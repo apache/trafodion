@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -52,7 +55,7 @@ import java.nio.ByteBuffer;
       public ColumnInfo() {
           super(TMUDRObjectType.COLUMN_INFO_OBJ, getCurrentVersion());
           usage_ = ColumnUseCode.UNKNOWN;
-          uniqueEntries_ = -1;
+          estimatedUniqueEntries_ = -1;
       }
 
       /**
@@ -63,7 +66,7 @@ import java.nio.ByteBuffer;
           name_ = name;
           type_ = type;
           usage_ = ColumnUseCode.UNKNOWN;
-          uniqueEntries_ = -1;
+          estimatedUniqueEntries_ = -1;
       }
 
       /**
@@ -74,8 +77,9 @@ import java.nio.ByteBuffer;
           name_ = new String(c.name_);
           type_ = new TypeInfo(c.type_);
           usage_ = c.usage_;
-          uniqueEntries_ = c.uniqueEntries_;
-          provenance_ = new ProvenanceInfo(c.provenance_);
+          estimatedUniqueEntries_ = c.estimatedUniqueEntries_;
+          if (c.provenance_ != null)
+              provenance_ = new ProvenanceInfo(c.provenance_);
       }
 
       /**
@@ -109,8 +113,8 @@ import java.nio.ByteBuffer;
        *
        *  @return Estimated number of unique entries.
        */
-      public long getUniqueEntries() {
-          return uniqueEntries_ ;
+      public long getEstimatedUniqueEntries() {
+          return estimatedUniqueEntries_ ;
       }
 
       /**
@@ -132,6 +136,8 @@ import java.nio.ByteBuffer;
        *  @return Provenance of the column.
        */
       public ProvenanceInfo getProvenance() {
+          if (provenance_ == null)
+              provenance_ = new ProvenanceInfo();
           return provenance_;
       }
 
@@ -168,10 +174,10 @@ import java.nio.ByteBuffer;
        *  </ul>
        *  @see ColumnInfo#getUniqueEntries()
        *
-       *  @param uniqueEntries Estimate of the number of unique entries.
+       *  @param estimatedUniqueEntries Estimate of the number of unique entries.
        */
-      public void setUniqueEntries(long uniqueEntries) {
-          uniqueEntries_ = uniqueEntries ;
+      public void setUniqueEntries(long estimatedUniqueEntries) {
+          estimatedUniqueEntries_ = estimatedUniqueEntries ;
       }
 
       /**
@@ -204,7 +210,7 @@ import java.nio.ByteBuffer;
        *  @param provenance The provenance information.
        */
       public void setProvenance(ProvenanceInfo provenance) {
-          provenance_ = provenance ;
+          provenance_ = new ProvenanceInfo(provenance);
       }
 
       // Functions for debugging
@@ -214,7 +220,8 @@ import java.nio.ByteBuffer;
           {
               s += " ";
               s += type_.toString(longForm);
-              if (provenance_.isFromInputTable())
+              if (provenance_ != null &&
+                  provenance_.isFromInputTable())
               {
                   s += String.format(" passthru(%d,%d)",
                                      provenance_.getInputTableNum(),
@@ -236,6 +243,10 @@ import java.nio.ByteBuffer;
                   s+= " (invalid usage code)";
                   break;
               }
+              if (estimatedUniqueEntries_ >= 0)
+              {
+                  s += String.format(" uec=%d", estimatedUniqueEntries_);
+              }
           }
           return s;
       }
@@ -248,6 +259,7 @@ import java.nio.ByteBuffer;
       // UDR writers can ignore these methods
       public static short getCurrentVersion() { return 1; }
 
+      @Override
       public int serializedLength() throws UDRException{
         return (super.serializedLength() + 
                 serializedLengthOfString(name_) + 
@@ -256,6 +268,7 @@ import java.nio.ByteBuffer;
                 serializedLengthOfLong());
       }
 
+      @Override
       public int serialize(ByteBuffer outputBuffer) throws UDRException{
         int origPos = outputBuffer.position();
 
@@ -269,7 +282,7 @@ import java.nio.ByteBuffer;
         serializeInt(usage_.ordinal(), 
                      outputBuffer);
 
-        serializeLong(uniqueEntries_,
+        serializeLong(estimatedUniqueEntries_,
                       outputBuffer);
 
         serializeInt(getProvenance().getInputTableNum(),
@@ -285,6 +298,7 @@ import java.nio.ByteBuffer;
         return bytesSerialized;
       }
 
+      @Override
       public int deserialize(ByteBuffer inputBuffer) throws UDRException {
 
        int origPos = inputBuffer.position();
@@ -304,13 +318,12 @@ import java.nio.ByteBuffer;
 
        usage_ = ColumnUseCode.values()[tempInt1];
 
-       uniqueEntries_ = deserializeLong(inputBuffer);
+       estimatedUniqueEntries_ = deserializeLong(inputBuffer);
 
         tempInt1 = deserializeInt(inputBuffer);
         int tempInt2 = deserializeInt(inputBuffer);
 
-        ProvenanceInfo p = new ProvenanceInfo(tempInt1, tempInt2); 
-        setProvenance(p);
+        provenance_ = new ProvenanceInfo(tempInt1, tempInt2); 
 
         int bytesDeserialized = inputBuffer.position() - origPos;
         validateDeserializedLength(bytesDeserialized);
@@ -321,7 +334,7 @@ import java.nio.ByteBuffer;
       private String name_;
       private TypeInfo type_;
       private ColumnUseCode usage_;
-      private long uniqueEntries_;
+      private long estimatedUniqueEntries_;
       private ProvenanceInfo provenance_;
   }
 

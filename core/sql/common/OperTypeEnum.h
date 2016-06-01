@@ -2,19 +2,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -89,6 +92,7 @@ enum OperatorTypeEnum {
                         REL_TABLE_MAPPING_UDF,
                         REL_TABLE_MAPPING_BUILTIN_LOG_READER,
                         REL_TABLE_MAPPING_BUILTIN_TIMESERIES,
+                        REL_TABLE_MAPPING_BUILTIN_JDBC,
                         REL_ANY_TABLE_MAPPING_UDF,
                         REL_ISOLATED_NON_TABLE_UDR,
                         REL_ISOLATED_SCALAR_UDF,
@@ -712,27 +716,28 @@ enum OperatorTypeEnum {
                         ITM_REF_CONSTRAINT = 2503,
                         ITM_UNIQUE_OPT_CONSTRAINT = 2504,
                         ITM_FUNC_DEPEND_CONSTRAINT = 2505,
-                        ITM_REF_OPT_CONSTRAINT = 2506,
-                        ITM_COMP_REF_OPT_CONSTRAINT = 2507,
+                        ITM_CHECK_OPT_CONSTRAINT,
+                        ITM_REF_OPT_CONSTRAINT,
+                        ITM_COMP_REF_OPT_CONSTRAINT,
 
                         // lookup a column in a native hbase table being accessed in row format
-                        ITM_HBASE_COLUMN_LOOKUP = 2508,
+                        ITM_HBASE_COLUMN_LOOKUP,
 
                         // display hbase columns being accessed in row format
-                        ITM_HBASE_COLUMNS_DISPLAY = 2509,
+                        ITM_HBASE_COLUMNS_DISPLAY,
 
-                       ITM_HBASE_COLUMN_CREATE = 2510,
+                        ITM_HBASE_COLUMN_CREATE,
 
                         // generate sequence numbers
-                        ITM_SEQUENCE_VALUE = 2511,
+                        ITM_SEQUENCE_VALUE,
 
                         // return number of the row being returned. Starts at 1
-                        ITM_ROWNUM = 2512,
+                        ITM_ROWNUM,
 
-                        ITM_HBASE_TIMESTAMP = 2513,
-                        ITM_HBASE_TIMESTAMP_REF = 2514,
-                        ITM_HBASE_VERSION = 2515,
-                        ITM_HBASE_VERSION_REF = 2516,
+                        ITM_HBASE_TIMESTAMP,
+                        ITM_HBASE_TIMESTAMP_REF,
+                        ITM_HBASE_VERSION,
+                        ITM_HBASE_VERSION_REF,
 
                         // list of item expressions
                         ITM_ITEM_LIST = 2550,
@@ -851,6 +856,8 @@ enum OperatorTypeEnum {
                         DDL_ALTER_TABLE_TOGGLE_CONSTRAINT,
                         DDL_ALTER_TABLE_TOGGLE_ONLINE,
                         DDL_ALTER_TABLE_NAMESPACE,
+                        DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE,
+                        DDL_ALTER_TABLE_ALTER_COLUMN_RENAME,
                         DDL_ALTER_TABLE_ALTER_COLUMN_DEFAULT_VALUE,
                         DDL_ALTER_TABLE_ALTER_COLUMN_SET_SG_OPTION,
                         DDL_ALTER_TABLE_ALTER_HBASE_OPTIONS,
@@ -1005,7 +1012,6 @@ enum OperatorTypeEnum {
                         // of class ElemDDLFileAttr.
                         ELM_FILE_ATTR_LIST,
                         ELM_PARTN_ATTR_LIST,
-                        ELM_FILE_ATTR_LOCK_LENGTH_ELEM,
                         ELM_FILE_ATTR_MAX_SIZE_ELEM,
                         ELM_FILE_ATTR_NO_LABEL_UPDATE_ELEM,
                         ELM_FILE_ATTR_OWNER_ELEM,
@@ -1027,6 +1033,9 @@ enum OperatorTypeEnum {
 
                         //ROW FORMAT
                         ELM_FILE_ATTR_ROW_FORMAT_ELEM,
+  
+                       // default column family for columns specified in CREATE stmt
+                        ELM_FILE_ATTR_COL_FAM_ELEM,
 
                         ELM_GRANTEE_ELEM,
                         ELM_KEY_VALUE_ELEM,
@@ -1037,8 +1046,6 @@ enum OperatorTypeEnum {
                         ELM_LIKE_OPT_WITH_HORIZONTAL_PARTITIONS_ELEM,
                         ELM_LIKE_OPT_WITHOUT_SALT_ELEM,
                         ELM_LIKE_OPT_WITHOUT_DIVISION_ELEM,
-                        ELM_LOAD_OPT_D_SLACK_ELEM,
-                        ELM_LOAD_OPT_I_SLACK_ELEM,
                         ELM_LOCATION_ELEM,
                         ELM_OPTION_LIST,
                         ELM_PARALLEL_EXEC_ELEM,

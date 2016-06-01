@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -164,7 +167,7 @@ static short genUpdExpr(
   ExpGenerator * expGen = generator->getExpGenerator();
 
   ExpTupleDesc::TupleDataFormat tupleFormat = 
-                   generator->getTableDataFormat( tableDesc->getNATable() );
+                   generator->getTableDataFormat( tableDesc->getNATable(), indexDesc);
   NABoolean alignedFormat = tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT;
 
   // Generate the update expression that will create the updated row
@@ -328,7 +331,7 @@ static short genMergeInsertExpr(
     return 0;
 
   ExpTupleDesc::TupleDataFormat tupleFormat = 
-                   generator->getTableDataFormat( tableDesc->getNATable() );
+                   generator->getTableDataFormat( tableDesc->getNATable(), indexDesc);
 
   NABoolean alignedFormat = (tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT);
   
@@ -424,6 +427,11 @@ static short genMergeInsertExpr(
   return 0;
 }
 
+static short genUpdConstraintExpr(Generator *generator)
+{
+  return 0;
+}
+
 static short genHbaseUpdOrInsertExpr(
 			     Generator * generator,
 			     NABoolean isInsert,
@@ -448,7 +456,8 @@ static short genHbaseUpdOrInsertExpr(
   ValueIdList updRowVidList;
 
   NABoolean isAligned = FALSE;
-  if (indexDesc->getPrimaryTableDesc()->getNATable()->isSQLMXAlignedTable())
+
+  if (indexDesc->getNAFileSet()->isSqlmxAlignedRowFormat())
     isAligned = TRUE;
 
   ExpTupleDesc::TupleDataFormat tupleFormat;
@@ -460,7 +469,8 @@ static short genHbaseUpdOrInsertExpr(
   listOfUpdatedColNames = NULL;
   if (updRecExprArray.entries() > 0)
     listOfUpdatedColNames = new(space) Queue(space);
- 
+
+
   for (CollIndex ii = 0; ii < updRecExprArray.entries(); ii++)
     {
       const ItemExpr *assignExpr = updRecExprArray[ii].getItemExpr();
@@ -481,7 +491,7 @@ static short genHbaseUpdOrInsertExpr(
 		"unexpected type of base table column");
       
       const NAColumn *nac = bc->getNAColumn();
-      if (HbaseAccess::isEncodingNeededForSerialization(bc))
+      if ((NOT isAligned) && HbaseAccess::isEncodingNeededForSerialization(bc))
 	{
 	  ie = new(generator->wHeap()) CompEncode
 	    (ie, FALSE, -1, CollationInfo::Sort, TRUE);
@@ -550,7 +560,6 @@ static short genHbaseUpdOrInsertExpr(
       Attributes * updValAttr = (generator->getMapInfo(updValId, 0))->getAttr();      
       assignAttr->copyLocationAttrs(updValAttr);
     }
-
   for (CollIndex ii = 0; ii < updRecExprArray.entries(); ii++)
     {
       const ItemExpr *assignExpr = updRecExprArray[ii].getItemExpr();
@@ -777,6 +786,8 @@ short HbaseDelete::codeGen(Generator * generator)
   ex_expr *proj_expr = 0;
   ex_expr *convert_expr = NULL;
   ex_expr * keyColValExpr = NULL;
+  ex_expr *preCondExpr = NULL;
+  ex_expr *lobExpr = NULL;
 
   ex_cri_desc * givenDesc 
     = generator->getCriDesc(Generator::DOWN);
@@ -800,8 +811,10 @@ short HbaseDelete::codeGen(Generator * generator)
 
   NABoolean returnRow = getReturnRow(this, getIndexDesc());
 
+  NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+
   ExpTupleDesc::TupleDataFormat asciiRowFormat = 
-    (getTableDesc()->getNATable()->isSQLMXAlignedTable() ?
+    (isAlignedFormat ?
      ExpTupleDesc::SQLMX_ALIGNED_FORMAT :
      ExpTupleDesc::SQLARK_EXPLODED_FORMAT);
   ExpTupleDesc::TupleDataFormat hbaseRowFormat = 
@@ -820,11 +833,18 @@ short HbaseDelete::codeGen(Generator * generator)
   ValueIdList srcVIDlist;
   ValueIdList dupVIDlist;
   HbaseAccess::sortValues(retColRefSet_, 
-                          columnList,
-                          srcVIDlist, dupVIDlist,
+			  columnList,
+			  srcVIDlist, dupVIDlist,
 			  (getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE));
 
   const CollIndex numColumns = columnList.entries();
+
+  if (! getPrecondition().isEmpty())
+    {
+      ItemExpr * preCondTree = getPrecondition().rebuildExprTree(ITM_AND,TRUE,TRUE);
+      expGen->generateExpr(preCondTree->getValueId(), ex_expr::exp_SCAN_PRED,
+			   &preCondExpr);
+    }
 
   // build key information
   keyRangeGen * keyInfo = 0;
@@ -872,6 +892,7 @@ short HbaseDelete::codeGen(Generator * generator)
 
   ULng32 convertRowLen = 0;
 
+  ValueIdList lobDelVIDlist;
   for (CollIndex ii = 0; ii < numColumns; ii++)
     {
       ItemExpr * col_node = ((columnList[ii]).getValueDesc())->getItemExpr();
@@ -887,7 +908,7 @@ short HbaseDelete::codeGen(Generator * generator)
 						    givenType,         // [IN] Actual type of HDFS column
 						    asciiValue,         // [OUT] Returned expression for ascii rep.
 						    castValue,        // [OUT] Returned expression for binary rep.
-                                                    getTableDesc()->getNATable()->isSQLMXAlignedTable()
+						    isAlignedFormat 
 						    );
       
       GenAssert(res == 1 && asciiValue != NULL && castValue != NULL,
@@ -898,6 +919,15 @@ short HbaseDelete::codeGen(Generator * generator)
       
       castValue->bindNode(generator->getBindWA());
       convertExprCastVids.insert(castValue->getValueId());
+
+      if (col_node->getValueId().getType().isLob())
+        {
+          ItemExpr * ld = new(generator->wHeap())
+            LOBdelete(castValue);
+          ld->bindNode(generator->getBindWA());
+          lobDelVIDlist.insert(ld->getValueId());
+        }
+      
     } // for (ii = 0; ii < numCols; ii++)
 
   // Add ascii columns to the MapTable. After this call the MapTable
@@ -920,9 +950,9 @@ short HbaseDelete::codeGen(Generator * generator)
 			   asciiTuppIndex,                        // [IN] index into atp
 			   &asciiTupleDesc,                       // [optional OUT] tuple desc
 			   ExpTupleDesc::LONG_FORMAT,             // [optional IN] desc format
-                           0,
-                           NULL,
-                           (NAColumnArray*)colArray);
+			   0,
+			   NULL,
+			   (NAColumnArray*)colArray);
    
   work_cri_desc->setTupleDescriptor(asciiTuppIndex, asciiTupleDesc);
   
@@ -1014,10 +1044,10 @@ short HbaseDelete::codeGen(Generator * generator)
   if (addDefaultValues) //hasAddedColumns)
     {
       expGen->addDefaultValues(columnList,
-                               getIndexDesc()->getAllColumns(),
-                               tuple_desc,
-                               TRUE);
-      
+		       getIndexDesc()->getAllColumns(),
+		       tuple_desc,
+		       TRUE);
+
       if (asciiRowFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT)
         {
           expGen->addDefaultValues(columnList,
@@ -1041,7 +1071,15 @@ short HbaseDelete::codeGen(Generator * generator)
       expGen->generateExpr(newPredTree->getValueId(), ex_expr::exp_SCAN_PRED,
 			   &scanExpr);
     }
-  
+
+  ex_expr * lobDelExpr = NULL;
+  if (getTableDesc()->getNATable()->hasLobColumn())
+    {
+      // generate code to delete rows from LOB desc table
+      expGen->generateListExpr(lobDelVIDlist, 
+                               ex_expr::exp_ARITH_EXPR, &lobDelExpr);
+    }
+
   ULng32 rowIdAsciiRowLen = 0; 
   ExpTupleDesc * rowIdAsciiTupleDesc = 0;
   ex_expr * rowIdExpr = NULL;
@@ -1070,15 +1108,7 @@ short HbaseDelete::codeGen(Generator * generator)
     }
   
   Queue * listOfFetchedColNames = NULL;
-  if (NOT getTableDesc()->getNATable()->isSeabaseTable())
-    {
-      // for hbase cell/row tables, the listoffetchedcols is not the columns that are
-      // part of the virtual cell/row tables.
-      // This list will come from the predicate and selected items used. TBD.
-      // For now, do not create a list.
-    }
-  else if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
-           (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+  if (isAlignedFormat)
     {
       listOfFetchedColNames = new(space) Queue(space);
       
@@ -1208,7 +1238,7 @@ short HbaseDelete::codeGen(Generator * generator)
 		      scanExpr,
 		      rowIdExpr,
 		      NULL, // updateExpr
-		      NULL, // mergeInsertExpr
+		      lobDelExpr, // NULL, // mergeInsertExpr
 		      NULL, // mergeInsertRowIdExpr
 		      NULL, // mergeUpdScanExpr
 		      NULL, // projExpr
@@ -1275,6 +1305,10 @@ short HbaseDelete::codeGen(Generator * generator)
 
   generator->initTdbFields(hbasescan_tdb);
 
+  if ((CmpCommon::getDefault(HBASE_ASYNC_OPERATIONS) == DF_ON)
+           && getInliningInfo().isIMGU())
+     hbasescan_tdb->setAsyncOperations(TRUE);
+
   if (getTableDesc()->getNATable()->isHbaseRowTable()) //rowwiseHbaseFormat())
     hbasescan_tdb->setRowwiseFormat(TRUE);
 
@@ -1282,7 +1316,7 @@ short HbaseDelete::codeGen(Generator * generator)
     {
       hbasescan_tdb->setSQHbaseTable(TRUE);
 
-      if (getTableDesc()->getNATable()->isSQLMXAlignedTable())
+      if (isAlignedFormat)
         hbasescan_tdb->setAlignedFormat(TRUE);
 
       if ((CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON) &&
@@ -1332,6 +1366,9 @@ short HbaseDelete::codeGen(Generator * generator)
 					   getPertableStatsTdbId());
     }
 
+  if (preCondExpr)
+    hbasescan_tdb->setInsDelPreCondExpr(preCondExpr);
+
   if (generator->isTransactionNeeded())
     setTransactionRequired(generator);
   else if (noDTMxn())
@@ -1368,6 +1405,8 @@ short HbaseUpdate::codeGen(Generator * generator)
   ex_expr *mergeInsertExpr = NULL;
   ex_expr *returnUpdateExpr = NULL;
   ex_expr * keyColValExpr = NULL;
+  ex_expr * insConstraintExpr  = NULL;
+  ex_expr * updConstraintExpr  = NULL;
 
   ex_cri_desc * givenDesc 
     = generator->getCriDesc(Generator::DOWN);
@@ -1401,9 +1440,11 @@ short HbaseUpdate::codeGen(Generator * generator)
  
   const Int16 returnedFetchedTuppIndex = (Int16)(returnedDesc->noTuples()-2);
   const Int16 returnedUpdatedTuppIndex = (Int16)(returnedFetchedTuppIndex + 1);
+
+  NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
   
   ExpTupleDesc::TupleDataFormat asciiRowFormat = 
-    (getTableDesc()->getNATable()->isSQLMXAlignedTable() ?
+    (isAlignedFormat ?
      ExpTupleDesc::SQLMX_ALIGNED_FORMAT :
      ExpTupleDesc::SQLARK_EXPLODED_FORMAT);
 
@@ -1489,7 +1530,7 @@ short HbaseUpdate::codeGen(Generator * generator)
 						   givenType,         // [IN] Actual type of HDFS column
 						   asciiValue,         // [OUT] Returned expression for ascii rep.
 						   castValue,        // [OUT] Returned expression for binary rep.
-                                                   getTableDesc()->getNATable()->isSQLMXAlignedTable()
+                                                   isAlignedFormat
 						   );
       
       GenAssert(res == 1 && asciiValue != NULL && castValue != NULL,
@@ -1707,8 +1748,8 @@ short HbaseUpdate::codeGen(Generator * generator)
     }
   
   Queue * listOfFetchedColNames = NULL;
-  if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
-      (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+
+  if (isAlignedFormat)
     {
       listOfFetchedColNames = new(space) Queue(space);
       
@@ -1746,6 +1787,18 @@ short HbaseUpdate::codeGen(Generator * generator)
   else if (getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries())
     {
       GenAssert(FALSE, "Should not reach here. This update should have been transformed to delete/insert");
+      // To be uncommented when TRAFODION-1610 is implemented
+      // Need to generate insConstraintExpr also
+/*
+      ItemExpr *constrTree =
+        getCheckConstraints().rebuildExprTree(ITM_AND, TRUE, TRUE);
+
+      if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
+        constrTree = generator->addCompDecodeForDerialization(constrTree);
+
+      expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
+                            &updConstraintExpr);
+*/
     }
  
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
@@ -1780,6 +1833,8 @@ short HbaseUpdate::codeGen(Generator * generator)
   ULng32 returnedFetchedRowLen = 0;
   ULng32 returnedUpdatedRowLen = 0;
   ULng32 returnedMergeInsertedRowLen = 0;
+  Queue *listOfOmittedColNames = NULL;
+
   if (returnRow)
     {
       const ValueIdList &fetchedOutputs =
@@ -1813,6 +1868,7 @@ short HbaseUpdate::codeGen(Generator * generator)
 				   0, returnedFetchedTuppIndex); 
       
       ValueIdList updatedOutputs;
+      ValueIdSet alreadyDeserialized;
 
       if (isMerge())
 	{
@@ -1849,6 +1905,7 @@ short HbaseUpdate::codeGen(Generator * generator)
 	      else
 		{
 		  tgtValueId = fetchedCol->getValueId();
+		  alreadyDeserialized += tgtValueId; // if it is necessary to deserialize, that is
 		}
  
 	      updatedOutputs.insert(tgtValueId);
@@ -1874,7 +1931,7 @@ short HbaseUpdate::codeGen(Generator * generator)
       ExpTupleDesc * returnedUpdatedTupleDesc = NULL;
       ValueIdList tgtConvValueIdList;
 
-     if (getTableDesc()->getNATable()->hasSerializedColumn())
+     if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
 	{
 	  // if serialized columns are present, then create a new row with
 	  // deserialized columns before returning it.
@@ -1887,7 +1944,8 @@ short HbaseUpdate::codeGen(Generator * generator)
 	     &returnUpdateExpr, 
 	     &returnedUpdatedTupleDesc,
 	     ExpTupleDesc::SHORT_FORMAT,
-	     tgtConvValueIdList);
+	     tgtConvValueIdList,
+	     alreadyDeserialized);
 	}
      else
        {
@@ -1931,24 +1989,43 @@ short HbaseUpdate::codeGen(Generator * generator)
       expGen->assignAtpAndAtpIndex(getScanIndexDesc()->getIndexColumns(),
 				   0, returnedFetchedTuppIndex); 
       */
-
+      NAColumn *col;
       if (isMerge())
 	{
 	  ValueIdList mergeInsertOutputs;
 
 	  for (CollIndex ii = 0; ii < mergeInsertRecExprArray().entries(); ii++)
-	    {
+	  {
 	      const ItemExpr *assignExpr = mergeInsertRecExprArray()[ii].getItemExpr();
 	      ValueId tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
-	      
+              col = tgtValueId.getNAColumn( TRUE );
+
+              if ((NOT isAlignedFormat) &&
+                  ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_MERGE) ||
+                   (CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL)) && 
+                  (((Assign*)assignExpr)->canBeSkipped()) &&
+                 (NOT col->isSystemColumn()) &&
+                 (NOT col->isClusteringKey()) &&
+                 (NOT col->isIdentityColumn()))
+              {
+                 if (listOfOmittedColNames == NULL)
+                    listOfOmittedColNames = new(space) Queue(space);
+                 NAString cnInList;
+                 HbaseAccess::createHbaseColId(col, cnInList);
+
+                 char * colNameInList = 
+                    space->AllocateAndCopyToAlignedSpace(cnInList, 0);
+          
+                 listOfOmittedColNames->insert(colNameInList);
+              }
 	      mergeInsertOutputs.insert(tgtValueId);
-	    }
+	  }
 	  
 	  MapTable * returnedMergeInsertedMapTable = 0;
 	  ExpTupleDesc * returnedMergeInsertedTupleDesc = NULL;
 	  ValueIdList tgtConvValueIdList;
 
-	  if (getTableDesc()->getNATable()->hasSerializedColumn())
+	  if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
 	    {
 	      // if serialized columns are present, then create a new row with
 	      // deserialized columns before returning it.
@@ -1961,7 +2038,8 @@ short HbaseUpdate::codeGen(Generator * generator)
 		 &returnMergeInsertExpr, 
 		 &returnedMergeInsertedTupleDesc,
 		 ExpTupleDesc::SHORT_FORMAT,
-		 tgtConvValueIdList);
+		 tgtConvValueIdList,
+		 alreadyDeserialized);
 	    }
 	  else
 	    {
@@ -2098,15 +2176,22 @@ short HbaseUpdate::codeGen(Generator * generator)
 		      );
 
   generator->initTdbFields(hbasescan_tdb);
+  hbasescan_tdb->setListOfOmittedColNames(listOfOmittedColNames);
 
   if (getTableDesc()->getNATable()->isHbaseRowTable()) 
     hbasescan_tdb->setRowwiseFormat(TRUE);
+
+  if (updConstraintExpr)
+    hbasescan_tdb->setUpdConstraintExpr(updConstraintExpr);
+
+  if (insConstraintExpr)
+    hbasescan_tdb->setInsConstraintExpr(insConstraintExpr);
 
   if (getTableDesc()->getNATable()->isSeabaseTable())
     {
       hbasescan_tdb->setSQHbaseTable(TRUE);
 
-      if (getTableDesc()->getNATable()->isSQLMXAlignedTable())
+      if (isAlignedFormat)
         hbasescan_tdb->setAlignedFormat(TRUE);
 
       if (CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON)
@@ -2212,7 +2297,6 @@ short HbaseInsert::codeGen(Generator *generator)
 
   ULng32 loggingRowLen = 0;
 
-  NABoolean addDefaultValues = TRUE;
   NABoolean hasAddedColumns = FALSE;
   if (getTableDesc()->getNATable()->hasAddedColumn())
     hasAddedColumns = TRUE;
@@ -2223,39 +2307,46 @@ short HbaseInsert::codeGen(Generator *generator)
   NAColumn *col;
 
   ValueIdList returnRowVIDList;
-  NABoolean upsertColsWereSkipped = FALSE;
+  Queue *listOfOmittedColNames = NULL;
+
+  NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+
   for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
-    {
+  {
       const ItemExpr *assignExpr = newRecExprArray()[ii].getItemExpr();
       ValueId tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
       ValueId srcValueId = assignExpr->child(1)->castToItemExpr()->getValueId();
 
       col = tgtValueId.getNAColumn( TRUE );
+      if ((NOT isAlignedFormat) &&
+         ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_MERGE) ||
+          (CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL)) && 
+         (((Assign*)assignExpr)->canBeSkipped()) && 
+         (NOT col->isSystemColumn()) &&
+         (NOT col->isClusteringKey()) &&
+         (NOT col->isIdentityColumn()))
+      {
+          if (listOfOmittedColNames == NULL)
+             listOfOmittedColNames = new(space) Queue(space);
+          NAString cnInList;
+          HbaseAccess::createHbaseColId(col, cnInList);
 
-      // if upsert stmt and this assign was not specified by user, skip it. 
-      // If used, it will overwrite existing values if this row exists in the table.
-      if ((isUpsert()) &&
-	  (NOT ((Assign*)assignExpr)->isUserSpecified()) &&
-	  (NOT col->isSystemColumn()) &&
-          (NOT col->isIdentityColumn()))
-	{
-	  upsertColsWereSkipped = TRUE;
-	  continue;
-	}
+          char * colNameInList = 
+             space->AllocateAndCopyToAlignedSpace(cnInList, 0);
+          listOfOmittedColNames->insert(colNameInList);
+      }
+      colArray.insert( col );
 
       if (returnRow)
-	returnRowVIDList.insert(tgtValueId);
+           returnRowVIDList.insert(tgtValueId);
 
-      if ( col != NULL )
-	colArray.insert( col );
-       
       ItemExpr * child1Expr = assignExpr->child(1);
       const NAType &givenType = tgtValueId.getType();
       
       ItemExpr * ie = new(generator->wHeap())
 	Cast(child1Expr, &givenType);
 
-      if (HbaseAccess::isEncodingNeededForSerialization
+      if ((NOT isAlignedFormat) && HbaseAccess::isEncodingNeededForSerialization
 	  (assignExpr->child(0)->castToItemExpr()))
 	{
 	  ie = new(generator->wHeap()) CompEncode
@@ -2267,9 +2358,8 @@ short HbaseInsert::codeGen(Generator *generator)
 	{ 
 	  GenAssert(0,"bindNode failed");
 	}
- 
       insertVIDList.insert(ie->getValueId());
-    }
+  }
 
   const NATable *naTable = getTableDesc()->getNATable();
 
@@ -2277,7 +2367,7 @@ short HbaseInsert::codeGen(Generator *generator)
   ExpTupleDesc * tupleDesc   = 0;
   ExpTupleDesc::TupleDataFormat tupleFormat;
 
-  if (naTable->isSQLMXAlignedTable())
+  if (isAlignedFormat)
     tupleFormat = ExpTupleDesc::SQLMX_ALIGNED_FORMAT;
   else
     tupleFormat = ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
@@ -2299,13 +2389,6 @@ short HbaseInsert::codeGen(Generator *generator)
 				     NULL,
 				     NULL,
 				     &colArray);
-  
-  if (addDefaultValues) 
-    {
-      expGen->addDefaultValues(insertVIDList,
-			       (upsertColsWereSkipped ? colArray : getIndexDesc()->getAllColumns()),
-			       tupleDesc);
-    }
 
   ex_expr * loggingDataExpr = NULL;
   ExpTupleDesc * loggingDataTupleDesc = NULL;
@@ -2361,7 +2444,7 @@ short HbaseInsert::codeGen(Generator *generator)
   // Only works for base tables because the constraint information is
   // stored with the table descriptor which doesn't exist for indexes.
   //
-  ex_expr * constraintExpr = NULL;
+  ex_expr * insConstraintExpr = NULL;
   Queue * listOfUpdatedColNames = NULL;
   Lng32 keyAttrPos = -1;
   ex_expr * rowIdExpr = NULL;
@@ -2369,25 +2452,15 @@ short HbaseInsert::codeGen(Generator *generator)
 
   ValueIdList savedInputVIDlist;
   NAList<Attributes*> savedInputAttrsList;
+
   const ValueIdList &indexVIDlist = getIndexDesc()->getIndexColumns();
-  CollIndex jj = 0;
   for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
     {
       const ItemExpr *assignExpr = newRecExprArray()[ii].getItemExpr();
       const ValueId &tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
       const ValueId &indexValueId = indexVIDlist[ii];
       col = tgtValueId.getNAColumn( TRUE );
-      
-      if ((isUpsert()) &&
-	  (NOT ((Assign*)assignExpr)->isUserSpecified()) &&
-	  (NOT col->isSystemColumn()) &&
-          (NOT col->isIdentityColumn()))
-	{
-	  continue;
-	}
-      
-      ValueId &srcValId = insertVIDList[jj];
-      jj++;
+      ValueId &srcValId = insertVIDList[ii];
       
       Attributes * colAttr = (generator->addMapInfo(tgtValueId, 0))->getAttr();
       Attributes * indexAttr = (generator->addMapInfo(indexValueId, 0))->getAttr();
@@ -2395,7 +2468,8 @@ short HbaseInsert::codeGen(Generator *generator)
       
       colAttr->copyLocationAttrs(castAttr);
       indexAttr->copyLocationAttrs(castAttr);
-
+      // To be removed when TRAFODION-1610 is implemented
+      //  `
       // if any of the target column is also an input value to this operator, then
       // make the value id of that input point to the location of the target column.
       // This is done as the input column value will become the target after this
@@ -2455,6 +2529,15 @@ short HbaseInsert::codeGen(Generator *generator)
 	} // if
     }
 
+  ex_expr* preCondExpr = NULL;
+  if (! getPrecondition().isEmpty())
+  {
+    ItemExpr * preCondTree = getPrecondition().rebuildExprTree(ITM_AND,
+							       TRUE,TRUE);
+    expGen->generateExpr(preCondTree->getValueId(), ex_expr::exp_SCAN_PRED,
+			 &preCondExpr);
+  }
+
   ULng32 f;
   expGen->generateKeyEncodeExpr(
 				getIndexDesc(),                         // describes the columns
@@ -2473,13 +2556,14 @@ short HbaseInsert::codeGen(Generator *generator)
       ItemExpr *constrTree = 
 	getCheckConstraints().rebuildExprTree(ITM_AND, TRUE, TRUE);
 
-      if (getTableDesc()->getNATable()->hasSerializedColumn())
-	constrTree = generator->addCompDecodeForDerialization(constrTree);
+      if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
+	constrTree = generator->addCompDecodeForDerialization(constrTree, isAlignedFormat);
 
       expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
-			   &constraintExpr);
+			   &insConstraintExpr);
 
       // restore original attribute values
+      // To be removed when TRAFODION-1610 is implemented
       for (Lng32 i = 0; i < savedInputVIDlist.entries(); i++)
         {
           ValueId inputValId = savedInputVIDlist[i];
@@ -2491,7 +2575,7 @@ short HbaseInsert::codeGen(Generator *generator)
   listOfUpdatedColNames = new(space) Queue(space);
   std::vector<NAString> columNamesVec;
 
-  if (NOT naTable->isSQLMXAlignedTable())
+  if (NOT isAlignedFormat)
     {
       for (CollIndex c = 0; c < colArray.entries(); c++)
         {
@@ -2569,9 +2653,10 @@ short HbaseInsert::codeGen(Generator *generator)
   ExpTupleDesc * projRowTupleDesc   = 0;
   if (returnRow)
     {
-      if (getTableDesc()->getNATable()->hasSerializedColumn())
+      if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
 	{
 	  ValueIdList deserColVIDList;
+	  ValueIdSet dummy;
 
 	  // if serialized columns are present, then create a new row with
 	  // deserialized columns before returning it.
@@ -2584,7 +2669,8 @@ short HbaseInsert::codeGen(Generator *generator)
 	     &projExpr, 
 	     &projRowTupleDesc,
 	     ExpTupleDesc::SHORT_FORMAT,
-	     deserColVIDList);
+	     deserColVIDList,
+	     dummy);
 	  
 	  workCriDesc->setTupleDescriptor(projRowTuppIndex, projRowTupleDesc);
 
@@ -2634,9 +2720,18 @@ short HbaseInsert::codeGen(Generator *generator)
   queue_index downqueuelength = (queue_index)getDefault(GEN_DP2I_SIZE_DOWN);
   Int32 numBuffers = getDefault(GEN_DP2I_NUM_BUFFERS);
 
-  if (getInsertType() == Insert::VSBB_INSERT_USER)
-    downqueuelength = 400;
-
+  if (getInsertType() == Insert::VSBB_INSERT_USER &&
+              generator->oltOptInfo()->multipleRowsReturned())
+  {
+    downqueuelength = getDefault(HBASE_ROWSET_VSBB_SIZE);
+    queue_index dq = 1;
+    queue_index bits = downqueuelength;
+    while (bits && dq < downqueuelength) {
+        bits = bits  >> 1;
+        dq = dq << 1;
+    }
+    downqueuelength = dq;
+  }
   char * tablename = NULL;
   if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
       (getTableDesc()->getNATable()->isHbaseCellTable()))
@@ -2676,7 +2771,7 @@ short HbaseInsert::codeGen(Generator *generator)
 		      t,
 		      tablename,
 		      insertExpr,
-		      constraintExpr,
+		      NULL,
 		      rowIdExpr,
 		      loggingDataExpr, // logging expr
 		      NULL, // mergeInsertExpr
@@ -2746,16 +2841,23 @@ short HbaseInsert::codeGen(Generator *generator)
 		      );
 
   generator->initTdbFields(hbasescan_tdb);
+  hbasescan_tdb->setListOfOmittedColNames(listOfOmittedColNames);
 
-  if (CmpCommon::getDefault(HBASE_ASYNC_OPERATIONS) == DF_ON
-           && t == ComTdbHbaseAccess::INSERT_)
-     hbasescan_tdb->setAsyncOperations(TRUE);
+  if ((CmpCommon::getDefault(HBASE_ASYNC_OPERATIONS) == DF_ON)
+           && getInliningInfo().isIMGU())
+    hbasescan_tdb->setAsyncOperations(TRUE);
+
+  if (preCondExpr)
+    hbasescan_tdb->setInsDelPreCondExpr(preCondExpr);
+
+  if (insConstraintExpr)
+    hbasescan_tdb->setInsConstraintExpr(insConstraintExpr);
 
   if (getTableDesc()->getNATable()->isSeabaseTable())
     {
       hbasescan_tdb->setSQHbaseTable(TRUE);
 
-      if (naTable->isSQLMXAlignedTable())
+      if (isAlignedFormat)
         hbasescan_tdb->setAlignedFormat(TRUE);
 
       if (CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON)
@@ -2765,10 +2867,15 @@ short HbaseInsert::codeGen(Generator *generator)
 	  (noCheck()))
 	hbasescan_tdb->setHbaseSqlIUD(FALSE);
 
-      if ((getInsertType() == Insert::VSBB_INSERT_USER) ||
-	  (getInsertType() == Insert::UPSERT_LOAD)) {
+      if (((getInsertType() == Insert::VSBB_INSERT_USER) && 
+                   generator->oltOptInfo()->multipleRowsReturned()) ||
+	  (getInsertType() == Insert::UPSERT_LOAD))
+      {
 	hbasescan_tdb->setVsbbInsert(TRUE);
         hbasescan_tdb->setHbaseRowsetVsbbSize(getDefault(HBASE_ROWSET_VSBB_SIZE));
+        // Set the VSBB flag in the RelExpr to display in explain
+        if (! hbasescan_tdb->hbaseSqlIUD())  
+           setVsbbInsert(TRUE);
       }
 
       if ((isUpsert()) &&
@@ -2789,6 +2896,15 @@ short HbaseInsert::codeGen(Generator *generator)
         hbasescan_tdb->setLoadPrepLocation(tlpTmpLocation);
         hbasescan_tdb->setNoDuplicates(CmpCommon::getDefault(TRAF_LOAD_PREP_SKIP_DUPLICATES) == DF_OFF);
         hbasescan_tdb->setMaxHFileSize(CmpCommon::getDefaultLong(TRAF_LOAD_MAX_HFILE_SIZE));
+
+	ULng32 loadFlushSizeinKB = getDefault(TRAF_LOAD_FLUSH_SIZE_IN_KB);
+	ULng32 loadFlushSizeinRows = 0;
+	loadFlushSizeinRows = (loadFlushSizeinKB*1024)/hbasescan_tdb->getRowLen() ;
+	// largest flush size, runtime cannot handle higher values 
+	// without code change
+	if (loadFlushSizeinRows >= USHRT_MAX/2)
+	  loadFlushSizeinRows = ((USHRT_MAX/2)-1);
+	hbasescan_tdb->setTrafLoadFlushSize(loadFlushSizeinRows);
 
         // For sample file, set the sample location in HDFS and the sampling rate.
         // Move later, when sampling not limited to bulk loads.
@@ -2846,8 +2962,6 @@ short HbaseInsert::codeGen(Generator *generator)
       if (traf_upsert_adjust_params)
       {
         ULng32 wbSize = getDefault(TRAF_UPSERT_WB_SIZE);
-        NABoolean traf_auto_flush =
-           (CmpCommon::getDefault(TRAF_UPSERT_AUTO_FLUSH) == DF_ON);
         NABoolean traf_write_toWAL =
                    (CmpCommon::getDefault(TRAF_UPSERT_WRITE_TO_WAL) == DF_ON);
 
@@ -2856,8 +2970,6 @@ short HbaseInsert::codeGen(Generator *generator)
         hbasescan_tdb->setCanAdjustTrafParams(true);
 
         hbasescan_tdb->setWBSize(wbSize);
-        hbasescan_tdb->setIsTrafAutoFlush(traf_auto_flush);
-
 
       }
       if (getTableDesc()->getNATable()->isEnabledForDDLQI())

@@ -1,19 +1,22 @@
 #!/bin/sh
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 #
@@ -48,21 +51,6 @@
 # also set http_proxy and ftp_proxy if necessary, to download
 # files from repositories on the Internet
 #
-# DCS to use. This list is in order of precedent.
-# DCS_TAR - Optionally specify a local tar file to use
-# DCS_URL - Optionally specify a URL to download
-# DCS_SRC - Optionally specify a local source tree to use
-# If none specified, download latest code from github
-#
-# Trafodion REST to use. This list is in order of precedent.
-# REST_TAR - Optionally specify a local tar file to use
-# REST_URL - Optionally specify a URL to download
-# REST_SRC - Optionally specify a local source tree to use
-# If none specified, download latest code from github
-#
-# phoenix_test
-# PHX_SRC - Optionally specify a local source tree to use
-#  otherwise, download latest code from github
 ##############################################################################
 
 function usage {
@@ -257,7 +245,9 @@ function listports {
 	MY_YARN_NM_PORT_NUM
 	MY_YARN_RESMAN_PORT_NUM
 	MY_YARN_SCHED_PORT_NUM
-	MY_YARN_TRACKER_PORT_NUM"
+	MY_YARN_TRACKER_PORT_NUM
+        MY_DB_MGR_PORT
+        MY_DB_MGR_SECURE_PORT"
 
   for AVAR in $VARS_FOR_PORTS; do
     AVALUE="$(eval "echo \$$AVAR")"
@@ -315,6 +305,7 @@ MY_DERBY_DATA_DIR=${MY_DATA_DIR}/derby
 MY_HADOOP_DATA_DIR=${MY_DATA_DIR}/hadoop
 MY_HIVE_DATA_DIR=${MY_DATA_DIR}/hive
 MY_HBASE_DATA_DIR=${MY_DATA_DIR}/hbase
+MY_ZOOKEEPER_DATA_DIR=${MY_DATA_DIR}/zookeeper
 
 # Administrator and Hive user name for MySQL installation
 MY_SQL_ADMIN=root
@@ -332,7 +323,7 @@ MY_CMD=$0
 MY_IMPLICIT_Y=
 NOACTION=
 VERBOSE=
-MISSING_P_VAL="ERROR: -p option should be followed by <start port num>, rand or fromDisplay"
+MISSING_P_VAL="ERROR: -p option should be followed by <start port num>, rand, fromDisplay or available"
 
 # process command line arguments
 ################################
@@ -346,7 +337,7 @@ do
       exit 1
     fi
     MY_START_PORT=$1
-    if [ $MY_START_PORT != "rand" -a $MY_START_PORT != "fromDisplay" ]; then
+    if [ $MY_START_PORT != "rand" -a $MY_START_PORT != "fromDisplay" -a $MY_START_PORT != "available" ]; then
       test $MY_START_PORT -gt 0 >/dev/null 2>&1
       if [ $? -ne 0 ]; then
         echo "$MISSING_P_VAL"
@@ -370,7 +361,7 @@ do
 *)  echo "ERROR: Unexpected argument $1"
     echo
     cat <<EOF
-Syntax: $0 [ -p [<starting port num> | rand | fromDisplay ] ]  [-y]  [-n] [-v]
+Syntax: $0 [ -p [<starting port num> | rand | fromDisplay | available ] ]  [-y]  [-n] [-v]
 EOF
     exit 1
     ;;
@@ -395,10 +386,53 @@ else
     # display :34.0 would result in starting port 53400 (instead of default 50000 range)
     MY_START_PORT=${DISPLAY/*:/}
     MY_START_PORT=${MY_START_PORT/.*/}
-    MY_START_PORT=`expr 50000 + $MY_START_PORT '*' 100`
+    # Pick a port range starting at 24000 + 200 * display number.
+    # Choose a display number of up to 42 to stay below the
+    # ephemeral port range which typically starts at 32768.
+    MY_START_PORT=`expr 24000 + $MY_START_PORT '*' 200`
   elif [ $MY_START_PORT == "rand" ]; then
-    # pick a random number between 9000 and 49000 that is divisible by 200
-    MY_START_PORT=`expr $RANDOM '%' 200 '*' 200 + 9000`
+    # pick a random number between 12000 and 24000 that is divisible by 200
+    MY_START_PORT=`expr $RANDOM '%' 60 '*' 200 + 12000`
+  elif [ $MY_START_PORT == "available" ]; then
+
+     portMsg=`python findPort.py`
+
+     missingPort=`echo $portMsg | cut -d':' -f 1-1`
+
+     if [[ $missingPort != "Port ranges not in use" ]]; then
+        echo "No free port available, exit"
+        exit 1
+     fi
+
+     ports=`echo $portMsg | cut -d':' -f 2-2`
+     port_arr=($ports)
+
+     port_arr1=()
+
+     # filter out any ports that are not between 12000 and 24000 that "-p rand" uses
+     # this is to assure consistency between this option and the rand option.
+     for elem in "${port_arr[@]}"
+     do
+       if [ $elem -ge 12000 -a $elem -le 24000 ]; then
+         port_arr1[${#port_arr1[@]}]=$elem
+       fi
+     done
+
+     num_ports=${#port_arr1[@]}
+
+     echo "Available ports detected for use: ${port_arr1[*]}"
+     echo "Total number of free ports: $num_ports"
+
+     if [ $num_ports -eq 0 ]; then
+       echo "No free ports available, exit."
+       exit 1
+     fi
+
+     random_port_index=`python -c "import random; print random.randint(0,${#port_arr1[@]}-1)"`
+     echo "Port index randomely chosen: $random_port_index"
+
+     MY_START_PORT="${port_arr1[$random_port_index]}"
+     echo "Port chosen: $MY_START_PORT"
   fi
   echo "# Using non-standard port range from MY_START_PORT env var: $MY_START_PORT..."
 fi
@@ -442,17 +476,28 @@ if [ $USE_DEFAULT_PORTS == 'yes' ]; then
   # hbase.rest.port
   MY_HBASE_REST_PORT_NUM=8080
   # dcs.master.port (range of port numbers, one per server)
-  MY_DCS_MASTER_PORT=37800
+  MY_DCS_MASTER_PORT=23400
   # dcs.master.info.port
-  MY_DCS_MASTER_INFO_PORT=40010
+  MY_DCS_MASTER_INFO_PORT=24400
   # dcs.server.info.port
-  MY_DCS_SERVER_INFO_PORT=40030
+  MY_DCS_SERVER_INFO_PORT=24410
   # trafodion.rest.port
   MY_REST_SERVER_PORT=4200
   # trafodion.rest.https.port
   MY_REST_SERVER_SECURE_PORT=4201
+  # database.mgr.port
+  MY_DB_MGR_PORT=4205
+  # database.mgr.secure.port
+  MY_DB_MGR_SECURE_PORT=4206
+  # drill.exec.http.port
+  MY_DRILL_INFO_PORT_NUM=8047
+  # drill.exec.rpc.user.server.port
+  MY_DRILL_RPC_PORT_NUM=31010
+  # drill.exec.rpc.bit.server.port
+  MY_DRILL_BIT_PORT_NUM=31011
 else
   # fs.default.name
+
   MY_HADOOP_HDFS_PORT_NUM=$MY_START_PORT
   MY_HADOOP_SHUFFLE_PORT_NUM=`expr $MY_START_PORT + 62`
   MY_YARN_RESMAN_PORT_NUM=`expr $MY_START_PORT + 132`
@@ -477,8 +522,15 @@ else
   MY_DCS_MASTER_PORT=`expr $MY_START_PORT + 172`
   MY_DCS_MASTER_INFO_PORT=`expr $MY_START_PORT + 181`
   MY_DCS_SERVER_INFO_PORT=`expr $MY_START_PORT + 182`
-  MY_REST_SERVER_PORT=`expr $MY_START_PORT + 183`
-  MY_REST_SERVER_SECURE_PORT=`expr $MY_START_PORT + 184`
+  MY_REST_SERVER_PORT=`expr $MY_START_PORT + 193`
+  MY_REST_SERVER_SECURE_PORT=`expr $MY_START_PORT + 194`
+  MY_DB_MGR_PORT=`expr $MY_START_PORT + 195`
+  MY_DB_MGR_SECURE_PORT=`expr $MY_START_PORT + 196`
+
+  # Apache Drill, embedded configuration
+  MY_DRILL_INFO_PORT_NUM=`expr $MY_START_PORT + 147`
+  MY_DRILL_RPC_PORT_NUM=`expr $MY_START_PORT + 148`
+  MY_DRILL_BIT_PORT_NUM=`expr $MY_START_PORT + 149`
 fi
 
 # handle ports in the range of 50000 to 50199
@@ -514,6 +566,8 @@ MY_HADOOP_TASK_TRACKER_PORT_NUM=`expr $MY_START_PORT + 60`
 # dfs.backup.http.address (50105)
 # mapred.job.tracker (???)
 
+listports > $MY_SW_SCRIPTS_DIR/sw_ports
+
 if [[ -n "$VERBOSE" ]]; then
   listports
 fi
@@ -525,10 +579,16 @@ fi
 # Specify mirrors and versions of needed components
 #####################################################
 
+# See JIRA TRAFODION-1512 that will eliminate this check
+  
 HADOOP_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
-HADOOP_TAR=hadoop-2.5.0-cdh5.3.0.tar.gz
-if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
-    HADOOP_TAR=hadoop-2.6.0.2.2.0.0-2041.tar.gz
+HADOOP_TAR=hadoop-2.6.0-cdh5.4.4.tar.gz
+
+if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    HADOOP_TAR=hadoop-2.7.1.2.3.2.0-2950.tar.gz
+fi
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    HADOOP_TAR=hadoop-2.5.2.tar.gz
 fi
 
 # Alternative: Use MariaDB (not validated)
@@ -541,29 +601,26 @@ MYSQL_TAR=mysql-5.6.10-linux-glibc2.5-x86_64.tar.gz
 MYSQL_JDBC_URL=http://cdn.mysql.com/archives/mysql-connector-java-5.1
 MYSQL_JDBC_TAR=mysql-connector-java-5.1.23.tar.gz
 
-HIVE_MIRROR_URL=https://archive.apache.org/dist/hive/hive-0.13.1
-HIVE_PREFIX=apache-hive-0.13.1-bin
+HIVE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
+HIVE_PREFIX=hive-${HIVE_DEP_VER_CDH}
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    HIVE_MIRROR_URL=https://archive.apache.org/dist/hive/hive-${HIVE_DEP_VER_APACHE}
+    HIVE_PREFIX=apache-hive-${HIVE_DEP_VER_APACHE}-bin
+fi
+if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    HIVE_PREFIX=apache-hive-${HIVE_DEP_VER_HDP}-bin
+fi
 HIVE_TAR=${HIVE_PREFIX}.tar.gz
 
-#HBASE_MIRROR_URL=http://psg.mtu.edu/pub/apache/hbase/hbase-0.98.3
 HBASE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
-
-HBASE_TAR=hbase-0.98.6-cdh5.3.0.tar.gz
-if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
-    HBASE_TAR=hbase-0.98.4.2.2.0.0-2041-hadoop2.tar.gz
+HBASE_TAR=hbase-${HBASE_DEP_VER_CDH}.tar.gz
+if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    HBASE_TAR=hbase-${HBASE_DEP_VER_HDP}.tar.gz
 fi
-
-
-# Default location of DCS code
-DCS_GIT=https://github.com/trafodion/dcs
-# Default location of REST code
-REST_GIT=https://github.com/trafodion/core
-
-# phoenix_test
-# PHX_SRC - Optionally specify a local source tree to use
-PHX_SRC=${PHX_SRC:-$MY_SW_ROOT/phoenix_test}
-# otherwise we download from here
-PHX_GIT=https://github.com/trafodion/phoenix_test
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    HBASE_MIRROR_URL=https://archive.apache.org/dist/hbase/hbase-${HBASE_DEP_VER_APACHE}
+    HBASE_TAR=hbase-${HBASE_DEP_VER_APACHE}-bin.tar.gz
+fi
 
 echo "Checking for existing Hadoop processes..."
 if [ `netstat -anl | grep ${MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM} | grep LISTEN | wc -l` -gt 0 -o \
@@ -580,9 +637,10 @@ if [ `netstat -anl | grep ${MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM} | grep LISTEN |
 fi
 
 # check for missing tpcds_kit.zip file
+INSTALL_TPCDS=1
 install_hadoop_regr_test_env --check
 if [ $? -ne 0 ]; then
-  exit 1
+  INSTALL_TPCDS=0
 fi
 
 if [ -d "$MY_SW_ROOT" ]; then
@@ -688,11 +746,30 @@ EOF
   cat <<EOF >$MY_SW_SCRIPTS_DIR/sw_env.sh
 # Basic environment variables for Trafodion/Hadoop/Hive/HBase/MySQL setup
 export JAVA_HOME=${JAVA_HOME}
+export JAVA_LIBRARY_PATH=${LD_LIBRARY_PATH}
+export MY_SW_SCRIPTS_DIR=${MY_SW_SCRIPTS_DIR}
+export MY_SW_ROOT=${MY_SW_ROOT}
 export MYSQL_HOME=${MYSQL_HOME}
 export YARN_HOME=${YARN_HOME}
 export HIVE_HOME=${HIVE_HOME}
 export HBASE_HOME=${HBASE_HOME}
+export HADOOP_PID_DIR=${MY_SW_ROOT}/tmp
+export HBASE_PID_DIR=${MY_SW_ROOT}/tmp
 export MY_HADOOP_HDFS_PORT_NUM=${MY_HADOOP_HDFS_PORT_NUM}
+export MY_HBASE_ZOOKEEPER_PEERPORT_NUM=${MY_HBASE_ZOOKEEPER_PEERPORT_NUM}
+export MY_HBASE_ZOOKEEPER_LEADERPORT_NUM=${MY_HBASE_ZOOKEEPER_LEADERPORT_NUM}
+export MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM=${MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM}
+export MY_ZOOKEEPER_DATA_DIR=${MY_ZOOKEEPER_DATA_DIR}
+export MY_DCS_MASTER_PORT=${MY_DCS_MASTER_PORT}
+export MY_DCS_MASTER_INFO_PORT=${MY_DCS_MASTER_INFO_PORT}
+export MY_DCS_SERVER_INFO_PORT=${MY_DCS_SERVER_INFO_PORT}
+export MY_REST_SERVER_PORT=${MY_REST_SERVER_PORT}
+export MY_REST_SERVER_SECURE_PORT=${MY_REST_SERVER_SECURE_PORT}
+export MY_DB_MGR_PORT=${MY_DB_MGR_PORT}
+export MY_DB_MGR_SECURE_PORT=${MY_DB_MGR_SECURE_PORT}
+export MY_DRILL_INFO_PORT_NUM=${MY_DRILL_INFO_PORT_NUM}
+export MY_DRILL_RPC_PORT_NUM=${MY_DRILL_RPC_PORT_NUM}
+export MY_DRILL_BIT_PORT_NUM=${MY_DRILL_BIT_PORT_NUM}
 EOF
 
   # now source in this script
@@ -756,16 +833,16 @@ EOF
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstarthbase
 #!/bin/sh
 echo "Starting HBase..."
-cd ${MY_SW_ROOT}
+cd ${MY_SW_ROOT}/hbase
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
-./hbase/bin/start-hbase.sh
+bin/start-hbase.sh
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstophbase
 #!/bin/sh
-cd ${MY_SW_ROOT}
+cd ${MY_SW_ROOT}/hbase
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
-./hbase/bin/stop-hbase.sh
+bin/stop-hbase.sh
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstatus
@@ -794,7 +871,7 @@ EOF
 # command to run hadoop
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
-${MY_SW_ROOT}/hadoop/bin/hadoop \$*
+${MY_SW_ROOT}/hadoop/bin/hadoop "\$@"
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swyarn
@@ -802,7 +879,7 @@ EOF
 # command to run yarn
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
-${MY_SW_ROOT}/hadoop/bin/yarn \$*
+${MY_SW_ROOT}/hadoop/bin/yarn "\$@"
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swhdfs
@@ -810,7 +887,7 @@ EOF
 # command to run hadoop
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
-${MY_SW_ROOT}/hadoop/bin/hdfs \$*
+${MY_SW_ROOT}/hadoop/bin/hdfs "\$@"
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swmysql
@@ -818,7 +895,7 @@ EOF
 # command to run mysql
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
-${MY_SW_ROOT}/mysql/bin/mysql --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_SQL_USER} --password=${MY_SQL_USER_PASSWD} --database=${MY_SQL_METASTORE_DB} \$*
+${MY_SW_ROOT}/mysql/bin/mysql --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_SQL_USER} --password=${MY_SQL_USER_PASSWD} --database=${MY_SQL_METASTORE_DB} "\$@"
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swmysqladmin
@@ -826,7 +903,7 @@ EOF
 # command to run mysqladmin as root user
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
-${MY_SW_ROOT}/mysql/bin/mysqladmin --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_SQL_ADMIN} --password=${MY_SQL_ADMIN_PASSWD} \$*
+${MY_SW_ROOT}/mysql/bin/mysqladmin --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_SQL_ADMIN} --password=${MY_SQL_ADMIN_PASSWD} "\$@"
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swhive
@@ -836,7 +913,13 @@ EOF
 # Pick up MySQL JDBC driver
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
 export HADOOP_HOME=${MY_SW_ROOT}/hadoop
-${MY_SW_ROOT}/hive/bin/hive \$*
+
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+  cd ${MY_SW_ROOT}/hadoop/share/hadoop/yarn/lib
+  rm jline*.jar
+fi
+
+${MY_SW_ROOT}/hive/bin/hive "\$@"
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swhbase
@@ -844,7 +927,7 @@ EOF
 # command to run hbase shell
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
-${MY_SW_ROOT}/hbase/bin/hbase shell \$*
+${MY_SW_ROOT}/hbase/bin/hbase shell "\$@"
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swuninstall_local_hadoop
@@ -860,6 +943,9 @@ read YN
 
 if [ "\$YN" = "y" -o "\$YN" = "Y" ]; then
   rm -rf $MY_SW_ROOT
+  # also remove the convenience scripts
+  cds
+  rm sw*
   echo "Removed $MY_SW_ROOT"
 else
   echo "Exiting without removing anything..."
@@ -877,6 +963,7 @@ EOF
 <a href="http://${MY_HOST_1}:${MY_YARN_HTTP_PORT_NUM}">Yarn</a>
 <a href="http://${MY_HOST_1}:${MY_HBASE_MASTER_INFO_PORT_NUM}">HBase Master</a>
 <a href="http://${MY_HOST_1}:${MY_DCS_MASTER_INFO_PORT}">DCS Master</a>
+<a href="http://${MY_HOST_1}:${MY_DRILL_INFO_PORT_NUM}">Drill Web Console (while shell is running)</a>
 </pre>
 </BODY>
 </HTML>
@@ -935,11 +1022,13 @@ if [ -d hadoop/bin ]; then
 else
   echo "Setting up Hadoop..."
   #####################################################
-
+echo "$MY_LOCAL_SW_DIST/${HADOOP_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${HADOOP_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HADOOP_TAR} .
+    echo "Copied Hadoop tar file from: $MY_LOCAL_SW_DIST/${HADOOP_TAR}" 
   else
     curl -O ${HADOOP_MIRROR_URL}/${HADOOP_TAR}
+    echo "Downloaded Hadoop tar file: ${HADOOP_MIRROR_URL}/${HADOOP_TAR}"
   fi
 
   echo "Unpacking Hadoop tar file..."
@@ -1036,7 +1125,7 @@ EOF
 <configuration>
      <property>
          <name>mapreduce.framework.name</name>
-         <value>yarn</value>
+         <value>local</value>
      </property>
      <property>
          <name>mapreduce.jobtracker.http.address</name>
@@ -1152,12 +1241,14 @@ if [ -d mysql/bin ]; then
   echo "MySQL files already exist, skipping MySQL setup"
 else
   #####################################################
-  echo "Downloading MySQL..."
-
+  echo "Setting up MySQL..."
+echo "$MY_LOCAL_SW_DIST/${MYSQL_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${MYSQL_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${MYSQL_TAR} .
+    echo "Copied MySql tar file from: $MY_LOCAL_SW_DIST/${MYSQL_TAR}"
   else
     curl ${MYSQL_MIRROR_URL}/${MYSQL_TAR} -o ${MYSQL_TAR}
+    echo "Downloaded MySql tar file: ${MYSQL_MIRROR_URL}/${MYSQL_TAR}"
   fi
 
   echo "Unpacking MySQL tar file ${MYSQL_TAR} ..."
@@ -1229,17 +1320,22 @@ if [ -f mysql-connector-java-*/mysql-connector-java-*.jar ]; then
   echo "MySQL JDBC driver file already exists, skipping JDBC setup"
 else
   #####################################################
-  echo "Downloading MySQL JDBC driver..."
-
+  echo "Setting up MySQL JDBC driver..."
+echo "$MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR} .
+    echo "Copied MySql JDBC tar file from: $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR}"
   else
     curl -O ${MYSQL_JDBC_URL}/${MYSQL_JDBC_TAR}
+    echo "Downloaded MySql JDBC tar file: ${MYSQL_JDBC_URL}/${MYSQL_JDBC_TAR}"
   fi
 
   echo "Unpacking MySQL JDBC tar file ${MYSQL_JDBC_TAR} ..."
   tar -xf ${MYSQL_JDBC_TAR}
   ln -s `dirname mysql-connector-java-*/mysql-connector-java-*.jar` mysql-connector-java
+  # copy the MySQL JDBC driver to the udr directory, so UDRs can use it
+  mkdir -p ${MY_SQROOT}/udr/external_libs
+  cp ${MY_SW_ROOT}/mysql-connector-java/mysql-connector-java*.jar ${MY_SQROOT}/udr/external_libs
 
 fi
 # end of MySQL JDBC setup
@@ -1250,12 +1346,14 @@ if [ -d hive/bin ]; then
   echo "Hive files already exist, skipping Hive setup"
 else
   #####################################################
-  echo "Downloading Hive..."
-
+  echo "Setting up Hive..."
+echo "$MY_LOCAL_SW_DIST/${HIVE_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${HIVE_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HIVE_TAR} .
+    echo "Copied Hive tar file from: $MY_LOCAL_SW_DIST/${HIVE_TAR}"
   else
     curl -O ${HIVE_MIRROR_URL}/${HIVE_TAR}
+    echo "Downloaded Hive tar file: ${HIVE_MIRROR_URL}/${HIVE_TAR}"
   fi
 
   echo "Unpacking Hive tar file ${HIVE_TAR} ..."
@@ -1376,12 +1474,14 @@ if [ -d hbase/bin ]; then
   echo "HBase files already exist, skipping HBase setup"
 else
   #####################################################
-  echo "Downloading HBase..."
-
+  echo "Setting up HBase..."
+echo "$MY_LOCAL_SW_DIST/${HBASE_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${HBASE_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HBASE_TAR} .
+    echo "Copied HBase tar file from: $MY_LOCAL_SW_DIST/${HBASE_TAR}"
   else
     curl -O ${HBASE_MIRROR_URL}/${HBASE_TAR}
+    echo "Downloaded HBase tar file: ${HBASE_MIRROR_URL}/${HBASE_TAR}"
   fi
 
   echo "Unpacking HBase tar file ${HBASE_TAR} ..."
@@ -1407,14 +1507,26 @@ else
 
   cd $MY_SW_ROOT
 
-  # Setup HBase TRX JAR in HBase' CLASSPATH
-  echo "export HBASE_CLASSPATH=${MY_SQROOT}/export/lib/\${HBASE_TRX_JAR}" >> ${HBASE_ENV_FILE}
+  # Setup HBase TRX JAR and utility JAR in HBase' CLASSPATH
+  echo "export HBASE_CLASSPATH=${MY_SQROOT}/export/lib/\${HBASE_TRX_JAR}:${MY_SQROOT}/export/lib/\${UTIL_JAR}" >> ${HBASE_ENV_FILE}
 
   echo "Updating file $HBASE_CONFIG_FILE ..."
 
   if [ -r $HBASE_CONFIG_FILE ]; then
     mv -f $HBASE_CONFIG_FILE $HBASE_CONFIG_FILE.orig
   fi
+
+  if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    MASTER_VISBILITY_COPROC="<property>
+    <name>hbase.coprocessor.master.classes</name>
+    <value>org.apache.hadoop.hbase.security.access.AccessController,
+           org.apache.hadoop.hbase.security.visibility.VisibilityController
+    </value>
+    </property>"
+    VISIBILITY_COPROC=", 
+      org.apache.hadoop.hbase.security.visibility.VisibilityController"
+  fi
+
   cat <<EOF >$HBASE_CONFIG_FILE
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
@@ -1427,8 +1539,12 @@ else
     <value>hdfs://${MY_HOST_1}:${MY_HADOOP_HDFS_PORT_NUM}/hbase</value>
   </property>
   <property>
+   <name>hbase.zookeeper.quorum</name>
+   <value>${HOSTNAME}</value>
+ </property>
+ <property>
     <name>hbase.zookeeper.property.dataDir</name>
-    <value>hdfs://${MY_HOST_1}:${MY_HADOOP_HDFS_PORT_NUM}/zookeeper</value>
+    <value>${MY_ZOOKEEPER_DATA_DIR}</value>
   </property>
   <property>
     <name>hbase.master.port</name>
@@ -1486,12 +1602,12 @@ else
      <name>hbase.hregion.impl</name>
      <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>
    </property>
+   ${MASTER_VISBILITY_COPROC}
    <property>
     <name>hbase.coprocessor.region.classes</name>
       <value>
            org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,
            org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,
-           org.apache.hadoop.hbase.coprocessor.transactional.SsccRegionEndpoint,
            org.apache.hadoop.hbase.coprocessor.AggregateImplementation
       </value>
    </property>
@@ -1509,287 +1625,34 @@ fi
 
 cd $MY_SW_ROOT
 
-if [ -d tpcds/tools ]; then
-  echo "TPC-DS files already exist, skipping TPC-DS setup"
-else
-  install_hadoop_regr_test_env \
-      --unpackDir=$MY_SW_ROOT/tpcds \
-      --dataDir=${MY_DATA_DIR}/tpcds \
-      --logFile=$MY_LOG_FILE \
-      --hdfsCmd=${MY_SW_SCRIPTS_DIR}/swhdfs \
-      --hiveCmd=${MY_SW_SCRIPTS_DIR}/swhive
-  if [ $? -ne 0 ]; then
-    echo "Error installing TPC-DS and ORC files, exiting..."
-    exit 1
+if [ $INSTALL_TPCDS -eq 1 ]; then
+  if [ -d tpcds/tools ]; then
+    echo "TPC-DS files already exist, skipping TPC-DS setup"
+  else
+    install_hadoop_regr_test_env \
+        --unpackDir=$MY_SW_ROOT/tpcds \
+        --dataDir=${MY_DATA_DIR}/tpcds \
+        --logFile=$MY_LOG_FILE \
+        --hdfsCmd=${MY_SW_SCRIPTS_DIR}/swhdfs \
+        --hiveCmd=${MY_SW_SCRIPTS_DIR}/swhive
+    if [ $? -ne 0 ]; then
+      echo "Error installing TPC-DS and ORC files, exiting..."
+      exit 1
+    fi
   fi
 fi
 # end of TPC-DS setup
 
-
 cd $MY_SW_ROOT
 
-if [ -d dcs-* ]; then
-  echo "DCS files already exist, skipping DCS setup"
-else
-  #####################################################
-  # four options, depend on user Env variables, as described above
-  if [[ -f $DCS_TAR ]]
-  then
-    echo "Using DCS Tar: $DCS_TAR" | tee -a ${MY_LOG_FILE}
-  elif [[ -n $DCS_URL ]]
-  then
-    echo "Downloading DCS Tar: $DCS_URL" | tee -a ${MY_LOG_FILE}
-    rm -f dcs_download.tar
-    curl ${DCS_URL} -o dcs_download.tar
-    DCS_TAR=./dcs_download.tar
-  elif [[ -d $DCS_SRC ]]
-  then
-    if [[ -f $DCS_SRC/target/dcs*tar.gz ]]
-    then
-      echo "Using DCS tar file in source tree: $DCS_SRC" | tee -a ${MY_LOG_FILE}
-    else
-      echo "No DCS tar file found, building DCS: $DCS_SRC" | tee -a ${MY_LOG_FILE}
-      cd $DCS_SRC
-      ${MAVEN:-mvn} site package >>${MY_LOG_FILE} 2>&1
-      cd $MY_SW_ROOT
-    fi
-    DCS_TAR=$(ls $DCS_SRC/target/dcs*tar.gz)
-  else
-    echo "Downloading DCS Source: $DCS_GIT" | tee -a ${MY_LOG_FILE}
-    mkdir -p src
-    git clone $DCS_GIT src/dcs >>${MY_LOG_FILE} 2>&1
-    DCS_SRC="$MY_SW_ROOT/src/dcs"
-    echo "Building DCS Source..." | tee -a ${MY_LOG_FILE}
-    cd src/dcs
-    ${MAVEN:-mvn} site package     >>${MY_LOG_FILE} 2>&1
-    cd $MY_SW_ROOT
-    DCS_TAR=$(ls $MY_SW_ROOT/src/dcs/target/dcs*tar.gz)
+if [[ -n "$VERBOSE" ]]; then
+
+  if [ ! -r $YARN_HOME/lib/native/libhdfs.so ]; then
+    echo "------------------------------------------------------------"
+    echo "-- WARNING: libhdfs.so is not present on this system. Please"
+    echo "--          build it, otherwise Trafodion will not compile."
+    echo "------------------------------------------------------------"
   fi
-  if [[ ! -f $DCS_TAR ]]
-  then
-    echo '**** ERROR:'  | tee -a ${MY_LOG_FILE}
-    echo "DCS tar file not found: $DCS_TAR"  | tee -a ${MY_LOG_FILE}
-    exit 2
-  fi
-  # install
-  echo "Installing DCS from: $DCS_TAR"  | tee -a ${MY_LOG_FILE}
-  tar xzf $DCS_TAR
-  DCS_HOME=$(ls -d $MY_SW_ROOT/dcs-*)
-
-  # configure DCS
-
-  #   use ~/.trafodion to avoid modifying sqenv*.sh in source tree
-  echo "Adding DCS_INSTALL_DIR to sqenv via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
-  echo "  Update it if switching between multiple local_hadoop environments"  | tee -a ${MY_LOG_FILE}
-  if [[ -f ~/.trafodion ]]
-  then
-    mv -f ~/.trafodion ~/.trafodion.orig
-    grep -v 'DCS_INSTALL_DIR=' ~/.trafodion.orig > ~/.trafodion
-  fi
-  DCSDIR=${DCS_HOME##*/}
-  echo "export DCS_INSTALL_DIR=\${MY_SQROOT}/sql/local_hadoop/$DCSDIR" >> ~/.trafodion
-
-  cd $DCS_HOME/conf/
-  mv dcs-env.sh dcs-env.sh.orig
-   # SQROOT env var does not propagate thru ssh command
-  echo "MY_SQROOT=$MY_SQROOT" > dcs-env.sh
-  sed -e "s@#[ ]*export DCS_MANAGES_ZK=true@export DCS_MANAGES_ZK=false@" dcs-env.sh.orig >> dcs-env.sh
-  mv -f dcs-site.xml dcs-site.xml.orig
-  sed -e "s@</configuration>@@" dcs-site.xml.orig > dcs-site.xml
-  cat >>dcs-site.xml <<EOF
-    <property>
-     <name>dcs.master.port</name> <value>$MY_DCS_MASTER_PORT</value>
-    </property>
-    <property>
-     <name>dcs.master.info.port</name> <value>$MY_DCS_MASTER_INFO_PORT</value>
-    </property>
-    <property>
-     <name>dcs.server.info.port</name> <value>$MY_DCS_SERVER_INFO_PORT</value>
-    </property>
-    <property>
-     <name>dcs.zookeeper.peerport</name> <value>$MY_HBASE_ZOOKEEPER_PEERPORT_NUM</value>
-    </property>
-    <property>
-     <name>dcs.zookeeper.leaderport</name> <value>$MY_HBASE_ZOOKEEPER_LEADERPORT_NUM</value>
-    </property>
-    <property>
-     <name>dcs.zookeeper.property.clientPort</name> <value>$MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM</value>
-    </property>
-  </configuration>
-EOF
-  echo "$(hostname -f) 4" > servers
-
-  # Configure DCS test scripts
-  if [[ -n "$DCS_SRC" ]]
-  then
-    echo "Adding swjdbc script...." | tee -a ${MY_LOG_FILE}
-    cat <<EOF >$MY_SW_SCRIPTS_DIR/swjdbc
-#!/bin/sh
-# command to run JDBC tests
-cd $DCS_SRC/src/test/jdbc_test
-./jdbc_test.py --appid=jdbc_test --user=SOMEUSER --pw=SOMEPASSWORD --javahome=\$JAVA_HOME \\
-  --target=localhost:$MY_DCS_MASTER_PORT \\
-  --jdbctype=T4 --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar "\$@"
-EOF
-    chmod +x $MY_SW_SCRIPTS_DIR/swjdbc
-  fi
-fi
-# end of DCS setup
-
-# begin of trafci setup
-
-echo "Updating trafci port number" | tee -a ${MY_LOG_FILE}
-TRAFCI_BIN_DIR=$MY_SQROOT/trafci/bin
-if [[ -f $TRAFCI_BIN_DIR/trafci ]]
-then
-  mv $TRAFCI_BIN_DIR/trafci  $TRAFCI_BIN_DIR/trafci.orig | tee -a ${MY_LOG_FILE}
-  sed -e "s@localhost:37800@localhost:$MY_DCS_MASTER_PORT@" $TRAFCI_BIN_DIR/trafci.orig >> $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
-  chmod +x $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
-  echo "Modified trafci port number to $MY_DCS_MASTER_PORT" | tee -a ${MY_LOG_FILE}
-else
-  echo "$TRAFCI_BIN_DIR not found" | tee -a ${MY_LOG_FILE}
-fi
-
-# end of trafci set up
-
-if [[ -d $PHX_SRC ]]; then
-  echo "Phoenix files already exist, skipping Phoenix setup" | tee -a ${MY_LOG_FILE}
-else
-  echo "Cloning phoenix_test repo...." | tee -a ${MY_LOG_FILE}
-  git clone $PHX_GIT $PHX_SRC >>${MY_LOG_FILE} 2>&1
-
-  #######################################################
-  # scripts to run tests
-  #######################################################
-  # adding this in this section to enable adding it to
-  # existing local_hadoop installations
-  echo "Adding swphoenix script...." | tee -a ${MY_LOG_FILE}
-  cat <<EOF >$MY_SW_SCRIPTS_DIR/swphoenix
-#!/bin/sh
-# command to run phoenix tests
-
-cd $PHX_SRC
-if [[ \$1 == "t4" ]]
-then
-  ./phoenix_test.py --target=localhost:$MY_DCS_MASTER_PORT --user=dontcare --pw=dontcare \\
-     --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar
-elif [[ \$1 == "t2" ]]
-then
-  export LD_PRELOAD=\$JAVA_HOME/jre/lib/amd64/libjsig.so:\$MY_SQROOT/export/lib\$SQ_MBTYPE/libseabasesig.so
-  ./phoenix_test.py --targettype=TR --javahome=\$JAVA_HOME \\
-     --jdbccp=\$MY_SQROOT/export/lib/jdbcT2.jar --jdbctype=T2
-else
-  echo "Usage: swphoenix (t2|t4)"
-  exit 1
-fi
-EOF
-  chmod +x $MY_SW_SCRIPTS_DIR/swphoenix
-
-fi
-# end of Phoenix setup
-
-# Begin of Trafodion REST Server setup
-
-if [ -d rest-* ]; then
-  echo "Trafodion REST files already exist, skipping REST setup"
-else
-  #####################################################
-  # three options, depend on user Env variables, as described above
-  if [[ -f $REST_TAR ]]
-  then
-    echo "Using REST Tar: $REST_TAR" | tee -a ${MY_LOG_FILE}
-  elif [[ -n $REST_URL ]]
-  then
-    echo "Downloading REST Tar: $REST_URL" | tee -a ${MY_LOG_FILE}
-    rm -f rest_download.tar
-    curl ${REST_URL} -o rest_download.tar
-    REST_TAR=./rest_download.tar
-  elif [[ -d $REST_SRC ]]
-  then
-    if [[ -f $REST_SRC/target/rest*tar.gz ]]
-    then
-      echo "Using REST tar file in source tree: $REST_SRC" | tee -a ${MY_LOG_FILE}
-    else
-      echo "No REST tar file found, building REST: $REST_SRC" | tee -a ${MY_LOG_FILE}
-      cd $REST_SRC
-      ${MAVEN:-mvn} site package >>${MY_LOG_FILE} 2>&1
-      cd $MY_SW_ROOT
-    fi
-    REST_TAR=$(ls $REST_SRC/target/rest*tar.gz)
-  elif [[ -d $MY_SQROOT/../rest ]]
-  then
-    cd $MY_SQROOT/../rest
-    echo "Building REST Source in $MY_SQROOT/../rest" | tee -a ${MY_LOG_FILE}
-    ${MAVEN:-mvn} site package     >>${MY_LOG_FILE} 2>&1
-    cd $MY_SW_ROOT
-    REST_TAR=$(ls $MY_SQROOT/../rest/target/rest*tar.gz)
-  else
-    echo "Downloading REST Source: $REST_GIT" | tee -a ${MY_LOG_FILE}
-    mkdir -p $MY_SW_ROOT/src
-    cd $MY_SW_ROOT/src
-    git clone $REST_GIT core >>${MY_LOG_FILE} 2>&1
-    cd $MY_SW_ROOT/src/core/rest
-    ${MAVEN:-mvn} site package     >>${MY_LOG_FILE} 2>&1
-    cd $MY_SW_ROOT
-    REST_TAR=$(ls $MY_SW_ROOT/src/core/rest/target/rest*tar.gz)
-  fi
-  if [[ ! -f $REST_TAR ]]
-  then
-    echo '**** ERROR:'  | tee -a ${MY_LOG_FILE}
-    echo "REST tar file not found: $REST_TAR"  | tee -a ${MY_LOG_FILE}
-    exit 2
-  fi
-  # install
-  echo "Installing REST from: $REST_TAR"  | tee -a ${MY_LOG_FILE}
-  tar xzf $REST_TAR
-  REST_HOME=$(ls -d $MY_SW_ROOT/rest-*)
-
-  # configure REST
-
-  #   use ~/.trafodion to avoid modifying sqenv*.sh in source tree
-  echo "Adding REST_INSTALL_DIR to sqenv via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
-  echo "  Update it if switching between multiple local_hadoop environments"  | tee -a ${MY_LOG_FILE}
-  if [[ -f ~/.trafodion ]]
-  then
-    mv -f ~/.trafodion ~/.trafodion.orig
-    grep -v 'REST_INSTALL_DIR=' ~/.trafodion.orig >> ~/.trafodion
-  fi
-  RESTDIR=${REST_HOME##*/}
-  echo "export REST_INSTALL_DIR=\${MY_SQROOT}/sql/local_hadoop/$RESTDIR" >> ~/.trafodion
-  cd $REST_HOME/conf/
-  mv rest-env.sh rest-env.sh.orig
-   # SQROOT env var does not propagate thru ssh command
-  echo "MY_SQROOT=$MY_SQROOT" > rest-env.sh
-  sed -e "s@#[ ]*export REST_MANAGES_ZK=true@export REST_MANAGES_ZK=false@" rest-env.sh.orig >> rest-env.sh
-  mv -f rest-site.xml rest-site.xml.orig
-  sed -e "s@</configuration>@@" rest-site.xml.orig > rest-site.xml
-  cat >>rest-site.xml <<EOF
-    <property>
-     <name>rest.port</name> <value>$MY_REST_SERVER_PORT</value>
-    </property>
-    <property>
-     <name>rest.https.port</name> <value>$MY_REST_SERVER_SECURE_PORT</value>
-    </property>
-    <property>
-     <name>rest.zookeeper.peerport</name> <value>$MY_HBASE_ZOOKEEPER_PEERPORT_NUM</value>
-    </property>
-    <property>
-     <name>rest.zookeeper.leaderport</name> <value>$MY_HBASE_ZOOKEEPER_LEADERPORT_NUM</value>
-    </property>
-    <property>
-     <name>rest.zookeeper.property.clientPort</name> <value>$MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM</value>
-    </property>
-  </configuration>
-EOF
-fi
-
-# End of Trafodion REST Server setup
-
-if [ ! -r $YARN_HOME/lib/native/libhdfs.so ]; then
-  echo "------------------------------------------------------------"
-  echo "-- WARNING: libhdfs.so is not present on this system. Please"
-  echo "--          build it, otherwise Trafodion will not compile."
-  echo "------------------------------------------------------------"
 fi
 
 echo

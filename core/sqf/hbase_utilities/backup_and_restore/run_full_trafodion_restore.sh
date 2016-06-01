@@ -2,19 +2,22 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
@@ -55,6 +58,8 @@ usage()
   echo "     (Optional) Non interactive mode. With this option the script does not prompt"
   echo "     the user to confirm the use of computed or default values when a parameter"
   echo "      like trafodion user, hbase user, hdfs user or backup path is not provided."
+  echo "-l"
+  echo "     (Optional) Snapshot size limit in MB above which map reduce is used for copy. Snapshots with size below this value will be copied using HDFS FileUtil.copy. Default value is 100 MB. FileUtil.copy is invoked through a class provided by Trafodion. Use 0 for this option to use HBase' ExportSnaphot class instead."
   echo " Example: $0  -b hdfs://<host>:<port>/<hdfs-path>  -m 4"
   exit 1
 }
@@ -69,6 +74,7 @@ hbase_root_dir=
 trafodion_user=
 confirm=1
 snapshot_name=
+mr_limit=100
 
 restore_run_id=${PWD}
 tmp_dir=$restore_run_id/tmp
@@ -83,7 +89,7 @@ hbase_delete_snapshots=${tmp_dir}/rstr_delete_snapshots.hbase
 
 
 
-while getopts :b:u:m:h:d:n arguments
+while getopts b:u:m:h:d:l:n arguments
 do
   case $arguments in
   b)  hdfs_backup_location=$OPTARG;;
@@ -91,6 +97,7 @@ do
   u)  trafodion_user=$OPTARG;;
   h)  hbase_user=$OPTARG;;
   d)  hdfs_user=$OPTARG;;
+  l)  mr_limit=$OPTARG;;
   n)  confirm=0;;
   *)  usage;;
   esac
@@ -194,14 +201,21 @@ do
   echo "restore_snapshot	'${snapshot_name}'" >>	$hbase_restore_snapshots
   echo "delete_snapshot	'${snapshot_name}'" >>	$hbase_delete_snapshots
   echo  "Importing Snapshot: ${snapshot_name}"   | tee -a $log_file
-  hbase_cmd="$(get_hbase_cmd)"
-  hbase_cmd+="org.apache.hadoop.hbase.snapshot.ExportSnapshot"
-  hbase_cmd+="-D hbase.rootdir=${hdfs_backup_location}/${snapshot_name}"
-  hbase_cmd+="-snapshot ${snapshot_name}"
-  hbase_cmd+="-copy-to ${hbase_root_dir}"
+  if [[ ${mr_limit} -eq 0 ]]; then
+     hbase_cmd="$(get_hbase_cmd) org.apache.hadoop.hbase.snapshot.ExportSnapshot"
+  else 
+     hbase_cmd="$(get_hbase_cmd) org.trafodion.utility.backuprestore.TrafExportSnapshot"
+  fi
+  hbase_cmd+=" -D hbase.rootdir=${hdfs_backup_location}/${snapshot_name}"
+  hbase_cmd+=" -snapshot ${snapshot_name}"
+  hbase_cmd+=" -copy-to ${hbase_root_dir}"
+  hbase_cmd+=" -mappers $mappers"
+  if [[ ${mr_limit} -ne 0 ]]; then
+     hbase_cmd+=" -mr-lowlimit-mb ${mr_limit}"
+  fi
   echo "${hbase_cmd}" | tee -a  $log_file
 
-  do_sudo ${hbase_user} "${hbase_cmd}" 2>&1 | tee -a  ${log_file}
+  do_sudo ${hbase_user} " ${hbase_cmd}" 2>&1 | tee -a  ${log_file}
   ##check for erros
   if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
       echo "****[ERROR]: Error encountered while importing snapshot ${snapshot_name}." | tee -a $log_file

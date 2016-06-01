@@ -2,19 +2,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -59,7 +62,6 @@
 #include "ElemDDLConstraintUnique.h"
 #include "ElemDDLFileAttrClause.h"
 #include "ElemDDLGrantee.h"
-#include "ElemDDLLoadOptions.h"
 #include "ElemDDLLibClientFilename.h"
 #include "ElemDDLLibClientName.h"
 #include "ElemDDLList.h"
@@ -199,10 +201,8 @@ ParViewTableColsUsageList::~ParViewTableColsUsageList()
 {
   for (CollIndex i = 0; i < entries(); i++)
   {
-//KSKSKS
     delete &operator[](i);
 //    NADELETE(&operator[](i), ParViewTableColsUsage, heap_);
-//KSKSKS
   }
 }
 
@@ -320,10 +320,8 @@ ParViewColTablesUsageList::~ParViewColTablesUsageList()
 {
   for (CollIndex i = 0; i < entries(); i++)
   {
-//KSKSKS
     delete &operator[](i);
 //    NADELETE(&operator[](i), ParViewColTablesUsage, heap_);
-//KSKSKS
   }
 }
 
@@ -456,10 +454,8 @@ ParViewColTableColsUsageList::~ParViewColTableColsUsageList()
 {
   for (CollIndex i = 0; i < entries(); i++)
   {
-//KSKSKS
     delete &operator[](i);
 //    NADELETE(&operator[](i), ParViewColTableColsUsage, heap_);
-//KSKSKS
   }
 }
 
@@ -539,7 +535,6 @@ ParViewColTableColsUsageList::clear()
   for (CollIndex i = 0; i < entries(); i++)
   {
     //    NADELETE(&operator[](i), ParViewColTableColsUsage, heap_);
-    // KSKSKS
 
 
     //#define NADELETE(p,C,h)  \
@@ -573,7 +568,6 @@ ParViewColTableColsUsageList::clear()
           )
          )
 
-    // KSKSKS
 #endif // 0
   }
   LIST(ParViewColTableColsUsage *)::clear();
@@ -654,7 +648,6 @@ ParViewUsages::~ParViewUsages()
 {
 }
 
-// KSKSKS
 
 
 const ParViewColTableColsUsageList &
@@ -671,7 +664,6 @@ ParViewUsages::getViewColTableColsUsageList()
 
 
 
-// KSKSKS
 
 // -----------------------------------------------------------------------
 // Methods for class StmtDDLCreateSynonym
@@ -1427,10 +1419,6 @@ StmtDDLCreateIndex::StmtDDLCreateIndex(NABoolean isUnique,
           isParallelExec_(FALSE),
           configFileName_(heap),
           isParallelExecutionClauseSpec_(FALSE),
-          isDSlackClauseSpec_(FALSE),
-          dSlackPercentage_(ElemDDLLoadOptDSlack::DEFAULT_PERCENTAGE),
-          isISlackClauseSpec_(FALSE),
-          iSlackPercentage_(ElemDDLLoadOptISlack::DEFAULT_PERCENTAGE),
           isAttributeClauseSpec_(FALSE),
           pPrimaryPartition_(NULL),
           columnRefArray_(heap),
@@ -1621,30 +1609,6 @@ StmtDDLCreateIndex::setIndexOption(ElemDDLNode * pIndexOption)
     pDivisionClauseParseNode_ =
       pIndexOption->castToElemDDLDivisionClause();
     isDivisionClauseSpec_ = TRUE;
-    break;
-
-  case ELM_LOAD_OPT_D_SLACK_ELEM :
-    ComASSERT(pIndexOption->castToElemDDLLoadOptDSlack() NEQ NULL);
-    if (isDSlackSpecified())
-    {
-      // Duplicate DSLACK clauses.
-      *SqlParser_Diags << DgSqlCode(-3100);
-    }
-    isDSlackClauseSpec_ = TRUE;
-    dSlackPercentage_ =
-      pIndexOption->castToElemDDLLoadOptDSlack()->getPercentage();
-    break;
-
-  case ELM_LOAD_OPT_I_SLACK_ELEM :
-    ComASSERT(pIndexOption->castToElemDDLLoadOptISlack() NEQ NULL);
-    if (isISlackSpecified())
-    {
-      // Duplicate ISLACK clauses.
-      *SqlParser_Diags << DgSqlCode(-3101);
-    }
-    isISlackClauseSpec_ = TRUE;
-    iSlackPercentage_ =
-      pIndexOption->castToElemDDLLoadOptISlack()->getPercentage();
     break;
 
   case ELM_PARALLEL_EXEC_ELEM :
@@ -2043,22 +2007,6 @@ StmtDDLCreateIndex::synthesize()
   }
 
   //
-  // load options
-  //
-
-  if (isDSlackSpecified())
-  {
-    pSystemPart->setIsDSlackSpecified(isDSlackSpecified());
-    pSystemPart->setDSlackPercentage(getDSlackPercentage());
-  }
-
-  if (isISlackSpecified())
-  {
-    pSystemPart->setIsISlackSpecified(isISlackSpecified());
-    pSystemPart->setISlackPercentage(getISlackPercentage());
-  }
-
-  //
   // Check to see if the index is a range partitioned index.
   // If it is then the FIRST-KEY option is required.
   // 
@@ -2171,22 +2119,6 @@ StmtDDLCreateIndex::getDetailInfo() const
   //
 
   detailTextList.append("Load options: ");
-
-  detailText = "    dslack spec?   ";
-  detailText += YesNo(isDSlackSpecified());
-  detailTextList.append(detailText);
-
-  detailText = "    dslack %:      ";
-  detailText += LongToNAString((Lng32)getDSlackPercentage());
-  detailTextList.append(detailText);
-
-  detailText = "    iSlack spec?   ";
-  detailText += YesNo(isISlackSpecified());
-  detailTextList.append(detailText);
-
-  detailText = "    iSlack %:      ";
-  detailText += LongToNAString((Lng32)getISlackPercentage());
-  detailTextList.append(detailText);
 
   detailText = "    par exec spec? ";
   detailText += YesNo(isParallelExecutionClauseSpecified());
@@ -3842,10 +3774,6 @@ StmtDDLCreateTable::StmtDDLCreateTable(const QualifiedName & aTableQualName,
           isUniqueStoreByPrimaryKey_(FALSE),
           storeOption_(COM_UNKNOWN_STORE_OPTION),
           isRoundRobinPartitioningSpecified_(FALSE),
-          isDSlackClauseSpec_(FALSE),
-          dSlackPercentage_(ElemDDLLoadOptDSlack::DEFAULT_PERCENTAGE),
-          isISlackClauseSpec_(FALSE),
-          iSlackPercentage_(ElemDDLLoadOptISlack::DEFAULT_PERCENTAGE),
           isHashV1PartitionSpec_(FALSE),
           isHashV2PartitionSpec_(FALSE),
           isPartitionClauseSpec_(FALSE),
@@ -4490,9 +4418,9 @@ StmtDDLCreateTable::synthesize()
 	  col->setColumnAttribute(pk);
 
 	  ElemDDLNode * pColAttrList = NULL;
-	  if (col->getChild(1))
+	  if (col->getChild(ElemDDLColDef::INDEX_ELEM_DDL_COL_ATTR_LIST))
 	    pColAttrList =
-	      col->getChild(1)->castToElemDDLNode(); //INDEX_ELEM_DDL_COL_ATTR_LIST);
+	      col->getChild(ElemDDLColDef::INDEX_ELEM_DDL_COL_ATTR_LIST)->castToElemDDLNode();
 	  
 	  ElemDDLNode * newColAttrList = NULL;
 	  if (pColAttrList)
@@ -4500,7 +4428,8 @@ StmtDDLCreateTable::synthesize()
 	      new (PARSERHEAP()) ElemDDLList(pColAttrList, pk);
 	  else
 	    newColAttrList = pk;
-	  col->setChild(1 /*INDEX_ELEM_DDL_COL_ATTR_LIST*/, newColAttrList);
+	  col->setChild(ElemDDLColDef::INDEX_ELEM_DDL_COL_ATTR_LIST, 
+                        newColAttrList);
 
 	  userSpecifiedPKey = TRUE;
 	}
@@ -4648,7 +4577,6 @@ StmtDDLCreateTable::synthesize()
 	{
 	  
 	  // LIKE clause currently not supported.
-	  // KSKSKS ****    *SqlParser_Diags << DgSqlCode(-3131);
 	  
 	  if (isLikeClauseSpec_)
 	    {
@@ -4729,6 +4657,9 @@ StmtDDLCreateTable::synthesize()
   // depending on whether the table is audited or not.
   //
   getFileAttributes().setDefaultValueForBuffered();
+
+  // if default column family is not specified, then set it to traf default
+  getFileAttributes().setDefaultValueForColFam();
 
   // ---------------------------------------------------------------------
   // Creates or updates parse node representing primary partition
@@ -4891,21 +4822,6 @@ StmtDDLCreateTable::synthesize()
       pSysPart->setMaxExt           (fileAttrs.getMaxExt());
     }
 
-    //
-    // load options
-    //
-
-    if (isDSlackSpecified())
-    {
-      pSysPart->setIsDSlackSpecified(isDSlackSpecified());
-      pSysPart->setDSlackPercentage(getDSlackPercentage());
-    }
-
-    if (isISlackSpecified())
-    {
-      pSysPart->setIsISlackSpecified(isISlackSpecified());
-      pSysPart->setISlackPercentage(getISlackPercentage());
-    }
   } // else (pSysPart NEQ NULL)
 
   if (isStoreBySpecified() AND
@@ -5216,8 +5132,10 @@ StmtDDLCreateTable::setPartitions(ElemDDLPartitionClause * pPartitionClause)
     // "hash2 partitioning") and a partitioning count (e.g. 
     // "number of partitions 2")   But, if "no partitions" is specified 
     // (number of partitions 0) then we don't allow any other partn spec
-    *SqlParser_Diags << DgSqlCode(-3103);
+    *SqlParser_Diags << DgSqlCode(-3103)
+                     << DgString0("PARTITION");
   }
+
   isPartitionClauseSpec_ = TRUE;
 
   //
@@ -5422,11 +5340,6 @@ StmtDDLCreateTable::setTableOption(ElemDDLNode * pTableOption)
 
   if (pTableOption->castToElemDDLStoreOpt() NEQ NULL)
   {
-    if (isLikeClauseSpec_)
-    {
-      // If you specify the LIKE clause you cannot specify the STORE BY clause.
-      // KSKSKS       *SqlParser_Diags << DgSqlCode(-3108);
-    }
     if (isStoreByClauseSpec_)
     {
       // Duplicate STORE BY clauses.
@@ -5483,12 +5396,6 @@ StmtDDLCreateTable::setTableOption(ElemDDLNode * pTableOption)
   switch (pTableOption->getOperatorType())
   {
   case ELM_FILE_ATTR_CLAUSE_ELEM :
-    if (isLikeClauseSpec_)
-    {
-      // If you specify the LIKE clause, you cannot specify the file ATTRIBUTES clause.
-      // KSKSKS      *SqlParser_Diags << DgSqlCode(-3110);
-    }
-    //
     // no needs to check for duplication - the syntax only allows
     // a single file ATTRIBUTES clause.
     //
@@ -5506,11 +5413,6 @@ StmtDDLCreateTable::setTableOption(ElemDDLNode * pTableOption)
 
   case ELM_LOCATION_ELEM :
     ComASSERT(pTableOption->castToElemDDLLocation() NEQ NULL);
-    if (isLikeClauseSpec_)
-    {
-      // If you specify the LIKE clause,you cannot specify the LOCATION clause.
-      // KSKSKS      *SqlParser_Diags << DgSqlCode(-3111);
-    }
     if (isLocationClauseSpec_)
     {
       // Duplicate LOCATION clauses.
@@ -5526,12 +5428,6 @@ StmtDDLCreateTable::setTableOption(ElemDDLNode * pTableOption)
     break;
 
   case ELM_PARTITION_CLAUSE_ELEM :
-    if (isLikeClauseSpec_)
-    {
-      // If you specify the LIKE clause, you cannot specify the PARTITION clause.
-      // KSKSKS      *SqlParser_Diags << DgSqlCode(-3112);
-    }
-    //
     // no needs to check for duplication - the syntax only allows
     // a single PARTITION clause.
     //
@@ -5564,7 +5460,8 @@ StmtDDLCreateTable::setTableOption(ElemDDLNode * pTableOption)
       // "hash2 partitioning") and a partitioning count (e.g. 
       // "number of partitions 2")   But, if "no partitions" is specified 
       // (number of partitions 0) then we don't allow any other partn spec
-      *SqlParser_Diags << DgSqlCode(-3103);
+      *SqlParser_Diags << DgSqlCode(-3103)
+                       << DgString0("PARTITION");
     }
 
     isPOSNumPartnsSpecified_ = TRUE;    
@@ -5978,28 +5875,6 @@ StmtDDLCreateTable::getDetailInfo() const
 
   ParDDLFileAttrsCreateTable fileAttribs  = getFileAttributes();
   detailTextList.append("    ", fileAttribs.getDetailInfo());
-
-  //
-  // load options
-  //
-
-  detailTextList.append("Load options: ");
-
-  detailText = "    dslack spec?   ";
-  detailText += YesNo(isDSlackSpecified());
-  detailTextList.append(detailText);
-
-  detailText = "    dslack %:      ";
-  detailText += LongToNAString((Lng32)getDSlackPercentage());
-  detailTextList.append(detailText);
-
-  detailText = "    iSlack spec?   ";
-  detailText += YesNo(isISlackSpecified());
-  detailTextList.append(detailText);
-
-  detailText = "    iSlack %:      ";
-  detailText += LongToNAString((Lng32)getISlackPercentage());
-  detailTextList.append(detailText);
 
   //
   // partitions
@@ -6596,10 +6471,6 @@ StmtDDLCreateMV::checkFileAttribute(ElemDDLFileAttr * pFileAttr)
 		*SqlParser_Diags << DgSqlCode(-12047); 
 		break;
 
-	case ELM_FILE_ATTR_LOCK_LENGTH_ELEM    :
-		*SqlParser_Diags << DgSqlCode(-12048); 
-		break;
-
 	case ELM_FILE_ATTR_AUDIT_ELEM :
 		*SqlParser_Diags << DgSqlCode(-12050); 
 		break;
@@ -6663,7 +6534,8 @@ StmtDDLCreateMV::checkPartitionDefinitionclause(
   if (isPartitionDefinitionSpecified_ || isPartitionByClauseSpecified_)
   {
     // Duplicate PARTITION clauses.
-    *SqlParser_Diags << DgSqlCode(-3103);
+    *SqlParser_Diags << DgSqlCode(-3103)
+                     << DgString0("PARTITION");
   }
   isPartitionDefinitionSpecified_ = TRUE;
 

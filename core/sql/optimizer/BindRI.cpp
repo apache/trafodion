@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -405,6 +408,43 @@ void RefConstraint::getMatchOptionPredicateText(NAString &text,
   text += ")";
 }
 
+//helper function to check if the given column name is reserved hidden coloum
+//NOTE:
+//  this function hardcode the special name string for SALT, DIVSION columns
+//  if the naming convension of SALT/DIVISION column is changed,
+//  this function MUST be changed as well
+static NABoolean isHiddenColumn(const char *colname)
+{
+  int len = strlen(colname);
+  if(strcmp(colname , "_SALT_") ==0) 
+    return TRUE;
+  //check for DIVISION column
+  //pattern _DIVISION_%d_
+  //must longer than 12
+  if(len >= 12) {
+    //must end with _
+    if(colname[len-1] == '_')
+    {
+      //if begin with _DIVISION_?
+      if(strncmp(colname,"_DIVISION_",10) == 0) 
+      {
+        //middle part are number
+        int allDigit = 1;
+        for(int i = 0; i< len-11; i++)
+        {
+          if(isdigit(colname[i+10]) == 0)
+          {
+            allDigit = 0;
+            break; //not digit
+          }
+        } 
+        if(allDigit == 1)
+          return TRUE; 
+      }
+    }
+  }
+  return FALSE;
+}
 
 // Writes a row-value-constructor consisting of fully qualified column names
 // in Ansi (external) format
@@ -414,12 +454,18 @@ void RefConstraint::getPredicateText(NAString &text,
 				     NAString *corrName) const
 {
   NAString tblText = ( (corrName == NULL) ? tblName.getQualifiedNameAsAnsiString() : *corrName);
+  int pos= 0;
   text += "(";
   for (CollIndex i = 0; i < keyColumns.entries(); i++)
     {
-      if (i)
+      if(isHiddenColumn(keyColumns[i]->getColName()) )
+        continue;
+      if (pos > 0)
+      {
         text += ",";
+      }
       text += tblText + "." + ToAnsiIdentifier(keyColumns[i]->getColName());
+      pos++; //move the pos
     }
   text += ")";
 }

@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -72,6 +75,7 @@ static const SessionDefaults::SessionDefaultMap sessionDefaultMap[] =
   SDEntry(SessionDefaults::CANCEL_QUERY_ALLOWED,     CANCEL_QUERY_ALLOWED,       SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE),
   SDEntry(SessionDefaults::CANCEL_UNIQUE_QUERY,      CANCEL_UNIQUE_QUERY,        SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE),
   SDEntry(SessionDefaults::CATALOG,                  CATALOG,                    SessionDefaults::SDT_ASCII,          TRUE,    TRUE,  FALSE, FALSE),
+  SDEntry(SessionDefaults::COMPILER_IDLE_TIMEOUT,    COMPILER_IDLE_TIMEOUT,      SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),  
   SDEntry(SessionDefaults::DBTR_PROCESS,             DBTR_PROCESS,               SessionDefaults::SDT_BOOLEAN,        TRUE,    FALSE, FALSE, FALSE),
   SDEntry(SessionDefaults::ESP_ASSIGN_DEPTH,         ESP_ASSIGN_DEPTH,           SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
   SDEntry(SessionDefaults::ESP_ASSIGN_TIME_WINDOW,   ESP_ASSIGN_TIME_WINDOW,     SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
@@ -136,7 +140,6 @@ SessionDefaults::SessionDefaults(CollHeap * heap)
        cancelLogging_(TRUE),
        suspendLogging_(TRUE),
        aqrWarn_(0),
-       explainInRMS_(FALSE),
        redriveCTAS_(FALSE),
        callEmbeddedArkcmp_(FALSE),
        exsmTraceLevel_(0),
@@ -191,6 +194,8 @@ SessionDefaults::SessionDefaults(CollHeap * heap)
   setEspStopIdleTimeout(60);
   // Default is 1800 (idle ESPs time out in 30 minutes)
   setEspIdleTimeout(30*60);
+  // Default is 1800 (Compiler Idle time out in 30 minutes)
+  setCompilerIdleTimeout(30*60);
   // Default is 0 (inactive ESPs never time out)
   setEspInactiveTimeout(0);
   // how long master waits for release work reply from esps (default is 15
@@ -223,7 +228,6 @@ SessionDefaults::SessionDefaults(CollHeap * heap)
   setParentQidSystem(NULL, 0);
   setWmsProcess(FALSE);
   aqrInfo_ = new(heap) AQRInfo(heap);
-  setExplainInRMS(FALSE);
   setRtsTimeout(rtsTimeout_);
   setStatisticsViewType(SQLCLI_PERTABLE_STATS);
   setReclaimTotalMemorySize(DEFAULT_RECLAIM_MEMORY_AFTER);
@@ -395,6 +399,12 @@ void SessionDefaults::setSessionDefaultAttributeValue
     case ESP_IDLE_TIMEOUT:
       {
 	setEspIdleTimeout(defaultValueAsLong);
+      }
+    break;
+
+    case COMPILER_IDLE_TIMEOUT:
+      {
+	setCompilerIdleTimeout(defaultValueAsLong);
       }
     break;
 
@@ -739,6 +749,8 @@ static const QueryString cqdInfo[] =
   {"unique_hash_joins"}, {"OFF"}
 , {"transform_to_sidetree_insert"}, {"OFF"}
 , {"METADATA_CACHE_SIZE"}, {"0"}
+, {"QUERY_CACHE"}, {"0"}
+, {"TRAF_RELOAD_NATABLE_CACHE"}, {"ON"}
 };
 
 static const AQRInfo::AQRErrorMap aqrErrorMap[] = 
@@ -769,6 +781,10 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
 
   // parallel purgedata failed
   AQREntry(   8022,      0,      3,    60,      0,   0, "",    0,     1),
+
+  // hive data modification timestamp mismatch.
+  // query will be AQR'd and hive metadata will be reloaded.
+  AQREntry(   8436,      0,      1,     0,      0,   2, "04:05",  0,     0),
 
   // FS memory errors
   AQREntry(   8550,     30,      1,    60,      0,   0, "",    0,     0),
@@ -839,8 +855,9 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
   // view not found
   AQREntry(   8598,      0,      1,     0,      1,   0, "",    0,     0), 
 
-  AQREntry(   8606,     97,      1,     0,      5,   0, "",    0,     0),
+  AQREntry(   8606,     73,      3,    60,      0,   0, "",    0,     0), 
 
+  AQREntry(   8606,     97,      1,     0,      5,   0, "",    0,     0),
   // privileges may have been revoked
   AQREntry(   8734,      0,      1,     0,      1,   0, "",    0,     0),
 
@@ -1686,7 +1703,6 @@ void SessionDefaults::beginSession()
   setParentQid(NULL, 0);
   setParentQidSystem(NULL, 0);
   setWmsProcess(FALSE);
-  setExplainInRMS(FALSE);
   setStatisticsViewType(SQLCLI_PERTABLE_STATS);
   setReclaimTotalMemorySize(DEFAULT_RECLAIM_MEMORY_AFTER);
   setReclaimFreeMemoryRatio(DEFAULT_RECLAIM_FREE_MEMORY_RATIO);

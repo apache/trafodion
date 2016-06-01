@@ -1,0 +1,184 @@
+////
+/**
+*@@@ START COPYRIGHT @@@
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements. See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+[[b-sample-database]]
+= B Sample Database
+
+This appendix presents the Sample Database schemas and tables on which
+the SPJs in this manual operate:
+
+* <<persnl-schema, PERSNL Schema>>
+** <<job-table, JOB Table>>
+** <<employee-table, EMPLOYEE Table>>
+** <<dept-table, DEPT Table>>
+** <<project-table, PROJECT Table>>
+* <<sales-schema, SALES Schema>>
+** <<customer-table, CUSTOMER Table>>
+** <<orders-table, ORDERS Table>>
+** <<odetail-table, ODETAIL Table>>
+** <<parts-table, PARTS Table>>
+* <<invent-schema, INVENT Schema>>
+** <<supplier-table, SUPPLIER Table>>
+** <<partsupp-table, PARTSUPP Table>>
+** <<partloc-table, PARTLOC Table>>
+
+Click on the link for the schema or table name to download the definition file.
+
+[[persnl-schema]]
+== PERSNL Schema
+
+The link:resources/source/persnl_schema.sql[`PERSNL` schema] stores employee data.
+
+[source, sql]
+----
+include::{sourcedir}/persnl_schema.sql[PERSNL Schema Definition File]
+----
+
+[[job-table]]
+=== JOB Table
+
+The link:resources/source/persnl_job_table.sql[`JOB` table] maps job codes to job descriptions.
+
+[source, sql]
+----
+include::{sourcedir}/persnl_job_table.sql[PERSNL JOB Table Definition File]
+----
+
+[[employee-table]]
+=== EMPLOYEE Table
+
+The link:resources/source/persnl_employee_table.sql[`EMPLOYEE` table] maps records employee information.
+
+[source, sql]
+----
+include::{sourcedir}/persnl_employee_table.sql[PERSNL EMPLOYEE Table Definition File]
+----
+
+[[dept-table]]
+=== DEPT Table
+
+The link:resources/source/persnl_dept_table.sql[`DEPT` table] maps records department information.
+
+[source, sql]
+----
+include::{sourcedir}/persnl_dept_table.sql[PERSNL DEPT Table Definition File]
+----
+
+[[project-table]]
+=== PROJECT Table
+
+The link:resources/source/persnl_project_table.sql[`PROJECT` table] maps records information about projects.
+
+[source, sql]
+----
+include::{sourcedir}/persnl_project_table.sql[PERSNL DEPT Table Definition File]
+----
+
+[[sales-schema]]
+== SALES Schema
+
+The link:resources/source/sales_schema.sql[`SALES` schema] stores customer and sales data.
+
+[source, sql]
+----
+include::{sourcedir}/sales_schema.sql[SALES Schema Definition File]
+----
+
+[[customer-table]]
+=== CUSTOMER Table
+
+The link:resources/source/sales_customer_table.sql[`CUSTOMER` table] maps records information about customers.
+
+[source, sql]
+----
+include::{sourcedir}/sales_customer_table.sql[SALES CUSTOMER Table Definition File]
+----
+
+[[orders-table]]
+=== ORDERS Table
+
+The link:resources/source/sales_orders_table.sql[`ORDERS` table] maps records information about sales orders.
+
+[source, sql]
+----
+include::{sourcedir}/sales_orders_table.sql[SALES ORDERS Table Definition File]
+----
+
+[[odetail-table]]
+=== ODETAIL Table
+
+The link:resources/source/sales_odetail_table.sql[`ODETAIL` table] maps records detailed information about sales orders.
+
+[source, sql]
+----
+include::{sourcedir}/sales_odetail_table.sql[SALES ODETAIL Table Definition File]
+----
+
+[[parts-table]]
+=== PARTS Table
+
+The link:resources/source/sales_parts_table.sql[`PARTS` table] maps records information about parts.
+
+[source, sql]
+----
+include::{sourcedir}/sales_parts_table.sql[SALES PARTS Table Definition File]
+----
+
+[[invent-schema]]
+=== INVENT Schema
+
+The link:resources/source/invent_schema.sql[`INVENT` schema] stores inventory data.
+
+[source, sql]
+----
+include::{sourcedir}/invent_schema.sql[INVENT Schema Definition File]
+----
+
+[[supplier-table]]
+=== SUPPLIER Table
+
+The link:resources/source/invent_supplier_table.sql[`SUPPLIER` table] maps records information about suppliers.
+
+[source, sql]
+----
+include::{sourcedir}/invent_supplier_table.sql[INVENT SUPPLIER Table Definition File]
+----
+
+[[partsupp-table]]
+=== PARTSUPP Table
+
+The link:resources/source/invent_partsupp_table.sql[`PARTSUPP` table] maps parts to suppliers.
+
+[source, sql]
+----
+include::{sourcedir}/invent_partsupp_table.sql[INVENT PARTSUPP Table Definition File]
+----
+
+[[partloc-table]]
+=== PARTLOC Table
+
+The link:resources/source/invent_partloc_table.sql[`PARTLOC` table] records number of parts to on hand.
+
+[source, sql]
+----
+include::{sourcedir}/invent_partloc_table.sql[INVENT PARTLOC Table Definition File]
+----

@@ -1,19 +1,22 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **************************************************************************/
@@ -69,7 +72,11 @@ public:
 		short	sqlStmtType,
 		BOOL	useDefaultDesc,
 		BOOL internalStmt = FALSE,
-		long stmtId = 0);
+		long stmtId = 0,
+		short sqlQueryType = SQL_UNKNOWN,
+		Int32  resultSetIndex = 0,
+		SQLSTMT_ID* callStmtId = NULL);
+
 	SRVR_STMT_HDL *createSrvrStmtForMFC(const char *stmtLabel,
 		long	*sqlcode,
 		const char *moduleName,
@@ -90,6 +97,12 @@ public:
 
 	
 	SRVR_STMT_HDL *getSrvrStmt(long dialogueId,long stmtId,long	*sqlcode);
+	SRVR_STMT_HDL *getInternalSrvrStmt(long dialogueId, const char* stmtLabel, long *sqlcode);
+
+	long getStmtCount()
+	{
+		return count;
+	}
 	
 	inline void setCurrentStmt(SRVR_STMT_HDL *pSrvrStmt) { pCurrentSrvrStmt = pSrvrStmt;};
 	bool isModuleLoaded(std::string strModuleName);//MFC
@@ -112,9 +125,6 @@ public:
 private:
 	SRVR_STMT_HDL_LIST		*pSrvrStmtListHead;
 	
-	//performance improvement changes
-//    __gnu_cxx::hash_map<long,SRVR_STMT_HDL*> mapOfSrvrStmt;
-//    __gnu_cxx::hash_map<std::string,SRVR_STMT_HDL*> mapOfInternalSrvrStmt;
     MapOfSrvrStmt mapOfSrvrStmt;
     MapOfInternalSrvrStmt mapOfInternalSrvrStmt;
 

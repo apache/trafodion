@@ -1,17 +1,24 @@
 /**
- *(C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+* @@@ START COPYRIGHT @@@
+
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+
+* @@@ END COPYRIGHT @@@
  */
 package org.trafodion.dcs.master;
 
@@ -54,7 +61,6 @@ import org.trafodion.dcs.util.VersionInfo;
 import org.trafodion.dcs.zookeeper.ZkClient;
 import org.trafodion.dcs.zookeeper.ZKConfig;
 import org.trafodion.dcs.master.listener.ListenerService;
-import org.trafodion.dcs.rest.DcsRest;
 
 public class DcsMaster implements Runnable {
     private static final Log LOG = LogFactory.getLog(DcsMaster.class);
@@ -67,7 +73,6 @@ public class DcsMaster implements Runnable {
     private int port;
     private int portRange;
     private InfoServer infoServer;
-    private DcsRest restServer;
     private String serverName;
     private int infoPort;
     private long startTime;
@@ -208,6 +213,11 @@ public class DcsMaster implements Runnable {
         try {
             netConf = new DcsNetworkConfiguration(conf);
             serverName = netConf.getHostName();
+	    if (serverName == null) {
+                LOG.error("DNS Interface [" + conf.get(Constants.DCS_DNS_INTERFACE, Constants.DEFAULT_DCS_DNS_INTERFACE)
+	    			+ "] configured in dcs.site.xml is not found!");
+		System.exit(1);
+            }
 
             // Wait to become the leader of all DcsMasters
             mle = new MasterLeaderElection(this);

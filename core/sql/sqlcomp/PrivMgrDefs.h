@@ -1,20 +1,23 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-//// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
-////
-////  Licensed under the Apache License, Version 2.0 (the "License");
-////  you may not use this file except in compliance with the License.
-////  You may obtain a copy of the License at
-////
-////      http://www.apache.org/licenses/LICENSE-2.0
-////
-////  Unless required by applicable law or agreed to in writing, software
-////  distributed under the License is distributed on an "AS IS" BASIS,
-////  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-////  See the License for the specific language governing permissions and
-////  limitations under the License.
-////
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
 //// @@@ END COPYRIGHT @@@
 //*****************************************************************************
 
@@ -42,6 +45,30 @@ enum PrivStatus { STATUS_UNKNOWN   = 20,
                   STATUS_NOTFOUND  = 23,
                   STATUS_ERROR     = 24
                 };
+
+inline const char * privStatusEnumToLit(PrivStatus privStatus)
+{
+  std::string result;
+  switch (privStatus)
+  {
+    case STATUS_GOOD:
+      result = "GOOD";
+      break;
+    case STATUS_WARNING:
+      result = "WARNING";
+      break;
+    case STATUS_NOTFOUND:
+      result = "NOTFOUND";
+      break;
+    case STATUS_ERROR:
+      result = "ERROR";
+      break;
+    default:
+      result = "UNKNOWN";
+  }
+  return result.c_str();
+}
+  
 
 enum {SQL_OPERATIONS_COMPONENT_UID = 1};
 #define SQL_OPERATION_NAME "SQL_OPERATIONS"
@@ -154,6 +181,13 @@ enum class SQLOperation {
    CREATE_TABLE,
    CREATE_TRIGGER,
    CREATE_VIEW,
+   DML_DELETE,
+   DML_EXECUTE,
+   DML_INSERT,
+   DML_REFERENCES,
+   DML_SELECT,
+   DML_UPDATE,
+   DML_USAGE,
    DROP,
    DROP_CATALOG,
    DROP_INDEX,
@@ -184,19 +218,15 @@ enum class SQLOperation {
    FIRST_OPERATION = ALTER,
    LAST_OPERATION = USE_ALTERNATE_SCHEMA,
    NUMBER_OF_OPERATIONS = LAST_OPERATION - FIRST_OPERATION + 1,
-   UNKNOWN
+   UNKNOWN,
+   FIRST_DML_PRIV = DML_DELETE,
+   LAST_DML_PRIV = DML_USAGE
 };
 
 enum class PrivDropBehavior {
    CASCADE = 2,
    RESTRICT = 3
 };                
-
-enum class PrivCommand {
-   GRANT_OBJECT = 2,
-   REVOKE_OBJECT_RESTRICT = 3,
-   REVOKE_OBJECT_CASCADE = 4
-};
 
 enum class PrivLevel {
    UNKNOWN = 0,
@@ -236,10 +266,10 @@ const static int32_t NBR_OF_PRIVS = NBR_DML_PRIVS+NBR_DDL_PRIVS;
 //using PrivMgrBitmap = std::bitset<NBR_OF_PRIVS>;
 #define PrivMgrBitmap std::bitset<NBR_OF_PRIVS>
 typedef std::bitset<NBR_OF_PRIVS> PrivObjectBitmap;
-typedef std::bitset<NBR_DML_COL_PRIVS> PrivColumnBitmap;
+typedef std::bitset<NBR_OF_PRIVS> PrivColumnBitmap;
 typedef std::bitset<NBR_OF_PRIVS> PrivSchemaBitmap;
 typedef std::map<size_t,PrivColumnBitmap> PrivColList;
-typedef std::map<size_t,std::bitset<NBR_DML_COL_PRIVS> >::const_iterator PrivColIterator;
+typedef std::map<size_t,std::bitset<NBR_OF_PRIVS> >::const_iterator PrivColIterator;
 
 inline bool isDMLPrivType(PrivType privType)
 {
@@ -268,15 +298,6 @@ inline bool isDMLPrivType(PrivType privType)
 #define UNKNOWN_GRANTEE_TYPE_LIT               "  "
 #define PUBLIC_GRANTEE_LIT                     "P "
 #define USER_GRANTEE_LIT                       "U "
-
-#define SYSTEM_AUTH_ID          -2
-#define PUBLIC_AUTH_ID          -1
-
-#define PUBLIC_AUTH_NAME "PUBLIC"
-#define SYSTEM_AUTH_NAME "_SYSTEM"
-
-#define DB_ROOTROLE_NAME "DB__ROOTROLE"
-#define DB_ROOTROLE_ID 1000000
 
 #define MAX_SQL_IDENTIFIER_NAME_LEN 256
 

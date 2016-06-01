@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -995,12 +998,18 @@ NAString Context::getRequirementsString() const
 {
   NAString IPPString("", CmpCommon::statementHeap());
 
-  char thisptr[7 + sizeof(void *)];
+  // will receive the string "ptr=%p, ", where %p is a hex address
+  // example:  "ptr=0x7fffffff23db, "
+  // so we need 4 bytes for "ptr=", 2 bytes for the "0x", up to
+  // 2 * sizeof(void *) bytes for the hex (each nibble goes to
+  // one ASCII character), 2 bytes for the ", " and 1 byte for
+  // the trailing null 
+  char thisptr[4 + 2 + 2*sizeof(void *) + 2 + 1];
 
   if ( CmpCommon::getDefault( NSK_DBG_PRINT_CONTEXT_POINTER ) == DF_ON )
   {
     sprintf(thisptr, "ptr=%p, ",this);
-    thisptr[6 + sizeof(void *)]='\0';
+    thisptr[sizeof(thisptr)-1]='\0';  // shouldn't be needed, but be safe
   }
   else
     thisptr[0]='\0';

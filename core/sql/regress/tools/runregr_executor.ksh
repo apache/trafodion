@@ -2,19 +2,22 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 #######################################################################
@@ -234,7 +237,7 @@ skippedfiles=
 
 # sbtestfiles contains the list of tests to be run in seabase mode
 if [ "$seabase" -ne 0 ]; then
-  sbtestfiles="TEST001 TEST002 TEST012 TEST013 TEST014 TEST015 TEST016 TEST020 TEST022 TEST025 TEST050 TEST063 TEST088 TEST101 TEST106 TEST107 TEST122 TEST130"
+  sbtestfiles="TEST001 TEST002 TEST012 TEST013 TEST014 TEST015 TEST016 TEST020 TEST022 TEST025 TEST050 TEST063 TEST088 TEST101 TEST106 TEST107 TEST122 TEST130 TEST131 TEST140"
   sbprettyfiles=
   for i in $prettyfiles; do
     for j in $sbtestfiles; do
@@ -446,9 +449,9 @@ fi
 
 # Tests that use SPJ on NSK or Linux require a running ODBC
 # service. So if the regressions are running, start MXOAS.
-if [ $USE_NDCS -ne 0 -a $diffOnly -eq 0 ]; then
-  START_MXODBC
-fi
+#if [ $USE_NDCS -ne 0 -a $diffOnly -eq 0 ]; then
+#  START_MXODBC
+#fi
 
 # main loop over all test files
 for i in $prettyfiles; do
@@ -905,15 +908,16 @@ for i in $prettyfiles; do
     fi
   fi
   echo $logtxt
-  echo "`date +'%D %T'`  $test 	$logtxt" >> $rgrlog
+  modtime=`stat --printf=%y $log | cut -d'.' -f1`
+  echo "$modtime  $test  $logtxt" >> $rgrlog
   echo
 
 done # for i in $prettyfiles
 
 # stop the MXOAS if it was started
-if [ $MXODBC_USABLE -eq 1 ]; then
-  STOP_MXODBC
-fi
+#if [ $MXODBC_USABLE -eq 1 ]; then
+#  STOP_MXODBC
+#fi
 
 #rm -f $MAKESCRIPT 2>$NULL
 rm -f $REGRRUNDIR/runmxcmp.ksh 2>$NULL

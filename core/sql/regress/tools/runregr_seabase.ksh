@@ -2,19 +2,22 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 #######################################################################
@@ -205,6 +208,11 @@ else
     fi
   done
 fi
+
+echo "copying scripts to $REGRRUNDIR"
+cp $REGRTSTDIR/ddl.sb028 $REGRRUNDIR 2>$NULL
+cp $REGRTSTDIR/dml.sb028 $REGRRUNDIR 2>$NULL
+cp $REGRTSTDIR/FILTER028 $REGRRUNDIR 2>$NULL
 
 skippedfiles=
 
@@ -647,7 +655,9 @@ for i in $prettyfiles; do
     logtxt="### FAIL ($diffsize lines$knownsize)     ###$logtxt"
   fi
   echo $logtxt
-  echo "`date +'%D %T'`  $test 	$logtxt" >> $rgrlog
+#  echo "`date +'%D %T'`  $test 	$logtxt" >> $rgrlog
+  modtime=`stat --printf=%y $log | cut -d'.' -f1`
+  echo "$modtime  $test  $logtxt" >> $rgrlog
   echo
 
 done # for i in $prettyfiles

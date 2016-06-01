@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -90,7 +93,11 @@ enum LOBcliQueryType
     LOB_DATA_EXTRACT,
 
     // returns length of lob given a lobhandle
-    LOB_CLI_SELECT_LOBLENGTH
+    LOB_CLI_SELECT_LOBLENGTH,
+   
+    // performs GC of lob file
+    LOB_CLI_PERFORM_LOB_GC
+
   };
 
 enum LOBcliQueryPhase
@@ -113,7 +120,7 @@ Lng32 SQL_EXEC_LOBcliInterface
  /*IN*/     char * inLobHandle,
  /*IN*/     Lng32  inLobHandleLen,
  /*IN*/     char * blackBox,
- /*IN*/     Lng32* blackBoxLen,
+ /*IN*/     Int32* blackBoxLen,
  /*OUT*/    char * outLobHandle,
  /*OUT*/    Lng32 * outLobHandleLen,
  /*IN*/     LOBcliQueryType qType,
@@ -130,7 +137,19 @@ Lng32 SQL_EXEC_LOBcliInterface
                                         Used in case of cursor fetches. 
                                     OUT: if returned, save it and pass it back
            				in */
- /*IN*/     Int64 xnId          /* xn id of the parent process, if non-zero */
+ /*IN*/     Int64 xnId,          /* xn id of the parent process, if non-zero */
+ /*IN*/     NABoolean lobTrace
+ );
+Lng32 SQL_EXEC_LOB_GC_Interface
+(
+ /*IN*/     void *lobGlobals, // can be passed or NULL
+ /*IN*/     char * handle,
+ /*IN*/     Lng32  handleLen,
+ /*IN*/     char*  hdfsServer,
+ /*IN*/     Lng32  hdfsPort,
+ /*IN*/     char *lobLocation,
+ /*IN*/     Int64 lobMaxMemChunkLen, // if passed in as 0, will use default value of 1G for the in memory buffer to do compaction.
+ /*IN*/     NABoolean lobTrace
  );
 
 Lng32 SQL_EXEC_LOBddlInterface
@@ -142,7 +161,11 @@ Lng32 SQL_EXEC_LOBddlInterface
  /*IN*/     LOBcliQueryType qType,
  /*IN*/     short *lobNumList,
  /*IN*/     short *lobTypList,
- /*IN*/     char* *lobLocList
+ /*IN*/     char* *lobLocList,
+ /*IN*/     char*  hdfsServer,
+ /*IN*/     Lng32  hdfsPort,
+ /*IN*/     Int64 lobMaxSize,
+ /*IN*/     NABoolean lobTrace
  );
 
 

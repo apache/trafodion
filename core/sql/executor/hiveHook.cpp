@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -42,8 +45,9 @@ struct hive_skey_desc* populateSortCols(HiveMetaData *md, Int32 sdID,
 struct hive_bkey_desc* populateBucketingCols(HiveMetaData *md, Int32 sdID,  
                                              NAText* tblStr, size_t& pos);
 NABoolean populateSerDeParams(HiveMetaData *md, Int32 serdeID, 
-                         char& fieldSep, char& recordSep,  
-                         NAText* tblStr, size_t& pos);
+                              char& fieldSep, char& recordSep,  
+                              NABoolean &nullFormatSpec, NAString &nullFormat,
+                              NAText* tblStr, size_t& pos);
 
 NABoolean findAToken (HiveMetaData *md, NAText* tblStr, size_t& pos, 
                       const char* tok, const char* errStr,
@@ -285,8 +289,12 @@ struct hive_sd_desc* populateSD(HiveMetaData *md, Int32 mainSdID,
     return NULL;
   Int32 numBuckets = atoi(numBucketsStr.c_str());
   
+  NABoolean nullFormatSpec = FALSE;
+  NAString nullFormat;
   NABoolean success = populateSerDeParams(md, 0, fieldTerminator, 
-                                          recordTerminator, tblStr, pos);
+                                          recordTerminator, 
+                                          nullFormatSpec, nullFormat,
+                                          tblStr, pos);
   if (!success)
     return NULL;
 
@@ -303,6 +311,7 @@ struct hive_sd_desc* populateSD(HiveMetaData *md, Int32 mainSdID,
                         numBuckets,
                         inputStr.c_str(),
                         outputStr.c_str(),
+                        (nullFormatSpec ? nullFormat.data() : NULL),
                         hive_sd_desc::TABLE_SD, 
                         // TODO : no support for hive_sd_desc::PARTN_SD
                         newColumns, 
@@ -316,7 +325,7 @@ struct hive_sd_desc* populateSD(HiveMetaData *md, Int32 mainSdID,
   
   // TODO : loop over SDs
   if (findAToken(md, tblStr, pos, "sd:StorageDescriptor(", 
-                 "getTableDesc::sd:StorageDescriptor(###"))
+                 "getTableDesc::sd:StorageDescriptor(###)",FALSE))
     return NULL;
 
   return result;
@@ -524,6 +533,7 @@ static int getAsciiDecimalValue(const char * valPtr)
 
 NABoolean populateSerDeParams(HiveMetaData *md, Int32 serdeID, 
                               char& fieldTerminator, char& recordTerminator,
+                              NABoolean &nullFormatSpec, NAString &nullFormat,
                               NAText* tblStr, size_t& pos)
 {
 
@@ -540,9 +550,19 @@ NABoolean populateSerDeParams(HiveMetaData *md, Int32 serdeID,
                   "populateSerDeParams::serDeInfo:)},###"))
     return NULL;
   
-  
+  const char * nullStr = "serialization.null.format=";
   const char * fieldStr = "field.delim" ;
   const char * lineStr = "line.delim" ;
+
+  nullFormatSpec = FALSE;
+  foundB = tblStr->find(nullStr,pos);
+  if ((foundB != std::string::npos) && (foundB < foundE))
+    {
+      nullFormatSpec = TRUE;
+      std::size_t foundNB = foundB + strlen(nullStr);
+      std::size_t foundNE = tblStr->find(", ", foundNB);
+      nullFormat = NAString(tblStr->substr(foundNB, (foundNE-foundNB)));
+    }
 
   foundB = tblStr->find(fieldStr,pos);
   if ((foundB != std::string::npos) && (foundB < foundE))
@@ -588,7 +608,7 @@ struct hive_bkey_desc* populateBucketingCols(HiveMetaData *md, Int32 sdID,
         // this is the last bucket col
       }
       NAText nameStr = tblStr->substr(pos, foundB-pos);
-      pos = foundB;
+      pos = foundB + 1;
       
       hive_bkey_desc* newBkey  = new (CmpCommon::contextHeap())
         struct hive_bkey_desc(nameStr.c_str(),
@@ -658,7 +678,7 @@ struct hive_tbl_desc* HiveMetaData::getFakedTableDesc(const char* tblName)
    hive_bkey_desc* bk1 = new (h) hive_bkey_desc("C2", 1);
 
 
-   hive_sd_desc* sd1 = new (h)hive_sd_desc(1, "loc", 0, 1, "ift", "oft", 
+   hive_sd_desc* sd1 = new (h)hive_sd_desc(1, "loc", 0, 1, "ift", "oft", NULL,
                                            hive_sd_desc::TABLE_SD, c1, 
                                            sk1, bk1, '\010', '\n');
 

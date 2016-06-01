@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -63,6 +66,8 @@
 #include "PrivMgrRoles.h"
 #include "ComUser.h"
 #include "ComMisc.h"
+#include "CmpSeabaseDDLmd.h"
+#include "CmpSeabaseDDLroutine.h"
 #include "hdfs.h"
 void cleanupLOBDataDescFiles(const char*, int, const char *);
 
@@ -546,7 +551,8 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       keyInfoArray = new(CTXTHEAP) ComTdbVirtTableKeyInfo[numKeys];
 
       if (buildColInfoArray(COM_BASE_TABLE_OBJECT,
-                            &colArray, colInfoArray, FALSE, FALSE, NULL, CTXTHEAP))
+                            &colArray, colInfoArray, FALSE, FALSE, NULL, NULL, NULL, NULL, 
+                            CTXTHEAP))
         {
           return resetCQDs(hbaseSerialization, hbVal, -1);
         }
@@ -620,11 +626,12 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       ComTdbVirtTableKeyInfo * indexNonKeyInfoArray = NULL;
       
       NAList<NAString> selColList;
-      
+      NAString defaultColFam(SEABASE_DEFAULT_COL_FAMILY);
       if (createIndexColAndKeyInfoArrays(indexColRefArray,
                                          createIndexNode->isUniqueSpecified(),
                                          FALSE, // no syskey
                                          FALSE, // not alignedFormat
+                                         defaultColFam,
                                          btNAColArray, btNAKeyArr,
                                          numIndexKeys, numIndexNonKeys, numIndexCols,
                                          indexColInfoArray, indexKeyInfoArray,
@@ -920,6 +927,17 @@ bool CmpSeabaseDDL::isHistogramTable(const NAString &name)
 
 }
 
+NABoolean CmpSeabaseDDL::isLOBDependentNameMatch(const NAString &name)
+{
+  if ((name(0,min((sizeof(LOB_MD_PREFIX)-1), name.length())) == LOB_MD_PREFIX) ||
+      (name(0,min((sizeof(LOB_DESC_CHUNK_PREFIX)-1), name.length()))==LOB_DESC_CHUNK_PREFIX)||
+      (name(0,min((sizeof(LOB_DESC_HANDLE_PREFIX)-1), name.length()))==LOB_DESC_HANDLE_PREFIX)
+      )
+    return true;
+  else
+    return false;
+}
+
 NABoolean CmpSeabaseDDL::isSeabase(const NAString &catName)
 {
   if ((CmpCommon::getDefault(MODE_SEABASE) == DF_ON) &&
@@ -1007,6 +1025,23 @@ NABoolean CmpSeabaseDDL::isSeabaseReservedSchema(
   return isSeabaseReservedSchema(catName, schName);
 }
 
+NABoolean CmpSeabaseDDL::isSeabaseExternalSchema(
+                                  const NAString &catName,
+                                  const NAString &schName)
+{
+  if (catName.isNull())
+    return FALSE;
+
+  NAString seabaseDefCatName = "";
+  CmpCommon::getDefault(SEABASE_CATALOG, seabaseDefCatName, FALSE);
+  seabaseDefCatName.toUpper();
+
+  if (catName != seabaseDefCatName)
+    return FALSE;
+
+  return ComIsTrafodionExternalSchemaName(schName);
+}
+ 
 // ----------------------------------------------------------------------------
 // Method:  isUserUpdatableSeabaseMD
 //
@@ -1037,6 +1072,19 @@ NABoolean CmpSeabaseDDL::isUserUpdatableSeabaseMD(const NAString &catName,
     }
 
   return FALSE;
+}
+
+std::vector<std::string> CmpSeabaseDDL::getHistogramTables()
+{
+  Int32 numHistTables = sizeof(allMDHistInfo) / sizeof(MDTableInfo);
+  std::vector<std::string> histTables;
+  for (Int32 i = 0; i < numHistTables; i++)
+  {
+    const MDTableInfo &mdh = allMDHistInfo[i];
+    std::string tableName(mdh.newName);
+    histTables.push_back(tableName);
+  }
+  return histTables;
 }
 
 ExpHbaseInterface* CmpSeabaseDDL::allocEHI(const char * server, 
@@ -1412,7 +1460,7 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
       if (hbaseErrStr)
         *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr().data();
 
-      retcode = -1394;
+      retcode = -1398;
       goto label_return;
     }
   else
@@ -1641,7 +1689,7 @@ void CmpSeabaseDDL::restoreAllControlsAndFlags()
   cliRC = cliInterface.executeImmediate("control query shape restore;");
 
   if (CmpCommon::context()->getCntlCount() > 0 &&
-      CmpCommon::context()->getCntlCount() < CQD_SENT_MAX)
+      CmpCommon::context()->getCntlCount() <= CQD_SENT_MAX)
     {
   cliRC = cliInterface.restoreCQD("volatile_schema_in_use");
 
@@ -1978,6 +2026,9 @@ short CmpSeabaseDDL::beginXnIfNotInProgress(ExeCliInterface *cliInterface,
           return -1;
         }
       
+      CmpContext* cmpContext = CmpCommon::context();
+      cmpContext->ddlObjsList().clear();
+
       xnWasStartedHere = TRUE;
     }
 
@@ -2010,10 +2061,50 @@ short CmpSeabaseDDL::endXnIfStartedHere(ExeCliInterface *cliInterface,
               cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
               return cliRC;
             }
+
+          ddlInvalidateNATables();
         }
+
+      CmpContext* cmpContext = CmpCommon::context();
+      cmpContext->ddlObjsList().clear();
     }
 
   return cliRC;
+}
+
+// Invalidate NATables for ddl objects that were affected in
+// this transaction.
+// DDL objects have already been set in ddlObjsList.
+short CmpSeabaseDDL::ddlInvalidateNATables()
+{
+  CmpContext* cmpContext = CmpCommon::context();
+  for (Lng32 i = 0; i < cmpContext->ddlObjsList().entries(); i++)
+    {
+      CmpContext::DDLObjInfo &ddlObj = cmpContext->ddlObjsList()[i];
+      NAString &ddlObjName = ddlObj.ddlObjName;
+      ComQiScope &qiScope = ddlObj.qiScope;
+      ComObjectType &ot = ddlObj.ot;
+      Int64 objUID = ddlObj.objUID;
+      ComObjectName tableName(ddlObjName);
+      
+      const NAString catalogNamePart = 
+        tableName.getCatalogNamePartAsAnsiString();
+      const NAString schemaNamePart =
+        tableName.getSchemaNamePartAsAnsiString(TRUE);
+      const NAString objectNamePart = 
+        tableName.getObjectNamePartAsAnsiString(TRUE);
+      
+      CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
+
+      if (ot == COM_USER_DEFINED_ROUTINE_OBJECT)
+        ActiveSchemaDB()->getNARoutineDB()->removeNARoutine(
+             cn.getQualifiedNameObj(), 
+             qiScope, objUID, TRUE, TRUE);
+      else
+        ActiveSchemaDB()->getNATableDB()->removeNATable(cn, qiScope, ot, TRUE, TRUE);
+    }
+
+  return 0;
 }
 
 short CmpSeabaseDDL::populateKeyInfo(ComTdbVirtTableKeyInfo &keyInfo,
@@ -2067,6 +2158,13 @@ NABoolean CmpSeabaseDDL::enabledForSerialization(NAColumn * nac)
   return FALSE;
 }
 
+// NAColumn in memory is expected to have the correct HbaseColFlags for
+// serialization depending on if it belongs to index or table. 
+// Index and Table row format can be different now. However, it is
+// recommended that the function is called only when it is not aligned
+// row format. The existing callers are verified to be working correctly
+// even though some callers don't adhere to this recommendation
+
 NABoolean CmpSeabaseDDL::isEncodingNeededForSerialization(NAColumn * nac)
 {
   const NAType *givenType = nac->getType();
@@ -2087,6 +2185,9 @@ short CmpSeabaseDDL::generateHbaseOptionsArray(
   NAText * hbaseCreateOptionsArray,
   NAList<HbaseCreateOption*> * hbaseCreateOptions)
 {
+  if (! hbaseCreateOptions)
+    return 0;
+
   for (CollIndex i = 0; i < hbaseCreateOptions->entries(); i++)
     {
       HbaseCreateOption * hbaseOption = (*hbaseCreateOptions)[i];
@@ -2101,16 +2202,18 @@ short CmpSeabaseDDL::generateHbaseOptionsArray(
           s = s.substr( startpos, endpos-startpos+1 );
         }
           
-      // upcase value, save original (now trimmed)
+      // upcase value, save original (now trimmed).
       valInOrigCase = s;
-      std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+
+      // Do not upcase column family name as fam name is case sensitive
+      if (hbaseOption->key() != "NAME")
+        std::transform(s.begin(), s.end(), s.begin(), ::toupper);
 
       NABoolean isError = FALSE;
       if (hbaseOption->key() == "NAME")
         {
           hbaseCreateOptionsArray[HBASE_NAME] = hbaseOption->val();
         }
-          
       else if (hbaseOption->key() == "MAX_VERSIONS")
         {
           if (str_atoi(hbaseOption->val().data(), 
@@ -2274,23 +2377,21 @@ short CmpSeabaseDDL::generateHbaseOptionsArray(
 
 short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi, 
                                       HbaseStr *table,
-                                      const char * cf1, 
-                                      const char * cf2, 
-                                      const char * cf3,
+                                      std::vector<NAString> &colFamVec,
                                       NAList<HbaseCreateOption*> * hbaseCreateOptions,
                                       const int numSplits,
                                       const int keyLength,
                                       char** encodedKeysBuffer,
-                                      NABoolean doRetry)
+                                      NABoolean doRetry,
+                                      NABoolean ddlXns)
 {
   // this method is called after validating that the table doesn't exist in seabase
   // metadata. It creates the corresponding hbase table.
   short retcode = 0;
 
-  // create HBASE_MD table.
   HBASE_NAMELIST colFamList;
   HbaseStr colFam;
-  
+
   retcode = -1;
   Lng32 numTries = 0;
   Lng32 delaySecs = 500; // 5 secs to start with
@@ -2316,7 +2417,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
     
   if (retcode == -1)
     {
-      *CmpCommon::diags() << DgSqlCode(-1390)
+      *CmpCommon::diags() << DgSqlCode(-1431)
                           << DgString0(table->val);
       return -1;
     } 
@@ -2333,74 +2434,51 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
     }
 
   NAText hbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
-  if (hbaseCreateOptions)
+  if (generateHbaseOptionsArray(hbaseCreateOptionsArray,
+                                hbaseCreateOptions) < 0)
     {
-      if (generateHbaseOptionsArray(hbaseCreateOptionsArray,
-                                    hbaseCreateOptions) < 0)
-        {
-          // diags already set             
-          return -1;
-        }   
+      // diags already set             
+      return -1;
     }
-  else
+
+  if (NOT hbaseCreateOptionsArray[HBASE_NAME].empty())
     {
-      colFamList.clear();
-      char cfName[1000];
+      short retcode = -HBASE_CREATE_OPTIONS_ERROR;
+      *CmpCommon::diags() << DgSqlCode(-8448)
+                          << DgString0((char*)"CmpSeabaseDDL::generateHbaseOptionsArray()")
+                          << DgString1(getHbaseErrStr(-retcode))
+                          << DgInt0(-retcode)
+                          << DgString2((char*)"NAME");
       
-      if (cf1)
-        {
-          strcpy(cfName, cf1);
-          colFam.val = cfName;
-          colFam.len = strlen(cfName);
-          
-          colFamList.insert(colFam);
-        }
-      
-      char cfName2[1000];
-      
-      if (cf2)
-        {
-          strcpy(cfName2, cf2);
-          colFam.val = cfName2;
-          colFam.len = strlen(cfName2);
-          
-          colFamList.insert(colFam);
-        }
-      
-      char cfName3[1000];
-      
-      if (cf3)
-        {
-          strcpy(cfName3, cf3);
-          colFam.val = cfName3;
-          colFam.len = strlen(cfName3);
-          
-          colFamList.insert(colFam);
-        }
+      return -1;
     }
 
   NABoolean isMVCC = true;
   if (CmpCommon::getDefault(TRAF_TRANS_TYPE) == DF_SSCC)
     isMVCC = false;
 
-  if (hbaseCreateOptions || (numSplits > 0) )
+  NAString colFamNames;
+  for (int i = 0; i < colFamVec.size(); i++)
     {
-      if (hbaseCreateOptionsArray[HBASE_NAME].empty())
-        hbaseCreateOptionsArray[HBASE_NAME] = SEABASE_DEFAULT_COL_FAMILY;
-
-      NABoolean noXn =
-                (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF) ?  true : false;
-
-      retcode = ehi->create(*table, hbaseCreateOptionsArray,
-                            numSplits, keyLength,
-                            (const char **)encodedKeysBuffer,
-                            noXn,
-                            isMVCC);
+      colFamNames += colFamVec[i];
+      colFamNames += " ";
     }
-  else
-    {
-      retcode = ehi->create(*table, colFamList, isMVCC);
-    }
+
+  hbaseCreateOptionsArray[HBASE_NAME] = colFamNames.data();
+
+  // TEMPTEMP 
+  //  Currently DTM crashes if number of column families goes beyond 5.
+  //  Do not use ddl xns if number of explicitly specified column fams
+  //  exceed 5. This is not a common case as recommendation from HBase
+  //  for good performance is to keep num of col fams small (3 or 4).
+  //  Once dtm bug is fixed, this check will be removed.
+  if (colFamVec.size() > 5)
+    ddlXns = FALSE;
+  retcode = ehi->create(*table, hbaseCreateOptionsArray,
+                        numSplits, keyLength,
+                        (const char **)encodedKeysBuffer,
+                        (NOT ddlXns),
+                        isMVCC);
 
   if (retcode < 0)
     {
@@ -2416,9 +2494,39 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   return 0;
 }
 
+short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi, 
+                                      HbaseStr *table,
+                                      const char * cf1, 
+                                      NAList<HbaseCreateOption*> * inHbaseCreateOptions,
+                                      const int numSplits,
+                                      const int keyLength,
+                                      char** encodedKeysBuffer,
+                                      NABoolean doRetry, 
+                                      NABoolean ddlXns)
+{
+  if (! cf1)
+    return -1;
+
+  std::vector<NAString> colFamVec;
+  colFamVec.push_back(cf1);
+
+  NAList<HbaseCreateOption*> lHbaseCreateOptions;
+  NAText lHbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
+
+  NAList<HbaseCreateOption*> * hbaseCreateOptions = inHbaseCreateOptions;
+  if (! inHbaseCreateOptions)
+    hbaseCreateOptions = &lHbaseCreateOptions;
+
+  return createHbaseTable(ehi, table, colFamVec, hbaseCreateOptions,
+                          numSplits, keyLength,
+                          encodedKeysBuffer, doRetry, ddlXns);
+}
+
 short CmpSeabaseDDL::alterHbaseTable(ExpHbaseInterface *ehi,
                                      HbaseStr *table,
-                                     NAList<HbaseCreateOption*> * hbaseCreateOptions)
+                                     NAList<NAString> &allColFams,
+                                     NAList<HbaseCreateOption*> * hbaseCreateOptions,
+                                     NABoolean ddlXns)
 {
   short retcode = 0;
   NAText hbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
@@ -2431,42 +2539,55 @@ short CmpSeabaseDDL::alterHbaseTable(ExpHbaseInterface *ehi,
     } 
   else  
     {
-      NABoolean noXn =
-        (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF) ?  true : false;
-               
-      retcode = ehi->alter(*table, hbaseCreateOptionsArray, noXn);
+      NABoolean noXn = (NOT ddlXns);
+         
+      retcode = 0;
+
+      // if col family name passed in, change attrs for that family.
+      // Otherwise change it for all user specified families.
+      if (hbaseCreateOptionsArray[HBASE_NAME].empty())
+        {
+          for (int i = 0; ((retcode != -1) && (i < allColFams.entries())); i++)
+            {
+              NAString colFam = allColFams[i];
+              
+              hbaseCreateOptionsArray[HBASE_NAME] = colFam;
+              retcode = ehi->alter(*table, hbaseCreateOptionsArray, noXn);
+            } // for
+        } // if
+      else
+        {
+          retcode = ehi->alter(*table, hbaseCreateOptionsArray, noXn);
+        }
 
       if (retcode < 0)
         {
-           *CmpCommon::diags() << DgSqlCode(-8448)
-                          << DgString0((char*)"ExpHbaseInterface::alter()")
-                          << DgString1(getHbaseErrStr(-retcode))
-                          << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
-           retcode = -1;
-        } 
-    }
+          *CmpCommon::diags() << DgSqlCode(-8448)
+                              << DgString0((char*)"ExpHbaseInterface::alter()")
+                              << DgString1(getHbaseErrStr(-retcode))
+                              << DgInt0(-retcode)
+                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+          retcode = -1;
+        } // if
+    } // else
 
   return retcode;
 }
 
 short CmpSeabaseDDL::dropHbaseTable(ExpHbaseInterface *ehi, 
-                                    HbaseStr *table, NABoolean asyncDrop)
+                                    HbaseStr *table, NABoolean asyncDrop,
+                                    NABoolean ddlXns)
 {
   short retcode = 0;
 
   retcode = ehi->exists(*table);
   if (retcode == -1) // exists
     {    
-      
-      NABoolean noXn =
-           (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF) ?  true : false;
-                
       if ((CmpCommon::getDefault(HBASE_ASYNC_DROP_TABLE) == DF_ON) ||
           (asyncDrop))
-        retcode = ehi->drop(*table, TRUE, noXn);
+        retcode = ehi->drop(*table, TRUE, (NOT ddlXns));
       else
-        retcode = ehi->drop(*table, FALSE, noXn);
+        retcode = ehi->drop(*table, FALSE, (NOT ddlXns));
       if (retcode < 0)
         {
           *CmpCommon::diags() << DgSqlCode(-8448)
@@ -2624,13 +2745,13 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
         collationSequence = charType->getCollation();
         if (serializedOption == 1) // option explicitly specified
           {
-            setFlags(hbaseColFlags, SEABASE_SERIALIZED);
+            setFlags(hbaseColFlags, NAColumn::SEABASE_SERIALIZED);
           }
         else if ((serializedOption == -1) && // not specified
                  (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON) &&
                  (NOT alignedFormat))
           {
-            setFlags(hbaseColFlags, SEABASE_SERIALIZED);
+            setFlags(hbaseColFlags, NAColumn::SEABASE_SERIALIZED);
           }
        }
       break;
@@ -2650,7 +2771,7 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
         if (serializedOption == 1) // option explicitly specified
           {
             if (DFS2REC::isBinary(datatype))
-              setFlags(hbaseColFlags, SEABASE_SERIALIZED);
+              setFlags(hbaseColFlags, NAColumn::SEABASE_SERIALIZED);
             else if (numericType->isEncodingNeeded())
               {
                 *CmpCommon::diags() << DgSqlCode(-1191)
@@ -2663,7 +2784,7 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
                  (DFS2REC::isBinary(datatype)) &&
                  (NOT alignedFormat))
           {
-            setFlags(hbaseColFlags, SEABASE_SERIALIZED);
+            setFlags(hbaseColFlags, NAColumn::SEABASE_SERIALIZED);
           }
       }
       break;
@@ -2723,7 +2844,7 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
   if ((serializedOption == 1) && (alignedFormat))
     {
       // ignore serialized option on aligned format tables
-      resetFlags(hbaseColFlags, SEABASE_SERIALIZED);
+      resetFlags(hbaseColFlags, NAColumn::SEABASE_SERIALIZED);
       
       /*
        *CmpCommon::diags()
@@ -2737,7 +2858,69 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
   return 0;
 }
 
+short CmpSeabaseDDL::getNAColumnFromColDef
+(ElemDDLColDef * colNode,
+ NAColumn* &naCol)
+{
+  NAString colFamily;
+  NAString colName;
+  Lng32 datatype, length, precision, scale, dt_start, dt_end;
+  Lng32 nullable, upshifted;
+  ComColumnClass colClass;
+  ComColumnDefaultClass defaultClass;
+  NAString charset, defVal;
+  NAString heading;
+  ULng32 hbaseColFlags;
+  Int64 colFlags;
+  LobsStorage lobStorage;
+  NABoolean alignedFormat = FALSE;
+  if (getColInfo(colNode,
+                 colFamily,
+                 colName,
+                 alignedFormat,
+                 datatype, length, precision, scale, dt_start, dt_end, 
+                 upshifted, nullable,
+                 charset, colClass, defaultClass, defVal, heading, lobStorage, 
+                 hbaseColFlags, colFlags))
+    {
+     *CmpCommon::diags() << DgSqlCode(-2004);
+     return -1;
+    }
+
+  NAType * naType = colNode->getColumnDataType();
+  if (! naType)
+    {
+      *CmpCommon::diags() << DgSqlCode(-2004);
+      return -1;
+    }
+
+  char * defV = NULL;
+  if ((defaultClass != COM_NO_DEFAULT) &&
+      (! defVal.isNull()))
+    {
+      char * data = (char*) defVal.data();
+      Lng32 len = defVal.length();
+      defV = new(STMTHEAP) char[len + 2];
+      str_cpy_all((char*)defV, data, len);
+      char * c = (char*)defV;
+      c[len] = 0;
+      c[len+1] = 0;
+    }
+
+  naCol = new(STMTHEAP) NAColumn(colNode->getColumnName().data(),
+                                 -1, // position
+                                 naType, NULL, NULL,
+                                 USER_COLUMN, //colClass, 
+                                 defaultClass,
+                                 defV);
+
+  naCol->setHbaseColFlags(hbaseColFlags);
+
+  return 0;
+}
+
 short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode, 
+                                NAString &colFamily,
                                 NAString &colName,
                                 NABoolean alignedFormat,
 				Lng32 &datatype,
@@ -2762,6 +2945,7 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
   hbaseColFlags = 0;
   colFlags = 0;
 
+  colFamily = colNode->getColumnFamily();
   colName = colNode->getColumnName();
 
   if (colNode->isHeadingSpecified())
@@ -2787,7 +2971,7 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
 
   if (colName == "SYSKEY")
     {
-      resetFlags(hbaseColFlags, SEABASE_SERIALIZED);
+      resetFlags(hbaseColFlags, NAColumn::SEABASE_SERIALIZED);
     }
 
   if  (collationSequence != CharInfo::DefaultCollation)
@@ -3368,7 +3552,7 @@ Int64 CmpSeabaseDDL::getObjectUID(
   return objUID;
 }
 
-Int64 CmpSeabaseDDL::getObjectUIDandOwners(
+Int64 CmpSeabaseDDL::getObjectInfo(
                                    ExeCliInterface *cliInterface,
                                    const char * catName,
                                    const char * schName,
@@ -3376,6 +3560,7 @@ Int64 CmpSeabaseDDL::getObjectUIDandOwners(
                                    const ComObjectType objectType,
                                    Int32 & objectOwner,
                                    Int32 & schemaOwner,
+                                   Int64 & objectFlags,
                                    bool reportErrorNow,
                                    NABoolean checkForValidDef)
 {
@@ -3396,7 +3581,7 @@ Int64 CmpSeabaseDDL::getObjectUIDandOwners(
     strcpy(cfvd, " and valid_def = 'Y' ");
 
   char buf[4000];
-  str_sprintf(buf, "select object_uid, object_owner, schema_owner from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and object_type = '%s' %s ",
+  str_sprintf(buf, "select object_uid, object_owner, schema_owner, flags from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and object_type = '%s' %s ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName, quotedSchName.data(), quotedObjName.data(),
               objectTypeLit, cfvd);
@@ -3425,14 +3610,22 @@ Int64 CmpSeabaseDDL::getObjectUIDandOwners(
 
   char * ptr = NULL;
   Lng32 len = 0;
+
+  // return object_uid
   cliInterface->getPtrAndLen(1, ptr, len);
   Int64 objUID = *(Int64*)ptr;
 
+  // return object_owner
   cliInterface->getPtrAndLen(2, ptr, len);
   objectOwner = *(Int32*)ptr;
 
+  // return schema_owner
   cliInterface->getPtrAndLen(3, ptr, len);
   schemaOwner = *(Int32*)ptr;
+
+  // return flags
+  cliInterface->getPtrAndLen(4, ptr, len);
+  objectFlags = *(Int64*)ptr;
 
   cliInterface->fetchRowsEpilogue(NULL, TRUE);
 
@@ -3742,6 +3935,39 @@ short CmpSeabaseDDL::getUsingViews(ExeCliInterface *cliInterface,
   
   return 0;
 }
+
+// finds all views that directly or indirectly(thru another view) contains
+// the given object.
+// Returns them in ascending order of their create time.
+short CmpSeabaseDDL::getAllUsingViews(ExeCliInterface *cliInterface,
+                                      NAString &catName,
+                                      NAString &schName,
+                                      NAString &objName,
+                                      Queue * &usingViewsQueue)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  char buf[4000];
+              
+  str_sprintf(buf, "select '\"' || trim(o.catalog_name) || '\"' || '.' || '\"' || trim(o.schema_name) || '\"' || '.' || '\"' || trim(o.object_name) || '\"' "
+    ", o.create_time from %s.\"%s\".%s O, "
+    " (get all views on table \"%s\".\"%s\".\"%s\") x(a) "
+    " where trim(O.schema_name) || '.' || trim(O.object_name) = x.a "
+    " order by 2",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              catName.data(), schName.data(), objName.data());
+  
+  cliRC = cliInterface->fetchAllRows(usingViewsQueue, buf, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return cliRC;
+    }
+  
+  return 0;
+}
+
 /* 
 Get the salt column text for a given table or index.
 Returns 0 for object does not have salt column
@@ -4007,7 +4233,7 @@ short CmpSeabaseDDL::updateHbaseOptionsInMetadata(
 
   // get the text from the metadata
 
-  Lng32 textType = 2;  // to get text containing HBASE_OPTIONS=>
+  ComTextType textType = COM_HBASE_OPTIONS_TEXT;  // to get text containing HBASE_OPTIONS=>
   Lng32 textSubID = 0; // meaning, the text pertains to the object as a whole
   NAString metadataText(STMTHEAP);
   result = getTextFromMD(cliInterface,
@@ -4084,35 +4310,20 @@ short CmpSeabaseDDL::updateHbaseOptionsInMetadata(
       // possible that the metadata text could shrink and take fewer
       // rows in its new form than the old. So we do the simple thing
       // to avoid such complications.
- 
-      char buf[2000];
-      str_sprintf(buf, 
-                  "delete from %s.\"%s\".%s where text_uid = %Ld and text_type = %d and sub_id = %d",
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-                  objectUID, textType, textSubID);
-      Lng32 cliRC = cliInterface->executeImmediate(buf);
+      Lng32 cliRC = deleteFromTextTable(cliInterface, objectUID, textType, textSubID);
       if (cliRC < 0)
         {
-          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
           result = -1;
         }
       else
         {
-          // double any quotes in the text, since we are going to use it
-          // as a literal an an INSERT statement shortly 
-
-          NAString doubledQuoteMetadataText;
-          ToQuotedString(doubledQuoteMetadataText /* out */,
-                         metadataText,
-                         FALSE /* don't surround with quotes */);
-
-          // insert the edited text back into the metadata
+          // insert the text back into the metadata
 
           result = updateTextTable(cliInterface,
                                    objectUID,
                                    textType,
                                    textSubID,
-                                   doubledQuoteMetadataText);
+                                   metadataText);
         }
     }
 
@@ -4172,6 +4383,7 @@ short CmpSeabaseDDL::updateSeabaseMDObjectsTable(
                                          const char * validDef, 
                                          Int32 objOwnerID,
                                          Int32 schemaOwnerID,
+                                         Int64 objectFlags,
                                          Int64 &inUID)
 {
 
@@ -4204,7 +4416,7 @@ short CmpSeabaseDDL::updateSeabaseMDObjectsTable(
   NAString quotedObjName;
   ToQuotedString(quotedObjName, NAString(objName), FALSE);
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', '%s', %d, %d, 0 )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', '%s', %d, %d, %Ld )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName, quotedSchName.data(), quotedObjName.data(),
               objectTypeLit,
@@ -4214,7 +4426,8 @@ short CmpSeabaseDDL::updateSeabaseMDObjectsTable(
               validDef,
               COM_NO_LIT,
               objOwnerID,
-              schemaOwnerID);
+              schemaOwnerID,
+              objectFlags);
   cliRC = cliInterface->executeImmediate(buf);
   
   if (cliRC < 0)
@@ -4291,8 +4504,6 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
                                          const ComTdbVirtTableKeyInfo * keyInfo,
                                          Lng32 numIndexes,
                                          const ComTdbVirtTableIndexInfo * indexInfo,
-                                         Int32 objOwnerID,
-                                         Int32 schemaOwnerID,
                                          Int64 &inUID)
 {
   NABoolean useRWRS = FALSE;
@@ -4301,8 +4512,12 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
       useRWRS = TRUE;
     }
 
+  Int32 objOwnerID = (tableInfo) ? tableInfo->objOwnerID : SUPER_USER;
+  Int32 schemaOwnerID = (tableInfo) ? tableInfo->schemaOwnerID : SUPER_USER;
+  Int64 objectFlags = (tableInfo) ? tableInfo->objectFlags : 0;
+  
   if (updateSeabaseMDObjectsTable(cliInterface,catName,schName,objName,objectType,
-                                  validDef,objOwnerID,schemaOwnerID,inUID))
+                                  validDef,objOwnerID, schemaOwnerID, objectFlags, inUID))
     return -1;
     
   Int64 objUID = inUID;
@@ -4424,19 +4639,20 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
                 }
             }
 
-           ToQuotedString(quotedDefVal, defVal, FALSE);
-
            if (colInfo->defaultClass == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT ||
                colInfo->defaultClass == COM_ALWAYS_DEFAULT_COMPUTED_COLUMN_DEFAULT)
              {
-               computedColumnDefinition = quotedDefVal;
-               quotedDefVal = "";
+               computedColumnDefinition = defVal;
+               // quotedDefVal = "";
                isComputedColumn = TRUE;
              }
            else if (useRWRS)
              {
                quotedDefVal = defVal; // outer quotes not needed when inserting using rowsets
              }
+           else
+             ToQuotedString(quotedDefVal, defVal, FALSE);
+
         } // colInfo->defVal
 
       const char *colClassLit = NULL;
@@ -4583,7 +4799,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
       if (tableInfo)
         {
           isAudited = tableInfo->isAudited;
-          if (tableInfo->rowFormat == 1)
+          if (tableInfo->rowFormat == COM_ALIGNED_FORMAT_TYPE)
             strcpy(rowFormat, COM_ALIGNED_FORMAT_LIT);
           numSaltPartns = tableInfo->numSaltPartns;
           hbaseCreateOptions = tableInfo->hbaseCreateOptions;
@@ -4739,17 +4955,30 @@ short CmpSeabaseDDL::updateSeabaseMDSPJ(
   NAString quotedSpjObjName;
   ToQuotedString(quotedSpjObjName, NAString(routineInfo->routine_name), FALSE);
   Int64 objUID = -1;
+
+  ComTdbVirtTableTableInfo * tableInfo = new(STMTHEAP) ComTdbVirtTableTableInfo[1];
+  tableInfo->tableName = NULL,
+  tableInfo->createTime = 0;
+  tableInfo->redefTime = 0;
+  tableInfo->objUID = 0;
+  tableInfo->objOwnerID = ownerID;
+  tableInfo->schemaOwnerID = schemaOwnerID;
+  tableInfo->isAudited = 1;
+  tableInfo->validDef = 1;
+  tableInfo->hbaseCreateOptions = NULL;
+  tableInfo->numSaltPartns = 0;
+  tableInfo->rowFormat = COM_UNKNOWN_FORMAT_TYPE;
+  tableInfo->objectFlags = 0;
+
   if (updateSeabaseMDTable(cliInterface, 
                            catalogNamePart, schemaNamePart, quotedSpjObjName,
                            COM_USER_DEFINED_ROUTINE_OBJECT,
                            "Y",
-                           NULL,
+                           tableInfo,
                            numCols,
                            colInfo,
                            0, NULL,
                            0, NULL, 
-                           ownerID,
-                           schemaOwnerID,
                            objUID))
     {
       return -1;
@@ -5189,13 +5418,13 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
                                             const NAString &catName, 
                                             const NAString &schName,
                                             const NAString &objName,
-                                            const ComObjectType objectType)
+                                            const ComObjectType objectType,
+                                            NABoolean ddlXns)
 {
 
-  //if DDL_TRANSACTIONS is ON, no need of additional cleanup.
-  //This check is temporary and will be removed once full functionality 
-  //is in.
-  if(CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_ON)
+  //if ddlXns are being used, no need of additional cleanup.
+  //transactional rollback will take care of cleanup.
+  if (ddlXns)
     return;
     
   Lng32 cliRC = 0;
@@ -5231,13 +5460,120 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
   return;
 }
 
+// user created traf stored col fam is of the form:  #<1-byte-num>
+//  1-byte-num is character '2' through '9', or 'a' through 'x'.
+// This allows for 32 column families and
+// is the index of user specified col family stored in naTable.allColFam().
+//
+// Family "#1" is reserved for system default column family name. This is also
+// the name that was used priori to multi-col fam support.
+short CmpSeabaseDDL::genTrafColFam(int index, NAString &trafColFamily)
+{
+  trafColFamily = "#";
+  unsigned char v;
+  
+  if (index >= 0 && index <= 7)
+    v = (unsigned char)('2' + index);
+  else if (index >= 8 && index <= 32)
+    v = (unsigned char)('a' + (index - 8));
+  else
+    return -1; // error
+  
+  trafColFamily.append((char*)&v, 1);
+
+  return 0;
+}
+
+short CmpSeabaseDDL::extractTrafColFam(const NAString &trafColFam, int &index)
+{
+  unsigned char v = (unsigned char)trafColFam.data()[1];
+  index = 0;
+  if (v >= '2' && v <= '9')
+    index = v - '2';
+  else if (v >= 'a' && v <= 'x')
+    index = ((v - 'a') + 8);
+  else
+    return -1;
+ 
+  return 0;
+}
+
+// inColFamily:       user specified column family
+// trafColFamily:     col fam stored in traf tables 
+// userColFamVec:  unique array of user col families
+// trafColFamVec:   unique array of traf col families 
+short CmpSeabaseDDL::processColFamily(NAString &inColFamily,
+                                      NAString &trafColFamily,
+                                      std::vector<NAString> *userColFamVec,
+                                      std::vector<NAString> *trafColFamVec)
+{
+  if (inColFamily.isNull())
+    return 0;
+  
+  if (! userColFamVec)
+    {
+      trafColFamily = inColFamily;
+      return 0;
+    }
+
+  int i = 0;
+  NABoolean found = FALSE;
+  while ((NOT found) && (i < userColFamVec->size()))
+    {
+      NAString &nas = (*userColFamVec)[i];
+      if (nas == inColFamily)
+        {
+          found = TRUE;
+        }
+      else
+        i++;
+    }
+
+  // add this user col fam to user fam array if not already there.
+  if (NOT found)
+    {
+      userColFamVec->push_back(inColFamily);
+    }
+
+  if (inColFamily == SEABASE_DEFAULT_COL_FAMILY)
+    trafColFamily = SEABASE_DEFAULT_COL_FAMILY;
+  else
+    {
+      genTrafColFam(i, trafColFamily);
+    }
+
+  if (trafColFamVec)
+    {
+      found = FALSE;
+      i = 0;
+      while ((NOT found) && (i < trafColFamVec->size()))
+        {
+          NAString &nas = (*trafColFamVec)[i];
+          if (nas == trafColFamily)
+            {
+              found = TRUE;
+            }
+          else
+            i++;
+        }
+
+      if (not found)
+        trafColFamVec->push_back(trafColFamily);
+    }
+
+  return 0;
+}
+
 short CmpSeabaseDDL::buildColInfoArray(
                                        ComObjectType objType,
                                        ElemDDLColDefArray *colArray,
                                        ComTdbVirtTableColumnInfo * colInfoArray,
                                        NABoolean implicitPK,
                                        NABoolean alignedFormat,
-                                       Lng32 *identityColPos,
+                                       Lng32 *identityColPos, // IN_OUT
+                                       std::vector<NAString> *userColFamVec, // IN_OUT
+                                       std::vector<NAString> *trafColFamVec, // IN_OUT
+                                       const char * inColFam, // IN
                                        NAMemory * heap)
 {
   std::vector<NAString> myvector;
@@ -5245,11 +5581,15 @@ short CmpSeabaseDDL::buildColInfoArray(
   if (identityColPos)
     *identityColPos = -1;
 
+  NAString defaultColFam = (inColFam ? inColFam : SEABASE_DEFAULT_COL_FAMILY);
+
+  NABoolean nullColFamFound = FALSE;
   size_t index = 0;
   for (index = 0; index < colArray->entries(); index++)
     {
       ElemDDLColDef *colNode = (*colArray)[index];
       
+      NAString colFamily;
       NAString colName;
       Lng32 datatype, length, precision, scale, dt_start, dt_end, nullable, upshifted;
       ComColumnClass colClass;
@@ -5260,6 +5600,7 @@ short CmpSeabaseDDL::buildColInfoArray(
       Int64 colFlags;
       LobsStorage lobStorage;
       if (getColInfo(colNode,
+                     colFamily,
                      colName,
                      alignedFormat,
                      datatype, length, precision, scale, dt_start, dt_end, upshifted, nullable,
@@ -5321,9 +5662,28 @@ short CmpSeabaseDDL::buildColInfoArray(
           colInfoArray[index].colHeading = head_val;
         }
 
+      if (colFamily.isNull())
+        {
+          colFamily = defaultColFam;
+
+          nullColFamFound = TRUE;
+        }
+      else 
+        {
+          if (alignedFormat)
+            {
+              *CmpCommon::diags() << DgSqlCode(-4223)
+                                  << DgString0("Column Family specification on columns of an aligned format table is");
+              return -1;
+            }
+        }
+
+      NAString storedColFamily;
+      processColFamily(colFamily, storedColFamily, userColFamVec, trafColFamVec);
+
       colInfoArray[index].hbaseColFam = 
-        new((heap ? heap : STMTHEAP)) char[strlen(SEABASE_DEFAULT_COL_FAMILY) +1];
-      strcpy((char*)colInfoArray[index].hbaseColFam, (char*)SEABASE_DEFAULT_COL_FAMILY);
+        new((heap ? heap : STMTHEAP)) char[storedColFamily.length() +1];
+      strcpy((char*)colInfoArray[index].hbaseColFam, (char*)storedColFamily.data());
 
       char idxNumStr[40];
       str_itoa(index+1, idxNumStr);
@@ -5351,6 +5711,13 @@ short CmpSeabaseDDL::buildColInfoArray(
         }
     }
 
+  if (userColFamVec && (userColFamVec->size() > 32))
+    {
+      *CmpCommon::diags() << DgSqlCode(-4225);
+
+      return -1;
+    }
+
   return 0;
 }
 
@@ -5363,9 +5730,11 @@ short CmpSeabaseDDL::buildColInfoArray(
   for (index = 0; index < paramArray->entries(); index++)
     {
       ElemDDLParamDef *paramNode = (*paramArray)[index];
-      ElemDDLColDef colNode(paramNode->getParamName(), 
+      ElemDDLColDef colNode(NULL, &paramNode->getParamName(), 
                             paramNode->getParamDataType(),
-                            NULL, NULL, STMTHEAP);
+                            NULL, STMTHEAP);
+
+      NAString colFamily;
       NAString colName;
       Lng32 datatype, length, precision, scale, dt_start, dt_end, nullable, upshifted;
       ComColumnClass colClass;
@@ -5376,6 +5745,7 @@ short CmpSeabaseDDL::buildColInfoArray(
       Int64 colFlags;
       LobsStorage lobStorage;
       if (getColInfo(&colNode,
+                     colFamily,
                      colName,
                      FALSE,
                      datatype, length, precision, scale, dt_start, dt_end, 
@@ -5496,33 +5866,56 @@ short CmpSeabaseDDL::buildKeyInfoArray(
   return 0;
 }
 
-// textType:   0, view text.  1, constraint text.  2, computed col text.
 // subID: 0, for text that belongs to table. colNumber, for column based text.
 short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
                                      Int64 objUID, 
-                                     Lng32 textType, 
+                                     ComTextType textType, 
                                      Lng32 subID, 
-                                     NAString &text)
+                                     NAString &text,
+                                     NABoolean withDelete)
 {
   Lng32 cliRC = 0;
+  if (withDelete)
+    {
+      // Note: It might be tempting to try an upsert instead of a
+      // delete followed by an insert, but this won't work. It is
+      // possible that the metadata text could shrink and take fewer
+      // rows in its new form than the old. So we do the simple thing
+      // to avoid such complications.
+       cliRC = deleteFromTextTable(cliInterface, objUID, textType, subID);
+      if (cliRC < 0)
+        {
+          return -1;
+        }
+    }
 
-  char * buf = new(STMTHEAP) char[400+TEXTLEN];
   Lng32 textLen = text.length();
+  Lng32 bufLen = (textLen>TEXTLEN ? TEXTLEN : textLen) + 1000;
+  char * buf = new(STMTHEAP) char[bufLen];
   Lng32 numRows = (textLen / TEXTLEN) + 1;
   Lng32 currPos = 0;
   for (Lng32 i = 0; i < numRows; i++)
     {
-      NAString temp = 
-        (i < numRows-1 ? text(currPos, TEXTLEN)
-         : text(currPos, (textLen - currPos)));
+      NAString temp;
 
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %d, %d, %d, 0, '%s')",
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-                  objUID,
-                  textType,
-                  subID,
-                  i,
-                  temp.data());
+      if (i < numRows-1)
+        ToQuotedString(temp, text(currPos, TEXTLEN));
+      else
+        ToQuotedString(temp, text(currPos, (textLen - currPos)));
+
+      if (snprintf(buf, bufLen, "insert into %s.\"%s\".%s values (%ld, %d, %d, %d, 0, %s)",
+                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+                   objUID,
+                   textType,
+                   subID,
+                   i,
+                   temp.data()) >= bufLen)
+        {
+          // we left room in buf for a few hundred quotes, but using
+          // too many could get us here
+          *CmpCommon::diags() << DgSqlCode(-1207);
+          return -1;
+        }
       cliRC = cliInterface->executeImmediate(buf);
       
       if (cliRC < 0)
@@ -5532,6 +5925,28 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
         }
 
       currPos += TEXTLEN;
+    }
+
+  return 0;
+}
+
+short CmpSeabaseDDL::deleteFromTextTable(ExeCliInterface *cliInterface,
+                                         Int64 objUID, 
+                                         ComTextType textType, 
+                                         Lng32 subID)
+{
+  Lng32 cliRC = 0;
+
+  char buf[1000];
+  str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %Ld and text_type = %d and sub_id = %d",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+              objUID, static_cast<int>(textType), subID);
+  cliRC = cliInterface->executeImmediate(buf);
+  
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
     }
 
   return 0;
@@ -5952,61 +6367,103 @@ short CmpSeabaseDDL::validateDivisionByExprForDDL(ItemExpr *divExpr)
 }
 
 short CmpSeabaseDDL::createEncodedKeysBuffer(char** &encodedKeysBuffer,
+                                             int &numSplits,
                                              desc_struct * colDescs, 
                                              desc_struct * keyDescs,
-                                             Lng32 numSplits, Lng32 numKeys, 
-                                             Lng32 keyLength, NABoolean isIndex)
+                                             int numSaltPartitions,
+                                             Lng32 numSaltSplits,
+                                             NAString *splitByClause,
+                                             Lng32 numKeys, 
+                                             Lng32 keyLength,
+                                             NABoolean isIndex)
 {
   encodedKeysBuffer = NULL;
-  
-  if (numSplits <= 0)
+  numSplits = 0;
+
+  if (numSaltSplits <= 0)
     return 0;
 
-    NAString ** inArray = createInArrayForLowOrHighKeys(colDescs, 
-                                                        keyDescs,
-                                                        numKeys,
-                                                        FALSE,
-                                                        isIndex,
-                                                        STMTHEAP ); 
+  // make a list of NAStrings with the default values for start keys
+  NAString ** defaultSplits = createInArrayForLowOrHighKeys(
+       colDescs,
+       keyDescs,
+       numKeys,
+       FALSE,
+       isIndex,
+       STMTHEAP );
+  NAString **splitValuesAsText = new(STMTHEAP) NAString *[numKeys];
+  ElemDDLPartitionList * pPartitionList = NULL;
+  ElemDDLPartitionRange *pPartitionRange = NULL;
 
-    char splitNumCharStr[5];
-    NAString splitNumString;
+      numSplits = numSaltSplits;
 
-    /* HBase creates 1 more split than
-       the number of rows in the split array. In the example below we have a 
-       salt column and an integer column as the key. KeyLength is 4 + 4 = 8.
-       encodedKeysBuffer will have 4 elements, each of length 8. When this
-       buffer is given to HBase through the Java API we get a table with 5 
-       splits and begin/end keys as shown below
-       
-       Start Key                                                     End Key
-       \x00\x00\x00\x01\x00\x00\x00\x00
-       \x00\x00\x00\x01\x00\x00\x00\x00      \x00\x00\x00\x02\x00\x00\x00\x00   
-       \x00\x00\x00\x02\x00\x00\x00\x00      \x00\x00\x00\x03\x00\x00\x00\x00
-       \x00\x00\x00\x03\x00\x00\x00\x00      \x00\x00\x00\x04\x00\x00\x00\x00   
-       \x00\x00\x00\x04\x00\x00\x00\x00 
-    */
-    encodedKeysBuffer = new (STMTHEAP) char*[numSplits];
-    for(int i =0; i < numSplits; i++)
-      encodedKeysBuffer[i] = new (STMTHEAP) char[keyLength];
+      // for salt splits, only the first key column value
+      // is variable, the rest use the default values
+      for (int k=1; k<numKeys; k++)
+        splitValuesAsText[k] = defaultSplits[k];
 
-    inArray[0] = &splitNumString;
-    short retVal = 0;
-    
-    for(Int32 i =0; i < numSplits; i++) {
-      sprintf(splitNumCharStr, "%d", i+1);
-      splitNumString = splitNumCharStr;
+  // allocate the result buffers, numSplits buffers of length keyLength
+  encodedKeysBuffer = new (STMTHEAP) char*[numSplits];
+  for(int i =0; i < numSplits; i++)
+    encodedKeysBuffer[i] = new (STMTHEAP) char[keyLength];
+
+  char splitNumCharStr[10];
+  NAString splitNumString;
+
+  // loop over the splits, HBase will create 1 more region than the
+  // number of rows in the split array
+  for(Int32 i =0; i < numSplits; i++)
+    {
+          /* We are splitting along salt partitions. In the example below we have a 
+             salt column and an integer column as the key. KeyLength is 4 + 4 = 8.
+             encodedKeysBuffer will have 4 elements, each of length 8. When this
+             buffer is given to HBase through the Java API we get a table with 5 
+             regions (4 splits) and begin/end keys as shown below
+
+             Start Key                             End Key
+                                                   \x00\x00\x00\x01\x00\x00\x00\x00
+             \x00\x00\x00\x01\x00\x00\x00\x00      \x00\x00\x00\x02\x00\x00\x00\x00   
+             \x00\x00\x00\x02\x00\x00\x00\x00      \x00\x00\x00\x03\x00\x00\x00\x00
+             \x00\x00\x00\x03\x00\x00\x00\x00      \x00\x00\x00\x04\x00\x00\x00\x00   
+             \x00\x00\x00\x04\x00\x00\x00\x00
+
+             When we have more salt partitions than regions, the salt values
+             will be distributed across the regions as evenly as possible
+          */
+
+          snprintf(splitNumCharStr, sizeof(splitNumCharStr), "%d",
+                  ((i+1)*numSaltPartitions)/(numSaltSplits+1));
+          splitNumString = splitNumCharStr;
+          splitValuesAsText[0] = &splitNumString;
+
+      short retVal = 0;
+
+      // convert the array of NAStrings with textual values into
+      // an encoded binary key buffer
       retVal = encodeKeyValues(colDescs,
                                keyDescs,
-                               inArray, // INPUT
+                               splitValuesAsText, // INPUT
                                isIndex,
+                               FALSE,             // encoding for Min Key
                                encodedKeysBuffer[i],  // OUTPUT
                                STMTHEAP,
                                CmpCommon::diags());
 
       if (retVal)
         return -1;
-    }
+
+      // check whether the encoded keys are ascending
+      if (i > 0 &&
+          memcmp(encodedKeysBuffer[i-1],
+                 encodedKeysBuffer[i],
+                 keyLength) >= 0)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1211)
+                              << DgInt0(i+1);
+          return -1;
+        }
+
+    } // loop over splits
 
   return 0;
 }
@@ -6015,6 +6472,7 @@ short CmpSeabaseDDL::dropSeabaseObject(ExpHbaseInterface * ehi,
                                        const NAString &objName,
                                        NAString &currCatName, NAString &currSchName,
                                        const ComObjectType objType,
+                                       NABoolean ddlXns,
                                        NABoolean dropFromMD,
                                        NABoolean dropFromHbase)
 {
@@ -6043,10 +6501,11 @@ short CmpSeabaseDDL::dropSeabaseObject(ExpHbaseInterface * ehi,
         //   than to do an extra I/O.
         Int32 objOwnerID = 0;
         Int32 schemaOwnerID = 0;
-        Int64 objUID = getObjectUIDandOwners(&cliInterface,
-                                             catalogNamePart.data(), schemaNamePart.data(),
-                                             objectNamePart.data(), objType,
-                                             objOwnerID,schemaOwnerID);
+        Int64 objectFlags = 0;
+        Int64 objUID = getObjectInfo(&cliInterface,
+                                     catalogNamePart.data(), schemaNamePart.data(),
+                                     objectNamePart.data(), objType,
+                                     objOwnerID,schemaOwnerID,objectFlags);
 
         if (objUID < 0 || objOwnerID == 0)
           { //TODO: Internal error?
@@ -6071,7 +6530,8 @@ short CmpSeabaseDDL::dropSeabaseObject(ExpHbaseInterface * ehi,
           HbaseStr hbaseTable;
           hbaseTable.val = (char*)extNameForHbase.data();
           hbaseTable.len = extNameForHbase.length();
-          retcode = dropHbaseTable(ehi, &hbaseTable);
+
+          retcode = dropHbaseTable(ehi, &hbaseTable, FALSE, ddlXns);
           if (retcode < 0)
             {
               return -1;
@@ -6188,12 +6648,13 @@ short CmpSeabaseDDL::updateSeabaseAuths(
   return 0;
 }
 
-void CmpSeabaseDDL::initSeabaseMD()
+void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
   NABoolean xnWasStartedHere = FALSE;
   Int64 schemaUID = -1;  
+  Int64 objectFlags = 0;
 
   Lng32 numTables = sizeof(allMDtablesInfo) / sizeof(MDTableInfo);
 
@@ -6209,6 +6670,8 @@ void CmpSeabaseDDL::initSeabaseMD()
 
   const char* sysCat = ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG);
 
+  ComTdbVirtTableTableInfo * tableInfo = new(STMTHEAP) ComTdbVirtTableTableInfo[1];
+ 
   Lng32 hbaseErrNum = 0;
   NAString hbaseErrStr;
   Lng32 errNum = validateVersions(&ActiveSchemaDB()->getDefaults(), ehi,
@@ -6243,7 +6706,23 @@ void CmpSeabaseDDL::initSeabaseMD()
       deallocEHI(ehi); 
       return;
     }
-    
+
+  // drop and recreate DTM table TDDL.
+  // Do not do this drop/recreate operation under a dtm transaction.
+  // See file core/sqf/src/seatrans/hbase-trx/src/main/java/org/apache/hadoop/hbase/client/transactional/TmDDL.java
+  // Keep the name TRAFODION._DTM_.TDDL and col fam "tddlcf" in sync with
+  // that file.
+  HbaseStr tddlTable;
+  const NAString tddlNAS("TRAFODION._DTM_.TDDL");
+  tddlTable.val = (char*)tddlNAS.data();
+  tddlTable.len = tddlNAS.length();
+  if (ehi->exists(tddlTable) == -1) // exists
+    {
+      dropHbaseTable(ehi, &tddlTable, FALSE, FALSE);
+      createHbaseTable(ehi, &tddlTable, "tddlcf", 
+                       NULL, 0, 0, NULL, FALSE, FALSE);
+    }
+
   // create hbase physical objects
   for (Lng32 i = 0; i < numTables; i++)
     {
@@ -6257,7 +6736,9 @@ void CmpSeabaseDDL::initSeabaseMD()
       hbaseObjectStr += mdti.newName;
       hbaseObject.val = (char*)hbaseObjectStr.data();
       hbaseObject.len = hbaseObjectStr.length();
-      if (createHbaseTable(ehi, &hbaseObject, SEABASE_DEFAULT_COL_FAMILY, NULL, NULL) == -1)
+      if (createHbaseTable(ehi, &hbaseObject, SEABASE_DEFAULT_COL_FAMILY, NULL,
+                           0, 0, NULL,
+                           FALSE, ddlXns) == -1)
         {
           deallocEHI(ehi); 
           return;
@@ -6271,8 +6752,11 @@ void CmpSeabaseDDL::initSeabaseMD()
   deallocEHI(ehi); 
   ehi = NULL;
 
+  // Note that this is not an existing jar file, the class
+  // loader will attempt to load the class from the CLASSPATH if
+  // it can't find this jar
   NAString installJar(getenv("MY_SQROOT"));
-  installJar += "/export/lib/trafodion-UDR-0.7.0.jar";
+  installJar += "/export/lib/trafodion-sql-currversion.jar";
 
   if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
     goto label_error;
@@ -6283,11 +6767,12 @@ void CmpSeabaseDDL::initSeabaseMD()
       goto label_error;
     }
 
+
   // Create Seabase system schema
   if (updateSeabaseMDObjectsTable(&cliInterface,sysCat,SEABASE_SYSTEM_SCHEMA,
                                   SEABASE_SCHEMA_OBJECTNAME,
                                   COM_SHARED_SCHEMA_OBJECT,"Y",SUPER_USER,
-                                  SUPER_USER,schemaUID))
+                                  SUPER_USER,objectFlags,schemaUID))
   {
     goto label_error;
   }
@@ -6297,7 +6782,7 @@ void CmpSeabaseDDL::initSeabaseMD()
   if (updateSeabaseMDObjectsTable(&cliInterface,sysCat,SEABASE_MD_SCHEMA,
                                   SEABASE_SCHEMA_OBJECTNAME,
                                   COM_PRIVATE_SCHEMA_OBJECT,"Y",SUPER_USER,
-                                  SUPER_USER,schemaUID))
+                                  SUPER_USER,objectFlags, schemaUID))
   {
     goto label_error;
   }
@@ -6323,8 +6808,6 @@ void CmpSeabaseDDL::initSeabaseMD()
                                mddi.newKeyInfo,
                                mddi.numIndexes,
                                mddi.indexInfo,
-                               SUPER_USER,
-                               SUPER_USER,
                                objUID))
         {
           goto label_error;
@@ -6341,19 +6824,30 @@ void CmpSeabaseDDL::initSeabaseMD()
       if (NOT mdti.isIndex)
         continue;
 
+      tableInfo->tableName = NULL,
+      tableInfo->createTime = 0;
+      tableInfo->redefTime = 0;
+      tableInfo->objUID = 0;
+      tableInfo->objOwnerID = SUPER_USER;
+      tableInfo->schemaOwnerID = SUPER_USER;
+      tableInfo->isAudited = 1;
+      tableInfo->validDef = 1;
+      tableInfo->hbaseCreateOptions = NULL;
+      tableInfo->numSaltPartns = 0;
+      tableInfo->rowFormat = COM_UNKNOWN_FORMAT_TYPE;
+      tableInfo->objectFlags = 0;
+
       Int64 objUID = -1;
       if (updateSeabaseMDTable(&cliInterface, 
                                sysCat, SEABASE_MD_SCHEMA, mdti.newName,
                                COM_INDEX_OBJECT,
                                "Y",
-                               NULL,
+                               tableInfo,
                                mddi.numNewCols,
                                mddi.newColInfo,
                                mddi.numNewKeys,
                                mddi.newKeyInfo,
                                0, NULL,
-                               SUPER_USER,
-                               SUPER_USER,
                                objUID))
         {
           goto label_error;
@@ -6395,7 +6889,12 @@ void CmpSeabaseDDL::initSeabaseMD()
      goto label_error;
    }
 
- if (createPrivMgrRepos(&cliInterface))
+ if (createPrivMgrRepos(&cliInterface, ddlXns))
+   {
+     goto label_error;
+   }
+
+ if (createSeabaseLibmgr (&cliInterface))
    {
      goto label_error;
    }
@@ -6602,7 +7101,8 @@ short CmpSeabaseDDL::createSchemaObjects(ExeCliInterface *cliInterface)
 //
 //  The diags area is populated with any unexpected errors
 // ---------------------------------------------------------------------------- 
-short CmpSeabaseDDL::createPrivMgrRepos(ExeCliInterface *cliInterface)
+short CmpSeabaseDDL::createPrivMgrRepos(ExeCliInterface *cliInterface,
+                                        NABoolean ddlXns)
 {
   // During install, the customer can choose to enable security features through 
   // an installation option which sets the the environment variable 
@@ -6615,7 +7115,8 @@ short CmpSeabaseDDL::createPrivMgrRepos(ExeCliInterface *cliInterface)
   std::vector<std::string> tablesCreated;
   std::vector<std::string> tablesUpgraded;
 
-  if (initSeabaseAuthorization(cliInterface, tablesCreated, tablesUpgraded) < 0)
+  if (initSeabaseAuthorization(cliInterface, ddlXns,
+                               tablesCreated, tablesUpgraded) < 0)
     return -1;
 
   return 0;
@@ -6883,10 +7384,11 @@ void  CmpSeabaseDDL::alterSeabaseSequence(StmtDDLCreateSequence  * alterSequence
 
   Int32 objectOwnerID = 0;
   Int32 schemaOwnerID = 0;
-  Int64 seqUID = getObjectUIDandOwners(&cliInterface,
-                                       catalogNamePart.data(), schemaNamePart.data(),
-                                       seqNamePart.data(), COM_SEQUENCE_GENERATOR_OBJECT,
-                                       objectOwnerID,schemaOwnerID);
+  Int64 objectFlags = 0;
+  Int64 seqUID = getObjectInfo(&cliInterface,
+                               catalogNamePart.data(), schemaNamePart.data(),
+                               seqNamePart.data(), COM_SEQUENCE_GENERATOR_OBJECT,
+                               objectOwnerID,schemaOwnerID,objectFlags);
   
   // Check for error getting metadata information
   if (seqUID == -1 || objectOwnerID == 0)
@@ -6978,8 +7480,10 @@ void  CmpSeabaseDDL::alterSeabaseSequence(StmtDDLCreateSequence  * alterSequence
 
   CorrName cn(seqNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
   cn.setSpecialType(ExtendedQualName::SG_TABLE);
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn, 
-    NATableDB::REMOVE_FROM_ALL_USERS, COM_SEQUENCE_GENERATOR_OBJECT);
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cn, 
+     ComQiScope::REMOVE_FROM_ALL_USERS, COM_SEQUENCE_GENERATOR_OBJECT,
+     alterSequenceNode->ddlXns(), FALSE);
 
   return;
 }
@@ -7031,10 +7535,11 @@ void  CmpSeabaseDDL::dropSeabaseSequence(StmtDDLDropSequence  * dropSequenceNode
     {
       Int32 objectOwnerID = 0;
       Int32 schemaOwnerID = 0;
-      Int64 seqUID = getObjectUIDandOwners(&cliInterface,
-                                           catalogNamePart.data(), schemaNamePart.data(),
-                                           objectNamePart.data(), COM_SEQUENCE_GENERATOR_OBJECT,
-                                           objectOwnerID,schemaOwnerID);
+      Int64 objectFlags = 0;
+      Int64 seqUID = getObjectInfo(&cliInterface,
+                                   catalogNamePart.data(), schemaNamePart.data(),
+                                   objectNamePart.data(), COM_SEQUENCE_GENERATOR_OBJECT,
+                                   objectOwnerID,schemaOwnerID,objectFlags);
   
       // Check for error getting metadata information
       if (seqUID == -1 || objectOwnerID == 0)
@@ -7078,19 +7583,22 @@ void  CmpSeabaseDDL::dropSeabaseSequence(StmtDDLDropSequence  * dropSequenceNode
 
   CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
   cn.setSpecialType(ExtendedQualName::SG_TABLE);
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
-    NATableDB::REMOVE_FROM_ALL_USERS, COM_SEQUENCE_GENERATOR_OBJECT);
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cn,
+     ComQiScope::REMOVE_FROM_ALL_USERS, COM_SEQUENCE_GENERATOR_OBJECT,
+     dropSequenceNode->ddlXns(), FALSE);
  
   return;
 }
 
-short CmpSeabaseDDL::dropSeabaseObjectsFromHbase(const char * pattern)
+short CmpSeabaseDDL::dropSeabaseObjectsFromHbase(const char * pattern,
+                                                 NABoolean ddlXns)
 {
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)
     return -1;
 
-  short retcode = ehi->dropAll(pattern, FALSE);
+  short retcode = ehi->dropAll(pattern, FALSE, (NOT ddlXns));
 
   if (retcode < 0)
     {
@@ -7106,7 +7614,7 @@ short CmpSeabaseDDL::dropSeabaseObjectsFromHbase(const char * pattern)
   return 0;
 }
 
-void CmpSeabaseDDL::dropSeabaseMD()
+void CmpSeabaseDDL::dropSeabaseMD(NABoolean ddlXns)
 {
   Lng32 cliRC;
   Lng32 retcode = 0;
@@ -7120,10 +7628,8 @@ void CmpSeabaseDDL::dropSeabaseMD()
     }
 
   // drop all objects that match the pattern "TRAFODION.*"
-  dropSeabaseObjectsFromHbase("TRAFODION\\..*");
+  dropSeabaseObjectsFromHbase("TRAFODION\\..*", ddlXns);
 
-  SQL_EXEC_DeleteHbaseJNI();
-  
   //drop all lob data and descriptor files
   dropLOBHdfsFiles();
 
@@ -7172,11 +7678,18 @@ void CmpSeabaseDDL::dropLOBHdfsFiles()
 // ----------------------------------------------------------------------------
 short CmpSeabaseDDL::initSeabaseAuthorization(
   ExeCliInterface *cliInterface,
+  NABoolean ddlXns,
   std::vector<std::string> &tablesCreated,
   std::vector<std::string> &tablesUpgraded)
 { 
   Lng32 cliRC = 0;
   NABoolean xnWasStartedHere = FALSE;
+
+  if (!ComUser::isRootUserID())
+  {
+    *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+    return -1;
+  }
 
   if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
   {
@@ -7203,13 +7716,51 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
 
   if (retcode != STATUS_ERROR)
   {
-    // change authorization status in compiler context and kill arkcmps
-    GetCliGlobals()->currContext()->setAuthStateInCmpContexts(TRUE, TRUE);
-    for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
-      GetCliGlobals()->currContext()->getArkcmp(i)->endConnection();
+     // Commit the transaction so privmgr schema exists in other processes
+     endXnIfStartedHere(cliInterface, xnWasStartedHere, 0);
+     if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+     {
+       SEABASEDDL_INTERNAL_ERROR("initialize authorization");
+       return -1;
+     }
+
+     // change authorization status in compiler context and kill arkcmps
+     GetCliGlobals()->currContext()->setAuthStateInCmpContexts(TRUE, TRUE);
+     for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
+       GetCliGlobals()->currContext()->getArkcmp(i)->endConnection();
+
+     // Adjust hive external table ownership - if someone creates external 
+     // tables before initializing authorization, the external schemas are 
+     // owned by DB__ROOT -> change to DB__HIVEROLE.  
+     // Also if you have initialized authorization and created external tables 
+     // before the fix for JIRA 1895, rerunning initialize authorization will 
+     // fix the metadata inconsistencies
+     if (adjustHiveExternalSchemas(cliInterface) != 0)
+       return -1;
+
+     // If someone initializes trafodion with library management but does not 
+     // initialize authorization, then the role DB__LIBMGRROLE has not been 
+     // granted to LIBMGR procedures.  Do this now
+     cliRC = existsInSeabaseMDTable(cliInterface,
+                                    getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, 
+                                    SEABASE_LIBMGR_LIBRARY,
+                                    COM_LIBRARY_OBJECT, TRUE, FALSE);
+     if (cliRC == 1) // library exists
+       cliRC = grantLibmgrPrivs(cliInterface);
   }
   else
   {
+    // make sure authorization status is FALSE in compiler context 
+    GetCliGlobals()->currContext()->setAuthStateInCmpContexts(FALSE, FALSE);
+    
+    // If any tables were created, go drop them now.
+    // Ignore any returned errors
+    if (NOT ddlXns)
+    {
+      bool doCleanup = true;
+      retcode = privInterface.dropAuthorizationMetadata(doCleanup);
+    }
+
     // Add an error if none yet defined in the diags area
     if ( CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
       SEABASEDDL_INTERNAL_ERROR("initialize authorization");
@@ -7221,10 +7772,18 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
   return cliRC;
 }
 
-void CmpSeabaseDDL::dropSeabaseAuthorization(ExeCliInterface *cliInterface)
+void CmpSeabaseDDL::dropSeabaseAuthorization(
+  ExeCliInterface *cliInterface,
+  NABoolean doCleanup)
 {
   Lng32 cliRC = 0;
   NABoolean xnWasStartedHere = FALSE;
+
+  if (!ComUser::isRootUserID())
+  {
+    *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+    return;
+  }
 
   if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
   {
@@ -7235,7 +7794,7 @@ void CmpSeabaseDDL::dropSeabaseAuthorization(ExeCliInterface *cliInterface)
   NAString privMgrMDLoc;
   CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
   PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), CmpCommon::diags());
-  PrivStatus retcode = privInterface.dropAuthorizationMetadata(); 
+  PrivStatus retcode = privInterface.dropAuthorizationMetadata(doCleanup); 
   if (retcode == STATUS_ERROR)
   {
     cliRC = -1; 
@@ -7417,7 +7976,7 @@ short CmpSeabaseDDL::dropMDTable(ExpHbaseInterface *ehi, const char * tab)
   retcode = existsInHbase(hbaseObject, ehi);
   if (retcode == 1) // exists
     {
-      retcode = dropHbaseTable(ehi, &hbaseObjStr, FALSE);
+      retcode = dropHbaseTable(ehi, &hbaseObjStr, FALSE, FALSE);
       return retcode;
     }
 
@@ -7466,6 +8025,98 @@ void CmpSeabaseDDL::updateVersion()
   if (endXnIfStartedHere(&cliInterface, xnWasStartedHere, cliRC) < 0)
     return;
 
+}
+
+// this method truncates an hbase table by dropping it and then recreating
+// it. Options that were used for the original hbase table are stored in
+// traf metadata and are passed in to hbase during table create.
+// When hbase truncate api is available (HBAse 1.0 and later), then this
+// method will call it instead of drop/recreate.
+// truncate is a non-transactional operation. Caller need to restore back
+// the truncated table if an error occurs.
+short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart, 
+                                        const NAString &schemaNamePart, 
+                                        const NAString &objectNamePart,
+                                        NATable * naTable,
+                                        ExpHbaseInterface * ehi)
+{
+  Lng32 retcode = 0;
+
+  const NAString extNameForHbase = 
+    catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
+
+  HbaseStr hbaseTable;
+  hbaseTable.val = (char*)extNameForHbase.data();
+  hbaseTable.len = extNameForHbase.length();
+
+  // drop this table from hbase
+  retcode = dropHbaseTable(ehi, &hbaseTable, FALSE, FALSE);
+  if (retcode)
+    {
+      deallocEHI(ehi); 
+      
+      processReturn();
+      
+      return -1;
+    }
+
+  // and recreate it.
+  NAFileSet * naf = naTable->getClusteringIndex();
+
+  NAList<HbaseCreateOption*> * hbaseCreateOptions = 
+    naTable->hbaseCreateOptions();
+  Lng32 numSaltPartns = naf->numSaltPartns();
+  Lng32 numSaltSplits = numSaltPartns - 1;
+  Lng32 numSplits = 0;
+  const Lng32 numKeys = naf->getIndexKeyColumns().entries();
+  Lng32 keyLength = naf->getKeyLength();
+  char ** encodedKeysBuffer = NULL;
+
+  const desc_struct * tableDesc = naTable->getTableDesc();
+  desc_struct * colDescs = tableDesc->body.table_desc.columns_desc; 
+  desc_struct * keyDescs = (desc_struct*)naf->getKeysDesc();
+
+  if (createEncodedKeysBuffer(encodedKeysBuffer/*out*/,
+                              numSplits/*out*/,
+                              colDescs, keyDescs,
+                              numSaltPartns,
+                              numSaltSplits,
+                              NULL,
+                              numKeys, 
+                              keyLength,
+                              FALSE))
+    {
+      deallocEHI(ehi); 
+
+      processReturn();
+      
+      return -1;
+    }
+  
+  std::vector<NAString> userColFamVec;
+  std::vector<NAString> trafColFamVec;
+  NAString outColFam;
+  for (int i = 0; i < naTable->allColFams().entries(); i++)
+    {
+      processColFamily(naTable->allColFams()[i], outColFam,
+                       &userColFamVec, &trafColFamVec);
+    } // for
+  
+  retcode = createHbaseTable(ehi, &hbaseTable, trafColFamVec,
+                             hbaseCreateOptions,
+                             numSplits, keyLength, 
+                             encodedKeysBuffer,
+                             FALSE);
+  if (retcode == -1)
+    {
+      deallocEHI(ehi); 
+
+      processReturn();
+
+      return -1;
+    }
+
+  return 0;
 }
 
 void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
@@ -7633,56 +8284,14 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
     }
                                  
   NABoolean asyncDrop = (CmpCommon::getDefault(HBASE_ASYNC_DROP_TABLE) == DF_ON);
-
-  HbaseStr hbaseTable;
-  hbaseTable.val = (char*)extNameForHbase.data();
-  hbaseTable.len = extNameForHbase.length();
-
-  // drop this table from hbase
-  retcode = dropHbaseTable(ehi, &hbaseTable, FALSE);
-  if (retcode)
+  NABoolean ddlXns = ddlExpr->ddlXns();
+  if (truncateHbaseTable(catalogNamePart, schemaNamePart, objectNamePart,
+                         naTable, ehi))
     {
       deallocEHI(ehi); 
       
       processReturn();
       
-      return;
-    }
-
-  // and recreate it.
-  NAFileSet * naf = naTable->getClusteringIndex();
-
-  NAList<HbaseCreateOption*> * hbaseCreateOptions = naTable->hbaseCreateOptions();
-  Lng32 numSaltedPartitions = naTable->numSaltPartns();
-  Lng32 numSplits = (numSaltedPartitions ? numSaltedPartitions - 1 : 0);
-  Lng32 numKeys = naf->getIndexKeyColumns().entries();
-  Lng32 keyLength = naf->getKeyLength();
-  char ** encodedKeysBuffer = NULL;
-
-  const desc_struct * tableDesc = naTable->getTableDesc();
-  desc_struct * colDescs = tableDesc->body.table_desc.columns_desc; 
-  desc_struct * keyDescs = (desc_struct*)naf->getKeysDesc();
-  if (createEncodedKeysBuffer(encodedKeysBuffer,
-                              colDescs, keyDescs, numSplits, numKeys, 
-                              keyLength, FALSE))
-    {
-      deallocEHI(ehi); 
-
-      processReturn();
-      
-      return;
-    }
-  
-  retcode = createHbaseTable(ehi, &hbaseTable, SEABASE_DEFAULT_COL_FAMILY, 
-                             NULL, NULL,
-                             hbaseCreateOptions, numSplits, keyLength, 
-                             encodedKeysBuffer);
-  if (retcode == -1)
-    {
-      deallocEHI(ehi); 
-
-      processReturn();
-
       return;
     }
 
@@ -7709,7 +8318,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
           hbaseIndex.len = extNameForIndex.length();
           
           // drop this table from hbase
-          retcode = dropHbaseTable(ehi, &hbaseIndex, FALSE);
+          retcode = dropHbaseTable(ehi, &hbaseIndex, FALSE, ddlXns);
           if (retcode)
             {
               deallocEHI(ehi); 
@@ -7719,10 +8328,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
               return;
             }
           
-          retcode = createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY, 
-                                     NULL, NULL,
-                                     NULL, 0, 0,
-                                     NULL);
+          retcode = createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY);
           if (retcode == -1)
             {
               deallocEHI(ehi); 
@@ -7781,6 +8387,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
        (ddlExpr->dropRepos()) ||
        (ddlExpr->upgradeRepos()) ||
        (ddlExpr->addSchemaObjects()) ||
+       (ddlExpr->createLibmgr()) ||
        (ddlExpr->updateVersion())))
     ignoreUninitTrafErr = TRUE;
 
@@ -7819,36 +8426,11 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
          }
     }
 
-  NABoolean startXn = TRUE;
-  if ((ddlExpr->dropHbase()) ||
-      (ddlExpr->purgedataHbase()) ||
-      (ddlExpr->initHbase()) ||
-      (ddlExpr->createMDViews()) ||
-      (ddlExpr->dropMDViews()) ||
-      (ddlExpr->initAuthorization()) ||
-      (ddlExpr->dropAuthorization()) ||
-      (ddlExpr->addSeqTable()) ||
-      (ddlExpr->createRepos()) ||
-      (ddlExpr->dropRepos()) ||
-      (ddlExpr->upgradeRepos()) ||
-      (ddlExpr->addSchemaObjects()) ||
-      (ddlExpr->updateVersion()) ||
-      ((ddlNode) &&
-      // TODO: When making ALTER TABLE/INDEX transactional, add cases here for them
-       ((ddlNode->getOperatorType() == DDL_DROP_SCHEMA) ||
-        (ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
-        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_CONSTRAINT_PRIMARY_KEY) ||
-        (ddlNode->getOperatorType() ==  DDL_ALTER_TABLE_ALTER_COLUMN_SET_SG_OPTION) ||
-        (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
-        (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
-        (ddlNode->getOperatorType() == DDL_CREATE_TABLE) ||
-        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
-        (ddlNode->getOperatorType() == DDL_DROP_TABLE))))
-    {
-      // transaction will be started and commited in called methods.
-      startXn = FALSE;
-    }
-
+  NABoolean startXn = FALSE;
+  NABoolean ddlXns = FALSE;
+  if (ddlExpr->ddlXnsInfo(ddlXns, startXn))
+    return -1;
+  
   if (startXn)
     {
       if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
@@ -7857,11 +8439,11 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
 
   if (ddlExpr->initHbase()) 
     {
-      initSeabaseMD();
+      initSeabaseMD(ddlExpr->ddlXns());
     }
   else if (ddlExpr->dropHbase())
     {
-      dropSeabaseMD();
+      dropSeabaseMD(ddlExpr->ddlXns());
     }
   else if (ddlExpr->createMDViews())
     {
@@ -7877,7 +8459,8 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       std::vector<std::string> tablesUpgraded;
 
       // Can ignore status returned, diags area contains any unexpected errors
-      initSeabaseAuthorization(&cliInterface, tablesCreated, tablesUpgraded);
+      initSeabaseAuthorization(&cliInterface, ddlExpr->ddlXns(),
+                               tablesCreated, tablesUpgraded);
 
 #ifdef _DEBUG
       // Do we want to display this information?  Base it on a cqd or envvar?
@@ -7905,7 +8488,11 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
     }
   else if (ddlExpr->dropAuthorization())
     {
-      dropSeabaseAuthorization(&cliInterface);
+      dropSeabaseAuthorization(&cliInterface, FALSE);
+    }
+  else if (ddlExpr->cleanupAuth())
+    {
+       dropSeabaseAuthorization(&cliInterface, TRUE);
     }
   else if (ddlExpr->addSeqTable())
     {
@@ -7914,6 +8501,18 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
   else if (ddlExpr->addSchemaObjects())
     {
       createSeabaseSchemaObjects();
+    }
+  else if (ddlExpr->createLibmgr())
+    {
+      createSeabaseLibmgr(&cliInterface);
+    }
+  else if (ddlExpr->dropLibmgr())
+    {
+      dropSeabaseLibmgr(&cliInterface);
+    }
+  else if (ddlExpr->upgradeLibmgr())
+    {
+      upgradeSeabaseLibmgr(&cliInterface);
     }
   else if (ddlExpr->updateVersion())
     {
@@ -8329,6 +8928,22 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
            alterSeabaseTableAlterIdentityColumn(alterIdentityColNode, 
                                                 currCatName, currSchName);
         }
+       else if (ddlNode->getOperatorType() ==  DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)
+         {
+           StmtDDLAlterTableAlterColumnDatatype * alterColNode =
+             ddlNode->castToStmtDDLNode()->castToStmtDDLAlterTableAlterColumnDatatype();
+           
+           alterSeabaseTableAlterColumnDatatype(alterColNode, 
+                                                currCatName, currSchName);
+        }
+       else if (ddlNode->getOperatorType() ==  DDL_ALTER_TABLE_ALTER_COLUMN_RENAME)
+         {
+           StmtDDLAlterTableAlterColumnRename * alterColNode =
+             ddlNode->castToStmtDDLNode()->castToStmtDDLAlterTableAlterColumnRename();
+           
+           alterSeabaseTableAlterColumnRename(alterColNode, 
+                                              currCatName, currSchName);
+        }
        else if (ddlNode->getOperatorType() ==  DDL_CLEANUP_OBJECTS)
          {
            StmtDDLCleanupObjects * co = 
@@ -8347,10 +8962,28 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
     } // else
   
 label_return:
+
   restoreAllControlsAndFlags();
 
   if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_))
-    cliRC = -1;
+    {
+      cliRC = -1;
+
+      // some ddl stmts are executed as multiple sub statements.
+      // some of those sub stmts may abort the enclosing xn started here
+      // in case of an error, and add an error condition that the xn
+      // was aborted.
+      // remove that error condition from the diags area. But dont do it
+      // if it is the main error.
+      //      if (xnWasStartedHere && 
+      if (CmpCommon::diags()->mainSQLCODE() != -CLI_VALIDATE_TRANSACTION_ERROR)
+        {
+          CollIndex i = 
+            CmpCommon::diags()->returnIndex(-CLI_VALIDATE_TRANSACTION_ERROR);
+          if (i != NULL_COLL_INDEX)
+            CmpCommon::diags()->deleteError(i);
+        }
+    }
 
   if (endXnIfStartedHere(&cliInterface, xnWasStartedHere, cliRC) < 0)
     return -1;
@@ -8543,15 +9176,6 @@ bool CmpSeabaseDDL::dropOneTableorView(
 
 char buf [1000];
 
-Lng32 cliRC = cliInterface.holdAndSetCQD("TRAF_RELOAD_NATABLE_CACHE", "ON");
-
-   if (cliRC < 0)
-   {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      
-      return false;
-   }
-
 bool someObjectsCouldNotBeDropped = false;
 
 char volatileString[20] = {0};
@@ -8576,7 +9200,8 @@ char objectTypeString[20] = {0};
                volatileString,objectTypeString,objectName);
                
 // Save the current parserflags setting
-ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+   ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+   Lng32 cliRC = 0;
 
    try
    {            
@@ -8597,8 +9222,6 @@ ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
    
    if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
       someObjectsCouldNotBeDropped = true;
-
-   cliRC = cliInterface.restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
 
    return someObjectsCouldNotBeDropped;
    
@@ -8730,9 +9353,10 @@ ComObjectType objectType;
       return CAT_INTERNAL_EXCEPTION_ERROR;
    }
 
-// For private schemas, the objects are always owned by the schema owner.   
-   schemaClass = COM_SCHEMA_CLASS_PRIVATE;
+   // For private schemas, the objects are always owned by the schema owner.
+   schemaClass = COM_SCHEMA_CLASS_PRIVATE; 
    objectOwner = schemaOwner;
+
 
 // Root user is authorized for all create operations in private schemas.  For 
 // installations with no authentication, all users are mapped to root database  
@@ -9677,9 +10301,9 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
         compressionOptionSpecified = TRUE;
       
       hbaseOptionsStr += hbaseOption->key();
-      hbaseOptionsStr += "=''";
+      hbaseOptionsStr += "='";
       hbaseOptionsStr += hbaseOption->val();
-      hbaseOptionsStr += "''";
+      hbaseOptionsStr += "'";
 
       hbaseOptionsStr += "|";
     }
@@ -9719,7 +10343,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
                HBASE_SALTED_TABLE_MAX_FILE_SIZE) == TRUE)
       {
         numHbaseOptions += 1;
-        snprintf(fileSizeOption,100,"MAX_FILESIZE=''%ld''|", maxFileSizeInt);
+        snprintf(fileSizeOption,100,"MAX_FILESIZE='%ld'|", maxFileSizeInt);
         hbaseOptionsStr += fileSizeOption;
       }
     }
@@ -9736,9 +10360,9 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
                HBASE_SALTED_TABLE_SET_SPLIT_POLICY) == TRUE)
       {
         numHbaseOptions += 1;
-        hbaseOptionsStr += "SPLIT_POLICY=''";
+        hbaseOptionsStr += "SPLIT_POLICY='";
         hbaseOptionsStr += saltedTableSplitPolicy;
-        hbaseOptionsStr += "''|";
+        hbaseOptionsStr += "'|";
       }
     }  
   }
@@ -9760,7 +10384,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
           (HBASE_DATA_BLOCK_ENCODING_OPTION) == TRUE)
         {
           numHbaseOptions += 1;
-          sprintf(optionStr, "DATA_BLOCK_ENCODING=''%s''|", dataBlockEncoding.data());
+          sprintf(optionStr, "DATA_BLOCK_ENCODING='%s'|", dataBlockEncoding.data());
           hbaseOptionsStr += optionStr;
         }
     }
@@ -9775,7 +10399,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
           (HBASE_COMPRESSION_OPTION) == TRUE)
         {
           numHbaseOptions += 1;
-          sprintf(optionStr, "COMPRESSION=''%s''|", compression.data());
+          sprintf(optionStr, "COMPRESSION='%s'|", compression.data());
           hbaseOptionsStr += optionStr;
         }
     }

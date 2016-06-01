@@ -1,22 +1,26 @@
 #!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
+#====================================================
 # Trafodion Configuration File
 # This file contains default values for the installer.
 
@@ -24,31 +28,26 @@
 # and then specify this file on the run line of trafodion_install.
 # Example:
 # ./trafodion_install --config_file <Trafodion-config-file>
+# WARNING: This mode is for advanced users! 
 #
-# NOTE: most parameters specified through the config file are not checked
-#       for validity.  Please make sure all values supplied here are correct.
-#       It is suggested the the user first run the trafodion_install script and
-#       answer all the prompts, then take all the values from
-#       /etc/trafodion/trafodion_config and copy them into a copy of this file.
 #=====================================================
 
 
 #=====================================================
+#Must be set to 'true' if on a SUSE linux system. If on another type of system
+#this must be set to false. 
+
+export SUSE_LINUX="false"
 
 # The working directory where Trafodion installer untars files, etc.
 # do not change this unless you really know what you are doing
 export TRAF_WORKDIR="/usr/lib/trafodion"
 
-# temporary directory to untar the Trafodion package to
-# this is typically $TRAF_WORKDIR/<package-filename>
-# i.e. $TRAF_WORKDIR/trafodion-1.0.0  or $TRAF_WORKDIR/trafodion-20150116_0830
-export UNTAR_DIR="$TRAF_WORKDIR/<package-filename>"
-
 # This is the directory where the installer scripts were untarred to
-export LOCAL_WORKDIR="$HOME/installer"
+export LOCAL_WORKDIR="$HOME/<downloadsDirectory>/installer"
 
 # The maximum number of dcs servers, i.e. client connections
-export DCS_SERVERS_PARM="2"
+export DCS_SERVERS_PARM="8"
 
 # "true" if this is an upgrade
 export UPGRADE_TRAF="false"
@@ -59,15 +58,9 @@ export TRAF_USER="trafodion"
 # Trafodion userid's password
 export TRAF_USER_PASSWORD="traf123"
 
-# the Trafodion version
-export TRAF_VERSION="1.0.0"
-
-# the HBase java version
-# NOTE: this is NOT the same as what you get with a java -version command
-export JAVA_VERSION="1.7"
-
 # a blank separated list of nodes in your cluster
 # node names should include full domain names
+#This can not be left blank!
 export NODE_LIST=""
 
 # count of nodes in node list
@@ -81,6 +74,10 @@ export MY_NODES=""
 # i.e. /opt/home, not /opt/home/trafodion
 export HOME_DIR="/home"
 
+#JAVA HOME must be a JDK. Must include FULL Path. Must be 1.7.0_65 or higher.
+
+export JAVA_HOME=""
+
 # If your machine doesn't have external internet access then you must
 # specify the location of the EPEL rpm, otherwise leave blank and it
 # will be installed from the internet
@@ -89,19 +86,17 @@ export EPEL_RPM=""
 # full path of the Trafodion package tar file
 export TRAF_PACKAGE=""
 
-# if TRAF_PACKAGE wasn't specified then these two values must be specified
-# TRAF_BUILD is the trafodion_server tar file
-# DCS_BUILD is the DCS tar file
-export TRAF_BUILD=""
-export DCS_BUILD=""
+#Default value set to "Y" if using a build BEFORE 05/11/2016 set this to "N"
+export ONE_TAR_INSTALL="Y"
 
 # Either "cloudera" or "hortonworks" (all lowercase)
 export HADOOP_TYPE=""
 
-# The URL for the Hadoop distro's REST API (i.e. node1.hp.com:8080)
+# The URL for Cloudera/Hortonworks REST API (i.e. http://node1.hp.com:8080)
+# Include http or https
 export URL=""
 
-# Hadoop UI admin's userid and password
+# Cloudera/Hortonworks UI admin's userid and password
 export ADMIN="admin"
 export PASSWORD="admin"
 
@@ -118,11 +113,12 @@ export HBASE_GROUP="hbase"
 # The hadoop HBase service name
 export HBASE="hbase"
 
-# the version string from hbase shell
-export hbaseVersion="0.98.0.2.1.1.0"
-
-# full path of where to isntall Trafodion to
-export SQ_ROOT="$HOME_DIR/$TRAF_USER/traf"
+# full path of where to install Trafodion to
+# On an upgrade, it is recommend to choose a different directory. 
+# First time install : /home/trafodion/traf
+# On Upgrade: /home/trafodion/traf_<date>
+# By doing this the previous version will remain and allow for an easier rollback.
+export SQ_ROOT=""
 
 # Start Trafodion after install completes
 export START="N"
@@ -131,6 +127,7 @@ export START="N"
 export INIT_TRAFODION="N"
 
 # full path to the sqconfig file
+# Default is to leave as is and this file will be created.
 export SQCONFIG=""
 
 export CONFIG_COMPLETE="true"
@@ -140,4 +137,32 @@ export LDAP_SECURITY="N"
 
 #Name of LDAP Config file
 export LDAP_AUTH_FILE="traf_authentication_config_${HOSTNAME}"
+
+#HA configuraton enabled, if want to enable set to true and add valid floating IP address.
+export ENABLE_HA="false"
+
+#Floating IP address for HA configuration only if ENABLE_HA is set to true
+export FLOATING_IP=""
+
+#If HA enabled the set the DCS Backup nodes
+export BACKUP_DCS_NODES=""
+
+
+#If HA enabled then set INTERFACE to match the interface of the floating ip
+export INTERFACE=""
+
+#Define if cloud environment is being used, if specified "Y" for CLOUD_CONFIG
+#the please define the type of cloud (CLOUD_TYPE) being used
+export CLOUD_CONFIG="N"
+
+#Define the type of cloud being used(1: AWS(Amazon cloud), 2: OpenStack, 3: Other)
+export CLOUD_TYPE=""
+#Based of cloud type, then set any of set one of following to true
+export AWS_CLOUD=""
+export OPEN_STACK=""
+export CLOUD_OTHER=""
+
+#Specify the node name of primary DcsMaster node, Default is the host where
+#dcs start script is run
+export DCS_PRIMARY_MASTER_NODE=`hostname -f`
 

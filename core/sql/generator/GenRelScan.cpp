@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -191,15 +194,18 @@ short FileScan::codeGen(Generator * generator)
 }
 
 int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
-						  const NAType &givenType,
-						  ItemExpr *&asciiValue,
-						  ItemExpr *&castValue)
+                                           const NAType &givenType,
+                                           ItemExpr *&asciiValue,
+                                           ItemExpr *&castValue,
+                                           NABoolean srcIsInt32Varchar)
 {
   int result = 0;
   asciiValue = NULL;
   castValue = NULL;
   CollHeap * h = generator->wHeap();
-
+  bool needTranslate = FALSE;
+  UInt32 hiveScanMode = CmpCommon::getDefaultLong(HIVE_SCAN_SPECIAL_MODE);
+ 
   // if this is an upshifted datatype, remove the upshift attr.
   // We dont want to upshift data during retrievals or while building keys.
   // Data is only upshifted during insert or updates.
@@ -211,31 +217,59 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
       ((CharType*)newGivenType)->setUpshifted(FALSE);
     }
 
+  if (newGivenType->getTypeQualifier() == NA_CHARACTER_TYPE &&
+      (CmpCommon::getDefaultString(HIVE_FILE_CHARSET) == "GBK" || 
+       CmpCommon::getDefaultString(HIVE_FILE_CHARSET) == "gbk") 
+      && CmpCommon::getDefaultString(HIVE_DEFAULT_CHARSET) == "UTF8" )
+    needTranslate = TRUE;
+  
   // source ascii row is a varchar where the data is a pointer to the source data
   // in the hdfs buffer.
   NAType *asciiType = NULL;
   
   if (DFS2REC::isDoubleCharacter(newGivenType->getFSDatatype()))
-    asciiType =  new (h) SQLVarChar(sizeof(Int64)/2, newGivenType->supportsSQLnull(),
-				    FALSE, FALSE, newGivenType->getCharSet());
-  else
-    asciiType = new (h) SQLVarChar(sizeof(Int64), newGivenType->supportsSQLnull());
-
-  if (asciiType)
     {
-      asciiValue = new (h) NATypeToItem(asciiType->newCopy(h));
-
-      castValue = new(h) Cast(asciiValue, newGivenType); 
-
-      if (castValue)
-	{
-	  ((Cast*)castValue)->setSrcIsVarcharPtr(TRUE);
-
-	  if (newGivenType->getTypeQualifier() == NA_INTERVAL_TYPE)
-	    ((Cast*)castValue)->setAllowSignInInterval(TRUE);
-	}
-
+      asciiType =  
+        new (h) SQLVarChar(sizeof(Int64)/2, newGivenType->supportsSQLnull(),
+                           FALSE, FALSE, newGivenType->getCharSet(),
+                           CharInfo::DefaultCollation,
+                           CharInfo::COERCIBLE,
+                           CharInfo::UnknownCharSet,
+                           (srcIsInt32Varchar ? sizeof(Int32) : 0));
     }
+  // set the source charset to GBK if HIVE_FILE_CHARSET is set
+  // HIVE_FILE_CHARSET can only be empty or GBK
+  else if (  needTranslate == TRUE )
+    {
+      asciiType =  
+        new (h) SQLVarChar(sizeof(Int64), newGivenType->supportsSQLnull(),
+                           FALSE, FALSE, CharInfo::GBK,
+                           CharInfo::DefaultCollation,
+                           CharInfo::COERCIBLE,
+                           CharInfo::UnknownCharSet,
+                           (srcIsInt32Varchar ? sizeof(Int32) : 0));
+    }
+  else
+    {
+      asciiType = 
+        new (h) SQLVarChar(sizeof(Int64), newGivenType->supportsSQLnull(),
+                           FALSE, FALSE,
+                           CharInfo::DefaultCharSet,
+                           CharInfo::DefaultCollation,
+                           CharInfo::COERCIBLE,
+                           CharInfo::UnknownCharSet,
+                           (srcIsInt32Varchar ? sizeof(Int32) : 0));
+    }
+
+  asciiValue = new (h) NATypeToItem(asciiType->newCopy(h));
+  castValue = new(h) Cast(asciiValue, newGivenType);
+  ((Cast*)castValue)->setSrcIsVarcharPtr(TRUE);
+
+  if(( hiveScanMode & 2 ) >0 ) 
+    ((Cast*)castValue)->setConvertNullWhenError(TRUE);
+  
+  if (newGivenType->getTypeQualifier() == NA_INTERVAL_TYPE)
+    ((Cast*)castValue)->setAllowSignInInterval(TRUE);
 
   if (castValue && asciiValue)
     result = 1;
@@ -299,7 +333,7 @@ int HbaseAccess::createAsciiColAndCastExpr2(Generator * generator,
   asciiValue = new (h) NATypeToItem(newGivenType->newCopy(h));
   castValue = new(h) Cast(asciiValue, newGivenType); 
 
-  if (HbaseAccess::isEncodingNeededForSerialization(colNode))
+  if ((!alignedFormat) && HbaseAccess::isEncodingNeededForSerialization(colNode))
     {
       castValue = new(generator->wHeap()) CompDecode(castValue, 
 						     newGivenType->newCopy(h),
@@ -326,29 +360,16 @@ short FileScan::genForTextAndSeq(Generator * generator,
   const NABoolean isSequenceFile = hTabStats->isSequenceFile();
 
   HiveFileIterator hfi;
-  NABoolean firstFile = TRUE;
   hdfsPort = 0;
   hdfsHostName = NULL;
   
-  while (firstFile && getHiveSearchKey()->getNextFile(hfi))
-    {
-      const HHDFSFileStats * hFileStats = hfi.getFileStats();
-      if (firstFile)
-        {
-          // determine connection info (host and port) from the first file
-          NAString dummy, hostName;
-          NABoolean result;
-          result = ((HHDFSTableStats*)hTabStats)->splitLocation
-            (hFileStats->getFileName().data(), hostName, hdfsPort, dummy) ;
-          
-          GenAssert(result, "Invalid Hive directory name");
-
-          hdfsHostName = 
-            space->AllocateAndCopyToAlignedSpace(hostName, 0);
-
-          firstFile = FALSE;
-        }
-    }
+  // determine host and port from dir name
+  NAString dummy, hostName;
+  NABoolean result = ((HHDFSTableStats*)hTabStats)->splitLocation
+    (hTabStats->tableDir().data(), hostName, hdfsPort, dummy) ;
+  GenAssert(result, "Invalid Hive directory name");
+  hdfsHostName = 
+        space->AllocateAndCopyToAlignedSpace(hostName, 0);
 
   hdfsFileInfoList = new(space) Queue(space);
   hdfsFileRangeBeginList = new(space) Queue(space);
@@ -786,8 +807,11 @@ short FileScan::codeGenForHive(Generator * generator)
   ULng32 asciiRowLen; 
   ExpTupleDesc * asciiTupleDesc = 0;
 
+  const Int32 origTuppIndex = 5;
+  ExpTupleDesc * origTupleDesc = 0;
+
   ex_cri_desc * work_cri_desc = NULL;
-  work_cri_desc = new(space) ex_cri_desc(5, space);
+  work_cri_desc = new(space) ex_cri_desc(6, space);
   returned_desc = new(space) ex_cri_desc(given_desc->noTuples() + 1, space);
 
   ExpTupleDesc::TupleDataFormat asciiRowFormat = ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
@@ -813,6 +837,7 @@ short FileScan::codeGenForHive(Generator * generator)
   //   by making sure that the output ValueIds created during
   //   binding refer to the outputs of the move expression
 
+  ValueIdList origExprVids;
   for (int ii = 0; ii < (int)hdfsVals.entries();ii++)
   {
     if (convertSkipList[ii] == 0)
@@ -825,9 +850,10 @@ short FileScan::codeGenForHive(Generator * generator)
 
     res = HbaseAccess::createAsciiColAndCastExpr(
 				    generator,        // for heap
-				    givenType,         // [IN] Actual type of HDFS column
-				    asciiValue,         // [OUT] Returned expression for ascii rep.
-				    castValue        // [OUT] Returned expression for binary rep.
+				    givenType,        // [IN] Actual type of HDFS column
+				    asciiValue,       // [OUT] Returned expression for ascii rep.
+				    castValue,        // [OUT] Returned expression for binary rep.
+                                    TRUE // max src data len is sizeof(Int32)
                                     );
      
     GenAssert(res == 1 && asciiValue != NULL && castValue != NULL,
@@ -837,16 +863,25 @@ short FileScan::codeGenForHive(Generator * generator)
     asciiVids.insert(asciiValue->getValueId());
       
     castValue->bindNode(generator->getBindWA());
+
     if (convertSkipList[ii] == 1 || convertSkipList[ii] == 2)
       executorPredCastVids.insert(castValue->getValueId());
     else
       projectExprOnlyCastVids.insert(castValue->getValueId());
+
+    origExprVids.insert(hdfsVals[ii]);
 
     orcRowLen += sizeof(Lng32);
     orcRowLen += givenType.getDisplayLength();
 
   } // for (ii = 0; ii < hdfsVals; ii++)
     
+
+  UInt32 hiveScanMode = CmpCommon::getDefaultLong(HIVE_SCAN_SPECIAL_MODE);
+  //enhance pCode to handle this mode in the future
+  //this is for JIRA 1920
+  if((hiveScanMode & 2 ) > 0)   //if HIVE_SCAN_SPECIAL_MODE is 2, disable pCode
+    exp_gen->setPCodeMode(ex_expr::PCODE_NONE);
 
   // Add ascii columns to the MapTable. After this call the MapTable
   // has ascii values in the work ATP at index asciiTuppIndex.
@@ -861,6 +896,19 @@ short FileScan::codeGenForHive(Generator * generator)
     
   // Add the tuple descriptor for reply values to the work ATP
   work_cri_desc->setTupleDescriptor(asciiTuppIndex, asciiTupleDesc);
+  
+  ULng32 origRowLen; 
+  exp_gen->processValIdList(
+       origExprVids,                             // [IN] ValueIdList
+       asciiRowFormat,                        // [IN] tuple data format
+       origRowLen,                           // [OUT] tuple length 
+       work_atp,                              // [IN] atp number
+       origTuppIndex,                        // [IN] index into atp
+       &origTupleDesc,                       // [optional OUT] tuple desc
+       ExpTupleDesc::LONG_FORMAT);             // [optional IN] desc format
+    
+  // Add the tuple descriptor for reply values to the work ATP
+  work_cri_desc->setTupleDescriptor(origTuppIndex, origTupleDesc);
   
   ExpTupleDesc * tuple_desc = 0;
   ExpTupleDesc * hdfs_desc = 0;
@@ -1069,7 +1117,11 @@ short FileScan::codeGenForHive(Generator * generator)
     type = (short)ComTdbHdfsScan::SEQUENCE_;
   else if (hTabStats->isOrcFile())
     type = (short)ComTdbHdfsScan::ORC_;
-
+  else {
+    *CmpCommon::diags() << DgSqlCode(-7002);
+      GenExit();
+    return -1;
+  }
   ULng32 buffersize = getDefault(GEN_DPSO_BUFFER_SIZE);
   queue_index upqueuelength = (queue_index)getDefault(GEN_DPSO_SIZE_UP);
   queue_index downqueuelength = (queue_index)getDefault(GEN_DPSO_SIZE_DOWN);
@@ -1113,6 +1165,41 @@ if (hTabStats->isOrcFile())
   char * tablename = 
     space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
 
+  char * nullFormat = NULL;
+  if (hTabStats->getNullFormat())
+    {
+      nullFormat = 
+        space->allocateAndCopyToAlignedSpace(hTabStats->getNullFormat(),
+                                             strlen(hTabStats->getNullFormat()),
+                                             0);
+    }
+
+  // info needed to validate hdfs file structs
+  char * hdfsRootDir = NULL;
+  Int64 modTS = -1;
+  Lng32 numOfPartLevels = -1;
+  Queue * hdfsDirsToCheck = NULL;
+  if (CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON)
+    {
+      hdfsRootDir =
+        space->allocateAndCopyToAlignedSpace(hTabStats->tableDir().data(),
+                                             hTabStats->tableDir().length(),
+                                             0);
+      modTS = hTabStats->getModificationTS();
+      numOfPartLevels = hTabStats->numOfPartCols();
+
+      // if specific directories are to checked based on the query struct
+      // (for example, when certain partitions are explicitly specified), 
+      // add them to hdfsDirsToCheck.
+      // At runtime, only these dirs will be checked for data modification.
+      // ** TBD **
+
+      // Right now, timestamp info is not being generated correctly for
+      // partitioned files. Skip data mod check for them.
+      if (numOfPartLevels > 0)
+        hdfsRootDir = NULL;
+    }
+
   // create hdfsscan_tdb
   ComTdbHdfsScan *hdfsscan_tdb = new(space) 
     ComTdbHdfsScan(
@@ -1131,6 +1218,7 @@ if (hTabStats->isOrcFile())
 		   hdfsFileRangeNumList,
 		   hTabStats->getRecordTerminator(),  // recordDelimiter
 		   hTabStats->getFieldTerminator(),   // columnDelimiter,
+                   nullFormat,
 		   hdfsBufSize,
                    rangeTailIOSize,
 		   executorPredColsRecLength,
@@ -1141,6 +1229,7 @@ if (hTabStats->isOrcFile())
 		   asciiTuppIndex,
 		   executorPredTuppIndex,
                    projectOnlyTuppIndex,
+                   origTuppIndex,
 		   work_cri_desc,
 		   given_desc,
 		   returned_desc,
@@ -1151,7 +1240,9 @@ if (hTabStats->isOrcFile())
 		   buffersize,
 		   errCountTab,
 		   logLocation,
-		   errCountRowId 
+		   errCountRowId,
+
+                   hdfsRootDir, modTS, numOfPartLevels, hdfsDirsToCheck
 		   );
 
   generator->initTdbFields(hdfsscan_tdb);
@@ -1159,6 +1250,8 @@ if (hTabStats->isOrcFile())
   hdfsscan_tdb->setUseCursorMulti(useCursorMulti);
 
   hdfsscan_tdb->setDoSplitFileOpt(doSplitFileOpt);
+
+  hdfsscan_tdb->setHiveScanMode(hiveScanMode);
 
   NABoolean hdfsPrefetch = FALSE;
   if (CmpCommon::getDefault(HDFS_PREFETCH) == DF_ON)
@@ -1263,8 +1356,19 @@ NABoolean HbaseAccess::validateVirtualTableDesc(NATable * naTable)
   return TRUE;
 }
 
+void populateRangeDescForBeginKey(char* buf, Int32 len, struct desc_struct* target, NAMemory* heap)
+{  
+   target->header.nodetype = DESC_HBASE_RANGE_REGION_TYPE;
+   target->body.hbase_region_desc.beginKey = buf;
+   target->body.hbase_region_desc.beginKeyLen = len;
+   target->body.hbase_region_desc.endKey = NULL;
+   target->body.hbase_region_desc.endKeyLen = 0;   
+}
+
+void populateRegionDescAsRANGE(char* buf, Int32 len, struct desc_struct* target, NAMemory*);
+
 desc_struct *HbaseAccess::createVirtualTableDesc(const char * name,
-						 NABoolean isRW, NABoolean isCW)
+						 NABoolean isRW, NABoolean isCW, NAArray<HbaseStr>* beginKeys)
 {
   desc_struct * table_desc = NULL;
 
@@ -1286,6 +1390,10 @@ desc_struct *HbaseAccess::createVirtualTableDesc(const char * name,
 
   if (table_desc)
     {
+       struct desc_struct* head = assembleDescs(beginKeys, populateRangeDescForBeginKey, STMTHEAP);
+
+      ((table_desc_struct*)table_desc)->hbase_regionkey_desc = head;
+
       Lng32 v1 = 
 	(Lng32) CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_NAME_LENGTH);
       Lng32 v2 = 
@@ -2172,8 +2280,7 @@ short HbaseAccess::codeGen(Generator * generator)
 
   returnedDesc = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
 
-  ExpTupleDesc::TupleDataFormat hbaseRowFormat = 
-    ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
+  ExpTupleDesc::TupleDataFormat hbaseRowFormat ;
   ValueIdList asciiVids;
   ValueIdList executorPredCastVids;
   ValueIdList convertExprCastVids;
@@ -2182,6 +2289,16 @@ short HbaseAccess::codeGen(Generator * generator)
   NABoolean hasAddedColumns = FALSE;
   if (getTableDesc()->getNATable()->hasAddedColumn())
     hasAddedColumns = TRUE;
+
+  NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+
+  // If CIF is not OFF use aligned format, except when table is
+  // not aligned and it has added columns. Support for added columns
+  // in not aligned tables is doable, but is turned off now due to
+  // this case causing a regression failure.
+  hbaseRowFormat = ((hasAddedColumns && !isAlignedFormat) || 
+		    (CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT) == DF_OFF )) ? 
+    ExpTupleDesc::SQLARK_EXPLODED_FORMAT : ExpTupleDesc::SQLMX_ALIGNED_FORMAT ;
 
   // build key information
   keyRangeGen * keyInfo = 0;
@@ -2200,10 +2317,44 @@ short HbaseAccess::codeGen(Generator * generator)
 		       ExpTupleDesc::SQLMX_KEY_FORMAT);
 
   const ValueIdList &retColumnList = retColRefSet_; 
+  // Always get the index name -- it will be the base tablename for
+  // primary access if it is trafodion table.
+  char * tablename = NULL;
+  char * snapshotName = NULL;
+  LatestSnpSupportEnum  latestSnpSupport=  latest_snp_supported;
+  if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
+      (getTableDesc()->getNATable()->isHbaseCellTable()))
+    {
+      tablename =
+        space->AllocateAndCopyToAlignedSpace(
+                                             GenGetQualifiedName(getTableName().getQualifiedNameObj().getObjectName()), 0);
+      latestSnpSupport = latest_snp_not_trafodion_table;
+    }
+  else
+    {
+      if (getIndexDesc() && getIndexDesc()->getNAFileSet())
+      {
+         tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
+         if (getIndexDesc()->isClusteringIndex())
+         {
+            //base table
+            snapshotName = (char*)getTableDesc()->getNATable()->getSnapshotName() ;
+           if (snapshotName == NULL)
+             latestSnpSupport = latest_snp_no_snapshot_available;
+          }
+          else
+            latestSnpSupport = latest_snp_index_table;
+      }
+    }
+
+  if (! tablename) 
+     tablename =
+        space->AllocateAndCopyToAlignedSpace(
+                                           GenGetQualifiedName(getTableName()), 0);
 
   ValueIdList columnList;
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
-      (NOT getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+      (NOT isAlignedFormat))
     sortValues(retColumnList, columnList,
 	       (getIndexDesc()->getNAFileSet()->getKeytag() != 0));
   else
@@ -2266,7 +2417,7 @@ short HbaseAccess::codeGen(Generator * generator)
 				     givenType,         // [IN] Actual type of HDFS column
 				     asciiValue,         // [OUT] Returned expression for ascii rep.
 				     castValue,        // [OUT] Returned expression for binary rep.
-                                     getTableDesc()->getNATable()->isSQLMXAlignedTable()
+                                     isAlignedFormat
 				     );
      
      GenAssert(res == 1 && castValue != NULL,
@@ -2312,7 +2463,7 @@ short HbaseAccess::codeGen(Generator * generator)
   ValueIdList encodedKeyExprVids(encodedKeyExprVidArr);
 
   ExpTupleDesc::TupleDataFormat asciiRowFormat = 
-    (getTableDesc()->getNATable()->isSQLMXAlignedTable() ?
+    (isAlignedFormat ?
      ExpTupleDesc::SQLMX_ALIGNED_FORMAT :
      ExpTupleDesc::SQLARK_EXPLODED_FORMAT);
 
@@ -2448,7 +2599,7 @@ short HbaseAccess::codeGen(Generator * generator)
 
   Queue * listOfFetchedColNames = NULL;
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
-      (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+      (isAlignedFormat))
     {
       listOfFetchedColNames = new(space) Queue(space);
 
@@ -2571,14 +2722,15 @@ short HbaseAccess::codeGen(Generator * generator)
 					 FALSE,                                // [IN] add convert nodes?
 					 work_atp,                            // [IN] target atp number
 					 hbaseFilterValTuppIndex,    // [IN] target tupp index
-					 hbaseRowFormat,                        // [IN] target tuple format
+					 asciiRowFormat,                        // [IN] target tuple format
 					 hbaseFilterValRowLen,             // [OUT] target tuple length
 					 &hbaseFilterValExpr,                // [OUT] move expression
 					 &hbaseFilterValTupleDesc,                     // [optional OUT] target tuple desc
 					 ExpTupleDesc::LONG_FORMAT);     // [optional IN] target desc format
 
       work_cri_desc->setTupleDescriptor(hbaseFilterValTuppIndex, hbaseFilterValTupleDesc);
-
+    }
+  if (!hbaseFilterColVIDlist_.isEmpty()){// with unary operator we can have column without value
       genListOfColNames(generator, getIndexDesc(), hbaseFilterColVIDlist_,
 			hbaseFilterColNames);
 
@@ -2659,42 +2811,6 @@ short HbaseAccess::codeGen(Generator * generator)
   //
   buffersize = buffersize > cbuffersize ? buffersize : cbuffersize;
 
-
-  // Always get the index name -- it will be the base tablename for
-  // primary access.
-  char * tablename = NULL;
-  char * snapshotName = NULL;
-  LatestSnpSupportEnum  latestSnpSupport=  latest_snp_supported;
-  if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
-      (getTableDesc()->getNATable()->isHbaseCellTable()))
-    {
-      tablename = 
-	space->AllocateAndCopyToAlignedSpace(
-					     GenGetQualifiedName(getTableName().getQualifiedNameObj().getObjectName()), 0);
-      latestSnpSupport = latest_snp_not_trafodion_table;
-    }
-  else
-    {
-      if (getIndexDesc() && getIndexDesc()->getNAFileSet())
-      {
-         tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
-         if (getIndexDesc()->isClusteringIndex())
-         {
-            //base table
-            snapshotName = (char*)getTableDesc()->getNATable()->getSnapshotName() ;
-           if (snapshotName == NULL)
-             latestSnpSupport = latest_snp_no_snapshot_available;
-          }
-          else
-            latestSnpSupport = latest_snp_index_table;
-      }
-    }
-
-  if (! tablename)
-    tablename = 
-      space->AllocateAndCopyToAlignedSpace(
-					   GenGetQualifiedName(getTableName()), 0);
-  
   Int32 computedHBaseRowSizeFromMetaData = getTableDesc()->getNATable()->computeHBaseRowSizeFromMetaData();
   if (computedHBaseRowSizeFromMetaData * getEstRowsAccessed().getValue()  <
                 getDefault(TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD)*1024*1024)
@@ -2763,6 +2879,18 @@ short HbaseAccess::codeGen(Generator * generator)
                                   hbpa, samplePercent()) ;
   generator->setHBaseCacheBlocks(computedHBaseRowSizeFromMetaData,
                                  getEstRowsAccessed().getValue(),hbpa);
+
+  Lng32 hbaseBlockSize = 65536; //default HBaseValue, should not be useful as the if statement should always pass
+  if(getIndexDesc() && getIndexDesc()->getNAFileSet())
+    hbaseBlockSize = getIndexDesc()->getNAFileSet()->getBlockSize();
+
+  generator->setHBaseSmallScanner(computedHBaseRowSizeFromMetaData,
+                                getEstRowsAccessed().getValue(),
+                                hbaseBlockSize,
+                                hbpa);
+
+  generator->setHBaseParallelScanner(hbpa);
+
 
   ComTdbHbaseAccess::HbaseAccessOptions * hbo = NULL;
   if (getHbaseAccessOptions())
@@ -2855,12 +2983,16 @@ short HbaseAccess::codeGen(Generator * generator)
   if (getTableDesc()->getNATable()->isHbaseRowTable()) //rowwiseHbaseFormat())
     hbasescan_tdb->setRowwiseFormat(TRUE);
 
+  hbasescan_tdb->setUseCif(hbaseRowFormat == 
+			   ExpTupleDesc::SQLMX_ALIGNED_FORMAT);
+
   if (getTableDesc()->getNATable()->isSeabaseTable())
     {
       hbasescan_tdb->setSQHbaseTable(TRUE);
 
-      if (getTableDesc()->getNATable()->isSQLMXAlignedTable())
+      if (isAlignedFormat)
         hbasescan_tdb->setAlignedFormat(TRUE);
+
       if (getTableDesc()->getNATable()->isEnabledForDDLQI())
         generator->objectUids().insert(
           getTableDesc()->getNATable()->objectUid().get_value());

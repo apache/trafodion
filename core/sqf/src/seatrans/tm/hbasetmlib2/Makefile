@@ -1,22 +1,25 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
-PROGS          = $(LIBEXPDIR)/libshbasetmlib.so $(LIBEXPDIR)/libidtm.so $(TMCLASS_FULL)/HBaseAuditControlPoint.class $(TMCLASS_FULL)/HBaseTmZK.class $(TMCLASS_FULL)/TmAuditTlog.class $(TMCLASS_FULL)/HBaseTxClient.class $(TMCLASS_FULL)/HashMapArray.class $(TMCLASS_FULL)/TrafInfo.class testrun
+PROGS          = $(LIBEXPDIR)/libshbasetmlib.so $(LIBEXPDIR)/libidtm.so testrun
 ###########################################################################
 
 include ../../../../macros.gmk
@@ -25,10 +28,6 @@ include ../macros.gmk
 
 LIBJVM        = -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -L$(JAVA_HOME)/jre/lib/amd64/server -ljvm
 LIBSTESTRUN   = -L$(LIBEXPDIR) -lsbms -lshbasetmlib $(DEBUG)
-TMCLASS_DIR   = $(MY_SQROOT)/export/lib
-TMCLASS_PKG   = org/trafodion/dtm
-TMCLASS_FULL  = $(TMCLASS_DIR)/$(TMCLASS_PKG)
-JAVAC         = $(JAVA_HOME)/bin/javac
 
 DEBUG		=
 DEFINES		= -DDEBUG -DxUSE_FILE_AUDIT
@@ -62,7 +61,17 @@ LIBSTM		+= $(LIBSTHX)
 endif
 
 
-all:  $(PROGS)
+all:  $(PROGS) mavenbuild
+
+mavenbuild:
+	# create a jar manifest file with the correct version information
+	mkdir -p src/main/resources
+	$(MY_SQROOT)/export/include/SCMBuildJava.sh 1.0.1 >src/main/resources/trafodion-dtm.jar.mf
+	# run maven
+	set -o pipefail; $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
+	set -o pipefail; $(MAVEN) -f pom.xml.apache package -DskipTests | tee maven_build_apache.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
+	set -o pipefail; $(MAVEN) -f pom.xml.hdp package -DskipTests | tee maven_build_hdp.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'	
+	cp -pf target/trafodion-dtm-*.jar $(MY_SQROOT)/export/lib
 
 $(LIBEXPDIR)/libshbasetmlib.so: $(LIBSTMOBJS)
 	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBTMB) -shared -o $@ $(LIBSTMOBJS)
@@ -71,24 +80,6 @@ $(LIBEXPDIR)/libidtm.so: $(LIBIDTMOBJS)
 	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBIDTMOBJS) -L$(LIBEXPDIR) -lsbms
 $(OUTDIR)/idtm.o: idtm.cpp
 	$(CXX) $(CDEPFLAGS) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
-
-$(TMCLASS_FULL)/HBaseTxClient.class: HBaseTxClient.java
-	$(JAVAC) -Xlint -Xlint:-path  HBaseTxClient.java TmAuditTlog.java HBaseAuditControlPoint.java HBaseTmZK.java HashMapArray.java -d $(TMCLASS_DIR)
-
-$(TMCLASS_FULL)/HBaseAuditControlPoint.class: HBaseAuditControlPoint.java
-	$(JAVAC) -Xlint -Xlint:-path  HBaseAuditControlPoint.java TmAuditTlog.java -d $(TMCLASS_DIR)
-
-$(TMCLASS_FULL)/TmAuditTlog.class: TmAuditTlog.java
-	$(JAVAC) -Xlint -Xlint:-path  TmAuditTlog.java HBaseAuditControlPoint.java -d $(TMCLASS_DIR)
-
-$(TMCLASS_FULL)/HBaseTmZK.class: HBaseTmZK.java
-	$(JAVAC) -Xlint -Xlint:-path  HBaseTmZK.java -d $(TMCLASS_DIR)
-
-$(TMCLASS_FULL)/TrafInfo.class: TrafInfo.java
-	$(JAVAC) -Xlint -Xlint:-path  TrafInfo.java -d $(TMCLASS_DIR)
-
-$(TMCLASS_FULL)/HashMapArray.class: HashMapArray.java
-	$(JAVAC) -Xlint -Xlint:-path  HashMapArray.java -d $(TMCLASS_DIR)
 
 test:   testrun
 
@@ -108,6 +99,8 @@ clean:
 	$(RM) $(PROGS)
 	$(RM) *.gcda *.gcno *.gcov
 	$(RM) -f  $(OUTDIR)/*.o
+	$(RM) -rf $(MY_SQROOT)/export/lib/trafodion-dtm-*.jar
+	-$(MAVEN) -f pom.xml clean
 
 cleanall: clean
 	$(RM) -rf $(BUILD_PLAT)

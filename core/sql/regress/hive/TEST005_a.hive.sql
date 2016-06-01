@@ -1,18 +1,21 @@
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
 --
---  Licensed under the Apache License, Version 2.0 (the "License");
---  you may not use this file except in compliance with the License.
---  You may obtain a copy of the License at
+--   http://www.apache.org/licenses/LICENSE-2.0
 --
---      http://www.apache.org/licenses/LICENSE-2.0
---
---  Unless required by applicable law or agreed to in writing, software
---  distributed under the License is distributed on an "AS IS" BASIS,
---  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
---  See the License for the specific language governing permissions and
---  limitations under the License.
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
 --
 -- @@@ END COPYRIGHT @@@
 
@@ -151,3 +154,46 @@ create table tbl_type_temp
      t           timestamp
 )
 row format delimited fields terminated by '|';
+
+drop table tbl_gbk;
+create external table tbl_gbk
+(
+    c1           int,
+    c2           string
+)
+row format delimited fields terminated by '\t'
+location '/user/hive/exttables/tbl_gbk';
+
+drop table tbl_dos;
+CREATE  external TABLE  tbl_dos(
+   c1  int,
+   c2  int,
+   c3  int,
+   c4  string)
+row format delimited fields terminated by '|' 
+location '/user/hive/exttables/tbl_dos'
+;
+
+drop table tbl_dos_num;
+CREATE  external TABLE  tbl_dos_num(
+   c1  int,
+   c2  int)
+row format delimited fields terminated by '|' 
+location '/user/hive/exttables/tbl_dos_num'
+;
+
+drop table tbl_bad;
+CREATE EXTERNAL TABLE tbl_bad (
+c1 int,
+c2 bigint,
+c3 string,
+c4 float,
+c5 smallint,
+c6 timestamp,
+c7 double,
+c8 tinyint
+)
+ROW FORMAT DELIMITED
+  FIELDS TERMINATED BY '|'
+LOCATION
+'/user/hive/exttables/tbl_bad';

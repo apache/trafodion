@@ -1,1 +1,0 @@
-..\..\..\..\src\odbc\srvrMsg\tdm_odbcsrvrMsg.mc

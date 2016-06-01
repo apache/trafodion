@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -36,6 +39,8 @@
 
 #include "ExpAtp.h"
 #include "ComPackDefs.h"
+#include "exp_attrs.h"
+#include "str.h"
 
 // constructor (Allocate and initialize) for an Atp
 NA_EIDPROC SQLEXP_LIB_FUNC
@@ -218,5 +223,74 @@ Lng32 atp_struct::unpack(Lng32 base)
   return 0;
 }
 
+void atp_struct::display(const char* title, ex_cri_desc* cri)
+{
+   cout << title << endl;
+   if (!cri)
+      cri = getCriDesc();
+
+   char subtitle[100];
+   unsigned short tuples = numTuples();
+   for (Int32 i=0; i<tuples; i++) {
+      ExpTupleDesc* tDesc = cri->getTupleDescriptor(i);
+
+      if ( tDesc && tDesc->attrs() ) {
+
+         tupp& tup = getTupp(i);
+
+         // get the pointer to the composite row
+         char* dataPtr = tup.getDataPointer();
+
+         //cout << "dataPtr=" << dataPtr << endl;
+
+         UInt32 attrs = tDesc->numAttrs();
+         for (Int32 j=0; j<attrs; j++) {
+             Attributes* attr = tDesc->getAttr(j);
+             Int16 dt = attr->getDatatype();
+             UInt32 len = attr->getLength();
+             
+             NABoolean isVarChar = attr->getVCIndicatorLength() > 0;
+
+             char* realDataPtr = dataPtr;
+             if ( isVarChar ) {  
+                realDataPtr += attr->getVCIndicatorLength();
+             } 
+
+             sprintf(subtitle, "%dth field: ", j);
+             print(subtitle, dt, realDataPtr, len);
+
+             dataPtr = realDataPtr + len;
+         }
+      }
+   }
+   cout << endl;
+}
+
+void atp_struct::print(char* title, Int16 dt, char* ptr, UInt32 len)
+{
+   cout << title << "datatype=" << dt << ", len=" << len << ", data=\"";
+   switch (dt) {
+      case REC_DECIMAL_LSE: 
+        cout << ptr ;
+        //printBrief(ptr, len);
+        break;
+
+      case REC_BYTE_V_ASCII: 
+        cout << ptr ;
+        break;
+
+      case REC_BYTE_F_ASCII: 
+        {
+           for (Int32 i=0; i<len; i++)
+             cout << ptr[i];
+        }
+        break;
+
+      default:
+         cout << "unimplemented, skip for now";
+        break;
+   }
+   cout << "\"" << endl;
+}
 
 

@@ -1,19 +1,22 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //
@@ -1917,7 +1920,7 @@ public class Installer
            c.insets = new Insets(0,0,5,0);
            legalPanel.add(componentsLabel,c);
            
-           JTextArea disclaimerText = new JTextArea("The ability to download open source extensions is provided for your convenience only.  HP neither recommends nor requires you to download this software.  The decision to download or use any non-HP branded software is at your sole risk and discretion.  Software provided under any open source licensing model is governed solely by such open source licensing terms.");
+           JTextArea disclaimerText = new JTextArea("The ability to download open source extensions is provided for your convenience only. Software provided under any open source licensing model is governed solely by such open source licensing terms.");
            c.gridheight = 15;
            c.gridwidth=20;
            c.ipadx = 150;
@@ -2285,7 +2288,7 @@ public class Installer
              {
                 System.out.print("\n"+ NEW_JDBC +
                    "\n--------------------------------------"+
-                   "\nEnter the location and file name: " + defaultInstallJDBC);
+                   "\nEnter the location and file name [" + defaultInstallJDBC +"]:");
                 line=bufReader.readLine();
                 Thread.sleep(100);
              } catch (IOException ioe)
@@ -2480,10 +2483,7 @@ public class Installer
        System.out.println("***                  Terms and Conditions                      ***");
        System.out.println("***                                                            ***");
        System.out.println("*** The ability to download open source extensions is provided ***");
-       System.out.println("*** for your convenience only. HP neither recommends nor       ***");
-       System.out.println("*** requires you to download this software.  The decision to   ***");
-       System.out.println("*** download or use any non-HP branded software is at your     ***");
-       System.out.println("*** sole risk and discretion.  Software provided under any     ***");
+       System.out.println("*** for your convenience only. Software provided under any     ***");
        System.out.println("*** open source licensing model is governed solely by such     ***");
        System.out.println("*** open source licensing terms.                               ***");
        System.out.println("***                                                            ***");

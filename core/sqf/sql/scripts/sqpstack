@@ -1,22 +1,25 @@
 #!/bin/sh
-#
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
+#
 #
 if [ $# -lt 1 ]; then
 	prog=monitor
@@ -35,7 +38,7 @@ if [ -n "$MY_NODES" ];then
 fi
 
 if [ -e $SQ_PDSH ]; then
-	hosts=`$SQ_PDSH $MY_NODES_PRM hostname|awk '{ print $2 }'|sort`
+	hosts=`$PDSH $MY_NODES_PRM $PDSH_SSH_CMD hostname|awk '{ print $2 }'|sort`
 else
 	hosts=`hostname`
 fi
@@ -48,7 +51,7 @@ else
 fi
 for host in $hosts; do
 	if [ -e $SQ_PDSH ]; then
-		ssh="ssh $host"
+		ssh="ssh -q $host"
 	fi
 	for prog in $proglist; do
 		pids=`$ssh ps -ef|grep -v 'ps -ef'|grep -vw $0|grep -w $w|grep -w $prog|grep -vw mpirun|grep -vw grep|awk '{ print $2 }'`

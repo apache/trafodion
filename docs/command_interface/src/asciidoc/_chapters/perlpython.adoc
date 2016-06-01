@@ -1,0 +1,222 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+= Run trafci From Perl or Python
+
+You can execute SQL statements in Perl or Python by invoking the trafci
+Perl or Python wrapper script.
+
+These instructions assume that you installed the trafci product. For more information,
+see <<install, Install and Configure>>.
+
+== Set the Login Environment Variables
+
+Before launching trafci from Perl or Python, set these login environment variables:
+
+
+[cols="45%l,55%",options="header"]
+|===
+|Environment Variable                            | Description
+| TRAFCI_PERL_JSERVER=<JavaServer_jar_path>      | Specifies the Perl JavaServer JAR location.
+| TRAFCI_PYTHON_JSERVER=<Jython_jar_path>        | Specifies the Jython JAR file location.
+| TRAFCI_PERL_JSERVER_PORT=<port_number>         | Specifies the port on which the JavaServer is listening.
+|===
+
+
+The Trafodion Command Interface Installer Wizard can attempt to automatically download and install both the Perl JavaServer
+and Jython open source extensions. If you wish to download and install them manually, refer to the instructions in the `README` file
+in the samples directory.
+
+To set the login environment variables, see the instructions for the operating system of the client workstation:
+
+* <<perlpython_env_windows, Set the Login Environment Variables on Windows>>.
+* <<perlpython_env_linux, Set the Login Environment Variables on Linux or Unix>>.
+
+NOTE: The Perl and Python wrapper scripts do not require these environment variables:
+
+* `TRAFCI_SERVER`
+* `TRAFCI_USER`
+* `TRAFCI_PASSWORD`
+
+<<<
+[[perlpython_env_windows]]
+=== Set the Login Environment Variables on Windows
+
+You can set the login environment variables for the session at command prompts, or you can set the login environment variables for
+the system or user by including them in the System Properties.
+
+==== Set Login Environment Variables on the Command Line
+
+At each command prompt, enter one of these commands:
+
+```
+set TRAFCI_PERL_JSERVER=<absolute-path-of-JavaServer.jar>
+set TRAFCI_PYTHON_JSERVER=<absolute-path-of-Jython.jar>
+set TRAFCI_PERL_JSERVER_PORT=<portnumber>
+```
+
+=== Set Login Environment Variables in the System Properties
+
+1. Right-click the *Computer* icon on your desktop, and then select *Properties*:
++
+image:{images}/mycomp.jpg[Select computer properties]
+
+2.  In the *Control Panel*, click the *Advanced* system settings.
+3.  In the *System Properties* dialog box, click the *Advanced* tab.
++
+<<<
+4.  Click the *Environment Variables* button:
++
+image:{images}/sysprop.jpg[Click Environment Variables button]
++
+[[perlpython_win_env_step5]]
++
+<<<
+
+5.  In the *Environment Variables* dialog box, click *New* under _System_ or _User_ variables, whichever you prefer.
++
+image:{images}/envvar.jpg[Environment Variables dialog box]
+
+6. In the *New System Variable* (or *New User Variable*) dialog box, type the name of the login environment variable for the _Variable Name_ and the
+required value for the _Variable Value_, and then click *OK*:
++
+image:{images}/logvar_new.jpg[New System Variable dialog box]
++
+[[perlpython_win_env_step7]]
+
+7. Verify that the environment variable appears under _System_ or _User_ variables.
+8.  Repeat <<perlpython_win_env_step5, Step 5>> to <<perlpython_win_env_step7,Step 7>> for each login environment variable.
+9.  After adding all three environment variables, click *OK* in the *Environment Variables and System Properties* dialog boxes
+to accept the changes.
+
+
+<<<
+[[perlpython_env_linux]]
+=== Set the Login Environment Variables on Linux or UNIX
+
+You can set the login environment variables for the session at command prompts, or you can set the login environment variables
+for each user by including the variables in the user profile on a Linux or UNIX client workstation.
+
+==== Set Login Environment Variables on the Command Line
+
+At each command prompt in any shell except the C shell, enter one of these commands:
+
+```
+export TRAFCI_PERL_JSERVER=<absolute-path-of-JavaServer.jar>
+export TRAFCI_PYTHON_JSERVER=<absolute-path-of-Jython.jar>
+export TRAFCI_PERL_JSERVER_PORT=<portnumber>
+```
+
+At each command prompt in the C shell, enter one of these commands:
+
+```
+setenv TRAFCI_PERL_SERVER=<absolute-path-of-JavaServer.jar>
+setenv TRAFCI_PYTHON_JSERVER=<absolute-path-of-Jython.jar>
+setenv TRAFCI_PERL_JSERVER_PORT=<portnumber>
+```
+
+==== Setting Login Environment Variables in the User Profile
+
+To set the login environment variables in the user profile:
+
+1.  Open the user profile (`.profile` or `.bash_profile` for the Bash shell) in the `$HOME` directory.
++
+*Example*
++
+```
+vi .profile
+```
+
+2.  Add these `export` commands (or `setenv` commands for the C shell) to the user profile.
++
+*Example*
++
+```
+export TRAFCI_PERL_JSERVER=<absolute-path-of-JavaServer.jar>
+export TRAFCI_PYTHON_JSERVER=<absolute-path-of-Jython.jar>
+export TRAFCI_PERL_JSERVER_PORT=<portnumber>
+```
++
+<<<
+3.  To activate the changes, either log out and log in again or execute the user profile.
++
+*Example*
++
+```
+. .profile
+```
+
+== Perl and Python Wrapper Scripts
+
+The Perl or Python wrapper scripts enable you to run SQL statements and script files using a single connection or
+multiple connections within Perl or Python programs. The Perl wrapper script is `trafci.pl`, and the Python wrapper
+script is `trafci.py`. By default, these wrapper scripts are located in the `bin` directory:
+
+[cols="30%h,70%l",options="header"]
+|===
+| Operating System | Directory                                                         
+| Windows          | <trafci-installation-directory>\Trafodion Command Interface\bin
+| Linux/Unix       | <trafci-installation-directory>/trafci/bin
+|===
+
+_trafci-installation-directory_ is the directory where you installed the trafci software files.
+
+== Launch trafci From the Perl or Python Command Line
+
+You can launch the Perl or Python wrapper scripts as shown below:
+
+[cols="15%h,50%l,35%l",options="header"]
+|===
+| Language | Launch Command                            | Example
+| Perl     | perl trafci.pl <perl-script-filename>     | > perl trafci.pl example.pl
+| Python   | python trafci.py <python-script-filename> | > python trafci.py example.py
+|===
+
+<<<
+=== Example Perl Program (`sample.pl`)
+
+You can download the `sample.pl` example from
+{docs-url}/command_interface/resources/source/sample.pl.
+
+Alternatively, copy and paste the following code into a file named `sample.pl`:
+
+[source,perl]
+----
+include::{sourcedir}/sample.pl[]
+----
+
+<<<
+=== Example Python Program (`sample.py`)
+
+You can download the `sample.py` example from
+{docs-url}/command_interface/resources/source/sample.py.
+
+Alternatively, copy and paste the following code into a file named `sample.py`:
+
+[source,python]
+----
+include::{sourcedir}/sample.py[]
+----
+

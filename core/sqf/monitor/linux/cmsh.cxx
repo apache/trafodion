@@ -2,19 +2,22 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //
@@ -124,19 +127,32 @@ int CCmsh::GetClusterState( PhysicalNodeNameMap_t &physicalNodeMap )
             it = physicalNodeMap.find( nodeName.c_str() );
             if (it != physicalNodeMap.end())
             {
-                // TEST_POINT: to force state down on node name 
-                const char *downNodeName = getenv( TP001_NODE_DOWN );
-                if ( downNodeName != NULL && 
-                    !strcmp( downNodeName, nodeName.c_str() ) )
-                {
-                    nodeState = StateDown ;
-                }
+               // TEST_POINT and Exclude List : to force state down on node name 
+               const char *downNodeName = getenv( TP001_NODE_DOWN );
+               const char *downNodeList = getenv( TRAF_EXCLUDE_LIST );
+	       string downNodeString = " ";
+	       if (downNodeList)
+	       {
+		 downNodeString += downNodeList;
+	         downNodeString += " ";
+	       }
+	       string downNodeToFind = " ";
+	       downNodeToFind += nodeName.c_str();
+	       downNodeToFind += " ";
+               if (((downNodeList != NULL) && 
+		      strstr(downNodeString.c_str(),downNodeToFind.c_str())) ||
+                   ( (downNodeName != NULL) && 
+                     !strcmp( downNodeName, nodeName.c_str()) ))
+              {
+                   nodeState = StateDown;
+              }
+	   
                 // Set physical node state
                 physicalNode = it->second;
                 physicalNode->SetState( nodeState );
             }
         }
-    }
+    }	
 
     TRACE_EXIT;
     return( rc );

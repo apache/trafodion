@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -894,10 +897,23 @@ void SimpleCostVector::print(FILE* ofd) const
 // excluded for coverage because it's a debug code
 void SimpleCostVector::print(FILE* pfp) const
 {
+  fprintf(pfp,"CPUTime=%g\n",counter_[CPU_TIME].value());
+  fprintf(pfp,"IOTime=%g\n",counter_[IO_TIME].value());
+  fprintf(pfp,"MSGTime=%g\n",counter_[MSG_TIME].value());
+  fprintf(pfp,"idleTime=%g\n",counter_[IDLE_TIME].value());
+  fprintf(pfp,"tuple processed=%g\n",counter_[TC_PROC].value());
+  fprintf(pfp,"tuple produced=%g\n",counter_[TC_PROD].value());
+  fprintf(pfp,"tuple sent=%g\n",counter_[TC_SENT].value());
+  fprintf(pfp,"IO rand=%g\n",counter_[IO_RAND].value());
+  fprintf(pfp,"IO seq=%g\n",counter_[IO_SEQ].value());
+  fprintf(pfp,"num Probes=%g\n",counter_[NUM_PROBES].value());
+/*
   for (Lng32 i = 0; i < COUNT_OF_SIMPLE_COST_COUNTERS; i++)
     fprintf(pfp,"%g,",counter_[i].value());
+*/
   fprintf(pfp,"\n");
 }
+
 // LCOV_EXCL_STOP
 //<pb>
 
@@ -2446,6 +2462,12 @@ void Cost::print(FILE * pfp, const char * , const char *) const
   fprintf(pfp,"preference : %d\n", priority_.getLevel()); //sathya
   return;
 }
+
+void Cost::display() const                                        
+{ 
+  print(); 
+}
+
 // LCOV_EXCL_STOP
 
 //<pb>

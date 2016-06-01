@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -55,8 +58,9 @@ class HSTableDef : public NABasicObject
     HSTableDef(const ComObjectName &tableName,
                const hs_table_type tableType,
                const ComAnsiNameSpace nameSpace);
+
     ~HSTableDef();
-    virtual NABoolean objExists(labelDetail detail = MIN_INFO) = 0;
+    virtual NABoolean objExists(NABoolean createExternalTable = FALSE) = 0;
     virtual NABoolean publicSchemaExists() = 0;
     Lng32 getColNum(const char *colName, NABoolean errIfNotFound = TRUE) const;
     char* getColName(Lng32 colNum) const;
@@ -65,6 +69,7 @@ class HSTableDef : public NABasicObject
     NAString getObjectFullName() const;
     NATable* getNATable() const {return naTbl_;}
     void setNATable();
+
     virtual NAString getCatalogLoc(formatType format = INTERNAL_FORMAT) const = 0;
     NAString getPrimaryLoc(formatType format = INTERNAL_FORMAT) const;
     virtual NAString getHistLoc(formatType format = INTERNAL_FORMAT) const = 0;
@@ -110,6 +115,9 @@ class HSTableDef : public NABasicObject
     virtual tblOrigin getTblOrigin() const = 0;
 
   protected:
+    NABoolean setObjectUID(NABoolean createExternalObject);
+
+  protected:
     NAString           *tableName_;
     NAString           *ansiName_;
     NAString           *guardianName_;
@@ -146,7 +154,7 @@ class HSSqTableDef : public HSTableDef
       {}
     ~HSSqTableDef()
       {}
-    NABoolean objExists(labelDetail detail = MIN_INFO);
+    NABoolean objExists(NABoolean createExternalTable = FALSE);
     NABoolean publicSchemaExists();
     NAString getNodeName() const;
     NAString getCatalogLoc(formatType format = INTERNAL_FORMAT) const;
@@ -221,7 +229,7 @@ class HSHiveTableDef : public HSTableDef
 
     ~HSHiveTableDef()
       {}
-    NABoolean objExists(labelDetail detail = MIN_INFO);
+    NABoolean objExists(NABoolean createExternalTable = FALSE);
     NABoolean publicSchemaExists()
       {
         return FALSE;
@@ -291,8 +299,7 @@ class HSHiveTableDef : public HSTableDef
       }
     Lng32 getTotalVarcharLength() const
       {
-        // Used in determination of whether dp2 sampling should be used, and
-        // also for row count estimation for sq tables. Not needed for hive.
+        // Used for row count estimation for sq tables. Not needed for hive.
         return 0;
       }
     Lng32 getBlockSize() const
@@ -332,7 +339,7 @@ class HSHbaseTableDef : public HSTableDef
 
     ~HSHbaseTableDef()
       {}
-    NABoolean objExists(labelDetail detail = MIN_INFO);
+    NABoolean objExists(NABoolean createExternalTable = FALSE);
     NABoolean publicSchemaExists()
       {
         return FALSE;
@@ -347,12 +354,8 @@ class HSHbaseTableDef : public HSTableDef
         HS_ASSERT(FALSE);  // MP only
         return "";
       }
-    // Unlike Hive, for HBase we must put the hist and hist_ints tables in
-    // HBase, so we use same cat/sch as source table.
-    NAString getHistLoc(formatType format = INTERNAL_FORMAT) const
-      {
-        return getPrimaryLoc(format);  // inherited from HSTableDef
-      }
+    NAString getHistLoc(formatType format = INTERNAL_FORMAT) const;
+
     Lng32 getFileType()  const
       {
         return -1;
@@ -403,8 +406,7 @@ class HSHbaseTableDef : public HSTableDef
       }
     Lng32 getTotalVarcharLength() const
       {
-        // Used in determination of whether dp2 sampling should be used, and
-        // also for row count estimation for sq tables. Not needed for HBase.
+        // Used for row count estimation for sq tables. Not needed for HBase.
         return 0;
       }
     Lng32 getBlockSize() const

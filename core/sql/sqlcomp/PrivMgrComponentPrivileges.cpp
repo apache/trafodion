@@ -1,24 +1,28 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //*****************************************************************************
 #include "PrivMgrComponentPrivileges.h"
-  
+
+#include "PrivMgrDefs.h"  
 #include "PrivMgrMD.h"
 #include "PrivMgrMDTable.h"
 #include "PrivMgrComponents.h"
@@ -41,8 +45,22 @@
 #include "CmpDDLCatErrorCodes.h"
 #include "ComUser.h"
 
+static bool isSQLDMLPriv(
+   const int64_t componentUID,
+   const std::string operationCode);
+
 namespace ComponentPrivileges 
 {
+
+class DMLPrivData
+{
+public:
+   int32_t                granteeID_;
+   std::vector<int32_t>   roleIDs_;
+   PrivObjectBitmap       DMLBitmap_;
+   bool                   managePrivileges_;
+};
+
 // *****************************************************************************
 // * Class:        MyRow
 // * Description:  This class represents a row in the COMPONENT_PRIVILEGES table.
@@ -71,6 +89,11 @@ public:
    virtual ~MyRow() {};
    inline void clear() {componentUID_ = 0;};
     
+   void describeGrant(
+      const std::string &operationName,
+      const std::string &componentName, 
+      std::vector<std::string> & outlines); 
+
 // -------------------------------------------------------------------
 // Data Members:
 // -------------------------------------------------------------------
@@ -106,7 +129,12 @@ public:
     
    inline void clear() { lastRowRead_.clear(); };
       
-   
+   PrivStatus fetchDMLPrivInfo(
+      const int32_t                granteeID,
+      const std::vector<int32_t> & roleIDs,
+      PrivObjectBitmap           & DMLBitmap,
+      bool                       & hasManagePrivileges);
+      
    PrivStatus fetchOwner(
       const int64_t componentUID,
       const std::string & operationCode,
@@ -131,11 +159,23 @@ public:
       OutputInfo & cliInterface,
       PrivMgrMDRow & rowOut);
       
+   void describeGrantTree(
+      const int32_t grantorID,
+      const std::string &operationName,
+      const std::string &componentName,
+      const std::vector<MyRow> &rows,
+      std::vector<std::string> & outlines);
+
+   int32_t findGrantor(
+      int32_t currentRowID,
+      const int32_t grantorID,
+      const std::vector<MyRow> rows);
+
 private:   
    MyTable();
    
    MyRow lastRowRead_;
-
+   DMLPrivData userDMLPrivs_;
 };
 }//End namespace ComponentPrivileges
 using namespace ComponentPrivileges;
@@ -197,9 +237,10 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
 // *****************************************************************************
 // *                                                                           *
 // * Function: PrivMgrComponentPrivileges::describeComponentPrivileges         *
-// *  lookup "_PRIVMGR_MD_".COMPONENT_PRIVILEGES joined with "_MD_".AUTHS        *
-// *  to generate GRANT COMPONENT PRIVILEGE statements                         *
-// *  for a specified operation code and component name/UID.                   *
+// *  calls selectAllWhere to get the list of privileges for the operation.    *
+// *  Once list is generated, starts at the root (system grant to owner) and   *
+// *  generates grant statements by traversing each branch based on grantor    *
+// *  -> grantee relationship.                                                 *
 // *                                                                           *
 // *                                                                           *
 // *****************************************************************************
@@ -209,16 +250,16 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
 // *  componentUIDString               const std::string &                  In *
 // *    used with operationCode to find wanted component privileges.           *
 // *                                                                           *
-// *  componentName                     const std::string &                 In *
+// *  componentName                    const std::string &                  In *
 // *    used for generate grant statement on the component.                    *
 // *                                                                           *
-// *  operationCode                        const std::string &              In *
+// *  operationCode                    const std::string &                  In *
 // *    used with componentUIDString to find wanted component privileges.      *
 // *                                                                           *
-// *  operationName                        const std::string &              In *
+// *  operationName                    const std::string &                  In *
 // *     used for generate grant statement as granted operation.               *
 // *                                                                           *
-// *  outlines                                   std::vector<std::string> & Out*
+// *  outlines                         std::vector<std::string> &           Out*
 // *      output generated GRANT statements to this array.                     *
 // *****************************************************************************
 // *                                                                           *
@@ -235,141 +276,50 @@ PrivStatus PrivMgrComponentPrivileges::describeComponentPrivileges(
    const std::string & operationCode, 
    const std::string & operationName,
    std::vector<std::string> & outlines) 
-   
 {
-//do the following joined select to get database user name 
-/*
-SELECT 
-AU.AUTH_DB_NAME, 
-CP.GRANTEE_ID,
-CP.GRANTOR_ID,
-CP.COMPONENT_UID,
-CP.OPERATION_CODE,
-CP.GRANT_DEPTH
-FROM 
-TRAFODION."_PRIVMGR_MD_".COMPONENT_PRIVILEGES CP 
-LEFT JOIN 
-TRAFODION."_MD_".AUTHS AU
-ON
-AU.AUTH_ID = CP.GRANTEE_ID
-WHERE 
-CP.OPERATION_CODE = operationCode 
-AND 
-CP.COMPONENT_UID = componentUIDString;
-*/
-    std::string selectJoinStmt;
-    selectJoinStmt += "SELECT "
-                        "AU.AUTH_DB_NAME, "
-                        "CP.GRANTEE_ID, "
-                        "CP.GRANTOR_ID, "
-                        "CP.COMPONENT_UID, "
-                        "CP.OPERATION_CODE, "
-                        "CP.GRANT_DEPTH "
-                       "FROM " 
-                        "TRAFODION.\"_PRIVMGR_MD_\".COMPONENT_PRIVILEGES CP "
-                       "LEFT JOIN " 
-                        "TRAFODION.\"_MD_\".AUTHS AU "
-                       "ON "
-                        "AU.AUTH_ID = CP.GRANTEE_ID "
-                       "WHERE ";
+   // Get the list of all privileges granted to the component and component
+   // operation
+   std::string whereClause (" WHERE COMPONENT_UID = ");
+   whereClause += componentUIDString;
+   whereClause += " AND OPERATION_CODE = '";
+   whereClause += operationCode;
+   whereClause += "'";
 
-    selectJoinStmt += "CP.OPERATION_CODE = '" + operationCode + "'";
-    selectJoinStmt += " AND CP.COMPONENT_UID = " + componentUIDString;
-    ExeCliInterface cliInterface(STMTHEAP);
-    Queue * tableQueue = NULL;
+   std::string orderByClause= "ORDER BY GRANTOR_ID, GRANTEE_ID, GRANT_DEPTH";
 
-    int32_t diagsMark = pDiags_->mark();
-    int32_t cliRC =  cliInterface.fetchAllRows(tableQueue, 
-                                               (char *)selectJoinStmt.c_str(), 
-                                                0, false, false, true);
+   std::vector<MyRow> rows;
+   MyTable &myTable = static_cast<MyTable &>(myTable_);
 
-    if (cliRC < 0)
-    {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+   PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
+
+   // We should get at least 1 row back - the grant from the system to the 
+   // component operation owner
+   int32_t rowIndex = 0;
+   if ((privStatus == STATUS_NOTFOUND) || 
+        (rows.size() == 0) ||
+        (rowIndex = myTable.findGrantor(0, SYSTEM_USER, rows) == -1))
+   {
+      std::string errorText("Unable to find any grants for operation ");
+      errorText += operationName;
+      errorText += " on component ";
+      errorText += componentName;
+      PRIVMGR_INTERNAL_ERROR(errorText.c_str());
       return STATUS_ERROR;
-    }
-    if (cliRC == 100) // did not find the row
-    {
-      pDiags_->rewind(diagsMark);
-      return STATUS_NOTFOUND;
-    }
+   }
+     
+   // Add the initial grant (system grant -> owner) to text (outlines)
+   // There is only one system grant -> owner per component operation
+   MyRow row = rows[rowIndex];
+   row.describeGrant(operationName, componentName, outlines);
 
-    tableQueue->position();
-    char * ptr = NULL;
-    Int32 len = 0;
-    char value[500];
-    std::string auth_db_name;
-    int32_t grantee_id;
-    int32_t grantor_id;
-    int64_t component_uid;
-    std::string operation_code;
-    int32_t grant_depth;
-    for (int idx = 0; idx < tableQueue->numEntries(); idx++)
-    {
-        OutputInfo * pCliRow = (OutputInfo*)tableQueue->getNext();
-        std::string componentText;
-        // column 1:  AUTH_DB_NAME
-        pCliRow->get(0,ptr,len);
-        strncpy(value, ptr, len);
-        value[len] = 0;
-        auth_db_name= value;
+   // Traverse the base branch that starts with the owner and proceeds
+   // outward.  In otherwords, describe grants where the grantee is the grantor.
+   int32_t newGrantor = row.granteeID_;
+   myTable.describeGrantTree(newGrantor, operationName, componentName, rows, outlines);   
 
-         // column 2:  GRANTEE_ID
-        pCliRow->get(1,ptr,len);
-        grantee_id = *(reinterpret_cast<int32_t*>(ptr));
-
-        // column 3: GRANTOR_ID
-        pCliRow->get(2,ptr,len);
-        grantor_id = *(reinterpret_cast<int32_t*>(ptr));
-
-        // column 4: COMPONENT_UID
-        pCliRow->get(3,ptr,len);
-        component_uid = *(reinterpret_cast<int64_t*>(ptr));
-
-        // column 5: OPERATION_CODE
-        pCliRow->get(4,ptr,len);
-        strncpy(value, ptr, len);
-        value[len] = 0;
-        operation_code = value;
-
-        // column 6: GRANT_DEPTH
-        pCliRow->get(5,ptr,len);
-        grant_depth = *(reinterpret_cast<int32_t*>(ptr));
-        
-        //generate grant statement
-        if (grantor_id == SYSTEM_AUTH_ID)
-           componentText += "-- ";
-        componentText += " GRANT COMPONENT PRIVILEGE ";
-        componentText += operationName;
-        outlines.push_back(componentText);
-        if(grant_depth != 0){
-          componentText = " ON ";
-          componentText += componentName ;
-          componentText += " TO ";
-          if(grantee_id == -1)
-            componentText += "PUBLIC";
-          else
-            componentText += auth_db_name;
-          outlines.push_back(componentText);
-          componentText = " WITH GRANT OPTION;";
-          outlines.push_back(componentText);
-        }
-        else
-        {
-          componentText = " ON ";
-          componentText += componentName ;
-          componentText += " TO ";
-          if(grantee_id == -1)
-            componentText += "PUBLIC;";
-          else
-            componentText += auth_db_name + ";";
-          outlines.push_back(componentText);
-        }
-        outlines.push_back("");
-    }    
-    return STATUS_GOOD;
-    
+   return STATUS_GOOD;
 }
+  
 //****** End of PrivMgrComponentPrivileges::describeComponentPrivileges ********
 
 
@@ -528,6 +478,52 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 }
 //***************** End of PrivMgrComponentPrivileges::getCount ****************
 
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrComponentPrivileges::getSQLDMLPrivileges                 *
+// *                                                                           *
+// *    Returns the SQL_OPERATION privileges associated with DML privileges    *
+// * for the specified authorization ID.                                       *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <granteeID>                     const int32_t                   In       *
+// *    is the authorization ID of the grantee.                                *
+// *                                                                           *
+// *  <roleIDs>                       const std::vector<int32_t> &    In       *
+// *    is a list of roleIDs granted to the grantee.                           *
+// *                                                                           *
+// *  <DMLBitmap>                     PrivObjectBitmap &              In       *
+// *    passes back the system-level DML privileges granted to the grantee.    *
+// *                                                                           *
+// *  <hasManagePrivileges>           bool &                          In       *
+// *    passes back if the user has MANAGE_PRIVILEGES authority.               *
+// *                                                                           *
+// *****************************************************************************
+void PrivMgrComponentPrivileges::getSQLDMLPrivileges(
+   const int32_t                granteeID,
+   const std::vector<int32_t> & roleIDs,
+   PrivObjectBitmap           & DMLBitmap,
+   bool                       & hasManagePrivileges)
+
+{
+                                   
+MyTable &myTable = static_cast<MyTable &>(myTable_);
+
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
+PrivStatus privStatus = myTable.fetchDMLPrivInfo(granteeID,roleIDs,DMLBitmap,
+                                                 hasManagePrivileges);
+
+   if (privStatus != STATUS_GOOD)
+      pDiags_->rewind(diagsMark);
+
+}
+//************ End of PrivMgrComponentPrivileges::getSQLDMLPrivileges **********
 
 
    
@@ -858,12 +854,13 @@ PrivStatus PrivMgrComponentPrivileges::grantPrivilegeInternal(
    const std::string & grantorName,
    const int32_t granteeID,
    const std::string & granteeName,
-   const int32_t grantDepth)
+   const int32_t grantDepth,
+   const bool checkExistence)
   
 {
 
-MyTable &myTable = static_cast<MyTable &>(myTable_);
-MyRow row(fullTableName_);
+   MyTable &myTable = static_cast<MyTable &>(myTable_);
+   MyRow row(fullTableName_);
 
    row.componentUID_ = componentUID;
    row.grantDepth_ = grantDepth;
@@ -872,9 +869,17 @@ MyRow row(fullTableName_);
    row.grantorID_ = grantorID;
    row.grantorName_ = grantorName;
    
+   const std::string componentUIDString = to_string((long long int)componentUID);
+
    for (size_t oc = 0; oc < operationCodes.size(); oc++)
    {
       row.operationCode_ = operationCodes[oc];
+
+      if (checkExistence &&
+          grantExists(componentUIDString, row.operationCode_, row.grantorID_,
+                      row.granteeID_, row.grantDepth_))
+         continue;
+
       PrivStatus privStatus = myTable.insert(row);
       
       if (privStatus != STATUS_GOOD)
@@ -933,8 +938,8 @@ MyRow row(fullTableName_);
    row.operationCode_ = operationCode;
    row.granteeID_ = granteeID;
    row.granteeName_ = granteeName;
-   row.grantorID_ = SYSTEM_AUTH_ID;
-   row.grantorName_ = "_SYSTEM";
+   row.grantorID_ = SYSTEM_USER;
+   row.grantorName_ = SYSTEM_AUTH_NAME;
    row.grantDepth_ = -1;
    
    return myTable.insert(row);
@@ -1440,6 +1445,15 @@ PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
       
 // *****************************************************************************
 // *                                                                           *
+// *   Expected NOTFOUND, but if empty list returned, return no error.         *
+// *                                                                           *
+// *****************************************************************************
+
+   if (rows.size() == 0)
+      return STATUS_GOOD;
+
+// *****************************************************************************
+// *                                                                           *
 // *   If there are grants and drop behavior is RESTRICT, return an error.     *
 // *                                                                           *
 // *****************************************************************************
@@ -1652,6 +1666,10 @@ PrivStatus privStatus = STATUS_GOOD;
       {
          return STATUS_ERROR;
       }
+      if (isSQLDMLPriv(componentUID,operations[oc]))
+      {   //TODO: QI only supports revoke from objects and users (roles)
+         // Notify QI
+      }
    }
     
 MyTable &myTable = static_cast<MyTable &>(myTable_);
@@ -1713,12 +1731,317 @@ bool someNotRevoked = false;
   
 }  
 //************* End of PrivMgrComponentPrivileges::revokePrivilege *************
-  
+
+// *****************************************************************************
+//    Private functions
+// *****************************************************************************
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrComponentPrivileges::isSQLDMLPriv                        *
+// *                                                                           *
+// *     This function determines if a component-level privilege is a DML      *
+// *  privilege in the SQL_OPERATIONS component.                               *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <componentUID>                  const int64_t                   In       *
+// *    is the unique ID associated with the component.                        *
+// *                                                                           *
+// *  <operationCode>                 const std::string &             In       *
+// *    is the two character code associated with the component operation.     *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// * true: This is a SQL_OPERATION DML privilege.                              *
+// * false: This is NOT a SQL_OPERATION DML privilege.                         *
+// *                                                                           *
+// *****************************************************************************
+static bool isSQLDMLPriv(
+   const int64_t componentUID,
+   const std::string operationCode)
+
+{
+
+   if (componentUID != SQL_OPERATIONS_COMPONENT_UID)
+      return false;
+      
+   for (SQLOperation operation = SQLOperation::FIRST_DML_PRIV;
+        static_cast<int>(operation) <= static_cast<int>(SQLOperation::LAST_DML_PRIV); 
+        operation = static_cast<SQLOperation>(static_cast<int>(operation) + 1))
+   {
+      if (PrivMgr::getSQLOperationCode(operation) == operationCode)
+         return true;
+   }
+
+   return false;
+
+}  
+//***************************** End of isSQLDMLPriv ****************************
+
+
 
 // *****************************************************************************
 //    MyTable methods
 // *****************************************************************************
 
+// *****************************************************************************
+// *                                                                           *
+// * Function: MyTable::describeGrantTree                                      *
+// *                                                                           *
+// *    Describes grants for the specified grantor                             *
+// *    Recursively calls itself to describe the grants for each grantee       *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  grantorID                        const int32_t                        In *
+// *    all grants granted by the grantorID are described.                     *
+// *                                                                           *
+// *  operationName                    const std::string &                  In *
+// *     used for generate grant statement as granted operation.               *
+// *                                                                           *
+// *  componentName                    const std::string &                  In *
+// *    used for generate grant statement on the component.                    *
+// *                                                                           *
+// *  rows                             const std::vector<MyRow> &           In *
+// *    all the rows that represent grants for the component operation.        *
+// *                                                                           *
+// *  outlines                         std::vector<std::string> &           Out*
+// *      output generated GRANT statements to this array.                     *
+// *                                                                           *
+// *****************************************************************************
+void MyTable::describeGrantTree(
+  const int32_t grantorID,
+  const std::string &operationName,
+  const std::string &componentName,
+  const std::vector<MyRow> &rows,
+  std::vector<std::string> & outlines)
+{
+   // Starts at the beginning of the list searching for grants attributed to 
+   // the grantorID
+   int32_t nextRowID = 0;
+   while (nextRowID >= 0 && nextRowID < rows.size())
+   {
+     int32_t rowID = findGrantor(nextRowID, grantorID, rows);
+
+     // If this grantor did not grant any requests, -1 is returned and we are
+     // done traversing this branch
+     if (rowID == -1)
+       return;
+
+     nextRowID = rowID;
+     MyRow row = rows[rowID];
+
+     // We found a grant, describe the grant
+     row.describeGrant(operationName, componentName, outlines);
+
+     // Traverser any grants that may have been performed by the grantee.
+     // If grantDepth is 0, then the grantee does not have the WITH GRANT 
+     // OPTION so no reason to traverse this potential branch - there is none.
+     if (row.grantDepth_ != 0)
+       describeGrantTree(row.granteeID_, operationName, componentName, rows, outlines);
+
+     // get next grant for this grantorID
+     nextRowID++;
+  }
+}
+
+//******************* End of MyTable::describeGrantTree ************************
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: MyTable::fetchDMLPrivInfo                                       *
+// *                                                                           *
+// *    Reads from the COMPONENT_PRIVILEGES table and returns the              * 
+// *    SQL_OPERATIONS privileges associated with DML privileges.              *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <granteeID>                     int32_t &                       In       *
+// *    is the authID whose system-level DML privileges are being fetched.     *
+// *                                                                           *
+// *  <roleIDs>                       const std::vector<int32_t> &    In       *
+// *    is a list of roleIDs granted to the grantee.                           *
+// *                                                                           *
+// *  <DMLBitmap>                     PrivObjectBitmap &              In       *
+// *    passes back the system-level DML privileges granted to the grantee.    *
+// *                                                                           *
+// *  <hasManagePrivileges>           bool &                          In       *
+// *    passes back if the user has MANAGE_PRIVILEGES authority.               *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_GOOD: Data returned.                                               *
+// *           *: Error encountered.                                           *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus MyTable::fetchDMLPrivInfo(
+   const int32_t                granteeID,
+   const std::vector<int32_t> & roleIDs,
+   PrivObjectBitmap           & DMLBitmap,
+   bool                       & hasManagePrivileges)
+   
+{
+
+// Check the last grantee data read before reading metadata.
+
+   if (userDMLPrivs_.granteeID_ == granteeID && 
+       userDMLPrivs_.roleIDs_ == roleIDs)
+   {
+      DMLBitmap = userDMLPrivs_.DMLBitmap_;
+      hasManagePrivileges = userDMLPrivs_.managePrivileges_;
+      return STATUS_GOOD;
+   } 
+      
+// Not found in cache, look for the priv info in metadata.
+// ??? - is the component_uid for SQL_OPERATIONS always going to be 1?
+std::string whereClause("WHERE COMPONENT_UID = 1 AND OPERATION_CODE IN ('");
+
+   for (SQLOperation operation = SQLOperation::FIRST_DML_PRIV;
+        static_cast<int>(operation) <= static_cast<int>(SQLOperation::LAST_DML_PRIV); 
+        operation = static_cast<SQLOperation>(static_cast<int>(operation) + 1))
+   {
+      whereClause += PrivMgr::getSQLOperationCode(operation);
+      whereClause += "','";
+   }
+
+   whereClause += PrivMgr::getSQLOperationCode(SQLOperation::MANAGE_PRIVILEGES);
+   whereClause += "') AND GRANTEE_ID IN (";
+   whereClause += PrivMgr::authIDToString(granteeID);
+   whereClause += ",";
+   for (size_t ri = 0; ri < roleIDs.size(); ri++)
+   {
+      whereClause += PrivMgr::authIDToString(roleIDs[ri]);
+      whereClause += ",";
+   }
+   whereClause += PrivMgr::authIDToString(PUBLIC_USER);
+   whereClause += ")";
+   
+std::string orderByClause;
+   
+std::vector<MyRow> rows;
+
+PrivStatus privStatus = selectAllWhere(whereClause,orderByClause,rows);
+
+   if (privStatus != STATUS_GOOD && privStatus != STATUS_WARNING)
+      return privStatus;
+   
+// Initialize cache.
+   userDMLPrivs_.granteeID_ = granteeID;
+   userDMLPrivs_.roleIDs_ = roleIDs;
+   userDMLPrivs_.managePrivileges_ = false;
+   userDMLPrivs_.DMLBitmap_.reset();  
+    
+   for (size_t r = 0; r < rows.size(); r++)
+   {
+      MyRow &row = rows[r];
+      
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::MANAGE_PRIVILEGES))
+      {
+         userDMLPrivs_.managePrivileges_ = true;
+         continue;
+      }   
+      
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_DELETE))
+      {
+         userDMLPrivs_.DMLBitmap_.set(DELETE_PRIV);
+         continue;
+      }   
+      
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_INSERT))
+      {
+         userDMLPrivs_.DMLBitmap_.set(INSERT_PRIV);
+         continue;
+      }   
+      
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_REFERENCES))
+      {
+         userDMLPrivs_.DMLBitmap_.set(REFERENCES_PRIV);
+         continue;
+      }   
+      
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_SELECT))
+      {
+         userDMLPrivs_.DMLBitmap_.set(SELECT_PRIV);
+         continue;
+      }   
+      
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_UPDATE))
+      {
+         userDMLPrivs_.DMLBitmap_.set(UPDATE_PRIV);
+         continue;
+      }   
+      
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_USAGE))
+      {
+         userDMLPrivs_.DMLBitmap_.set(USAGE_PRIV);
+         continue;
+      }   
+   }
+   
+   hasManagePrivileges = userDMLPrivs_.managePrivileges_;
+   DMLBitmap = userDMLPrivs_.DMLBitmap_;   
+   
+   return STATUS_GOOD;
+
+}   
+//******************* End of MyTable::fetchDMLPrivInfo *************************
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: MyTable::findGrantor                                            *
+// *                                                                           *
+// *    Search the list of grants for the component operation looking for the  *
+// *    next row for the grantor.                                              *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  currentRowID                           int32_t                        In *
+// *    where to start searching for the next row for the grantor.             *
+// *                                                                           *
+// *  grantorID                        const int32_t                        In *
+// *    the grantor to search for.                                             *
+// *                                                                           *
+// *  rows                             const std::vector<MyRow> &           In *
+// *    all the rows that represent grants for the component operation.        *
+// *                                                                           *
+// *                                                                           *
+// * Returns                                                                   *
+// *   >= 0 -- the index into rows where the next row for grantor is described *
+// *     -1 -- no more row, done                                               *
+// *                                                                           *
+// *****************************************************************************
+int32_t MyTable::findGrantor(
+  int32_t currentRowID,
+  const int32_t grantorID,
+  const std::vector<MyRow> rows)
+{
+   for (size_t i = currentRowID; i < rows.size(); i++)
+   {
+      if (rows[i].grantorID_ == grantorID)
+        return i;
+
+      // rows are sorted in grantorID order, so once the grantorID stored in
+      // rows is greater than the requested grantorID, we are done.
+      if (rows[i].grantorID_ > grantorID)
+        return -1;
+   }
+   return -1;
+}
+
+//******************* End of MyTable::findGrantor ******************************
 
 // *****************************************************************************
 // *                                                                           *
@@ -1757,7 +2080,7 @@ PrivStatus MyTable::fetchOwner(
 
 // Check the last row read before reading metadata.
 
-   if (lastRowRead_.grantorID_ == SYSTEM_AUTH_ID &&
+   if (lastRowRead_.grantorID_ == SYSTEM_USER &&
        lastRowRead_.componentUID_ == componentUID &&
        lastRowRead_.operationCode_ == operationCode)
    {
@@ -1802,7 +2125,8 @@ PrivStatus privStatus = selectWhereUnique(whereClause,row);
    return STATUS_GOOD;
 
 }   
-//********************** End of MyTable::fetchByName ***************************
+//*********************** End of MyTable::fetchOwner ***************************
+
 
 
 
@@ -1896,6 +2220,9 @@ std::string selectStmt ("SELECT COMPONENT_UID, OPERATION_CODE, GRANTEE_ID, GRANT
 Queue * tableQueue = NULL;
 
 PrivStatus privStatus = executeFetchAll(selectStmt,tableQueue);
+
+   if (privStatus == STATUS_ERROR)
+      return privStatus;
 
    tableQueue->position();
    for (int idx = 0; idx < tableQueue->numEntries(); idx++)
@@ -2073,3 +2400,56 @@ std::string selectStmt ("SELECT COMPONENT_UID, OPERATION_CODE, GRANTEE_ID, GRANT
 }
 //************************** End of MyTable::setRow ****************************
 
+// *****************************************************************************
+//    MyRow methods
+// *****************************************************************************
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: MyRow::describeGrant                                            *
+// *                                                                           *
+// *    Generates text for the grant based on the row, operationName, and      *
+// *    componentName                                                          *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  operationName                    const std::string &                  In *
+// *     used for generate grant statement as granted operation.               *
+// *                                                                           *
+// *  componentName                    const std::string &                  In *
+// *    used for generate grant statement on the component.                    *
+// *                                                                           *
+// *  outlines                         std::vector<std::string> &           Out*
+// *      output generated GRANT statements to this array.                     *
+// *                                                                           *
+// *****************************************************************************
+void MyRow::describeGrant(
+  const std::string &operationName,
+  const std::string &componentName,
+  std::vector<std::string> & outlines)
+{
+   //generate grant statement
+   std::string grantText;
+   if (grantorID_ == SYSTEM_USER)
+      grantText += "-- ";
+   grantText += "GRANT COMPONENT PRIVILEGE \"";
+   grantText += operationName;
+   grantText += "\" ON \"";
+   grantText += componentName;
+   grantText += "\" TO \"";
+   if(granteeID_ == -1)
+     grantText += PUBLIC_AUTH_NAME;
+   else
+     grantText += granteeName_;
+   grantText += '"';
+   if(grantDepth_ != 0){
+     grantText += " WITH GRANT OPTION";
+   }
+   grantText += ";";
+   outlines.push_back(grantText);
+}
+
+
+//************************** End of MyRow::describeGrant ***********************

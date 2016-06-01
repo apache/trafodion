@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -41,6 +44,7 @@
 #include "hiveHook.h"
 #include "ExpLOBexternal.h"
 #include "ComSecurityKey.h"
+#include "ExpHbaseDefs.h"
 
 //forward declaration(s)
 // -----------------------------------------------------------------------
@@ -59,6 +63,7 @@ class NATableDB;
 struct desc_struct;
 class HbaseCreateOption;
 class PrivMgrUserPrivs;
+class ExpHbaseInterface;
 
 typedef QualifiedName* QualifiedNamePtr;
 typedef ULng32 (*HashFunctionPtr)(const QualifiedName&);
@@ -340,6 +345,7 @@ struct NATableEntryDetails {
       char catalog[ComMAX_1_PART_INTERNAL_UTF8_NAME_LEN_IN_BYTES + 1]; // +1 for NULL byte
       char schema[ComMAX_1_PART_INTERNAL_UTF8_NAME_LEN_IN_BYTES + 1];
       char object[ComMAX_1_PART_INTERNAL_UTF8_NAME_LEN_IN_BYTES + 1];
+      int size;
 };
 
 // ***********************************************************************
@@ -398,10 +404,6 @@ public:
   //NATable construction.
   //***************************************************************************
   void resetAfterStatement();
-
-  // removes information from TabletoCluster Map. This object is instantiated
-  // per table and maintained in gpClusterInfo global object
-  void removeTableToClusterMapInfo();
 
   //setup this NATable for the statement.
   //This has to be done after NATable construction
@@ -508,6 +510,7 @@ public:
 
   const ComUID &getCatalogUid() const           { return catalogUID_; }
   const ComUID &getSchemaUid() const            { return schemaUID_; }
+
   const ComUID &objectUid() const
   {
     if (objectUID_.get_value() == 0)
@@ -515,7 +518,17 @@ public:
     return objectUID_;
   }
 
-  Int64 lookupObjectUid();  // Used to look up uid on demand for metadata tables
+  // fetch the object UID that is associated with the external 
+  // table object (if any) for a native table.
+  // Set objectUID_ to 0 if no such external table exists;
+  // set objectUID_ to -1 if there is error during the fetch operation;
+  NABoolean fetchObjectUIDForNativeTable(const CorrName& corrName);
+
+
+  Int64 lookupObjectUid();  // Used to look up uid on demand for metadata tables.
+                            // On return, the "Object Not Found" error (-1389) 
+                            // is filtered out from CmpCommon::diags().
+
   bool isEnabledForDDLQI() const;
 
   const ComObjectType &getObjectType() const { return objectType_; }
@@ -549,7 +562,8 @@ public:
 
   const char *getViewCheck() const              { return viewCheck_; }
 
-  NABoolean hasSaltedColumn();
+  NABoolean hasSaltedColumn(Lng32 * saltColPos = NULL);
+  NABoolean hasDivisioningColumn(Lng32 * divColPos = NULL);
 
   void setUpdatable( NABoolean value )
   {  value ? flags_ |= IS_UPDATABLE : flags_ &= ~IS_UPDATABLE; }
@@ -564,21 +578,38 @@ public:
   {  return (flags_ & IS_INSERTABLE) != 0; }
 
   void setSQLMXTable( NABoolean value )
-  {  value ? flags_ |= SQLMX_ROW_FORMAT : flags_ &= ~SQLMX_ROW_FORMAT; }
+  {  value ? flags_ |= SQLMX_ROW_TABLE : flags_ &= ~SQLMX_ROW_TABLE; }
 
   NABoolean isSQLMXTable() const
-  {  return (flags_ & SQLMX_ROW_FORMAT) != 0; }
+  {  return (flags_ & SQLMX_ROW_TABLE) != 0; }
 
   void setSQLMXAlignedTable( NABoolean value )
   {
     (value
-     ? flags_ |= SQLMX_ALIGNED_ROW_FORMAT
-     : flags_ &= ~SQLMX_ALIGNED_ROW_FORMAT);
+     ? flags_ |= SQLMX_ALIGNED_ROW_TABLE
+     : flags_ &= ~SQLMX_ALIGNED_ROW_TABLE);
   }
 
   NABoolean isSQLMXAlignedTable() const
-  {  return (flags_ & SQLMX_ALIGNED_ROW_FORMAT) != 0; }
+  {
+    if (getClusteringIndex() != NULL)
+       return getClusteringIndex()->isSqlmxAlignedRowFormat();
+    else
+       return getSQLMXAlignedTable();
+  }
 
+  NABoolean isAlignedFormat(const IndexDesc *indexDesc) const
+  {
+    NABoolean isAlignedFormat;
+
+    if (isHbaseRowTable()||
+      isHbaseCellTable() || (indexDesc == NULL))
+      isAlignedFormat  = isSQLMXAlignedTable();
+    else
+      isAlignedFormat = indexDesc->getNAFileSet()->isSqlmxAlignedRowFormat();
+    return isAlignedFormat;
+  }
+ 
 // LCOV_EXCL_START :cnu
   void setVerticalPartitions( NABoolean value )
   {  value ? flags_ |= IS_VERTICAL_PARTITION : flags_ &= ~IS_VERTICAL_PARTITION;}
@@ -667,11 +698,36 @@ public:
   NABoolean hasLobColumn() const
   {  return (flags_ & LOB_COLUMN) != 0; }
 
+  void setHasSerializedEncodedColumn( NABoolean value )
+  {  value ? flags_ |= SERIALIZED_ENCODED_COLUMN : flags_ &= ~SERIALIZED_ENCODED_COLUMN; }
+
+  NABoolean hasSerializedEncodedColumn() const
+  {  return (flags_ & SERIALIZED_ENCODED_COLUMN) != 0; }
+
   void setHasSerializedColumn( NABoolean value )
   {  value ? flags_ |= SERIALIZED_COLUMN : flags_ &= ~SERIALIZED_COLUMN; }
 
   NABoolean hasSerializedColumn() const
   {  return (flags_ & SERIALIZED_COLUMN) != 0; }
+
+  void setIsExternalTable( NABoolean value )
+  {  value ? flags_ |= IS_EXTERNAL_TABLE : flags_ &= ~IS_EXTERNAL_TABLE; }
+
+  NABoolean isExternalTable() const
+  {  return (flags_ & IS_EXTERNAL_TABLE) != 0; }
+
+
+  void setHasExternalTable( NABoolean value )
+  {  value ? flags_ |= HAS_EXTERNAL_TABLE : flags_ &= ~HAS_EXTERNAL_TABLE; }
+
+  NABoolean hasExternalTable() const
+  {  return (flags_ & HAS_EXTERNAL_TABLE) != 0; }
+
+  void setIsHistogramTable( NABoolean value )
+  {  value ? flags_ |= IS_HISTOGRAM_TABLE : flags_ &= ~IS_HISTOGRAM_TABLE; }
+
+  NABoolean isHistogramTable() const
+  {  return (flags_ & IS_HISTOGRAM_TABLE) != 0; }
 
   const CheckConstraintList &getCheckConstraints() const
                                                 { return checkConstraints_; }
@@ -753,7 +809,6 @@ public:
   NABoolean insertMissingStatsWarning(CollIndexSet colsSet) const;
 
   const desc_struct * getTableDesc() const { return tableDesc_; }
-  Lng32 numSaltPartns() { return clusteringIndex_->numSaltPartns(); }
   NAList<HbaseCreateOption*> * hbaseCreateOptions()
     { return clusteringIndex_->hbaseCreateOptions();}
 
@@ -808,12 +863,23 @@ public:
   NABoolean getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize) const;
   NABoolean getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames) const;
 
+  static NAArray<HbaseStr>* getRegionsBeginKey(const char* extHBaseName);
+
+  NAString &defaultColFam() { return defaultColFam_; }
+  NAList<NAString> &allColFams() { return allColFams_; }
+
 private:
+  NABoolean getSQLMXAlignedTable() const
+  {  return (flags_ & SQLMX_ALIGNED_ROW_TABLE) != 0; }
+
   // copy ctor
   NATable (const NATable & orig, NAMemory * h=0) ; //not written
 
   void setRecordLength(Int32 recordLength) { recordLength_ = recordLength; }
   void setupPrivInfo();
+
+  ExpHbaseInterface* getHBaseInterface() const;
+  static ExpHbaseInterface* getHBaseInterfaceRaw();
 
   //size of All NATable related data after construction
   //this is used when NATables are cached and only then
@@ -859,8 +925,8 @@ private:
   // Bitfield flags to be used instead of numerous NABoolean fields
   enum Flags {
     UNUSED                    = 0x00000000,
-    SQLMX_ROW_FORMAT          = 0x00000004,
-    SQLMX_ALIGNED_ROW_FORMAT  = 0x00000008,
+    SQLMX_ROW_TABLE           = 0x00000004,
+    SQLMX_ALIGNED_ROW_TABLE   = 0x00000008,
     IS_INSERTABLE             = 0x00000010,
     IS_UPDATABLE              = 0x00000020,
     IS_VERTICAL_PARTITION     = 0x00000040,
@@ -874,7 +940,11 @@ private:
     DROPPABLE                 = 0x00004000,
     LOB_COLUMN                = 0x00008000,
     REMOVE_FROM_CACHE_BNC     = 0x00010000,  // Remove from NATable Cache Before Next Compilation
-    SERIALIZED_COLUMN    = 0x00020000
+    SERIALIZED_ENCODED_COLUMN = 0x00020000,
+    SERIALIZED_COLUMN         = 0x00040000,
+    IS_EXTERNAL_TABLE         = 0x00080000,
+    HAS_EXTERNAL_TABLE        = 0x00100000,
+    IS_HISTOGRAM_TABLE        = 0x00200000
   };
     
   UInt32 flags_;
@@ -1036,6 +1106,8 @@ private:
   // Caching stats
   UInt32 hitCount_;
   UInt32 replacementCounter_;
+  Int64  sizeInCache_;
+  NABoolean recentlyUsed_;
 
   COM_VERSION osv_;
   COM_VERSION ofv_;
@@ -1091,11 +1163,15 @@ private:
   // keeps track of these new columnsa allowing us to 
   // destroy them when NATable is destroyed.
   NAColumnArray newColumns_;
+
+  NAString defaultColFam_;
+  NAList<NAString> allColFams_;
 }; // class NATable
 
 #pragma warn(1506)  // warning elimination 
 
 struct NATableCacheStats {
+  char   contextType[8];
   ULng32 numLookups;  
   ULng32 numCacheHits;     
   ULng32 currentCacheSize;
@@ -1159,10 +1235,12 @@ public:
   NATable * get(CorrName& corrName, BindWA * bindWA,
                 desc_struct *inTableDescStruct);
 
-  enum QiScope { REMOVE_FROM_ALL_USERS = 100, REMOVE_MINE_ONLY };
-  void removeNATable(CorrName &corrName, QiScope qiScope, 
-                     ComObjectType ot);
-  
+  void removeNATable2(CorrName &corrName, ComQiScope qiScope, 
+                      ComObjectType ot);
+  void removeNATable(CorrName &corrName, ComQiScope qiScope, 
+                     ComObjectType ot, 
+                     NABoolean ddlXns, NABoolean atCommit);
+   
   void RemoveFromNATableCache( NATable * NATablep , UInt32 currIndx );
   static void remove_entries_marked_for_removal();
   static void unmark_entries_marked_for_removal();

@@ -2,19 +2,22 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //
@@ -254,6 +257,7 @@ typedef enum {
     ReqType_TransInfo,                      // request transaction enlistment information
     ReqType_MonStats,                       // get monitor statistics
     ReqType_ZoneInfo,                       // zone information request 
+    ReqType_NodeName,                       // change node name request
 
     ReqType_Invalid                         // marks the end of the request
                                             // types, add any new request types 
@@ -282,6 +286,7 @@ typedef enum {
     ReplyType_Mount,                        // reply with mount info
     ReplyType_MonStats,                     // reply with monitor statistics
     ReplyType_ZoneInfo,                     // reply with info on list of zones
+    ReplyType_NodeName,                     // reply with results
 
 
     ReplyType_Invalid                       // marks the end of the reply types,
@@ -600,6 +605,19 @@ struct NodeInfo_reply_def
     int last_nid;                           // Last Logical Node ID returned
     int last_pnid;                          // Last Physical Node ID returned
     bool continuation;                      // true if continuation of earlier request
+};
+
+struct NodeName_def
+{
+    int nid;                                    // node id of requesting process
+    int pid;                                    // process id of requesting process
+    char new_name[MPI_MAX_PROCESSOR_NAME];      // get information on node id (-1 for all)
+    char current_name[MPI_MAX_PROCESSOR_NAME];  // current name of node (validation)
+};
+
+struct NodeName_reply_def
+{
+    int return_code;                        // error returned to sender
 };
 
 struct NodeJoining_def
@@ -1056,6 +1074,7 @@ struct request_def
         struct PNodeInfo_def         pnode_info;
         struct SpareUp_def           spare_up;
         struct NodeReInt_def         reintegrate;
+        struct NodeName_def          nodename;
     } u;
 };
 
@@ -1085,6 +1104,7 @@ struct reply_def
         struct Close_reply_def         close;
         struct MonStats_reply_def      mon_info;
         struct ZoneInfo_reply_def      zone_info;
+        struct NodeName_reply_def      nodename;
     } u;
 };
 

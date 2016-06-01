@@ -1,19 +1,22 @@
 -- TEST056      6/2/98
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
 --
---  Licensed under the Apache License, Version 2.0 (the "License");
---  you may not use this file except in compliance with the License.
---  You may obtain a copy of the License at
+--   http://www.apache.org/licenses/LICENSE-2.0
 --
---      http://www.apache.org/licenses/LICENSE-2.0
---
---  Unless required by applicable law or agreed to in writing, software
---  distributed under the License is distributed on an "AS IS" BASIS,
---  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
---  See the License for the specific language governing permissions and
---  limitations under the License.
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
 --
 -- @@@ END COPYRIGHT @@@
 --
@@ -75,30 +78,22 @@ create table T056t10 (swallow int default 121 not null ,
                       barnowl int default 1000 not null);
 
 create unique index T056in5 on T056t10 (barnowl) 
-#ifMX
        location $$partition$$ 
        range partition (
         add first key 150 location $$partition$$,
         add first key 180 location $$partition$$)
-#ifMX
 ; 
 
 create table T056t11 (wren int not null , 
   junco int not null ,
-  blackbird int
-#ifMP
-not null
-#ifMP
-,
+  blackbird int,
   primary key(wren,junco) )
-#ifMX
       location $$partition2$$
       range partition (
         add first key (30)  location $$partition2$$,
         add first key (170) location $$partition2$$,
         add first key (190) location $$partition2$$,
         add first key (300) location $$partition2$$)
-#ifMX
 ;
 
 insert into T056t11 values (1,11,111),(3,13,113),(5,15,115)
@@ -482,7 +477,6 @@ update T056t34 set sma1 = 99 where vch2 like '%vch2';
 
 select orders, sma1, vch1, vch2 from T056t34;
 
---#ifndef SEABASE_REGRESS
 begin work;
 
 update T056t34 set vch1 = 'v' where num1 > 10;
@@ -499,7 +493,9 @@ alter table T056t34 add vch3 varchar(3) default 'neo';
 update T056t34 set vch3 = 'new' where vch1 = 'v';
 
 rollback;
---#endif
+
+-- this should return error. Col vch3 will be removed as part of rollback.
+update T056t34 set vch3 = 'new' where vch1 = 'v';
 
 delete from T056t34 where orders > 2 and orders < 12
                        or orders = 51;

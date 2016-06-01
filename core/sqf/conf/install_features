@@ -1,6 +1,28 @@
 #!/bin/bash
 #
-# Install feature file ($MY_SQROOT/etc/install_features)
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+# Install feature file ($MY_SQROOT/conf/install_features)
 #
 # This file allows specific Trafodion core builds to signal to
 # the installer the presence of a new feature that requires
@@ -35,9 +57,11 @@
 # ===========================================================
 #
 
-# Trafodion core only works with CDH 5.3 and HDP 2.2
+# Trafodion core only works with CDH 5.4 [and HDP 2.3 not yet]
 # This env var will signal that to the installer which will
 # verify the hadoop distro versions are correct as well as 
 # perform some additional support for this.
-export CDH_5_3_HDP_2_2_SUPPORT="Y"
-
+export CDH_5_3_HDP_2_2_SUPPORT="N"
+export HDP_2_3_SUPPORT="Y"
+export CDH_5_4_SUPPORT="Y"
+export APACHE_1_0_X_SUPPORT="Y"

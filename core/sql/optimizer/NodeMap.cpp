@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -35,9 +38,11 @@
 #include "cextdecs/cextdecs.h"
 
 #include "OptimizerSimulator.h"
+#include "exp_function.h"
 
 #include "CliSemaphore.h"
 
+static const int nodeNameLen = 256;
 //<pb>
 //==============================================================================
 //  Helper functions called only by NodeMap member functions.
@@ -162,15 +167,7 @@ NodeMapEntry::NodeMapEntry(char* fullName, char* givenName, CollHeap* heap,
   {   // KSKSKS
 	  clusterNumber_ = 3;
           nodeNumber_=1;// KSKSKS
-  }  // KSKSKS
-  else { // KSKSKS
-  Int32 second;
-  error = gpClusterInfo->whichSMPANDCLUSTER(dp2Name_,clusterNumber_,nodeNumber_,second,tableIdent);
-  if (!error) {
-    const NABoolean dp2NameToSegmentCpuFails=FALSE;
-    CCMPASSERT(dp2NameToSegmentCpuFails);
-  }
-  }                            
+  }  // KSKSKS                       
  
   //------------------------------------------------------------------------------------------
   // Set the given name for the partition (the ansi identifier associated with the partition)
@@ -413,15 +410,15 @@ const NAString
 NodeMapEntry::getText() const
 {
   short actualClusterNameLen = 0;
-  Int32 guardianRetcode;
-  char buffer[50];
+  NABoolean result;
+  char buffer[nodeNameLen];
 
-  guardianRetcode = OSIM_NODENUMBER_TO_NODENAME(getClusterNumber(),
-                                            buffer,
-                                            9-1, // leave room for NUL
-                                            &actualClusterNameLen);
-
-  if (guardianRetcode || actualClusterNameLen == 0) {
+  result = gpClusterInfo->NODE_ID_TO_NAME(getClusterNumber(), 
+                                                               buffer, 
+                                                               sizeof(buffer)-1, 
+                                                               &actualClusterNameLen);
+  
+  if (!result || actualClusterNameLen == 0) {
     sprintf(buffer, "Unknown:"); // error, don't have a node name
     actualClusterNameLen = (short)strlen("Unknown");
   } else {
@@ -1287,23 +1284,6 @@ NodeMap::isActive(const CollIndex position) const
   return map_[position]->isPartitionActive();
 
 } // NodeMap::isActive()
-//<pb>
-//==============================================================================
-// Retrieve the list of nodes across which a given table is partitioned.
-//
-// Input:
-//  none
-//
-// Output:
-//  none
-//
-// Returns:
-//  list of nodes across which a given table is partitioned.
-//
-const NAList<CollIndex>* NodeMap::getTableNodeList() const
-{
-  return gpClusterInfo->getTableNodeList ( tableIdent_ );
-}
 
 Lng32
 NodeMap::getPopularNodeNumber(CollIndex beginPos, CollIndex endPos) const
@@ -1311,24 +1291,161 @@ NodeMap::getPopularNodeNumber(CollIndex beginPos, CollIndex endPos) const
   Lng32 numNodes = gpClusterInfo->numOfSMPs();
   // an array of nodes in the cluster
   Int64 *nodes = new(CmpCommon::statementHeap()) Int64[numNodes];
+  for(Lng32 i = 0; i < numNodes ; i++ )
+    nodes[i] = 0; //init the array with 0
 
   for (Lng32 index = beginPos; index < endPos; index++) {
     CMPASSERT(map_.getUsage(index) != UNUSED_COLL_ENTRY);
     Lng32 currNodeNum = getNodeNumber(index);
-    nodes[currNodeNum] += 1; // keep count regions node number
+
+    if ( currNodeNum != ANY_NODE )
+      nodes[currNodeNum] += 1; // keep count regions node number
   }
 
   Lng32 nodeFrequency = 0; 
-  Lng32 popularNodeNumber = 0; // first node number is popular to start with
+  Lng32 popularNodeNumber = -1; // first node number is popular to start with
+  // introduce a pseudo-random offset to avoid a bias
+  // towards particular nodes
+  Lng32 offset = ExHDPHash::hash((char*)&beginPos, 0, sizeof(beginPos)) % numNodes;
   for (Lng32 index = 0; index < numNodes; index++) {
-    if (nodes[index] > nodeFrequency) {
-      nodeFrequency = nodes[index];
-      popularNodeNumber = index;
+    Lng32 offsetIndex = (index+offset)%numNodes;
+    if (nodes[offsetIndex] > nodeFrequency) {
+      nodeFrequency = nodes[offsetIndex];
+      popularNodeNumber = offsetIndex;
     }
   }
   NADELETEBASIC(nodes, CmpCommon::statementHeap());
   return popularNodeNumber;
 } // NodeMap::getNodeNum
+
+// Smooth the node map to reassign entries with identical node Id of higher
+// frequency than the rest to some other nodes. Assume there are m total entries in the map, and 
+// n nodes in the cluster. Assume further there are s entries in the map (out of m) that refer 
+// to very few nodes.  These s entrres are the subject of smoothing operation.  We do so by
+// 1. allocate an array nodeUsageMap[] and the ith entry in it contains all indexes k in the map
+//    that points at i (i.e., nodeMap.getNodeId[k] = i)
+// 2. Find out s by frequency counting
+// 3. Find out m - s
+// 4. Find out how many nodes in each of the s entries that should be moved
+// 
+// The nodels accepting the reasssignment will be from the set of the nodes contained in the map.
+//
+// Example 1.  Assume the original node map with 6 entries as follows:
+//
+//    NodeMapIndex   0   1   2   3  4  5 
+//    NodeMapEntry   0   1   1   3  1  5
+//
+// The nodes accepting the reasssignment will be { 0, 3, 5 }
+//
+// The subset of entries referring to a few nodes with high frequency: s = { 1, 2, 4 } 
+// Since f(0)=f(3)=f(5)=1, the average frequency of nodes not in s: (1+1+1)/3 = 1.
+// We will allow one (1) assigment in s to remain in node 1 since it is the average frequency, and 
+// re-assign the rest (marked X) to different nodes via round-robin starting the 1st node in the map. 
+// The node (1) is excluded from the re-assignment. 
+//
+//    NodeMapIndex   0   1   2   3  4  5 
+//    NodeMapEntry   0   1   1   3  1  5
+//                           X      X
+//                           ^      ^
+//                           |      |
+//                          to 0   to 3
+//
+// The final smoothed node map:
+//
+//    NodeMapIndex   0   1   2   3  4  5 
+//    NodeMapEntry   0   1   0   3  3  5
+//
+NABoolean NodeMap::smooth(Lng32 numNodes) 
+{
+  NABoolean smoothed = FALSE;
+
+  typedef ClusteredBitmap* ClusteredBitmapPtr;
+
+  ClusteredBitmap** nodeUsageMap = new (heap_) ClusteredBitmapPtr[numNodes];
+
+  for (Lng32 index = 0; index < numNodes; index++) {
+     nodeUsageMap[index] = NULL;
+  }
+
+  ClusteredBitmap includedNodes(heap_);
+
+  Lng32 highestFreq = 0;
+  for (Lng32 index = 0; index < getNumEntries(); index++) {
+    Lng32 currNodeNum = getNodeNumber(index);
+
+    if ( currNodeNum != ANY_NODE ) {
+
+      if ( nodeUsageMap[currNodeNum] == NULL ) 
+         nodeUsageMap[currNodeNum] = new (heap_)ClusteredBitmap(heap_);
+
+      nodeUsageMap[currNodeNum]->insert(index);
+      includedNodes.insert(currNodeNum);
+
+      Lng32 entries = nodeUsageMap[currNodeNum]->entries();
+      if ( highestFreq < entries ) {
+         highestFreq = entries;
+      } 
+    } 
+  }
+
+  // Find how many entries wth the highest frequency, and compute the number of entries with
+  // normal frequency (normEntries) and the number of nodes that appear with normal frequency 
+  // (normalNodesCt).
+  Lng32 count = 0;
+  Lng32 normalEntries = 0;
+  Lng32 normalNodesCt = 0;
+  for (Lng32 index = 0; index < numNodes; index++) {
+      if ( !nodeUsageMap[index] ) continue;
+
+      if ( nodeUsageMap[index]->entries() == highestFreq ) {
+         count++;
+         includedNodes.subtractElement(index);
+      } else {
+         normalEntries++;
+         normalNodesCt += nodeUsageMap[index]->entries();
+      }
+  }
+
+  if ( normalEntries >= 1 && count <= 2 && count < getNumEntries() && 
+       count* highestFreq < floor(numNodes * 0.67) ) 
+  {
+     Lng32 baseFreq  = ceil(normalNodesCt / normalEntries);
+     CollIndex availableNode = 0;
+
+     for (Lng32 index = 0; index < numNodes; index++) {
+         if ( nodeUsageMap[index] && nodeUsageMap[index]->entries() == highestFreq ) {
+            // skip first baseFreq entries and reassign the rest starting at the (baseFreq+1)th entry
+            Lng32 notTouched = 0;
+            NABoolean canAssign = FALSE;
+            for (CollIndex j=0; nodeUsageMap[index]->nextUsed(j); j++ ) {
+               if ( canAssign ) {
+
+                  // round-robin to the next available node. If we exhause all the available
+                  // nodes, go back to the start
+                  if ( !includedNodes.nextUsed(availableNode) ) {
+                     availableNode=0;
+                     includedNodes.nextUsed(availableNode);
+                  } 
+     
+                  // availableNode++ is part ofhte round-robin scheme, required to
+                  // iterate over a ClusteredBitmap.
+                  setNodeNumber(j, availableNode++);             
+
+                  smoothed=TRUE;
+               } else {
+                  notTouched++;
+                  if ( notTouched >= baseFreq ) 
+                    canAssign = TRUE;  
+               }
+            }
+         }
+     }
+  }
+
+  NADELETEARRAY(nodeUsageMap, numNodes, ClusteredBitmapPtr, heap_);
+                  
+  return smoothed;
+}
 
 //<pb>
 //==============================================================================
@@ -1906,8 +2023,8 @@ short NodeMap::codeGen(const PartitioningFunction *partFunc,
   const NodeMap *compNodeMap = partFunc->getNodeMap();
   ExEspNodeMap *exeNodeMap = new(space) ExEspNodeMap;
   ExEspNodeMapEntry *mapEntries = new (space) ExEspNodeMapEntry[numESPs];
-  char clusterNameTemp[9];
-  Int32 guardianRetcode;
+  char clusterNameTemp[256];
+  NABoolean result;
   
 #pragma warning (disable : 4018)   //warning elimination
   assert(numESPs == compNodeMap->getNumEntries());
@@ -1922,12 +2039,11 @@ short NodeMap::codeGen(const PartitioningFunction *partFunc,
       short actualClusterNameLen = 0;
       char *clusterName;
 
-      guardianRetcode = OSIM_NODENUMBER_TO_NODENAME(ne->getClusterNumber(),
-						clusterNameTemp,
-						9-1, // leave room for NUL
-						&actualClusterNameLen);
-
-      if (guardianRetcode || actualClusterNameLen == 0)
+      result = gpClusterInfo->NODE_ID_TO_NAME(ne->getClusterNumber(), 
+                                                                                              clusterNameTemp, 
+                                                                                              sizeof(clusterNameTemp)-1, 
+                                                                                              &actualClusterNameLen);
+      if (!result || actualClusterNameLen == 0)
 	clusterName = NULL; // error, don't have a node name
       else
 	{
@@ -2524,7 +2640,7 @@ NodeMap::getText() const
   Int32 lastClusterNumber=0;
   Int32 lastNodeNumber=0;
   Int32 inRange=0;
-  char buffer[50];
+  char buffer[nodeNameLen];
   NAString result = "(";
 
   for (ULng32 nodeIdx = 0; nodeIdx < map_.entries(); nodeIdx++) {

@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -67,7 +70,7 @@ using namespace std;
 // no use for this in EID
 #include "ComGuardianFileNameParts.h"
 #endif
-
+#include "Collections.h"
 
 // -----------------------------------------------------------------------
 // definitions we use to stay as compatible with the RWCString class, and
@@ -382,6 +385,9 @@ public:
   size_t        first(const char* cs) const { return fbstring_.find_first_of(cs); }
   size_t        first(const char* cs, size_t N) const{return fbstring_.find_first_of(cs, N);}
 
+  //splite this string into words by delim, memory for words are allocated in heap of elems,
+  NAList<NAString> & split(char delim, NAList<NAString> & elems);
+  
   UInt32      hash(caseCompare cmp) const;
   UInt32      hash() const;
   UInt32      hashFoldCase() const;
@@ -426,12 +432,9 @@ public:
 
   NAString&     prepend(const NAString& s, size_t N);
   NAString&     prepend(char c, size_t rep=1);  // Prepend c rep times
-  istream&      readFile(istream&);                     // Read to EOF or null character.
-  istream&      readLine(istream&,
-                         NABoolean skipWhite = TRUE);   // Read to EOF or newline.
-  istream&      readString(istream&);                   // Read to EOF or null character.
-  istream&      readToDelim(istream&, char delim='\n'); // Read to EOF or delimitor.
-  istream&      readToken(istream&);                    // Read separated by white space.
+  Int32      readFile(ifstream&);                     // Read to EOF or null character.
+  Int32      readLine(ifstream&);   // Read to EOF or newline.
+  Int32      readToDelim(ifstream&, char delim='\n'); // Read to EOF or delimitor.
 
   NAString&     remove(size_t pos);                     // Remove pos to end of string
 
@@ -450,17 +453,15 @@ public:
   NAString&     replace(size_t pos, size_t n, const NAString&, size_t);
 
   void          resize(size_t N);                       // Truncate or add blanks as necessary.
-  /*
-  void          restoreFrom(RWvistream&);               // Restore from ASCII store
-  void          restoreFrom(RWFile&);                   // Restore string
-  void          saveOn(RWvostream& s) const;
-  void          saveOn(RWFile& f) const;
-  */
+
   NASubString   strip(stripType s=trailing, char c=' ');
+  
   void          toLower();                              // Change self to lower-case
   void          toUpper();                              // Change self to upper-case
   void          toUpper8859_1();              // ISO 8859_1 alphabet upper-case
-
+  
+  NABoolean format(const char* formatTemplate...);
+  
   // useful for supplying hash functions to template hash collection ctors:
   static UInt32       hash(const NAString&);
 protected:
@@ -473,18 +474,16 @@ protected:
   void                  cow();                          // Do copy on write as needed
   
   void                  cow(size_t nc);                 // Do copy on write as needed
-  static size_t         adjustCapacity(size_t nc);
+  
   void                  initChar(char, NAMemory *h);    // Initialize from char
+
+  static char* buildBuffer(const char* formatTemplate, va_list args);
+  
 private:
 
   void          clone();          // Make self a distinct copy
 
   void          clone(size_t nc); // Make self a distinct copy w. capacity nc
-#if 0
-  static const size_t initialCapac;           // Initial allocation Capacity
-  static const size_t resizeInc;              // Resizing increment
-  static const size_t freeboard;              // Max empty space before reclaim
-#endif
 
   NAMemory * heap() const { return fbstring_.heap(); }
   
@@ -515,6 +514,8 @@ NABoolean operator==(const NAString& s1, const char* s2);
 friend class NASubString;
   
 };
+
+typedef NAString* NAStringPtr;
 
 SQLEXPORT_LIB_FUNC NAString toLower(const NAString&);   // Return lower-case version of argument.
 

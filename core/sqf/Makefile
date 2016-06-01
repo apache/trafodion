@@ -1,18 +1,21 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
@@ -38,10 +41,15 @@ SQL_W=$(MY_SQROOT)/../sql
     DP2=se
 
 MISC = win misc_sec
-SQ_COMPONENTS := make_sqevlog seabed stfs $(MISC) tm $(SEAMONSTER_TARGET) make_sql make_monitor tools
+SQ_COMPONENTS := make_sqevlog seabed stfs $(MISC) tm $(SEAMONSTER_TARGET) make_sql make_monitor tools hbase_utilities
 
 .PHONY: $(SQ_COMPONENTS)
-all: genverhdr setupdir $(SQ_COMPONENTS) 
+
+buildinfo:
+	@echo "Building $(TRAFODION_VER_PROD) Version $(TRAFODION_VER) $(SQ_BUILD_TYPE)"
+	@echo ""
+
+all: genverhdr $(SQ_COMPONENTS) 
 
 win: make_sqevlog seabed
 	cd src/win; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
@@ -60,7 +68,7 @@ smstub:
 	cd ../smstub/src; $(MAKE) 2>&1 | sed -e "s/$$/	##(SMSTUB)/" ; exit $${PIPESTATUS[0]}
 
 
-make_sql: $(SEAMONSTER_TARGET) win 
+make_sql: $(SEAMONSTER_TARGET) win hbase_utilities
 	cd sql; $(MAKE) WROOT=$(SQL_W) 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
 	cd $(MY_SQROOT)/sql/scripts && ./makemsg.ksh 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
 
@@ -76,6 +84,9 @@ monitor_ib:
 
 make_sqevlog: 
 	cd sqevlog; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
+
+hbase_utilities: tm
+	cd hbase_utilities; $(MAKE) 2>&1 | sed -e "s/$$/  ##(HBASE_UTIL)/" ; exit $${PIPESTATUS[0]}
 
 .PHONY: conn
 conn:
@@ -97,6 +108,7 @@ clean: setupdir_clean
 	-cd src/tm; $(MAKE) clean
 	-cd sql; $(MAKE) WROOT=$(SQL_W) clean
 	-cd sqevlog; $(MAKE) clean
+	-cd hbase_utilities; $(MAKE) clean
 	# from genverhdr.ksh
 	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java
 	# from makemsg.ksh
@@ -111,6 +123,7 @@ cleanall: setupdir_clean
 	-cd src/tm; $(MAKE) cleanall
 	-cd sql; $(MAKE) WROOT=$(SQL_W) clean
 	-cd sqevlog; $(MAKE) cleanall
+	-cd hbase_utilities; $(MAKE) clean
 	# from genverhdr.ksh
 	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java
 	# from makemsg.ksh
@@ -159,35 +172,38 @@ EXPORTSQLEXE= tdm_sqlc tdm_arkcmp tdm_arkesp sqlci tdm_udrserv mxlobsrvr
 EXPORTUTILS= mxtool sup   mxexportddl mximportddl
 
 setupdir:
+	mkdir -p $(EXPORTBIN_DIR)
+	mkdir -p $(EXPORTLIB_DIR)
+	mkdir -p $(EXPORTINCSQL_DIR)
+	mkdir -p $(EXPORTINCEVL_DIR)
+	@# side-effect directory creation in these targets
 	-cd monitor/linux; $(MAKE) setup
 	-cd src/win; $(MAKE) setup
 	-cd src/seabed; $(MAKE) setup
 	-cd src/tm; $(MAKE) setup
-	-cd sql; $(MAKE) WROOT=$(SQL_W) setup
 	-cd sqevlog; $(MAKE) setup
-	-@./makelink ../../mondump $(EXPORTBIN_DIR)
-	-@./makelink ../../sqid $(EXPORTBIN_DIR)
-	-@./makelink ../../sqinfo $(EXPORTBIN_DIR)
-	-@./makelink ../../sqvers $(EXPORTBIN_DIR)
-	@# SQL .mdf files
-	-mkdir -p $(EXPORTINCSQL_DIR)
-
+	@# builds/copies 3rd party dependencies as necessary
+	cd sql; $(MAKE) WROOT=$(SQL_W) setup
+	@# commands to export
+	-ln -sf ../../mondump $(EXPORTBIN_DIR)
+	-ln -sf ../../sqid $(EXPORTBIN_DIR)
+	-ln -sf ../../sqinfo $(EXPORTBIN_DIR)
+	-ln -sf ../../sqvers $(EXPORTBIN_DIR)
 	@# SQL Messages .txt file
-	-@./makelink $(SQL_W)/bin/SqlciErrors.txt $(EXPORTINCSQL_DIR)
-
+	-ln -sf $(SQL_W)/bin/SqlciErrors.txt $(EXPORTINCSQL_DIR)
 	@# copy some header files
 	-ln -sf $(SQL_W)/cli/sqlcli.h $(EXPORTINCSQL_DIR)
 	-ln -sf $(SQL_W)/sqludr/sqludr.h $(EXPORTINCSQL_DIR)
 	@#
-	-mkdir -p export/include/nsk
-	-cp -p inc/cextdecs/cextdecs.h export/include/nsk
+	mkdir -p export/include/nsk
+	-ln -sf $(MY_SQROOT)/inc/cextdecs/cextdecs.h export/include/nsk
 	@# USTAT
 	-mkdir -p export/lib/mx_ustat
-	-cp -f $(SQL_W)/ustat/USAS.sh export/lib/mx_ustat
-	-cp -f $(SQL_W)/ustat/FillAutoTbl.sh export/lib/mx_ustat
-	-cp -f $(SQL_W)/ustat/RunLogUstats.sh export/lib/mx_ustat
-	-cp -f $(SQL_W)/ustat/StopAutoStats.sh export/lib/mx_ustat
-	-cp -f $(SQL_W)/ustat/stats_profile export/lib/mx_ustat
+	-ln -sf $(SQL_W)/ustat/USAS.sh export/lib/mx_ustat
+	-ln -sf $(SQL_W)/ustat/FillAutoTbl.sh export/lib/mx_ustat
+	-ln -sf $(SQL_W)/ustat/RunLogUstats.sh export/lib/mx_ustat
+	-ln -sf $(SQL_W)/ustat/StopAutoStats.sh export/lib/mx_ustat
+	-ln -sf $(SQL_W)/ustat/stats_profile export/lib/mx_ustat
 
 # "setupdir" target clean up
 setupdir_clean:
@@ -195,7 +211,9 @@ setupdir_clean:
 	rm -rf $(EXPORTLIB_DIR)/librwtlh.so
 	rm -rf $(EXPORTLIB_DIR)/libdummy.so $(EXPORTLIB_DIR)/libtdm_measenty.so \
 		$(EXPORTLIB_DIR)/libtdm_security.so $(EXPORTLIB_DIR)/libtdm_tfds.so \
-		$(EXPORTLIB_DIR)/libtdm_tmflib.so $(EXPORTLIB_DIR)/libtdm_tmfuser.so
+		$(EXPORTLIB_DIR)/libtdm_tmflib.so $(EXPORTLIB_DIR)/libtdm_tmfuser.so \
+	        $(EXPORTLIB_DIR)/libhdfs*.so $(EXPORTLIB_DIR)/libhadoop*.so \
+	        $(EXPORTINCEVL_DIR)/hdfs.h
 	@for f in $(EXPORTSQLLIBS); do \
 	  echo rm -f $(EXPORTLIB_DIR)/$$f ; \
 	       rm -f $(EXPORTLIB_DIR)/$$f ; done
@@ -232,7 +250,7 @@ PV_MAJOR ?=  $(shell grep TRAFODION_VER_MAJOR=  $(SQVFILE) | cut -f2 -d=)
 PV_MINOR ?=  $(shell grep TRAFODION_VER_MINOR=  $(SQVFILE) | cut -f2 -d=)
 PV_UPDATE ?= $(shell grep TRAFODION_VER_UPDATE= $(SQVFILE) | cut -f2 -d=)
 
-genverhdr:
+genverhdr: buildinfo
 	cd build-scripts && ./genverhdr.ksh -major "${PV_MAJOR}" \
                                         -minor "${PV_MINOR}" \
                                         -update "${PV_UPDATE}" \
@@ -242,35 +260,42 @@ genverhdr:
                                         -branch "${PV_BRANCH}" \
                                         -date "${PV_DATE}"
 
-PKG_PROD = trafodion
+PKG_PROD = apache-trafodion
+PKG_PHX = phoenix
+PKG_DCS = dcs
 
 ifeq ($(SQ_BUILD_TYPE),release)
-  PKG_TYPE="server-$(TRAFODION_VER)"
+  PKG_TYPE="server-$(TRAFODION_VER)-incubating"
 else
   PKG_TYPE="server-$(TRAFODION_VER)-debug"
 endif
 
-
 PKG_BIN ?= "${PKG_PROD}.bin"
-PKG_TAR ?= "../${PKG_PROD}_$(PKG_TYPE).tgz"
+PKG_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}_$(PKG_TYPE).tar.gz"
 PKG_TAR_UN = "${PKG_PROD}_${SQ_BUILD_TYPE}.tar"
-SRC_PKG_BIN ?= "../${PKG_PROD}-src.bin"
-SRC_PKG_TAR ?= "../${PKG_PROD}-src.tgz"
+SRC_PKG_BIN ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}-src.bin"
+SRC_PKG_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}-src.tgz"
+PKG_PHX_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PHX}-tests.tgz"
+PKG_DCS_TEST_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_DCS}-tests.tgz"
 
-PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf src/seatrans/hbase-trx hbase_utilities/backup_and_restore
+PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf hbase_utilities/backup_and_restore
 
 PKG_BIN_OBJS += trafci
+PKG_BIN_OBJS += samples
 PKG_BIN_OBJS += export/limited-support-tools
+PKG_BIN_OBJS += LICENSE NOTICE
+PKG_BIN_OBJS += rest-${TRAFODION_VER} dcs-${TRAFODION_VER}
 
 PKG_BIN_DIRS ?= sql export
 PKG_BIN_DIRS += trafci
+PKG_BIN_DIRS += samples
 
 # Package Regression variables (parser file is for compGeneral/TESTTOK2)
 PKG_REGRESS_OBJS ?= $(SQL_W)/regress inc/seaquest/sqtypes.h inc/fs/feerrors.h $(SQL_W)/cli/sqlcli.h $(SQL_W)/cli/SQLCLIdev.h $(SQL_W)/parser/sqlparser.y
 REGRESS_EXCLUDE_FILES = "--exclude=$(SQL_W)/regress/seabase"
 REGRESS_EXCLUDE_FILES =
 
-PKG_REGRESS_TAR ?= "../${PKG_PROD}-regress.tgz"
+PKG_REGRESS_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}-regress.tgz"
 
 
 # Package SeaMonster kernel module
@@ -278,6 +303,7 @@ SEAMONSTER_TAR ?= "seamonster_${SQ_BUILD_TYPE}-src.tar.gz"
 
 #	Targets to tar/gzip the tree
 package: pkglist-files pkglist-symlinks tmp/sqenv.sh
+	mkdir -p ../../${DISTRIBUTION_DIR}
 	chmod o-rwx $(PKG_BIN_DIRS)
 	chmod -R o-rwx $(PKG_BIN_OBJS)
 	tar --mode o-rwx --no-recursion -chf $(PKG_TAR_UN) -X build-scripts/package.exclude -X build-scripts/package.exclude.$(SQ_MBTYPE) -T pkglist-files
@@ -285,6 +311,24 @@ package: pkglist-files pkglist-symlinks tmp/sqenv.sh
 	cd tmp; tar --mode o-rwx -rf ../$(PKG_TAR_UN) sqenv.sh
 	gzip -c $(PKG_TAR_UN) > $(PKG_TAR)
 	rm -f $(PKG_TAR_UN) pkglist-files pkglist-symlinks tmp/sqenv.sh
+
+LICENSE: ../../licenses/LICENSE-server
+	cp -f $? $@
+
+../../licenses/LICENSE-server:
+	cd $(@D) && $(MAKE) $(@F)
+
+NOTICE: ../../licenses/NOTICE-server
+	cp -f $? $@
+
+../../licenses/NOTICE-server:
+	cd $(@D) && $(MAKE) $(@F)
+
+rest-${TRAFODION_VER}:
+	ln -s ../rest/target/$@/$@ $@
+
+dcs-${TRAFODION_VER}:
+	ln -s ../../dcs/target/$@/$@ $@
 
 tmp/sqenv.sh:
 	@if [ ! -d tmp ]; then mkdir tmp; fi
@@ -298,7 +342,7 @@ pkglist-files: pkglist-symlinks
 	find -L $(PKG_BIN_OBJS) -type d -o -type f | grep -v -xf pkglist-symlinks > $@
 
 # simple symlinks that point to filename (does not start with . or /)
-pkglist-symlinks:
+pkglist-symlinks: LICENSE NOTICE rest-${TRAFODION_VER} dcs-${TRAFODION_VER}
 	find $(PKG_BIN_OBJS) -lname '[^./]*' > $@
 
 #	Targets to tar/gzip the self installer
@@ -323,6 +367,13 @@ srcpackage:
 package-regress:
 	tar chzf $(PKG_REGRESS_TAR) -X build-scripts/package.exclude $(REGRESS_EXCLUDE_FILES) $(PKG_REGRESS_OBJS)
 
+#	Targets to tar/gzip the phoenix tests
+package-phx:
+	tar chzf $(PKG_PHX_TAR) ../../tests/phx 
+
+#	Targets to tar/gzip the dcs tests
+package-dcs:
+	tar chzf $(PKG_DCS_TEST_TAR) ../../dcs/src/test 
 
 #	Targets to tar/gzip the self installer with sources
 srcpackagebin:

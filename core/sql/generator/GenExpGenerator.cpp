@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -291,7 +294,7 @@ Attributes * ExpGenerator::convertNATypeToAttributes
 
       attr->setIsoMapping((CharInfo::CharSet)SqlParser_ISO_MAPPING);
 
-      if (naType->getTypeQualifier() == NA_CHARACTER_TYPE)
+      if (naType->getTypeQualifier() == NA_CHARACTER_TYPE) 
 	{
 	  const CharType *charType = (CharType *)naType;
 
@@ -375,6 +378,7 @@ Attributes * ExpGenerator::convertNATypeToAttributes
 	  Int16 scale = lobLen & 0xFFFF;
 	  attr->setPrecision(precision);
 	  attr->setScale(scale);
+          attr->setCharSet(lobType->getCharSet());
 	}
       
       else
@@ -736,7 +740,6 @@ void ExpGenerator::copyDefaultValues(
 				     ExpTupleDesc * srcTupleDesc)
 {
   Lng32 numAttrs = MINOF(srcTupleDesc->numAttrs(), tgtTupleDesc->numAttrs());
-  //  for (CollIndex i = 0; i < srcTupleDesc->numAttrs(); i++)
   for (CollIndex i = 0; i < numAttrs; i++)
     {
       Attributes * srcAttr = srcTupleDesc->getAttr(i);
@@ -749,12 +752,46 @@ void ExpGenerator::copyDefaultValues(
 
       if (srcAttr->getDefaultValue())
 	{
-	  char * tgtDefVal =
-	    new(generator->getSpace()) char[srcAttr->getDefaultValueStorageLength()];
-	  
-	  str_cpy_all(tgtDefVal, 
-		      srcAttr->getDefaultValue(), 
-		      srcAttr->getDefaultValueStorageLength());
+          Lng32 tgtDefLen = tgtAttr->getDefaultValueStorageLength();
+          Lng32 srcDefLen = srcAttr->getDefaultValueStorageLength();
+          char* srcDefVal = srcAttr->getDefaultValue();
+	  char * tgtDefVal = new(generator->getSpace()) char[tgtDefLen];
+
+          // if source and target def storage lengths dont match, then
+          // need to move each part (null, vclen, data) separately.
+          if ((tgtDefLen == srcDefLen) &&
+              (tgtAttr->getNullFlag() == srcAttr->getNullFlag()) &&
+              (tgtAttr->getVCIndicatorLength() == srcAttr->getVCIndicatorLength()) &&
+              (tgtAttr->getLength() == srcAttr->getLength()))
+            {
+              str_cpy_all(tgtDefVal, srcDefVal, srcDefLen);
+            }
+          else
+            {
+              char * tgtDefValCurr = tgtDefVal;
+
+              short nullVal = 0;
+              if (srcAttr->getNullFlag())
+                {
+                  str_cpy_all((char*)&nullVal, srcDefVal, 
+                              ExpTupleDesc::NULL_INDICATOR_LENGTH);
+                  srcDefVal += ExpTupleDesc::NULL_INDICATOR_LENGTH;
+                }
+              
+              if (tgtAttr->getNullFlag())
+                {
+                  str_cpy_all(tgtDefVal, (char*)&nullVal, 
+                              ExpTupleDesc::NULL_INDICATOR_LENGTH);
+                  tgtDefValCurr += ExpTupleDesc::NULL_INDICATOR_LENGTH;
+                }
+              
+              Lng32 srcDefLen    = srcAttr->getLength(srcDefVal);
+              tgtAttr->setVarLength(srcDefLen, tgtDefValCurr);
+              tgtDefValCurr += tgtAttr->getVCIndicatorLength();
+              srcDefVal += srcAttr->getVCIndicatorLength();
+
+              str_cpy_all(tgtDefValCurr, srcDefVal, srcDefLen);
+            }
 	  
 	  tgtAttr->setDefaultValue(srcAttr->getDefaultClass(), tgtDefVal);
 	}
@@ -2889,7 +2926,8 @@ short ExpGenerator::generateKeyEncodeExpr(const IndexDesc * indexDesc,
       if (handleSerialization)
 	{
 	  NAColumn * nac = indexDesc->getNAFileSet()->getIndexKeyColumns()[i];
-	  if (CmpSeabaseDDL::isEncodingNeededForSerialization(nac))
+          NABoolean isAlignedRowFormat = indexDesc->getNAFileSet()->isSqlmxAlignedRowFormat();
+	  if ((!isAlignedRowFormat) && CmpSeabaseDDL::isEncodingNeededForSerialization(nac))
 	    {
 	      if (desc_flag)
 		{
@@ -2935,7 +2973,8 @@ short ExpGenerator::generateDeserializedMoveExpr(
 						 ex_expr ** moveExpr,
 						 ExpTupleDesc ** tupleDesc,
 						 ExpTupleDesc::TupleDescFormat tdescF,
-						 ValueIdList &deserVIDlist)
+						 ValueIdList &deserVIDlist,
+						 ValueIdSet &alreadyDeserialized)
 {
   for (Lng32 i = 0; i < valIdList.entries(); i++)
     {
@@ -2943,7 +2982,8 @@ short ExpGenerator::generateDeserializedMoveExpr(
       NAColumn * nac = vid.getNAColumn( TRUE );
 
       ItemExpr * ie = NULL;
-      if (CmpSeabaseDDL::isEncodingNeededForSerialization(nac))
+      if (CmpSeabaseDDL::isEncodingNeededForSerialization(nac) &&
+	  !alreadyDeserialized.contains(vid))
 	{
 	  ie = new(generator->wHeap()) CompDecode(vid.getItemExpr(), &vid.getType(),
 						  FALSE, TRUE);

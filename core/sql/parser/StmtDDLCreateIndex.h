@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -93,8 +96,6 @@ public:
 
         // returns a NAList of ElemDDLColRef parse nodes.
 
-  inline unsigned short getDSlackPercentage() const;
-
   inline const ParDDLFileAttrsCreateIndex & getFileAttributes() const;
   inline       ParDDLFileAttrsCreateIndex & getFileAttributes();
 
@@ -113,8 +114,6 @@ public:
         // physical device name format.  If the LOCATION
         // clause is not specified, a default location is
         // used.
-
-  inline unsigned short getISlackPercentage() const;
 
   inline const QualifiedName & getOrigTableNameAsQualifiedName() const;
   inline       QualifiedName & getOrigTableNameAsQualifiedName();
@@ -175,19 +174,9 @@ public:
         // returns TRUE if the index file attribute clause appears;
         // returns FALSE otherwise.
 
-  inline NABoolean isDSlackSpecified() const;
-
-        // returns TRUE if DSlack clause appears;
-        // returns FALSE otherwise.
-
   inline NABoolean isLocationSpecified() const;
 
         // returns TRUE if location clause is specified;
-        // returns FALSE otherwise.
-
-  inline NABoolean isISlackSpecified() const;
-
-        // returns TRUE if ISlack clause appears;
         // returns FALSE otherwise.
 
   inline NABoolean isPopulateOptionSpecified() const;
@@ -436,12 +425,6 @@ private:
   // Index load information
   //
 
-  NABoolean isDSlackClauseSpec_;
-  unsigned short dSlackPercentage_;
-
-  NABoolean isISlackClauseSpec_;
-  unsigned short iSlackPercentage_;
-
   NABoolean isParallelExecutionClauseSpec_;
   NABoolean isParallelExec_;  // TRUE (ON); FALSE (OFF)
   NABoolean isPopulated_;     // True if populate option is specified, false if no populate is specified.
@@ -534,12 +517,6 @@ StmtDDLCreateIndex::getColRefArray()
   return columnRefArray_;
 }
 
-inline unsigned short
-StmtDDLCreateIndex::getDSlackPercentage() const
-{
-  return dSlackPercentage_;
-}
-
 inline const ParDDLFileAttrsCreateIndex &
 StmtDDLCreateIndex::getFileAttributes() const
 {
@@ -556,12 +533,6 @@ inline const NAString &
 StmtDDLCreateIndex::getGuardianLocation() const
 {
   return guardianLocation_;
-}
-
-inline unsigned short
-StmtDDLCreateIndex::getISlackPercentage() const
-{
-  return iSlackPercentage_;
 }
 
 // get index name
@@ -694,20 +665,6 @@ inline NABoolean
 StmtDDLCreateIndex::isAttributeSpecified() const
 {
   return isAttributeClauseSpec_;
-}
-
-// is the DSlack clause specified?
-inline NABoolean
-StmtDDLCreateIndex::isDSlackSpecified() const
-{
-  return isDSlackClauseSpec_;
-}
-
-// is the ISlack clause specified?
-inline NABoolean
-StmtDDLCreateIndex::isISlackSpecified() const
-{
-  return isISlackClauseSpec_;
 }
 
 // is location clause specified?

@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -84,6 +87,7 @@ public:
       DDL = PROCESSDDL,	// synonyms
       UPDATE_HIST_STAT,
       SET_TRANS,
+      DDL_NATABLE_INVALIDATE,
       INTERNALSP_REQUEST,
       INTERNALSP_GETNEXT,
       ENVS_REFRESH,
@@ -1011,6 +1015,28 @@ private:
   CmpMessageSetTrans& operator=(const CmpMessageSetTrans&);
   CmpMessageSetTrans(const CmpMessageSetTrans&);
 }; // end of CmpMessageSetTrans
+
+// -----------------------------------------------------------------------
+// The DDL NATABLE INVALIDATION command
+// This command is send from executor to arkcmp at the end of a 
+// transaction. On receiving it, arkcmp invalidates NATable for ddl objects 
+// that were part of that transaction. They are then reloaded when that
+// object is accessed.
+// -----------------------------------------------------------------------
+
+class CmpMessageDDLNATableInvalidate : public CmpMessageRequest 
+{
+public:
+  CmpMessageDDLNATableInvalidate(char* stmt=NULL,CmpMsgBufLenType size=0,CollHeap* h=0):
+  CmpMessageRequest(DDL_NATABLE_INVALIDATE, stmt,size,h)
+    { };
+
+  virtual ~CmpMessageDDLNATableInvalidate() {};
+   
+private:
+  CmpMessageDDLNATableInvalidate& operator=(const CmpMessageDDLNATableInvalidate&);
+  CmpMessageDDLNATableInvalidate(const CmpMessageDDLNATableInvalidate&);
+}; // end of CmpMessageDDLNATableInvalidate
 
 // -----------------------------------------------------------------------
 // Database user ID

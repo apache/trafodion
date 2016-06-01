@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1465,7 +1468,10 @@ NABoolean ExOperStats::operator==(ExOperStats * other)
        statType() == ExOperStats::BMO_STATS ||
        statType() == ExOperStats::UDR_BASE_STATS ||
        statType() == ExOperStats::REPLICATOR_STATS ||
-       statType() == ExOperStats::REORG_STATS) 
+       statType() == ExOperStats::REORG_STATS || 
+       statType() == ExOperStats::HBASE_ACCESS_STATS ||
+       statType() == ExOperStats::HDFSSCAN_STATS) 
+
   {
     if (getId()->tdbId_ == other->getId()->tdbId_)
       return TRUE;
@@ -1946,6 +1952,12 @@ void ExFragRootOperStats::merge(ExOperStats * other)
       break;
     case BMO_STATS:
       merge((ExBMOStats *)other);
+      break;
+    case HBASE_ACCESS_STATS:
+      merge((ExHbaseAccessStats *)other);
+      break;
+    case HDFSSCAN_STATS:
+      merge((ExHdfsScanStats *)other);
       break;
     default:
       // do nothing - This type of stat has no merge data
@@ -5400,7 +5412,7 @@ void ExMeasStats::merge(ExHbaseAccessStats* other)
   exeDp2Stats()->incAccessedDP2Rows(other->rowsAccessed());
   exeDp2Stats()->incUsedDP2Rows(other->rowsUsed());
   exeDp2Stats()->incDiskReads(other->hbaseCalls());
-  exeDp2Stats()->incProcessBusyTime(other->getTimer().getTime());
+  exeDp2Stats()->incProcessBusyTime(other->getHbaseTimer().getTime());
   fsDp2MsgsStats() ->incMessageBytes(0);
 }
 
@@ -6688,7 +6700,10 @@ NABoolean ExStatisticsArea::merge(ExOperStats * other, UInt16 statsMergeType)
         other->statType() != ExOperStats::BMO_STATS &&
         other->statType() != ExOperStats::PERTABLE_STATS &&
         other->statType() != ExOperStats::UDR_BASE_STATS &&
+        other->statType() != ExOperStats::HBASE_ACCESS_STATS &&
+        other->statType() != ExOperStats::HDFSSCAN_STATS &&
         other->statType() != ExOperStats::REORG_STATS)
+
         // Ignore stats and return as if merge is done
         return TRUE;
       while ((stat = getNext()) != NULL)
@@ -8068,20 +8083,26 @@ Lng32 ExStatisticsArea::getStatsDesc(short *statsCollectType,
         *no_returned_stats_desc = numEntries()+1;
     if (max_stats_desc < numEntries()+1)
       return -CLI_INSUFFICIENT_STATS_DESC;
-    sqlstats_desc[0].tdb_id = (short)_UNINITIALIZED_TDB_ID;
-    sqlstats_desc[0].stats_type = ExOperStats::MASTER_STATS;
-    sqlstats_desc[0].tdb_name[0] = '\0';
-    // Leave the index 1 for ROOT_OPER_STATS
+    i=0;
+    sqlstats_desc[i].tdb_id = (short)_UNINITIALIZED_TDB_ID;
+    sqlstats_desc[i].stats_type = ExOperStats::MASTER_STATS;
+    sqlstats_desc[i].tdb_name[0] = '\0';
+    i++;
+    // Populate the stats descriptor for ROOT_OPER_STATS first
     position();
-    for (i=2; (stat = getNext()) != NULL; )
+    for (; (stat = getNext()) != NULL; )
     {
       if (stat->statType() == ExOperStats::ROOT_OPER_STATS)
       {
-        sqlstats_desc[1].tdb_id = (short)stat->getTdbId();
-        sqlstats_desc[1].stats_type = ExOperStats::ROOT_OPER_STATS;
-        sqlstats_desc[1].tdb_name[0] = '\0';
+        sqlstats_desc[i].tdb_id = (short)stat->getTdbId();
+        sqlstats_desc[i].stats_type = ExOperStats::ROOT_OPER_STATS;
+        sqlstats_desc[i].tdb_name[0] = '\0';
+        i++;
       }
-      else 
+    } 
+    position();
+    for (; (stat = getNext()) != NULL; )
+    {
       if (stat->statType() == ExOperStats::PERTABLE_STATS )
       {
         sqlstats_desc[i].tdb_id = (short)stat->getPertableStatsId();
@@ -8251,6 +8272,8 @@ NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *other,
   ExUDRBaseStats *udrBaseStats;
   ExMasterStats *masterStats;
   ExProcessStats *processStats;
+  ExHbaseAccessStats *hbaseAccessStats;
+  ExHdfsScanStats *hdfsScanStats;
   NABoolean retcode = FALSE;
   ExOperStats::StatType statType;
   ExOperStats *stat1;
@@ -8405,6 +8428,26 @@ NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *other,
             retcode = TRUE;
           }
           break;
+        case ExOperStats::HDFSSCAN_STATS:
+          if (detailLevel_ == stat->getTdbId())
+          {
+            hdfsScanStats = new (getHeap()) ExHdfsScanStats(getHeap());
+            hdfsScanStats->setCollectStatsType(getCollectStatsType());
+            hdfsScanStats->copyContents((ExHdfsScanStats *)stat);
+            insert(hdfsScanStats);
+            retcode = TRUE;
+          }
+          break;
+        case ExOperStats::HBASE_ACCESS_STATS:
+          if (detailLevel_ == stat->getTdbId())
+          {
+            hbaseAccessStats = new (getHeap()) ExHbaseAccessStats(getHeap());
+            hbaseAccessStats->setCollectStatsType(getCollectStatsType());
+            hbaseAccessStats->copyContents((ExHbaseAccessStats *)stat);
+            insert(hbaseAccessStats);
+            retcode = TRUE;
+          }
+          break; 
         default:
           break;
         } // StatType case
@@ -9957,7 +10000,6 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
           		  Lng32 maxLen)
 {
   char *buf = dataBuffer;
-  char transIdText[129];
   
   Int64 exeElapsedTime;
   Int64 compElapsedTime;
@@ -9984,10 +10026,6 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
   }
   else
     exeElapsedTime = exeEndTime_ - exeStartTime_;
-  {
-    str_cpy_all(transIdText, "-1", 2);
-    transIdText[2] = '\0';
-  }
   short stmtState = stmtState_;
 
 #ifndef __EID
@@ -10002,7 +10040,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
     "subqueryType: %s EstRowsAccessed: %f EstRowsUsed: %f compElapsedTime: %Ld "
     "exeElapsedTime: %Ld parentQid: %s parentQidSystem: %s childQid: %s "
     "rowsReturned: %Ld firstRowReturnTime: %Ld numSqlProcs: %d  numCpus: %d "
-    "exePriority: %d transId: %s suspended: %s lastSuspendTime: %Ld "
+    "exePriority: %d transId: %Ld suspended: %s lastSuspendTime: %Ld "
     "LastErrorBeforeAQR: %d AQRNumRetries: %d DelayBeforeAQR: %d "
     "reclaimSpaceCnt: %d "
     "blockedInSQL: %d blockedInClient: %d  lastActivity: %d "
@@ -10034,7 +10072,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
               numSqlProcs_,
               numCpus_,
               exePriority_,
-              transIdText,
+              transId_,
               (isQuerySuspended_ ? "yes" : "no" ),
               querySuspendedTime_,
               aqrLastErrorCode_,
@@ -10057,7 +10095,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
     "subqueryType: %d EstRowsAccessed: %f EstRowsUsed: %f compElapsedTime: %Ld "
     "exeElapsedTime: %Ld parentQid: %s parentQidSystem: %s childQid: %s "
     "rowsReturned: %Ld firstRowReturnTime: %Ld numSqlProcs: %d  numCpus: %d "
-    "exePriority: %d transId: %s suspended: %s lastSuspendTime: %Ld "
+    "exePriority: %d transId: %Ld suspended: %s lastSuspendTime: %Ld "
     "LastErrorBeforeAQR: %d AQRNumRetries: %d DelayBeforeAQR: %d reclaimSpaceCnt: %d "
     "blockedInSQL: %d blockedInClient: %d  lastActivity: %d "
                   "sqlSrcLen: %d sqlSrc: \"%s\"",
@@ -10088,7 +10126,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
               numSqlProcs_,
               numCpus_,
               exePriority_,
-              transIdText,
+              transId_,
               (isQuerySuspended_ ? "yes" : "no" ),
               querySuspendedTime_,
               aqrLastErrorCode_,
@@ -10663,6 +10701,27 @@ NABoolean ExMasterStats::filterForCpuStats(short subReqType,
       }
    }
    else
+   if (subReqType == SQLCLI_STATS_REQ_ACTIVE_QUERIES)
+   {
+      if (stmtState_ != Statement::PROCESS_ENDED_)
+      {
+         if (exeStartTime_ != -1) {
+            if (exeEndTime_ != -1)
+               tsToCompare = exeEndTime_;
+            else
+               tsToCompare = exeStartTime_;
+            lastActivity_ = (Int32)((currTimestamp-tsToCompare) / (Int64)1000000);
+            if (exeEndTime_ == -1)
+               return TRUE;
+            else
+            if (lastActivity_ <= etTimeInSecs) {
+               lastActivity_ = -lastActivity_;
+               retcode = TRUE;
+            }
+         }
+      }
+   }
+   else
    if (subReqType == SQLCLI_STATS_REQ_QUERIES_IN_SQL)
    {
       if (exeStartTime_ != -1 && exeEndTime_ == -1 && isBlocking_)
@@ -10903,6 +10962,15 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
       retcode = SQLCLI_STATS_REQ_ET_OFFENDER;
     }
     else  
+    if (strncasecmp(ptr, "ACTIVE_QUERIES", 14) == 0) 
+    {
+      ptr = str_tok(NULL, ',', &internal);
+      etTemp = ptr;
+      etOffender = TRUE; 
+      *subReqType = (short)SQLCLI_STATS_REQ_ACTIVE_QUERIES;
+      retcode = SQLCLI_STATS_REQ_ET_OFFENDER;
+    }
+    else	
     if (strncasecmp(ptr, "DEAD_QUERIES", 12) == 0) 
     {
       ptr = str_tok(NULL, ',', &internal);
@@ -11072,7 +11140,7 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
        tempNum =  str_atoi(pidTemp, str_len(pidTemp));
        if (tempNum < 0)
           tempNum = -1;
-       *pid = (short)tempNum;
+       *pid = (pid_t)tempNum;
     }
   }
   if (timeTemp != NULL)
@@ -11100,7 +11168,7 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
   if (etTemp != NULL)
   {
     tempNum =  atoi(etTemp);
-    *filter = (short)tempNum;
+    *filter = (Lng32)tempNum;
     retcode = SQLCLI_STATS_REQ_ET_OFFENDER;
   }
   if (nodeNameTemp != NULL)

@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -410,6 +413,7 @@ ExSqlComp::ReturnStatus ExSqlComp::sendR(CmpMessageObj* c, NABoolean w)
 
   // send the message.
   Int64 transid = cliGlobals_->currContext()->getTransaction()->getExeXnId(); 
+  recentIpcTimestamp_ = NA_JulianTimestamp();
   sqlcompMessage_->send(w, transid);
 
   if (badConnection_) 
@@ -440,6 +444,7 @@ ExSqlComp::ReturnStatus ExSqlComp::sendR(CmpMessageObj* c, NABoolean w)
 void ExSqlComp::completeRequests()
 {
   sqlcompMessage_->waitOnMsgStream(IpcInfiniteTimeout);
+  recentIpcTimestamp_ = NA_JulianTimestamp();
 }
 
 // The return status of ERROR here is only useful for WAITED requests --
@@ -449,6 +454,7 @@ inline
 ExSqlComp::ReturnStatus ExSqlComp::waitForReply()
 {
   sqlcompMessage_->waitOnMsgStream(IpcImmediately);
+  recentIpcTimestamp_ = NA_JulianTimestamp();
   return (outstandingSendBuffers_.ioStatus_ == FINISHED) ? SUCCESS : ERROR;
 }
 
@@ -1004,7 +1010,7 @@ isShared_(FALSE), lastContext_(NULL), resendingControls_(FALSE)
   server_ = 0;
 
   diagArea_ = ComDiagsArea::allocate(h_);  
- 
+  recentIpcTimestamp_ = -1; 
 }
 
 ExSqlComp::~ExSqlComp()
@@ -1275,6 +1281,11 @@ ExSqlComp::ReturnStatus ExSqlComp::sendRequest (Operator op,
     case EXSQLCOMP::SET_TRANS :
       request = new(h_) 
 	CmpMessageSetTrans(input_data,(CmpMsgBufLenType)size,h_);
+      break;
+      
+    case EXSQLCOMP::DDL_NATABLE_INVALIDATE :
+      request = new(h_) 
+	CmpMessageDDLNATableInvalidate(input_data,(CmpMsgBufLenType)size,h_);
       break;
       
     case EXSQLCOMP::DATABASE_USER :

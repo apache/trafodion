@@ -1,19 +1,22 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
@@ -151,7 +154,7 @@ public:
     return NULL;
   };
 
-  ComTdbAccessType getAccessType() { return ComTdbAccessType(accessType_); }
+  ComTdbAccessType getAccessType() const { return ComTdbAccessType(accessType_); }
 
   class HbaseScanRows : public NAVersionedObject
   {
@@ -262,15 +265,46 @@ public:
     NABoolean useMinMdamProbeSize() 
     { return (flags_ & USE_MIN_MDAM_PROBE_SIZE) != 0; };
 
+    void setUseSmallScanner(NABoolean v)
+    {(v ? flags_ |= USE_SMALL_SCANNER :
+      flags_ &= ~USE_SMALL_SCANNER); };
+    NABoolean useSmallScanner()
+    { return (flags_ & (USE_SMALL_SCANNER | USE_SMALL_SCANNER_FOR_MDAM)) != 0; };
+    void setUseSmallScannerForProbes(NABoolean v)
+    {(v ? flags_ |= USE_SMALL_SCANNER_FOR_PROBES :
+      flags_ &= ~USE_SMALL_SCANNER_FOR_PROBES); };
+    NABoolean useSmallScannerForProbes()
+    { return (flags_ & USE_SMALL_SCANNER_FOR_PROBES) != 0; };
+
+    void setUseSmallScannerForMDAMifNeeded(UInt32 numRowRetrieved){
+        //if last scan of mdam fitted in one block, and small scanner CQD is either ON or SYSTEM (this is summarized in USE_SMALL_SCANNER_FOR_PROBES)
+        //then next MDAM scan can use small scanner. Most likely it is about same size as previous one.
+        if ((numRowRetrieved < maxNumRowsPerHBaseBlock_) && ((flags_ & USE_SMALL_SCANNER_FOR_PROBES) != 0))
+            flags_ |= USE_SMALL_SCANNER_FOR_MDAM;
+        else
+            flags_ &= ~USE_SMALL_SCANNER_FOR_MDAM;
+    }
+
+    void setMaxNumRowsPerHbaseBlock(UInt32 n) { maxNumRowsPerHBaseBlock_ = n;}
+    UInt32 maxNumRowsPerHbaseBlock() { return maxNumRowsPerHBaseBlock_; }
+
+    void setDopParallelScanner(Float32 f) { dopParallelScanner_ = f;}
+    Float32 dopParallelScanner() { return dopParallelScanner_; }
+
   private:
     enum
     {
-      CACHE_BLOCKS               = 0x0001,
-      USE_MIN_MDAM_PROBE_SIZE    = 0x0002
+      CACHE_BLOCKS                 = 0x0001,
+      USE_MIN_MDAM_PROBE_SIZE      = 0x0002,
+      USE_SMALL_SCANNER            = 0x0004,
+      USE_SMALL_SCANNER_FOR_PROBES = 0x0008,
+      USE_SMALL_SCANNER_FOR_MDAM   = 0x0010
     };
     
     UInt32 flags_;
     UInt32 numCacheRows_;
+    UInt32 maxNumRowsPerHBaseBlock_;
+    Float32 dopParallelScanner_;
   };
 
   // ---------------------------------------------------------------------
@@ -599,14 +633,15 @@ public:
   Queue* listOfDeletedColNames() { return listOfUpDeldColNames_; }
   Queue* listOfMergedColNames() { return listOfMergedColNames_; }
   Queue* listOfIndexesAndTable() { return listOfIndexesAndTable_; }
-
+  Queue* listOfOmittedColNames() { return listOfOmittedColNames_; }
   void setListOfIndexesAndTable(Queue* val) {listOfIndexesAndTable_ = val; }
+  void setListOfOmittedColNames(Queue* val) {listOfOmittedColNames_ = val; }
 
   // overloading listOfUpdatedColNames and listOfMergedColNames...for now.
   Queue* listOfHbaseFilterColNames() { return listOfUpDeldColNames_; }
   Queue* listOfHbaseCompareOps() { return listOfMergedColNames_; }
 
-  UInt32 convertRowLen() { return convertRowLen_;}
+  UInt32 convertRowLen() const { return convertRowLen_;}
 
   char * keyColName() { return keyColName_; }
 
@@ -701,6 +736,10 @@ public:
   {(v ? flags_ |= ASYNC_OPERATIONS : flags_ &= ~ASYNC_OPERATIONS); };
   NABoolean asyncOperations() { return (flags_ & ASYNC_OPERATIONS) != 0; };
 
+  void setUseCif(NABoolean v)
+        {(v ? flags2_ |= USE_CIF : flags_ &= ~USE_CIF); };
+  NABoolean getUseCif() { return (flags_ & USE_CIF) != 0; };
+
   void setCanAdjustTrafParams(NABoolean v)
    {(v ? flags2_ |= TRAF_UPSERT_ADJUST_PARAMS : flags2_ &= ~TRAF_UPSERT_ADJUST_PARAMS); };
    NABoolean getCanAdjustTrafParams() { return (flags2_ & TRAF_UPSERT_ADJUST_PARAMS) != 0; };
@@ -713,13 +752,9 @@ public:
     {wbSize_ = v; };
     UInt32 getWBSize() { return wbSize_; };
 
-    void setIsTrafAutoFlush(NABoolean v)
-     {(v ? flags2_ |= TRAF_UPSERT_AUTO_FLUSH : flags2_ &= ~TRAF_UPSERT_AUTO_FLUSH); };
-     NABoolean getIsTrafLoadAutoFlush() { return (flags2_ & TRAF_UPSERT_AUTO_FLUSH) != 0; };
-
-     void setTrafWriteToWAL(NABoolean v)
-      {(v ? flags2_ |= TRAF_UPSERT_WRITE_TO_WAL : flags2_ &= ~TRAF_UPSERT_WRITE_TO_WAL); };
-      NABoolean getTrafWriteToWAL() { return (flags2_ & TRAF_UPSERT_WRITE_TO_WAL) != 0; };
+   void setTrafWriteToWAL(NABoolean v)
+     {(v ? flags2_ |= TRAF_UPSERT_WRITE_TO_WAL : flags2_ &= ~TRAF_UPSERT_WRITE_TO_WAL); };
+   NABoolean getTrafWriteToWAL() { return (flags2_ & TRAF_UPSERT_WRITE_TO_WAL) != 0; };
 
   const char * getLoadPrepLocation() const { return LoadPrepLocation_; }
   void setLoadPrepLocation(char * loadPrepLocation) { LoadPrepLocation_ = loadPrepLocation;  }
@@ -825,6 +860,11 @@ public:
    UInt16 getHbaseRowsetVsbbSize()
    { return hbaseRowsetVsbbSize_; } 
 
+   void setTrafLoadFlushSize(UInt16 size)
+   {  trafLoadFlushSize_ = size; }
+   UInt16 getTrafLoadFlushSize()
+   { return trafLoadFlushSize_; } 
+
    void setLogErrorRows(NABoolean v)
      {(v ? flags2_ |= TRAF_LOAD_LOG_ERROR_ROWS : flags2_ &= ~TRAF_LOAD_LOG_ERROR_ROWS); };
    NABoolean getLogErrorRows() { return (flags2_ & TRAF_LOAD_LOG_ERROR_ROWS) != 0; };
@@ -835,7 +875,16 @@ public:
 
    UInt32 getMaxErrorRows() const{ return maxErrorRows_; }
    void setMaxErrorRows(UInt32 v ) { maxErrorRows_= v; }
-
+  
+   void setInsDelPreCondExpr(ExExprPtr exprPtr) {
+        insDelPreCondExpr_ = exprPtr;
+   }
+   void setInsConstraintExpr(ExExprPtr exprPtr) {
+      insConstraintExpr_ = exprPtr;
+   }
+   void setUpdConstraintExpr(ExExprPtr exprPtr) {
+      updConstraintExpr_ = exprPtr;
+   }
  protected:
   enum
   {
@@ -854,13 +903,14 @@ public:
     UPDEL_COLNAME_IS_STR             = 0x1000,
     USE_HBASE_XN                     = 0x2000,
     ALIGNED_FORMAT                   = 0x4000,
-    ASYNC_OPERATIONS                 = 0x8000
+    ASYNC_OPERATIONS                 = 0x8000,
+    USE_CIF                          = 0x10000
   };
 
   enum
   {
     TRAF_UPSERT_ADJUST_PARAMS        = 0x0001,
-    TRAF_UPSERT_AUTO_FLUSH           = 0x0002,
+    TRAF_UPSERT_UNUSED               = 0x0002,
     TRAF_UPSERT_WRITE_TO_WAL         = 0x0004,
     TRAF_LOAD_PREP                   = 0x0008,
     TRAF_LOAD_COMPLETION             = 0x0010,
@@ -900,7 +950,7 @@ public:
   UInt32 mergeInsertRowLen_;
   UInt32 returnFetchedRowLen_;
   UInt32 returnUpdatedRowLen_;
-
+  
   UInt32 rowIdLen_;
   UInt32 outputRowLen_;
   UInt32 rowIdAsciiRowLen_;
@@ -930,7 +980,10 @@ public:
   ExExprPtr encodedKeyExpr_;
 
   ExExprPtr keyColValExpr_;
+  ExExprPtr insDelPreCondExpr_;
   ExExprPtr hbaseFilterExpr_;
+  ExExprPtr insConstraintExpr_;
+  ExExprPtr updConstraintExpr_;
 
   ExCriDescPtr workCriDesc_;      
 
@@ -944,6 +997,7 @@ public:
   QueuePtr listOfUpDeldColNames_;
   QueuePtr listOfMergedColNames_;
   QueuePtr listOfIndexesAndTable_; // used by bulk load
+  QueuePtr listOfOmittedColNames_;
 
   // information about key ranges
   keyRangeGenPtr keyInfo_;                             
@@ -969,6 +1023,7 @@ public:
   HbaseSnapshotScanAttributesPtr hbaseSnapshotScanAttributes_;
   UInt32 maxErrorRows_;
   UInt16 hbaseRowsetVsbbSize_; 
+  UInt16 trafLoadFlushSize_; 
   HbaseAccessOptionsPtr hbaseAccessOptions_;
   char fillers[2];
 };

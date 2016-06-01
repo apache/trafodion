@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1999-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -79,6 +82,7 @@ MemoryMonitor::MemoryMonitor(Lng32 windowSize,
 			     Lng32 sampleInterval,
 			     CollHeap *heap)
   : physKBytes_(0),
+    physKBytesRatio_(0),
     availBytesPercent_(1.0),
     commitBytesPercent_(0),
     commitPhysRatio_(0),
@@ -102,14 +106,33 @@ MemoryMonitor::MemoryMonitor(Lng32 windowSize,
   char *currPtr;
   size_t bytesRead;
   fd_meminfo_ = fopen("/proc/meminfo", "r");
-  bytesRead = fread(buffer, 1, 1024, fd_meminfo_);
-  currPtr = strstr(buffer, "MemTotal");
-  sscanf(currPtr, "%*s " PF64 " kB", &memTotal_);
-  physKBytes_ = memTotal_;
-  physKBytesRatio_ = physKBytes_ / (8 * 1024 * 1024);
-  fd_vmstat_ = fopen("/proc/vmstat", "r");
+  if (fd_meminfo_) {
+    bytesRead = fread(buffer, 1, 1024, fd_meminfo_);
+    currPtr = strstr(buffer, "MemTotal");
+    if (currPtr) {
+      sscanf(currPtr, "%*s " PF64 " kB", &memTotal_);
+      physKBytes_ = memTotal_;
+      physKBytesRatio_ = physKBytes_ / (8 * 1024 * 1024);
+    }
+    else {
+      // something unexpected. let's just close the file
+      fclose(fd_meminfo_);
+      fd_meminfo_ = 0;
+    }
+  }
 
-	ULng32 pageSize = 0;  
+  // Disable monitoring if the envvar is set.
+  // We do this here to get the initial meminfo 
+  // even if one wants to disable continous memory 
+  // monitoring.
+  char *lv_envVar = getenv("SQL_DISABLE_MEMMONITOR");
+  if (lv_envVar && (strcmp(lv_envVar, "1") == 0)) {
+    return;
+  }
+
+  ULng32 pageSize = 0;  
+
+  fd_vmstat_ = fopen("/proc/vmstat", "r");
 
   if (!threadIsCreated_)
     {
@@ -131,7 +154,6 @@ MemoryMonitor::~MemoryMonitor() {
     fclose(fd_vmstat_);
   }
 };
-
 
 // Called by main thread only.
 Lng32 MemoryMonitor::memoryPressure() {
@@ -178,6 +200,7 @@ void MemoryMonitor::updatePageFaultRate(Int64 pageFault) {
   if (entryCount_ < 3)
     entryCount_++;
 }
+
 void MemoryMonitor::update(float &scale) {
 	
 	if (fd_meminfo_ == NULL) 
@@ -185,7 +208,7 @@ void MemoryMonitor::update(float &scale) {
         Int32 success = fseek(fd_meminfo_, 0, SEEK_SET);
         if (success != 0)
                 return;
-	char buffer[2048];
+	char buffer[4096];
 	Int64 memFree = -1, memCommitAS = 0;
 	Int64 pgpgout = -1, pgpgin = -1;
 	size_t bytesRead;
@@ -199,9 +222,9 @@ void MemoryMonitor::update(float &scale) {
 		return;
         }
         currPtr = strstr(buffer, "MemFree");
-	sscanf(currPtr, "%*s " PF64 " kB", &memFree);
+	if (currPtr) sscanf(currPtr, "%*s " PF64 " kB", &memFree);
         currPtr = strstr(buffer, "Committed_AS");
-	sscanf(currPtr, "%*s " PF64 " kB", &memCommitAS);
+	if (currPtr) sscanf(currPtr, "%*s " PF64 " kB", &memCommitAS);
 
 	Lng32 prevPressure = pressure_;
 	if (memTotal_ > 0 && memCommitAS > 0 && memFree > -1)
@@ -239,9 +262,9 @@ void MemoryMonitor::update(float &scale) {
 		return;
         }
         currPtr = strstr(buffer, "pgpgin");
-	sscanf(currPtr, "%*s " PF64 " kB", &pgpgin);
+	if (currPtr) sscanf(currPtr, "%*s " PF64 " kB", &pgpgin);
         currPtr = strstr(buffer, "pgpgout");
-	sscanf(currPtr, "%*s " PF64 " kB", &pgpgout);
+	if (currPtr) sscanf(currPtr, "%*s " PF64 " kB", &pgpgout);
 	if (pgpgin > -1 && pgpgout > -1)
 	  updatePageFaultRate(pgpgin + pgpgout);
 	else

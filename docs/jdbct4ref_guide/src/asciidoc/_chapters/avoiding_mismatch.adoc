@@ -1,0 +1,97 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+[[avoiding-driver-server-version-mismatch]]
+= Avoiding Driver-Server Version Mismatch
+
+The {project-name} JDBC type 4 driver described in this
+document can connect only with an version-equivalent platform
+(server). It cannot connect with an earlier version platform.
+
+To make a connection with the {project-name} platform, JDBC clients,
+through the driver, connect with the {project-name} database
+connectivity service (DCS) on the {project-name} platform. In some
+situations, {project-name} JDBC clients need to make connections to
+older-version platforms (servers) from the same client boxes.
+To make a connection, the driver version
+must be compatible with the {project-name} platform version.
+
+NOTE: The DCS release version and {project-name} platform release
+version are always the same.
+
+
+[[compatible-versions]]
+== Compatible Versions
+
+Ensure that you install the driver version that is compatible with the
+{project-name} platform version.
+
+
+[cols=",",options="header" ]
+|===
+| Driver version  | Compatible versions of the {project-name} platform
+| {project-name} Release 2.0 driver  | All versions up to, but not including, {project-name} Release 2.2
+| {project-name} Release 2.1 driver  | All versions up to, but not including, {project-name} Release 2.2
+| {project-name} Release 2.2 driver  | {project-name} Release 2.2 and later versions
+|===
+
+If a compatible version is not installed, you can obtain the software to
+download from the {project-name} download site.
+
+[[considerations-for-mixed-version-jdbc-clients-connecting-to-project-name-platforms]]
+== Considerations for Mixed-Version JDBC Clients Connecting to {project-name} Platforms
+
+On the client platform, you can install multiple versions of the
+{project-name} JDBC type 4 driver to connect to {project-name}
+platforms of different platform versions.
+
+* Assuming you have installed the Release 2.2 {project-name} JDBC type
+4 driver on your workstation and set up the client environment, the 2.2
+driver's classes are set your java CLASSPATH.
+* To connect to a Release 2.1 or 2.0 server ({project-name} platform)
+from the same client machine, you must load the 2.1 driver by making
+sure that it is in your java CLASSPATH.
+* Connecting to both a 2.1 and 2.2 server from the same application at
+the same time is not possible.
+* A given application must use either the 2.2 driver or the 2.1 driver
+when launched. The only way to switch is to reload the application when
+pointing to a new CLASSPATH that contains a different driver.
+
+[[version-mismatch-error-message]]
+== Version Mismatch Error Message
+
+If an {project-name} JDBC client attempts to connect to an invalid DCS
+version, the driver returns the error:
+
+```
+SQLCODE: 29162
+SQLSTATE S1000
+
+Error text:
+
+Unexpected programming exception has been found: <errortext>. Check
+the server event log on node <logfile_location> for details.
+```
+
+* <errortext> is the error text from the server.
+* <logfile_location> is the location of the log file.
+

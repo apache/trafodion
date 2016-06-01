@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -556,6 +559,8 @@ void HHDFSListPartitionStats::populate(hdfsFS fs,
     }
   else
     {
+      dirInfo_ = *dirInfo;
+
       // list all the files in this directory, they all belong
       // to this partition and either belong to a specific bucket
       // or to the default bucket
@@ -822,6 +827,7 @@ NABoolean HHDFSTableStats::populate(struct hive_tbl_desc *htd)
   numOfPartCols_ = htd->getNumOfPartCols();
   recordTerminator_ = hsd->getRecordTerminator();
   fieldTerminator_ = hsd->getFieldTerminator() ;
+  nullFormat_ = hsd->getNullFormat();
   NAString hdfsHost;
   Int32 hdfsPort = -1;
   NAString tableDir;
@@ -1005,6 +1011,9 @@ void HHDFSTableStats::processDirectory(const NAString &dir, Int32 numOfBuckets,
       totalNumPartitions_++;
       // aggregate stats
       add(partStats);
+
+      if (partStats->dirInfo()->mLastMod > modificationTS_)
+        modificationTS_ = partStats->dirInfo()->mLastMod;
     }
 }
 

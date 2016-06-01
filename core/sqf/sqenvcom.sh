@@ -1,21 +1,23 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
-#
 
 ##############################################################
 # Set / Calculate standard environmental values
@@ -27,13 +29,16 @@
 #  * Add an entry in sqf/LocalSettingsTemplate.sh to make path configurable.
 ##############################################################
 
+#Product version (Trafodion or derivative product)
+export TRAFODION_VER_PROD="Apache Trafodion"
 # Trafodion version (also update file ../sql/common/copyright.h)
-export TRAFODION_VER_MAJOR=1
-export TRAFODION_VER_MINOR=2
+export TRAFODION_VER_MAJOR=2
+export TRAFODION_VER_MINOR=1
 export TRAFODION_VER_UPDATE=0
 export TRAFODION_VER="${TRAFODION_VER_MAJOR}.${TRAFODION_VER_MINOR}.${TRAFODION_VER_UPDATE}"
 
-
+# Product copyright header
+export PRODUCT_COPYRIGHT_HEADER="2015-2016 Apache Software Foundation"
 ##############################################################
 # Trafodion authentication:
 #    Set TRAFODION_ENABLE_AUTHENTICATION to YES to enable
@@ -64,11 +69,10 @@ export MALLOC_ARENA_MAX=1
 export SQ_USE_INTC=0
 
 if [[ "$SQ_BUILD_TYPE" = "release" ]]; then
-  SQ_BTYPE=
+  export SQ_BTYPE=
 else
-  SQ_BTYPE=d
+  export SQ_BTYPE=d
 fi
-export SQ_BTYPE
 export SQ_MBTYPE=$SQ_MTYPE$SQ_BTYPE
 
 # To enable code coverage, set this to 1
@@ -90,17 +94,18 @@ cpucnt=$(grep processor /proc/cpuinfo | wc -l)
 #     no number means unlimited, and will swamp the system
 export MAKEFLAGS="-j$cpucnt"
 
-if [[ -n "$CLUSTERNAME" ]]; then
-  export MY_ROOT=/opt/hp
-  export TOOLSDIR=${TOOLSDIR:-/home/tools}
-  export MY_UDR_ROOT=/home/udr
-else
-  export MY_ROOT=/opt/home
-  export TOOLSDIR=${TOOLSDIR:-/opt/home/tools}
-  export MY_UDR_ROOT=$PWD
+# For now set up the TOOLSDIR, it may be overwritten later when the
+# .trafodion configuration file is loaded.
+if [ -z "$TOOLSDIR" ]; then
+  if [[ -n "$CLUSTERNAME" ]]; then
+    export TOOLSDIR=${TOOLSDIR:-/home/tools}
+    export MY_UDR_ROOT=/home/udr
+  else
+    export TOOLSDIR=${TOOLSDIR:-/opt/home/tools}
+    export MY_UDR_ROOT=$PWD
+  fi
 fi
 
-export MY_MPI_ROOT=$MY_ROOT
 
 # Use JAVA_HOME if set, else look for installed openjdk, finally toolsdir
 REQ_JDK_VER="1.7.0_67"
@@ -115,7 +120,10 @@ fi
 
 
 export SQ_PDSH=/usr/bin/pdsh
+export PDSH="$SQ_PDSH -R exec"
+export PDSH_SSH_CMD="ssh -q -n %h"
 export SQ_PDCP=/usr/bin/pdcp
+export PDCP="$SQ_PDCP -R ssh"
 export TAR_DOWNLOAD_ROOT=$HOME/sqllogs
 export CACERTS_DIR=$HOME/cacerts
 
@@ -123,15 +131,52 @@ export CACERTS_DIR=$HOME/cacerts
 # Examples:
 # Red Hat Enterprise Linux Server release 6.3 (Santiago)
 # CentOS release 6.5 (Final)
-export RH_MAJ_VERS=$(sed -r 's/^.* release ([0-9]+).[0-9]+ .*/\1/' /etc/redhat-release)
-
+if [[ "$SUSE_LINUX" == "false" ]]; then
+   export RH_MAJ_VERS=$(sed -r 's/^.* release ([0-9]+).[0-9]+ .*/\1/' /etc/redhat-release)
+else
+   export RH_MAJ_VERS=6
+fi
 export MY_SQROOT=$PWD
 export SQ_HOME=$PWD
 
+# set common version to be consistent between shared lib and maven dependencies
+export HBASE_DEP_VER_CDH=1.0.0-cdh5.4.4
+export HIVE_DEP_VER_CDH=1.1.0-cdh5.4.4
+export HBASE_DEP_VER_HDP=1.1.2
+export HIVE_DEP_VER_HDP=1.2.1
+export HBASE_DEP_VER_APACHE=1.0.2
+export HIVE_DEP_VER_APACHE=1.1.0
+export HBASE_TRX_ID_CDH=hbase-trx-cdh5_4
+export HBASE_TRX_ID_APACHE=hbase-trx-apache1_0_2
+export HBASE_TRX_ID_HDP=hbase-trx-hdp2_3
+export THRIFT_DEP_VER=0.9.0
+export HIVE_DEP_VER=0.13.1
+export HADOOP_DEP_VER=2.6.0
+
+# staged build-time dependencies
+export HADOOP_BLD_LIB=${TOOLSDIR}/hadoop-${HADOOP_DEP_VER}/lib/native
+export HADOOP_BLD_INC=${TOOLSDIR}/hadoop-${HADOOP_DEP_VER}/include
+
+# general Hadoop & TRX dependencies - not distro specific, choose one to build against
 export HBASE_TRXDIR=$MY_SQROOT/export/lib
-export HBASE_TRX_JAR=hbase-trx-cdh5_3-${TRAFODION_VER}.jar
-if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
-    export HBASE_TRX_JAR=hbase-trx-hdp2_2-${TRAFODION_VER}.jar
+export HBASE_TRX_JAR=${HBASE_TRX_ID_CDH}-${TRAFODION_VER}.jar
+export DTM_COMMON_JAR=trafodion-dtm-${TRAFODION_VER}.jar
+export SQL_JAR=trafodion-sql-${TRAFODION_VER}.jar
+export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
+export JDBCT4_JAR=jdbcT4-${TRAFODION_VER}.jar
+
+HBVER=""
+if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    export HBASE_TRX_JAR=${HBASE_TRX_ID_HDP}-${TRAFODION_VER}.jar
+    HBVER="hdp2_3"
+    export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
+    export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
+fi
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
+    HBVER="apache1_0_2"
+    export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
+    export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
 fi
 
 # check for workstation env
@@ -145,6 +190,9 @@ if [[ -e ${MY_SQROOT}/etc/ms.env ]] ; then
 fi
 
 export SQ_IDTMSRV=1
+
+# Turn on/off generation of Service Monitor
+export SQ_SRVMON=1
 
 export MY_MPI_ROOT="$MY_SQROOT"
 export MPI_ROOT="$MY_SQROOT/opt/hpmpi"
@@ -223,8 +271,6 @@ if [[ -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
   # native library directories and include directories
   export HADOOP_LIB_DIR=$YARN_HOME/lib/native
   export HADOOP_INC_DIR=$YARN_HOME/include
-  export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
-  export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
   # directories with jar files and list of jar files
@@ -239,6 +285,8 @@ if [[ -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
     HBASE_JAR_FILES="$HBASE_JAR_FILES $d/*.jar"
   done
 
+  lv_hbase_cp=
+
   export HIVE_JAR_DIRS="$HIVE_HOME/lib"
   export HIVE_JAR_FILES="$HIVE_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-*.jar"
 
@@ -251,76 +299,60 @@ if [[ -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
   export HBASE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hbase/conf
   export HIVE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hive/conf
 
-elif [[ -f $MY_SQROOT/Makefile && -d $TOOLSDIR ]]; then
-  # we are are in a source tree - use build-time dependencies in TOOLSDIR
-  # ----------------------------------------------------------------
+elif [[ -d /opt/cloudera/parcels/CDH ]]; then
+  # we are on a cluster with Cloudera parcels installed
+  # -------------------------------------------
 
   # native library directories and include directories
-  export HADOOP_LIB_DIR=$TOOLSDIR/hadoop-2.4.0/lib/native
-  export HADOOP_INC_DIR=$TOOLSDIR/hadoop-2.4.0/include
-  export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
-  export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
+  export HADOOP_LIB_DIR=/opt/cloudera/parcels/CDH/lib/hadoop/lib/native
+  export HADOOP_INC_DIR=/opt/cloudera/parcels/CDH/include
+
+
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
 
-  # directories with jar files and list of jar files
-  export HADOOP_JAR_DIRS="$TOOLSDIR/hadoop-2.4.0/share/hadoop/common
-                          $TOOLSDIR/hadoop-2.4.0/share/hadoop/common/lib
-                          $TOOLSDIR/hadoop-2.4.0/share/hadoop/mapreduce
-                          $TOOLSDIR/hadoop-2.4.0/share/hadoop/hdfs"
-  export HBASE_JAR_FILES=
-  HBASE_JAR_DIRS="$HBASE_HOME/lib"
-  for d in $TOOLSDIR/hbase-0.98.1-cdh5.1.0/lib; do
-    HBASE_JAR_FILES="$HBASE_JAR_FILES $d/*.jar"
-  done
+  lv_hbase_cp=`hbase classpath`
 
-  export HIVE_JAR_DIRS="$TOOLSDIR/apache-hive-0.13.1-bin/lib"
-  export HIVE_JAR_FILES="$TOOLSDIR/hadoop-2.4.0/share/hadoop/mapreduce/hadoop-mapreduce-client-core-*.jar"
+  # directories with jar files and list of jar files
+  # (could try to reduce the number of jars in the classpath)
+  export HADOOP_JAR_DIRS="/opt/cloudera/parcels/CDH/lib/hadoop
+                          /opt/cloudera/parcels/CDH/lib/hadoop/lib"
+  export HADOOP_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hadoop/client/hadoop-hdfs-*.jar"
+  export HIVE_JAR_DIRS="/opt/cloudera/parcels/CDH/lib/hive/lib"
+  export HIVE_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar
+                         /opt/cloudera/parcels/CDH/lib/hadoop-mapreduce/hadoop-mapreduce-client-common.jar"
 
   # suffixes to suppress in the classpath (set this to ---none--- to add all files)
   export SUFFIXES_TO_SUPPRESS="-sources.jar -tests.jar"
 
   # Configuration directories
 
-  export HADOOP_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hadoop/etc/hadoop
-  export HBASE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hbase/conf
-  export HIVE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hive/conf
+  export HADOOP_CNF_DIR=/etc/hadoop/conf
+  export HBASE_CNF_DIR=/etc/hbase/conf
+  export HIVE_CNF_DIR=/etc/hive/conf
 
 elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
   # we are on a cluster with Cloudera installed
   # -------------------------------------------
-
+  
   # native library directories and include directories
   export HADOOP_LIB_DIR=/usr/lib/hadoop/lib/native
   export HADOOP_INC_DIR=/usr/include
 
-  ### Thrift not supported on Cloudera yet (so use TOOLSDIR download)
-  export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
-  export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
- 
 
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
+
+  lv_hbase_cp=`hbase classpath`
 
   # directories with jar files and list of jar files
   # (could try to reduce the number of jars in the classpath)
   export HADOOP_JAR_DIRS="/usr/lib/hadoop
                           /usr/lib/hadoop/lib"
   export HADOOP_JAR_FILES="/usr/lib/hadoop/client/hadoop-hdfs-*.jar"
-  export HBASE_JAR_FILES="/usr/lib/hbase/hbase-*-security.jar
-                          /usr/lib/hbase/hbase-client.jar
-                          /usr/lib/hbase/hbase-common.jar
-                          /usr/lib/hbase/hbase-server.jar
-                          /usr/lib/hbase/hbase-examples.jar
-                          /usr/lib/hbase/hbase-protocol.jar
-			  /usr/lib/hbase/lib/htrace-core.jar
-                          /usr/lib/hbase/lib/zookeeper.jar
-                          /usr/lib/hbase/lib/protobuf-*.jar
-                         /usr/lib/hbase/lib/snappy-java-*.jar
-                         /usr/lib/hbase/lib/high-scale-lib-*.jar
-                         /usr/lib/hbase/hbase-hadoop-compat.jar "
   export HIVE_JAR_DIRS="/usr/lib/hive/lib"
-  export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar"
+  export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar
+                         /usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-common.jar"
 
   # suffixes to suppress in the classpath (set this to ---none--- to add all files)
   export SUFFIXES_TO_SUPPRESS="-sources.jar -tests.jar"
@@ -341,33 +373,23 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
   # The supported HDP version, HDP 1.3 uses Hadoop 1
   export USE_HADOOP_1=1
 
-  ### Thrift not supported on Hortonworks yet (so use TOOLSDIR download)
-  export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
-  export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
+
+  lv_hbase_cp=`hbase classpath`
 
   # directories with jar files and list of jar files
   export HADOOP_JAR_DIRS="/usr/hdp/current/hadoop-client
                           /usr/hdp/current/hadoop-client/lib"
   export HADOOP_JAR_FILES="/usr/hdp/current/hadoop-client/client/hadoop-hdfs-*.jar"
-  export HBASE_JAR_FILES="/usr/hdp/current/hbase-client/hbase-*-security.jar
-                          /usr/hdp/current/hbase-client/lib/hbase-common.jar
-                          /usr/hdp/current/hbase-client/lib/hbase-client.jar
-                          /usr/hdp/current/hbase-client/lib/hbase-server.jar
-                          /usr/hdp/current/hbase-client/lib/hbase-protocol.jar
-                          /usr/hdp/current/hbase-client/lib/htrace-core*.jar
-                          /usr/hdp/current/hbase-client/lib/zookeeper.jar
-                          /usr/hdp/current/hbase-client/lib/protobuf-*.jar
-                         /usr/hdp/current/hbase-client/lib/snappy-java-*.jar
-                         /usr/hdp/current/hbase-client/lib/high-scale-lib-*.jar
-                         /usr/hdp/current/hbase-client/lib/hbase-hadoop-compat-*-hadoop2.jar "
-
   export HIVE_JAR_DIRS="/usr/hdp/current/hive-client/lib"
   export HIVE_JAR_FILES="/usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-client-core*.jar"
 
-  export HBASE_TRX_JAR=hbase-trx-hdp2_2-${TRAFODION_VER}.jar
-
+  export HBASE_TRX_JAR=${HBASE_TRX_ID_HDP}-${TRAFODION_VER}.jar
+  HBVER="hdp2_3"
+  export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
+  export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
+  
   # Configuration directories
 
   export HADOOP_CNF_DIR=/etc/hadoop/conf
@@ -379,6 +401,8 @@ elif [[ -d /opt/mapr ]]; then
   # ----------------------------------------------------------------
 
   # We tried this with MapR 3.1, which has hadoop-0.20.2, hbase-0.94.13, hive-0.12
+
+  [[ $SQ_VERBOSE == 1 ]] && echo "Found /opt/mapr, this is a MapR distro"
 
   # Note that hadoopversion and hiveversion are not officially
   # supported by MapR, only hbaseversion is. We recommend creating
@@ -402,9 +426,6 @@ elif [[ -d /opt/mapr ]]; then
     MAPR_HIVEDIR=$(echo /opt/mapr/hive/hive-*)
   fi
 
-  ### Thrift not supported on MapR (so use TOOLSDIR download)
-  export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
-  export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
 
@@ -437,29 +458,137 @@ elif [[ -d /opt/mapr ]]; then
   # HBase-trx jar with some modifications to work with MapR HBase 0.94.13
   export HBASE_TRX_JAR=hbase-trx-mapr4_0-trx-${TRAFODION_VER}.jar
 
-elif [[ -e $MY_SQROOT/sql/scripts/install_local_hadoop
-     && -e $MY_SQROOT/export/bin${SQ_MBTYPE}/monitor
-     && -e ${HBASE_TRXDIR}/${HBASE_TRX_JAR}
-     && -e $MY_SQROOT/export/lib/trafodion-sql-${TRAFODION_VER}.jar
-     && -e $MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar
-     && -e $MY_SQROOT/export/lib/jdbcT2.jar ]]; then
-
-  # Several built files exist, perhaps by unpackaging a file from downloads.trafodion.org,
-  # but install_local_hadoop has not yet run.
-
-  NEEDS_HADOOP_INSTALL=1
-  echo "WARNING: Did not find Hadoop distribution,"
-  echo "         you may need to run sql/scripts/install_local_hadoop"
-
 else
-  echo "WARNING: Did not find supported Hadoop distribution"
+
+  # try some other options
+
+  function vanilla_apache_usage {
+
+  cat <<EOF
+
+    If you are ready to build Trafodion, perform one of the following options:
+
+      make all         (Build Trafodion, DCS, and REST) OR
+      make package     (Build Trafodion, DCS, REST, and Client drivers)  OR
+      make package-all (Build Trafodion, DCS, REST, Client drivers, and Tests)
+
+    If Trafodion has been built and you want test: 
+
+       Execute the install_local_hadoop script which performs a single node
+       install using a popular Hadoop distribution 
+
+          cd $MY_SQROOT/sql/scripts
+          install_local_hadoop [-p <port option>]
+          install_traf_components 
+          configure Trafodion and start the processes
+          HAVE FUN!
+
+   You can also choose to install_local_hadoop before building Trafodion.
+
+EOF
+  }
+
+  # Hadoop/HBase/Hive install directories, as determined by this script,
+  # when using an Apache installation without one of the distros
+  APACHE_HADOOP_HOME=None
+  APACHE_HBASE_HOME=None
+  APACHE_HIVE_HOME=None
+
+  if [ -f $HADOOP_PREFIX/etc/hadoop/core-site.xml ]; then
+    APACHE_HADOOP_HOME=$HADOOP_PREFIX
+    export HADOOP_CNF_DIR=$HADOOP_PREFIX/etc/hadoop
+  fi
+  if [ -f $HBASE_HOME/conf/hbase-site.xml ]; then
+    [[ $SQ_VERBOSE == 1 ]] && echo "HBASE_HOME is set to $HBASE_HOME, this is vanilla Apache"
+    APACHE_HBASE_HOME=$HBASE_HOME
+    export HBASE_CNF_DIR=$HBASE_HOME/conf
+  fi
+
+  APACHE_HIVE_HOME=$HIVE_HOME
+  export HIVE_CNF_DIR=$HIVE_HOME/conf
+
+  # sometimes, conf file and lib files don't have the same parent,
+  # try to handle some common cases, where the libs are under /usr/lib
+  if [ ! -d $APACHE_HADOOP_HOME/lib/ -a -d /usr/lib/hadoop ]; then
+    APACHE_HADOOP_HOME=/usr/lib/hadoop
+  fi
+  if [ ! -d $APACHE_HBASE_HOME/lib -a -d /usr/lib/hbase ]; then
+    APACHE_HBASE_HOME=/usr/lib/hbase
+  fi
+  if [ ! -d $APACHE_HIVE_HOME/lib -a -d /usr/lib/hive ]; then
+    APACHE_HIVE_HOME=/usr/lib/hive
+  fi
+
+  if [ -n "$HBASE_CNF_DIR" -a -n "$HADOOP_CNF_DIR" -a \
+       -d $APACHE_HADOOP_HOME/lib -a -d $APACHE_HBASE_HOME/lib ]; then
+    # We are on a system with Apache HBase, probably without a distro
+    # ---------------------------------------------------------------
+
+
+    [ "$SQ_VERBOSE" == 1 ] && echo "Found both HBase and Hadoop config for vanilla Apache"
+
+    # native library directories and include directories
+    if [ -f /usr/lib/hadoop/lib/native/libhdfs.so ]; then
+      export HADOOP_LIB_DIR=/usr/lib/hadoop/lib/native
+    elif [ -f $APACHE_HADOOP_HOME/lib/native/libhdfs.so ]; then
+      export HADOOP_LIB_DIR=$APACHE_HADOOP_HOME/lib/native
+    else
+      echo '**** ERROR: Could not find Hadoop native library libhdfs.so in ' $APACHE_HADOOP_HOME/lib/native
+    fi
+
+    if [ -f /usr/include/hdfs.h ]; then
+      export HADOOP_INC_DIR=/usr/include
+    elif [ -f $APACHE_HADOOP_HOME/include/hdfs.h ]; then
+      export HADOOP_INC_DIR=$APACHE_HADOOP_HOME/include
+    fi
+
+    # directories with jar files and list of jar files
+    export HADOOP_JAR_DIRS="$APACHE_HADOOP_HOME/share/hadoop/common
+                            $APACHE_HADOOP_HOME/share/hadoop/common/lib
+                            $APACHE_HADOOP_HOME/share/hadoop/mapreduce
+                            $APACHE_HADOOP_HOME/share/hadoop/hdfs"
+    export HADOOP_JAR_FILES=
+    export HIVE_JAR_DIRS="$APACHE_HIVE_HOME/lib"
+
+    #hbase classpath captures all the right set of jars hbase is using.
+    #this also includes the trx jar that gets installed as part of install.
+    #Additional testing needed.Including it here for future validation.
+    lv_hbase_cp=`hbase classpath`
+
+    # end of code for Apache Hadoop/HBase installation w/o distro
+    export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
+    HBVER="apache1_0_2"
+    export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
+    export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
+  else
+    # print usage information, not enough information about Hadoop/HBase
+    if [[ -z $HADOOP_TYPE ]]; then
+       vanilla_apache_usage
+       NEEDS_HADOOP_INSTALL=1
+    fi
+  fi
 
 fi
+# Common for all distros
+if [[ -d $TOOLSDIR/thrift-${THRIFT_DEP_VER} ]]; then
+  # this is for a build environment, where we need
+  # thrift from TOOLSDIR
+  export THRIFT_LIB_DIR=$TOOLSDIR/thrift-${THRIFT_DEP_VER}/lib
+  export THRIFT_INC_DIR=$TOOLSDIR/thrift-${THRIFT_DEP_VER}/include
+fi
+
+
+# ---+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+# end of customization variables
 
 # Common for local workstations, Cloudera, Hortonworks and MapR
 
-export ZOOKEEPER_DIR=$TOOLSDIR/zookeeper-3.4.5
-export MPICH_ROOT=$TOOLSDIR/dest-mpich-3.0.4
+if [ -z $ZOOKEEPER_DIR ]; then
+  export ZOOKEEPER_DIR=$TOOLSDIR/zookeeper-3.4.5
+fi
+if [ -z $MPICH_ROOT ]; then
+  export MPICH_ROOT=$TOOLSDIR/dest-mpich-3.0.4
+fi
 export PROTOBUFS=/usr
 
 # LOG4CXX
@@ -468,16 +597,25 @@ then
   export LOG4CXX_LIB_DIR=$TOOLSDIR/apache-log4cxx-0.10.0/lib
   export LOG4CXX_INC_DIR=$TOOLSDIR/apache-log4cxx-0.10.0/include
 else
-  export LOG4CXX_LIB_DIR=/lib64:/usr/lib64
+  export LOG4CXX_LIB_DIR=/usr/lib64
   export LOG4CXX_INC_DIR=/usr/include/log4cxx
 fi
 
+# For now, set the QT_TOOLKIT envvar if the required version exists in the
+# download location
+if [[ -z "$QT_TOOLKIT" && -d $TOOLSDIR/Qt-4.8.5-64 ]]; 
+then
+   # QT_TOOLKIT is optional, if the directory doesn't exist
+   # then we won't build the compiler GUI
+   # QT_TOOLKIT components must not be bundled into Trafodion build
+   # LGPL license is not compatible with ASF license policy.
+   # Do not re-distribute shared libs or any componet of Qt. Do not link statically.
+   export QT_TOOLKIT="$TOOLSDIR/Qt-4.8.5-64"
+fi
 
-# ---+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-# end of customization variables
 
 # for debugging
-export LD_BIND_NOW=true
+# export LD_BIND_NOW=true
 
 export MPI_TMPDIR=$PWD/tmp
 if [[ -d $MPI_TMPDIR ]]; then
@@ -510,6 +648,14 @@ export SQ_MON_ALTLOG=0
 # Monitor sync thread responsiveness timeout
 # default 15 mins
 export SQ_MON_SYNC_TIMEOUT=900
+export SQ_MON_KEEPALIVE=1
+export SQ_MON_KEEPIDLE=60
+export SQ_MON_KEEPINTVL=6
+export SQ_MON_KEEPCNT=5
+
+# The wait timeout is in seconds
+export SQ_MON_EPOLL_WAIT_TIMEOUT=12
+export SQ_MON_EPOLL_RETRY_COUNT=15
 
 # set to 0 to disable phandle verifier
 export SQ_PHANDLE_VERIFIER=1
@@ -520,9 +666,6 @@ export SQ_DTM_PERSISTENT_PROCESS=1
 
 # Check the state of the node with the cluster manager during regroup
 export SQ_WDT_CHECK_CLUSTER_STATE=0
-
-# Perl libraries used by Seaquest (e.g. sqgen components)
-export PERL5LIB=$MY_SQROOT/export/lib
 
 # Enable SQ_PIDMAP if you want to get a record of process activity.
 # This can be useful in troubleshooting problems.  There is an overhead cost
@@ -598,43 +741,45 @@ source tools/sqtools.sh
 ######################
 
 # Standard tools expected to be installed and found in PATH
-export ANT="/usr/bin/ant"
-if [[ ! -e $ANT ]]; then
-  ANT="${TOOLSDIR}/bin/ant"
-fi
+# Tool availability are checked during the build (make) step
+export ANT=ant
 export AR=ar
 export FLEX=flex
 export CXX=g++
 export MAVEN=mvn
-if [[ -z "$(which $MAVEN 2> /dev/null)" ]]; then
-  export M2_HOME="${TOOLSDIR}/apache-maven-3.0.5"
-  MAVEN="${M2_HOME}/bin/mvn"
-fi
 
 # Non-standard or newer version tools
-export BISON="${TOOLSDIR}/bison_3_linux/bin/bison"     # Need 1.3 version or later
-
-
-export LLVM="${TOOLSDIR}/dest-llvm-3.2"
-export UDIS86="${TOOLSDIR}/udis86-1.7.2"
-export ICU="${TOOLSDIR}/icu4.4"
-export QT_TOOLKIT="${TOOLSDIR}/Qt-4.8.5-64"
-
+if [ -z $BISON ]; then
+  export BISON="${TOOLSDIR}/bison_3_linux/bin/bison"     # Need 1.3 version or later
+fi
+if [ -z $LLVM ]; then
+  export LLVM="${TOOLSDIR}/dest-llvm-3.2"
+fi
+if [ -z $UDIS86 ]; then
+  export UDIS86="${TOOLSDIR}/udis86-1.7.2"
+fi
+if [ -z $ICU ]; then
+  export ICU="${TOOLSDIR}/icu4c_4.4"
+fi
 
 #######################
 # Developer Local over-rides  (see sqf/LocalSettingsTemplate.sh)
+# Cannot rely on this, the connectivity build overwrites the .trafodion file
 ######################
 if [[ -r ~/.trafodion ]]; then
   [[ $SQ_VERBOSE == 1 ]] && echo "Sourcing local settings file ~/.trafodion"
   source ~/.trafodion
 fi
+
 # PROTOBUFS may include local over-rides
 export PROTOBUFS_LIB=$PROTOBUFS/lib
 export PROTOBUFS_INC=$PROTOBUFS/include
 
 ######################
 # Library Path may include local over-rides
-export LD_LIBRARY_PATH=$CC_LIB_RUNTIME:$MPI_ROOT/lib/$MPILIB:$MY_SQROOT/export/lib"$SQ_MBTYPE":$HADOOP_LIB_DIR:$LOC_JVMLIBS:$LOG4CXX_LIB_DIR:.
+# Put Hadoop native dir before Trafodion, so that an available libhdfs will
+# be picked up there, otherwise use the libhdfs distributed with Trafodion.
+export LD_LIBRARY_PATH=$CC_LIB_RUNTIME:$MPI_ROOT/lib/$MPILIB:$HADOOP_LIB_DIR:$MY_SQROOT/export/lib"$SQ_MBTYPE":$LOC_JVMLIBS:$LOG4CXX_LIB_DIR:.
 
 ######################
 # classpath calculation may include local over-rides
@@ -656,6 +801,8 @@ done
 for d in $HIVE_JAR_DIRS; do
   HIVE_JAR_FILES="$HIVE_JAR_FILES $d/*.jar"
 done
+
+SQ_CLASSPATH=$lv_hbase_cp;
 
 # assemble all of them into a classpath
 for j in $HBASE_JAR_FILES $HADOOP_JAR_FILES $HIVE_JAR_FILES; do
@@ -684,14 +831,17 @@ SQ_CLASSPATH=${SQ_CLASSPATH#:}
 
 # add Hadoop and HBase config dirs to classpath, if they exist
 if [[ -n "$HADOOP_CNF_DIR" ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HADOOP_CNF_DIR"; fi
-if [[ -n "$HIVE_CNF_DIR"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HBASE_CNF_DIR";  fi
+if [[ -n "$HBASE_CNF_DIR"  ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HBASE_CNF_DIR";  fi
 if [[ -n "$HIVE_CNF_DIR"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HIVE_CNF_DIR";   fi
 if [[ -n "$SQ_CLASSPATH"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:";   fi
-SQ_CLASSPATH=${SQ_CLASSPATH}${HBASE_TRXDIR}:\
+SQ_CLASSPATH=${SQ_CLASSPATH}:\
 ${HBASE_TRXDIR}/${HBASE_TRX_JAR}:\
-$MY_SQROOT/export/lib/trafodion-sql-${TRAFODION_VER}.jar:\
-$MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar:\
+$MY_SQROOT/export/lib/${DTM_COMMON_JAR}:\
+$MY_SQROOT/export/lib/${SQL_JAR}:\
+$MY_SQROOT/export/lib/${UTIL_JAR}:\
+$MY_SQROOT/export/lib/${JDBCT4_JAR}:\
 $MY_SQROOT/export/lib/jdbcT2.jar
+
 
 # Check whether the current shell environment changed from a previous execution of this
 # script.
@@ -709,6 +859,10 @@ This is not supported. To change environments, do the following:
   start a new shell and source in sqenv.sh
   sqstart
 EOF
+# export an env var that can be checked by subsequent scripts
+# (exit is not a good option here since we source in this file,
+# so exit would kill the entire shell)
+export CHANGED_SQ_ENV_RESTART_SHELL=1
 fi
 
 # take anything from the existing classpath, but not the part that was
@@ -739,7 +893,7 @@ MANPATH=$(remove_duplicates_in_path "$MANPATH")
 ###################
 
 # Check variables that should refer to real directories
-VARLIST="MY_SQROOT $VARLIST JAVA_HOME PERL5LIB MPI_TMPDIR"
+VARLIST="MY_SQROOT $VARLIST JAVA_HOME MPI_TMPDIR"
 
 if [[ "$SQ_VERBOSE" == "1" ]]; then
   echo "Checking variables reference existing directories ..."

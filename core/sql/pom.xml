@@ -20,12 +20,71 @@
  */
 -->
   <repositories>
+    <repository>
+      <id>cloudera</id>
+      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+    </repository>
   </repositories>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <hadoop.version>2.6.0-cdh5.4.4</hadoop.version>
+    <hbase.version>${env.HBASE_DEP_VER_CDH}</hbase.version>
+    <hbase-trx.id>${env.HBASE_TRX_ID_CDH}</hbase-trx.id>
+    <hive.version>${env.HIVE_DEP_VER_CDH}</hive.version>
+    <thrift.version>${env.THRIFT_DEP_VER}</thrift.version>
     <java.version>1.7</java.version>
   </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-server</artifactId>
+      <version>${hbase.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-client</artifactId>
+      <version>${hbase.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hbase.client.transactional</groupId>
+      <artifactId>${hbase-trx.id}</artifactId>
+      <version>${env.TRAFODION_VER}</version>
+      <scope>system</scope>
+      <systemPath>${env.HBASE_TRXDIR}/${env.HBASE_TRX_JAR}</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-jdbc</artifactId>
+      <version>${hive.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-metastore</artifactId>
+      <version>${hive.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-exec</artifactId>
+      <version>${hive.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.thrift</groupId>
+      <artifactId>libthrift</artifactId>
+      <version>${thrift.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-configuration</groupId>
+      <artifactId>commons-configuration</artifactId>
+      <version>1.6</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>2.5.0</version>
+    </dependency>
+  </dependencies>
 
   <groupId>org.trafodion.sql</groupId>
   <modelVersion>4.0.0</modelVersion>
@@ -34,4 +93,19 @@
   <name>trafodion-sql</name>
   <description>Java code for SQL engine in Trafodion</description>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestFile>
+              src/main/resources/trafodion-sql.jar.mf
+            </manifestFile>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

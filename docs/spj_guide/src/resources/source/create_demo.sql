@@ -1,0 +1,14 @@
+obey persnl_schema.sql ;
+obey persnl_employee_table.sql ;
+obey persnl_job_table.sql ;
+obey persnl_dept_table.sql ;
+obey persnl_project_table.sql ;
+obey sales_schema.sql ;
+obey sales_customer_table.sql ;
+obey sales_orders_table.sql ;
+obey sales_odetail_table.sql ;
+obey sales_parts_table.sql ;
+obey invent_schema.sql ;
+obey invent_supplier_table.sql ;
+obey invent_partloc_table.sql ;
+obey invent_partsupp_table.sql ;

@@ -1,18 +1,21 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
@@ -34,7 +37,6 @@ include ../macros.gmk       # odbc level
 #       compression.cpp
 #       TransportBase.cpp
 #       FileSystemDrvr.cpp
-#       FileSystemDrvr_ps.cpp
 #       FileSystemSrvr.cpp
 #       TCPIPSystemSrvr.cpp
 #       Listener.cpp
@@ -45,9 +47,7 @@ include ../macros.gmk       # odbc level
 #       QSInterfaceDrvr
 #       QSMarshalingDrvr
 #    from Common/linux
-#       FileSystemDrvr_ps.cpp
 #       TCPIPSystemSrvr_ps.cpp
-#       Listener_ps.cpp
 #    from nsksrvr/Interface:
 #       Listener_srvr.cpp
 #       marshalingsrvr_srvr.cpp
@@ -71,7 +71,6 @@ COMMON_OBJS  = $(OUTDIR)/utils.o \
         $(OUTDIR)/compression.o \
         $(OUTDIR)/TransportBase.o \
         $(OUTDIR)/FileSystemDrvr.o \
-        $(OUTDIR)/FileSystemDrvr_ps.o \
         $(OUTDIR)/FileSystemSrvr.o \
         $(OUTDIR)/TCPIPSystemSrvr.o \
         $(OUTDIR)/TCPIPSystemSrvr_ps.o \
@@ -122,7 +121,7 @@ DBT_LIBS =
 
 EARLY_LIBS = -ljsig
 
-COMMON_LIBS = -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli -larkcmp_dll -L../nsksrvrcore -lmxocore -L$(LOG4CXX_LIB_DIR) -llog4cxx
+COMMON_LIBS = -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli -larkcmp_dll -L../nsksrvrcore -lmxocore -llog4cxx
 
 ifeq ($(SQ_MTYPE),64)
 LOC_JSIG=$(JAVA_HOME)/jre/lib/amd64/server
@@ -131,6 +130,8 @@ LOC_JSIG=$(JAVA_HOME)/jre/lib/i386/server
 endif
 
 
+#gcc 4.8 need explicit enable this flag, otherwise ld must explicitly link with all so using '-l'
+GCCMODE        += -Xlinker --copy-dt-needed-entries
 # Produce mxosrvr
 $(BINEXPDIR)/mxosrvr: $(OBJS) $(LIBEXPDIR)/libzookeeper_mt.so
 	$(CXX) $(GCCMODE) -o $@ $(DBG_FLGS)  -L$(LIBEXPDIR) -D_SQ64 -L$(LOC_JSIG) $(EARLY_LIBS) $(COMMON_LIBS) $(DBT_LIBS) -lzookeeper_mt $(HADOOP_LIBS) $(OBJS) -lz

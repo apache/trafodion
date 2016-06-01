@@ -2,19 +2,22 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 #######################################################################
@@ -132,7 +135,7 @@ if [ "$REGRCONCURRENT" -ne 0 ]; then
 else
   # sequential execution
   export TEST_CATALOG='cat'
-  export TEST_SCHEMA_NAME='sch'
+  export TEST_SCHEMA_NAME='SCH'
 fi
 
 seabase=0
@@ -218,7 +221,7 @@ fi
 
 # sbtestfiles contains the list of tests to be run in seabase mode
 if [ "$seabase" -ne 0 ]; then
-  sbtestfiles="TEST000 TEST001 TEST002 TEST004 TEST005 TEST008 TEST010 TEST018 TEST019 TEST020 TEST027 TEST029 TEST032 TEST037 TEST038 TEST041 TEST056 TEST061 TEST116 TESTRTS TEST162"
+  sbtestfiles="TEST000 TEST001 TEST002 TEST004 TEST005 TEST008 TEST010 TEST018 TEST019 TEST020 TEST027 TEST029 TEST032 TEST037 TEST038 TEST041 TEST056 TEST061 TEST116 TEST131 TEST162 TESTRTS"
   sbprettyfiles=
   for i in $prettyfiles; do
     for j in $sbtestfiles; do
@@ -299,7 +302,7 @@ skipTheseTests="TEST007 TEST030 TEST035 TEST040 TEST043 TEST050 TEST066 TEST113 
 # TEST051 TEST070
 skipTheseTests="$skipTheseTests TEST051 TEST070"
 
-skipTheseTests="$skipTheseTests TEST082 TEST088 TEST116"
+skipTheseTests="$skipTheseTests TEST082 TEST088"
 
 if [ "$SQ_COVERAGE" = "" -a "$SQ_COVERAGE_OPTIMIZER" = "" ]; then
   skipTheseTests="$skipTheseTests TESTNAHEAP"
@@ -833,7 +836,8 @@ for i in $prettyfiles; do
     logtxt="### FAIL ($diffsize lines$knownsize)     ###$logtxt"
   fi
   echo $logtxt
-  echo "`date +'%D %T'`  $test 	$logtxt" >> $rgrlog
+  modtime=`stat --printf=%y $log | cut -d'.' -f1`
+  echo "$modtime  $test  $logtxt" >> $rgrlog
   echo
 
 done # for i in $prettyfiles

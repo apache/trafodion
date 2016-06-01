@@ -3,19 +3,22 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
 --
---  Licensed under the Apache License, Version 2.0 (the "License");
---  you may not use this file except in compliance with the License.
---  You may obtain a copy of the License at
+--   http://www.apache.org/licenses/LICENSE-2.0
 --
---      http://www.apache.org/licenses/LICENSE-2.0
---
---  Unless required by applicable law or agreed to in writing, software
---  distributed under the License is distributed on an "AS IS" BASIS,
---  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
---  See the License for the specific language governing permissions and
---  limitations under the License.
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
 --
 -- @@@ END COPYRIGHT @@@
 
@@ -32,6 +35,20 @@ set schema hive.hive;
 cqd HIVE_MAX_STRING_LENGTH '20' ;
 cqd mode_seahive 'ON';
 cqd traf_enable_orc_format 'ON';
+cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
+
+prepare explainIt from
+  select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
+         substring(operator,1,16) operator,
+         cast(LEFT_CHILD_SEQ_NUM as char(2)) lc,
+         cast(RIGHT_CHILD_SEQ_NUM as char(2)) rc,
+         substring
+         (substring(substring(tname from (1+locate('.',tname))),1,case locate(')',tname) when 0 then 0 else locate(')',substring(tname from (1+locate('.',tname))))-1 end),
+         (locate('.',substring(tname from (1+locate('.',tname)))))+1,
+         10
+        ) tab_name
+         from table (explain(NULL,'XX'))
+         order by 1 desc;
 
 ?section tests
 --------------------------------------------------------------------------
@@ -51,22 +68,20 @@ select s_store_sk, left(s_store_id, 20) from hive.hive.store_orc where s_store_s
 select count(*) from hive.hive.store_orc;
 
 -- explain of join between 2 ORC tables
-explain options 'f' select x.s_suite_number, y.s_street_name
+prepare XX from select x.s_suite_number, y.s_street_name
  from hive.hive.store_orc x, hive.hive.store_orc y
   where x.s_store_sk = y.s_store_sk;
+execute explainIt;
 
 -- execute of join between 2 ORC tables
-select x.s_suite_number, y.s_street_name
- from hive.hive.store_orc x, hive.hive.store_orc y
-  where x.s_store_sk = y.s_store_sk;
+execute XX;
 
 -- explain of join between hive(hdfs) and ORC tables
-explain options 'f' select x.s_suite_number, y.s_street_name
+prepare XX from select x.s_suite_number, y.s_street_name
  from hive.hive.store x, hive.hive.store_orc y
   where x.s_store_sk = y.s_store_sk;
+execute explainIt;
 
 -- execute of join between hive(hdfs) and ORC tables
-select x.s_suite_number, y.s_street_name
- from hive.hive.store x, hive.hive.store_orc y
-  where x.s_store_sk = y.s_store_sk;
+execute XX;
 

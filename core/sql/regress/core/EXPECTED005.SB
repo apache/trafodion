@@ -1488,12 +1488,12 @@ S   OPERATOR              LC  RC  TAB_NAME
 
 --- SQL operation complete.
 >>
->>select num_lookups, num_cache_hits, num_entries, max_cache_size from table(natablecache('user','local')) ;
+>>select context, num_lookups, num_cache_hits, num_entries, max_cache_size from table(natablecache('user','local')) ;
 
-NUM_LOOKUPS  NUM_CACHE_HITS  NUM_ENTRIES  MAX_CACHE_SIZE
------------  --------------  -----------  --------------
+CONTEXT   NUM_LOOKUPS  NUM_CACHE_HITS  NUM_ENTRIES  MAX_CACHE_SIZE
+--------  -----------  --------------  -----------  --------------
 
-        165             135           16        20971520
+NONE              165             135           16        20971520
 
 --- 1 row(s) selected.
 >>
@@ -1568,7 +1568,7 @@ NUM_LOOKUPS  NUM_CACHE_HITS  NUM_ENTRIES  MAX_CACHE_SIZE
 NUM_LOOKUPS  NUM_CACHE_HITS  NUM_ENTRIES  MAX_CACHE_SIZE
 -----------  --------------  -----------  --------------
 
-        170             136            0        20971520
+        165             135            0        20971520
 
 --- 1 row(s) selected.
 >>

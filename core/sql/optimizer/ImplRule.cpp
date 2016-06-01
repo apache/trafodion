@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -695,8 +698,8 @@ void copyCommonGenericUpdateFields(GenericUpdate *result,
   // We should write a RelExpr::copyCommonRelExprFields method instead
   // of copying them here.
   result->setTolerateNonFatalError(bef->getTolerateNonFatalError());
-
   result->setNoCheck(bef->noCheck());
+  result->setPrecondition(bef->getPrecondition());
 
 }
 
@@ -1293,17 +1296,16 @@ RelExpr * generateScanSubstitutes(RelExpr * before,
 	if (resultNeedsToBeOrdered)
 	{
 	  ValueIdList sortKey = idesc->getOrderOfKeyValues();
-	  // Remove from the sort key any columns that are covered by
-	  // constants or input values.
-	  sortKey.removeCoveredExprs(
-          before->getGroupAttr()->getCharacteristicInputs());
 
-	  // make sure it satisfies the required order and also
-	  // determine the scan direction
+	  // Make sure it satisfies the required order and also
+	  // determine the scan direction. If computed column predicates
+          // select only one salt or division value, for example,
+          // then make use of this to satisfy order requirements.
           if ((rppForMe->getSortKey() != NULL) AND
               ((oc = sortKey.satisfiesReqdOrder(
                        *rppForMe->getSortKey(),
-                       before->getGroupAttr())) == DIFFERENT_ORDER))
+                       before->getGroupAttr(),
+                       &bef->getComputedPredicates())) == DIFFERENT_ORDER))
             indexQualifies = FALSE;
 
           // hbase does not support inverse order scan
@@ -1315,7 +1317,8 @@ RelExpr * generateScanSubstitutes(RelExpr * before,
               (rppForMe->getArrangedCols() != NULL) AND
               NOT sortKey.satisfiesReqdArrangement(
                     *rppForMe->getArrangedCols(),
-                    before->getGroupAttr()))
+                    before->getGroupAttr(),
+                    &bef->getComputedPredicates()))
             indexQualifies = FALSE;
 	}
 
@@ -2131,6 +2134,9 @@ NABoolean HbaseDeleteRule::topMatch(RelExpr * relExpr, Context *context)
   Delete * del = (Delete *) relExpr;
   if (del->getTableDesc()->getNATable()->isHbaseTable() == FALSE)
     return FALSE;
+
+  if (del->getTableDesc()->getNATable()->hasLobColumn())
+    return FALSE;
   
   // HbaseDelete can only execute above DP2
   if (context->getReqdPhysicalProperty()->executeInDP2())
@@ -2653,6 +2659,16 @@ RelExpr * HbaseInsertRule::nextSubstitute(RelExpr * before,
   result = new(CmpCommon::statementHeap()) 
     HbaseInsert(bef->getTableName(),bef->getTableDesc());
 
+  result->setInsertType(bef->getInsertType());
+
+  DefaultToken vsbbTok = CmpCommon::getDefault(INSERT_VSBB);
+  if ((numberOfRowsToBeInserted > 1) &&
+      (vsbbTok != DF_OFF) &&
+      (result->getInsertType() != Insert::UPSERT_LOAD))
+    {
+      result->setInsertType(Insert::VSBB_INSERT_USER);
+    }
+
   copyCommonGenericUpdateFields(result, bef);
 
   result->setPartKey(skey);
@@ -2669,16 +2685,6 @@ RelExpr * HbaseInsertRule::nextSubstitute(RelExpr * before,
 
   if (result->getGroupAttr()->isEmbeddedInsert())
     result->executorPred() += bef->selectionPred();
-
-  result->setInsertType(bef->getInsertType());
-
-  DefaultToken vsbbTok = CmpCommon::getDefault(INSERT_VSBB);
-  if ((numberOfRowsToBeInserted > 1) &&
-      (vsbbTok != DF_OFF) &&
-      (result->getInsertType() != Insert::UPSERT_LOAD))
-    {
-      result->setInsertType(Insert::VSBB_INSERT_USER);
-    }
 
   return result;
 }

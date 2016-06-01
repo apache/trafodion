@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -638,10 +641,11 @@ public:
   // parent's outer references +=
   //     current's outer references
   //     - parent's local references
+  // when keepLocalRefs = TRUE, they are retained (for merge)
   // Note that the + and - operators correspond to the set union and
   // set difference operations.
   // --------------------------------------------------------------------
-  void mergeOuterRefs(const ValueIdSet &other);
+  void mergeOuterRefs(const ValueIdSet &other, NABoolean keepLocalRefs);
 
   // --------------------------------------------------------------------
   // Accessor/mutator method for unresolvedAggregates_
@@ -1175,7 +1179,8 @@ public:
   // --------------------------------------------------------------------
   BindWA(SchemaDB *schemaDB,
   	 CmpContext *currentCmpContext = NULL,
-	 NABoolean inDDL = FALSE);
+	 NABoolean inDDL = FALSE,
+	 NABoolean allowExternalTables = FALSE);
 
   // copy ctor
   BindWA (const BindWA & orig, CollHeap * h=0) ; // not written
@@ -1199,7 +1204,7 @@ public:
   // --------------------------------------------------------------------
   BindScope *getCurrentScope() const;
   BindScope *getPreviousScope(BindScope *currentScope) const;
-  void removeCurrentScope();
+  void removeCurrentScope(NABoolean keepLocalRefs = FALSE);
 
   BindScope *findNextScopeWithTriggerInfo(BindScope *currentScope = NULL);
   
@@ -1477,8 +1482,8 @@ public:
 
   short &viewCount()			   { return viewCount_; }
 
-  NABoolean isCompoundCreateSchema() const { return compoundCreateSchema_; }
-  void setCompoundCreateSchema(NABoolean t) { compoundCreateSchema_ = t; }
+  NABoolean allowExternalTables() const { return allowExternalTables_; }
+  void setAllowExternalTables(NABoolean t) { allowExternalTables_ = t; }
 
   LIST(OptSqlTableOpenInfo *) &getStoiList()  { return stoiList_; }
   LIST(OptUdrOpenInfo *) &getUdrStoiList()  { return udrStoiList_; }
@@ -1794,7 +1799,6 @@ private:
   // --------------------------------------------------------------------
   NABoolean inDDL_;
 
-
   //---------------------------------------------------------------------
   // does the query tree contain any update nodes?
   //---------------------------------------------------------------------
@@ -1815,15 +1819,10 @@ private:
   short viewCount_;
 
   // --------------------------------------------------------------------
-  // Flag to indicate we are compiling a compound create schema statement.
-  // When we bind the view as part of the compound create schema statement,
-  // we need to reset referenceCount_ of the base table to zero.  The
-  // base table is of class NATable.  Otherwise, error 1109 would be           
-  // reported.  The referencCount_ is reset in BindWA:getNATable,
-  // BindRelExpr.cpp.  This flag is introduced for this purpose to fix
-  // solution 10-040518-6149.
+  // Flag to indicate we are accessing an object which is defined in an
+  // external (native) hive or hbase.
   // --------------------------------------------------------------------
-  NABoolean compoundCreateSchema_;
+  NABoolean allowExternalTables_;
 
   // points to a class used by RowSets code.
   HostArraysWA *hostArraysArea_;

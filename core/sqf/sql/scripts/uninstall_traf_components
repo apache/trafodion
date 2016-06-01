@@ -1,0 +1,159 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@ 
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# @@@ END COPYRIGHT @@@
+
+# This script uninstalls all the traf-components that was installed using install_traf_component script
+
+RM='/bin/rm -rf'
+
+function usage() {
+   LOCAL_HADOOP_DIR=\$MY_SQROOT/sql/local_hadoop
+   prog=`basename $0`
+   echo "$prog { all | dcs | rest | clients | tests }"
+   echo "  all     --- Removes all the installed components (dcs, rest and clients) from $LOCAL_HADOOP_DIR"
+   echo "  dcs     --- Removes DCS from  \$DCS_INSTALL_DIR"
+   echo "  rest    --- Removes REST from \$REST_INSTALL_DIR"
+   echo "  clients --- Removes all the client components (odb, lnxdrvr) from $LOCAL_HADOOP_DIR"
+   echo "  tests   --- Removes various test directories from $LOCAL_HADOOP_DIR"
+}
+
+function uninstall_dcs() {
+  if [[ -d $DCS_INSTALL_DIR ]]; then
+     echo "**** Uninstalling DCS from $DCS_INSTALL_DIR"
+     $RM $DCS_INSTALL_DIR  
+     status_code=$?
+     if [[ $status_code != 0 ]]; then
+        echo "**** Failed to uninstall DCS from $DCS_INSTALL_DIR :"  $status_code
+        echo
+        exit 1
+     else
+        echo "**** Successfully uninstalled DCS from $DCS_INSTALL_DIR"
+     fi
+  else
+     echo "**** Nothing to uninstall for DCS ($DCS_INSTALL_DIR does not exist)"
+  fi
+}
+
+function uninstall_rest() {
+
+  if [[ -d $REST_INSTALL_DIR ]]; then
+     echo "**** Uninstalling REST Server from $REST_INSTALL_DIR"
+     $RM $REST_INSTALL_DIR $MY_SQROOT/sql/scripts/swrest
+     status_code=$?
+     if [[ $status_code != 0 ]]; then
+        echo "**** Failed to uninstall REST from $REST_INSTALL_DIR :"  $status_code
+        echo
+        exit 1
+     else
+        echo "**** Successfully uninstalled REST from $REST_INSTALL_DIR"
+     fi
+  else
+     echo "**** Nothing to uninstall for REST ($REST_INSTALL_DIR does not exist)"
+  fi
+}
+
+function uninstall_clients_dir() {
+
+  CLIENTS_DIR=$MY_SQROOT/sql/local_hadoop/clients
+  LNXDRVR_DIR=$MY_SQROOT/sql/local_hadoop/lnxdrvr
+  ODB_DIR=$MY_SQROOT/sql/local_hadoop/odb
+  if [[ -d $CLIENTS_DIR ]]; then
+     echo "**** Uninstalling clients (lnxdrvr and odb) from $CLIENTS_DIR"
+     $RM $CLIENTS_DIR $LNXDRVR_DIR $ODB_DIR $MY_SQROOT/sql/scripts/swodb $MY_SQROOT/sql/scripts/swlnx
+     status_code=$?
+     if [[ $status_code != 0 ]]; then
+        echo "**** Failed to uninstall clients (lnxdrvr and odb) from $CLIENTS_DIR :"  $status_code
+        echo
+        exit 1
+     else
+        echo "**** Successfully uninstalled clients (lnxdrvr and odb) from $CLIENTS_DIR"
+     fi
+  else
+     echo "**** Nothing to uninstall for clients ($CLIENTS_DIR does not exist)"
+  fi
+}
+
+function uninstall_tests_dir() {
+
+  DCSTEST_DIR=$MY_SQROOT/sql/local_hadoop/dcstests
+  TESTS_DIR=$MY_SQROOT/sql/local_hadoop/tests
+  if [[ -d $DCSTEST_DIR ]]; then
+     echo "**** Uninstalling dcs(jdbc/odbc) tests from $DCSTEST_DIR"
+     $RM $DCSTEST_DIR $MY_SQROOT/sql/scripts/swjdbc $MY_SQROOT/sql/scripts/swpyodbc
+     status_code=$?
+     if [[ $status_code != 0 ]]; then
+        echo "**** Failed to uninstall odbc/jdbc tests directory from $DCSTEST_DIR :"  $status_code
+        echo
+        exit 1
+     else
+        echo "**** Successfully uninstalled dcs(odbc/jdbc) tests directory from $DCSTEST_DIR"
+     fi
+  else
+     echo "**** Nothing to uninstall for dcs(odbc/jdbc) tests ($DCSTEST_DIR does not exist)"
+  fi
+
+  if [[ -d $TESTS_DIR ]]; then
+     echo "**** Uninstalling phoenix tests from $TESTS_DIR"
+     $RM $TESTS_DIR $MY_SQROOT/sql/scripts/swphoenix
+     status_code=$?
+     if [[ $status_code != 0 ]]; then
+        echo "**** Failed to uninstall phoenix tests directory from $TESTS_DIR :"  $status_code
+        echo
+        exit 1
+     else
+        echo "**** Successfully uninstalled phoenix tests from $TESTS_DIR"
+     fi
+  else
+     echo "**** Nothing to uninstall for phoenix tests ($TESTS_DIR does not exist)"
+  fi
+}
+
+#Main
+echo
+if [ ! -z ${MY_SQROOT} ]; then
+   case "$1" in
+      dcs)
+        uninstall_dcs
+        ;;
+      rest)
+        uninstall_rest
+        ;;
+      clients)
+        uninstall_clients_dir
+        ;;
+      tests)
+        uninstall_tests_dir
+        ;;
+      all)
+        uninstall_dcs
+        echo
+        uninstall_rest
+        echo
+        uninstall_clients_dir
+        echo
+        uninstall_tests_dir
+        ;;
+      *)
+        usage
+        echo
+        exit 1
+   esac
+fi
+echo
+exit 0

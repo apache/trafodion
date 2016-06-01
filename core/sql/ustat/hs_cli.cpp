@@ -2,19 +2,22 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 ********************************************************************/
@@ -66,6 +69,7 @@
 #include "NLSConversion.h"
 #include "SqlciError.h"
 #include "ExpErrorEnums.h"
+#include "CmpSeabaseDDL.h" // call to createHistogramTables
 
 // -----------------------------------------------------------------------
 // Class to deallocate statement and descriptor.
@@ -107,6 +111,49 @@ private:
   SQLDESC_ID *pd_;
 };
 #pragma warn(770)  // warning elimination
+
+// -----------------------------------------------------------------------
+// DESCRIPTION: Call SQL CLI to execute a SQL statement. The caller is
+//          responsible for all error checking and recovery.
+// INPUTS:  stmt = statement descriptor for the SQL query
+//          srcDesc = source descriptor pointing to the 
+//               text string of SQL query.
+//          doPrintPlan = if true, the plan for the query will be
+//                printed after the statement is prepared but before
+//                execution; if false we do a single CLI ExecDirect call
+// -----------------------------------------------------------------------
+
+Lng32 HSExecDirect( SQLSTMT_ID * stmt
+                  , SQLDESC_ID * srcDesc
+                  , NABoolean doPrintPlan
+                  )
+{
+  Lng32 retcode = 0;
+
+  if (doPrintPlan)
+    {
+      retcode = SQL_EXEC_Prepare(stmt, srcDesc);
+      if (retcode >= 0) // ignore warnings
+        {
+          if (doPrintPlan)
+            {
+              HSLogMan *LM = HSLogMan::Instance();
+              if (LM->LogNeeded()) 
+                {
+                  printPlan(stmt);
+                }
+            } 
+          retcode = SQL_EXEC_ExecFetch(stmt,0,0);
+        }
+    }
+  else
+    {
+      retcode = SQL_EXEC_ExecDirect(stmt, srcDesc, 0, 0);
+    }
+
+  return retcode;
+}
+
 
 // -----------------------------------------------------------------------
 // DESCRIPTION: Execute a standalone dml/ddl statement.
@@ -224,7 +271,7 @@ Lng32 HSFuncExecQuery( const char *dml
   if (!doRetry)
   {
     // execute immediate this statement
-    retcode = SQL_EXEC_ExecDirect(&stmt, &srcDesc, 0, 0);
+    retcode = HSExecDirect(&stmt, &srcDesc, srcTabRowCount != 0);
     // If retcode is > 0 or sqlcode is HS_WARNING, then set to 0 (no error/ignore).
     if (retcode >= 0) retcode = 0;
     // If sqlcode is HS_WARNING, then this means failures should be returned as
@@ -255,7 +302,7 @@ Lng32 HSFuncExecQuery( const char *dml
       }
 
       // execute immediate this statement
-      retcode = SQL_EXEC_ExecDirect(&stmt, &srcDesc, 0, 0);
+      retcode = HSExecDirect(&stmt, &srcDesc, srcTabRowCount != 0);
 
       // filter retcode for HSHandleError
       HSFilterWarning(retcode);
@@ -316,10 +363,6 @@ Lng32 HSFuncExecQuery( const char *dml
       if (srcTabRowCount)
       {
         getRowCountFromStats(srcTabRowCount, tabDef) ;
-        // printing plan for insert...selects
-        if (LM->LogNeeded()) {
-          printPlan(&stmt) ;
-        }
       }
     }
   return retcode;
@@ -370,125 +413,40 @@ Lng32 HSClearCLIDiagnostics()
 }
 
 // -----------------------------------------------------------------------
-// Create SB_Histograms and SB_Histogram_Intervals tables if they
-// don't already exist.
-// -----------------------------------------------------------------------
-Lng32 CreateSeabaseHist(const HSGlobalsClass* hsGlobal)
-  {
-    HSLogMan *LM = HSLogMan::Instance();
-    if (LM->LogNeeded())
-      {
-        snprintf(LM->msg, sizeof(LM->msg), "Creating %s table for schema %s on demand.",
-                         HBASE_HIST_NAME, hsGlobal->catSch->data());
-        LM->Log(LM->msg);
-      }
-
-    NAString ddl = "CREATE TABLE IF NOT EXISTS ";
-    ddl.append(hsGlobal->hstogram_table->data())
-       .append(" (  TABLE_UID      LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , HISTOGRAM_ID   INT UNSIGNED NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , COL_POSITION   INT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , COLUMN_NUMBER  INT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , COLCOUNT       INT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_COUNT SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , ROWCOUNT       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , TOTAL_UEC      LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , STATS_TIME     TIMESTAMP(0) NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , LOW_VALUE      VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , HIGH_VALUE     VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , READ_TIME      TIMESTAMP(0) NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , READ_COUNT     SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , SAMPLE_SECS    LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , COL_SECS       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , SAMPLE_PERCENT SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , CV             FLOAT(54) NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , REASON         CHAR(1) CHARACTER SET ISO88591 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V1             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V2             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V3             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V4             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V5             VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V6             VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-              "  , constraint "HBASE_HIST_PK" primary key"
-                "  (TABLE_UID ASC, HISTOGRAM_ID ASC, COL_POSITION ASC)"
-               " ); ");
-
-    LM->StartTimer("Create Trafodion HISTOGRAMS table");
-
-    Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
-                            "Create SeaBase histograms table", NULL);
-    LM->StopTimer();
-    if (retcode < 0 && LM->LogNeeded())
-      {
-        snprintf(LM->msg, sizeof(LM->msg), "Creation of %s failed.", HBASE_HIST_NAME);
-        LM->Log(LM->msg);
-      }
-
-    return retcode;
-  }
-
-Lng32 CreateSeabaseHistint(const HSGlobalsClass* hsGlobal)
-  {
-    HSLogMan *LM = HSLogMan::Instance();
-    if (LM->LogNeeded())
-      {
-        snprintf(LM->msg, sizeof(LM->msg), "Creating %s table for schema %s on demand.",
-                         HBASE_HISTINT_NAME, hsGlobal->catSch->data());
-        LM->Log(LM->msg);
-      }
-
-    NAString ddl = "CREATE TABLE IF NOT EXISTS ";
-    ddl.append(hsGlobal->hsintval_table->data())
-       .append(" (  TABLE_UID         LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , HISTOGRAM_ID      INT UNSIGNED NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_NUMBER   SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_ROWCOUNT LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_UEC      LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_BOUNDARY VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , STD_DEV_OF_FREQ   NUMERIC(12, 3) NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V1                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V2                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V3                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V4                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V5                VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V6                VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , constraint "HBASE_HISTINT_PK" primary key"
-              "     (TABLE_UID ASC, HISTOGRAM_ID ASC, INTERVAL_NUMBER ASC)"
-               " ) ;");
-
-    LM->StartTimer("Create Trafodion HISTOGRAM_INTERVALS table");
-    Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
-                                    "Create SeaBase histogram intervals table", NULL);
-    LM->StopTimer();
-    if (retcode < 0 && LM->LogNeeded())
-      {
-        snprintf(LM->msg, sizeof(LM->msg), "Creation of %s failed.", HBASE_HISTINT_NAME);
-        LM->Log(LM->msg);
-      }
-
-    return retcode;
-  }
-
-// -----------------------------------------------------------------------
 // Create histogram tables if they don't exist.
 // -----------------------------------------------------------------------
 Lng32 CreateHistTables (const HSGlobalsClass* hsGlobal)
   {
     Lng32 retcode = 0;
 
-    // do NOT check security for volatile tables
+    HSLogMan *LM = HSLogMan::Instance();
+    if (LM->LogNeeded())
+      {
+        snprintf(LM->msg, sizeof(LM->msg), "Creating histogram tables for schema %s on demand.",
+                         hsGlobal->catSch->data());
+        LM->Log(LM->msg);
+      }
+
+    // do NOT check volatile tables
     if (hsGlobal->objDef->isVolatile()) return retcode;
 
-    // Create HISTOGRAMS if is doesn't already exist
-    retcode = CreateSeabaseHist(hsGlobal);
-    HSFilterWarning(retcode);
-    HSHandleError(retcode);
+    LM->StartTimer("Table creation");
+    NAString tableNotCreated;
 
-    // create the  HISTOGRAM_INTERVALS, if it doesn't already exist.
-    hsGlobal->diagsArea.clear();
-    retcode = CreateSeabaseHistint(hsGlobal);
+    // Call createHistogramTables to create any table that does not yet exist.
+    NAString histogramsLocation = getHistogramsTableLocation(hsGlobal->catSch->data(), FALSE);
+    retcode = (CmpSeabaseDDL::createHistogramTables(NULL, histogramsLocation, TRUE, tableNotCreated)); 
+    if (retcode < 0 && LM->LogNeeded())
+      {
+        snprintf(LM->msg, sizeof(LM->msg), "Create failed for table %s.",
+                         tableNotCreated.data());
+        LM->Log(LM->msg);
+      }
+    LM->StopTimer();
+
     HSFilterWarning(retcode);
     HSHandleError(retcode);
+    hsGlobal->diagsArea.clear();
 
     return retcode;
  }
@@ -537,6 +495,20 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
 
     NAString tempTabName = tblName;
     NAString userTabName = objDef->getObjectFullName();
+
+    // If the table is a native one, convert the fully qualified user table name NT
+    // to a fully qualified external table name ET. The sample table will be created
+    // like ET.
+    NABoolean isNativeTable =  
+      HSGlobalsClass::isNativeCat(objDef->getCatName(HSTableDef::EXTERNAL_FORMAT));
+
+    if ( isNativeTable ) {
+      userTabName = ComConvertNativeNameToTrafName(
+                      objDef->getCatName(HSTableDef::EXTERNAL_FORMAT),
+                      objDef->getSchemaName(HSTableDef::EXTERNAL_FORMAT),
+                      objDef->getObjectName(HSTableDef::EXTERNAL_FORMAT));
+    }
+
     NAString userLocation;
     ComObjectName *sampleName;
     NAString tableOptions;
@@ -544,7 +516,11 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
 
     if (objDef->getObjectFormat() == SQLMX)
       {
-        tableOptions = " WITH PARTITIONS";
+        
+        // Do not emit the WITH PARTITIONS clause for native table. 
+        // Rather, the SALT USING clause will be used. 
+        if ( !isNativeTable ) 
+           tableOptions = " WITH PARTITIONS";
         // If a transaction is running, the table needs to be created as audited.
         // Otherwise, create table as non-audited.
         if (TM->InTransaction())
@@ -678,6 +654,7 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
                             - UERR_UNABLE_TO_CREATE_OBJECT,
                             NULL,
                             tempTabName, objDef);
+
     HSHandleError(retcode);
 
     //***********************************************************
@@ -1698,8 +1675,8 @@ Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
                           createDandI,
                           minRowCtPerPartition
                          );
-      // sampleName output, actualRows & sampleRows will get modified if necessary
-      //  (based on isEstimate and the use of DP2 sampling respectively).
+      // sampleName output & actualRows will get modified if necessary
+      //  (based on isEstimate).
     if (!retcode)
     {
 
@@ -4785,7 +4762,7 @@ Lng32 HSinsertEmptyHist::insert()
 #else // NA_USTAT_USE_STATIC not defined, use dynamic query
     char sbuf[25];
     NAString qry = "SELECT HISTOGRAM_ID, COL_POSITION, COLUMN_NUMBER, COLCOUNT, "
-                          "cast(READ_TIME as char(19)), REASON "
+                          "cast(READ_TIME as char(19) character set iso88591), REASON "
                    "FROM ";
     qry.append(histTable_);
     qry.append(    " WHERE TABLE_UID = ");
@@ -5115,9 +5092,9 @@ NAString HSSample::getTempTablePartitionInfo(NABoolean unpartitionedSample,
     // 4. The table is an hbase table.
     // In any of these case, the sample table will be single partitioned.
     if (objDef->getObjectFormat() == SQLMP
-             // Set by HSTableDef::getLabelInfo().
+        // Set by HSTableDef::getLabelInfo().
         || (usePOS == FALSE && userDefinedScratchVols == FALSE)
-        || (HSGlobalsClass::isHbaseCat(objDef->getCatName())))
+        || HSGlobalsClass::isTrafodionCatalog(objDef->getCatName()) )
      {
         numPartitionsNeeded = 1;
 
@@ -5129,93 +5106,136 @@ NAString HSSample::getTempTablePartitionInfo(NABoolean unpartitionedSample,
           }
       }
     else
-      {
-        numPartitionsNeeded = (Lng32) ceil((double)sampleRowCount
+     // if the table is a native HBase or Hive table
+     if ( HSGlobalsClass::isNativeCat(objDef->getCatName()) )
+     {
+
+           usePOS = FALSE;
+
+           numPartitionsNeeded = (Lng32) ceil((double)sampleRowCount
                                                      *
                                            objDef->getRecordLength()
                                                      /
                                            scratchVolThreshold
                                          );
 
+           NADefaults &defs = CmpCommon::context()->schemaDB_->getDefaults();
 
-        // For both IUS and RUS, make sure the number of partitions of the source table
-        // is a multiple of numPartitionsNeeded.
-        if ( CmpCommon::getDefault(USTAT_USE_GROUPING_FOR_SAMPLING) == DF_ON )
-        {
+           NABoolean fakeEnv= FALSE;
+           ComUInt32 numConfiguredESPs = defs.getTotalNumOfESPsInCluster(fakeEnv);
 
-          Lng32 tblPartns = objDef->getNumPartitions();
+           numPartitionsNeeded = MINOF(numConfiguredESPs, numPartitionsNeeded);
+           numPartitionsNeeded = MAXOF(1, numPartitionsNeeded);
 
-          if ( tblPartns < numPartitionsNeeded )
-            numPartitionsNeeded = tblPartns;
+           LM->Log("SYSKEY primary key.");
 
-          if ( numPartitionsNeeded > 0 )
-            while ( tblPartns % numPartitionsNeeded != 0 )
-              numPartitionsNeeded++;
+           snprintf(LM->msg, sizeof(LM->msg), "Partitions Needed: %d (TableType=%s, ~SampleSet=%d, RecLen=%d, threshold=%d)"
+                            , numPartitionsNeeded
+                            , "NATIVE"
+                            , (Lng32)sampleRowCount
+                            , (Lng32)objDef->getRecordLength()
+                            , scratchVolThreshold);
+  
+           LM->Log(LM->msg);
 
-          // Force to take the default code path of local node POS mode
-          // (which is identical to multi-node POS for SQ) to set the number of
-          // partitions for POS. That is, the # of partns of the sample table
-          // is specified via CQD POS_NUM_OF_PARTNS.
-          usePOSMultiNode = FALSE;
-          usePOSLocalNodeWithTableSize = FALSE;
+           if ( numPartitionsNeeded > 1 ) {
+               tableOptions +=" salt using ";
+               snprintf(tempStr, sizeof(tempStr), "%d", numPartitionsNeeded);
+               tableOptions += tempStr;
+               tableOptions +=" partitions on( ";
+               NAFileSet *naSet = objDef->getNATable()->getClusteringIndex();
+               tableOptions +=  naSet->getBestPartitioningKeyColumns(',');
+               tableOptions +=" ) ";
+           }
 
-        } else
-        {
+           return tableOptions;
 
-        // part of fix/workaround to bugzilla 2784: we need to guard against
-        // partitioning the sample table in a way that mxcmp is unable to
-        // generate a parallel plan for the sideinsert to populate it.
-        // For now, choosing numPartitionsNeeded to be even is safe.
-        if (((numPartitionsNeeded % 2) != 0) AND (numPartitionsNeeded > 1))
-          --numPartitionsNeeded;
+        } else {
 
-        // If POS is going to be uzed, there are 3 possibilities
-        // 1. estimated Number of partitions of sample table is less than
-        // number of partitions on local node, assuming each partition holds
-        // at most HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
-        // (100MB/10MB is defaul) bytes of data.
-        // In this case we set POS to LOCAL_NODE and create exactly as many
-        // partitions as needed.
-        // 2. If case 1. is not true, (i.e. data in sample table will not fit on
-        // node, if we have HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
-        // bytes of data in each partition and 1 partition per disk) we heuristically
-        // multiply HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
-        // by 3 and see if the sample table will now fit in the local node. If it
-        // does we set POS to LOCAL_NODE and provide POS with the sample table size.
-        // POS will create one partition in each disk on the local node and automatically
-        // adjust the extent size based on the sample table size. If the number of partitions
-        // in the source table is less than or equal to the number of partitions in the local
-        // node we choose this option too as we do not want the sample table to have more partitions
-        // than the base table.
-        // 3. If the sample table will not fit in the local node even when
-        // HIST_SCRATCH_VOL_THRESHOLD is multiplied by 3, then we set POS to MULTI_NODE and
-        // provide it with the sample table size. POS will create a sample table
-        // with one partition in each available disk in the multi-node with the appropriate
-        // extent size based on sample table size.
+           numPartitionsNeeded = (Lng32) ceil((double)sampleRowCount
+                                                     *
+                                           objDef->getRecordLength()
+                                                     /
+                                           scratchVolThreshold
+                                         );
 
-        NAString *localNodeName = getLocalNodeName();
-        NodeToCpuVolMapDB *volumeCache = ActiveSchemaDB()->getNodeToCpuVolMapDB();
-        Lng32 numVolsInLocalNode = volumeCache->getTotalNumOfVols(localNodeName);
-        if ( (numVolsInLocalNode > 0) &&
-             (numPartitionsNeeded > numVolsInLocalNode))
-        {
-          if ((numPartitionsNeeded < 3*numVolsInLocalNode) ||
-              (objDef->getNumPartitions() <= numVolsInLocalNode))
-          {
-            usePOSLocalNodeWithTableSize = TRUE;
-            numPartitionsNeeded = numVolsInLocalNode;
-          }
-          else
-            usePOSMultiNode = TRUE ;
-
-            sampleTableSizeInMB = (Lng32) ceil((double)sampleRowCount
-                                                           *
-                                               objDef->getRecordLength()
-                                                           /
-                                                     MB_IN_BYTES);
-        }
-       } // end of not IUS
-      }
+           // For both IUS and RUS, make sure the number of partitions of the source table
+           // is a multiple of numPartitionsNeeded.
+           if ( CmpCommon::getDefault(USTAT_USE_GROUPING_FOR_SAMPLING) == DF_ON )
+           {
+   
+             Lng32 tblPartns = objDef->getNumPartitions();
+   
+             if ( tblPartns < numPartitionsNeeded )
+               numPartitionsNeeded = tblPartns;
+   
+             if ( numPartitionsNeeded > 0 )
+               while ( tblPartns % numPartitionsNeeded != 0 )
+                 numPartitionsNeeded++;
+   
+             // Force to take the default code path of local node POS mode
+             // (which is identical to multi-node POS for SQ) to set the number of
+             // partitions for POS. That is, the # of partns of the sample table
+             // is specified via CQD POS_NUM_OF_PARTNS.
+             usePOSMultiNode = FALSE;
+             usePOSLocalNodeWithTableSize = FALSE;
+   
+           } else {
+   
+           // part of fix/workaround to bugzilla 2784: we need to guard against
+           // partitioning the sample table in a way that mxcmp is unable to
+           // generate a parallel plan for the sideinsert to populate it.
+           // For now, choosing numPartitionsNeeded to be even is safe.
+           if (((numPartitionsNeeded % 2) != 0) AND (numPartitionsNeeded > 1))
+             --numPartitionsNeeded;
+   
+           // If POS is going to be uzed, there are 3 possibilities
+           // 1. estimated Number of partitions of sample table is less than
+           // number of partitions on local node, assuming each partition holds
+           // at most HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
+           // (100MB/10MB is defaul) bytes of data.
+           // In this case we set POS to LOCAL_NODE and create exactly as many
+           // partitions as needed.
+           // 2. If case 1. is not true, (i.e. data in sample table will not fit on
+           // node, if we have HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
+           // bytes of data in each partition and 1 partition per disk) we heuristically
+           // multiply HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
+           // by 3 and see if the sample table will now fit in the local node. If it
+           // does we set POS to LOCAL_NODE and provide POS with the sample table size.
+           // POS will create one partition in each disk on the local node and automatically
+           // adjust the extent size based on the sample table size. If the number of partitions
+           // in the source table is less than or equal to the number of partitions in the local
+           // node we choose this option too as we do not want the sample table to have more partitions
+           // than the base table.
+           // 3. If the sample table will not fit in the local node even when
+           // HIST_SCRATCH_VOL_THRESHOLD is multiplied by 3, then we set POS to MULTI_NODE and
+           // provide it with the sample table size. POS will create a sample table
+           // with one partition in each available disk in the multi-node with the appropriate
+           // extent size based on sample table size.
+   
+           NAString *localNodeName = getLocalNodeName();
+           NodeToCpuVolMapDB *volumeCache = ActiveSchemaDB()->getNodeToCpuVolMapDB();
+           Lng32 numVolsInLocalNode = volumeCache->getTotalNumOfVols(localNodeName);
+           if ( (numVolsInLocalNode > 0) &&
+                (numPartitionsNeeded > numVolsInLocalNode))
+           {
+             if ((numPartitionsNeeded < 3*numVolsInLocalNode) ||
+                 (objDef->getNumPartitions() <= numVolsInLocalNode))
+             {
+               usePOSLocalNodeWithTableSize = TRUE;
+               numPartitionsNeeded = numVolsInLocalNode;
+             }
+             else
+               usePOSMultiNode = TRUE ;
+   
+               sampleTableSizeInMB = (Lng32) ceil((double)sampleRowCount
+                                                              *
+                                                  objDef->getRecordLength()
+                                                              /
+                                                        MB_IN_BYTES);
+           }
+          } // end of USTAT_USE_GROUPING_FOR_SAMPLING is OFF
+     } // end of non hive tables
                                    /*=========================================*/
                                    /*   FLOAT PRIMARY KEY - NO PARTITIONING   */
                                    /*=========================================*/
@@ -5459,7 +5479,7 @@ static char ppStmtText[] =
 "          when LEFT_CHILD_SEQ_NUM is null then"
 "            '.  '"
 "          else"
-"            cast(cast(LEFT_CHILD_SEQ_NUM as numeric(3)) as char(3))"
+"            cast(cast(LEFT_CHILD_SEQ_NUM as numeric(3)) as char(3) character set iso88591)"
 "        end"
 ""
 // RIGHT CHILD
@@ -5467,11 +5487,11 @@ static char ppStmtText[] =
 "          when RIGHT_CHILD_SEQ_NUM is null then"
 "            '.  '"
 "          else"
-"            cast(cast(RIGHT_CHILD_SEQ_NUM as numeric(3)) as char(3))"
+"            cast(cast(RIGHT_CHILD_SEQ_NUM as numeric(3)) as char(3) character set iso88591)"
 "        end"
 ""
 // SEQUENCE NUMBER
-"      , cast(cast(SEQ_NUM as numeric(3)) as char(3))"
+"      , cast(cast(SEQ_NUM as numeric(3)) as char(3) character set iso88591)"
 ""
 // OPERATOR
 "      , cast(substring(lower(OPERATOR) from 1 for 20) as char(20))"
@@ -5702,13 +5722,13 @@ static char ppStmtText[] =
 "            from 1 for 20) as char(20))"
 ""
 // CARDINALITY
-"      , CAST(CARDINALITY AS CHAR(11))"
+"      , CAST(CARDINALITY AS CHAR(11) character set iso88591)"
 ""
 // OPERATOR COST
-"      , CAST(OPERATOR_COST AS CHAR(11))"
+"      , CAST(OPERATOR_COST AS CHAR(11) character set iso88591)"
 ""
 // TOTAL COST
-"      , CAST(TOTAL_COST AS CHAR(11))"
+"      , CAST(TOTAL_COST AS CHAR(11) character set iso88591)"
 ""
 "        FROM TABLE(EXPLAIN(NULL, '";
 
@@ -5730,6 +5750,8 @@ Lng32 printPlan(SQLSTMT_ID *stmt)
       } row;
 
     HSLogMan *LM = HSLogMan::Instance();
+
+    HSFuncExecQuery("CQD DEFAULT_CHARSET 'ISO88591'"); // to avoid buffer overruns in row
 
     NAString ppStmtStr = ppStmtText;
     ppStmtStr.append((char *)stmt->identifier).append("')) ORDER BY SEQ_NUM DESC;");
@@ -5774,11 +5796,15 @@ Lng32 printPlan(SQLSTMT_ID *stmt)
             LM->Log(LM->msg);
           }
         else if (retcode != 100)
-          HSLogError(retcode);
+          {
+            HSFuncExecQuery("CQD DEFAULT_CHARSET RESET");
+            HSLogError(retcode);
+          }
       }
 
     // ppStmtId will be closed by ~HSCursor if closeStmtNeeded_ is set.
 
+    HSFuncExecQuery("CQD DEFAULT_CHARSET RESET");
     return retcode;
   }
 

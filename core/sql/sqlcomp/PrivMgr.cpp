@@ -1,19 +1,22 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //*****************************************************************************
@@ -43,6 +46,10 @@
 #include "CmpCommon.h"
 #include "CmpContext.h"
 #include "CmpDDLCatErrorCodes.h"
+#include "logmxevent_traf.h"
+#include "ComUser.h"
+#include "NAUserId.h"
+
 
 // ==========================================================================
 // Contains non inline methods in the following classes
@@ -95,7 +102,8 @@ PrivMgr::PrivMgr(
    const std::string & metadataLocation,
    ComDiagsArea * pDiags,
    PrivMDStatus authorizationEnabled)
-: metadataLocation_ (metadataLocation),
+: trafMetadataLocation_ ("TRAFODION.\"_MD_\""),
+  metadataLocation_ (metadataLocation),
   pDiags_(pDiags),
   authorizationEnabled_(authorizationEnabled)
   
@@ -237,6 +245,62 @@ int32_t diagsMark = pDiags_->mark();
 }
 
 
+// ----------------------------------------------------------------------------
+// static method: getAuthNameFromAuthID
+//
+// Converts the authorization ID into its corresponding database name
+//
+//   authID - ID to convert
+//   authName - returned name
+//
+// returns:
+//   true - conversion successful
+//   false - conversion failed, ComDiags setup with error information
+// ----------------------------------------------------------------------------
+bool PrivMgr::getAuthNameFromAuthID(
+ const int32_t authID, 
+ std::string &authName)
+{
+  switch (authID)
+  {
+    case SYSTEM_USER:
+      authName = SYSTEM_AUTH_NAME;
+      break;  
+    case PUBLIC_USER:
+      authName = PUBLIC_AUTH_NAME;
+      break;  
+    case SUPER_USER:
+      authName = DB__ROOT;
+      break;
+    case ROOT_ROLE_ID:
+      authName = DB__ROOTROLE;
+      break;
+    case HIVE_ROLE_ID:
+      authName = DB__HIVEROLE;
+      break;
+    case HBASE_ROLE_ID:
+      authName = DB__HBASEROLE;
+      break;
+    default:
+    {
+      int32_t length = 0;
+      char authNameFromMD[MAX_DBUSERNAME_LEN + 1];
+
+      Int16 retcode = ComUser::getAuthNameFromAuthID(authID,authNameFromMD,
+                                               MAX_DBUSERNAME_LEN,length);
+      if (retcode != 0)
+      {
+        *CmpCommon::diags() << DgSqlCode(-20235)
+                            << DgInt0(retcode)
+                            << DgInt1(authID);
+        return false;
+      }
+      authName = authNameFromMD;
+    }
+  }
+  return true;
+}
+
 // *****************************************************************************
 // *                                                                           *
 // * Function: PrivMgr::getSQLOperationName                                    *
@@ -287,6 +351,13 @@ const char * PrivMgr::getSQLOperationName(SQLOperation operation)
       case SQLOperation::CREATE_TABLE: return "CREATE_TABLE";
       case SQLOperation::CREATE_TRIGGER: return "CREATE_TRIGGER";
       case SQLOperation::CREATE_VIEW: return "CREATE_VIEW";
+      case SQLOperation::DML_DELETE: return "DML_DELETE";
+      case SQLOperation::DML_EXECUTE: return "DML_EXECUTE";
+      case SQLOperation::DML_INSERT: return "DML_INSERT";
+      case SQLOperation::DML_REFERENCES: return "DML_REFERENCES";
+      case SQLOperation::DML_SELECT: return "DML_SELECT";
+      case SQLOperation::DML_UPDATE: return "DML_UPDATE";
+      case SQLOperation::DML_USAGE: return "DML_USAGE";
       case SQLOperation::DROP: return "DROP";
       case SQLOperation::DROP_CATALOG: return "DROP_CATALOG";
       case SQLOperation::DROP_INDEX: return "DROP_INDEX";
@@ -373,6 +444,13 @@ const char * PrivMgr::getSQLOperationCode(SQLOperation operation)
       case SQLOperation::CREATE_TABLE: return "CT";
       case SQLOperation::CREATE_TRIGGER: return "CG";
       case SQLOperation::CREATE_VIEW: return "CV";
+      case SQLOperation::DML_DELETE: return "PD";
+      case SQLOperation::DML_EXECUTE: return "PE";
+      case SQLOperation::DML_INSERT: return "PI";
+      case SQLOperation::DML_REFERENCES: return "PR";
+      case SQLOperation::DML_SELECT: return "PS";
+      case SQLOperation::DML_UPDATE: return "PU";
+      case SQLOperation::DML_USAGE: return "PG";
       case SQLOperation::DROP: return "D0";
       case SQLOperation::DROP_CATALOG: return "DC";
       case SQLOperation::DROP_INDEX: return "DI";
@@ -462,6 +540,13 @@ const char * PrivMgr::getSQLOperationDescription(SQLOperation operation)
       case SQLOperation::CREATE_TABLE: return "Allow grantee to create tables";
       case SQLOperation::CREATE_TRIGGER: return "Allow grantee to create triggers";
       case SQLOperation::CREATE_VIEW: return "Allow grantee to create views";
+      case SQLOperation::DML_DELETE: return "Allow grantee to delete rows";
+      case SQLOperation::DML_EXECUTE: return "Allow grantee to execute functions";
+      case SQLOperation::DML_INSERT: return "Allow grantee to insert rows";
+      case SQLOperation::DML_REFERENCES: return "Allow grantee to reference columns";
+      case SQLOperation::DML_SELECT: return "Allow grantee to select rows";
+      case SQLOperation::DML_UPDATE: return "Allow grantee to update rows";
+      case SQLOperation::DML_USAGE: return "Allow grantee to use libraries and sequences";
       case SQLOperation::DROP: return "Allow grantee to drop database objects";
       case SQLOperation::DROP_CATALOG: return "Allow grantee to drop catalogs";
       case SQLOperation::DROP_INDEX: return "Allow grantee to drop indexes";
@@ -826,6 +911,7 @@ ComObjectType PrivMgr::ObjectLitToEnum(const char *objectLiteral)
    return COM_UNKNOWN_OBJECT;
    
 }
+
 //********************* End of PrivMgr::ObjectLitToEnum ************************
 
 
@@ -889,5 +975,48 @@ void PrivMgr::setFlags()
   // The parserflag requests return a unsigned int return code of 0
   SQL_EXEC_GetParserFlagsForExSqlComp_Internal(parserFlags_);
   SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
+}
+
+// ----------------------------------------------------------------------------
+// method::log
+//
+// sends a message to log4cxx implementation designed by SQL
+//
+// Input:
+//    filename - code file that is performing the request 
+//    message  - the message to log
+//    index    - index for logging that loops through a list
+//
+// Background
+//   Privilege manager code sets up a message and calls this log method
+//   This method calls SQLMXLoggingArea::logPrivMgrInfo described in 
+//      sqlmxevents/logmxevent_traf (.h & .cpp)
+//   logPrivMgrInfo is a wrapper class around qmscommon/QRLogger (.h & .cpp)
+//      log method
+//   QRLogger generates a message calls the log method in 
+//      sqf/commonLogger/CommonLogger (.h & .cpp) 
+//   CommonLogger interfaces with the log4cxx code which eventually puts
+//      a message into a log file called ../sqf/logs/master_exec_0_pid.log.  
+//      A new master log is created for each new SQL process started.
+//
+// Sometimes it is amazing that things actually work with all these levels
+// of interfaces.  Perhaps we can skip a few levels...  
+// ----------------------------------------------------------------------------
+void PrivMgr::log(
+  const std::string filename,
+  const std::string message,
+  const int_32 index)
+{ 
+  std::string logMessage (filename);
+  logMessage += ": ";
+  logMessage += message;
+  if (index >= 0)
+  {
+    logMessage += ", index level is ";
+    logMessage += to_string((long long int)index); 
+  }
+
+  SQLMXLoggingArea::logPrivMgrInfo("Privilege Manager", 0, logMessage.c_str(), 0);
+  
 }
 

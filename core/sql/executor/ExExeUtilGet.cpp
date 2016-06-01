@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -61,7 +64,8 @@
 #include "PrivMgrCommands.h"
 
 #include "ExpHbaseInterface.h"
-
+#include "sql_buffer_size.h"
+#include "hdfs.h"
 //******************************************************************************
 //                                                                             *
 //  These definitions were stolen from CatWellKnownTables.h
@@ -155,7 +159,6 @@ static const QueryString getUsersForRoleQuery[] =
   {"   from %s.\"%s\".%s RU "},
   {" where (RU.grantor_ID != -2) and "},
   {"       (RU.role_name='%s') "},
-  {" for read uncommitted access "},
   {" order by 1"},
   {" ; "}
 };
@@ -167,7 +170,6 @@ static const QueryString getRolesForUserQuery[] =
   {"   from %s.\"%s\".%s RU "},
   {" where (RU.grantor_ID != -2) and "},
   {"       (RU.grantee_name='%s') "},
-  {" for read uncommitted access "},
   {" order by 1 "},
   {" ; "}
 };
@@ -176,7 +178,6 @@ static const QueryString getComponents[] =
 {
   {" select translate(rtrim(component_name) using ucs2toutf8)  "},
   {"   from %s.\"%s\".%s "},
-  {" for read uncommitted access "},
   {" order by component_name "},
   {" ; "}
 };
@@ -189,7 +190,6 @@ static const QueryString getComponentOperations[] =
   {"    %s.\"%s\".%s o "},
   {" where (c.component_uid=o.component_uid) and "},
   {"       (c.component_name='%s')  "},
-  {" for read uncommitted access "},
   {" order by 1 "},
   {" ; "}
 };
@@ -210,7 +210,6 @@ static const QueryString getComponentPrivilegesForUser[] =
   {"          %s.\"%s\".%s ru "},
   {"          where ru.grantee_name = '%s')))"},
   {" order by 1 " },
-  {" for read uncommitted access "},
   {" ; " }
 };
 
@@ -218,12 +217,11 @@ static const QueryString getComponentPrivilegesForUser[] =
 
 static const QueryString getTrafTablesInSchemaQuery[] =
 {
-  {" select object_name  from "},
+  {" select %sobject_name%s  from "},
   {"   %s.\"%s\".%s "},
   {"  where catalog_name = '%s' and "},
   {"        schema_name = '%s'  and "},
   {"        object_type = 'BT'  "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -235,9 +233,23 @@ static const QueryString getTrafIndexesInSchemaQuery[] =
   {"  where catalog_name = '%s' and "},
   {"        schema_name = '%s'  and "},
   {"        object_type = 'IX'  "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
+};
+
+static const QueryString getTrafIndexesOnTableQuery[] =
+{
+  {" select %sO2.object_name%s from "},
+  {"   %s.\"%s\".%s I, "},
+  {"   %s.\"%s\".%s O, "},
+  {"   %s.\"%s\".%s O2 "},
+  {"  where O.catalog_name = '%s' "},
+  {"    and O.schema_name = '%s' "},
+  {"    and O.object_name = '%s' "},
+  {"    and I.base_table_uid = O.object_uid "},
+  {"    and I.index_uid = O2.object_uid "},
+  {" order by 1 "},
+  {" ; "}
 };
 
 static const QueryString getTrafProceduresInSchemaQuery[] =
@@ -249,7 +261,6 @@ static const QueryString getTrafProceduresInSchemaQuery[] =
   {"        T.object_type = 'UR'  and "},
   {"        T.object_uid = R.udr_uid  and "},
   {"        R.udr_type = 'P ' "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -261,7 +272,6 @@ static const QueryString getTrafLibrariesInSchemaQuery[] =
   {"  where T.catalog_name = '%s' and "},
   {"        T.schema_name = '%s'  and "},
   {"        T.object_type = 'LB' "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -275,7 +285,6 @@ static const QueryString getTrafFunctionsInSchemaQuery[] =
   {"        T.object_type = 'UR'  and "},
   {"        T.object_uid = R.udr_uid  and "},
   {"        R.udr_type = 'F ' "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -289,7 +298,6 @@ static const QueryString getTrafTableFunctionsInSchemaQuery[] =
   {"        T.object_type = 'UR'  and "},
   {"        T.object_uid = R.udr_uid  and "},
   {"        R.udr_type = 'T ' "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -304,7 +312,6 @@ static const QueryString getTrafProceduresForLibraryQuery[] =
   {"      where T1.object_type = 'LB' and T1.catalog_name = '%s' and "},
   {"            T1.schema_name = '%s' and T1.object_name = '%s') and "},
   {"      %s  "}, // fot udr_type: procedure, function, or table_mapping fn.
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -316,7 +323,6 @@ static const QueryString getTrafSequencesInSchemaQuery[] =
   {"  where catalog_name = '%s' and "},
   {"        schema_name = '%s'  and "},
   {"        object_type = 'SG' "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -327,7 +333,6 @@ static const QueryString getTrafSequencesInCatalogQuery[] =
   {"   %s.\"%s\".%s "},
   {"  where catalog_name = '%s' and "},
   {"        object_type = 'SG' "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -339,7 +344,6 @@ static const QueryString getTrafViewsInCatalogQuery[] =
   {"   %s.\"%s\".%s,  %s.\"%s\".%s "},
   {"  where view_uid = object_uid and "},
   {"            catalog_name = '%s' "},
-  {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -351,14 +355,13 @@ static const QueryString getTrafViewsInSchemaQuery[] =
   {"  where view_uid = object_uid and "},
   {"             catalog_name = '%s' and "},
   {"             schema_name = '%s' "},
-  {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
 };
 
 static const QueryString getTrafObjectsInViewQuery[] =
 {
-  {" select T.object_name from "},
+  {" select trim(T.schema_name) || '.' || trim(T.object_name) from "},
   {"   %s.\"%s\".%s VU,  %s.\"%s\".%s T "},
   {"  where VU.using_view_uid = "},
   {"     (select T2.object_uid from  %s.\"%s\".%s T2 "},
@@ -366,14 +369,13 @@ static const QueryString getTrafObjectsInViewQuery[] =
   {"                   T2.schema_name = '%s' and "},
   {"                   T2.object_name = '%s' ) "},
   {"     and VU.used_object_uid = T.object_uid "},
-  {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
 };
 
 static const QueryString getTrafViewsOnObjectQuery[] =
 {
-  {" select %sT.object_name %s  from "},
+  {" select trim(T.schema_name) || '.' || trim(T.object_name) from "},
   {"   %s.\"%s\".%s T "},
   {"   where T.object_uid in "},
   {"   (select using_view_uid from  %s.\"%s\".%s VU "},
@@ -396,7 +398,6 @@ static const QueryString getTrafSchemasInCatalogQuery[] =
   {"   from %s.\"%s\".%s "},
   {"  where catalog_name = '%s' "},
   {"        and (object_type = 'PS' or object_type = 'SS') "},
-  {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -408,7 +409,6 @@ static const QueryString getTrafSchemasForAuthIDQuery[] =
   {"        %s.\"%s\".%s A "},
   {"  where (T.object_type = 'PS' or T.object_type = 'SS') and "},
   {"         A.auth_db_name = '%s' and T.object_owner = A.auth_id  "},
-  {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -418,7 +418,6 @@ static const QueryString getTrafUsers[] =
   {" select distinct auth_db_name "},
   {"   from %s.\"%s\".%s "},
   {"  where auth_type = '%s' "},
-  {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -428,7 +427,7 @@ static const QueryString getTrafRoles[] =
   {" select distinct auth_db_name "},
   {"   from %s.\"%s\".%s "},
   {"  where auth_type = 'R' "},
-  {"  for read uncommitted access "},
+  {" union select * from (values ('PUBLIC')) "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -1218,7 +1217,6 @@ Lng32 ExExeUtilGetMetadataInfoTcb::setupPrivilegesTypeForUserQuery()
          " O.object_uid  = SP.table_uid AND "
          " SP.grantee    = U.user_id AND "
          " SP.grantor   != -2 "
-   " FOR READ UNCOMMITTED ACCESS "
    " ; "
   };
 
@@ -1249,7 +1247,6 @@ Lng32 ExExeUtilGetMetadataInfoTcb::setupPrivilegesTypeForUserQuery()
          " O.object_uid = TP.table_uid AND"
          " TP.grantee   = U.user_id AND"
          " TP.grantor  != -2"
-   " FOR READ UNCOMMITTED ACCESS"
    " ; "
   };
 
@@ -1344,7 +1341,6 @@ Lng32 ExExeUtilGetMetadataInfoTcb::setupObjectTypeForUserQuery()
          " O.OBJECT_TYPE  = '%s' AND"
          " O.OBJECT_OWNER = U.USER_ID"
          " %s"
-   " FOR READ UNCOMMITTED ACCESS"
    " ; "
   };
 
@@ -1491,7 +1487,7 @@ Int32 ExExeUtilGetMetadataInfoTcb::setupAuthIDInfo(const char *authName,
            " where auth_id = (select role_id from "
            "                    hp_system_catalog.hp_security_schema.roles "
            "                   where role_name = '%s') "
-           " for read uncommitted access; ",
+           " ; ",
         authName, authName);
       break;
 
@@ -1501,7 +1497,7 @@ Int32 ExExeUtilGetMetadataInfoTcb::setupAuthIDInfo(const char *authName,
            " where auth_id = (select user_id from "
            "                    hp_system_catalog.hp_security_schema.users "
            "                   where user_name = '%s') "
-           " for read uncommitted access; ",
+           " ; ",
         authName, authName);
       break;
      
@@ -1513,8 +1509,8 @@ Int32 ExExeUtilGetMetadataInfoTcb::setupAuthIDInfo(const char *authName,
            "                   where user_name = '%s') "
            "    or  auth_id = (select role_id from "
            "                    hp_system_catalog.hp_security_schema.roles "
-           "                   where role_name = '%s')) "
-           " for read uncommitted access; ",
+              "                   where role_name = '%s')) "
+           " ; ",
         authName, authName);
       break;
   }
@@ -1654,6 +1650,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	    char sch[100];
             char pmsch[100];
 	    char tab[100];
+            char indexes[100];
 	    char view[100];
 	    char view_usage[100];
             char auths[100];
@@ -1672,6 +1669,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	    strcpy(tab, SEABASE_OBJECTS);
 	    strcpy(view, SEABASE_VIEWS);
 	    strcpy(view_usage, SEABASE_VIEWS_USAGE);
+            strcpy(indexes, SEABASE_INDEXES);
             strcpy(auths, SEABASE_AUTHS);
             strcpy(role_usage, "ROLE_USAGE");
             strcpy(components, "COMPONENTS");
@@ -1708,11 +1706,13 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  qs = getTrafTablesInSchemaQuery;
 		  sizeOfqs = sizeof(getTrafTablesInSchemaQuery);
 
-		  param_[0] = cat;
-		  param_[1] = sch;
-		  param_[2] = tab;
-		  param_[3] = getMItdb().cat_;
-		  param_[4] = getMItdb().sch_;
+                  param_[0] = catSchValue;
+                  param_[1] = endQuote;
+		  param_[2] = cat;
+		  param_[3] = sch;
+		  param_[4] = tab;
+		  param_[5] = getMItdb().cat_;
+		  param_[6] = getMItdb().sch_;
 		}
 	      break;
 	      
@@ -1782,20 +1782,19 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		}
 	      break;
 
-	      case ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_:
-	      case ComTdbExeUtilGetMetadataInfo::VIEWS_ON_VIEW_:
-		{
-		  qs = getTrafViewsOnObjectQuery;
-		  sizeOfqs = sizeof(getTrafViewsOnObjectQuery);
+              case ComTdbExeUtilGetMetadataInfo::INDEXES_ON_TABLE_:
+                {
+		  qs = getTrafIndexesOnTableQuery;
+		  sizeOfqs = sizeof(getTrafIndexesOnTableQuery);
 
 		  param_[0] = catSchValue;
 		  param_[1] = endQuote;
 		  param_[2] = cat;
 		  param_[3] = sch;
-		  param_[4] = tab;
+		  param_[4] = indexes;
 		  param_[5] = cat;
 		  param_[6] = sch;
-		  param_[7] = view_usage;
+		  param_[7] = tab;
 		  param_[8] = cat;
 		  param_[9] = sch;
 		  param_[10] = tab;
@@ -1803,9 +1802,31 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  param_[12] = getMItdb().sch_;
 		  param_[13] = getMItdb().obj_;
 
+                }
+                break;
+
+	      case ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_:
+	      case ComTdbExeUtilGetMetadataInfo::VIEWS_ON_VIEW_:
+		{
+		  qs = getTrafViewsOnObjectQuery;
+		  sizeOfqs = sizeof(getTrafViewsOnObjectQuery);
+
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
+		  param_[3] = cat;
+		  param_[4] = sch;
+		  param_[5] = view_usage;
+		  param_[6] = cat;
+		  param_[7] = sch;
+		  param_[8] = tab;
+		  param_[9] = getMItdb().cat_;
+		  param_[10] = getMItdb().sch_;
+		  param_[11] = getMItdb().obj_;
+
 		  if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_)
 		    strcpy(ausStr, " and T1.object_type = 'BT' ");
-		  param_[14] = ausStr;
+		  param_[12] = ausStr;
 		}
 	      break;
 
@@ -1940,6 +1961,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
               case ComTdbExeUtilGetMetadataInfo::ROLES_:
                 {
                   qs = getTrafRoles;
+
                   sizeOfqs = sizeof(getTrafRoles);
 
                   param_[0] = cat;
@@ -2977,7 +2999,7 @@ ExExeUtilGetHbaseObjectsTcb::ExExeUtilGetHbaseObjectsTcb(
   outBuf_ = new(getGlobals()->getDefaultHeap())
     char[ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+6+1];
 
-  bal_ = NULL;
+  hbaseTables_ = NULL;
 }
 
 ExExeUtilGetHbaseObjectsTcb::~ExExeUtilGetHbaseObjectsTcb()
@@ -3037,8 +3059,8 @@ short ExExeUtilGetHbaseObjectsTcb::work()
 
         case SETUP_HBASE_QUERY_:
           {
-            bal_ = ehi_->listAll("");
-            if (! bal_)
+            hbaseTables_ = ehi_->listAll("");
+            if (! hbaseTables_)
               {
                 step_ = HANDLE_ERROR_;
                 break;
@@ -3052,18 +3074,19 @@ short ExExeUtilGetHbaseObjectsTcb::work()
 
         case PROCESS_NEXT_ROW_:
           {
-            if (currIndex_ == bal_->getSize())
+            if (currIndex_ == hbaseTables_->entries())
               {
                 step_ = DONE_;
                 break;
               }
 
-            Int32 len = 0;
-            hbaseName_ = bal_->getEntry(currIndex_, hbaseNameBuf_, 
-                                        ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+6, 
-                                        len);
-            hbaseName_[len] = 0;
-            
+            HbaseStr *hbaseName = &hbaseTables_->at(currIndex_);
+            if (hbaseName->len > ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+6)
+                hbaseName->len = ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+6; 
+            strncpy(hbaseNameBuf_, hbaseName->val, hbaseName->len);
+            hbaseNameBuf_[hbaseName->len] = 0;
+            hbaseName_ = hbaseNameBuf_;
+
             Lng32 numParts = 0;
             char *parts[4];
             LateNameInfo::extractParts(hbaseName_, outBuf_, numParts, parts, FALSE);
@@ -3072,7 +3095,7 @@ short ExExeUtilGetHbaseObjectsTcb::work()
 
             if (getMItdb().allObjs())
               {
-                step_ = RETURN_ROW_;
+                step_ = EVAL_EXPR_;
                 break;
               }
 
@@ -3107,23 +3130,38 @@ short ExExeUtilGetHbaseObjectsTcb::work()
             if ((getMItdb().externalObjs()) &&
                 (externalObj))
               {
-                step_ = RETURN_ROW_;
+                step_ = EVAL_EXPR_;
                 break;
               }
             else if ((getMItdb().systemObjs()) &&
                 (sysObj))
               {
-                step_ = RETURN_ROW_;
+                step_ = EVAL_EXPR_;
                 break;
               }
             else if ((getMItdb().userObjs()) &&
                      ((NOT sysObj) && (NOT externalObj)))
              {
-                step_ = RETURN_ROW_;
+                step_ = EVAL_EXPR_;
                 break;
               }
  
             step_ = PROCESS_NEXT_ROW_;
+          }
+          break;
+
+        case EVAL_EXPR_:
+          {
+            exprRetCode = evalScanExpr(hbaseName_, strlen(hbaseName_));
+	    if (exprRetCode == ex_expr::EXPR_FALSE)
+	      {
+		// row does not pass the scan expression,
+		// move to the next row.
+		step_ = PROCESS_NEXT_ROW_;
+		break;
+	      }
+            
+            step_ = RETURN_ROW_;
           }
           break;
 
@@ -3151,6 +3189,10 @@ short ExExeUtilGetHbaseObjectsTcb::work()
 
 	case DONE_:
 	  {
+            if (hbaseTables_ != NULL) {
+               deleteNAArray(getHeap(), hbaseTables_);
+               hbaseTables_ = NULL;
+            }
 	    retcode = handleDone();
 	    if (retcode == 1)
 	      return WORK_OK;
@@ -3447,7 +3489,7 @@ short ExExeUtilGetMetadataInfoVersionTcb::work()
 	    // make sure there is enough space to move header
 	    if (isUpQueueFull(5))
 	      {
-		return WORK_OK; // come back later
+		return WORK_CALL_AGAIN; // come back later
 	      }
 
 	    if (numOutputEntries_ == 2)
@@ -4436,6 +4478,12 @@ ExExeUtilLobShowddlTcb::ExExeUtilLobShowddlTcb
   : ExExeUtilTcb(exe_util_tdb, NULL, glob),
     step_(INITIAL_)
 {
+  strcpy(lobMDNameBuf_,"");
+  lobMDNameLen_=0;
+  lobMDName_ = NULL;
+  
+  Lng32 currLobNum_ = 0;
+  strcpy(sdOptionStr_,"");
 }
 
 short ExExeUtilLobShowddlTcb::fetchRows(char * query, short &rc)
@@ -4656,12 +4704,18 @@ short ExExeUtilLobShowddlTcb::work()
 	      ExpLOBoper::ExpGetLOBname
 	      (lobTdb().objectUID_, lobTdb().getLOBnum(currLobNum_), 
 	       tgtLobNameBuf, 100);
-	    
-	    str_sprintf(query_, "Location: %s", 
+
+	    if (lobTdb().getIsExternalLobCol(currLobNum_))
+              str_sprintf(query_, "<External HDFS location>");
+            else 
+              str_sprintf(query_, "Location: %s", 
 			lobTdb().getLOBloc(currLobNum_));
 	    moveRowToUpQueue(query_);
 
-	    str_sprintf(query_, "DataFile: %s", tgtLobName);
+            if (lobTdb().getIsExternalLobCol(currLobNum_))
+              str_sprintf(query_, "<External HDFS file>");
+            else 
+              str_sprintf(query_, "DataFile: %s", tgtLobName);
 	    moveRowToUpQueue(query_);
 
 	    step_ = FETCH_LOB_DESC_HANDLE_SHOWDDL_;
@@ -4883,8 +4937,11 @@ Lng32 ExExeUtilHiveMDaccessTcb::getLengthFromHiveColType(const char* hiveType)
   if ( !strcmp(hiveType, "bigint"))
     return 8;
 
-  if ( !strcmp(hiveType, "string"))
-    return 32000; // TBD: add cqd.
+  if ( !strcmp(hiveType, "string")) {
+    char maxStrLen[100];
+    cliInterface()->getCQDval("HIVE_MAX_STRING_LENGTH", maxStrLen);
+    return atoi(maxStrLen); // TBD: add cqd.
+  }
 
   if ( !strcmp(hiveType, "float"))
     return 4;
@@ -5309,4 +5366,1400 @@ ExExeUtilHiveMDaccessPrivateState::~ExExeUtilHiveMDaccessPrivateState()
 {
 };
 
+///////////////////////////////////////////////////////////////////
+ex_tcb * ExExeUtilRegionStatsTdb::build(ex_globals * glob)
+{
+  ExExeUtilRegionStatsTcb * exe_util_tcb;
+
+  if (displayFormat())
+    exe_util_tcb = new(glob->getSpace()) ExExeUtilRegionStatsFormatTcb(*this, glob);
+  else
+    exe_util_tcb = new(glob->getSpace()) ExExeUtilRegionStatsTcb(*this, glob);
+    
+  exe_util_tcb->registerSubtasks();
+
+  return (exe_util_tcb);
+}
+
+////////////////////////////////////////////////////////////////
+// Constructor for class ExExeUtilRegionStatsTcb
+///////////////////////////////////////////////////////////////
+ExExeUtilRegionStatsTcb::ExExeUtilRegionStatsTcb(
+     const ComTdbExeUtilRegionStats & exe_util_tdb,
+     ex_globals * glob)
+     : ExExeUtilTcb( exe_util_tdb, NULL, glob)
+{
+  statsBuf_ = new(glob->getDefaultHeap()) char[sizeof(ComTdbRegionStatsVirtTableColumnStruct)];
+  statsBufLen_ = sizeof(ComTdbRegionStatsVirtTableColumnStruct);
+
+  stats_ = (ComTdbRegionStatsVirtTableColumnStruct*)statsBuf_;
+
+  inputNameBuf_ = NULL;
+  if (exe_util_tdb.inputExpr_)
+    {
+      inputNameBuf_ = new(glob->getDefaultHeap()) char[exe_util_tdb.inputRowlen_];
+    }
+
+  int jniDebugPort = 0;
+  int jniDebugTimeout = 0;
+  ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
+					(char*)"", //exe_util_tdb.server(), 
+					(char*)"", //exe_util_tdb.zkPort(),
+                                        jniDebugPort,
+                                        jniDebugTimeout);
+
+  regionInfoList_ = NULL;
+  
+  tableName_ = new(glob->getDefaultHeap()) char[2000];
+
+  // get hbase rootdir location. Max linux pathlength is 1024.
+  hbaseRootdir_ = new(glob->getDefaultHeap()) char[1030];
+  strcpy(hbaseRootdir_, "/hbase");
+
+  step_ = INITIAL_;
+}
+
+ExExeUtilRegionStatsTcb::~ExExeUtilRegionStatsTcb()
+{
+  if (statsBuf_)
+    NADELETEBASIC(statsBuf_, getGlobals()->getDefaultHeap());
+
+  if (ehi_)
+    delete ehi_;
+
+  statsBuf_ = NULL;
+}
+
+//////////////////////////////////////////////////////
+// work() for ExExeUtilRegionStatsTcb
+//////////////////////////////////////////////////////
+Int64 ExExeUtilRegionStatsTcb::getEmbeddedNumValue
+(char* &sep, char endChar, NABoolean adjustLen)
+{
+  Int64 num = -1;
+  char * sepEnd = strchr(sep+1, endChar);
+  if (sepEnd)
+    {
+      char longBuf[30];
+
+      Lng32 len = sepEnd - sep - 1;
+      str_cpy_all(longBuf, (sep+1), len);
+      longBuf[len] = 0;                
+      
+      num = str_atoi(longBuf, len);
+
+      sep += len + 1;
+
+      if ((adjustLen) && (num == 0))
+        num = 1024;
+    }
+
+  return num;
+}
+
+short ExExeUtilRegionStatsTcb::collectStats(char * tableName)
+{
+  // populate catName_, schName_, objName_.
+  if (extractParts(tableName,
+                   &catName_, &schName_, &objName_))
+    {
+      return -1;
+    }
+
+  // collect stats from ehi.
+  HbaseStr tblName;
+  
+  NAString extNameForHbase = 
+    NAString(catName_) + "." + NAString(schName_) + "." + NAString(objName_);
+  tblName.val = (char*)extNameForHbase.data();
+  tblName.len = extNameForHbase.length();
+  
+  regionInfoList_ = ehi_->getRegionStats(tblName);
+  if (! regionInfoList_)
+    {
+      return -1;
+    }
+ 
+  currIndex_ = 0;
+
+  return 0;
+}
+
+short ExExeUtilRegionStatsTcb::populateStats
+(Int32 currIndex, NABoolean nullTerminate)
+{
+  str_pad(stats_->catalogName, sizeof(stats_->catalogName), ' ');
+  str_cpy_all(stats_->catalogName, catName_, strlen(catName_));
+  if (nullTerminate)
+    stats_->catalogName[strlen(catName_)] = 0;
+
+  str_pad(stats_->schemaName, sizeof(stats_->schemaName), ' ');
+  str_cpy_all(stats_->schemaName, schName_, strlen(schName_));
+  if (nullTerminate)
+    stats_->schemaName[strlen(schName_)] = 0;
+
+  str_pad(stats_->objectName, sizeof(stats_->objectName), ' ');
+  str_cpy_all(stats_->objectName, objName_, strlen(objName_));
+  if (nullTerminate)
+    stats_->objectName[strlen(objName_)] = 0;
+  
+  str_pad(stats_->regionName, sizeof(stats_->regionName), ' ');
+  stats_->regionNum       = currIndex_+1;
+  
+  char regionInfoBuf[5000];
+  Int32 len = 0;
+  char *regionInfo = regionInfoBuf;
+  char *val = regionInfoList_->at(currIndex).val;
+  len = regionInfoList_->at(currIndex).len; 
+  if (len >= sizeof(regionInfoBuf))
+     len = sizeof(regionInfoBuf)-1;
+  strncpy(regionInfoBuf, val, len);
+  regionInfoBuf[len] = '\0';
+  stats_->numStores                = 0;
+  stats_->numStoreFiles            = 0;
+  stats_->storeFileUncompSize      = 0;
+  stats_->storeFileSize            = 0;
+  stats_->memStoreSize             = 0;
+  
+  char longBuf[30];
+  char * sep1 = strchr(regionInfo, '|');
+  if (sep1)
+    {
+      str_cpy_all(stats_->regionName, regionInfo, 
+                  (Lng32)(sep1 - regionInfo)); 
+
+      if (nullTerminate)
+        stats_->regionName[sep1 - regionInfo] = 0;
+    }
+  
+  char * sepStart = sep1;
+  stats_->numStores = getEmbeddedNumValue(sepStart, '|', FALSE);
+  stats_->numStoreFiles = getEmbeddedNumValue(sepStart, '|', FALSE);
+  stats_->storeFileUncompSize = getEmbeddedNumValue(sepStart, '|', FALSE);
+  stats_->storeFileSize = getEmbeddedNumValue(sepStart, '|', FALSE);
+  stats_->memStoreSize = getEmbeddedNumValue(sepStart, '|', FALSE);
+  stats_->readRequestsCount = getEmbeddedNumValue(sepStart, '|', FALSE);
+  stats_->writeRequestsCount = getEmbeddedNumValue(sepStart, '|', FALSE);
+  
+  return 0;
+}
+
+short ExExeUtilRegionStatsTcb::work()
+{
+  short retcode = 0;
+  Lng32 cliRC = 0;
+
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+  
+  // if no room in up queue, won't be able to return data/status.
+  // Come back later.
+  if (qparent_.up->isFull())
+    return WORK_OK;
+  
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate =
+    *((ExExeUtilPrivateState*) pentry_down->pstate);
+
+  // Get the globals stucture of the master executor.
+  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
+  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
+  ContextCli * currContext = masterGlob->getCliGlobals()->currContext();
+
+  while (1)
+    {
+      switch (step_)
+	{
+	case INITIAL_:
+	  {
+            if (ehi_ == NULL)
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+
+            if (getDLStdb().inputExpr())
+              {
+                step_ = EVAL_INPUT_;
+                break;
+              }
+
+            strcpy(tableName_, getDLStdb().getTableName());
+
+	    step_ = COLLECT_STATS_;
+	  }
+	break;
+
+        case EVAL_INPUT_:
+          {
+	    workAtp_->getTupp(getDLStdb().workAtpIndex())
+	      .setDataPointer(inputNameBuf_);
+
+	    ex_expr::exp_return_type exprRetCode =
+	      getDLStdb().inputExpr()->eval(pentry_down->getAtp(), workAtp_);
+	    if (exprRetCode == ex_expr::EXPR_ERROR)
+	      {
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+            short len = *(short*)inputNameBuf_;
+            str_cpy_all(tableName_, &inputNameBuf_[2], len);
+            tableName_[len] = 0;
+
+            step_ = COLLECT_STATS_;
+          }
+          break;
+
+        case COLLECT_STATS_:
+          {
+            if (collectStats(tableName_))
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+
+            currIndex_ = 0;
+
+            step_ = POPULATE_STATS_BUF_;
+          }
+          break;
+
+	case POPULATE_STATS_BUF_:
+	  {
+            if (currIndex_ == regionInfoList_->entries())
+              {
+                step_ = DONE_;
+                break;
+              }
+            
+            if (populateStats(currIndex_))
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+
+	    step_ = RETURN_STATS_BUF_;
+	  }
+	break;
+
+	case RETURN_STATS_BUF_:
+	  {
+	    if (qparent_.up->isFull())
+	      return WORK_OK;
+
+	    short rc = 0;
+	    if (moveRowToUpQueue((char*)stats_, statsBufLen_, &rc, FALSE))
+	      return rc;
+
+            currIndex_++;
+
+            step_ = POPULATE_STATS_BUF_;
+	  }
+	break;
+
+	case HANDLE_ERROR_:
+	  {
+	    retcode = handleError();
+	    if (retcode == 1)
+	      return WORK_OK;
+	    
+	    step_ = DONE_;
+	  }
+	break;
+	
+	case DONE_:
+	  {
+            if (regionInfoList_ != NULL) {
+               deleteNAArray(getHeap(), regionInfoList_);
+               regionInfoList_ = NULL;
+            }
+	    retcode = handleDone();
+	    if (retcode == 1)
+	      return WORK_OK;
+	    
+	    step_ = INITIAL_;
+	    
+	    return WORK_CALL_AGAIN;
+	  }
+	break;
+
+
+	} // switch
+
+    } // while
+
+  return WORK_OK;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Constructor and destructor for ExeUtil_private_state
+/////////////////////////////////////////////////////////////////////////////
+ExExeUtilRegionStatsPrivateState::ExExeUtilRegionStatsPrivateState()
+{
+}
+
+ExExeUtilRegionStatsPrivateState::~ExExeUtilRegionStatsPrivateState()
+{
+};
+
+
+////////////////////////////////////////////////////////////////
+// Constructor for class ExExeUtilRegionStatsFormatTcb
+///////////////////////////////////////////////////////////////
+ExExeUtilRegionStatsFormatTcb::ExExeUtilRegionStatsFormatTcb(
+     const ComTdbExeUtilRegionStats & exe_util_tdb,
+     ex_globals * glob)
+     : ExExeUtilRegionStatsTcb( exe_util_tdb, glob)
+{
+  statsTotalsBuf_ = new(glob->getDefaultHeap()) char[sizeof(ComTdbRegionStatsVirtTableColumnStruct)];
+
+  statsTotals_ = (ComTdbRegionStatsVirtTableColumnStruct*)statsTotalsBuf_;
+
+  initTotals();
+
+  step_ = INITIAL_;
+}
+
+static NAString removeTrailingBlanks(char * name, Lng32 maxLen)
+{
+  NAString nas;
+  
+  if (! name)
+    return nas;
+
+  Lng32 i = maxLen;
+  while ((i > 0) && (name[i-1] == ' '))
+    {
+      i--;
+    }
+
+  if (i > 0)
+    nas = NAString(name, i);
+
+  return nas;
+}
+
+short ExExeUtilRegionStatsFormatTcb::initTotals()
+{
+  statsTotals_->numStores                 = 0;
+  statsTotals_->numStoreFiles             = 0;
+  statsTotals_->readRequestsCount         = 0;
+  statsTotals_->writeRequestsCount        = 0;
+  statsTotals_->storeFileUncompSize      = 0;
+  statsTotals_->storeFileSize            = 0;
+  statsTotals_->memStoreSize             = 0;
+
+  return 0;
+}
+
+short ExExeUtilRegionStatsFormatTcb::computeTotals()
+{
+  str_pad(statsTotals_->catalogName, sizeof(statsTotals_->catalogName), ' ');
+  str_cpy_all(statsTotals_->catalogName, catName_, strlen(catName_));
+
+  str_pad(statsTotals_->schemaName, sizeof(statsTotals_->schemaName), ' ');
+  str_cpy_all(statsTotals_->schemaName, schName_, strlen(schName_));
+
+  str_pad(statsTotals_->objectName, sizeof(statsTotals_->objectName), ' ');
+  str_cpy_all(statsTotals_->objectName, objName_, strlen(objName_));
+
+  str_pad(statsTotals_->regionName, sizeof(statsTotals_->regionName), ' ');
+
+  for (Int32 currIndex = 0; currIndex < regionInfoList_->entries(); currIndex++)
+    {
+      if (populateStats(currIndex))
+        return -1;
+
+      statsTotals_->numStores           += stats_->numStores;
+      statsTotals_->numStoreFiles       += stats_->numStoreFiles;
+      statsTotals_->storeFileUncompSize += stats_->storeFileUncompSize;
+      statsTotals_->storeFileSize       += stats_->storeFileSize;
+      statsTotals_->memStoreSize        += stats_->memStoreSize;  
+      statsTotals_->readRequestsCount   += stats_->readRequestsCount;
+      statsTotals_->writeRequestsCount  += stats_->writeRequestsCount;
+    }
+  
+  return 0;
+}
+
+short ExExeUtilRegionStatsFormatTcb::work()
+{
+  short retcode = 0;
+  Lng32 cliRC = 0;
+
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+  
+  // if no room in up queue, won't be able to return data/status.
+  // Come back later.
+  if (qparent_.up->isFull())
+    return WORK_OK;
+  
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate =
+    *((ExExeUtilPrivateState*) pentry_down->pstate);
+
+  // Get the globals stucture of the master executor.
+  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
+  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
+  ContextCli * currContext = masterGlob->getCliGlobals()->currContext();
+
+  while (1)
+    {
+      switch (step_)
+	{
+	case INITIAL_:
+	  {
+            if (ehi_ == NULL)
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+            
+            initTotals();
+            
+            if (getDLStdb().inputExpr())
+              {
+                step_ = EVAL_INPUT_;
+                break;
+              }
+
+            strcpy(tableName_, getDLStdb().getTableName());
+
+	    step_ = COLLECT_STATS_;
+	  }
+	break;
+
+        case EVAL_INPUT_:
+          {
+	    workAtp_->getTupp(getDLStdb().workAtpIndex())
+	      .setDataPointer(inputNameBuf_);
+
+	    ex_expr::exp_return_type exprRetCode =
+	      getDLStdb().inputExpr()->eval(pentry_down->getAtp(), workAtp_);
+	    if (exprRetCode == ex_expr::EXPR_ERROR)
+	      {
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+            short len = *(short*)inputNameBuf_;
+            str_cpy_all(tableName_, &inputNameBuf_[2], len);
+            tableName_[len] = 0;
+
+            step_ = COLLECT_STATS_;
+          }
+          break;
+
+        case COLLECT_STATS_:
+          {
+            if (collectStats(tableName_))
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+
+            currIndex_ = 0;
+
+            step_ = COMPUTE_TOTALS_;
+          }
+          break;
+
+        case COMPUTE_TOTALS_:
+          {
+            if (computeTotals())
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+
+            step_ = RETURN_SUMMARY_;
+          }
+          break;
+
+        case RETURN_SUMMARY_:
+          {
+	    // make sure there is enough space to move header
+	    if (isUpQueueFull(14))
+	      {
+		return WORK_CALL_AGAIN; // come back later
+	      }
+
+            ULng32 neededSize = SqlBufferNeededSize(14, 250);
+            if (! pool_->get_free_buffer(neededSize))
+              {
+                return WORK_CALL_AGAIN;
+              }
+            
+            char buf[1000];
+	    short rc = 0;
+
+            str_sprintf(buf, " ");
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "Stats Summary");
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+ 
+            str_sprintf(buf, "=============");
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, " ");
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            NAString objName = 
+              removeTrailingBlanks(statsTotals_->catalogName, STATS_NAME_MAX_LEN);
+            objName += ".";
+            objName +=
+              removeTrailingBlanks(statsTotals_->schemaName, STATS_NAME_MAX_LEN);
+            objName += ".";
+            objName += 
+              removeTrailingBlanks(statsTotals_->objectName, STATS_NAME_MAX_LEN);
+
+            str_sprintf(buf, "  ObjectName:              %s", objName.data());
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "  NumRegions:              %d", regionInfoList_->entries());
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "  RegionsLocation:         %s/data/default", 
+                        hbaseRootdir_);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "  TotalNumStores:          %d", statsTotals_->numStores);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "  TotalNumStoreFiles:      %d", statsTotals_->numStoreFiles);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "  TotalUncompressedSize:   %Ld", statsTotals_->storeFileUncompSize);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+           str_sprintf(buf, "  TotalStoreFileSize:      %Ld", statsTotals_->storeFileSize);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "  TotalMemStoreSize:       %Ld", statsTotals_->memStoreSize);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "  TotalReadRequestsCount:  %Ld", statsTotals_->readRequestsCount);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "  TotalWriteRequestsCount: %Ld", statsTotals_->writeRequestsCount);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            step_ = RETURN_DETAILS_;
+            return WORK_RESCHEDULE_AND_RETURN;
+          }
+          break;
+
+        case RETURN_DETAILS_:
+          {
+
+            if ((getDLStdb().summaryOnly()) ||
+                (regionInfoList_->entries() == 0))
+              {
+                step_ = DONE_;
+                break;
+              }
+
+	    // make sure there is enough space to move header
+	    if (isUpQueueFull(4))
+	      {
+		return WORK_CALL_AGAIN; // come back later
+	      }
+
+            ULng32 neededSize = SqlBufferNeededSize(4, 250);
+            if (! pool_->get_free_buffer(neededSize))
+              {
+                return WORK_CALL_AGAIN;
+              }
+
+            char buf[1000];
+	    short rc = 0;
+
+            str_sprintf(buf, " ");
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "Stats Details");
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+ 
+            str_sprintf(buf, "=============");
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, " ");
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            currIndex_ = 0;
+            step_ = POPULATE_STATS_BUF_;
+
+            return WORK_RESCHEDULE_AND_RETURN;
+          }
+          break;
+
+	case POPULATE_STATS_BUF_:
+	  {
+            if (currIndex_ == regionInfoList_->entries())
+              {
+                step_ = DONE_;
+                break;
+              }
+            
+            if (populateStats(currIndex_))
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+
+            step_ = RETURN_REGION_INFO_;
+          }
+          break;
+
+        case RETURN_REGION_INFO_:
+          {
+	    // make sure there is enough space to move header
+	    if (isUpQueueFull(10))
+	      {
+		return WORK_CALL_AGAIN; // come back later
+	      }
+
+            ULng32 neededSize = SqlBufferNeededSize(4, 100);
+            if (! pool_->get_free_buffer(neededSize))
+              {
+                return WORK_CALL_AGAIN;
+              }
+
+            char buf[1000];
+	    short rc = 0;
+
+            str_sprintf(buf, "  RegionNum:          %d", currIndex_+1);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "  RegionName:         %s", 
+                        removeTrailingBlanks(stats_->regionName, STATS_REGION_NAME_MAX_LEN).data(), TRUE);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+            
+            str_sprintf(buf, "  NumStores:          %d", stats_->numStores);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "  NumStoreFiles:      %d", stats_->numStoreFiles);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            if (stats_->storeFileUncompSize == 0)
+              str_sprintf(buf, "  UncompressedSize:   %Ld (less than 1MB)", stats_->storeFileUncompSize);
+            else
+              str_sprintf(buf, "  UncompressedSize:   %Ld Bytes", stats_->storeFileUncompSize);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            if (stats_->storeFileSize == 0)
+              str_sprintf(buf, "  StoreFileSize:      %Ld (less than 1MB)", stats_->storeFileSize);
+            else
+              str_sprintf(buf, "  StoreFileSize:      %Ld Bytes", stats_->storeFileSize);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            if (stats_->memStoreSize == 0)
+              str_sprintf(buf, "  MemStoreSize:       %Ld (less than 1MB)", stats_->memStoreSize);
+            else
+              str_sprintf(buf, "  MemStoreSize:       %Ld Bytes", stats_->memStoreSize);              
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "  ReadRequestsCount:  %Ld", stats_->readRequestsCount);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "  WriteRequestsCount: %Ld", stats_->writeRequestsCount);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            str_sprintf(buf, "   ");
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+
+            currIndex_++;
+
+            step_ = POPULATE_STATS_BUF_;
+
+            return WORK_RESCHEDULE_AND_RETURN;
+          }
+          break;
+
+	case HANDLE_ERROR_:
+	  {
+	    retcode = handleError();
+	    if (retcode == 1)
+	      return WORK_OK;
+	    
+	    step_ = DONE_;
+	  }
+	break;
+	
+	case DONE_:
+	  {
+            if (regionInfoList_ != NULL) {
+               deleteNAArray(getHeap(), regionInfoList_);
+               regionInfoList_ = NULL;
+            }
+	    retcode = handleDone();
+	    if (retcode == 1)
+	      return WORK_OK;
+	    
+	    step_ = INITIAL_;
+	    
+	    return WORK_CALL_AGAIN;
+	  }
+	break;
+
+
+	} // switch
+
+    } // while
+
+  return WORK_OK;
+}
+
+
+///////////////////////////////////////////////////////////////////
+ex_tcb * ExExeUtilLobInfoTdb::build(ex_globals * glob)
+{
+
+  if (isTableFormat())
+    {
+      ExExeUtilLobInfoTableTcb *exe_util_tcb = new(glob->getSpace()) ExExeUtilLobInfoTableTcb(*this,glob);
+      exe_util_tcb->registerSubtasks();
+
+      return (exe_util_tcb);
+    }
+  else
+    {
+
+
+    ExExeUtilLobInfoTcb *exe_util_tcb = new(glob->getSpace()) ExExeUtilLobInfoTcb(*this, glob);
+    exe_util_tcb->registerSubtasks();
+
+    return (exe_util_tcb);
+    }
+ 
+}
+
+////////////////////////////////////////////////////////////////
+// Constructor for class ExExeUtilLobInfoTcb
+///////////////////////////////////////////////////////////////
+ExExeUtilLobInfoTcb::ExExeUtilLobInfoTcb(
+     const ComTdbExeUtilLobInfo & exe_util_tdb,
+     ex_globals * glob)
+     : ExExeUtilTcb( exe_util_tdb, NULL, glob)
+{
+  
+
+  inputNameBuf_ = NULL;
+  if (exe_util_tdb.inputExpr_)
+    {
+      inputNameBuf_ = new(glob->getDefaultHeap()) char[exe_util_tdb.inputRowlen_];
+    }
+
+  tableName_ = new(glob->getDefaultHeap()) char[2000];
+  currLobNum_ = 1;
+  step_ = INITIAL_;
+}
+
+ExExeUtilLobInfoTcb::~ExExeUtilLobInfoTcb()
+{
+  if (tableName_)
+    NADELETEBASIC(tableName_, getGlobals()->getDefaultHeap());
+  if(inputNameBuf_) 
+     NADELETEBASIC(inputNameBuf_, getGlobals()->getDefaultHeap());
+ 
+  tableName_ = NULL;
+  inputNameBuf_ = NULL;
+}
+
+short ExExeUtilLobInfoTcb::collectAndReturnLobInfo(char * tableName,Int32 currLobNum, ContextCli *currContext)
+{
+  char *catName = NULL;
+  char *schName = NULL;
+  char *objName = NULL;
+  Int32 offset = 0;
+  char columnName[LOBINFO_MAX_FILE_LEN]= {'\0'};
+  char lobLocation[LOBINFO_MAX_FILE_LEN]={'\0'};
+  char lobDataFilePath[LOBINFO_MAX_FILE_LEN]={'\0'};
+  Int64 lobEOD=0;
+
+  char buf[LOBINFO_MAX_FILE_LEN+500];
+  short rc = 0;
+  if (isUpQueueFull(5))
+    {
+      return WORK_CALL_AGAIN; // come back later
+    }
+  
+
+  // populate catName, schName, objName.
+  if (extractParts(tableName,
+                   &catName, &schName, &objName))
+    {
+      return -1;
+    }
+  str_pad(buf,sizeof(buf),' ');
+  //column name
+  offset = (currLobNum-1)*LOBINFO_MAX_FILE_LEN; 
+  strcpy(columnName, &((getLItdb().getLobColList())[offset]));
+  removeTrailingBlanks(columnName, LOBINFO_MAX_FILE_LEN);
+  str_sprintf(buf, "  ColumnName :  %s", columnName);
+  if (moveRowToUpQueue(buf, strlen(buf), &rc))
+    return rc;
+
+  //lob location  
+ 
+   strcpy(lobLocation, &((getLItdb().getLobLocList())[offset]));
+  removeTrailingBlanks(lobLocation, LOBINFO_MAX_FILE_LEN);
+if (getLItdb().getLobTypeList()[(currLobNum-1)*sizeof(Int32)] == Lob_External_HDFS_File)
+  str_sprintf(buf, "  Lob Location :  External HDFS Location");
+else
+  str_sprintf(buf, "  Lob Location :  %s", lobLocation);
+  if (moveRowToUpQueue(buf, strlen(buf), &rc))
+    return rc;      
+  
+  char lobDescChunkFileBuf[LOBINFO_MAX_FILE_LEN*2];
+  //Get the descriptor chunks table name
+  char *lobDescChunksFile =
+    ExpLOBoper::ExpGetLOBDescChunksName(strlen(schName),schName,
+                                        getLItdb().objectUID_, currLobNum, 
+                                        lobDescChunkFileBuf, LOBINFO_MAX_FILE_LEN*2);
+ 
+  char *query = new(getGlobals()->getDefaultHeap()) char[4096]; 
+  // lobDataFile
+  char tgtLobNameBuf[LOBINFO_MAX_FILE_LEN];
+ 
+  
+   char *lobDataFile = 
+     ExpLOBoper::ExpGetLOBname
+     (getLItdb().objectUID_, currLobNum, 
+      tgtLobNameBuf, LOBINFO_MAX_FILE_LEN);
+    
+    
+ 
+  removeTrailingBlanks(lobDataFile, LOBINFO_MAX_FILE_LEN);
+  if (getLItdb().getLobTypeList()[(currLobNum-1)*sizeof(Int32)] == Lob_External_HDFS_File)
+    str_sprintf(buf, "  LOB Data File:  External HDFS File");
+  else
+    str_sprintf(buf, "  LOB Data File:  %s", lobDataFile);
+  if (moveRowToUpQueue(buf, strlen(buf), &rc))
+    return rc;  
+                
+  //EOD of LOB data file
+  hdfsFS fs = hdfsConnect((char*)getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
+  if (fs == NULL)
+    return LOB_DATA_FILE_OPEN_ERROR;
+
+  
+  snprintf(lobDataFilePath, LOBINFO_MAX_FILE_LEN, "%s/%s", lobLocation, lobDataFile);
+  hdfsFile fdData = hdfsOpenFile(fs, lobDataFilePath,O_RDONLY,0,0,0);
+  if (!fdData) 
+    {
+      hdfsCloseFile(fs,fdData);
+      fdData = NULL;
+      return LOB_DATA_FILE_OPEN_ERROR;
+    }
+  hdfsFileInfo *fInfo = hdfsGetPathInfo(fs, lobDataFilePath);
+  if (fInfo)
+    lobEOD = fInfo->mSize;
+  else
+    lobEOD = 0;
+  
+  str_sprintf(buf, "  LOB EOD :  %Ld", lobEOD);
+  if (moveRowToUpQueue(buf, strlen(buf), &rc))
+    return rc;
+
+  // Sum of all the lobDescChunks for used space
+
+   
+  str_sprintf (query,  "select sum(chunklen) from  %s ", lobDescChunksFile);
+  // set parserflags to allow ghost table
+  currContext->setSqlParserFlags(0x1);	
+
+  Int64 outlen = 0;Lng32 len = 0;
+  Int32 cliRC = cliInterface()->executeImmediate(query,(char *)&outlen, &len, FALSE);
+  if ((len ==0) ||(getLItdb().getLobTypeList()[(currLobNum-1)*sizeof(Int32)] == Lob_External_HDFS_File))
+    outlen = 0;
+  NADELETEBASIC(query, getGlobals()->getDefaultHeap());
+  
+  currContext->resetSqlParserFlags(0x1);
+  if (cliRC <0 )
+    {
+      return cliRC;
+    }
+
+  str_sprintf(buf, "  LOB Used Len :  %Ld", outlen);
+  if (moveRowToUpQueue(buf, strlen(buf), &rc))
+    return rc;
+  return 0;
+}
+short ExExeUtilLobInfoTcb::work()
+{
+  short retcode = 0;
+  Lng32 cliRC = 0;
+  const char *parentQid = NULL;
+  char buf[1000];
+     short rc = 0;
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+  
+  // if no room in up queue, won't be able to return data/status.
+  // Come back later.
+  if (qparent_.up->isFull())
+    return WORK_OK;
+  
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate =
+    *((ExExeUtilPrivateState*) pentry_down->pstate);
+
+  // Get the globals stucture of the master executor.
+  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
+  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
+  ContextCli * currContext = masterGlob->getCliGlobals()->currContext();
+   ExExeStmtGlobals *stmtGlobals = getGlobals()->castToExExeStmtGlobals();
+  while (1)
+    {
+      switch (step_)
+	{
+	case INITIAL_:
+	  {
+            if (isUpQueueFull(3))
+	      {
+		return WORK_CALL_AGAIN; // come back later
+	      }
+           
+             
+            if (getLItdb().inputExpr())
+              {
+                step_ = EVAL_INPUT_;
+                break;
+              }
+
+            strcpy(tableName_, getLItdb().getTableName());
+            str_pad(buf,1000,'\0');
+            str_sprintf(buf, " ");
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+              return rc;
+            removeTrailingBlanks(tableName_, LOBINFO_MAX_FILE_LEN);
+            str_pad(buf,1000,'\0');
+            str_sprintf(buf, "Lob Information for table: %s", tableName_);
+            if (moveRowToUpQueue(buf, strlen(buf), &rc))
+              return rc;
+            str_pad(buf,1000,'\0');
+             str_sprintf(buf, "=========================");
+            if (moveRowToUpQueue(buf, strlen(buf), &rc))
+              return rc;
+            str_pad(buf,1000,'\0');
+            str_sprintf(buf, " ");
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+            
+	    step_ = COLLECT_LOBINFO_;
+           
+	  }
+	break;
+
+        case EVAL_INPUT_:
+          {
+	    workAtp_->getTupp(getLItdb().workAtpIndex())
+	      .setDataPointer(inputNameBuf_);
+
+	    ex_expr::exp_return_type exprRetCode =
+	      getLItdb().inputExpr()->eval(pentry_down->getAtp(), workAtp_);
+	    if (exprRetCode == ex_expr::EXPR_ERROR)
+	      {
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+            short len = *(short*)inputNameBuf_;
+            str_cpy_all(tableName_, &inputNameBuf_[2], len);
+            tableName_[len] = 0;
+
+           
+            step_ = COLLECT_LOBINFO_;
+          }
+          break;
+
+        case COLLECT_LOBINFO_:
+          {
+            if (getLItdb().getNumLobs() == 0)
+              {
+                str_sprintf(buf, "  Num Lob Columns = 0", tableName_);
+                if (moveRowToUpQueue(buf, strlen(buf), &rc))
+                  return rc;
+                step_ = DONE_;
+                break;
+              }
+            if (currLobNum_ == getLItdb().getNumLobs()+1)
+              {
+                step_ = DONE_;
+                break;
+              }
+            if (collectAndReturnLobInfo(tableName_,currLobNum_, currContext))
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+            currLobNum_++;
+            
+          }
+          break;
+
+
+
+	case HANDLE_ERROR_:
+	  {
+            
+	    retcode = handleError();
+	    if (retcode == 1)
+	      return WORK_OK;
+	    
+	    step_ = DONE_;
+	  }
+	break;
+	
+	case DONE_:
+	  {
+           
+	    retcode = handleDone();
+	    if (retcode == 1)
+	      return WORK_OK;
+	    
+	    step_ = INITIAL_;
+	    
+	    return WORK_OK;
+	  }
+	break;
+
+
+	} // switch
+
+    } // while
+
+  return WORK_OK;
+}
+//LCOV_EXCL_STOP
+
+
+
+////////////////////////////////////////////////////////////////
+// Constructor for class ExExeUtilLobInfoTableTcb
+///////////////////////////////////////////////////////////////
+ExExeUtilLobInfoTableTcb::ExExeUtilLobInfoTableTcb(
+     const ComTdbExeUtilLobInfo & exe_util_tdb,
+     ex_globals * glob)
+     : ExExeUtilTcb( exe_util_tdb, NULL, glob)
+{
+  lobInfoBuf_ = new(glob->getDefaultHeap()) char[sizeof(ComTdbLobInfoVirtTableColumnStruct)];
+  lobInfoBufLen_ = sizeof(ComTdbLobInfoVirtTableColumnStruct);
+
+  lobInfo_ = (ComTdbLobInfoVirtTableColumnStruct*)lobInfoBuf_;
+
+  inputNameBuf_ = NULL;
+  if (exe_util_tdb.inputExpr_)
+    {
+      inputNameBuf_ = new(glob->getDefaultHeap()) char[exe_util_tdb.inputRowlen_];
+    }
+
+  
+  tableName_ = new(glob->getDefaultHeap()) char[2000];
+  currLobNum_ = 1;
+  step_ = INITIAL_;
+}
+
+ExExeUtilLobInfoTableTcb::~ExExeUtilLobInfoTableTcb()
+{
+  if (lobInfoBuf_)
+    NADELETEBASIC(lobInfoBuf_, getGlobals()->getDefaultHeap());
+  if (tableName_)
+    NADELETEBASIC(tableName_, getGlobals()->getDefaultHeap());
+  if(inputNameBuf_) 
+     NADELETEBASIC(inputNameBuf_, getGlobals()->getDefaultHeap());
+
+  tableName_ = NULL;
+  inputNameBuf_ = NULL;
+
+  lobInfoBuf_ = NULL;
+}
+short ExExeUtilLobInfoTableTcb:: populateLobInfo(Int32 currIndex, NABoolean nullTerminate )
+{
+  return 0;
+}
+short ExExeUtilLobInfoTableTcb::collectLobInfo(char * tableName,Int32 currLobNum, ContextCli *currContext)
+{
+  char *catName = NULL;
+  char *schName = NULL;
+  char *objName = NULL;
+  Int32 offset = 0;
+  char columnName[LOBINFO_MAX_FILE_LEN]= {'\0'};
+  char lobDataFilePath[LOBINFO_MAX_FILE_LEN]={'\0'};
+  Int64 lobEOD=0;
+
+  // populate catName, schName, objName.
+  if (extractParts(tableName,
+                   &catName, &schName, &objName))
+    {
+      return -1;
+    }
+  str_pad((char *)lobInfo_,sizeof(ComTdbLobInfoVirtTableColumnStruct),' ');
+  
+  str_cpy_all(lobInfo_->catalogName,catName,strlen(catName));
+  str_cpy_all(lobInfo_->schemaName,schName,strlen(schName));
+  str_cpy_all(lobInfo_->objectName,objName,strlen(objName));
+
+  //column name
+  offset = (currLobNum-1)*LOBINFO_MAX_FILE_LEN; 
+  str_cpy_all(lobInfo_->columnName, &((getLItdb().getLobColList())[offset]),
+              strlen(&((getLItdb().getLobColList())[offset])));
+
+  char *lobLocation = new(getGlobals()->getDefaultHeap()) char[LOBINFO_MAX_FILE_LEN]  ;
+ 
+   
+  lobLocation = &((getLItdb().getLobLocList())[offset]);
+ if (getLItdb().getLobTypeList()[(currLobNum-1)*sizeof(Int32)] == Lob_External_HDFS_File)
+ str_cpy_all(lobInfo_->lobLocation, "External HDFS Location", strlen("External HDFS Location"));
+ else 
+   str_cpy_all(lobInfo_->lobLocation, (char *)&lobLocation[0], strlen(lobLocation));
+                          
+  // lobDataFile
+  char tgtLobNameBuf[LOBINFO_MAX_FILE_LEN];
+  char query[4096];
+  char lobDescChunkFileBuf[LOBINFO_MAX_FILE_LEN*2];
+ 
+  //Get the descriptor chunks table name
+  char *lobDescChunksFile =
+    ExpLOBoper::ExpGetLOBDescChunksName(strlen(schName),schName,
+                                        getLItdb().objectUID_, currLobNum, 
+                                        lobDescChunkFileBuf, LOBINFO_MAX_FILE_LEN*2);
+    char *lobDataFile = 
+	      ExpLOBoper::ExpGetLOBname
+	      (getLItdb().objectUID_, currLobNum, 
+	       tgtLobNameBuf, LOBINFO_MAX_FILE_LEN);
+   
+  if (getLItdb().getLobTypeList()[(currLobNum-1)*sizeof(Int32)] == Lob_External_HDFS_File)
+    {
+      str_cpy_all(lobInfo_->lobDataFile, "External HDFS File" ,strlen("External HDFS File"));  
+    }
+  else
+    {
+      str_cpy_all(lobInfo_->lobDataFile,  lobDataFile,strlen(lobDataFile));
+    }             
+  //EOD of LOB data file
+  hdfsFS fs = hdfsConnect(getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
+  if (fs == NULL)
+    return LOB_DATA_FILE_OPEN_ERROR;
+
+  snprintf(lobDataFilePath, LOBINFO_MAX_FILE_LEN, "%s/%s", lobLocation, lobDataFile);
+  hdfsFile fdData = hdfsOpenFile(fs, lobDataFilePath,O_RDONLY,0,0,0);
+  if (!fdData) 
+    {
+      hdfsCloseFile(fs,fdData);
+      fdData = NULL;
+      return LOB_DATA_FILE_OPEN_ERROR;
+    }
+  hdfsFileInfo *fInfo = hdfsGetPathInfo(fs, lobDataFilePath);
+  if (fInfo)
+    lobEOD = fInfo->mSize;
+  else
+    lobEOD = 0;
+  lobInfo_->lobDataFileSizeEod=lobEOD;
+  // Sum of all the lobDescChunks for used space
+
+  str_sprintf (query,  "select sum(chunklen) from  %s ", lobDescChunksFile);
+
+  // set parserflags to allow ghost table
+  currContext->setSqlParserFlags(0x1);
+	
+  Int64 outlen = 0;Lng32 len = 0;
+  Int32 cliRC = cliInterface()->executeImmediate(query,(char *)&outlen, &len, FALSE);
+  if ((len == 0) || (getLItdb().getLobTypeList()[(currLobNum-1)*sizeof(Int32)] == Lob_External_HDFS_File))
+    outlen = 0;
+  lobInfo_->lobDataFileSizeUsed = outlen;
+  currContext->resetSqlParserFlags(0x1);
+        
+
+  if (cliRC <0 )
+    {
+      return cliRC;
+    }
+  
+  return 0;
+}
+short ExExeUtilLobInfoTableTcb::work()
+{
+  short retcode = 0;
+  Lng32 cliRC = 0;
+  const char *parentQid = NULL;
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+  
+  // if no room in up queue, won't be able to return data/status.
+  // Come back later.
+  if (qparent_.up->isFull())
+    return WORK_OK;
+  
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate =
+    *((ExExeUtilPrivateState*) pentry_down->pstate);
+
+  // Get the globals stucture of the master executor.
+  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
+  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
+  ContextCli * currContext = masterGlob->getCliGlobals()->currContext();
+  
+  ExExeStmtGlobals *stmtGlobals = getGlobals()->castToExExeStmtGlobals();
+  if (stmtGlobals->castToExMasterStmtGlobals())
+    parentQid = stmtGlobals->castToExMasterStmtGlobals()->
+      getStatement()->getUniqueStmtId();
+  else 
+  {
+    ExEspStmtGlobals *espGlobals = stmtGlobals->castToExEspStmtGlobals();
+    if (espGlobals && espGlobals->getStmtStats())
+      parentQid = espGlobals->getStmtStats()->getQueryId();
+  }
+  ExeCliInterface cliInterface(getHeap(), NULL, NULL, parentQid);
+  while (1)
+    {
+      switch (step_)
+	{
+	case INITIAL_:
+	  {
+           
+            if (getLItdb().inputExpr())
+              {
+                step_ = EVAL_INPUT_;
+                break;
+              }
+
+            strcpy(tableName_, getLItdb().getTableName());
+
+	    step_ = COLLECT_LOBINFO_;
+	  }
+	break;
+
+        case EVAL_INPUT_:
+          {
+	    workAtp_->getTupp(getLItdb().workAtpIndex())
+	      .setDataPointer(inputNameBuf_);
+
+	    ex_expr::exp_return_type exprRetCode =
+	      getLItdb().inputExpr()->eval(pentry_down->getAtp(), workAtp_);
+	    if (exprRetCode == ex_expr::EXPR_ERROR)
+	      {
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+            short len = *(short*)inputNameBuf_;
+            str_cpy_all(tableName_, &inputNameBuf_[2], len);
+            tableName_[len] = 0;
+
+            step_ = COLLECT_LOBINFO_;
+          }
+          break;
+
+        case COLLECT_LOBINFO_:
+          {
+            if (currLobNum_ == getLItdb().getNumLobs()+1)
+              {
+                step_ = DONE_;
+                break;
+              }
+            if (collectLobInfo(tableName_,currLobNum_, currContext))
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+
+            step_ = POPULATE_LOBINFO_BUF_;
+          }
+          break;
+
+	case POPULATE_LOBINFO_BUF_:
+	  {
+            
+            
+            if (populateLobInfo(currLobNum_))
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+                }
+
+	    step_ = RETURN_LOBINFO_BUF_;
+	  }
+	break;
+
+	case RETURN_LOBINFO_BUF_:
+	  {
+	    if (qparent_.up->isFull())
+	      return WORK_OK;
+
+	    short rc = 0;
+	    if (moveRowToUpQueue((char*)lobInfo_, lobInfoBufLen_, &rc, FALSE))
+	      return rc;
+
+            currLobNum_++;
+
+            step_ = COLLECT_LOBINFO_;
+	  }
+	break;
+
+	case HANDLE_ERROR_:
+	  {
+	    retcode = handleError();
+	    if (retcode == 1)
+	      return WORK_OK;
+	    
+	    step_ = DONE_;
+	  }
+	break;
+	
+	case DONE_:
+	  {
+	    retcode = handleDone();
+	    if (retcode == 1)
+	      return WORK_OK;
+	    
+	    step_ = INITIAL_;
+	    
+	    return WORK_CALL_AGAIN;
+	  }
+	break;
+
+
+	} // switch
+
+    } // while
+
+  return WORK_OK;
+}
 //LCOV_EXCL_STOP

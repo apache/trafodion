@@ -1,19 +1,22 @@
 /* -*-C++-*-
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
  *****************************************************************************
@@ -350,6 +353,9 @@ THREAD_P DefaultDefault defaultDefaults[] = {
 
 SDDint__(AFFINITY_VALUE,                        "-2"),
 
+// controls the ESP allocation per core. 
+ DDkwd__(AGGRESSIVE_ESP_ALLOCATION_PER_CORE,        "OFF"),
+
 SDDkwd__(ALLOW_AUDIT_ATTRIBUTE_CHANGE,	       "FALSE"), // Used to control if row sampling will use the sample operator in SQL/MX or the
 
  // this should be used for testing only. DML should not be executed on
@@ -586,6 +592,8 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DD_____(CMP_ERR_LOG_FILE,    "tdm_arkcmp_errors.log"),
 
   DDkwd__(COLLECT_REORG_STATS,                                  "ON"),
+
+  DDint__(COMPILER_IDLE_TIMEOUT,                    "1800"), // To match with set session defaults value
 
   // tracking compilers specific defaults
   DDint__(COMPILER_TRACKING_INTERVAL, "0"),
@@ -1165,7 +1173,7 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
  DDdskNS(DDL_DEFAULT_LOCATIONS,                ""),
 
   DDkwd__(DDL_EXPLAIN,                           "OFF"),
-  DDkwd__(DDL_TRANSACTIONS,         "OFF"),
+  DDkwd__(DDL_TRANSACTIONS,         "ON"),
 
     // We ignore this setting for the first (SYSTEM_DEFAULTS) table open+read.
   DDkwd__(DEFAULTS_TABLE_ACCESS_WARNINGS,	"OFF"),
@@ -1287,7 +1295,7 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDSint__(ESP_ASSIGN_DEPTH,                    "0"),
 
   DDSint__(ESP_FIXUP_PRIORITY_DELTA,            "0"),
-  DDSint__(ESP_IDLE_TIMEOUT,                    "0"),
+  DDint__(ESP_IDLE_TIMEOUT,                    "1800"), // To match with set session defaults value
   DDkwd__(ESP_MULTI_FRAGMENTS,			"ON"),
   DDkwd__(ESP_MULTI_FRAGMENT_QUOTAS,		"ON"),
   DDui1500_4000(ESP_MULTI_FRAGMENT_QUOTA_VM,	"4000"),
@@ -1320,6 +1328,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  SDDui___(EXE_MEMORY_FOR_PARTIALHGB_IN_MB,	"100"),
 
+ SDDui___(EXE_MEMORY_FOR_PROBE_CACHE_IN_MB,	"100"),
 
   // lower-bound memory limit for BMOs/nbmos (in MB)
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE, "10"),
@@ -1370,7 +1379,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXPLAIN_DISPLAY_FORMAT,		"EXTERNAL"),
 
-  DDkwd__(EXPLAIN_IN_RMS, 		        "OFF"),
+  DDkwd__(EXPLAIN_IN_RMS, 		        "ON"),
 
   DDui___(EXPLAIN_OUTPUT_ROW_SIZE,   "80"),
 
@@ -1730,7 +1739,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   // HBASE_SQL_IUD_SEMANTICS:      Off: Don't check for existing rows for insert/update
 
   DDkwd__(HBASE_ASYNC_DROP_TABLE,		"OFF"),
-  DDkwd__(HBASE_ASYNC_OPERATIONS,		"OFF"),
+  DDkwd__(HBASE_ASYNC_OPERATIONS,		"ON"),
  // HBASE_CACHE_BLOCKS, ON => cache every scan, OFF => cache no scan
  // SYSTEM => cache scans which take less than 1 RS block cache mem.
  DDui___(HBASE_BLOCK_SIZE,                      "65536"),
@@ -1746,6 +1755,11 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  DDkwd__(HBASE_DATA_BLOCK_ENCODING_OPTION,		             ""),
 
+ // If set to 'OFF' we get a stub cost of 1 for delete operations.
+ // We can remove this once the delete costing code has broader
+ // exposure.
+ DDkwd__(HBASE_DELETE_COSTING,		             "ON"),
+ DDflt0_(HBASE_DOP_PARALLEL_SCANNER,             "0."),
  DDkwd__(HBASE_FILTER_PREDS,		             "OFF"),
  DDkwd__(HBASE_HASH2_PARTITIONING,                   "ON"),
  DDui___(HBASE_INDEX_LEVEL,                          "0"),
@@ -1762,19 +1776,28 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(HBASE_RANGE_PARTITIONING,	        "ON"),
   DDkwd__(HBASE_RANGE_PARTITIONING_MC_SPLIT,	"ON"),
+  DDkwd__(HBASE_RANGE_PARTITIONING_PARTIAL_COLS,"ON"),
  DDui___(HBASE_REGION_SERVER_MAX_HEAP_SIZE,     "1024"), // in units of MB
 
   DDkwd__(HBASE_ROWSET_VSBB_OPT,		"ON"),
-  DDusht_(HBASE_ROWSET_VSBB_SIZE,        	"1000"),
+  DDusht_(HBASE_ROWSET_VSBB_SIZE,        	"1024"),
   DDflt0_(HBASE_SALTED_TABLE_MAX_FILE_SIZE,	"0"),
   DDkwd__(HBASE_SALTED_TABLE_SET_SPLIT_POLICY,	"ON"),
   DD_____(HBASE_SCHEMA,                         "HBASE"),
- DDkwd__(HBASE_SERIALIZATION,		"OFF"),
+ DDkwd__(HBASE_SERIALIZATION,		"ON"),
  
   DD_____(HBASE_SERVER,                         ""), 
+  DDkwd__(HBASE_SMALL_SCANNER,      "OFF"),
   DDkwd__(HBASE_SQL_IUD_SEMANTICS,		"ON"),
   DDkwd__(HBASE_STATS_PARTITIONING,           	"ON"),
   DDkwd__(HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT,		"OFF"),
+
+  // If set to 'OFF' we get a stub cost of 1 for update operations.
+  // We can remove this once the delete costing code has broader
+  // exposure. This is 'OFF' at the moment because the update code
+  // is only partially written.
+  DDkwd__(HBASE_UPDATE_COSTING,		             "OFF"),
+
   DDkwd__(HBASE_UPDEL_CURSOR_OPT,		"ON"),
   DDui___(HBASE_USE_FAKED_REGIONS,		"0"),
   DD_____(HBASE_ZOOKEEPER_PORT,                 ""),
@@ -1859,7 +1882,10 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDflt_0_1(HIST_DEFAULT_SEL_FOR_LIKE_WILDCARD,	"0.10"),
   DDflt_0_1(HIST_DEFAULT_SEL_FOR_PRED_EQUAL,	"0.01"),
   DDflt_0_1(HIST_DEFAULT_SEL_FOR_PRED_RANGE,	"0.3333"),
+
+  // control the amount of data in each partition of the persistent sample tble.
   DDflt1_(HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD, "10240000"),
+
   DDkwd__(HIST_FREQ_VALS_NULL_FIX,              "ON"),
   DDkwd__(HIST_INCLUDE_SKEW_FOR_NON_INNER_JOIN,      "ON"),
   DDkwd__(HIST_INTERMEDIATE_REDUCTION,      "OFF"),
@@ -1912,10 +1938,11 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  XDDkwd__(HIST_PREFETCH,                        "ON"),
  XDDkwd__(HIST_REMOVE_TRAILING_BLANKS,          "ON"), // should remove after verifying code is solid
   DDansi_(HIST_ROOT_NODE,                            ""),
- XDDflt1_(HIST_ROWCOUNT_REQUIRING_STATS,        "50000"),
+ XDDflt1_(HIST_ROWCOUNT_REQUIRING_STATS,        "500"),
   DDflt0_(HIST_SAME_TABLE_PRED_REDUCTION,       "0.0"),
   DDvol__(HIST_SCRATCH_VOL,                     ""),
-  DDflt1_(HIST_SCRATCH_VOL_THRESHOLD,           "104857600"),
+  // control the amount of data in each partition of the sample tble.
+  DDflt1_(HIST_SCRATCH_VOL_THRESHOLD,           "10240000"),
   DDflt_0_1(HIST_SKEW_COST_ADJUSTMENT,            "0.2"),
   DDkwd__(HIST_SKIP_MC_FOR_NONKEY_JOIN_COLUMNS,   "OFF"),
   DDui___(HIST_TUPLE_FREQVAL_LIST_THRESHOLD,     "40"),
@@ -1932,8 +1959,11 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DD_____(HIVE_CATALOG,                                ""),
 
+  DDkwd__(HIVE_DATA_MOD_CHECK,                  "ON"),
+
   DDkwd__(HIVE_DEFAULT_CHARSET,            (char *)SQLCHARSETSTRING_UTF8),
   DD_____(HIVE_DEFAULT_SCHEMA,                  "HIVE"),
+  DD_____(HIVE_FILE_CHARSET,                    ""),
   DD_____(HIVE_FILE_NAME,     "/hive/tpcds/customer/customer.dat" ),
   DD_____(HIVE_HDFS_STATS_LOG_FILE,             ""),
   DDint__(HIVE_LIB_HDFS_PORT_OVERRIDE,          "-1"),
@@ -1945,6 +1975,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDflt0_(HIVE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
   DDui___(HIVE_NUM_ESPS_PER_DATANODE,           "2"),
   DDpct__(HIVE_NUM_ESPS_ROUND_DEVIATION,        "34"),
+  DDint__(HIVE_SCAN_SPECIAL_MODE,                "0"),
   DDkwd__(HIVE_SORT_HDFS_HOSTS,                 "ON"),
   DD_____(HIVE_USE_FAKE_SQ_NODE_NAMES,          "" ),
   DDkwd__(HIVE_USE_FAKE_TABLE_DESC,             "OFF"),
@@ -2047,11 +2078,18 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // precision but degraded performance.
   SDDkwd__(LIMIT_MAX_NUMERIC_PRECISION,		"SYSTEM"),
 
+ // Size in bytes  used to perform garbage collection  to lob data file 
+  // default size is 5GB   . Change to adjust disk usage. 
+  DDint__(LOB_GC_LIMIT_SIZE,            "5000"),
+  
   DDint__(LOB_HDFS_PORT,                       "0"),
   DD_____(LOB_HDFS_SERVER,                 "default"), 
  
-  // default size is 1 G  (1000 M)
-  DDint__(LOB_MAX_SIZE,                         "1000"),
+   // Size of memoryin bytes  used to perform I/O to lob data file 
+  // default size is 512MB   . Change to adjust memory usage. 
+  DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "512"), 
+  // default size is 10 G  (10000 M)
+  DDint__(LOB_MAX_SIZE,                         "10000"),
   // default size is 32000. Change this to extract more data into memory.
   DDui___(LOB_OUTPUT_SIZE,                         "32000"),
 
@@ -2136,6 +2174,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   XDDflt__(MC_SKEW_SENSITIVITY_THRESHOLD,        "0.1"),
 
 
+  DDui___(MDAM_APPLY_RESTRICTION_CHECK,	            "2"),
   DDflt0_(MDAM_CPUCOST_NET_OVH,			"2000."),
 
 
@@ -2155,6 +2194,10 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   XDDkwd__(MDAM_SCAN_METHOD,			"ON"),
 
   DDflt0_(MDAM_SELECTION_DEFAULT,		"0.5"),
+
+  DDflt0_(MDAM_TOTAL_UEC_CHECK_MIN_RC_THRESHOLD, "10000"),
+  DDflt0_(MDAM_TOTAL_UEC_CHECK_UEC_THRESHOLD,	 "0.2"),
+
   DDkwd__(MDAM_TRACING,			        "OFF"),
 
   // controls the max. number of probes at which MDAM under NJ plan will be
@@ -2208,6 +2251,9 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(MERGE_JOIN_ACCEPT_MULTIPLE_NJ_PROBES,	"ON"),
   DDkwd__(MERGE_JOIN_CONTROL,			"OFF"),
   DDkwd__(MERGE_JOIN_WITH_POSSIBLE_DEADLOCK, "OFF"),
+
+  // controls if merge/upsert is supported on table with a unique index
+  DDkwd__(MERGE_WITH_UNIQUE_INDEX,   "ON"),
 
  SDDui___(METADATA_CACHE_SIZE,    "20"),
   DDkwd__(METADATA_STABLE_ACCESS, "OFF"),
@@ -3140,7 +3186,7 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   DDkwd__(SHOW_MEMO_STATS,		"OFF"),
 
   DDkwd__(SIMILARITY_CHECK,			"ON "),
-  DDkwd__(SIMPLE_COST_MODEL,                    "ON"),
+ DDkwd__(SIMPLE_COST_MODEL,                    "ON"),
 
  XDDkwd__(SKEW_EXPLAIN,                         "ON"),
  XDDflt__(SKEW_ROWCOUNT_THRESHOLD,              "1000000"), // Column row count
@@ -3258,26 +3304,30 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TEST_PASS_ONE_ASSERT_TASK_NUMBER,	"-1"),
   DDint__(TEST_PASS_TWO_ASSERT_TASK_NUMBER,	"-1"),
 
- XDDintN2(TIMEOUT,				"6000"),
-
+  XDDintN2(TIMEOUT,				"6000"),
+ 
   DDflt0_(TMUDF_CARDINALITY_FACTOR, "1"),
   DDflt0_(TMUDF_LEAF_CARDINALITY, "1"),
 
   DDkwd__(TOTAL_RESOURCE_COSTING,               "ON"),
-
+ 
   DDint__(TRAF_ALIGNED_FORMAT_ADD_COL_METHOD,	"2"),
-
- DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "OFF"),   
-
+ 
+  DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "OFF"),   
+ 
   DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
+ 
+  DDkwd__(TRAF_ALLOW_RESERVED_COLNAMES,          "OFF"),   
+ 
+  DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
 
- DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
+  DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
 
- DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
+  DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
- DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),   
+  DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),   
 
- DDkwd__(TRAF_CLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
+  DDkwd__(TRAF_CLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
   DDkwd__(TRAF_COL_LENGTH_IS_CHAR,                 "ON"),   
 
@@ -3287,12 +3337,14 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  
  DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
 
+  DDkwd__(TRAF_INDEX_ALIGNED_ROW_FORMAT,        "ON"),   
   DDkwd__(TRAF_INDEX_CREATE_OPT,          "OFF"),
-
+  DDkwd__(TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE,        "OFF"),
   DDkwd__(TRAF_LOAD_CONTINUE_ON_ERROR,          "OFF"),
   DD_____(TRAF_LOAD_ERROR_COUNT_ID,             "" ),
   DD_____(TRAF_LOAD_ERROR_COUNT_TABLE,          "ERRORCOUNTER" ),
   DD_____(TRAF_LOAD_ERROR_LOGGING_LOCATION,     "/bulkload/logs/" ),
+  DDint__(TRAF_LOAD_FLUSH_SIZE_IN_KB,           "1024"),
   DDkwd__(TRAF_LOAD_FORCE_CIF,                  "ON"),
   DDkwd__(TRAF_LOAD_LOG_ERROR_ROWS,             "OFF"),
   DDint__(TRAF_LOAD_MAX_ERROR_ROWS,             "0"),
@@ -3313,6 +3365,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
  // max size in bytes of a char or varchar column.
   DDui2__(TRAF_MAX_CHARACTER_COL_LENGTH,	"200000"),
+
+ DDkwd__(TRAF_MULTI_COL_FAM,     "ON"),
 
   DDkwd__(TRAF_NO_CONSTR_VALIDATION,                   "OFF"),
 
@@ -3352,12 +3406,11 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TRAF_UNLOAD_BYPASS_LIBHDFS,                  "ON"),
   DD_____(TRAF_UNLOAD_DEF_DELIMITER,                   "|" ),
-  DD_____(TRAF_UNLOAD_DEF_NULL_STRING,                 "" ),
   DD_____(TRAF_UNLOAD_DEF_RECORD_SEPARATOR,            "\n" ),
   DDint__(TRAF_UNLOAD_HDFS_COMPRESS,                   "0"),
   DDkwd__(TRAF_UNLOAD_SKIP_WRITING_TO_FILES,           "OFF"),
   DDkwd__(TRAF_UPSERT_ADJUST_PARAMS,                   "OFF"),
-  DDkwd__(TRAF_UPSERT_AUTO_FLUSH,                      "OFF"),
+  DDkwd__(TRAF_UPSERT_MODE,                            "MERGE"),
   DDint__(TRAF_UPSERT_WB_SIZE,                         "2097152"),
   DDkwd__(TRAF_UPSERT_WRITE_TO_WAL,                    "OFF"),
 
@@ -3384,6 +3437,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  XDDui___(UDR_DEBUG_FLAGS,                      "0"), // see sqludr/sqludr.h for values
  SDD_____(UDR_JAVA_OPTIONS,                     "OFF"),
   DD_____(UDR_JAVA_OPTION_DELIMITERS,           " "),
+ XDDui___(UDR_JVM_DEBUG_PORT,                   "0"),
+ XDDui___(UDR_JVM_DEBUG_TIMEOUT,                "0"),
 
   DDkwd__(UNAVAILABLE_PARTITION,		"STOP"),	// "?" used?
  DDkwd__(UNC_PROCESS,				"OFF"),
@@ -3420,13 +3475,16 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USE_LARGE_QUEUES,                     "ON"),
 
   DDkwd__(USE_MAINTAIN_CONTROL_TABLE,          "OFF"),
+
+  DDkwd__(USE_OLD_DT_CONSTRUCTOR,      "OFF"),
+
   // Adaptive segmentation, use operator max to determine degree of parallelism
   DDui___(USE_OPERATOR_MAX_FOR_DOP,     "1"),
 
 // Specify the number of partitions before invoking parallel label operations
   DDui1__(USE_PARALLEL_FOR_NUM_PARTITIONS,       "32"),
 
-  DDkwd__(USTAT_ADD_SALTED_KEY_PREFIXES_FOR_MC, "OFF"),  // When ON, generate MCs for primary key prefixes as well as full key
+  DDkwd__(USTAT_ADD_SALTED_KEY_PREFIXES_FOR_MC, "ON"),   // When ON, generate MCs for primary key prefixes as well as full key
                                                          //   of salted table when ON EVERY KEY or ON EVERY COLUMN is specified.
   DDkwd__(USTAT_ATTEMPT_ESP_PARALLELISM,        "ON"),   // for reading column values
   DDui___(USTAT_AUTOMATION_INTERVAL,            "0"),
@@ -3506,17 +3564,20 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_LOCK_HIST_TABLES,               "OFF"),
   DD_____(USTAT_LOG,                            "ULOG"),
   DDui30_246(USTAT_MAX_CHAR_BOUNDARY_LEN,       "30"),   // Values can be 30-246.
+  DDflt0_   (USTAT_MAX_CHAR_DATASIZE_FOR_IS,    "1000"),  // max data size in MB for char type to use 
  XDDui___(USTAT_MAX_READ_AGE_IN_MIN,            "5760"),
   DDui___(USTAT_MAX_SAMPLE_AGE,                 "365"),  // For R2.5 set to a year so user created samples won't be removed.
 
+                                                         // internal sort without checking UEC.
   DDflt0_(USTAT_MIN_CHAR_UEC_FOR_IS,            "0.2"),  // minimum UEC for char type to use internal sort
-  DDflt0_(USTAT_MIN_DEC_BIN_UEC_FOR_IS,         "0.03"), // minimum UEC for binary types to use internal sort
+  DDflt0_(USTAT_MIN_DEC_BIN_UEC_FOR_IS,         "0.0"),  // minimum UEC for binary types to use internal sort
 
-  DDflt0_(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT,      "10000000"),
+ DDflt0_(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT,      "10000000"),
   DDui1__(USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE,    "10000"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_LOW_SAMPLE,    "1000000"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_SAMPLE,        "10000"),
   DDflt0_(USTAT_MODIFY_DEFAULT_UEC,             "0.05"),
+  DDflt0_(USTAT_NAHEAP_ESTIMATED_MAX,           "1.3"),  // estimated max memory allocation (in GB) feasible with NAHEAP.
  XDDui1__(USTAT_NECESSARY_SAMPLE_MAX,           "5000000"), // Maximum sample size with NECESSARY
   DDui1__(USTAT_NUM_MC_GROUPS_FOR_KEYS,         "10"),
  XDDpct__(USTAT_OBSOLETE_PERCENT_ROWCOUNT,      "15"),
@@ -3535,13 +3596,14 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_BACKING_SAMPLE,             "OFF"),
   DDkwd__(USTAT_USE_BULK_LOAD,                  "OFF"),
   DDkwd__(USTAT_USE_GROUPING_FOR_SAMPLING,      "ON"),
-  DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC,       "OFF"),
+  DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC,       "ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC_LOOP,  "ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC_NEW_HIST,       "OFF"),  // TEMP FOR TESTING -- SHOULD REMOVE
   DDkwd__(USTAT_USE_IS_WHEN_NO_STATS,           "ON"), // use IS when no histograms exist for the column
   DDkwd__(USTAT_USE_SIDETREE_INSERT,            "ON"),
   DDkwd__(USTAT_USE_SLIDING_SAMPLE_RATIO,       "ON"), // Trend sampling rate down w/increasing table size, going
                                                        //   flat at 1%.
+ XDDui1__(USTAT_YOULL_LIKELY_BE_SORRY,          "100000000"),  // guard against unintentional long-running UPDATE STATS
   DDkwd__(VALIDATE_RFORK_REDEF_TS,	        "OFF"),
 
   DDkwd__(VALIDATE_VIEWS_AT_OPEN_TIME,		"OFF"),
@@ -3695,12 +3757,15 @@ const char *NADefaults::getCurrentDefaultsAttrNameAndValue(
 // -----------------------------------------------------------------------
 void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 {
+  deleteMe();
+
   const size_t numAttrs = numDefaultAttributes();
+  if (numAttrs != sizeof(defaultDefaults) / sizeof(DefaultDefault))
+    return;
+
   CMPASSERT_STRING
     (numAttrs == sizeof(defaultDefaults) / sizeof(DefaultDefault),
      "Check sqlcomp/DefaultConstants.h for a gap in enum DefaultConstants or sqlcomp/nadefaults.cpp for duplicate entries in array defaultDefaults[].");
-
-  deleteMe();
 
   SqlParser_NADefaults_Glob =
   SqlParser_NADefaults_ = new NADHEAP SqlParser_NADefaults();
@@ -3713,6 +3778,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   currentTokens_	= new NADHEAP DefaultToken * [numAttrs];
   currentState_		= INIT_DEFAULT_DEFAULTS;
   heldDefaults_	        = new NADHEAP char * [numAttrs];
+  heldHeldDefaults_	= new NADHEAP char * [numAttrs];
 
   // reset all entries
   size_t i = 0;
@@ -3728,6 +3794,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   memset( currentFloats_, 0, sizeof(float *) * numAttrs );
   memset( currentTokens_, 0, sizeof(DefaultToken *) * numAttrs );
   memset( heldDefaults_, 0, sizeof(char *) * numAttrs );
+  memset( heldHeldDefaults_, 0, sizeof(char *) * numAttrs );
 
   #ifndef NDEBUG
     // This env-var turns on consistency checking of default-defaults and
@@ -3740,6 +3807,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   // for each entry of the (alphabetically sorted) default defaults
   // table, enter the default default into the current default table
   // which is sorted by enum values
+  NAString prevAttrName;
   for (i = 0; i < numAttrs; i++)
     {
       // the enum must be less than the max (if this assert fails
@@ -3772,6 +3840,15 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 
       // set up our backlink which maps [enum] to its defaultDefaults entry
       defDefIx_[defaultDefaults[i].attrEnum] = i;
+
+      // attrs must be in ascending sorted order. If not, error out.
+      if (prevAttrName > defaultDefaults[i].attrName)
+        {
+          SqlParser_NADefaults_ = NULL;
+
+          return;
+        }
+      prevAttrName = defaultDefaults[i].attrName;
 
       // LCOV_EXCL_START
       // for debugging only
@@ -3969,6 +4046,7 @@ NADefaults::NADefaults(NAMemory * h)
   , currentFloats_(NULL)
   , currentTokens_(NULL)
   , heldDefaults_(NULL)
+  , heldHeldDefaults_(NULL)
   , currentState_(UNINITIALIZED)
   , readFromSQDefaultsTable_(FALSE)
   , SqlParser_NADefaults_(NULL)
@@ -4002,6 +4080,7 @@ NADefaults::NADefaults(NAMemory * h)
   setFlagOn(ZIG_ZAG_TREES, DEFAULT_ALLOWS_SEPARATE_SYSTEM);
   setFlagOn(COMPRESSED_INTERNAL_FORMAT, DEFAULT_ALLOWS_SEPARATE_SYSTEM);
   setFlagOn(COMPRESSED_INTERNAL_FORMAT_BMO, DEFAULT_ALLOWS_SEPARATE_SYSTEM);
+  setFlagOn(HBASE_SMALL_SCANNER, DEFAULT_ALLOWS_SEPARATE_SYSTEM);
 }
 
 NADefaults::~NADefaults()
@@ -4040,6 +4119,12 @@ void NADefaults::deleteMe()
     for (size_t i = numDefaultAttributes(); i--; )
       NADELETEBASIC(heldDefaults_[i], NADHEAP);
     NADELETEBASIC(heldDefaults_, NADHEAP);
+  }
+
+  if (heldHeldDefaults_) {
+    for (size_t i = numDefaultAttributes(); i--; )
+      NADELETEBASIC(heldHeldDefaults_[i], NADHEAP);
+    NADELETEBASIC(heldHeldDefaults_, NADHEAP);
   }
 
   for (CollIndex i = tablesRead_.entries(); i--; )
@@ -4292,61 +4377,8 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
 
     case MAX_ESPS_PER_CPU_PER_OP:
       {
-        // set 2 ESPs per node, as a starting point.
-        #define DEFAULT_ESPS_PER_NODE 2
-
-        Lng32 numESPsPerNode = DEFAULT_ESPS_PER_NODE;
-        Lng32 coresPerNode = 1;
-        if(!OSIM_isNSKbehavior())
-        {
-          // Make sure the gpClusterInfo points at an NAClusterLinux object.
-          // In osim simulation mode, the pointer can point at a NAClusterNSK
-          // object, for which the method numTSEsForPOS() is not defined.
-          NAClusterInfoLinux* gpLinux = dynamic_cast<NAClusterInfoLinux*>(gpClusterInfo);
-
-          // number of POS TSE
-          Lng32 numTSEsPerCluster = gpLinux->numTSEsForPOS();
-
-          // cluster nodes
-          Lng32 nodesdPerCluster = gpClusterInfo->getTotalNumberOfCPUs();
-
-          // TSEs per node
-          Lng32 TSEsPerNode = numTSEsPerCluster/nodesdPerCluster;
-
-          // cores per node
-          coresPerNode = gpClusterInfo->numberOfCpusPerSMP();
-
-          // For Linux/nt, we conservatively allocate ESPs per node as follows
-          // - 1 ESP per 2 cpu cores if cores are equal or less than TSEs
-          // - 1 ESP per TSE if number of cores is more than double the TSEs
-          // - 1 ESP per 2 TSEs if cores are more than TSEs but less than double the TSEs
-          // - 1 ESP per node. Only possible on NT or workstations
-          //      - number of cores less than TSEs and there are 1 or 2 cpur cores per node
-          //      - number of TSEs is less than cpu cores and there 1 or 2 TSEs per node.
-          //        This case is probable if virtual nodes are used
-
-          // TSEsPerNode is 0 for arkcmps started by the seapilot universal comsumers
-          // in this case we only consider cpu cores
-          if ((coresPerNode <= TSEsPerNode) || (TSEsPerNode == 0))
-          {
-             if (coresPerNode > 1)
-                numESPsPerNode = DEFAULT_ESPS_PER_NODE; 
-          }
-          else if (coresPerNode > (TSEsPerNode*2))
-          {
-             numESPsPerNode = TSEsPerNode;
-          }
-          else if (TSEsPerNode > 1)
-          {
-             numESPsPerNode = TSEsPerNode/2;
-          }
-          else // not really needed since numESPsPerNode is set to 1 from above
-          {
-             numESPsPerNode = DEFAULT_ESPS_PER_NODE;
-          }
-        }
-
-        ftoa_((float)(numESPsPerNode)/(float)(coresPerNode), valuestr);
+        float espsPerCore = computeNumESPsPerCore(FALSE);
+        ftoa_(espsPerCore, valuestr);
         strcpy(newValue, valuestr);
         if(reInit)
           ActiveSchemaDB()->
@@ -4356,13 +4388,9 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
       break;
 
     case DEF_NUM_NODES_IN_ACTIVE_CLUSTERS:
-      if(OSIM_isLinuxbehavior())
-      {
-        utoa_(((NAClusterInfoLinux*)gpClusterInfo)->numLinuxNodes(), valuestr);
-        strcpy(newValue, valuestr);
-      }
-      else
-        strcpy(newValue, "16");
+
+      utoa_(((NAClusterInfoLinux*)gpClusterInfo)->numLinuxNodes(), valuestr);
+      strcpy(newValue, valuestr);
 
       if(reInit)
         ActiveSchemaDB()->
@@ -4907,8 +4935,7 @@ float NADefaults::getNumOfESPsPerNodeInFloat() const
    double maxEspPerCpuPerOp = getAsDouble(MAX_ESPS_PER_CPU_PER_OP);
 
    CollIndex cores =
-     (OSIM_isNSKbehavior() || 
-      (CmpCommon::context() && CURRSTMT_OPTDEFAULTS->isFakeHardware())
+     ( (CmpCommon::context() && CURRSTMT_OPTDEFAULTS->isFakeHardware())
      ) ?  
         getAsLong(DEF_NUM_SMP_CPUS) :
         gpClusterInfo->numberOfCpusPerSMP();
@@ -4929,9 +4956,7 @@ ULng32 NADefaults::getTotalNumOfESPsInCluster(NABoolean& fakeEnv) const
 
    CollIndex numOfNodes = gpClusterInfo->numOfSMPs();
 
-   if (OSIM_isNSKbehavior() ||
-      (CmpCommon::context() && CURRSTMT_OPTDEFAULTS->isFakeHardware())) {
-
+   if ( (CmpCommon::context() && CURRSTMT_OPTDEFAULTS->isFakeHardware())) {
      fakeEnv = TRUE;
      numOfNodes = getAsLong(DEF_NUM_NODES_IN_ACTIVE_CLUSTERS);
    }
@@ -5861,6 +5886,18 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
         }
      }
      break;
+
+     case AGGRESSIVE_ESP_ALLOCATION_PER_CORE:
+     {
+        NABoolean useAgg = (getToken(attrEnum) == DF_ON);
+        float numESPsPerCore = computeNumESPsPerCore(useAgg);
+        char valuestr[WIDEST_CPUARCH_VALUE];
+        ftoa_(numESPsPerCore, valuestr);
+        NAString val(valuestr);
+        insert(MAX_ESPS_PER_CPU_PER_OP, val, errOrWarn);
+     }
+     break;
+
       default:  break;
       }
     }	  // code to valid overwrite (insert)
@@ -5881,6 +5918,77 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
   return attrEnum;
 
 } // NADefaults::validateAndInsert()
+
+float NADefaults::computeNumESPsPerCore(NABoolean aggressive)
+{
+   #define DEFAULT_ESPS_PER_NODE 2   // for conservation allocation
+   #define DEFAULT_ESPS_PER_CORE 0.5 // for aggressive allocation
+
+     // Make sure the gpClusterInfo points at an NAClusterLinux object.
+     // In osim simulation mode, the pointer can point at a NAClusterNSK
+     // object, for which the method numTSEsForPOS() is not defined.
+   NAClusterInfoLinux* gpLinux = dynamic_cast<NAClusterInfoLinux*>(gpClusterInfo);
+   assert(gpLinux);		
+
+   // cores per node
+   Lng32 coresPerNode = gpClusterInfo->numberOfCpusPerSMP();
+
+   if ( aggressive ) {
+      float totalMemory = gpLinux->totalMemoryAvailable(); // per Node, in KB
+      totalMemory /= (1024*1024); // per Node, in GB
+      totalMemory /= coresPerNode ; // per core, in GB
+      totalMemory /= 2; // per core, 2GB per ESP
+      return MINOF(DEFAULT_ESPS_PER_CORE, totalMemory);
+   } else {
+      Lng32 numESPsPerNode = DEFAULT_ESPS_PER_NODE;
+      return (float)(numESPsPerNode)/(float)(coresPerNode);
+   }
+
+// The following lines of code are comment out but retained for possible
+// future references.
+//
+//     // number of POS TSE
+//   Lng32 numTSEsPerCluster = gpLinux->numTSEsForPOS();
+//
+//     // cluster nodes
+//   Lng32 nodesdPerCluster = gpClusterInfo->getTotalNumberOfCPUs();
+//
+//     // TSEs per node
+//   Lng32 TSEsPerNode = numTSEsPerCluster/nodesdPerCluster;
+//
+//
+//
+//     // For Linux/nt, we conservatively allocate ESPs per node as follows
+//     // - 1 ESP per 2 cpu cores if cores are equal or less than TSEs
+//     // - 1 ESP per TSE if number of cores is more than double the TSEs
+//     // - 1 ESP per 2 TSEs if cores are more than TSEs but less than double the TSEs
+//     // - 1 ESP per node. Only possible on NT or workstations
+//     //      - number of cores less than TSEs and there are 1 or 2 cpur cores per node
+//     //      - number of TSEs is less than cpu cores and there 1 or 2 TSEs per node.
+//     //        This case is probable if virtual nodes are used
+//
+//     // TSEsPerNode is 0 for arkcmps started by the seapilot universal comsumers
+//     // in this case we only consider cpu cores
+//   if ( coresPerNode <= TSEsPerNode || TSEsPerNode == 0 )
+//   {
+//       if (coresPerNode > 1)
+//           numESPsPerNode = DEFAULT_ESPS_PER_NODE; 
+//   }
+//   else if (coresPerNode > (TSEsPerNode*2))
+//   {
+//        numESPsPerNode = TSEsPerNode;
+//   }
+//   else if (TSEsPerNode > 1)
+//   {
+//        numESPsPerNode = TSEsPerNode/2;
+//   }
+//   else // not really needed since numESPsPerNode is set to 1 from above
+//   {
+//        numESPsPerNode = DEFAULT_ESPS_PER_NODE;
+//   }
+//        
+//   return (float)(numESPsPerNode)/(float)(coresPerNode);
+}
 
 enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
 						 Lng32 holdOrRestoreCQD)
@@ -5908,10 +6016,13 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
   char * value = NULL;
   if (holdOrRestoreCQD == 1) // hold cqd
     {
-      if (heldDefaults_[attrEnum])
-	{
-	  NADELETEBASIC(heldDefaults_[attrEnum], NADHEAP);
-	}
+      if (heldHeldDefaults_[attrEnum])
+        {
+          // Gasp! We've done three successive HOLDs... it's off to
+          // the bit bucket for the deepest value
+          NADELETEBASIC(heldHeldDefaults_[attrEnum], NADHEAP);
+        }
+      heldHeldDefaults_[attrEnum] = heldDefaults_[attrEnum];
 
       if (currentDefaults_[attrEnum])
 	{
@@ -5931,15 +6042,24 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
       if (! heldDefaults_[attrEnum])
 	return attrEnum;
 
+      // there is an odd semantic that if currentDefaults_[attrEnum]
+      // is null, we leave it as null, but pop a held value anyway;
+      // this semantic was preserved when the second level 
+      // (heldHeldDefaults_) was added.
+
       if (currentDefaults_[attrEnum])
-	{
-	  NADELETEBASIC(currentDefaults_[attrEnum], NADHEAP);
-	  value = new NADHEAP char[strlen(heldDefaults_[attrEnum]) + 1];
-	  strcpy(value, heldDefaults_[attrEnum]);
-	  currentDefaults_[attrEnum] = value;
-	}
+        {
+          // do a validateAndInsert so the caches (such as currentToken_)
+          // get updated and so appropriate semantic actions are taken
+          NAString value(heldDefaults_[attrEnum]);
+          validateAndInsert(lookupAttrName(attrEnum), // sad that we have to do a lookup again
+                            value,
+                            FALSE);
+        }
+      
       NADELETEBASIC(heldDefaults_[attrEnum], NADHEAP);
-      heldDefaults_[attrEnum] = NULL;
+      heldDefaults_[attrEnum] = heldHeldDefaults_[attrEnum];
+      heldHeldDefaults_[attrEnum] = NULL;
     }
 
   return attrEnum;
@@ -6236,6 +6356,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "MEASURE",
   "MEDIUM",
   "MEDIUM_LOW",
+  "MERGE",
   "MINIMUM",
   "MMAP",
   "MULTI_NODE",
@@ -6246,6 +6367,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "ON",
   "OPENS_FOR_WRITE",
   "OPERATOR",
+  "OPTIMAL",
   "ORDERED",
   "PERTABLE",
   "PRINT",
@@ -6257,6 +6379,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "RELEASE",
   "REMOTE",
   "REPEATABLE_READ",
+  "REPLACE",
   "REPSEL",
   "RESOURCES",
   "RETURN",
@@ -6323,6 +6446,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
   else {
     if ((attrEnum == TERMINAL_CHARSET) ||
         (attrEnum == USE_HIVE_SOURCE) ||
+        (attrEnum == HIVE_FILE_CHARSET) ||
         (attrEnum == HBASE_DATA_BLOCK_ENCODING_OPTION) ||
         (attrEnum == HBASE_COMPRESSION_OPTION))
       return DF_USER;
@@ -6396,6 +6520,14 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	  case '2':	return DF_HIGH;
 	  case '3':	return DF_MAXIMUM;
 	}
+      // HBASE_FILTER_PREDS
+        if ((attrEnum == HBASE_FILTER_PREDS) && value.length()==1)
+      switch (*value.data()){
+        case '0': return DF_OFF;
+        case '1': return DF_MINIMUM;
+        case '2': return DF_MEDIUM;
+        // in the future add DF_HIGH and DF_MAXIMUM when we implement more pushdown capabilities
+      }
     if ( attrEnum == TEMPORARY_TABLE_HASH_PARTITIONS ||
          attrEnum == MVQR_REWRITE_CANDIDATES ||
          attrEnum == MVQR_PUBLISH_TABLE_LOCATION ||
@@ -6571,6 +6703,10 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	isValid = TRUE;
       break;
 
+    case HIVE_SCAN_SPECIAL_MODE:
+	isValid = TRUE;
+	break;
+
     case IS_SQLCI:
       // for primary mxcmp that is invoked for user queries, the only valid
       // value for mxci_process cqd is TRUE. This cqd is set once by mxci
@@ -6651,6 +6787,15 @@ DefaultToken NADefaults::token(Int32 attrEnum,
           tok == DF_MEDIUM	 || tok == DF_MAXIMUM)
         isValid = TRUE;
       break;
+
+    case HBASE_FILTER_PREDS:
+        if(tok == DF_OFF || tok == DF_ON)
+        {
+            if (tok == DF_ON)
+                tok = DF_MINIMUM; // to keep backward compatibility
+        isValid= TRUE;
+        }
+        break;
 
     case ROBUST_QUERY_OPTIMIZATION:
       if (tok == DF_MINIMUM || tok == DF_SYSTEM || tok == DF_MAXIMUM ||
@@ -6883,10 +7028,29 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	isValid = TRUE;
       break;
 
+    case LOB_MAX_CHUNK_MEM_SIZE:
+      if (tok >=0  && tok <= 512000)
+	isValid = TRUE;
+      break;
+
+    case LOB_GC_LIMIT_SIZE:
+      if (tok >= 0 )
+        isValid=TRUE;
+
     case TRAF_TRANS_TYPE:
       if (tok  == DF_MVCC || tok == DF_SSCC)
         isValid = TRUE;
     break;
+
+    case HBASE_RANGE_PARTITIONING_PARTIAL_COLS:
+      if (tok == DF_OFF || tok == DF_MINIMUM ||
+          tok == DF_MEDIUM || tok == DF_MAXIMUM || tok == DF_ON)
+        isValid = TRUE;
+      break;
+    case TRAF_UPSERT_MODE:
+      if (tok == DF_MERGE || tok == DF_REPLACE || tok == DF_OPTIMAL)
+	isValid = TRUE;
+      break;
 
     // Nothing needs to be added here for ON/OFF/SYSTEM keywords --
     // instead, add to DEFAULT_ALLOWS_SEPARATE_SYSTEM code in the ctor.

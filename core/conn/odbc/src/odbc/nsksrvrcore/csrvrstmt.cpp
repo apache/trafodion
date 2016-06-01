@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 ********************************************************************/
@@ -126,7 +129,12 @@ SRVR_STMT_HDL::SRVR_STMT_HDL()
 	IRD = NULL;
 	outputDataValue._length = 0;
 	outputDataValue._buffer = NULL;
-	outputDataValue.pad_to_offset_8_ = {'\0', '\0', '\0', '\0'};
+        //outputDataValue.pad_to_offset_8_ = {'\0', '\0', '\0', '\0'};
+        //use trafodional way to initialze array, above is c++11 in gcc 4.8
+        //for gcc 4.4 backward compatibilty, Trafodion now is using c++0x , gcc 4.4 cannot support c++11 mode
+        //once tested with -std=c++11, may recover this coding style
+        memset( outputDataValue.pad_to_offset_8_ , 0, sizeof(outputDataValue.pad_to_offset_8_) );
+
 	inputDataValue._length = 0;
 	inputDataValue._buffer = NULL;
 	delayedOutputDataValue._length = 0;

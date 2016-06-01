@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -962,7 +965,7 @@ public:
   // NB: no need for a dtor
   //
   Interval () :
-      loIndex_(NULL_COLL_INDEX), hist_(NULL)
+      loIndex_(NULL_COLL_INDEX), hist_(0)
   {}
 
   Interval (CollIndex startIndex, const HistogramSharedPtr& hist) :
@@ -1134,10 +1137,10 @@ public:
   inline NABoolean isNull() const { return (hiBound().isNullValue()) ; }
 
   // make sure we don't use Intervals that have been compromised
-  inline void setInvalid() { hist_ = NULL ; }
+  inline void setInvalid() { hist_ = 0; }
   inline NABoolean isValid() const
   {
-    return ( (hist_ != NULL) &&
+    return ( (hist_ != 0) &&
              ((loIndex_+2) <= hist_->entries()) ) ;
   }
   // was loIndex_ <= hist_->entries()-2, but we hate underflow!
@@ -1443,7 +1446,7 @@ public:
   ColStats (ComUID & histid, CostScalar uec = 0, CostScalar rowcount = 0,
             CostScalar baseRowCount = -1,
 	    NABoolean unique = FALSE, NABoolean shapeChanged = FALSE,
-	    const HistogramSharedPtr& desc = NULL, NABoolean modified = FALSE,
+	    const HistogramSharedPtr& desc = 0, NABoolean modified = FALSE,
 	    CostScalar rowRedFactor = 1.0, CostScalar uecRedFactor = 1.0,
                  Int32 avgVarcharSize = 0,  
 	    NAMemory* heap=0, NABoolean allowMinusOne=FALSE);

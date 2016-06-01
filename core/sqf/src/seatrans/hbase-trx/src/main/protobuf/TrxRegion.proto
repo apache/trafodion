@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -32,6 +35,8 @@ import "Client.proto";
 message AbortTransactionRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
+  required int32 participantNum = 3;
+  required bool dropTableRecorded = 4;
 }
 
 message AbortTransactionResponse {
@@ -42,6 +47,7 @@ message AbortTransactionResponse {
 message AbortTransactionMultipleRequest{
   repeated bytes regionName = 1;
   required int64 transactionId = 2;
+  required int32 participantNum = 3;
 }
 
 message AbortTransactionMultipleResponse {
@@ -62,7 +68,8 @@ message BeginTransactionResponse {
 message CommitRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
-  optional bool ignoreUnknownTransactionException = 3;
+  required int32 participantNum = 3;
+  optional bool ignoreUnknownTransactionException = 4;
 }
 
 message CommitResponse {
@@ -73,7 +80,8 @@ message CommitResponse {
 message CommitMultipleRequest{
   repeated bytes regionName = 1;
   required int64 transactionId = 2;
-  optional bool ignoreUnknownTransactionException = 3;
+  required int32 participantNum = 3;
+  optional bool ignoreUnknownTransactionException = 4;
 }
 
 message CommitMultipleResponse {
@@ -84,6 +92,8 @@ message CommitMultipleResponse {
 message CommitRequestRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
+  required int32 participantNum = 3;
+  required bool dropTableRecorded = 4;
 }
 
 message CommitRequestResponse {
@@ -95,6 +105,7 @@ message CommitRequestResponse {
 message CommitRequestMultipleRequest{
   repeated bytes regionName = 1;
   required int64 transactionId = 2;
+  required int32 participantNum = 3;
 }
 
 message CommitRequestMultipleResponse {
@@ -106,6 +117,7 @@ message CommitRequestMultipleResponse {
 message CommitIfPossibleRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
+  required int32 participantNum = 3;
 }
 
 message CommitIfPossibleResponse {
@@ -258,6 +270,59 @@ message RecoveryRequestResponse {
   optional bool hasException = 3;
 }
 
+message TlogDeleteRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required Scan scan = 3;
+  required int64 auditSeqNum = 4;
+  required bool ageCommitted = 5;
+}
+
+message TlogDeleteResponse {
+  repeated Result result = 1;
+  required int64  count = 2;
+  optional string exception = 3;
+  optional bool hasException = 4;
+}
+
+message TlogWriteRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required MutationProto put = 3;
+  required bytes row = 4;
+  required bytes family = 5;
+  required bytes qualifier = 6;
+  required bytes value = 7;
+  required int64 commitId = 8;
+  optional bool forced = 9;
+}
+
+message TlogWriteResponse {
+  repeated int64 result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message TlogTransactionStatesFromIntervalRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required int64 clusterId = 3;
+  required int64 auditSeqNum =4;
+  required int64 scannerId = 5;
+  required int32 numberOfRows = 6;
+  required int64 nextCallSeq = 7;
+  required bool  closeScanner = 8;
+}
+
+message TlogTransactionStatesFromIntervalResponse {
+  repeated Result result = 1;
+  required int64  count = 2;
+  required int64  nextCallSeq = 3;
+  required bool   hasMore = 4;
+  optional string exception = 5;
+  optional bool hasException = 6;
+}
+
 message TransactionalAggregateRequest {
   /** The request passed to the TransactionalAggregateService consists of three parts
    *  (1) the (canonical) classname of the ColumnInterpreter implementation
@@ -283,6 +348,27 @@ message TransactionalAggregateResponse {
   repeated bytes first_part = 3;
   optional bytes second_part = 4;
 
+}
+
+message TransactionPersist {
+  repeated int64 txById = 1;
+  repeated int64 seqNoListSeq = 2;
+  repeated int64 seqNoListTxn = 3;
+  required int64 nextSeqId = 4;
+}
+
+message TransactionStateMsg {
+  required int64 txId = 1;
+  repeated MutationProto put = 2;
+  repeated MutationProto delete = 3;
+  repeated bool putOrDel = 4;
+  repeated int64 txnsToCheck = 5;
+  required int64 startSeqNum = 6;
+  required int64 seqNum = 7;
+  required int64 logSeqId = 8;
+  required bool reinstated = 9;
+  required int32 status = 10;
+  required int32 commitProgress = 11;
 }
 
 service TrxRegionService {
@@ -324,6 +410,12 @@ service TrxRegionService {
     returns(PutMultipleTransactionalResponse);
   rpc recoveryRequest(RecoveryRequestRequest)
     returns(RecoveryRequestResponse);
+  rpc deleteTlogEntries(TlogDeleteRequest)
+    returns(TlogDeleteResponse);
+  rpc putTlog(TlogWriteRequest)
+    returns(TlogWriteResponse);
+  rpc getTransactionStatesPriorToAsn(TlogTransactionStatesFromIntervalRequest)
+    returns(TlogTransactionStatesFromIntervalResponse);
   rpc GetMax (TransactionalAggregateRequest)
     returns (TransactionalAggregateResponse);
   rpc GetMin (TransactionalAggregateRequest) 
@@ -339,4 +431,3 @@ service TrxRegionService {
   rpc GetMedian (TransactionalAggregateRequest) 
     returns (TransactionalAggregateResponse);
 }
-

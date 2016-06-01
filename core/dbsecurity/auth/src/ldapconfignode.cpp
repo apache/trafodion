@@ -1,19 +1,22 @@
 //******************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //******************************************************************************
@@ -1600,8 +1603,9 @@ int ldapderef = LDAP_DEREF_ALWAYS;
    }
 // LCOV_EXCL_STOP  
 
-   // startTLS
-   if (self.host_->LDAPConfig_->SSL_Level == YES_TLS)
+   // Setup certificate file
+   if (self.host_->LDAPConfig_->SSL_Level == YES_TLS || 
+       self.host_->LDAPConfig_->SSL_Level == YES_SSL)
    {
       int demand = LDAP_OPT_X_TLS_DEMAND;
       rc = ldap_set_option(ld,LDAP_OPT_X_TLS_REQUIRE_CERT,&demand);
@@ -1626,7 +1630,11 @@ int ldapderef = LDAP_DEREF_ALWAYS;
          LOG_AUTH_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,emsMsg); 
          return LD_STATUS_RESOURCE_FAILURE;
       }
-      
+   }   
+   
+   // startTLS
+   if (self.host_->LDAPConfig_->SSL_Level == YES_TLS)
+   {
       rc = ldap_start_tls_s (ld, NULL, NULL);
       if (rc != LDAP_SUCCESS)
       {

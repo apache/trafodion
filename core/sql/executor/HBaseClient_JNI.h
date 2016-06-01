@@ -1,25 +1,29 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
 #ifndef HBASE_CLIENT_H
 #define HBASE_CLIENT_H
 #define INLINE_COLNAME_LEN 256
+#define MAX_COLNAME_LEN 32767 
 
 #include <list>
 #include "Platform.h"
@@ -30,7 +34,7 @@
 #include "Hbase_types.h"
 #include "ExpHbaseDefs.h"
 #include "NAMemory.h"
-#include "HTableClient.h"
+#include "org_trafodion_sql_HTableClient.h"
 
 // forward declare
 class ExHbaseAccessStats;
@@ -53,70 +57,6 @@ typedef enum {
  ,HBC_Req_Drop
 } HBaseClientReqType;
 
-// ===========================================================================
-// ===== The ByteArrayList class implements access to the Java 
-// ===== ByteArrayList class.
-// ===========================================================================
-
-typedef enum {
-  BAL_OK     = JOI_OK
- ,BAL_FIRST  = JOI_LAST
- ,BAL_ERROR_ADD_PARAM = BAL_FIRST
- ,BAL_ERROR_ADD_EXCEPTION
- ,BAL_ERROR_GET_EXCEPTION
- ,BAL_LAST
-} BAL_RetCode;
-
-class ByteArrayList : public JavaObjectInterface
-{
-public:
-  ByteArrayList(NAHeap *heap, jobject jObj = NULL)
-    :  JavaObjectInterface(heap, jObj)
-  {}
-
-  // Destructor
-  virtual ~ByteArrayList();
-  
-  // Initialize JVM and all the JNI configuration.
-  // Must be called.
-  BAL_RetCode    init();
-  
-  BAL_RetCode add(const Text& str);
-    
-  // Add a Text vector.
-  BAL_RetCode add(const TextVec& vec);
-
-  BAL_RetCode addElement(const char * data, int keyLength);
-    
-  // Get a Text element
-  Text* get(Int32 i);
-
-  // Get the error description.
-  virtual char* getErrorText(BAL_RetCode errEnum);
-
-  Int32 getSize();
-  Int32 getEntrySize(Int32 i);
-  char* getEntry(Int32 i, char* buf, Int32 bufLen, Int32& dataLen);
-
-
-private:  
-  enum JAVA_METHODS {
-    JM_CTOR = 0, 
-    JM_ADD,
-    JM_GET,
-    JM_GETSIZE,
-    JM_GETENTRY,
-    JM_GETENTRYSIZE,
-    JM_LAST
-  };
-  
-  static jclass          javaClass_;  
-  static JavaMethodInit* JavaMethods_;
-  static bool javaMethodsInitialized_;
-  // this mutex protects both JaveMethods_ and javaClass_ initialization
-  static pthread_mutex_t javaMethodsInitMutex_;
-};
-
 class HBaseClientRequest
 {
 public :
@@ -131,7 +71,6 @@ public :
   NAHeap *heap_;
 };
 
-
 // ===========================================================================
 // ===== The HTableClient class implements access to the Java 
 // ===== HTableClient class.
@@ -139,7 +78,7 @@ public :
 
 typedef enum {
   HTC_OK     = JOI_OK
- ,HTC_FIRST  = BAL_LAST
+ ,HTC_FIRST  = JOI_LAST
  ,HTC_DONE   = HTC_FIRST
  ,HTC_DONE_RESULT = 1000
  ,HTC_DONE_DATA
@@ -152,30 +91,9 @@ typedef enum {
  ,HTC_ERROR_SCANOPEN_EXCEPTION
  ,HTC_ERROR_FETCHROWS_EXCEPTION
  ,HTC_ERROR_SCANCLOSE_EXCEPTION
- ,HTC_ERROR_GETROWOPEN_PARAM
- ,HTC_ERROR_GETROWOPEN_EXCEPTION
- ,HTC_ERROR_GETROWSOPEN_PARAM
- ,HTC_ERROR_GETROWSOPEN_EXCEPTION
  ,HTC_ERROR_GETCLOSE_EXCEPTION
  ,HTC_ERROR_DELETEROW_PARAM
  ,HTC_ERROR_DELETEROW_EXCEPTION
- ,HTC_ERROR_DELETEROWS_PARAM
- ,HTC_ERROR_DELETEROWS_EXCEPTION
- ,HTC_ERROR_CHECKANDDELETEROW_PARAM
- ,HTC_ERROR_CHECKANDDELETEROW_EXCEPTION
- ,HTC_ERROR_CHECKANDDELETE_ROW_NOTFOUND
- ,HTC_ERROR_INSERTROW_PARAM
- ,HTC_ERROR_INSERTROW_EXCEPTION
- ,HTC_ERROR_INSERTROWS_PARAM
- ,HTC_ERROR_INSERTROWS_EXCEPTION
- ,HTC_ERROR_CHECKANDINSERTROW_PARAM
- ,HTC_ERROR_CHECKANDINSERTROW_EXCEPTION
- ,HTC_ERROR_CHECKANDINSERT_DUP_ROWID
- ,HTC_ERROR_CHECKANDINSERT_NOTRANS
- ,HTC_ERROR_CHECKANDUPDATEROW_PARAM
- ,HTC_ERROR_CHECKANDUPDATEROW_EXCEPTION
- ,HTC_ERROR_CHECKANDUPDATE_ROW_NOTFOUND
- ,HTC_ERROR_CHECKANDUPDATE_NOTRANS
  ,HTC_ERROR_CREATE_PARAM
  ,HTC_ERROR_CREATE_EXCEPTION
  ,HTC_ERROR_DROP_PARAM
@@ -184,23 +102,19 @@ typedef enum {
  ,HTC_ERROR_EXISTS_EXCEPTION
  ,HTC_ERROR_COPROC_AGGR_PARAM
  ,HTC_ERROR_COPROC_AGGR_EXCEPTION
- ,HTC_ERROR_COPROC_AGGR_GET_RESULT_PARAM
- ,HTC_ERROR_COPROC_AGGR_GET_RESULT_EXCEPTION
  ,HTC_ERROR_GRANT_PARAM
  ,HTC_ERROR_GRANT_EXCEPTION
  ,HTC_ERROR_REVOKE_PARAM
  ,HTC_ERROR_REVOKE_EXCEPTION
- ,HTC_GETENDKEYS
  ,HTC_ERROR_GETHTABLENAME_EXCEPTION
- ,HTC_ERROR_FLUSHTABLE_EXCEPTION
  ,HTC_GET_COLNAME_EXCEPTION
  ,HTC_GET_COLVAL_EXCEPTION
  ,HTC_GET_ROWID_EXCEPTION
  ,HTC_NEXTCELL_EXCEPTION
- ,HTC_ERROR_GETROWS_PARAM
- ,HTC_ERROR_GETROWS_EXCEPTION
  ,HTC_ERROR_COMPLETEASYNCOPERATION_EXCEPTION
  ,HTC_ERROR_ASYNC_OPERATION_NOT_COMPLETE
+ ,HTC_ERROR_WRITETOWAL_EXCEPTION
+ ,HTC_ERROR_WRITEBUFFERSIZE_EXCEPTION
  ,HTC_LAST
 } HTC_RetCode;
 
@@ -262,11 +176,12 @@ public:
   
   HTC_RetCode init();
   
-  HTC_RetCode startScan(Int64 transID, const Text& startRowID, const Text& stopRowID, const LIST(HbaseStr) & cols, Int64 timestamp, bool cacheBlocks, Lng32 numCacheRows,
+  HTC_RetCode startScan(Int64 transID, const Text& startRowID, const Text& stopRowID, const LIST(HbaseStr) & cols, Int64 timestamp, bool cacheBlocks, bool smallScanner, Lng32 numCacheRows,
                         NABoolean preFetch,
 			const LIST(NAString) *inColNamesToFilter, 
 			const LIST(NAString) *inCompareOpList,
 			const LIST(NAString) *inColValuesToCompare,
+            Float32 dopParallelScanner = 0.0f,
 			Float32 samplePercent = -1.0f,
 			NABoolean useSnapshotScan = FALSE,
 			Lng32 snapTimeout = 0,
@@ -274,24 +189,9 @@ public:
 			char * tmpLoc = NULL,
 			Lng32 espNum = 0,
                         Lng32 versions = 0);
-  HTC_RetCode startGet(Int64 transID, const HbaseStr& rowID, const LIST(HbaseStr) & cols, 
-		Int64 timestamp);
-  HTC_RetCode startGets(Int64 transID, const LIST(HbaseStr)& rowIDs, const LIST(HbaseStr) & cols, 
-		Int64 timestamp);
-  HTC_RetCode getRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, const LIST(HbaseStr)& columns);
-  HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const LIST(HbaseStr)& columns, Int64 timestamp);
-  HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
-  HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
-  HTC_RetCode insertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
-       Int64 timestamp, bool asyncOperation);
-  HTC_RetCode insertRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows, Int64 timestamp, 
-       bool autoFlush, bool asyncOperation);
+  HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const LIST(HbaseStr) *columns, Int64 timestamp);
   HTC_RetCode setWriteBufferSize(Int64 size);
   HTC_RetCode setWriteToWAL(bool vWAL);
-  HTC_RetCode checkAndInsertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row, Int64 timestamp,
-                                                         bool asyncOperation);
-  HTC_RetCode checkAndUpdateRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
-       const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp, bool asyncOperation);
   HTC_RetCode coProcAggr(Int64 transID, 
 			 int aggrType, // 0:count, 1:min, 2:max, 3:sum, 4:avg
 			 const Text& startRow, 
@@ -341,9 +241,6 @@ public:
   // Get the error description.
   virtual char* getErrorText(HTC_RetCode errEnum);
 
-  ByteArrayList* getEndKeys();
-
-  HTC_RetCode flushTable(); 
   void setTableName(const char *tableName)
   {
     Int32 len = strlen(tableName);
@@ -374,28 +271,18 @@ public:
 
 private:
   NAString getLastJavaError();
+
   enum JAVA_METHODS {
     JM_CTOR = 0
    ,JM_GET_ERROR 
    ,JM_SCAN_OPEN 
-   ,JM_GET_OPEN  
-   ,JM_GETS_OPEN 
    ,JM_DELETE    
-   ,JM_CHECKANDDELETE
-   ,JM_CHECKANDUPDATE
    ,JM_COPROC_AGGR
    ,JM_GET_NAME
    ,JM_GET_HTNAME
-   ,JM_GETENDKEYS
-   ,JM_FLUSHT
    ,JM_SET_WB_SIZE
    ,JM_SET_WRITE_TO_WAL
-   ,JM_DIRECT_INSERT
-   ,JM_DIRECT_CHECKANDINSERT
-   ,JM_DIRECT_INSERT_ROWS
-   ,JM_DIRECT_DELETE_ROWS
    ,JM_FETCH_ROWS
-   ,JM_DIRECT_GET_ROWS
    ,JM_COMPLETE_PUT
    ,JM_LAST
   };
@@ -468,8 +355,6 @@ typedef enum {
  ,HBC_ERROR_LIST_EXCEPTION
  ,HBC_ERROR_EXISTS_PARAM
  ,HBC_ERROR_EXISTS_EXCEPTION
- ,HBC_ERROR_FLUSHALL_PARAM
- ,HBC_ERROR_FLUSHALL_EXCEPTION
  ,HBC_ERROR_GRANT_PARAM
  ,HBC_ERROR_GRANT_EXCEPTION
  ,HBC_ERROR_REVOKE_PARAM
@@ -497,6 +382,24 @@ typedef enum {
  ,HBC_ERROR_CREATE_COUNTER_EXCEPTION
  ,HBC_ERROR_INCR_COUNTER_PARAM
  ,HBC_ERROR_INCR_COUNTER_EXCEPTION
+ ,HBC_ERROR_INSERTROW_PARAM
+ ,HBC_ERROR_INSERTROW_EXCEPTION
+ ,HBC_ERROR_INSERTROW_DUP_ROWID
+ ,HBC_ERROR_INSERTROWS_PARAM
+ ,HBC_ERROR_INSERTROWS_EXCEPTION
+ ,HBC_ERROR_CHECKANDUPDATEROW_PARAM
+ ,HBC_ERROR_CHECKANDUPDATEROW_EXCEPTION
+ ,HBC_ERROR_CHECKANDUPDATEROW_NOTFOUND
+ ,HBC_ERROR_DELETEROW_PARAM
+ ,HBC_ERROR_DELETEROW_EXCEPTION
+ ,HBC_ERROR_DELETEROWS_PARAM
+ ,HBC_ERROR_DELETEROWS_EXCEPTION
+ ,HBC_ERROR_CHECKANDDELETEROW_PARAM
+ ,HBC_ERROR_CHECKANDDELETEROW_EXCEPTION
+ ,HBC_ERROR_CHECKANDDELETEROW_NOTFOUND
+ ,HBC_ERROR_GETKEYS
+ ,HBC_ERROR_LISTALL
+ ,HBC_ERROR_REGION_STATS
  ,HBC_LAST
 } HBC_RetCode;
 
@@ -532,12 +435,13 @@ public:
   HBC_RetCode registerTruncateOnAbort(const char* fileName, Int64 transID);
   HBC_RetCode drop(const char* fileName, bool async, Int64 transID);
   HBC_RetCode drop(const char* fileName, JNIEnv* jenv, Int64 transID); // thread specific
-  HBC_RetCode dropAll(const char* pattern, bool async);
-  HBC_RetCode copy(const char* currTblName, const char* oldTblName);
-  ByteArrayList* listAll(const char* pattern);
-  static HBC_RetCode flushAllTablesStatic();
-  HBC_RetCode flushAllTables();
-  HBC_RetCode exists(const char* fileName);
+  HBC_RetCode dropAll(const char* pattern, bool async, Int64 transID);
+  HBC_RetCode copy(const char* srcTblName, const char* tgtTblName,
+                   NABoolean force);
+  NAArray<HbaseStr>* listAll(NAHeap *heap, const char* pattern);
+  NAArray<HbaseStr>* getRegionStats(NAHeap *heap, const char* tblName);
+
+  HBC_RetCode exists(const char* fileName, Int64 transID);
   HBC_RetCode grant(const Text& user, const Text& tableName, const TextVec& actionCodes); 
   HBC_RetCode revoke(const Text& user, const Text& tableName, const TextVec& actionCodes);
   HBC_RetCode estimateRowCount(const char* tblName, Int32 partialRowSize,
@@ -567,14 +471,42 @@ public:
             ExHbaseAccessStats *hbs, Int64 transID, const HbaseStr& rowID, 
             const LIST(HbaseStr) & cols, Int64 timestamp);
   HTableClient_JNI *startGets(NAHeap *heap, const char* tableName, bool useTRex, 
-            ExHbaseAccessStats *hbs, Int64 transID, const LIST(HbaseStr)& rowIDs, 
+            ExHbaseAccessStats *hbs, Int64 transID, const LIST(HbaseStr) *rowIDs, 
+            short rowIDLen, const HbaseStr *rowIDsInDB, 
             const LIST(HbaseStr) & cols, Int64 timestamp);
   HBC_RetCode incrCounter( const char * tabName, const char * rowId, const char * famName, 
                  const char * qualName , Int64 incr, Int64 & count);
   HBC_RetCode createCounterTable( const char * tabName,  const char * famName);
+  HBC_RetCode insertRow(NAHeap *heap, const char *tableName,
+      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID,
+      HbaseStr row, Int64 timestamp,bool checkAndPut, bool asyncOperation,
+      HTableClient_JNI **outHtc);
+  HBC_RetCode insertRows(NAHeap *heap, const char *tableName,
+      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, short rowIDLen, HbaseStr rowIDs,
+      HbaseStr rows, Int64 timestamp,  bool asyncOperation,
+      HTableClient_JNI **outHtc);
+  HBC_RetCode checkAndUpdateRow(NAHeap *heap, const char *tableName,
+      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID,
+      HbaseStr row, HbaseStr columnToCheck, HbaseStr columnValToCheck,
+       Int64 timestamp, bool asyncOperation,
+      HTableClient_JNI **outHtc);
+  HBC_RetCode deleteRow(NAHeap *heap, const char *tableName,
+      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, const LIST(HbaseStr) *cols, 
+      Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
+  HBC_RetCode deleteRows(NAHeap *heap, const char *tableName,
+      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, short rowIDLen, HbaseStr rowIDs, 
+      Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
+  HBC_RetCode checkAndDeleteRow(NAHeap *heap, const char *tableName,
+      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, 
+      HbaseStr columnToCheck, HbaseStr columnValToCheck,
+      Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
+  NAArray<HbaseStr>* getStartKeys(NAHeap *heap, const char *tableName, bool useTRex);
+  NAArray<HbaseStr>* getEndKeys(NAHeap *heap, const char * tableName, bool useTRex);
+
 private:   
   // private default constructor
   HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout);
+  NAArray<HbaseStr>* getKeys(Int32 funcIndex, NAHeap *heap, const char *tableName, bool useTRex);
 
 private:
   NAString  getLastJavaError();
@@ -594,9 +526,9 @@ private:
    ,JM_DROP
    ,JM_DROP_ALL
    ,JM_LIST_ALL
+   ,JM_GET_REGION_STATS
    ,JM_COPY
    ,JM_EXISTS
-   ,JM_FLUSHALL
    ,JM_GRANT
    ,JM_REVOKE
    ,JM_GET_HBLC
@@ -608,10 +540,19 @@ private:
    ,JM_SET_ARC_PERMS
    ,JM_START_GET
    ,JM_START_GETS
+   ,JM_START_DIRECT_GETS
    ,JM_GET_HBTI
    ,JM_CREATE_COUNTER_TABLE  
    ,JM_INCR_COUNTER
    ,JM_GET_REGN_NODES
+   ,JM_HBC_DIRECT_INSERT_ROW
+   ,JM_HBC_DIRECT_INSERT_ROWS
+   ,JM_HBC_DIRECT_CHECKANDUPDATE_ROW
+   ,JM_HBC_DELETE_ROW
+   ,JM_HBC_DIRECT_DELETE_ROWS
+   ,JM_HBC_CHECKANDDELETE_ROW
+   ,JM_HBC_GETSTARTKEYS
+   ,JM_HBC_GETENDKEYS
    ,JM_LAST
   };
   static jclass          javaClass_; 
@@ -820,6 +761,9 @@ jobjectArray convertToStringObjectArray(const HBASE_NAMELIST& nameList);
 jobjectArray convertToStringObjectArray(const NAText *text, int arrayLen);
 int convertStringObjectArrayToList(NAHeap *heap, jarray j_objArray, 
                                          LIST(Text *)&list);
+int convertByteArrayObjectArrayToNAArray(NAHeap *heap, jarray j_objArray, 
+             NAArray<HbaseStr> **retArray);
+void deleteNAArray(CollHeap *heap, NAArray<HbaseStr> *array);
 #endif
 
 

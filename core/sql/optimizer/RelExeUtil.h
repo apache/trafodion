@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -84,6 +87,10 @@ public:
       stmtText_ = NULL;
   };
 
+  GenericUtilExpr(OperatorTypeEnum otype) 
+       : RelExpr(otype, NULL, NULL, NULL)
+  {};
+
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
 
   // method to do code generation
@@ -92,9 +99,14 @@ public:
 		       ValueIdSet &pulledNewInputs);
   virtual short codeGen(Generator*);
 
+  // no return from this method, the atp and atpindex is changed to
+  // returned atp (= 0) and returned atp index (last entry of returnedDesc).
+  // If noAtpOrIndexChange flag is set, then they are not changed.
   short processOutputRow(Generator * generator,
-                         const Int32 work_atp, const Int32 output_row_atp_index,
-                         ex_cri_desc * returnedDesc);
+                         const Int32 work_atp, 
+                         const Int32 output_row_atp_index,
+                         ex_cri_desc * returnedDesc,
+                         NABoolean noAtpOrIndexChange = FALSE);
 
   // The set of values that I can potentially produce as output.
   virtual void getPotentialOutputValues(ValueIdSet & vs) const;
@@ -190,6 +202,14 @@ public:
 // -----------------------------------------------------------------------
 class DDLExpr : public GenericUtilExpr
 {
+  void setDDLXns(NABoolean v)
+  {
+    if (v)
+      ddlXns_ = (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_ON);
+    else
+      ddlXns_ = FALSE;
+  }
+
 public:
   DDLExpr(ExprNode * ddlNode,
 	  char * ddlStmtText,
@@ -227,6 +247,8 @@ public:
   {
     if (explObjName)
       explObjName_ = *explObjName;
+
+    setDDLXns(TRUE);
   };
 
  DDLExpr(NABoolean initHbase, NABoolean dropHbase,
@@ -266,6 +288,8 @@ public:
     
     if (dropMDviews)
       setDropMDViews(TRUE);
+
+    setDDLXns(TRUE);
   };
 
  DDLExpr(NABoolean purgedataHbase,
@@ -299,6 +323,8 @@ public:
   {
     purgedataTableName_ = purgedataTableName;
     qualObjName_ = purgedataTableName.getQualifiedNameObj();
+
+    setDDLXns(TRUE);
   };
 
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
@@ -365,6 +391,8 @@ public:
   NABoolean addSeqTable() { return addSeqTable_; }
   NABoolean addSchemaObjects() { return addSchemaObjects_; }
 
+  short ddlXnsInfo(NABoolean &ddlXns, NABoolean &xnCanBeStarted);
+
   NAString getQualObjName() { return qualObjName_.getQualifiedNameAsString(); }
 
   void setCreateMDViews(NABoolean v)
@@ -379,6 +407,18 @@ public:
   {(v ? flags_ |= GET_MD_VERSION : flags_ &= ~GET_MD_VERSION); }
   NABoolean getMDVersion() { return (flags_ & GET_MD_VERSION) != 0;}
 
+  void setCreateLibmgr(NABoolean v)
+  {(v ? flags_ |= CREATE_LIBMGR : flags_ &= ~CREATE_LIBMGR); }
+  NABoolean createLibmgr() { return (flags_ & CREATE_LIBMGR) != 0;}
+
+  void setDropLibmgr(NABoolean v)
+  {(v ? flags_ |= DROP_LIBMGR : flags_ &= ~DROP_LIBMGR); }
+  NABoolean dropLibmgr() { return (flags_ & DROP_LIBMGR) != 0;}
+
+  void setUpgradeLibmgr(NABoolean v)
+  {(v ? flags_ |= UPGRADE_LIBMGR : flags_ &= ~UPGRADE_LIBMGR); }
+  NABoolean upgradeLibmgr() { return (flags_ & UPGRADE_LIBMGR) != 0;}
+
   void setCreateRepos(NABoolean v)
   {(v ? flags_ |= CREATE_REPOS : flags_ &= ~CREATE_REPOS); }
   NABoolean createRepos() { return (flags_ & CREATE_REPOS) != 0;}
@@ -391,15 +431,25 @@ public:
   {(v ? flags_ |= UPGRADE_REPOS : flags_ &= ~UPGRADE_REPOS); }
   NABoolean upgradeRepos() { return (flags_ & UPGRADE_REPOS) != 0;}
 
+  void setCleanupAuth(NABoolean v)
+  {(v ? flags_ |= CLEANUP_AUTH : flags_ &= ~CLEANUP_AUTH); }
+  NABoolean cleanupAuth() { return (flags_ & CLEANUP_AUTH) != 0;}
+
+  NABoolean ddlXns() { return ddlXns_; }
+
  protected:
   enum Flags
   {
-    CREATE_MD_VIEWS      = 0x0001,
-    DROP_MD_VIEWS          = 0x0002,
-    GET_MD_VERSION        = 0x0004,
+    CREATE_MD_VIEWS         = 0x0001,
+    DROP_MD_VIEWS           = 0x0002,
+    GET_MD_VERSION          = 0x0004,
     CREATE_REPOS            = 0x0008,
-    DROP_REPOS                = 0x0010,
-    UPGRADE_REPOS            = 0x0020
+    DROP_REPOS              = 0x0010,
+    UPGRADE_REPOS           = 0x0020,
+    CLEANUP_AUTH            = 0X0040,
+    CREATE_LIBMGR           = 0x0080,
+    DROP_LIBMGR             = 0x0100,
+    UPGRADE_LIBMGR          = 0x0200
   };
 
   // see method processSpecialDDL in sqlcomp/parser.cpp
@@ -460,6 +510,11 @@ public:
   NABoolean returnStatus_;
 
   UInt32 flags_;
+
+  // if TRUE, ddl transactions are enabled. Actual operation may
+  // run under one transaction or multiple transactions.
+  // Details in sqlcomp/CmpSeabaseDDL*.cpp.
+  NABoolean ddlXns_;
 };
 
 // -----------------------------------------------------------------------
@@ -488,6 +543,8 @@ public:
     GET_METADATA_INFO_        = 12,
     GET_VERSION_INFO_         = 13,
     SUSPEND_ACTIVATE_         = 14,
+    REGION_STATS_         = 15,
+    LOB_INFO_             =16,
     SHOWSET_DEFAULTS_         = 18,
     AQR_                      = 19,
     DISPLAY_EXPLAIN_COMPLEX_  = 20,
@@ -523,6 +580,9 @@ public:
          stoi_(NULL)
   {
   };
+
+  ExeUtilExpr()
+       : GenericUtilExpr(REL_EXE_UTIL) {};
 
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
 				CollHeap* outHeap = 0);
@@ -974,7 +1034,8 @@ public:
 		    NABoolean isHiveTable = FALSE,
 		    NAString * hiveTableLocation = NULL,
                     NAString * hiveHostName = NULL,
-                    Int32 hiveHdfsPort = 0)
+                    Int32 hiveHdfsPort = 0,
+                    Int64 hiveModTS = -1)
        : ExeUtilExpr(FAST_DELETE_, name, exprNode, NULL, stmtText, stmtTextCharSet, oHeap),
          doPurgedataCat_(doPurgedataCat),
          noLog_(noLog), ignoreTrigger_(ignoreTrigger),
@@ -984,7 +1045,8 @@ public:
          offlineTable_(FALSE),
          doLabelPurgedata_(FALSE),
          numLOBs_(0),
-         isHiveTable_(isHiveTable)
+         isHiveTable_(isHiveTable),
+         hiveModTS_(hiveModTS)
   {
     if (isHiveTable )
       {
@@ -1063,6 +1125,9 @@ private:
   NAString  hiveTableLocation_;
   NAString hiveHostName_;
   Int32 hiveHdfsPort_;
+
+  // timestamp of hiveTableLocation. 
+  Int64 hiveModTS_;
 };
 
 class ExeUtilMaintainObject : public ExeUtilExpr
@@ -1653,6 +1718,99 @@ private:
   AQRTask task_;
 };
 
+class ExeUtilRegionStats : public ExeUtilExpr 
+{
+public:
+  
+  ExeUtilRegionStats(const CorrName &objectName,
+                     NABoolean summaryOnly,
+                     NABoolean isIndex,
+                     NABoolean forDisplay,
+                     RelExpr * child = NULL,
+                     CollHeap *oHeap = CmpCommon::statementHeap());
+  
+  ExeUtilRegionStats():
+       summaryOnly_(FALSE),
+       isIndex_(FALSE),
+       displayFormat_(FALSE)
+  {}
+ 
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  // a method used for recomputing the outer references (external dataflow
+  // input values) that are needed by this operator.
+  virtual void recomputeOuterReferences();
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+  virtual const char 	*getVirtualTableName();
+  static const char * getVirtualTableNameStr() 
+  { return "EXE_UTIL_REGION_STATS__";}
+  virtual desc_struct 	*createVirtualTableDesc();
+
+  virtual NABoolean producesOutput() { return TRUE; }
+
+  virtual int getArity() const { return ((child(0) == NULL) ? 0 : 1); }
+
+ virtual NABoolean aqrSupported() { return TRUE; }
+
+private:
+  ItemExpr * inputColList_;
+
+  NABoolean summaryOnly_;
+
+  NABoolean isIndex_;
+
+  NABoolean displayFormat_;
+
+  NABoolean errorInParams_;
+};
+
+class ExeUtilLobInfo : public ExeUtilExpr 
+{
+public:
+  
+  ExeUtilLobInfo(const CorrName &objectName,
+                 NABoolean tableFormat = FALSE,
+                     RelExpr * child = NULL,
+                     CollHeap *oHeap = CmpCommon::statementHeap());
+  
+  ExeUtilLobInfo()       
+  {}
+ 
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  // a method used for recomputing the outer references (external dataflow
+  // input values) that are needed by this operator.
+  virtual void recomputeOuterReferences();
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+  virtual const char 	*getVirtualTableName();
+  static const char * getVirtualTableNameStr() 
+  { return "EXE_UTIL_LOB_INFO__";}
+  virtual desc_struct 	*createVirtualTableDesc();
+
+  virtual NABoolean producesOutput() { return TRUE; }
+
+  virtual int getArity() const { return ((child(0) == NULL) ? 0 : 1); }
+
+ virtual NABoolean aqrSupported() { return TRUE; }
+
+private:
+  Int64 objectUID_;
+  NABoolean tableFormat_;
+  NABoolean errorInParams_;
+};
+
 class ExeUtilLongRunning : public ExeUtilExpr 
 {
 public:
@@ -1862,13 +2020,13 @@ public:
   };
   enum ExtractFileActionType
   {
-    ERROR_IF_NOT_EXISTS =1, TRUNCATE_EXISTING };
+    ERROR_IF_NOT_EXISTS =1, ERROR_IF_EXISTS, TRUNCATE_EXISTING,APPEND_OR_CREATE };
   
   
  ExeUtilLobExtract(ItemExpr * handle, 
 		   ExtractToType toType,
-		   ItemExpr * bufaddr,
-		   ItemExpr * bufsize,
+		   Int64 bufaddr=0,
+		   Int64 extractSizeAddr=0,
 		   Int64 intParam = 0,
 		   Int64 intParam2 = 0,
 		   char * stringParam = NULL,
@@ -1881,12 +2039,12 @@ public:
 		 NULL, CharInfo::UnknownCharSet, oHeap),
     handle_(handle),
     toType_(toType),
-    bufAddrExpr_(bufaddr),
-    bufSizeExpr_(bufsize),
+    bufAddr_(bufaddr),
+    extractSizeAddr_(extractSizeAddr),
     intParam_(intParam),
     intParam2_(intParam2),
     handleInStringFormat_(TRUE),
-    withCreate_(FALSE)
+    withCreate_(TRUE)
     {
       if (stringParam)
 	stringParam_ = stringParam;
@@ -1938,8 +2096,8 @@ public:
   ItemExpr * handle_;
   ExtractToType toType_;
   
-  ItemExpr * bufAddrExpr_;
-  ItemExpr * bufSizeExpr_;
+  Int64 bufAddr_;
+  Int64 extractSizeAddr_;
   
   Int64 intParam_;   // options for create or size limit
   Int64 intParam2_;// options for file behavior

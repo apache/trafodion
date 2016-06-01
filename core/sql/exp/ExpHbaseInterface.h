@@ -9,19 +9,22 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 *
@@ -39,7 +42,6 @@
 
 #include <iostream>
 
-#include <boost/lexical_cast.hpp>
 #include <protocol/TBinaryProtocol.h>
 #include <transport/TSocket.h>
 #include <transport/TTransportUtils.h>
@@ -57,6 +59,8 @@
 class ex_globals;
 class CliGlobals;
 class ExHbaseAccessStats;
+
+Int64 getTransactionIDFromContext();
 
 using namespace apache::thrift;
 using namespace apache::thrift::protocol;
@@ -79,6 +83,7 @@ namespace {
 class ExpHbaseInterface : public NABasicObject
 {
  public:
+  NAHeap *getHeap() { return (NAHeap*)heap_; }
 
   static ExpHbaseInterface* newInstance(CollHeap* heap, 
                                         const char* server = NULL, 
@@ -125,13 +130,15 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn) = 0;
 
   // drops all objects from hbase that match the pattern
-  virtual Lng32 dropAll(const char * pattern, NABoolean async) = 0;
+  virtual Lng32 dropAll(const char * pattern, NABoolean async, NABoolean noXn) = 0;
 
   // retrieve all objects from hbase that match the pattern
-  virtual ByteArrayList* listAll(const char * pattern) = 0;
+  virtual NAArray<HbaseStr> *listAll(const char * pattern) = 0;
 
-  // make a copy of currTableName as oldTblName.
-  virtual Lng32 copy(HbaseStr &currTblName, HbaseStr &oldTblName);
+  // make a copy of srcTblName as tgtTblName
+  // if force is true, remove target before copying.
+  virtual Lng32 copy(HbaseStr &srcTblName, HbaseStr &tgtTblName,
+                     NABoolean force = FALSE);
 
   virtual Lng32 exists(HbaseStr &tblName) = 0;
 
@@ -146,11 +153,13 @@ class ExpHbaseInterface : public NABasicObject
 			 const int64_t timestamp,
 			 const NABoolean readUncommitted,
 			 const NABoolean cacheBlocks,
+			 const NABoolean smallScanner,
 			 const Lng32 numCacheRows,
-                         const NABoolean preFetch,
+             const NABoolean preFetch,
 			 const LIST(NAString) *inColNamesToFilter, 
 			 const LIST(NAString) *inCompareOpList,
 			 const LIST(NAString) *inColValuesToCompare,
+	         Float32 dopParallelScanner = 0.0f,
 			 Float32 samplePercent = -1.0f,
 			 NABoolean useSnapshotScan = FALSE,
 			 Lng32 snapTimeout = 0,
@@ -160,8 +169,6 @@ class ExpHbaseInterface : public NABasicObject
                          Lng32 versions = 0) = 0;
 
   virtual Lng32 scanClose() = 0;
-
-  virtual Lng32 getHTable(HbaseStr &tblName) = 0;
 
   Lng32 fetchAllRows(
 		     HbaseStr &tblName,
@@ -182,14 +189,9 @@ class ExpHbaseInterface : public NABasicObject
 		const LIST(HbaseStr) & columns,
 		const int64_t timestamp) = 0;
 
-  // return 1 if row exists, 0 if does not exist. -ve num in case of error.
-  virtual Lng32 rowExists(
-			  HbaseStr &tblName,
-			  HbaseStr &row) = 0;
-
  virtual Lng32 getRowsOpen(
 		HbaseStr &tblName,
-		const LIST(HbaseStr) & rows, 
+		const LIST(HbaseStr) *rows, 
 		const LIST(HbaseStr) & columns,
 		const int64_t timestamp) = 0;
 
@@ -219,29 +221,31 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 getRowID(HbaseStr &rowID) = 0;
  
   virtual Lng32 deleteRow(
-		  HbaseStr &tblName,
-		  HbaseStr& row, 
-		  const LIST(HbaseStr) & columns,
+		  HbaseStr tblName,
+		  HbaseStr row, 
+		  const LIST(HbaseStr) *columns,
 		  NABoolean noXn,
-		  const int64_t timestamp) = 0;
+		  const int64_t timestamp,
+                  NABoolean asyncOperation) = 0;
 
 
 
   virtual Lng32 deleteRows(
-		  HbaseStr &tblName,
+		  HbaseStr tblName,
                   short rowIDLen,
-		  HbaseStr &rowIDs,
+		  HbaseStr rowIDs,
 		  NABoolean noXn,
-		  const int64_t timestamp) = 0;
+		  const int64_t timestamp,
+                  NABoolean asyncOperation) = 0;
 
 
   virtual Lng32 checkAndDeleteRow(
 				  HbaseStr &tblName,
 				  HbaseStr& row, 
-				  const Text& columnToCheck,
-				  const Text& colValToCheck,
+				  HbaseStr& columnToCheck,
+				  HbaseStr& colValToCheck,
                                   NABoolean noXn,
-				  const int64_t timestamp);
+				  const int64_t timestamp) = 0;
 
 
 
@@ -250,27 +254,27 @@ class ExpHbaseInterface : public NABasicObject
 		  HbaseStr & column) = 0;
 
   virtual Lng32 insertRow(
-		  HbaseStr &tblName,
-		  HbaseStr& rowID, 
-		  HbaseStr& row,
+		  HbaseStr tblName,
+		  HbaseStr rowID, 
+		  HbaseStr row,
 		  NABoolean noXn,
 		  const int64_t timestamp,
                   NABoolean asyncOperation) = 0;
 
- virtual Lng32 getRows(
+ virtual Lng32 getRowsOpen(
+          HbaseStr tblName,
           short rowIDLen,
-          HbaseStr &rowIDs,
+          HbaseStr rowIDs,
           const LIST(HbaseStr) & columns) = 0;
 
  virtual Lng32 insertRows(
-		  HbaseStr &tblName,
+		  HbaseStr tblName,
                   short rowIDLen,
-                  HbaseStr &rowIDs,
-                  HbaseStr &rows,
+                  HbaseStr rowIDs,
+                  HbaseStr rows,
 		  NABoolean noXn,
 		  const int64_t timestamp,
-		  NABoolean autoFlush = TRUE,
-                  NABoolean asyncOperation = FALSE) = 0; // by default, flush rows after put
+                  NABoolean asyncOperation) = 0; 
  
  virtual Lng32 setWriteBufferSize(
                  HbaseStr &tblName,
@@ -326,12 +330,11 @@ class ExpHbaseInterface : public NABasicObject
 				  HbaseStr &tblName,
 				  HbaseStr& rowID, 
 				  HbaseStr& row,
-				  const Text& columnToCheck,
-				  const Text& colValToCheck,
+				  HbaseStr& columnToCheck,
+				  HbaseStr& colValToCheck,
                                   NABoolean noXn,				
-                                 
 				  const int64_t timestamp,
-                                  NABoolean asyncOperation);
+                                  NABoolean asyncOperation) = 0;
 
  
   virtual Lng32 getClose() = 0;
@@ -357,9 +360,8 @@ class ExpHbaseInterface : public NABasicObject
 		      const Text& tblName,
 		      const std::vector<Text> & actionCodes) = 0;
 
-  virtual ByteArrayList* getRegionInfo(const char*) = 0;
-  virtual Lng32 flushTable() = 0;
-  static Lng32 flushAllTables();
+  virtual NAArray<HbaseStr>* getRegionBeginKeys(const char*) = 0;
+  virtual NAArray<HbaseStr>* getRegionEndKeys(const char*) = 0;
 
   virtual Lng32 estimateRowCount(HbaseStr& tblName,
                                  Int32 partialRowSize,
@@ -378,6 +380,8 @@ class ExpHbaseInterface : public NABasicObject
                                    Int32 partns,
                                    ARRAY(const char *)& nodeNames) = 0;
 
+  // get regions and size
+  virtual NAArray<HbaseStr> *getRegionStats(const HbaseStr& tblName) = 0;
 
 protected:
   enum 
@@ -439,12 +443,14 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn);
 
   virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn);
-  virtual Lng32 dropAll(const char * pattern, NABoolean async);
+  virtual Lng32 dropAll(const char * pattern, NABoolean async, NABoolean noXn);
 
-  virtual ByteArrayList* listAll(const char * pattern);
+  virtual NAArray<HbaseStr>* listAll(const char * pattern);
 
-  // make a copy of currTableName as oldTblName.
-  virtual Lng32 copy(HbaseStr &currTblName, HbaseStr &oldTblName);
+  // make a copy of srcTblName as tgtTblName
+  // if force is true, remove target before copying.
+  virtual Lng32 copy(HbaseStr &srcTblName, HbaseStr &tgtTblName,
+                     NABoolean force = FALSE);
 
   // -1, if table exists. 0, if doesn't. -ve num, error.
   virtual Lng32 exists(HbaseStr &tblName);
@@ -460,11 +466,13 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 			 const int64_t timestamp,
 			 const NABoolean readUncommitted,
 			 const NABoolean cacheBlocks,
+			 const NABoolean smallScanner,
 			 const Lng32 numCacheRows,
-                         const NABoolean preFetch,
+             const NABoolean preFetch,
 			 const LIST(NAString) *inColNamesToFilter, 
 			 const LIST(NAString) *inCompareOpList,
 			 const LIST(NAString) *inColValuesToCompare,
+	         Float32 DOPparallelScanner = 0.0f,
 			 Float32 samplePercent = -1.0f,
 			 NABoolean useSnapshotScan = FALSE,
 			 Lng32 snapTimeout = 0,
@@ -475,8 +483,6 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 
   virtual Lng32 scanClose();
 
-  virtual Lng32 getHTable(HbaseStr &tblName);
-
   // return 1 if table is empty, 0 if not empty. -ve num in case of error
   virtual Lng32 isEmpty(HbaseStr &tblName);
 
@@ -486,14 +492,9 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		const LIST(HbaseStr) & columns,
 		const int64_t timestamp);
  
-  // return 1 if row exists, 0 if does not exist. -ve num in case of error.
-  virtual Lng32 rowExists(
-			  HbaseStr &tblName,
-			  HbaseStr &row);
-
  virtual Lng32 getRowsOpen(
 		HbaseStr &tblName,
-		const LIST(HbaseStr) & rows, 
+		const LIST(HbaseStr) *rows, 
 		const LIST(HbaseStr) & columns,
 		const int64_t timestamp);
 
@@ -523,26 +524,28 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 getRowID(HbaseStr &rowID);
 
   virtual Lng32 deleteRow(
-		  HbaseStr &tblName,
-		  HbaseStr &row, 
-		  const LIST(HbaseStr) & columns,
+		  HbaseStr tblName,
+		  HbaseStr row, 
+		  const LIST(HbaseStr) *columns,
 		  NABoolean noXn,
-		  const int64_t timestamp);
+		  const int64_t timestamp,
+                  NABoolean asyncOperation);
 
 
   virtual Lng32 deleteRows(
-		  HbaseStr &tblName,
+		  HbaseStr tblName,
                   short rowIDLen,
-		  HbaseStr &rowIDs,
+		  HbaseStr rowIDs,
 		  NABoolean noXn,		 		  
-		  const int64_t timestamp);
+		  const int64_t timestamp,
+                  NABoolean asyncOperation);
 
 
   virtual Lng32 checkAndDeleteRow(
 				  HbaseStr &tblName,
 				  HbaseStr& row, 
-				  const Text& columnToCheck,
-				  const Text& colValToCheck,
+				  HbaseStr& columnToCheck,
+				  HbaseStr& colValToCheck,
                                   NABoolean noXn,     
 				  const int64_t timestamp);
 
@@ -552,27 +555,27 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		  HbaseStr & column);
 
   virtual Lng32 insertRow(
-		  HbaseStr &tblName,
-		  HbaseStr& rowID, 
-                  HbaseStr& row,
+		  HbaseStr tblName,
+		  HbaseStr rowID, 
+                  HbaseStr row,
 		  NABoolean noXn,
 		  const int64_t timestamp,
                   NABoolean asyncOperation);
 
- virtual Lng32 getRows(
+ virtual Lng32 getRowsOpen(
+          HbaseStr tblName,
           short rowIDLen,
-          HbaseStr &rowIDs,
+          HbaseStr rowIDs,
           const LIST(HbaseStr) & columns);
 
  virtual Lng32 insertRows(
-		  HbaseStr &tblName,
+		  HbaseStr tblName,
                   short rowIDLen,
-                  HbaseStr &rowIDs,
-                  HbaseStr &rows,
+                  HbaseStr rowIDs,
+                  HbaseStr rows,
 		  NABoolean noXn,
 		  const int64_t timestamp,
-		  NABoolean autoFlush = TRUE,
-                  NABoolean asyncOperation = FALSE); // by default, flush rows after put
+                  NABoolean asyncOperation); 
   
   virtual Lng32 setWriteBufferSize(
                   HbaseStr &tblName,
@@ -628,8 +631,8 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 				  HbaseStr &tblName,
 				  HbaseStr& rowID, 
 				  HbaseStr& row,
-				  const Text& columnToCheck,
-				  const Text& colValToCheck,
+				  HbaseStr& columnToCheck,
+				  HbaseStr& colValToCheck,
                                   NABoolean noXn,			
 				  const int64_t timestamp,
                                   NABoolean asyncOperation);
@@ -659,9 +662,9 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 		      const Text& tblName,
   		      const std::vector<Text> & actionCodes);
 
+  virtual NAArray<HbaseStr>* getRegionBeginKeys(const char*);
+  virtual NAArray<HbaseStr>* getRegionEndKeys(const char*);
 
-  virtual ByteArrayList* getRegionInfo(const char*);
-  virtual Lng32 flushTable();
   virtual Lng32 estimateRowCount(HbaseStr& tblName,
                                  Int32 partialRowSize,
                                  Int32 numCols,
@@ -679,6 +682,7 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
                                    Int32 partns,
                                    ARRAY(const char *)& nodeNames) ;
 
+  virtual NAArray<HbaseStr>* getRegionStats(const HbaseStr& tblName);
 
 private:
   bool  useTRex_;

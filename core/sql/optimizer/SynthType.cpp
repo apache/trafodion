@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -40,6 +43,7 @@
 #include "CmpErrors.h"
 #include "ComSqlId.h"
 #include "OptimizerSimulator.h"
+#include "exp_datetime.h"
 
 // For TRIGGERS_STATUS_VECTOR_SIZE and SIZEOF_UNIQUE_EXECUTE_ID
 #include "Triggers.h"
@@ -732,7 +736,12 @@ static const NAType *synthAvgSum(const NAType& operand,
 		    {
 		      precision = MAX_NUMERIC_PRECISION;
 		    }
-		}
+		} else {
+
+                    if ( precision >= MAX_NUMERIC_PRECISION + 1 )
+                        precision = MINOF(precision + 10,
+                                          (Lng32)CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED));
+                }
 	    }
 
 	  if ((NOT type->isBigNum()) &&
@@ -2774,8 +2783,6 @@ const NAType *CurrentTimestampRunning::synthesizeType()
 // -----------------------------------------------------------------------
 // member functions for class DateFormat
 // -----------------------------------------------------------------------
-
-#pragma nowarn(1506)   // warning elimination
 const NAType *DateFormat::synthesizeType()
 {
   //
@@ -2788,17 +2795,6 @@ const NAType *DateFormat::synthesizeType()
   // Check that the operands are compatible.
   //
   if (!vid.getType().isSupportedType()) {
-    // 4071 The operand of a DATEFORMAT function must be a datetime.
-// LCOV_EXCL_START - mp
-    *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
-    return NULL;
-// LCOV_EXCL_STOP
-  }
-
-  if (((getDateFormat() == DEFAULT) ||
-       (getDateFormat() == USA) ||
-       (getDateFormat() == EUROPEAN)) &&
-      (vid.getType().getTypeQualifier() != NA_DATETIME_TYPE)) {
     // 4071 The operand of a DATEFORMAT function must be a datetime.
     *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
     return NULL;
@@ -2829,154 +2825,44 @@ const NAType *DateFormat::synthesizeType()
   NABoolean formatAsDate = FALSE;
   NABoolean formatAsTimestamp = FALSE;
   NABoolean formatAsTime = FALSE;
+
   if (vid.getType().getTypeQualifier() == NA_DATETIME_TYPE)
     {
-      // This code is now identical for all DatetimeTypes
       const DatetimeType& operand = (DatetimeType &)vid.getType();
-      //
-      // Return the result.
-      //
-      if (getDateFormat() == DATE_FORMAT_STR)
-	{
-	  if (child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT)
-	    {
-	      ConstValue * cv = (ConstValue*)(child(1)->castToItemExpr());
-	      length = cv->getStorageSize();
-	    }
-	  else
-	    {
-	      // must be a const for now.
-	      CMPASSERT(child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT);
-	    }
-	}
-      else if (getDateFormat() == TIMESTAMP_FORMAT_STR)
-	{
-	  if (child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT)
-	    {
-	      ConstValue * cv = (ConstValue*)(child(1)->castToItemExpr());
-	      length = cv->getStorageSize();
+      Lng32 frmt = ExpDatetime::getDatetimeFormat(formatStr_.data());
 
-	      if ((NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		   == "YYYYMMDDHH24MISS") ||
-		  (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		   == "YYYYMMDD:HH24:MI:SS") ||
-		  (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		   == "DD.MM.YYYY:HH24:MI:SS") ||
-		  (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		   == "YYYY-MM-DD HH24:MI:SS"))
-		{
-		  // length includes 2 extra bytes for "24" that was specified
-		  // in the format.
-		  length -= 2;
-		}
-	    }
-	  else if (getDateFormat() == TIME_FORMAT_STR)
-	    {
-	      if (child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT)
-		{
-		  ConstValue * cv = (ConstValue*)(child(1)->castToItemExpr());
-		  length = cv->getStorageSize();
-		  
-		  if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		      == "HH24:MI:SS")
-		    {
-		      // length includes 2 extra bytes for "24" that was specified
-		      // in the format.
-		      length -= 2;
-		    }
-		}
-	    }  
-	  else
-	    {
-	      // must be a const for now.
-	      CMPASSERT(child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT);
-	    }
-	}
-      else
-	{
+      if (wasDateformat_)
+        {
 	  length = operand.getDisplayLength();
-	  if(operand.containsField(REC_DATE_HOUR) && (getDateFormat() == USA))
+          if(operand.containsField(REC_DATE_HOUR) && 
+             ((frmt == ExpDatetime::DATETIME_FORMAT_USA) ||
+              (frmt == ExpDatetime::DATETIME_FORMAT_TS7)))
 	    length += 3; // add 3 for a blank and "am" or "pm"
-	}
+        }
+      else
+        {
+          length = ExpDatetime::getDatetimeFormatMaxLen(frmt);
+        }
     }
   else if (vid.getType().getTypeQualifier() == NA_CHARACTER_TYPE)
     {
-      //
-      // Return the result.
-      //
+      length = formatStr_.length();
       if (getDateFormat() == DATE_FORMAT_STR)
 	{
 	  formatAsDate = TRUE;
-	  if (child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT)
-	    {
-	      ConstValue * cv = (ConstValue*)(child(1)->castToItemExpr());
-	      length = cv->getStorageSize();
-	    }
-	  else
-	    {
-	      // must be a const for now.
-	      CMPASSERT(child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT);
-	    }
 	}
       else if (getDateFormat() == TIMESTAMP_FORMAT_STR)
 	{
 	  formatAsTimestamp = TRUE;
-	  if (child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT)
-	    {
-	      ConstValue * cv = (ConstValue*)(child(1)->castToItemExpr());
-	      length = cv->getStorageSize();
-	    }
-	  else
-	    {
-	      // must be a const for now.
-	      CMPASSERT(child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT);
-	    }
 	}
       else if (getDateFormat() == TIME_FORMAT_STR)
 	{
 	  formatAsTime = TRUE;
-	  if (child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT)
-	    {
-	      ConstValue * cv = (ConstValue*)(child(1)->castToItemExpr());
-	      length = cv->getStorageSize();
-	    }
-	  else
-	    {
-	      // must be a const for now.
-	      CMPASSERT(child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT);
-	    }
 	}
     }
   else if (vid.getType().getTypeQualifier() == NA_NUMERIC_TYPE)
     {
-      const NumericType &numeric  = (NumericType&)vid.getType();
-      if ((numeric.isExact()) &&
-	  (NOT numeric.isBigNum()) &&
-	  (numeric.getScale() == 0))
-	{
-	  if (child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT)
-	    {
-	      ConstValue * cv = (ConstValue*)(child(1)->castToItemExpr());
-	      length = cv->getStorageSize();
-	    }
-	  else
-	    {
-	      // must be a const for now.
-	      CMPASSERT(child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT);
-	    }
-	}
-      else
-	{
-	  // 4047 Arguments of USER function must have a scale of 0.
-	  *CmpCommon::diags() << DgSqlCode(-4047) << DgString0(getTextUpper());
-	  return NULL;
-	}
-    }
-  else
-    {
-      // 4071 The operand of a DATEFORMAT function must be a datetime.
-      *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
-      return NULL;
+      length = formatStr_.length();
     }
 
   if (formatAsDate)
@@ -2988,7 +2874,6 @@ const NAType *DateFormat::synthesizeType()
   else
     return new HEAP SQLChar(length, vid.getType().supportsSQLnullLogical());
 }
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // member functions for class DayOfWeek
@@ -5199,6 +5084,13 @@ const NAType *Translate::synthesizeType()
          err4106arg = SQLCHARSETSTRING_UTF8;
        break;
 
+     case GBK_TO_UTF8:
+       if (translateSource->getCharSet() == CharInfo::GBK )
+         charsetTarget = CharInfo::UTF8;
+       else
+         err4106arg = SQLCHARSETSTRING_GBK;
+       break;
+
      case ISO88591_TO_UTF8:
        if (translateSource->getCharSet() == CharInfo::ISO88591)
        {
@@ -6454,7 +6346,6 @@ const NAType *LOBinsert::synthesizeType()
 
   if ((obj_ == STRING_) ||
       (obj_ == FILE_) ||
-      (obj_ == BUFFER_) ||
       (obj_ == EXTERNAL_) ||
       (obj_ == LOAD_))
     {
@@ -6475,6 +6366,16 @@ const NAType *LOBinsert::synthesizeType()
 			      << DgString1("LOB");
 	  return NULL;
 	}
+    }
+  else if (obj_ == BUFFER_)
+    {
+     if (typ1.getTypeQualifier() != NA_NUMERIC_TYPE)
+	{
+	  // 4043 The operand of a $0~String0 function must be blob
+	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBINSERT")
+			      << DgString1("LARGEINT");
+	  return NULL;
+	} 
     }
   else 
     {
@@ -6509,9 +6410,10 @@ const NAType *LOBupdate::synthesizeType()
   ValueId vid2 = child(1)->getValueId();
   const NAType &typ2 = (NAType&)vid2.getType();
 
+ 
+
   if ((obj_ == STRING_) ||
       (obj_ == FILE_) ||
-      (obj_ == BUFFER_) ||
       (obj_ == EXTERNAL_))
     {
       if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
@@ -6531,6 +6433,25 @@ const NAType *LOBupdate::synthesizeType()
 			      << DgString1("LOB");
 	  return NULL;
 	}
+    }
+  else if (obj_ == BUFFER_)
+    {
+     if (typ1.getTypeQualifier() != NA_NUMERIC_TYPE)
+	{
+	  // 4043 The operand of a $0~String0 function must be blob
+	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
+			      << DgString1("LARGEINT");
+	  return NULL;
+	} 
+      ValueId vid3 = child(2)->getValueId();
+      const  NAType &typ3 = (NAType&)vid3.getType();
+      if (typ3.getTypeQualifier() != NA_NUMERIC_TYPE)
+	{
+	  // 4043 The operand of a $0~String0 function must be blob
+	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
+			      << DgString1("LARGEINT");
+	  return NULL;
+	} 
     }
   else 
     {

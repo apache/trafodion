@@ -1,17 +1,24 @@
 /**
- *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+* @@@ START COPYRIGHT @@@
+
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+
+*   http://www.apache.org/licenses/LICENSE-2.0
+
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+
+* @@@ END COPYRIGHT @@@
  */
 package org.trafodion.dcs.servermt.serverHandler;
 
@@ -93,6 +100,7 @@ public final class ServerHandler implements Callable {
     public int instance;
     public int serverThread;
     public String serverName;
+    public String extHostAddress;
     public int serverState= ServerConstants.SERVER_STATE_INIT;
 
     public byte[] cert;
@@ -107,6 +115,7 @@ public final class ServerHandler implements Callable {
         this.zkc = zkc;
         this.netConf = netConf;
         this.hostName = netConf.getHostName();
+        this.extHostAddress = netConf.getExtHostAddress();
         this.requestTimeout = conf.getInt(Constants.DCS_SERVER_LISTENER_REQUEST_TIMEOUT,Constants.DEFAULT_SERVER_LISTENER_REQUEST_TIMEOUT);
         this.connectingTimeout = conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT) * 1000;
         this.selectorTimeout = conf.getInt(Constants.DCS_SERVER_LISTENER_SELECTOR_TIMEOUT,Constants.DEFAULT_SERVER_LISTENER_SELECTOR_TIMEOUT);

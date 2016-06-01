@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -139,10 +142,9 @@ void print_transid_str(int32 pv_node, int32 pv_seqnum) {
 
 long now()
 {  
-   struct timezone lv_tz =  {0, NULL};
    timeval lv_now;
 
-   int lv_success = gettimeofday(&lv_now, &lv_tz);
+   int lv_success = gettimeofday(&lv_now, NULL);
    if (lv_success != 0)
    {
       printf("\n** gettimeofday returned error %d.", lv_success);
@@ -469,23 +471,22 @@ void process_tmstats_node(bool pv_reset, int32 pv_nid, bool json)
 
     lv_error = TMSTATS(pv_nid, &lv_stats, pv_reset);
 
-    if(json==false) {
-        if (lv_error)
-            printf("Node %d\t**Error %d.", pv_nid, lv_error);
-        else
-        {
-            printf("Node %d:", pv_nid);
-            print_counters(&lv_stats.iv_counts);
-            print_txnStats(&lv_stats.iv_txn);
+    if (lv_error) {
+        printf("Node %d\t**Error %d.\n", pv_nid, lv_error);
+    }
 
-            // Pool statistics
-            printf("\n  Txn Pool:\t");
-            print_poolStats(lv_stats.iv_transactionPool_stats);
-            printf("\n  Thrd Pool:\t");
-            print_poolStats(lv_stats.iv_threadPool_stats);
-            printf("\n  RMMsg Pool:\t");
-            print_poolStats(lv_stats.iv_RMMessagePool_stats);
-        }
+    else if(json==false) {
+        printf("Node %d:", pv_nid);
+        print_counters(&lv_stats.iv_counts);
+        print_txnStats(&lv_stats.iv_txn);
+
+        // Pool statistics
+        printf("\n  Txn Pool:\t");
+        print_poolStats(lv_stats.iv_transactionPool_stats);
+        printf("\n  Thrd Pool:\t");
+        print_poolStats(lv_stats.iv_threadPool_stats);
+        printf("\n  RMMsg Pool:\t");
+        print_poolStats(lv_stats.iv_RMMessagePool_stats);
         printf("\n");
     } 
     else {
@@ -493,13 +494,13 @@ void process_tmstats_node(bool pv_reset, int32 pv_nid, bool json)
         printf(",\"txnStats\":{\"txnBegins\": %ld", lv_stats.iv_counts.iv_begin_count);
         printf(",\"txnAborts\": %ld", lv_stats.iv_counts.iv_abort_count);
         printf(",\"txnCommits\": %ld}}", lv_stats.iv_counts.iv_commit_count);
+        printf("\n");
     }
 } //process_tmstats_node
 
 
 void process_tmstats(bool pv_reset, int32 pv_node, bool json)
 {
-    int lv_error = 0;
     int lv_dtm_count = 0;
     bool del = false;
 
@@ -510,7 +511,7 @@ void process_tmstats(bool pv_reset, int32 pv_node, bool json)
         process_tmstats_node(pv_reset, pv_node, json);
     else
     {
-        lv_error = msg_mon_get_node_info        ( &lv_dtm_count,
+        msg_mon_get_node_info        ( &lv_dtm_count,
                                                   MAX_NODES,
                                                   NULL);
         
@@ -595,14 +596,13 @@ void process_statusalltransactions_node(int32 pv_node)
 
 void process_statusalltransactions(int32 pv_node)
 {
-  int lv_error = 0;
   int lv_dtm_count = 0;
 
   if(pv_node !=-1)
      cout << "Info specific node: " << pv_node << "\n";
   else
   {
-     lv_error = msg_mon_get_node_info(&lv_dtm_count,
+     msg_mon_get_node_info(&lv_dtm_count,
                                       MAX_NODES,
                                       NULL);
 
@@ -663,14 +663,13 @@ void process_list_node(int32 pv_node)
 
 void process_list(int32 pv_node)
 {
-    int lv_error = 0;
     int lv_dtm_count = 0;
 
     if (pv_node != -1)
         process_list_node(pv_node);
     else
     {
-        lv_error = msg_mon_get_node_info (&lv_dtm_count,
+        msg_mon_get_node_info (&lv_dtm_count,
                                           MAX_NODES,
                                           NULL);
 
@@ -1696,7 +1695,7 @@ int main(int argc, char *argv[])
                 lv_param1 = atoi(lp_nextcmd);
             }
             if (lv_param1 == 0)
-                lv_resume_error= RESUMETRANSACTION(NULL);
+                lv_resume_error= RESUMETRANSACTION(0);
             else
                 lv_resume_error= RESUMETRANSACTION(lv_param1);
                 cout << "RESUMETRANSACTION(" << lv_param1 << ") returned error " << lv_resume_error << endl;

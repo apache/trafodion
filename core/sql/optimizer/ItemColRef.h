@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -445,9 +448,6 @@ public:
   // has been transformed (i.e., all \0 chars become "\0").
   NAString getConstStr(NABoolean transformNeeded = TRUE) const;
     
-  NAWString getConstWStr();
-  // returns the Unicode-encoded string form of column default values
-    
   short isNull() const			 { return isNull_ ? -1 : 0; }
   NABoolean isNullWasDefaultSpec() const { return isNull_==IS_NULL_WAS_DEFAULT;}
   void setWasDefaultSpec()		 { if (isNull_)
@@ -595,9 +595,6 @@ private:
             enum CharInfo::CharSet strLitPrefixCharSet = CharInfo::UnknownCharSet
          );
 
-   void init_wtext_field(enum CharInfo::CharSet strLitPrefixCharSet
-                         = CharInfo::UnknownCharSet);
-
 private:
 
   // this indicates whether the constant is a NULL constant
@@ -622,10 +619,6 @@ private:
   // is an invalid SQL literal, it just means we are keeping the older
   // code that doesn't always store valid literals.
   NABoolean textIsValidatedSQLLiteralInUTF8_;
-
-  // wtext_ is used to hold and return (via getConstWStr())
-  // a column default's string value.
-  NAWString *wtext_;  
 
   NABoolean rebindNeeded_; // TRUE if the string const value is originally
                            // set with an unknown charset value.
@@ -844,6 +837,8 @@ public:
   NABoolean isCachedParam() const	    { return isCachedParam_; }
   void setIsCachedParam(NABoolean isCachedParam = TRUE)  
   { isCachedParam_ = isCachedParam; }
+
+  NABoolean isSystemGeneratedOutputHV() const;
 
   NAString& getPrototypeValue() 	   { return prototypeValue_; }
   const NAString& getPrototypeValue() const { return prototypeValue_; } // LCOV_EXCL_LINE

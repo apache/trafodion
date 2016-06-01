@@ -1,19 +1,22 @@
 /*********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2005-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -66,10 +69,12 @@ public:
     GET_MAINTAIN_INFO_       = 9,
     GET_STATISTICS_          = 10,
     USER_LOAD_               = 11,
+    REGION_STATS_        = 12,
     LONG_RUNNING_            = 13,
     GET_METADATA_INFO_       = 14,
     GET_VERSION_INFO_        = 15,
     SUSPEND_ACTIVATE_        = 16,
+    LOB_INFO_                = 17,
     SHOW_SET_                = 19,
     AQR_                     = 20,
     DISPLAY_EXPLAIN_COMPLEX_ = 21,
@@ -1513,7 +1518,8 @@ public:
 			  NABoolean ishiveTruncate = FALSE,
 			  char * hiveTableLocation = NULL,
                           char * hiveHostName = NULL,
-                          Lng32 hivePortNum = 0
+                          Lng32 hivePortNum = 0,
+                          Int64 hiveModTS = -1
 			  );
 
   Long pack(void *);
@@ -1562,6 +1568,11 @@ public:
   Lng32 getHiveHdfsPort() const
   {
     return hiveHdfsPort_;
+  }
+
+  Lng32 getHiveModTS() const
+  {
+    return hiveModTS_;
   }
 
   // ---------------------------------------------------------------------
@@ -1640,7 +1651,9 @@ private:
   NABasicPtr  hiveTableLocation_;                    // 56-63
   NABasicPtr hiveHdfsHost_;                          // 64-71
   Int32 hiveHdfsPort_;                               // 72-75
-  char fillersComTdbExeUtilFastDelete_[52];          // 76-127
+  char fillers1_[4];                                 // 76-79
+  Int64 hiveModTS_;                                  // 80-87
+  char fillersComTdbExeUtilFastDelete_[40];          // 88-127
 };
 
 class ComTdbExeUtilGetStatistics : public ComTdbExeUtil
@@ -2652,7 +2665,7 @@ public:
   enum ExtractToType
   {
     TO_FILE_, TO_STRING_, TO_BUFFER_, TO_EXTERNAL_FROM_STRING_,
-    TO_EXTERNAL_FROM_FILE_,  NOOP_
+    TO_EXTERNAL_FROM_FILE_, RETRIEVE_LENGTH_,NOOP_
   };
   
 
@@ -2665,8 +2678,10 @@ public:
      char * handle,
      Lng32 handleLen,
      ExtractToType toType,
-     Int64 size,
-     Int64 size2,
+     Int64 bufAddr,
+     Int64 extractSize,
+     Int64 intParam1,
+     Int64 intParam2,
      Int32 lobStorageType,
      char * stringParam1,
      char * stringParam2,
@@ -2699,7 +2714,7 @@ public:
   Lng32 getLobHdfsPort() { return lobHdfsPort_; }
 
   ExtractToType getToType() { return (ExtractToType)toType_; }
-
+ 
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
@@ -2735,14 +2750,25 @@ public:
   void setErrorIfNotExists(NABoolean v)
   {(v ? flags_ |= ERROR_IF_NOT_EXISTS : flags_ &= ~ERROR_IF_NOT_EXISTS); };
   NABoolean errorIfNotExists() { return (flags_ & ERROR_IF_NOT_EXISTS) != 0; };
+
+  void setErrorIfExists(NABoolean v)
+  {(v ? flags_ |= ERROR_IF_EXISTS : flags_ &= ~ERROR_IF_EXISTS); };
+  NABoolean errorIfExists() { return (flags_ & ERROR_IF_EXISTS) != 0; };
   
   void setTruncateExisting(NABoolean v)
   {(v ? flags_ |= TRUNCATE_EXISTING : flags_ &= ~TRUNCATE_EXISTING); };
   NABoolean truncateExisting() { return (flags_ & TRUNCATE_EXISTING) != 0; };
+  
+   void setAppendOrCreate(NABoolean v)
+  {(v ? flags_ |= APPEND_OR_CREATE : flags_ &= ~APPEND_OR_CREATE); };
+  NABoolean appendOrCreate() { return (flags_ & APPEND_OR_CREATE) != 0; };
 
-  void setRowSize(Int64 rowSize) { rowSize_ = rowSize; };
-  void setBufSize(Int64 bufSize) { bufSize_ = bufSize;};
-
+  void setExtractSizeIOAddr(Int64 ext_addr){ extractSizeIOAddr_ = ext_addr;};
+  Int64 dataExtractSizeIOAddr() { return extractSizeIOAddr_;}
+  void setTotalBufSize(Int64 bufSize) { totalBufSize_ = bufSize;};
+  Int64 getTotalBufSize() { return totalBufSize_;};
+  void setBufAddr(Int64 bufAddr) {bufAddr_ = bufAddr;};
+  Int64 getBufAddr() { return bufAddr_;};
 
 private:
   enum
@@ -2752,15 +2778,22 @@ private:
     WITH_CREATE        = 0x0004,
     RETRIEVE_LENGTH    =0x0008,
     ERROR_IF_NOT_EXISTS =0x0010,
-    TRUNCATE_EXISTING = 0x0020
+    ERROR_IF_EXISTS     =0x0020,
+    TRUNCATE_EXISTING = 0x0040,
+    APPEND_OR_CREATE = 0x0080
+  
+    
   };
 
   NABasicPtr handle_;                                      // 00-07
   short toType_;                                           // 08-09
   Int32 flags_;    
   Lng32 handleLen_;
-  Int64 rowSize_; // row size
-  Int64 bufSize_; // buf size
+  Int64 extractSizeIOAddr_; // as passed in via syntax size
+  Int64 totalBufSize_; // buf size
+  Int64 bufAddr_ ; //buffer addressed as passed in by user via syntax
+  Int64 intParam1_;
+  Int64 intParam2_;
   Lng32 lobStorageType_ ; // valid when  extract is from a file.
   Lng32 lobHdfsPort_;
   NABasicPtr lobHdfsServer_;
@@ -2790,6 +2823,7 @@ public:
      Lng32 numLOBs,
      char * lobNumArray,
      char * lobLocArray,
+     char * lobTypeArray,
      short maxLocLen,
      short sdOptions,
      ex_cri_desc * given_cri_desc,
@@ -2820,35 +2854,36 @@ public:
 
   short getLOBnum(short i);
   char * getLOBloc(short i);
-
+  NABoolean getIsExternalLobCol(short i);
   UInt16 numLOBs() { return numLOBs_; }
 
   char * getLOBnumArray() { return lobNumArray_; }
   char * getLOBlocArray() { return lobLocArray_; }
-
+  char * getLOBtypeArray() { return lobTypeArray_;}
+ 
   char * schName() { return schName_; };
 private:
-  UInt32 flags_;                                     // 00-03
+  UInt32 flags_;                                    
 
-  UInt16 numLOBs_;                                   // 04-05
+  UInt16 numLOBs_;                                  
   short maxLocLen_;
   
   // array of shorts. numLOBs entries. 
   // Each entry is the lobNum.
-  NABasicPtr lobNumArray_;                           // 08-15
+  NABasicPtr lobNumArray_;                           
 
   // array of string, null terminated. numLOBs entries. 
   // Each entry is the storage location of lob data file.
-  NABasicPtr lobLocArray_;                           // 16-23
+  NABasicPtr lobLocArray_;                          
+  //array of int32. numLOBs entries
+  NABasicPtr lobTypeArray_; 
+  Int64 objectUID_;                                  
 
-  Int64 objectUID_;                                  // 24-31
+  NABasicPtr schName_;                               
+  short schNameLen_;                                
 
-  NABasicPtr schName_;                               // 32-39
-  short schNameLen_;                                 // 40-41
-
-  short sdOptions_;                                  // 42-43
-
-  char fillersComTdbExeUtilLobShowddl_[4];           // 44-47
+  short sdOptions_;                                 
+  char fillersComTdbExeUtilLobShowddl_[4];           
 };
 
 
@@ -3437,6 +3472,249 @@ private:
   UInt8        scanType_;                               // 29 - 29
   NABasicPtr   snapshotSuffix_;                         // 30 - 37
   char         fillersExeUtilHbaseUnLoad_[16];          // 38 - 53
+};
+
+static const ComTdbVirtTableColumnInfo comTdbRegionStatsVirtTableColumnInfo[] =
+  {
+    { "CATALOG_NAME",                   0, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "SCHEMA_NAME",                    1, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "OBJECT_NAME",                    2, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "REGION_NUM",                     3, COM_USER_COLUMN, REC_BIN64_SIGNED,  4, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "REGION_NAME",                    4, COM_USER_COLUMN, REC_BYTE_F_ASCII,  512, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "NUM_STORES",                     5, COM_USER_COLUMN, REC_BIN32_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "NUM_STORE_FILES",                6, COM_USER_COLUMN, REC_BIN32_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "STORE_FILE_UNCOMP_SIZE",         7, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "STORE_FILE_SIZE",                8, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "MEM_STORE_SIZE",                 9, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "READ_REQUESTS_COUNT",           10, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "WRITE_REQUESTS_COUNT",          11, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  }
+  };
+
+#define STATS_NAME_MAX_LEN 256
+#define STATS_REGION_NAME_MAX_LEN 512
+struct ComTdbRegionStatsVirtTableColumnStruct
+{
+  char   catalogName[STATS_NAME_MAX_LEN];
+  char   schemaName[STATS_NAME_MAX_LEN];
+  char   objectName[STATS_NAME_MAX_LEN];
+  Int64  regionNum;
+  char   regionName[STATS_REGION_NAME_MAX_LEN];
+  Lng32  numStores;
+  Lng32  numStoreFiles;
+  Int64  storeFileUncompSize;
+  Int64  storeFileSize;
+  Int64  memStoreSize;
+  Int64  readRequestsCount;
+  Int64  writeRequestsCount;
+};
+
+
+class ComTdbExeUtilRegionStats : public ComTdbExeUtil
+{
+  friend class ExExeUtilRegionStatsTcb;
+  friend class ExExeUtilRegionStatsPrivateState;
+
+public:
+  ComTdbExeUtilRegionStats()
+       : ComTdbExeUtil()
+  {}
+  
+  ComTdbExeUtilRegionStats(
+       char * tableName,
+       ex_expr_base * input_expr,
+       ULng32 input_rowlen,
+       ex_cri_desc * work_cri_desc,
+       const unsigned short work_atp_index,
+       ex_cri_desc * given_cri_desc,
+       ex_cri_desc * returned_cri_desc,
+       queue_index down,
+       queue_index up,
+       Lng32 num_buffers,
+       ULng32 buffer_size
+       );
+  
+  //  Long pack (void *);
+  //  Lng32 unpack(void *, void * reallocator);
+  
+  void setIsIndex(NABoolean v)
+  {(v ? flags_ |= IS_INDEX : flags_ &= ~IS_INDEX); };
+  NABoolean isIndex() { return (flags_ & IS_INDEX) != 0; };
+
+  void setDisplayFormat(NABoolean v)
+  {(v ? flags_ |= DISPLAY_FORMAT : flags_ &= ~DISPLAY_FORMAT); };
+  NABoolean displayFormat() { return (flags_ & DISPLAY_FORMAT) != 0; };
+
+  void setSummaryOnly(NABoolean v)
+  {(v ? flags_ |= SUMMARY_ONLY : flags_ &= ~SUMMARY_ONLY); };
+  NABoolean summaryOnly() { return (flags_ & SUMMARY_ONLY) != 0; };
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilRegionStats);}
+
+  virtual const char *getNodeName() const 
+  { 
+    return "GET_REGION_STATS";
+  };
+
+  static int getVirtTableNumCols()
+  {
+    return sizeof(comTdbRegionStatsVirtTableColumnInfo)/sizeof(ComTdbVirtTableColumnInfo);
+  }
+
+  static ComTdbVirtTableColumnInfo * getVirtTableColumnInfo()
+  {
+    return (ComTdbVirtTableColumnInfo*)comTdbRegionStatsVirtTableColumnInfo;
+  }
+
+  static int getVirtTableNumKeys()
+  {
+    return 0;
+  }
+
+  static ComTdbVirtTableKeyInfo * getVirtTableKeyInfo()
+  {
+    return NULL;
+  }
+
+private:
+  enum
+  {
+    IS_INDEX       = 0x0001,
+    DISPLAY_FORMAT = 0x0002,
+    SUMMARY_ONLY   = 0x0004
+  };
+
+  UInt32 flags_;                                     // 00-03
+
+  char fillersComTdbExeUtilRegionStats_[76];      // 04-79
+};
+
+
+
+// Lob info virtual table info
+static const ComTdbVirtTableColumnInfo comTdbLobInfoVirtTableColumnInfo[] =
+  {
+    { "CATALOG_NAME",                   0, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "SCHEMA_NAME",                    1, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "OBJECT_NAME",                    2, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "COLUMN_NAME",                     3, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "LOB_LOCATION",                    4, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "LOB_DATA_FILE",                     5, COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "LOB_DATA_FILE_SIZE_EOD",         6, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "LOB_DATA_FILE_SIZE_USED",                7, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  }
+    
+  };
+
+#define LOBINFO_MAX_FILE_LEN 256
+struct ComTdbLobInfoVirtTableColumnStruct
+{
+  char   catalogName[LOBINFO_MAX_FILE_LEN];
+  char   schemaName[LOBINFO_MAX_FILE_LEN];
+  char   objectName[LOBINFO_MAX_FILE_LEN];
+  char   columnName[LOBINFO_MAX_FILE_LEN];
+  char   lobLocation[LOBINFO_MAX_FILE_LEN];
+  char   lobDataFile[LOBINFO_MAX_FILE_LEN];
+  Int64  lobDataFileSizeEod;
+  Int64  lobDataFileSizeUsed;
+};
+
+
+class ComTdbExeUtilLobInfo : public ComTdbExeUtil
+{
+  friend class ExExeUtilLobInfoTcb;
+  friend class ExExeUtilLobInfoTableTcb;
+  friend class ExExeUtilLobInfoPrivateState;
+
+public:
+  ComTdbExeUtilLobInfo()
+       : ComTdbExeUtil()
+  {}
+  Lng32 getNumLobs() { return numLOBs_;}
+  char *getLobColList(){return lobColArray_;}
+  char *getLobNumList() {return lobNumArray_;}
+  char *getLobLocList() {return lobLocArray_;}
+  char *getLobTypeList(){return lobTypeArray_;}
+  Int64 getObjectUID() { return objectUID_;}
+  Int32 getHdfsPort() { return hdfsPort_;}
+  char *getHdfsServer() {return hdfsServer_;}
+  NABoolean isTableFormat() { return tableFormat_;}
+  ComTdbExeUtilLobInfo(
+       char * tableName,
+       Int64 objectUID,
+       Lng32 numLOBs,
+       char* lobColArray,
+       char* lobNumArray,
+       char* lobLocArray,
+       char *lobTypeArray,
+       Int32 hdfsPort,
+       char *hdfsServer,
+       NABoolean tableFormat,
+       ex_cri_desc * work_cri_desc,
+       const unsigned short work_atp_index,
+       ex_cri_desc * given_cri_desc,
+       ex_cri_desc * returned_cri_desc,
+       queue_index down,
+       queue_index up,
+       Lng32 num_buffers,
+       ULng32 buffer_size
+       );
+  
+  
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilRegionStats);}
+
+  virtual const char *getNodeName() const 
+  { 
+    return "GET_LOB_INFO";
+  };
+
+  static int getVirtTableNumCols()
+  {
+    return sizeof(comTdbLobInfoVirtTableColumnInfo)/sizeof(ComTdbVirtTableColumnInfo);
+  }
+
+  static ComTdbVirtTableColumnInfo * getVirtTableColumnInfo()
+  {
+    return (ComTdbVirtTableColumnInfo*)comTdbLobInfoVirtTableColumnInfo;
+  }
+
+  static int getVirtTableNumKeys()
+  {
+    return 0;
+  }
+
+  static ComTdbVirtTableKeyInfo * getVirtTableKeyInfo()
+  {
+    return NULL;
+  }
+  Long pack(void *);
+  Lng32 unpack(void *, void * reallocator);
+private:
+  UInt32 flags_;   
+  UInt16 numLOBs_;                                   
+  
+  //array fo strings - column names 
+  NABasicPtr lobColArray_;
+  // array of shorts. numLOBs entries. 
+  // Each entry is the lobNum.
+  NABasicPtr lobNumArray_;  
+  //array of int32. numLOBS entries
+  NABasicPtr lobTypeArray_;                         
+
+  // array of string, null terminated. numLOBs entries. 
+  // Each entry is the storage location of lob data file.
+  NABasicPtr lobLocArray_;                           
+  Int32 hdfsPort_;
+  NABasicPtr hdfsServer_;
+  Int64 objectUID_;                                                      
+
+  NABoolean tableFormat_;
+  
 };
 #endif
 

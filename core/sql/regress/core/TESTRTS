@@ -4,12 +4,40 @@
 -- Expected files: EXPECTEDRTS, EXPECTEDRTS.MX EXPECTEDRTS.MP
 -- Table created: TSTAT
 -- Limitations:
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
 
+obey TESTRTS(clean_up);
+obey TESTRTS(create_insert);
+obey TESTRTS(test_rts);
+obey TESTRTS(esp_idle_timeout);
+obey TESTRTS(clean_up);
+log ;
+exit;
 
 ?section create_insert
 cqd hist_on_demand_stats_size '10000';
 
-obey TESTRTS(clean_up);
+?section test_rts
 sh chmod 777 $scriptsdir/tools/run_rts.ksh ;
 log LOGRTS clear ;
 
@@ -230,9 +258,6 @@ get statistics for pid a;
 
 -- Test to determine if invalid token is taken as stmt name
 select * from table (statistics(null, 'AAA='));
-obey TESTRTS(clean_up);
-log;
-exit;
 
 ?section compare_current_qid
 prepare s1 from select count(*) from
@@ -255,4 +280,15 @@ log LOGRTS;
 
 ?section clean_up
 drop table tstat;
+
+?section esp_idle_timeout
+get process statistics for current ;
+set session default esp_idle_timeout '60' ;
+cqd esp_idle_timeout '60' ;
+control query shape esp_exchange(hash_groupby(esp_exchange(scan)));
+select distinct d from tstat ;
+get process statistics for current ;
+sh sleep 70;
+select distinct d from tstat ;
+get process statistics for current ;
 

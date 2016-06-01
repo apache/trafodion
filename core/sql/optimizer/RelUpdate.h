@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -139,7 +142,8 @@ GenericUpdate(const CorrName &name,
     noCheck_(FALSE),
     noIMneeded_(FALSE),
     useMVCC_(FALSE),
-    useSSCC_(FALSE)
+    useSSCC_(FALSE),
+    preconditionTree_(NULL)
   {}
 
   // copy ctor
@@ -529,7 +533,21 @@ GenericUpdate(const CorrName &name,
                                else
                                  return FALSE; 
                             }
+
+  inline ItemExpr * getPreconditionTree() const { return preconditionTree_; }
+  inline const ValueIdSet getPrecondition() const { return precondition_; }
+  inline void setPreconditionTree(ItemExpr *pc) { preconditionTree_ = pc; }
+  inline void setPrecondition(const ValueIdSet pc)
+           { precondition_ = pc; exprsInDerivedClasses_ += precondition_; }
+
+  virtual ItemExpr * insertValues() { return NULL;}
+
 protected:
+
+  // Here, derived classes can register expressions that are used by
+  // them, so that the computation of characteristic inputs can make
+  // sure these expressions get the inputs they need.
+  ValueIdSet exprsInDerivedClasses_;
   
 private:
 
@@ -906,6 +924,12 @@ private:
   // if set to ON, then this statement will run under SSCC mode
   NABoolean useSSCC_;
 
+  // predicate evaluated before doing the LeafInsert(unique IM)
+  // LeafDelete (IM). Only insert/delete if TRUE
+  ItemExpr *preconditionTree_;
+  ValueIdSet precondition_;
+ 
+
 };
 
 // -----------------------------------------------------------------------
@@ -1019,7 +1043,7 @@ public:
 	if (insType == UPSERT_LOAD)
 	  insertType_ = insType;
 
-	isUpsert_ = TRUE;
+        isUpsert_ = TRUE;
       }
     else
       insertType_ = insType; 
@@ -1125,7 +1149,8 @@ public:
     baseColRefs_ = val;
   }
 
-  NABoolean isUpsertThatNeedsMerge() const;
+  NABoolean isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean omittedDefaultCols,
+                                   NABoolean omittedCurrentDefaultCols) const;
   RelExpr* xformUpsertToMerge(BindWA *bindWA) ;
 
 protected:
@@ -1248,9 +1273,10 @@ public:
              TableDesc *tabId,
              ItemExprList *afterColumns,
              OperatorTypeEnum otype = REL_LEAF_INSERT,
+	     ItemExpr *preconditionTree = NULL,
              CollHeap *oHeap = CmpCommon::statementHeap())
   : Insert(name, tabId, otype, NULL, NULL, NULL, oHeap)
-  {setBaseColRefs(afterColumns);}
+  {setBaseColRefs(afterColumns);setPreconditionTree(preconditionTree);}
 
   // copy ctor
   LeafInsert (const LeafInsert &) ; // not written
@@ -1416,7 +1442,8 @@ public:
   virtual const NAString getText() const;
 
   ItemExpr * insertCols() {return insertCols_;}
-  ItemExpr * insertValues() { return insertValues_;}
+  virtual ItemExpr * insertValues() { return insertValues_;}
+
   NABoolean xformedUpsert() {return xformedUpsert_;}
   void setXformedUpsert() {xformedUpsert_ = TRUE;}
 private:
@@ -1452,6 +1479,10 @@ public:
 
   // a virtual function for performing name binding within the query tree
   virtual RelExpr *bindNode(BindWA *bindWA);
+
+  virtual RelExpr *preCodeGen(Generator * generator,
+                              const ValueIdSet & externalInputs,
+                              ValueIdSet &pulledNewInputs);
 
   // method to do code generation
   virtual short codeGen(Generator *);
@@ -1492,7 +1523,7 @@ public:
     return isFastDelete_;
   }
   
-  ValueIdList    &lobDeleteExpr()          { return lobDeleteExpr_; }
+  // ValueIdList    &lobDeleteExpr()          { return lobDeleteExpr_; }
 
   ConstStringList* &csl() { return csl_; }
 
@@ -1504,7 +1535,7 @@ public:
 private:
   NABoolean isFastDelete_;
 
-  ValueIdList  lobDeleteExpr_;
+  // ValueIdList  lobDeleteExpr_;
 
   ConstStringList * csl_;
   // Estimated number of rows accessed by Delete operator.
@@ -1563,7 +1594,7 @@ public:
   virtual const NAString getText() const;
 
   ItemExpr * insertCols() {return insertCols_;}
-  ItemExpr * insertValues() { return insertValues_;}
+  virtual ItemExpr * insertValues() { return insertValues_;}
 private:
   ItemExpr *insertCols_;
   ItemExpr *insertValues_;
@@ -1580,12 +1611,13 @@ public:
              ItemExprList *beforeColumns,
 	     NABoolean isUndoUniqueIndex = FALSE,
              OperatorTypeEnum otype = REL_LEAF_DELETE,
+             ItemExpr *preconditionTree = NULL,
              CollHeap *oHeap = CmpCommon::statementHeap())
     : Delete(name, tabId, otype, NULL, NULL, NULL, NULL, oHeap),
     baseColRefs_(beforeColumns),
     isUndoUniqueIndex_(isUndoUniqueIndex)
     
-  {trigTemp_ = NULL;}
+  {trigTemp_ = NULL; setPreconditionTree(preconditionTree); }
 
   // copy ctor
   LeafDelete (const LeafDelete &) ; // not written
@@ -1671,6 +1703,8 @@ public:
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
                                                   const Lng32     planNumber,
                                                   PlanWorkSpace  *pws);
+
+  virtual CostMethod * costMethod() const;
 
   //! getText method
   //  used to display the name of the node.
@@ -1799,7 +1833,8 @@ public:
                CollHeap *oHeap = CmpCommon::statementHeap(),
                InsertType insertType = SIMPLE_INSERT)
        : Insert(name,tabId,otype,child,NULL,NULL,oHeap, insertType),
-         returnRow_(FALSE)
+         returnRow_(FALSE),
+         vsbbInsert_(FALSE)
        {};
 
   // copy ctor
@@ -1819,11 +1854,17 @@ public:
                                                   const Lng32    planNumber,
                                                   PlanWorkSpace  *pws);
 
+  // optimizer functions
+  virtual CostMethod* costMethod() const;
+
   // get a printable string that identifies the operator
   const NAString getText() const;
 
   void setReturnRow(NABoolean val) {returnRow_ = val;}
   NABoolean isReturnRow() {return returnRow_;}
+
+  void setVsbbInsert(NABoolean val) { vsbbInsert_ = val; }
+  NABoolean vsbbInsert() const { return vsbbInsert_; } 
 
   // method to do code generation
   virtual RelExpr *preCodeGen(Generator * generator,
@@ -1838,7 +1879,7 @@ private:
   // used when lob colums are being loaded. Set in GenPreCode.
   ValueIdList lobLoadExpr_;
   NABoolean returnRow_ ; // currently used only for bulk load incremental IM
-
+  NABoolean vsbbInsert_ ;
 
 };
 
@@ -1974,6 +2015,8 @@ public:
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
                                                   const Lng32     planNumber,
                                                   PlanWorkSpace  *pws);
+
+  virtual CostMethod * costMethod() const;
 
   //! getText method
   //  used to display the name of the node.

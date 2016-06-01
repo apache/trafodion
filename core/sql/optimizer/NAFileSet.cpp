@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -50,7 +53,6 @@ NAFileSet::NAFileSet(const QualifiedName & fileSetName,
 		     Lng32 numberOfFiles,
 		     Cardinality estimatedNumberOfRecords,
 		     Lng32 recordLength,
-		     Lng32 lockLength,
 		     Lng32 blockSize,
 		     Int32 indexLevels,
 		     const NAColumnArray & allColumns,
@@ -73,6 +75,7 @@ NAFileSet::NAFileSet(const QualifiedName & fileSetName,
                      Lng32 fileCode,
 		     NABoolean isVolatile,
 		     NABoolean inMemObjectDefn,
+                     Int64 indexUID,
                      desc_struct *keysDesc,
                      HHDFSTableStats *hHDFSTableStats,
                      Lng32 numSaltPartns,
@@ -86,7 +89,6 @@ NAFileSet::NAFileSet(const QualifiedName & fileSetName,
            countOfFiles_(numberOfFiles),
 	   estimatedNumberOfRecords_(estimatedNumberOfRecords),
 	   recordLength_(recordLength),
-	   lockLength_(lockLength),
 	   blockSize_(blockSize),
 	   indexLevels_(indexLevels),
            allColumns_(allColumns, h), 
@@ -108,9 +110,11 @@ NAFileSet::NAFileSet(const QualifiedName & fileSetName,
            resetAfterStatement_(FALSE),
 	   bitFlags_(0),
 	   keyLength_(0),
+	   encodedKeyLength_(0),
            thisRemoteIndexGone_(FALSE),
            isDecoupledRangePartitioned_(isDecoupledRangePartitioned),
            fileCode_(fileCode),
+           indexUID_(indexUID),
            keysDesc_(keysDesc),
            hHDFSTableStats_(hHDFSTableStats),
            numSaltPartns_(numSaltPartns),
@@ -158,6 +162,18 @@ Lng32 NAFileSet::getKeyLength()
 		keyLength_ += indexKeyColumns_[i]->getType()->getTotalSize();
 	}
 	return keyLength_;
+}
+
+// returns the length of the encoded key in bytes for this index
+Lng32 NAFileSet::getEncodedKeyLength()
+{
+	if(encodedKeyLength_ >0) return encodedKeyLength_;
+
+	for(CollIndex i=0;i<indexKeyColumns_.entries();i++)
+	{
+		encodedKeyLength_ += indexKeyColumns_[i]->getType()->getEncodedKeyLength();
+	}
+	return encodedKeyLength_;
 }
 
 Lng32 NAFileSet::getCountOfPartitions() const
@@ -358,4 +374,18 @@ const QualifiedName& NAFileSet::getRandomPartition() const
   QualifiedName *partQName = 
     new (STMTHEAP) QualifiedName(nme->getPartitionName(), 3, STMTHEAP, NULL);
   return *partQName;
+}
+
+NAString NAFileSet::getBestPartitioningKeyColumns(char separator) const
+{
+   const NAColumnArray & partKeyCols = getPartitioningKeyColumns();
+
+   if ( partKeyCols.entries() > 0 ) {
+      return partKeyCols.getColumnNamesAsString(separator);
+   } else {
+      const NAColumnArray& allCols = getAllColumns();
+      UInt32 ct = allCols.entries();
+      if ( ct > 2 ) ct=2;
+      return allCols.getColumnNamesAsString(separator, ct);
+   }
 }

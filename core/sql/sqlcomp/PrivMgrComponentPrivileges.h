@@ -1,20 +1,23 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-//// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
-////
-////  Licensed under the Apache License, Version 2.0 (the "License");
-////  you may not use this file except in compliance with the License.
-////  You may obtain a copy of the License at
-////
-////      http://www.apache.org/licenses/LICENSE-2.0
-////
-////  Unless required by applicable law or agreed to in writing, software
-////  distributed under the License is distributed on an "AS IS" BASIS,
-////  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-////  See the License for the specific language governing permissions and
-////  limitations under the License.
-////
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
 //// @@@ END COPYRIGHT @@@
 //*****************************************************************************
 
@@ -77,6 +80,12 @@ public:
       
    int64_t getCount();
      
+   void getSQLDMLPrivileges(
+      const int32_t                granteeID,
+      const std::vector<int32_t> & roleIDs,
+      PrivObjectBitmap           & DMLBitmap,
+      bool                       & hasManagePrivileges);
+      
    PrivStatus grantPrivilege(
       const std::string & componentName,
       const std::vector<std::string> & operations,
@@ -93,7 +102,8 @@ public:
       const std::string & grantorName,
       const int32_t granteeID,
       const std::string & granteeName,
-      const int32_t grantDepth);
+      const int32_t grantDepth,
+      const bool checkExistence);
       
    PrivStatus grantPrivilegeToCreator(
       const int64_t componentUID,

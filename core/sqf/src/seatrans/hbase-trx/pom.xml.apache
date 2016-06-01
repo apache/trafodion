@@ -19,36 +19,7 @@
  * limitations under the License.
  */
 -->
-<!--
-  <parent>
-    <artifactId>hbase</artifactId>
-    <groupId>org.apache.hbase</groupId>
-    <version>0.98.3</version>
-    <relativePath>..</relativePath>
-  </parent>
--->
-<!--
-<repositories>
-    <repository>
-      <releases>
-        <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
-        <checksumPolicy>warn</checksumPolicy>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-        <updatePolicy>never</updatePolicy>
-        <checksumPolicy>fail</checksumPolicy>
-      </snapshots>
-      <id>HDPReleases</id>
-      <name>HDP Releases</name>
-      <url>http://repo.hortonworks.com/content/repositories/releases/</url>
-      <layout>default</layout>
-    </repository>
-  </repositories> 
--->
-
-<repositories>
+  <repositories>
     <repository>
       <id>Apache</id>
       <url>http://mvnrepository.com/artifact/</url>
@@ -58,23 +29,20 @@
 
   <properties>
     <hadoop.version>2.4.0</hadoop.version>
-    <hbase.version>0.98.4-hadoop2</hbase.version>
-    <!--<hbase.version>0.98.0.2.1.4.0-632-hadoop2</hbase.version>-->
-    <!--<hbase.version>0.98.3-hadoop2</hbase.version>-->
-    <!--<hbase.version>0.98.3-hadoop1</hbase.version>-->
+    <hbase.version>${env.HBASE_DEP_VER_APACHE}</hbase.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <protobuf.version>2.5.0</protobuf.version>                                                                                              
+    <protocVersion>2.5.0</protocVersion>                                                                                                    
     <java.version>1.7</java.version>
     <trx-suffix>apache</trx-suffix>
   </properties>
 
-
   <groupId>org.apache</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>hbase-trx-hbase_98_4</artifactId>
+  <artifactId>hbase-trx-apache1_0_2</artifactId>
   <version>${env.TRAFODION_VER}</version>
   <name>HBase - Trx</name>
   <description>Trx of HBase usage</description>
-
 
   <build>
     <defaultGoal>package</defaultGoal>
@@ -147,6 +115,11 @@
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-thrift</artifactId>
+      <version>${hbase.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-annotations</artifactId>
       <version>${hbase.version}</version>
     </dependency>
     <dependency>
@@ -338,6 +311,8 @@ if we can combine these profiles somehow -->
                   <goal>protoc</goal>
                 </goals>
                 <configuration>
+                  <protobuf.version>2.5.0</protobuf.version>
+                  <protocVersion>2.5.0</protocVersion>
                   <imports>
                     <param>${basedir}/src/main/protobuf</param>
                     <param>${basedir}/hbase-protocol/src/main/protobuf</param>

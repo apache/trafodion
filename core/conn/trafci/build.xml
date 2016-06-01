@@ -2,19 +2,22 @@
 
 <!-- @@@ START COPYRIGHT @@@                                                 -->
 <!--                                                                         -->
-<!-- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.       -->
+<!-- Licensed to the Apache Software Foundation (ASF) under one              -->
+<!-- or more contributor license agreements.  See the NOTICE file            -->
+<!-- distributed with this work for additional information                   -->
+<!-- regarding copyright ownership.  The ASF licenses this file              -->
+<!-- to you under the Apache License, Version 2.0 (the                       -->
+<!-- "License"); you may not use this file except in compliance              -->
+<!-- with the License.  You may obtain a copy of the License at              -->
 <!--                                                                         -->
-<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
-<!-- you may not use this file except in compliance with the License.        -->
-<!-- You may obtain a copy of the License at                                 -->
+<!--   http://www.apache.org/licenses/LICENSE-2.0                            -->
 <!--                                                                         -->
-<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
-<!--                                                                         -->
-<!-- Unless required by applicable law or agreed to in writing, software     -->
-<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
-<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
-<!-- See the License for the specific language governing permissions and     -->
-<!-- limitations under the License.                                          -->
+<!-- Unless required by applicable law or agreed to in writing,              -->
+<!-- software distributed under the License is distributed on an             -->
+<!-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY                  -->
+<!-- KIND, either express or implied.  See the License for the               -->
+<!-- specific language governing permissions and limitations                 -->
+<!-- under the License.                                                      -->
 <!--                                                                         -->
 <!-- @@@ END COPYRIGHT @@@                                                   -->
 
@@ -29,9 +32,10 @@
     </exec>
     <property file="buildId"/>
 
+    <property environment="my_env"/>
     <property name="source.version" value="1.7" />
     <property id="base.dir" name="base.dir" value="."/>
-    <property name="jdbcT4" value="${base.dir}/../../sqf/export/lib/jdbcT4.jar"/>
+    <property name="jdbcT4" value="${base.dir}/../../sqf/export/lib/jdbcT4-${my_env.TRAFODION_VER}.jar"/>
     <property name="platform-install.dir" value="${base.dir}/../../sqf/trafci"/>
     <property name="temp.dir" value="${base.dir}/temp"/>
     <property name="tempsrc.dir" value="${temp.dir}/src"/>
@@ -61,13 +65,21 @@
     <property name="tar.file" value="trafci.tar" />
     <property name="installer.zipfile" value="trafci.zip" />
     <property name="vproc.version" value="TrafCI_Build_${bldId}"/>
+
+    <target name="ProductVersion">
+       <echo>
+         ${my_env.TRAFODION_VER_PROD}
+         ${my_env.PRODUCT_COPYRIGHT_HEADER}
+       </echo>
+    </target>
  
-    <target name="clean">
+    <target name="clean" depends="ProductVersion">
        <delete dir="${temp.dir}"/>
        <delete dir="${platform-install.dir}"/>
+       <delete file="${utils.dir}/trafci.cmd"/> 
     </target>
 
-    <target name="init" depends="clean">
+    <target name="init">
        <mkdir dir="${temp.dir}"/>
        <mkdir dir="${tempsrc.dir}"/>
        <mkdir dir="${tempinstall.dir}"/>
@@ -101,7 +113,7 @@
 
     </target>
 
-    <target name="build" depends="compile"> 
+    <target name="build" depends="compile, ProductVersion"> 
       <copy todir="${Properties.dest}">
          <fileset dir="${Properties.src}"/>
       </copy>
@@ -128,9 +140,26 @@
     </target>
 
     <target name="deploy" depends="build">
-       <copy todir="${deploy.dir}/bin">
-           <fileset dir="${utils.dir}" excludes="**/*.contrib*, ciencr.sh, onplatform.sh, README, trafci_install.sh"/>
+
+       <copy file="${utils.dir}/trafci.cmd-tmpl"
+           tofile="${utils.dir}/trafci.cmd"
+           overwrite="true">
+       </copy>
+       <copy file="${utils.dir}/trafci.sh-tmpl"
+           tofile="${utils.dir}/trafci.sh"
+           overwrite="true">
+       </copy>
+    	
+
+       <replace file="${utils.dir}/trafci.cmd" token="@prodver@" value="${my_env.TRAFODION_VER_PROD}"/>
+       <replace file="${utils.dir}/trafci.cmd" token="@copyrighthdr@" value="${my_env.PRODUCT_COPYRIGHT_HEADER}"/>
+       <replace file="${utils.dir}/trafci.sh" token="##prodver##" value="${my_env.TRAFODION_VER_PROD}"/>
+       <replace file="${utils.dir}/trafci.sh" token="##copyrighthdr##" value="${my_env.PRODUCT_COPYRIGHT_HEADER}"/>
+
+      <copy todir="${deploy.dir}/bin">
+           <fileset dir="${utils.dir}" excludes="**/*.contrib*, ciencr.sh, onplatform.sh, README, trafci_install.sh, *-tmpl"/>
       </copy>
+
       <copy todir="${deploy.dir}/lib">
            <fileset dir="${lib.dir}" excludes="**/*.contrib*, *.db, **/*.db"/>
       </copy>
@@ -139,9 +168,9 @@
            <fileset dir="${samples.dir}" excludes="**/*.contrib*, *.db"/>
       </copy>
 
-      <jar destfile="${deploy.dir}/${installer.file}">
+      <jar destfile="${deploy.dir}/${installer.file}" update="true">
             <fileset dir="${installclasses.dir}" />
-            <fileset dir="${deploy.dir}" excludes="ciencr.sh, onplatform.sh" />
+            <fileset dir="${deploy.dir}" excludes="ciencr.sh, onplatform.sh ${installer.file}" />
             <manifest>
                <attribute name="Main-Class" value="Installer" />
             </manifest>
@@ -151,7 +180,7 @@
 
       <tar destfile="${deploy.dir}/${tar.file}" basedir="${deploy.dir}" includes="*.jar,README">
       </tar> 
-      <zip destfile="${client.dir}/${installer.zipfile}" basedir="${deploy.dir}" includes="*.jar,README"/>
+      <zip destfile="${client.dir}/${installer.zipfile}" basedir="${deploy.dir}" includes="*.jar,README" update="yes"/>
     </target>
     <target name="dist" depends="deploy">
       <exec dir="${utils.dir}" executable="sh">

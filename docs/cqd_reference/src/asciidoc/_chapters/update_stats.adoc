@@ -1,0 +1,115 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+[[update-statistics-and-reorg]]
+= Update Statistics and Reorg
+
+[[ustat-max-read-age-in-min]]
+== USTAT_MAX_READ_AGE_IN_MIN
+
+[cols="25%h,75%"]
+|===
+| *Description*               | When performing update statistics with the NECESSARY keyword or with automation, this is
+the number of minutes that are allowed to have elapsed since a histogram was marked as read for it to be regenerated. +
+ +
+Histograms that were marked more than USTAT_MAX_READ_AGE_IN_MIN minutes ago are not regenerated.
+| *Values*                    | 0 through max unsigned integer. +
+ +
+Setting this CQD to a value less than 2 * USTAT_AUTOMATION_INTERVAL is silently ignored and
+2 * USTAT_AUTOMATION_INTERVAL (default value of 2880) is used. +
+ +
+The default value is 5760 (4 days).
+| *Usage*                     | Influences how frequently the histograms for a table are regenerated.
+If a table is being used frequently, then chances are that its histograms are also be considered for update frequently.
+However, if a table is not used frequently, then this CQD influences how frequently the histograms for that table are updated. +
+ +
+A smaller setting reduces the number of histograms being updated if there are many tables that have not been used within that interval.
+A larger setting updates histogram for many more tables that are not being accessed that often.
+| *Production Usage*          | Please contact {project-support}.
+| *Impact*                    | Influences the number of histograms that need to be regenerated and therefore the time it takes for
+update statistics automation to regenerate histograms for all the tables that so qualify.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | USTAT_AUTOMATION_INTERVAL sets a lower bound on this CQD. +
+ +
+It is influenced by USTAT_AUTO_READTIME_UPDATE_INTERVAL, which influences how often READ_TIME is updated for the histogram.
+This CQD qualifies the histogram to be regenerated; it is the maximum time since READ_TIME was updated. $$$
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | {project-name} 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[ustat-min-rowcount-for-sample]]
+== USTAT_MIN_ROWCOUNT_FOR_SAMPLE
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Sets the minimum rows that need to be in a table before sampling is used to update statistics for that table.
+If a table has a fewer rows than the value of this CQD, then the SAMPLE option is silently ignored when performing update statistics.
+| *Values*                    | 1 through max unsigned integer. +
+ +
+The default value is 10000.
+| *Usage*                     | Influences for what tables sampling is used for histogram statistics generation. If the setting is smaller,
+then more tables qualify for sampling. If the setting is larger, then fewer tables qualify for sampling. Sampling can result in faster update
+statistics run times. But for smaller tables, it can also result in poor histogram accuracy which could result in poor query plans. 
+| *Production Usage*          | Please contact {project-support}.
+| *Impact*                    | Setting this CQD to a smaller value means that sampling is used for tables with fewer rows, when the SAMPLE option is
+specified as part of update statistics. This can result in less accurate histograms and poor query plans, because the sample size may be too small to
+generate good estimates for histograms. +
+ +
+Setting this CQD to a larger value can result in sampling not being used for many tables and therefore longer update statistics run times.
+However, these tables may also have more accurate histograms.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | {project-name} 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[ustat-min-rowcount-for-low-sample]]
+== USTAT_MIN_ROWCOUNT_FOR_LOW_SAMPLE
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Defines the behavior of the UPDATE STATISTICS utility. It places a lower limit on the number of sample rows that will be used when sampling. +
+ +
+If the number of rows in the table is less than this value and sampling is used, then the sample size used will be that specified by
+the <<hist-default-sample-min,HIST_DEFAULT_SAMPLE_MIN>> CQD. (which defaults to 10,000).
+| *Values*                    | This CQD may take on any integer value greater than zero. +
+ +
+The default for this CQD is *1,000,000*.
+| *Usage*                     | Prevents accidental use of too-small samples when generating statistics on tables. If sample sizes are too small,
+then histogram statistics will be less accurate, leading to potentially less efficient query plans.
+| *Production Usage*          | Please contact {project-support}.
+| *Impact*                    | Setting this CQD to lower values may result in smaller sample sizes for small tables.
+This may slightly improve UPDATE STATISTICS run time, but at the cost of potentially less efficient queries.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | <<hist-default-sample-min,HIST_DEFAULT_SAMPLE_MIN>> effects the behavior of this CQD.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | {project-name} 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+

@@ -9,19 +9,22 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -216,8 +219,11 @@ void LmLanguageManagerJava::initialize(LmResult &result,
   bytesToUnicodeId_ =  unicodeToBytesId_ =
   utilityGetRSInfoId_ = utilityInitRSId_ =
   utilityGetT4RSInfoId_ = utilityInitT4RSId_ = utilityGetConnTypeId_ =
-  lmObjMethodInvokeClass_ = makeNewObjId_ = routineMethodInvokeId_ = routineReturnInfoClass_ =
-  returnInfoStatusField_ = returnInfoRIIField_ = returnInfoRPIField_ =
+  lmObjMethodInvokeClass_ = makeNewObjId_ = setRuntimeInfoId_ =
+  routineMethodInvokeId_ = routineReturnInfoClass_ =
+  returnInfoStatusField_ = returnInfoSQLStateField_ = returnInfoMessageField_ =
+  returnInfoRIIField_ = returnInfoRPIField_ =
+  udrClass_ = udrQueueStateField_ =
   rsCloseId_ = rsBeforeFirstId_ = rsNextId_ = rsWasNullId_ = rsGetWarningsId_ =
   rsGetShortId_ = rsGetIntId_ = rsGetLongId_ = rsGetFloatId_ =
   rsGetDoubleId_ = rsGetStringId_ = rsGetObjectId_ = rsGetBigDecimalId_ =
@@ -626,12 +632,17 @@ void LmLanguageManagerJava::initialize(LmResult &result,
         "makeNewObj",
         "(Lorg/trafodion/sql/udr/UDR;[B[B)Lorg/trafodion/sql/udr/LmUDRObjMethodInvoke;");
 
+      setRuntimeInfoId_ = jni->GetMethodID((jclass) lmObjMethodInvokeClass_,
+        "setRuntimeInfo",
+        "(Ljava/lang/String;II)V");
+
       routineMethodInvokeId_ = jni->GetMethodID((jclass) lmObjMethodInvokeClass_,
         "invokeRoutineMethod",
-        "(I[B[BI)Lorg/trafodion/sql/udr/LmUDRObjMethodInvoke$ReturnInfo;");
+        "(I[B[BI[B)Lorg/trafodion/sql/udr/LmUDRObjMethodInvoke$ReturnInfo;");
 
       if (jni->ExceptionOccurred() ||
           makeNewObjId_ == NULL ||
+          setRuntimeInfoId_ == NULL ||
           routineMethodInvokeId_ == NULL)
       {
         exceptionReporter_->insertDiags(diagsArea_,
@@ -663,6 +674,14 @@ void LmLanguageManagerJava::initialize(LmResult &result,
            (jclass) routineReturnInfoClass_,
            "returnStatus_",
            "I");
+      returnInfoSQLStateField_ = jni->GetFieldID(
+           (jclass) routineReturnInfoClass_,
+           "returnedSQLState_",
+           "Ljava/lang/String;");
+      returnInfoMessageField_ = jni->GetFieldID(
+           (jclass) routineReturnInfoClass_,
+           "returnedMessage_",
+           "Ljava/lang/String;");
       returnInfoRIIField_ = jni->GetFieldID(
            (jclass) routineReturnInfoClass_,
            "returnedInvocationInfo_",
@@ -674,6 +693,8 @@ void LmLanguageManagerJava::initialize(LmResult &result,
 
       if (jni->ExceptionOccurred() ||
           returnInfoStatusField_ == NULL ||
+          returnInfoSQLStateField_ == NULL ||
+          returnInfoMessageField_ == NULL ||
           returnInfoRIIField_ == NULL ||
           returnInfoRPIField_ == NULL)
       {
@@ -690,6 +711,53 @@ void LmLanguageManagerJava::initialize(LmResult &result,
     exceptionReporter_->insertDiags(diagsArea_,
                                     -LME_JVM_SYS_CLASS_ERROR,
                                     "org.trafodion.sql.udr.LmUDRObjMethodInvoke$ReturnInfo");
+    result = LM_ERR;
+    return;
+  }
+
+  jc = (jclass) jni->FindClass("org/trafodion/sql/udr/UDR");
+  if (jc)
+  {
+    udrClass_ = (jclass) jni->NewGlobalRef(jc);
+    jni->DeleteLocalRef(jc);
+  }
+  else
+  {
+    exceptionReporter_->insertDiags(diagsArea_,
+                                    -LME_JVM_SYS_CLASS_ERROR,
+                                    "org.trafodion.sql.udr.UDR");
+    result = LM_ERR;
+    return;
+  }
+
+  // this class is used in JNI calls from Java UDRs to C++ code that
+  // gets and emits rows
+  jc = (jclass) jni->FindClass("org/trafodion/sql/udr/UDR$QueueStateInfo");
+  if (jc)
+  {
+    udrQueueStateField_ = jni->GetFieldID(
+         jc,
+         "queueState_",
+         "I");
+
+    if (jni->ExceptionOccurred() ||
+        udrQueueStateField_ == NULL)
+      {
+        exceptionReporter_->insertDiags(diagsArea_,
+                                        -LME_JVM_SYS_CLASS_ERROR,
+                                        "org/trafodion/sql/udr/UDR$QueueStateInfo");
+        result = LM_ERR;
+        jni->DeleteLocalRef(jc);
+        return;
+      }
+
+    jni->DeleteLocalRef(jc);
+  }
+  else
+  {
+    exceptionReporter_->insertDiags(diagsArea_,
+                                    -LME_JVM_SYS_CLASS_ERROR,
+                                    "org/trafodion/sql/udr/UDR$QueueStateInfo");
     result = LM_ERR;
     return;
   }
@@ -1926,7 +1994,7 @@ LmResult LmLanguageManagerJava::putRoutine(
   // Verify the specified handle.
   LmRoutineJava *h = (LmRoutineJava*)handle;
 
-  if (h == NULL || !h->isValid())
+  if (h == NULL)
   {
     *da << DgSqlCode(-LME_INTERNAL_ERROR)
         << DgString0(": Invalid Routine Handle.");
@@ -1988,54 +2056,80 @@ LmResult LmLanguageManagerJava::invokeRoutine(
   }
   LM_DEBUG_SIGNAL_HANDLERS("[SIGNAL] Restored Java signal handlers before entering Java in invokeRoutine");
 
-  LmParameter *lmParams = routine->getLmParams();
-
-  // Map the in-bound parameters from SQL to Java values.
-  result = processInParameters(routine, lmParams, inputRow, da);
-  if (result == LM_ERR)
-  {
-    processParametersDone(routine, lmParams);
-  }
-  else
-  {
-    // Before invoking method, make sure we don't have any pending exceptions.
-    if (jni->ExceptionOccurred() != NULL)
+  if (routine->getParamStyle() == COM_STYLE_JAVA_OBJ)
     {
-      exceptionReporter_->insertDiags(da,
-                                      -LME_INTERNAL_ERROR,
-                                      ": There is a pending exception.");
+      LmRoutineJavaObj *javaObjRoutine = static_cast<LmRoutineJavaObj *>(routine);
+      Int32 dummy1, dummy2;
 
-      processParametersDone(routine, lmParams);
-      result = LM_ERR;
-    }
-  }
+      // this path is only used for the run-time call, where we
+      // have already received the UDRInvocationInfo/UDRPlanInfo
+      result = javaObjRoutine->invokeRoutineMethod(
+           tmudr::UDRInvocationInfo::RUNTIME_WORK_CALL,
+           NULL,    // invocation info already there
+           0,
+           &dummy1, // expecting no updated invocation info
+           NULL,    // plan info is already there or not used
+           0,
+           -1,
+           &dummy2, // expecting no updated plan info
+           (char *) inputRow,
+           -1,      // use row length set earlier
+           (char *) outputRow,
+           -1,      // use row length set earlier
+           da);
+    } // Java object routine, used for TMUDFs
+  else
+    {
+      // this is a Java routine with Java parameters, used for SPJs
 
-  if (result != LM_ERR)
-  {
-    // Invoke the Java method.
-    routine->setDefaultCatSchFlag(setDefaultCatSchFlag_);
-    result = routine->invokeRoutine(inputRow, outputRow, da);
+      LmParameter *lmParams = routine->getLmParams();
 
-    // Handle any uncaught Java exceptions.
-    result = exceptionReporter_->processUserException(routine, da);
+      // Map the in-bound parameters from SQL to Java values.
+      result = processInParameters(routine, lmParams, inputRow, da);
+      if (result == LM_ERR)
+        {
+          processParametersDone(routine, lmParams);
+        }
+      else
+        {
+          // Before invoking method, make sure we don't have any pending exceptions.
+          if (jni->ExceptionOccurred() != NULL)
+            {
+              exceptionReporter_->insertDiags(da,
+                                              -LME_INTERNAL_ERROR,
+                                              ": There is a pending exception.");
 
-    NABoolean javaException = (result == LM_OK ? FALSE : TRUE);
+              processParametersDone(routine, lmParams);
+              result = LM_ERR;
+            }
+        }
+
+      if (result != LM_ERR)
+        {
+          // Invoke the Java method.
+          routine->setDefaultCatSchFlag(setDefaultCatSchFlag_);
+          result = routine->invokeRoutine(inputRow, outputRow, da);
+
+          // Handle any uncaught Java exceptions.
+          result = exceptionReporter_->processUserException(routine, da);
+
+          NABoolean javaException = (result == LM_OK ? FALSE : TRUE);
   
-    // If there are any uncaught Java exceptions then there may be 
-    // Java result set and connection objects created in the SPJ
-    // method that may still be valid and they need to be cleaned up.
-    // We need to call processOutParameters() even when exceptions
-    // are thrown so that we have the necessary LM objects created 
-    // which are required for the cleanup process.
+          // If there are any uncaught Java exceptions then there may be 
+          // Java result set and connection objects created in the SPJ
+          // method that may still be valid and they need to be cleaned up.
+          // We need to call processOutParameters() even when exceptions
+          // are thrown so that we have the necessary LM objects created 
+          // which are required for the cleanup process.
 
-    // Map the out-bound parameters from Java to SQL values.
-    result = processOutParameters(routine, lmParams, outputRow,
-                                  javaException, da);
+          // Map the out-bound parameters from Java to SQL values.
+          result = processOutParameters(routine, lmParams, outputRow,
+                                        javaException, da);
 
-
-    // De-ref any Java objects resulting from the type mappings.
-    processParametersDone(routine, lmParams);
-  }
+          // De-ref any Java objects resulting from the type mappings.
+          processParametersDone(routine, lmParams);
+        }
+    } // Java routine with Java parameters
 
   status = lmRestoreUdrTrapSignalHandlers(TRUE);
   if (status != TRUE) {

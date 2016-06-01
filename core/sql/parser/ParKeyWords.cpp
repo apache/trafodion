@@ -2,19 +2,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -299,7 +302,6 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("DATE_TRUNC",         TOK_DATE_TRUNC,  NONRESTOKEN_),
   ParKeyWord("DATEDIFF",           TOK_DATEDIFF,    NONRESTOKEN_),
   ParKeyWord("DATE_SUB",           TOK_DATE_SUB,    NONRESTOKEN_),
-  ParKeyWord("DATEFMT_INTN",       TOK_DATEFMT_INTN, NONRESTOKEN_),
   ParKeyWord("DATEFORMAT",         TOK_DATEFORMAT,  NONRESTOKEN_),
   ParKeyWord("DATETIME",           TOK_DATETIME,    COMPAQ_|RESWORD_|MPWORD_),
   ParKeyWord("DATETIME_CODE",      TOK_DATETIME_CODE, NONRESTOKEN_),
@@ -600,7 +602,6 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("LOCATOR",            TOK_LOCATOR,     COMPAQ_|RESWORD_),
   ParKeyWord("LOCK",               TOK_LOCK,        FIRST_|NONRESTOKEN_),
   ParKeyWord("LOCKING",            TOK_LOCKING,     NONRESTOKEN_),
-  ParKeyWord("LOCKLENGTH",         TOK_LOCKLENGTH,  NONRESTOKEN_),
   ParKeyWord("LOCKONREFRESH",      TOK_LOCKONREFRESH, FLAGSNONE_),
   ParKeyWord("LOG",                TOK_LOG,         NONRESTOKEN_),
   ParKeyWord("LOG10",              TOK_LOG10,       NONRESTOKEN_),
@@ -618,6 +619,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("LZO",                TOK_LZO,         NONRESTOKEN_),
   ParKeyWord("M",                  TOK_M,           NONRESTOKEN_),
   ParKeyWord("MAINTAIN",           TOK_MAINTAIN,    SECOND_|COMPAQ_|RESWORD_),
+  ParKeyWord("MANAGEMENT",         TOK_MANAGEMENT,  NONRESTOKEN_),
   ParKeyWord("MANUAL",             TOK_MANUAL,      FLAGSNONE_),
   ParKeyWord("MAP",                TOK_MAP,         COMPAQ_|RESWORD_),
   ParKeyWord("MASTER",             TOK_MASTER,      NONRESTOKEN_),
@@ -720,7 +722,6 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("OFF",                TOK_OFF,         POTANS_|RESWORD_),
   ParKeyWord("OFFLINE",            TOK_OFFLINE,     NONRESTOKEN_),
   ParKeyWord("OFFSET",             TOK_OFFSET,      NONRESTOKEN_),
-  ParKeyWord("OID",                IDENTIFIER,      POTANS_|RESWORD_),
   ParKeyWord("OJ",                 TOK_OJ,          NONRESTOKEN_),
   ParKeyWord("OLD",                TOK_OLD,         ANS_|RESWORD_|NONRESTOKEN_|ALLOWOLDNEW_),
   ParKeyWord("ON",                 TOK_ON,          FIRST_|ANS_|RESWORD_|MPWORD_),
@@ -856,6 +857,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("REFERENCES",         TOK_REFERENCES,  ANS_|RESWORD_),
   ParKeyWord("REFERENCING",        TOK_REFERENCING, ANS_|RESWORD_|NONRESTOKEN_),
   ParKeyWord("REFRESH",            TOK_REFRESH,     FLAGSNONE_),
+  ParKeyWord("REGION",             TOK_REGION,      NONRESTOKEN_),
   ParKeyWord("REGISTER",           TOK_REGISTER,    NONRESTOKEN_),
   ParKeyWord("REINITIALIZE",       TOK_REINITIALIZE, FIRST_|NONRESTOKEN_),
   ParKeyWord("RELATED",            TOK_RELATED,     NONRESTOKEN_),
@@ -1027,7 +1029,8 @@ ParKeyWord ParKeyWords::keyWords_[] = {
 // used in QAT tests
   ParKeyWord("STATEMENT",          TOK_STATEMENT,   NONRESTOKEN_),
   ParKeyWord("STATIC",             TOK_STATIC,      NONRESTOKEN_),
-  ParKeyWord("STATISTICS",         TOK_STATISTICS,  SECOND_|NONRESTOKEN_),
+  ParKeyWord("STATISTICS",         TOK_STATISTICS,  NONRESTOKEN_),
+  ParKeyWord("STATS",              TOK_STATS,       NONRESTOKEN_),
   ParKeyWord("STATUS",             TOK_STATUS,      NONRESTOKEN_),
   ParKeyWord("STDDEV",             TOK_STDDEV,      NONRESTOKEN_),
   ParKeyWord("STOP",               TOK_STOP,        NONRESTOKEN_),
@@ -1085,9 +1088,10 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("TO_CHAR",            TOK_TO_CHAR,     NONRESTOKEN_),
   ParKeyWord("TO_DATE",            TOK_TO_DATE,     NONRESTOKEN_),
   ParKeyWord("TO_NUMBER",          TOK_TO_NUMBER,   NONRESTOKEN_),
-  ParKeyWord("TO_TIMESTAMP",          TOK_TO_TIMESTAMP,   NONRESTOKEN_),
+  ParKeyWord("TO_TIME",            TOK_TO_TIME,   NONRESTOKEN_),
+  ParKeyWord("TO_TIMESTAMP",       TOK_TO_TIMESTAMP,   NONRESTOKEN_),
   ParKeyWord("TOKENSTR",           TOK_TOKENSTR,    NONRESTOKEN_),
-  ParKeyWord("TRAFODION",             TOK_TRAFODION,    NONRESTOKEN_),
+  ParKeyWord("TRAFODION",          TOK_TRAFODION,    NONRESTOKEN_),
   ParKeyWord("TRAILING",           TOK_TRAILING,    ANS_|RESWORD_|MPWORD_),
   ParKeyWord("TRANSACTION",        TOK_TRANSACTION, ANS_|RESWORD_),
   ParKeyWord("TRANSFORM",          TOK_TRANSFORM,   NONRESTOKEN_),

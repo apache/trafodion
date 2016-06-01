@@ -2,23 +2,25 @@
 #
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 #
-require "ctime.pl";
 use sqnodes;
 use POSIX;
 use DBI;
@@ -142,6 +144,10 @@ my $DBH = 0;
 # instance type
 my $instanceType = "";
 
+sub getTime {
+    return strftime("%a %b %d %H:%M:%S %Y\n", localtime(time));
+}
+
 sub printScript {
     ($dWhich, @rest) = @_;
 
@@ -196,7 +202,7 @@ sub printRMSCheckScript{
 }
 
 sub printTime {
-    printScript(1, "# Trafodion Startup script generated @ ",&ctime(time),"\n");
+    printScript(1, "# Trafodion Startup script generated @ ",getTime(),"\n");
 }
 
 sub validate_config_script {
@@ -477,6 +483,7 @@ sub genComponentWait {
 }
 
 
+
 sub genIdTmSrv {
     if ($SQ_IDTMSRV > 0) {
         my $l_pn = "";
@@ -553,6 +560,24 @@ sub genDTM {
     printScript(1, "sqr_stat=\$\?\n");
     printScript(1, "done\n");
     printScript(1, "echo \"The Transaction Service is Ready.\"\n");
+}
+sub genLOBConfig {
+
+    # Generate sqconfig.db config for LOB.
+    # This allows the process startup daemon (pstartd)
+    # to start it up after a node failure.
+    for ($i=0; $i < $gdNumNodes; $i++) {
+	my $l_progname="mxlobsrvr";
+	my $l_procargs="";
+	my $l_procname="\$ZLOBSRV$i";
+	my $l_procname_config = sprintf('$ZLOBSRV%d', $i);
+	my $l_stdout="stdout_\$ZLOBSRV_$i";
+	addDbProcData($l_procname_config, "PERSIST_RETRIES", "10,60");
+	addDbProcData($l_procname_config, "PERSIST_ZONES", $i);
+	addDbPersistProc($l_procname_config, $i, 1);
+	addDbProcDef( $ProcessType_Generic, $l_procname_config, $i, $l_progname, $l_stdout, $l_procargs);
+    }
+
 }
 
 sub genSSMPCommand {
@@ -639,30 +664,30 @@ sub generateRMS {
     
     #generate rmsstart and rmsstop scripts
     printRMSScript(0, "#!/bin/sh\n");
-    printRMSScript(0, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSScript(0, "# SQ config/utility file generated @ ",getTime(),"\n");
     printRMSScript(0, "\n# Start the RMS processes\n");
     printRMSScript(0, "sscpstart\n");
     printRMSScript(0, "ssmpstart\n");
 
     printRMSStopScript(0, "#!/bin/sh\n");
-    printRMSStopScript(0, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSStopScript(0, "# SQ config/utility file generated @ ",getTime(),"\n");
     printRMSStopScript(0, "\n# Stop the RMS processes\n");
     printRMSStopScript(0, "ssmpstop\n");
     printRMSStopScript(0, "sscpstop\n");
 
     #generate ssmpstart, ssmpstop, sscpstart, sscpstop scripts
     printRMSScript(1, "#!/bin/sh\n");
-    printRMSScript(1, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSScript(1, "# SQ config/utility file generated @ ",getTime(),"\n");
     printRMSScript(2, "\n# Start the SSMP processes\n");
     printRMSScript(3, "\n# Start the SSCP processes\n");
 
     printRMSStopScript(1, "#!/bin/sh\n");
-    printRMSStopScript(1, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSStopScript(1, "# SQ config/utility file generated @ ",getTime(),"\n");
     printRMSStopScript(1, "sqshell -a << eof\n"); 
     printRMSStopScript(2, "\n!Stop the SSMP processes\n");
     printRMSStopScript(3, "\n!Stop the SSCP processes\n");
 
-    printRMSCheckScript(1, "-- SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSCheckScript(1, "-- SQ config/utility file generated @ ",getTime(),"\n");
     printRMSCheckScript(1, "prepare rms_check from select current_timestamp, \n");
     printRMSCheckScript(1, "cast('Node' as varchar(5)), \n");
     printRMSCheckScript(1, "cast(tokenstr('nodeId:', variable_info) as varchar(3)) node, \n");
@@ -1007,7 +1032,7 @@ sub printInitLinesAuxFiles {
     my $file_ptr  = @_[0];
 
     print $file_ptr "#!/bin/sh\n";
-    print $file_ptr "# SQ config/utility file generated @ ", &ctime(time), "\n";
+    print $file_ptr "# SQ config/utility file generated @ ", getTime(), "\n";
 }
 
 sub openFiles {
@@ -1416,7 +1441,7 @@ while (<SRC>) {
 
 
     genIdTmSrv();
-
+    genLOBConfig();
     genDTM();
 
     generateRMS();

@@ -2,19 +2,22 @@
 
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //
@@ -86,7 +89,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_TABLE_ALREADY_EXISTS                      = 1055
                   , CAT_UNABLE_TO_ALTER_VIEW                      = 1056
                   , CAT_LOCATION_NO_GOOD                          = 1057
-                  , CAT_LOCK_ALREADY_EXISTS                       = 1058
+                  , CAT_HISTOGRAM_TABLE_NOT_CREATED               = 1058
                   , CAT_DEPENDENT_CONSTRAINT_EXISTS               = 1059
                   , CAT_VIEW_INVALID                              = 1060
                   , CAT_USER_CANNOT_DROP_SMD_CATALOG              = 1061
@@ -101,7 +104,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_CREATE_OBJECT_ERROR                       = 1070
                   , CAT_UNABLE_TO_ACCESS_OBJECT                   = 1071
                   , CAT_REFERENCED_UNIQUE_CONSTRAINT_IS_DISABLED  = 1072
-                  , CAT_ONLY_SUPER_ID_CAN_INITIALIZE_SQL          = 1073
+                  , CAT_ATTEMPT_CLEANUP_SCHEMA                    = 1073
                   , CAT_UNABLE_TO_CREATE_SYNONYM                  = 1074
                   , CAT_CATALOG_IS_NOT_EMPTY                      = 1075
                   , CAT_UNABLE_TO_GRANT                           = 1076
@@ -128,7 +131,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_PARTITION_KEY_NOT_EXIST                   = 1097
                   , CAT_PARTITION_KEY_DUPLICATED                  = 1098
                   , CAT_VIEW_COLUMN_UNNAMED                       = 1099
-                  , CAT_SMDIO_SELECT_ERROR                        = 1100
+		  , CAT_LOB_COLUMN_ALTER                          = 1100
                   , CAT_SMDIO_UPDATE_ERROR                        = 1101
                   , CAT_SMDIO_INSERT_ERROR                        = 1102
                   , CAT_SMDIO_DELETE_ERROR                        = 1103
@@ -159,7 +162,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_WRONG_API_REQUEST                         = 1128
                   , CAT_OPERATION_NOT_ALLOWED_ON_VP_TABLE         = 1129
                   , CAT_DEFAULT_REQUIRED                          = 1130
-                  , CAT_CANNOT_ADD_COL_TO_ENTRY_SEQ_TABLE         = 1131
+                  , CAT_EXTERNAL_TABLE_EXISTS                     = 1131
                   , CAT_CANNOT_BE_DEFAULT_NULL_AND_NOT_NULL       = 1132
                   , CAT_ONLY_SUPER_CAN_DO_THIS                    = 1133
                   , CAT_LIST_OF_LOCKS_EXIST                       = 1134
@@ -211,8 +214,8 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   //
                   // 1150-1180  Queuing and publish/subscribe errors
                   //
-                  , CAT_SUBVOLUME_MISMATCH                        = 1180
-                  , CAT_DROP_LABEL_ERROR                          = 1181
+                  , CAT_EXTERNAL_NAME_MISMATCH                    = 1180
+                  , CAT_EXTERNAL_SCHEMA_NAME_TOO_LONG             = 1181
                   , CAT_RFORK_SQL_ERROR                           = 1182
                   , CAT_METADATA_SQL_ERROR                        = 1183
                   , CAT_INSUFFICIENT_PRIV_ON_COLUMN               = 1184
@@ -270,6 +273,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_ALL_SCHEMAS_OP_IN_PROGRESS                = 1278
                   , CAT_VOLATILE_OPERATION_ON_REGULAR_OBJECT      = 1279
                   , CAT_REGULAR_OPERATION_ON_VOLATILE_OBJECT      = 1280
+		  , CAT_LOB_COLUMN_IN_VOLATILE_TABLE              = 1282
                   , CAT_NOT_DROPPABLE_TABLE                       = 1284
                   , CAT_NOT_DROPPABLE_SCHEMA                      = 1285
                   , CAT_ONLY_SUPER_ID_CAN_INITIALIZE_SECURITY     = 1287
@@ -415,7 +419,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_LDAP_DEFAULTCONFIG_INSERT_ERROR           = 1530
 
                   , CAT_NO_POPULATE_VOLATILE_INDEX                = 1540
-                  , CAT_LOB_COL_CANNOT_BE_KEY                     = 1541
+                  , CAT_LOB_COL_CANNOT_BE_INDEX_OR_KEY            = 1541
 
                   // Sequence Generator errors
                   , CAT_SG_MAXVALUE_MINVALUE_ERROR                = 1570

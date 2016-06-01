@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -746,6 +749,27 @@ Lng32 NAColumnArray::getOffset(Lng32 position) const
 
   return result;
 }
+
+ULng32 NAColumnArray::getMaxTrafHbaseColQualifier() const
+{
+  NAColumn *column;
+  char * colQualPtr;
+  Lng32 colQualLen;
+  Int64 colQVal;
+  ULng32 maxVal = 0;
+
+  for (CollIndex i = 0; i < entries(); i++)
+    {
+      column = (*this)[i];
+      colQualPtr = (char*)column->getHbaseColQual().data();
+      colQualLen = column->getHbaseColQual().length();
+      colQVal = str_atoi(colQualPtr, colQualLen);
+      if (colQVal > maxVal)
+	maxVal = colQVal ;
+    }
+  return maxVal;
+}
+
 // LCOV_EXCL_STOP
 
 //method to reset an NAColumn object after a statement
@@ -814,3 +838,27 @@ Int32 NAColumnArray::getColumnPosition(NAColumn& nc) const
   return -1;
 }
 
+NAString NAColumnArray::getColumnNamesAsString(char separator) const
+{
+   return getColumnNamesAsString(separator, entries());
+}
+
+NAString NAColumnArray::getColumnNamesAsString(char separator, UInt32 ct) const
+{
+  NAString nmList;
+
+  if ( ct == 0 )
+    return NAString();
+
+  if ( ct > entries() )
+    ct = entries();
+
+  for (CollIndex i = 0; i < ct-1; i++)
+  {
+     nmList += ToAnsiIdentifier(at(i)->getColName());
+     nmList += separator;
+  }
+     
+  nmList += ToAnsiIdentifier(at(ct-1)->getColName());
+  return nmList;
+}

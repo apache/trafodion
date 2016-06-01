@@ -1,19 +1,22 @@
 //******************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //******************************************************************************
@@ -150,6 +153,7 @@ enum ExeErrorCode
   EXE_IS_BITWISE_AND_ERROR		= 8431,
   EXE_UNSIGNED_OVERFLOW                 = 8432,
   EXE_INVALID_CHARACTER                 = 8433,
+  EXE_HIVE_DATA_MOD_CHECK_ERROR         = 8436,
   EXE_HISTORY_BUFFER_TOO_SMALL		= 8440,
   EXE_OLAP_OVERFLOW_NOT_SUPPORTED       = 8441,
   EXE_ERROR_FROM_LOB_INTERFACE          = 8442,
@@ -220,6 +224,7 @@ enum ExeErrorCode
   EXE_CANT_COMMIT_OR_ROLLBACK           = 8613,
   EXE_CANT_BEGIN_WITH_MULTIPLE_CONTEXTS = 8614,
   EXE_CANT_BEGIN_USER_TRANS_WITH_LRU    = 8615,
+  EXE_COMMIT_CONFLICT_FROM_TRANS_SUBSYS	= 8616,
   EXE_LAST_CONCURRENCY_CONTROL_ERROR	= 8629,
 
   //-------------------------------------------------------------

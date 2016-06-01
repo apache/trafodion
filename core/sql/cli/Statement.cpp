@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
  **********************************************************************/
@@ -1400,43 +1403,6 @@ RETCODE Statement::prepare(char *source, ComDiagsArea &diagsArea,
 			passed_gen_code, passed_gen_code_len,
 			charset, unpackTdbs, cliFlags);
 
-  if (rc == 0)
-    {
-      if ((NOT (cliFlags & PREPARE_AUTO_QUERY_RETRY)) &&
-	  (NOT (cliFlags & PREPARE_NO_TEXT_CACHE)) &&
-	  source &&
-	  (stmt_type == DYNAMIC_STMT) &&
-	  unpackTdbs &&
-	  root_tdb &&
-	  root_tdb->qCacheInfoIsClass() &&
-	  root_tdb->qcInfo() &&
-	  root_tdb->qcInfo()->cacheWasHit() &&
-	  (! root_tdb->getLateNameInfoList()->variablePresent()) &&
-	  //	  (! root_tdb->getUdrStoiList()) &&
-	  //	  (context_->getSessionDefaults()->aqr()) &&
-	  (root_tdb->aqrEnabled()) &&
-	  (context_->getNumOfCliCalls() == 1))
-	{
-	  rc = execute(cliGlobals_, NULL,
-		       diagsArea, INITIAL_STATE_,
-		       TRUE, cliFlags);
-	  if (rc == 0)
-	    {
-	      // if a Xn was started by exe, then
-	      // set an indication in aqr that it was started
-	      // during prepare. Used at statement dealloc time to commit
-	      // that xn, if autocommit is on and the Xn still exists.
-	      ExTransaction * exTransaction = context_->getTransaction();
-	      if ((exTransaction->xnInProgress()) &&
-		  (exTransaction->exeStartedXn()) &&
-		  (exTransaction->implicitXn()))
-		context_->aqrInfo()->setXnStartedAtPrepare(TRUE);
-	      else
-		context_->aqrInfo()->setXnStartedAtPrepare(FALSE);
-	    }
-	}
-    }
-
   StmtDebug2("[END prepare] %p, result is %s", this, RetcodeToString(rc));
   return rc;
 }
@@ -1545,7 +1511,12 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
           if (embeddedArkcmpSetup == 0)           
             {
 	      context_->setEmbeddedArkcmpIsInitialized(TRUE);
-	  //    context_->setEmbeddedArkcmpContext(CmpCommon::context());
+              //    context_->setEmbeddedArkcmpContext(CmpCommon::context());
+            }
+          else if (embeddedArkcmpSetup == -2)
+            {
+              diagsArea << DgSqlCode(-2079);
+              return ERROR;
             }
           else
             {
@@ -1580,7 +1551,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
       
       SQLMXLoggingArea::logSQLMXAbortEvent("Statement.cpp",888, "testing abort event");
       SQLMXLoggingArea::logSQLMXAssertionFailureEvent("Statement.cpp",777,"testing assertion failure");
-      SQLMXLoggingArea::logSQLMXDebugEvent("debug event" ,69);
+      SQLMXLoggingArea::logSQLMXDebugEvent("debug event" ,69,__LINE__);
       
       SQLMXLoggingArea::logMVRefreshInfoEvent("mv refresh info");
       SQLMXLoggingArea::logMVRefreshErrorEvent("mv refresh error");
@@ -1901,7 +1872,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 	    }
 
 	} // while retry
-
+      context_->killIdleMxcmp();
       assignRootTdb((ex_root_tdb *)fetched_gen_code);
       root_tdb_size = (Lng32) fetched_gen_code_len;
     }
@@ -2007,11 +1978,12 @@ Lng32 Statement::unpackAndInit(ComDiagsArea &diagsArea,
   SessionDefaults *sessionDefaults =
        context_->getSessionDefaults();
   if (statsGlobals != NULL && stmtStats_ != NULL && root_tdb != NULL 
-        && getUniqueStmtId() != NULL 
-        && sessionDefaults->isExplainInRMS())
+        && getUniqueStmtId() != NULL) 
   {
     ex_root_tdb *rootTdb = getRootTdb();
-    if (rootTdb->explainInRms() &&
+    //root_tdb is not unpacked for SHOWPLAN and 
+    // explain fragment can't be obtained for such prepared queries
+    if (!rootTdb->isPacked() && rootTdb->explainInRms() &&
         rootTdb->getFragDir()->getExplainFragDirEntry
                  (fragOffset, fragLen, topNodeOffset) == 0)
     {
@@ -6308,7 +6280,11 @@ short Statement::beginTransaction(ComDiagsArea &diagsArea)
   // will be updated for BEGIN WORK statements.
   updateTModeValues();
 
-  if (root_tdb->transactionReqd())
+  // implicit xns for ddl stmts will be started and committed/aborted
+  // in arkcmp if auto commit is on. Otherwise, it will be started here.
+  if ((root_tdb->transactionReqd()) &&
+      ((NOT root_tdb->ddlQuery()) ||
+       (NOT context_->getTransaction()->autoCommit())))
     {
       // the trans mode at compile time of this query must be the
       // same as the transaction mode at execution time.
@@ -6445,30 +6421,29 @@ short Statement::commitTransaction(ComDiagsArea &diagsArea)
 	  //	    waited = TRUE;
 	  short taRetcode = context_->commitTransaction(waited);
 	  
-      StmtDebug1("  Return code is %d", (Lng32) taRetcode);
+          StmtDebug1("  Return code is %d", (Lng32) taRetcode);
       
 	  setAutocommitXn(FALSE);
 
 	  if (taRetcode != 0)
 	    {
-        // If there are diagnostics in the statement globals then add
-        // them to the caller's diags area first. They may contain
-        // information about something that went wrong before the
-        // COMMIT was attempted. Then add information about the COMMIT
-        // failure that just occurred.
-        statementGlobals_->takeGlobalDiagsArea(diagsArea);
-        diagsArea.mergeAfter(*context_->getTransaction()->getDiagsArea());
-        return ERROR;
-      }
-      
-      StmtDebug0("  COMMIT was successful");
+              // If there are diagnostics in the statement globals then add
+              // them to the caller's diags area first. They may contain
+              // information about something that went wrong before the
+              // COMMIT was attempted. Then add information about the COMMIT
+              // failure that just occurred.
+              statementGlobals_->takeGlobalDiagsArea(diagsArea);
+              diagsArea.mergeAfter(*context_->getTransaction()->getDiagsArea());
+              return ERROR;
+            }
+          StmtDebug0("  COMMIT was successful");
+        }
     }
-  }
   else
-  {
-    StmtDebug0("  No AUTOCOMMIT transaction for this stmt");
+    {
+      StmtDebug0("  No AUTOCOMMIT transaction for this stmt");
     }
-
+  
   return 0;
 }
 

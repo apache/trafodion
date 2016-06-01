@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -159,7 +162,7 @@ short CmpSeabaseMDupgrade::dropMDtables(ExpHbaseInterface *ehi,
       hbaseTable.val = (char*)extNameForHbase.data();
       hbaseTable.len = extNameForHbase.length();
       
-      retcode = dropHbaseTable(ehi, &hbaseTable);
+      retcode = dropHbaseTable(ehi, &hbaseTable, FALSE, FALSE);
       if (retcode < 0)
 	{
 	  errcode = -1;
@@ -304,6 +307,7 @@ short CmpSeabaseDDL::isOldMetadataInitialized(ExpHbaseInterface * ehi)
 }
 
 short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
+                                                   NABoolean ddlXns,
 						   NAString &currCatName, NAString &currSchName)
 {
   Lng32 cliRC = 0;
@@ -1324,6 +1328,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		      if (dropSeabaseObject(ehi, mdti.oldName,
 					    catName, schName,
                                             objectType,
+                                            FALSE,
 					    TRUE, FALSE))
 			{
 			  deallocEHI(ehi); 
@@ -1369,7 +1374,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 
 		      if (dropSeabaseObject(ehi, oldViewName,
 					    catName, schName,
-					    COM_VIEW_OBJECT))
+					    COM_VIEW_OBJECT,
+                                            FALSE))
 			{
 			  deallocEHI(ehi); 
 
@@ -1543,7 +1549,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		      break;
 		    }
 		  
-		  cliRC = upgradePrivMgr(&cliInterface, privMgrDoneMsg);
+		  cliRC = upgradePrivMgr(&cliInterface, ddlXns, privMgrDoneMsg);
 		  if (cliRC != 0)
 		    {
 		      mdui->setStep(UPGRADE_FAILED);
@@ -1742,6 +1748,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		      if (dropSeabaseObject(ehi, mdti.oldName,
 					    catName, schName,
 					    (mdti.isIndex ? COM_INDEX_OBJECT : COM_BASE_TABLE_OBJECT),
+                                            FALSE,
 					    FALSE, TRUE))
 			{
 			  // ignore errors. Continue dropping old md tables.
@@ -2094,7 +2101,6 @@ short CmpSeabaseMDupgrade::customizeNewMDv23tov30(CmpDDLwithStatusInfo *mdui,
             NAString hbaseCreateOptions((char*)oi->get(1));
                
             Lng32 numSaltPartns = 0;
-            NAString newHbaseCreateOptions;
                
             // get num salt partns from hbaseCreateOptions.
             // It is stored as:  NUM_SALT_PARTNS=>NNNN
@@ -2111,10 +2117,6 @@ short CmpSeabaseMDupgrade::customizeNewMDv23tov30(CmpDDLwithStatusInfo *mdui,
                    
                 hbaseCreateOptions.remove(idx2, strlen("NUM_SALT_PARTNS=>")+4);
                 hbaseCreateOptions = hbaseCreateOptions.strip();
-                   
-                if (NOT hbaseCreateOptions.isNull())
-                  ToQuotedString(newHbaseCreateOptions, hbaseCreateOptions.data(), 
-                                 FALSE);
               }
                
             str_sprintf(buf, "update %s.\"%s\".%s set num_salt_partns = %d where table_uid = %Ld",
@@ -2136,11 +2138,11 @@ short CmpSeabaseMDupgrade::customizeNewMDv23tov30(CmpDDLwithStatusInfo *mdui,
                 return -1;
               }
                
-            if (NOT newHbaseCreateOptions.isNull())
+            if (NOT hbaseCreateOptions.isNull())
               {
                 if (updateTextTable(&cliInterface, tableUID, 
                                     COM_HBASE_OPTIONS_TEXT, 0,
-                                    newHbaseCreateOptions))
+                                    hbaseCreateOptions))
                   {
                     *CmpCommon::diags() << DgSqlCode(-1423)
                                         << DgString0(SEABASE_TABLES);
@@ -2428,13 +2430,15 @@ short CmpSeabaseMDupgrade::customizeNewMDv23tov30(CmpDDLwithStatusInfo *mdui,
 // ----------------------------------------------------------------------------
 short CmpSeabaseMDupgrade::upgradePrivMgr (
   ExeCliInterface *cliInterface, 
+  NABoolean ddlXns,
   NAString &privMgrDoneMsg)
 {
   std::vector<std::string> tablesCreated;
   std::vector<std::string> tablesUpgraded;
 
   // initSeabaseAuthorization will create or upgrade PrivMgr metadata tables
-  if (initSeabaseAuthorization(cliInterface, tablesCreated, tablesUpgraded) < 0)
+  if (initSeabaseAuthorization(cliInterface, ddlXns,
+                               tablesCreated, tablesUpgraded) < 0)
     return -1;
 
   // Report which tables were created and which were upgraded

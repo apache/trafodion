@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -44,7 +47,7 @@
 
 #define LOB_HANDLE_LEN 1024
 
-
+class ExLobInMemoryDescChunksEntry;
 ////////////////////////////////
 // class LOBglobals
 ////////////////////////////////
@@ -188,6 +191,7 @@ public:
   virtual unsigned char getClassVersionID()
   {
     return 1;
+
   }
 
   virtual void populateImageVersionIDArray()
@@ -222,22 +226,23 @@ public:
 					Int64 uid, Lng32 lobNum, 
 					char * outBuf, Lng32 outBufLen);
 
-  static char * ExpGetLOBHdrName(Lng32 schNameLen, char * schName, 
-				 Int64 uid, Lng32 lobNum, 
-				 char * outBuf, Lng32 outBufLen);
 
   static Lng32 ExpGetLOBnumFromDescName(char * descName, Lng32 descNameLen);
   
   static char * ExpGetLOBMDName(Lng32 schNameLen, char * schName,
 				Int64 uid,  
 				char * outBuf, Lng32 outBufLen);
+  static void calculateNewOffsets(ExLobInMemoryDescChunksEntry *dcArray, Lng32 numEntries);
+  static Lng32 compactLobDataFile(void *lobGlob, ExLobInMemoryDescChunksEntry *dcArray, Int32 numEntries, char *tgtLobName, Int64 lobMaxChunkSize, void *lobHeap,char *hdfsServer, Int32 hdfsPort,char *lobLocation);
+  static Int32 restoreLobDataFile(void *lobGlob, char *lobName, void *lobHeap, char *hdfsServer, Int32 hdfsPort,char *lobLocation );
+  static Int32 purgeBackupLobDataFile(void *lobGlob,char *lobName, void *lobHeap, char *hdfsServer, Int32 hdfsPort, char *lobLocation);
 
   static Lng32 createLOB(void * lobGlob, void * lobHeap,
-			 char * lobLoc,
-			 Int64 uid, Lng32 lobNum);
+			 char * lobLoc, Int32 hdfsPort, char *hdfsServer,
+			 Int64 uid, Lng32 lobNum, Int64 lobMAxSize);
 
   static Lng32 dropLOB(void * lobGlob, void * lobHeap, 
-		       char * lobLoc,
+		       char * lobLoc,Int32 hdfsPort, char *hdfsServer,
 		       Int64 uid, Lng32 lobNum);
 
   static Lng32 purgedataLOB(void * lobGlob, 
@@ -260,11 +265,11 @@ public:
 
   // Generates LOB handle that is stored in the SQL row.
   // LOB handle max len:  512 bytes
-  // <flags><LOBnum><objectUid><LOBlen><descKey><descTS><chunkNum><schNameLen><schName>
-  // <--4--><--4---><----8----><---8--><---8---><--8---><----2---><---2------><--vc--->
+  // <flags><LOBType><LOBnum><objectUid><LOBlen><descKey><descTS><chunkNum><schNameLen><schName>
+  // <--4--><--4----><--4---><----8----><---8--><---8---><--8---><----2---><---2------><--vc--->
   static void genLOBhandle(Int64 uid, 
 			   Lng32 lobNum,
-			   short lobType,
+			   Int32 lobType,
 			   Int64 descKey, 
 			   Int64 descTS,
 			   Lng32 flags,
@@ -274,7 +279,7 @@ public:
 			   char * ptr);
 
   static void updLOBhandle(Int64 descSyskey, 
-			   Lng32 flags,
+			   Lng32 flags,                       
 			   char * ptr);
 
   static Lng32 genLOBhandleFromHandleString(char * lobHandleString,
@@ -298,6 +303,16 @@ public:
   virtual Lng32 initClause();
   void setLobMaxSize(Int64 maxsize) { lobMaxSize_ = maxsize;}
   Int64 getLobMaxSize() { return lobMaxSize_;}
+  void setLobSize(Int64 lobsize) { lobSize_ = lobsize;}
+  Int64 getLobSize() { return lobSize_;}
+  void setLobMaxChunkMemSize(Int64 maxsize) { lobMaxChunkMemSize_ = maxsize;}
+  Int64 getLobMaxChunkMemSize() { return lobMaxChunkMemSize_;}
+  void setLobGCLimit(Int64 gclimit) { lobGCLimit_ = gclimit;}
+  Int64 getLobGCLimit() { return lobGCLimit_;}
+  void setLobHdfsServer(char *hdfsServer)
+  {strcpy(lobHdfsServer_,hdfsServer);}
+  void setLobHdfsPort(Int32 hdfsPort)
+  {lobHdfsPort_ = hdfsPort;}
  protected:
   typedef enum
   {
@@ -330,31 +345,27 @@ public:
   struct LOBHandle
   {
     
-    short flags_;
-    char  lobType_;
-    char  filler1_;
+    Int32 flags_;
+    Int32  lobType_;
     Lng32 lobNum_;
     Int64 objUID_;
-    //    Int64 lobLen_;
     Int64 descSyskey_;
     Int64 descPartnkey_;
-    char  filler_[30];
-    //    short numChunks_;
+    char  filler_[30];  
     short schNameLen_;
     char  schName_;
-    // char schName_[schNameLen_]
-    // short inlinedLOBlen_;
-    // char inlinedLOB_[inlinedLOBlen_]
+   
   };
 
   Lng32 checkLobOperStatus();
-
+  
 protected:
   char * descSchName() { return descSchName_; }
 
   char * getLobHdfsServer() { return (strlen(lobHdfsServer_) == 0 ? NULL : lobHdfsServer_); }
   Lng32 getLobHdfsPort() { return lobHdfsPort_; }
-      
+ 
+
   short flags_;      // 00-02
 
   short lobNum_;
@@ -370,7 +381,7 @@ protected:
   char lobHandleSaved_[LOB_HANDLE_LEN];
 
   char outLobHandle_[LOB_HANDLE_LEN];
-  Int64 outHandleLen_;
+  Int32 outHandleLen_;
 
   char blackBox_[1024];
   Int64 blackBoxLen_;
@@ -382,8 +393,10 @@ protected:
 
   short descSchNameLen_;
   char  descSchName_[510];
-  
+  Int64 lobSize_;
   Int64 lobMaxSize_;
+  Int64 lobMaxChunkMemSize_;
+  Int64 lobGCLimit_;
   //  NABasicPtr lobStorageLocation_;
 }
 ;
@@ -428,7 +441,15 @@ class ExpLOBiud : public ExpLOBoper {
   {
     (v) ? liudFlags_ |= FROM_STRING: liudFlags_ &= ~FROM_STRING;
   };
+  NA_EIDPROC NABoolean fromBuffer()
+  {
+    return ((liudFlags_ & FROM_BUFFER) != 0);
+  };
 
+  NA_EIDPROC inline void setFromBuffer(NABoolean v)
+  {
+    (v) ? liudFlags_ |= FROM_BUFFER: liudFlags_ &= ~FROM_BUFFER;
+  };
   NA_EIDPROC NABoolean fromFile()
   {
     return ((liudFlags_ & FROM_FILE) != 0);
@@ -468,6 +489,7 @@ class ExpLOBiud : public ExpLOBoper {
   {
     (v) ? liudFlags_ |= FROM_EXTERNAL: liudFlags_ &= ~FROM_EXTERNAL;
   };
+  
 
  protected:
   Int64 objectUID_;
@@ -479,7 +501,8 @@ class ExpLOBiud : public ExpLOBoper {
     FROM_FILE          = 0x0004,
     FROM_LOAD          = 0x0008,
     FROM_LOB           = 0x0010,
-    FROM_EXTERNAL      = 0x0020
+    FROM_EXTERNAL      = 0x0020,
+    FROM_BUFFER        = 0x0040
   };
 
   Lng32 liudFlags_;
@@ -489,6 +512,7 @@ class ExpLOBiud : public ExpLOBoper {
 class ExpLOBinsert : public ExpLOBiud {
 public:
   ExpLOBinsert(OperatorTypeEnum oper_type,
+	       Lng32 numAttrs,
 	       Attributes ** attr, 
 	       Int64 objectUID,
 	       short descSchNameLen,
@@ -522,18 +546,12 @@ public:
 
   virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
-
-
+  
  private:
-  //  char * descSchName() { return descSchName_; }
-
+ 
   Lng32 liFlags_;
   char filler1_[4];
-  //  Int64 objectUID_;
-
-  //  short descSchNameLen_;
-  //  char  descSchName_[510];
-  //  NABasicPtr  descSchName_;
+ 
 };
 
 class ExpLOBdelete : public ExpLOBiud {
@@ -693,6 +711,7 @@ public:
   {
     return tgtLocation_;
   }
+  
  private:
    enum
   {
@@ -868,6 +887,7 @@ public:
 class ExpLOBload : public ExpLOBinsert {
 public:
   ExpLOBload(OperatorTypeEnum oper_type,
+	     Lng32 numAttrs,
 	     Attributes ** attr, 
 	     Int64 objectUID,
 	     short descSchNameLen,

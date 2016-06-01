@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -67,8 +70,14 @@ class HdfsFileInfo
 
 #define LOB_ACCESS_SUCCESS 0
 #define LOB_ACCESS_PREEMPT 1
+enum ExpLOBinterfaceInputFlags
+  {
+    TRUNCATE_TGT_FILE_ =        0x0001,
+    CREATE_TGT_FILE_   =        0x0002,
+    ERROR_IF_TGT_FILE_EXISTS_ =  0x0004
+  };
 
-Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, NABoolean isHive=FALSE);
+Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, NABoolean isHive=FALSE, Int64   lobMaxSize =0);
 
 Lng32 ExpLOBinterfaceCleanup(void *& lobGlob, void * lobHeap);
 
@@ -77,6 +86,7 @@ Lng32 ExpLOBinterfaceCreate(void * lobGlob,
 			    char * lobLoc,
 			    Lng32 lobType = (Lng32)Lob_HDFS_File,
 			    char * lobHdfsServer = (char *)"default",
+			    Int64 lobMaxSize = 0,
 			    Lng32 lobHdfsPort = 0,
 	                    int    bufferSize = 0,
 	                    short  replication =0,
@@ -88,9 +98,7 @@ Lng32 ExpLOBinterfaceDrop(void * lobGlob,
 			  char * lobName,
 			  char * lobLoc);
 
-Lng32 ExpLOBInterfacePurgedata(void * lobGlob, 
-			       char * lobHdfsServer ,
-			       Lng32 lobHdfsPort ,
+Lng32 ExpLOBInterfacePurgedata(void * lobGlob, 			      
 			       char * lobName,
 			       char * lobLoc);
 
@@ -125,7 +133,7 @@ Lng32 ExpLOBInterfaceInsert(void * lobGlob,
 
 			    Lng32 handleLen,
 			    char * lobHandle,
-			    Int64 * outHandleLen,
+			    Int32 * outHandleLen,
 			    char * outLobHandle,
 
 			    Int64 blackBoxLen,
@@ -144,8 +152,9 @@ Lng32 ExpLOBInterfaceInsert(void * lobGlob,
 
 			    char * srcLobData = NULL, 
 			    Int64  srcLobLen  = 0,
-			    Int64 lobMaxSize = 2000*1024*1024,
-			    
+			    Int64 lobMaxSize = 0,
+			    Int64 lobMaxChunkMemSize = 0,
+                            Int64 lobGCLimit = 0,
 			    int    bufferSize = 0,
 			    short  replication =0,
 			    int    blocksize=0
@@ -158,7 +167,7 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
 			    char * lobLocation,
 			    Lng32 handleLen,
 			    char * lobHandle,
-			    Int64 *outHandleLen,
+			    Int32 *outHandleLen,
 			    char * outLobHandle,
 			    Int64 &requestTag,
 			    Int64 xnId,	
@@ -176,7 +185,10 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
 			    short srcDescSchNameLen,
 			    char * srcDescSchName,
 			    Int64 srcDescKey, 
-			    Int64 srcDescTS);
+			    Int64 srcDescTS,
+			    Int64 lobMaxSize = 0,
+			    Int64 lobMaxChunkMemSize = 0,
+                            Int64 lobGCLimit = 0);
 
 Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob, 
 				  char * lobHdfsServer ,
@@ -185,7 +197,7 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
 				  char * lobLocation,
 				  Lng32 handleLen,
 				  char * lobHandle,
-				  Int64 *outHandleLen,
+				  Int32 *outHandleLen,
 				  char * outLobHandle,
 				  Int64 &requestTag,
 				  Int64 xnId,	
@@ -203,7 +215,10 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
 				  short srcDescSchNameLen,
 				  char * srcDescSchName,
 				  Int64 srcDescKey, 
-				  Int64 srcDescTS
+				  Int64 srcDescTS,
+				  Int64 lobMaxSize = 0,
+				  Int64 lobMaxChunkMemSize = 0,
+                                  Int64 lobGCLimit = 0
 				  );
 
 Lng32 ExpLOBInterfaceDelete(void * lobGlob, 
@@ -235,7 +250,9 @@ Lng32 ExpLOBInterfaceSelect(void * lobGlob,
 			    Lng32 waited,
 
 			    Int64 offset, Int64 inLen, 
-			    Int64 &outLen, char * lobData);
+			    Int64 &outLen, char * lobData,
+			    Int64 lobMaxChunkMemlen,
+			    Int32 inputFlags=0);
 
 Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob, 
 				  char * lobName, 
@@ -244,11 +261,12 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
 				  char * lobHdfsServer,
 				  Lng32 lobHdfsPort,
 
-				  Int64 handleLen,  
+				  Int32 handleLen,  
 				  char * lobHandle,
 				  Int64 cusrorBytes,
 				  char *cursorId,
 				  Int64 &requestTag,
+				  LobsSubOper so,
 				  Lng32 checkStatus,
 				  Lng32 waitedOp,
 
@@ -268,6 +286,21 @@ Lng32 ExpLOBinterfaceStats(void * lobGlob,
 			   Lng32 lobHdfsPort = 0);
 
 char * getLobErrStr(Lng32 errEnum);
+
+Lng32 ExpLOBinterfacePerformGC(void *& lobGlob, char *lobName,void *descChunksArray, Int32 numEntries, char *hdfsServer, Int32 hdfsPort,char *LOBlOC,Int64 lobMaxChunkMemSize);
+Lng32 ExpLOBinterfaceRestoreLobDataFile(void *& lobGlob, char *hdfsServer, Int32 hdfsPort,char *lobLoc,char *lobName);
+Lng32 ExpLOBinterfacePurgeBackupLobDataFile(void *& lobGlob,  char *hdfsServer, Int32 hdfsPort,char *lobLoc,char *lobName);
+
+// dirPath: path to needed directory (includes directory name)
+// modTS is the latest timestamp on any file/dir under dirPath.
+// This method validates that current modTS is not greater then input modTS.
+// Return: 1, if check fails. 0, if passes. -1, if error.
+Lng32 ExpLOBinterfaceDataModCheck(void * lobGlob,
+                                  char * dirPath,
+                                  char * lobHdfsServer,
+                                  Lng32  lobHdfsPort,
+                                  Int64  modTS,
+                                  Lng32  numOfPartLevels);
 
 Lng32 ExpLOBinterfaceEmptyDirectory(void * lobGlob,
                             char * lobName,

@@ -1,19 +1,22 @@
 /* -*-C++-*-
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -344,3 +347,57 @@ Int16 ComUser::getAuthNameFromAuthID(Int32   authID,
 
   return FEOK;
 }
+
+// ----------------------------------------------------------------------------
+// method: getRoleList
+//
+// Returns the list of system roles
+// Params:
+//   (out) roleList - the list of roles, space is managed by the caller
+//   (out) actualLen - the length of the returned role list
+//   ( in) maxLen - the size of the roleList allocated by the caller
+//   ( in) delimited - delimiter to use (defaults to single quote)
+//   ( in) separator - specified what separator to use (defaults to comma)
+//   ( in) includeSpecialAuths - includes the special auths (PUBLIC and _SYSTEM) 
+//
+//  Returns:  FEOK -- found
+//            FEBUFTOOSMALL -- space allocated for role list is too small 
+// ----------------------------------------------------------------------------
+Int32 ComUser::getRoleList (char * roleList,
+                            Int32 &actualLen,
+                            const Int32 maxLen,
+                            const char delimiter,
+                            const char separator,
+                            const bool includeSpecialAuths)
+{
+  Int32 numberRoles = sizeof(systemRoles)/sizeof(SystemRolesStruct);
+  Int32 roleListLen = (MAX_AUTHNAME_LEN*numberRoles)+(numberRoles * 4); // 4 = 2 del + 2 sep
+  char generatedRoleList[roleListLen];
+  char *pRoles = generatedRoleList;
+  char roleName[MAX_AUTHNAME_LEN + 4];
+  char currentSeparator = ' ';
+  for (Int32 i = 0; i < numberRoles; i++)
+  {
+    const SystemRolesStruct &roleDefinition = systemRoles[i];
+    if (!includeSpecialAuths && roleDefinition.isSpecialAuth)
+      continue;
+
+    // str_sprintf does not support the %c format
+    sprintf(roleName, "%c%c%s%c",
+                currentSeparator, delimiter, roleDefinition.roleName, delimiter);
+    str_cpy_all(pRoles, roleName, sizeof(roleName)-1); // don't copy null terminator 
+    currentSeparator = separator;
+    pRoles = pRoles + strlen(roleName);
+  }
+
+  pRoles = '\0'; // null terminate string
+  pRoles = generatedRoleList;
+  actualLen = strlen(pRoles);
+  if (actualLen > maxLen) 
+    return FEBUFTOOSMALL;
+ 
+  str_cpy_all(roleList, pRoles, strlen(pRoles));
+  roleList[strlen(pRoles)] = 0; // null terminate string
+  return FEOK;
+}
+

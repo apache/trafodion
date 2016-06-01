@@ -55,19 +55,20 @@
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Wed May 27 00:18:12 2015
+-- Definition current  Sat Apr 23 04:03:53 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                CHAR(10) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Wed May 27 00:18:12 2015
+-- Definition current  Sat Apr 23 04:03:53 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -80,12 +81,13 @@
   , COL_VALUE                        VARCHAR(20) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Wed May 27 00:18:12 2015
+-- Definition current  Sat Apr 23 04:03:53 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -93,6 +95,7 @@
   , COLUMN_DETAILS                   VARCHAR(60) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>
@@ -192,6 +195,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- should see no sort operator when selecting from one salt bucket
+>>prepare xx from select * from t010t3 where (a,b) = (1,'b') order by c;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    trafodion_scan                  T010T3                1.00E+000
+
+--- SQL operation complete.
+>>
 >>-- selectPred should present due to the 2nd disjunct b='1'
 >>prepare xx from select * from t010t1 where a=1 or b='1';
 
@@ -201,7 +218,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471093611281
+PLAN_ID .................. 212328144236102671
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -232,6 +249,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -242,7 +260,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437223724
+  ObjectUIDs ............. 8974081219266698537
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -263,8 +281,10 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... ((A = 1) or (B = '1'))
 
@@ -280,7 +300,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471093661990
+PLAN_ID .................. 212328144236172868
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -312,6 +332,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -322,7 +343,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437223724
+  ObjectUIDs ............. 8974081219266698537
   select_list ............ %(1), %('1')
   input_variables ........ %(1), %('1')
 
@@ -341,8 +362,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... (B = %('1'))
   begin_key .............. (A = %(1))
@@ -359,7 +382,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471093715550
+PLAN_ID .................. 212328144236246122
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -390,6 +413,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -400,7 +424,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437223724
+  ObjectUIDs ............. 8974081219266698537
   select_list ............ TRAFODION.SCH.T010T1.A, %('1')
   input_variables ........ %('1')
 
@@ -422,8 +446,10 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... (B = %('1'))
 
@@ -438,7 +464,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471093434704
+PLAN_ID .................. 212328144234883898
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -470,6 +496,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -480,7 +507,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437223724
+  ObjectUIDs ............. 8974081219266698537
   select_list ............ %(2), TRAFODION.SCH.T010T1.B
   input_variables ........ %(2)
 
@@ -499,8 +526,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   begin_key .............. (A = %(2))
   end_key ................ (A = %(2))
@@ -741,7 +770,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212299471096327562
+PLAN_ID .................. 212328144237774804
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -774,6 +803,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -784,7 +814,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437223802
+  ObjectUIDs ............. 8974081219266698665
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -805,8 +835,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = %('a')) and (C = %(1))
 
@@ -816,7 +848,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212299471096382061
+PLAN_ID .................. 212328144237838319
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -850,6 +882,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -860,7 +893,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437223802
+  ObjectUIDs ............. 8974081219266698665
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -881,8 +914,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = %('a'))
                              and (((C = 1) or (C = 3)) or (C >= 5))
@@ -893,7 +928,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212299471096444859
+PLAN_ID .................. 212328144237933701
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -926,6 +961,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -936,7 +972,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437223802
+  ObjectUIDs ............. 8974081219266698665
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -957,8 +993,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = %('a'))
@@ -969,7 +1007,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212299471096503826
+PLAN_ID .................. 212328144238040780
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -1002,6 +1040,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -1012,7 +1051,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437223802
+  ObjectUIDs ............. 8974081219266698665
   input_variables ........ %('a')
 
 
@@ -1032,10 +1071,10 @@ DESCRIPTION
 
 TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+REQUESTS_IN .............. 4
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -1061,8 +1100,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a'))
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
@@ -1074,7 +1115,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212299471096637126
+PLAN_ID .................. 212328144238219552
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -1109,6 +1150,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -1119,7 +1161,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437223802
+  ObjectUIDs ............. 8974081219266698665
   input_variables ........ %('upd'), %(4)
 
 
@@ -1146,7 +1188,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212299471096698653
+PLAN_ID .................. 212328144238293051
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -1179,6 +1221,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -1190,7 +1233,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437223802
+  ObjectUIDs ............. 8974081219266698665
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -1211,8 +1254,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = %('a')) and (C = %(1))
 
@@ -1222,7 +1267,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212299471096749409
+PLAN_ID .................. 212328144238342233
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -1256,6 +1301,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -1267,7 +1313,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437223802
+  ObjectUIDs ............. 8974081219266698665
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -1288,8 +1334,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = %('a'))
                              and (((C = 1) or (C = 3)) or (C >= 5))
@@ -1300,7 +1348,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212299471096813776
+PLAN_ID .................. 212328144238413387
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -1333,6 +1381,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -1344,7 +1393,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437223802
+  ObjectUIDs ............. 8974081219266698665
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -1365,8 +1414,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = %('a'))
@@ -1377,7 +1428,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212299471096874312
+PLAN_ID .................. 212328144238472839
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -1410,6 +1461,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -1421,7 +1473,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437223802
+  ObjectUIDs ............. 8974081219266698665
   input_variables ........ %('a')
 
 
@@ -1441,10 +1493,10 @@ DESCRIPTION
 
 TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+REQUESTS_IN .............. 4
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -1470,8 +1522,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a'))
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
@@ -1483,7 +1537,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212299471096978847
+PLAN_ID .................. 212328144238597986
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -1518,6 +1572,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -1529,7 +1584,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437223802
+  ObjectUIDs ............. 8974081219266698665
   input_variables ........ %('uuu'), %(4)
 
 
@@ -1706,19 +1761,20 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Wed May 27 00:18:38 2015
+-- Definition current  Sat Apr 23 04:04:22 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                CHAR(10) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Wed May 27 00:18:38 2015
+-- Definition current  Sat Apr 23 04:04:22 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -1731,12 +1787,13 @@ _SALT_      A            B           C            D
   , COL_VALUE                        VARCHAR(20) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Wed May 27 00:18:38 2015
+-- Definition current  Sat Apr 23 04:04:22 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -1744,6 +1801,7 @@ _SALT_      A            B           C            D
   , COLUMN_DETAILS                   VARCHAR(60) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>
@@ -1843,6 +1901,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- should see no sort operator when selecting from one salt bucket
+>>prepare xx from select * from t010t3 where (a,b) = (1,'b') order by c;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    trafodion_scan                  T010T3                1.00E+000
+
+--- SQL operation complete.
+>>
 >>-- selectPred should present due to the 2nd disjunct b='1'
 >>prepare xx from select * from t010t1 where a=1 or b='1';
 
@@ -1852,7 +1924,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471119164315
+PLAN_ID .................. 212328144264792830
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -1883,6 +1955,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -1893,7 +1966,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437226364
+  ObjectUIDs ............. 8974081219266701767
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -1914,8 +1987,10 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... ((A = 1) or (B = '1'))
 
@@ -1931,7 +2006,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471119215657
+PLAN_ID .................. 212328144264858194
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -1963,6 +2038,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -1973,7 +2049,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437226364
+  ObjectUIDs ............. 8974081219266701767
   select_list ............ 1, '1'
 
 
@@ -1993,8 +2069,10 @@ DESCRIPTION
   columns ................ all
   unique_rows ............ 1
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... (B = '1')
 
@@ -2009,7 +2087,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471119265219
+PLAN_ID .................. 212328144264920731
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -2040,6 +2118,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -2050,7 +2129,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437226364
+  ObjectUIDs ............. 8974081219266701767
   select_list ............ TRAFODION.SCH.T010T1.A, '1'
 
 
@@ -2071,8 +2150,10 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... (B = '1')
 
@@ -2087,7 +2168,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471119313814
+PLAN_ID .................. 212328144264982346
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -2119,6 +2200,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -2129,7 +2211,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437226364
+  ObjectUIDs ............. 8974081219266701767
   select_list ............ 1, TRAFODION.SCH.T010T1.B
 
 
@@ -2149,8 +2231,10 @@ DESCRIPTION
   columns ................ all
   unique_rows ............ 1
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
 
 --- SQL operation complete.
@@ -2389,7 +2473,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212299471121578704
+PLAN_ID .................. 212328144266615337
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2422,6 +2506,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -2432,7 +2517,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437226462
+  ObjectUIDs ............. 8974081219266701834
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -2454,8 +2539,10 @@ DESCRIPTION
   unique_rows ............ 1,a,1
   unique_rows ............ 4,a,1
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
 
 --- SQL operation complete.
@@ -2464,7 +2551,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212299471121611308
+PLAN_ID .................. 212328144266661893
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2498,6 +2585,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -2508,7 +2596,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437226462
+  ObjectUIDs ............. 8974081219266701834
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -2543,8 +2631,10 @@ DESCRIPTION
   begin_keys(incl) ....... 4,a,5
   end_keys(incl) ......... 4,a,2147483647
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
 
 --- SQL operation complete.
@@ -2553,7 +2643,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212299471121643583
+PLAN_ID .................. 212328144266702743
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2586,6 +2676,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -2596,7 +2687,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437226462
+  ObjectUIDs ............. 8974081219266701834
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -2622,8 +2713,10 @@ DESCRIPTION
   unique_rows ............ 4,a,1
   unique_rows ............ 4,a,3
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
 
 --- SQL operation complete.
@@ -2632,7 +2725,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212299471121675508
+PLAN_ID .................. 212328144266745552
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -2665,6 +2758,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -2675,7 +2769,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437226462
+  ObjectUIDs ............. 8974081219266701834
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -2694,10 +2788,10 @@ DESCRIPTION
 
 TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+REQUESTS_IN .............. 4
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -2729,8 +2823,10 @@ DESCRIPTION
   unique_rows ............ 6,a,1
   unique_rows ............ 6,a,3
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a')
 
@@ -2740,7 +2836,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212299471121732276
+PLAN_ID .................. 212328144266819972
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -2775,6 +2871,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -2785,7 +2882,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437226462
+  ObjectUIDs ............. 8974081219266701834
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -2807,6 +2904,7 @@ DESCRIPTION
   begin_keys(incl) ....... 4,b,-2147483648
   end_keys(excl) ......... 4,b,2
   new_rec_expr ........... (D assign 'upd')
+  predicate .............. (C < 2)
 
 --- SQL operation complete.
 >>explain y1;
@@ -2814,7 +2912,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212299471121783919
+PLAN_ID .................. 212328144266913570
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2847,6 +2945,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -2858,7 +2957,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437226462
+  ObjectUIDs ............. 8974081219266701834
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -2880,8 +2979,10 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a') and (C = 1) and ((A = 1) or (A = 4))
 
@@ -2891,7 +2992,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212299471121817657
+PLAN_ID .................. 212328144266974806
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2925,6 +3026,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -2936,7 +3038,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437226462
+  ObjectUIDs ............. 8974081219266701834
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -2958,8 +3060,10 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a') and (((A = 1) or (A = 2)) or (A = 4)) and
                              (((C = 1) or (C = 3)) or (C >= 5))
@@ -2970,7 +3074,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212299471121849909
+PLAN_ID .................. 212328144267036984
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -3003,6 +3107,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -3014,7 +3119,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437226462
+  ObjectUIDs ............. 8974081219266701834
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -3036,8 +3141,10 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a') and (((A = 1) or (A = 2)) or (A = 4)) and
                              ((C = 1) or (C = 3))
@@ -3048,7 +3155,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212299471121885273
+PLAN_ID .................. 212328144267100023
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -3081,6 +3188,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -3092,7 +3200,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437226462
+  ObjectUIDs ............. 8974081219266701834
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -3111,10 +3219,10 @@ DESCRIPTION
 
 TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+REQUESTS_IN .............. 4
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -3142,8 +3250,10 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a') and (((A = 2) or (A = 4)) or (A = 6)) and
                              ((C = 1) or (C = 3))
@@ -3154,7 +3264,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212299471121942892
+PLAN_ID .................. 212328144267191615
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -3189,6 +3299,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -3200,7 +3311,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437226462
+  ObjectUIDs ............. 8974081219266701834
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -3377,19 +3488,20 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Wed May 27 00:19:04 2015
+-- Definition current  Sat Apr 23 04:04:48 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                CHAR(10) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Wed May 27 00:19:04 2015
+-- Definition current  Sat Apr 23 04:04:48 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -3402,12 +3514,13 @@ _SALT_      A            B           C            D
   , COL_VALUE                        VARCHAR(20) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Wed May 27 00:19:04 2015
+-- Definition current  Sat Apr 23 04:04:48 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -3415,6 +3528,7 @@ _SALT_      A            B           C            D
   , COLUMN_DETAILS                   VARCHAR(60) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>
@@ -3514,6 +3628,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- should see no sort operator when selecting from one salt bucket
+>>prepare xx from select * from t010t3 where (a,b) = (1,'b') order by c;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    trafodion_scan                  T010T3                1.00E+000
+
+--- SQL operation complete.
+>>
 >>-- selectPred should present due to the 2nd disjunct b='1'
 >>prepare xx from select * from t010t1 where a=1 or b='1';
 
@@ -3523,7 +3651,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471144660436
+PLAN_ID .................. 212328144290107608
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -3554,6 +3682,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -3564,7 +3693,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437228949
+  ObjectUIDs ............. 8974081219266704365
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -3585,8 +3714,10 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... ((A = 1) or (B = '1'))
 
@@ -3602,7 +3733,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471144712283
+PLAN_ID .................. 212328144290179279
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -3634,6 +3765,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -3644,7 +3776,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437228949
+  ObjectUIDs ............. 8974081219266704365
   select_list ............ %(1), %('1')
   input_variables ........ %(1), %('1')
 
@@ -3663,8 +3795,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... (B = %('1'))
   begin_key .............. (A = %(1))
@@ -3681,7 +3815,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471144761726
+PLAN_ID .................. 212328144290246591
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -3712,6 +3846,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -3722,7 +3857,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437228949
+  ObjectUIDs ............. 8974081219266704365
   select_list ............ TRAFODION.SCH.T010T1.A, %('1')
   input_variables ........ %('1')
 
@@ -3744,8 +3879,10 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... (B = %('1'))
 
@@ -3760,7 +3897,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471144508022
+PLAN_ID .................. 212328144288935078
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -3792,6 +3929,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -3802,7 +3940,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437228949
+  ObjectUIDs ............. 8974081219266704365
   select_list ............ %(2), TRAFODION.SCH.T010T1.B
   input_variables ........ %(2)
 
@@ -3821,8 +3959,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   begin_key .............. (A = %(2))
   end_key ................ (A = %(2))
@@ -4063,7 +4203,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212299471146943995
+PLAN_ID .................. 212328144292121052
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4096,6 +4236,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -4106,7 +4247,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437229017
+  ObjectUIDs ............. 8974081219266704430
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -4126,8 +4267,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (C = %(1)) and ((A = 1) or (A = 4))
   begin_key .............. (A = <min>), (B = %('a')), (C = %(1))
@@ -4139,7 +4282,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212299471146979601
+PLAN_ID .................. 212328144292161638
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4173,6 +4316,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -4183,7 +4327,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437229017
+  ObjectUIDs ............. 8974081219266704430
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4203,8 +4347,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (((A = 1) or (A = 2)) or (A = 4))
                              and (((C = 1) or (C = 3)) or (C >= 5))
@@ -4217,7 +4363,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212299471147013790
+PLAN_ID .................. 212328144292198590
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4250,6 +4396,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -4260,7 +4407,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437229017
+  ObjectUIDs ............. 8974081219266704430
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4280,8 +4427,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (((A = 1) or (A = 2)) or (A = 4))
                              and ((C = 1) or (C = 3))
@@ -4294,7 +4443,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212299471147049449
+PLAN_ID .................. 212328144292239365
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -4327,6 +4476,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -4337,7 +4487,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437229017
+  ObjectUIDs ............. 8974081219266704430
   input_variables ........ %('a')
 
 
@@ -4357,10 +4507,10 @@ DESCRIPTION
 
 TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+REQUESTS_IN .............. 4
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -4385,8 +4535,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (((A = 2) or (A = 4)) or (A = 6))
                              and ((C = 1) or (C = 3))
@@ -4399,7 +4551,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212299471147114607
+PLAN_ID .................. 212328144292320041
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -4434,6 +4586,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -4444,7 +4597,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 26525986437229017
+  ObjectUIDs ............. 8974081219266704430
   input_variables ........ %('upd'), %(4)
 
 
@@ -4471,7 +4624,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212299471147168801
+PLAN_ID .................. 212328144292393136
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4504,6 +4657,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -4515,7 +4669,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437229017
+  ObjectUIDs ............. 8974081219266704430
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -4535,8 +4689,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (C = %(1)) and ((A = 1) or (A = 4))
   begin_key .............. (A = <min>), (B = %('a')), (C = %(1))
@@ -4548,7 +4704,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212299471147203181
+PLAN_ID .................. 212328144292431753
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4582,6 +4738,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -4593,7 +4750,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437229017
+  ObjectUIDs ............. 8974081219266704430
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4613,8 +4770,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (((A = 1) or (A = 2)) or (A = 4))
                              and (((C = 1) or (C = 3)) or (C >= 5))
@@ -4627,7 +4786,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212299471147236612
+PLAN_ID .................. 212328144292474349
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4660,6 +4819,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -4671,7 +4831,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437229017
+  ObjectUIDs ............. 8974081219266704430
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4691,8 +4851,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (((A = 1) or (A = 2)) or (A = 4))
                              and ((C = 1) or (C = 3))
@@ -4705,7 +4867,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212299471147272579
+PLAN_ID .................. 212328144292514451
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -4738,6 +4900,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -4749,7 +4912,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437229017
+  ObjectUIDs ............. 8974081219266704430
   input_variables ........ %('a')
 
 
@@ -4769,10 +4932,10 @@ DESCRIPTION
 
 TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+REQUESTS_IN .............. 4
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -4797,8 +4960,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (((A = 2) or (A = 4)) or (A = 6))
                              and ((C = 1) or (C = 3))
@@ -4811,7 +4976,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212299471147333576
+PLAN_ID .................. 212328144292590301
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -4846,6 +5011,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -4857,7 +5023,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437229017
+  ObjectUIDs ............. 8974081219266704430
   input_variables ........ %('uuu'), %(4)
 
 
@@ -5034,19 +5200,20 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Wed May 27 00:19:25 2015
+-- Definition current  Sat Apr 23 04:05:13 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                CHAR(10) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Wed May 27 00:19:25 2015
+-- Definition current  Sat Apr 23 04:05:13 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -5059,12 +5226,13 @@ _SALT_      A            B           C            D
   , COL_VALUE                        VARCHAR(20) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Wed May 27 00:19:25 2015
+-- Definition current  Sat Apr 23 04:05:13 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -5072,6 +5240,7 @@ _SALT_      A            B           C            D
   , COLUMN_DETAILS                   VARCHAR(60) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>
@@ -5171,6 +5340,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- should see no sort operator when selecting from one salt bucket
+>>prepare xx from select * from t010t3 where (a,b) = (1,'b') order by c;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    trafodion_scan                  T010T3                1.00E+000
+
+--- SQL operation complete.
+>>
 >>-- selectPred should present due to the 2nd disjunct b='1'
 >>prepare xx from select * from t010t1 where a=1 or b='1';
 
@@ -5180,7 +5363,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471166383911
+PLAN_ID .................. 212328144315059805
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -5211,6 +5394,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -5221,7 +5405,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437231080
+  ObjectUIDs ............. 8974081219266706876
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -5242,8 +5426,10 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... ((A = 1) or (B = '1'))
 
@@ -5259,7 +5445,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471166434885
+PLAN_ID .................. 212328144315122372
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -5291,6 +5477,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -5301,7 +5488,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437231080
+  ObjectUIDs ............. 8974081219266706876
   select_list ............ 1, '1'
 
 
@@ -5321,8 +5508,10 @@ DESCRIPTION
   columns ................ all
   unique_rows ............ 1
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... (B = '1')
 
@@ -5337,7 +5526,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471166482747
+PLAN_ID .................. 212328144315180866
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -5368,6 +5557,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -5378,7 +5568,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437231080
+  ObjectUIDs ............. 8974081219266706876
   select_list ............ TRAFODION.SCH.T010T1.A, '1'
 
 
@@ -5399,8 +5589,10 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... (B = '1')
 
@@ -5415,7 +5607,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471166530637
+PLAN_ID .................. 212328144315245579
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -5447,6 +5639,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -5457,7 +5650,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437231080
+  ObjectUIDs ............. 8974081219266706876
   select_list ............ 1, TRAFODION.SCH.T010T1.B
 
 
@@ -5477,8 +5670,10 @@ DESCRIPTION
   columns ................ all
   unique_rows ............ 1
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
 
 --- SQL operation complete.
@@ -5717,7 +5912,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212299471168596235
+PLAN_ID .................. 212328144316926240
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -5750,6 +5945,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -5760,7 +5956,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437231197
+  ObjectUIDs ............. 8974081219266706932
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -5780,8 +5976,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = 'a') and (C = 1)
 
@@ -5791,7 +5989,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212299471168641744
+PLAN_ID .................. 212328144317000051
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -5825,6 +6023,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -5835,7 +6034,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437231197
+  ObjectUIDs ............. 8974081219266706932
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -5855,8 +6054,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = 'a') and
                              (((C = 1) or (C = 3)) or (C >= 5))
@@ -5867,7 +6068,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212299471168695906
+PLAN_ID .................. 212328144317075938
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -5900,6 +6101,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -5910,7 +6112,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437231197
+  ObjectUIDs ............. 8974081219266706932
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -5930,8 +6132,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = 'a')
@@ -5942,7 +6146,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212299471168754574
+PLAN_ID .................. 212328144317135494
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -5975,6 +6179,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -5985,7 +6190,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437231197
+  ObjectUIDs ............. 8974081219266706932
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -6004,10 +6209,10 @@ DESCRIPTION
 
 TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+REQUESTS_IN .............. 4
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -6033,8 +6238,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a')
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
@@ -6046,7 +6253,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212299471168844724
+PLAN_ID .................. 212328144317248537
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -6081,6 +6288,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -6091,7 +6299,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437231197
+  ObjectUIDs ............. 8974081219266706932
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -6113,6 +6321,7 @@ DESCRIPTION
   begin_keys(incl) ....... 4,b,-2147483648
   end_keys(excl) ......... 4,b,2
   new_rec_expr ........... (D assign 'upd')
+  predicate .............. (C < 2)
 
 --- SQL operation complete.
 >>explain y1;
@@ -6120,7 +6329,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212299471168896538
+PLAN_ID .................. 212328144317303309
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6153,6 +6362,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -6164,7 +6374,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437231197
+  ObjectUIDs ............. 8974081219266706932
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -6184,8 +6394,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = 'a') and (C = 1)
 
@@ -6195,7 +6407,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212299471168941452
+PLAN_ID .................. 212328144317349912
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6229,6 +6441,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -6240,7 +6453,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437231197
+  ObjectUIDs ............. 8974081219266706932
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -6260,8 +6473,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = 'a') and
                              (((C = 1) or (C = 3)) or (C >= 5))
@@ -6272,7 +6487,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212299471168991472
+PLAN_ID .................. 212328144317409876
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6305,6 +6520,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -6316,7 +6532,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437231197
+  ObjectUIDs ............. 8974081219266706932
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -6336,8 +6552,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = 'a')
@@ -6348,7 +6566,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212299471169046951
+PLAN_ID .................. 212328144317469296
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -6381,6 +6599,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -6392,7 +6611,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437231197
+  ObjectUIDs ............. 8974081219266706932
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -6411,10 +6630,10 @@ DESCRIPTION
 
 TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+REQUESTS_IN .............. 4
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -6440,8 +6659,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a')
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
@@ -6453,7 +6674,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212299471169131646
+PLAN_ID .................. 212328144317572749
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -6488,6 +6709,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -6499,7 +6721,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437231197
+  ObjectUIDs ............. 8974081219266706932
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -6696,19 +6918,20 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Wed May 27 00:19:50 2015
+-- Definition current  Sat Apr 23 04:05:38 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                CHAR(10) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Wed May 27 00:19:50 2015
+-- Definition current  Sat Apr 23 04:05:38 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -6721,12 +6944,13 @@ _SALT_      A            B           C            D
   , COL_VALUE                        VARCHAR(20) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Wed May 27 00:19:50 2015
+-- Definition current  Sat Apr 23 04:05:38 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -6734,6 +6958,7 @@ _SALT_      A            B           C            D
   , COLUMN_DETAILS                   VARCHAR(60) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>
@@ -6833,6 +7058,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- should see no sort operator when selecting from one salt bucket
+>>prepare xx from select * from t010t3 where (a,b) = (1,'b') order by c;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    trafodion_scan                  T010T3                1.00E+000
+
+--- SQL operation complete.
+>>
 >>-- selectPred should present due to the 2nd disjunct b='1'
 >>prepare xx from select * from t010t1 where a=1 or b='1';
 
@@ -6842,7 +7081,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471190555749
+PLAN_ID .................. 212328144340252394
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -6873,6 +7112,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -6883,7 +7123,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437233568
+  ObjectUIDs ............. 8974081219266709376
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -6904,8 +7144,10 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... ((A = 1) or (B = '1'))
 
@@ -6921,7 +7163,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471190606309
+PLAN_ID .................. 212328144340312113
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -6953,6 +7195,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -6963,7 +7206,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437233568
+  ObjectUIDs ............. 8974081219266709376
   select_list ............ %(1), %('1')
   input_variables ........ %(1), %('1')
 
@@ -6982,8 +7225,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... (B = %('1'))
   begin_key .............. (A = %(1))
@@ -7000,7 +7245,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471190653260
+PLAN_ID .................. 212328144340368341
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -7031,6 +7276,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -7041,7 +7287,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437233568
+  ObjectUIDs ............. 8974081219266709376
   select_list ............ TRAFODION.SCH.T010T1.A, %('1')
   input_variables ........ %('1')
 
@@ -7063,8 +7309,11 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2
+  pushed_down_rpn ........ (#1:2=?)
   key_columns ............ A
   executor_predicates .... (B = %('1'))
 
@@ -7079,7 +7328,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471190408347
+PLAN_ID .................. 212328144339112888
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -7111,6 +7360,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -7121,7 +7371,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437233568
+  ObjectUIDs ............. 8974081219266709376
   select_list ............ %(2), TRAFODION.SCH.T010T1.B
   input_variables ........ %(2)
 
@@ -7140,8 +7390,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   begin_key .............. (A = %(2))
   end_key ................ (A = %(2))
@@ -7382,7 +7634,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212299471192801843
+PLAN_ID .................. 212328144342277216
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7415,6 +7667,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -7425,7 +7678,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437233637
+  ObjectUIDs ............. 8974081219266709434
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -7446,8 +7699,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = %('a')) and (C = %(1))
 
@@ -7457,7 +7712,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212299471192844713
+PLAN_ID .................. 212328144342325330
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7491,6 +7746,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -7501,7 +7757,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437233637
+  ObjectUIDs ............. 8974081219266709434
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -7522,8 +7778,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = %('a'))
                              and (((C = 1) or (C = 3)) or (C >= 5))
@@ -7534,7 +7792,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212299471192895874
+PLAN_ID .................. 212328144342385845
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7567,6 +7825,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -7577,7 +7836,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437233637
+  ObjectUIDs ............. 8974081219266709434
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -7598,8 +7857,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = %('a'))
@@ -7610,7 +7871,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212299471192946876
+PLAN_ID .................. 212328144342447114
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -7643,6 +7904,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -7653,7 +7915,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437233637
+  ObjectUIDs ............. 8974081219266709434
   input_variables ........ %('a')
 
 
@@ -7673,10 +7935,10 @@ DESCRIPTION
 
 TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+REQUESTS_IN .............. 4
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -7702,8 +7964,11 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3
+  pushed_down_rpn ........ (#1:2=?)
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
                              = 3)) and (B = %('a'))
@@ -7714,7 +7979,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212299471193048121
+PLAN_ID .................. 212328144342571114
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -7749,6 +8014,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -7759,7 +8025,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437233637
+  ObjectUIDs ............. 8974081219266709434
   input_variables ........ %('upd'), %(4)
 
 
@@ -7786,7 +8052,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212299471193099896
+PLAN_ID .................. 212328144342639729
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7819,6 +8085,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -7830,7 +8097,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437233637
+  ObjectUIDs ............. 8974081219266709434
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -7851,8 +8118,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = %('a')) and (C = %(1))
 
@@ -7862,7 +8131,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212299471193140077
+PLAN_ID .................. 212328144342687157
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7896,6 +8165,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -7907,7 +8177,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437233637
+  ObjectUIDs ............. 8974081219266709434
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -7928,8 +8198,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = %('a'))
                              and (((C = 1) or (C = 3)) or (C >= 5))
@@ -7940,7 +8212,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212299471193188067
+PLAN_ID .................. 212328144342740627
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7973,6 +8245,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -7984,7 +8257,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437233637
+  ObjectUIDs ............. 8974081219266709434
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -8005,8 +8278,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = %('a'))
@@ -8017,7 +8292,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212299471193237767
+PLAN_ID .................. 212328144342829114
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -8050,6 +8325,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -8061,7 +8337,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437233637
+  ObjectUIDs ............. 8974081219266709434
   input_variables ........ %('a')
 
 
@@ -8081,10 +8357,10 @@ DESCRIPTION
 
 TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+REQUESTS_IN .............. 4
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -8110,8 +8386,11 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3
+  pushed_down_rpn ........ (#1:2=?)
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
                              = 3)) and (B = %('a'))
@@ -8122,7 +8401,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212299471193326623
+PLAN_ID .................. 212328144342988889
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -8157,6 +8436,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -8168,7 +8448,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437233637
+  ObjectUIDs ............. 8974081219266709434
   input_variables ........ %('uuu'), %(4)
 
 
@@ -8345,19 +8625,20 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Wed May 27 00:20:13 2015
+-- Definition current  Sat Apr 23 04:06:04 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                CHAR(10) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Wed May 27 00:20:13 2015
+-- Definition current  Sat Apr 23 04:06:04 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -8370,12 +8651,13 @@ _SALT_      A            B           C            D
   , COL_VALUE                        VARCHAR(20) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Wed May 27 00:20:13 2015
+-- Definition current  Sat Apr 23 04:06:04 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -8383,6 +8665,7 @@ _SALT_      A            B           C            D
   , COLUMN_DETAILS                   VARCHAR(60) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>
@@ -8482,6 +8765,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- should see no sort operator when selecting from one salt bucket
+>>prepare xx from select * from t010t3 where (a,b) = (1,'b') order by c;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    trafodion_scan                  T010T3                1.00E+000
+
+--- SQL operation complete.
+>>
 >>-- selectPred should present due to the 2nd disjunct b='1'
 >>prepare xx from select * from t010t1 where a=1 or b='1';
 
@@ -8491,7 +8788,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471214427740
+PLAN_ID .................. 212328144365540549
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -8522,6 +8819,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -8532,7 +8830,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437235965
+  ObjectUIDs ............. 8974081219266711846
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -8553,8 +8851,10 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... ((A = 1) or (B = '1'))
 
@@ -8570,7 +8870,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471214475553
+PLAN_ID .................. 212328144365595968
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -8602,6 +8902,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -8612,7 +8913,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437235965
+  ObjectUIDs ............. 8974081219266711846
   select_list ............ 1, '1'
 
 
@@ -8632,8 +8933,10 @@ DESCRIPTION
   columns ................ all
   unique_rows ............ 1
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
   executor_predicates .... (B = '1')
 
@@ -8648,7 +8951,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471214520721
+PLAN_ID .................. 212328144365647254
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -8679,6 +8982,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -8689,7 +8993,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437235965
+  ObjectUIDs ............. 8974081219266711846
   select_list ............ TRAFODION.SCH.T010T1.A, '1'
 
 
@@ -8710,8 +9014,11 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2
+  pushed_down_rpn ........ (#1:2=?)
   key_columns ............ A
   executor_predicates .... (B = '1')
 
@@ -8726,7 +9033,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212299471214566535
+PLAN_ID .................. 212328144365700486
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -8758,6 +9065,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -8768,7 +9076,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437235965
+  ObjectUIDs ............. 8974081219266711846
   select_list ............ 1, TRAFODION.SCH.T010T1.B
 
 
@@ -8788,8 +9096,10 @@ DESCRIPTION
   columns ................ all
   unique_rows ............ 1
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
+  column_retrieved ....... #1:1,#1:2
   key_columns ............ A
 
 --- SQL operation complete.
@@ -9028,7 +9338,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212299471216646050
+PLAN_ID .................. 212328144367286744
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9061,6 +9371,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -9071,7 +9382,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437236032
+  ObjectUIDs ............. 8974081219266711903
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -9091,8 +9402,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = 'a') and (C = 1)
 
@@ -9102,7 +9415,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212299471216690874
+PLAN_ID .................. 212328144367337278
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9136,6 +9449,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -9146,7 +9460,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437236032
+  ObjectUIDs ............. 8974081219266711903
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -9166,8 +9480,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = 'a') and
                              (((C = 1) or (C = 3)) or (C >= 5))
@@ -9178,7 +9494,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212299471216744884
+PLAN_ID .................. 212328144367394943
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9211,6 +9527,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -9221,7 +9538,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437236032
+  ObjectUIDs ............. 8974081219266711903
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -9241,8 +9558,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = 'a')
@@ -9253,7 +9572,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212299471216799063
+PLAN_ID .................. 212328144367453475
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -9286,6 +9605,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -9296,7 +9616,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437236032
+  ObjectUIDs ............. 8974081219266711903
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -9315,10 +9635,10 @@ DESCRIPTION
 
 TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+REQUESTS_IN .............. 4
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -9344,8 +9664,11 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3
+  pushed_down_rpn ........ (#1:2=?)
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
                              = 3)) and (B = 'a')
@@ -9356,7 +9679,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212299471216894449
+PLAN_ID .................. 212328144367556161
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -9391,6 +9714,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -9401,7 +9725,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 26525986437236032
+  ObjectUIDs ............. 8974081219266711903
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -9423,6 +9747,7 @@ DESCRIPTION
   begin_keys(incl) ....... 4,b,-2147483648
   end_keys(excl) ......... 4,b,2
   new_rec_expr ........... (D assign 'upd')
+  predicate .............. (C < 2)
 
 --- SQL operation complete.
 >>explain y1;
@@ -9430,7 +9755,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212299471216945052
+PLAN_ID .................. 212328144367612269
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9463,6 +9788,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -9474,7 +9800,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437236032
+  ObjectUIDs ............. 8974081219266711903
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -9494,8 +9820,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = 'a') and (C = 1)
 
@@ -9505,7 +9833,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212299471216988910
+PLAN_ID .................. 212328144367662094
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9539,6 +9867,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -9550,7 +9879,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437236032
+  ObjectUIDs ............. 8974081219266711903
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -9570,8 +9899,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = 'a') and
                              (((C = 1) or (C = 3)) or (C >= 5))
@@ -9582,7 +9913,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212299471217038813
+PLAN_ID .................. 212328144367715857
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9615,6 +9946,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -9626,7 +9958,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437236032
+  ObjectUIDs ............. 8974081219266711903
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -9646,8 +9978,10 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3,#1:4
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = 'a')
@@ -9658,7 +9992,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212299471217090118
+PLAN_ID .................. 212328144367769413
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -9691,6 +10025,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -9702,7 +10037,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437236032
+  ObjectUIDs ............. 8974081219266711903
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -9721,10 +10056,10 @@ DESCRIPTION
 
 TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+REQUESTS_IN .............. 4
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -9750,8 +10085,11 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
+  column_retrieved ....... #1:1,#1:2,#1:3
+  pushed_down_rpn ........ (#1:2=?)
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
                              = 3)) and (B = 'a')
@@ -9762,7 +10100,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212299471217178964
+PLAN_ID .................. 212328144367903054
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -9797,6 +10135,7 @@ DESCRIPTION
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
@@ -9808,7 +10147,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 26525986437236032
+  ObjectUIDs ............. 8974081219266711903
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -9960,7 +10299,7 @@ _SALT_      A            B           C            D
 >>drop table if exists minotaur.events_load75;
 
 --- SQL operation complete.
->>create schema minotaur;
+>>create schema if not exists minotaur;
 
 --- SQL operation complete.
 >>CREATE TABLE if not exists TRAFODION.MINOTAUR.EVENTS_LOAD75
@@ -10094,7 +10433,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
 1    .    2    root                                                  1.00E+009
-.    .    1    trafodion_index_scan            T010IX1               1.00E+009
+.    .    1    trafodion_scan                  T010T4                1.00E+009
 
 --- SQL operation complete.
 >>execute s;
@@ -10316,12 +10655,12 @@ CREATE TABLE TRAFODION.SCH."delim_tab"
 --- SQL operation complete.
 >>get all volatile schemas;
 
-Schema(Active  ): VOLATILE_SCHEMA_MXID110000212952122994710660444710000000002
+Schema(Active  ): VOLATILE_SCHEMA_MXID110000323252123281442173510010000000002
 
 --- SQL operation complete.
 >>get all volatile tables;
 
-Schema(Active  ): VOLATILE_SCHEMA_MXID110000212952122994710660444710000000002
+Schema(Active  ): VOLATILE_SCHEMA_MXID110000323252123281442173510010000000002
   Table: VTAB1
   Table: VTAB2
 

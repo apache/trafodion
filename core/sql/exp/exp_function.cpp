@@ -1,19 +1,22 @@
 /*********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -2531,9 +2534,8 @@ ex_expr::exp_return_type ex_function_dateformat::eval(char *op_data[],
   char *formatStr = op_data[2];
   char *result = op_data[0];
   
-  if ((getDateFormat() == ExpDatetime::DATETIME_FORMAT_TIME1) ||
-      (getDateFormat() == ExpDatetime::DATETIME_FORMAT_TIME2) ||
-      (getDateFormat() == ExpDatetime::DATETIME_FORMAT_TIME_STR))
+  if ((getDateFormat() == ExpDatetime::DATETIME_FORMAT_NUM1) ||
+      (getDateFormat() == ExpDatetime::DATETIME_FORMAT_NUM2))
     {
       // numeric to TIME conversion.
       if(ExpDatetime::convNumericTimeToASCII(opData, 
@@ -2560,20 +2562,25 @@ ex_expr::exp_return_type ex_function_dateformat::eval(char *op_data[],
       if ((DFS2REC::isAnyCharacter(getOperand(1)->getDatatype())) &&
 	  (DFS2REC::isDateTime(getOperand(0)->getDatatype())))
 	{
+          Lng32 sourceLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+
 	  ExpDatetime *datetimeOpType = (ExpDatetime *) getOperand(0);
 	  if(datetimeOpType->convAsciiToDate(opData, 
-					     getOperand(1)->getLength(),
-					     result,
-					     getOperand(0)->getLength(),
-					     getDateFormat(),
-					     heap,
-					     diagsArea,
-                                	     0) < 0) {
-	
-	    ExRaiseFunctionSqlError(heap, diagsArea, EXE_INTERNAL_ERROR,
-				    derivedFunction(),
-				    origFunctionOperType());
-	    
+                                             sourceLen,
+                                             result,
+                                             getOperand(0)->getLength(),
+                                             getDateFormat(),
+                                             heap,
+                                             diagsArea,
+                                             0) < 0) {
+            
+            if (diagsArea && (*diagsArea) && 
+                (*diagsArea)->getNumber(DgSqlCode::ERROR_) == 0)
+              {
+                ExRaiseFunctionSqlError(heap, diagsArea, EXE_INTERNAL_ERROR,
+                                        derivedFunction(),
+                                        origFunctionOperType());
+              }
 	    return ex_expr::EXPR_ERROR;
 	  }
 	}
@@ -2581,7 +2588,7 @@ ex_expr::exp_return_type ex_function_dateformat::eval(char *op_data[],
 	{
 	  ExpDatetime *datetimeOpType = (ExpDatetime *) getOperand(1);
 	  if(datetimeOpType->convDatetimeToASCII(opData, 
-					     result,
+                                                 result,
 						 getOperand(0)->getLength(),
 						 getDateFormat(),
 						 formatStr,
@@ -4431,12 +4438,14 @@ Lng32 ex_function_hivehash::hashForCharType(char* data, Lng32 length)
 {
   // To compute: SUM (i from 0 to n-1) (s(i) * 31^(n-1-i)
 
+  ULng32 resultCopy = 0;
   ULng32 result = (ULng32)data[0];
   for (Lng32 i=1; i<length; i++ ) {
 
      // perform result * 31, optimized as (result <<5 - result)
-     result << 5;
-     result -= result;
+     resultCopy = result;
+     result <<= 5;
+     result -= resultCopy;
 
      result += (ULng32)(data[i]);
   }

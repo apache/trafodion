@@ -2,19 +2,22 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
@@ -268,7 +271,6 @@ def generate_pom_xml(targettype, jdbc_groupid, jdbc_artid, jdbc_path, hadoop_dis
                     'MY_ZOOKEEPER_VERSION': get_hadoop_component_ver(hadoop_distro, "zookeeper"),
                     # cdh sub-string added at 1.1
                     'TRAF_HBASE_TRX_REGEX': re.compile("^hbase-trx-(cdh[\d_]*-)?[\d\.]{3,}jar"),
-                    'TRAF_HBASE_ACS_REGEX': re.compile("^trafodion-HBaseAccess-[\d\.]{3,}jar"),
                     'MVN_DEPS': [('org.apache.hbase', 'hbase-client', '${hbase_version}', 'EDEP'),
                                  ('org.apache.hbase', 'hbase-common', '${hbase_version}', 'EDEP'),
                                  ('org.apache.hbase', 'hbase-server', '${hbase_version}', 'EDEP'),
@@ -291,12 +293,11 @@ def generate_pom_xml(targettype, jdbc_groupid, jdbc_artid, jdbc_path, hadoop_dis
         hadoop_dict = {
             'HDP': {'MY_HADOOP_DISTRO': 'HDPReleases',
                     'MY_HADOOP_VERSION': get_hadoop_component_ver(hadoop_distro, "hadoop"),
-                    'MY_MVN_URL': 'http://repo.hortonworks.com/content/repositories/releases/',
+                    'MY_MVN_URL': 'http://repo.hortonworks.com/content/groups/public/',
                     'MY_HBASE_VERSION': get_hadoop_component_ver(hadoop_distro, "hbase"),
                     'MY_HIVE_VERSION': get_hadoop_component_ver(hadoop_distro, "hive"),
                     'MY_ZOOKEEPER_VERSION': get_hadoop_component_ver(hadoop_distro, "zookeeper"),
                     'TRAF_HBASE_TRX_REGEX': re.compile("^hbase-trx-hdp[\d_]*-[\d\.]{3,}jar"),
-                    'TRAF_HBASE_ACS_REGEX': re.compile("^trafodion-HBaseAccess-[\d\.]{3,}jar"),
                     'MVN_DEPS': [('org.apache.hbase', 'hbase-client', '${hbase_version}', 'EDEP'),
                                  ('org.apache.hbase', 'hbase-common', '${hbase_version}', 'EDEP'),
                                  ('org.apache.hbase', 'hbase-server', '${hbase_version}', 'EDEP'),
@@ -363,16 +364,6 @@ def generate_pom_xml(targettype, jdbc_groupid, jdbc_artid, jdbc_path, hadoop_dis
                                    if m][0]
             template_text = re.sub('TRAF_HBASE_TRX_FILE', traf_hbase_trx_file, template_text)
 
-            traf_hbase_access_file = [m.group(0) for l in traf_lib_file_list for m in
-                                      [hadoop_dict[hadoop_distro]['TRAF_HBASE_ACS_REGEX'].search(l)]
-                                      if m][0]
-            template_text = re.sub('TRAF_HBASE_ACS_FILE', traf_hbase_access_file, template_text)
-
-            # find the Trafodion HBase version being used
-            hbaseVerRegex = re.compile("^hbase-trx(-[a-z0-9_]+)?-([\d\.]{3,})jar")
-            traf_hbase_version = hbaseVerRegex.match(traf_hbase_trx_file).group(2)[:-1]
-            template_text = re.sub('MY_TRAF_HBASE_VERSION', traf_hbase_version, template_text)
-
             # fix up T2 Hadoop properties
             for hprop in ['MY_HADOOP_DISTRO', 'MY_HADOOP_VERSION', 'MY_MVN_URL', 'MY_HBASE_VERSION',
                           'MY_HIVE_VERSION', 'MY_ZOOKEEPER_VERSION']:
@@ -438,9 +429,8 @@ def prog_parse_args():
     frame = rec[0]
     info = inspect.getframeinfo(frame)
     gvars.my_ROOT = os.path.dirname(os.path.abspath(info.filename))
-
     DEFAULT_RESULTS_DIR = os.path.join(gvars.my_ROOT, 'results')
-    DEFAULT_JDBC_CLASSPATH = '${project.basedir}/lib/hp/tr/jdbcT4.jar'
+    DEFAULT_JDBC_CLASSPATH = '${project.basedir}/lib/jdbcT4-${TRAFODION_VER}.jar'
     DEFAULT_PROP_FILE = os.path.join(gvars.my_ROOT, 'jdbcprop')
 
     # alas, the more powerful argparse module only exists in >= 2.7 and >= 3.2,
@@ -478,7 +468,7 @@ def prog_parse_args():
         optparse.make_option('', '--jdbccp', action='store', type='string',
                              dest='jdbccp', default=DEFAULT_JDBC_CLASSPATH,
                              help="jdbc classpath, defaulted to " +
-                                  "'${project.basedir}/lib/hp/tr/jdbcT4.jar', \t\t "
+                                  "'${project.basedir}/lib/jdbcT4-${TRAFODION_VER}.jar', \t\t "
                                   "<test_root> is where this program is"),
         optparse.make_option('', '--resultdir', action='store', type='string',
                              dest='resultdir', default=DEFAULT_RESULTS_DIR,
@@ -612,6 +602,12 @@ def prog_parse_args():
     ArgList._hadoop_distro = distro
     ArgList._maven_local_repo = options.mvnlocalrepo
     ArgList._no_maven = options.nomaven
+
+    # Turn off usage of maven for T2 tests
+    # Remove once TRAFODION-1929 is fixed
+    if options.jdbctype == 'T2':
+        ArgList._no_maven = True
+
     ArgList._export_str1 = options.exportstr1
     ArgList._export_str2 = options.exportstr2
     ArgList._export_str3 = options.exportstr3
@@ -749,6 +745,8 @@ gvars.my_MVN_ERROR_FILE = None
 
 prog_parse_args()
 
+os.chdir(gvars.my_ROOT)
+
 # check to make sure executables mvn and javac are in the PATH
 if spawn.find_executable("mvn") is None:
     print "ERROR: Could not find the Maven executable \'mvn\' in the PATH! \n"
@@ -828,9 +826,9 @@ else:
 
     # generate command to run tests without Maven
     gvars.my_RUN_CMD = (os.path.join(ArgList._javahome, 'bin/java') + ' -cp ' + myclasspath +
-                        ' ' + myoptions + ' -Duser.timezone=GMT -Dhpjdbc.properties=' +
+                        ' ' + myoptions + ' -Duser.timezone=GMT -Dtrafjdbc.properties=' +
                         ArgList._prop_file + ' org.junit.runner.JUnitCore ' +
-                        'test.java.com.hp.phoenix.end2end.')
+                        'test.java.org.trafodion.phoenix.end2end.')
 
     # Generate list of tests if needed
     if ArgList._tests is None:

@@ -1,19 +1,22 @@
 /***********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -5186,6 +5189,7 @@ RelExpr * Join::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->tsjForSetNFError_ = tsjForSetNFError_;
   result->tsjForMerge_ = tsjForMerge_;
   result->tsjForMergeWithInsert_ = tsjForMergeWithInsert_;
+  result->tsjForMergeUpsert_ = tsjForMergeUpsert_;
   result->tsjForSideTreeInsert_ = tsjForSideTreeInsert_;
   result->enableTransformToSTI_ = enableTransformToSTI_;
 
@@ -9512,7 +9516,8 @@ FileScan::FileScan(const CorrName& tableName,
      estRowsAccessed_ (0),
      mdamFlag_(UNDECIDED),
      skipRowsToPreventHalloween_(FALSE),
-     doUseSearchKey_(TRUE)
+     doUseSearchKey_(TRUE),
+     computedNumOfActivePartitions_(-1)
 {
   // Set the filescan properties:
 
@@ -9549,6 +9554,17 @@ FileScan::FileScan(const CorrName& tableName,
                                      dummySet, // needed by interface but not used here
                                      indexDesc_
                                    );
+
+   
+      if ( indexDesc_->getPartitioningFunction() &&
+           indexDesc_->getPartitioningFunction()->castToRangePartitioningFunction() ) 
+      {
+         const RangePartitioningFunction* rangePartFunc =
+              indexDesc_->getPartitioningFunction()->castToRangePartitioningFunction();
+
+         computedNumOfActivePartitions_ = 
+             rangePartFunc->computeNumOfActivePartitions(partKeys_, tableDescPtr);
+      }
     }
   setComputedPredicates(generatedCCPreds);
 
@@ -12296,6 +12312,11 @@ RelExpr * GenericUpdate::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   if (currOfCursorName())
     result->currOfCursorName_ = currOfCursorName()->copyTree(outHeap)->castToItemExpr();
 
+  if (preconditionTree_)
+    result->preconditionTree_ = preconditionTree_->copyTree(outHeap)->castToItemExpr();
+  result->setPrecondition(precondition_);
+  result->exprsInDerivedClasses_ = exprsInDerivedClasses_;
+  
   return RelExpr::copyTopNode(result, outHeap);
 }
 
@@ -12434,6 +12455,16 @@ void GenericUpdate::addLocalExpr(LIST(ExprNode *) &xlist,
       llist.insert("check_constraint");
     }
 
+  if (preconditionTree_ != NULL OR
+      precondition_.entries() > 0)
+    {
+      if (preconditionTree_ != NULL)
+        xlist.insert(preconditionTree_);
+      else
+        xlist.insert(precondition_.rebuildExprTree(ITM_AND));
+      llist.insert("precondition");
+    }
+
   RelExpr::addLocalExpr(xlist,llist);
 }
 
@@ -12530,6 +12561,9 @@ void GenericUpdate::pushdownCoveredExpr(const ValueIdSet &outputExpr,
   // QSTUFF ?? again need to understand details 
   ValueIdSet localExprs(newRecExpr());
 
+  if (setOfValuesReqdByParent)
+    localExprs += *setOfValuesReqdByParent;
+
   // QSTUFF
   localExprs.insertList(newRecBeforeExpr());
   // QSTUFF
@@ -12545,6 +12579,8 @@ void GenericUpdate::pushdownCoveredExpr(const ValueIdSet &outputExpr,
   localExprs.insertList(updateToSelectMap().getBottomValues());
   if (setOfValuesReqdByParent)
     localExprs += *setOfValuesReqdByParent ;
+  localExprs += exprsInDerivedClasses_;
+
   // ---------------------------------------------------------------------
   // Check which expressions can be evaluated by my child.
   // Modify the Group Attributes of those children who inherit some of
@@ -12761,7 +12797,7 @@ MergeUpdate::MergeUpdate(const CorrName &name,
 			 ItemExpr *where)
      : Update(name,tabId,otype,child,setExpr,NULL,oHeap),
        insertCols_(insertCols), insertValues_(insertValues),
-       where_(where),xformedUpsert_(FALSE)
+       where_(where), xformedUpsert_(FALSE)
 {
   setCacheableNode(CmpMain::BIND);
   
@@ -12980,20 +13016,25 @@ const NAString HbaseInsert::getText() const
 
   if (isUpsert())
     {
-      if (getInsertType() == Insert::VSBB_INSERT_USER)
-	text += "vsbb_upsert";
-      else if (getInsertType() == Insert::UPSERT_LOAD)
+      if (getInsertType() == Insert::UPSERT_LOAD)
         {
           if (getIsTrafLoadPrep())
             text += "load_preparation";
           else
             text += "load";
         }
+      else if (vsbbInsert())
+	text += "vsbb_upsert";
       else
         text += "upsert";
     }
   else
-    text += "insert";
+    {
+      if (vsbbInsert())
+	text += "vsbb_upsert";
+      else
+        text += "insert";
+    }
   
   return (text + " " + getUpdTableNameText());
 }

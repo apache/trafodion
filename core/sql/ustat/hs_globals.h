@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -70,8 +73,6 @@ class AbstractFastStatsHist;
 Lng32 AddNecessaryColumns();
 Lng32 AddAllColumnsForIUS();
 
-NABoolean enableDp2SamplingIfSuitable(HSTableDef *objDef, double &samplePercent,
-                                      Int64 &sampleRowCnt);
 Lng32 createSampleOption(Lng32 sampleType, double samplePercent, NAString &sampleOpt,
                         Int64 sampleValue1=0, Int64 sampleValue2=0);
 Lng32 doubleToHSDataBuffer(const double dbl, HSDataBuffer& dbf);
@@ -157,6 +158,7 @@ class ISFixedChar
     // NABasicObject does not define array versions of those operators. Even if
     // it did, we wouldn't subclass it because it would make the objects bigger
     // (NABasicObject has a heap ptr member variable).
+    /*
     void* operator new[](size_t size)
     {
       return STMTHEAP->allocateMemory(size, FALSE);
@@ -166,6 +168,7 @@ class ISFixedChar
     {
       STMTHEAP->deallocateMemory(addr);
     }
+*/
 
     // Note that we forego the usual convention of having operator= return a
     // reference to the assigned-to object. This is just to make this operation
@@ -1336,6 +1339,10 @@ public:
     // parser errors
     enum { ERROR_NONE = 0, ERROR_SYNTAX, ERROR_SEMANTICS};
 
+    // Set CQDs controlling min/max HBase cache size to minimize risk of
+    // scanner timeout.
+    static NABoolean setHBaseCacheSize(double sampleRatio);
+
     // Static fns for determining minimum table sizes for sampling, and for
     // using lowest sampling rate, under default sampling protocol.
     static Int64 getMinRowCountForSample();
@@ -1371,10 +1378,20 @@ public:
     // See if catName is the name of an HBase catalog.
     static NABoolean isHbaseCat(const NAString& catName)
     {
-      return (((defaultHbaseCatName != NULL) && (catName == (*defaultHbaseCatName))) ||
-              ((catName == TRAFODION_SYSCAT_LIT) ||
-	       (catName == HBASE_SYSTEM_CATALOG)));
+      return ((catName == TRAFODION_SYSCAT_LIT) || isNativeHbaseCat(catName));
     }
+
+    static NABoolean isNativeHbaseCat(const NAString& catName)
+    {
+      return (((defaultHbaseCatName != NULL) && (catName == (*defaultHbaseCatName))) ||
+              (catName == HBASE_SYSTEM_CATALOG));
+    }
+
+    static NABoolean isNativeCat(const NAString& catName)
+    {
+      return (isNativeHbaseCat(catName) || isHiveCat(catName));
+    }
+
 
     static NABoolean isHBaseMeta(const NAString& schName)
     { return (schName == "_MD_" || schName == "_PRIVMGR_MD_"); }
@@ -1547,6 +1564,9 @@ public:
     void startJitLogging(const char* checkPointName, Int64 elapsedSeconds);
 
     
+    static void setPerformISForMC(NABoolean x) { performISForMC_ = x; }
+    static NABoolean performISForMC() { return performISForMC_; }
+
                                               /*==============================*/
                                               /*     OBJECT INFORMATION       */
                                               /*==============================*/
@@ -1554,6 +1574,7 @@ public:
     NAString      *catSch;                         /* catalog+schema name     */
     NAString      *user_table;                     /* object name             */
     NABoolean     isHbaseTable;                    /* ustat on HBase table    */
+    NABoolean     isHiveTable;                     /* ustat on Hive table     */
     ComAnsiNameSpace nameSpace;                    /* object namespace    ++MV*/
     Int64          numPartitions;                  /* # of partns in object   */
     NAString      *hstogram_table;                 /* HISTOGRM table          */
@@ -1587,6 +1608,7 @@ public:
     NABoolean      sampleTableUsed;                /* sample table created    */
     NABoolean      samplingUsed;                   /* sample (w/wo sample tbl)*/
     NABoolean      unpartitionedSample;            /* sample tbl not partitned*/
+    NABoolean      isUpdatestatsStmt;              /* is update stats command */
     Lng32           groupCount;                     /* total #column groups    */
     Lng32           singleGroupCount;               /* #single-column groups   */
     HSColGroupStruct *singleGroup;                 /* single-column group list*/
@@ -1662,7 +1684,7 @@ private:
     //
     // When performing internal sort, determines the amount of memory required
     // for each column that will be read into memory.
-    Int64 getInternalSortMemoryRequirements();
+    Int64 getInternalSortMemoryRequirements(NABoolean performISForMC);
 
     // Get maximum amount of memory to use for internal sort.
     Int64 getMaxMemory();
@@ -1683,7 +1705,7 @@ private:
 
     // Select a set of columns that will fit in available memory so they can
     // be sorted internally.
-    Int32 selectSortBatch(NABoolean ISonlyWhenBetter,
+    Int32 selectSortBatch(Int64 rows, NABoolean ISonlyWhenBetter,
                         NABoolean trySampleInMemory);
 
     // Select a set of columns that can be IUS updated in memory in one batch.
@@ -1693,6 +1715,10 @@ private:
     // any IUS, and 'colsSelected' indicates # of columns selected for
     // IUS in this batch.
     Lng32 selectIUSBatch(Int64 currentRows, Int64 futureRows,NABoolean& ranOut, Int32& colsSelected);
+
+    // Determine if all groups (both single and MC) can fit in memory for internal sort.
+    // No space is actually allocated and no state is set for each group.
+    NABoolean allGroupsFitInMemory(Int64 rows);
 
     // Determine the next batch of columns to be processed with internal sort
     // by calling selectSortBatch() and ensuring that adequate memory can be
@@ -1704,7 +1730,8 @@ private:
     // When a memory allocation fails, return any memory already allocated for
     // the group for internal sort, and set any PENDING columns back to
     // UNPROCESSED state.  This function cannot fail.
-    static void memRecover(HSColGroupStruct* group, NABoolean firstFailed, Int64 rows, HSColGroupStruct* mgroup);
+    static void memRecover(HSColGroupStruct* group, NABoolean firstFailed, Int64 rows, 
+                           HSColGroupStruct* mgroup);
 
     // Allocate memory for the columns selected for an internal sort batch.
     //Int32 allocateMemoryForColumns(Int64 rows);
@@ -1888,6 +1915,8 @@ private:
     double jitLogThreshold;
     Int64 stmtStartTime;
     NABoolean jitLogOn;
+
+    static THREAD_P NABoolean performISForMC_;
 
   };  // class HSGlobalsClass
 

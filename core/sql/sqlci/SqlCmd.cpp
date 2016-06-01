@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //
@@ -639,6 +642,7 @@ char * SqlCmd::replacePattern(SqlciEnv * sqlci_env, char * str)
 	    }
 
 	  j = 0;
+          skipChar = FALSE;
 	  state = CONSUME_CHAR;
 	  break;
 
@@ -1624,10 +1628,43 @@ short SqlCmd::doDescribeInput(SqlciEnv * sqlci_env,
 						  , 0
 						  , 0
 						  );
-		  
+                  
+                  rec_datetime_field dtStartField = REC_DATE_YEAR;
+                  rec_datetime_field dtEndField = REC_DATE_SECOND;
+                  if (datatype == REC_DATETIME)
+                    {
+                      Lng32 dtCode;
+                      retcode = SQL_EXEC_GetDescItem(input_desc, entry,
+                                                     SQLDESC_DATETIME_CODE,
+                                                     &dtCode, 0, 0, 0, 0);
+                      HandleCLIError(retcode, sqlci_env);
+
+                      // this will get fractional precision
+                      retcode = SQL_EXEC_GetDescItem(input_desc, entry,
+                                                     SQLDESC_PRECISION,
+                                                     &precision, 0, 0, 0, 0);
+                      HandleCLIError(retcode, sqlci_env);
+                      
+                      if (dtCode == REC_DTCODE_DATE)
+                        {
+                          dtStartField = REC_DATE_YEAR;
+                          dtEndField = REC_DATE_DAY;
+                        }
+                      else if (dtCode == REC_DTCODE_TIME)
+                        {
+                          dtStartField = REC_DATE_HOUR;
+                          dtEndField = REC_DATE_SECOND;
+                        }
+                      else if (dtCode == REC_DTCODE_TIMESTAMP)
+                        {
+                          dtStartField = REC_DATE_YEAR;
+                          dtEndField = REC_DATE_SECOND;
+                        }
+                     }
+
 		  NAType::convertTypeToText(tgttype,
 					    datatype, length, precision, scale,
-					    REC_DATE_YEAR, REC_DATE_SECOND,
+					    dtStartField, dtEndField,
 					    (short)precision,
 					    SQLInterval::DEFAULT_LEADING_PRECISION,
 					    FALSE/*upshift*/,

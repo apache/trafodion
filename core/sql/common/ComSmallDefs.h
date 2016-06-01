@@ -2,19 +2,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -85,17 +88,7 @@ typedef Int32			ComUserID;
 
 typedef NABoolean               ComBoolean;
 
-#define SERVICES_USER 33334       // user id of DB__ServicesUser
-#define SUPER_USER 33333          // user id of DB__ROOT
-#define SUPER_USER_LIT "33333"
-
-// Defines for special users
-#define DB__USERADMIN_ROLE      "DB__USERADMIN"
-#define DB__ROOTROLE            "DB__ROOTROLE"
-#define DB__ROOT                "DB__ROOT"
-// Defines for special users
-#define SYSTEM_USER -2
-#define PUBLIC_USER -1
+// user and role definitions have been moved to NAUserId.h
 
 // Defaults for system attributes
 #define SMD_LOCATION  "$SYSTEM"
@@ -110,7 +103,8 @@ typedef NABoolean               ComBoolean;
 #define HIVE_SYSTEM_CATALOG          "HIVE"
 #define HIVE_SYSTEM_SCHEMA           "HIVE"
 #define HIVE_STATS_CATALOG           "TRAFODION"
-#define HIVE_STATS_SCHEMA            "HIVESTATS"
+#define HIVE_STATS_SCHEMA            "\"_HIVESTATS_\""
+#define HIVE_EXT_SCHEMA_PREFIX       "_HV_"
 
 #define HBASE_SYSTEM_CATALOG          "HBASE"
 #define HBASE_SYSTEM_SCHEMA           "HBASE"
@@ -118,12 +112,22 @@ typedef NABoolean               ComBoolean;
 #define HBASE_HISTINT_NAME            "SB_HISTOGRAM_INTERVALS"
 #define HBASE_HIST_PK                    "SB_HISTOGRAMS_PK"
 #define HBASE_HISTINT_PK               "SB_HISTOGRAM_INTERVALS_PK"
+#define HBASE_EXT_SCHEMA_PREFIX       "_HB_"
+
+#define HBASE_STATS_CATALOG          "TRAFODION"
+#define HBASE_STATS_SCHEMA           "\"_HBASESTATS_\""
+
+// default null format for data in hive files.
+#define HIVE_DEFAULT_NULL_STRING             "\\N"
+
 #define TRAFODION_SYSCAT_LIT              "TRAFODION"
 #define SEABASE_SYSTEM_SCHEMA           "SEABASE"
 #define SEABASE_OLD_PRIVMGR_SCHEMA         "PRIVMGR_MD"
 #define SEABASE_PRIVMGR_SCHEMA         "_PRIVMGR_MD_"
 #define SEABASE_UDF_SCHEMA             "_UDF_"
-
+#define LOB_MD_PREFIX                  "LOBMD_"
+#define LOB_DESC_CHUNK_PREFIX          "LOBDescChunks_"
+#define LOB_DESC_HANDLE_PREFIX         "LOBDescHandle_"
 #define SEABASE_DEFAULT_COL_FAMILY "#1"
 
 // reserved names for seabase metadata where SQL table information is kept
@@ -169,6 +173,16 @@ typedef NABoolean               ComBoolean;
 #define REPOS_METRIC_TEXT_TABLE  "METRIC_TEXT_TABLE"
 
 #define SEABASE_REGRESS_DEFAULT_SCHEMA "SCH"
+
+// Trafodion system library and procedures reserved schema
+// Procedures are defined in CmpSeabaseDDLroutine.h
+#define SEABASE_LIBMGR_SCHEMA "_LIBMGR_"
+#define SEABASE_LIBMGR_LIBRARY "DB__LIBMGRNAME"
+
+// reserved column names for traf internal system usage
+#define TRAF_SALT_COLNAME "_SALT_"
+#define TRAF_DIVISION_COLNAME_PREFIX "_DIVISION_"
+#define TRAF_SYSKEY_COLNAME "SYSKEY"
 
 // length of explain_plan column in metric_query_table.
 // explain_plan greater than this length are chunked and store in multiple
@@ -561,6 +575,7 @@ enum ComColumnClass { COM_UNKNOWN_CLASS
                     , COM_USER_COLUMN
                     , COM_ADDED_USER_COLUMN
                     , COM_MV_SYSTEM_ADDED_COLUMN
+                    , COM_ALTERED_USER_COLUMN
                     };
 
 #define COM_UNKNOWN_CLASS_LIT               "  "
@@ -568,6 +583,7 @@ enum ComColumnClass { COM_UNKNOWN_CLASS
 #define COM_USER_COLUMN_LIT                 "U "
 #define COM_ADDED_USER_COLUMN_LIT           "A "
 #define COM_MV_SYSTEM_ADDED_COLUMN_LIT      "M "
+#define COM_ALTERED_USER_COLUMN_LIT         "C "
 
 enum ComColumnDefaultClass { COM_CURRENT_DEFAULT
                            , COM_NO_DEFAULT
@@ -612,12 +628,16 @@ enum ComParamDefaultClass { COM_CURRENT_PARAM_DEFAULT        = COM_CURRENT_DEFAU
 #define COM_ALWAYS_COMPUTE_COMPUTED_PARAM_DEFAULT_LIT "AC"
 #define COM_ALWAYS_DEFAULT_COMPUTED_PARAM_DEFAULT_LIT "AD"
 
-// represent the kind of string value stored in TEXT table
+// Represents the kind of string value stored in TEXT table.  Note
+// that changing existing values will require an UPGRADE of the
+// metadata.
 enum ComTextType {COM_VIEW_TEXT = 0,
                   COM_CHECK_CONSTR_TEXT = 1,
                   COM_HBASE_OPTIONS_TEXT = 2,
                   COM_TABLE_COMMENT_TEXT = 3,
-                  COM_COMPUTED_COL_TEXT = 4
+                  COM_COMPUTED_COL_TEXT = 4,
+                  COM_HBASE_COL_FAMILY_TEXT = 5,
+                  COM_HBASE_SPLIT_TEXT = 6
 };
 
 enum ComColumnDirection { COM_UNKNOWN_DIRECTION
@@ -1058,6 +1078,8 @@ enum ComRowFormat {  COM_UNKNOWN_FORMAT_TYPE
                      , COM_PACKED_FORMAT_TYPE
                      , COM_ALIGNED_FORMAT_TYPE
                      , COM_HBASE_FORMAT_TYPE
+                     , COM_HIVE_EXTERNAL_FORMAT_TYPE
+                     , COM_HBASE_EXTERNAL_FORMAT_TYPE
 };
 
 #define COM_ROWFORMAT_LIT_LEN                2
@@ -1065,6 +1087,7 @@ enum ComRowFormat {  COM_UNKNOWN_FORMAT_TYPE
 #define COM_PACKED_FORMAT_LIT                "PF"
 #define COM_ALIGNED_FORMAT_LIT               "AF"
 #define COM_HBASE_FORMAT_LIT                   "HF"
+#define COM_HIVE_EXTERNAL_FORMAT_TYPE_LIT    "EV"
 
 // table load action: regular, SET or MULTISET.
 // Regular:  will error out if duplicate key is inserted.
@@ -1513,7 +1536,8 @@ enum ComSchemaType { COM_USER_TYPE,
 enum ComSchemaClass { COM_SCHEMA_CLASS_UNKNOWN = 2,
                       COM_SCHEMA_CLASS_PRIVATE = 3,
                       COM_SCHEMA_CLASS_SHARED = 4,
-                      COM_SCHEMA_CLASS_DEFAULT = 5};
+                      COM_SCHEMA_CLASS_DEFAULT = 5
+                    };
 
 enum ComSQLDataType { COM_UNKNOWN_SDT
                     , COM_CHARACTER_SDT
@@ -1840,6 +1864,15 @@ enum ComAuthenticationType{
 #define COM_DBS_FAIL_LIT       "F"
 #define COM_DBS_YES_LIT        "Y"
 #define COM_DBS_NO_LIT         "N"
+
+// used with removeNATable for QI support
+enum ComQiScope 
+  {
+    REMOVE_FROM_ALL_USERS = 100,
+    REMOVE_MINE_ONLY
+  };
+
+
 //
 // (Maximum) size of TEXT.TEXT metadata column in bytes (for NSK) or NAWchars (for SeaQuest)
 //

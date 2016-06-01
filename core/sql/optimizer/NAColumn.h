@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -85,23 +88,24 @@ public:
   // ---------------------------------------------------------------------
 
   NAColumn(const char* colName,
-    Lng32 position,
-    NAType *type,
-    CollHeap *h,
-    const NATable* table = NULL,
-    ColumnClass columnClass = USER_COLUMN,
-    const ComColumnDefaultClass defaultClass = COM_NO_DEFAULT,
-    char* defaultValue = NULL,
-    char* heading = NULL,
-    NABoolean upshift = FALSE,
-    NABoolean addedColumn = FALSE,
-    ComColumnDirection colDirection = COM_UNKNOWN_DIRECTION,
-    NABoolean isOptional = FALSE,
-    char *routineParamType = NULL,
-    NABoolean storedOnDisk = TRUE,
-    char *computedColExpr = NULL,
-    NABoolean isSaltColumn = FALSE,
-    NABoolean isDivisioningColumn = FALSE)
+           Lng32 position,
+           NAType *type,
+           CollHeap *h,
+           const NATable* table = NULL,
+           ColumnClass columnClass = USER_COLUMN,
+           const ComColumnDefaultClass defaultClass = COM_NO_DEFAULT,
+           char* defaultValue = NULL,
+           char* heading = NULL,
+           NABoolean upshift = FALSE,
+           NABoolean addedColumn = FALSE,
+           ComColumnDirection colDirection = COM_UNKNOWN_DIRECTION,
+           NABoolean isOptional = FALSE,
+           char *routineParamType = NULL,
+           NABoolean storedOnDisk = TRUE,
+           char *computedColExpr = NULL,
+           NABoolean isSaltColumn = FALSE,
+           NABoolean isDivisioningColumn = FALSE,
+           NABoolean isAlteredColumn = FALSE)
   : heap_(h),
     colName_(colName, h),
     position_(position),
@@ -113,6 +117,7 @@ public:
     heading_(heading),
     upshift_(upshift),
     addedColumn_(addedColumn),
+    alteredColumn_(isAlteredColumn),
     keyKind_(NON_KEY),
     clusteringKeyOrdering_(NOT_ORDERED),
     isNotNullNondroppable_(NULL),
@@ -129,7 +134,7 @@ public:
     isSaltColumn_(isSaltColumn),
     isDivisioningColumn_(isDivisioningColumn),
     lobNum_(-1),
-    lobStorageType_(Lob_Invalid_Storage),
+    lobStorageType_(Lob_HDFS_File),
     lobStorageLocation_(NULL),
     hbaseColFlags_(0)
   {
@@ -151,6 +156,7 @@ public:
     heading_(nac.heading_),
     upshift_(nac.upshift_),
     addedColumn_(nac.addedColumn_),
+    alteredColumn_(nac.alteredColumn_),
     keyKind_(nac.keyKind_),
     clusteringKeyOrdering_(nac.clusteringKeyOrdering_),
     isNotNullNondroppable_(nac.isNotNullNondroppable_),
@@ -239,6 +245,7 @@ public:
   inline const char* getComputedColumnExprString() const { return computedColumnExpression_; }
   inline NABoolean isStoredOnDisk() const       { return storedOnDisk_; }
   inline NABoolean isAddedColumn() const { return addedColumn_; }
+  inline NABoolean isAlteredColumn() const { return alteredColumn_; }
   inline NABoolean isSaltColumn() const        { return isSaltColumn_;}
   inline NABoolean isDivisioningColumn() const { return isDivisioningColumn_; }
 
@@ -395,6 +402,14 @@ public:
     return hbaseColFlags_;
   }
 
+  void resetSerialization() {
+     hbaseColFlags_ &= SEABASE_SERIALIZED;
+  }
+
+  enum {
+    SEABASE_SERIALIZED = 0x0001
+  };
+
 private:
   enum referencedState { NOT_REFERENCED, REFERENCED_ANYWHERE, REFERENCED_FOR_MULTI_INTERVAL_HISTOGRAM, REFERENCED_FOR_SINGLE_INTERVAL_HISTOGRAM };
 
@@ -505,6 +520,11 @@ private:
   // Set to TRUE if this column was an added column.
   // ----------------------------------------------------
   NABoolean addedColumn_;
+
+  // ----------------------------------------------------
+  // Set to TRUE if this column was altered by datatype change
+  // ----------------------------------------------------
+  NABoolean alteredColumn_;
 
   // ----------------------------------------------------
   // Set to TRUE if there is a join predicate on this column.
@@ -623,6 +643,15 @@ public:
 
   // get total storage size (aggregated over each element)
   Int32 getTotalStorageSize() const;
+
+  // For Trafodion tables column qualifier is an unsigned 
+  // numeric > 0. This method is used during alter table add
+  // column to find the maximum value currently in use. Columns
+  // are deleted during alter table drop column.
+  ULng32 getMaxTrafHbaseColQualifier() const;
+
+  NAString getColumnNamesAsString(char separator) const;
+  NAString getColumnNamesAsString(char separator, UInt32 ct) const;
 
 private:
 

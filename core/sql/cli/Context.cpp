@@ -1,19 +1,22 @@
 //**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //**********************************************************************/
@@ -170,11 +173,10 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     lobGlobals_(NULL),
     seqGen_(NULL),
     dropInProgress_(FALSE),
-#ifdef NA_CMPDLL
     isEmbeddedArkcmpInitialized_(FALSE),
-    embeddedArkcmpContext_(NULL)
-#endif // NA_CMPDLL
-    , numCliCalls_(0)
+    embeddedArkcmpContext_(NULL),
+    ddlStmtsExecuted_(FALSE)
+   , numCliCalls_(0)
    , jniErrorStr_(&exHeap_)
    , hbaseClientJNI_(NULL)
    , hiveClientJNI_(NULL)
@@ -4035,11 +4037,7 @@ void ContextCli::endSession(NABoolean cleanupEsps,
       
       sessionInUse_ = FALSE;
     }
-  // kill mxcmp, if an inMemory table definition was created in mxcmp memory.
-  if (inMemoryObjectDefn())
-    {
-      killAndRecreateMxcmp();
-    }
+    killAndRecreateMxcmp();
   if (rc < 0) 
     {
       // an error was returned during drop of tables in the volatile schema.
@@ -4171,6 +4169,105 @@ void ContextCli::resetVolTabList()
 
 void ContextCli::closeAllTables()
 {
+}
+
+// this method is used to send a transaction operation specific message
+// to arkcmp by executor.
+// Based on that, arkcmp takes certain actions.
+// Called from executor/ex_transaction.cpp.
+// Note: most of the code in this method has been moved from ex_transaction.cpp
+ExSqlComp::ReturnStatus ContextCli::sendXnMsgToArkcmp
+(char * data, Lng32 dataSize, 
+ Lng32 xnMsgType, ComDiagsArea* &diagsArea)
+{
+  // send the set trans request to arkcmp so compiler can
+  // set this trans mode in its memory. This is done so any
+  // statement compiled after this could be compiled with the
+  // current trans mode.
+  ExSqlComp *cmp = NULL;
+  ExSqlComp::ReturnStatus cmpStatus ;
+  // the dummyReply is moved up because otherwise the 
+  // compiler would complain about
+  // initialization of variables afer goto statements.
+  
+  char* dummyReply = NULL;
+  ULng32 dummyLength;
+  ContextCli *currCtxt = this;
+  Int32 cmpRet = 0;
+
+  // If use embedded compiler, send the settings to it
+  if (currCtxt->getSessionDefaults()->callEmbeddedArkcmp() &&
+      currCtxt->isEmbeddedArkcmpInitialized() &&  
+      (CmpCommon::context()) &&
+      (CmpCommon::context()->getRecursionLevel() == 0))
+    {
+      NAHeap *arkcmpHeap = currCtxt->exHeap();
+      
+      cmpRet = CmpCommon::context()->compileDirect(
+           data, dataSize,
+           arkcmpHeap,
+           SQLCHARSETCODE_UTF8,
+           CmpMessageObj::MessageTypeEnum(xnMsgType),
+           dummyReply, dummyLength,
+           currCtxt->getSqlParserFlags(),
+           NULL, 0);
+      if (cmpRet != 0)
+        {
+          char emsText[120];
+          str_sprintf(emsText,
+                      "Set transaction mode to embedded arkcmp failed, return code %d",
+                      cmpRet);
+          SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, emsText, 0);
+          diagsArea = CmpCommon::diags();
+        }
+      
+      if (dummyReply != NULL)
+        {
+          arkcmpHeap->deallocateMemory((void*)dummyReply);
+          dummyReply = NULL;
+        }
+    }
+
+  if (!currCtxt->getSessionDefaults()->callEmbeddedArkcmp()  || 
+      (currCtxt->getSessionDefaults()->callEmbeddedArkcmp() && 
+       ((cmpRet != 0) || 
+        (CmpCommon::context()->getRecursionLevel() > 0) ||
+        currCtxt->getArkcmp()->getServer())
+       )
+      )
+    {
+      for (short i = 0; i < currCtxt->getNumArkcmps();i++)
+        {
+          cmp = currCtxt->getArkcmp(i);
+          cmpStatus = cmp->sendRequest(CmpMessageObj::MessageTypeEnum(xnMsgType),
+                                       data, dataSize,
+                                       TRUE, NULL,
+                                       SQLCHARSETCODE_UTF8,
+                                       TRUE /*resend, if needed*/
+                                       );
+          
+          if (cmpStatus != ExSqlComp::SUCCESS) {
+            diagsArea = cmp->getDiags();
+            // If its an error don't proceed further.
+            if (cmpStatus == ExSqlComp::ERROR)
+              return cmpStatus;
+          }
+	  
+          cmpStatus = cmp->getReply(dummyReply, dummyLength);
+          cmp->getHeap()->deallocateMemory((void*)dummyReply);
+          if (cmpStatus != ExSqlComp::SUCCESS) {
+            diagsArea = cmp->getDiags();
+            //Don't proceed if its an error.
+            if (cmpStatus == ExSqlComp::ERROR)
+              return cmpStatus;
+          }
+	  
+          if (cmp->status() != ExSqlComp::FETCHED)
+            diagsArea = cmp->getDiags();
+        } // for
+    }
+  
+  return ExSqlComp::SUCCESS;
 }
 
 Lng32 ContextCli::setSecInvalidKeys(
@@ -4842,6 +4939,26 @@ Lng32 parse_statsReq(short statsReqType,char *statsReqStr, Lng32 statsReqStrLen,
     return -1;
   }
   return 0;
+
+}
+
+void ContextCli::killIdleMxcmp() 
+{
+  Int64 currentTimestamp;
+  Int32 compilerIdleTimeout;
+  Int64 recentIpcTimestamp ;
+ 
+  if (arkcmpArray_.entries() == 0)
+     return;
+  if (arkcmpArray_[0]->getServer() == NULL)
+     return;
+  compilerIdleTimeout = getSessionDefaults()->getCompilerIdleTimeout();
+  if (compilerIdleTimeout == 0)
+     return;
+  currentTimestamp = NA_JulianTimestamp();
+  recentIpcTimestamp  = arkcmpArray_[0]->getRecentIpcTimestamp();
+  if (recentIpcTimestamp != -1 && (((currentTimestamp - recentIpcTimestamp)/1000000)  >= compilerIdleTimeout))
+     killAndRecreateMxcmp();
 }
 
 void ContextCli::killAndRecreateMxcmp()
@@ -5563,10 +5680,14 @@ Int32 ContextCli::switchToCmpContext(Int32 cmpCntxtType)
     {
       // find none to use, create new CmpContext instance
       CmpContext *savedCntxt = cmpCurrentContext;
-      if (arkcmp_main_entry())
+      Int32 rc = 0;
+      if (rc = arkcmp_main_entry())
         {
           cmpCurrentContext = savedCntxt;
-          return -1;  // failed to create new CmpContext instance
+          if (rc == 2)
+            return -2; // error during NADefaults creation
+          else
+            return -1;  // failed to create new CmpContext instance
         }
       
       cmpCntxt = CmpCommon::context();

@@ -1,19 +1,22 @@
 //**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 /**********************************************************************/
@@ -670,8 +673,12 @@ void NARoutine::setupPrivInfo(void)
 
   // gather privileges
   std::vector <ComSecurityKey *> secKeyVec;
-  if (STATUS_GOOD != privInterface.getPrivileges(objectUID_, ComUser::getCurrentUser(),
-                                    *privInfo_, &secKeyVec))
+  ComObjectType objectType = (UDRType_ == COM_PROCEDURE_TYPE ? 
+                              COM_STORED_PROCEDURE_OBJECT : 
+                              COM_USER_DEFINED_ROUTINE_OBJECT);
+  if (STATUS_GOOD != privInterface.getPrivileges(objectUID_, objectType,
+                                                 ComUser::getCurrentUser(),
+                                                 *privInfo_, &secKeyVec))
   {
     NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
     privInfo_ = NULL;
@@ -785,9 +792,6 @@ void NARoutineDB::resetAfterStatement()
   // to save compile-time performance.
   if (routinesToDeleteAfterStatement_.entries())
   {
-    for(CollIndex i=0; i < routinesToDeleteAfterStatement_.entries(); i++)
-      delete routinesToDeleteAfterStatement_[i];
-
     // Clear the list of tables to delete after statement
     routinesToDeleteAfterStatement_.clear();
   }
@@ -849,9 +853,9 @@ void NARoutineDB::free_entries_with_QI_key(Int32 numKeys, SQL_QIKEY* qiKeyArray)
 // propagate to all the other processes that could have the routine stored 
 // in cache.
 // ----------------------------------------------------------------------------
-void NARoutineDB::removeNARoutine(QualifiedName &routineName, 
-                                  QiScope qiScope, 
-                                  Int64 objUID)
+void NARoutineDB::removeNARoutine2(QualifiedName &routineName, 
+                                   ComQiScope qiScope, 
+                                   Int64 objUID)
 {
 
   NAHashDictionaryIterator<NARoutineDBKey,NARoutine> iter (*this); 
@@ -899,6 +903,44 @@ void NARoutineDB::removeNARoutine(QualifiedName &routineName,
     }
     long retcode = SQL_EXEC_SetSecInvalidKeys(numKeys, qiKeys);
   }
+}
+
+// This method follows the same semantics as NATableDB::removeNATable
+void NARoutineDB::removeNARoutine(QualifiedName &routineName, 
+                                  ComQiScope qiScope, 
+                                  Int64 objUID,
+                                  NABoolean ddlXns, NABoolean atCommit)
+
+{
+  if ((ddlXns) &&
+      (NOT atCommit))
+    {
+      CmpContext::DDLObjInfo ddlObj;
+      ddlObj.ddlObjName = routineName.getQualifiedNameAsString();
+      ddlObj.qiScope = qiScope;
+      ddlObj.ot = COM_USER_DEFINED_ROUTINE_OBJECT;
+      ddlObj.objUID = objUID;
+
+      NABoolean found = FALSE;
+      for (Lng32 i = 0;
+           ((NOT found) && (i <  CmpCommon::context()->ddlObjsList().entries()));
+           i++)
+        {
+          CmpContext::DDLObjInfo &ddlObjInList = 
+            CmpCommon::context()->ddlObjsList()[i];
+          if (ddlObj.ddlObjName == ddlObjInList.ddlObjName)
+            found = TRUE;
+        }
+
+      removeNARoutine2(routineName, qiScope, objUID);
+
+      if (NOT found)
+        CmpCommon::context()->ddlObjsList().insert(ddlObj);
+ 
+      return;
+    }
+
+  removeNARoutine2(routineName, qiScope, objUID);
 }
 
 // Find the NARoutine entry in the cache for 'key' or create it if not found.

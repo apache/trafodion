@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -52,6 +55,7 @@
 #include "LateBindInfo.h"
 #include "ComVersionDefs.h"
 #include "ParScannedTokenQueue.h"
+#include "StmtDDLCreateTable.h"
 
 class NAWString;
 
@@ -738,6 +742,70 @@ class MultiValueExprList
 // INSERT2000 COLUMN FIX ENDS HERE
 // */
 
+// ----------------------------------------------------------------------------
+// Class: TableTokens
+//
+// This is a helper class that gathers tokens from different create table
+// productions to make setting values in the create table parser node more
+// uniform.
+//
+// Class contains three members:
+//   type_ - describe the type of table as specified by the create table
+//           start tokens
+//   options_ - describe how data is loaded for create table statements
+//           that load data
+//   ifNotExistsSet - A table token that tells the create code to ignore
+//           already exists errors.
+// ----------------------------------------------------------------------------           
+class TableTokens : public NABasicObject
+{
+public:
+  // Type of tables available from create table start tokens
+  enum TableType
+    { TYPE_REGULAR_TABLE = 0,
+      TYPE_EXTERNAL_TABLE,
+      TYPE_SET_TABLE,
+      TYPE_MULTISET_TABLE,
+      TYPE_VOLATILE_TABLE,
+      TYPE_VOLATILE_TABLE_MODE_SPECIAL1,
+      TYPE_VOLATILE_SET_TABLE,
+      TYPE_VOLATILE_MULTISET_TABLE,
+      TYPE_GHOST_TABLE
+    };
+
+  // load/in memory options
+  enum TableOptions
+    { OPT_NONE,
+      OPT_LOAD,
+      OPT_NO_LOAD,
+      OPT_IN_MEM,
+      OPT_LOAD_WITH_DELETE
+    };
+
+  TableTokens(TableType type, NABoolean ifNotExistsSet)
+  : type_(type),
+    options_ (OPT_NONE),
+    ifNotExistsSet_(ifNotExistsSet)
+  {}
+
+  TableType getType() { return type_; }
+  NABoolean isVolatile()
+   { return (type_ == TYPE_VOLATILE_TABLE ||
+             type_ == TYPE_VOLATILE_TABLE_MODE_SPECIAL1 ||
+             type_ == TYPE_VOLATILE_SET_TABLE ||
+             type_ == TYPE_VOLATILE_MULTISET_TABLE); }
+  TableOptions getOptions() { return options_; }
+  NABoolean ifNotExistsSet() { return ifNotExistsSet_; }
+
+  void setOptions( TableOptions load) { options_ = load; }
+  void setTableTokens(StmtDDLCreateTable *pNode);
+
+private:
+  TableType    type_;
+  TableOptions options_;
+  NABoolean    ifNotExistsSet_;
+};
+
 // -----------------------------------------------------------------------
 // Declarations of global functions
 // -----------------------------------------------------------------------
@@ -791,6 +859,7 @@ SqlParserAux_buildDropRoutine ( ComRoutineType  drop_routine_type_tokens  // in
                               , ComDropBehavior optional_drop_behavior    // in
                               , NABoolean       optional_validate         // in
                               , NAString      * optional_logfile          // in - deep copy
+                              , NABoolean       optional_if_exists        // in
                               );
 
 ElemDDLNode *

@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -56,6 +59,9 @@
 //////////////////////////////
 #include "Analyzer.h"
 //////////////////////////////
+//
+#include "NATable.h"
+#include "EncodedKeyValue.h"
 
 #include "SqlParserGlobals.h"		// must be last #include
 
@@ -507,6 +513,29 @@ ValueId::getNAColumn(NABoolean okIfNotColumn) const
   return NULL;  // NT_PORT
 }
 
+
+NABoolean ValueId::isColumnWithNonNullNonCurrentDefault() const{
+  NAColumn * nac = NULL;
+  ItemExpr *ck = getItemExpr();
+  if ( ck == NULL )
+     return FALSE;
+  switch (ck->getOperatorType()){
+  case ITM_BASECOLUMN:
+      nac = ((BaseColumn*)ck)->getNAColumn();
+      break;
+  case ITM_INDEXCOLUMN:
+      nac = ((IndexColumn*)ck)->getNAColumn();
+      break;
+  default:
+      break;
+  }
+  if (nac &&  nac->getDefaultValue() && nac->getDefaultClass()!=COM_NULL_DEFAULT && nac->getDefaultClass()!=COM_CURRENT_DEFAULT)
+      return TRUE;
+  else
+      return FALSE;
+}
+
+
 // Since we *can* have an INSTANTIATE_NULL inside a VEG_REFERENCE, a loop
 // was required for the function below.
 //
@@ -636,7 +665,7 @@ void ValueId::getSubExprRootedByVidUnion(ValueIdSet & vs)
 // expression with the given expression.
 // used in Insert::bindNode() to move constraints from the target table
 // to the source table.
-// -----------------------------------------------------------------------
+// ----------------------------------------------------------------------
 void ValueId::replaceBaseColWithExpr(const NAString& colName,
 				     const ValueId & vid)
 {
@@ -925,7 +954,8 @@ ValueIdList ValueIdList::findNJEquiJoinCols(
 // Otherwise, return the length of the prefix seen so far. If there
 // were no matches, then we will return 0.
 // -----------------------------------------------------------------------
-Int32 ValueIdList::complifyAndCheckPrefixCovered (const ValueIdSet& vidSet)
+Int32 ValueIdList::complifyAndCheckPrefixCovered (const ValueIdSet& vidSet,
+                                                  const GroupAttributes *ga)
 {
   // if the set's empty, clearly it doesn't cover anything!
   if ( vidSet.entries() == 0 ) return 0 ;
@@ -1018,6 +1048,12 @@ Int32 ValueIdList::complifyAndCheckPrefixCovered (const ValueIdSet& vidSet)
           (*this)[i] = inverseCol->getValueId();
         }
       } // end if the simp. set contains the simp. expresssion
+      else if (ga && ga->canEliminateOrderColumnBasedOnEqualsPred(thisVid))
+      {
+        // if this column is constrained to a single value, then
+        // simply remove it from "this"
+        removeAt(i--);
+      }
       else
         return i;
     }
@@ -1034,10 +1070,11 @@ Int32 ValueIdList::complifyAndCheckPrefixCovered (const ValueIdSet& vidSet)
 // corresponding versions in the provided set.
 // For the remaining suffix, remove those items from this list.
 // ---------------------------------------------------------------------
-void ValueIdList::complifyAndRemoveUncoveredSuffix (const ValueIdSet& vidSet)
+void ValueIdList::complifyAndRemoveUncoveredSuffix (const ValueIdSet& vidSet,
+                                                    const GroupAttributes *ga)
 {
   // last covered id in this list
-  Int32 index = complifyAndCheckPrefixCovered(vidSet);
+  Int32 index = complifyAndCheckPrefixCovered(vidSet, ga);
   Int32 i = (Int32)entries() - 1;  // index of last key column
 
   // Remove all entries following the index
@@ -1257,45 +1294,72 @@ void ValueIdList::replaceVEGExpressions
 } // ValueIdList::replaceVEGExpressions()
 
 OrderComparison ValueIdList::satisfiesReqdOrder(const ValueIdList & reqdOrder,
-						const GroupAttributes *) const
+                                                GroupAttributes *ga,
+                                                const ValueIdSet *preds) const
 {
-  NAUnsigned numCols = reqdOrder.entries();
+  NAUnsigned numReqdEntries = reqdOrder.entries();
   OrderComparison allCols = SAME_ORDER; // sort order comparison of all columns together
   OrderComparison oneCol;  // one column compared with its counterpart
 
-  // is the actual sort key as long as the required one?
-  //
-  // Note the following comparison does not consider duplications.
-  // such as this=[a, c] and reqOrder=[a, a, c]
-  // See OptPhysRelExpr.cpp for a fix for a case regarding union sort keys
-  // (search for 10-020913-1676)
-  if (entries() < numCols)
-    return DIFFERENT_ORDER;
+  CollIndex thisIx = 0;
+  CollIndex reqdIx = 0;
 
-  if (!OSIM_isNTbehavior() || (OSIM_isNTbehavior() && OSIM_runningSimulation()))
-  {
-  ItemExpr *ie = (*this)[0].getItemExpr();
-  ItemExpr * reqdExpr = reqdOrder[0].getItemExpr();
-  CollIndex i = 0;
-  CollIndex j = 0;
-  CollIndex numEntries = entries();
+  ValueIdList tempThis(*this);
 
-  if (numEntries < numCols)
+  // if group attributes are provided, remove any constant expressions,
+  // since those should not appear in the requirements and since they
+  // are not relevant to the ordering
+  if (ga)
+    tempThis.removeCoveredExprs(ga->getCharacteristicInputs());
+
+  CollIndex numActEntries = tempThis.entries();
+
+  // we assume that reqdOrder went through a RequirementGenerator
+  // and is therefore already optimized (e.g. no duplicate columns)
+
+  // is the actual sort key at least as long as the required one?
+  if (numActEntries < numReqdEntries)
      return DIFFERENT_ORDER;
 
-  for (CollIndex startCol = 0; startCol < numCols; startCol++)
+  for (CollIndex reqdIx = 0; reqdIx < numReqdEntries; reqdIx++)
   {
-     if ((reqdOrder[j] == (*this)[i]))
+     NABoolean done = FALSE;
+ 
+     // compare the next required order column with one or more
+     // ValueIds in tempThis
+     while (!done)
      {
-	oneCol = SAME_ORDER;
-     }
-     else
-     {
-        oneCol = reqdOrder[j].getItemExpr()->
-        sameOrder((*this)[i].getItemExpr());
+       // make sure we have enough columns in "tempThis"
+       if (thisIx >= numActEntries)
+         return DIFFERENT_ORDER;
+
+       // compare the next column of tempThis with the required order
+       oneCol = reqdOrder[reqdIx].getItemExpr()->sameOrder(
+            tempThis[thisIx].getItemExpr());
+
+       done = TRUE;
+
+       // If we didn't find the column, then try to find an equals
+       // predicate that equates the column to a constant, so that
+       // we can skip over it. This typically happens with computed
+       // columns such as salt or division that don't have associated
+       // VEGs, which are handled by tempThis.removeCoveredExprs() above.
+       if (oneCol == DIFFERENT_ORDER &&
+           ga &&
+           (numActEntries-thisIx) > (numReqdEntries-reqdIx) && // extra cols in this
+           ga->tryToEliminateOrderColumnBasedOnEqualsPred(tempThis[thisIx],
+                                                          preds))
+       {
+         // this is a predicate of the form col = const
+         // and col is our current ValueId in tempThis,
+         // therefore skip over it and try again
+         thisIx++;
+         done = FALSE;
+       }
      }
 
-     if (startCol == 0)
+
+     if (reqdIx == 0)
         allCols = oneCol;
      else
         allCols = combineOrderComparisons(allCols,oneCol);
@@ -1303,43 +1367,15 @@ OrderComparison ValueIdList::satisfiesReqdOrder(const ValueIdList & reqdOrder,
      if (allCols == DIFFERENT_ORDER)
         return allCols;
 
-     i++; j++;
-  }
-  }
-  else{
-  for (CollIndex i = 0; i < numCols; i++)
-    {
-      if ((reqdOrder[i] == (*this)[i]))
-	{
-	  oneCol = SAME_ORDER;
-	}
-      else
-	{
-	  // if the expressions are not exactly the same, try to match similar
-	  // expressions that result in the same sorting order, like a and a+1
-	  oneCol = reqdOrder[i].getItemExpr()->
-	    sameOrder((*this)[i].getItemExpr());
-	}
-
-      // the first column determines whether we do the same order or the
-      // inverse order or nothing, all other columns have to follow that
-      // decision
-      if (i == 0)
-	allCols = oneCol;
-      else
-	allCols = combineOrderComparisons(allCols,oneCol);
-
-      // did we already loose it?
-      if (allCols == DIFFERENT_ORDER)
-	return allCols;
-    }
+     thisIx++;
   }
   return allCols;
 }
 
 NABoolean ValueIdList::satisfiesReqdArrangement(
      const ValueIdSet &reqdArrangement,
-     const GroupAttributes * ga) const
+     GroupAttributes * ga,
+     const ValueIdSet *preds) const
 {
   // ---------------------------------------------------------------------
   // check requirement for arrangement of data (check whether the required
@@ -1350,6 +1386,12 @@ NABoolean ValueIdList::satisfiesReqdArrangement(
   ValueIdSet arrCols(reqdArrangement);
   NABoolean found = TRUE;
   CollIndex startCol = 0;
+
+  // if group attributes are provided, remove any constant expressions,
+  // since those should not appear in the requirements and since they
+  // are not relevant to the ordering
+  if (ga)
+    arrCols.removeCoveredExprs(ga->getCharacteristicInputs());
 
   // walk along the sort key, as long as all columns in the sort
   // keys are part of the required set of arranged columns
@@ -1388,6 +1430,16 @@ NABoolean ValueIdList::satisfiesReqdArrangement(
 		  arrCols -= x;
 		}
 	    }
+
+          if ((NOT found) && ga)
+            {
+              // if this column is constrained to a single value,
+              // we can skip over it and continue (we set found to
+              // true but don't remove anything from arrCols)
+              found = ga->tryToEliminateOrderColumnBasedOnEqualsPred(
+                   (*this)[i],
+                   preds);
+            }
 	}
     }
 
@@ -2917,6 +2969,7 @@ ValueIdSet ValueIdSet::createMirrorPreds(ValueId &computedCol,
   CMPASSERT( iePtr->getOperatorType() == ITM_BASECOLUMN );
 
   ItemExpr *compExpr = ((BaseColumn *) iePtr)->getComputedColumnExpr().getItemExpr();
+  ItemExpr *prevPred = NULL;
 
   for (ValueId kpv = init(); next(kpv); advance(kpv))  
    {
@@ -2934,7 +2987,44 @@ ValueIdSet ValueIdSet::createMirrorPreds(ValueId &computedCol,
            {
              ItemExpr * newPred = piePtr->createMirrorPred(iePtr, compExpr, underlyingCols);
              if (newPred != NULL)
-                newComputedPreds += newPred->getValueId();
+               {
+                 // look for the following pattern, which is common
+                 // when a range of values falls within one division
+                 // col1 >= const1 AND col1 <= const1
+                 // and transform this into the single predicate col1 = const1
+                 if (prevPred)
+                   {
+                     OperatorTypeEnum prevOp = prevPred->getOperatorType();
+                     OperatorTypeEnum newOp = newPred->getOperatorType();
+                     NABoolean neg1, neg2;
+                     ConstValue *prevConst = prevPred->child(1)->castToConstValue(neg1);
+                     ConstValue *newConst = newPred->child(1)->castToConstValue(neg2);
+
+                     if ((prevOp == ITM_GREATER_EQ && newOp  == ITM_LESS_EQ ||
+                          newOp  == ITM_GREATER_EQ && prevOp == ITM_LESS_EQ) &&
+                         prevPred->child(0) == newPred->child(0) &&
+                         prevConst && newConst &&
+                         prevConst->duplicateMatch(*newConst) && neg1 == neg2 &&
+                         static_cast<BiRelat *>(prevPred)->getSpecialNulls() ==
+                         static_cast<BiRelat *>(newPred)->getSpecialNulls())
+                       {
+                         // make the <= or >= predicate of the pattern into an = predicate
+                         BiRelat *newEqualPred = new(CmpCommon::statementHeap())
+                           BiRelat(ITM_EQUAL,
+                                   newPred->child(0),
+                                   newPred->child(1));
+                         newEqualPred->setSpecialNulls(
+                              static_cast<BiRelat *>(newPred)->getSpecialNulls());
+                         newEqualPred->synthTypeAndValueId();
+
+                         newComputedPreds -= prevPred->getValueId();
+                         newPred = newEqualPred;
+                       }
+                   }
+
+                 newComputedPreds += newPred->getValueId();
+                 prevPred = newPred;
+               }
              break;
            }
          case ITM_ASSIGN:
@@ -3098,7 +3188,12 @@ void ValueIdSet::replaceVEGExpressions
           if (iePtr != exprId.getItemExpr())  // a replacement was done
 	    {
 	      subtractElement(exprId);        // remove existing ValueId
-	      newExpr += iePtr->getValueId(); // replace with a new one
+          //insert new expression(s)
+          if (iePtr->getOperatorType() == ITM_AND)
+              //The replacement of a RangeSpec could be an AND, convert ANDed predicates into additional values in newExpr.
+              iePtr->convertToValueIdSet(newExpr, NULL, ITM_AND, FALSE, FALSE);
+          else
+              newExpr += iePtr->getValueId(); // replace with a new one
 	    }
 	}
       else // delete the ValueId of the VEGPredicate/VEGReference from the set
@@ -6314,6 +6409,7 @@ ValueIdSet& ValueIdSet::intersectSetDeep(const ValueIdSet & v)
   return *this;
 }
 
+
 // --------------------------------------------------------------------
 // return true iff ValueIdSet has predicates that guarantee
 // that opd is not nullable
@@ -6385,5 +6481,123 @@ Lng32 ValueIdList::findPrefixLength(const ValueIdSet& x) const
          break;
     }
   return ct;
+}
+
+// -----------------------------------------------------------------------
+// replace any ColReference (of the given column name) in of this value
+// expression with the given expression.
+// used in ValueId::computeEncodedKey() to assign key values into the
+// salt/DivisionByto expression.
+// ----------------------------------------------------------------------
+void ValueId::replaceColReferenceWithExpr(const NAString& colName,
+                                          const ValueId & vid)
+{
+  ItemExpr* thisItemExpr = getItemExpr();
+  for( Lng32 i = 0; i < thisItemExpr->getArity(); i++ )
+  {
+    ValueId childValueId = thisItemExpr->child(i).getValueId();
+    ItemExpr* childItemExpr = childValueId.getItemExpr();
+
+    if( childItemExpr->getOperatorType() == ITM_REFERENCE)
+    {
+      if( ((ColReference*)childItemExpr)->getColRefNameObj().getColName() == colName )
+        thisItemExpr->setChild( i, vid.getItemExpr() );
+    }
+    childValueId.replaceColReferenceWithExpr( colName, vid );
+  }
+}
+
+
+char*
+ValueIdList::computeEncodedKey(const TableDesc* tDesc, NABoolean isMaxKey, 
+                               char*& encodedKeyBuffer, Int32& keyBufLen) const
+{
+   const NATable*  naTable = tDesc->getNATable();
+
+
+   CollIndex count = entries();
+   NAString** inputStrings = new (STMTHEAP) NAStringPtr[count];
+
+   for (Int32 j=0; j<count; j++ ) 
+       inputStrings[j] = NULL;
+
+   for (Int32 j=0; j<count; j++ ) {
+
+      ValueId vid = (*this)[j];
+      ItemExpr* ie = vid.getItemExpr();
+
+      if ( ie->getOperatorType() != ITM_CONSTANT ) {
+          
+          ConstValue* value = NULL;
+          if ( ie->doesExprEvaluateToConstant(TRUE, TRUE) ) {
+             ValueIdSet availableValues;
+             // do a simple VEG replacement with no available values
+             // and no inputs, all VEGies should have constants in
+             // them and should be replaced with those
+             ie = ie->replaceVEGExpressions(availableValues, availableValues);
+             value = ie->evaluate(STMTHEAP);
+             if ( !value )
+                return NULL;
+          } else
+             return NULL;
+
+          inputStrings[j] = new (STMTHEAP) NAString(value->getConstStr(FALSE));
+      } else  {
+         // no need to prefix with charset prefix.
+         inputStrings[j] = new (STMTHEAP) NAString(((ConstValue*) ie)->getConstStr(FALSE));
+
+         if ( *inputStrings[j] == "<min>" ||  *inputStrings[j] == "<max>" )
+            inputStrings[j] = NULL;
+      }
+   }
+
+   const NAFileSet * naf = naTable->getClusteringIndex();
+   const desc_struct * tableDesc = naTable->getTableDesc();
+   desc_struct * colDescs = tableDesc->body.table_desc.columns_desc;
+   desc_struct * keyDescs = (desc_struct*)naf->getKeysDesc();
+
+   // cast away const since the method may compute and store the length
+   keyBufLen = ((NAFileSet*)naf)->getEncodedKeyLength(); 
+
+   if ( naTable->isHbaseCellTable() || naTable->isHbaseRowTable() ) { 
+      // the encoded key for Native Hbase table is a null-terminated string ('<key>')
+      NAString key;
+      key.append("(");
+
+      size_t idx = inputStrings[0]->index("_ISO88591");
+      if ( idx == 0 )
+         key.append(inputStrings[0]->remove(0, 9));
+      else
+         key.append(*inputStrings[0]);
+
+      key.append(")");
+
+      keyBufLen = inputStrings[0]->length() + 5; // extra 4 bytes for (,', ', ), and one byte for null. 
+
+      if (!encodedKeyBuffer )
+         encodedKeyBuffer = new (STMTHEAP) char[keyBufLen];
+
+      memcpy(encodedKeyBuffer, key.data(), key.length());
+      encodedKeyBuffer[key.length()] = NULL;
+
+      return encodedKeyBuffer;
+
+   } else {
+      keyBufLen = ((NAFileSet*)naf)->getEncodedKeyLength(); 
+
+      if (!encodedKeyBuffer )
+         encodedKeyBuffer = new (STMTHEAP) char[keyBufLen];
+
+      short ok = encodeKeyValues(colDescs, keyDescs,
+                      inputStrings,    // INPUT
+                      FALSE,           // not isIndex
+                      isMaxKey,        
+                      encodedKeyBuffer,// OUTPUT
+                      STMTHEAP, CmpCommon::diags());
+
+      NADELETEARRAY(inputStrings, count, NAStringPtr, STMTHEAP);
+
+      return ( ok == 0 ) ? encodedKeyBuffer : NULL;
+   }
 }
 

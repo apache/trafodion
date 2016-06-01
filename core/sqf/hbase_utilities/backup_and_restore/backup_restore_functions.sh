@@ -2,26 +2,29 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
 default_trafodion_user="trafodion"
 default_hbase_user="hbase"
 default_hdfs_user="hdfs"
-mappers=2
+mappers=0
 date_str="$(date '+%Y%m%d-%H%M')"
 
 ###############################################################################
@@ -32,7 +35,7 @@ which_environment()
   if [[ -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
     # we are on a development system where install_local_hadoop has been executed
     return 1
-  elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" || -n "$(ls /etc/init.d/ambari* 2>/dev/null)" || -d /opt/mapr  ]]; then
+  elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" || -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ||  -d /opt/cloudera/parcels/CDH || -d /opt/mapr  ]]; then
     #cluster with Cloudera, Horton Works or Mapr distribution
     return 2
   else
@@ -299,7 +302,7 @@ validate_sudo_access()
    do_sudo $usr "echo 'aa'" &> /dev/null
    if [[  $? -ne 0 ]]
    then
-     echo "***[ERROR]: Could not validate sudo access."     | tee -a ${log_file}
+     echo "***[ERROR]: Could not validate sudo access for ${usr}."     | tee -a ${log_file}
      return 1
    fi
 
@@ -408,4 +411,36 @@ get_hdfs_uri()
   else
     echo ${fs_defFs}
   fi
+}
+###############################################################################
+#start_trafodion
+###############################################################################
+start_trafodion()
+{
+  local traf_user=$1
+  ###
+  echo "Starting Trafodion..."  | tee -a $log_file
+  ##
+  which_environment
+  local env1=$?
+  local sqstart_rc=1
+  if [[ "$USER" -eq "$traf_user" ]]; then
+    env1=1
+  fi
+  if [[ $env1 -eq 1 ]]; then
+    $MY_SQROOT/sql/scripts/sqstart
+    sqstart_rc=$?
+  elif [[ $env1 -eq 2 ]]; then
+    sudo -n -u $traf_user sh -c ". /home/trafodion/.bashrc; sqstart"  
+    sqstart_rc=$?
+  else
+    sqstart_rc=1 
+  fi
+
+  if [[ $sqstart_rc -eq 0 ]]; then
+   echo "Trafodion started successfully. Continuing ..." | tee -a $log_file
+  else
+   echo "Trafodion not started. Please start Trafodion at your convinience." | tee -a $log_file
+  fi
+  return 0
 }

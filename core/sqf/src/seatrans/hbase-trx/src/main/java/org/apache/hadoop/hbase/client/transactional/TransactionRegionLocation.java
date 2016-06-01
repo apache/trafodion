@@ -1,20 +1,26 @@
-// @@@ START COPYRIGHT @@@
-//
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
-//
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
-//
-// @@@ END COPYRIGHT @@@
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+**/
+
 package org.apache.hadoop.hbase.client.transactional;
 
 import org.apache.commons.logging.Log;
@@ -31,6 +37,7 @@ public class TransactionRegionLocation extends HRegionLocation {
 
   static final Log LOG = LogFactory.getLog(TransactionRegionLocation.class);
 
+  public boolean tableRecordedDropped;
   /*
    public TransactionRegionLocation(HRegionInfo regionInfo, final String hostname, final int port) {
      //ServerName
@@ -41,6 +48,17 @@ public class TransactionRegionLocation extends HRegionLocation {
 
   public TransactionRegionLocation(HRegionInfo regionInfo, ServerName servName) {
     super(regionInfo, servName);
+    tableRecordedDropped = false;
+  }
+
+  public void setTableRecordedDropped()
+  {
+    tableRecordedDropped = true;
+    if (LOG.isTraceEnabled()) LOG.trace("Table recorded dropped for region:" + super.getRegionInfo());
+  }
+  public boolean isTableRecodedDropped()
+  {
+    return tableRecordedDropped;
   }
 
    @Override
@@ -68,7 +86,7 @@ public class TransactionRegionLocation extends HRegionLocation {
    }
 
    public int compareTo(TransactionRegionLocation o) {
-      if (LOG.isTraceEnabled()) LOG.trace("compareTo TransactionRegionLocation ENTRY: " + o);
+      if (LOG.isTraceEnabled()) LOG.trace("compareTo TransactionRegionLocation ENTRY: " + o.getRegionInfo().getRegionNameAsString());
       int result = super.getHostname().compareTo(o.getHostname());
       if (result != 0){
          if (LOG.isTraceEnabled()) LOG.trace("compareTo hostnames differ: mine: " + super.getHostname() + " hex: " +
@@ -82,10 +100,22 @@ public class TransactionRegionLocation extends HRegionLocation {
       }
       result = super.getRegionInfo().compareTo(o.getRegionInfo());
       if (result != 0) {
-         if (super.getRegionInfo().getEncodedName().compareTo(o.getRegionInfo().getEncodedName()) == 0) {
-            if (LOG.isTraceEnabled()) LOG.trace("compareTo TransactionRegionLocation regionInfo differs:\n    mine: end key: " + Hex.encodeHexString(super.getRegionInfo().getEndKey()) + " hex: " +
-               Hex.encodeHexString(super.getRegionInfo().getRegionName()) + "\n object's end key: " + Hex.encodeHexString(o.getRegionInfo().getEndKey()) + " hex: " +
-               Hex.encodeHexString(o.getRegionInfo().getRegionName()) + "result is " + result);
+         if (super.getRegionInfo().getEncodedName().compareTo(o.getRegionInfo().getEncodedName()) == 0){
+            if (LOG.isTraceEnabled()) LOG.trace("compareTo regionInfo RegionNames match " + o.getRegionInfo().getEncodedName());
+            if (super.getRegionInfo().containsRange(o.getRegionInfo().getStartKey(), o.getRegionInfo().getEndKey())) {
+               if (LOG.isTraceEnabled()) LOG.trace("This region contains object's start and end keys.  Regions match " + o.getRegionInfo().getEncodedName());
+               result = 0;
+               return result;
+            }
+            if (LOG.isTraceEnabled()) LOG.trace("compareTo TransactionRegionLocation regionInfo RegionNames match, but object end keys differ:\n  this hex name: "
+                        + Hex.encodeHexString(super.getRegionInfo().getRegionName()) + "\n   obj hex name: "
+                        + Hex.encodeHexString(o.getRegionInfo().getRegionName())
+                        + "\n This end key    : " + Hex.encodeHexString(super.getRegionInfo().getEndKey())
+                        + "\n Object's end key: " + Hex.encodeHexString(o.getRegionInfo().getEndKey())  + "\n result " + result);
+         }
+         else {
+            if (LOG.isTraceEnabled()) LOG.trace("compareTo TransactionRegionLocation regionInfo.getEncodedName differs:\n      mine: "
+                    + super.getRegionInfo().getEncodedName() + "\n object's : " + o.getRegionInfo().getEncodedName() + " result is " + result);
          }
       }
       return result;

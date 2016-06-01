@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -71,13 +74,16 @@ public:
   enum defaultClauseStatusType { DEFAULT_CLAUSE_NOT_SPEC = 0,
                                  NO_DEFAULT_CLAUSE_SPEC = 1,
                                  DEFAULT_CLAUSE_SPEC = 2};
-  
+  enum { INDEX_ELEM_DDL_COL_ATTR_LIST = 0,
+         MAX_ELEM_DDL_COL_DEF_ARITY = 1};
+
   // default constructor
-  ElemDDLColDef(const NAString & columnName,
-                NAType * pColumnDataType,
-                ElemDDLNode * pColDefaultValue = NULL,
-                ElemDDLNode * pColAttrList = NULL,
-                CollHeap * heap = PARSERHEAP());
+  ElemDDLColDef(
+       const NAString * columnFamily,
+       const NAString * columnName,
+       NAType * pColumnDataType,
+       ElemDDLNode * pColAttrList = NULL,
+       CollHeap * heap = PARSERHEAP());
 
   // copy ctor
   ElemDDLColDef (const ElemDDLColDef & orig, CollHeap * h=0) ; // not written
@@ -96,6 +102,7 @@ public:
   virtual ExprNode * getChild(Lng32 index);
 
   inline NAType * getColumnDataType() const;
+  inline const NAString & getColumnFamily() const;
   inline const NAString & getColumnName() const;
 
   inline const ElemDDLConstraintArray & getConstraintArray() const;
@@ -109,6 +116,8 @@ public:
 
   void setDefaultClauseStatus(defaultClauseStatusType d)
   { defaultClauseStatus_ = d; }
+
+  void setDefaultAttribute(ElemDDLNode * pColDefaultNode);
 
   inline const defaultClauseStatusType getDefaultClauseStatus() const;
 
@@ -195,6 +204,8 @@ public:
   NABoolean isSerializedSpecified() { return isSeabaseSerializedSpec_; }
   inline NABoolean isSeabaseSerialized() { return seabaseSerialized_; }
 
+  NABoolean isColDefaultSpecified() { return isColDefaultSpec_; }
+
   //
   // methods for tracing
   //
@@ -215,6 +226,7 @@ private:
   // private data members
   // ---------------------------------------------------------------------
 
+  NAString columnFamily_;
   NAString columnName_;
   NAType * columnDataType_;
 
@@ -285,10 +297,6 @@ private:
   //   Column Attributes list includes column constraint definitions
   //   and column heading specification (HEADING clause).
   //
-  enum { INDEX_ELEM_DDL_COL_DEFAULT_VALUE = 0,
-         INDEX_ELEM_DDL_COL_ATTR_LIST,
-         MAX_ELEM_DDL_COL_DEF_ARITY };
-
   ElemDDLNode * children_[MAX_ELEM_DDL_COL_DEF_ARITY];
 
   ComColumnDirection direction_;  // IN / OUT / INOUT
@@ -300,6 +308,7 @@ private:
   NABoolean isSeabaseSerializedSpec_;
   NABoolean seabaseSerialized_;
 
+  NABoolean isColDefaultSpec_;
 }; // class ElemDDLColDef
 
 // -----------------------------------------------------------------------
@@ -340,6 +349,12 @@ inline NAType *
 ElemDDLColDef::getColumnDataType() const
 {
   return columnDataType_;
+}
+
+inline const NAString &
+ElemDDLColDef::getColumnFamily() const
+{
+  return columnFamily_;
 }
 
 inline const NAString &

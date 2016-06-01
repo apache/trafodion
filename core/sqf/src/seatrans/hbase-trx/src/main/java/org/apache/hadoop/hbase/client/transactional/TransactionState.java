@@ -1,20 +1,26 @@
-// @@@ START COPYRIGHT @@@
-//
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
-//
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
-//
-// @@@ END COPYRIGHT @@@
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+**/
+
 package org.apache.hadoop.hbase.client.transactional;
 
 import java.io.IOException;
@@ -62,6 +68,7 @@ public class TransactionState {
     private boolean ddlTrans;
     private static boolean useConcurrentHM = false;
     private static boolean getCHMVariable = true;
+    private boolean hasRetried = false;
 
     public Set<String> tableNames = Collections.synchronizedSet(new HashSet<String>());
     public Set<TransactionRegionLocation> participatingRegions;
@@ -279,13 +286,16 @@ public class TransactionState {
         boolean added = participatingRegions.add(trRegion);
 
         if (added) {
-            if (LOG.isTraceEnabled()) LOG.trace("Added new trRegion to participatingRegions [" + trRegion.getRegionInfo().getRegionNameAsString() + "], endKey: "
-                  + Hex.encodeHexString(trRegion.getRegionInfo().getEndKey()) + " and transaction [" + transactionId + "]");
-
+           if (LOG.isTraceEnabled()) LOG.trace("Added new trRegion (#" + participatingRegions.size()
+                        + ") to participatingRegions ["        + trRegion.getRegionInfo().getRegionNameAsString()
+                        + "], endKey: "        + Hex.encodeHexString(trRegion.getRegionInfo().getEndKey()) 
+                        + " and transaction [" + transactionId + "]");
         }
         else {
-            if (LOG.isTraceEnabled()) LOG.trace("trRegion already present in participatinRegions [" + trRegion.getRegionInfo().getEncodedName() + "], endKey: "
-                  + Hex.encodeHexString(trRegion.getRegionInfo().getEndKey()) + " and transaction [" + transactionId + "]");
+           if (LOG.isTraceEnabled()) LOG.trace("trRegion already present in (" + participatingRegions.size()
+                       + ") participatinRegions ["    + trRegion.getRegionInfo().getEncodedName()
+                       + "], endKey: "        + Hex.encodeHexString(trRegion.getRegionInfo().getEndKey()) 
+                       + " and transaction [" + transactionId + "]");
         }
 
         return added;
@@ -422,4 +432,13 @@ public class TransactionState {
     public void setDDLTx(final boolean status) {
         this.ddlTrans = status;
     }
+
+    public void setRetried(boolean val) {
+        this.hasRetried = val;
+    }
+
+    public boolean hasRetried() {
+      return this.hasRetried;
+    }
+
 }

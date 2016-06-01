@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -3282,6 +3285,15 @@ NABoolean TSJRule::topMatch (RelExpr * expr,
   if (NOT updateExpr->getNoFlow() || 
       // no FirstN on top of a TSJ
       ((updateExpr->getOperatorType() == REL_UNARY_DELETE) && updateExpr->isMtsStatement()))
+    return FALSE;
+
+  // It is not semantically correct to convert a MERGE having a 
+  // "NOT MATCHED" action to a TSJ, since the former has right 
+  // join semantics. (If we converted here to a TSJ, a non-matching
+  // row would not be returned by the outer child scan node, so
+  // the inner child merge node would never see it and hence the
+  // "NOT MATCHED" logic would not be activiated.)
+  if (updateExpr->isMerge() && updateExpr->insertValues())
     return FALSE;
 
   return TRUE;

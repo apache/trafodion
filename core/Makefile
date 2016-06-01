@@ -2,19 +2,22 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 #
@@ -24,17 +27,17 @@
 include macros.gmk
 
 # Make Targets
-.PHONY: all dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr rest odb
-.PHONY: package package-all pkg-product pkg-sql-regress check-copyrights
+.PHONY: all dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr dcs rest odb
+.PHONY: package package-all pkg-product pkg-sql-regress pkg-phx-tests pkg-dcs-tests check-copyrights pkg-installer
 
 ################
 ### Main targets
 # Server-side only
 
 # Default target (all components)
-all: $(MPI_TARGET) dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar rest odb
+all: $(MPI_TARGET) dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar dcs rest odb lib_mgmt
 
-package: pkg-product pkg-client
+package: pkg-product pkg-client pkg-installer
 
 #############
 # Components
@@ -61,11 +64,14 @@ verhdr:
 dbsecurity: $(MPI_TARGET)
 	cd dbsecurity && $(MAKE) all 2>&1 | sed -e "s/$$/	##(Security)/";exit $${PIPESTATUS[0]}
 
-foundation: dbsecurity $(MPI_TARGET) $(SEAMONSTER_TARGET)
+foundation: sqroot dbsecurity $(MPI_TARGET) $(SEAMONSTER_TARGET)
 	cd sqf && $(MAKE) all
 
 jdbc_jar: verhdr
-	cd conn/jdbc_type4 && $(ANT) deploy 2>&1 | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
+	cd conn/jdbcT4 && $(MAKE) 2>&1 && $(MAVEN) install | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
+
+dcs: jdbc_jar jdbc_type2_jar
+	cd ../dcs && $(MAKE) 2>&1 | sed -e "s/$$/  ##(DCS)/" ; exit $${PIPESTATUS[0]}
 
 ndcs: jdbc_jar foundation
 	cd conn/odbc/src/odbc && $(MAKE) ndcs        2>&1 | sed -e "s/$$/	##(NDCS)/";exit $${PIPESTATUS[0]}
@@ -75,15 +81,23 @@ ci: trafci
 trafci: jdbc_jar
 	cd conn/trafci && $(ANT) dist 2>&1 | sed -e "s/$$/	##(TRAFCI)/" ; exit $${PIPESTATUS[0]}
 
-jdbc_type2_jar: ndcs
+jdbc_type2_jar: verhdr foundation
 	cd conn/jdbc_type2 && $(ANT)  2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 	cd conn/jdbc_type2 && $(MAKE) 2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
+	$(MAVEN) install:install-file -Dfile=conn/jdbc_type2/dist/jdbcT2.jar \
+	    -DgroupId=org.trafodion.jdbc.t2.T2Driver -DartifactId=t2driver -Dversion="$$TRAFODION_VER" \
+	    -Dpackaging=jar -DgeneratePom=true | sed -e "s/$$/        ##(JDBC_TYPE2)/";exit $${PIPESTATUS[0]}
 
-rest: verhdr
+rest: verhdr jdbc_jar
 	cd rest && $(MAKE) 2>&1 | sed -e "s/$$/  ##(REST)/" ; exit $${PIPESTATUS[0]}
 
 odb: ndcs
 	cd conn/odb && $(MAKE) 2>&1 | sed -e "s/$$/	##(ODB)/" ; exit $${PIPESTATUS[0]}
+
+cleantests:
+	cd ../dcs/src/test/pytests && $(RM) -r odbc* tox.ini config.ini .tox .testrep* env.sh test_p2.pyc 
+	cd ../dcs/src/test/jdbc_test && $(RM) -r jdbcprop pom.xml  target
+	cd ../tests/phx && $(RM) -r jdbcprop *.log pom.xml target
 
 clean: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
@@ -92,27 +106,35 @@ clean: sqroot
 	cd sqf &&			$(MAKE) clean
 	cd conn/odbc/src/odbc &&	$(MAKE) clean
 	cd conn/trafci        &&	$(ANT) clean
-	cd conn/jdbc_type4    &&	$(ANT) clean
+	cd conn/jdbcT4        &&	$(MAKE) clean
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&		$(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
+	cd ../dcs &&			$(MAKE) clean 
+	cd sql/lib_mgmt &&		$(MAKE) clean
+	cd ../install &&                $(MAKE) clean
+	$(RM) -r ../${DISTRIBUTION_DIR}
 
-cleanall: sqroot
+cleanall: sqroot eclipseclean cleantests
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
 	cd dbsecurity &&		$(MAKE) cleanall
 	cd sqf &&			$(MAKE) cleanall
 	cd conn/odbc/src/odbc &&	$(MAKE) cleanall
 	cd conn/trafci        &&	$(ANT) clean
-	cd conn/jdbc_type4    &&	$(ANT) clean
+	cd conn/jdbcT4        &&	$(MAKE) clean
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&	        $(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
+	cd ../dcs &&			$(MAKE) clean
+	cd sql/lib_mgmt &&		$(MAKE) cleanall
+	cd ../install &&                $(MAKE) clean
+	$(RM) -r ../${DISTRIBUTION_DIR}
 
-package-all: package pkg-sql-regress
+package-all: package pkg-sql-regress pkg-phx-tests pkg-dcs-tests 
 
-pkg-product: all  
+pkg-product: all dcs rest 
 	cd sqf && $(MAKE) package 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
 
 pkg-client: ci ndcs odb
@@ -120,14 +142,28 @@ pkg-client: ci ndcs odb
 
 # Package SQL regression tests (all target produces some regress/tool files so do that first)
 pkg-sql-regress: all
-	cd sqf && $(MAKE) package-regress 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
+	cd sqf && $(MAKE) package-regress 2>&1 | sed -e "s/$$/	##(Package sql regress)/";exit $${PIPESTATUS[0]}
+
+# Package Phoenix test
+pkg-phx-tests: all 
+	cd sqf && $(MAKE) package-phx 2>&1 | sed -e "s/$$/	##(Package phoenix)/";exit $${PIPESTATUS[0]}
+
+# Package dcs tests
+pkg-dcs-tests: all
+	cd sqf && $(MAKE) package-dcs 2>&1 | sed -e "s/$$/	##(Package dcs tests)/";exit $${PIPESTATUS[0]}
+
+# Package installer
+pkg-installer: 
+	cd ../install && $(MAKE) 2>&1 | sed -e "s/$$/	##(Package installer)/";exit $${PIPESTATUS[0]}
 
 version:
 	@cd sqf; unset SQ_VERBOSE; source sqenv.sh ; echo "$${TRAFODION_VER}"
 
-# Check that Environment variables are set correctly
+# Check that Environment variables are set correctly and
+# create links and files needed as prerequisite for the build
 sqroot:
 	./bldenvchk.sh;
+	cd sqf && $(MAKE) setupdir 2>&1 | sed -e "s/$$/	##(setupdir)/";exit $${PIPESTATUS[0]}
 
 # Check for absolute filenames used as dynamic linked libraries
 find-absolute-dlls:
@@ -135,3 +171,44 @@ find-absolute-dlls:
 
 check-copyrights:
 	python ./updateCopyrightCheck.py
+
+eclipse: rest/.project dcs/.project sql/.project sqf/src/seatrans/hbase-trx/.project .project
+	@echo
+	@echo
+	@echo "  Now you can import 5 projects in Eclipse:"
+	@echo "      $^"
+	@echo
+	@echo "  File->Import->General->Existing Projects into Workspace"
+	@echo "  Select root directory $(@D)"
+	@echo "  Search for nested projects"
+	@echo "  Select all or only those you want"
+	@echo
+
+rest/.project:
+	cd rest && $(MAVEN) eclipse:eclipse
+
+dcs/.project:
+	cd ../dcs && $(MAVEN) eclipse:eclipse
+
+sql/.project:
+	cd sql  && $(MAVEN) eclipse:eclipse
+
+sqf/src/seatrans/hbase-trx/.project:
+	cd sqf/src/seatrans/hbase-trx && $(MAVEN) eclipse:eclipse
+
+.project:
+	cp sqf/export/limited-support-tools/eclipse.project .project
+	cp sqf/export/limited-support-tools/eclipse.cproject .cproject
+
+eclipseclean:
+	$(RM) rest/.classpath rest/.project
+	$(RM) ../dcs/.classpath ../dcs/.project
+	$(RM) sql/.classpath sql/.project
+	$(RM) sqf/src/seatrans/hbase-trx/.classpath sqf/src/seatrans/hbase-trx/.project
+	$(RM) .cproject .project
+
+trafinstall:
+	cd $(MY_SQROOT)/sql/scripts && install_traf_components
+
+lib_mgmt:
+	cd sql/lib_mgmt && $(MAKE) all

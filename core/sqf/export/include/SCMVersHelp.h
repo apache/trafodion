@@ -7,19 +7,22 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 *
@@ -38,40 +41,45 @@
 /*
  * internal helpers (i.e. used by SCMVersHelp.h)
  */
-#define INTVERS_PROC_BUILD(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,bv,br,scmbv,dt) \
+#define INTVERS_PROC_BUILD(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,prodver,bv,br,scmbv,dt) \
 VERS_ ## comp ## \
 _CV ## cvmaj ## _ ## cvmin ## _ ## cvupd ## \
 _PV ## pvmaj ## _ ## pvmin ## _ ## pvupd ## \
+_ ## prodver ##\
 _BV ## bv ## \
 _BR ## br ## \
 _DT ## dt ## \
 _SV ## scmbv
-#define INTVERS_PROC_MAC(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,bv,br,scmbv,dt) \
-INTVERS_PROC_BUILD(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,bv,br,scmbv,dt)
+#define INTVERS_PROC_MAC(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,prodver,bv,br,scmbv,dt) \
+  INTVERS_PROC_BUILD(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,prodver,bv,br,scmbv,dt)
 
-#define INTVERS_STR_BUILD(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,bv,scmbv,dt) \
+#define INTVERS_STR_BUILD(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,prodver,bv,scmbv,dt) \
 #comp " " \
 "Version " #cvmaj "." #cvmin "." #cvupd " " \
+#prodver " "\
 "Release " #pvmaj "." #pvmin "." #pvupd " " \
 "(Build " #bv " [" #scmbv "], date " #dt ")"
-#define INTVERS_STR_MAC(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,bv,scmbv,dt) \
-INTVERS_STR_BUILD(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,bv,scmbv,dt)
+#define INTVERS_STR_MAC(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,prodver,bv,scmbv,dt) \
+  INTVERS_STR_BUILD(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,prodver,bv,scmbv,dt)
 #define INTVERS_STR(comp) INTVERS_STR_MAC(comp,\
                                           VERS_CV_MAJ,VERS_CV_MIN,VERS_CV_UPD,\
                                           VERS_PV_MAJ,VERS_PV_MIN,VERS_PV_UPD,\
+                                          VERS_PRODVER,\
                                           VERS_BV,\
                                           VERS_SCMBV,\
                                           VERS_DT)
-#define INTVERS2_STR_BUILD(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,bv,br,scmbv,dt) \
+#define INTVERS2_STR_BUILD(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,prodvers,bv,br,scmbv,dt) \
 #comp " " \
 "Version " #cvmaj "." #cvmin "." #cvupd " " \
+#prodvers " "\
 "Release " #pvmaj "." #pvmin "." #pvupd " " \
 "(Build " #bv " [" #scmbv "], branch " #br ", date " #dt ")"
-#define INTVERS2_STR_MAC(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,bv,br,scmbv,dt) \
-INTVERS2_STR_BUILD(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,bv,br,scmbv,dt)
+#define INTVERS2_STR_MAC(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,prodvers,bv,br,scmbv,dt) \
+  INTVERS2_STR_BUILD(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,prodver,bv,br,scmbv,dt)
 #define INTVERS2_STR(comp) INTVERS2_STR_MAC(comp,\
                                            VERS_CV_MAJ,VERS_CV_MIN,VERS_CV_UPD,\
                                            VERS_PV_MAJ,VERS_PV_MIN,VERS_PV_UPD,\
+                                           VERS_PRODVER,\
                                            VERS_BV,\
                                            VERS_BR,\
                                            VERS_SCMBV,\
@@ -96,6 +104,7 @@ INTVERS2_STR_BUILD(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,bv,br,scmbv,dt)
 #define VERS_PROC(comp) INTVERS_PROC_MAC(comp,\
                                          VERS_CV_MAJ,VERS_CV_MIN,VERS_CV_UPD,\
                                          VERS_PV_MAJ,VERS_PV_MIN,VERS_PV_UPD,\
+                                         VERS_PRODVER,\
                                          VERS_BV,\
                                          VERS_BR2,\
                                          VERS_SCMBV2,\
@@ -104,8 +113,8 @@ INTVERS2_STR_BUILD(comp,cvmaj,cvmin,cvupd,pvmaj,pvmin,pvupd,bv,br,scmbv,dt)
 /*
  * use this to get copyright string
  */
-#define VERS_COPY_STR \
-"(C) Copyright 2011-2013 Hewlett-Packard Development Company, L.P."
+
+#define VERS_COPY_STR  "Copyright (c) $PRODUCT_COPYRIGHT_HEADER"
 
 /*
  * use this to define version proc function for a library

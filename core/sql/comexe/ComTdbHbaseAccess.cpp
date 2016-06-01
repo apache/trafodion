@@ -1,19 +1,22 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
@@ -127,6 +130,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   returnMergeInsertExpr_(returnMergeInsertExpr),
   encodedKeyExpr_(encodedKeyExpr),
   keyColValExpr_(keyColValExpr),
+  insDelPreCondExpr_(NULL),
+  insConstraintExpr_(NULL),
+  updConstraintExpr_(NULL),
   hbaseFilterExpr_(hbaseFilterExpr),
 
   asciiRowLen_(asciiRowLen),
@@ -187,7 +193,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   samplingRate_(samplingRate),
   sampleLocation_(NULL),
   hbaseRowsetVsbbSize_(0),
-
+  trafLoadFlushSize_(0),
   hbaseAccessOptions_(hbaseAccessOptions)
 {};
 
@@ -234,6 +240,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   returnMergeInsertExpr_(NULL),
   encodedKeyExpr_(NULL),
   keyColValExpr_(NULL),
+  insDelPreCondExpr_(NULL),
+  insConstraintExpr_(NULL),
+  updConstraintExpr_(NULL),
   hbaseFilterExpr_(NULL),
 
   asciiRowLen_(0),
@@ -273,6 +282,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   listOfUpDeldColNames_(NULL),
   listOfMergedColNames_(NULL),
   listOfIndexesAndTable_(NULL),
+  listOfOmittedColNames_(NULL),
 
   keyInfo_(NULL),
   keyColName_(NULL),
@@ -293,7 +303,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   samplingRate_(-1),
   sampleLocation_(NULL),
   hbaseRowsetVsbbSize_(0),
-
+  trafLoadFlushSize_(0),
   hbaseAccessOptions_(NULL)
 {
 }
@@ -306,7 +316,7 @@ ComTdbHbaseAccess::~ComTdbHbaseAccess()
 Int32
 ComTdbHbaseAccess::numExpressions() const
 {
-  return(15);
+  return 18;
 }
  
 // Return the expression names of the explain TDB based on some 
@@ -325,7 +335,7 @@ ComTdbHbaseAccess::getExpressionName(Int32 expNum) const
     case 3: 
       return "UpdateExpr";
     case 4: 
-      return "MergeInsertExpr";
+      return ((getAccessType() == DELETE_) ? "LobDeleteExpr" : "MergeInsertExpr");
     case 5:
       return "LowKeyExpr";
     case 6:
@@ -346,6 +356,12 @@ ComTdbHbaseAccess::getExpressionName(Int32 expNum) const
       return "keyColValExpr";
     case 14:
       return "hbaseFilterExpr";
+    case 15:
+      return "preCondExpr";
+    case 16:
+      return "insConstraintExpr";
+    case 17:
+      return "updConstraintExpr";
     default:
       return 0;
     }  
@@ -388,6 +404,12 @@ ComTdbHbaseAccess::getExpressionNode(Int32 expNum)
       return keyColValExpr_;
     case 14:
       return hbaseFilterExpr_;
+    case 15:
+      return insDelPreCondExpr_;
+    case 16:
+      return insConstraintExpr_;
+    case 17:
+      return updConstraintExpr_;
     default:
       return NULL;
     }  
@@ -408,12 +430,16 @@ Long ComTdbHbaseAccess::pack(void * space)
   rowIdExpr_.pack(space);
   encodedKeyExpr_.pack(space);
   keyColValExpr_.pack(space);
+  insDelPreCondExpr_.pack(space);
+  insConstraintExpr_.pack(space);
+  updConstraintExpr_.pack(space);
   hbaseFilterExpr_.pack(space);
   colFamNameList_.pack(space);
   workCriDesc_.pack(space);
   listOfFetchedColNames_.pack(space);
   listOfUpDeldColNames_.pack(space);
   listOfMergedColNames_.pack(space);
+  listOfOmittedColNames_.pack(space);
   listOfIndexesAndTable_.pack(space);
   keyInfo_.pack(space);
   keyColName_.pack(space);
@@ -475,12 +501,16 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
   if(rowIdExpr_.unpack(base, reallocator)) return -1;
   if(encodedKeyExpr_.unpack(base, reallocator)) return -1;
   if(keyColValExpr_.unpack(base, reallocator)) return -1;
+  if(insDelPreCondExpr_.unpack(base, reallocator)) return -1;
+  if(insConstraintExpr_.unpack(base, reallocator)) return -1;
+  if(updConstraintExpr_.unpack(base, reallocator)) return -1;
   if(hbaseFilterExpr_.unpack(base, reallocator)) return -1;
   if(colFamNameList_.unpack(base, reallocator)) return -1;
   if(workCriDesc_.unpack(base, reallocator)) return -1;
   if(listOfFetchedColNames_.unpack(base, reallocator)) return -1;
   if(listOfUpDeldColNames_.unpack(base, reallocator)) return -1;
   if(listOfMergedColNames_.unpack(base, reallocator)) return -1;
+  if(listOfOmittedColNames_.unpack(base, reallocator)) return -1;
   if(listOfIndexesAndTable_.unpack(base, reallocator)) return -1;
   if(keyInfo_.unpack(base, reallocator)) return -1;
   if(keyColName_.unpack(base)) return -1;
@@ -611,14 +641,12 @@ static void showColNames(Queue * listOfColNames, Space * space)
       char colFam[100];
       while (currPtr[currPos] != ':')
 	{
-	  colFam[jj] = currPtr[currPos];
 	  currPos++;
 	  jj++;
 	}
-      colFam[jj] = ':';
       jj++;
       currPos++;
-      colFam[jj] = 0;
+      snprintf(colFam,sizeof(colFam),"%.*s",jj,currPtr+sizeof(short));
       colNameLen -= jj;
       
       NABoolean withAt = FALSE;
@@ -669,19 +697,9 @@ static void showStrColNames(Queue * listOfColNames, Space * space,
 	}
       else
 	{
-	  Lng32 currPos = 0;
 	  short colNameLen = *(short*)currPtr;
-	  currPos += sizeof(short);
 	  char colName[500];
-	  
-	  for (Lng32 i = 0; i < colNameLen; i++)
-	    {
-	      colName[i] = currPtr[currPos];
-	      currPos++;
-	    }
-	  
-	  colName[colNameLen] = 0;
-	  
+	  snprintf(colName,sizeof(colName),"%.*s",colNameLen,currPtr+sizeof(short));
 	  colNamePtr = colName;
 	}
 
@@ -724,7 +742,7 @@ ComTdbHbaseAccess::getNodeName() const
           case INSERT_:
             {
               if ((vsbbInsert()) && (NOT hbaseSqlIUD()))
-                return ("EX_TRAF_VSBB_INSERT");
+                return ("EX_TRAF_VSBB_UPSERT");
               else
                 return ("EX_TRAF_INSERT");
             }
@@ -751,15 +769,15 @@ ComTdbHbaseAccess::getNodeName() const
             break;
 
           case UPDATE_:
-            return (rowsetOper()? "EX_TRAF_ROWSET_UPDATE": "EX_TRAF_UPDATE");
+            return (rowsetOper()? "EX_TRAF_VSBB_UPDATE": "EX_TRAF_UPDATE");
             break;
 
           case MERGE_:
-            return (rowsetOper()? "EX_TRAF_ROWSET_MERGE": "EX_TRAF_MERGE");
+            return (rowsetOper()? "EX_TRAF_VSBB_MERGE": "EX_TRAF_MERGE");
             break;
 
           case DELETE_:
-            return (rowsetOper()? "EX_TRAF_ROWSET_DELETE": "EX_TRAF_DELETE");
+            return (rowsetOper()? "EX_TRAF_VSBB_DELETE": "EX_TRAF_DELETE");
             break;
 
           case COPROC_:
@@ -820,15 +838,15 @@ ComTdbHbaseAccess::getNodeName() const
         break;
 
       case UPDATE_:
-        return (rowsetOper()? "EX_HBASE_ROWSET_UPDATE": "EX_HBASE_UPDATE");
+        return (rowsetOper()? "EX_HBASE_VSBB_UPDATE": "EX_HBASE_UPDATE");
         break;
 
       case MERGE_:
-        return (rowsetOper()? "EX_HBASE_ROWSET_MERGE": "EX_HBASE_MERGE");
+        return (rowsetOper()? "EX_HBASE_VSBB_MERGE": "EX_HBASE_MERGE");
         break;
 
       case DELETE_:
-        return (rowsetOper()? "EX_HBASE_ROWSET_DELETE": "EX_HBASE_DELETE");
+        return (rowsetOper()? "EX_HBASE_VSBB_DELETE": "EX_HBASE_DELETE");
         break;
 
       case COPROC_:

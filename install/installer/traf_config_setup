@@ -2,19 +2,22 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
@@ -24,6 +27,7 @@
 
 #==============================================
 # Defaults
+suseLinux=$(grep -cr SUSE /proc/version)
 LOCAL_WORKDIR="$( cd "$( dirname "$0" )" && pwd )"
 TRAF_WORKDIR="/usr/lib/trafodion"
 TRAF_CONFIG="/etc/trafodion/trafodion_config"
@@ -39,23 +43,42 @@ HOME_DIR="/home"
 TRAF_PACKAGE=""
 TRAF_BUILD=""
 DCS_BUILD=""
-
+REST_BUILD=""
 HADOOP_TYPE=""
 ADMIN="admin"
 PASSWORD="admin"
 URL=""
+HADOOP_NODES=""
+
+HADOOP_PREFIX=""
+HBASE_HOME=""
+HIVE_HOME=""
+
 HDFS_USER="hdfs"
 HBASE_USER="hbase"
 HBASE_GROUP="hbase"
+ZOO_USER="zookeeper"
 
 SQ_ROOT=""
 INIT_TRAFODION="N"
 START="N"
 SQCONFIG=""
 DCS_SERVERS_PARM="2"
+ENABLE_HA="false"
+FLOATING_IP=""
+BACKUP_DCS_NODES=""
 LDAP_SECURITY="N"
 SCANNER_MODE="N"
-
+DCS_PRIMARY_MASTER_NODE=`hostname -f`
+DCS_MASTER_PORT="23400"
+DCS_MASTER_HOST="$DCS_PRIMARY_MASTER_NODE"
+CLOUD_CONFIG="N"
+CLOUD_TYPE=""
+AWS_CLOUD=""
+OPEN_STACK=""
+OTHER_CLOUD=""
+MANAGEMENT_ENABLED="N"
+MANAGEMENT_NODES=""
 LDAP_LEVEL="0"
 #==============================================
 
@@ -116,10 +139,11 @@ done
 
 #==============================================
 
+
 echo
-echo "*******************************"
-echo " Trafodion Configuration Setup"
-echo "*******************************"
+echo "************************************"
+echo " Trafodion Configuration File Setup"
+echo "************************************"
 echo
 echo "***INFO: Please press [Enter] to select defaults."
 echo
@@ -134,39 +158,73 @@ if [ -f $LOCAL_TRAF_CONFIG ]; then
 	source $LOCAL_TRAF_CONFIG
 fi
 
+if [[ -f $TRAF_CONFIG ]]; then
+   source $TRAF_CONFIG
+fi
+
+if [[ "$suseLinux" -ge "1" ]]; then
+   SUSE_LINUX="true"
+else 
+   SUSE_LINUX="false"
+fi
+
 echo "#!/bin/bash" > $LOCAL_TRAF_CONFIG
+echo "export SUSE_LINUX=\"$SUSE_LINUX\"" >> $LOCAL_TRAF_CONFIG
 echo "export TRAF_USER=\"$TRAF_USER\"" >> $LOCAL_TRAF_CONFIG
 echo "export TRAF_WORKDIR=\"$TRAF_WORKDIR\"" >> $LOCAL_TRAF_CONFIG
 echo "export LOCAL_WORKDIR=\"$LOCAL_WORKDIR\"" >> $LOCAL_TRAF_CONFIG
 echo "export SQCONFIG=\"$SQCONFIG\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
-# Password
-if [[ "$userForTrafodion" == "0" ]]; then
-   echo -n "Enter $TRAF_USER password, default is [$TRAF_USER_PASSWORD]: "
-   read answer
-   if [ -z $answer ]; then
-      echo "export TRAF_USER_PASSWORD=\"$TRAF_USER_PASSWORD\"" >> $LOCAL_TRAF_CONFIG
-   else
-      length=${#answer}
-      if [[ $length -lt "6" ]]; then
-         echo "***ERROR: Linux requires password to be at least 6 characters"
-         echo "***ERROR: Password length must be from 6-8 characters."
-         exit -1
-      fi
-      if [[ $length -gt "8" ]]; then
-         echo "***ERROR: VNC server requires passwords be 8 or less characters"
-         echo "***ERROR: Password length must be from 6-8 characters."
-         exit -1  
-      fi
-      echo "export TRAF_USER_PASSWORD=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+#Check if customer is using cloud environment and get the type of cloud being used
+#Get the CLOUD_CONFIG and CLOUD_TYPE
+echo -n "Is this a cloud environment (Y/N), default is [$CLOUD_CONFIG]: "
+read answer
+
+if [ ! -z $answer ]; then
+   if [[ "${answer}" =~ ^[Yy]$ ]]; then
+         CLOUD_CONFIG="Y"
    fi
+fi
+
+echo "export CLOUD_CONFIG=\"$CLOUD_CONFIG\"" >> $LOCAL_TRAF_CONFIG
+
+if [[ "$CLOUD_CONFIG" == "Y" ]]; then
+  echo -n "Specify the type of cloud being used (1: AWS(Amazon cloud), 2: OpenStack, 3: Other): "
+  read answer1
+  if [[ -z "$answer1" ]]; then
+     echo "***ERROR: User must specify the type of Cloud being used."
+     exit -1
+  else
+     CLOUD_TYPE=$answer1
+  fi
+  echo "export CLOUD_TYPE=\"$CLOUD_TYPE\"" >> $LOCAL_TRAF_CONFIG
+  case "$CLOUD_TYPE" in
+    1) AWS_CLOUD=true
+       echo "export AWS_CLOUD=\"$AWS_CLOUD\"" >> $LOCAL_TRAF_CONFIG
+       ;;
+    2) OPEN_STACK=true
+       echo "export OPEN_STACK=\"$OPEN_STACK\"" >> $LOCAL_TRAF_CONFIG
+       ;;
+    3) CLOUD_OTHER=true
+       echo "export CLOUD_OTHER=\"$CLOUD_OTHER\"" >> $LOCAL_TRAF_CONFIG
+  esac
+fi
+
+#==============================================
+# Password
+echo -n "Enter $TRAF_USER password, default is [$TRAF_USER_PASSWORD]: "
+read answer
+if [ -z $answer ]; then
+   echo "export TRAF_USER_PASSWORD=\"$TRAF_USER_PASSWORD\"" >> $LOCAL_TRAF_CONFIG
+else
+    echo "export TRAF_USER_PASSWORD=\"$answer\"" >> $LOCAL_TRAF_CONFIG
 fi
 
 #==============================================
 # List of Nodes
 
-echo -n "Enter list of nodes (blank separated), default [$NODE_LIST]: "
+echo -n "Enter list of data nodes (blank separated), default [$NODE_LIST]: "
 read answer
 if [[ -z "$answer" ]]; then
    if [ -z "$NODE_LIST" ]; then
@@ -174,80 +232,33 @@ if [[ -z "$answer" ]]; then
       exit -1
    fi 
 else
-   NODES="$answer"
-   NODE_LIST=""
-   ERROR_NODES=""
-   for node in $NODES
-   do
-      newNode=$(ssh -n $node hostname)
-      
-      if [[ $? -ne "0" ]]; then
-         echo "***ERROR: Could not ssh to $node."
-         echo "***ERROR: Please check node names for typos"
-         exit -1
-      fi
-
-      nodeName=$(echo $newNode | sed 's/[^a-zA-Z0-9\ \.\-]//g')
-
-      if [[ "$nodeName" != "$newNode" ]]; then
-         echo "***ERROR: Nodes are not named properly."
-         echo "***ERROR: Nodes can have no special characters other than '-' and '.'"
-         exit -1
-      fi
-
-      if [[ "$newNode" =~ ^([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})$ ]]; then
-         echo "***ERROR: Nodes are not named properly."
-         echo "***ERROR: IP addresses are not supported. Please use node names."
-         exit -1
-      fi
-    
-      #Testing sudo access on all nodes
-      ssh -n $newNode sudo echo "***INFO: Testing sudo access on node $newNode"
-      if [ $? -ne "0" ]; then
-         error=1
-         ERROR_NODES="$ERROR_NODES $newNode"
-      fi
-      
-      NODE_LIST="$NODE_LIST $newNode"  
-   done
-
-   if [[ $error == "1" ]]; then
-      echo "***ERROR: $ERROR_NODES does not have sudo access."
-      echo "***ERROR: Must have sudo access on all nodes."
-      exit -1
-   fi
+   NODE_LIST="$answer"
 fi
 
-for node in $NODE_LIST
-do
-   ssh -n $node echo "***INFO: Testing ssh on $node"
-   if [[ $? -ne "0" ]]; then
-      errorFound=1
-      ERROR_NODES="$ERROR_NODES $node"
-   fi
-done
-
-if [[ $errorFound == "1" ]]; then
-   echo "***ERROR: Could not ssh to $ERROR_NODES."
-   echo "***ERROR: Check permissions and known hosts files."
-   exit -1 
-fi
-
-node_count=$(echo $NODE_LIST | wc -w)
 echo "export NODE_LIST=\"$NODE_LIST\"" >> $LOCAL_TRAF_CONFIG
-echo "export node_count=\"$node_count\"" >> $LOCAL_TRAF_CONFIG
+node_count=$(echo $NODE_LIST | wc -w)
 
-MY_NODES=""
-for node in $NODE_LIST
-do 
-   MY_NODES="$MY_NODES -w $node"
-done 
-echo "export MY_NODES=\"$MY_NODES\"" >> $LOCAL_TRAF_CONFIG
+#==============================================
+echo -n "Do you have a set of management nodes (Y/N), default is N: "
+read answer
+ 
 
-if [ $node_count -eq 1 ]; then
-    TRAF_PDSH=""
+if [[ "${answer}" =~ ^[Yy]$ ]]; then
+   echo "export MANAGEMENT_ENABLED=\"Y\"" >> $LOCAL_TRAF_CONFIG
+   #List of Management Nodes
+   echo -n "Enter list management nodes (blank separated), default [$MANAGEMENT_NODES]: "
+   read answer
+   if [[ -z "$answer" ]]; then
+      if [ -z "$MANAGEMENT_NODES" ]; then
+         echo "***ERROR: Management nodes must be specified."
+         exit -1
+      fi
+   else
+      MANAGEMENT_NODES="$answer"
+      echo "export MANAGEMENT_NODES=\"$MANAGEMENT_NODES\"" >> $LOCAL_TRAF_CONFIG
+   fi
 else
-    TRAF_PDSH="pdsh -S $MY_NODES"
+   echo "export MANAGEMENT_ENABLED=\"N\"" >> $LOCAL_TRAF_CONFIG 
 fi
 
 #==============================================
@@ -260,42 +271,13 @@ if [[ "$userForTrafodion" == "0" ]]; then
       # strip off TRAF_USER if user added it on end of directory
       HOME_DIR=$(echo "$answer" | sed -e "s@/$TRAF_USER\$@@")
    fi
-
-   #Test if home directory is on a NFS disk
-   diskType="$( df -P -T $HOME_DIR | tail -n +2 | awk '{print $2}')"
-   if [ "$diskType" == "nfs" ]; then
-      echo "***ERROR: Trafodion userid's home directory ($HOME_DIR) cannot be on an NFS disk"
-      echo "***ERROR: Please choose a different directory to install on."
-      exit -1
-  fi
 else
   HOME_DIR=$(grep -r "trafodion" /etc/passwd | sed 's/.*:://' | sed 's/\:.*$//' | sed 's/\/trafodion.*$//')
   
 fi
 
 echo "export HOME_DIR=\"$HOME_DIR\"" >> $LOCAL_TRAF_CONFIG
-#==============================================
-#Check location given for EPEL RPM
-if [[ "$userForTrafodion" == "0" ]]; then
-   echo -n "Specify full path to EPEL RPM (including .rpm), default is None: "
-   read answer
 
-   if [ -z $answer ]; then
-      echo "***INFO: Will attempt to download RPM if EPEL is not installed on all nodes."
-      echo "export EPEL_RPM=\"\"" >> $LOCAL_TRAF_CONFIG
-   else
-      if [[ ! -f $answer ]]; then
-         echo "***ERROR: File not found. Please check path for existence and typos."
-         exit -1
-      fi 
-      if [[ "$answer" == *"rpm"* ]]; then
-         echo "export EPEL_RPM=\"$answer\"" >> $LOCAL_TRAF_CONFIG      
-      else
-         echo "***ERROR: File enter is not an RPM. Check file is of type epel***.rpm"
-         exit -1
-      fi
-   fi
-fi
 #==============================================
 #Check location given for Java 65 or greater
 
@@ -311,49 +293,6 @@ else
       JAVA_HOME=$answer
 fi
 
-REQ_VER="1.7.0_65"
-JAVA7="7"
-JAVA65="65"
-
-for node in $NODE_LIST
-do
-   THIS_JVM_VER="$(ssh -n $node $JAVA_HOME/bin/java -version 2>&1 > /dev/null)"
-   if [[ "$THIS_JVM_VER" == *"No such file"* ]]; then
-      echo "***ERROR: Unable to find Java version on node $node"
-      echo "***ERROR: Must enter a specific Java version (example: /usr/java/jdk1.7.0_67)"
-      echo "***ERROR: Please check for typos and that directory exists"
-      exit -1
-   fi
-
-   javaType="$(ssh -n $node $JAVA_HOME/bin/javac -version 2>&1 > /dev/null | grep "No such file" | wc -l)"
-   if [[ $javaType -eq "1" ]]; then
-      echo "***ERROR: Java version on node $node is of type JRE"
-      echo "***ERROR: Java version needed on all nodes must be a JDK"
-      exit -1
-   fi
-
-   temp_JAVA=`echo "${THIS_JVM_VER:15:2}" | sed 's/.*\.//'`
-   
-   #Check if using something less than Java 7
-   if [[ "$temp_JAVA" -lt "$JAVA7" ]]; then
-      error="true"
-   fi
-   
-   #Checking if using 1.7.0_n
-   if [[ "${THIS_JVM_VER:18:1}" -eq "0" ]] && [[ "$temp_JAVA" -eq "$JAVA7" ]]; then
-      if [[ "${THIS_JVM_VER:20:1}" -eq "0" ]] || [[ "${THIS_JVM_VER:20:2}" -lt $JAVA65 ]]; then      
-         error="true"
-      fi
-   fi
-
-   if [[ -n $error ]]; then
-      echo "***ERROR: Your existing JAVA_HOME on $node is less than $REQ_VER"
-      echo "***ERROR: Your Java Version on $node = $THIS_JVM_VER"
-      echo "***ERROR: Required java version on $node should be greater than $REQ_VER"
-      exit -1
-   fi
-done
-
 echo "export JAVA_HOME=\"$JAVA_HOME\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
@@ -362,7 +301,7 @@ echo "export JAVA_HOME=\"$JAVA_HOME\"" >> $LOCAL_TRAF_CONFIG
 # TRAF_PACKAGE = the trafodion package tar file which contains trafodion core & dcs
 # TRAF_BUILD = the trafodion core tar file extracted from the trafodion package
 # DCS_BUILD = the dcs tar file extracted from the trafodion package
-
+# 05/10/2016 
 if [ -z "$TRAF_PACKAGE" ]; then
    TRAF_DEFAULT="$TRAF_BUILD"
 else
@@ -389,291 +328,310 @@ if [ ! -f $TRAF_PACKAGE ]; then
    exit -1
 fi
 
-# Determine if we have a package or just the trafodion_server tar file
-# Normally, the package file is what should be specified but because
-# we used to not support the package file and required the trafodion core
-# tar file previous users might still specify the trafodion core tar file instead
-# Also, developers might only have trafodion core tar file and not a package
-# tar file.
+# Determine if we have a package that was created before 05/10/2016. 
+# Tar files created after 05/10/2016 are no longer a tar of tar packages
+# but just one tar file.
+
 package=$(tar -tzf $TRAF_PACKAGE | grep build-version.txt | wc -l )
 if [ $package -eq 0 ]; then
    
-   # assume user specified a trafodion core tar file
-   TRAF_BUILD=$TRAF_PACKAGE
-   TRAF_PACKAGE=""
-   
-   #TODO: do a quick sanity check on the file to make sure it is a traf build tar file
-
-   echo "***INFO: tar file is not a package tar file which includes Trafodion & DCS"
-   echo "***INFO: assuming it is a Trafodion build only tar file"
-   
-   # since it is not a package tar file, we'll need to prompt for the DCS build file
-   echo -n "Enter location of DCS tar file [DCS_BUILD]: "
-   read answer
-   if [ -z $answer ]; then
-      if [ -z $DCS_BUILD ]; then
-         echo "***ERROR: Must specify DCS tar file location."
-         exit -1
-      fi
-   else
-      DCS_BUILD=$answer
-   fi
-   
-   # make sure file exists
-   if [ ! -f $DCS_BUILD ]; then
-      echo "***ERROR: $DCS_BUILD does not exist"
-      exit -1
-   fi
-
-   #TODO: do a quick sanity check on the file to make sure it is a DCS build tar file
-   
-   # since it is not a package tar file, we'll need to prompt for the rest build file
-   echo -n "Enter location of REST tar file [$REST_BUILD]: "
-   read answer
-   if [ -z $answer ]; then
-      if [ -z $REST_BUILD ]; then
-         echo "***ERROR: Must specify REST tar file location."
-         exit -1
-      fi
-   else
-      REST_BUILD=$answer
-   fi
-   
-   # make sure file exists
-   if [ ! -f $REST_BUILD ]; then
-      echo "***ERROR: $REST_BUILD does not exist"
-      exit -1
-   fi
-
-   #TODO: do a quick sanity check on the file to make sure it is a rest build tar file
-   
+   ONE_TAR_INSTALL="Y"
+   TRAF_BUILD=""
+   DCS_BUILD=""
+   REST_BUILD="" 
 else
    # user specifed a package file
+   ONE_TAR_INSTALL="N"
    TRAF_BUILD=""
    DCS_BUILD=""
    REST_BUILD=""
 fi
 
+
 echo "export TRAF_PACKAGE=\"$TRAF_PACKAGE\"" >> $LOCAL_TRAF_CONFIG
 echo "export TRAF_BUILD=\"$TRAF_BUILD\"" >> $LOCAL_TRAF_CONFIG
 echo "export DCS_BUILD=\"$DCS_BUILD\"" >> $LOCAL_TRAF_CONFIG
 echo "export REST_BUILD=\"$REST_BUILD\"" >> $LOCAL_TRAF_CONFIG
-
-#Check if install_features file exists
-if [[ -z $TRAF_BUILD ]]; then
-   TRAF_BUILD=$(tar -tf $TRAF_PACKAGE | grep "trafodion_server")
-   tar -xzf $TRAF_PACKAGE --directory $LOCAL_WORKDIR
-fi
-
-if [[ -z $TRAF_BUILD ]]; then 
-   echo "***ERROR: trafodion_server-n.n.n.tgz not included in $TRAF_PACKAGE"
-   echo "***ERROR: Workaround may be to enter trafodion_server-n.n.n.tgz as trafodion tar package."
-   exit -1
-fi
-
-install_features_path=$(tar -tf $LOCAL_WORKDIR/$TRAF_BUILD | grep "install_features")
-
-if [[ ! -z $install_features_path ]]; then
-   tar -xzf $LOCAL_WORKDIR/$TRAF_BUILD $install_features_path
-   source $install_features_path
-   echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
-else
-   CDH_5_3_HDP_2_2_SUPPORT="N"
-   echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
-fi
-
-#>>> to allow failed installs to be rerun easily we need to do something
-#>>> about defaulting the tar file once the user specified it but maybe
-#>>> blank it out once the install completes successfully.
+echo "export ONE_TAR_INSTALL=\"$ONE_TAR_INSTALL\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
-# Hadoop Distro
+#Backup restore user
+export BACKUP_USER="trafodion"
 
-echo "***INFO: Detecting Hadoop distro"
-ambari_installed=$(hadoop version 2>&1 | grep hortonworks | wc -l)
-cloudera_installed=$(hadoop version 2>&1 | grep cloudera | wc -l)
+echo -n "Enter Backup/Restore username (can be Trafodion), default is [$BACKUP_USER]: "
+read answer
 
-
-if [[ "$ambari_installed" -eq "0" ]] && [[ "$cloudera_installed" -eq "0" ]]; then
-   cloudera_installed=$(rpm -qa | grep cloudera | wc -l)
-   ambari_installed=$(rpm -qa | grep ambari | wc -l)
+if [ -z $answer ]; then
+   echo "export BACKUP_USER=\"$BACKUP_USER\"" >> $LOCAL_TRAF_CONFIG
+else
+   echo "export BACKUP_USER=\"$answer\"" >> $LOCAL_TRAF_CONFIG
 fi
 
+#==============================================
+#Enter Hadoop Type
 
-if [[ "$ambari_installed" -eq "0" ]] && [[ "$cloudera_installed" -eq "0" ]]; then
-   echo "***ERROR: Hadoop distribution could not be determined."
-   echo "***ERROR: Only Hortonworks or Cloudera supported."
-   exit -1
-fi 
+echo -n "Specify the Hadoop distribution installed (1: Cloudera, 2: Hortonworks, 3: Other): "
+read answer1
+  if [[ -z "$answer1" ]]; then
+     echo "***ERROR: User must specify the version of Hadoop being used."
+     exit -1
+  fi
+  case "$answer1" in
+    1) HADOOP_TYPE="cloudera"
+       echo "export HADOOP_TYPE=\"$HADOOP_TYPE\"" >> $LOCAL_TRAF_CONFIG
+       ;;
+    2) HADOOP_TYPE="hortonworks"
+       echo "export HADOOP_TYPE=\"$HADOOP_TYPE\"" >> $LOCAL_TRAF_CONFIG
+       ;;
+    3) HADOOP_TYPE="apache"
+       echo "export HADOOP_TYPE=\"$HADOOP_TYPE\"" >> $LOCAL_TRAF_CONFIG
+  esac
 
-echo "exit" | hbase shell &> hbaseVersion.txt
+export $HADOOP_TYPE
+#==============================================
+if [[ "$HADOOP_TYPE" == "apache" ]]; then
+   echo -n "Enter Hadoop installed full path (example: '/opt/hadoop-2.6.0'), default is [$HADOOP_PREFIX]: "
+   read answer
 
-if [[ ! -f hbaseVersion.txt ]]; then
-   echo "***ERROR: Could not find file hbaseVersion.txt"
-   echo "***ERROR: Error while running hbase shell" 
-   echo "***ERROR: Check that hbase is installed and working."
-   exit -1
-fi
-
-if [[ $ambari_installed -gt 0 ]]; then
-   echo "***INFO: Hortonworks detected"
-   if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-      #Check that Hortonworks 2.2 is not installed
-      versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.1.* | wc -l)
-      if [[ $versionInstalled -eq "0" ]]; then
-         echo "***ERROR: Only Hortonworks version 2.1.* is currently supported."
-         echo "***ERROR: Detected Hortonworks version:"
-         cat hbaseVersion.txt
+   if [ -z  $answer ]; then
+      if [[ -z $HADOOP_PREFIX ]]; then
+         echo "***ERROR: Must enter Hadoop installed path"
          exit -1
       fi
-      nameOfVersion=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.1.*)
    else
-      nameOfVersion=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.2.*)
+      if [[ -e $answer ]]; then
+         HADOOP_PREFIX=$answer
+      else
+         echo "***ERROR: Hadoop installed path doesn't exist"
+         exit -1
+      fi
    fi
+   echo "export HADOOP_PREFIX=\"$HADOOP_PREFIX\"" >> $LOCAL_TRAF_CONFIG
+
+   #Hbase path 
+   echo -n "Enter HBase installed full path (example: '/opt/hbase-1.2.0'), default is [$HBASE_HOME]: "
+   read answer
+
+   if [ -z  $answer ]; then
+      if [[ -z $HBASE_HOME ]]; then
+         echo "***ERROR: Must enter HBase installed path"
+         exit -1
+      fi
+   else
+      if [[ -e $answer ]]; then
+         HBASE_HOME=$answer
+      else
+         echo "***ERROR: HBase installed path doesn't exist"
+         exit -1
+      fi
+   fi
+   echo "export HBASE_HOME=\"$HBASE_HOME\"" >> $LOCAL_TRAF_CONFIG
    
-   #Check that HDP 2.[n>2].* is not installed.
-   if [[ -z $nameOfVersion ]]; then
-       versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | sed 's/Version 0.[0-9]*.[0-9].//g' | grep [1-3].[0-9].* | wc -l)
-       if [[ $versionInstalled -gt "0" ]]; then
-          echo "***ERROR: Trafodion and Hortonworks versions may not be compatible"
-          echo "***ERROR: Trafodion 1.1.0 is compatible with Hortonworks 2.2"
-          echo "***ERROR: Trafodion 1.0.1 and 1.0.0 are compatbile with Hortonworks 2.1"
-          echo "***ERROR: Detected Hortonworks version:"
-          cat hbaseVersion.txt
-          exit -1
-       fi
-    fi
+   #Zookeeper path
+   echo -n "Enter Zookeeper installed full path (example: '/opt/zoo'), default is [$ZOO_HOME]: "
+   read answer
 
-   hadoop_type="hortonworks"
-   echo "export HADOOP_TYPE=\"$hadoop_type\"" >> $LOCAL_TRAF_CONFIG
-   if [ -z "$URL" ]; then
-      URL=$(hostname --long):8080
-   fi
-fi
-
-if [[ $cloudera_installed -gt 0 ]]; then
-   echo "***INFO: Cloudera detected"
-   if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then 
-      #Check that Cloudera 5.2 or 5.3 are not installed.
-      versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].* | wc -l)
-      nameOfVersion=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].*)
-      if [[ $versionInstalled -eq "0" ]]; then
-         echo "***ERROR: Only Cloudera Versions 5.0.* or 5.1.* are currently supported"
-         echo "***ERROR: Detected Cloudera version:"
-         cat hbaseVersion.txt
-         exit -1 
+   if [ -z  $answer ]; then
+      if [[ -z $ZOO_HOME ]]; then
+         echo "***ERROR: Must enter HBase installed path"
+         exit -1
       fi
-   else 
-     nameOfVersion=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[2-3].*)
-   fi
-
-   #Check that Cloudera 5.[n>3].* is not installed.
-   if [[ -z $nameOfVersion ]]; then 
-      versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[4-6].[0-9].* | wc -l)
-      if [[ $versionInstalled -gt "0" ]]; then 
-         echo "***ERROR: Trafodion and Cloudera versions may not be compatible"
-         echo "***ERROR: Trafodion 1.1.0 is compatible with Cloudera 5.2 and 5.3"
-         echo "***ERROR: Trafodion 1.0.1 and 1.0.0 are compatible with Cloudera 5.1.2 and 5.1.3"
-         echo "***ERROR: Detected Cloudera version:"
-         cat hbaseVersion.txt
-         exit -1 
+   else
+      if [[ -e $answer ]]; then
+         ZOO_HOME=$answer
+      else
+         echo "***ERROR: HBase installed path doesn't exist"
+         exit -1
       fi
    fi
+   echo "export ZOO_HOME=\"$ZOO_HOME\"" >> $LOCAL_TRAF_CONFIG
 
-   #Check for Cloudera parcels of packages.
-   parcelsInstalled=`sudo ls /opt/cloudera/parcels/ | wc -l`
-   if [[ $parcelsInstalled -gt "0" ]]; then
-      echo "***ERROR: Cloudera parcels installed"
-      echo "***ERROR: Trafodion only supports Cloudera packages at this time."
-      exit -1
-   fi   
-   hadoop_type="cloudera"
-   echo "export HADOOP_TYPE=\"$hadoop_type\"" >> $LOCAL_TRAF_CONFIG
-   if [ -z "$URL" ]; then
-      URL=$(hostname --long):7180
-   fi  
-fi
-echo "***DEBUG: nameOfVersion=$nameOfVersion"
-for node in $NODE_LIST;
-do
-   ssh $node -n 'echo "exit" | hbase shell &> hbaseVersion.txt'
-   versionInstalled=$(ssh -n $node grep \"$nameOfVersion\" hbaseVersion.txt | wc -l)
-   if [[ "$versionInstalled" -eq "0" ]]; then
-      echo "***ERROR: $hadoop_type version on $node not same as all other nodes."
-      echo "***ERROR: Please reinstall $hadoop_type with same version on all nodes."
-      exit -1
+   #Hive path 
+
+   echo -n "Is Hive Installed (Y/N), default is N: "
+   read answer
+
+   if [[ "${answer}" =~ ^[Yy]$ ]]; then
+
+      echo -n "Enter Hive installed full path, default is [$HIVE_HOME]: "
+      read answer1
+
+      if [ -z  $answer1 ]; then
+         if [[ -z $HIVE_HOME ]]; then
+            echo "***ERROR: Must enter apache Hive installed path"
+            exit -1
+         fi
+      else
+         if [[ -e $answer1 ]]; then
+            HIVE_HOME=$answer
+         else
+            echo "***ERROR: apache Hive installed path doesn't exist"
+            exit -1
+         fi
+      fi
    fi
-done 
+   echo "export HIVE_HOME=\"$HIVE_HOME\"" >> $LOCAL_TRAF_CONFIG
+
+   echo -n "Enter list of all nodes in this cluster (blank separated), default [$HADOOP_NODES]: "
+   read answer2
+   if [[ -z "$answer2" ]]; then
+      if [ -z "$HADOOP_NODES" ]; then
+         echo "***ERROR: All nodes in this cluster must be specified."
+         exit -1
+      fi
+   else
+      HADOOP_NODES="$answer2"
+      echo "export HADOOP_NODES=\"$HADOOP_NODES\"" >> $LOCAL_TRAF_CONFIG
+   fi
+
+   echo -n "Enter list of all HBase nodes in this cluster (blank separated), default [$HBASE_NODES]: "
+   read answer3
+   if [[ -z "$answer3" ]]; then
+      if [ -z "$HBASE_NODES" ]; then
+         echo "***ERROR: All nodes in this cluster must be specified."
+         exit -1
+      fi
+   else
+      HBASE_NODES="$answer3"
+      echo "export HBASE_NODES=\"$HBASE_NODES\"" >> $LOCAL_TRAF_CONFIG
+   fi
+
+   echo -n "Enter list of all HDFS nodes in this cluster (blank separated), default [$HDFS_NODES]: "
+   read answer4
+   if [[ -z "$answer4" ]]; then
+      if [ -z "$HDFS_NODES" ]; then
+         echo "***ERROR: All nodes in this cluster must be specified."
+         exit -1
+      fi
+   else
+      HDFS_NODES="$answer4"
+      echo "export HDFS_NODES=\"$HDFS_NODES\"" >> $LOCAL_TRAF_CONFIG
+   fi
+
+fi
 
 #==============================================
 #Hadoop user name
 
-echo -n "Enter $hadoop_type admin username, default is [$ADMIN]: "
-read answer
+if [[ "$HADOOP_TYPE" != "apache" ]]; then
 
-if [ -z $answer ]; then
-   echo "export ADMIN=\"$ADMIN\"" >> $LOCAL_TRAF_CONFIG
-   username=$ADMIN
-else
-   echo "export ADMIN=\"$answer\"" >> $LOCAL_TRAF_CONFIG
-   username=$answer
-fi
-#==============================================
-#Hadoop Password
+   echo -n "Enter Hadoop admin username, default is [$ADMIN]: "
+   read answer
 
-echo -n "Enter $hadoop_type admin password, default is [$PASSWORD]: "
-read answer
+   if [ -z $answer ]; then
+      echo "export ADMIN=\"$ADMIN\"" >> $LOCAL_TRAF_CONFIG
+      username=$ADMIN
+   else
+      echo "export ADMIN=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+      username=$answer
+   fi
+   #==============================================
+   #Hadoop Password
 
-if [ -z $answer ]; then
-   echo "export PASSWORD=\"$PASSWORD\"" >> $LOCAL_TRAF_CONFIG
-   password=$PASSWORD
-else
-   echo "export PASSWORD=\"$answer\"" >> $LOCAL_TRAF_CONFIG
-   password=$answer
-fi
+   echo -n "Enter Hadoop admin password, default is [$PASSWORD]: "
+   read answer
 
-#==============================================
-#Hadoop URL
+   if [ -z $answer ]; then
+      echo "export PASSWORD=\"$PASSWORD\"" >> $LOCAL_TRAF_CONFIG
+      password=$PASSWORD
+   else
+      echo "export PASSWORD=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+      password=$answer
+   fi
 
-echo -n "Enter $hadoop_type external network URL (including port), default is [$URL]: "
-read answer
+   #==============================================
+   #Hadoop URL
 
-#TODO: check URL is valid
+   echo -n "Enter full Hadoop external network URL:port (include 'http://' or 'https://), default is [$URL]: "
+   read answer
 
-if [ ! -z  $answer ]; then
-   URL=$answer
-fi
-echo "export URL=\"$URL\"" >> $LOCAL_TRAF_CONFIG
-
-temp=$(curl -su $username:$password http://$URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | sed 's/^[^\:]* ://')
-CLUSTER_NAME=$(echo $temp | sed -e 's/^"//' -e 's/"$//')
-CLUSTER_NAME=${CLUSTER_NAME// /%20}
-
-if [ -z $CLUSTER_NAME ]; then
-   if [[ $hadoop_type == "cloudera" ]]; then
-      echo "***INFO: Cloudera server might be down, attempting to restart"
-      sudo /etc/init.d/cloudera-scm-server restart 2>&1 | tee -a $INSTALL_LOG
-      temp=$(curl -su $username:$password http://$URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | sed 's/^[^\:]* ://')
-      CLUSTER_NAME=$(echo $temp | sed -e 's/^"//' -e 's/"$//')
-      CLUSTER_NAME=${CLUSTER_NAME// /%20}
-      if [ -x $CLUSTER_NAME ]; then
-         echo "***ERROR: Could not access http://$URL" 2>&1 | tee -a $INSTALL_LOG
-         echo "***ERROR: Check URL and port are correct or if Cloudera manager is up" 2>&1 | tee -a $INSTALL_LOG
+   if [ -z  $answer ]; then
+      if [[ -z $URL ]]; then
+         echo "***ERROR: Must enter $HADOOP_TYPE external network URL"
          exit -1
       fi
-   else 
-      echo "***ERROR: Could not access http://$URL" 2>&1 | tee -a $INSTALL_LOG
-      echo "***ERROR: Check URL and port are correct or if $hadoop_type is up." 2>&1 | tee -a $INSTALL_LOG
+   else
+      URL=$answer
+   fi
+
+   validURL=$(curl -k -s --head $URL | head -n 1 | grep "OK" | wc -l)
+
+   if [[ $validURL -eq "1" ]]; then
+      echo "export URL=\"$URL\"" >> $LOCAL_TRAF_CONFIG
+   else
+      echo "***ERROR: Could not access $URL"
+      echo "***ERROR: Check that URL and port are correct or if $HADOOP_TYPE is up"
       exit -1
    fi
 fi
+#==============================================
 
-echo "export CLUSTER_NAME=\"$CLUSTER_NAME\"" >> $LOCAL_TRAF_CONFIG
+#echo -n "Is this a multi-cluster setup (Y/N), default is N: "
+#read answer
+
+#if [[ "${answer}" =~ ^[Yy]$ ]]; then
+#   echo "export MULTI_CLUSTER=\"Y\"" >> $LOCAL_TRAF_CONFIG
+   
+#   echo -n "Enter full Hadoop Cluster name, default is [$CLUSTER_NAME]: "
+#   read answer
+
+#   answer=${answer// /%20}
+
+#   if [ -z $answer ]; then
+#      if [[ -z $CLUSTER_NAME ]]; then
+#         echo "***ERROR: Must enter full Hadoop Cluster name"
+#         exit -1
+#      fi
+#   else
+#      CLUSTER_NAME=$answer
+#      echo "export CLUSTER_NAME=\"$CLUSTER_NAME\"" >> $LOCAL_TRAF_CONFIG
+#   fi
+ 
+#   echo -n "Enter list of all nodes in this cluster (blank separated), default [$HADOOP_NODES]: "
+#   read answer
+#   if [[ -z "$answer" ]]; then
+#      if [ -z "$HADOOP_NODES" ]; then
+#         echo "***ERROR: All nodes in this cluster must be specified."
+#         exit -1
+#      fi
+#   else
+#      HADOOP_NODES="$answer"
+#      echo "export HADOOP_NODES=\"$HADOOP_NODES\"" >> $LOCAL_TRAF_CONFIG
+#   fi
+   
+#   echo -n "Enter list of all HBase nodes in this cluster (blank separated), default [$HBASE_NODES]: "
+#   read answer
+#   if [[ -z "$answer" ]]; then
+#      if [ -z "$HBASE_NODES" ]; then
+#         echo "***ERROR: All nodes in this cluster must be specified."
+#         exit -1
+#      fi
+#   else
+#      HBASE_NODES="$answer"
+#      echo "export HBASE_NODES=\"$HBASE_NODES\"" >> $LOCAL_TRAF_CONFIG
+#   fi
+   
+#   echo -n "Enter list of all HDFS nodes in this cluster (blank separated), default [$HDFS_NODES]: "
+#   read answer
+#   if [[ -z "$answer" ]]; then
+#      if [ -z "$HDFS_NODES" ]; then
+#         echo "***ERROR: All nodes in this cluster must be specified."
+#         exit -1
+#      fi
+#   else
+#      HDFS_NODES="$answer"
+#      echo "export HDFS_NODES=\"$HDFS_NODES\"" >> $LOCAL_TRAF_CONFIG
+#   fi
+ 
+#else
+   echo "export MULTI_CLUSTER=\"N\"" >> $LOCAL_TRAF_CONFIG
+#fi
+
 
 #==============================================
 #HDFS Username
 
-echo -n "Enter HDFS username, default is [$HDFS_USER]: "
+echo -n "Enter HDFS username or username running HDFS, default is [$HDFS_USER]: "
 read answer
 
 if [ -z $answer ]; then
@@ -685,7 +643,7 @@ fi
 #==============================================
 #HBase user
 
-echo -n "Enter HBase username, default is [$HBASE_USER]: "
+echo -n "Enter HBase username or username running HBase, default is [$HBASE_USER]: "
 read answer
 
 if [ -z $answer ]; then
@@ -704,6 +662,18 @@ if [ -z $answer ]; then
    echo "export HBASE_GROUP=\"$HBASE_GROUP\"" >> $LOCAL_TRAF_CONFIG
 else
    echo "export HBASE_GROUP=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+fi
+
+#==============================================
+#HBase group
+
+echo -n "Enter Zookeeper username or username running Zookeeper, default is [$ZOO_USER]: "
+read answer
+
+if [ -z $answer ]; then
+   echo "export ZOO_USER=\"$ZOO_USER\"" >> $LOCAL_TRAF_CONFIG
+else
+   echo "export ZOO_USER=\"$answer\"" >> $LOCAL_TRAF_CONFIG
 fi
 
 #==============================================
@@ -740,10 +710,11 @@ if [[ $SCANNER_MODE == "N" ]]; then
       echo "export START=\"Y\"" >> $LOCAL_TRAF_CONFIG
       echo "export INIT_TRAFODION=\"Y\"" >> $LOCAL_TRAF_CONFIG 
    else
-      echo "export START=\"${answer^}\"" >> $LOCAL_TRAF_CONFIG
-      if [[ "${answer^}" == "Y" ]]; then 
+      if [[ "${answer}" =~ ^[Yy]$ ]]; then
+         echo "export START=\"Y\"" >> $LOCAL_TRAF_CONFIG
          echo "export INIT_TRAFODION=\"Y\"" >> $LOCAL_TRAF_CONFIG 
       else
+         echo "export START=\"N\"" >> $LOCAL_TRAF_CONFIG
          echo "export INIT_TRAFODION=\"N\"" >> $LOCAL_TRAF_CONFIG
          echo "***INFO: Trafodion will not be started after install is complete."
          echo "***INFO: User will need follow steps on the trafodion wiki on how to start."
@@ -753,19 +724,91 @@ fi
 #==============================================
 #DCS Servers
 
-echo -n "Total number of DCS servers to start, default [$DCS_SERVERS_PARM]: "
+DCS_SERVERS_PARM=$(($node_count * 8))
+echo -n "Total number of client connections per cluster, default [$DCS_SERVERS_PARM]: "
 read answer
 
 if [ ! -z $answer ]; then
    DCS_SERVERS_PARM="$answer"
 fi
 
-if [[ $DCS_SERVERS_PARM != *[!0-9]* ]]; then
-   echo "export DCS_SERVERS_PARM=\"$DCS_SERVERS_PARM\"" >> $LOCAL_TRAF_CONFIG
-else
-   echo "***ERROR: DCS servers must be a number."
-   exit -1
+echo "export DCS_SERVERS_PARM=\"$DCS_SERVERS_PARM\"" >> $LOCAL_TRAF_CONFIG
+
+#==============================================
+
+#Get the node name where the customer would like to start DcsMaster process
+
+echo -n "Enter the node of primary DcsMaster, default [$DCS_PRIMARY_MASTER_NODE]: "
+read answer
+
+if [ ! -z $answer ]; then
+   DCS_PRIMARY_MASTER_NODE="$answer"
 fi
+
+echo "export DCS_PRIMARY_MASTER_NODE=\"$DCS_PRIMARY_MASTER_NODE\"" >> $LOCAL_TRAF_CONFIG
+echo "export DCS_MASTER_HOST=\"$DCS_PRIMARY_MASTER_NODE\"" >> $LOCAL_TRAF_CONFIG
+echo "export DCS_MASTER_PORT=\"$DCS_MASTER_PORT\"" >> $LOCAL_TRAF_CONFIG
+
+#==============================================
+#Enable HA
+
+echo -n "Enable High Availability (Y/N), default is N: "
+read answer
+
+if [[ ! -z $answer ]]; then
+   if [[ "${answer}" =~ ^[Yy]$ ]]; then
+      ENABLE_HA="true"
+   else
+      ENABLE_HA="false"
+   fi
+else
+   ENABLE_HA="false"
+fi
+
+echo "export ENABLE_HA=\"$ENABLE_HA\"" >> $LOCAL_TRAF_CONFIG
+
+#==============================================
+#Add Floating IP if HA Enabled
+if [[ "$ENABLE_HA" == "true" ]]; then
+   #Get the floating IP address, interface name and the list of backup nodes to be used
+   ######Get the floating IP address
+   echo -n "Enter floating IP address for setting up HA: "
+   read answer1
+
+   if [[ -z $answer1 ]]; then
+         echo "Floating IP address must be specified."
+         exit 1
+   else
+      FLOATING_IP="$answer1"
+   fi
+   echo "export FLOATING_IP=\"$FLOATING_IP\"" >> $LOCAL_TRAF_CONFIG
+   sed -i '/DCS_MASTER_HOST\=/d' $LOCAL_TRAF_CONFIG
+   echo "export DCS_MASTER_HOST=\"$FLOATING_IP\"" >> $LOCAL_TRAF_CONFIG
+
+   ######Get the interface used by the floating IP address
+   echo -n "Enter interface used for floating IP address: "
+   read answer2
+
+   if [ -z $answer2 ]; then
+      echo "Floating IP address interface name must be specified."
+      exit 1
+   else
+      INTERFACE="$answer2"
+   fi
+   echo "export INTERFACE=\"$INTERFACE\"" >> $LOCAL_TRAF_CONFIG
+
+   ######Get the list of backup nodes to be used
+   echo -n "Enter backup nodes for HA (blank seperated): "
+   read answer3
+
+   if [[ -z "$answer3" ]]; then
+      echo "Backup nodes must be specified."
+      exit 1
+   else
+      BACKUP_DCS_NODES="$answer3"
+   fi
+   echo "export BACKUP_DCS_NODES=\"$BACKUP_DCS_NODES\"" >> $LOCAL_TRAF_CONFIG
+fi 
 
 #==============================================
 #Simple security
@@ -774,7 +817,9 @@ if [[ $SCANNER_MODE == "N" ]]; then
    read answer
 
    if [ ! -z $answer ]; then
-      LDAP_SECURITY="${answer^}"
+      if [[ "${answer}" =~ ^[Yy]$ ]]; then
+         LDAP_SECURITY="Y"
+      fi
    else 
       LDAP_SECURITY="N"
    fi
@@ -860,7 +905,7 @@ if [[ $SCANNER_MODE == "N" ]]; then
       read answer4
       if [[ -z "$answer4" ]]; then
          if [ -z "$LDAP_LEVEL" ]; then
-            echo "***ERROR: Much enter LDAP Encryption level."
+            echo "***ERROR: Must enter LDAP Encryption level."
             exit -1
          fi
       else
@@ -920,6 +965,7 @@ if [[ $SCANNER_MODE == "N" ]]; then
    fi
 
 fi
+
 #==============================================
 #All items added to config file
 #Will add setup complete flag
@@ -932,6 +978,12 @@ sudo mkdir -p $TRAF_CONFIG_DIR
 sudo chmod 777 $TRAF_CONFIG_DIR
 sudo cp $LOCAL_TRAF_CONFIG $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
-echo "***INFO: Configuration file: $TRAF_CONFIG"
+
+#==============================================
+#Call user defined prompting script
+
+$LOCAL_WORKDIR/traf_user_prompt | tee -a $INSTALL_LOG
+
+#==============================================
 
 echo "***INFO: Trafodion configuration setup complete"

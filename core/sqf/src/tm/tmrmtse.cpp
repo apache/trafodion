@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -188,7 +191,6 @@ void RM_Info_TSE::remove_rm_by_index (int32 pv_index)
 int RM_Info_TSE::set_partic_and_transid(TM_Txid_Internal pv_transid, int32 pv_rmid )
 {
     bool lv_found = false;
-    bool lv_partic_added = false;
 
     int lv_idx = 0;
     while (lv_idx <= iv_high_index_used && !lv_found)
@@ -197,7 +199,7 @@ int RM_Info_TSE::set_partic_and_transid(TM_Txid_Internal pv_transid, int32 pv_rm
          // partic to true and set the transid
         if (ia_TSEBranches[lv_idx].rmid() == pv_rmid)
         {
-            lv_partic_added = ia_TSEBranches[lv_idx].add_partic(pv_transid);
+            ia_TSEBranches[lv_idx].add_partic(pv_transid);
             lv_found = true;
             iv_num_rm_partic++;
 

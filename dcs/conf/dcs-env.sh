@@ -1,37 +1,24 @@
 #/**
-# *(C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
-# *
-# * Licensed under the Apache License, Version 2.0 (the "License");
-# * you may not use this file except in compliance with the License.
-# * You may obtain a copy of the License at
-# *
-# *     http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
-# */
-#
-#/**
-# * Copyright 2007 The Apache Software Foundation
-# *
-# * Licensed to the Apache Software Foundation (ASF) under one
-# * or more contributor license agreements.  See the NOTICE file
-# * distributed with this work for additional information
-# * regarding copyright ownership.  The ASF licenses this file
-# * to you under the Apache License, Version 2.0 (the
-# * "License"); you may not use this file except in compliance
-# * with the License.  You may obtain a copy of the License at
-# *
-# *     http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
+#* @@@ START COPYRIGHT @@@
+#*
+#* Licensed to the Apache Software Foundation (ASF) under one
+#* or more contributor license agreements.  See the NOTICE file
+#* distributed with this work for additional information
+#* regarding copyright ownership.  The ASF licenses this file
+#* to you under the Apache License, Version 2.0 (the
+#* "License"); you may not use this file except in compliance
+#* with the License.  You may obtain a copy of the License at
+#*
+#*   http://www.apache.org/licenses/LICENSE-2.0
+#*
+#* Unless required by applicable law or agreed to in writing,
+#* software distributed under the License is distributed on an
+#* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#* KIND, either express or implied.  See the License for the
+#* specific language governing permissions and limitations
+#* under the License.
+#*
+#* @@@ END COPYRIGHT @@@
 # */
 
 # Set environment variables here.
@@ -89,7 +76,13 @@ export DCS_OPTS="-XX:+UseConcMarkSweepGC"
 # export DCS_REST_OPTS="$DCS_REST_OPTS $DCS_JMX_BASE -Dcom.sun.management.jmxremote.port=10103"
 # export DCS_ZOOKEEPER_OPTS="$DCS_ZOOKEEPER_OPTS $DCS_JMX_BASE -Dcom.sun.management.jmxremote.port=10104"
 
-# File naming hosts on which DCS Servers will run.  $DCS_HOME/conf/servers by default.
+# File naming host on which DCS Primary Master is configured to run. $DCS_HOME/conf/master by default.
+# export DCS_PRIMARY_MASTER=${DCS_HOME}/conf/master
+
+# File naming hosts on which DCS Backup Masters is configured to run. $DCS_HOME/conf/backup-masters by default.
+# export DCS_BACKUP_MASTERS=${DCS_HOME}/conf/backup-masters
+
+# File naming hosts on which DCS Servers will run. $DCS_HOME/conf/servers by default.
 # export DCS_SERVERS=${DCS_HOME}/conf/servers
 
 # Extra ssh options.  Empty by default.

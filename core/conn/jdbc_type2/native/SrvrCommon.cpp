@@ -1,19 +1,22 @@
 /************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **************************************************************************/
@@ -57,6 +60,7 @@
 
 SRVR_GLOBAL_Def     *srvrGlobal = NULL;
 long                *TestPointArray = NULL;
+__thread SQLMODULE_ID       nullModule;
 __thread SQLDESC_ITEM       gDescItems[NO_OF_DESC_ITEMS];
 __thread char               CatalogNm[MAX_ANSI_NAME_LEN+1];
 __thread char               SchemaNm[MAX_ANSI_NAME_LEN+1];
@@ -256,7 +260,7 @@ int initSqlCore(int argc, char *argv[])
 #endif
 
     gDescItems[0].item_id = SQLDESC_TYPE;
-    gDescItems[1].item_id = SQLDESC_LENGTH;
+    gDescItems[1].item_id = SQLDESC_OCTET_LENGTH;
     gDescItems[2].item_id = SQLDESC_PRECISION;
     gDescItems[3].item_id = SQLDESC_SCALE;
     gDescItems[4].item_id = SQLDESC_NULLABLE;
@@ -310,7 +314,6 @@ int initSqlCore(int argc, char *argv[])
     // Make sure you change NO_OF_DESC_ITEMS if you add any more items
     FUNCTION_RETURN_NUMERIC(retcode,(NULL));
 }
-
 
 
 
@@ -372,6 +375,63 @@ SRVR_STMT_HDL *getSrvrStmt(long dialogueId,
     FUNCTION_RETURN_PTR(pSrvrStmt,(NULL));
 }
 
+SRVR_STMT_HDL *getInternalSrvrStmt(long dialogueId,
+		const char* stmtLabel,
+		long* sqlcode)
+{
+	FUNCTION_ENTRY("getInternalSrvrStmt",("dialogueId=0x%08x, stmtLabel=0x%08x, sqlcode=0x%08x",
+				dialogueId,
+				stmtLabel,
+				sqlcode));
+
+	SQLRETURN rc;
+	SRVR_STMT_HDL *pSrvrStmt=NULL;
+
+	SRVR_CONNECT_HDL *pConnect=NULL;
+
+	if (dialogueId == 0)
+	{
+		*sqlcode = DIALOGUE_ID_NULL_ERROR;
+		FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
+	}
+	if (stmtLabel == NULL)
+	{
+		*sqlcode = STMT_ID_NULL_ERROR;
+		FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
+	}
+
+	pConnect = (SRVR_CONNECT_HDL *)dialogueId;
+	pSrvrStmt = pConnect->getInternalSrvrStmt(dialogueId, stmtLabel, sqlcode);
+	if(pSrvrStmt != NULL)
+	{
+		if (pSrvrStmt->dialogueId != dialogueId)
+		{
+			*sqlcode = STMT_ID_MISMATCH_ERROR;
+			FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
+		}
+	}
+    else
+    {
+        FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
+    }
+
+	rc = pConnect->switchContext(sqlcode);
+	switch (rc)
+	{
+		case SQL_SUCCESS:
+		case SQL_SUCCESS_WITH_INFO:
+			break;
+		default:
+			FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
+	}
+
+	if(pSrvrStmt != NULL)
+	{
+		pConnect->setCurrentStmt(pSrvrStmt);
+	}
+	FUNCTION_RETURN_PTR(pSrvrStmt,(NULL));
+}
+
 SRVR_STMT_HDL *createSrvrStmt(long dialogueId,
                               const char *stmtLabel,
                               long  *sqlcode,
@@ -381,7 +441,10 @@ SRVR_STMT_HDL *createSrvrStmt(long dialogueId,
                               short sqlStmtType,
                               BOOL  useDefaultDesc,
                               BOOL    internalStmt,
-                              long stmtId)
+                              long stmtId,
+							  short sqlQueryType,
+							  Int32  resultSetIndex,
+							  SQLSTMT_ID* callStmtId)
 {
     FUNCTION_ENTRY("createSrvrStmt",(""));
     DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  dialogueId=%ld, stmtLabel=%s",
@@ -418,7 +481,7 @@ SRVR_STMT_HDL *createSrvrStmt(long dialogueId,
         FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
     }
     pSrvrStmt = pConnect->createSrvrStmt(stmtLabel, sqlcode, moduleName, moduleVersion, moduleTimestamp,
-        sqlStmtType, useDefaultDesc,internalStmt,stmtId);
+        sqlStmtType, useDefaultDesc,internalStmt,stmtId, sqlQueryType, resultSetIndex, callStmtId);
     FUNCTION_RETURN_PTR(pSrvrStmt,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
 }
 
@@ -607,7 +670,7 @@ void convertWildcard(unsigned long metadataId, BOOL isPV, const char *inName, ch
                         break;
                     case '_':
                     case '%':
-                        *out++ = '\\';
+                        //*out++ = '\\';
                         break;
                     default:
                         break;
@@ -654,7 +717,7 @@ void convertWildcard(unsigned long metadataId, BOOL isPV, const char *inName, ch
                         break;
                     case '_':
                     case '%':
-                        *out++ = '\\';
+                        //*out++ = '\\';
                         break;
                     default:
                         break;
@@ -1056,33 +1119,14 @@ short do_ExecSMD(
 
     // Setup module filenames for MX metadata
     //Module version is changed from 0 to "SQLCLI_ODBC_MODULE_VERSION" R3.0
-    if (strncmp(stmtLabel, "SQL_GETTYPEINFO",15) == 0)
-        pSrvrStmt = createSrvrStmt(dialogueId,
-        stmtLabel,
-        &sqlcode,
-        "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMXGTI",
-        SQLCLI_ODBC_MODULE_VERSION,
-        1234567890,
-        sqlStmtType,
-        false,true);
-    else if (strncmp(stmtLabel, "SQL_JAVA_",9) == 0)
-        pSrvrStmt = createSrvrStmt(dialogueId,
-        stmtLabel,
-        &sqlcode,
-        "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMXJAVA",
-        SQLCLI_ODBC_MODULE_VERSION,
-        1234567890,
-        sqlStmtType,
-        false,true);
-    else
-        pSrvrStmt = createSrvrStmt(dialogueId,
-        stmtLabel,
-        &sqlcode,
-        NULL,
-        0,
-        0,
-        sqlStmtType,
-        false,false);
+    pSrvrStmt = createSrvrStmt(dialogueId,
+    stmtLabel,
+    &sqlcode,
+    NULL,
+    0,
+    0,
+    sqlStmtType,
+    false,true);
 
     *stmtId = (long)pSrvrStmt;
     SQLValue_def *sqlString = NULL;
@@ -1461,8 +1505,8 @@ short do_ExecSMD(
         "else dt.USELENGTH end) as integer) BUFFER_LENGTH, "
         "cast(co.COLUMN_SCALE as smallint) DECIMAL_DIGITS, "
         "cast(dt.NUM_PREC_RADIX as smallint) NUM_PREC_RADIX, "
-        "cast((case when co.NULLABLE = 0 then 0 when co.NULLABLE = 2 then 1 else 2 end) as smallint) NULLABLE, "
-        "cast(NULL as varchar(128)) REMARKS, "
+        "cast(co.NULLABLE as smallint) NULLABLE, "
+        "cast('' as varchar(128)) REMARKS, "
         "trim(co.DEFAULT_VALUE) COLUMN_DEF, "
         "cast((case when co.FS_DATA_TYPE = 0 and co.character_set = 'UCS2' then -8 "
         "when co.FS_DATA_TYPE = 64 and co.character_set = 'UCS2' then -9 else dt.SQL_DATA_TYPE end) as smallint) SQL_DATA_TYPE, "
@@ -1570,6 +1614,96 @@ short do_ExecSMD(
                                 " FOR READ UNCOMMITTED ACCESS order by 1, 2, 3, 5 ;",
                         tableParam[0], inputParam[0], inputParam[1],
                         inputParam[2], inputParam[3]);
+                    break;
+                case SQL_API_SQLPROCEDURES:
+                    if ((!checkIfWildCard(catalogNm, catalogNmNoEsc) || !checkIfWildCard(schemaNm, schemaNmNoEsc) || !checkIfWildCard(
+tableNm, tableNmNoEsc)) && !metadataId)
+                    {
+                        executeException->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
+                        executeException->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_WILDCARD_NOT_SUPPORTED;
+                        FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
+                    }
+
+                    if (strcmp(catalogNm,"") == 0)
+                        strcpy(tableName1,SEABASE_MD_CATALOG);
+                    else
+                        strcpy(tableName1, catalogNm);
+                    tableParam[0] = tableName1;
+                    convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+                    convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
+                    convertWildcard(metadataId, TRUE, tableNm, expTableNm);
+                    convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
+                    inputParam[0] = schemaNmNoEsc;
+                    inputParam[1] = expSchemaNm;
+                    inputParam[2] = tableNmNoEsc;
+                    inputParam[3] = expTableNm;
+                    inputParam[4] = NULL;
+
+                    snprintf((char *)sqlString->dataValue._buffer, totalSize,
+                        "select obj.CATALOG_NAME PROCEDURE_CAT, obj.SCHEMA_NAME PROCEDURE_SCHEM, "
+			"obj.OBJECT_NAME PROCEDURE_NAME, cast(NULL as varchar(10)) R1,cast(NULL as varchar(10)) R2,"
+                        "cast(NULL as varchar(10)) R3, cast(NULL as varchar(10)) REMARKS,"
+			"cast(case when routines.UDR_TYPE = 'P' then 1"
+			" when routines.UDR_TYPE = 'F' or routines.UDR_TYPE = 'T'"
+			" then 2 else 0 end as smallint) PROCEDURE_TYPE, "
+                        "obj.OBJECT_NAME SPECIFIC_NAME "
+                        " from TRAFODION.\"_MD_\".OBJECTS obj "
+			" left join TRAFODION.\"_MD_\".ROUTINES routines on obj.OBJECT_UID = routines.UDR_UID"
+                        " where "
+                        " (obj.SCHEMA_NAME = '%s' or trim(obj.SCHEMA_NAME) LIKE '%s' ESCAPE '\\')"
+			" and (obj.OBJECT_NAME = '%s' or trim(obj.OBJECT_NAME) LIKE '%s' ESCAPE '\\')"
+                        " and obj.OBJECT_TYPE='UR' "
+                        " order by obj.OBJECT_NAME"
+                        " FOR READ UNCOMMITTED ACCESS;",
+                        inputParam[0], inputParam[1], inputParam[2], inputParam[3]);
+                    break;
+                case SQL_API_SQLPROCEDURECOLUMNS:
+                    if ((!checkIfWildCard(catalogNm, catalogNmNoEsc) || !checkIfWildCard(schemaNm, schemaNmNoEsc) || !checkIfWildCard(
+tableNm, tableNmNoEsc)) && !metadataId)
+                    {
+                        executeException->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
+                        executeException->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_WILDCARD_NOT_SUPPORTED;
+                        FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
+                    }
+
+                    if (strcmp(catalogNm,"") == 0)
+                        strcpy(tableName1,SEABASE_MD_CATALOG);
+                    else
+                        strcpy(tableName1, catalogNm);
+                    tableParam[0] = tableName1;
+                    convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+                    convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
+                    convertWildcard(metadataId, TRUE, tableNm, expTableNm);
+		            convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
+                    convertWildcard(metadataId, TRUE, columnNm, expColumnNm);
+                    convertWildcardNoEsc(metadataId, TRUE, columnNm, columnNmNoEsc);
+                    inputParam[0] = schemaNmNoEsc;
+                    inputParam[1] = expSchemaNm;
+                    inputParam[2] = tableNmNoEsc;
+                    inputParam[3] = expTableNm;
+                    inputParam[4] = columnNmNoEsc;
+                    inputParam[5] = expColumnNm;
+                    inputParam[6] = NULL;
+
+                    snprintf((char *)sqlString->dataValue._buffer, totalSize,
+                            "select obj.CATALOG_NAME PROCEDURE_CAT, obj.SCHEMA_NAME PROCEDURE_SCHEM,"
+                            "obj.OBJECT_NAME PROCEDURE_NAME, cols.COLUMN_NAME COLUMN_NAME, "
+                            "cast((case when cols.DIRECTION='I' then 1 when cols.DIRECTION='N' then 2 when cols.DIRECTION='O' then 3 else 0 end) as smallint) COLUMN_TYPE, "
+                            "cols.FS_DATA_TYPE DATA_TYPE, cols.SQL_DATA_TYPE TYPE_NAME, "
+                            "cols.COLUMN_PRECISION \"PRECISION\", cols.COLUMN_SIZE LENGTH, cols.COLUMN_SCALE SCALE, "
+                            "cast(1 as smallint) RADIX, cols.NULLABLE NULLABLE, cast(NULL as varchar(10)) REMARKS, "
+                            "cols.DEFAULT_VALUE COLUMN_DEF, cols.FS_DATA_TYPE SQL_DATA_TYPE, cast(0 as smallint) SQL_DATETIME_SUB, "
+                            "cols.COLUMN_SIZE CHAR_OCTET_LENGTH, cols.COLUMN_NUMBER ORDINAL_POSITION, "
+                            "cols.NULLABLE IS_NULLABLE, cols.COLUMN_NAME SPECIFIC_NAME"
+                            " from TRAFODION.\"_MD_\".OBJECTS obj "
+                            " left join TRAFODION.\"_MD_\".COLUMNS cols on obj.OBJECT_UID=cols.OBJECT_UID "
+                            " where "
+                            " (obj.SCHEMA_NAME = '%s' or trim(obj.SCHEMA_NAME) LIKE '%s' ESCAPE '\\')"
+                            " and (obj.OBJECT_NAME = '%s' or trim(obj.OBJECT_NAME) LIKE '%s' ESCAPE '\\')"
+                            " and (cols.COLUMN_NAME = '%s' or trim(cols.COLUMN_NAME) LIKE '%s' ESCAPE '\\')"
+                            " order by cols.COLUMN_NUMBER"
+                            " FOR READ UNCOMMITTED ACCESS;"
+                        ,inputParam[0], inputParam[1], inputParam[2], inputParam[3], inputParam[4], inputParam[5]);
                     break;
             }
     if (pSrvrStmt == NULL)
@@ -1928,36 +2062,14 @@ short do_ExecFetchAppend(
     long                totalLength=0;
 
     // Setup module filenames for MX metadata
-    if (strncmp(stmtLabel, "SQL_GETTYPEINFO",15) == 0) {
-        pSrvrStmt = createSrvrStmt(dialogueId,
-            stmtLabel,
-            &sqlcode,
-            "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMXGTI",
-            SQLCLI_ODBC_MODULE_VERSION,
-            1234567890,
-            sqlStmtType,
-            false,true);
-    }
-    else if (strncmp(stmtLabel, "SQL_JAVA_",9) == 0) {
-        pSrvrStmt = createSrvrStmt(dialogueId,
-            stmtLabel,
-            &sqlcode,
-            "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMXJAVA",
-            SQLCLI_ODBC_MODULE_VERSION,
-            1234567890,
-            sqlStmtType,
-            false,true);
-    }
-    else {
-        pSrvrStmt = createSrvrStmt(dialogueId,
-            stmtLabel,
-            &sqlcode,
-            "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMX",
-            SQLCLI_ODBC_MODULE_VERSION,
-            1234567890,
-            sqlStmtType,
-            false,true);
-    }
+    pSrvrStmt = createSrvrStmt(dialogueId,
+        stmtLabel,
+        &sqlcode,
+        NULL,
+        SQLCLI_ODBC_MODULE_VERSION,
+        1234567890,
+        sqlStmtType,
+        false,true);
 
     if (pSrvrStmt == NULL){
         executeException->exception_nr = odbc_SQLSvc_PrepareFromModule_SQLError_exn_;
@@ -2210,3 +2322,108 @@ void print_outputValueList(SQLValueList_def *oVL, long colCount, const char * fc
     fflush(stdout);
 }
 #endif
+
+// DO NOT call this function using pSrvrStmt->sqlWarningOrErrorLength and pSrvrStmt->sqlWarningOrError,
+// Since the WarningOrError is static and pSrvrStmt->sqlWarningOrError will deallocate this memory. 
+extern "C" void GETMXCSWARNINGORERROR(
+          /* In    */ Int32 sqlcode
+        , /* In    */ char *sqlState
+        , /* In    */ char *msg_buf
+        , /* Out   */ Int32 *MXCSWarningOrErrorLength
+        , /* Out   */ BYTE *&MXCSWarningOrError)
+{
+    Int32 total_conds = 1;
+    Int32 buf_len;
+    Int32 curr_cond = 1;
+    Int32 msg_buf_len = strlen(msg_buf)+1;
+    Int32 time_and_msg_buf_len = 0;
+    Int32 msg_total_len = 0;
+    Int32 rowId = 0; // use this for rowset recovery.
+    char tsqlState[6];
+    BYTE WarningOrError[1024];
+    char  strNow[TIMEBUFSIZE + 1];
+    char* time_and_msg_buf = NULL;
+
+    memset(tsqlState,0,sizeof(tsqlState));
+    memcpy(tsqlState,sqlState,sizeof(tsqlState)-1);
+
+    bzero(WarningOrError,sizeof(WarningOrError));
+
+    *MXCSWarningOrErrorLength = 0;
+    MXCSWarningOrError = WarningOrError; // Size of internally generated message should be enough
+
+    *(Int32 *)(WarningOrError+msg_total_len) = total_conds;
+    msg_total_len += sizeof(total_conds);
+    *(Int32 *)(WarningOrError+msg_total_len) = rowId;
+    msg_total_len += sizeof(rowId);
+    *(Int32 *)(WarningOrError+msg_total_len) = sqlcode;
+    msg_total_len += sizeof(sqlcode);
+    time_and_msg_buf_len   = msg_buf_len + TIMEBUFSIZE;
+    *(Int32 *)(WarningOrError+msg_total_len) = time_and_msg_buf_len;
+    msg_total_len += sizeof(time_and_msg_buf_len);
+    //Get the timetsamp
+        time_and_msg_buf = new char[time_and_msg_buf_len];
+    strncpy(time_and_msg_buf, msg_buf, msg_buf_len);
+    time_t  now = time(NULL);
+    bzero(strNow, sizeof(strNow));
+    strftime(strNow, sizeof(strNow), " [%Y-%m-%d %H:%M:%S]", localtime(&now));
+    strcat(time_and_msg_buf, strNow);
+    memcpy(WarningOrError+msg_total_len, time_and_msg_buf, time_and_msg_buf_len);
+    msg_total_len += time_and_msg_buf_len;
+    delete time_and_msg_buf;
+    memcpy(WarningOrError+msg_total_len, tsqlState, sizeof(tsqlState));
+    msg_total_len += sizeof(tsqlState);
+
+    memcpy(MXCSWarningOrError, WarningOrError, sizeof(WarningOrError));
+    *MXCSWarningOrErrorLength = msg_total_len;
+    return;
+}
+
+char* strcpyUTF8(char *dest, const char *src, size_t destSize, size_t copySize)
+{
+    char c;
+    size_t len;
+
+    if (copySize == 0)
+        len = strlen(src);
+    else
+        len = copySize;
+
+    if (len >= destSize)
+        len = destSize-1; // truncation
+
+    while (len > 0)
+    {
+        c = src[len-1];
+        if (c < 0x80 || c > 0xbf)
+            break;
+        len--; // in second, third, or fourth byte of a multi-byte sequence
+    }
+    strncpy((char*)dest, (const char*)src, len);
+    dest[len] = 0;
+
+    return dest;
+}
+
+int getAllocLength(int DataType, int Length)
+{
+    int AllocLength;
+
+    switch (DataType) {
+        case SQLTYPECODE_CHAR:
+        //case SQLTYPECODE_CHAR_UP: // sqlcli doesn't support anymore
+        case SQLTYPECODE_VARCHAR:
+            AllocLength = Length+1; 
+            break;
+        case SQLTYPECODE_VARCHAR_WITH_LENGTH:
+        //case SQLTYPECODE_VARCHAR_UP: // sqlcli doesn't support anymore
+        case SQLTYPECODE_VARCHAR_LONG:
+            AllocLength = Length+3;
+            break;
+        default:
+            AllocLength = Length;
+            break;
+    }
+    return AllocLength;
+}
+

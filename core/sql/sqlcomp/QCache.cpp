@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1434,20 +1437,24 @@ NABoolean CacheData::backpatchParams
               charVal = (char*) (&val);
         }
 
+        Lng32 dataConversionErrorFlag = 0;
         short retCode = convDoIt((char*)charVal,
-           constVal->getStorageSize(),
-           (short)sourceType->getFSDatatype(),
-           sourceType->getPrecision(),
-           sourceScale,
-           (char*)(targetBugPtr+offset),
-           targetLen,
-           (short)(targetType->getFSDatatype()),
-           targetType->getPrecision(),
-           targetScale,
-           varCharLen, 
-           varCharLenSize);
+                                 constVal->getStorageSize(),
+                                 (short)sourceType->getFSDatatype(),
+                                 sourceType->getPrecision(),
+                                 sourceScale,
+                                 (char*)(targetBugPtr+offset),
+                                 targetLen,
+                                 (short)(targetType->getFSDatatype()),
+                                 targetType->getPrecision(),
+                                 targetScale,
+                                 varCharLen, 
+                                 varCharLenSize,
+                                 NULL, NULL, CONV_UNKNOWN,
+                                 &dataConversionErrorFlag);
 
-        if (retCode != ex_expr::EXPR_OK)
+        if ((retCode != ex_expr::EXPR_OK) ||
+            (dataConversionErrorFlag == ex_conv_clause::CONV_RESULT_ROUNDED_DOWN))
            return FALSE;
   
         offset += targetLen;
@@ -3495,7 +3502,7 @@ NABoolean hqcConstant::isApproximatelyEqualTo(hqcConstant & other)
 #if 1    
     //Check if an error can occur when coverting coming ConstValue()(other) to target( this->getConstValue() )
     if(!other.getConstValue()->getType()->isCompatible(*(this->getSQCType())) 
-       ||other.getConstValue()->getType()->errorsCanOccur(*(this->getSQCType()), FALSE) )
+       || !other.getConstValue()->canBeSafelyCoercedTo(*(this->getSQCType())) )
        return FALSE;
 #else     
     if(other.getConstValue()->getType()->errorsCanOccur(*(this->getSQCType()), FALSE))

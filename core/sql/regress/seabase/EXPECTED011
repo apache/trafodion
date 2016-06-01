@@ -7,13 +7,14 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Thu May 21 10:49:05 2015
+-- Definition current  Tue Mar  8 05:49:30 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                CHAR(10) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>
@@ -137,6 +138,80 @@ A            B
 
 --- 1 row(s) selected.
 >>
+>>explain select * from t011t1 where a >= 3 and a < 5;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212324176171390042
+ROWS_OUT ................. 7
+EST_TOTAL_COST ........... 0.01
+STATEMENT ................ select * from t011t1 where a >= 3 and a < 5;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 7
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 11
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality ... 11
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
+  SCHEMA ................. TRAFODION.SCH
+  QUERY_CACHE ............ 0
+  GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 7433846178641183029
+  select_list ............ TRAFODION.SCH.T011T1.A, TRAFODION.SCH.T011T1.B
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T011T1
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 11
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 11
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T011T1
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(incl) ....... 3
+  end_keys(excl) ......... 5
+  cache_size ........... 100
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ......... 11
+  column_retrieved ....... #1:1,#1:2
+  pushed_down_rpn ........ (#1:1>=?)(#1:1<?)AND
+  key_columns ............ A
+
+--- SQL operation complete.
+>>
 >>select * from t011t1 where a > 4 and a < 2;
 
 --- 0 row(s) selected.
@@ -229,8 +304,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-1    .    2    root                  o         x                     2.00E+000
-.    .    1    trafodion_delete                T011T1                2.00E+000
+3    .    4    root                            x                     2.00E+000
+1    2    3    tuple_flow                                            2.00E+000
+.    .    2    trafodion_vsbb_delet            T011T1                1.00E+000
+.    .    1    trafodion_scan                  T011T1                2.00E+000
 
 --- SQL operation complete.
 >>explain options 'f' delete from t011t1 where a = ?;
@@ -362,8 +439,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-1    .    2    root                  o         x                     2.00E+000
-.    .    1    trafodion_delete                T011T1                2.00E+000
+3    .    4    root                            x                     2.00E+000
+1    2    3    tuple_flow                                            2.00E+000
+.    .    2    trafodion_vsbb_delet            T011T1                1.00E+000
+.    .    1    trafodion_scan                  T011T1                2.00E+000
 
 --- SQL operation complete.
 >>explain options 'f' delete from t011t1 where a = ?;
@@ -380,9 +459,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-4    .    5    root                            x                     1.00E+001
-2    3    4    nested_join                                           1.00E+001
-.    .    3    trafodion_vsbb_delet            T011T1                1.00E+000
+6    .    7    root                            x                     1.00E+001
+2    5    6    nested_join                                           1.00E+001
+3    4    5    tuple_flow                                            1.00E+000
+.    .    4    trafodion_vsbb_delet            T011T1                1.00E+000
+.    .    3    trafodion_vsbb_scan             T011T1                1.00E+000
 1    .    2    unpack                                                1.00E+001
 .    .    1    values                                                1.00E+000
 
@@ -489,8 +570,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-1    .    2    root                  o         x                     2.00E+000
-.    .    1    trafodion_delete                T011T1                2.00E+000
+3    .    4    root                            x                     2.00E+000
+1    2    3    tuple_flow                                            2.00E+000
+.    .    2    trafodion_delete                T011T1                1.00E+000
+.    .    1    trafodion_scan                  T011T1                2.00E+000
 
 --- SQL operation complete.
 >>explain options 'f' delete from t011t1 where a = ?;
@@ -507,9 +590,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-4    .    5    root                            x                     1.00E+001
-2    3    4    nested_join                                           1.00E+001
-.    .    3    trafodion_delete                T011T1                1.00E+000
+6    .    7    root                            x                     1.00E+001
+2    5    6    nested_join                                           1.00E+001
+3    4    5    tuple_flow                                            1.00E+000
+.    .    4    trafodion_delete                T011T1                1.00E+000
+.    .    3    trafodion_scan                  T011T1                1.00E+000
 1    .    2    unpack                                                1.00E+001
 .    .    1    values                                                1.00E+000
 
@@ -881,9 +966,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-4    .    5    root                            x                     1.00E+001
-2    3    4    nested_join                                           1.00E+001
-.    .    3    trafodion_delete                T011T1                1.00E+000
+6    .    7    root                            x                     1.00E+001
+2    5    6    nested_join                                           1.00E+001
+3    4    5    tuple_flow                                            1.00E+000
+.    .    4    trafodion_delete                T011T1                1.00E+000
+.    .    3    trafodion_scan                  T011T1                1.00E+000
 1    .    2    unpack                                                1.00E+001
 .    .    1    values                                                1.00E+000
 
@@ -961,8 +1048,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-1    .    2    root                  o         x                     2.00E+000
-.    .    1    trafodion_delete                T011T1                2.00E+000
+3    .    4    root                            x                     2.00E+000
+1    2    3    tuple_flow                                            2.00E+000
+.    .    2    trafodion_delete                T011T1                1.00E+000
+.    .    1    trafodion_scan                  T011T1                2.00E+000
 
 --- SQL operation complete.
 >>explain options 'f' update t011t1 set b = 'b' where a = 1 or a = 2;
@@ -1180,7 +1269,7 @@ METRIC_TEXT_TABLE
 >>invoke trafodion."_REPOS_".metric_query_table;
 
 -- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
--- Definition current  Thu May 21 10:49:45 2015
+-- Definition current  Tue Mar  8 05:51:31 2016
 
   (
     INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1335,7 +1424,10 @@ METRIC_TEXT_TABLE
   , NUM_NODES                        LARGEINT DEFAULT NULL
   , UDR_PROCESS_BUSY_TIME            LARGEINT DEFAULT NULL
   , PERTABLE_STATS                   INT DEFAULT NULL
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, EXEC_START_UTC_TS ASC, QUERY_ID ASC)
 
 --- SQL operation complete.
 >>
@@ -1362,7 +1454,7 @@ METRIC_TEXT_TABLE
 >>-- get qid for the prepared stmt
 >>get qid for statement explstmt;
 
-MXID11000008581212298990535708589000000000206U3333300_1268_EXPLSTMT
+MXID11000029589212324176152856001000000000206U3333300_1994_EXPLSTMT
 
 --- SQL operation complete.
 >>
@@ -1414,7 +1506,7 @@ SEQ_NUM      OPERATOR
 --- SQL command prepared.
 >>get qid for statement explstmt2;
 
-MXID11000008581212298990535708589000000000206U3333300_1279_EXPLSTMT2
+MXID11000029589212324176152856001000000000206U3333300_2005_EXPLSTMT2
 
 --- SQL operation complete.
 >>set qid MXID123456 for explstmt2;
@@ -1979,6 +2071,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>
+>>
+>>
+>>
 >>obey TEST011(clnup);
 >>drop table T011T1;
 
@@ -2009,6 +2105,12 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>drop table t011t6b;
 
 *** ERROR[1389] Object TRAFODION.SCH.T011T6B does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>drop table t011t7;
+
+*** ERROR[1389] Object TRAFODION.SCH.T011T7 does not exist in Trafodion.
 
 --- SQL operation failed with errors.
 >>

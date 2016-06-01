@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -179,26 +182,11 @@ public:
         // object only apply to the primary partition of the
         // table.
 
-  inline unsigned short getISlackPercentage() const;
-
-        // returns the slack percentage of the index block
-        // associating with the primary partition.
-
   inline NABoolean getIsConstraintPKSpecified() const;
 
         // returns TRUE if a primary key (column or table)
         // constraint definition appears; returns FALSE
         // otherwise.
-
-  inline NABoolean getIsDSlackSpecified() const;
-
-        // returns TRUE if the dslack clause/phrase appears;
-        // returns FALSE otherwise.
-
-  inline NABoolean getIsISlackSpecified() const;
-
-        // returns TRUE if the islack clause/phrase appears;
-        // returns FALSE otherwise.
 
   inline NABoolean getIsLikeOptionSpecified() const;
 
@@ -275,11 +263,6 @@ public:
         // Create Table.  If LIKE clause is not specified,
         // the returned information is not relevant.
 
-  inline unsigned short getDSlackPercentage() const;
-
-        // returns the slack percentage of the data block
-        // associating with the primary partition.
-
   inline const NAString & getGuardianLocation() const;
 
         // returns an empty string unless the parse node
@@ -348,18 +331,6 @@ public:
 
   inline ExtendedQualName::SpecialTableType getTableType() const; // ++MV
   inline NABoolean isSpecialTypeSpecified() const; // ++MV
-
-  inline NABoolean isDSlackSpecified() const;
-
-        // same as getIsDSlackSpecified() -
-        // returns TRUE if the dslack clause/phrase appears;
-        // returns FALSE otherwise.
-
-  inline NABoolean isISlackSpecified() const;
-
-        // same as getIsISlackSpecified() -
-        // returns TRUE if the islack clause/phrase appears;
-        // returns FALSE otherwise.
 
   inline NABoolean isLikeOptionSpecified() const;
 
@@ -518,6 +489,8 @@ public:
   inline void setCreateTableAsIsoMapping(const Int32 charset);
   const Int32 getCreateTableAsScannedInputCharset() const;
   inline void setCreateTableAsScannedInputCharset(const Int32 charset);
+
+  //void setTableTraits(StmtDDLTableTraits tableTraits );
 
   // ---------------------------------------------------------------------
   // other public methods
@@ -767,19 +740,6 @@ private:
   // Aligned or Packed table data format
   NABoolean isAlignedTableFormatSpecified_;
 
-  //
-  // load options
-  //
-
-  // DSLACK clause/phrase
-  NABoolean isDSlackClauseSpec_;
-  unsigned short dSlackPercentage_;
-
-  // ISLACK clause/phrase
-  NABoolean isISlackClauseSpec_;
-  unsigned short iSlackPercentage_;
-
-  //
   // Each element of the following arrays is a pointer
   // pointing to a StmtDDLAddConstraint parse node in
   // the parse sub-tree containing the table body
@@ -971,12 +931,6 @@ StmtDDLCreateTable::getColDefArray()
   return columnDefArray_;
 }
 
-inline unsigned short
-StmtDDLCreateTable::getDSlackPercentage() const
-{
-  return dSlackPercentage_;
-}
-
 inline const ParDDLFileAttrsCreateTable &
 StmtDDLCreateTable::getFileAttributes() const
 {
@@ -995,30 +949,10 @@ StmtDDLCreateTable::getGuardianLocation() const
   return guardianLocation_;
 }
 
-inline unsigned short
-StmtDDLCreateTable::getISlackPercentage() const
-{
-  return iSlackPercentage_;
-}
-
 inline NABoolean
 StmtDDLCreateTable::getIsConstraintPKSpecified() const
 {
   return isPrimaryKeyClauseSpec_;
-}
-
-// is dslack clause/phrase specified?
-inline NABoolean
-StmtDDLCreateTable::getIsDSlackSpecified() const
-{
-  return isDSlackClauseSpec_;
-}
-
-// is islack clause/phrase specified?
-inline NABoolean
-StmtDDLCreateTable::getIsISlackSpecified() const
-{
-  return isISlackClauseSpec_;
 }
 
 // is the like clause specified?
@@ -1266,22 +1200,6 @@ inline const NAString
 StmtDDLCreateTable::getTableName() const
 {
   return tableQualName_.getQualifiedNameAsAnsiString();
-}
-
-// is dslack clause/phrase specified?
-// same as getIsDSlackSpecified()
-inline NABoolean
-StmtDDLCreateTable::isDSlackSpecified() const
-{
-  return isDSlackClauseSpec_;
-}
-
-// is islack clause/phrase specified?
-// same as getIsISlackSpecified()
-inline NABoolean
-StmtDDLCreateTable::isISlackSpecified() const
-{
-  return isISlackClauseSpec_;
 }
 
 // is the like clause specified?

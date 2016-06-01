@@ -3,19 +3,22 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
 --
---  Licensed under the Apache License, Version 2.0 (the "License");
---  you may not use this file except in compliance with the License.
---  You may obtain a copy of the License at
+--   http://www.apache.org/licenses/LICENSE-2.0
 --
---      http://www.apache.org/licenses/LICENSE-2.0
---
---  Unless required by applicable law or agreed to in writing, software
---  distributed under the License is distributed on an "AS IS" BASIS,
---  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
---  See the License for the specific language governing permissions and
---  limitations under the License.
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
 --
 -- @@@ END COPYRIGHT @@@
 
@@ -63,12 +66,12 @@ order by s desc;
 log LOG003 clear;
 
 set schema hive.hive;
-cqd attempt_esp_parallelism 'off';
-cqd AUTO_QUERY_RETRY 'OFF';
-cqd hive_max_esps  '1';
-cqd PARALLEL_NUM_ESPS '1';
+--cqd attempt_esp_parallelism 'off';
+--cqd hive_max_esps  '1';
+--cqd PARALLEL_NUM_ESPS '1';
 cqd HIVE_MAX_STRING_LENGTH '25' ;
 cqd mode_seahive 'ON';
+cqd auto_query_retry_warnings 'ON';
 
 prepare s from insert into hive.ins_customer select * from hive.customer;
 execute s;
@@ -84,10 +87,20 @@ select count(*) from hive.ins_promotion;
 --select from hive table where row delimiter was explicettely specified
 select [first 20] * from hive.ins_promotion order by p_promo_sk ;
 
+-- some negative tests
+insert into hive.ins_promotion (p_promo_sk, p_item_sk) select * from hive.promotion;
+-- target column list is not supported
+
+insert into hive.ins_promotion select *, p_promo_sk from hive.promotion;
+-- number of columns doesn't match
+
+prepare s from
+insert into hive.ins_time_dim values ('a', 2, 3, 4, 5, 6, 'c', 'd', 'e', 'f');
+-- wrong data types
+
 
 --try new HIVE SYNTAX
 --------------
-cqd query_cache '0';
 insert into TABLE hive.ins_customer_address select * from hive.customer_address;
 
 select count(*) from hive.customer_address;
@@ -154,7 +167,6 @@ cqd PARALLEL_NUM_ESPS '2';
 set schema hive;
 cqd hive_max_esps '2';
 cqd HIVE_MAX_STRING_LENGTH '25' ;
-cqd query_cache '0';
 control query shape esp_exchange(cut);
 prepare s from insert into table ins_store_sales_summary select ss_sold_date_sk,ss_store_sk, sum (ss_quantity) from store_sales group by  ss_sold_date_sk ,ss_store_sk; 
 explain options 'f' s;
@@ -176,7 +188,7 @@ sh diff -b LOG003_ORIG_STORE_SALES_SUMMARY.DAT LOG003_INS_STORE_SALES_SUMMARY.DA
 
 log LOG003;
 --execute again --overwrite should get rid og existing data from previous run
-control query shape union(cut,esp_exchange(cut));
+control query shape union(cut, esp_exchange(cut));
 prepare s from insert overwrite table ins_store_sales_summary select ss_sold_date_sk,ss_store_sk, sum (ss_quantity) from store_sales group by  ss_sold_date_sk ,ss_store_sk; 
 explain options 'f' s;
 execute s;

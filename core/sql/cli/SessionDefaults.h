@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -129,6 +132,7 @@ public:
     SUSPEND_LOGGING,
     USER_EXPERIENCE_LEVEL,
     WMS_PROCESS,
+    COMPILER_IDLE_TIMEOUT,
     LAST_SESSION_DEFAULT_ATTRIBUTE  // This enum entry should be last always. Add new enums before this entry
   };
   
@@ -187,6 +191,12 @@ public:
     const Int16 DisAmbiguate = 0;
     wmsProcess_ = v;
     updateDefaultsValueString(WMS_PROCESS, DisAmbiguate, wmsProcess_);
+  }
+
+  void setCompilerIdleTimeout(Lng32 compilerIdleTimeout)
+  {
+    compilerIdleTimeout_ = compilerIdleTimeout;
+    updateDefaultsValueString(COMPILER_IDLE_TIMEOUT, compilerIdleTimeout_);
   }
   
   void setIsoMappingName(const char * attrValue, Lng32 attrValueLen);
@@ -467,6 +477,7 @@ public:
   Lng32 getEspAssignTimeWindow(){ return espAssignTimeWindow_; }
   Lng32 getEspStopIdleTimeout() { return espStopIdleTimeout_; }
   Lng32 getEspIdleTimeout() { return espIdleTimeout_; }
+  Lng32 getCompilerIdleTimeout() { return compilerIdleTimeout_; }
   Lng32 getEspInactiveTimeout() { return espInactiveTimeout_; }
   Lng32 getEspReleaseWorkTimeout() { return espReleaseWorkTimeout_; }
   Lng32 getMaxPollingInterval() { return maxPollingInterval_; }
@@ -567,13 +578,6 @@ public:
   {return sessionEnvvars_;}
 
   AQRInfo * aqrInfo() { return aqrInfo_; }
-
-  void setExplainInRMS(NABoolean v = TRUE)
-  {
-    explainInRMS_ = v;
-  }
-
-  NABoolean isExplainInRMS() { return explainInRMS_; }
 
   Lng32 getStatisticsViewType() { return statisticsViewType_; }
   void setStatisticsViewType(Lng32 type) 
@@ -677,7 +681,9 @@ private:
   Lng32 espStopIdleTimeout_;
   // number of seconds an esp should wait idle before it times out
   Lng32 espIdleTimeout_;
-  // number of seconds an esp should remain inactive before times out
+  // number of seconds the compiler process can remain idle before it is killed by the master 
+  Lng32 compilerIdleTimeout_;
+  // numcompilerIber of seconds an esp should remain inactive before times out
   Lng32 espInactiveTimeout_;
   // number of seconds that master waits for release work reply from esps
   Lng32 espReleaseWorkTimeout_;
@@ -763,8 +769,6 @@ private:
   NABoolean suspendLogging_;              // suspended's session
   NABoolean callEmbeddedArkcmp_;       // call the procedural interface and don't send a message to the arkcmp process.
   AQRInfo * aqrInfo_;
-  NABoolean explainInRMS_;  // Flag to trigger copying of explain fragment to the RMS shared
-                            // segment
   Lng32 statisticsViewType_;     // Statistics view type which could be different from the collection statistics type
 /*
   Memory manager will start to reclaim space when the below conditions are met

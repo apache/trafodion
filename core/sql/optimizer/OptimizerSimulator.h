@@ -12,19 +12,22 @@
 **********************************************************************/
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -192,16 +195,12 @@ class OptimizerSimulator : public NABasicObject
       ESTIMATED_ROWS = FIRST_SYSCALL,
       NODE_AND_CLUSTER_NUMBERS,
       NACLUSTERINFO,
-      NODENAME_TO_NODENUMBER,
-      NODENUMBER_TO_NODENAME,
       MYSYSTEMNUMBER,
       VIEWSFILE,
       VIEWDDLS,
       TABLESFILE,
       CREATE_SCHEMA_DDLS,
       CREATE_TABLE_DDLS,
-      CREATE_INDEX_DDLS,
-      ALTER_TABLE_DDLS,
       SYNONYMSFILE,
       SYNONYMDDLS,
       CQD_DEFAULTSFILE,
@@ -250,7 +249,6 @@ class OptimizerSimulator : public NABasicObject
 
     void errorMessage(const char *msg);
     void warningMessage(const char *msg);
-    
     void debugMessage(const char* format, ...);
     
     NABoolean setOsimModeAndLogDir(osimMode mode, const char * localdir);
@@ -270,28 +268,6 @@ class OptimizerSimulator : public NABasicObject
 
     void readSysCallLogfiles();
     
-    void capture_NODENUMBER_TO_NODENAME(short error, 
-                                                                                                                Int32 nodeNumber,
-                                                                                                                char *nodeNameStr,
-                                                                                                                short maxLen,
-                                                                                                                short *actualLen);
-    void readLogfile_NODENUMBER_TO_NODENAME();
-    short simulate_NODENUMBER_TO_NODENAME(Int32 nodeNumber,
-                                                                                                                   char *nodeName,
-                                                                                                                   short maxLen,
-                                                                                                                   short *actualLen);
-    
-    
-
-    void capture_NODENAME_TO_NODENUMBER(short error,
-                                                                                                               const char *fileName,
-                                                                                                               short nodeNameLen,
-                                                                                                               Int32 *nodeNumber);
-    void readLogfile_NODENAME_TO_NODENUMBER();
-    short simulate_NODENAME_TO_NODENUMBER(const char *fileName,
-                                                                                                                    short nodeNameLen,
-                                                                                                                    Int32 *nodeNumber);
-    
     void capture_getEstimatedRows(const char *tableName, double estRows);
     void readLogfile_getEstimatedRows();
     double simulate_getEstimatedRows(const char *tableName);
@@ -309,8 +285,10 @@ class OptimizerSimulator : public NABasicObject
     void readLogfile_MYSYSTEMNUMBER();
     short simulate_MYSYSTEMNUMBER();
 
-    NABoolean isSysParamsInitialized();
-    void setSysParamsInitialized(NABoolean b);
+    NABoolean isClusterInfoInitialized() { return clusterInfoInitialized_; }
+
+    void setClusterInfoInitialized(NABoolean b) { clusterInfoInitialized_ = b; }
+
     // File pathnames for log files that contain system call data.
     const char * getLogFilePath (sysCall index) const
     {  return sysCallLogFilePath_[index]; }
@@ -328,8 +306,8 @@ class OptimizerSimulator : public NABasicObject
     short loadHistogramsTable(NAString* modifiedPath, QualifiedName * qualifiedName, unsigned int bufLen);
     short loadHistogramIntervalsTable(NAString* modifiedPath, QualifiedName * qualifiedName, unsigned int bufLen);
     Int64 getTableUID(const char * catName, const char * schName, const char * objName);
-    short fetchAllRowsFromMetaTable(Queue * &q, const char* query);
-    short executeInMetaContext(const char* query);
+    short fetchAllRowsFromMetaContext(Queue * &q, const char* query);
+    short executeFromMetaContext(const char* query);
     void loadDDLs();
     void histogramHDFSToLocal();
     void removeHDFSCacheDirectory();
@@ -337,11 +315,13 @@ class OptimizerSimulator : public NABasicObject
     void checkDuplicateNames();
     void dropObjects();
     void dumpVersions();
-    void saveTablesBeforeAction();
-    void saveViewsBeforeAction();
+    void saveTablesBeforeStart();
+    void saveViewsBeforeStart();
     void execHiveSQL(const char* hiveSQL);
+    
     // This is the directory OSIM uses to read/write log files.
     NAString osimLogLocalDir_;    //OSIM dir in local disk, used during capture and simu mode.
+    
     // This is the mode under which OSIM is running (default is OFF).
     // It is set by an environment variable OSIM_MODE.
     osimMode osimMode_;
@@ -352,10 +332,6 @@ class OptimizerSimulator : public NABasicObject
     char *sysCallLogFilePath_[NUM_OF_SYSCALLS];
 
     ofstream* writeSysCallStream_[NUM_OF_SYSCALLS];
-
-    NAHashDictionary<NAString, NAString> *hashDict_NODENAME_TO_NODENUMBER_;
-    
-    NAHashDictionary<Int32, NAString> *hashDict_NODENUMBER_TO_NODENAME_;
     
     NAHashDictionary<NAString, double> *hashDict_getEstimatedRows_;
 
@@ -371,9 +347,8 @@ class OptimizerSimulator : public NABasicObject
     sysType captureSysType_;
     NABoolean capturedNodeAndClusterNum_;
     NABoolean capturedInitialData_;
-    //NABoolean usingCaptureHint_;
     NABoolean hashDictionariesInitialized_;
-    NABoolean sysParamsInitialized_;
+    NABoolean clusterInfoInitialized_;
     NABoolean tablesBeforeActionInitilized_;
     NABoolean viewsBeforeActionInitilized_;
     NABoolean CLIInitialized_;
@@ -393,14 +368,6 @@ class OptimizerSimulator : public NABasicObject
 };
 
 // System call wrappers.
-  short OSIM_NODENAME_TO_NODENUMBER(const char *nodeName,
-                                     short nodeNameLen,
-                                     Int32 *nodeNumber);
-  short OSIM_NODENUMBER_TO_NODENAME(Int32 nodeNumber,
-                                     char *nodeName,
-                                     short maxLen,
-                                     short *actualLen);
-  
 
   short OSIM_MYSYSTEMNUMBER();
   void  OSIM_getNodeAndClusterNumbers(short& nodeNum, Int32& clusterNum);
@@ -417,8 +384,5 @@ class OptimizerSimulator : public NABasicObject
   NABoolean OSIM_runningSimulation();
   NABoolean OSIM_runningInCaptureMode();
   NABoolean OSIM_ustatIsDisabled();
-  NABoolean OSIM_isNTbehavior();
-  NABoolean OSIM_isNSKbehavior();
-  NABoolean OSIM_isLinuxbehavior();
-  NABoolean OSIM_SysParamsInitialized();
+  NABoolean OSIM_ClusterInfoInitialized();
 #endif

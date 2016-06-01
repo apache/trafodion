@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1997-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -62,11 +65,11 @@ class CostMethodNestedJoinFlow;
 class CostMethodMergeUnion;
 class CostMethodTuple;
 class CostMethodTranspose;
-class CostMethodDP2Insert;
-class CostMethodDP2SideTreeInsert;
-class CostMethodDP2VSBBInsert;
-class CostMethodDP2Update;
-class CostMethodDP2Delete;
+class CostMethodStoredProc;
+class CostMethodHbaseInsert;
+class CostMethodHbaseUpdateOrDelete;
+class CostMethodHbaseUpdate;
+class CostMethodHbaseDelete;
 class CostMethodUnPackRows;
 class CostMethodTableMappingUDF;
 class CostMethodFastExtract;
@@ -1993,14 +1996,14 @@ protected:
 //<pb>
 /**********************************************************************/
 /*                                                                    */
-/*                         CostMethodDP2Insert                        */
+/*                         CostMethodHbaseInsert                      */
 /*                                                                    */
 /**********************************************************************/
-class CostMethodDP2Insert : public CostMethod
+class CostMethodHbaseInsert : public CostMethod
 {
 public:
   // Constructor
-  CostMethodDP2Insert() : CostMethod( "CostMethodDP2Insert" ) {}
+  CostMethodHbaseInsert() : CostMethod( "CostMethodHbaseInsert" ) {}
 
 protected:
   // Cost functions
@@ -2009,26 +2012,17 @@ protected:
                                             Lng32& countOfStreams);
 
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
                                                const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
   virtual void cacheParameters(RelExpr*, const Context *);
-  CostScalar getNumberOfInserts();
-  virtual void calculateIOCosts();
-  virtual CostScalar calculateNumberOfInserts();
   virtual void cleanUp();
-  virtual void calculateCpuAndIdleCosts();
 
 protected:
-  IndexDesc* CIDesc_;
   
   // storage related
-  CostScalar indexLevels_;
-  CostScalar kbPerBlock_;
-  CostScalar rowsPerBlock_;
-  CostScalar totalIndexBlocks_;
-  CostScalar entriesInIndexBlock_;
+  // TODO: add members to help compute whether inserts will
+  // fit in memstore or not if this seems interesting
 
   // parallelism related
   CostScalar activePartitions_;
@@ -2036,75 +2030,37 @@ protected:
   CostScalar streamsPerCpu_;
   CostScalar countOfAsynchronousStreams_;
 
-  NABoolean probesInOrder_;
-
-  // Used for MV logging pushdown
-  NABoolean usedForMvLogging_;
-  const PushDownProperty* pushDownProperty_;
-
-  // I/O and CPU related cost scalars
-  CostScalar transferFR_;
-  CostScalar transferLR_;
-  CostScalar seeksFR_;
-  CostScalar seeksLR_;
-  CostScalar numInserts_;
-  CostScalar cpuFR_;
-  CostScalar cpuLR_;
-  CostScalar idleFR_;
-  CostScalar idleLR_;
-
-}; // class CostMethodDP2Insert
-
-class CostMethodDP2SideTreeInsert : public CostMethodDP2Insert
-{
-public:
-  // constructor
-  CostMethodDP2SideTreeInsert() : CostMethodDP2Insert () {}
-
-protected:
-  virtual void calculateIOCosts();
-  virtual CostScalar calculateNumberOfInserts();
-};
-
-class CostMethodDP2VSBBInsert : public CostMethodDP2Insert
-{
-public:
-  // constructor
-  CostMethodDP2VSBBInsert() : CostMethodDP2Insert () {}
+}; // class CostMethodHbaseInsert
 
 
-protected:
-  virtual void calculateIOCosts();
-  virtual CostScalar calculateNumberOfInserts();
-};
 
 //<pb>
 /**********************************************************************/
 /*                                                                    */
-/*                         CostMethodDP2UpdateOrDelete                */
+/*                         CostMethodHbaseUpdateOrDelete              */
 /*                                                                    */
 /**********************************************************************/
-class CostMethodDP2UpdateOrDelete : public CostMethod
+class CostMethodHbaseUpdateOrDelete : public CostMethod
 {
 public:
   // Constructor
-  CostMethodDP2UpdateOrDelete( const char* className )
+  CostMethodHbaseUpdateOrDelete( const char* className )
     : CostMethod( className ) 
   {};
 
 protected:
 
-  // Cost functions
+  // Old model cost function (obsolete; only here because base
+  // class requires an implementation)
   virtual Cost* computeOperatorCostInternal(RelExpr* op,
                                             const Context* myContext,
-                                            Lng32& countOfStreams) = 0;
+                                            Lng32& countOfStreams);
+
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
                                                const PlanWorkSpace* pws,
 					       Lng32& countOfStreams) = 0;
 
-  // Common functions to cost DP2 operations.
   NABoolean allKeyColumnsHaveHistogramStatistics(
     const IndexDescHistograms & histograms,
     const IndexDesc * CIDesc
@@ -2117,84 +2073,59 @@ protected:
     const IndexDesc * CIDesc
     ) const;
 
-  void computePartialScanCostForDP2CursorOperation(
-    CostScalar & seeksFR, CostScalar & transferFR, CostScalar & cpuFR,
-    CostScalar & seeksLR, CostScalar & transferLR, CostScalar & cpuLR,
+void computeIOCostsForCursorOperation(
+    CostScalar & randomIOs,        // out
+    CostScalar & sequentialIOs,    // out
     const IndexDesc * CIDesc,
     const CostScalar & numRowsToScan,
     NABoolean probesInOrder
     ) const;
 
-  void computePartialScanCostForDP2SubSetOperation(
-    CostScalar & seeksFR, CostScalar & transferFR, CostScalar & cpuFR,
-    CostScalar & seeksLR, CostScalar & transferLR, CostScalar & cpuLR,
-    const IndexDesc * CIDesc,
-    const CostScalar & numRowsToScan,
-    const CostScalar & numExecutorPreds
-    ) const;
-
-  inline CostScalar computeIdleCost( const CostScalar & activePartitions );
-
 protected:
 
-  // Used for MV logging pushdown
-  NABoolean usedForMvLogging_;
-  const PushDownProperty* pushDownProperty_;
 };
 //<pb>
 /**********************************************************************/
 /*                                                                    */
-/*                         CostMethodDP2Update                        */
+/*                         CostMethodHbaseUpdate                        */
 /*                                                                    */
 /**********************************************************************/
-class CostMethodDP2Update : public CostMethodDP2UpdateOrDelete
+class CostMethodHbaseUpdate : public CostMethodHbaseUpdateOrDelete
 {
 public:
   // Constructor
-  CostMethodDP2Update() 
-    : CostMethodDP2UpdateOrDelete( "CostMethodDP2Update" )  {}
+  CostMethodHbaseUpdate()
+    : CostMethodHbaseUpdateOrDelete( "CostMethodHbaseUpdate" )  {}
 
 protected:
-  // Cost functions
-  virtual Cost* computeOperatorCostInternal(RelExpr* op,
-                                            const Context* myContext,
-                                            Lng32& countOfStreams);
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
                                                const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
-  virtual void cacheParameters(RelExpr*, const Context *);
-  virtual void cleanUp();
 
-}; // class CostMethodDP2Update
+}; // class CostMethodHbaseUpdate
 
 //<pb>
 /**********************************************************************/
 /*                                                                    */
-/*                         CostMethodDP2Delete                        */
+/*                         CostMethodHbaseDelete                        */
 /*                                                                    */
 /**********************************************************************/
-class CostMethodDP2Delete : public CostMethodDP2UpdateOrDelete
+class CostMethodHbaseDelete : public CostMethodHbaseUpdateOrDelete
 {
 public:
   // Constructor
-  CostMethodDP2Delete() 
-    : CostMethodDP2UpdateOrDelete( "CostMethodDP2Delete" )  {}
+  CostMethodHbaseDelete()
+    : CostMethodHbaseUpdateOrDelete( "CostMethodHbaseDelete" )  {}
 
 protected:
-  // Cost functions
-  virtual Cost* computeOperatorCostInternal(RelExpr* op,
-                                            const Context* myContext,
-                                            Lng32& countOfStreams);
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
                                                const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
-}; // class CostMethodDP2Delete
+}; // class CostMethodHbaseDelete
 
 
 /**********************************************************************/

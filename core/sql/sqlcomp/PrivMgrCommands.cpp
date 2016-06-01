@@ -1,19 +1,22 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //*****************************************************************************
@@ -293,7 +296,7 @@ bool PrivMgrCommands::describePrivileges (const PrivMgrObjectInfo &objectInfo,
 // Returns the status of the request
 // The Trafodion diags area contains the error that was encountered
 // ----------------------------------------------------------------------------
-PrivStatus PrivMgrCommands::dropAuthorizationMetadata()
+PrivStatus PrivMgrCommands::dropAuthorizationMetadata(bool doCleanup)
 {
   PrivMgrMDAdmin metadata(getMetadataLocation(),getDiags());
   std::vector<string> tablesToDrop;
@@ -303,7 +306,7 @@ PrivStatus PrivMgrCommands::dropAuthorizationMetadata()
     const PrivMgrTableStruct &tableDefinition = privMgrTables[ndx_tl];
     tablesToDrop.push_back(tableDefinition.tableName);
   }
-  return metadata.dropMetadata(tablesToDrop);
+  return metadata.dropMetadata(tablesToDrop, doCleanup);
 }
 
 
@@ -401,6 +404,7 @@ PrivStatus PrivMgrCommands::getGrantorDetailsForObject(
 //
 // Input:
 //     objectUID - a unique object identifier
+//     objectType - the type of the object
 //     objectName - the name of the object
 //     privilegeText - the resultant grant text
 //     secKeySet - the security keys for the object/user
@@ -410,6 +414,7 @@ PrivStatus PrivMgrCommands::getGrantorDetailsForObject(
 // ----------------------------------------------------------------------------
 PrivStatus PrivMgrCommands::getPrivileges(
   const int64_t objectUID,
+  ComObjectType objectType,
   const int32_t userID,
   PrivMgrUserPrivs &userPrivs,
   std::vector <ComSecurityKey *>* secKeySet)
@@ -423,7 +428,8 @@ PrivStatus PrivMgrCommands::getPrivileges(
   if (authorizationEnabled())
   {
     PrivMgrPrivileges objectPrivs (metadataLocation_, pDiags_);
-    PrivStatus retcode = objectPrivs.getPrivsOnObjectForUser(objectUID, 
+    PrivStatus retcode = objectPrivs.getPrivsOnObjectForUser(objectUID,
+                                                             objectType, 
                                                              userID, 
                                                              objPrivs, 
                                                              grantablePrivs,
@@ -486,9 +492,8 @@ PrivStatus privStatus = STATUS_GOOD;
 
    try
    {
-      PrivMgrPrivileges objectPrivileges(getMetadataLocation(),pDiags_);
-      
-      privStatus = objectPrivileges.getPrivRowsForObject(objectUID,objectPrivsRows);
+      PrivMgrPrivileges objectPrivileges(objectUID,getMetadataLocation(),pDiags_);
+      privStatus = objectPrivileges.getPrivRowsForObject(objectUID, objectPrivsRows);
    }
 
    catch (...)
@@ -694,8 +699,8 @@ PrivStatus PrivMgrCommands::grantObjectPrivilege (
       const int64_t objectUID,
       const std::string &objectName,
       const ComObjectType objectType,
+      const int32_t grantorUID,
       const int32_t granteeUID,
-      const std::string &granteeName,
       const PrivMgrBitmap &objectPrivs,
       const PrivMgrBitmap &grantablePrivs)
 {
@@ -707,11 +712,10 @@ PrivStatus PrivMgrCommands::grantObjectPrivilege (
      return STATUS_ERROR;
   }
 
-  int32_t grantorUID = SYSTEM_AUTH_ID;
   PrivMgrPrivileges grantCmd(objectUID, objectName, grantorUID, metadataLocation_, pDiags_);
   grantCmd.setTrafMetadataLocation(trafMetadataLocation_);
   return grantCmd.grantObjectPriv
-   (objectType, granteeUID, granteeName, objectPrivs, grantablePrivs);
+   (objectType, granteeUID, objectPrivs, grantablePrivs);
 }
 
 // *****************************************************************************
@@ -871,9 +875,9 @@ PrivStatus privStatus = STATUS_GOOD;
 
    try
    {
-      PrivMgrPrivileges objectPrivileges(getMetadataLocation(),pDiags_);
+      PrivMgrPrivileges objectPrivileges(objectUID, getMetadataLocation(),pDiags_);
       
-      privStatus = objectPrivileges.insertPrivRowsForObject(objectUID,objectPrivsRows);
+      privStatus = objectPrivileges.insertPrivRowsForObject(objectUID, objectPrivsRows);
    }
 
    catch (...)
@@ -1044,8 +1048,8 @@ PrivStatus privStatus = STATUS_GOOD;
       privStatus = componentPrivileges.revokePrivilege(componentName,
                                                        operationNamesList,
                                                        grantorID,
-                                                       granteeID,0,
-                                                       isGOFSpecified,
+                                                       granteeID,
+                                                       isGOFSpecified, 0,
                                                        dropBehavior);
    }
 

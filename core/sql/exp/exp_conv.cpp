@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1322,53 +1325,24 @@ ex_expr::exp_return_type convAsciiToDatetime(char *target,
   // Setup attribute for the destination.
   //
   dstOpType.setPrecision(code);
+  dstOpType.setScale(fractionPrecision);
 
-  switch (code) {
-  case REC_DTCODE_DATE :
-  case REC_DTCODE_YEAR_DAY :
-    {
-    ret = dstOpType.convAsciiToDate(source,
-                                    sourceLen,
-                                    target,
-                                    targetLen,
-				    ExpDatetime::DATETIME_FORMAT_NONE,
-                                    heap,
-                                    diagsArea,
-				    flags);
-    }
-    break;
-  case REC_DTCODE_TIME :
-  case REC_DTCODE_HOUR_SECOND :
-    {
-    dstOpType.setScale(fractionPrecision);
-    ret = dstOpType.convAsciiToTime(source,
-                                    sourceLen,
-                                    target,
-                                    targetLen,
-                                    heap,
-                                    diagsArea,
-				    flags);
-    }
-    break;
-  default :
-    {
-    dstOpType.setScale(fractionPrecision);
-    ret = dstOpType.convAsciiToDatetime(source,
-                                        sourceLen,
-                                        target,
-                                        targetLen,
-                                        heap,
-                                        diagsArea,
-					flags);
-    }
-  }
-
+  ret = dstOpType.convAsciiToDatetime(source,
+                                      sourceLen,
+                                      target,
+                                      targetLen,
+                                      ExpDatetime::DATETIME_FORMAT_NONE,
+                                      heap,
+                                      diagsArea,
+                                      flags);
+  
   if (ret < 0)
     return ex_expr::EXPR_ERROR;
-
+  
   return ex_expr::EXPR_OK;
   
 }
+
 // LCOV_EXCL_START
 NA_EIDPROC
 ex_expr::exp_return_type convUnicodeToDatetime(char *target,
@@ -1493,6 +1467,7 @@ ex_expr::exp_return_type convDatetimeDatetime(char * target,
                                              dstEndField,
                                              (short)targetScale,
                                              target,
+                                             targetLen,
                                              validateFlag,
                                              &roundedDown) != 0) {
 
@@ -9318,6 +9293,32 @@ convDoIt(char * source,
   };
   break;
 
+// gb2312 -> utf8
+// JIRA 1720
+  case CONV_GBK_F_UTF8_V:
+  {
+    int copyLen = 0;
+    int convLen = gbkToUtf8( source, sourceLen, target, targetLen);
+    if (convLen >= 0) {
+      copyLen = convLen; 
+      if ( varCharLen )
+        setVCLength(varCharLen, varCharLenSize, copyLen);
+      //if the target length is not enough, instead of truncate, raise a SQL Error
+      if (convLen > targetLen)
+        ExRaiseSqlError(heap, diagsArea, EXE_STRING_OVERFLOW);
+    }
+    else {
+      // LCOV_EXCL_START
+      convLen = 0;
+      copyLen = 0;
+      if ( varCharLen )
+        setVCLength(varCharLen, varCharLenSize, copyLen);
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+      return ex_expr::EXPR_ERROR;
+      // LCOV_EXCL_STOP
+    }
+  };
+  break;
 // 5/10/98: sjis -> unicode
   case CONV_SJIS_F_UNICODE_F: 
   case CONV_SJIS_F_UNICODE_V: 
@@ -10472,7 +10473,18 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
             *dataConversionErrorFlag = -(*dataConversionErrorFlag);
           }
       }
-//    return retcode;
+
+    if( retcode != ex_expr::EXPR_OK && ( flags_ & CONV_TO_NULL_WHEN_ERROR ) != 0)
+    {
+      //move null to target
+      if(tgt->getNullFlag())
+      {
+        ExpTupleDesc::setNullValue( op_data[-2*MAX_OPERANDS],
+                                    tgt->getNullBitIndex(),
+                                    tgt->getTupleFormat() );
+        retcode = ex_expr::EXPR_OK;
+      }
+    } 
   };
   }; // switch
 

@@ -1,0 +1,187 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@ 
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# @@@ END COPYRIGHT @@@
+
+dcsznode=/$USER/dcs/master
+dcstmp=/tmp/dcstmp-$USER.log
+tmpjps=/tmp/jpstmp-$USER.log
+jpscmd=$JAVA_HOME/bin/jps
+cfg_mxo_cnt=0
+act_mxo_cnt=0
+down_mxo_cnt=0
+backup_dcsmaster_cnt=0
+cfg_dcsmaster_cnt=0
+actual_dcsmaster_cnt=0
+down_dcsmaster_cnt=0
+cfg_dcsserver_cnt=0
+actual_dcsserver_cnt=0
+down_dcsserver_cnt=0
+activeMaster=localhost
+
+if [ -e $SQ_PDSH ]; then
+   L_PDSH="$SQ_PDSH $MY_NODES "
+else
+   L_PDSH=
+fi
+
+tmp_ps=`mktemp -t`
+if [[ $? != 0 ]]; then
+    echo "Error while getting a temporary file. Exiting."
+    exit 3
+fi
+tmp_chk=`mktemp -t`
+if [[ $? != 0 ]]; then
+    echo "Error while getting a temporary file. Exiting."
+    exit 3
+fi
+
+#Check if Trafodion is up and operational
+sqcheck -f > $tmp_chk 2>&1
+sq_stat=$?
+if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
+
+ if [ -d $DCS_INSTALL_DIR ];then
+
+### Get the list of DcsServer and DcsMaster
+  $L_PDSH $jpscmd |/bin/egrep 'DcsMaster|DcsServer' > $tmpjps
+
+### Get the configured primary node for DcsMaster
+  if [ -s ${DCS_INSTALL_DIR}/conf/master ]; then
+     primary_dcsmaster=`cat ${DCS_INSTALL_DIR}/conf/master | /bin/egrep -v '^#|^$'`
+  fi
+
+### Get the configured number of DcsMaster's
+  if [ -s ${DCS_INSTALL_DIR}/conf/backup-masters ]; then
+     let backup_dcsmaster_cnt=`/bin/egrep -cv '#|^$' ${DCS_INSTALL_DIR}/conf/backup-masters`
+     let cfg_dcsmaster_cnt=$backup_dcsmaster_cnt+1
+     list_of_backups=`cat ${DCS_INSTALL_DIR}/conf/backup-masters | /bin/egrep -v '^#|^$'|paste -sd ' ' -`
+   else
+     let cfg_dcsmaster_cnt=1
+   fi
+
+### Get the configured number of DcsServer and mxosrvr
+   if [ -f ${DCS_INSTALL_DIR}/conf/servers ]; then
+      let cfg_mxo_cnt=`cat $DCS_INSTALL_DIR/conf/servers|awk '{if ($2=="") k=1;else k=$2;cnt+=k} END {print cnt}'`
+      let cfg_dcsserver_cnt=`cat $DCS_INSTALL_DIR/conf/servers|awk '{if ($2=="") p=1;else p+=1;} END {print p}'`
+   fi
+
+### Check if there are any DcsMaster and DcsServer's that are started 
+   actual_dcsmaster_cnt=`cat $tmpjps |grep DcsMaster |wc -l` 
+   actual_dcsserver_cnt=`cat $tmpjps |grep DcsServer |wc -l` 
+
+### Get the node where the active master is running
+   if [[ ! -z $CLUSTERNAME ]]; then
+     if [[ $ENABLE_HA == "true" ]]; then
+        echo "Cluster Configuration: HA"
+        floatip_interface=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f1`
+        floatip_port=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f3`
+        if [[ -z $floatip_port ]]; then
+            floatip_port=23400
+        fi
+        if [[ -z $AWS_CLOUD ]]; then
+           interface_to_use=$floatip_interface":"$floatip_port
+        else
+           interface_to_use=$floatip_interface
+        fi
+        activeMaster=`$L_PDSH /sbin/ip addr show |grep $interface_to_use$ |cut -d':' -f1`
+        if [[ ! -z $activeMaster ]]; then
+           activeDcsPid=`cat $tmpjps |grep DcsMaster |grep $activeMaster |cut -d" " -f2 |paste -sd ' ' -`
+        fi
+     else
+        echo "Cluster Running      : Non-HA"
+        activeMaster=`cat $tmpjps |grep DcsMaster |cut -d":" -f1 |paste -sd ' ' -`
+     fi
+   else
+     ### Get the pid of the active DcsMaster 
+     activeDcsPid=`cat $tmpjps |grep DcsMaster |cut -d" " -f1`
+   fi
+
+
+### Get the count of DcsMaster & DcsServers that are stopped
+   if ( [ "$cfg_dcsserver_cnt" '!=' "$actual_dcsserver_cnt" ] ); then
+     let down_dcsserver_cnt=cfg_dcsserver_cnt-actual_dcsserver_cnt
+   else
+     down_dcsserver_cnt=''
+   fi
+
+   if ( [ "$cfg_dcsmaster_cnt" '!=' "$actual_dcsmaster_cnt" ] ); then
+     let down_dcsmaster_cnt=cfg_dcsmaster_cnt-actual_dcsmaster_cnt
+   else
+     down_dcsmaster_cnt=''
+   fi
+
+### Get the current cluster process status (all processes)
+  cstat > $tmp_ps 2>&1
+
+### Get the actual number of mxosrvrs
+  let act_mxo_cnt=`< $tmp_ps egrep -a -i ' mxosrvr' | wc -l`
+  if ( [ "$cfg_mxo_cnt" '!=' "$act_mxo_cnt" ] ); then 
+    let down_mxo_cnt=cfg_mxo_cnt-act_mxo_cnt
+  else
+    down_mxo_cnt=''
+  fi 
+  echo
+  if ( [ "$actual_dcsmaster_cnt" '!=' 0 ] && [ "$actual_dcsserver_cnt" '!=' 0 ] ); then
+   echo "ls $dcsznode"|$DCS_INSTALL_DIR/bin/dcs zkcli > $dcstmp
+   zkport=`cat $dcstmp | /usr/bin/head -n 1 | cut -d ":" -f2`
+   if [ ! -z "$zkport" ]; then
+     echo "Zookeeper listen port: $zkport"
+   else
+     echo "Zookeeper is not started..."
+     exit 1
+   fi
+   masterport=`cat $dcstmp | /usr/bin/tail -n 1 | cut -d ":" -f4`
+   if [ ! -z "$masterport" ]; then
+     echo -e "DcsMaster listen port: $masterport\n"
+     if [[ ! -z "$primary_dcsmaster" ]]; then
+        echo "Configured Primary DcsMaster: \"$primary_dcsmaster\""
+     fi
+     if [[ ! -z "$list_of_backups" ]]; then
+        echo "Configured Backup DcsMasters: \"$list_of_backups\""
+     fi
+     if ( [ ! -z "$activeMaster" ] && [ ! -z "$activeDcsPid" ] ); then
+        echo "Active DcsMaster            : \"$activeMaster\", pid $activeDcsPid"
+     else
+        echo "Active DcsMaster            : \"$activeMaster\""
+     fi
+     echo
+   fi
+   rm -f $dcstmp $tmp_chk $tmp_ps $tmpjps
+  else
+   if ( [ "$actual_dcsmaster_cnt" '>' 0 ] || [ "$actual_dcsserver_cnt" '>' 0 ] ); then
+     echo "Partial DCS process is up and running. Please stop and restart DCS using 'dcsstop' and 'dcsstart' command..."
+    else
+     echo "DcsMaster is not started. Please start DCS using 'dcsstart' command..."
+   fi
+   echo
+  fi
+  echo -e "Process\t\tConfigured\tActual\t\tDown"
+  echo -e "---------\t----------\t------\t\t----"
+  echo -e "DcsMaster\t$cfg_dcsmaster_cnt\t\t$actual_dcsmaster_cnt\t\t$down_dcsmaster_cnt"
+  echo -e "DcsServer\t$cfg_dcsserver_cnt\t\t$actual_dcsserver_cnt\t\t$down_dcsserver_cnt"
+  echo -e "mxosrvr\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t\t$down_mxo_cnt\n"
+ else
+   echo "DCS is not installed. Please install and configure DCS..."
+   exit 1
+ fi
+else
+ echo "Trafodion is not started or is not operational..."
+ echo
+fi
+exit 0

@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -407,6 +410,10 @@ const NAString ExeUtilExpr::getText() const
       result = "GET_QID";
       break;
 
+    case REGION_STATS_:
+      result = "REGION_STATS";
+      break;
+      
    default:
 
       result = "ADD_TO_EXEUTILEXPR::GETTEXT()";
@@ -3086,7 +3093,248 @@ RelExpr * ExeUtilAQR::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
 
-// See ControlRunningQuery
+// -----------------------------------------------------------------------
+// Member functions for class ExeUtilRegionStats
+// -----------------------------------------------------------------------
+ExeUtilRegionStats::ExeUtilRegionStats
+(const CorrName &objectName,
+ NABoolean summaryOnly,
+ NABoolean isIndex,
+ NABoolean forDisplay,
+ RelExpr * child,
+ CollHeap *oHeap)
+     : ExeUtilExpr(REGION_STATS_, objectName,
+		   NULL, child, NULL, CharInfo::UnknownCharSet, oHeap),
+       summaryOnly_(summaryOnly),
+       isIndex_(isIndex),
+       displayFormat_(forDisplay),
+       errorInParams_(FALSE),
+       inputColList_(NULL)
+{
+}
+
+RelExpr * ExeUtilRegionStats::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  ExeUtilRegionStats *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) ExeUtilRegionStats(getTableName(),
+                                              summaryOnly_, isIndex_, 
+                                              displayFormat_,
+                                              NULL,
+                                              outHeap);
+  else
+    result = (ExeUtilRegionStats *) derivedNode;
+
+  result->errorInParams_ = errorInParams_;
+
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+// -----------------------------------------------------------------------
+// member functions for class ExeUtilRegionStats
+// -----------------------------------------------------------------------
+RelExpr * ExeUtilRegionStats::bindNode(BindWA *bindWA)
+{
+  if (errorInParams_)
+    {
+      *CmpCommon::diags() << DgSqlCode(-4218) << DgString0("GET ");
+
+      bindWA->setErrStatus();
+      return this;
+    }
+
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  if (getTableName().getQualifiedNameObj().getObjectName().isNull())
+    {
+      *CmpCommon::diags() << DgSqlCode(-4218) << DgString0("REGION STATS");
+      
+      bindWA->setErrStatus();
+      return this;
+    }
+
+  if (! child(0))
+    {
+      NATable * naTable = bindWA->getNATable(getTableName());
+      if ((!naTable) || (bindWA->errStatus()))
+        return this;
+    }
+
+  RelExpr * childExpr = NULL;
+  
+  if (getArity() > 0)
+    {
+      childExpr = child(0)->bindNode(bindWA);
+      if (bindWA->errStatus()) 
+	return NULL;
+
+      if ((childExpr->getRETDesc() == NULL) ||
+	  (childExpr->getRETDesc()->getDegree() > 1) ||
+	  (childExpr->getRETDesc()->getType(0).getTypeQualifier() != NA_CHARACTER_TYPE))
+	{
+	  *CmpCommon::diags() << DgSqlCode(-4218) << DgString0("REGION STATS ");
+	  
+	  bindWA->setErrStatus();
+	  return this;
+	}
+
+      inputColList_ = childExpr->getRETDesc()->getValueId(0).getItemExpr();
+
+      setChild(0, NULL);
+    }
+
+  RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+
+  if (childExpr)
+    {
+      RelExpr * re = new(PARSERHEAP()) Join
+	(childExpr, boundExpr, REL_TSJ_FLOW, NULL);
+      ((Join*)re)->doNotTransformToTSJ();
+      ((Join*)re)->setTSJForWrite(TRUE);
+      
+      boundExpr = re->bindNode(bindWA);
+      if (bindWA->errStatus()) 
+	return NULL;
+    }
+
+  return boundExpr;
+}
+
+void ExeUtilRegionStats::recomputeOuterReferences()
+{
+  if (inputColList_)
+    {
+      ValueIdSet outerRefs = getGroupAttr()->getCharacteristicInputs(); 
+      outerRefs += inputColList_->getValueId();
+      
+      getGroupAttr()->setCharacteristicInputs(outerRefs);
+    }
+} // ExeUtilRegionStats::recomputeOuterReferences()  
+
+// -----------------------------------------------------------------------
+// Member functions for class ExeUtilRegionStats
+// -----------------------------------------------------------------------
+ExeUtilLobInfo::ExeUtilLobInfo
+(const CorrName &objectName,
+ NABoolean  tableFormat,
+ RelExpr * child,
+ CollHeap *oHeap)
+     : ExeUtilExpr(LOB_INFO_, objectName,
+		   NULL, child, NULL, CharInfo::UnknownCharSet, oHeap),
+       errorInParams_(FALSE),
+       objectUID_(0)
+{
+  tableFormat_ = tableFormat;
+}
+
+RelExpr * ExeUtilLobInfo::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  ExeUtilLobInfo *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) ExeUtilLobInfo(getTableName(),
+                                          FALSE,
+                                          NULL,
+                                          outHeap);
+  else
+    result = (ExeUtilLobInfo *) derivedNode;
+
+  result->errorInParams_ = errorInParams_;
+  result->objectUID_ = objectUID_;
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+// -----------------------------------------------------------------------
+// member functions for class ExeUtilLobInfo
+// -----------------------------------------------------------------------
+RelExpr * ExeUtilLobInfo::bindNode(BindWA *bindWA)
+{
+  if (errorInParams_)
+    {
+      *CmpCommon::diags() << DgSqlCode(-4218) << DgString0("GET ");
+
+      bindWA->setErrStatus();
+      return this;
+    }
+
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  if (getTableName().getQualifiedNameObj().getObjectName().isNull())
+    {
+      *CmpCommon::diags() << DgSqlCode(-4218) << DgString0("LOB INFO");
+      
+      bindWA->setErrStatus();
+      return this;
+    }
+
+  
+  NATable * naTable = bindWA->getNATable(getTableName());
+  if ((!naTable) || (bindWA->errStatus()))
+    return this;
+    
+ // Allocate a TableDesc and attach it to this.
+  //
+  setUtilTableDesc(bindWA->createTableDesc(naTable, getTableName()));
+  if (bindWA->errStatus())
+    return this;
+
+  objectUID_ = naTable->objectUid().get_value();
+
+  RelExpr * childExpr = NULL;
+  
+  if (getArity() > 0)
+    {
+      childExpr = child(0)->bindNode(bindWA);
+      if (bindWA->errStatus()) 
+	return NULL;
+
+      if ((childExpr->getRETDesc() == NULL) ||
+	  (childExpr->getRETDesc()->getDegree() > 1) ||
+	  (childExpr->getRETDesc()->getType(0).getTypeQualifier() != NA_CHARACTER_TYPE))
+	{
+	  *CmpCommon::diags() << DgSqlCode(-4218) << DgString0("LOB INFO ");
+	  
+	  bindWA->setErrStatus();
+	  return this;
+	}
+
+      
+
+      setChild(0, NULL);
+    }
+
+  RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+
+  if (childExpr)
+    {
+      RelExpr * re = new(PARSERHEAP()) Join
+	(childExpr, boundExpr, REL_TSJ_FLOW, NULL);
+      ((Join*)re)->doNotTransformToTSJ();
+      ((Join*)re)->setTSJForWrite(TRUE);
+      
+      boundExpr = re->bindNode(bindWA);
+      if (bindWA->errStatus()) 
+	return NULL;
+    }
+
+  return boundExpr;
+}
+
+void ExeUtilLobInfo::recomputeOuterReferences()
+{
+ 
+} // ExeUtilLobInfo::recomputeOuterReferences()  
 
 
 // -----------------------------------------------------------------------
@@ -3664,6 +3912,9 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   NABoolean alterDropConstr = FALSE;
   NABoolean alterRenameTable = FALSE;
   NABoolean alterIdentityCol = FALSE;
+  NABoolean alterColDatatype = FALSE;
+  NABoolean alterColRename = FALSE;
+  NABoolean externalTable = FALSE;
   
   returnStatus_ = FALSE;
 
@@ -3677,7 +3928,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
       return boundExpr;
       //      isHbase_ = TRUE;
     }
-  else if (initAuthorization() || dropAuthorization())
+  else if (initAuthorization() || dropAuthorization() || cleanupAuth())
   {
     isHbase_ = TRUE;
     hbaseDDLNoUserXn_ = TRUE;
@@ -3688,6 +3939,11 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
     isHbase_ = TRUE;
     hbaseDDLNoUserXn_ = TRUE;
   }
+  else if (createLibmgr() || dropLibmgr() || upgradeLibmgr())
+    {
+      isHbase_ = TRUE;
+      hbaseDDLNoUserXn_ = TRUE;
+    }
   else if (createRepos() || dropRepos() || upgradeRepos())
     {
       isHbase_ = TRUE;
@@ -3698,12 +3954,12 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
     isHbase_ = TRUE;
     hbaseDDLNoUserXn_ = TRUE;      
   }
-  else if (getExprNode() && getExprNode()->castToElemDDLNode())
+  else if (getExprNode() && getExprNode()->castToStmtDDLNode())
   {
-    if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateTable())
+    if (getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateTable())
     {
       StmtDDLCreateTable * createTableNode =
-        getExprNode()->castToElemDDLNode()->castToStmtDDLCreateTable();
+        getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateTable();
 
       isCreate_ = TRUE;
       isTable_ = TRUE;
@@ -3729,19 +3985,39 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         return NULL;
       }
 
+      // Hive tables can only be specified as external and must be created
+      // with the FOR clause
+      if (qualObjName_.isHive()) 
+      {
+        if (createTableNode->isExternal())
+        {
+          externalTable = TRUE;
+          isHbase_ = TRUE;
+        }
+        else
+        {
+          *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("DDL");
+          bindWA->setErrStatus();
+          return NULL;
+        }
+      }
+ 
       // if unique, ref or check constrs are specified, then dont start a transaction.
       // ddl with these clauses is executed as a compound create.
       // A compound create cannot run under a user transaction.
       if ((createTableNode->getAddConstraintUniqueArray().entries() > 0) ||
 	  (createTableNode->getAddConstraintRIArray().entries() > 0) ||
 	  (createTableNode->getAddConstraintCheckArray().entries() > 0))
-	hbaseDDLNoUserXn_ = TRUE;
-       
+        {
+          if ((NOT createTableNode->ddlXns()) &&
+              (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+            hbaseDDLNoUserXn_ = TRUE;
+        }
     } // createTable
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateHbaseTable())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateHbaseTable())
     {
       StmtDDLCreateHbaseTable * createHbaseTableNode =
-	getExprNode()->castToElemDDLNode()->castToStmtDDLCreateHbaseTable();
+	getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateHbaseTable();
       
       isCreate_ = TRUE;
       isTable_ = TRUE;
@@ -3756,7 +4032,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
 	getDDLNode()->castToStmtDDLNode()->castToStmtDDLCreateHbaseTable()->
 	getTableNameAsQualifiedName();
     } // createHbaseTable
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateIndex())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateIndex())
     {
       isCreate_ = TRUE;
       isIndex_ = TRUE;
@@ -3769,7 +4045,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLCreateIndex()->
         getIndexNameAsQualifiedName();
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLPopulateIndex())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLPopulateIndex())
     {
       isCreate_ = TRUE;
       isIndex_ = TRUE;
@@ -3782,16 +4058,41 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLPopulateIndex()->
         getIndexNameAsQualifiedName();
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLDropTable())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLDropTable())
     {
       isDrop_ = TRUE;
       isTable_ = TRUE;
 
-      qualObjName_ =
-        getDDLNode()->castToStmtDDLNode()->castToStmtDDLDropTable()->
-        getTableNameAsQualifiedName();
+      StmtDDLDropTable * dropTableNode =
+        getExprNode()->castToStmtDDLNode()->castToStmtDDLDropTable();
+
+      qualObjName_ = dropTableNode->getTableNameAsQualifiedName();
+
+      // Normally, when a drop table is executed and DDL transactions is not
+      // enabled, a user started transaction is not allowed.  However, when a
+      // session ends, a call is made to drop a volatile table, this drop should
+      // succeed. 
+      if ((dropTableNode->isVolatile()) &&
+          (NOT getExprNode()->castToStmtDDLNode()->ddlXns()))
+        hbaseDDLNoUserXn_ = TRUE;
+
+      // Drops of Hive and HBase external tables are allowed 
+      if (qualObjName_.isHive() || (qualObjName_.isHbase()))
+        {
+          if (dropTableNode->isExternal())
+            {
+              isHbase_ = TRUE;
+              externalTable = TRUE;
+            }
+          else
+            {
+              *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("DDL");
+              bindWA->setErrStatus();
+              return NULL;
+            }
+        }
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLDropHbaseTable())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLDropHbaseTable())
     {
       isDrop_ = TRUE;
       isTable_ = TRUE;
@@ -3802,7 +4103,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLDropHbaseTable()->
         getTableNameAsQualifiedName();
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLDropIndex())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLDropIndex())
     {
       isDrop_ = TRUE;
       isIndex_ = TRUE;
@@ -3811,30 +4112,34 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLDropIndex()->
         getIndexNameAsQualifiedName();
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterTable())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterTable())
     {
       isAlter_ = TRUE;
       isTable_ = TRUE;
 
-      if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterTableAddColumn())
+      if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterTableAddColumn())
         alterAddCol = TRUE;
-      else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterTableDropColumn())
+      else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterTableDropColumn())
         alterDropCol = TRUE;
-      else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterTableDisableIndex())
+      else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterTableDisableIndex())
         alterDisableIndex = TRUE;
-      else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterTableEnableIndex())
+      else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterTableEnableIndex())
         alterEnableIndex = TRUE;
-      else if ((getExprNode()->castToElemDDLNode()->castToStmtDDLAddConstraintUnique()) ||
-	       (getExprNode()->castToElemDDLNode()->castToStmtDDLAddConstraintRI()) ||
-	       (getExprNode()->castToElemDDLNode()->castToStmtDDLAddConstraintCheck()))
+      else if ((getExprNode()->castToStmtDDLNode()->castToStmtDDLAddConstraintUnique()) ||
+	       (getExprNode()->castToStmtDDLNode()->castToStmtDDLAddConstraintRI()) ||
+	       (getExprNode()->castToStmtDDLNode()->castToStmtDDLAddConstraintCheck()))
          alterAddConstr = TRUE;
-      else if (getExprNode()->castToElemDDLNode()->castToStmtDDLDropConstraint())
+      else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLDropConstraint())
          alterDropConstr = TRUE;
-      else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterTableRename())
+      else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterTableRename())
          alterRenameTable = TRUE;
-      else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterTableAlterColumnSetSGOption())
+      else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterTableAlterColumnSetSGOption())
          alterIdentityCol = TRUE;
-      else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterTableHBaseOptions())
+      else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterTableAlterColumnDatatype())
+         alterColDatatype = TRUE;
+       else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterTableAlterColumnRename())
+         alterColRename = TRUE;
+       else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterTableHBaseOptions())
          alterHBaseOptions = TRUE;
        else
         otherAlters = TRUE;
@@ -3843,11 +4148,11 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLAlterTable()->
         getTableNameAsQualifiedName();
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterIndex())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterIndex())
     {
       isAlter_ = TRUE;
       isIndex_ = TRUE;
-      if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterIndexHBaseOptions())
+      if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterIndexHBaseOptions())
         alterHBaseOptions = TRUE;
       else
         otherAlters = TRUE;
@@ -3856,7 +4161,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLAlterIndex()->
         getIndexNameAsQualifiedName();
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateView())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateView())
     {
       isCreate_ = TRUE;
       isView_ = TRUE;
@@ -3865,7 +4170,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLCreateView()->
         getViewNameAsQualifiedName();
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLDropView())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLDropView())
     {
       isDrop_ = TRUE;
       isView_ = TRUE;
@@ -3874,10 +4179,10 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLDropView()->
         getViewNameAsQualifiedName();
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateSequence())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateSequence())
     {
       StmtDDLCreateSequence * createSeq =
-	getExprNode()->castToElemDDLNode()->castToStmtDDLCreateSequence();
+	getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateSequence();
       
       isCreate_ = TRUE;
       isSeq = TRUE;
@@ -3891,10 +4196,10 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
 	getDDLNode()->castToStmtDDLNode()->castToStmtDDLCreateSequence()->
 	getSeqNameAsQualifiedName();
     } // createSequence
-   else if (getExprNode()->castToElemDDLNode()->castToStmtDDLDropSequence())
+   else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLDropSequence())
     {
       StmtDDLDropSequence * dropSeq =
-	getExprNode()->castToElemDDLNode()->castToStmtDDLDropSequence();
+	getExprNode()->castToStmtDDLNode()->castToStmtDDLDropSequence();
       
       isDrop_ = TRUE;
       isSeq = TRUE;
@@ -3908,55 +4213,55 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
 	getDDLNode()->castToStmtDDLNode()->castToStmtDDLDropSequence()->
 	getSeqNameAsQualifiedName();
     } // dropSequence
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLRegisterUser())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLRegisterUser())
     {
       isAuth = TRUE; 
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterUser())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterUser())
     {
       isAuth = TRUE; 
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateRole())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateRole())
     {
       isAuth = TRUE; 
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLRoleGrant())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLRoleGrant())
     {
       isPrivilegeMngt = TRUE; 
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLRegisterComponent())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLRegisterComponent())
     {
       isPrivilegeMngt = TRUE; 
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateComponentPrivilege())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateComponentPrivilege())
     {
       isPrivilegeMngt = TRUE; 
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLDropComponentPrivilege())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLDropComponentPrivilege())
     {
       isPrivilegeMngt = TRUE; 
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLGrantComponentPrivilege())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLGrantComponentPrivilege())
     {
       isPrivilegeMngt = TRUE; 
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLRevokeComponentPrivilege())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLRevokeComponentPrivilege())
     {
       isPrivilegeMngt = TRUE; 
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLGiveAll())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLGiveAll())
     {
       isPrivilegeMngt = TRUE; 
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLGiveObject())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLGiveObject())
     {
       isPrivilegeMngt = TRUE; 
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLGiveSchema())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLGiveSchema())
     {
       isPrivilegeMngt = TRUE; 
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLGrant())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLGrant())
     {
       isTable_ = TRUE;
       isPrivilegeMngt = TRUE;
@@ -3964,7 +4269,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLGrant()->
         getGrantNameAsQualifiedName();
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLRevoke())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLRevoke())
     {
       isTable_ = TRUE;
       isPrivilegeMngt = TRUE;
@@ -3972,67 +4277,72 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLRevoke()->
         getRevokeNameAsQualifiedName();
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLDropSchema())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLDropSchema())
     {
       isDropSchema = TRUE;
       qualObjName_ =
         QualifiedName(NAString("dummy"),
-                      getExprNode()->castToElemDDLNode()->castToStmtDDLDropSchema()->getSchemaNameAsQualifiedName().getSchemaName(),
-                      getExprNode()->castToElemDDLNode()->castToStmtDDLDropSchema()->getSchemaNameAsQualifiedName().getCatalogName());
+                      getExprNode()->castToStmtDDLNode()->castToStmtDDLDropSchema()->getSchemaNameAsQualifiedName().getSchemaName(),
+                      getExprNode()->castToStmtDDLNode()->castToStmtDDLDropSchema()->getSchemaNameAsQualifiedName().getCatalogName());
 
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateSchema())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateSchema())
     {
       isCreateSchema = TRUE;
       qualObjName_ =
         QualifiedName(NAString("dummy"),
-                      getExprNode()->castToElemDDLNode()->castToStmtDDLCreateSchema()->getSchemaNameAsQualifiedName().getSchemaName(),
-                      getExprNode()->castToElemDDLNode()->castToStmtDDLCreateSchema()->getSchemaNameAsQualifiedName().getCatalogName());
+                      getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateSchema()->getSchemaNameAsQualifiedName().getSchemaName(),
+                      getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateSchema()->getSchemaNameAsQualifiedName().getCatalogName());
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateLibrary())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateLibrary())
     {
       isCreate_ = TRUE;
       isLibrary_ = TRUE;
-      qualObjName_ = getExprNode()->castToElemDDLNode()->
+      qualObjName_ = getExprNode()->castToStmtDDLNode()->
         castToStmtDDLCreateLibrary()->getLibraryNameAsQualifiedName();
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLDropLibrary())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLDropLibrary())
     {
       isDrop_ = TRUE;
       isLibrary_ = TRUE;
-      qualObjName_ = getExprNode()->castToElemDDLNode()->
+      qualObjName_ = getExprNode()->castToStmtDDLNode()->
         castToStmtDDLDropLibrary()->getLibraryNameAsQualifiedName();
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateRoutine())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateRoutine())
     {
       isCreate_ = TRUE;
       isRoutine_ = TRUE;
-      qualObjName_ = getExprNode()->castToElemDDLNode()->
+      qualObjName_ = getExprNode()->castToStmtDDLNode()->
         castToStmtDDLCreateRoutine()->getRoutineNameAsQualifiedName();
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLDropRoutine())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLDropRoutine())
     {
       isDrop_ = TRUE;
       isRoutine_ = TRUE;
-      qualObjName_ = getExprNode()->castToElemDDLNode()->
+      qualObjName_ = getExprNode()->castToStmtDDLNode()->
         castToStmtDDLDropRoutine()->getRoutineNameAsQualifiedName();
     }
-    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCleanupObjects())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLCleanupObjects())
     {
       isCleanup_ = TRUE;
-      if (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
-        hbaseDDLNoUserXn_ = TRUE;
 
       returnStatus_ = 
-        getExprNode()->castToElemDDLNode()->castToStmtDDLCleanupObjects()->getStatus();
+        getExprNode()->castToStmtDDLNode()->castToStmtDDLCleanupObjects()->getStatus();
     }
+
+    if (isCleanup_)
+      {
+        if (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+          hbaseDDLNoUserXn_ = TRUE;
+      }
 
     if ((isCreateSchema || isDropSchema) ||
         ((isTable_ || isIndex_ || isView_ || isRoutine_ || isLibrary_ || isSeq) &&
          (isCreate_ || isDrop_ || purgedataHbase_ ||
           (isAlter_ && (alterAddCol || alterDropCol || alterDisableIndex || alterEnableIndex || 
-			alterAddConstr || alterDropConstr || alterRenameTable || 
-                        alterIdentityCol || alterHBaseOptions || otherAlters)))))
+			alterAddConstr || alterDropConstr || alterRenameTable ||
+                        alterIdentityCol || alterColDatatype || alterColRename ||
+                        alterHBaseOptions || otherAlters)))))
       {
 	if (NOT isNative_)
 	  {
@@ -4054,7 +4364,8 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
 	// if a user ddl operation, it cannot run under a user transaction.
 	// If an internal ddl request, like a CREATE internally issued onbehalf
 	// of a CREATE LIKE, then allow it to run under a user Xn.
-	if (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+        if ((NOT getExprNode()->castToStmtDDLNode()->ddlXns()) &&
+            (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
 	  hbaseDDLNoUserXn_ = TRUE;
       }
     else if (isAuth || isPrivilegeMngt || isCleanup_)
@@ -4083,7 +4394,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   if (bindWA->errStatus())
     return NULL;
 
-  if (isHbase_)
+  if (isHbase_ || externalTable)
     return boundExpr;
 
   *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("DDL");
@@ -4145,8 +4456,8 @@ RelExpr * ExeUtilProcessVolatileTable::bindNode(BindWA *bindWA)
 
       volTabName_ = 
 	QualifiedName(NAString("dummy"),
-		      getExprNode()->castToElemDDLNode()->castToStmtDDLCreateSchema()->getSchemaNameAsQualifiedName().getSchemaName(),
-		      getExprNode()->castToElemDDLNode()->castToStmtDDLCreateSchema()->getSchemaNameAsQualifiedName().getCatalogName());
+		      getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateSchema()->getSchemaNameAsQualifiedName().getSchemaName(),
+		      getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateSchema()->getSchemaNameAsQualifiedName().getCatalogName());
     }
   else if (getDDLNode()->castToStmtDDLNode() &&
 	   getDDLNode()->castToStmtDDLNode()->castToStmtDDLDropSchema())
@@ -4156,8 +4467,8 @@ RelExpr * ExeUtilProcessVolatileTable::bindNode(BindWA *bindWA)
 
       volTabName_ = 
 	QualifiedName(NAString("dummy"),
-		      getExprNode()->castToElemDDLNode()->castToStmtDDLDropSchema()->getSchemaNameAsQualifiedName().getSchemaName(),
-		      getExprNode()->castToElemDDLNode()->castToStmtDDLDropSchema()->getSchemaNameAsQualifiedName().getCatalogName());
+		      getExprNode()->castToStmtDDLNode()->castToStmtDDLDropSchema()->getSchemaNameAsQualifiedName().getSchemaName(),
+		      getExprNode()->castToStmtDDLNode()->castToStmtDDLDropSchema()->getSchemaNameAsQualifiedName().getCatalogName());
     }
     
   RelExpr * boundExpr = DDLExpr::bindNode(bindWA);
@@ -4288,10 +4599,10 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
   NAWcharBuf* wcbuf = 0;
       
   if ((getExprNode()) &&
-      (getExprNode()->castToElemDDLNode()) &&
-      (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateTable()))
+      (getExprNode()->castToStmtDDLNode()) &&
+      (getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateTable()))
     createTableNode =
-      getExprNode()->castToElemDDLNode()->castToStmtDDLCreateTable();
+      getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateTable();
 
   CorrName savedTableName = getTableName();
   RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
@@ -4465,6 +4776,14 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 			      continue;
 			    }
 			  
+                          if (NOT colDefNode->castToElemDDLColDef()->getColumnFamily().isNull())
+                            {
+                              colDef +=
+                                ToAnsiIdentifier(colDefNode->castToElemDDLColDef()->
+                                                 getColumnFamily());
+                              colDef += ".";
+                            }
+
 			  colDef += 
 			    ToAnsiIdentifier(colDefNode->castToElemDDLColDef()->
 					     getColumnName());
@@ -5154,8 +5473,8 @@ RelExpr * ExeUtilLobExtract::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap
 
   result->handle_ = handle_;
   result->toType_ = toType_;
-  result->bufAddrExpr_ = bufAddrExpr_;
-  result->bufSizeExpr_ = bufSizeExpr_;
+  result->bufAddr_ = bufAddr_;
+  result->extractSizeAddr_ = extractSizeAddr_;
   result->intParam_ = intParam_;
   result->intParam2_ = intParam2_;
   result->stringParam_ = stringParam_;
@@ -5512,7 +5831,7 @@ RelExpr * ExeUtilHBaseBulkLoad::bindNode(BindWA *bindWA)
   setUtilTableDesc(bindWA->createTableDesc(naTable, getTableName()));
   if (bindWA->errStatus())
     return this;
-  if ((CmpCommon::getDefault(COMP_BOOL_226) == DF_OFF) && 
+  if ((CmpCommon::getDefault(TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE) == DF_OFF) && 
       getUtilTableDesc()->hasSecondaryIndexes() && 
       !(getUtilTableDesc()->isIdentityColumnGeneratedAlways() && 
         getUtilTableDesc()->hasIdentityColumnInClusteringKey()) &&

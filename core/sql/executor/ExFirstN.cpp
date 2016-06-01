@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -97,6 +100,8 @@ ExFirstNTcb::ExFirstNTcb(const ExFirstNTdb & firstn_tdb,
 
   workAtp_ = NULL;
   firstNParamVal_ = 0;
+  effectiveFirstN_ = -1;
+  returnedSoFar_ = 0;
   if (firstn_tdb.workCriDesc_)
     {
       workAtp_ = allocateAtp(firstn_tdb.workCriDesc_, space);
@@ -194,13 +199,15 @@ short ExFirstNTcb::work()
 
 	    ex_queue_entry * centry = qchild_.down->getTailEntry();
 
-	    // firstNRows_ or firstNRowsParam is set to a positive number
+	    // effectiveFirstN_ is set to a positive number
 	    // if FIRST N rows are requested.
 	    // It is set to 0 or a negative number, if last N rows are needed.
 	    // 0 means process all but don't return any rows.
 	    // -1 means get all rows. Should not reach this state.
-	    // -ve number means return the last '-(N+2)' rows.
-            Lng32 firstNVal = firstnTdb().firstNRows();
+	    // <-1 means return the last '-(N+2)' rows.
+            effectiveFirstN_ = firstnTdb().firstNRows();
+            returnedSoFar_ = 0;
+
             if (firstnTdb().firstNRowsExpr_)
               {
                 ex_expr::exp_return_type evalRetCode =
@@ -212,24 +219,24 @@ short ExFirstNTcb::work()
                     break;
                   }
 
-                firstNVal = firstNParamVal_;
+                effectiveFirstN_ = firstNParamVal_;
               }
             
-            if (firstNVal >= 0)
+            if (effectiveFirstN_ >= 0)
               {
 		centry->downState.request = ex_queue::GET_N;
 
 		// if I got a GET_ALL request then send a GET_N request to
-		// my child with the N value being firstNRows_.
+		// my child with the N value being effectiveFirstN_.
 		// if I got a GET_N request, then send the minimum of the
-		// GET_N request value and firstNRows_ to my child.
+		// GET_N request value and effectiveFirstN_ to my child.
 		if ((pentry_down->downState.request != ex_queue::GET_N) ||
-		    (pentry_down->downState.requestValue == firstnTdb().firstNRows()))
-		  centry->downState.requestValue = firstNVal;
+		    (pentry_down->downState.requestValue == effectiveFirstN_))
+		  centry->downState.requestValue = effectiveFirstN_;
 		else
 		  {
 		    centry->downState.requestValue = 
-		      MINOF(pentry_down->downState.requestValue, firstNVal);
+		      MINOF(pentry_down->downState.requestValue, effectiveFirstN_);
 		  }
 
 		step_ = PROCESS_FIRSTN_;
@@ -240,7 +247,7 @@ short ExFirstNTcb::work()
 		centry->downState.request = ex_queue::GET_ALL;
 		centry->downState.requestValue = 11;
 
-                requestedLastNRows_ = -(firstNVal + 2);
+                requestedLastNRows_ = -(effectiveFirstN_ + 2);
                 returnedLastNRows_ = 0;
 
 		step_ = PROCESS_LASTN_;
@@ -266,7 +273,19 @@ short ExFirstNTcb::work()
 	      {
 	      case ex_queue::Q_OK_MMORE:
 		{
-		  moveChildDataToParent();
+                  if (returnedSoFar_ < effectiveFirstN_)
+                    {
+                      moveChildDataToParent();
+                      returnedSoFar_++;
+                    }
+                  else
+                    {
+                      // looks like the child may not honor our
+                      // GET_N request, so send a cancel, maybe
+                      // that will work better
+                      qchild_.down->cancelRequest();
+                      step_ = CANCEL_;
+                    }
 		}
 		break;
 
@@ -321,7 +340,10 @@ short ExFirstNTcb::work()
 		    {
 		      // We know that current entry is Q_OK_MMORE.
 		      // Need atleast 1 more entry than requested to process
-		      // last N.
+		      // last N. Note that there is a small chance that this
+                      // will lead to a buffer deadlock (child's buffer pool
+                      // is full, child expects us to consume a row before it
+                      // can produce another one).
 		      if (qchild_.up->getLength() < 1 + 1)
 			return WORK_OK;
 

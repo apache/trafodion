@@ -1,19 +1,22 @@
 //******************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //**********************************************************************/
@@ -34,7 +37,7 @@
  *
  ***************************************************************************** */
 
-// This enum contains defaults used in SQLARK.
+// This enum contains defaults used in Trafodion.
 // To add a default, include it in this enum and in DefaultDefaults of
 // sqlcomp/NADefaults.cpp.
 //
@@ -51,7 +54,6 @@
 // ***************************************************************************
 // ***************************************************************************
 // NOTE: DO NOT make this enum non-contiguous.
-// Add new defaults after the last entry in this enum.
 // Valid attributes must begin at zero and there must be no holes.
 // The algorithm to read defaults from the defaults table requires this.
 // You must always add a default default in NADefaults.cpp, otherwise
@@ -707,6 +709,7 @@ enum DefaultConstants
                                             // CQDs are delimited by ","
   USTAT_MIN_CHAR_UEC_FOR_IS,     // minimum UEC for char type to use internal sort
   USTAT_MIN_DEC_BIN_UEC_FOR_IS,  // minimum UEC for binary types to use internal sort
+  USTAT_YOULL_LIKELY_BE_SORRY, // minimum row count where explicit NO SAMPLE clause is required
 
 
   // -------------------------------------------------------------------------
@@ -3287,12 +3290,14 @@ enum DefaultConstants
   // size is for all rows for a particular column.
   // Size is expressed in Mbs
   LOB_MAX_SIZE,
-
+  //Max memory used to tranfer data/perform I/O to lob data file. 
+  LOB_MAX_CHUNK_MEM_SIZE,
   LOB_STORAGE_TYPE,
   LOB_STORAGE_FILE_DIR,
 
   LOB_HDFS_SERVER,
   LOB_HDFS_PORT,
+  LOB_GC_LIMIT_SIZE,
 
   // Should the DISK POOL be turned on when replicating the DDL using COPY DDL
   REPLICATE_DISK_POOL,
@@ -3450,7 +3455,7 @@ enum DefaultConstants
   // instead of relying on default cardinality estimate.
   ESTIMATE_HBASE_ROW_COUNT,
 
-  // if ON, then filter predicates could be pushed down to hbase.
+  // if OFF or '0' is disabled, ON or '1' is simple pushdown, '2' is for advance pushdown
   // It will depends on the query on which predicates or sub-predicates could be pushed.
   HBASE_FILTER_PREDS,
 
@@ -3547,7 +3552,6 @@ enum DefaultConstants
   
   TRAF_UPSERT_ADJUST_PARAMS,
   TRAF_UPSERT_WB_SIZE,
-  TRAF_UPSERT_AUTO_FLUSH,
   TRAF_UPSERT_WRITE_TO_WAL,
   TRAF_LOAD_PREP_ADJUST_PART_FUNC,
   TRAF_LOAD_PREP_TMP_LOCATION,
@@ -3642,7 +3646,6 @@ enum DefaultConstants
   GROUP_BY_PARTIAL_ROOT_THRESHOLD,
   TRAF_UNLOAD_BYPASS_LIBHDFS,
   TRAF_UNLOAD_DEF_DELIMITER,
-  TRAF_UNLOAD_DEF_NULL_STRING,
   TRAF_UNLOAD_DEF_RECORD_SEPARATOR,
   TRAF_LOAD_FORCE_CIF,
   TRAF_ENABLE_ORC_FORMAT,
@@ -3738,6 +3741,87 @@ enum DefaultConstants
 
   //control lob output size when converting to string/memory 
   LOB_OUTPUT_SIZE,
+
+  TRAF_MULTI_COL_FAM,
+
+  // estimated max naheap memory, used as a limit for update stats utility
+  USTAT_NAHEAP_ESTIMATED_MAX,
+
+  EXE_MEMORY_FOR_PROBE_CACHE_IN_MB,
+  
+  TRAF_INDEX_ALIGNED_ROW_FORMAT,
+
+  UDR_JVM_DEBUG_PORT,
+  UDR_JVM_DEBUG_TIMEOUT,
+  //enable HBASE Small Scanner, optimizing scans of size below HFile block size
+  HBASE_SMALL_SCANNER,
+
+  TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE,
+  HBASE_RANGE_PARTITIONING_PARTIAL_COLS,
+  MERGE_WITH_UNIQUE_INDEX,
+
+  USTAT_MAX_CHAR_DATASIZE_FOR_IS,
+
+  // If the next two are 'ON' we use the HBase costing code; if they
+  // are 'OFF' we use a stub cost of 1 for Updates and Deletes to
+  // Trafodion or HBase tables instead. We'll remove these once the
+  // costing code has broader exposure.
+  HBASE_DELETE_COSTING,
+  HBASE_UPDATE_COSTING,
+  TRAF_LOAD_FLUSH_SIZE_IN_KB,
+
+  // Specify whic additional restriction check to apply
+  //  0: no check
+  //  1: apply majority of keys with predicates check
+  //  2: apply total UECs on keyless key columns check
+  //  3: apply both 1) and 2)
+  MDAM_APPLY_RESTRICTION_CHECK,
+
+  // A threshold of total UECs on keyless key columns above which MDAM will not be considered.
+  // The threshold is expressed as a percentage of the total RC.
+  MDAM_TOTAL_UEC_CHECK_UEC_THRESHOLD,
+
+  // A threshold of minitmal RC above which the above total UEC check will be applied.
+  MDAM_TOTAL_UEC_CHECK_MIN_RC_THRESHOLD,
+
+  // set to ON to aggressively allocate ESP per core
+  AGGRESSIVE_ESP_ALLOCATION_PER_CORE,
+
+  // if ON, use older datetime value constructor in DatetimeValue::DatetimeValue
+  // Default is OFF. This cqd is used in case there are problems.
+  // It will be removed after testing is complete.
+  USE_OLD_DT_CONSTRUCTOR,
+
+  // real charset in the HIVE table
+  HIVE_FILE_CHARSET,
+
+  // By default only alter of varchar col length is supported.
+  // If this cqd is on, then other alters (name, datatype) are also supported.
+  TRAF_ALTER_COL_ATTRS,
+
+  // Controls the behavior of upsert - MERGE, REPLACE, OPTIMAL
+  TRAF_UPSERT_MODE,
+  // if set, let users create system reserved names. Default is OFF.
+  // This cqd should only be used to debug or if system column names are
+  // REALLY needed by users.
+  // Currently syskey, _salt_, _division_.
+  TRAF_ALLOW_RESERVED_COLNAMES,
+
+  //if 0, regular scanner is used. From 0.x to 1.0, percentage of regions that need to be scanned that will be done in parallel.
+  //if >= 2, set a fixed number of thread, real DOP. 2.0 2 thread, 3.0 3 thread etc.
+  HBASE_DOP_PARALLEL_SCANNER,
+
+  // bitmap to control various special behavior of HIVE_SCAN
+  //   // 1 : DOS FORMAT conversion on
+  //     // 2 : todo
+  HIVE_SCAN_SPECIAL_MODE,
+
+  // if set, data modification check is done at runtime before running
+  // a query.
+  HIVE_DATA_MOD_CHECK,
+
+  COMPILER_IDLE_TIMEOUT,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
@@ -3828,6 +3912,7 @@ enum DefaultToken {
  DF_MEASURE,
  DF_MEDIUM,
  DF_MEDIUM_LOW,
+ DF_MERGE,
  DF_MINIMUM,
  DF_MMAP,
  DF_MULTI_NODE,
@@ -3838,6 +3923,7 @@ enum DefaultToken {
  DF_ON,
  DF_OPENS_FOR_WRITE,
  DF_OPERATOR,
+ DF_OPTIMAL,
  DF_ORDERED,
  DF_PERTABLE,
  DF_PRINT,
@@ -3849,6 +3935,7 @@ enum DefaultToken {
  DF_RELEASE,
  DF_REMOTE,
  DF_REPEATABLE_READ,
+ DF_REPLACE,
  DF_REPSEL,
  DF_RESOURCES,
  DF_RETURN,

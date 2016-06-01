@@ -1,20 +1,23 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-//// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
-////
-////  Licensed under the Apache License, Version 2.0 (the "License");
-////  you may not use this file except in compliance with the License.
-////  You may obtain a copy of the License at
-////
-////      http://www.apache.org/licenses/LICENSE-2.0
-////
-////  Unless required by applicable law or agreed to in writing, software
-////  distributed under the License is distributed on an "AS IS" BASIS,
-////  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-////  See the License for the specific language governing permissions and
-////  limitations under the License.
-////
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
 //// @@@ END COPYRIGHT @@@
 //*****************************************************************************
 
@@ -26,6 +29,7 @@
 #include "PrivMgrDefs.h"
 #include "PrivMgr.h"
 #include "PrivMgrDesc.h"
+#include "PrivMgrMDTable.h"
 #include "ComSmallDefs.h"
 #include "CmpSeabaseDDLauth.h"
 
@@ -33,6 +37,7 @@
 class Queue;
 class ExeCliInterface;
 class OutputInfo;
+
 #ifndef Lng32
 typedef int             Lng32;
 #endif
@@ -53,18 +58,28 @@ typedef int             Lng32;
 // -----------------------------------------------------------------------
 class ObjectPrivsRow;
 class PrivMgrMDAdmin;
+class ObjectReference;
+class ObjectUsage;
 
 // -----------------------------------------------------------------------
 // Struct definitions
 // -----------------------------------------------------------------------
-typedef struct {
-  int64_t objectUID;
-  int32_t objectOwner;
-  std::string objectName;
-  ComObjectType objectType;
-  PrivMgrDesc originalPrivs;
-  PrivMgrDesc updatedPrivs;
-} ObjectUsage;
+struct ColumnReference {
+  int32_t columnOrdinal;
+  PrivMgrCoreDesc originalPrivs;
+  PrivMgrCoreDesc updatedPrivs;
+  ColumnReference() 
+  : columnOrdinal(-1),
+    originalPrivs(),
+    updatedPrivs(){};
+
+  void describe (std::string &details) const
+  {
+    details = "column usage - column number is ";
+    details += to_string((long long int) columnOrdinal);
+  }
+
+};
 
 typedef struct {
   int64_t viewUID;
@@ -74,15 +89,133 @@ typedef struct {
   bool isInsertable;
   PrivMgrDesc originalPrivs;
   PrivMgrDesc updatedPrivs;
+
+  void describe (std::string &details) const
+  {
+    details = "view usage - type is VI";
+    details += ", UID is ";
+    details += to_string((long long int) viewUID);
+    details += ", name is ";
+    details += viewName;
+    details += ", viewOwner is ";
+    details += to_string((long long int) viewOwner);
+    details += (isUpdatable) ? ", isUpdatable is Y " : "isUpdateable is N"; 
+    details += (isInsertable) ? ", isInsertable is Y " : "isInsertable is N"; 
+  }
+
 } ViewUsage;
 
-typedef struct {
+// -----------------------------------------------------------------------
+// Class definitions
+// -----------------------------------------------------------------------
+class ObjectReference
+{
+  public:
+
+  ObjectReference()
+  : objectUID(0),
+    objectOwner(NA_UserIdDefault),
+    objectType(COM_UNKNOWN_OBJECT),
+    columnReferences(NULL),
+    updatedPrivs()
+  {}
+    
+  virtual ~ObjectReference ( void )
+  {
+    if (columnReferences)
+    {
+      while(!columnReferences->empty())
+        delete columnReferences->back(), columnReferences->pop_back();
+      delete columnReferences;
+    }
+  }
+
   int64_t objectUID;
   int32_t objectOwner;
   ComObjectType objectType;
   std::string objectName;
+  //TBD - make columnReferences a map instead of a vector
+  std::vector<ColumnReference *> *columnReferences;
   PrivMgrDesc updatedPrivs;
-} ObjectReference;
+
+  void describe (std::string &details) const
+  {
+    details = "object reference - type is ";
+    char objectTypeLit[3] = {0};
+    strncpy(objectTypeLit,PrivMgr::ObjectEnumToLit(objectType),2);
+    details += objectTypeLit;
+    details += ", UID is ";
+    details += to_string((long long int) objectUID);
+    details += ", name is ";
+    details += objectName;
+    details += ", owner is ";
+    details += to_string((long long int) objectOwner);
+  }
+
+};
+
+class ObjectUsage
+{
+  public:
+
+  ObjectUsage()
+  : objectUID (0),
+    granteeID (NA_UserIdDefault),
+    grantorIsSystem(false),
+    objectType (COM_UNKNOWN_OBJECT),
+    columnReferences(NULL),
+    originalPrivs(),
+    updatedPrivs()
+  {}
+
+  virtual ~ObjectUsage ( void )
+  {
+    if (columnReferences)
+    {
+      while(!columnReferences->empty())
+        delete columnReferences->back(), columnReferences->pop_back();
+      delete columnReferences;
+    }
+  }
+
+  int64_t objectUID;
+  int32_t granteeID;
+  bool grantorIsSystem;
+  std::string objectName;
+  ComObjectType objectType;
+  std::vector<ColumnReference *> *columnReferences;
+  PrivMgrDesc originalPrivs;
+  PrivMgrDesc updatedPrivs;
+
+  ColumnReference * findColumn (int32_t columnOrdinal)
+  {
+    if (columnReferences == NULL)
+      return NULL;
+    for (int i = 0; i < columnReferences->size(); i++)
+    {
+      ColumnReference *pRef = (*columnReferences)[i];
+      if (pRef->columnOrdinal == columnOrdinal)
+        return pRef;
+    }
+    return NULL;
+  }
+
+  void describe (std::string &details) const
+  {
+    details = "object usage - type is ";
+    char objectTypeLit[3] = {0};
+    strncpy(objectTypeLit,PrivMgr::ObjectEnumToLit(objectType),2);
+    details += objectTypeLit;
+    details += ", UID is ";
+    details += to_string((long long int) objectUID);
+    details += ", name is ";
+    details += objectName;
+    details += ", grantee is ";
+    details += to_string((long long int) granteeID);
+    details += ", is owner ";
+    details += (grantorIsSystem) ? "true " : "false ";
+  }
+};
 
 
 // ****************************************************************************
@@ -120,7 +253,9 @@ class PrivMgrMDAdmin : public PrivMgr
       const std::string &colsLocation,
       std::vector<std::string> &tablesCreated,
       std::vector<std::string> &tablesUpgraded);
-    PrivStatus dropMetadata(const std::vector<std::string> &objectsToDrop);
+    PrivStatus dropMetadata(
+      const std::vector<std::string> &objectsToDrop,
+      bool doCleanup);
 
     inline void setMetadataLocation (const std::string metadataLocation)
       {metadataLocation_ = metadataLocation;};
@@ -128,6 +263,7 @@ class PrivMgrMDAdmin : public PrivMgr
     bool getConstraintName(
       const int64_t referencedTableUID,
       const int64_t referencingTableUID, 
+      const int32_t columnNumber,
       std::string &referencingTable);
 
     PrivStatus getObjectsThatViewReferences (
@@ -157,14 +293,15 @@ class PrivMgrMDAdmin : public PrivMgr
 
   private:
 
+    void cleanupMetadata(ExeCliInterface &cliInterface);
+
     bool isRoot(std::string userName)
     { return ((userName == "DB__ROOT") ? true : false); }
     
     PrivStatus updatePrivMgrMetadata(
        const std::string &objectsLocation,
        const std::string &authsLocation,
-       const bool shouldPopulateObjectPrivs,
-       const bool shouldPopulateRoleGrants);
+       const bool shouldPopulateObjectPrivs);
 
     PrivStatus upgradeMetadata (
       const PrivMgrTableStruct &tableDefinition,

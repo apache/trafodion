@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@ 
 **********************************************************************/
@@ -69,7 +72,7 @@ void SQLMXLoggingArea::init()
     else
     {
       sprintf(buffer, "SQLMXLoggingArea::init() pthread_mutex_init() rc=%d", rc);
-      logSQLMXDebugEvent(buffer, (short)rc);
+      logSQLMXDebugEvent(buffer, (short)rc,__LINE__);
     }
   }
 }
@@ -159,6 +162,28 @@ void SQLMXLoggingArea::logExecRtInfo(const char *fileName,
   if (lockedMutex)
     unlockMutex();
 }
+
+// ----------------------------------------------------------------------------
+// Method: logPrivMgrInfo
+//
+// When privMgr debugging is set, logs information 
+// Information is logged into: master_exec_pid.log in the logs directory
+// ----------------------------------------------------------------------------
+void SQLMXLoggingArea::logPrivMgrInfo(const char *filename,
+                                      ULng32 lineNo,
+                                      const char *msg,
+                                      Int32 level)
+{
+  bool lockedMutex = lockMutex();
+
+  QRLogger::log(CAT_SQL_PRIVMGR,
+                LL_DEBUG, 
+                "%s ", msg);
+
+  if (lockedMutex)
+    unlockMutex();
+}
+
 
 static void writeStackTrace(char *s, int bufLen)
 {
@@ -250,11 +275,11 @@ void SQLMXLoggingArea::logSQLMXPredefinedEvent(const char *msg, logLevel level)
     unlockMutex();
 }
 
-void SQLMXLoggingArea::logSQLMXDebugEvent(const char *msg, short errorcode, bool lock)
+void SQLMXLoggingArea::logSQLMXDebugEvent(const char *msg, short errorcode, Int32 line)
 {
-  bool lockedMutex = lock ? lockMutex() : false;
+  bool lockedMutex =  lockMutex() ;
   
-  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_DEBUG, "%s ", msg);
+  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_DEBUG, "%s ERRORCODE:%d LINE:%d ", msg,errorcode,line);
 
   if (lockedMutex)
     unlockMutex();

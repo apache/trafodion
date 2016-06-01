@@ -1,18 +1,25 @@
-/**
- *(C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//
+// @@@ START COPYRIGHT @@@
+//
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+// @@@ END COPYRIGHT @@@
+//
 package org.trafodion.dcs.master.listener;
 
 import java.sql.SQLException;
@@ -156,29 +163,21 @@ class ConnectReply {
             for(int i=0; i < randomPicks; i++){
                 while(true){
                     index = random.nextInt();
-                    index = index > 0? index : -index;
+                    index = Math.abs(index);
                     index %= length;
                     if (indexArr[index] != index) break;
                 }
                 indexArr[index] = index;
-                maxIndex = index > maxIndex ? index : maxIndex;
+                maxIndex = Math.max(maxIndex, index);
                 server = servers.get(index);
-                if(LOG.isDebugEnabled())
-                    LOG.debug(clientSocketAddress + ": " + " index " + index + " server picked " + server );
-                
                 nodeRegisteredPath = registeredPath + "/" + server;
-                stat = zkc.exists(nodeRegisteredPath,false);
-                if(stat != null){
-                    data = zkc.getData(nodeRegisteredPath, false, stat);
-                    if (false == (new String(data)).startsWith("AVAILABLE:"))
-                        continue;
-                    else {
-                        found = true;
-                        break;
-                    }
-                }
-                else
-                    continue;
+ 		if(LOG.isDebugEnabled())
+                    LOG.debug(clientSocketAddress + ": " + " index " + index + " server picked " + server );
+                data = isServerAvailable(nodeRegisteredPath);
+                if(data != null){
+                	found = true;
+                	break;
+                }else continue;
             }
 //
 // search sequentially for AVAILABLE server starting from highest random index + 1 to length
@@ -187,22 +186,15 @@ class ConnectReply {
                 for(index=maxIndex+1; index<length; index++){
                     if (indexArr[index] != index){
                         server = servers.get(index);
+                        nodeRegisteredPath = registeredPath + "/" + server;
                         if(LOG.isDebugEnabled())
                             LOG.debug(clientSocketAddress + ": " + "server selected in search 1 " + server );
                             
-                        nodeRegisteredPath = registeredPath + "/" + server;
-                        stat = zkc.exists(nodeRegisteredPath,false);
-                        if(stat != null){
-                            data = zkc.getData(nodeRegisteredPath, false, stat);
-                            if (false == (new String(data)).startsWith("AVAILABLE:"))
-                                continue;
-                            else {
-                                found = true;
-                                break;
-                            }
-                        }
-                        else
-                            continue;
+                        data = isServerAvailable(nodeRegisteredPath);
+                        if(data != null){
+                        	found = true;
+                        	break;
+                        }else continue;
                     }
                 }
             }
@@ -213,22 +205,15 @@ class ConnectReply {
                 for(index=0; index<maxIndex; index++){
                     if (indexArr[index] != index){
                         server = servers.get(index);
+                        nodeRegisteredPath = registeredPath + "/" + server;
                         if(LOG.isDebugEnabled())
                             LOG.debug(clientSocketAddress + ": " + "server selected in search 2 " + server );
                             
-                        nodeRegisteredPath = registeredPath + "/" + server;
-                        stat = zkc.exists(nodeRegisteredPath,false);
-                        if(stat != null){
-                            data = zkc.getData(nodeRegisteredPath, false, stat);
-                            if (false == (new String(data)).startsWith("AVAILABLE:"))
-                                continue;
-                            else {
-                                found = true;
-                                break;
-                            }
-                        }
-                        else
-                            continue;
+                        data = isServerAvailable(nodeRegisteredPath);
+                        if(data != null){
+                        	found = true;
+                        	break;
+                        }else continue;
                     }
                 }
             }
@@ -290,12 +275,10 @@ class ConnectReply {
         if (found == false || exceptionThrown == true){
             exception.exception_nr = ListenerConstants.DcsMasterNoSrvrHdl_exn; //no available servers
             replyException = true;
-            if(LOG.isDebugEnabled()){
-                if (found == false)
-                    LOG.info(clientSocketAddress + ": " + "No Available Servers");
-                else
-                    LOG.info(clientSocketAddress + ": " + "No Available Servers - exception thrown");
-            }
+            if (found == false)
+                LOG.error(clientSocketAddress + ": " + "No Available Servers");
+            else
+                LOG.error(clientSocketAddress + ": " + "No Available Servers - exception thrown");
         } else {
             
             if (cc.datasource.length() == 0)
@@ -328,4 +311,15 @@ class ConnectReply {
         }
     return replyException;
     }
+    
+	private byte[] isServerAvailable(String serverPath) throws KeeperException, InterruptedException {
+        Stat stat = zkc.exists(serverPath,false);
+        if(stat != null){
+            byte[] data = zkc.getData(serverPath, false, stat);
+            if(data != null && new String(data).startsWith("AVAILABLE:")){
+            	return data;
+            }
+        }
+		return null;
+	}
 }

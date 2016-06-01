@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -199,6 +202,10 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
 
     // globals for Optimizer -- also causes NADefaults table to be read in
     schemaDB_ = new(heap_) SchemaDB(readTableDef_);
+
+    // error during nadefault creation. Cannot proceed. Return.
+    if (! schemaDB_->getDefaults().getSqlParser_NADefaults_Ptr())
+      return;
 
     size_t memLimit = (size_t) 1024 * CmpCommon::getDefaultLong(MEMORY_LIMIT_NATABLECACHE_UPPER_KB);
     schemaDB_->getNATableDB()->getHeap()->setUpperLimit(memLimit);
@@ -834,7 +841,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         // NAMemory.h.
         cmpStatement = new CTXTHEAP CmpStatement(this);
         CmpMessageSQLText sqltext(data, data_len, CTXTHEAP, charset, op);
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(sqltext);
         copyFrags = TRUE;
         break;
@@ -845,7 +852,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         // request is from ex_control_tcb::work() for setting compiler CQDs
         cmpStatement = new CTXTHEAP CmpStatement(this);
         CmpMessageCompileStmt compileStmt(data, data_len, op, CTXTHEAP, charset);
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(compileStmt);
         copyData = TRUE;
         break;
@@ -855,7 +862,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         // request is from ContextCli::createMxcmpSession() to set user id
         cmpStatement = new CTXTHEAP CmpStatement(this);
         CmpMessageDatabaseUser databaseUserStmt(data, data_len, CTXTHEAP);
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(databaseUserStmt);
         copyData = TRUE;
         break;
@@ -867,7 +874,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         CmpMessageDDL ddlStmt(data, data_len, CTXTHEAP, charset,
                              parentQid, parentQidLen);
  
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(ddlStmt);
         copyData = TRUE;
         break;
@@ -877,7 +884,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         // request is from ExDescribeTcb::work() to get statement explain
         cmpStatement = new CTXTHEAP CmpStatement(this);
         CmpMessageDescribe describeStmt(data, data_len, CTXTHEAP, charset);
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(describeStmt);
         copyData = TRUE;
         break;
@@ -887,7 +894,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         // request is from ContextCli::endMxcmpSession()
         cmpStatement = new CTXTHEAP CmpStatement(this);
         CmpMessageEndSession endSessionStmt(data, data_len, CTXTHEAP);
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(endSessionStmt);
         copyData = TRUE;
         break;
@@ -897,20 +904,30 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         // request is from ExDescribeTcb::work() for getting compiler CQDs
         cmpStatement = new CTXTHEAP CmpStatement(this);
         CmpMessageSetTrans setTransStmt(data, data_len, CTXTHEAP);
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(setTransStmt);
         copyData = TRUE;
         break;
       } // end of case (CmpMessageObj::SET_TRANS)
 
-      case (CmpMessageObj::INTERNALSP_REQUEST) :
+       case (CmpMessageObj::DDL_NATABLE_INVALIDATE) :
+      {
+        cmpStatement = new CTXTHEAP CmpStatement(this);
+        CmpMessageDDLNATableInvalidate ddlInvalidateStmt(data, data_len, CTXTHEAP);
+        Assign_SqlParser_Flags(parserFlags);
+        rs = cmpStatement->process(ddlInvalidateStmt);
+        copyData = TRUE;
+        break;
+      } // end of case (CmpMessageObj::DDL_NATABLE_INVALIDATE)
+
+     case (CmpMessageObj::INTERNALSP_REQUEST) :
       { 
         //request is from ExStoredProcTcb::work(), 
         cmpStatement = new CTXTHEAP CmpStatementISP(this);
         //ISP request is passed as data argument
         CMPASSERT(data);
         CmpMessageISPRequest & ispRequest = *(CmpMessageISPRequest *)data;
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         //process request
         rs = cmpStatement->process(ispRequest);
         copyData = TRUE;
@@ -934,7 +951,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
             cmpStatement = new CTXTHEAP CmpStatement(this);
             CMPASSERT(FALSE);
          }
-         Set_SqlParser_Flags(parserFlags);//What is this for??
+         Assign_SqlParser_Flags(parserFlags);//What is this for??
          //process request
          rs = cmpStatement->process(ispGetNext);
          copyData = TRUE;

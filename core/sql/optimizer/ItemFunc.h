@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1700,22 +1703,23 @@ public:
 class DateFormat : public CacheableBuiltinFunction
 {
 public:
-  enum 
-  { 
-    DEFAULT,  // YYYY-MM-DD
-    USA,      // MM/DD/YYYY AM|PM
-    EUROPEAN, // DD.MM.YYYY
-    DATE_FORMAT_STR, // formatStr_ contains date format    
-    TIME_FORMAT_STR, // formatStr_ contains time format
-    TIMESTAMP_FORMAT_STR  // formatStr_ contains time format
+  enum FormatType
+  {
+    FORMAT_GENERIC = 0,
+    FORMAT_TO_DATE,
+    FORMAT_TO_CHAR
   };
 
-  DateFormat(ItemExpr *val1Ptr, ItemExpr *formatStrPtr,
-	     Int32 dateFormat)
-	: CacheableBuiltinFunction(ITM_DATEFORMAT,
-			  2, val1Ptr, formatStrPtr),
-	  dateFormat_(dateFormat)
-	{ allowsSQLnullArg() = FALSE; }
+  enum 
+  { 
+    DATE_FORMAT_NONE = 0,
+    DATE_FORMAT_STR,       // formatStr_ contains date format    
+    TIME_FORMAT_STR,       // formatStr_ contains time format
+    TIMESTAMP_FORMAT_STR   // formatStr_ contains timestamp format
+  };
+
+  DateFormat(ItemExpr *val1Ptr, const NAString &formatStr,
+             Lng32 formatType, NABoolean wasDateformat = FALSE);
 
   // virtual destructor
   virtual ~DateFormat();
@@ -1723,12 +1727,20 @@ public:
   // accessor functions
   Int32 getDateFormat() const { return dateFormat_; }
 
+  Int32 getExpDatetimeFormat() const { return frmt_; }
+
   // do not change format literals of DateFormat into constant parameters
   virtual ItemExpr* normalizeForCache(CacheWA& cwa, BindWA& bindWA)
     { return this; } 
 
   // append an ascii-version of ItemExpr into cachewa.qryText_
   virtual void generateCacheKey(CacheWA& cwa) const;
+
+  NABoolean errorChecks(Lng32 frmt, BindWA *bindWA, const NAType* opType);
+
+  ItemExpr * quickDateFormatOpt(BindWA * bindWA);
+
+  ItemExpr * bindNode(BindWA * bindWA);
 
   // a virtual function for type propagating the node
   virtual const NAType * synthesizeType();
@@ -1739,7 +1751,11 @@ public:
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
 				 CollHeap* outHeap = 0);
   
-  
+  void unparse(NAString &result,
+               PhaseEnum phase,
+               UnparseFormatEnum form,
+               TableDesc * tabId) const;
+    
   virtual NABoolean hasEquivalentProperties(ItemExpr * other);
 
   virtual QR::ExprElement getQRExprElem() const
@@ -1748,8 +1764,20 @@ public:
   }
 
 private:
+  // string contains user specified format string
+  NAString formatStr_;
 
+  // TO_DATE or TO_CHAR
+  Lng32 formatType_;
+
+  // DATE, TIME or TIMESTAMP
   Int32 dateFormat_;
+
+  // original function was DATEFORMAT
+  NABoolean wasDateformat_; 
+
+  // actual datetime format (defined in class ExpDatetime in exp_datetime.h)
+  Lng32 frmt_;
 }; // class DateFormat
 
 class DayOfWeek : public CacheableBuiltinFunction
@@ -2109,6 +2137,7 @@ public:
         UTF8_TO_SJIS, SJIS_TO_UTF8, UTF8_TO_ISO88591,
         ISO88591_TO_UTF8,
         KANJI_MP_TO_ISO88591, KSC5601_MP_TO_ISO88591,
+        GBK_TO_UTF8,
         UNKNOWN_TRANSLATION};
 
   Translate(ItemExpr *valPtr, NAString* map_table_name);
@@ -2409,6 +2438,8 @@ public:
 
   NABoolean noStringTruncationWarnings() { return noStringTruncationWarnings_; }
 
+  NABoolean convertNullWhenError() { return convertNullWhenError_; }
+
   // get and set for flags_. See enum Flags.
   NABoolean matchChildType()   { return (flags_ & MATCH_CHILD_TYPE) != 0; }
   void setMatchChildType(NABoolean v)
@@ -2441,6 +2472,9 @@ public:
 
   void setNoStringTruncationWarnings(NABoolean v)
   { noStringTruncationWarnings_ = v; }
+
+  void setConvertNullWhenError(NABoolean v)
+  { convertNullWhenError_= v; }
 
 private:
 
@@ -2478,6 +2512,9 @@ private:
   // If true, string truncation warnings are not returned. This is set to true
   
   NABoolean noStringTruncationWarnings_;
+
+  // If true, convert error will not returned, move null into target
+  NABoolean convertNullWhenError_; 
 
   UInt32 flags_;
 
@@ -2660,6 +2697,8 @@ public:
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
 				 CollHeap* outHeap = 0);
 
+  ItemExpr * quickDateFormatOpt(BindWA * bindWA);
+
   const NAString& getFormatStr() const
   {
     return formatStr_;
@@ -2697,15 +2736,25 @@ public:
  };
 
  LOBoper(OperatorTypeEnum otype,
-	 ItemExpr *val1Ptr, ItemExpr *val2Ptr = NULL, 
+	 ItemExpr *val1Ptr, ItemExpr *val2Ptr = NULL,ItemExpr *val3Ptr = NULL, 
 	 ObjectType obj = NOOP_)
    : BuiltinFunction(otype,  CmpCommon::statementHeap(),
-                     2, val1Ptr, val2Ptr),
+                     3, val1Ptr, val2Ptr,val3Ptr),
    obj_(obj),
    lobNum_(-1),
    lobStorageType_(Lob_Invalid_Storage),
-   lobMaxSize_(CmpCommon::getDefaultNumeric(LOB_MAX_SIZE))
-   {}
+   lobMaxSize_(CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)),
+     lobMaxChunkMemSize_(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)),
+     lobGCLimit_(CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE)),
+     hdfsPort_((Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT)),
+     hdfsServer_( CmpCommon::getDefaultString(LOB_HDFS_SERVER))
+   {
+     if ((obj == STRING_) || (obj == BUFFER_) || (obj == FILE_))
+       lobStorageType_ = Lob_HDFS_File;
+     else if (obj == EXTERNAL_)
+       lobStorageType_ = Lob_External_HDFS_File;
+    
+   }
 
  // copyTopNode method
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
@@ -2732,14 +2781,21 @@ public:
   LobsStorage &lobStorageType() { return lobStorageType_; }
   NAString &lobStorageLocation() { return lobStorageLocation_; }
   Int64 getLobMaxSize() {return lobMaxSize_*1024*1024; }
-  
+  Int64 getLobMaxChunkMemSize() { return lobMaxChunkMemSize_*1024*1024;}
+  Int64 getLobGCLimit() { return lobGCLimit_*1025*1024;}
+  Int32 getLobHdfsPort() { return hdfsPort_;}
+  NAString &getLobHdfsServer(){return hdfsServer_;}
  protected:
   ObjectType obj_;
 
   short lobNum_;
   LobsStorage lobStorageType_;
   NAString lobStorageLocation_;
-  Int64 lobMaxSize_; // In MB units
+  Int32 lobMaxSize_; // In MB units
+  Int32 lobMaxChunkMemSize_; //In MB Units
+  Int32 lobGCLimit_ ;//In MB Units
+  Int32 hdfsPort_;
+  NAString hdfsServer_;
   
 }; // LOBoper
 
@@ -2752,7 +2808,7 @@ class LOBinsert : public LOBoper
 	   ObjectType fromObj, 
 	   NABoolean isAppend = FALSE,
 	   OperatorTypeEnum otype = ITM_LOBINSERT)
-   : LOBoper(otype, val1Ptr, val2Ptr,fromObj),
+   : LOBoper(otype, val1Ptr, val2Ptr,NULL,fromObj),
     objectUID_(-1),
     append_(isAppend),
     lobSize_(0),
@@ -2808,7 +2864,7 @@ class LOBselect : public LOBoper
  public:
   
  LOBselect(ItemExpr *val1Ptr, ItemExpr *val2Ptr, ObjectType toObj)
-   : LOBoper(ITM_LOBSELECT, val1Ptr, val2Ptr, toObj)
+   : LOBoper(ITM_LOBSELECT, val1Ptr, val2Ptr,NULL,toObj)
     {
     };
   
@@ -2852,10 +2908,12 @@ class LOBupdate : public LOBoper
   
   LOBupdate(ItemExpr *val1Ptr,
 	    ItemExpr *val2Ptr,
+	    ItemExpr *val3Ptr,
 	    ObjectType fromObj, 
 	    NABoolean isAppend = FALSE)
-    : LOBoper(ITM_LOBUPDATE, val1Ptr, val2Ptr, fromObj),
+    : LOBoper(ITM_LOBUPDATE, val1Ptr, val2Ptr,val3Ptr,fromObj),
     objectUID_(-1),
+    lobSize_(0),
     append_(isAppend)
     {};
   
@@ -2876,7 +2934,7 @@ class LOBupdate : public LOBoper
   Int64 & updatedTableObjectUID() { return objectUID_; }
   
   NAString &updatedTableSchemaName() { return schName_; }
-
+  Lng32 & lobSize() { return lobSize_; }
  private:
   // ---------------------------------------------------------------//
   // ObjectUID of the table this blob is being inserted into
@@ -2888,6 +2946,7 @@ class LOBupdate : public LOBoper
 
 
   NABoolean append_;
+  Lng32 lobSize_;
 }; // class LOBupdate
 
 class LOBconvert : public LOBoper
@@ -2895,7 +2954,7 @@ class LOBconvert : public LOBoper
  public:
   
  LOBconvert(ItemExpr *val1Ptr, ObjectType toObj,  Lng32 tgtSize = 32000) 
-   : LOBoper(ITM_LOBCONVERT, val1Ptr, NULL,toObj),
+   : LOBoper(ITM_LOBCONVERT, val1Ptr, NULL,NULL,toObj),
     tgtSize_(tgtSize)     
     {};
   
@@ -2923,7 +2982,7 @@ class LOBconvertHandle : public LOBoper
  public:
   
  LOBconvertHandle(ItemExpr *val1Ptr, ObjectType toObj)
-   : LOBoper(ITM_LOBCONVERTHANDLE, val1Ptr, NULL,toObj)
+   : LOBoper(ITM_LOBCONVERTHANDLE, val1Ptr, NULL,NULL,toObj)
     {};
   
   // copyTopNode method
@@ -2962,7 +3021,7 @@ class LOBextract : public LOBoper
  public:
   
  LOBextract(ItemExpr *val1Ptr, Lng32 tgtSize = 1000)
-   : LOBoper(ITM_LOBEXTRACT, val1Ptr, NULL,EXTRACT_),
+   : LOBoper(ITM_LOBEXTRACT, val1Ptr, NULL,NULL,EXTRACT_),
     tgtSize_(tgtSize)
     {};
   

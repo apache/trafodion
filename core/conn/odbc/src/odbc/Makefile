@@ -2,19 +2,22 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
@@ -69,11 +72,13 @@ cleanall: cleanallndcs cleanlnx_drvr
 include $(MY_SQROOT)/macros.gmk
 bldlnx_drvr:
 	cd $(MY_SQROOT)/../conn/unixodbc/odbc/odbcclient/unixcli;$(MAKE) -f makefile.lnx linux64_$(SQ_BUILD_TYPE)
-	cd $(MY_SQROOT)/../conn/unixodbc/odbc/odbcclient/unixcli/package;rm -rf *.gz; ./mklnxpkg.sh -f; cp -p trafodbc_Linux64_pkg.tar.gz $(MY_SQROOT)/../conn/clients/TRAF_ODBC_Linux_Driver_64.tar.gz
+	cd $(MY_SQROOT)/../conn/unixodbc/odbc/odbcclient/unixcli/package;rm -rf *.gz $(LIBEXPDIR)/libicu* $(LIBEXPDIR)/libtrafodbc*; ./mklnxpkg.sh -f; cp -p trafodbc_Linux64_pkg.tar.gz $(MY_SQROOT)/../conn/clients/TRAF_ODBC_Linux_Driver_64.tar.gz; cp -Pf relfiles/linux64/lib* $(LIBEXPDIR);cp -p relfiles/linux64/{connect_test.cpp,TRAFDSN,runconnect_test.sh} $(MY_SQROOT)/samples
+	cd $(LIBEXPDIR);ln -sf libicudata.so.44 libicudata.so;ln -sf libicuuc.so.44 libicuuc.so;ln -sf libtrafodbc_l64.so libtrafodbc64.so;ln -sf libtrafodbc_l64_drvr.so libtrafodbc_drvr64.so
 
 # Linux ODBC driver clean targets	
 .PHONY: cleanlnx_drvr
 cleanlnx_drvr:
 	cd $(MY_SQROOT)/../conn/unixodbc/odbc/odbcclient/unixcli;$(MAKE) -f makefile.lnx clean; 
-	/bin/rm -f $(LIBEXPDIR)/libtrafodbc*
-
+	/bin/rm -f $(LIBEXPDIR)/libtrafodbc* $(LIBEXPDIR)/libicu*
+	cd $(MY_SQROOT)/../conn/unixodbc/odbc/odbcclient/unixcli/package;rm -rf *.gz relfiles
+	cd $(MY_SQROOT)/samples;rm -rf connect_test* runconnect_test.sh TRAFDSN

@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //
@@ -418,7 +421,6 @@ static const char *returnClassOrigin(Lng32 theSQLCODE, size_t offset)
 {
   char sqlstate[6];
   ComSQLSTATE(theSQLCODE,sqlstate);
-
   // Classes and subclasses starting with letters '0' ... '4', 'A' ... 'H' are
   // defined by ISO/ANSI SQL92. See subclause 18.1, GR 3b) and subclause 22.1.
 
@@ -426,7 +428,7 @@ static const char *returnClassOrigin(Lng32 theSQLCODE, size_t offset)
       (sqlstate[offset] >= 'A' && sqlstate[offset] <= 'H'))
     return "ISO 9075";
   else
-    return COPYRIGHT_XTOP_PRODNAME_H;
+    return (const char *)COPYRIGHT_XTOP_PRODNAME_H;
 }
 
 const char *ComClassOrigin(Lng32 theSQLCODE)

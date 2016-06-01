@@ -1,19 +1,22 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //*****************************************************************************
@@ -340,6 +343,58 @@ std::string whereClause(" WHERE CATALOG_NAME = '");
 //****************** End of PrivMgrObjects::deleteEntryByName *****************
 
 
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrObjects::fetchObjectOwner                                *
+// *                                                                           *
+// *    Returns the object owner ID for the object that matches the unique ID  *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *                                                                           *
+// *  <objectUID>                     const int64_t                   In       *
+// *    is the unique ID representing the object.                              *
+// *                                                                           *
+// *  <objectOwner>                   int32_t &                       Out      *
+// *    passes back the object owner ID.                                       *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// *  STATUS_GOOD: The object owner was returned.                              *
+// * STATUS_ERROR: Theo object owner was not returned. CLI error is put into   *
+// *               the diags area.                                             *
+// *                                                                           *
+// *****************************************************************************
+
+PrivStatus PrivMgrObjects::fetchObjectOwner(
+   const int64_t objectUID,
+   int32_t & objectOwner)
+
+{
+
+MyTable &myTable = static_cast<MyTable &>(myTable_);
+MyRow row(fullTableName_);
+
+std::string whereClause(" WHERE OBJECT_UID = ");
+
+   whereClause += UIDToString(objectUID);
+
+PrivStatus privStatus = myTable.selectWhereUnique(whereClause,row);
+
+   if (privStatus != STATUS_GOOD)
+      return STATUS_ERROR;
+
+   objectOwner = row.objectOwner_;
+
+   return STATUS_GOOD;
+
+}
+//****************** End of PrivMgrObjects::fetchObjectOwner  *****************
 
 
 // *****************************************************************************

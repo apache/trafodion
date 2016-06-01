@@ -1,19 +1,22 @@
 /* -*-C++-*-
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
  *****************************************************************************
@@ -41,7 +44,6 @@
 #include "ComOperators.h"
 #include "ComLocationNames.h"
 #include "ElemDDLKeyValue.h"
-#include "ElemDDLLoadOptions.h"
 #include "ElemDDLLocation.h"
 #include "ElemDDLPartitionList.h"
 #include "ItemConstValueArray.h"
@@ -352,15 +354,6 @@ ElemDDLPartitionSystem::initializeDataMembers()
 
   isMaxExtentSpec_         = FALSE;
   ParSetDefaultMaxExtents(maxExt_);
- //
-  // load options
-  //
-
-  isDSlackSpec_         = FALSE;
-  dSlackPercentage_     = ElemDDLLoadOptDSlack::DEFAULT_PERCENTAGE;
-
-  isISlackSpec_         = FALSE;
-  iSlackPercentage_     = ElemDDLLoadOptISlack::DEFAULT_PERCENTAGE;
 
   //
   // location
@@ -464,28 +457,6 @@ ElemDDLPartitionSystem::setPartitionAttr(ElemDDLNode * pPartitionAttr)
 	  }
     }
 	break;
-    case ELM_LOAD_OPT_D_SLACK_ELEM :
-    if (isDSlackSpec_)
-    {
-      // cout << "*** Error *** Duplicate DSLACK phrases in PARTITION clause.
-      *SqlParser_Diags << DgSqlCode(-3063);
-    }
-    isDSlackSpec_ = TRUE;
-    dSlackPercentage_ =
-      pPartitionAttr->castToElemDDLLoadOptDSlack()->getPercentage();
-    break;
-
-    case ELM_LOAD_OPT_I_SLACK_ELEM :
-    if (isISlackSpec_)
-    {
-      // Duplicate ISLACK phrases in PARTITION clause.
-      *SqlParser_Diags << DgSqlCode(-3064);
-    }
-    isISlackSpec_ = TRUE;
-    iSlackPercentage_ =
-      pPartitionAttr->castToElemDDLLoadOptISlack()->getPercentage();
-    break;
-
   default :
     ABORT("internal logic error");
     break;
@@ -654,28 +625,6 @@ ElemDDLPartitionSystem::getDetailInfo() const
 
   detailText = "    max size unit: ";
   detailText += maxSizeFileAttr.getMaxSizeUnitAsNAString();;
-  detailTextList.append(detailText);
-
-  //
-  // load options for this partition
-  //
-
-  detailTextList.append("Load options:");
-
-  detailText = "    dslack spec?   ";
-  detailText += YesNo(isDSlackSpecified());
-  detailTextList.append(detailText);
-
-  detailText = "    dslack %:      ";
-  detailText += LongToNAString((Lng32)getDSlackPercentage());
-  detailTextList.append(detailText);
-
-  detailText = "    islack spec?   ";
-  detailText += YesNo(isISlackSpecified());
-  detailTextList.append(detailText);
-
-  detailText = "    islack %:      ";
-  detailText += LongToNAString((Lng32)getISlackPercentage());
   detailTextList.append(detailText);
 
   return detailTextList;

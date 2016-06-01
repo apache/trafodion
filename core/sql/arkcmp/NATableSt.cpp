@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2012-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //********************************************************************/
@@ -65,7 +68,7 @@ SP_STATUS NATableCacheStatStoredProcedure::sp_InputFormat(SP_FIELDDESC_STRUCT *i
      return SP_SUCCESS;
 }
 
-const Lng32 NUM_OF_OUTPUT = 6;
+const Lng32 NUM_OF_OUTPUT = 7;
 
 SP_STATUS NATableCacheStatStoredProcedure::sp_NumOutputFields(
   Lng32 *numFields,
@@ -85,6 +88,7 @@ SP_STATUS NATableCacheStatStoredProcedure::sp_OutputFormat(
   SP_HANDLE spObj,
   SP_ERROR_STRUCT *error)
 {
+  strcpy(&((format++)->COLUMN_DEF[0]), "Context          CHAR(8) CHARACTER SET ISO88591");
   strcpy(&((format++)->COLUMN_DEF[0]), "Num_lookups      INT UNSIGNED");
   strcpy(&((format++)->COLUMN_DEF[0]), "Num_cache_hits   INT UNSIGNED");
   strcpy(&((format++)->COLUMN_DEF[0]), "Num_entries   INT UNSIGNED");
@@ -128,12 +132,13 @@ SP_STATUS NATableCacheStatStoredProcedure::sp_Process(
     if(!it->getNext(stats))
        return SP_SUCCESS;
 
-    fFunc(0, outputData, sizeof(ULng32), &(stats.numLookups), 0);
-    fFunc(1, outputData, sizeof(ULng32), &(stats.numCacheHits), 0);
-    fFunc(2, outputData, sizeof(ULng32), &(stats.numEntries), 0);
-    fFunc(3, outputData, sizeof(ULng32), &(stats.currentCacheSize), 0);
-    fFunc(4, outputData, sizeof(ULng32), &(stats.highWaterMark), 0);
-    fFunc(5, outputData, sizeof(ULng32), &(stats.maxCacheSize), 0);
+    fFunc(0, outputData, sizeof(stats.contextType), &(stats.contextType), 0);
+    fFunc(1, outputData, sizeof(ULng32), &(stats.numLookups), 0);
+    fFunc(2, outputData, sizeof(ULng32), &(stats.numCacheHits), 0);
+    fFunc(3, outputData, sizeof(ULng32), &(stats.numEntries), 0);
+    fFunc(4, outputData, sizeof(ULng32), &(stats.currentCacheSize), 0);
+    fFunc(5, outputData, sizeof(ULng32), &(stats.highWaterMark), 0);
+    fFunc(6, outputData, sizeof(ULng32), &(stats.maxCacheSize), 0);
     return SP_MOREDATA;
   }
 
@@ -189,7 +194,7 @@ SP_STATUS
 						       SP_HANDLE spObj,
 						       SP_ERROR_STRUCT *error)
 {
-  *numFields = 4;
+  *numFields = 5;
   return SP_SUCCESS;
 }
 
@@ -206,6 +211,7 @@ SP_STATUS NATableCacheEntriesStoredProcedure::sp_OutputFormat(
   strcpy(&((format++)->COLUMN_DEF[0]), "Catalog_name 		VARCHAR(128) character set UTF8");
   strcpy(&((format++)->COLUMN_DEF[0]), "Schema_name 		VARCHAR(128) character set UTF8");
   strcpy(&((format++)->COLUMN_DEF[0]), "Object_name 		VARCHAR(128) character set UTF8");
+  strcpy(&((format++)->COLUMN_DEF[0]), "Entry_size    		INT");
   return SP_SUCCESS;
 }
 
@@ -248,6 +254,7 @@ SP_STATUS NATableCacheEntriesStoredProcedure::sp_Process(SP_PROCESS_ACTION actio
     fFunc(1,outputData,(Lng32)strlen(details.catalog),(void*)(details.catalog),1);
     fFunc(2,outputData,(Lng32)strlen(details.schema),(void*)(details.schema),1);
     fFunc(3,outputData,(Lng32)strlen(details.object),(void*)(details.object),1);
+    fFunc(4,outputData,(Lng32)sizeof(details.size),  (void*)(&details.size),0);
 
     return SP_MOREDATA;
   }
@@ -348,7 +355,11 @@ NABoolean NATableCacheStatsISPIterator::getNext(NATableCacheStats & stats)
    //Only for remote tdm_arkcmp with 0 context
    if(currCacheIndex_ == -1)
    {
+     const char *cName = "ARKCMP";
+
      ActiveSchemaDB()->getNATableDB()->getCacheStats(stats);
+     memset(stats.contextType, ' ', sizeof(stats.contextType));
+     memcpy(stats.contextType, cName, MINOF(sizeof(stats.contextType), strlen(cName)));
      currCacheIndex_ = -2;
      return TRUE;
    }
@@ -362,7 +373,11 @@ NABoolean NATableCacheStatsISPIterator::getNext(NATableCacheStats & stats)
           currCacheIndex_++;
           return getNext(stats);
       }
-      ctxInfos_[currCacheIndex_++]->getCmpContext()->getSchemaDB()->getNATableDB()->getCacheStats(stats);
+      ctxInfos_[currCacheIndex_]->getCmpContext()->getSchemaDB()->getNATableDB()->getCacheStats(stats);
+      const char *cName = ctxInfos_[currCacheIndex_++]->getName();
+
+      memset(stats.contextType, ' ', sizeof(stats.contextType));
+      memcpy(stats.contextType, cName, MINOF(sizeof(stats.contextType), strlen(cName)));
       return TRUE;
    }
    //all entries of all caches are fetched, we are done!

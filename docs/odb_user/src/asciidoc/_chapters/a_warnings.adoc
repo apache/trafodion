@@ -1,0 +1,101 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+== A. Troubleshooting
+1.  odb uses Condition Variables to synchronize threads during copy and parallel load operations.
+2.  Most of the memory allocation operations are dynamic. For example, you can execute an SQL
+command as long as you want. However, you can _hard code_ limits as follows:
++
+[source,cplusplus]
+--
+#define MAX_VNLEN   32 /* Max variable name length */
+#define MAXCOL_LEN 128 /* Max column name length */
+#define MAXOBJ_LEN 128 /* Max catalog/schema/table name length */
+#define MAX_CLV     64 /* Max command line variables (-var) */
+--
+
+3.  Some Linux/UNIX systems (notably the Linux Loader) have huge default stack size. Due to this
+extremely large value, you can have errors like this when starting tens/hundreds of threads:
++
+```
+Error starting cmd thread #: cannot allocate memory
+```
++
+If you get this error, then check your default stack size:
++
+```
+$ ulimit -a
+core file size                         (blocks, -c) 0
+data seg size                          (kbytes, -d) unlimited
+max nice                                       (-e) 0
+file size                              (blocks, -f) unlimited
+pending signals                                (-i) 137215
+max locked memory                      (kbytes, -l) 32
+max memory size                        (kbytes, -m) unlimited
+open files                                     (-n) 65536
+pipe size                           (512 bytes, -p) 8
+POSIX message queues                    (bytes, -q) 819200
+max rt priority                                (-r) 0
+stack size                             (kbytes, -s) 204800
+cpu time                              (seconds, -t) unlimited
+max user processes                             (-u) 2047
+virtual memory                         (kbytes, -v) unlimited
+file locks                                     (-x) unlimited
+```
++
+In the example above, the `stack size` value is the problem. Reset it to a reasonable value. (The value will be reset to the initial value when you start a new session).
++
+<<<
++
+*Example*
++
+```
+$ ulimit -s 4096
+```
+
+4. If you get errors such as:
++
+```
+C:\Users\felici> odb64luo -u xx -p yy -d oraxe -l src=region.tbl.gz:tgt=region:fs=^|:truncate
+
+odb [2012-10-11 13:27:22]: starting ODBC connection(s)... 0 
+[0] odb(5020) - [Oracle][ODBC]Optional feature not implemented. (State: HYC00 Native Err: 0)
+```
++
+Try adding `-nocatnull` to your command line. When the back-end database doesn't use catalogs, 
+then you should use an *empty string* as catalog name.
++
+NOTE: Some flawed ODBC Drivers unfortunately want NULL here &#8212; instead of *empty strings* as it should be.
+
+5.  You can have errors loading `TIME(N)` fields with` N>0` under {project-name} because the
+ODBC Driver does not manage the field display size when `N>0`.
+6.  If you have problems starting odb on Unix/Linux check:
++
+* The shared library dependencies with `ldd <odb_executable_name>`.
+* The shared lib path defined in the following environment variables used by the shared library loader:
+** *Linux*: `LD_LIBRARY_PATH`
+** *IBM IAX*: `LIBPATH` (not currently supported)
+** *HP/UX*: `SHLIB_PATH` (not currently supported)
+

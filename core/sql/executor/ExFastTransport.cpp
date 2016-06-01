@@ -2,19 +2,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -49,6 +52,7 @@
 #include "SequenceFileReader.h" 
 #endif
 #include  "cli_stdh.h"
+#include "ComSmallDefs.h"
 
 
 //----------------------------------------------------------------------
@@ -85,6 +89,7 @@ ExFastExtractTcb::ExFastExtractTcb(
   , sourceFieldsConvIndex_(NULL)
   , currBuffer_(NULL)
   , bufferAllocFailuresCount_(0)
+  , modTS_(-1)
 {
   
   ex_globals *stmtGlobals = getGlobals();
@@ -478,6 +483,16 @@ Lng32 ExHdfsFastExtractTcb::lobInterfaceCreate()
 
 }
 
+Lng32 ExHdfsFastExtractTcb::lobInterfaceDataModCheck()
+{
+  return ExpLOBinterfaceDataModCheck(lobGlob_,
+                                     targetLocation_,
+                                     hdfsHost_,
+                                     hdfsPort_,
+                                     myTdb().getModTSforDir(),
+                                     0);
+}
+
 
 Lng32 ExHdfsFastExtractTcb::lobInterfaceClose()
 {
@@ -513,7 +528,9 @@ ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
     lobGlob_ = NULL;
   }
 
-  //release sequenceFileWriter_???
+  if (sequenceFileWriter_ != NULL) {
+     NADELETE(sequenceFileWriter_, SequenceFileWriter, getHeap());
+  }
 
 } // ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 
@@ -524,13 +541,13 @@ Int32 ExHdfsFastExtractTcb::fixup()
 
   ex_tcb::fixup();
 
-
   if(!myTdb().getSkipWritingToFiles() &&
      !myTdb().getBypassLibhdfs())
 
     ExpLOBinterfaceInit
       (lobGlob_, getGlobals()->getDefaultHeap(),TRUE);
 
+  modTS_ = myTdb().getModTSforDir();
 
   return 0;
 }
@@ -582,11 +599,15 @@ void ExHdfsFastExtractTcb::convertSQRowToString(ULng32 nullLen,
     if (attr->getNullFlag()
         && ExpAlignedFormat::isNullValue(childRow + attr->getNullIndOffset(),
             attr->getNullBitIndex())) {
-      if ( !getEmptyNullString()) // includes hive null which is empty string
-      {
-        memcpy(targetData, myTdb().getNullString(), nullLen);
-        targetData += nullLen;
-      }
+      // source is a null value.
+
+      nullLen = 0;
+      if (myTdb().getNullString()) {
+        nullLen = strlen(myTdb().getNullString());
+        memcpy(targetData, myTdb().getNullString(), nullLen); 
+      } 
+
+      targetData += nullLen;
       currBuffer_->bytesLeft_ -= nullLen;
     } else {
       switch ((conv_case_index) sourceFieldsConvIndex_[i]) {
@@ -644,7 +665,8 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
   SFW_RetCode sfwRetCode = SFW_OK;
   ULng32 recSepLen = strlen(myTdb().getRecordSeparator());
   ULng32 delimLen = strlen(myTdb().getDelimiter());
-  ULng32 nullLen = strlen(myTdb().getNullString());
+  ULng32 nullLen = 
+    (myTdb().getNullString() ? strlen(myTdb().getNullString()) : 0);
   if (myTdb().getIsHiveInsert())
   {
     recSepLen = 1;
@@ -670,9 +692,62 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
     {
     case EXTRACT_NOT_STARTED:
     {
+      pstate.step_= EXTRACT_CHECK_MOD_TS;
+    }
+    break;
+
+    case EXTRACT_CHECK_MOD_TS:
+    {
+      if ((! myTdb().getTargetFile()) ||
+          (myTdb().getModTSforDir() == -1))
+        {
+          pstate.step_ = EXTRACT_INITIALIZE;
+          break;
+        }
+
+      numBuffers_ = 0;
+
+      memset (hdfsHost_, '\0', sizeof(hdfsHost_));
+      strncpy(hdfsHost_, myTdb().getHdfsHostName(), sizeof(hdfsHost_));
+      hdfsPort_ = myTdb().getHdfsPortNum();
+      memset (fileName_, '\0', sizeof(fileName_));
+      memset (targetLocation_, '\0', sizeof(targetLocation_));
+      snprintf(targetLocation_,999, "%s", myTdb().getTargetName());
+
+      retcode = lobInterfaceDataModCheck();
+      if (retcode < 0)
+      {
+        Lng32 cliError = 0;
+        
+        Lng32 intParam1 = -retcode;
+        ComDiagsArea * diagsArea = NULL;
+        ExRaiseSqlError(getHeap(), &diagsArea, 
+                        (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
+                        NULL, &intParam1, 
+                        &cliError, 
+                        NULL, 
+                        "HDFS",
+                        (char*)"ExpLOBInterfaceDataModCheck",
+                        getLobErrStr(intParam1));
+        pentry_down->setDiagsArea(diagsArea);
+        pstate.step_ = EXTRACT_ERROR;
+        break;
+      }
+      
+      if (retcode == 1) // check failed
+      {
+        ComDiagsArea * diagsArea = NULL;
+        ExRaiseSqlError(getHeap(), &diagsArea, 
+                        (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+        pentry_down->setDiagsArea(diagsArea);
+        pstate.step_ = EXTRACT_ERROR;
+        break;
+      }
+      
       pstate.step_= EXTRACT_INITIALIZE;
     }
-    //  no break here
+    break;
+    
     case EXTRACT_INITIALIZE:
     {
       pstate.processingStarted_ = FALSE;
@@ -742,8 +817,8 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           if ((isSequenceFile() || myTdb().getBypassLibhdfs()) &&
               !sequenceFileWriter_)
           {
-            sequenceFileWriter_ = new(getSpace())
-                                     SequenceFileWriter((NAHeap *)getSpace());
+            sequenceFileWriter_ = new(getHeap())
+                                     SequenceFileWriter((NAHeap *)getHeap());
             sfwRetCode = sequenceFileWriter_->init();
             if (sfwRetCode != SFW_OK)
             {
@@ -787,7 +862,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
               break;
             }
           }
-
+            
           if (feStats)
           {
             feStats->setPartitionNumber(fileNum);
@@ -1112,13 +1187,16 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         }
         else  if (myTdb().getBypassLibhdfs())
         {
-          sfwRetCode = sequenceFileWriter_->hdfsClose();
-          if (!errorOccurred_ && sfwRetCode != SFW_OK )
-          {
-            createSequenceFileError(sfwRetCode);
-            pstate.step_ = EXTRACT_ERROR;
-            break;
-          }
+          if (sequenceFileWriter_)
+            {
+              sfwRetCode = sequenceFileWriter_->hdfsClose();
+              if (!errorOccurred_ && sfwRetCode != SFW_OK )
+                {
+                  createSequenceFileError(sfwRetCode);
+                  pstate.step_ = EXTRACT_ERROR;
+                  break;
+                }
+            }
         }
         else
         {

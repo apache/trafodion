@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -503,6 +506,80 @@ Int32 getMissingCols (const NABitVector &map1, const NABitVector &map2, NABitVec
   missing_bits->addSet(new_missing_bits);
 
   return (Int32) (missing_bits->entries() - initial);
+}
+
+// If an HBase table is very large, we risk time-outs because the
+// sample scan doesn't return rows fast enough. In this case, we
+// want to reduce the HBase row cache size to a smaller number to
+// force more frequent returns. Experience shows that a value of
+// '10' worked well with a 17.7 billion row table with 128 regions
+// on six nodes (one million row sample). We'll assume a workable
+// HBase cache size value scales linearly with the sampling ratio.
+// That is, we'll assume the model:
+//
+//   workable value = (sample row count / actual row count) * c,
+//   where c is chosen so that we get 10 when the sample row count
+//   is 1,000,000 and the actual row count is 17.7 billion.
+//
+//   Solving for c, we get c = 10 * (17.7 billion/1 million).
+//
+// Note that the Generator does a similar calculation in
+// Generator::setHBaseNumCacheRows. The calculation here is more
+// conservative because we care more about getting UPDATE STATISTICS
+// done without a timeout, trading off possible speed improvements
+// by using a smaller cache size.
+//
+// Another issue is that it's been observed that time-outs also
+// depend on system load. Through experimentation we've discovered
+// that a value of 50 works well in loaded scenarios, assuming the
+// table is not too large. So, we use a maximum of the workable
+// value computed above and 50.
+//
+// Another note: If the user has already set HBASE_NUM_CACHE_ROWS_MAX,
+// then we don't do anything here. We respect the user's choices
+// instead.
+//
+// We had hoped that HBase 1.1, with its heartbeat protocol, would
+// solve this time-out problem for good. But early testing seems
+// to suggest that this is not the case.
+//
+// Input:
+// sampleRatio -- Percentage of rows being sampled.
+//
+// Return:
+// TRUE if the CQDs were altered, FALSE otherwise. The caller should use this
+// information to reset the CQDs following execution of the sample query to
+// avoid a performance penalty for subsequent queries (notably those that
+// read the sample table).
+NABoolean HSGlobalsClass::setHBaseCacheSize(double sampleRatio)
+{
+  double calibrationFactor = 10 * (17700000000/1000000);
+  Int64 workableCacheSize = (Int64)(sampleRatio * calibrationFactor);
+  if (workableCacheSize < 1)
+    workableCacheSize = 1;  // can't go below 1 unfortunately
+  else if (workableCacheSize > 50)
+    workableCacheSize = 50; 
+
+  // Do this only if the user didn't set the CQD in this session
+  // (So, for example, if the CQD was set in the DEFAULTS table
+  // but not in this session, we'll still override it.)
+  NADefaults &defs = ActiveSchemaDB()->getDefaults();
+  if (defs.getProvenance(HBASE_NUM_CACHE_ROWS_MAX) < 
+      NADefaults::SET_BY_CQD)
+    {
+      char temp1[40];  // way more space than needed, but it's safe
+      Lng32 wcs = (Lng32)workableCacheSize;
+      sprintf(temp1,"'%d'",wcs);
+      NAString minCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN ";
+      minCQD += temp1;
+      HSFuncExecQuery(minCQD);
+      NAString maxCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX ";
+      maxCQD += temp1;
+      HSFuncExecQuery(maxCQD);
+      return TRUE;
+    }
+  else
+    return FALSE;
 }
 
 // rearrange the MCs so that the larger groups are listed first
@@ -2737,9 +2814,12 @@ void HSHistogram::maintainEndIntervalForIUS(float avgRCPerInterval, Lng32 intNum
 // Hash function used for jitLogThresholdHash.
 static ULng32 hashString(const NAString& str) { return str.hash(); }
 
+THREAD_P NABoolean HSGlobalsClass::performISForMC_ = FALSE;
+
 HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
   : catSch(new(STMTHEAP) NAString(STMTHEAP)),
     isHbaseTable(FALSE),
+    isHiveTable(FALSE),
     user_table(new(STMTHEAP) NAString(STMTHEAP)),
     numPartitions(0),
     hstogram_table(new(STMTHEAP) NAString(STMTHEAP)),
@@ -2779,7 +2859,8 @@ HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
     sample_I_generated(FALSE),
     jitLogThreshold(0),
     stmtStartTime(0),
-    jitLogOn(FALSE)
+    jitLogOn(FALSE),
+    isUpdatestatsStmt(FALSE)
   {
     // Must add the context first in the constructor.
     contID_ = AddHSContext(this);
@@ -2800,6 +2881,8 @@ HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
         jitLogThresholdHash = new(CTXTHEAP) JitLogHashType(hashString, 77, TRUE, CTXTHEAP);
         initJITLogData();
       }
+
+    performISForMC_ = FALSE;
   }
 
 HSGlobalsClass::~HSGlobalsClass()
@@ -2855,6 +2938,7 @@ Lng32 HSGlobalsClass::Initialize()
        defaultHiveCatName = new (GetCliGlobals()->exCollHeap()) NAString("");
     else
       (*defaultHiveCatName) = "";
+
     CmpCommon::getDefault(HIVE_CATALOG, (*defaultHiveCatName), FALSE);
     (*defaultHiveCatName).toUpper();
 
@@ -2862,7 +2946,8 @@ Lng32 HSGlobalsClass::Initialize()
        defaultHbaseCatName = new (GetCliGlobals()->exCollHeap()) NAString("");
     else
       (*defaultHbaseCatName) = "";
-    CmpCommon::getDefault(SEABASE_CATALOG, (*defaultHbaseCatName), FALSE);
+
+    CmpCommon::getDefault(HBASE_CATALOG, (*defaultHbaseCatName), FALSE);
     (*defaultHbaseCatName).toUpper();
 
                                               /*==============================*/
@@ -2873,12 +2958,32 @@ Lng32 HSGlobalsClass::Initialize()
         HSTranMan *TM = HSTranMan::Instance(); // Must have transaction around this.
         TM->Begin("Create schema for hive stats.");
         NAString ddl = "CREATE SCHEMA IF NOT EXISTS ";
-        ddl.append(HIVE_STATS_CATALOG).append('.').append(HIVE_STATS_SCHEMA);
+        ddl.append(HIVE_STATS_CATALOG).append('.').append(HIVE_STATS_SCHEMA).
+            append(" AUTHORIZATION DB__ROOT");
         retcode = HSFuncExecQuery(ddl, -UERR_INTERNAL_ERROR, NULL,
                                   "Creating schema for Hive statistics", NULL,
                                   NULL);
         HSHandleError(retcode);
-        TM->Commit(); // Must commit this transaction (even if schema didn't get created).
+        TM->Commit(); // In case if there is an error, the commit will log the error (if
+                      // ULOG is enabled. Otherwise, the method will commit the tranaction.
+      }
+                                              /*=====================================*/
+                                              /*   CREATE HBASE STATS SCHEMA         */
+                                              /*   typically as trafodion.hbasestats */
+                                              /*=====================================*/
+    if (isNativeHbaseCat(objDef->getCatName()))
+      {
+        HSTranMan *TM = HSTranMan::Instance(); // Must have transaction around this.
+        TM->Begin("Create schema for native hbase stats.");
+        NAString ddl = "CREATE SCHEMA IF NOT EXISTS ";
+        ddl.append(HBASE_STATS_CATALOG).append('.').append(HBASE_STATS_SCHEMA).
+            append(" AUTHORIZATION DB__ROOT");
+        retcode = HSFuncExecQuery(ddl, -UERR_INTERNAL_ERROR, NULL,
+                                  "Creating schema for native HBase statistics", NULL,
+                                  NULL);
+        HSHandleError(retcode);
+        TM->Commit(); // In case if there is an error, the commit will log the error (if
+                      // ULOG is enabled. Otherwise, the method will commit the tranaction.
       }
                                               /*==============================*/
                                               /*    CREATE HISTOGRM TABLES    */
@@ -2994,6 +3099,25 @@ Lng32 HSGlobalsClass::Initialize()
       rowChangeCount = inserts + deletes + updates;
 
     HS_ASSERT(actualRowCount >= 0);
+
+    Int64 youWillLikelyBeSorry = 
+      ActiveSchemaDB()->getDefaults().getAsDouble(USTAT_YOULL_LIKELY_BE_SORRY);
+    if ((actualRowCount >= youWillLikelyBeSorry) &&
+       !(optFlags & CLEAR_OPT) &&
+       !(optFlags & SAMPLE_REQUESTED) &&
+       !(optFlags & IUS_OPT))
+      {
+        // attempt to do UPDATE STATISTICS on a big table without sampling,
+        // which could take a really long time
+        if ((optFlags & NO_SAMPLE) == 0)  // if explicit NO SAMPLE is missing
+          {
+            // raise an error on the chance that omitting the SAMPLE clause
+            // was accidental
+            HSFuncMergeDiags(-UERR_YOU_WILL_LIKELY_BE_SORRY);
+            retcode = -1;
+            HSHandleError(retcode);
+          }
+      }
 
 
                                              /*===================================*/
@@ -3214,9 +3338,7 @@ Lng32 HSGlobalsClass::Initialize()
             if (sampleTblPercent > 100) sampleTblPercent=100;
             if (sampleTblPercent < 0)   sampleTblPercent=0;
             samplePercentX100 = (short) (sampleTblPercent * 100); 
-               // saved for automation: percent * 100.  Note that if DP2 sampling
-               // is enabled, this value may actually be adjusted, however, we 
-               // want to save the unadjusted value.
+               // saved for automation: percent * 100.  
           }
       }
     else
@@ -3563,96 +3685,6 @@ Lng32 createSampleOption(Lng32 sampleType, double samplePercent, NAString &sampl
 }
 
 
-/**********************************************/
-/* FUNCTION: enableDp2SamplingIfSuitable()    */
-/* PURPOSE: helper method that will           */
-/*          (a) determine if sampling % is    */
-/*              appropriate for Dp2 sampling  */
-/*          (b) check if minimal rowcount     */
-/*              per partition is > 10         */
-/*          (c) if not, return FALSE          */
-/*          (d) if YES, check for varchars    */ 
-/*              and adjust sampling % or do   */
-/*              not use DP2 sampling.         */
-/*          (e) if using DP2 sampling, set    */
-/*              CQD ALLOW_DP2_ROW_SAMPLING.   */
-/*          (f) return TRUE or FALSE.         */
-/* INPUT:  objDef - pointer to source table   */ 
-/*           object.                          */
-/* OUTPUT: samplePercent (may be adjusted)    */
-/*         sampleRowCnt  (may be adjusted)    */
-/* RETCODE: NABoolean - TRUE if DP2 sampling  */
-/*                      enabled.              */
-/**********************************************/
-NABoolean enableDp2SamplingIfSuitable(HSTableDef *objDef, 
-                                      double &samplePercent, Int64 &sampleRowCnt,
-                                      Int64 minRowCtPerPartition)
-{
-  HSLogMan *LM = HSLogMan::Instance();
-  NABoolean dp2SamplingUsed = FALSE;
-
-  // (a) Experiments have shown that if sampling % > 5, DP2 sampling does not 
-  // provide much benefit.  So the default setting for ALLOW_DP2_ROW_SAMPLING 
-  // (system) will not allow DP2 sampling above 5%.  Setting allow_dp2_sampling 
-  // to ON allows the user to force dp2Sampling.
-  const double MAX_SAMPLE_FRACTION_IN_DP2_SYSTEM = 5;
-  if ((samplePercent < MAX_SAMPLE_FRACTION_IN_DP2_SYSTEM &&
-       CmpCommon::getDefault(ALLOW_DP2_ROW_SAMPLING) == DF_SYSTEM) ||
-       CmpCommon::getDefault(ALLOW_DP2_ROW_SAMPLING) == DF_ON)
-  {
-    Lng32 varcharLength = objDef->getTotalVarcharLength();
-
-    // Unconditionally test the feasibility of performing DP2 sampling.
-    // DP2 sampling is not recommended when #rows per partition
-    // is less than 10.
-    {
-
-      // Do not use DP2 sampling if the minimal rowcount per partition is equal to
-      // or less than 10
-      if (minRowCtPerPartition > 10) 
-      {
-        dp2SamplingUsed = TRUE;
-
-        // DP2 sampling tends to retrieve a smaller sample than expected if
-        // the table contains varchars.  Increase the sampling ratio by
-        // assuming that all varchars are half full.
-        // this is the average number of rows in a block
-        if ( varcharLength > 0 ) {
-
-           Lng32 recLen = objDef->getRecordLength();             
-           Lng32 blockSize = objDef->getBlockSize();
-
-           Lng32 dp2_calc_num_rows_per_block =  blockSize/recLen ;
-           float expected_avg_num_rows_per_block =  ((float) blockSize)/(recLen - (varcharLength/2));
-           float adjustment_factor = 
-             (expected_avg_num_rows_per_block - dp2_calc_num_rows_per_block)/expected_avg_num_rows_per_block ;
-           double oldsamplePercent = samplePercent;
-           samplePercent = samplePercent*(1+adjustment_factor);
-           if (samplePercent > 100) samplePercent = 100;
-           sampleRowCnt  = (Int64)((double)sampleRowCnt *(samplePercent/oldsamplePercent));
-   
-           if (LM->LogNeeded())
-           {
-             sprintf(LM->msg, "%s %f %s %f", 
-                              "\t\tSAMPLING %% INCREASED.\n\t\tOLD SAMPLING %% =",
-                              oldsamplePercent, 
-                              "\n\t\tNEW SAMPLING %%  = %f \n", 
-                              samplePercent); 
-             LM->Log(LM->msg);
-           }
-        }
-      }
-    }
-    if (dp2SamplingUsed == TRUE) 
-    {
-      LM->Log("\t\tDP2 ROW SAMPLING ENABLED.\n");
-      HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_DP2_ROW_SAMPLING 'ON'");   // step (c)
-    }
-  }
-  return dp2SamplingUsed;   // step (d)
-}
-
-
 /***********************************************/
 /* METHOD:  HSSample makeTableName() member    */
 /* PURPOSE: Creates a unique sample table name */
@@ -3755,7 +3787,6 @@ void HSSample::makeTableName(NABoolean isPersSample)
 /*              rowCountIsEstimate = TRUE.     */
 /* INPUT:   sampleRowCnt - the size of the     */
 /*              sample table to create.        */
-/*              Adjusted if DP2 sampling used. */
 /* RETCODE:  0 - successful                    */
 /*           non-zero otherwise                */
 /***********************************************/
@@ -3772,7 +3803,6 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     Lng32 retcode = 0;
     NAString dml, insertType, sampleOption;
     char intStr[30];
-    NABoolean dp2SamplingUsed = FALSE;
     NABoolean forceNoPartitioning = TRUE;
 
     HSTranMan *TM = HSTranMan::Instance();
@@ -3782,10 +3812,9 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     LM->StartTimer("Create/populate sample table");
     (void)getTimeDiff(TRUE);
 
-
-    // Enable DP2 sampling when suitable - may adjust 'samplePercent' & 'sampleRowCnt'.
-    dp2SamplingUsed = enableDp2SamplingIfSuitable(objDef, samplePercent, sampleRowCnt, 
-                                                  minRowCtPerPartition);     
+    NABoolean EspCQDUsed = FALSE;
+    NABoolean HBaseCQDsUsed = FALSE;
+     
     sampleRowCount = sampleRowCnt;  // Save sample row count for HSSample object.
 
     // Create sample option based on sampling type, using 'samplePercent'.
@@ -3816,8 +3845,6 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     if (retcode) TM->Rollback();
     HSHandleError(retcode);
 
-    HSFuncExecQuery("CONTROL QUERY DEFAULT DETAILED_STATISTICS 'PERTABLE'");
-
     if (LM->LogNeeded())
       {
         sprintf(LM->msg, "\tSAMPLE TABLE = %s", sampleTable.data());
@@ -3828,8 +3855,29 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     // need to use a vanilla INSERT statement. Otherwise, we can use SIDETREE
     // INSERTS for better performance. A current bug in the HBase interface
     // requires the use of Upsert.
-    if (hs_globals->isHbaseTable)
+    // For Hive tables the sample table used is a Trafodion table
+    if (hs_globals->isHbaseTable || hs_globals->isHiveTable)
       {
+        // The optimal degree of parallelism for the LOAD or UPSERT is
+        // the number of partitions of the original table. Force that.
+        // Note that when the default for AGGRESSIVE_ESP_ALLOCATION_PER_CORE
+        // is permanently changed to 'ON', we may be able to remove this CQD.
+        if (hs_globals->objDef->getNumPartitions() > 1)
+          {
+            char temp[40];  // way more space than needed, but it's safe
+            sprintf(temp,"'%d'",hs_globals->objDef->getNumPartitions());
+            NAString EspsCQD = "CONTROL QUERY DEFAULT PARALLEL_NUM_ESPS ";
+            EspsCQD += temp;
+            HSFuncExecQuery(EspsCQD);
+            EspCQDUsed = TRUE;  // remember to reset later
+          }
+
+        // Set CQDs controlling HBase cache size (number of rows returned by HBase
+        // in a batch) to avoid scanner timeout. Reset these after the sample query
+        // has executed.
+        if (hs_globals->isHbaseTable)
+          HBaseCQDsUsed = HSGlobalsClass::setHBaseCacheSize(samplePercent);
+
         if (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_STATS) == DF_ON)
           {
             insertType = "LOAD WITH NO OUTPUT, NO RECOVERY, NO POPULATE INDEXES, NO DUPLICATE CHECK INTO ";
@@ -3931,7 +3979,7 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     // On SQ, alter the sample table to audit afterwards. There are performance 
     // issues with non-audited tables on SQ. For Trafodion, however, this alter
     // is not supported, so skip it.
-     if (!hs_globals->isHbaseTable)
+     if (!hs_globals->isHbaseTable && !hs_globals->isHiveTable)
        {
          LM->StartTimer("Set audit attribute on sample table");
          SQL_EXEC_SetParserFlagsForExSqlComp_Internal(hsALLOW_SPECIALTABLETYPE);
@@ -3965,14 +4013,22 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     //plan issues, the cqd should be removed.                              //Workaround: 10-040706-7608
     if (!(TM->InTransaction()))                                            //Workaround: 10-040706-7608
       HSFuncExecQuery("CONTROL QUERY DEFAULT PLAN_STEALING RESET");        //Workaround: 10-040706-7608
-    if (dp2SamplingUsed)
-      HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_DP2_ROW_SAMPLING RESET");
-    HSFuncExecQuery("CONTROL QUERY DEFAULT DETAILED_STATISTICS RESET");
+    
     HSFuncExecQuery("CONTROL QUERY DEFAULT POS RESET");
     HSFuncExecQuery("CONTROL QUERY DEFAULT POS_NUM_OF_PARTNS RESET");
     
     // Reset the IDENTITY column override CQD
     HSFuncExecQuery("CONTROL QUERY DEFAULT OVERRIDE_GENERATED_IDENTITY_VALUES RESET");                                                                      
+
+    if (HBaseCQDsUsed)
+      {
+        HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN RESET");
+        HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX RESET");
+      }
+    if (EspCQDUsed)
+      {
+        HSFuncExecQuery("CONTROL QUERY DEFAULT PARALLEL_NUM_ESPS RESET");
+      }
 
     if (retcode) TM->Rollback();
     else         TM->Commit();
@@ -4001,15 +4057,13 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
       //    (b) user has not specified the rowcount and
       //    (c) we appear to get a meaningful rowcount for the source table 
       //        (source table rowcount >= rows inserted into sample table) and
-      //    (d) dp2 sampling has not been used
-      //    (e) CLUSTER sampling not used
+      //    (d) CLUSTER sampling not used
       // we set the actualRowCount to the value obtained from the statistics table
       // This works since every row of the source table is scanned for EID sampling
       // and the number of rows scanned is recorded in the stats area.
       if (rowCountIsEstimate &&
           !(hs_globals->optFlags & ROWCOUNT_OPT) &&
           (sourceTableRowCount > sampleRowCount) &&
-          !(dp2SamplingUsed) &&
           (hs_globals->optFlags & SAMPLE_REQUESTED) != SAMPLE_RAND_2) 
         {
           tableRowCnt = sourceTableRowCount;
@@ -4895,8 +4949,7 @@ void HSGlobalsClass::getMemoryRequirementsForOneGroup(HSColGroupStruct* group, I
 // sample table. The maximum number of rows we will actually read must be based
 // on the amount of memory allocated to hold their values.
 //
-// Note: row count may be adjusted up if DP2 sampling and heavy amount of varchars.
-Int64 HSGlobalsClass::getInternalSortMemoryRequirements()
+Int64 HSGlobalsClass::getInternalSortMemoryRequirements(NABoolean performISForMC)
 {
   HSLogMan *LM = HSLogMan::Instance();
   Int64 rows;
@@ -4908,22 +4961,11 @@ Int64 HSGlobalsClass::getInternalSortMemoryRequirements()
   // get memory requirements for single column groups first
   getMemoryRequirements(singleGroup, rows);
 
-  if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON)
+  if ( performISForMC ) 
   {
      // now get memory requirements for multi-column groups
      getMCMemoryRequirements(multiGroup, rows);
   }
-
-  // Double rows to read if we are sampling with DP2 and more than half the 
-  // row data may be varchars.  DP2 row sampling can be thrown off in this
-  // case, resulting in many more rows read than expected, so we need to have
-  // memory to store these rows.   -- Disabled for now. --
-#if 0
-  if (sampleRowCount > 0 &&
-      sampleRowCount*100/actualRowCount < 5 && // DP2 sampling may be enabled.
-      (float) cumuVarCharSize/(float) cumuElementSize > 0.5) 
-    rows *= 2;  
-#endif
 
   return rows;
 }
@@ -5364,9 +5406,30 @@ Lng32 HSGlobalsClass::CollectStatistics()
         //
         ISMemPercentage_ = (float)CmpCommon::getDefaultNumeric(USTAT_IS_MEMORY_FRACTION);
 
-        NABoolean trySampleTableBypassForIS = useSampling && multiGroup == NULL &&
-                                              externalSampleTable == FALSE;
-            // Don't bypass sampling for internal sort when MC stats requested.
+        NABoolean trySampleTableBypassForIS = useSampling && externalSampleTable == FALSE;
+
+        mapInternalSortTypes(singleGroup);
+        Int64 maxRowsToRead = getInternalSortMemoryRequirements(TRUE); 
+
+        if (trySampleTableBypassForIS && multiGroup ) {
+
+              if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON &&
+                  allGroupsFitInMemory(maxRowsToRead)) 
+              {
+                // if both single and MC groups can fit in memory, turn on
+                // performing MC in memory flag.
+                //
+                // Do not have to set the flag for next call to this function 
+                // (HSGlobalsClass::CollectStatistics()) since it is not static and
+                // therefore a new HSGlobalsClass object will be constructed.
+                // In HSGlobalsClass::HSGlobalsClass(), the flag is set to FALSE.
+                setPerformISForMC(TRUE);
+
+              } else {
+                // othereise, don't bypass sampling for internal sort.
+                trySampleTableBypassForIS = FALSE;
+              } 
+         }
 
         if (useSampling && sampleRowCount <= getMinRowCountForSample())
           internalSortWhenBetter = FALSE;                              // always use internal sort.
@@ -5395,7 +5458,7 @@ Lng32 HSGlobalsClass::CollectStatistics()
         HSColGroupStruct* s_group_back[singleGroupCount];
         HSColumnStruct   *col;
 
-        if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON)
+        if ( performISForMC() ) 
         {
            while (mgroup != NULL)
            {
@@ -5424,16 +5487,12 @@ Lng32 HSGlobalsClass::CollectStatistics()
            sgroup = NULL;
         }
 
-        mapInternalSortTypes(singleGroup);
-        Int64 maxRowsToRead = getInternalSortMemoryRequirements(); 
-          // row count may be adjusted up if DP2 sampling and heavy amount of varchars.
-        
         if (internalSortWhenBetter)
           getPreviousUECRatios(singleGroup);  // used to decide when to use IS
 
 
         
-        if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON)
+        if ( performISForMC() ) 
         {
            // reorder the single group columns if any MC group can be computed in memory
            orderMCGroups(s_group_back);
@@ -5443,14 +5502,14 @@ Lng32 HSGlobalsClass::CollectStatistics()
         numColsToProcess = getColsToProcess(maxRowsToRead,
                                               internalSortWhenBetter,
                                               trySampleTableBypassForIS);
+        NABoolean hbaseCQDsUsed = FALSE;
+
         if (trySampleTableBypassForIS && numColsToProcess == singleGroupCount)
           {
               // This is not performed when there are MC stats to process.
               if (LM->LogNeeded())
                 LM->Log("Internal sort: reading sample directly from base table; no sample table created");
               *hssample_table = getTableName(user_table->data(), nameSpace);
-              enableDp2SamplingIfSuitable(objDef, sampleTblPercent, sampleRowCount,
-                                          minRowCtPerPartition_); 
                 // sampleTblPercent and sampleRowCount may get adjusted.
               retcode = createSampleOption(optFlags & SAMPLE_REQUESTED, 
                                            sampleTblPercent, *sampleOption, 
@@ -5458,6 +5517,12 @@ Lng32 HSGlobalsClass::CollectStatistics()
               HSHandleError(retcode);
               sampleTableUsed = FALSE;
               samplingUsed    = TRUE;
+
+              // Set CQDs controlling HBase cache size (number of rows returned by HBase
+              // in a batch) to avoid scanner timeout. Reset these after the sample query
+              // has executed.
+              if (isHbaseTable)
+                hbaseCQDsUsed = HSGlobalsClass::setHBaseCacheSize(sampleTblPercent);
           }
         else
           {
@@ -5483,6 +5548,11 @@ Lng32 HSGlobalsClass::CollectStatistics()
    
             retcode = readColumnsIntoMem(&cursor, maxRowsToRead);
             HSHandleError(retcode);
+            if (hbaseCQDsUsed)
+              {
+                HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN RESET");
+                HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX RESET");
+              }
             checkTime("after reading pending columns into memory for internal sort");
             columnSeconds = getTimeDiff() / numColsToProcess;  // saved for automation
 
@@ -5504,15 +5574,14 @@ Lng32 HSGlobalsClass::CollectStatistics()
             HSHandleError(retcode);
             LM->StopTimer();
 
-            if ((CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON) &&
+            if ( performISForMC() &&
                 !allMCGroupsProcessed(TRUE)
                )
             {
                LM->StartTimer("MC: Compute MC stats using Internal Sort");
                retcode = ComputeMCStatistics(TRUE);
                LM->StopTimer();
-               if ((CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC_LOOP) == DF_ON) &&
-                   !allMCGroupsProcessed(TRUE)
+               if ( performISForMC() && !allMCGroupsProcessed(TRUE)
                   )
                {
                   if (LM->LogNeeded())
@@ -5530,7 +5599,6 @@ Lng32 HSGlobalsClass::CollectStatistics()
 
         HSFuncExecQuery("CONTROL QUERY DEFAULT FLOATTYPE RESET");
         HSFuncExecQuery("CONTROL QUERY DEFAULT LIMIT_MAX_NUMERIC_PRECISION RESET");
-        HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_DP2_ROW_SAMPLING RESET");
       }
 
                                           /*=================================*/
@@ -5544,16 +5612,6 @@ Lng32 HSGlobalsClass::CollectStatistics()
     //      SELECT column, COUNT(*) FROM table GROUP BY column ORDER BY column
     //The result will always be a VARCHAR(len) CHARACTER SET UCS2
     //In most cases, this will reduce the number of fetches.
-
-    //10-040618-7112: temporary workaround for compiler issue
-    //make sure no parallel plans get generated for single partitioned tables
-    //The sample table for SQLMP tables are always single partition. Whereas for
-    //SQLMX, the table may be partitioned based on the HIST_SCRATCH_VOL cqd.
-    if ((sampleTableUsed && tableFormat == SQLMP) ||
-        (NOT sampleTableUsed && objDef->getNumPartitions() == 1))
-      {
-        HSFuncExecQuery("CONTROL QUERY DEFAULT ATTEMPT_ESP_PARALLELISM 'OFF'");
-      }
 
     if (CmpCommon::getDefault(USTAT_ATTEMPT_ESP_PARALLELISM) == DF_OFF)
       HSFuncExecQuery("CONTROL QUERY DEFAULT ATTEMPT_ESP_PARALLELISM 'OFF'");
@@ -5658,7 +5716,7 @@ Lng32 HSGlobalsClass::CollectStatistics()
                                           /* sampled UEC -> est UEC          */
                                           /* sampled ROWCOUNT -> est ROWCOUNT*/
                                           /*=================================*/
-        if (sampleRowCount > 0 && actualRowCount > sampleRowCount)
+        if (samplingUsed && sampleRowCount > 0 && actualRowCount > sampleRowCount)
           {
             LM->StartTimer("fix sample row counts");
             retcode = FixSamplingCounts(group);
@@ -5668,6 +5726,24 @@ Lng32 HSGlobalsClass::CollectStatistics()
           }
         group = group->next;
       }
+
+    // If we used cqd USTAT_ESTIMATE_HBASE_ROW_COUNT 'ON', then actualRowCount
+    // is the estimate of the row count given by HBase. If we also did not do
+    // sampling, we know the true row count; this is in sampleRowCount. We
+    // take the opportunity here to correct the actualRowCount in this case.
+    if (!samplingUsed && isHbaseTable &&
+        CmpCommon::getDefault(USTAT_ESTIMATE_HBASE_ROW_COUNT) == DF_ON)
+      {
+        if (LM->LogNeeded())
+          {
+            sprintf(LM->msg, "Correcting actualRowCount (was " PF64 ") from sampleRowCount (" PF64 ")",
+                             actualRowCount,sampleRowCount);
+            LM->Log(LM->msg);
+          }
+        actualRowCount = sampleRowCount;
+      }
+         
+
     if (singleGroup && LM->LogNeeded())
       LM->StopTimer();
 
@@ -5699,7 +5775,7 @@ Lng32 HSGlobalsClass::CollectStatistics()
 
         LM->StartTimer("MC: fix MC stats");
 
-        if (sampleRowCount > 0 && actualRowCount > sampleRowCount)
+        if (samplingUsed && sampleRowCount > 0 && actualRowCount > sampleRowCount)
           {
             group = multiGroup;
             while (group != NULL)
@@ -5711,16 +5787,6 @@ Lng32 HSGlobalsClass::CollectStatistics()
             }
           }
         LM->StopTimer();
-      }
-
-    //10-040618-7112: temporary workaround for compiler issue
-    //make sure no parallel plans get generated for single partitioned tables
-    //The sample table for SQLMP tables are always single partition. Whereas for
-    //SQLMX, the table may be partitioned based on the HIST_SCRATCH_VOL cqd.
-    if ((sampleTableUsed && tableFormat == SQLMP) ||
-        (NOT sampleTableUsed && objDef->getNumPartitions() == 1))
-      {
-        HSFuncExecQuery("CONTROL QUERY DEFAULT ATTEMPT_ESP_PARALLELISM RESET");
       }
 
     if (CmpCommon::getDefault(USTAT_ATTEMPT_ESP_PARALLELISM) == DF_OFF)
@@ -6900,13 +6966,13 @@ Lng32 HSGlobalsClass::selectIUSBatch(Int64 currentRows, Int64 futureRows, NABool
 
   // Now allocate memory for singleGroup, inMemDelete and inMemInsert table, 
   // for each column in PENDING state.
-   allocateMemoryForColumns(singleGroup, futureRows);
+   allocateMemoryForColumns(singleGroup, futureRows, NULL);
 
    allocateMemoryForColumns(iusSampleDeletedInMem->getColumns(), 
-                            iusSampleDeletedInMem->getNumRows());
+                            iusSampleDeletedInMem->getNumRows(), NULL);
 
    allocateMemoryForColumns(iusSampleInsertedInMem->getColumns(), 
-                            iusSampleInsertedInMem->getNumRows());
+                            iusSampleInsertedInMem->getNumRows(), NULL);
 
    if (LM->LogNeeded())
     {
@@ -7740,7 +7806,7 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
 #else // NA_USTAT_USE_STATIC not defined, use dynamic query
     char sbuf[25];
     NAString qry = "SELECT HISTOGRAM_ID, COL_POSITION, COLUMN_NUMBER, COLCOUNT, "
-                          "cast(READ_TIME as char(19)), REASON "
+                          "cast(READ_TIME as char(19) character set iso88591), REASON "
                    "FROM ";
     qry.append(hstogram_table->data());
     qry.append(    " WHERE TABLE_UID = ");
@@ -8378,7 +8444,7 @@ Lng32 HSGlobalsClass::ComputeMCStatistics(NABoolean usingIS)
           mgroup->skewedValuesCollected = collectMCSkewedValues; 
         }
 
-        if ((CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON) && usingIS)
+        if ( performISForMC() && usingIS)
         {
           // check if the data needed by all columns in the MC is already in
           // memory so IS can be used
@@ -8501,7 +8567,7 @@ Lng32 HSGlobalsClass::ComputeMCStatistics(NABoolean usingIS)
 
                // temporary CQD used for testing to make sure that fast path stats computation is
                // correct - should remove after validation
-               if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC_NEW_HIST) == DF_ON)
+               if ( performISForMC() )
                   computeMCISuec (mgroup, tempData, samplingUsed, numRows, intCount);
                else
                {
@@ -9841,7 +9907,7 @@ void processNullsForColumn(HSColGroupStruct *group, Lng32 rowsRead, T* dummyPtr)
   T     *frontData, *backData;
 
   // copy data for MC
-  if ((CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON) && (group->mcs_usingme > 0) &&
+  if ( HSGlobalsClass::performISForMC() && (group->mcs_usingme > 0) &&
       (group->ISdatatype != REC_BYTE_F_ASCII) && 
       (group->ISdatatype != REC_BYTE_F_DOUBLE) &&
       (group->ISdatatype != REC_BYTE_V_ASCII) && 
@@ -10068,18 +10134,25 @@ Lng32 HSGlobalsClass::processInternalSortNulls(Lng32 rowsRead, HSColGroupStruct 
 Int64 HSGlobalsClass::getMaxMemory()
 {
     // the NAHeap will never exceed around 1.3GB.
-    const Int64 NAHEAP_ESTIMATED_MAX = (const Int64)(1.3 * 1024 * 1024 * 1024);
     Int64       mem;
     HSLogMan   *LM = HSLogMan::Instance();
+
+    mem = Int64(sysconf(_SC_AVPHYS_PAGES)) * Int64(sysconf(_SC_PAGE_SIZE));
 
     if (LM->LogNeeded())
       {
         LM->Log("Entering getMaxMemory()");
-        sprintf(LM->msg, "Will use up to %.7f percent of available physical memory",
+        sprintf(LM->msg, "The amount of physical memory currently available is %ld", mem);
+        LM->Log(LM->msg);
+
+        sprintf(LM->msg, "Will use up to %.7f percent of the min of the available physical memory, and CQD USTAT_NAHEAP_ESTIMATED_MAX",
                          ISMemPercentage_ * 100);
         LM->Log(LM->msg);
       }
-  mem = Int64(sysconf(_SC_AVPHYS_PAGES)) * Int64(sysconf(_SC_PAGE_SIZE));
+
+  Int64 NAHEAP_ESTIMATED_MAX = (Int64)
+                (CmpCommon::getDefaultNumeric(USTAT_NAHEAP_ESTIMATED_MAX) *
+                1024 * 1024 * 1024);
 
   // Limit the amount of assumed available memory by the estimated max heap size.
   if (mem > NAHEAP_ESTIMATED_MAX)
@@ -10204,7 +10277,7 @@ bool isInternalSortType(HSColumnStruct &col)
 // from the column's existing histogram). If there is no existing histogram for
 // the column, the values used default to 0, and internal sort will not be used.
 //
-NABoolean isInternalSortEfficient(HSColGroupStruct *group)
+NABoolean isInternalSortEfficient(Int64 rows, HSColGroupStruct *group)
 {
   HSLogMan *LM = HSLogMan::Instance();
   Lng32 dataType = group->ISdatatype;
@@ -10242,10 +10315,16 @@ NABoolean isInternalSortEfficient(HSColGroupStruct *group)
     }
   else if (DFS2REC::isAnyCharacter(dataType))
     {
-      // For char types, number of distinct values must be at least 
+      // For char types, if the total amount of data (rows * length) is less than 
+      // USTAT_MAX_CHAR_DATASIZE_FOR_IS (default to 1000 MB), use IS. Otherwise
+      // the number of distinct values must be at least 
       // USTAT_MIN_CHAR_UEC_FOR_IS of total (default 20%).
-      uecRateMinForIS = CmpCommon::getDefaultNumeric(USTAT_MIN_CHAR_UEC_FOR_IS);
-      returnVal = (uecRate >= uecRateMinForIS);
+      if ( rows * group->ISlength < 1024*1024*CmpCommon::getDefaultNumeric(USTAT_MAX_CHAR_DATASIZE_FOR_IS) )
+        returnVal = TRUE;
+      else {
+        uecRateMinForIS = CmpCommon::getDefaultNumeric(USTAT_MIN_CHAR_UEC_FOR_IS);
+        returnVal = (uecRate >= uecRateMinForIS);
+      }
     }
   else
     returnVal = TRUE;  // No threshold established yet for other types; use IS
@@ -10272,6 +10351,44 @@ NABoolean isInternalSortEfficient(HSColGroupStruct *group)
     }
 
   return returnVal;
+}
+
+NABoolean HSGlobalsClass::allGroupsFitInMemory(Int64 rows)
+{
+  Int64 memLeft = getMaxMemory();
+
+  // account for at least one multi-column memory if MC IS is used
+   HSColGroupStruct *mgroup = multiGroup;
+   while (mgroup && memLeft > 0)
+   {
+      memLeft -= mgroup->memNeeded;
+      mgroup = mgroup->next;
+   }
+  
+  Int32 count = 0;
+  HSColGroupStruct *group = singleGroup;
+  while (group && memLeft > 0)
+    {
+      if (group->memNeeded > 0 &&        // was set to 0 if exceeds address space
+          group->memNeeded < memLeft &&
+          isInternalSortType(group->colSet[0]) &&
+          isInternalSortEfficient(rows, group))  
+        {
+          count++;
+          memLeft -= group->memNeeded;
+        }
+      group = group->next;
+    }
+
+  HSLogMan *LM = HSLogMan::Instance();
+  if (LM->LogNeeded())
+    {
+      sprintf(LM->msg, 
+         "HSGlobalsClass::allGroupsFitInMemory(): count of single groups that fit =%d, total single count=%d", count, singleGroupCount);
+      LM->Log(LM->msg);
+    }
+
+  return count == singleGroupCount;
 }
 
 // Determines a set of columns to process with internal sort, based on
@@ -10302,7 +10419,7 @@ Int32 HSGlobalsClass::getColsToProcess(Int64 rows,
 
   do
     {
-      numColsSelected = selectSortBatch(internalSortWhenBetter,
+      numColsSelected = selectSortBatch(rows, internalSortWhenBetter,
                                         trySampleTableBypass);
       if (numColsSelected > 0)
         numColsToProcess = allocateMemoryForInternalSortColumns(rows);
@@ -10340,8 +10457,9 @@ Int32 HSGlobalsClass::getColsToProcess(Int64 rows,
 // select all columns if they will all fit in memory at once, and only consider
 // expected individual column performance if this can't be done.
 //
-Int32 HSGlobalsClass::selectSortBatch(NABoolean ISonlyWhenBetter,
-                                    NABoolean trySampleInMemory)
+Int32 HSGlobalsClass::selectSortBatch(Int64 rows, 
+                                      NABoolean ISonlyWhenBetter,
+                                      NABoolean trySampleInMemory)
 {
   HSLogMan *LM = HSLogMan::Instance();
 
@@ -10352,7 +10470,7 @@ Int32 HSGlobalsClass::selectSortBatch(NABoolean ISonlyWhenBetter,
   Int64 mcMemUsed = 0;
 
   // account for at least one multi-column memory if MC IS is used
-  if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON)
+  if ( performISForMC() )
   {
      HSColGroupStruct *mgroup = multiGroup;
      while (mgroup)
@@ -10378,7 +10496,8 @@ Int32 HSGlobalsClass::selectSortBatch(NABoolean ISonlyWhenBetter,
           group->memNeeded > 0 &&        // was set to 0 if exceeds address space
           group->memNeeded < memLeft &&
           isInternalSortType(group->colSet[0]) &&
-          (trySampleInMemory || !ISonlyWhenBetter || isInternalSortEfficient(group)))  //@ZXuec
+          (trySampleInMemory || !ISonlyWhenBetter || 
+           isInternalSortEfficient(rows, group)))  //@ZXuec
         {
           group->state = PENDING;
           count++;
@@ -10429,8 +10548,7 @@ Int32 HSGlobalsClass::selectSortBatch(NABoolean ISonlyWhenBetter,
           group = group->next;
       }
 
-      if ((CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON) &&
-          (mcMemUsed > 0))
+      if (performISForMC() && (mcMemUsed > 0))
       {
          sprintf(LM->msg, "    multi-column groups (" PFSZ " bytes)", multiGroup->memNeeded);
          LM->Log(LM->msg);
@@ -10492,7 +10610,7 @@ void HSGlobalsClass::memRecover(HSColGroupStruct* failedGroup,
 
           // if MC in memory is enabled, we should also mark all MCs using this
           // column as DONT_TRY since we won't be able to compute them in memory
-          if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON)
+          if (performISForMC())
           {
               HSColGroupStruct* mgroup = mgr;
 
@@ -10722,7 +10840,7 @@ Lng32 HSGlobalsClass::readColumnsIntoMem(HSCursor *cursor, Int64 rows)
   if (retcode < 0) HSHandleError(retcode) else retcode=0; // Set to 0 for warnings.
 
   // some post-reading to memory processing to support MC in-memory computation
-  if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON)
+  if ( performISForMC() )
   {
       HSColGroupStruct* group = singleGroup;
      do
@@ -11359,7 +11477,7 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
     }
 
     // Upscale rowcounts and estimate UECs when sampling.
-    if (sampleRowCount > 0 && actualRowCount > sampleRowCount)
+    if (samplingUsed && sampleRowCount > 0 && actualRowCount > sampleRowCount)
     {
       retcode = FixSamplingCounts(group);
       HSHandleError(retcode);
@@ -11375,8 +11493,7 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
     // of memory for possibly long times, so we free it as soon as possible.
     // If MC IS is ON and there are MCs using this column, then keep this
     // column in memory until all MCs using it are properly computed
-    if ((CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_OFF) ||
-         group->mcs_usingme == 0)
+    if ( !HSGlobalsClass::performISForMC() || group->mcs_usingme == 0)
     {
        group->freeISMemory(TRUE,(group->mcs_usingme==0));
     }
@@ -15442,3 +15559,4 @@ Lng32 HSGlobalsClass::CollectStatisticsWithFastStats()
 
   return retcode;
 }
+

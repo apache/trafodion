@@ -1,20 +1,23 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-//// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
-////
-////  Licensed under the Apache License, Version 2.0 (the "License");
-////  you may not use this file except in compliance with the License.
-////  You may obtain a copy of the License at
-////
-////      http://www.apache.org/licenses/LICENSE-2.0
-////
-////  Unless required by applicable law or agreed to in writing, software
-////  distributed under the License is distributed on an "AS IS" BASIS,
-////  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-////  See the License for the specific language governing permissions and
-////  limitations under the License.
-////
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
 //// @@@ END COPYRIGHT @@@
 //*****************************************************************************
 
@@ -54,6 +57,50 @@ public:
 };
 
 // *****************************************************************************
+// * Class:        ColPrivEntry
+// * Description:  This class represents the privileges and corresponding 
+// *               WGO (with grant option) for a column
+// *****************************************************************************
+class ColPrivEntry
+{
+public:
+   PrivMgrCoreDesc    privDesc_;
+   bool               isUpdate_;
+
+   ColPrivEntry()
+   : isUpdate_(false){};
+   ColPrivEntry(const PrivMgrMDRow &row);
+   ColPrivEntry(const ColPrivEntry &other);
+
+   PrivMgrCoreDesc &getPrivDesc (void) { return privDesc_; }
+
+   int32_t getColumnOrdinal (void) { return privDesc_.getColumnOrdinal(); }
+   PrivColumnBitmap getPrivBitmap (void) { return privDesc_.getPrivBitmap(); }
+   PrivColumnBitmap getGrantableBitmap (void) { return privDesc_.getWgoBitmap(); }
+
+   void setColumnOrdinal (int32_t columnOrdinal)
+   { privDesc_.setColumnOrdinal(columnOrdinal); }
+
+   void setPrivBitmap(PrivMgrBitmap privBitmap)
+   { privDesc_.setPrivBitmap(privBitmap); }
+   void setGrantableBitmap(PrivMgrBitmap grantableBitmap)
+   { privDesc_.setWgoBitmap(grantableBitmap);}
+
+   void setPriv (PrivType privType, bool value)
+   { privDesc_.setPriv(privType, value); }
+   void setGrantable (PrivType privType, bool value)
+   { privDesc_.setWgo(privType, value); }
+
+   void describe (std::string &details) const
+   {
+      details = "column usage - column number is ";
+      details += to_string((long long int) privDesc_.getColumnOrdinal());
+      details += ", isUpdate is ";
+      details += (isUpdate_) ? "true " : "false ";
+   }
+};
+
+// *****************************************************************************
 // * Class:         PrivMgrPrivileges
 // * Description:  This class represents the access rights for objects
 // *****************************************************************************
@@ -86,6 +133,11 @@ public:
 
    PrivMgrPrivileges (
       const PrivMgrObjectInfo &objectInfo,
+      const std::string &metadataLocation,
+      ComDiagsArea *pDiags = NULL);
+
+   PrivMgrPrivileges(
+      const int64_t objectUID,
       const std::string &metadataLocation,
       ComDiagsArea *pDiags = NULL);
 
@@ -134,6 +186,7 @@ public:
 
    PrivStatus getPrivsOnObjectForUser(
       const int64_t objectUID,
+      ComObjectType objectType,
       const int32_t userID,
       PrivObjectBitmap &userPrivs,
       PrivObjectBitmap &grantablePrivs,
@@ -168,7 +221,6 @@ public:
   PrivStatus grantObjectPriv(
       const ComObjectType objectType,
       const int32_t granteeID,
-      const std::string &granteeName,
       const PrivObjectBitmap privsBitmap,
       const PrivObjectBitmap grantableBitmap);
 
@@ -232,16 +284,20 @@ protected:
 
    PrivStatus getPrivsFromAllGrantors(
      const int64_t objectUID,
+     ComObjectType objectType,
      const int32_t grantee,
      const std::vector<int32_t> & roleIDs,
      PrivMgrDesc &privs,
+     bool & hasManagePrivileges,
      std::vector <ComSecurityKey *>* secKeySet = NULL
      );
           
    PrivStatus getUserPrivs(
+     ComObjectType objectType,
      const int32_t grantee,
      const std::vector<int32_t> & roleIDs,
      PrivMgrDesc &privs,
+     bool & hasManagePrivileges,
      std::vector <ComSecurityKey *>* secKeySet = NULL
      );
      
@@ -250,6 +306,11 @@ private:
 // -------------------------------------------------------------------
 // Private functions:
 // -------------------------------------------------------------------
+
+  bool checkColumnRevokeRestrict (
+    int32_t granteeID,
+    const std::vector<ColPrivEntry> &colPrivsToRevoke,
+    std::vector <PrivMgrMDRow *> &rowList );
 
   bool checkRevokeRestrict (
     PrivMgrMDRow &rowIn,
@@ -291,6 +352,12 @@ private:
     const PrivCommand command,
     std::vector<ObjectUsage *> &listOfAffectedObjects);
 
+  void getColRowsForGranteeOrdinal(
+    const int32_t granteeID,
+    const int32_t columnOrdinal,
+    const std::vector<int32_t> &roleIDs,
+    std::vector<PrivMgrMDRow *> &rowList);
+
   PrivStatus getGrantedPrivs(
     const int32_t granteeID,
     PrivMgrMDRow &row);
@@ -322,14 +389,30 @@ private:
    const std::vector<int32_t> &roleIDs,
    PrivStatus & privStatus);
 
+  void scanColumnBranch( const PrivType pType,
+    const int32_t& grantor,
+    const std::set<int32_t> &listOfColumnOrdinals,
+    const std::vector<PrivMgrMDRow *> & rowList  );
+
+  void scanColumnPublic(
+    const PrivType pType,
+    const std::set<int32_t> &listOfColumnOrdinals,
+    const std::vector<PrivMgrMDRow *>& rowList );
+
   void scanObjectBranch( 
-    const PrivType pType, // in
-    const int32_t& grantor,              // in
-    const std::vector<PrivMgrMDRow *>& rowList  );   // in
+    const PrivType pType,
+    const int32_t& grantor,
+    const std::vector<PrivMgrMDRow *>& rowList  );
 
   void scanPublic( 
     const PrivType pType, // in
     const std::vector<PrivMgrMDRow *>& rowList );    // in
+
+  void summarizeColPrivs(
+    const ObjectReference &objRef,
+    const std::vector<int32_t> &roleIDs,
+    const std::vector<ObjectUsage *> &listOfAffectedObjects,
+    std::vector<ColumnReference *> &columnReferences);
 
   PrivStatus summarizeCurrentAndOriginalPrivs(
     const int64_t objectUID,

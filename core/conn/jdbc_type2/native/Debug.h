@@ -1,19 +1,22 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2005-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **************************************************************************/
@@ -277,8 +280,6 @@ const char *WrapperDataTypeStr(jbyte dataType);
 
 #define BENCHMARK_ADD_COUNTER(index,name,value)
 
-extern unsigned long debugLevel;
-
 #else /* !_DEBUG */
 
 #ifdef _BENCHMARK
@@ -361,7 +362,7 @@ SQLCLI_LIB_FUNC long CliDebug_CurrentContext(SQLCTX_HANDLE *contextHandle, const
 #define CLI_ClearDiagnostics(statement_id) CliDebug_ClearDiagnostics(statement_id, __FILE__, __LINE__)
 SQLCLI_LIB_FUNC long CliDebug_ClearDiagnostics (SQLSTMT_ID *statement_id, const char *filename, unsigned long line);
 #define CLI_GetDiagnosticsStmtInfo2(statement_id, what_to_get, numeric_value, string_value, max_string_len, len_of_item) CliDebug_GetDiagnosticsStmtInfo2(statement_id, what_to_get, numeric_value, string_value, max_string_len, len_of_item, __FILE__, __LINE__)
-SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsStmtInfo2(SQLSTMT_ID *statement_id, long what_to_get, int *numeric_value, char *string_value, long max_string_len, int *len_of_item, const char *filename, unsigned long line);
+SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsStmtInfo2(SQLSTMT_ID *statement_id, long what_to_get, void *numeric_value, char *string_value, long max_string_len, int *len_of_item, const char *filename, unsigned long line);
 #define CLI_DeallocDesc(desc_id) CliDebug_DeallocDesc(desc_id, __FILE__, __LINE__)
 SQLCLI_LIB_FUNC long CliDebug_DeallocDesc(SQLDESC_ID *desc_id, const char *filename, unsigned long line);
 #define CLI_DeallocStmt(statement_id) CliDebug_DeallocStmt(statement_id, __FILE__, __LINE__)

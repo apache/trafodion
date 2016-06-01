@@ -1,20 +1,25 @@
-// @@@ START COPYRIGHT @@@
-//
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
-//
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
-//
-// @@@ END COPYRIGHT @@@
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+**/
 
 package org.apache.hadoop.hbase.regionserver.transactional;
 
@@ -48,7 +53,6 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.regionserver.wal.HLog;
 import org.apache.hadoop.hbase.regionserver.InternalScanner;
 import org.apache.hadoop.hbase.regionserver.KeyValueScanner;
 import org.apache.hadoop.hbase.regionserver.ScanQueryMatcher;
@@ -57,6 +61,7 @@ import org.apache.hadoop.hbase.regionserver.ScanInfo;
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
+import org.apache.hadoop.hbase.wal.WAL;
 import org.apache.hadoop.io.DataInputBuffer;
 
 /**
@@ -102,9 +107,10 @@ public class TransactionState {
     protected int reInstated = 0;
     protected long flushTxId = 0;
 
+    protected boolean splitRetry = false;
     protected boolean earlyLogging = false;
     protected boolean commit_TS_CC = false;
-    protected HLog tHLog = null;
+    protected WAL tHLog = null;
     protected Object xaOperation = new Object();;
     protected CommitProgress commitProgress = CommitProgress.NONE; // 0 is no commit yet, 1 is a commit is under way, 2 is committed
     protected List<Tag> tagList = Collections.synchronizedList(new ArrayList<Tag>());
@@ -114,7 +120,7 @@ public class TransactionState {
     public static byte TS_TRAFODION_TXN_TAG_TYPE = 41;
 
     public TransactionState(final long transactionId, final long rLogStartSequenceId, AtomicLong hlogSeqId, final HRegionInfo regionInfo,
-                                                 HTableDescriptor htd, HLog hLog, boolean logging) {
+                                                 HTableDescriptor htd, WAL hLog, boolean logging) {
         Tag transactionalTag = null;
         if (LOG.isTraceEnabled()) LOG.trace("Create TS object for " + transactionId + " early logging " + logging);
         this.transactionId = transactionId;
@@ -183,6 +189,35 @@ public class TransactionState {
             }
         }
     }
+    /**
+     * Get the originating node of the transaction.
+     *
+     * @return Return the nodeId.
+     */
+    public long getNodeId() {
+
+        return ((transactionId >> 32) & 0xFFL);
+    }
+
+    /**
+     * Get the originating node of the passed in transaction.
+     *
+     * @return Return the nodeId.
+     */
+    public static long getNodeId(long transId) {
+
+        return ((transId >> 32) & 0xFFL);
+    }
+    /**
+     * Get the originating cluster of the passed in transaction.
+     *
+     * @return Return the clusterId.
+     */
+    public static long getClusterId(long transId) {
+
+        return ((transId >> 48) & 0xFFL);
+    }
+
 
     /**
      * Get the status.
@@ -191,6 +226,18 @@ public class TransactionState {
      */
     public Status getStatus() {
         return status;
+    }
+
+    public long getLogSeqId() {
+      return logSeqId.get();
+    }
+
+    public void setSplitRetry(boolean value) {
+      splitRetry = value;
+    }
+
+    public boolean getSplitRetry() {
+      return splitRetry;
     }
 
     public long getFlushTxId() {

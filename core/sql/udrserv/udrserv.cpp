@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -56,6 +59,7 @@
 #include "LmRoutine.h"
 #include "ComDefs.h"
 #include "sqludr.h"
+#include "NAUserId.h"
 
 #include "SCMVersHelp.h"
 DEFINE_DOVERS(tdm_udrserv)
@@ -167,24 +171,28 @@ static Int32 invokeUdrMethod(const char *method,
 // LCOV_EXCL_START
 // Dead Code
 // These methods are not used, and the interface has not been tested for a long time.
-// Andy is of the opinion that we might want to retire them
+// We might want to retire them
 static Int32 processCommandsFromFile(const char *filename, UdrGlobals &glob);
 static Int32 processSingleCommandFromFile(FILE *f, UdrGlobals &glob);
 // LCOV_EXCL_STOP
+
+// Changed the default to 512 to limit java heap size used by SQL processes.
+// Keep this define in sync with executor/JavaObjectInterface.cpp
+#define DEFAULT_JVM_MAX_HEAP_SIZE 512
 
 static NAString initErrText("");
 /*************************************************************************
    Helper function to propagate all Java-related environment settings
    found in an optional configuration file into an LmJavaOptions instance.
 
-   File must be in location indicated by envvar MXUDRCFG, or if not found, use
-   default of /usr/tandem/sqlmx/udr/mxudrcfg (NT default is c:/tdm_sql/udr/mxudrcfg)
+   File must be in location indicated by envvar TRAFUDRCFG, or if not found, 
+   use default of $MY_SQROOT/conf/trafodion.udr.config
 *************************************************************************/
 void readCfgFileSection ( const char *section, LmJavaOptions &javaOptions )
 {
    char *p = NULL;
    char buffer [BUFFMAX+1];
-   
+
    while ((UdrCfgParser::readSection(section, buffer, sizeof(buffer), initErrText )) > 0)
    {
       UDR_DEBUG2("[%s] entry: %s", section, buffer);
@@ -224,7 +232,11 @@ void InitializeJavaOptionsFromEnvironment(LmJavaOptions &javaOptions
    {
       javaOptions.addSystemProperty("java.class.path", val);
    }
-
+   char maxHeapOption[64];
+   int maxHeapEnvvarMB = DEFAULT_JVM_MAX_HEAP_SIZE;
+   sprintf(maxHeapOption, "-Xmx%dm", maxHeapEnvvarMB);
+   javaOptions.addOption((const char *)maxHeapOption, TRUE);
+   
    /* Look for java startup options and envvars in configuration file */
    if (UdrCfgParser::cfgFileIsOpen(initErrText))
    {
@@ -233,7 +245,7 @@ void InitializeJavaOptionsFromEnvironment(LmJavaOptions &javaOptions
       UdrCfgParser::closeCfgFile();
    }
 
-   if ((val = getenv("SQLMX_JAVA_OPTIONS")))
+   if ((val = getenv("TRAF_UDR_JAVA_OPTIONS")))
    {
       const char *delimiters = " \t";
       bool newlineIsPresent = (strchr(val, '\n') ? true : false);
@@ -2007,7 +2019,7 @@ static Int32 invokeUdrMethod(const char *method,
 
   ComRoutineExternalSecurity externalSecurity =
 		                     COM_ROUTINE_EXTERNAL_SECURITY_INVOKER;
-  Int32 routineOwnerId = SUPER_USER; //dbRoot
+  Int32 routineOwnerId = ROOT_USER_ID; //dbRoot
 
   while (result == LM_OK && i++ < nTimesToInvoke)
   {

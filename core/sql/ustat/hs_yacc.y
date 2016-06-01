@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -89,7 +92,7 @@ extern int yylex(YYSTYPE * lvalp, void* scanner);
 %token  ON TOK_OFF EVERY COLUMN KEY TO CLEAR VIEWONLY GENERATE INTERVALS
 %token  TOK_SET ROWCOUNT SAMPLE ROWS RANDOM PERIODIC TOK_PERCENT CLUSTERS BLOCKS OF
 %token  EXISTING COLUMNS NECESSARY CREATE REMOVE ALL WITH SKEWED VALUES 
-%token  INCREMENTAL WHERE WHERE_CONDITION PERSISTENT
+%token  INCREMENTAL WHERE WHERE_CONDITION PERSISTENT NO
 %%
 
 /*
@@ -99,7 +102,10 @@ extern int yylex(YYSTYPE * lvalp, void* scanner);
          same syntax it will fail to parse there and never get here.
 */
 
-statement   :  UPDATE STATISTICS FOR table_kind table_identifier histogram_options
+statement   :  UPDATE STATISTICS { hs_globals_y->isUpdatestatsStmt = TRUE; } FOR table_kind table_identifier histogram_options
+                   {
+                      hs_globals_y->isUpdatestatsStmt = FALSE;
+                   }
               | UPDATE STATISTICS LOG ON
                    {
                      HSLogMan *LM = HSLogMan::Instance();
@@ -503,6 +509,13 @@ interval_clause :   GENERATE int_number INTERVALS
 ;
 
 sample_clause : sample_clause_init sample_clause_body
+
+              | NO SAMPLE
+                 {
+                   // explicit NO SAMPLE, to override error 
+                   // UERR_YOU_WILL_LIKELY_BE_SORRY on large tables
+                   hs_globals_y->optFlags |= NO_SAMPLE;
+                 }
 ;
 
 sample_clause_init : { 

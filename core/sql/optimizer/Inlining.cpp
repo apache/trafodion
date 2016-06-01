@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1838,6 +1841,7 @@ RelExpr *GenericUpdate::createIMTree(BindWA *bindWA,
               Union(imTree, createIMNodes(bindWA, useInternalSyskey, index),
                     NULL, NULL, REL_UNION, CmpCommon::statementHeap(), TRUE, TRUE);
             imTree->setBlockStmt(isinBlockStmt());
+            imTree->getInliningInfo().setFlags(II_isIMUnion);
           } // not bulk load
           else {
             RelExpr * oldIMTree = imTree;
@@ -1869,9 +1873,10 @@ static RelExpr *createIMNode(BindWA *bindWA,
 			     CorrName &tableCorrName,
 			     const CorrName &indexCorrName,
 			     IndexDesc *index,
-			     NABoolean isInsert,
+			     NABoolean isIMInsert,
 			     NABoolean useInternalSyskey,
-                           NABoolean isMerge)
+                             NABoolean isForUpdate,
+                             NABoolean isForMerge)
 {
    
  // See createOldAndNewCorrelationNames() for info on OLDCorr/NEWCorr
@@ -1885,15 +1890,19 @@ static RelExpr *createIMNode(BindWA *bindWA,
   // delete a row that corresponds to a different row in the base table(index
   // key belonging to a different row). Hence in this case, it is better to always
   // match not only the index key but also remaining columns in the index table
-  // that correspond to the base table. Hence we introduce robustDelete below. 
-  NABoolean robustDelete = isMerge && index->isUniqueIndex();
+  // that correspond to the base table. Hence we introduce 
+  // robustDelete below. This flag could also be called 
+  // isIMOnAUniqueIndexForMerge
+  NABoolean robustDelete = isForMerge && index->isUniqueIndex();
 
-  tableCorrName.setCorrName((isInsert || robustDelete)? NEWCorr : OLDCorr);
+  tableCorrName.setCorrName((isIMInsert)?  NEWCorr : OLDCorr);
   
   ItemExprList *colRefList = new(bindWA->wHeap()) ItemExprList(bindWA->wHeap());
-
-  const ValueIdList &indexColVids = ((isInsert || robustDelete)? index->getIndexColumns() : index->getIndexKey());
   
+  const ValueIdList &indexColVids = ((isIMInsert || robustDelete)? 
+				     index->getIndexColumns() : 
+				     index->getIndexKey());
+  ItemExpr *preCond = NULL; // pre-condition for delete, insert if any
   for (CollIndex i=0; i < indexColVids.entries(); i++) {
 
     const NAString &colName = indexColVids[i].getNAColumn()->getColName();
@@ -1911,20 +1920,84 @@ static RelExpr *createIMNode(BindWA *bindWA,
     colRefList->insert(colRef);
   }
 
+  // There are 4 cases here. Following table shows when precondition
+  // expression is addded
+  // Index Type/IM operation->  Delete  | Insert
+  // Non-unique Index           Yes        No 
+  // Unique Index               Yes        Yes
+  if ((!isIMInsert && isForUpdate)||robustDelete)
+    {
+      // For delete nodes that are part of an update, generate a
+      // comparison expression between old and new index column values
+      // and suppress the delete if no columns change. This avoids the
+      // situation where we delete and then re-insert the same index
+      // row within one millisecond and get the same HBase timestamp
+      // value assigned. In that case, the delete will win out over
+      // the insert, even though the insert happens later in time. The
+      // HBase-trx folks are also working on a change to avoid that.
+      // similar checks are added for unique index insert (into the index
+      // table only, using the robustDelete flag above). 
+      // Since we do checkandput for unique indexes, putting 
+      // an existing row (key + value) will raise a uniqueness violation,
+      // while from the user's point of view no change in the uninque index
+      // table is expected.
+
+      CorrName predValues(tableCorrName);
+
+      if (isIMInsert)
+	predValues.setCorrName(OLDCorr);
+      else
+	predValues.setCorrName(NEWCorr);
+
+      for (CollIndex cc=0; cc<colRefList->entries(); cc++)
+        {
+          ColReference *predColRef = static_cast<ColReference *>
+	    ((*colRefList)[cc]);
+
+	  BiRelat *comp1Col  = NULL;
+          // create a predicate OLD@.<col> = NEW@.<col>
+	  comp1Col = new (bindWA->wHeap())
+	    BiRelat(ITM_EQUAL,
+		    predColRef,
+		    new (bindWA->wHeap()) ColReference(
+			 new (bindWA->wHeap()) ColRefName(
+	    		 predColRef->getColRefNameObj().getColName(),
+			 predValues,
+			 bindWA->wHeap())),
+                    TRUE); // special NULLs, treat NULL == NULL as true
+
+          if (preCond == NULL)
+            preCond = comp1Col;
+          else
+            preCond = new (bindWA->wHeap()) BiLogic(ITM_AND, preCond, comp1Col);
+        }
+
+      // the actual condition is that the values are NOT the same
+      preCond = new (bindWA->wHeap()) UnLogic(ITM_NOT, preCond);
+    }
+
   // NULL tableDesc here, like all Insert/Update/Delete ctors in SqlParser,
   // because the LeafXxx::bindNode will call GenericUpdate::bindNode
   // which will do the appropriate createTableDesc.
   GenericUpdate *imNode;
-  if (isInsert)
+  if (isIMInsert)
     {
       if (!bindWA->isTrafLoadPrep())
       {
-        imNode = new (bindWA->wHeap()) LeafInsert(indexCorrName, NULL, colRefList);
+        imNode = new (bindWA->wHeap()) 
+	  LeafInsert(indexCorrName, NULL, colRefList, REL_LEAF_INSERT,
+		     preCond, bindWA->wHeap());
         HostArraysWA * arrayWA = bindWA->getHostArraysArea() ;
         if (arrayWA && arrayWA->hasHostArraysInTuple()) {
           if (arrayWA->getTolerateNonFatalError() == TRUE)
             imNode->setTolerateNonFatalError(RelExpr::NOT_ATOMIC_);    
-        }	
+        }
+        // For index maintenance on non-unique HBase indexes we can use a put.
+        // In fact we must use a put, otherwise we'll get a uniqueness constraint
+        // violation for those rows that didn't change and therefore didn't get
+        // deleted, due to the precondition (see below).
+        if (!index->isUniqueIndex())
+          imNode->setNoCheck(TRUE);
       } // regular insert
       else {
         imNode = new (bindWA->wHeap()) Insert(indexCorrName,
@@ -1938,10 +2011,15 @@ static RelExpr *createIMNode(BindWA *bindWA,
       } // traf load prep
     }
   else
-    imNode = new (bindWA->wHeap()) LeafDelete(indexCorrName,
-                                        NULL,
-                                        colRefList,
-                                        (robustDelete)?TRUE:FALSE);
+    {
+      imNode = new (bindWA->wHeap()) LeafDelete(indexCorrName,
+                                                NULL,
+                                                colRefList,
+                                                (robustDelete)?TRUE:FALSE,
+                                                REL_LEAF_DELETE,
+                                                preCond,
+                                                bindWA->wHeap());
+    }
 
    // The base table's rowsAffected() will get set in ImplRule.cpp,
   // but we don't want any of these indexes' rowsAffected to be computed
@@ -1951,6 +2029,9 @@ static RelExpr *createIMNode(BindWA *bindWA,
 
   // Do not collect STOI info for security checks.
   imNode->getInliningInfo().setFlags(II_AvoidSecurityChecks);
+  
+  // Set the flag that this GU is part of IM
+  imNode->getInliningInfo().setFlags(II_isIMGU);
 
   if (bindWA->isTrafLoadPrep())
     return imNode;
@@ -1977,6 +2058,8 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
     indexCorrName.setIsVolatile(TRUE);
 
   RelExpr *indexInsert = NULL, *indexDelete = NULL, *indexOp = NULL;
+  NABoolean isForUpdate = (getOperatorType() == REL_UNARY_UPDATE ||
+                           isMergeUpdate());
 
   if (indexCorrName.getUgivenName().isNull())
     {
@@ -1994,7 +2077,8 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
 					 index, 
 					 TRUE, 
 					 useInternalSyskey,
-                                      isMerge());
+                                         isForUpdate,
+                                         isMerge());
 
   // Create a list of base columns ColReferences for
   // ONLY the index KEY columns as BEFORE/OLD columns.
@@ -2006,7 +2090,8 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
 					 index, 
 					 FALSE,
     			       		 useInternalSyskey,
-                                      isMerge());
+                                         isForUpdate,
+                                         isMerge());
 
   if (getOperatorType() == REL_UNARY_UPDATE) {
     indexOp = new (bindWA->wHeap()) Union(indexDelete, indexInsert, 
@@ -2041,6 +2126,9 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
 
     // Add a root just to be consistent, so all returns from this method
     // are topped with a RelRoot.
+
+    // Set this Union is part of IM
+    indexOp->getInliningInfo().setFlags(II_isIMUnion);
     indexOp = new (bindWA->wHeap()) RelRoot(indexOp);
   }
 

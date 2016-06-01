@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -131,7 +134,7 @@ void setUpClusterInfo(CollHeap* heap)
   //-------------------------------------------------------
   // Set up cluster information based on hardware platform.
   //-------------------------------------------------------
-  if (OSIM_runningSimulation() && !OSIM_SysParamsInitialized())
+  if (OSIM_runningSimulation() && !OSIM_ClusterInfoInitialized())
   {
     switch (CURRCONTEXT_OPTSIMULATOR->getCaptureSysType())
     {
@@ -144,7 +147,7 @@ void setUpClusterInfo(CollHeap* heap)
             break;
     }
   } 
-  else if(OSIM_runningInCaptureMode() && !OSIM_SysParamsInitialized())
+  else if(OSIM_runningInCaptureMode() && !OSIM_ClusterInfoInitialized())
   {
       if(gpClusterInfo) NADELETEBASIC(gpClusterInfo, heap);
       gpClusterInfo = new (heap) NAClusterInfoLinux (heap);
@@ -252,7 +255,10 @@ ULng32 clusterNumHashFunc(const CollIndex& num)
   return (ULng32)(num);
 }
 
-
+static ULng32 intHashFunc(const Int32& Int)
+{
+  return (ULng32)Int;
+}
 
 //============================================================================
 // Methods for class NAClusterInfo; it provides information about the cluster
@@ -296,13 +302,13 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
       // Hash Map to store NodeName and NoideIds
       nodeNameToNodeIdMap_ = new (heap) NAHashDictionary<NAString, Int32>
           (NAString::hash, 101, TRUE, heap_);
-      dp2NameToInfoMap_ = new(heap) NAHashDictionary<DP2name,DP2info>
-          (&dp2DescHashFunc, 101,TRUE,heap);
+          
       clusterToCPUMap_ = new(heap) NAHashDictionary<CollIndex,maps>
-          (&clusterNumHashFunc,17,TRUE, heap);
-      tableToClusterMap_ = new(heap) NAHashDictionary<CollIndex, maps> 
-          (&tableIdentHashFunc, 13, TRUE, heap);
-
+                                                          (&clusterNumHashFunc,17,TRUE, heap);
+                                                          
+      nodeIdToNodeNameMap_ = new(heap) NAHashDictionary<Int32, NAString>
+                                                          (&intHashFunc, 101,TRUE,heap);
+                                                          
       activeClusters_= NULL;
       smpCount_ = -1;
 
@@ -355,12 +361,27 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
 
           // store nodeName-nodeId pairs
           NAString *key_nodeName = new (heap_) NAString(nodeInfo[i].node_name, heap_);
-          size_t i = key_nodeName->index(':');
-          if (i && i != NA_NPOS)
-            key_nodeName->remove(i);
+          size_t pos = key_nodeName->index('.');
+          if (pos && pos != NA_NPOS)
+            key_nodeName->remove(pos);
+#ifdef _DEBUG
+          else {
+             // The node names for virtual nodes seen with workstations are of
+             // format <nodeName>:0, <nodeName>:1 etc. In debug mode, we work with
+             // such node names by removing all substrings starting at ':' and 
+             // insert the node name into the nodeIdToNodeNameMap_.
+             pos = key_nodeName->index(':');
+             if (pos && pos != NA_NPOS)
+               key_nodeName->remove(pos);
+          }
+#endif
 
           Int32 *val_nodeId = new Int32(nodeInfo[i].nid);
           nodeNameToNodeIdMap_->insert(key_nodeName, val_nodeId);
+
+          // store nodeId->nadeName 
+          //share the same memory with nodeNameToNodeIdMap_
+          nodeIdToNodeNameMap_->insert(val_nodeId, key_nodeName);
         }
       }
 
@@ -385,19 +406,16 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
       CollIndex *cluster=clusterToCPUMap_->insert(ptrClusterNum,cpuList); 
 
       CMPASSERT(cluster);
-      fillOutDisks_(heap_);
-      // For CAPTURE mode, the data will be captured later in CmpMain::compile()
+
       break;
     }
     case OptimizerSimulator::SIMULATE:
 
-      dp2NameToInfoMap_  = NULL;
       clusterToCPUMap_ = NULL;
-      tableToClusterMap_ = NULL;
+      nodeIdToNodeNameMap_ = NULL;
       activeClusters_= NULL;
       smpCount_ = -1;
-
-      // Simulate the NAClusterInfo.
+      //load NAClusterInfo from OSIM file
       simulateNAClusterInfo();
       break;
     default:
@@ -415,12 +433,12 @@ NAClusterInfo::~NAClusterInfo()
     delete nodeNameToNodeIdMap_;
   }
 
-  // clear and delete dp2NameToInfoMap_
-  if(dp2NameToInfoMap_)
+  if(nodeIdToNodeNameMap_)
   {
-    dp2NameToInfoMap_->clearAndDestroy();
-    delete dp2NameToInfoMap_;
+    nodeIdToNodeNameMap_->clear();
+    delete nodeIdToNodeNameMap_;
   }
+
   CollIndex *key;  
   maps * value;
   UInt32 i=0;
@@ -440,23 +458,7 @@ NAClusterInfo::~NAClusterInfo()
     clusterToCPUMap_->clear();
     delete clusterToCPUMap_;
   }
-
-  if(tableToClusterMap_)
-  {
-    // clear and delete tableToClusterMap_
-    //iterate over all the entries in tableToClusterMap_
-    NAHashDictionaryIterator<CollIndex,maps> tableToClusterMapIter(*tableToClusterMap_);
-
-    for ( i = 0 ; i < tableToClusterMapIter.entries() ; i++)
-    {
-       tableToClusterMapIter.getNext (key,value) ;
-       NADELETEBASIC(key,CmpCommon::contextHeap());
-       delete value;
-    }
-    tableToClusterMap_->clear();
-    delete tableToClusterMap_;
-  }
-
+  
   // clear and delete activeClusters_ list
   if(activeClusters_)
   {
@@ -487,35 +489,6 @@ void NAClusterInfo::captureNAClusterInfo(ofstream & naclfile)
   naclfile << "localCluster_: " << localCluster_ << endl
            << "localSMP_: " << localSMP_ << endl;
 
-  DP2name *key_dp2name;
-  DP2info *val_dp2info;
-  // Iterator for logging all the entries in dp2NameToInfoMap_ HashDictionary.
-  NAHashDictionaryIterator<DP2name, DP2info> dp2N2IIter (*dp2NameToInfoMap_, NULL, NULL);
-  char *dp2name;
-  Int32 clusterNum, primaryCPU, secondaryCPU;
-
-  naclfile << "dp2NameToInfoMap_: " << dp2N2IIter.entries() << " :" << endl;
-  if (dp2N2IIter.entries() > 0)
-  {
-    // Write the header line for the table.
-    naclfile << "  ";
-    naclfile.width(17); naclfile << "dp2name_" << "  ";
-    naclfile.width(14); naclfile << "clusterNumber_" << "  ";
-    naclfile.width(11); naclfile << "primaryCPU_" << "  ";
-    naclfile.width(13); naclfile << "secondaryCPU_" << endl;
-    for (i=0; i<dp2N2IIter.entries(); i++)
-    {
-      dp2N2IIter.getNext(key_dp2name, val_dp2info);
-      key_dp2name->getDp2Name(dp2name);
-      val_dp2info->getDp2Info(clusterNum, primaryCPU, secondaryCPU);
-      naclfile << "  ";
-      naclfile.width(17); naclfile << dp2name << "  ";
-      naclfile.width(14); naclfile << clusterNum << "  ";
-      naclfile.width(11); naclfile << primaryCPU << "  ";
-      naclfile.width(13); naclfile << secondaryCPU << endl;
-    }
-  }
-
   CollIndex *key_collindex;  
   maps *val_maps;
   // Iterator for logging all the entries in clusterToCPUMap_ HashDictionary.
@@ -525,8 +498,9 @@ void NAClusterInfo::captureNAClusterInfo(ofstream & naclfile)
   {
     // Write the header line for the table.
     naclfile << "  ";
-    naclfile.width(10); naclfile << "clusterNum" << "  ";
-                        naclfile << "cpuList" << endl;
+    naclfile.width(10); 
+    naclfile << "clusterNum" << "  ";
+    naclfile << "cpuList" << endl;
     for (i=0; i<C2CPUIter.entries(); i++)
     {
       C2CPUIter.getNext(key_collindex, val_maps);
@@ -540,7 +514,15 @@ void NAClusterInfo::captureNAClusterInfo(ofstream & naclfile)
       naclfile << endl;
     }
   }
-  naclfile << "discsOnCluster_: " << discsOnCluster_  << endl;
+
+  Int32 * nodeID = NULL;
+  NAString* nodeName = NULL;
+  NAHashDictionaryIterator<Int32, NAString> nodeNameAndIDIter (*nodeIdToNodeNameMap_);
+  naclfile << "nodeIdAndNodeNameMap: " << nodeNameAndIDIter.entries() << endl;
+  for(nodeNameAndIDIter.getNext(nodeID, nodeName); nodeID && nodeName; nodeNameAndIDIter.getNext(nodeID, nodeName))
+  {
+      naclfile << *nodeID << " " << nodeName->data() << endl;
+  }
 
   // Now save the OS-specific information to the NAClusterInfo.txt file
   captureOSInfo(naclfile);
@@ -557,11 +539,6 @@ void NAClusterInfo::simulateNAClusterInfo()
   char var[256];
 
   const char* filepath = CURRCONTEXT_OPTSIMULATOR->getLogFilePath(OptimizerSimulator::NACLUSTERINFO);
-
-  // initialize stuff that is not read from the log file
-  // this info is calculated during query compilation  
-  tableToClusterMap_ = new(heap_) NAHashDictionary<CollIndex, maps>
-      (&tableIdentHashFunc, 13, TRUE, heap_);
 
   activeClusters_= NULL;
   smpCount_ = -1;
@@ -586,36 +563,6 @@ void NAClusterInfo::simulateNAClusterInfo()
     else if (!strcmp(var, "localSMP_"))
     {
       naclfile >> localSMP_; naclfile.ignore(OSIM_LINEMAX, '\n');
-    }
-    else if (!strcmp(var, "dp2NameToInfoMap_"))
-    {
-      char dp2name[100];
-      Int32 dp2N2I_entries, clusterNumber, primaryCPU, secondaryCPU, cpuLimit;
-      dp2NameToInfoMap_  = new(heap_)  NAHashDictionary<DP2name,DP2info> (&dp2DescHashFunc, 101,TRUE,heap_);
-      naclfile >> dp2N2I_entries; naclfile.ignore(OSIM_LINEMAX, '\n');
-      if (dp2N2I_entries > 0)
-      {
-        // Read and ignore the header line.
-        naclfile.ignore(OSIM_LINEMAX, '\n');
-        for (i=0; i<dp2N2I_entries; i++)
-        {
-          naclfile >> dp2name >> clusterNumber >> primaryCPU >> secondaryCPU;
-          naclfile.ignore(OSIM_LINEMAX, '\n');
-          // Validate legitimacy of SMP node number.
-
-         
-          if (OSIM_isLinuxbehavior())
-             cpuLimit = MAX_NUM_SMPS_SQ;
-          else
-             cpuLimit = MAX_NUM_SMPS_NSK;
-  
-          CMPASSERT(primaryCPU >= 0 && primaryCPU <= cpuLimit);
-          DP2name *key_dp2name = new(heap_) DP2name(dp2name, heap_);
-          DP2info *val_dp2info = new(heap_) DP2info(clusterNumber, primaryCPU, secondaryCPU);
-          DP2name *checkDp2name = dp2NameToInfoMap_->insert(key_dp2name, val_dp2info);
-          CMPASSERT(checkDp2name);
-        }
-      }
     }
     else if (!strcmp(var, "clusterToCPUMap_"))
     {
@@ -644,9 +591,38 @@ void NAClusterInfo::simulateNAClusterInfo()
         }
       }
     }
-    else if (!strcmp(var, "discsOnCluster_"))
+    else if(!strcmp(var, "nodeIdAndNodeNameMap"))
     {
-      naclfile >> discsOnCluster_; naclfile.ignore(OSIM_LINEMAX, '\n');
+      Int32 id_name_entries;
+      Int32 nodeId;
+      char nodeName[256];
+      nodeIdToNodeNameMap_ = new(heap_) NAHashDictionary<Int32, NAString>
+                                                          (&intHashFunc, 101,TRUE,heap_);
+                                                          
+      nodeNameToNodeIdMap_ = new(heap_) NAHashDictionary<NAString, Int32>
+                                                          (&NAString::hash, 101,TRUE,heap_);
+      naclfile >> id_name_entries;
+      naclfile.ignore(OSIM_LINEMAX, '\n');
+      for(i = 0; i < id_name_entries; i++)
+      {
+          naclfile >> nodeId >> nodeName;
+          naclfile.ignore(OSIM_LINEMAX, '\n');
+          
+          //populate clusterId<=>clusterName map from file
+          Int32 * key_nodeId = new Int32(nodeId);
+          NAString * val_nodeName = new (heap_) NAString(nodeName, heap_);
+          Int32 * retId = nodeIdToNodeNameMap_->insert(key_nodeId, val_nodeName);
+          //CMPASSERT(retId);
+          
+          NAString * key_nodeName = new (heap_) NAString(nodeName, heap_);
+          Int32 * val_nodeId = new Int32(nodeId);
+          NAString * retName = nodeNameToNodeIdMap_->insert(key_nodeName, val_nodeId);
+          //some node names are like g4t3024:0, g4t3024:1
+          //I don't know why we need to remove strings after ':' or '.' in node name,
+          //but if string after ':' or '.' is removed, same node names correspond to different node ids,
+          //this can cause problems here
+          //CMPASSERT(retName);
+      }
     }
     else
     {
@@ -667,125 +643,6 @@ void NAClusterInfo::simulateNAClusterInfo()
   }
 }
 
-//<pb>
-//==============================================================================
-//  An internal function which finds out all DP2s in the local system and puts the
-// information it finds in dp2NameToInfoMap
-//
-// Input:
-//  heap - Pointer to heap in which to allocate memory.
-//
-// Output:
-//  none
-//
-// Return:
-//  none
-//
-// To Be Done: 
-//  This method does not check the return calls from the filesystem to see
-// if there have been any serious errors.  These errors should be checked.
-// However, not all users of NAClusterInfo care about these errors, so we
-// need to change the NAClusterInfo ctor so that the user communicates
-// whether s/he wants to do a longjmp in case of a bad error from the
-// filesystem subroutines.
-//
-//==============================================================================
-#pragma nowarn(770)   // warning elimination 
-#pragma nowarn(252)   // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
-#pragma nowarn(259)   // warning elimination 
-void
-NAClusterInfo::fillOutDisks_(CollHeap * heap)
-{
-
-  Int32 dNumInfo = 0;
-  MS_Mon_Process_Info_Type* tseInfo = NULL;
-
-  short ret_val = msg_mon_get_process_info_type(MS_ProcessType_TSE,
-                                             &dNumInfo,
-                                             0,  // max ignored if info is NULL
-                                             NULL); 
-
-  tseInfo = new (heap_) MS_Mon_Process_Info_Type [dNumInfo];
-
-  ret_val = msg_mon_get_process_info_type(MS_ProcessType_TSE,
-                                             &dNumInfo,
-                                             dNumInfo,
-                                             tseInfo);
-
-  discsOnCluster_= 0;
-
-  // ret_val may need error handling.
-
-  // When msg_mon_get_process_info_type() returns, each of the "process_name"
-  // fields in the "tseInfo" array are filled in.  As each TSE is processed,
-  // the rest of the array is searched to find the other TSE in the backup/
-  // primary pair.  If the other TSE in the pair is found, the "proces_name"
-  // in it is replaced with a null character to prevent it from being
-  // processed twice.
-
-  for (Int32 tseIdx1 = 0; tseIdx1 < dNumInfo; tseIdx1++)
-  {
-    // Skip this TSE if it has already been processed.
-    if (tseInfo[tseIdx1].process_name[0] == '\0')
-      continue;
-
-    Lng32 primaryNode = -1;
-    Lng32 backupNode = -1;
-
-    if (tseInfo[tseIdx1].backup)
-      backupNode = tseInfo[tseIdx1].nid;
-    else
-      primaryNode = tseInfo[tseIdx1].nid;
-
-    // Examine the rest of the array for a TSE with a matching volume name.
-    for (Int32 tseIdx2 = tseIdx1+1; tseIdx2 < dNumInfo; tseIdx2++)
-    {
-      if (strcmp(tseInfo[tseIdx1].process_name, tseInfo[tseIdx2].process_name) == 0)
-      {
-        // A match was found. Set the first character of the process_name to
-        // a null character so it won't be processed again.
-        tseInfo[tseIdx2].process_name[0] = '\0';
-
-        if (tseInfo[tseIdx2].backup)
-        {
-          CMPASSERT(backupNode == -1);  // There shouldn't be two backup TSEs
-          backupNode = tseInfo[tseIdx2].nid;
-        }
-        else
-        {
-          CMPASSERT(primaryNode == -1); // There shouldn't be two primary TSEs
-          primaryNode = tseInfo[tseIdx2].nid;
-        }
-        break; // break from tseIdx2 loop
-      }
-    }
-
-
-    char fullName[100];
-    snprintf(fullName, sizeof(fullName), "\\NSK.%s", tseInfo[tseIdx1].process_name);
-    DP2name * ptrDp2name = new(heap) DP2name(fullName, heap);
-    DP2info * dp2Info = new(heap) DP2info(localCluster_,
-                                          primaryNode,
-                                          backupNode);
-    DP2name *check = dp2NameToInfoMap_->insert(ptrDp2name,dp2Info);
-    CMPASSERT(check);  // The assertion will fail on duplicate dp2 names
-    discsOnCluster_++;
-  }
-
-  NADELETEBASIC(tseInfo, heap_);
-
-
-} // NAClusterInfo::fillOutDisks_()
-#pragma warn(259)  // warning elimination 
-#pragma warn(1506)  // warning elimination
-#pragma warn(252)  // warning elimination
-#pragma warn(770)  // warning elimination
-
-
-#pragma nowarn(1506)   // warning elimination
-
-// LCOV_EXCL_START
 Lng32
 NAClusterInfo::getNumActiveCluster()
 {
@@ -793,7 +650,6 @@ NAClusterInfo::getNumActiveCluster()
   CMPASSERT(activeClusters_->entries());
   return activeClusters_->entries();
 }// NAClusterInfo::getNumActiveClusters()
-// LCOV_EXCL_STOP
 
 Lng32
 NAClusterInfo::mapNodeNameToNodeNum(const NAString &keyNodeName) const
@@ -806,6 +662,25 @@ NAClusterInfo::mapNodeNameToNodeNum(const NAString &keyNodeName) const
   else return ANY_NODE;
 
 } // NodeMap::getNodeNmber
+
+NABoolean NAClusterInfo::NODE_ID_TO_NAME(Int32 nodeId, char *nodeName, short maxLen, short *actualLen)
+{
+    //Currently, this method behaves as same as NODENUMBER_TO_NODENAME_(),
+    //which always returns "\\NSK", the only reason for doing this is to
+    //avoid diff in regression test and core file dumped when exiting sqlci.(don't know why.)
+    NODENUMBER_TO_NODENAME_(nodeId, nodeName, maxLen, actualLen);
+    return TRUE;
+    //Following code may be used in future to provide real node id to name map.
+    *actualLen = 0;
+    if (nodeIdToNodeNameMap_->contains(&nodeId))
+    {
+        NAString * value = nodeIdToNodeNameMap_->getFirstValue(&nodeId);
+        *actualLen = value->length();
+        strncpy(nodeName, value->data(), maxLen < (*actualLen) ? maxLen : (*actualLen));
+        return TRUE;
+    }
+    return FALSE;
+}
 
 #pragma warn(1506)  // warning elimination 
 
@@ -868,7 +743,7 @@ there will be no parallel processing.
 void 
 NAClusterInfo::createActiveClusterList()
 {
-  CMPASSERT(tableToClusterMap_);
+  //CMPASSERT(tableToClusterMap_);
   activeClusters_ = new(CmpCommon::statementHeap()) 
     NAList<CollIndex>(CmpCommon::statementHeap());
 
@@ -1094,146 +969,6 @@ Lng32 NAClusterInfo::getTotalNumberOfCPUs()
   return cpuCount;
 }
 
-//-----------------------------------------------------------------
-//NAClusterInfo::getTableNodeList()
-// Called by NodeMap::getTableNodeList().
-// Input is a table identifier.
-// Output is the list of nodes.
-//
-const NAList<CollIndex>* NAClusterInfo::getTableNodeList(Int32 tableIdent) const
-{
-  CMPASSERT(tableToClusterMap_);
-  // Should this be an CMPASSERT(tableIdent > 0) ?
-  if ((tableIdent >0) && (tableToClusterMap_->entries() > 0))
-  {
-    CollIndex longTableId(tableIdent);
-    maps * tableNodeList = tableToClusterMap_->getFirstValue(&longTableId);
-    return (tableNodeList ? tableNodeList->list : NULL);
-  }
-  return NULL;
-}
-
-#pragma warn(1506)  // warning elimination 
-//-------------------------------------------------------------------
-//inserts table to cluster mapping into tableToClusterMap.
-//Checks for duplicates. tableIdent assigned by NATable.cpp
-//------------------------------------------------------------------
-NABoolean 
-NAClusterInfo::insertIntoTableToClusterMap(Int32 tableIdent, Int32 cluster)
-{
-  CMPASSERT(tableToClusterMap_);
-  CollIndex longTableId(tableIdent);
-  maps * clustList = tableToClusterMap_->getFirstValue(&longTableId);
-  if( NOT clustList)
-  {
-    clustList = new(heap_) maps(heap_);
-    clustList->list->insert(cluster);
-    // make a copy of tableIdent
-
-    CollIndex * ptrTableNum = new(heap_) CollIndex(tableIdent);
-    if (tableToClusterMap_->insert(ptrTableNum,clustList))
-    {
-      return TRUE;
-    }
-    else
-    {
-      // The clustList and ptrTableNum were not inserted correctly.
-      // Free them now to prevent a memory leak.
-      // LCOV_EXCL_START
-      NADELETEBASIC(ptrTableNum, heap_);
-      delete clustList;
-      return FALSE;
-      // LCOV_EXCL_STOP
-    }
-  }
-  else if (NOT clustList->list->contains(cluster))
-  {
-    clustList->list->insert(cluster);
-  }
-  return TRUE;
-}
-
-//<pb>
-//==============================================================================
-//  Determine SMP number of a specified dp2 or -1 if no such dp2 exists.
-//
-// Input:
-//  dp2Name  --  name of specified disk process.
-//
-// Output:
-//  cluster no,.primary and secondary CPU,
-// caches this info in the appropriate structure
-//
-// Return:
-//  
-//
-//==============================================================================
-#pragma nowarn(252)   // warning elimination 
-#pragma nowarn(262)   // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
-NABoolean
-NAClusterInfo::whichSMPANDCLUSTER(const char * dp2Name,Int32& cluster, Int32& primary,
-                                  Int32& secondary, Int32 tableIdent)
-{
-  char * name = (char *) dp2Name;
-  DP2name temp(name,HEAP);
-
-  //check if already cached
-  DP2info * info = dp2NameToInfoMap_->getFirstValue(&temp);
-  if (info) {
-    info->getDp2Info(cluster,primary,secondary);
-    return insertIntoTableToClusterMap(tableIdent,cluster);
-  }
-
-  DP2name *ptrDp2Name = new(CmpCommon::contextHeap()) DP2name(name,CmpCommon::contextHeap());
-  DP2info *dp2info = NULL;
-  DP2name *check = NULL;
-
-  // The behavior of NT and Linux could execute this code
-  cluster = 0;
-  primary=-1;
-  secondary=-1;
-  dp2info = new(heap_) DP2info(cluster,primary,-1);
-  check =dp2NameToInfoMap_->insert(ptrDp2Name,dp2info);
-
-  if(!check) return FALSE;
-
-  return insertIntoTableToClusterMap(tableIdent,cluster);
-} // NAClusterInfo::whichSMP()
-
-#pragma warn(1506)  // warning elimination 
-#pragma warn(262)  // warning elimination 
-#pragma warn(252)  // warning elimination 
-//<pb>
-
-// This method is used by CURRSTMT_OPTDEFAULTS->newMemoryLimit() only. The latter
-// is not called in normal mode.
-// LCOV_EXCL_START
-Int32 
-NAClusterInfo::discsOnCluster() const
-{ 
-#ifndef NDEBUG
-    if ( inTestMode() ) {
-      NADefaults & defs = ActiveSchemaDB()->getDefaults();
-      return (Int32)(defs.getAsLong(POS_TEST_NUM_NODES)) *
-             (Int32)(defs.getAsLong(POS_TEST_NUM_VOLUMES_PER_NODE));
-    }
-#endif
-   return discsOnCluster_; 
-}
-// LCOV_EXCL_STOP
-
-// return TRUE if incompatible version (MAX(OSV) > MIN(MXV))
-#pragma nowarn(1506)   // warning elimination 
-
-// LCOV_EXCL_START
-NABoolean NAClusterInfo::checkIfMixedVersion()
-{
-  return FALSE;
-}
-// LCOV_EXCL_STOP
-#pragma warn(1506)  // warning elimination 
-
 // setMaxOSV should be called for all NATable in the current Statement
 // before the versioning check.
 void NAClusterInfo::setMaxOSV(QualifiedName &qualName, COM_VERSION osv)
@@ -1245,13 +980,6 @@ void NAClusterInfo::setMaxOSV(QualifiedName &qualName, COM_VERSION osv)
     maxOSVName_ = qualName;
   }
 }
-
-// LCOV_EXCL_START
-NABoolean NAClusterInfo::checkIfDownRevCompilerNeeded()
-{
-  return FALSE;
-}
-// LCOV_EXCL_STOP
 
 #pragma nowarn(161)   // warning elimination 
 void NAClusterInfo::cleanupPerStatement()
@@ -1265,88 +993,32 @@ void NAClusterInfo::cleanupPerStatement()
 }
 #pragma warn(161)  // warning elimination 
 
-void NAClusterInfo::removeFromTableToClusterMap(CollIndex tableId)
-{
-  maps *m=NULL;
-#pragma nowarn(769)
-  CollIndex *cix=NULL;
-  NAHashDictionaryIterator<CollIndex, maps> Iter(*tableToClusterMap_, &tableId,
-                                                       NULL);
-  tableToClusterMap_->remove(&tableId);
-  Iter.getNext(cix,m);
-
-#pragma warn(769)
-  if (m != NULL)
-    delete m;
-  if (cix != NULL)
-    NADELETEBASIC(cix,heap_);
-}
-
 void NAClusterInfo::initializeForOSIMCapture()
 {
-  char localNodeName[9];
-  short actualNodeNameLen = 0;
-  Int32 guardianRC;
-
-  guardianRC = OSIM_NODENUMBER_TO_NODENAME(-1,
-                                            localNodeName,
-                                            9-1, // leave room for NUL
-                                            &actualNodeNameLen);
-  localNodeName[actualNodeNameLen]='\0';
-
   UInt32 i=0;
-
   // clear out clusterToCPUMap_;
   if (clusterToCPUMap_)
   {
-    CollIndex * clusterNum;
-    maps * cpuMap;
-    NAHashDictionaryIterator<CollIndex,maps> clusterToCPUMapIter
+      CollIndex * clusterNum;
+      maps * cpuMap;
+      NAHashDictionaryIterator<CollIndex,maps> clusterToCPUMapIter
                                              (*clusterToCPUMap_);
-    for (i=0; i<clusterToCPUMapIter.entries(); i++)
-    {
-      clusterToCPUMapIter.getNext(clusterNum,cpuMap);
-
-      // only delete entries from other clusters
-      if(*clusterNum != (CollIndex)localCluster_)
+      for (i=0; i<clusterToCPUMapIter.entries(); i++)
       {
-        // On Linux, there is only one cluster. The following code will not be exercised. 
-        // LCOV_EXCL_START
-        clusterToCPUMap_->remove(clusterNum);
-        NADELETEBASIC(clusterNum,heap_);
-        delete cpuMap;
-        // LCOV_EXCL_STOP
-      }
-    }
+          clusterToCPUMapIter.getNext(clusterNum,cpuMap);
 
-  }
-
-  //clear out dp2NameToInfoMap_
-  if ( dp2NameToInfoMap_ )
-  {
-    DP2name * dp2Name = NULL;
-    DP2info * dp2Info = NULL;
-    NAHashDictionaryIterator<DP2name,DP2info> dp2NameToInfoMapIter
-                                              (*dp2NameToInfoMap_);
-    for (i=0; i< dp2NameToInfoMapIter.entries(); i++)
-    {
-      dp2NameToInfoMapIter.getNext(dp2Name,dp2Info);
-
-      char * dp2NameStr = NULL;
-      dp2Name->getDp2Name(dp2NameStr);
-      char * nodeNameEnd = strchr (dp2NameStr,'.');
-      (*nodeNameEnd) = '\0';
-      if(strcmp(localNodeName,dp2NameStr)!=0)
-      {
-        // On Linux, there is only one cluster. The following code will not be exercised. 
-        // LCOV_EXCL_START
-        dp2NameToInfoMap_->remove(dp2Name);
-        delete dp2Name;
-        delete dp2Info;
-        // LCOV_EXCL_STOP
-      }
-    }
-  }
+          // only delete entries from other clusters
+          if(*clusterNum != (CollIndex)localCluster_)
+          {
+            // On Linux, there is only one cluster. The following code will not be exercised. 
+            // LCOV_EXCL_START
+            clusterToCPUMap_->remove(clusterNum);
+            NADELETEBASIC(clusterNum,heap_);
+            delete cpuMap;
+            // LCOV_EXCL_STOP
+          }
+      }//for
+   }
 }
 
 NAClusterInfoLinux::NAClusterInfoLinux(CollHeap * heap) : NAClusterInfo(heap)

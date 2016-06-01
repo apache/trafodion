@@ -1,17 +1,24 @@
 /**
- *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+* @@@ START COPYRIGHT @@@
+
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+
+* @@@ END COPYRIGHT @@@
  */
 package org.trafodion.rest;
 
@@ -157,8 +164,15 @@ public class RESTServlet implements RestConstants {
 	    List<String> children = getChildren(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_RUNNING, new RunningWatcher());
 
 	    if( ! children.isEmpty()) {
+        	//If dcsstop.sh is executed and rest server is not restarted, the nodes get appended to the
+        	//existing list and we end with duplicate entries for the same servers with different timestamps
+        	//Since the runningServers are only for the DcsServers, it is ok and not expensive to reconstruct 
+        	//the list every time
+			runningServers.clear();
+			
 	        for(String child : children) {
-	            //If stop-dcs.sh is executed and DCS_MANAGES_ZK then zookeeper is stopped abruptly.
+
+	        	//If stop-dcs.sh is executed and DCS_MANAGES_ZK then zookeeper is stopped abruptly.
 	            //Second scenario is when ZooKeeper fails for some reason regardless of whether DCS
 	            //manages it. When either happens the DcsServer running znodes still exist in ZooKeeper
 	            //and we see them at next startup. When they eventually timeout

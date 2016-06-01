@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -252,6 +255,7 @@ public:
   enum FastExtractStates
   {
     EXTRACT_NOT_STARTED = 0,
+    EXTRACT_CHECK_MOD_TS,
     EXTRACT_INITIALIZE,
     EXTRACT_PASS_REQUEST_TO_CHILD,
     EXTRACT_RETURN_ROWS_FROM_CHILD,
@@ -363,6 +367,9 @@ protected:
   time_t              tstart_;
 
   UInt32             bufferAllocFailuresCount_;
+
+  // modification timestamp of root dir location.
+  Int64              modTS_;
 }; // class ExFastExtractTcb
 /////////////////////////////////////////////////////
 
@@ -398,6 +405,7 @@ protected:
   Lng32 lobInterfaceInsert(ssize_t bytesToWrite);
   Lng32 lobInterfaceCreate();
   Lng32 lobInterfaceClose();
+  Lng32 lobInterfaceDataModCheck();
 
   virtual void insertUpQueueEntry(ex_queue::up_status status,
                           ComDiagsArea *diags,

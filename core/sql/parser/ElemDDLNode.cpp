@@ -2,19 +2,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -378,12 +381,6 @@ ElemDDLNode::castToElemDDLPartnAttrList()
   return NULL;
 }
 
-ElemDDLFileAttrLockLength *
-ElemDDLNode::castToElemDDLFileAttrLockLength()
-{
-  return NULL;
-}
-
 ElemDDLFileAttrMaxSize *
 ElemDDLNode::castToElemDDLFileAttrMaxSize()
 {
@@ -425,6 +422,13 @@ ElemDDLNode::castToElemDDLFileAttrRowFormat()
 {
   return NULL;
 }
+
+ElemDDLFileAttrColFam *
+ElemDDLNode::castToElemDDLFileAttrColFam()
+{
+  return NULL;
+}
+
 //++ MV
 ElemDDLFileAttrRangeLog *
 ElemDDLNode::castToElemDDLFileAttrRangeLog()
@@ -561,24 +565,6 @@ ElemDDLLikeOptWithoutDivision * ElemDDLNode::castToElemDDLLikeOptWithoutDivision
 
 ElemDDLList *
 ElemDDLNode::castToElemDDLList()
-{
-  return NULL;
-}
-
-ElemDDLLoadOpt *
-ElemDDLNode::castToElemDDLLoadOpt()
-{
-  return NULL;
-}
-
-ElemDDLLoadOptDSlack *
-ElemDDLNode::castToElemDDLLoadOptDSlack()
-{
-  return NULL;
-}
-
-ElemDDLLoadOptISlack *
-ElemDDLNode::castToElemDDLLoadOptISlack()
 {
   return NULL;
 }
@@ -1411,6 +1397,18 @@ ElemDDLNode::castToStmtDDLAlterTableAlterColumnDefaultValue()
   return NULL;
 }
 
+StmtDDLAlterTableAlterColumnDatatype *
+ElemDDLNode::castToStmtDDLAlterTableAlterColumnDatatype()
+{
+  return NULL;
+}
+
+StmtDDLAlterTableAlterColumnRename *
+ElemDDLNode::castToStmtDDLAlterTableAlterColumnRename()
+{
+  return NULL;
+}
+
 StmtDDLAlterTableAlterColumnSetSGOption *
 ElemDDLNode::castToStmtDDLAlterTableAlterColumnSetSGOption()
 {
@@ -2198,7 +2196,7 @@ ElemDDLKeyValue::getText() const
 // virtual
 NAString ElemDDLKeyValue::getSyntax() const
 {
-  return keyValue_->getConstStr();
+  return keyValue_->getConstStr(FALSE);
 
 
 } // getSyntax()

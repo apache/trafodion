@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -46,7 +49,7 @@
 #include "exp_function.h" // for calling ExHDPHash::hash(data, len)
 #include "ItemFuncUDF.h"
 #include "CmpStatement.h"
-//#include "ItmFlowControlFunction.h"
+#include "exp_datetime.h"
 
 #include "OptRange.h"
 
@@ -711,7 +714,7 @@ ItemExpr* ItemExpr::getConstantInVEG()
 
 ItemExpr * ItemExpr::createMirrorPred(ItemExpr *compColPtr, 
                                       ItemExpr * compColExprPtr, 
-                                      ValueIdSet underlyingCols)
+                                      const ValueIdSet &underlyingCols)
 {
    CMPASSERT(compColPtr->getOperatorType() == ITM_BASECOLUMN);
    ValueIdSet eics = ((BaseColumn *)compColPtr)->getEIC();
@@ -871,6 +874,12 @@ NABoolean ItemExpr::doesExprEvaluateToConstant(NABoolean strict,
 		  return TRUE;
 
 		case ITM_HOSTVAR:
+                 {
+                     HostVar* hv = (HostVar*)this;
+                     if ( hv->isSystemGeneratedOutputHV() )
+                        return TRUE;
+                 }
+
 		case ITM_DYN_PARAM:
 		case ITM_CACHE_PARAM:
 		case ITM_CURRENT_USER:
@@ -2286,6 +2295,10 @@ void ItemExpr::computeKwdAndFlags( NAString &kwd,
     else
       kwd = getText();
   }
+  else if (operatorType == ITM_NAMED_TYPE_TO_ITEM)
+  {
+    kwd = ToAnsiIdentifier(((NamedTypeToItem *)this)->getText());
+  }
   else if (( operatorType == ITM_CACHE_PARAM) &&
            (form == QUERY_FORMAT) )
     ((ConstantParameter *)this)->getConstVal()->unparse(kwd, phase, QUERY_FORMAT, tabId);
@@ -2375,8 +2388,11 @@ void ItemExpr::computeKwdAndPostfix( NAString &kwd,
                   // Get the Data type after the Cast
                   const NAType *naType = ((Cast *) this)->getType();
 
-                  // ignore NULLs description in getTypeSQLName
+                  // ignore NULLs description in getTypeSQLName, since it
+                  // does not return valid SQL syntax
                   postfix += naType->getTypeSQLname(TRUE);
+                  if (!naType->supportsSQLnull())
+                    postfix += " NOT NULL";
                   postfix += ")";
                 }
               else
@@ -3117,32 +3133,34 @@ ConstValue * BiArith::castToConstValue (NABoolean & negate_it)
 
   if ((op == ITM_MINUS) || (op == ITM_PLUS))
   {
-    if (op == ITM_MINUS)
-      negate_it = TRUE;
-    else
-      negate_it = FALSE;
-
-    NABoolean neg = FALSE;
-    ConstValue * lhs = child(0)->castToConstValue(neg);
-    ConstValue * rhs = child(1)->castToConstValue(neg);
+    NABoolean neg0 = FALSE;
+    NABoolean neg1 = FALSE;
+    ConstValue * lhs = child(0)->castToConstValue(neg0);
+    ConstValue * rhs = child(1)->castToConstValue(neg1);
 
     if (lhs && rhs)
     {
-      NormValue lhsVal = NormValue(lhs);
-      if (lhsVal.getValue() == 0)
-	return (rhs);
+      Lng32 scale0 = 0;
+      if (lhs->canGetExactNumericValue() &&
+          lhs->getExactNumericValue(scale0) == 0)
+        {
+          if (op == ITM_MINUS)
+            negate_it = (!neg1);
+          else
+            negate_it = neg1;
+          return (rhs);
+        }
       else
       {
-	NormValue rhsVal = NormValue (rhs);
-	if (rhsVal.getValue() == 0)
-	  return (lhs);
+        Lng32 scale1 = 0;
+        if (rhs->canGetExactNumericValue() &&
+            rhs->getExactNumericValue(scale1) == 0)
+          {
+            negate_it = neg0;
+            return (lhs);
+          }
       }
     }
-
-
-
-
-
   }
   return NULL;
 }
@@ -5927,6 +5945,40 @@ void FuncDependencyConstraint::unparse(NAString &result,
 
 
 // -----------------------------------------------------------------------
+// member functions for class CheckOptConstraint
+// -----------------------------------------------------------------------
+CheckOptConstraint::~CheckOptConstraint() {}
+
+Int32 CheckOptConstraint::getArity() const { return 0; }
+
+ItemExpr * CheckOptConstraint::copyTopNode(ItemExpr *derivedNode,
+                                           CollHeap* outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) CheckOptConstraint(checkPreds_);
+  else
+    result = derivedNode;
+
+  return OptConstraint::copyTopNode(result, outHeap);
+}
+
+const NAString CheckOptConstraint::getText() const
+{
+  return "CheckOptConstraint";
+}
+
+void CheckOptConstraint::unparse(NAString &result,
+                                 PhaseEnum phase,
+                                 UnparseFormatEnum form,
+                                 TableDesc * tabId) const
+{
+  result += "CheckOptConstraint";
+  checkPreds_.unparse(result,phase,form);
+}
+
+// -----------------------------------------------------------------------
 // member functions for class RefOptConstraint
 // -----------------------------------------------------------------------
 Int32 RefOptConstraint::getArity() const { return 0;}
@@ -8189,12 +8241,16 @@ DateFormat::~DateFormat() {}
 ItemExpr * DateFormat::copyTopNode(ItemExpr *derivedNode,
 				   CollHeap* outHeap)
 {
-  ItemExpr *result;
+  DateFormat *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) DateFormat(child(0), child(1), getDateFormat());
+    result = new (outHeap) DateFormat(child(0), 
+                                      formatStr_, formatType_, 
+                                      wasDateformat_);
   else
-    result = derivedNode;
+    result = (DateFormat*)derivedNode;
+
+  frmt_ = result->frmt_;
 
   return BuiltinFunction::copyTopNode(result,outHeap);
 
@@ -8213,6 +8269,46 @@ NABoolean DateFormat::hasEquivalentProperties(ItemExpr * other)
   return 
       (this->dateFormat_ == df->dateFormat_);
 }
+
+void DateFormat::unparse(NAString &result,
+		      PhaseEnum phase,
+                      UnparseFormatEnum form,
+		      TableDesc * tabId) const
+{
+  if (wasDateformat_)
+    result += "DATEFORMAT(";
+  else if (formatType_ == FORMAT_TO_DATE)
+    result += "TO_DATE(";
+  else if (formatType_ == FORMAT_TO_CHAR)
+    result += "TO_CHAR(";
+  else
+    result += "unknown(";
+
+  child(0)->unparse(result, phase, form, tabId);
+
+  result += ", ";
+
+  if (wasDateformat_)
+    {
+      if (frmt_ == ExpDatetime::DATETIME_FORMAT_DEFAULT)
+        result += "DEFAULT";
+      else if (frmt_ == ExpDatetime::DATETIME_FORMAT_USA)
+        result += "USA";
+      else if (frmt_ == ExpDatetime::DATETIME_FORMAT_EUROPEAN)
+        result += "EUROPEAN";
+      else
+        result += "unknown";
+    }
+  else
+    {
+      result += "'";
+      result += formatStr_;
+      result += "'";
+    }
+
+  result += ")";  
+}
+
 // -----------------------------------------------------------------------
 // member functions for class DayOfWeek
 // -----------------------------------------------------------------------
@@ -9732,7 +9828,7 @@ ConstValue::ConstValue()
      , storageSize_(0)
      , text_(new (CmpCommon::statementHeap()) NAString("NULL", CmpCommon::statementHeap()))
      , textIsValidatedSQLLiteralInUTF8_(FALSE)
-     , wtext_(0), isSystemSupplied_(FALSE)
+     , isSystemSupplied_(FALSE)
      , locale_strval(0)
      , locale_wstrval(0)
      , isStrLitWithCharSetPrefix_(FALSE)
@@ -9746,7 +9842,6 @@ ConstValue::ConstValue(Lng32 intval, NAMemory * outHeap)
            : ItemExpr(ITM_CONSTANT)
            , isNull_(IS_NOT_NULL)
            , textIsValidatedSQLLiteralInUTF8_(FALSE)
-           , wtext_(0)
            , type_(new (CmpCommon::statementHeap()) SQLInt(TRUE, FALSE))
 	   , isSystemSupplied_(FALSE)
            , locale_strval(0)
@@ -9773,7 +9868,7 @@ ConstValue::ConstValue(const NAString & strval,
              enum CharInfo::Collation collation,
              enum CharInfo::Coercibility coercibility,
              NAMemory * outHeap)
-: ItemExpr(ITM_CONSTANT), isNull_(IS_NOT_NULL), wtext_(0),
+: ItemExpr(ITM_CONSTANT), isNull_(IS_NOT_NULL),
   textIsValidatedSQLLiteralInUTF8_(FALSE), isStrLitWithCharSetPrefix_(FALSE),
   isSystemSupplied_(FALSE), locale_wstrval(0), rebindNeeded_(FALSE)
 {
@@ -9871,7 +9966,6 @@ ConstValue::ConstValue(const NAWString& wstrval,
    isSystemSupplied_(FALSE),
    value_(0),
    text_(0),
-   wtext_(0),
    locale_strval(0),
    locale_wstrval(0),
    isStrLitWithCharSetPrefix_(FALSE),
@@ -9946,8 +10040,6 @@ void ConstValue::initCharConstValue(const NAWString& strval,
 	    NAString((char*)strval.data(), storageSize_,
 	     outHeap);
   textIsValidatedSQLLiteralInUTF8_ = FALSE;
-
-  init_wtext_field(strLitPrefixCharSet);
 }
 
 
@@ -9959,7 +10051,6 @@ ConstValue::ConstValue(NAString strval, NAWString wstrval,
    value_(0),
    text_(0),
    textIsValidatedSQLLiteralInUTF8_(FALSE),
-   wtext_(0),
    isSystemSupplied_(FALSE),
    isStrLitWithCharSetPrefix_(FALSE),
    rebindNeeded_(FALSE)
@@ -10061,7 +10152,6 @@ ConstValue::ConstValue(const NAType * type, void * value, Lng32 value_len,
   : ItemExpr(ITM_CONSTANT)
   , isNull_(IS_NOT_NULL)
   , type_(type)
-  , wtext_(0)
   , isSystemSupplied_(FALSE)
   , locale_strval(0)
   , locale_wstrval(0)
@@ -10123,7 +10213,6 @@ ConstValue::ConstValue(const NAType * type, void * value, Lng32 value_len,
   : ItemExpr(ITM_CONSTANT)
   , isNull_(isNull)
   , type_(type)
-  , wtext_(0)
   , isSystemSupplied_(FALSE)
   , locale_strval(0)
   , locale_wstrval(0)
@@ -10171,7 +10260,6 @@ ConstValue::ConstValue(const NAType * type,
 		       const NABoolean includeNull,
                        NAMemory * outHeap)
 : ItemExpr(ITM_CONSTANT)
-, wtext_(0)
 , isNull_(IsNullEnum(type->supportsSQLnull() && includeNull && !wantMinValue))
 , type_(type)
 , isSystemSupplied_(FALSE)
@@ -10262,7 +10350,7 @@ ConstValue::ConstValue(OperatorTypeEnum otype,
 
 ConstValue::ConstValue(const ConstValue& s, NAHeap *h)
   : ItemExpr(ITM_CONSTANT), isNull_(s.isNull_), type_(s.type_)
-  , storageSize_(s.storageSize_), wtext_(s.wtext_)
+  , storageSize_(s.storageSize_)
   , textIsValidatedSQLLiteralInUTF8_(s.textIsValidatedSQLLiteralInUTF8_)
   , isSystemSupplied_(s.isSystemSupplied_)
   , isStrLitWithCharSetPrefix_(s.isStrLitWithCharSetPrefix_)
@@ -10279,7 +10367,7 @@ ConstValue::ConstValue(const ConstValue& s, NAHeap *h)
 
 ConstValue::ConstValue(const ConstValue& s)
   : ItemExpr(ITM_CONSTANT), isNull_(s.isNull_), type_(s.type_)
-  , storageSize_(s.storageSize_), wtext_(s.wtext_), value_(s.value_)
+  , storageSize_(s.storageSize_), value_(s.value_)
   , textIsValidatedSQLLiteralInUTF8_(s.textIsValidatedSQLLiteralInUTF8_)
   , text_(s.text_), isSystemSupplied_(s.isSystemSupplied_)
   , isStrLitWithCharSetPrefix_(s.isStrLitWithCharSetPrefix_)
@@ -10297,9 +10385,6 @@ ConstValue::~ConstValue()
 
   if (text_)
     NADELETEBASIC((NAString*)text_,CmpCommon::statementHeap());
-
-  if (wtext_)
-    NADELETEBASIC((NAWString*)wtext_,CmpCommon::statementHeap());
 }
 
 NABoolean ConstValue::isAUserSuppliedInput() const    { return TRUE; }
@@ -10478,8 +10563,11 @@ ConstValue * ConstValue::castToConstValue(NABoolean & negate_it)
 
 Int32 ConstValue::getArity() const { return 0; }
 
-NAString ConstValue::getConstStr(NABoolean transformeNeeded) const
+NAString ConstValue::getConstStr(NABoolean transformNeeded) const
 {
+  if ((*text_ == "<min>") || (*text_ == "<max>"))
+    return *text_ ;
+
   if (getType()->getTypeQualifier() == NA_DATETIME_TYPE &&
       getType()->getPrecision() != SQLDTCODE_MPDATETIME)
   {
@@ -10489,91 +10577,17 @@ NAString ConstValue::getConstStr(NABoolean transformeNeeded) const
   {
     CharType* chType = (CharType*)getType();
 
-     // 4/8/96: added the Boolean switch so that displayable
-     // and non-displayable version can be differed.
-    if ( transformeNeeded ) {
+    // 4/8/96: added the Boolean switch so that displayable
+    // and non-displayable version can be differed.
+    if ( transformNeeded )
       return chType->getCharSetAsPrefix() + getText();
-    }
-    else {
-      NAString str(CmpCommon::statementHeap());
-      ToQuotedString(str, *text_);
-      return chType->getCharSetAsPrefix() + str;
-    }
+    else
+      return chType->getCharSetAsPrefix() + getTextForQuery(QUERY_FORMAT);
   }
   else
   {
     return *text_;
   }
-}
-
-NAWString ConstValue::getConstWStr()
-{
-  if (wtext_ == NULL)
-    init_wtext_field();
-
-  return *wtext_;
-}
-
-void ConstValue::init_wtext_field(enum CharInfo::CharSet strLitPrefixCharSet)
-{
-  NAMemory *heap = CmpCommon::statementHeap();
-
-  if (getType()->getTypeQualifier() == NA_CHARACTER_TYPE)
-    {
-      CharType* chType = (CharType*)getType();
-      enum CharInfo::CharSet charset = chType->getCharSet();
-      switch (charset)
-        {
-        case CharInfo::ISO88591:
-        case CharInfo::UTF8:
-        // case CharInfo::SJIS: // Uncomment if we ever support SJIS
-          {
-            NAWcharBuf *wBuf = NULL;
-            NAString str(getConstStr(FALSE), heap);
-
-#pragma nowarn(1506)   // warning elimination
-            charBuf cBuf((unsigned char*)str.data(), str.length(), heap);
-#pragma warn(1506)  // warning elimination
-            Int32 ErrCod = 0;
-            wBuf = csetToUnicode(cBuf, heap, wBuf, charset, ErrCod);
-            if (wBuf)
-              {
-                wtext_ = new (heap)
-                  NAWString(wBuf->data(), wBuf->getStrLen(), heap);
-                NADELETE(wBuf, NAWcharBuf, heap);
-              }
-            break;
-          }
-        case CharInfo::UNICODE:
-          {
-            NAWString wt((NAWchar*)text_->data(), (text_->length() / BYTES_PER_NAWCHAR));
-            NAWString wstr = wt.ToQuotedWString();
-            if ( ( strLitPrefixCharSet == CharInfo::ISO88591 ) ||
-                 ( strLitPrefixCharSet == CharInfo::UTF8 )   )
-            {
-              wtext_ = new (heap)
-                NAWString(NAWString(CharInfo::ISO88591,
-                          (strLitPrefixCharSet == CharInfo::ISO88591)
-                           ? "_ISO88591" : "_UTF8" ) + wstr,
-                          heap);
-            }
-            else
-            {
-            wtext_ = new (heap)
-	      NAWString(
-	        NAWString(CharInfo::ISO88591, chType->getCharSetAsPrefix()) + wstr,
-                        heap);
-            }
-            break;
-          }
-        }
-    }
-  else
-    {
-      wtext_ = new (heap) NAWString(CharInfo::ISO88591, getConstStr().data(), heap);
-    }
-
-  if (!wtext_) wtext_ = new (heap) NAWString(WIDE_(""), heap);
 }
 
 // Genesis 10-980402-1556 (see Binder)
@@ -10808,7 +10822,6 @@ NABoolean ConstValue::isEmptyString() const
 {
   if (getType()->getTypeQualifier() == NA_CHARACTER_TYPE) {
     if (text_ && text_->length() == 0) { return TRUE; }
-    if (wtext_ && wtext_->length() == 0) { return TRUE; }
   }
   return FALSE;
 }
@@ -12021,6 +12034,7 @@ Cast::Cast(ItemExpr *val1Ptr, const NAType *type, OperatorTypeEnum otype,
     }
              
   noStringTruncationWarnings_ = noStringTrunWarnings;
+  convertNullWhenError_ = FALSE;
 }
 
 Cast::Cast(ItemExpr *val1Ptr, ItemExpr *errorOutPtr, const NAType *type,
@@ -12034,6 +12048,7 @@ Cast::Cast(ItemExpr *val1Ptr, ItemExpr *errorOutPtr, const NAType *type,
 {
   checkForTruncation_ = checkForTrunc;
   noStringTruncationWarnings_ = noStringTrunWarnings;
+  convertNullWhenError_ = FALSE;
 }
 
 Cast::~Cast() {}
@@ -12563,7 +12578,7 @@ ItemExpr * LOBoper::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   LOBoper *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) LOBoper(getOperatorType(), NULL, NULL, obj_);
+    result = new (outHeap) LOBoper(getOperatorType(), NULL, NULL, NULL,obj_);
   else
     result = (LOBoper*)derivedNode;
 
@@ -12621,7 +12636,7 @@ ItemExpr * LOBupdate::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   LOBupdate *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) LOBupdate(NULL, NULL, obj_, append_);
+    result = new (outHeap) LOBupdate(NULL, NULL, NULL,obj_, append_);
   else
     result = (LOBupdate*)derivedNode;
 
@@ -13442,6 +13457,8 @@ Translate::Translate(ItemExpr *valPtr, NAString* map_table_name)
     map_table_id_ = Translate::SJIS_TO_UTF8;
   else if ( _strcmpi(map_table_name->data(), "UTF8TOSJIS") == 0 )
     map_table_id_ = Translate::UTF8_TO_SJIS;
+  else if ( _strcmpi(map_table_name->data(), "GBKTOUTF8") == 0 )
+    map_table_id_ = Translate::GBK_TO_UTF8;
 
                 else
                   if ( _strcmpi(map_table_name->data(), "KANJITOISO88591") == 0 )
@@ -14533,6 +14550,12 @@ HostVar::setPMOrdPosAndIndex( ComColumnDirection paramMode,
     hvIndex_ = index;
 }
 
+NABoolean HostVar::isSystemGeneratedOutputHV() const
+{  
+  return (isSystemGenerated() &&
+           getName() == "_sys_ignored_CC_convErrorFlag"); 
+}
+
 void
 DynamicParam::setPMOrdPosAndIndex( ComColumnDirection paramMode,
 				   Int32 ordinalPosition,
@@ -14980,3 +15003,81 @@ NABoolean LOBoper::isCovered
   return FALSE;
 }
 
+// Evalaute the exprssion at compile time. Assume all operands are constants.
+// Return NULL if the computation fails and CmpCommon::diags() may be side-affected.
+ConstValue* ItemExpr::evaluate(CollHeap* heap)
+{
+  ValueIdList exprs;
+  exprs.insert(getValueId());
+
+  const NAType& dataType = getValueId().getType();
+
+  Lng32 decodedValueLen = dataType.getNominalSize() + dataType.getSQLnullHdrSize();
+
+  char staticDecodeBuf[200];
+  Lng32 staticDecodeBufLen = 200;
+
+  char* decodeBuf = staticDecodeBuf;
+  Lng32 decodeBufLen = staticDecodeBufLen;
+
+  // For character types, multiplying by 6 to deal with conversions between
+  // any two known character sets allowed. See CharInfo::maxBytesPerChar()
+  // for a list of max bytes per char for each supported character set.  
+  Lng32 factor = (DFS2REC::isAnyCharacter(dataType.getFSDatatype())) ? 6 : 1;
+
+  if ( staticDecodeBufLen < decodedValueLen * factor) {
+    decodeBufLen = decodedValueLen * factor;
+    decodeBuf = new (STMTHEAP) char[decodeBufLen];
+  }
+
+  Lng32 resultLength = 0;
+  Lng32 resultOffset = 0;
+
+  // Produce the decoded key. Refer to 
+  // ex_function_encode::decodeKeyValue() for the 
+  // implementation of the decoding logic.
+  ex_expr::exp_return_type rc = exprs.evalAtCompileTime
+    (0, ExpTupleDesc::SQLARK_EXPLODED_FORMAT, decodeBuf, decodeBufLen,
+     &resultLength, &resultOffset, CmpCommon::diags()
+     );
+
+
+  ConstValue* result = NULL;
+
+  if ( rc == ex_expr::EXPR_OK ) {
+    CMPASSERT(resultOffset == dataType.getPrefixSizeWithAlignment());
+    // expect the decodeBuf to have this layout
+    // | null ind. | varchar length ind. | alignment | result |
+    // |<---getPrefixSizeWithAlignment-------------->|
+    // |<----getPrefixSize-------------->|
+
+    // The method getPrefixSizeWithAlignment(), the diagram above,
+    // and this code block assumes that varchar length ind. is
+    // 2 bytes if present. If it is 4 bytes we should fail the 
+    // previous assert
+
+    // Next we get rid of alignment bytes by prepending the prefix
+    // (null ind. + varlen ind.) to the result. ConstValue constr.
+    // will process prefix + result. The assert above ensures that 
+    // there are no alignment fillers at the beginning of the 
+    // buffer. Given the previous assumption about size
+    // of varchar length indicator, alignment bytes will be used by
+    // expression evaluator only if column is of nullable type.
+    // For a description of how alignment is computed, please see
+    // ExpTupleDesc::sqlarkExplodedOffsets() in exp/exp_tuple_desc.cpp
+
+    if (dataType.getSQLnullHdrSize() > 0)
+      memmove(&decodeBuf[resultOffset - dataType.getPrefixSize()], 
+                        decodeBuf, dataType.getPrefixSize());
+    result =
+      new (heap) 
+      ConstValue(&dataType,
+                 (void *) &(decodeBuf[resultOffset - 
+                                      dataType.getPrefixSize()]),
+                 resultLength+dataType.getPrefixSize(),
+                 NULL,
+                 heap);
+  }
+
+  return result;
+}

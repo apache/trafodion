@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1148,12 +1151,12 @@ void ScanKey::createComputedColumnPredicates(ValueIdSet &predicates,           /
                       colToKeyValueMap.rewriteValueIdDown(mpValId,
                                                           mpValIdRewritten);
                       generatedPredicates += mpValIdRewritten;
-                    }
-                }
-            } 
-         }
-       }
-  }
+                    } // not a divisioning column
+                } // preds for all underlying columns
+            } // a computed column 
+         } // a base column
+       } // switch on operator type
+  } // loop over key columns
   predicates += generatedPredicates;
 } // createComputedColumnPredicates (...)
 
@@ -2004,39 +2007,39 @@ void Disjuncts::computeCommonPredicates()
       get(disjunct,i);
       if(CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON )
       {
-	    ValueIdSet inVidset = disjunct.getAsValueIdSet();
-	    ValueIdSet outVidset,parsedVs;
-        for (ValueId predId = inVidset.init();
-	     inVidset.next(predId);
-	     inVidset.advance(predId) )
-	    {
-         if(predId.getItemExpr()->getOperatorType() == ITM_RANGE_SPEC_FUNC )
-         {
-		  if(predId.getItemExpr()->child(1)->getOperatorType() == ITM_AND ){
-	        predId.getItemExpr()->child(1)->convertToValueIdSet(parsedVs, NULL, ITM_AND, FALSE);
+	 ValueIdSet inVidset = disjunct.getAsValueIdSet();
+	 ValueIdSet outVidset,parsedVs;
+         for (ValueId predId = inVidset.init();
+	      inVidset.next(predId);
+	      inVidset.advance(predId) )
+	 {
+            if(predId.getItemExpr()->getOperatorType() == ITM_RANGE_SPEC_FUNC )
+            {
+	       if(predId.getItemExpr()->child(1)->getOperatorType() == ITM_AND ){
+	          predId.getItemExpr()->child(1)->convertToValueIdSet(parsedVs, NULL, ITM_AND, FALSE);
 		    outVidset +=parsedVs;
-		 }
-	     else if(predId.getItemExpr()->child(1)->getOperatorType() != ITM_AND 
+            }
+	    else if(predId.getItemExpr()->child(1)->getOperatorType() != ITM_AND 
 			 && predId.getItemExpr()->child(1)->getOperatorType() != ITM_OR)
-	      outVidset += predId.getItemExpr()->child(1)->castToItemExpr()->getValueId();	    
-	   }
+	       outVidset += predId.getItemExpr()->child(1)->castToItemExpr()->getValueId();	    
+           }
 	   else
-	    outVidset +=predId;
-	    parsedVs.clear();
+	     outVidset +=predId;
+	 parsedVs.clear();
 	}
 
 	if (i==0)
 	  commonPredicates_.insert(outVidset);
 	else
 	  commonPredicates_.intersectSet(outVidset);
-      }
-      else
-      {
+     }
+     else
+     {
 	if (i==0)
 	  commonPredicates_.insert(disjunct.getAsValueIdSet());
 	else
 	  commonPredicates_.intersectSet(disjunct.getAsValueIdSet());
-      }
+     }
     }
   }
 } // Disjuncts::computeCommonPredicates(..)
@@ -2097,6 +2100,74 @@ DisjunctArray * Disjuncts::createEmptyDisjunctArray() const
   DCMPASSERT(disjunctArrayPtr != NULL);
   return disjunctArrayPtr;
 }
+
+NABoolean isOrItemExpr(ItemExpr* iePtr)
+{
+   return (iePtr && iePtr->getOperatorType() == ITM_OR);
+}
+
+NABoolean isAndOrItemExpr(ItemExpr* iePtr)
+{
+   return (iePtr &&
+           (iePtr->getOperatorType() == ITM_AND || 
+            iePtr->getOperatorType() == ITM_OR)
+           )
+           ;
+}
+
+NABoolean Disjuncts::containsSomePredsInRanges(funcPtrT funcP) const
+{
+//  CollIndex order;
+//  CollIndex numOfKeyCols=keyPredsByCol.entries();
+//  KeyColumns::KeyColumn::KeyColumnType typeOfRange = KeyColumns::KeyColumn::EMPTY;
+  Disjunct disjunct;
+  ValueIdSet vs;
+  for (CollIndex i=0; i < entries(); i++)
+  {
+    this->get(disjunct,i);
+    vs = disjunct.getAsValueIdSet();
+    for (ValueId predId = vs.init();
+	 vs.next(predId);
+	 vs.advance(predId) )
+    {
+      if(predId.getItemExpr()->getOperatorType() == ITM_RANGE_SPEC_FUNC )
+      {
+	if ((*funcP)(predId.getItemExpr()->child(1)))
+	  return TRUE;
+      }
+    }
+  }
+  return FALSE;
+}
+
+NABoolean Disjuncts::containsOrPredsInRanges() const
+{
+   return containsSomePredsInRanges(isOrItemExpr);
+}
+
+NABoolean Disjuncts::containsAndorOrPredsInRanges() const
+{
+   return containsSomePredsInRanges(isAndOrItemExpr);
+  /*
+  if (keyPredsByCol.containsPredicates())
+  {
+    for (order = 0; order < numOfKeyCols; order++)
+    {
+      if (keyPredsByCol.getPredicateExpressionPtr(order) != NULL)
+        typeOfRange = keyPredsByCol.getPredicateExpressionPtr(order)->getType();
+      else
+      	typeOfRange = KeyColumns::KeyColumn::EMPTY;
+      if (typeOfRange == KeyColumns::KeyColumn::INLIST )
+	//  ||
+	//  typeOfRange != KeyColumns::KeyColumn::RANGE)
+	return TRUE;
+    } // end of for-loop
+
+  } // if (containsPredicates())
+  */
+  //return FALSE;
+}
+
 
 //---------------------------------------------------------
 // Methods for class DisjunctsDisjuncts                             |

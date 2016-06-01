@@ -1,19 +1,22 @@
 
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 /**********************************************************************/
@@ -56,6 +59,7 @@
 #ifdef NA_CMPDLL
 #include "CmpCommon.h"
 #endif // NA_CMPDLL
+#include "ExSqlComp.h"
 #include "ExStats.h"
 #include "ExpSeqGen.h"
 #include "ssmpipc.h"
@@ -206,6 +210,10 @@ public:
   LmRoutine *findTrustedRoutine(CollIndex ix);
   void putTrustedRoutine(CollIndex ix);
 
+  ExSqlComp::ReturnStatus sendXnMsgToArkcmp
+  (char * data, Lng32 dataSize, 
+   Lng32 xnMsgType, ComDiagsArea* &diagsArea);
+    
 private:
 
   // The heap where executor 'stuff' will be allocated from.
@@ -469,6 +477,10 @@ private:
   bool cbServerInUse_;
   NABoolean dropInProgress_;
 
+  // set to true if ddl stmts are issued.
+  // Reset at begin and commit Xn. Used to do NATable invalidation
+  // for ddl stmts issued within a transaction.
+  NABoolean ddlStmtsExecuted_;
 
   //   
   //
@@ -832,7 +844,9 @@ SQLCLI_LIB_FUNC
 
   ExTransaction * getTransaction()	{ return transaction_; }
 
-Lng32 setAuthID(
+  NABoolean &ddlStmtsExecuted() { return ddlStmtsExecuted_; }
+
+  Lng32 setAuthID(
    const char * externalUsername,
    const char * databaseUsername,
    const char * authToken,
@@ -967,6 +981,7 @@ Lng32 setAuthID(
   void initVolTabList();
   void resetVolTabList();
 
+  void killIdleMxcmp();
   void killAndRecreateMxcmp();
 
 #ifdef NA_DEBUG_C_RUNTIME

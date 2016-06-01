@@ -2,19 +2,22 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //
@@ -1885,7 +1888,13 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         // Queue the node down request for processing by a worker thread.
         ReqQueue.enqueueDownReq( recv_msg->u.down.pnid );
         break;
+    case InternalType_NodeName:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf("%s@%d - Internal node name request (%s to %s)\n", method_name, __LINE__, recv_msg->u.nodename.current_name, recv_msg->u.nodename.new_name);
 
+        // Queue the node down request for processing by a worker thread.
+        ReqQueue.enqueueNodeNameReq( recv_msg->u.nodename.current_name, recv_msg->u.nodename.new_name );
+        break;
     case InternalType_SoftNodeDown:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal soft node down request for pnid=%d\n", method_name, __LINE__, recv_msg->u.down.pnid);
@@ -2389,6 +2398,11 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
     case InternalType_Down:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal down node request for pnid=%d\n", method_name, __LINE__, recv_msg->u.down.pnid);
+        break;
+
+    case InternalType_NodeName:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf("%s@%d - Internal node name request (%s to %s)\n", method_name, __LINE__, recv_msg->u.nodename.current_name, recv_msg->u.nodename.new_name);
         break;
 
     case InternalType_SoftNodeDown:

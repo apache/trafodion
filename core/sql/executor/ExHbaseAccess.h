@@ -1,19 +1,22 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
@@ -202,6 +205,9 @@ protected:
   inline ex_expr *mergeInsertExpr() const 
     { return hbaseAccessTdb().mergeInsertExpr_; }
 
+  inline ex_expr *lobDelExpr() const 
+    { return hbaseAccessTdb().mergeInsertExpr_; }
+
   inline ex_expr *mergeInsertRowIdExpr() const 
     { return hbaseAccessTdb().mergeInsertRowIdExpr_; }
 
@@ -228,6 +234,15 @@ protected:
 
   inline ex_expr *keyColValExpr() const 
     { return hbaseAccessTdb().keyColValExpr_; }
+
+  inline ex_expr *insDelPreCondExpr() const
+    { return hbaseAccessTdb().insDelPreCondExpr_; }
+
+  inline ex_expr *insConstraintExpr() const
+    { return hbaseAccessTdb().insConstraintExpr_; }
+
+  inline ex_expr *updConstraintExpr() const
+    { return hbaseAccessTdb().updConstraintExpr_; }
 
   inline ex_expr *hbaseFilterValExpr() const 
     { return hbaseAccessTdb().hbaseFilterExpr_; }
@@ -276,11 +291,11 @@ protected:
   short handleDone(ExWorkProcRetcode &rc, Int64 rowsAffected = 0);
   short createColumnwiseRow();
   short createRowwiseRow();
-  Lng32 createSQRowFromHbaseFormat();
+  Lng32 createSQRowFromHbaseFormat(Int64 *lastestRowTimestamp = NULL);
   Lng32 createSQRowFromHbaseFormatMulti();
-  Lng32 createSQRowFromAlignedFormat();
+  Lng32 createSQRowFromAlignedFormat(Int64 *lastestRowTimestamp = NULL);
   short copyCell();
-  Lng32 createSQRowDirect();
+  Lng32 createSQRowDirect(Int64 *lastestRowTimestamp = NULL);
   Lng32 setupSQMultiVersionRow();
 
   void extractColNameFields
@@ -291,7 +306,10 @@ protected:
 		  char * tuppRow = NULL);
   void setupPrevRowId();
   short extractColFamilyAndName(char * input, Text &colFam, Text &colName);
-  short evalKeyColValExpr(Text &columnToCheck, Text &colValToCheck);
+  short evalKeyColValExpr(HbaseStr &columnToCheck, HbaseStr &colValToCheck);
+  short evalInsDelPreCondExpr();
+  short evalConstraintExpr(ex_expr *expr, UInt16 tuppIndex = 0,
+                  char * tuppRow = NULL);
   short evalEncodedKeyExpr();
   short evalRowIdExpr(NABoolean noVarchar = FALSE);
   short evalRowIdAsciiExpr(NABoolean noVarchar = FALSE);
@@ -314,6 +332,7 @@ protected:
 
   short createDirectRowBuffer(UInt16 tuppIndex, char * tuppRow, 
                         Queue * listOfColNames,
+                        Queue * listOfOmittedColNames,
 			NABoolean isUpdate = FALSE,
 			std::vector<UInt32> * posVec = NULL,
 			double sampleRate = 0.0);
@@ -387,6 +406,7 @@ protected:
 
   char * asciiRow_;
   char * convertRow_;
+  UInt32 convertRowLen_;
   char * updateRow_;
   char * mergeInsertRow_;
   char * rowIdRow_;
@@ -475,6 +495,7 @@ protected:
   Lng32 colValEntry_;
   Int16 asyncCompleteRetryCount_;
   NABoolean *resultArray_;
+  NABoolean asyncOperation_;
   Int32 asyncOperationTimeout_;
 
   // Redefined and used by ExHbaseAccessBulkLoadPrepSQTcb.
@@ -819,15 +840,14 @@ public:
     , CHECK_AND_INSERT
     , PROCESS_INSERT
     , PROCESS_INSERT_AND_CLOSE
-    , PROCESS_INSERT_FLUSH_AND_CLOSE
     , RETURN_ROW
     , INSERT_CLOSE
-    , FLUSH_BUFFERS
     , HANDLE_EXCEPTION
     , HANDLE_ERROR
     , DONE
     , ALL_DONE
-    , ASYNC_INSERT_COMPLETE
+    , COMPLETE_ASYNC_INSERT
+    , CLOSE_AND_DONE
 
   } step_;
 
@@ -945,7 +965,8 @@ public:
     , NEXT_ROW
     , CREATE_FETCHED_ROW
     , CREATE_UPDATED_ROW
-    , EVAL_CONSTRAINT
+    , EVAL_INS_CONSTRAINT
+    , EVAL_UPD_CONSTRAINT
     , CREATE_MUTATIONS
     , APPLY_PRED
     , APPLY_MERGE_UPD_SCAN_PRED
@@ -1012,7 +1033,8 @@ public:
     , CREATE_UPDATED_ROW
     , CREATE_MERGE_INSERTED_ROW
     , CREATE_MUTATIONS
-    , EVAL_CONSTRAINT
+    , EVAL_INS_CONSTRAINT
+    , EVAL_UPD_CONSTRAINT
     , APPLY_PRED
     , APPLY_MERGE_UPD_SCAN_PRED
     , RETURN_ROW
@@ -1032,6 +1054,9 @@ public:
 
  protected:
   NABoolean rowUpdated_;
+  Int64 latestRowTimestamp_;
+  HbaseStr columnToCheck_;
+  HbaseStr colValToCheck_;
 };
 
 // UMD: unique UpdMergeDel on native Hbase table
@@ -1119,9 +1144,8 @@ public:
     , SETUP_UMD
     , SETUP_SELECT
     , CREATE_UPDATED_ROW
-    , PROCESS_DELETE
     , PROCESS_DELETE_AND_CLOSE
-    , PROCESS_UPDATE
+    , EVAL_CONSTRAINT
     , PROCESS_UPDATE_AND_CLOSE
     , PROCESS_SELECT
     , NEXT_ROW
@@ -1133,7 +1157,8 @@ public:
     , CREATE_ROW
     , APPLY_PRED
     , RETURN_ROW
-    , ASYNC_INSERT_COMPLETE
+    , COMPLETE_ASYNC_OPERATION
+    , CLOSE_AND_DONE
   } step_;
 
   ExHbaseAccessSQRowsetTcb( const ExHbaseAccessTdb &tdb,

@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -730,6 +733,12 @@ Lng32 getAnsiTypeFromFSType(Lng32 datatype)
    case REC_DATETIME:
       numeric_value = SQLTYPECODE_DATETIME;
       break;
+   case REC_BLOB:
+     numeric_value = SQLTYPECODE_BLOB;
+     break;
+   case REC_CLOB:
+     numeric_value = SQLTYPECODE_CLOB;
+     break;
 
    case REC_INT_YEAR:
    case REC_INT_MONTH:
@@ -829,6 +838,13 @@ const char * getAnsiTypeStrFromFSType(Lng32 datatype)
      return COM_DATETIME_SDT_LIT;
      break;
 
+   case REC_BLOB:
+     return COM_BLOB_SDT_LIT;
+     break;
+   case REC_CLOB:
+     return COM_CLOB_SDT_LIT;
+     break;
+
    case REC_INT_YEAR:
    case REC_INT_MONTH:
    case REC_INT_YEAR_MONTH:
@@ -844,12 +860,7 @@ const char * getAnsiTypeStrFromFSType(Lng32 datatype)
    case REC_INT_DAY_SECOND:
      return COM_INTERVAL_SDT_LIT;
      break;
-   case REC_BLOB:
-     return COM_BLOB_SDT_LIT;
-     break;
-   case REC_CLOB:
-       return COM_CLOB_SDT_LIT;
-     break;
+   
    default:
       // error
       break;
@@ -1078,7 +1089,12 @@ Lng32 getFSTypeFromANSIType(Lng32 ansitype)
    case SQLTYPECODE_DATETIME:
       datatype = REC_DATETIME;
       break;
-
+   case SQLTYPECODE_BLOB:
+     datatype = REC_BLOB;
+     break;
+   case SQLTYPECODE_CLOB:
+     datatype = REC_CLOB;
+     break;
    default:
       // error
       datatype = ansitype;

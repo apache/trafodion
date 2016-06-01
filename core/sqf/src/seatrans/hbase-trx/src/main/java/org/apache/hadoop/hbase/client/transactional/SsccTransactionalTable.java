@@ -1,19 +1,26 @@
-// @@@ START COPYRIGHT @@@
-//
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
-//
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
-//
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+**/
+
 
 package org.apache.hadoop.hbase.client.transactional;
 
@@ -34,9 +41,11 @@ import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
@@ -44,6 +53,7 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.TrafParallelClientScanner;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.ipc.BlockingRpcCallback;
 import org.apache.hadoop.hbase.ipc.ServerRpcController;
@@ -147,13 +157,6 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
         super( tableName,connection, threadPool);       
     }
 
-    public void resetConnection() throws IOException {
-        if (LOG.isDebugEnabled()) LOG.debug("Resetting connection for " + this.getTableDescriptor().getTableName());
-        HConnection conn = this.getConnection();
-        conn = HConnectionManager.createConnection(this.getConfiguration());
-    }
-
-
     private void addLocation(final TransactionState transactionState, HRegionLocation location) {
       if (LOG.isTraceEnabled()) LOG.trace("addLocation ENTRY");
       if (transactionState.addRegion(location)){
@@ -205,8 +208,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
           try {
             result = super.coprocessorService(SsccRegionService.class, get.getRow(), get.getRow(), callable);
           } catch (Throwable e) {
-            e.printStackTrace();
-            throw new IOException("ERROR while calling coprocessor get");
+            throw new IOException("ERROR while calling coprocessor get", e);
           }            
           Collection<SsccGetTransactionalResponse> results = result.values();
           // Should only be one result, if more than one. Can't handle.
@@ -265,12 +267,8 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
             try {
               result = super.coprocessorService(SsccRegionService.class, row, row, callable);
 
-            } catch (ServiceException e) {
-              e.printStackTrace();
-              throw new IOException();
             } catch (Throwable t) {
-              t.printStackTrace();
-              throw new IOException();
+              throw new IOException("ERROR while calling coprocessor delete ",t);
             } 
             Collection<SsccDeleteTransactionalResponse> results = result.values();
             //GetTransactionalResponse[] resultArray = (GetTransactionalResponse[]) results.toArray();
@@ -332,8 +330,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
         try {
           result = super.coprocessorService(SsccRegionService.class, put.getRow(), put.getRow(), callable);
         } catch (Throwable e) {
-          e.printStackTrace();
-          throw new IOException("ERROR while calling coprocessor put " + e);
+          throw new IOException("ERROR while calling coprocessor put ", e);
         }
         Collection<SsccPutTransactionalResponse> results = result.values();
         SsccPutTransactionalResponse[] resultArray = new SsccPutTransactionalResponse[results.size()]; 
@@ -415,8 +412,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
       try {
         result = super.coprocessorService(SsccRegionService.class, delete.getRow(), delete.getRow(), callable);
       } catch (Throwable e) {
-        e.printStackTrace();
-        throw new IOException("ERROR while calling coprocessor checkAndDelete");
+        throw new IOException("ERROR while calling coprocessor checkAndDelete", e);
       }
 
       Collection<SsccCheckAndDeleteResponse> results = result.values();
@@ -494,11 +490,7 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
       try {
          result = super.coprocessorService(SsccRegionService.class, put.getRow(), put.getRow(), callable);
       } catch (Throwable e) {
-          StringWriter sw = new StringWriter();
-          PrintWriter pw = new PrintWriter(sw);
-          e.printStackTrace(pw);
-          //sw.toString();
-        throw new IOException("ERROR while calling coprocessor checkAndPut" + sw.toString());
+        throw new IOException("ERROR while calling coprocessor checkAndPut", e);
       }
       Collection<SsccCheckAndPutResponse> results = result.values();
       // Should only be one result, if more than one. Can't handle.
@@ -571,8 +563,7 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
                                                    entry.getValue().get(0).getRow(),
                                                    callable);
  	      } catch (Throwable e) {
- 	        e.printStackTrace();
-	        throw new IOException("ERROR while calling coprocessor delete");
+	        throw new IOException("ERROR while calling coprocessor delete", e);
  	      }
 	      if(result.size() > 1) {
              LOG.error("result size for multiple delete:" + result.size());
@@ -650,8 +641,7 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
                                           entry.getValue().get(0).getRow(),
                                           callable);
       } catch (Throwable e) {
-        e.printStackTrace();
-        throw new IOException("ERROR while calling coprocessor put");
+        throw new IOException("ERROR while calling coprocessor put", e);
       }
       Collection<SsccPutMultipleTransactionalResponse> results = result.values();
       SsccPutMultipleTransactionalResponse[] resultArray = new SsccPutMultipleTransactionalResponse[results.size()];
@@ -665,22 +655,22 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
 
 	}
 	
-	// validate for well-formedness
-	public void validatePut(final Put put) throws IllegalArgumentException {
-		if (put.isEmpty()) {
-			throw new IllegalArgumentException("No columns to insert");
-		}
-		if (maxKeyValueSize > 0) {
-			for (List<KeyValue> list : put.getFamilyMap().values()) {
-				for (KeyValue kv : list) {
-					if (kv.getLength() > maxKeyValueSize) {
-						throw new IllegalArgumentException(
-								"KeyValue size too large");
-					}
-				}
-			}
-		}
-	}
+    // validate for well-formedness
+    public void validatePut(final Put put) throws IllegalArgumentException {
+        if (put.isEmpty()) {
+            throw new IllegalArgumentException("No columns to insert");
+        }
+        if (maxKeyValueSize > 0) {
+            for (List<Cell> list : put.getFamilyCellMap().values()) {
+                for (Cell c : list) {
+                    if (KeyValueUtil.length(c) > maxKeyValueSize) {
+                        throw new IllegalArgumentException("KeyValue size too large");
+                    }
+                }
+            }
+        }
+    }
+
 	public HRegionLocation getRegionLocation(byte[] row, boolean f)
                                   throws IOException {
         return super.getRegionLocation(row, f);
@@ -695,9 +685,7 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
     {
         return super.getConfiguration();
     }
-    public void flushCommits()
-                  throws InterruptedIOException,
-                RetriesExhaustedWithDetailsException {
+    public void flushCommits() throws IOException {
          super.flushCommits();
     }
     public HConnection getConnection()
@@ -725,9 +713,12 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
     {
         return super.getTableName();
     }
-    public ResultScanner getScanner(Scan scan) throws IOException
+    public ResultScanner getScanner(Scan scan, float DOPparallelScanner) throws IOException
     {
-        return super.getScanner(scan);
+        if (scan.isSmall() || DOPparallelScanner == 0)
+            return super.getScanner(scan);
+        else
+            return new TrafParallelClientScanner(this.connection, scan, getName(), DOPparallelScanner);       
     }
     public Result get(Get g) throws IOException
     {
@@ -749,11 +740,11 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
     {
         return super.checkAndPut(row,family,qualifier,value,put);
     }
-    public void put(Put p) throws  InterruptedIOException,RetriesExhaustedWithDetailsException
+    public void put(Put p) throws IOException
     {
         super.put(p);
     }
-    public void put(List<Put> p) throws  InterruptedIOException,RetriesExhaustedWithDetailsException
+    public void put(List<Put> p) throws IOException
     {
         super.put(p);
     }

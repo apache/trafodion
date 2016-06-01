@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -126,10 +129,9 @@ void deinitializeArkcmp()
 }
 
 
-
-//extern void bloom_filter_test();
-//extern void  hdfs_list_test(int argc, char **argv);
-
+// RETURN:  0, no error.  
+//          2, error during NADefaults creation. 
+//          1, other errors during CmpContext creation.
 Int32 arkcmp_main_entry()
 {
 
@@ -140,17 +142,10 @@ Int32 arkcmp_main_entry()
   // same order on NSK and Windows.
   cout.sync_with_stdio();
 
-
   initializeArkcmp();
-
-
   try
   {
-
-
     { // a local ctor scope, within a try block
-
-
       // Set up the context info for the connection, it contains the variables
       // persistent through each statement loops.
 
@@ -168,6 +163,16 @@ Int32 arkcmp_main_entry()
         context= new (cmpContextHeap)CmpContext(CmpContext::IS_DYNAMIC_SQL,
 			 cmpContextHeap);
         cliSemaphore->release();
+
+        if (! context->getSchemaDB()->getDefaults().getSqlParser_NADefaults_Ptr())
+          {
+            // error during nadefault creation.
+            // Cannot proceed.
+            ArkcmpErrorMessageBox
+              (ARKCMP_ERROR_PREFIX "- Cannot initialize NADefaults data.",
+               ERROR_SEV, FALSE, FALSE, TRUE);
+            return(2);
+          }
 
       }
       catch (...)

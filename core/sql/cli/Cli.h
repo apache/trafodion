@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1997-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -892,7 +895,7 @@ Lng32 SQLCLI_LOBcliInterface
  /*IN*/     char * inLobHandle,
  /*IN*/     Lng32  inLobHandleLen,
  /*IN*/     char * blackBox,
- /*IN*/     Lng32* blackBoxLen,
+ /*IN*/     Int32* blackBoxLen,
  /*OUT*/    char * outLobHandle,
  /*OUT*/    Lng32 * outLobHandleLen,
  /*IN*/     LOBcliQueryType qType,
@@ -904,7 +907,20 @@ Lng32 SQLCLI_LOBcliInterface
  /*OUT*/    Int64 * outDescPartnKey,  /* returned after insert and select */
  /*OUT*/    Int64 * outDescSyskey,    /* returned after insert and select */
  /*INOUT*/  void* *inCliInterface,
- /*IN*/     Int64 xnId          /* xn id of the parent process, if non-zero */
+ /*IN*/     Int64 xnId,          /* xn id of the parent process, if non-zero */
+ /*IN */    NABoolean lobTrace
+ );
+Lng32 SQLCLI_LOB_GC_Interface
+(
+ /*IN*/     CliGlobals *cliGlobals,
+ /*IN*/     void *lobGlobals, // can be passed or NULL
+ /*IN*/     char * handle,
+ /*IN*/     Lng32  handleLen,
+ /*IN*/     char*  hdfsServer,
+ /*IN*/     Lng32  hdfsPort,
+ /*IN*/     char *lobLocation,
+ /*IN*/    Int64 lobMaxMemChunkLen, // if passed in as 0, will use default value of 1G for the in memory buffer to do compaction.
+ /*IN*/    NABoolean lobTrace
  );
 
 Lng32 SQLCLI_LOBddlInterface
@@ -917,7 +933,11 @@ Lng32 SQLCLI_LOBddlInterface
  /*IN*/     LOBcliQueryType qType,
  /*IN*/     short *lobNumList,
  /*IN*/     short *lobTypList,
- /*IN*/     char* *lobLocList
+ /*IN*/     char* *lobLocList,
+ /*IN*/    char *hdfsServer,
+ /*IN*/    Int32 hdfsPort,
+ /*IN*/     Int64 lobMaxSize,
+ /*IN*/    NABoolean lobTrace
  );
 
 Lng32 SQLCLI_LOBloader2sqlInterface

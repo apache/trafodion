@@ -1,0 +1,286 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+[[reserved_words]]
+= Reserved Words
+The words listed in this appendix are reserved for use by {project-name} SQL.
+To prevent syntax errors, avoid using these words as identifiers in
+{project-name} SQL. In {project-name} SQL, if an operating system name contains a
+reserved word, you must enclose the reserved word in double quotes (")
+to access that column or object.
+
+NOTE: In {project-name} SQL, ABSOLUTE, DATA, EVERY, INITIALIZE, OPERATION,
+PATH, SPACE, STATE, STATEMENT, STATIC, and START are not reserved words.
+
+{project-name} SQL treats these words as reserved when they are part of
+{project-name} SQL stored text. They cannot be used as identifiers unless you
+enclose them in double quotes.
+
+[[reserved_sql_identifiers_a]]
+== Reserved SQL Identifiers: A
+
+
+[cols="5*l"]
+|===
+| ACTION   | ADD   | ADMIN    | AFTER         | AGGREGATE
+| ALIAS|   | ALL   | ALLOCATE | ALTER         | AND
+| ANY      | ARE   | ARRAY    | AS            | ASC
+| ASSERTION| ASYNC | AT       | AUTHORIZATION | AVG
+|===
+
+
+[[reserved_sql_identifiers_b]]
+== Reserved SQL Identifiers: B
+
+
+[cols="5*l"]
+|===
+| BEFORE     | BEGIN | BETWEEN | BINARY | BIT
+| BIT_LENGTH | BLOB  | BOOLEAN | BOTH   | BREADTH
+| BY         |       |         |        |
+|===
+
+[[reserved_sql_identifiers_c]]
+== Reserved SQL Identifiers: C
+
+
+[cols="5*l"]
+|===
+| CALL         | CASCADE      | CASCADED          | CASE             | CAST
+| CATALOG      | CHAR         | CHARACTER         | CHARACTER_LENGTH | CHAR_LENGTH
+| CHECK        | CLASS        | CLOB              | CLOSE            | COALESCE
+| COLLATE      | COLLATION    | COLUMN            | COMMIT           | COMPLETION
+| CONNECT      | CONNECTION   | CONSTRAINT        | CONSTRAINTS      | CONSTRUCTOR
+| CONTINUE     | CONVERT      | CORRESPONDING     | COUNT            | CREATE
+| CROSS        | CUBE         | CURRENT           | CURRENT_DATE     | CURRENT_PATH
+| CURRENT_ROLE | CURRENT_TIME | CURRENT_TIMESTAMP | CURRENT_USER     | CURRNT_USR_INTN
+| CURSOR       | CYCLE        |                   |                  |
+|===
+
+
+[[reserved_sql_identifiers_d]]
+== Reserved SQL Identifiers: D
+
+[cols="5*l"]
+|===
+| DATE       | DATETIME   | DAY        | DEALLOCATE    | DEC
+| DECIMAL    | DECLARE    | DEFAULT    | DEFERRABLE    | DEFERRED
+| DELETE     | DEPTH      | DEREF      | DESC          | DESCRIBE
+| DESCRIPTOR | DESTROY    | DESTRUCTOR | DETERMINISTIC | DIAGNOSTICS
+| DICTIONARY | DISCONNECT | DISTINCT   | DOMAIN        | DOUBLE
+| DROP       | DYNAMIC    |            |               |
+|===
+
+
+[[reserved_sql_identifiers_e]]
+== Reserved SQL Identifiers: E
+
+
+[cols="5*l"]
+|===
+| EACH    | ELSE   | ELSEIF   | END       | END-EXEC
+| EQUALS  | ESCAPE | EXCEPT   | EXCEPTION | EXEC
+| EXECUTE | EXISTS | EXTERNAL | EXTRACT   |
+|===
+
+
+== Reserved SQL Identifers:  F
+
+[cols="5*l"]
+|===
+| FALSE   | FETCH    | FIRST    | FLOAT | FOR
+| FOREIGN | FOUND    | FRACTION | FREE  | FROM
+| FULL    | FUNCTION |          |       |
+|===
+
+
+[[reserved_sql_identifiers_g]]
+== Reserved SQL Identifiers G
+
+[cols="5*l"]
+|===
+| GENERAL | GET   | GLOBAL   | GO | GOTO
+| GRANT   | GROUP | GROUPING |    |
+|===  
+
+[[reserved_sql_identifiers_h]]
+== Reserved SQL Identifiers: H
+
+[[reserved_sql_identifiers_i]]
+== Reserved SQL Identifiers: I
+
+
+[cols="5*l"]
+|===
+| IDENTITY    | IF        | IGNORE | IMMEDIATE | IN
+| INDICATOR   | INITIALLY | INNER  | INOUT     | INPUT
+| INSENSITIVE | INSERT    | INT    | INTEGER   | INTERSECT
+| INTERVAL    | INTO      | IS     | ISOLATION | ITERATE
+|===
+
+
+[[reserved_sql_identifiers_j]]
+== Reserved SQL Identifiers J
+
+[[reserved_sql_identifiers_k]]
+== Reserved SQL Identifiers: K
+
+[[reserved_sql_identifiers_l]]
+== Reserved SQL Identifiers: L
+
+[cols="5*l"]
+|===
+| LANGUAGE | LARGE | LAST      | LATERAL        | LEADING
+| LEAVE    | LEFT  | LESS      | LEVEL          | LIKE
+| LIMIT    | LOCAL | LOCALTIME | LOCALTIMESTAMP | LOCATOR
+| LOOP     | LOWER |           |                |
+|===
+
+
+[[reserved_sql_identifiers_m]]
+== Reserved SQL Identifiers: M
+
+[cols="5*l"]
+|===
+| MAINTAIN | MAP   | MATCH  | MATCHED  | MAX
+| MERGE    | MIN   | MINUTE | MODIFIES | MODIFY
+| MODULE   | MONTH |        |          |
+|===
+
+
+[[reserved_sql_identifiers_n]]
+== Reserved SQL Identifiers: N
+
+[cols="5*l"]
+|===
+| NAMES | NATIONAL | NATURAL | NCHAR | NCLOB
+| NEW   | NEXT     | NO      | NONE  | NOT
+| NULL  | NULLIF   | NUMERIC |       |
+|===
+
+[[reserved_sql_identifiers_o]]
+== Reserved SQL Identifiers: O
+
+[cols="5*l"]
+|===
+| OCTET_LENGTH | OF    | OFF    | OID        | OLD
+| ON           | ONLY  | OPEN   | OPERATORS  | OPTION
+| OPTIONS      | OR    | ORDER  | ORDINALITY | OTHERS
+| OUT          | OUTER | OUTPUT | OVERLAPS   |
+|===
+
+
+[[reserved_sql_identifiers_p]]
+== Reserved SQL Identifiers: P
+
+[cols="5*l"]
+|===
+| PAD        | PARAMETER | PARAMETERS | PARTIAL    | PENDANT
+| POSITION   | POSTFIX   | PRECISION  | PREFIX    | PREORDER
+| PREPARE    | PRESERVE  | PRIMARY    | PRIOR     | PRIVATE
+| PRIVILEGES | PROCEDURE | PROTECTED  | PROTOTYPE | PUBLIC
+|===
+
+
+[[reserved_sql_identifiers_q]]
+== Reserved SQL Identifiers: Q
+
+[[reserved_sql_identifiers_r]]
+== Reserved SQL Identifiers: R
+
+[cols="5*l"]
+|===
+| READ       | READS       | REAL     | RECURSIVE | REF
+| REFERENCES | REFERENCING | RELATIVE | REORG     | REORGANIZE
+| REPLACE    | RESIGNAL    | RESTRICT | RESULT    | RETURN
+| RETURNS    | REVOKE      | RIGHT    | ROLLBACK  | ROLLUP
+| ROUTINE    | ROW         | ROWS     |           |
+|===
+
+[[reserved_sql_identifiers_s]]
+== Reserved SQL Identifiers: S
+
+[cols="5*l"]
+|===
+| SAVEPOINT    | SCHEMA         | SCOPE         | SCROLL      | SEARCH
+| SECOND       | SECTION        | SELECT        | SENSITIVE   | SESSION
+| SESSION_USER | SESSN_USR_INTN | SET           | SETS        | SIGNAL
+| SIMILAR      | SIZE           | SMALLINT      | SOME        | SPECIFIC
+| SPECIFICTYPE | SQL            | SQL_CHAR      | SQL_DATE    | SQL_DECIMAL
+| SQL_DOUBLE   | SQL_FLOAT      | SQL_INT       | SQL_INTEGER | SQL_REAL
+| SQL_SMALLINT | SQL_TIME       | SQL_TIMESTAMP | SQL_VARCHAR | SQLCODE
+| SQLERROR     | SQLEXCEPTION   | SQLSTATE      | SQLWARNING  | STRUCTURE
+| SUBSTRING    | SUM            | SYNONYM       | SYSTEM_USER |
+|===
+
+
+[[reserved_sql_identifiers_t]]
+== Reserved SQL Identifiers: T
+
+[cols="5*l"]
+|===
+| TABLE           | TEMPORARY | TERMINATE | TEST        | THAN
+| THEN            | THERE     | TIME      | TIMESTAMP   | TIMEZONE_HOUR
+| TIMEZONE_MINUTE | TO        | TRAILING  | TRANSACTION | TRANSLATE
+| TRANSLATION     | TRANSPOSE | TREAT     | TRIGGER     | TRIM
+| TRUE            |           |           |             |
+|===
+
+[[reserved_sql_identifiers_u]]
+== Reserved SQL Identifiers: U
+
+[cols="5*l"]
+|===
+| UNDER  | UNION | UNIQUE  | UNKNOWN | UNNEST
+| UPDATE | UPPER | UPSHIFT | USAGE   | USER
+| USING  |       |         |         |
+|===
+
+[[reserved_sql_identifiers_v]]
+== Reserved SQL Identifiers: V
+
+[cols="5*l"]
+|===
+| VALUE | VALUES  | VARCHAR | VARIABLE | VARYING
+| VIEW  | VIRTUAL | VISIBLE |          |
+|===
+
+[[reserved_sql_identifiers_w]]
+== Reserved SQL Identifiers: W
+
+[cols="5*l"]
+|===
+| WAIT | WHEN    | WHENEVER | WHERE | WHILE
+| WITH | WITHOUT | WORK     | WRITE |
+|===
+
+
+[[reserved_sql_identifiers_y]]
+== Reserved SQL Identifiers Y
+
+[[reserved_sql_identifiers_z]]
+== Reserved SQL Identifiers: Z
+
+

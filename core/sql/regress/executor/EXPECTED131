@@ -1,0 +1,472 @@
+>>obey TEST131(setup);
+>>create schema t131sch;
+
+--- SQL operation complete.
+>>set schema t131sch;
+
+--- SQL operation complete.
+>>create table t131helper (a int not null, primary key(a));
+
+--- SQL operation complete.
+>>insert into t131helper values(1);
+
+--- 1 row(s) inserted.
+>>create table t1311k (uniq int not null,
++>					c1000 int,
++>					str1 varchar(4000),
++>					primary key (uniq));
+
+--- SQL operation complete.
+>>insert into t1311k
++>  select (100*x100)+(10*x10)+x1,
++>  		 (100*x100)+(10*x10)+x1,
++>  		 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
++>  from t131helper
++>  		transpose 0,1,2,3,4,5,6,7,8,9 as x100
++>  		transpose 0,1,2,3,4,5,6,7,8,9 as x10
++>  		transpose 0,1,2,3,4,5,6,7,8,9 as x1;
+
+--- 1000 row(s) inserted.
+>>
+>>update statistics for table t1311k on every column sample 10 rows;
+
+--- SQL operation complete.
+>>
+>>--t1311kbis has twice the block size as t1311k that has default hbase block size of 64K  				 					      
+>>create table t1311kbis (uniq int not null,
++>					c1000 int,
++>					str1 varchar (4000),
++>					primary key (uniq))
++>					HBASE_OPTIONS (BLOCKSIZE='131072');
+
+--- SQL operation complete.
+>>insert into t1311kbis
++>  select (100*x100)+(10*x10)+x1,
++>  		 (100*x100)+(10*x10)+x1,
++>  		 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
++>  from t131helper
++>  		transpose 0,1,2,3,4,5,6,7,8,9 as x100
++>  		transpose 0,1,2,3,4,5,6,7,8,9 as x10
++>  		transpose 0,1,2,3,4,5,6,7,8,9 as x1;
+
+--- 1000 row(s) inserted.
+>>
+>>update statistics for table t1311kbis on every column sample 10 rows;
+
+--- SQL operation complete.
+>>
+>>--reload new session to make sure we are not using cached histogram
+>>sh sh runmxci.ksh -i "TEST131(dml)";
+>>set schema t131sch;
+
+--- SQL operation complete.
+>>-- need set CQD since invoking this section using a new sh session to force statistic to be taken into account
+>>-- suspect this is because histogram is cached per session and we are starting a new session, reloading Histogram...
+>>cqd hbase_small_scanner 'SYSTEM';
+
+--- SQL operation complete.
+>>-- should have small scanner on and endKey populated (JIRA 1446)
+>>explain select * from t1311k where uniq >2 and uniq <5;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212321106837120815
+ROWS_OUT ................. 3
+EST_TOTAL_COST ........... 0.01
+STATEMENT ................ select * from t1311k where uniq >2 and uniq <5;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 3
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est ........... 3
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality .... 3
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  SCHEMA ................. T131SCH
+  HBASE_SMALL_SCANNER .... SYSTEM
+  GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 6569714930762029600
+  select_list ............ TRAFODION.T131SCH.T1311K.UNIQ,
+                             TRAFODION.T131SCH.T1311K.C1000,
+                             TRAFODION.T131SCH.T1311K.STR1
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T1311K
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 3
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est ........... 3
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.T131SCH.T1311K
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(excl) ....... 2
+  end_keys(excl) ......... 5
+  cache_size ........... 100
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed .......... 3
+  column_retrieved ....... #1:1,#1:2,#1:3
+  key_columns ............ UNIQ
+  executor_predicates .... (UNIQ > 2) and (UNIQ < 5)
+
+--- SQL operation complete.
+>>explain select * from t1311k where uniq >2 and uniq <99;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212321106837208060
+ROWS_OUT ................ 97
+EST_TOTAL_COST ........... 0.01
+STATEMENT ................ select * from t1311k where uniq >2 and uniq <99;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 97
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 97
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality ... 97
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  SCHEMA ................. T131SCH
+  HBASE_SMALL_SCANNER .... SYSTEM
+  GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 6569714930762029600
+  select_list ............ TRAFODION.T131SCH.T1311K.UNIQ,
+                             TRAFODION.T131SCH.T1311K.C1000,
+                             TRAFODION.T131SCH.T1311K.STR1
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T1311K
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 97
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 97
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.T131SCH.T1311K
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(excl) ....... 2
+  end_keys(excl) ........ 99
+  cache_size ........... 100
+  probes ................. 1
+  rows_accessed ......... 97
+  column_retrieved ....... #1:1,#1:2,#1:3
+  key_columns ............ UNIQ
+  executor_predicates .... (UNIQ > 2) and (UNIQ < 99)
+
+--- SQL operation complete.
+>>select uniq, c1000 from t1311k where uniq >2 and uniq <5;
+
+UNIQ         C1000      
+-----------  -----------
+
+          3            3
+          4            4
+
+--- 2 row(s) selected.
+>>select uniq, c1000 from t1311k where uniq >2 and uniq <99;
+
+UNIQ         C1000      
+-----------  -----------
+
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+          8            8
+          9            9
+         10           10
+         11           11
+         12           12
+         13           13
+         14           14
+         15           15
+         16           16
+         17           17
+         18           18
+         19           19
+         20           20
+         21           21
+         22           22
+         23           23
+         24           24
+         25           25
+         26           26
+         27           27
+         28           28
+         29           29
+         30           30
+         31           31
+         32           32
+         33           33
+         34           34
+         35           35
+         36           36
+         37           37
+         38           38
+         39           39
+         40           40
+         41           41
+         42           42
+         43           43
+         44           44
+         45           45
+         46           46
+         47           47
+         48           48
+         49           49
+         50           50
+         51           51
+         52           52
+         53           53
+         54           54
+         55           55
+         56           56
+         57           57
+         58           58
+         59           59
+         60           60
+         61           61
+         62           62
+         63           63
+         64           64
+         65           65
+         66           66
+         67           67
+         68           68
+         69           69
+         70           70
+         71           71
+         72           72
+         73           73
+         74           74
+         75           75
+         76           76
+         77           77
+         78           78
+         79           79
+         80           80
+         81           81
+         82           82
+         83           83
+         84           84
+         85           85
+         86           86
+         87           87
+         88           88
+         89           89
+         90           90
+         91           91
+         92           92
+         93           93
+         94           94
+         95           95
+         96           96
+         97           97
+         98           98
+
+--- 96 row(s) selected.
+>>-- should get Small scanner off since the scanned rows do not fit in 64K block
+>>explain select * from t1311k where uniq >2 and uniq <30;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212321106837369355
+ROWS_OUT ................ 29
+EST_TOTAL_COST ........... 0.01
+STATEMENT ................ select * from t1311k where uniq >2 and uniq <30;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 29
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 29
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality ... 29
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  SCHEMA ................. T131SCH
+  HBASE_SMALL_SCANNER .... SYSTEM
+  GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 6569714930762029600
+  select_list ............ TRAFODION.T131SCH.T1311K.UNIQ,
+                             TRAFODION.T131SCH.T1311K.C1000,
+                             TRAFODION.T131SCH.T1311K.STR1
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T1311K
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 29
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 29
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.T131SCH.T1311K
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(excl) ....... 2
+  end_keys(excl) ........ 30
+  cache_size ........... 100
+  probes ................. 1
+  rows_accessed ......... 29
+  column_retrieved ....... #1:1,#1:2,#1:3
+  key_columns ............ UNIQ
+  executor_predicates .... (UNIQ > 2) and (UNIQ < 30)
+
+--- SQL operation complete.
+>>-- should get Small scanner on since the scanned rows fit in 128K block
+>>explain select * from t1311kbis where uniq >2 and uniq <30;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212321106838405209
+ROWS_OUT ................ 29
+EST_TOTAL_COST ........... 0.01
+STATEMENT ................ select * from t1311kbis where uniq >2 and uniq <30;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 29
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 29
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality ... 29
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  SCHEMA ................. T131SCH
+  HBASE_SMALL_SCANNER .... SYSTEM
+  GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 6569714930762031952
+  select_list ............ TRAFODION.T131SCH.T1311KBIS.UNIQ,
+                             TRAFODION.T131SCH.T1311KBIS.C1000,
+                             TRAFODION.T131SCH.T1311KBIS.STR1
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T1311KBIS
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 29
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 29
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.T131SCH.T1311KBIS
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(excl) ....... 2
+  end_keys(excl) ........ 30
+  cache_size ........... 100
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ......... 29
+  column_retrieved ....... #1:1,#1:2,#1:3
+  key_columns ............ UNIQ
+  executor_predicates .... (UNIQ > 2) and (UNIQ < 30)
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>obey TEST131(clnup);
+>>set schema t131sch;
+
+--- SQL operation complete.
+>>drop table t131helper cascade;
+
+--- SQL operation complete.
+>>drop table t1311k cascade;
+
+--- SQL operation complete.
+>>drop table t1311kbis cascade;
+
+--- SQL operation complete.
+>>drop schema t131sch cascade;
+
+--- SQL operation complete.
+>>
+>>
+>>log;

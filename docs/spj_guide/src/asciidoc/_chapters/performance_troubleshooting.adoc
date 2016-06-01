@@ -1,0 +1,265 @@
+////
+/**
+*@@@ START COPYRIGHT @@@
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements. See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+[[performance-and-troubleshooting]]
+= Performance and Troubleshooting
+
+This chapter describes how to improve and monitor the performance of
+SPJs on {project-name} and provides guidelines for
+troubleshooting common problems:
+
+* <<troubleshooting-common-problems, Troubleshooting Common Problems>>
+* <<performance-tip, Performance Tip>>
+* <<displaying-an-execution-plan-of-a-call-statement, Displaying an Execution Plan of a CALL Statement>>
+
+[[troubleshooting-common-problems]]
+== Troubleshooting Common Problems
+
+To resolve problems that occur when you register or execute an SPJ,
+follow these guidelines:
+
+* Note the SQLCODE or SQLSTATE value of the error messages and locate
+the information in the
+{docs-url}/messages_guide/index.html[[{project-name} Messages Manual]],
+which provides cause, effect, and recovery information for all SQL errors.
+
+* Check that the user has the appropriate permissions to create or call
+the SPJ. See these sections:
+** <<required-privileges-for-creating-or-dropping-an-spj, Required Privileges for Creating or Dropping an SPJ>>.
+** <<required-privileges-for-calling-an-spj, Required Privileges for Calling an SPJ>>.
+
+* Check the code of the SPJ method. See <<develop-spj-methods, Develop SPJ Methods>>.
+Fix any problems.
+
+* If you successfully compiled, deployed, and registered the SPJ but are
+receiving errors when calling the SPJ, check that the output parameters
+in the Java method are specified as arrays. See
+<<returning-output-values-from-the-java-method, Returning Output Values From the Java Method>>.
+
+
+* Verify that someone did not alter the library by selecting a JAR file
+that contains a different class name, method name, or method signature
+than the original JAR file, without dropping and re-creating the SPJ.
+
+* Check the syntax of the CALL statement in the application. See
+<<execute-spjs, Execute SPJs>>. Fix any problems.
+
+* If the SPJ is supposed to return result sets, but the result sets are
+not being returned to the calling application, then check that the SPJ method
+does not explicitly close a `java.sql.Connection` object. See
+<<Use-of-java-sql-Connection-Objects, Use of java.sql.Connection Objects>>.
+
+* If a `java.lang.ArrayIndexOutOfBoundsException` occurs, then check that the
+SPJ method is not trying to insert more than one array element into a
+`java.sql.ResultSets[]` array. For more information, see
+<<returning-stored-procedure-result-sets, Returning Stored Procedure Result Sets>>.
+
+* To identify Java-related errors, execute the SPJ method outside {project-name}
+by invoking the Java method directly in a Java application that you run on a
+client workstation, using the {project-name} JDBC Type-4 driver to connect to {project-name}.
+
+* If you are using JDBC tracing and logging, then follow these guidelines:
+
+** Execute the SPJ method outside the database by invoking the Java
+method directly from a Java application that you run on a client
+workstation, using the {project-name} JDBC Type-4 driver to connect to the {project-name}
+platform.
+
+** Verify that the file directory specified in the `T4LogFile` property
+exists on the client workstation and that you have write access to it.
+
+[[performance-tip]]
+== Performance Tip
+
+To ensure the optimal performance of SPJs on {project-name},
+avoid nesting CALL statements in an SPJ method, which wastes resources
+and might diminish performance. For more information, see
+<<nested-java-method-invocations, Nested Java Method Invocations>>.
+
+[[displaying-an-execution-plan-of-a-call-statement]]
+== Displaying an Execution Plan of a CALL Statement
+
+An execution plan reveals how a CALL statement was optimized. You can
+display all or part of the execution plan for a CALL statement by using
+the EXPLAIN statement or function.
+
+[[using-the-explain-statement]]
+=== Using the EXPLAIN Statement
+
+Suppose that you want to display the execution plan for this CALL
+statement:
+
+```
+CALL trafodion.persnl.adjustsalary( 202, 5.5, ? ) ;
+```
+
+Enter this EXPLAIN statement in an trafci session:
+
+[source, sql]
+----
+SQL> PREPARE spj1 FROM CALL trafodion.persnl.adjustsalary( 202, 5.5, ? ) ;
+
+--- SQL command prepared.
+
+SQL> EXPLAIN spj1 ;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... SPJ1
+PLAN_ID .................. 212206487012085509
+ROWS_OUT ................. 1
+EST_TOTAL_COST ........... 0
+STATEMENT ................ CALL trafodion.persnl.adjustsalary( 202, 5.5, ? )
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ====================================== SEQ_NO 2         ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0
+DESCRIPTION
+  max_card_est ........... 1
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 3,466,211,324
+  max_max_cardinality .... 1
+  total_overflow_size .... 0.00 KB xn_autoabort_interval -1
+  plan_version ........... 2,500
+  LDAP_USERNAME ..........   sqluser_admin
+  NVCI_PROCESS ........... ON
+  SHOWCONTROL_UNEXTERNALI  OFF
+  SCHEMA ................. TRAFODION.INVENT
+  CATALOG ................ TRAFODION
+  PRIORITY ............... 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.ASSOC2DS)
+  PRIORITY ............... 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.DATASOURCES)
+  PRIORITY ............... 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.ENVIRONMENTVALUES)
+  PRIORITY ............... 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.NAME2ID)
+  PRIORITY ............... 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.RESOURCEPOLICIES)
+  select_list ............ NUMERIC(8,2) SIGNED
+  input_variables ........ ?
+
+CALL ====================================== SEQ_NO 1         NO CHILDREN
+TABLE_NAME ............... TRAFODION.PERSNL.ADJUSTSALARY
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0
+DESCRIPTION
+  max_card_est ........... -1
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  routine_name ........... TRAFODION.PERSNL.ADJUSTSALARY
+  parameter_modes ........ I I O
+  sql_access_mode ........ MODIFIES SQL DATA
+  external_name .......... adjustSalary
+  library ................ TRAFODION.PERSNL.PAYROLL
+  external_file .......... Payroll
+  signature .............. (Ljava/math/BigDecimal;D[Ljava/math/BigDecimal;)V
+  language ............... JAVA
+  parameter_style ........ JAVA
+  external_security ...... INVOKER
+  max_result_sets ........ 0
+  parameters ............. cast(202), cast(cast((cast(5.5) / cast(10)))), NUMERIC(8,2) SIGNED
+
+--- SQL operation complete.
+
+SQL>
+----
+
+The EXPLAIN statement generates and displays all the columns of the
+result table of the EXPLAIN function. For the syntax of the EXPLAIN
+statement, see the
+{docs-url}/sql_reference/index.html#explain_statement[{project-name} SQL Reference Manual].
+
+[[using-the-explain-function]]
+=== Using the EXPLAIN Function
+
+You can also prepare the CALL statement and select specific columns from
+the result table of the EXPLAIN function, as shown below:
+
+[source, sql]
+----
+SQL> PREPARE spj1 FROM CALL trafodion.persnl.adjustsalary( 202, 5.5, ? ) ;
+
+--- SQL command prepared.
+
+SQL> SELECT SUBSTRING( operator, 1, 8 ) AS "OPERATOR", operator_cost,
++> SUBSTRING( description, 1, 500 ) AS "DESCRIPTION"
++> FROM TABLE ( EXPLAIN( NULL, 'SPJ1' ) ) ;
+
+OPERATOR OPERATOR_COST  DESCRIPTION
+-------- -------------- --------------------------------------------------------------------------------------
+CALL                0.0 max_card_est: -1 fragment_id: 0 parent_frag: (none) fragment_type: master routine_name:
+TRAFODION.PERSNL.ADJUSTSALARY parameter_modes: I I O sql_access_mode: MODIFIES SQL DATA external_name: adjustSalary
+library: TRAFODION.PERSNL.PAYROLL external_file: Payroll signature: (Ljava/math/BigDecimal;D[Ljava/math/BigDecimal;)V
+language: JAVA parameter_style: JAVA external_security: INVOKER max_result_sets: 0 parameters: cast(202),
+cast(cast((cast(5.5) / cast(10)))), NUMERIC(8,2) SIGNED
+ROOT                0.0 max_card_est: 1 fragment_id: 0 parent_frag: (none) fragment_type: master statement_index:
+  0 affinity_value: 3466211324 max_max_cardinality: 1 total_overflow_size: 0.00 KB statement: call
+trafodion.persnl.adjustsalary( 202, 5.5 ,? ) xn_autoabort_interval: -1 plan_version: 2500 LDAP_USERNAME: sqluser_admin
+NVCI_PROCESS: ON SHOWCONTROL_UNEXTERNALIZED_ATTRS: OFF SCHEMA: TRAFODION.INVENT CATALOG: TRAFODION PRIORITY: 9 (for table
+SYSTEM_CATALOG.MXCS_SCHEMA.ASSOC2DS) PRIORITY: 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.D
+
+--- 2 row(s) selected. SQL>
+----
+
+For a CALL statement, the OPERATOR column of the result table contains a
+row named CALL. The DESCRIPTION column contains special token pairs for
+the CALL operator. For descriptions of the token pairs, see this table:
+
+<<<
+.Token Pairs Description
+[cols="30%,60%,10%", options="header"]
+|===
+| Token             | Token Description                                                              | Data Type
+| `max_card_est`    | The upper limit for the operator cardinality in the query tree.                | integer
+| `fragment_id`     | A sequential number assigned to the fragment. 0 is always the master
+executor, and 1 is reserved for the Explain plan. Numbers 2 to _n_ are ESP or storage-engine fragments. | integer
+| `parent_frag`     | The fragment_id for the parent fragment of the current fragment. The
+value is (none) for the master executor.                                                             | integer
+| `fragment_type`   | Type of fragment, which can be either master, ESP, or storage engine.          | text
+| `routine_name`    | ANSI name of the procedure.                                                    | text
+| `parameter_modes` | A sequence of characters that specifies SQL parameter modes for the
+procedure. I is used for an IN parameter, O for an OUT parameter, and N
+for an INOUT parameter. Characters are separated by a single space. The
+value none is returned if the procedure has no SQL parameters.                                       | text
+| `sql_access_mode` | SQL access mode of the procedure.                  `                           | text
+| `external_name`   | Java method name.                                                              | text
+| `library`         | ANSI name of the library object that maps to the procedure's JAR file.         | text
+| `external_file`   | Java class name, possibly prefixed by a package name, that contains the SPJ method. | text
+| `signature`       | Java signature of the SPJ method in internal Java Virtual Machine (JVM) format. | text
+| `language`        | Language in which the SPJ method is written, which is always Java.             | text
+| `parameter_style` | Convention of passing parameter arguments to the stored procedure, which
+conforms to the Java language for SPJs.                                                              | text
+| `external_security` | External security of the stored procedure, indicating the privileges or
+rights that users have when executing (or calling) the procedure. The value is either INVOKER or
+DEFINER. For more information, see <<understand-external-security, Understand External Security>>.   | text
+| `max_result_sets` | The maximum number of result sets that this procedure can return.              | integer
+| `parameters`      | The parameter arguments that are passed to or from the procedure.              | text
+|===
+
+For the syntax of the EXPLAIN function, see the
+{docs-url}/sql_reference/index.html#explain_statement[{project-name} SQL Reference Manual].
+

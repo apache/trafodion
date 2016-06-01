@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -197,6 +200,11 @@ void SearchKey::init(const ValueIdList & keyColumns,
 					      allChosenPredsAreEqualPreds_
 					      );
 
+
+  // Find any full key predicate in setOfPredicates that refers 
+  // to a key column and save the result in fullKeyPredicates_.
+  computeFullKeyPredicates(setOfPredicates);
+  
 
   // We do not want to remove the predicates which have two constants
   // in their VEG. These should be evaluated like any other predicate.
@@ -2705,6 +2713,65 @@ void SearchKey::computeCoveredLeadingKeys()
        if ( !found )
          break;
     }
+  }
+}
+
+void SearchKey::computeFullKeyPredicates(ValueIdSet& predicates)
+{
+  // If the key column is an INDEX COLUMN, convert it into a base column
+  ValueIdList baseKeyCols;
+
+  ValueId vid;
+  const ValueIdList& keyColumns = getKeyColumns();
+  for (CollIndex i=0; i<keyColumns.entries(); i++ ) {
+     if ( keyColumns[i].getItemExpr()->getOperatorType() == ITM_INDEXCOLUMN )
+       vid = ((IndexColumn*)(keyColumns[i].getItemExpr()))->getDefinition();
+     else
+       vid = keyColumns[i];
+
+     baseKeyCols.insertAt(baseKeyCols.entries(), vid);
+  }
+
+  // compute the # of leading key columns covered by the key columns 
+  // in the disjunct.
+   ValueIdSet columnsCoveredByKey;
+
+   vid = predicates.init();
+   for (; predicates.next(vid); predicates.advance(vid)) {
+
+      columnsCoveredByKey.clear();
+      vid.getItemExpr()->findAll(ITM_BASECOLUMN, columnsCoveredByKey, TRUE, TRUE);
+
+      // for each vid (or predicate), check the base column list
+      for (CollIndex i=0; i<baseKeyCols.entries(); i++ ) {
+
+         NABoolean found = FALSE;
+
+         // the predicate directly refers the base column 
+         if ( columnsCoveredByKey.containsTheGivenValue(baseKeyCols[i]) ) {
+            fullKeyPredicates_ += vid;
+            found = TRUE;
+         } else {
+            // do a search by column position
+           BaseColumn* keyCol = (BaseColumn*)(baseKeyCols[i].getItemExpr());
+
+
+           ValueId cvid = columnsCoveredByKey.init();
+           for (; columnsCoveredByKey.next(cvid); columnsCoveredByKey.advance(cvid)) {
+              BaseColumn* colInKeyPred =  (BaseColumn*)(cvid.getItemExpr());
+ 
+              // the key column in the predicate is the same as the base column 
+              if ( keyCol->getColNumber() == colInKeyPred->getColNumber() ) {
+                 fullKeyPredicates_ += vid;
+                 found = TRUE;
+                 break;
+              }
+          }
+        }
+
+        if ( found )
+         break;
+     }
   }
 }
 

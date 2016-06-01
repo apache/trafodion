@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -2237,13 +2240,7 @@ ExExeUtilHiveTruncateTcb::ExExeUtilHiveTruncateTcb(
   qparent_.down->allocatePstate(this);
 
   numExistingFiles_ = 0;
-  memset (hdfsHost_, '\0', sizeof(hdfsHost_));
-  memset (hiveTableLocation_, '\0', sizeof(hiveTableLocation_));
 
-  strncpy(hdfsHost_, fdTdb().getHiveHdfsHost(), sizeof(hdfsHost_));
-  hdfsPort_ = fdTdb().getHiveHdfsPort();
-  char * outputPath =  fdTdb().getHiveTableLocation();
-  strncpy(hiveTableLocation_, outputPath, 512);
   step_ = INITIAL_;
 }
 
@@ -2287,26 +2284,84 @@ short ExExeUtilHiveTruncateTcb::work()
       case INITIAL_:
       {
 
-        //nothing for now --
-        // more stuff later
+        if (fdTdb().getHiveModTS() > 0)
+          step_ = DATA_MOD_CHECK_;
+        else
+          step_ = EMPTY_DIRECTORY_;
+      }
+      break;
+
+      case DATA_MOD_CHECK_:
+      {
+        cliRC = ExpLOBinterfaceDataModCheck
+          (lobGlob_,
+           fdTdb().getHiveTableLocation(),
+           fdTdb().getHiveHdfsHost(),
+           fdTdb().getHiveHdfsPort(),
+           fdTdb().getHiveModTS(),
+           0);
+
+        if (cliRC < 0)
+        {
+          Lng32 cliError = 0;
+          
+          Lng32 intParam1 = -cliRC;
+          ComDiagsArea * diagsArea = NULL;
+          ExRaiseSqlError(getHeap(), &diagsArea, 
+                          (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
+                          NULL, &intParam1, 
+                          &cliError, 
+                          NULL, 
+                          "HDFS",
+                          (char*)"ExpLOBInterfaceEmptyDirectory",
+                          getLobErrStr(intParam1));
+          pentry_down->setDiagsArea(diagsArea);
+          step_ = ERROR_;
+          break;
+        }
+
+        if (cliRC == 1) // data mod check failed
+        {
+          ComDiagsArea * diagsArea = NULL;
+          ExRaiseSqlError(getHeap(), &diagsArea, 
+                          (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+          pentry_down->setDiagsArea(diagsArea);
+          
+          step_ = ERROR_;
+          break;
+        }
+   
         step_ = EMPTY_DIRECTORY_;
       }
-        break;
+      break;
 
       case EMPTY_DIRECTORY_:
       {
-        Lng32 retCode= ExpLOBinterfaceEmptyDirectory(
-                                    lobGlob_,
-                                    (char*)"",                  //name is empty
-                                    hiveTableLocation_,
-                                    Lob_HDFS_File,
-                                    hdfsHost_,
-                                    hdfsPort_,
-                                    0 ,
-                                    1 ,
-                                    0);
-        if (retCode != 0)
+        cliRC = ExpLOBinterfaceEmptyDirectory(
+             lobGlob_,
+             (char*)"",                  //name is empty
+             fdTdb().getHiveTableLocation(),
+             Lob_HDFS_File,
+             fdTdb().getHiveHdfsHost(),
+             fdTdb().getHiveHdfsPort(),
+             0 ,
+             1 ,
+             0);
+        if (cliRC != 0)
         {
+          Lng32 cliError = 0;
+          
+          Lng32 intParam1 = -cliRC;
+          ComDiagsArea * diagsArea = NULL;
+          ExRaiseSqlError(getHeap(), &diagsArea, 
+                          (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
+                          NULL, &intParam1, 
+                          &cliError, 
+                          NULL, 
+                          "HDFS",
+                          (char*)"ExpLOBInterfaceEmptyDirectory",
+                          getLobErrStr(intParam1));
+          pentry_down->setDiagsArea(diagsArea);
           step_ = ERROR_;
         }
         else
@@ -2315,6 +2370,7 @@ short ExExeUtilHiveTruncateTcb::work()
         }
       }
       break;
+
       case ERROR_:
       {
         if (qparent_.up->isFull())
@@ -2347,7 +2403,7 @@ short ExExeUtilHiveTruncateTcb::work()
 
         step_ = DONE_;
       }
-        break;
+      break;
 
       case DONE_:
       {

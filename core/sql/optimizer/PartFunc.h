@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -72,6 +75,7 @@ class NAColumnArray;
 class SearchKey;
 class SkewedValueList;
 typedef LIST(Int64) Int64List;
+typedef NABoolean (*compFuncPtrT)(const char* low, const char* key, const char* high, Int32 keyLen, NABoolean checkLast);
 
 // ----------------------------------------------------------------------
 // literals for special numbers of partitions (don't care, exactly one)
@@ -2032,6 +2036,15 @@ public:
   void completePartitionBoundaries(const ValueIdList& partitioningKeyOrder,
 				   Lng32 encodedBoundaryKeyLength);
 
+
+  // find a boundary pair [low, high) with smallest low value in which keys fall, and return the
+  // // index of the boundary low. Return -1 otherwise, or the key lengths are different.
+  Int32 findBeginBoundary(char* encodedKey, Int32 keyLen, compFuncPtrT compFunc) const;
+
+  // find a boundary pair [low, high) with the largest low value in which keys fall, and return the
+  // // index of the boundary low. Return -1 otherwise, or the key lengths are different.
+  Int32 findEndBoundary(char* encodedKey, Int32 keyLen, compFuncPtrT compFunc) const;
+
   void setupForStatement(NABoolean useStringVersion);
   void resetAfterStatement();
 
@@ -2242,6 +2255,12 @@ public:
 
   NABoolean 
      partFuncAndFuncPushDownCompatible(const PartitioningFunction&) const;
+
+  // ---------------------------------------------------------------------
+  // Compute the number of active partitions. Active partitions are those
+  // that will be accessed applying the search key skey.
+  // ---------------------------------------------------------------------
+  Int32 computeNumOfActivePartitions(SearchKey* skey, const TableDesc* tDesc) const;
 
   virtual const NAString getText() const;
   virtual void print( FILE* ofd = stdout,
@@ -2686,5 +2705,7 @@ private:
 
 }; // class RoundRobinPartitioningFunction
 // LCOV_EXCL_STOP
+//
+
 
 #endif /* PARTFUNC_H */

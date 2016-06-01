@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -94,6 +97,7 @@ enum hs_table_type { UNKNOWN_TYPE = 0,
 #define SAMPLE_PERIODIC   0x00010000               /* SAMPLE PERIODIC         */
 #define SAMPLE_REQUESTED  0x0001F000               /* 'OR' sampling options   */
 #define SAMPLE_ALL        0x00020000               /* For REMOVE SAMPLE       */
+#define NO_SAMPLE         0x00200000               /* NO SAMPLE (explicit)    */
 
                                                    /*===    IUS OPTIONS    ===*/
 #define IUS_OPT           0x00040000               /* INCREMENTAL UPDATE STATS*/
@@ -101,6 +105,7 @@ enum hs_table_type { UNKNOWN_TYPE = 0,
 
                                                    /*=== SHOWSTATS OPTIONS ===*/
 #define SHOWSTATS_OPT     0x00100000               /* SHOWSTATS COMMAND       */
+//  note 0x00200000 taken above
 #define DETAIL_OPT        0x00000001               /* DETAILS                 */
 
 
@@ -161,6 +166,10 @@ enum USTAT_ERROR_CODES {UERR_SYNTAX_ERROR                    = 15001,
                         UERR_NO_ONEVERYKEY                   = 9240,
                         UERR_NO_PRIVILEGE                    = 9241,
                         UERR_CANT_CREATE_HIVE_STATS_SCHEMA   = 9242,
+                        UERR_YOU_WILL_LIKELY_BE_SORRY        = 9243,
+                        UERR_USER_TRANSACTION                = 9244,
+                        UERR_LOB_STATS_NOT_SUPPORTED         = 9246,
+                        UERR_VOLATILE_TABLES_NOT_SUPPORTED   = 9247,
                         UERR_NO_ERROR                        = 9250,
                         UERR_LAST_ERROR                      = 9250
                        };

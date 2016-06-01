@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/*
+ * @@@ START COPYRIGHT @@@
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ *
+ */
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.apache</groupId>
+    <artifactId>apache</artifactId>
+    <version>16</version>
+    <relativePath/>
+      <!-- no parent resolution -->
+  </parent>
+
+  <groupId>org.apache.trafodion</groupId>
+  <artifactId>trafodion</artifactId>
+  <version>1.3.0</version>
+  <packaging>pom</packaging>
+  <name>Apache Trafodion</name>
+  <description>Trafodion is a webscale SQL-on-Hadoop solution enabling transactional or operational workloads on Hadoop.</description>
+  <url>http://trafodion.incubator.apache.org</url>
+  <inceptionYear>2015</inceptionYear>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+      <comments>A business-friendly OSS license</comments>
+    </license>
+  </licenses>
+
+  <organization>
+    <name>Apache Software Foundation</name>
+    <url>http://www.apache.org</url>
+  </organization>
+
+  <issueManagement>
+    <system>JIRA</system>
+    <url>http://issues.apache.org/jira/browse/TRAFODION</url>
+  </issueManagement>
+
+  <scm>
+    <connection>scm:git:http://git-wip-us.apache.org/repos/asf/incubator-trafodion.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-trafodion.git</developerConnection>
+    <url>https://git-wip-us.apache.org/repos/asf?p=incubator-trafodion.git</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://jenkins.esgyn.com</url>
+  </ciManagement>
+
+  <mailingLists>
+    <mailingList>
+      <name>User List</name>
+      <subscribe>user-subscribe@trafodion.incubator.apache.org</subscribe>
+      <unsubscribe>user-unsubscribe@trafodion.incubator.apache.org</unsubscribe>
+      <post>user@trafodion.incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-trafodion-user/</archive>
+    </mailingList>
+    <mailingList>
+      <name>Developer List</name>
+      <subscribe>dev-subscribe@trafodion.incubator.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@trafodion.incubator.apache.org</unsubscribe>
+      <post>dev@trafodion.incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-trafodion-dev/</archive>
+    </mailingList>
+    <mailingList>
+      <name>GitHub Codereview List</name>
+      <subscribe>codereview-subscribe@trafodion.incubator.apache.org</subscribe>
+      <unsubscribe>codereview-unsubscribe@trafodion.incubator.apache.org</unsubscribe>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-trafodion-codereview/</archive>
+    </mailingList>
+    <mailingList>
+      <name>Commits List</name>
+      <subscribe>commits-subscribe@trafodion.incubator.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@trafodion.incubator.apache.org</unsubscribe>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-trafodion-commits/</archive>
+    </mailingList>
+    <mailingList>
+      <name>Issues List</name>
+      <subscribe>issues-subscribe@trafodion.incubator.apache.org</subscribe>
+      <unsubscribe>issues-unsubscribe@trafodion.incubator.apache.org</unsubscribe>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-trafodion-issues/</archive>
+    </mailingList>
+  </mailingLists>
+
+  <developers>
+    <developer>
+      <id>TrafodionDeveloper</id>
+      <name>See list of Trafodion developers</name>
+      <email>dev@trafodion.incubator.apache.org</email>
+      <url>https://cwiki.apache.org/confluence/display/TRAFODION/Contributors</url>
+    </developer>
+  </developers>
+
+  <contributors>
+    <contributor>
+      <name>See list of Trafodion contributors</name>
+      <email>dev@trafodion.incubator.apache.org</email>
+      <url>https://cwiki.apache.org/confluence/display/TRAFODION/Contributors</url>
+    </contributor>
+  </contributors>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+  </properties>
+
+  <modules>
+    <module>docs/client_install</module>
+    <module>dcs</module>
+    <module>core/rest</module>
+    <module>docs/command_interface</module>
+    <module>docs/cqd_reference</module>
+    <module>docs/load_transform</module>
+    <module>docs/provisioning_guide</module>
+    <module>docs/messages_guide</module>
+    <module>docs/odb_user</module>
+    <module>docs/spj_guide</module>
+    <module>docs/sql_reference</module>
+    <module>docs/jdbct4ref_guide</module>
+  </modules>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>${basedir}/docs/src/site/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+    <outputDirectory>${basedir}/docs/target</outputDirectory>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>2.7</version>
+          <configuration>
+            <encoding>UTF-8</encoding>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>3.4</version>
+          <inherited>false</inherited>
+          <dependencies>
+            <dependency>
+              <!-- add support for ssh/scp -->
+              <groupId>org.apache.maven.wagon</groupId>
+              <artifactId>wagon-ssh</artifactId>
+              <version>2.2</version>
+            </dependency>
+            <!-- Markdown is used for the website pages -->
+            <dependency>
+               <groupId>org.apache.maven.doxia</groupId>
+               <artifactId>doxia-module-markdown</artifactId>
+               <version>1.6</version>
+            </dependency>
+            <dependency>
+              <groupId>lt.velykis.maven.skins</groupId>
+              <artifactId>reflow-velocity-tools</artifactId>
+              <version>1.1.1</version>
+            </dependency>
+            <!-- Reflow skin requires Velocity >= 1.7  -->
+            <dependency>
+              <groupId>org.apache.velocity</groupId>
+              <artifactId>velocity</artifactId>
+              <version>1.7</version>
+            </dependency>
+          </dependencies>
+          <configuration>
+            <siteDirectory>${basedir}/docs/src/site</siteDirectory>
+            <outputDirectory>${basedir}/docs/target</outputDirectory>
+            <inputEncoding>UTF-8</inputEncoding>
+            <outputEncoding>UTF-8</outputEncoding>
+            <attributes>
+              <imagesdir>./images</imagesdir>
+              <icons>font</icons>
+              <stylesheet>trafodion.css</stylesheet>
+              <last-update-label>false</last-update-label>
+            </attributes>
+          </configuration>
+        </plugin>
+        <!-- For AsciiDoc docs building -->
+        <plugin>
+          <groupId>org.asciidoctor</groupId>
+          <artifactId>asciidoctor-maven-plugin</artifactId>
+          <version>1.5.2</version>
+          <inherited>false</inherited>
+          <dependencies>
+            <dependency>
+              <groupId>org.asciidoctor</groupId>
+              <artifactId>asciidoctorj-pdf</artifactId>
+              <version>1.5.2</version>
+            </dependency>
+          </dependencies>
+          <configuration>
+            <outputDirectory>${basedir}/docs/target/docs</outputDirectory>
+            <doctype>book</doctype>
+            <imagesDir>images</imagesDir>
+            <sourceHighlighter>coderay</sourceHighlighter>
+            <attributes>
+              <docVersion>${project.version}</docVersion>
+            </attributes>
+          </configuration>
+          <executions>
+            <execution>
+              <id>output-html</id>
+              <phase>site</phase>
+              <goals>
+                <goal>process-asciidoc</goal>
+              </goals>
+              <configuration>
+                <attributes>
+                  <imagesdir>./images</imagesdir>
+                  <icons>font</icons>
+                  <stylesheet>trafodion.css</stylesheet>
+                  <last-update-label>false</last-update-label>
+                </attributes>
+                <backend>html5</backend>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <reporting>
+    <excludeDefaults>true</excludeDefaults>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>2.8</version>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>project-team</report>
+              <report>mailing-list</report>
+              <report>issue-tracking</report>
+              <report>license</report>
+              <report>summary</report>
+              <report>scm</report>
+              <report>cim</report>
+              <report>modules</report>
+              <report>dependencies</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+    </plugins>
+  </reporting>
+
+  <distributionManagement>
+    <site>
+      <id>trafodion.incubator.apache.org</id>
+      <name>Trafodion Website at incubator.apache.org</name>
+      <!-- On why this is the tmp dir and not trafodion.incubator.apache.org, see
+      https://issues.apache.org/jira/browse/HBASE-7593?focusedCommentId=13555866&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-13555866
+      -->
+      <url>file:///tmp</url>
+    </site>
+  </distributionManagement>
+
+</project>

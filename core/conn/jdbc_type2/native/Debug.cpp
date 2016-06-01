@@ -1,19 +1,22 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2005-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **************************************************************************/
@@ -45,8 +48,8 @@
 #include <time.h>
 #include <sys/times.h>
 #include <sys/types.h>
+#include <sys/syscall.h>
 #include <unistd.h>
-#include <windows.h>
 #ifdef NSK_PLATFORM
 	#include <sqlWin.h>
 #else
@@ -56,13 +59,11 @@
 #include "SrvrCommon.h"
 #include "SrvrKds.h"
 #include "SqlInterface.h"
-#include "commondiags.h"
 //#include "spthread.h" commented by Venu for TSLX
 
 #include "jni.h"
 
 #include "Vproc.h"
-#include <tslxExt.h> //added by venu for TSLX
 
 // Maximum output line length
 #define DEBUG_MAX_LINE_LEN 1024UL
@@ -183,8 +184,7 @@ static const char *UCase(const char *text)
 
 static unsigned long GetThreadId(void)
 {
-	_TSLX_t thread_id = tslx_ext_pthread_self();
-	return((unsigned long) thread_id.field1);
+        return syscall(SYS_gettid);
 }
 
 static const char *GetId(void)
@@ -665,7 +665,7 @@ const char *DebugFormat(const char *fmt, ...)
 
 	if (fmt==NULL) return(NULL);
 
-	va_list marker
+	va_list marker;
 	va_start( marker, fmt );     /* Initialize variable arguments. */
 	vsprintf(buffer, fmt, marker);
 	va_end( marker );            /* Reset variable arguments.      */
@@ -1002,15 +1002,6 @@ void DebugTransTag(const char * filename, unsigned long line)
 			return;
 		}
 
-		//Convert txn identifier from internal form to external ASCII form
-		status = TRANSIDTOTEXT(txnId,buffer,(short)sizeof(buffer),&length);
-		if (status != 0)
-		{
-			// Report error status and return null
-			DebugOutput(DebugFormat("Status from TRANSIDTOTEXT = %d", status),
-						filename, line);
-			return;
-		}
 		buffer[length] = 0;
 		DebugOutput(DebugFormat("transTagASCII = '%s'", buffer),
 					filename, line);
@@ -1294,7 +1285,7 @@ void CliDebugShowServerStatement(void *vSrvrStmt,
 			line);
 		DEBUG_OUT_LOC(DEBUG_LEVEL_CLI|DEBUG_LEVEL_DATA|DEBUG_LEVEL_STMT,
 			("  Statement='%s'",
-				DebugString(pSrvrStmt->sqlString.dataValue._buffer)),
+				DebugString((const char *)pSrvrStmt->sqlString.dataValue._buffer)),
 			filename,
 			line);
 		DEBUG_OUT_LOC(DEBUG_LEVEL_CLI|DEBUG_LEVEL_DATA|DEBUG_LEVEL_STMT,
@@ -1653,6 +1644,7 @@ void CliDebugShowDesc(void *vSrvrStmt, int uDescType,
 				}
 				break;
 			default:
+                                break;
 			}
 			descItemIdx++;
 		}
@@ -2136,7 +2128,7 @@ SQLCLI_LIB_FUNC long CliDebug_ClearDiagnostics (SQLSTMT_ID *statement_id,
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsStmtInfo2(SQLSTMT_ID *statement_id, long what_to_get, int *numeric_value, char *string_value,
+SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsStmtInfo2(SQLSTMT_ID *statement_id, long what_to_get, void *numeric_value, char *string_value,
 													  long max_string_len, int *len_of_item,
 													  const char *filename, unsigned long line)
 {
@@ -2149,11 +2141,9 @@ SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsStmtInfo2(SQLSTMT_ID *statement_id, 
 			len_of_item),
 		filename, line);
 
-	if (numeric_value) *numeric_value = 0;
-	if (max_string_len) *string_value = 0;
 	long rc = SQL_EXEC_GetDiagnosticsStmtInfo2(statement_id, what_to_get, numeric_value, string_value, max_string_len, len_of_item);
 	if (numeric_value)
-		DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("numeric_value=%ld",*numeric_value),filename,line);
+		DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("numeric_value=%ld",(Int64 *)numeric_value),filename,line);
 	if (max_string_len)
 		DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("string_value=%s",string_value),filename,line);
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);

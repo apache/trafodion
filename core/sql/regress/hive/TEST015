@@ -3,19 +3,22 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
 --
---  Licensed under the Apache License, Version 2.0 (the "License");
---  you may not use this file except in compliance with the License.
---  You may obtain a copy of the License at
+--   http://www.apache.org/licenses/LICENSE-2.0
 --
---      http://www.apache.org/licenses/LICENSE-2.0
---
---  Unless required by applicable law or agreed to in writing, software
---  distributed under the License is distributed on an "AS IS" BASIS,
---  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
---  See the License for the specific language governing permissions and
---  limitations under the License.
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
 --
 -- @@@ END COPYRIGHT @@@
 
@@ -36,8 +39,9 @@ obey TEST015(setup);
 cqd COMPRESSED_INTERNAL_FORMAT 'ON';
 cqd COMPRESSED_INTERNAL_FORMAT_BMO 'ON';
 cqd COMPRESSED_INTERNAL_FORMAT_DEFRAG_RATIO '100';
-cqd query_cache '0';
 cqd HIVE_NUM_ESPS_PER_DATANODE '3';
+
+cqd auto_query_retry_warnings 'ON';
 
 obey TEST015(test_bulk_load_simple);
 
@@ -61,6 +65,7 @@ drop table t015t3 cascade;
 drop table t015t4 cascade;
 drop table t015t5 cascade;
 drop table t015t6 cascade;
+drop table "customer_address_delim" ;
 
 ?section setup
 --------------------------------------------------------------------------
@@ -429,7 +434,6 @@ explain options 'f'
 load  transform into customer_demographics
 select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 
-cqd comp_bool_226 'off' ;
 load  into customer_demographics 
 select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 
@@ -458,8 +462,6 @@ select count(*) from table(index_table cd_dep_college_count_IDX2);
 
 drop index cd_dep_count_IDX2;
 drop index cd_dep_college_count_IDX2;
-
-cqd comp_bool_226 'on' ;
 
 -- --load with upsert using load
 -- drop table customer_demographics_salt cascade;
@@ -523,7 +525,7 @@ cqd comp_bool_226 'on' ;
 -----
 drop table customer_address cascade;
 
-create table customer_address
+create table "customer_address_delim"
 (
   ca_address_sk        int not null,
   ca_address_id        char(16),
@@ -541,24 +543,23 @@ create table customer_address
   primary key (ca_address_sk)
 )
 salt using 4 partitions
-
 HBASE_OPTIONS (data_block_encoding = 'FAST_DIFF', compression = 'GZ') 
 ;
 
 select count(*) from hive.hive.customer_address  where ca_address_sk <= 5000;
-select count(*) from customer_address;
+select count(*) from "customer_address_delim";
 
 prepare s from 
-load transform into customer_address 
+load transform into "customer_address_delim" 
 select * from hive.hive.customer_address  where ca_address_sk <= 5000;                                                                                              
 explain options 'f' s;
 
-load   into customer_address 
+load   into "customer_address_delim" 
 select * from hive.hive.customer_address  where ca_address_sk <= 5000;                                                                                                   
 
-select count(*) from customer_address;
+select count(*) from "customer_address_delim";
 
-select [first 20] * from customer_address order by ca_address_sk ;
+select [first 20] * from "customer_address_delim" order by ca_address_sk ;
 
 cqd attempt_esp_parallelism 'off';
 load with no output into t015t4 select a,a,a from t015t1;

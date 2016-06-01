@@ -1,0 +1,225 @@
+-- ============================================================================
+-- TEST133 - tests initializing, dropping and upgrading privilege metadata
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- This tests the following commands:
+--
+--   INITIALIZE AUTHORIZATION
+--   INITIALIZE AUTHORIZATION, DROP
+--   INITIALIZE AUTHORIZATION, UPGRADE
+--
+-- Sections:
+--   clean_up - removes database setup
+--   set_up - prepares for test
+--   tests - runs tests
+--   authorized - runs authorization tests
+-- ============================================================================
+
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+obey TEST133(clean_up);
+log LOG133 clear;
+obey TEST133(tests);
+sh sqlci -i "TEST133(authorized)" -u sql_user4;
+log;
+obey TEST133(clean_up);
+initialize authorization;
+exit;
+
+?section clean_up
+drop sequence t133sch.team_number_sequence;
+-- drop database
+drop schema t133sch cascade;
+
+set parserflags 131072;
+drop schema "_HV_HIVE_" cascade;
+reset parserflags 131072;
+
+?section create_db
+create schema t133sch;
+set schema t133sch;
+create table teams
+  (team_number int not null primary key,
+   team_name char(20) not null,
+   team_contact varchar(50) not null,
+   team_contact_number char (10) not null
+   )
+  ;
+
+alter table teams add constraint valid_team_no check (team_number > 0);
+
+create table team_statistics
+  (team_number int not null primary key,
+   num_players int not null)
+;
+
+create table games
+   ( home_team_number int not null,
+     visitor_team_number int not null,
+     game_number int not null primary key,
+     game_time timestamp not null,
+     game_location varchar(50) not null)
+  ;
+
+alter table games add constraint valid_game_number check (game_number > 0);
+
+create table standings
+    (team_number int not null primary key,
+     wins int default 0,
+     loses int default 0,
+     last_updated timestamp default current_timestamp)
+;
+
+create view home_teams_games as
+  select t.team_number, g.game_number, g.game_time
+  from "TEAMS" t,
+       "GAMES" g
+  where t.team_number = g.home_team_number
+  order by 1, game_number, game_time;
+
+create table players
+  (player_number int not null,
+   player_name varchar (50) not null,
+   player_team_number int not null,
+   player_phone_number char (10) not null,
+   player_details varchar(50),
+   primary key (player_number, player_team_number))
+  no partition;
+
+alter table players add constraint valid_player_number check(player_number > 0);
+
+create view players_on_team as
+  select player_name, team_name
+  from teams t, players p
+  where p.player_team_number = t.team_number
+  order by t.team_name;
+
+create view games_by_player as
+  select player_name, game_time
+  from teams t, games g, players p
+  where p.player_team_number = t.team_number and
+        t.team_number = g.home_team_number
+  order by player_name, team_number;
+
+alter table players add constraint players_teams
+   foreign key (player_team_number) references teams (team_number);
+
+create volatile table home_games as
+  select home_team_number, visitor_team_number, game_number,  game_location
+  from games
+    where extract(year  from games.game_time) =
+          extract(year  from current_timestamp) and
+          extract(month from games.game_time) =
+          extract(month from current_timestamp);
+
+create sequence team_number_sequence;
+
+-- create function to display bitmaps as a bitmap rather than longs
+sh rm -f ./etest141.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh etest141.cpp
+  2>&1 | tee LOG133-SECONDARY;
+set pattern $$DLL$$ etest141.dll;
+set pattern $$QUOTE$$ '''';
+
+create library t133_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+create function translateBitmap(bitmap largeint) returns (bitmap_string char (20))
+language c parameter style sql external name 'translateBitmap'
+library t133_l1
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+?section set_up
+set schema "_PRIVMGR_MD_";
+prepare get_owner_privs from
+select distinct
+   substring (object_name,1,40) as object_name,
+   object_type as type,
+   substring(authname(grantor_id),1,10) as grantor,
+   substring(authname(grantee_id),1,10) as grantee,
+   t133sch.translateBitmap(privileges_bitmap) as granted_privs,
+   t133sch.translateBitmap(grantable_bitmap) as grantable_privs
+from "_PRIVMGR_MD_".object_privileges
+where object_uid in
+     (select object_uid
+      from "_MD_".objects
+      where schema_name in ('_PRIVMGR_MD_', 'T133SCH', '_HV_HIVE_'))
+  order by 1, 2, 3, 4, 5
+;
+
+?section tests
+-- =================================================================
+-- this set of tests run basic initialize authorization tests
+-- =================================================================
+
+obey TEST133(create_db);
+set schema "_PRIVMGR_MD_";
+get tables;
+
+-- verify can't create an object in "_PRIVMGR_MD_" schema
+create table t133_t1 (c1 int not null primary key, c2 int);
+
+obey TEST133(set_up);
+execute get_owner_privs;
+
+initialize authorization, drop;
+get tables;
+
+-- owner s/b db__root
+create external table customer for hive.hive.customer;
+create external table item for hive.hive.item;
+create external table promotion for hive.hive.promotion;
+select schema_owner, object_owner, substring (object_name,1,20) as object_name 
+from "_MD_".objects where schema_name = '_HV_HIVE_';
+
+initialize authorization;
+get tables;
+select count (*) from components;
+select count (*) from component_operations;
+select count (*) from component_privileges;
+
+-- external Hive schema now owned by DB__HIVEROLE
+select schema_owner, object_owner, substring (object_name,1,20) as object_name 
+from "_MD_".objects where schema_name = '_HV_HIVE_';
+
+-- External hive table show owner as DB__HIVEROLE
+execute get_owner_privs;
+
+-- drop role_usage and make sure initialize authorization recreates
+set parserflags 131072;
+drop table role_usage;
+get tables;
+
+initialize authorization;
+get tables;
+execute get_owner_privs;
+
+-- drop components and make sure initialize authorization recreates
+drop table components;
+get tables;
+initialize authorization, drop;
+get tables;
+
+?section authorized
+set schema "_PRIVMGR_MD_";
+log LOG133;
+initialize authorization;
+initialize authorization, drop;
+

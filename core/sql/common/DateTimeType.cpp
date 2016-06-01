@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -38,6 +41,7 @@
 #include "NumericType.h"
 #include "str.h"
 #include "exp_clause_derived.h"
+#include "exp_datetime.h"
 
 #include <cextdecs/cextdecs.h>
 
@@ -741,7 +745,8 @@ void DatetimeType::getRepresentableValue(const char* inValueString,
   char valueString[valueStringLen];
   str_cpy_all(valueString, &inValueString[startOff], i /*length*/);
   valueString[i] = '\0';
-  DatetimeValue dtValue(valueString, getStartField(), getEndField(), fracPrec);
+  DatetimeValue dtValue(valueString, getStartField(), getEndField(), fracPrec,
+                        FALSE);
 
   assert(*bufLen >= dtValue.getValueLen() && dtValue.isValid());
   *bufLen = dtValue.getValueLen();
@@ -1396,17 +1401,69 @@ NABoolean SQLMPDatetime::isCompatible(const NAType& other, UInt32 * flags) const
 //  DatetimeValue : A datetime value
 //
 // ***********************************************************************
-
 DatetimeValue::DatetimeValue
 ( const char* strValue
 , rec_datetime_field startField
 , rec_datetime_field endField
 , UInt32& fractionPrecision   /* IN - OUT */
+, NABoolean useOldConstructor
 )
 : value_(NULL)
 , valueLen_(0)
 , startField_(startField)
 , endField_  (endField)
+{
+  fractionPrecision = 0;
+  if (useOldConstructor)
+    {
+      oldConstructor(strValue, startField, endField, fractionPrecision);
+      return;
+    }
+
+  char dstValue[101];
+
+  ComDiagsArea *diags = NULL;
+
+  Lng32 trueFP = 6;
+  ULng32 flags = 0;
+  flags |= CONV_NO_HADOOP_DATE_FIX;
+  short rc = 
+    ExpDatetime::convAsciiToDatetime((char*)strValue, strlen(strValue), 
+                                     dstValue, 100,
+                                     startField, endField, 
+                                     ExpDatetime::DATETIME_FORMAT_NONE,
+                                     trueFP,
+                                     NULL, &diags, flags);
+  if (rc)
+    return;
+
+  if (endField == REC_DATE_SECOND)
+    {
+      Lng32 fp = trueFP;
+      for (; fp < 6; fp++)
+        {
+          if (startField == REC_DATE_YEAR)
+            *(Lng32*)&dstValue[7] /= 10;
+          else
+            *(Lng32*)&dstValue[3] /= 10;
+        }
+    }
+  else
+    trueFP = 0;
+
+  fractionPrecision = trueFP;
+  valueLen_ = (unsigned short) DatetimeType::getStorageSize(
+		startField, endField, trueFP);
+  unsigned char *value = value_ = new unsigned char[valueLen_];
+
+  memcpy(value, dstValue, valueLen_);
+
+} // DatetimeValue::DatetimeValue ctor
+
+void DatetimeValue::oldConstructor(const char* strValue,
+                                   rec_datetime_field startField,
+                                   rec_datetime_field endField,
+                                   UInt32& fractionPrecision /* OUT */)
 {
   UInt32 saveMPPrecision = fractionPrecision;
 
@@ -1435,12 +1492,10 @@ DatetimeValue::DatetimeValue
 		 )))
   {				      // restore original specified precision
 
-//LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
     if (subtype == DatetimeType::SUBTYPE_SQLMPDatetime)
     {
      fractionPrecision = saveMPPrecision;
     }
-//LCOV_EXCL_STOP : cnu
 
     return;
   }
@@ -1461,13 +1516,10 @@ DatetimeValue::DatetimeValue
 		 ,fractionPrecision   /* OUT */
 		 )))
   {				      // restore original specified precision
-
-//LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
     if (subtype == DatetimeType::SUBTYPE_SQLMPDatetime)
     {
      fractionPrecision = saveMPPrecision;
     }
-//LCOV_EXCL_STOP : cnu
 
     return;
   }
@@ -1482,10 +1534,8 @@ DatetimeValue::DatetimeValue
   {
     if (fractionPrecision > saveMPPrecision)
      {
-//LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
       fractionPrecision = saveMPPrecision;
       return;
-//LCOV_EXCL_STOP : cnu
      }
     else
     {			// adjust the fractional value based on fractional precision.
@@ -1500,8 +1550,7 @@ DatetimeValue::DatetimeValue
   //
   if (*strValue == '\0')
     setValue(startField, endField, fractionPrecision, values);
-
-} // DatetimeValue::DatetimeValue ctor
+}
 
 DatetimeValue::DatetimeValue
 ( const char* value

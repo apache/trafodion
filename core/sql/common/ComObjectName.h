@@ -24,19 +24,22 @@
  *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
  *
@@ -58,6 +61,7 @@ using namespace std;
 #include "ComAnsiNamePart.h"
 #include "ComRoutineActionNamePart.h"
 #include "ComSchemaName.h"
+#include "ComMisc.h"
 
 // -----------------------------------------------------------------------
 // forward declarations
@@ -276,6 +280,9 @@ class ComObjectName : public NABasicObject
     NABoolean isVolatile() const      { return (flags_ & IS_VOLATILE) != 0; }
     void setIsVolatile(NABoolean v)
     { (v ? flags_ |= IS_VOLATILE : flags_ &= ~IS_VOLATILE);}
+
+    inline NABoolean isExternalHive() const;  
+    inline NABoolean isExternalHbase() const;
 
   protected:
 
@@ -586,6 +593,42 @@ NABoolean
 ComObjectName::isValid() const
 {
   return (NOT objectNamePart_.isEmpty());
+}
+
+// ----------------------------------------------------------------------------
+// Method: isExternalHive
+//
+// Looks at the prefix and suffix of the schema name to see the schema contains
+// external (native) hive table information.
+//
+// returns TRUE if it is a HIVE schema
+// ----------------------------------------------------------------------------
+NABoolean
+ComObjectName::isExternalHive() const
+{
+  NAString schemaName(schemaNamePart_.getInternalName());
+
+  if (ComIsTrafodionExternalSchemaName(schemaName))
+    return (schemaName(0,sizeof(HIVE_EXT_SCHEMA_PREFIX)-1) == HIVE_EXT_SCHEMA_PREFIX); 
+  return FALSE;
+}
+  
+// ----------------------------------------------------------------------------
+// Method: isExternalHbase
+//
+// Looks at the prefix and suffix of the schema name to see the schema contains
+// external (native) hbase table information.
+//
+// returns TRUE if it is a hbase schema
+// ----------------------------------------------------------------------------
+NABoolean
+ComObjectName::isExternalHbase() const
+{
+  NAString schemaName(schemaNamePart_.getInternalName());
+
+  if (ComIsTrafodionExternalSchemaName(schemaName))
+    return (schemaName(0,sizeof(HBASE_EXT_SCHEMA_PREFIX)-1) == HBASE_EXT_SCHEMA_PREFIX); 
+  return FALSE;
 }
 
 void

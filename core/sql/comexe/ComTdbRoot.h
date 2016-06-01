@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -359,7 +362,8 @@ class ComTdbRoot : public ComTdb
     HDFS_ACCESS                 = 0x00000008,
     EXE_UTIL_RWRS              = 0x00000010,
     EMBEDDED_COMPILER          = 0x00000020,
-    HIVE_ACCESS                = 0x00000040
+    HIVE_ACCESS                = 0x00000040,
+    EXE_LOB_ACCESS             = 0x00000080
   };
 
   // Use these values in 16-bit rtFlags3_
@@ -625,7 +629,8 @@ public:
     SQL_DESCRIBE_QUERY = 4,
     SQL_DISPLAY_EXPLAIN = 5,
     SQL_STMT_HBASE_LOAD = 6,
-    SQL_STMT_HBASE_UNLOAD = 7
+    SQL_STMT_HBASE_UNLOAD = 7,
+    SQL_STMT_LOB_EXTRACT = 8
    };
   
   ComTdbRoot();
@@ -840,7 +845,9 @@ public:
 
    NABoolean isEmbeddedCompiler() const
     {return ((rtFlags2_ & EMBEDDED_COMPILER) != 0);};
- 
+    NABoolean isLobExtract() const
+    {return ((rtFlags2_ & EXE_LOB_ACCESS) != 0);};
+
   char * getSnapshotScanTempLocation () { return snapshotscanTempLocation_; }
   Queue * getListOfSnapshotScanTables() { return listOfSnapshotScanTables_; }
 
@@ -993,6 +1000,10 @@ public:
   void setEmbeddedCompiler(NABoolean v)
     { 
       (v ? rtFlags2_ |= EMBEDDED_COMPILER : rtFlags2_ &= ~EMBEDDED_COMPILER); 
+    }
+  void setLobAccess(NABoolean v)
+    { 
+      (v ? rtFlags2_ |= EXE_LOB_ACCESS : rtFlags2_ &= ~EXE_LOB_ACCESS); 
     }
   NABoolean hdfsAccess() const
     {return ((rtFlags2_ & HDFS_ACCESS) != 0);};

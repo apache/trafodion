@@ -1,19 +1,22 @@
  /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -48,10 +51,10 @@
 #include "NAStringDef.h"
 #include "NAMemory.h"
 #include "str.h"
-
+#include <stdarg.h>
 
 #include "str.h"
-#include <iostream>
+#include <fstream>
 #ifdef NA_STD_NAMESPACE
 using namespace std;
 #endif // NA_STD_NAMESPACE
@@ -345,6 +348,132 @@ void
 NAString::resize(size_t N)
 {
   fbstring_.resize(N, ' ');			// Shrank; truncate the string
+}
+
+NAList<NAString> & NAString::split(char delim, NAList<NAString> & elems)
+{
+  int begin = 0;
+  int end = 0;
+  elems.clear();
+  end = fbstring_.find_first_of(delim, begin);
+  //For string like "w1|w2|w3|", devided by '|' we get 4 words
+  //"w1", "w2", "w3", ""
+  while(end >= begin)
+  {
+     NAString word(fbstring_.data() + begin,  end - begin);
+     elems.insert(word);
+     begin = end + 1;
+     end = fbstring_.find_first_of(delim, begin);
+  }
+  if(fbstring_.size() > 0)
+  {
+    NAString end_word(fbstring_.data()+begin, fbstring_.size()-begin);
+    elems.insert(end_word);
+  }
+  
+  return elems;
+}
+
+Int32 NAString::readFile(ifstream& in) // Read to EOF or null character.
+{
+    char c;
+    Int32 char_count = 0;
+    fbstring_ = "";
+    c = in.get();
+    while(c != '\0' && c!=EOF)
+    {
+        fbstring_.append(1, c);
+        c = in.get();
+        char_count++;
+    }
+    return char_count;
+}
+
+Int32 NAString::readLine(ifstream& in)   // Read to EOF or newline.
+{
+    return readToDelim(in, '\n');
+}
+
+Int32 NAString::readToDelim(ifstream& in, char delim) // Read to EOF or delimitor.
+{
+    char c;
+    Int32 char_count = 0;
+    fbstring_ = "";
+    c = in.get();
+    while(c != '\0' && c!=delim && c!=EOF)
+    {
+        fbstring_.append(1, c);
+        c = in.get();
+        char_count++;
+    }
+    return char_count;
+}
+
+//This static function calculates and allocates buffer for the printf-like formatted string,
+//and the formatted string is copied to the buffer.
+char* NAString::buildBuffer(const char* formatTemplate, va_list args)
+{
+  // calculate needed bytes to allocate memory from system heap.
+  int bufferSize = 20049;
+  int msgSize = 0;
+  //buffer is managed by this static function
+  static THREAD_P char *buffer = NULL;
+  va_list args2;
+  va_copy(args2, args);
+  bool secondTry = false;
+  if (buffer == NULL)
+      buffer = new char[bufferSize];
+  // For messages shorter than the initial 20K limit, a single pass through
+  // the loop will suffice.
+  // For longer messages, 2 passes will do it. The 2nd pass uses a buffer of the
+  // size returned by the call to vsnprintf. If a second pass is necessary, we
+  // pass the copy of the va_list we made above, because the first call changes
+  // the state of the va_list, and can cause a crash if reused.
+  while(1)
+  {
+      msgSize = vsnprintf(buffer, bufferSize, formatTemplate, secondTry ? args2 : args);
+      if ( msgSize < 0 ){
+          //there is error, try second time
+          if(!secondTry){
+              secondTry = TRUE;
+              continue;
+          }
+          else
+            return NULL;//error second time
+      }
+      else if(msgSize < bufferSize) {
+          // Buffer is large enough - we're good.
+          break; 
+      }
+      else { 
+          // Buffer is too small, reallocate it and go through the loop again.
+          bufferSize = msgSize + 1; // Use correct size now.
+          delete [] buffer;
+          buffer = new char[bufferSize];
+          secondTry = true;
+      }
+  }
+  va_end(args2);
+  return buffer;
+}
+
+NABoolean NAString::format(const char* formatTemplate...)
+{
+  NABoolean retcode;
+  va_list args ;
+  va_start(args, formatTemplate);
+
+  char * buffer = buildBuffer(formatTemplate, args);
+  if(buffer) {
+    fbstring_ = buffer;
+    retcode = TRUE;
+  }
+  else {
+    fbstring_ = "";
+    retcode = FALSE;
+  }  
+  va_end(args);
+  return retcode;
 }
 
 // Return a substring of self stripped at beginning and/or end

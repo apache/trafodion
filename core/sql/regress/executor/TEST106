@@ -1,19 +1,22 @@
 -- Test: TEST0106 (Executor)
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
 --
---  Licensed under the Apache License, Version 2.0 (the "License");
---  you may not use this file except in compliance with the License.
---  You may obtain a copy of the License at
+--   http://www.apache.org/licenses/LICENSE-2.0
 --
---      http://www.apache.org/licenses/LICENSE-2.0
---
---  Unless required by applicable law or agreed to in writing, software
---  distributed under the License is distributed on an "AS IS" BASIS,
---  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
---  See the License for the specific language governing permissions and
---  limitations under the License.
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
 --
 -- @@@ END COPYRIGHT @@@
 --
@@ -61,7 +64,7 @@ obey TEST106(clnup);
 log LOG106 clear;
 
 create table T106_interleaved_log (
-                   ts time(6) not null,
+                   ts timestamp(6) not null,
                    msg char(60) ) no partition;
  
 
@@ -232,36 +235,36 @@ control query default QUERY_LIMIT_SQL_PROCESS_CPU 'reset';
 obey TEST106(make_cancel_stmt);
 
 select 'subject launch canceler - FUNKY_OPT_UNIQUE', 
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test1, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel)" & ;
 
 select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test1, launch canceler, finish');
 
 obey TEST106(synch_cancel);
 
 select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test1, execute, start');
 
 execute s1;
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test1, execute, finished');
 
 obey TEST106(synch_cancel);
@@ -287,28 +290,28 @@ control query default QUERY_LIMIT_SQL_PROCESS_CPU 'reset';
 obey TEST106(make_cancel_stmt);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test2, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel)" & ;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test2, launch canceler, finished');
 
 obey TEST106(synch_cancel);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test2, execute s1, start');
 
 ------- long running, cpu-bound select query -------
 execute s1;
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test2, execute s1, finished');
 
 obey TEST106(synch_cancel);
@@ -326,36 +329,36 @@ control query default QUERY_LIMIT_SQL_PROCESS_CPU 'reset';
 obey TEST106(make_cancel_stmt);
 
 select 'subject launch canceler - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'update_test1, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel)" & ;
 
 select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'update_test1, launch canceler, finish');
 
 obey TEST106(synch_cancel);
 
 select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values 
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'update_test1, execute, start');
 
 execute s1;
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'update_test1, execute, finished');
 
 obey TEST106(synch_cancel);
@@ -369,36 +372,36 @@ prepare s1 from delete from t106a;
 obey TEST106(make_cancel_stmt);
 
 select 'subject launch canceler - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'delete_test1, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel)" & ;
 
 select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'delete_test1, launch canceler, finish');
 
 obey TEST106(synch_cancel);
 
 select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values 
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'delete_test1, execute, start');
 
 execute s1;
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'delete_test1, execute, finished');
 
 obey TEST106(synch_cancel);
@@ -411,36 +414,36 @@ prepare s1 from insert into t106c select * from t106a;
 obey TEST106(make_cancel_stmt);
 
 select 'subject launch canceler - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'insert_test1, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel)" & ;
 
 select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'insert_test1, launch canceler, finish');
 
 obey TEST106(synch_cancel);
 
 select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values 
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'insert_test1, execute, start');
 
 execute s1;
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'insert_test1, execute, finished');
 
 obey TEST106(synch_cancel);
@@ -471,36 +474,36 @@ prepare s1 from insert into t106c
 obey TEST106(make_cancel_stmt);
 
 select 'subject launch canceler - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'insert_test2, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel)" & ;
 
 select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'insert_test2, launch canceler, finish');
 
 obey TEST106(synch_cancel);
 
 select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values 
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'insert_test2, execute, start');
 
 execute s1;
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'insert_test2, execute, finished');
 
 obey TEST106(synch_cancel);
@@ -532,36 +535,36 @@ upsert using load into t106c
 obey TEST106(make_cancel_stmt);
 
 select 'subject launch canceler - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'upsert_test1, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel)" & ;
 
 select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'upsert_test1, launch canceler, finish');
 
 obey TEST106(synch_cancel);
 
 select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values 
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'upsert_test1, execute, start');
 
 execute s1;
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'upsert_test1, execute, finished');
 
 obey TEST106(synch_cancel);
@@ -580,26 +583,26 @@ control query default QUERY_LIMIT_SQL_PROCESS_CPU 'reset';
 obey TEST106(make_cancel_stmt);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'cpu_bound_esps, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel)" & ;
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'cpu_bound_esps, launch canceler, finished');
 
 obey TEST106(synch_cancel);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'cpu_bound_esps, execute s1, start');
 
 execute s1;
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'cpu_bound_esps, execute s1, finished');
 
 obey TEST106(synch_cancel);
@@ -620,27 +623,27 @@ control query default COMP_INT_39 'reset';
 obey TEST106(make_cancel_stmt);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'escalation1, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel)" & ;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'escalation1, launch canceler, finished');
 
 obey TEST106(synch_cancel);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'escalation1, execute s1, start');
 
 execute s1;
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'escalation1, execute s1, finished');
 
 obey TEST106(synch_cancel);
@@ -743,27 +746,27 @@ c10k, c1k, c100, c10, c1, uniq
 obey TEST106(make_cancel_stmt);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'ustats_test, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel)" & ;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'ustats_test, launch canceler, finished');
 
 obey TEST106(synch_cancel);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'ustats_test, execute s1, start');
 
 execute s1;
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6),
+(CURRENT_TIMESTAMP (6),
 'ustats_test, execute s1, finished');
 
 obey TEST106(synch_cancel);
@@ -789,37 +792,37 @@ control query default QUERY_LIMIT_SQL_PROCESS_CPU 'reset';
 obey TEST106(make_cancel_nid_pid_stmt);
 
 select 'subject launch canceler - FUNKY_OPT_UNIQUE', 
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test1_nid_pid, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel_nid_pid)" & ;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test1_nid_pid, launch canceler, finished');
 
 select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 obey TEST106(synch_cancel);
 
 select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test1_nid_pid, execute s1, start');
 
 execute s1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test1_nid_pid, execute s1, finished');
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 obey TEST106(synch_cancel);
 
@@ -844,29 +847,29 @@ control query default QUERY_LIMIT_SQL_PROCESS_CPU 'reset';
 obey TEST106(make_cancel_nid_pid_stmt);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test2_nid_pid, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel_nid_pid)" & ;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test2_nid_pid, launch canceler, finished');
 
 obey TEST106(synch_cancel);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test2_nid_pid, execute s1, start');
 
 ------- long running, cpu-bound select query -------
 execute s1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test2_nid_pid, execute s1, finished');
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 obey TEST106(synch_cancel);
 
@@ -884,28 +887,28 @@ control query default QUERY_LIMIT_SQL_PROCESS_CPU 'reset';
 obey TEST106(make_cancel_nid_pid_stmt);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'cpu_bound_esps_nid_pid, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel_nid_pid)" & ;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'cpu_bound_esps_nid_pid, launch canceler, finished');
 
 obey TEST106(synch_cancel);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'cpu_bound_esps_nid_pid, execute s1, start');
 
 execute s1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'cpu_bound_esps_nid_pid, execute s1, finished');
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 obey TEST106(synch_cancel);
 
@@ -925,28 +928,28 @@ control query default COMP_INT_39 'reset';
 obey TEST106(make_cancel_nid_pid_stmt);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'escalation1_nid_pid, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel_nid_pid)" & ;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'escalation1_nid_pid, launch canceler, finished');
 
 obey TEST106(synch_cancel);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'escalation1_nid_pid, execute s1, start');
 
 execute s1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'escalation1_nid_pid, execute s1, finished');
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 obey TEST106(synch_cancel);
 
@@ -971,37 +974,37 @@ control query default QUERY_LIMIT_SQL_PROCESS_CPU 'reset';
 obey TEST106(make_cancel_pname_stmt);
 
 select 'subject launch canceler - FUNKY_OPT_UNIQUE', 
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test1_pname, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel_pname)" & ;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test1_pname, launch canceler, finished');
 
 select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 obey TEST106(synch_cancel);
 
 select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test1_pname, execute s1, start');
 
 execute s1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test1_pname, execute s1, finished');
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 obey TEST106(synch_cancel);
 
@@ -1026,29 +1029,29 @@ control query default QUERY_LIMIT_SQL_PROCESS_CPU 'reset';
 obey TEST106(make_cancel_pname_stmt);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test2_pname, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel_pname)" & ;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test2_pname, launch canceler, finished');
 
 obey TEST106(synch_cancel);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test2_pname, execute s1, start');
 
 ------- long running, cpu-bound select query -------
 execute s1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'positive_test2_pname, execute s1, finished');
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 obey TEST106(synch_cancel);
 
@@ -1072,22 +1075,22 @@ insert into T106_interleaved_log values
 sh sqlci -i"TEST106(do_cancel_pname)" & ;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'cpu_bound_esps_pname, launch canceler, finished');
 
 obey TEST106(synch_cancel);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'cpu_bound_esps_pname, execute s1, start');
 
 execute s1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'cpu_bound_esps_pname, execute s1, finished');
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 obey TEST106(synch_cancel);
 
@@ -1107,28 +1110,28 @@ control query default COMP_INT_39 'reset';
 obey TEST106(make_cancel_pname_stmt);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'escalation1_pname, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel_pname)" & ;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'escalation1_pname, launch canceler, finished');
 
 obey TEST106(synch_cancel);
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'escalation1_pname, execute s1, start');
 
 execute s1;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'escalation1_pname, execute s1, finished');
 
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 obey TEST106(synch_cancel);
 
@@ -1316,19 +1319,19 @@ obey cancel_cmd;
 ?section synch_cancel
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'foreground awaits synch_cancel');
 
 -- wait until other mxci is ready
 sh sh $scriptsdir/executor/synch_106.ksh;
 
 select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-       CURRENT_TIME (6) from (values (1)) as t1;
+       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 log;
 sh rm ${REGRRUNDIR}/test106_synch ; 
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'foreground finished synch_cancel');
 
 log LOG106;
@@ -1340,18 +1343,18 @@ log CANCEL_LOG106 clear;
 ------ Contents of cancel session --------;
 ------------------------------------------;
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'do_cancel has begun');
 
 sh touch ${REGRRUNDIR}/test106_synch;
 
 select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 sh sleep 13;
 
 select 'canceler woke up - FUNKY_OPT_UNIQUE', 
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 set session default CANCEL_ESCALATION_INTERVAL '5';
 log;
@@ -1364,16 +1367,16 @@ sh grep "Execute End Time" GET_STATS106 >> CANCEL_LOG106;
 log CANCEL_LOG106;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'do_cancel will cancel');
 
 obey cancel_cmd;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'do_cancel has canceled');
 
-select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 log;
 sh cat CANCEL_LOG106 >> cancel_log106_all;
 
@@ -1387,18 +1390,18 @@ log CANCEL_LOG106 clear;
 ------ Contents of cancel session --------;
 ------------------------------------------;
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'do_cancel_pname has begun');
 
 sh touch ${REGRRUNDIR}/test106_synch;
 
 select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 sh sleep 13;
 
 select 'canceler woke up - FUNKY_OPT_UNIQUE', 
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 set session default CANCEL_ESCALATION_INTERVAL '5';
 log;
@@ -1410,16 +1413,16 @@ sh grep "Execute End Time" GET_STATS106 >> CANCEL_LOG106;
 log CANCEL_LOG106;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'do_cancel_pname will cancel');
 
 obey cancel_pname_cmd;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'do_cancel_pname has canceled');
 
-select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 log;
 sh cat CANCEL_LOG106 >> cancel_log106_all;
 
@@ -1433,18 +1436,18 @@ log CANCEL_LOG106 clear;
 ------ Contents of cancel session --------;
 ------------------------------------------;
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'do_cancel_nid_pid has begun');
 
 sh touch ${REGRRUNDIR}/test106_synch;
 
 select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 sh sleep 13;
 
 select 'canceler woke up - FUNKY_OPT_UNIQUE', 
-CURRENT_TIME (6) from (values (1)) as t1;
+CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
 set session default CANCEL_ESCALATION_INTERVAL '5';
 log;
@@ -1456,16 +1459,16 @@ sh grep "Execute End Time" GET_STATS106 >> CANCEL_LOG106;
 log CANCEL_LOG106;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'do_cancel_nid_pid will cancel');
 
 obey cancel_nid_pid_cmd;
 
 insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
+(CURRENT_TIMESTAMP (6), 
 'do_cancel_nid_pid has canceled');
 
-select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 log;
 sh cat CANCEL_LOG106 >> cancel_log106_all;
 

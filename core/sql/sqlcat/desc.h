@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //
@@ -58,7 +61,6 @@ enum desc_nodetype {
   DESC_VIEW_TYPE,
   DESC_SCHEMA_LABEL_TYPE,
   DESC_SEQUENCE_GENERATOR_TYPE,
-  DESC_HBASE_HASH2_REGION_TYPE,
   DESC_HBASE_RANGE_REGION_TYPE,
   DESC_ROUTINE_TYPE,
   DESC_LIBRARY_TYPE
@@ -121,6 +123,9 @@ struct table_desc_struct {
   void * secKeySet;
   ComBoolean isInsertOnly;
   char * snapshotName;
+  char * default_col_fam;
+  char * all_col_fams;
+  Int64 tableFlags;
   desc_struct *columns_desc;
   desc_struct *indexes_desc;
   desc_struct *constrnts_desc;
@@ -166,6 +171,7 @@ struct indexes_desc_struct {
   char *indexname;  // physical name of index. Different from ext_indexname
                     // for ARK tables.
   ULng32 redeftime[2];
+  Int64 indexUID;
   Int32 issystemtablecode;	// ...but too much bother in ReadTableDef.C
   // Indicates whether it is a vertical partition or an index
   ComPartitioningScheme partitioningScheme;     // round robin, range, etc.
@@ -199,6 +205,7 @@ struct indexes_desc_struct {
   // Partitioning key columns -- used by NonStop SQL/MX to accommodate
   // independent partitioning and clustering keys
   desc_struct *partitioning_keys_desc;
+  ComRowFormat rowFormat;
 #ifdef NA_LITTLE_ENDIAN
   void encode() {}
 #endif
@@ -466,6 +473,12 @@ struct desc_struct {
   void pack(char *buffer);
   Lng32 getLength(void);
 };
+
+// Used by assembleDescs() to populate the fields of each new desc_struct.
+// // buf and len describe the new data extracted from the source (usually from JNI)
+// // target is the new desc_struct object to populate with.
+// // h is the heap from which memory allocation can be done.
+typedef void (*populateFuncT)(char* buf, Int32 len, desc_struct* target, NAMemory* h);
 
 // uses HEAP of CmpCommon!
 desc_struct *readtabledef_allocate_desc(desc_nodetype nodetype);

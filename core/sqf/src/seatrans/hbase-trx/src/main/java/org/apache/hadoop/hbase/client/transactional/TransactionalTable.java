@@ -1,44 +1,56 @@
-// @@@ START COPYRIGHT @@@
-//
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
-//
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
-//
-// @@@ END COPYRIGHT @@@
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+**/
+
 
 package org.apache.hadoop.hbase.client.transactional;
 
+import java.io.File;
+import java.util.Collection;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.io.InterruptedIOException;
 import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
 
 import org.apache.commons.codec.binary.Hex;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HConnectionManager;
@@ -48,7 +60,9 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.TrafParallelClientScanner;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndDeleteRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndDeleteResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutRequest;
@@ -73,6 +87,7 @@ import org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto;
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.MutationType;
 import org.apache.hadoop.hbase.regionserver.transactional.SingleVersionDeleteNotSupported;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.fs.Path;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.HBaseZeroCopyByteString;
@@ -87,6 +102,9 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
     static private HConnection connection = null;
     static Configuration       config = HBaseConfiguration.create();
     static ExecutorService     threadPool;
+    static int                 retries = 15;
+    static int                 delay = 1000;
+    private String retryErrMsg = "Coprocessor result is null, retries exhausted";
 
     static {
 	config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
@@ -113,12 +131,6 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
      */
     public TransactionalTable(final byte[] tableName) throws IOException {
        super(tableName, connection, threadPool);      
-    }
-
-    public void resetConnection() throws IOException {
-        if (LOG.isDebugEnabled()) LOG.debug("Resetting connection for " + this.getTableDescriptor().getTableName());
-        HConnection conn = this.getConnection();
-        conn = HConnectionManager.createConnection(this.getConfiguration());
     }
 
     private void addLocation(final TransactionState transactionState, HRegionLocation location) {
@@ -168,27 +180,36 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
        }   
       };  
 
-      Map<byte[], GetTransactionalResponse> result = null;   
+      GetTransactionalResponse result = null;   
       try {
-        result = super.coprocessorService(TrxRegionService.class, get.getRow(), get.getRow(), callable);
+        int retryCount = 0;
+        boolean retry = false;
+        do {
+          Iterator<Map.Entry<byte[], TrxRegionProtos.GetTransactionalResponse>> it = super.coprocessorService(TrxRegionService.class, 
+                                                                                                              get.getRow(), 
+                                                                                                              get.getRow(), 
+                                                                                                              callable)
+                                                                                                              .entrySet().iterator();
+          if(it.hasNext()) {
+            result = it.next().getValue();
+            retry = false;
+          } 
+
+          if(result == null || result.getException().contains("closing region")) {
+            Thread.sleep(TransactionalTable.delay);
+            retry = true;
+            transactionState.setRetried(true);
+            retryCount++;
+          }
+        } while (retryCount < TransactionalTable.retries && retry == true);
       } catch (Throwable e) {
-        e.printStackTrace();    
-        throw new IOException("ERROR while calling coprocessor");
-      }            
-      Collection<GetTransactionalResponse> results = result.values();
-      // Should only be one result, if more than one. Can't handle.
-      // Need to test whether '!=' or '>' is correct
-      if (LOG.isTraceEnabled()) LOG.trace("Results count: " + results.size());
-      //if(results.size() != 1)
-      //  throw new IOException("Incorrect number of results from coprocessor call");      
-      GetTransactionalResponse[] resultArray = new GetTransactionalResponse[results.size()];    		  
-      results.toArray(resultArray);            
-      if(resultArray.length == 0) 
-    	  throw new IOException("Problem with calling coprocessor, no regions returned result");
-      
-      if(resultArray[0].hasException())
-        throw new IOException(resultArray[0].getException());
-      return ProtobufUtil.toResult(resultArray[0].getResult());      
+        throw new IOException("ERROR while calling coprocessor", e);
+      } 
+      if(result == null)
+        throw new IOException(retryErrMsg);
+      else if(result.hasException())
+        throw new IOException(result.getException());
+      return ProtobufUtil.toResult(result.getResult());      
     }
     
     /**
@@ -228,27 +249,35 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
         };
 
         byte[] row = delete.getRow();
-        Map<byte[], DeleteTransactionalResponse> result = null; 
+        DeleteTransactionalResponse result = null; 
         try {
-          result = super.coprocessorService(TrxRegionService.class, row, row, callable);
-          
-        } catch (ServiceException e) {
-          e.printStackTrace();
-          throw new IOException();
-        } catch (Throwable t) {
-          t.printStackTrace();
-          throw new IOException();
-        } 
-        Collection<DeleteTransactionalResponse> results = result.values();
-        //GetTransactionalResponse[] resultArray = (GetTransactionalResponse[]) results.toArray();
-        DeleteTransactionalResponse[] resultArray = new DeleteTransactionalResponse[results.size()];
-        results.toArray(resultArray);
-        
-        if(resultArray.length == 0) 
-      	  throw new IOException("Problem with calling coprocessor, no regions returned result");
+          int retryCount = 0;
+          boolean retry = false;
+          do {
+            Iterator<Map.Entry<byte[], DeleteTransactionalResponse>> it = super.coprocessorService(TrxRegionService.class, 
+                                              row, 
+                                              row, 
+                                              callable)
+                                              .entrySet().iterator();
+            if(it.hasNext()) {
+              result = it.next().getValue();
+              retry = false;
+            }
 
-        if(resultArray[0].hasException())
-          throw new IOException(resultArray[0].getException());
+            if(result == null || result.getException().contains("closing region")) {
+              Thread.sleep(TransactionalTable.delay);
+              retry = true;
+              transactionState.setRetried(true);
+              retryCount++;
+            }
+          } while (retryCount < TransactionalTable.retries && retry == true);
+        } catch (Throwable t) {
+          throw new IOException("ERROR while calling coprocessor",t);
+        } 
+        if(result == null)
+          throw new IOException(retryErrMsg);
+        else if(result.hasException())
+          throw new IOException(result.getException());
     }
 
     /**
@@ -292,21 +321,36 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
         return rpcCallback.get();
       }
     };
-    Map<byte[], PutTransactionalResponse> result = null; 
+    PutTransactionalResponse result = null; 
     try {
-      result = super.coprocessorService(TrxRegionService.class, put.getRow(), put.getRow(), callable);
+      int retryCount = 0;
+      boolean retry = false;
+      do {
+        Iterator<Map.Entry<byte[], PutTransactionalResponse>> it= super.coprocessorService(TrxRegionService.class, 
+                                                                                          put.getRow(), 
+                                                                                          put.getRow(), 
+                                                                                          callable)
+                                                                                          .entrySet().iterator();
+        if(it.hasNext()) {
+          result = it.next().getValue();
+          retry = false;
+        }
+
+        if(result == null || result.getException().contains("closing region")) {
+          Thread.sleep(TransactionalTable.delay);
+          retry = true;
+          transactionState.setRetried(true);
+          retryCount++;
+        }
+
+      } while(retryCount < TransactionalTable.retries && retry == true);
     } catch (Throwable e) {
-      e.printStackTrace();
-      throw new IOException("ERROR while calling coprocessor");
+      throw new IOException("ERROR while calling coprocessor", e);
     }    
-    Collection<PutTransactionalResponse> results = result.values();
-    PutTransactionalResponse[] resultArray = new PutTransactionalResponse[results.size()]; 
-    results.toArray(resultArray);
-    if(resultArray.length == 0) 
-  	  throw new IOException("Problem with calling coprocessor, no regions returned result");
-    
-    if(resultArray[0].hasException())
-      throw new IOException(resultArray[0].getException());
+    if(result == null)
+      throw new IOException(retryErrMsg);
+    else if(result.hasException())
+      throw new IOException(result.getException());
     
     // put is void, may not need to check result
     if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put EXIT");
@@ -368,22 +412,37 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
         }
       };
 
-      Map<byte[], CheckAndDeleteResponse> result = null;
+      CheckAndDeleteResponse result = null;
       try {
-        result = super.coprocessorService(TrxRegionService.class, delete.getRow(), delete.getRow(), callable);
+        int retryCount = 0;
+        boolean retry = false;
+        do {
+          Iterator<Map.Entry<byte[], CheckAndDeleteResponse>> it = super.coprocessorService(TrxRegionService.class, 
+                                                                                            delete.getRow(), 
+                                                                                            delete.getRow(), 
+                                                                                            callable)
+                                                                                            .entrySet()
+                                                                                            .iterator();
+          if(it.hasNext()) {
+            result = it.next().getValue();
+            retry = false;
+          }
+
+          if(result == null || result.getException().contains("closing region")) {
+            Thread.sleep(TransactionalTable.delay);
+            retry = true;
+            transactionState.setRetried(true);
+            retryCount++;
+          }
+        } while (retryCount < TransactionalTable.retries && retry == true);
       } catch (Throwable e) {
-        e.printStackTrace();
-        throw new IOException("ERROR while calling coprocessor");
+        throw new IOException("ERROR while calling coprocessor",e);
       }
-      
-      Collection<CheckAndDeleteResponse> results = result.values();
-      
-      if(results.size() == 0) 
-    	  throw new IOException("Problem with calling coprocessor, no regions returned result");
-     CheckAndDeleteResponse response = results.iterator().next();
-      if(response.hasException())
-          throw new IOException(response.getException());
-      return response.getResult();
+      if(result == null)
+        throw new IOException(retryErrMsg);
+      else if(result.hasException())
+        throw new IOException(result.getException());
+      return result.getResult();
    }
     
 	public boolean checkAndPut(final TransactionState transactionState,
@@ -434,23 +493,39 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
       }
     };
 
-      Map<byte[], CheckAndPutResponse> result = null;
+      CheckAndPutResponse result = null;
       try {
-	  result = super.coprocessorService(TrxRegionService.class, put.getRow(), put.getRow(), callable);
+        int retryCount = 0;
+        boolean retry = false;
+        do {
+          Iterator<Map.Entry<byte[], CheckAndPutResponse>> it = super.coprocessorService(TrxRegionService.class, 
+                                                                                      put.getRow(), 
+                                                                                      put.getRow(), 
+                                                                                      callable)
+                                                                                      .entrySet()
+                                                                                      .iterator();
+          if(it.hasNext()) {
+            result = it.next().getValue();
+            retry = false;
+          }
+
+          if(result == null || result.getException().contains("closing region")) {
+            Thread.sleep(TransactionalTable.delay);
+            retry = true;
+            transactionState.setRetried(true);
+            retryCount++;
+          }
+        } while (retryCount < TransactionalTable.retries && retry == true);
       } catch (Throwable e) {        
-          StringWriter sw = new StringWriter();
-          PrintWriter pw = new PrintWriter(sw);
-          e.printStackTrace(pw);
-          //sw.toString();
-        throw new IOException("ERROR while calling coprocessor " + sw.toString());       
+        throw new IOException("ERROR while calling coprocessor ",e);       
       }
-      Collection<CheckAndPutResponse> results = result.values();
-      if(results.size() == 0) 
-    	  throw new IOException("Problem with calling coprocessor, no regions returned result");
-      CheckAndPutResponse response = results.iterator().next();
-      if(response.hasException())
-          throw new IOException(response.getException());
-      return response.getResult();          
+
+      if(result == null)
+        throw new IOException(retryErrMsg);
+      else if(result.hasException())
+        throw new IOException(result.getException());
+
+      return result.getResult();          
     }
 
        /**
@@ -515,28 +590,37 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
    	      }
    	    };
    	    
-   	   Map<byte[], DeleteMultipleTransactionalResponse> result = null;
+   	   DeleteMultipleTransactionalResponse result = null;
  	      try {
- 	        result = super.coprocessorService(TrxRegionService.class, 
-                                                  entry.getValue().get(0).getRow(),
-                                                  entry.getValue().get(0).getRow(),
-                                                  callable);
+ 	        int retryCount = 0;
+ 	        boolean retry = false;
+ 	        do {
+ 	          Iterator<Map.Entry<byte[], DeleteMultipleTransactionalResponse>> it= super.coprocessorService(TrxRegionService.class, 
+ 	                                            entry.getValue().get(0).getRow(), 
+ 	                                            entry.getValue().get(0).getRow(), 
+ 	                                            callable)
+ 	                                            .entrySet().iterator();
+ 	          if(it.hasNext()) {
+ 	            result = it.next().getValue();
+ 	            retry = false;
+ 	          }
+
+ 	          if(result == null || result.getException().contains("closing region")) {
+ 	            Thread.sleep(TransactionalTable.delay);
+ 	            retry = true;
+ 	            transactionState.setRetried(true);
+ 	            retryCount++;
+ 	          }
+ 	        } while (retryCount < TransactionalTable.retries && retry == true);
+ 	        
  	      } catch (Throwable e) {
- 	        e.printStackTrace();
-	        throw new IOException("ERROR while calling coprocessor");
+	        throw new IOException("ERROR while calling coprocessor", e);
  	      }
-	      if(result.size() > 1) {
-             LOG.error("result size for multiple delete:" + result.size());
-             throw new IOException("Incorrect number of region results");
-	      }
-	      Collection<DeleteMultipleTransactionalResponse> results = result.values();
-	      DeleteMultipleTransactionalResponse[] resultArray = new DeleteMultipleTransactionalResponse[results.size()];
-	      results.toArray(resultArray);
-	      if(resultArray.length == 0) 
-	    	  throw new IOException("Problem with calling coprocessor, no regions returned result");
-	      
-          if (resultArray[0].hasException())
-             throw new IOException(resultArray[0].getException());
+
+             if(result == null)
+               throw new IOException(retryErrMsg);
+             else if (result.hasException())
+               throw new IOException(result.getException());
 	   }
    	}
 
@@ -601,44 +685,55 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 	        return rpcCallback.get();
 	      }
 	    };
-	    Map<byte[], PutMultipleTransactionalResponse> result = null;
+	    PutMultipleTransactionalResponse result = null;
       try {
-        result = super.coprocessorService(TrxRegionService.class,
-                                          entry.getValue().get(0).getRow(),
-                                          entry.getValue().get(0).getRow(),
-                                          callable);
+        int retryCount = 0;
+        boolean retry = false;
+        do {
+          Iterator<Map.Entry<byte[], PutMultipleTransactionalResponse>> it= super.coprocessorService(TrxRegionService.class, 
+                                            entry.getValue().get(0).getRow(),
+                                            entry.getValue().get(0).getRow(),                                             
+                                            callable)
+                                            .entrySet().iterator();
+          if(it.hasNext()) {
+            result = it.next().getValue();
+            retry = false;
+          }
+
+          if(result == null || result.getException().contains("closing region")) {
+            Thread.sleep(TransactionalTable.delay);
+            retry = true;
+            transactionState.setRetried(true);
+            retryCount++;
+          }
+        } while (retryCount < TransactionalTable.retries && retry == true);
       } catch (Throwable e) {
-        e.printStackTrace();
-        throw new IOException("ERROR while calling coprocessor");
+        throw new IOException("ERROR while calling coprocessor",e);
       }
-      Collection<PutMultipleTransactionalResponse> results = result.values();
-      PutMultipleTransactionalResponse[] resultArray = new PutMultipleTransactionalResponse[results.size()];
-      results.toArray(resultArray);
-      if(resultArray.length == 0) 
-    	  throw new IOException("Problem with calling coprocessor, no regions returned result");
-      
-      if (resultArray[0].hasException()) 
-        throw new IOException(resultArray[0].getException());
+      if(result == null)
+        throw new IOException(retryErrMsg);
+      else if (result.hasException()) 
+        throw new IOException(result.getException());
      }
 		}
 	
-	// validate for well-formedness
-	public void validatePut(final Put put) throws IllegalArgumentException {
-		if (put.isEmpty()) {
-			throw new IllegalArgumentException("No columns to insert");
-		}
-		if (maxKeyValueSize > 0) {
-			for (List<KeyValue> list : put.getFamilyMap().values()) {		  
-				for (KeyValue kv : list) {
-					if (kv.getLength() > maxKeyValueSize) {
-						throw new IllegalArgumentException(
-								"KeyValue size too large");
-					}
-				}
-			}
-		}
-	}
-	
+    // validate for well-formedness
+    public void validatePut(final Put put) throws IllegalArgumentException {
+        if (put.isEmpty()) {
+            throw new IllegalArgumentException("No columns to insert");
+        }
+        if (maxKeyValueSize > 0) {
+            for (List<Cell> list : put.getFamilyCellMap().values()) {
+                for (Cell c : list) {
+                    if (KeyValueUtil.length(c) > maxKeyValueSize) {
+                        throw new IllegalArgumentException("KeyValue size too large");
+                    }
+                }
+            }
+        }
+    }
+
+
 	private int maxKeyValueSize;
 public HRegionLocation getRegionLocation(byte[] row, boolean f)
                                   throws IOException {
@@ -654,8 +749,7 @@ public HRegionLocation getRegionLocation(byte[] row, boolean f)
         return super.getConfiguration();
     }
     public void flushCommits()
-                  throws InterruptedIOException,
-                RetriesExhaustedWithDetailsException {
+                  throws IOException {
          super.flushCommits();
     }
     public HConnection getConnection()
@@ -683,9 +777,12 @@ public HRegionLocation getRegionLocation(byte[] row, boolean f)
     {
         return super.getTableName();
     }
-    public ResultScanner getScanner(Scan scan) throws IOException
+    public ResultScanner getScanner(Scan scan, float DOPparallelScanner) throws IOException
     {
-        return super.getScanner(scan);
+        if (scan.isSmall() || DOPparallelScanner == 0)
+            return super.getScanner(scan);
+        else
+            return new TrafParallelClientScanner(this.connection, scan, getName(), DOPparallelScanner);       
     }
     public Result get(Get g) throws IOException
     {
@@ -708,11 +805,11 @@ public HRegionLocation getRegionLocation(byte[] row, boolean f)
     {
         return super.checkAndPut(row,family,qualifier,value,put);
     }
-    public void put(Put p) throws  InterruptedIOException,RetriesExhaustedWithDetailsException
+    public void put(Put p) throws IOException
     {
         super.put(p);
     }
-    public void put(List<Put> p) throws  InterruptedIOException,RetriesExhaustedWithDetailsException
+    public void put(List<Put> p) throws IOException
     {
         super.put(p);
     }

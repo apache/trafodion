@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -134,11 +137,14 @@ struct hive_sd_desc
 
    char fieldTerminator_;
    char recordTerminator_;
+   char* nullFormat_;
 
    struct hive_sd_desc* next_;
 
    hive_sd_desc(Int32 sdID, const char* loc, Int64 creationTS, Int32 buckets,
-                const char* ift, const char* of, char knd,
+                const char* ift, const char* of, 
+                const char* nf,
+                char knd,
                 struct hive_column_desc* column,
                 struct hive_skey_desc* skey,
                 struct hive_bkey_desc* bkey,
@@ -146,20 +152,22 @@ struct hive_sd_desc
                 )
 
         : sdID_(sdID), buckets_(buckets), kind_(knd), column_(column),
-      skey_(skey), bkey_(bkey), 
-      fieldTerminator_(fieldTerminator),
-      recordTerminator_(recordTerminator),
-      next_(NULL)
-   {
-     location_ = strduph(loc, CmpCommon::contextHeap());
-     inputFormat_ = strduph(ift, CmpCommon::contextHeap()); 
-     outputFormat_= strduph(of, CmpCommon::contextHeap());
-   }
+          skey_(skey), bkey_(bkey), 
+          fieldTerminator_(fieldTerminator),
+          recordTerminator_(recordTerminator),
+          next_(NULL)
+  {
+    location_ = strduph(loc, CmpCommon::contextHeap());
+    inputFormat_ = strduph(ift, CmpCommon::contextHeap()); 
+    outputFormat_= strduph(of, CmpCommon::contextHeap());
+    nullFormat_ = (nf ? strduph(nf, CmpCommon::contextHeap()) : NULL);
+  }
 
   ~hive_sd_desc();
 
    char getFieldTerminator() const { return fieldTerminator_; }
    char getRecordTerminator() const { return recordTerminator_;}
+   char *getNullFormat() const {return nullFormat_; }
 
    NABoolean isSequenceFile() const;
    NABoolean isOrcFile() const;

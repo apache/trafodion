@@ -2,19 +2,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -97,12 +100,12 @@ class ElemDDLFileAttrDeallocate;
 class ElemDDLFileAttrICompress;
 class ElemDDLFileAttrList;
 class ElemDDLPartnAttrList;
-class ElemDDLFileAttrLockLength;
 class ElemDDLFileAttrMaxSize;
 class ElemDDLFileAttrExtents;
 class ElemDDLFileAttrMaxExtents;
 class ElemDDLFileAttrUID;
 class ElemDDLFileAttrRowFormat;
+class ElemDDLFileAttrColFam;
 class ElemDDLFileAttrNoLabelUpdate;
 class ElemDDLFileAttrOwner;
 //++ MV
@@ -134,9 +137,6 @@ class ElemDDLLikeOptWithHorizontalPartitions;
 class ElemDDLLikeOptWithoutSalt;
 class ElemDDLLikeOptWithoutDivision;
 class ElemDDLList;
-class ElemDDLLoadOpt;
-class ElemDDLLoadOptDSlack;
-class ElemDDLLoadOptISlack;
 class ElemDDLLocation;
 class ElemDDLOptionList;
 class ElemDDLParallelExec;
@@ -274,6 +274,8 @@ class StmtDDLAlterTableMove;
 class StmtDDLAlterTablePartition;
 class StmtDDLAlterTableRename;
 class StmtDDLAlterTableNamespace;
+class StmtDDLAlterTableAlterColumnDatatype;
+class StmtDDLAlterTableAlterColumnRename;
 class StmtDDLAlterTableAlterColumnDefaultValue;
 class StmtDDLAlterTableAlterColumnSetSGOption;
 class StmtDDLAlterTableSetConstraint;
@@ -417,12 +419,12 @@ public:
   virtual ElemDDLFileAttrICompress      * castToElemDDLFileAttrICompress();
   virtual ElemDDLFileAttrList           * castToElemDDLFileAttrList();
   virtual ElemDDLPartnAttrList          * castToElemDDLPartnAttrList();
-  virtual ElemDDLFileAttrLockLength     * castToElemDDLFileAttrLockLength();
   virtual ElemDDLFileAttrMaxSize        * castToElemDDLFileAttrMaxSize();
   virtual ElemDDLFileAttrExtents        * castToElemDDLFileAttrExtents();
   virtual ElemDDLFileAttrMaxExtents     * castToElemDDLFileAttrMaxExtents();
   virtual ElemDDLFileAttrUID		* castToElemDDLFileAttrUID();
   virtual ElemDDLFileAttrRowFormat	* castToElemDDLFileAttrRowFormat();
+  virtual ElemDDLFileAttrColFam	* castToElemDDLFileAttrColFam();
   virtual ElemDDLFileAttrNoLabelUpdate  * castToElemDDLFileAttrNoLabelUpdate();
   virtual ElemDDLFileAttrOwner          * castToElemDDLFileAttrOwner();
 
@@ -455,9 +457,6 @@ public:
   virtual ElemDDLLikeOptWithoutSalt     * castToElemDDLLikeOptWithoutSalt();
   virtual ElemDDLLikeOptWithoutDivision * castToElemDDLLikeOptWithoutDivision();
   virtual ElemDDLList                   * castToElemDDLList();
-  virtual ElemDDLLoadOpt                * castToElemDDLLoadOpt();
-  virtual ElemDDLLoadOptDSlack          * castToElemDDLLoadOptDSlack();
-  virtual ElemDDLLoadOptISlack          * castToElemDDLLoadOptISlack();
   virtual ElemDDLLocation               * castToElemDDLLocation();
   virtual ElemDDLOptionList             * castToElemDDLOptionList();
   virtual ElemDDLParallelExec           * castToElemDDLParallelExec();
@@ -606,6 +605,10 @@ public:
   virtual StmtDDLAlterTableNamespace    * castToStmtDDLAlterTableNamespace();
   virtual StmtDDLAlterTableAlterColumnDefaultValue* 
                 castToStmtDDLAlterTableAlterColumnDefaultValue();
+  virtual StmtDDLAlterTableAlterColumnDatatype* 
+                castToStmtDDLAlterTableAlterColumnDatatype();
+  virtual StmtDDLAlterTableAlterColumnRename* 
+                castToStmtDDLAlterTableAlterColumnRename();
   virtual StmtDDLAlterTableSetConstraint*
                 castToStmtDDLAlterTableSetConstraint();
   virtual StmtDDLAlterTableToggleConstraint*

@@ -1,0 +1,84 @@
+>>
+>>create hbase table t028tbl1(column family 'cf');
+
+--- SQL operation complete.
+>>
+>>insert into hbase."_CELL_".t028tbl1 values
++>('0', 'cf', '1a', -1, '2'),
++>('1', 'cf', '1a', -1, '102'),
++>('2', 'cf', '1a', -1, '202'),
++>('3', 'cf', '1a', -1, '302'),
++>('4', 'cf', '1a', -1, '402'),
++>('5', 'cf', '1a', -1, '502'),
++>('6', 'cf', '1a', -1, '602'),
++>('7', 'cf', '1a', -1, '702'),
++>('8', 'cf', '1a', -1, '802');
+
+--- 9 row(s) inserted.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>cqd  USTAT_INTERNAL_SORT 'off';
+
+--- SQL operation complete.
+>>update statistics for table hbase."_CELL_".t028tbl1 on every column;
+
+--- SQL operation complete.
+>>showstats for table hbase."_CELL_".t028tbl1 on ROW_ID detail;
+
+Detailed Histogram data for Table HBASE."_CELL_".T028TBL1
+Table ID: 378379789629904219
+
+Hist ID:    2022909903
+Column(s):  ROW_ID
+Total Rows: 9
+Total UEC:  9
+Low Value:  ('0')
+High Value: ('8')
+Intervals:  9
+
+Number    Rowcount         UEC Boundary
+====== =========== =========== ======================================
+     0           0           0 ('0')
+     1           1           1 ('0')
+     2           1           1 ('1')
+     3           1           1 ('2')
+     4           1           1 ('3')
+     5           1           1 ('4')
+     6           1           1 ('5')
+     7           1           1 ('6')
+     8           1           1 ('7')
+     9           1           1 ('8')
+
+
+--- SQL operation complete.
+>>
+>>explain options 'f' select * from hbase."_CELL_".t028tbl1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  9.00E+000
+.    .    1    hbase_scan                      T028TBL1              9.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' select * from hbase."_CELL_".t028tbl1 where col_family = 'cf1';
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  9.00E+000
+.    .    1    hbase_scan                      T028TBL1              9.00E+000
+
+--- SQL operation complete.
+>>
+>>drop hbase table t028tbl1;
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+

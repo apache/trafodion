@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1591,6 +1594,11 @@ desc_struct* Generator::createColDescs(
 	  col_desc->body.columns_desc.colclass = 'A';
 	  col_desc->body.columns_desc.addedColumn = 1;
 	}
+      else if (info->columnClass == COM_ALTERED_USER_COLUMN)
+	{
+	  col_desc->body.columns_desc.colclass = 'C';
+	  col_desc->body.columns_desc.addedColumn = 1;
+	}
 
       if (info->colHeading)
 	col_desc->body.columns_desc.heading = (char*)info->colHeading;
@@ -1834,8 +1842,8 @@ desc_struct * Generator::createVirtualTableDesc(
 
   if (tableInfo)
     table_desc->body.table_desc.rowFormat =
-      (tableInfo->rowFormat == 1 ? COM_ALIGNED_FORMAT_TYPE : COM_HBASE_FORMAT_TYPE);
-  
+      tableInfo->rowFormat ;
+
   if (CmpCommon::context()->sqlSession()->validateVolatileName(tableName))
     table_desc->body.table_desc.isVolatile = 1;
   else
@@ -1850,6 +1858,22 @@ desc_struct * Generator::createVirtualTableDesc(
 
   table_desc->body.table_desc.owner = (tableInfo ? tableInfo->objOwnerID : SUPER_USER);
   table_desc->body.table_desc.schemaOwner = (tableInfo ? tableInfo->schemaOwnerID : SUPER_USER);
+
+  if (tableInfo && tableInfo->defaultColFam)
+    {
+      table_desc->body.table_desc.default_col_fam = 
+        new HEAP char[strlen(tableInfo->defaultColFam)+1];
+      strcpy(table_desc->body.table_desc.default_col_fam, tableInfo->defaultColFam);
+    }
+
+  if (tableInfo && tableInfo->allColFams)
+    {
+      table_desc->body.table_desc.all_col_fams = 
+        new HEAP char[strlen(tableInfo->allColFams)+1];
+      strcpy(table_desc->body.table_desc.all_col_fams, tableInfo->allColFams);
+    }
+
+  table_desc->body.table_desc.tableFlags = (tableInfo ? tableInfo->objectFlags : 0);
 
   desc_struct * files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
   //  files_desc->body.files_desc.audit = -1; // audited table
@@ -1955,6 +1979,7 @@ desc_struct * Generator::createVirtualTableDesc(
   index_desc->body.indexes_desc.tablename = table_desc->body.table_desc.tablename;
   index_desc->body.indexes_desc.indexname = table_desc->body.table_desc.tablename;
   index_desc->body.indexes_desc.keytag = 0; // primary index
+  index_desc->body.indexes_desc.indexUID = 0;
   index_desc->body.indexes_desc.record_length = table_desc->body.table_desc.record_length;
   index_desc->body.indexes_desc.colcount = table_desc->body.table_desc.colcount;
   index_desc->body.indexes_desc.isVerticalPartition = 0;
@@ -1962,10 +1987,13 @@ desc_struct * Generator::createVirtualTableDesc(
   index_desc->body.indexes_desc.isVolatile = table_desc->body.table_desc.isVolatile;
   index_desc->body.indexes_desc.hbaseCreateOptions  = NULL;
   index_desc->body.indexes_desc.numSaltPartns = 0;
+  index_desc->body.indexes_desc.rowFormat = table_desc->body.table_desc.rowFormat;
   if (tableInfo)
   {
-      index_desc->body.indexes_desc.numSaltPartns = tableInfo->numSaltPartns;
-      if (tableInfo->hbaseCreateOptions)
+    index_desc->body.indexes_desc.indexUID = tableInfo->objUID;
+    
+    index_desc->body.indexes_desc.numSaltPartns = tableInfo->numSaltPartns;
+    if (tableInfo->hbaseCreateOptions)
       {
         index_desc->body.indexes_desc.hbaseCreateOptions  = 
           new HEAP char[strlen(tableInfo->hbaseCreateOptions) + 1];
@@ -1973,7 +2001,7 @@ desc_struct * Generator::createVirtualTableDesc(
                tableInfo->hbaseCreateOptions);
       }
   }
-
+  
   if (numIndexes > 0)
     {
       desc_struct * prev_desc = index_desc;
@@ -1989,6 +2017,7 @@ desc_struct * Generator::createVirtualTableDesc(
 	  curr_index_desc->body.indexes_desc.indexname = new HEAP char[strlen(indexInfo[i].indexName)+1];
 	  strcpy(curr_index_desc->body.indexes_desc.indexname, indexInfo[i].indexName);
 
+          curr_index_desc->body.indexes_desc.indexUID = indexInfo[i].indexUID;
 	  curr_index_desc->body.indexes_desc.keytag = indexInfo[i].keytag;
 	  curr_index_desc->body.indexes_desc.unique = indexInfo[i].isUnique;
 	  curr_index_desc->body.indexes_desc.isCreatedExplicitly = indexInfo[i].isExplicit;
@@ -2011,6 +2040,8 @@ desc_struct * Generator::createVirtualTableDesc(
           curr_index_desc->body.indexes_desc.hbaseCreateOptions  = NULL;
           curr_index_desc->body.indexes_desc.numSaltPartns = 
             indexInfo[i].numSaltPartns;
+          curr_index_desc->body.indexes_desc.rowFormat = 
+            indexInfo[i].rowFormat;
           if (indexInfo[i].hbaseCreateOptions)
           {
             curr_index_desc->body.indexes_desc.hbaseCreateOptions  = 
@@ -3110,3 +3141,24 @@ void Generator::setHBaseCacheBlocks(Int32 hbaseRowSize, double estRowsAccessed,
       hbpa->setCacheBlocks(TRUE);
   }
 }
+
+void Generator::setHBaseSmallScanner(Int32 hbaseRowSize, double estRowsAccessed,
+                      Lng32 hbaseBlockSize, ComTdbHbaseAccess::HbasePerfAttributes * hbpa)
+{
+  if (CmpCommon::getDefault(HBASE_SMALL_SCANNER) == DF_SYSTEM)
+  {
+    if(((hbaseRowSize*estRowsAccessed)<hbaseBlockSize) && (estRowsAccessed>0))//added estRowsAccessed > 0 because MDAM costing is not populating this field correctly
+        hbpa->setUseSmallScanner(TRUE);
+    hbpa->setUseSmallScannerForProbes(TRUE);
+  }else if (CmpCommon::getDefault(HBASE_SMALL_SCANNER) == DF_ON)
+  {
+      hbpa->setUseSmallScanner(TRUE);
+      hbpa->setUseSmallScannerForProbes(TRUE);
+  }
+  hbpa->setMaxNumRowsPerHbaseBlock(hbaseBlockSize/hbaseRowSize);
+}
+
+void Generator::setHBaseParallelScanner(ComTdbHbaseAccess::HbasePerfAttributes * hbpa){
+    hbpa->setDopParallelScanner(CmpCommon::getDefaultNumeric(HBASE_DOP_PARALLEL_SCANNER));
+}
+

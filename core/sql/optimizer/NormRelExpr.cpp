@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1204,8 +1207,20 @@ void Join::transformNode(NormWA & normWARef,
   }
   // Make values available to the childs
   ValueIdSet availableValues = getGroupAttr()->getCharacteristicInputs();
-  child(0)->getGroupAttr()->addCharacteristicInputs(availableValues);
   child(1)->getGroupAttr()->addCharacteristicInputs(availableValues);
+  if (isTSJForMergeUpsert())
+  {
+    ValueIdSet subqVids;
+    for (ValueId vid = availableValues.init();
+	 availableValues.next(vid); availableValues.advance(vid)) {
+      if (vid.getItemExpr()->getOperatorType() == ITM_ROW_SUBQUERY)
+	subqVids.insert(vid);
+    }
+    availableValues -= subqVids;
+    //remove subqueries
+    
+  }
+    child(0)->getGroupAttr()->addCharacteristicInputs(availableValues);
 
 
   // ---------------------------------------------------------------------
@@ -1694,11 +1709,26 @@ void Join::recomputeOuterReferences()
       // If it is a TSJ don't add the outputs of the left child to
       // the needed inputs.
       exprSet = child(1).getPtr()->getGroupAttr()->getCharacteristicInputs();
-      if (isTSJ())
+      if (isTSJForMergeUpsert()) 
+      {
+	ValueIdSet exprSet2; 
+	ValueId vid;
+	for (vid = exprSet.init();
+	     exprSet.next(vid);
+	     exprSet.advance(vid))
+	  exprSet2.insert(vid.getItemExpr()->
+			  getReplacementExpr()->getValueId());
+	exprSet2.removeCoveredExprs(child(0).getPtr()->getGroupAttr()->getCharacteristicOutputs());
+	outerRefs += exprSet2;
+      }
+      else 
+      {
+	if (isTSJ())
         {
           exprSet.removeCoveredExprs(child(0).getPtr()->getGroupAttr()->getCharacteristicOutputs());
         }
-       outerRefs += exprSet;
+	outerRefs += exprSet;
+      }
 
       getGroupAttr()->setCharacteristicInputs(outerRefs);
     }
@@ -6255,12 +6285,15 @@ void GenericUpdate::rewriteNode(NormWA & normWARef)
   potentialOutputs_.normalizeNode(normWARef);
   // QSTUFF
 
+  precondition_.normalizeNode(normWARef);
+
+  // these are no longer used in the following phases,
+  // so remove them instead of rewriting them
+  exprsInDerivedClasses_.clear();
   // ---------------------------------------------------------------------
   // Rewrite the expressions in the selection predicates and
   // in the Group Attributes.
   // ---------------------------------------------------------------------
-
-  
   RelExpr::rewriteNode(normWARef);
 
   // ---------------------------------------------------------------------
@@ -6421,6 +6454,7 @@ void GenericUpdate::recomputeOuterReferences()
   allMyExpr += executorPred();
   allMyExpr += usedColumns();
   allMyExpr += getSelectionPred();
+  allMyExpr += exprsInDerivedClasses_;
 
   ValueIdSet beginKeyPredSet(beginKeyPred());
   allMyExpr += beginKeyPredSet;
@@ -7037,32 +7071,32 @@ void RelRoot::recomputeOuterReferences()
   // been pulled up.
   // ---------------------------------------------------------------------
   if (NOT getGroupAttr()->getCharacteristicInputs().isEmpty())
-    {
-      ValueIdSet leafValues, emptySet;
-      GroupAttributes emptyGA;
-      child(0)->getGroupAttr()->getCharacteristicInputs().
-                  getLeafValuesForCoverTest(leafValues, emptyGA, emptySet);
-      CMPASSERT((getGroupAttr()->getCharacteristicInputs().contains
-                (child(0)->getGroupAttr()->getCharacteristicInputs())) || 
-                (getGroupAttr()->getCharacteristicInputs().contains (leafValues)));
-      ValueIdSet outerRefs = getGroupAttr()->getCharacteristicInputs(); 
-
-      // Remove from outerRefs those valueIds that are not needed
-      // by my selection predicate or by my computed expression list.
-      // Need to add the orderby list since it is not a subset of the
-      // computed expression list.
-      ValueIdSet allMyExpr(getSelectionPred());
-      allMyExpr.insertList(compExpr());
-      allMyExpr.insertList(reqdOrder());
-
-      allMyExpr.weedOutUnreferenced(outerRefs);
-
-      // Add to outerRefs those that my child need.
-      outerRefs += child(0).getPtr()->getGroupAttr()->getCharacteristicInputs();
-
-      // set my Character Inputs to this new minimal set.
-      getGroupAttr()->setCharacteristicInputs(outerRefs);
-    }
+  {
+    ValueIdSet leafValues, emptySet;
+    GroupAttributes emptyGA;
+    child(0)->getGroupAttr()->getCharacteristicInputs().
+      getLeafValuesForCoverTest(leafValues, emptyGA, emptySet);
+    CMPASSERT((getGroupAttr()->getCharacteristicInputs().contains
+               (child(0)->getGroupAttr()->getCharacteristicInputs())) || 
+              (getGroupAttr()->getCharacteristicInputs().contains (leafValues))); 
+    ValueIdSet outerRefs = getGroupAttr()->getCharacteristicInputs(); 
+    
+    // Remove from outerRefs those valueIds that are not needed
+    // by my selection predicate or by my computed expression list.
+    // Need to add the orderby list since it is not a subset of the
+    // computed expression list.
+    ValueIdSet allMyExpr(getSelectionPred());
+    allMyExpr.insertList(compExpr());
+    allMyExpr.insertList(reqdOrder());
+    
+    allMyExpr.weedOutUnreferenced(outerRefs);
+    
+    // Add to outerRefs those that my child need.
+    outerRefs += child(0).getPtr()->getGroupAttr()->getCharacteristicInputs();
+    
+    // set my Character Inputs to this new minimal set.
+    getGroupAttr()->setCharacteristicInputs(outerRefs);
+  }
 } // RelRoot::recomputeOuterReferences()  
 
 // -----------------------------------------------------------------------

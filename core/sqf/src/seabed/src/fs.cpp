@@ -2,19 +2,22 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -734,6 +737,7 @@ SB_Export short BFILE_CLOSE_(short pv_filenum, short pv_tapedisposition) {
     FS_Fd_Type *lp_fd;
     short       lv_fserr;
     int         lv_status;
+    int         lv_refcount;
     SB_API_CTR (lv_zctr, BFILE_CLOSE_);
 
     SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_FS_CLOSE, pv_filenum);
@@ -753,7 +757,7 @@ SB_Export short BFILE_CLOSE_(short pv_filenum, short pv_tapedisposition) {
     if (pv_filenum == gv_fs_receive_fn)
         gv_fs_receive_fn = -1;
     else {
-        if (msg_mon_get_ref_count(&lp_fd->iv_phandle) > 1) {
+        if ((lv_refcount = msg_mon_get_ref_count(&lp_fd->iv_phandle)) > 1  || (lv_refcount == 0)) {
             // send close message to remote
             fs_int_fs_file_close(lp_fd);
         }

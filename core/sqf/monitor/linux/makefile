@@ -1,18 +1,21 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
@@ -45,7 +48,7 @@ FLAGS+= -UNDEBUG
 FLAGS+= -Wall -Wextra
 
 # Flags for use in compiling Seabed trace modules
-SBFLAGS = -Wall -Wextra -pedantic -Werror  -Wno-long-long $(DBG_FLGS) $(OPTIM_FLGS)
+SBFLAGS = -Wall -Wextra -pedantic -Werror  -Wno-long-long $(DBG_FLGS) $(OPTIM_FLGS) -Xlinker --copy-dt-needed-entries
 SBDIR = ../../src/seabed/src
 
 COMMONLOGGERDIR = ../../commonLogger
@@ -80,7 +83,8 @@ INCLUDES+= -I$(LOG4CXX_INC_DIR)
 INCLUDES+= -I$(LOG4CXX_INC_DIR)/log4cxx
 
 LIBS+=  -lsqlite3
-LIBS+=  -L$(LOG4CXX_LIB_DIR) -llog4cxx
+LIBS+=  -llog4cxx
+LIBS+=  -ldl
 
 ifeq ($(USE_TESTPOINTS),1)
    FLAGS+= -DUSE_TESTPOINTS
@@ -127,6 +131,7 @@ MONITORSRC += reqmount.cxx
 MONITORSRC += reqnewproc.cxx
 MONITORSRC += reqnodedown.cxx
 MONITORSRC += reqnodeinfo.cxx
+MONITORSRC += reqnodename.cxx
 MONITORSRC += reqnodeup.cxx
 MONITORSRC += reqnotify.cxx
 MONITORSRC += reqopen.cxx
@@ -186,6 +191,7 @@ MONITOROBJS += $(OUTDIR)/reqmount.o
 MONITOROBJS += $(OUTDIR)/reqnewproc.o
 MONITOROBJS += $(OUTDIR)/reqnodedown.o
 MONITOROBJS += $(OUTDIR)/reqnodeinfo.o
+MONITOROBJS += $(OUTDIR)/reqnodename.o
 MONITOROBJS += $(OUTDIR)/reqpnodeinfo.o
 MONITOROBJS += $(OUTDIR)/reqnodeup.o
 MONITOROBJS += $(OUTDIR)/reqnotify.o

@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -90,28 +93,31 @@ BindScope::~BindScope()
 // ***********************************************************************
 // BindScope::mergeOuterRefs()
 // ***********************************************************************
-void BindScope::mergeOuterRefs(const ValueIdSet& other)
+void BindScope::mergeOuterRefs(const ValueIdSet& other, NABoolean keepLocalRefs)
 {
   outerRefs_ += other;
 
-  // Get the list of valueIds that this scope exposes and remove
-  // them from the local references
-  ValueIdList localRefList;
-  if (RETDesc_)
-    RETDesc_->getValueIdList(localRefList,USER_AND_SYSTEM_COLUMNS);
-
-  ValueIdSet localRefSet = localRefList;
-  outerRefs_ -= localRefSet;
-
-  // subtract any other local references
-  outerRefs_ -= localRefs_;
+  if (!keepLocalRefs)
+  {
+    // Get the list of valueIds that this scope exposes and remove
+    // them from the local references
+    ValueIdList localRefList;
+    if (RETDesc_)
+      RETDesc_->getValueIdList(localRefList,USER_AND_SYSTEM_COLUMNS);
+    
+    ValueIdSet localRefSet = localRefList;
+    outerRefs_ -= localRefSet;
+    
+    // subtract any other local references
+    outerRefs_ -= localRefs_;
+  }
 } // BindScope::mergeOuterRefs()
 
 
 // ***********************************************************************
 // BindWA()
 // ***********************************************************************
-BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL)
+BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL, NABoolean allowExtTables)
      : schemaDB_(schemaDB)
      , currentCmpContext_(cmpContext)
      , inputVars_(cmpContext ? cmpContext->statementHeap() : NULL)
@@ -128,7 +134,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL)
   //     , inRIMaint_(FALSE)
      , inViewWithCheckOption_(NULL)
      , viewCount_(0)
-     , compoundCreateSchema_(FALSE)
+     , allowExternalTables_(allowExtTables)
      , errFlag_(FALSE)
      , uniqueNum_(0)
      , uniqueIudNum_(0) //++Triggers,
@@ -370,7 +376,7 @@ BindScope* BindWA::getSubqueryScope (BindScope *currentScope) const
 // ***********************************************************************
 // BindWA::removeCurrentScope()
 // ***********************************************************************
-void BindWA::removeCurrentScope()
+void BindWA::removeCurrentScope(NABoolean keepLocalRefs)
 {
   //
   // Remove the current scope from the BindScope list.  If there is a parent
@@ -382,7 +388,7 @@ void BindWA::removeCurrentScope()
   BindScope *currScope;
   scopes_.getLast(currScope);
   if (NOT scopes_.isEmpty())
-    getCurrentScope()->mergeOuterRefs(currScope->getOuterRefs());
+    getCurrentScope()->mergeOuterRefs(currScope->getOuterRefs(),keepLocalRefs);
 
   delete currScope;
 } // BindWA::removeCurrentScope()

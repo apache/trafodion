@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -756,7 +759,11 @@ Lng32 ExeCliInterface::getPtrAndLen(short entry, char* &ptr, Lng32 &len, short**
   if (datatype == REC_BYTE_V_ASCII ||
       datatype == REC_BYTE_V_ASCII_LONG ||
       datatype == REC_BYTE_V_DOUBLE ||
-      datatype == SQLTYPECODE_VARCHAR_WITH_LENGTH)
+      datatype == SQLTYPECODE_VARCHAR_WITH_LENGTH ||
+      datatype == SQLTYPECODE_VARCHAR_LONG ||
+      datatype == SQLTYPECODE_BLOB ||
+      datatype == SQLTYPECODE_CLOB
+      )
     {
 
       // Depending on value of len, first 2 or 4 bytes of data indicate
@@ -1004,9 +1011,8 @@ Lng32 ExeCliInterface::executeImmediateExec(const char * stmtStr,
 	{
 	  char * ptr;
 	  Lng32 len;
-	  getPtrAndLen(1, ptr, len);
-
-	  str_cpy_all(outputBuf, ptr, len);
+	  getPtrAndLen(1, ptr, len);         
+          str_cpy_all(outputBuf, ptr, len);
 	  
 	  if (nullTerminate)
 	    outputBuf[len] = 0;
@@ -1044,6 +1050,8 @@ Lng32 ExeCliInterface::executeImmediateExec(const char * stmtStr,
 
   return ((cliRetcode != -1) ? cliRetcode : retcode);
 }
+
+
 
 Lng32 ExeCliInterface::executeImmediate(const char * stmtStr,
 				       char * outputBuf,

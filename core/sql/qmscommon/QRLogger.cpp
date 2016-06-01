@@ -1,19 +1,22 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
@@ -47,6 +50,7 @@ std::string CAT_SQL_LOB                       = "SQL.LOB";
 std::string CAT_SQL_SSMP                      = "SQL.SSMP";
 std::string CAT_SQL_SSCP                      = "SQL.SSCP";
 std::string CAT_SQL_UDR                       = "SQL.UDR";
+std::string CAT_SQL_PRIVMGR                   = "SQL.PRIVMGR";
 // hdfs
 std::string CAT_SQL_HDFS_JNI_TOP              =  "SQL.HDFS.JniTop";
 std::string CAT_SQL_HDFS_SEQ_FILE_READER      =  "SQL.HDFS.SeqFileReader";
@@ -57,14 +61,14 @@ std::string CAT_SQL_HBASE                     =  "SQL.HBase";
 // these categories are currently not used 
 std::string CAT_SQL_QMP                       = "SQL.Qmp";
 std::string CAT_SQL_QMM                       = "SQL.Qmm";
-std::string CAT_SQL_COMP_QR_DESC_GEN          = "SQL.Comp.DescGen";
-std::string CAT_SQL_COMP_QR_HANDLER           = "SQL.Comp.QRHandler";
-std::string CAT_SQL_COMP_QR_COMMON            = "SQL.COMP.QRCommon";
-std::string CAT_SQL_COMP_QR_IPC               = "SQL.COMP.QRCommon.IPC";
-std::string CAT_SQL_COMP_MV_REFRESH           = "SQL.COMP.MV.REFRESH";
-std::string CAT_SQL_COMP_MVCAND               = "SQL.Comp.MVCandidates";
-std::string CAT_SQL_MEMORY                    = "SQL.Memory";
-std::string CAT_SQL_COMP_RANGE                = "SQL.COMP.Range";
+std::string CAT_SQL_COMP_QR_DESC_GEN          = "SQL.COMP"; // ".DescGen";
+std::string CAT_SQL_COMP_QR_HANDLER           = "SQL.COMP"; // ".QRHandler";
+std::string CAT_SQL_COMP_QR_COMMON            = "SQL.COMP"; // ".QRCommon";
+std::string CAT_SQL_COMP_QR_IPC               = "SQL.COMP"; // ".QRCommon.IPC";
+std::string CAT_SQL_COMP_MV_REFRESH           = "SQL.COMP"; // ".MV.REFRESH";
+std::string CAT_SQL_COMP_MVCAND               = "SQL.COMP"; // ".MVCandidates";
+std::string CAT_SQL_MEMORY                    = "SQL.COMP"; // ".Memory";
+std::string CAT_SQL_COMP_RANGE                = "SQL.COMP"; // ".Range";
 std::string CAT_QR_TRACER                     = "QRCommon.Tracer";
 std::string CAT_SQL_QMS                       = "SQL.Qms";
 std::string CAT_SQL_QMS_MAIN                  = "SQL.Qms.Main";
@@ -74,7 +78,7 @@ std::string CAT_SQL_MVMEMO_STATS              = "SQL.Qms.MvmemoStats";
 std::string CAT_SQL_QMS_GRP_LATTCE_INDX       = "SQL.Qms.LatticeIndex";
 std::string CAT_SQL_QMS_MATCHTST_MVDETAILS    = "SQL.Qms.MatchTest";
 std::string CAT_SQL_QMS_XML                   = "SQL.Qms.XML";
-std::string CAT_SQL_COMP_XML                  = "SQL.Comp.XML";
+std::string CAT_SQL_COMP_XML                  = "SQL.COMP"; // ".XML";
 
 // **************************************************************************
 // **************************************************************************
@@ -292,7 +296,6 @@ std::string &QRLogger::getMyDefaultCat()
     case QRL_UDR:
       return CAT_SQL_UDR;
       break;
-
     default:
       return CAT_SQL;   
     }
@@ -356,7 +359,6 @@ void QRLogger::introduceSelf ()
    case QRL_UDR:
       snprintf (msg, 300, "%s,,, A udrserver  process is launched.", procInfo.data());
       break;
-           
     }
 
    LOG4CXX_INFO(myLogger,msg);
@@ -447,7 +449,13 @@ void QRLogger::logQVP(ULng32 eventId,
     {
         if ( myLevel == log4cxx::Level::getOff() )
           return;
-        if ( myLevel->toInt() < paramLevel->toInt() )
+
+        int_32 configuredLevel = myLevel->toInt();
+        int_32 requestedLevel = paramLevel->toInt();
+
+        // If the configured logging level is greater (more restrictive) than
+        // the requested level, don't log.  
+        if ( configuredLevel > requestedLevel)
           return;
     }
   }
@@ -475,7 +483,9 @@ void QRLogger::logDiags(ComDiagsArea* diagsArea, std::string &cat)
     log4cxx::LevelPtr myLevel = myLogger->getLevel();
     if ( myLevel ) 
     {
-      if ( myLevel != log4cxx::Level::getOff() && myLevel->toInt() >= LL_WARN )
+      // If configured Level is the same or less restrictive than WARN (30000)
+      // than report the warning
+      if ( myLevel != log4cxx::Level::getOff() && myLevel->toInt() <= LL_WARN )
       {
         for (i=1; i<=diagsArea->getNumber(DgSqlCode::WARNING_); i++)
         {
@@ -564,7 +574,13 @@ void QRLogger::log(std::string &cat,
     {
         if ( myLevel == log4cxx::Level::getOff() )
           return;
-        if ( myLevel->toInt() < paramLevel->toInt() )
+
+        int_32 configuredLevel = myLevel->toInt();
+        int_32 requestedLevel = paramLevel->toInt();
+
+        // If the configured logging level is greater (more restrictive) than
+        // the requested level, don't log.  
+        if ( configuredLevel > requestedLevel)
           return;
     }
   }
@@ -607,7 +623,13 @@ void QRLogger::log(std::string &cat,
     {
         if ( myLevel == log4cxx::Level::getOff() )
           return;
-        if ( myLevel->toInt() < paramLevel->toInt() )
+
+        int_32 configuredLevel = myLevel->toInt();
+        int_32 requestedLevel = paramLevel->toInt();
+  
+        // If the configured logging level is greater (more restrictive) than
+        // the requested level, don't log. 
+        if ( configuredLevel > requestedLevel)
           return;
     }
   }

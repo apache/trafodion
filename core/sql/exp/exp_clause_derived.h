@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1539,7 +1542,9 @@ enum conv_case_index {
   CONV_UTF8_F_UCS2_V                   =248,
 
   CONV_BLOB_BLOB                       =249,
-  CONV_BLOB_ASCII_F                    =250
+  CONV_BLOB_ASCII_F                    =250,
+
+  CONV_GBK_F_UTF8_V                    =251
 };
 
 class SQLEXP_LIB_FUNC  ex_conv_clause : public ex_clause {
@@ -1560,7 +1565,8 @@ public:
                             short num_operands = 2, 
 			    NABoolean checkTruncErr = FALSE,
                             NABoolean reverseDataErrorConversionFlag = FALSE,
-                            NABoolean noStringTruncWarnings = FALSE);
+                            NABoolean noStringTruncWarnings = FALSE,
+                            NABoolean convertToNullWhenErrorFlag = FALSE);
 
 
   // Values used for dataConvErrorFlag.
@@ -1715,9 +1721,11 @@ private:
       TREAT_ALL_SPACES_AS_ZERO           = 0x0002,
       ALLOW_SIGN_IN_INTERVAL             = 0x0004,
       NO_DATETIME_VALIDATION             = 0x0008,
-
+       
       // source is a varchar value which is a pointer to the actual data.
-      SRC_IS_VARCHAR_PTR                     = 0x0010
+      SRC_IS_VARCHAR_PTR                     = 0x0010,
+      // when convert into error, suppress error, move null into convert target
+      CONV_TO_NULL_WHEN_ERROR                = 0x0020
     };
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
@@ -1770,7 +1778,13 @@ enum ConvDoItFlags
   //The following flag is set when performing intermediate conversions so
   //that if the conversion fails, error report would specify it as a failure
   //of an intermediate conversion.
-  CONV_INTERMEDIATE_CONVERSION = 0x0080
+  CONV_INTERMEDIATE_CONVERSION = 0x0080,
+
+  // during CAST from string to timestamp, a date value is extended with
+  // zeroed out time part. This flag, if set, disables it.
+  // Used when a TIMESTAMP literal is being created which requires the value
+  // to exactly match the specified type. 
+  CONV_NO_HADOOP_DATE_FIX  = 0x0010
 };
 
 // helper function for convDoIt and ex_conv_clause::pCodeGenerate:

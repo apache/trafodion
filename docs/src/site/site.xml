@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+-->
+
+
+<project name="Apache Trafodion">
+
+  <publishDate position="none"/>
+  <version position="none"/>
+  <googleAnalyticsAccountId>UA-72491210-1</googleAnalyticsAccountId>
+  <skin>
+    <groupId>lt.velykis.maven.skins</groupId>
+    <artifactId>reflow-maven-skin</artifactId>
+    <version>1.1.1</version>
+  </skin>
+
+  <bannerLeft>
+    <!-- Apache Trafodion, but with "Trafodion" highlighted -->
+    <name>
+       <![CDATA[
+       <img src="images/logos/trafodion-logo.jpg" alt="Trafodion Logo" width="383"><span class="logo-right"><img id="incubator-logo" alt="Apache Incubator" src="images/logos/egg-logo.png" /></span>
+       ]]>
+    </name>
+    <href>index.html</href>
+  </bannerLeft>
+
+  <custom>
+    <reflowSkin>
+      <!--  Set to false for local testing. True means that some sourced in info is kept in the cloud = better performance. -->
+      <protocolRelativeURLs>false</protocolRelativeURLs>
+      <theme>bootswatch-cerulean</theme>
+      <titleTemplate>%1$s %2$s</titleTemplate>
+      <skinAttribution>false</skinAttribution>
+      <breadcrumbs>false</breadcrumbs>   
+      <imgLightbox>false</imgLightbox>
+      <markPageHeader>false</markPageHeader>
+      <smoothScroll>true</smoothScroll>
+      <!--  Enable code highlighting -->
+      <highlightJs>true</highlightJs>
+      <brand>
+        <!-- Brand text in top-left part of the site -->
+        <name>
+          <![CDATA[<span class="brand-apache">Apache</span> <span class="brand-trafodion">Trafodion</span> <span class="brand-apache">(incubating)</span> ]]>
+        </name>
+        <href>index.html</href>
+      </brand>
+      <slogan>Transactional SQL-on-Hadoop Database</slogan>
+      <!-- Use Table of Contents at the top of the page (max 6 elements) -->
+      <toc>top</toc>
+      <tocTopMax>9</tocTopMax>
+      <bottomNav maxSpan="8" >
+        <column>Project</column>
+        <column>Features</column>
+      </bottomNav>
+      <bottomDescription>
+        <![CDATA[
+          <a href="http://trafodion.apache.org/">Apache Trafodion</a> is a webscale SQL-on-Hadoop solution enabling transactional or operational
+          workloads on Hadoop. <br /><br />The name &quot;Trafodion&quot; (the Welsh word for transactions, pronounced
+          &quot;Tra-vod-eee-on&quot;) was chosen specifically to emphasize the differentiation that 
+          Trafodion provides in closing a critical gap in the Hadoop ecosystem.<br /><br />          
+          Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Trafodion extends 
+          Hadoop to provide guaranteed transactional integrity, enabling new kinds of big data 
+          applications to run on Hadoop.
+        ]]>
+      </bottomDescription>
+     <pages>
+        <index>
+          <titleTemplate>%1$s</titleTemplate>
+          <!-- no ToC on the main index page -->
+          <toc>false</toc>
+          <!-- no breadcrumbs on the main index page -->
+          <breadcrumbs>false</breadcrumbs>
+          <markPageHeader>false</markPageHeader>
+          <sections>
+            <carousel />
+            <body />
+            <!--carousel /-->
+            <columns>2</columns>
+            <body />
+          </sections>
+        </index>
+        <architecture-overview>
+          <shortTitle>Architecture Overview</shortTitle>
+        </architecture-overview>
+        <documentation>
+          <shortTitle>Documentation Library</shortTitle>
+        </documentation>
+        <download>
+          <shortTitle>Download</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+        </download>
+        <faq>
+          <toc>top</toc>
+          <shortTitle>Frequently Asked Questions</shortTitle>
+          <!-- Use H1 headings only for the TOC -->
+          <tocTopFlatten>false</tocTopFlatten>
+        </faq>
+        <issue-tracking>
+          <toc>false</toc>
+        </issue-tracking>
+        <license>
+          <shortTitle>License</shortTitle>
+          <toc>false</toc>
+        </license>
+        <logo>
+          <shortTitle>Logo</shortTitle>
+          <toc>false</toc>
+           <sections>
+              <body />
+              <thumbs>2</thumbs>
+           </sections>
+        </logo>        
+        <mail-lists>
+          <shortTitle>Mailing Lists</shortTitle>
+          <toc>false</toc>
+        </mail-lists>
+        <management>
+          <shortTitle>Managing Trafodion</shortTitle>
+          <toc>false</toc>
+        </management>
+        <new-features>
+          <shortTitle>New Features</shortTitle>
+        </new-features>
+        <performance>
+          <shortTitle>Performance</shortTitle>
+        </performance>
+        <presentations>
+          <shortTitle>Presentations</shortTitle>
+          <toc>false</toc>
+        </presentations>
+        <port-assignment>
+          <toc>false</toc>
+          <shortTitle>Port Assignment</shortTitle>
+        </port-assignment>
+        <quickstart>
+ 	      <shortTitle>Quick Start</shortTitle>
+	    </quickstart>
+        <release-notes>
+          <toc>false</toc>
+        </release-notes>
+        <release-notes-1-3-0>
+           <shortTitle>Release 1.3.0</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+        </release-notes-1-3-0>
+        <release-notes-1-1-0>
+           <shortTitle>Release 1.1.0</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+        </release-notes-1-1-0>
+        <release-notes-1-0-1>
+           <shortTitle>Release 1.0.1</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+        </release-notes-1-0-1>
+        <release-notes-1-0-0>
+           <shortTitle>Release 1.0.0</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+        </release-notes-1-0-0>
+        <release-notes-0-9-0>
+           <shortTitle>Release 0.9.0</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+        </release-notes-0-9-0>
+        <release-notes-0-8-0>
+           <shortTitle>Release 0.8.0</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+        </release-notes-0-8-0>
+        <roadmap>
+          <shortTitle>Roadmap</shortTitle>
+        </roadmap>
+      </pages>
+    </reflowSkin>
+  </custom>
+
+  <body>
+    <breadcrumbs>
+      <item name="Trafodion" href="index.html"/>
+    </breadcrumbs>
+    <links>
+      <item name="Download" href="download.html"/>
+      <item name="Quick Start" href="quickstart.html"/>
+      <item name="Documentation" href="documentation.html"/>
+      <item name="Contribute" href="contributing-redirect.html"/>
+    </links>
+    <menu name="Project">
+      <item href="index.html" name="Overview"/>
+      <item href="faq.html" name="FAQ"/>
+      <item href="release-notes.html" name="Release Notes"/>
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Apache+Trafodion+Home" name="Wiki"/>
+      <item name="Videos" href="https://www.youtube.com/playlist?list=PLyyCp3HBB8Tv9696OnG0_mmgF5tfHeyOi"/>
+      <item href="management.html" name="Managing Trafodion"/>
+      <!-- item href="new-features.html" name="New Features"/-->
+      <!-- item href="roadmap.html" name="Roadmap"/-->
+      <!-- item href="performance.html" name="Performance"/-->
+      <item href="http:divider" name=""/>
+      <item href="team-redirect.html" name="Team"/>
+      <item href="presentations.html" name="Presentations"/>
+      <item href="logo.html" name="Logo"/>
+      <item href="mail-lists.html" name="Mailing List"/>
+      <item href="http:divider" name=""/>
+      <item href="source-repository.html" name="Source Repository"/>
+      <item href="issue-tracking.html" name="Issue Tracking"/>
+      <item href="license.html" name="License"/>
+    </menu>
+    <menu name="Features">
+      <item href="architecture-overview.html" name="Architecture Overview"/>
+      <item href="http:divider" name=""/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/security-ansi-schemas" name="ANSI Schema Support"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/ustat-automation" name="Automated Update Statistics"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/bulkunload" name="Bulk Unload"/>
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Trafodion+Manageability#TrafodionManageability-LoggingEvents" name="Event Handling"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/hybrid-query-cache" name="Hybrid Query Cache"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/identity-column" name="Identity Column"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/lob-support" name="Large Object (LOB)"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/ddl-query-invalidation" name="Metadata Query Invalidation"/>
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Cmp-divisioning" name="Multi-Temperature Data"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/access-external-hbase-tables" name="Native HBase Tables"/>
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Tutorial:+The+object-oriented+UDF+interface" name="Object-Oriented UDF Tutorial"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/sql-query-cancel" name="Query Cancel"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/security-privilege-updates" name="Privilege Checking"/>
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Trafodion+Manageability" name="Repository"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/enable-get-statistics-thru-rms" name="Runtime Management System"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/sequence-numbers" name="Sequence Numbers"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/skew-buster" name="Skew Buster"/>
+      <item href="http:divider" name=""/>
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Backup+and+Restore" name="Backup/Restore Utility"/>
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Metadata+Cleanup" name="Metadata Cleanup Utility"/>
+    </menu>
+    <menu name="Apache">
+      <item href="http://incubator.apache.org/projects/trafodion.html" name="Project Status" target="_blank"/>
+      <item href="http://www.apache.org/foundation/how-it-works.html" name="Apache Foundation" target="_blank"/>
+      <item href="http://www.apache.org/licenses/" name="Apache License" target="_blank"/>
+      <item href="http://www.apache.org/security/" name="Apache Security" target="_blank"/>
+      <item href="http:divider" name=""/>
+      <item href="http://www.apache.org/foundation/sponsorship.html" name="Sponsorship" target="_blank"/>
+      <item href="http://www.apache.org/foundation/thanks.html" name="Thanks" target="_blank"/>
+    </menu>
+    <footer>
+      <hr />
+      <div class="row span16">
+        <span>Disclaimer: Apache Trafodion is an effort undergoing incubation at the Apache Software Foundation (ASF), sponsored by the Apache Incubator PMC. 
+        Incubation is required of all newly accepted projects until a further review indicates that the infrastructure, communications, and decision making 
+        process have stabilized in a manner consistent with other successful ASF projects. While incubation status is not necessarily a reflection of the 
+        completeness or stability of the code, it does indicate that the project has yet to be fully endorsed by the ASF.</span><br /><br />
+        <span>Apache, Apache Maven, Apache Maven Fluido Skin, the Apache feather logo, the Apache Maven project logo and the Apache Incubator project logo 
+        are trademarks of The Apache Software Foundation.</span><br /><br />
+        <span>
+          <a href="http://incubator.apache.org/" target="_blank"><img id="incubator-logo" alt="Apache Incubator" src="images/logos/egg-logo.png" /></a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</project>

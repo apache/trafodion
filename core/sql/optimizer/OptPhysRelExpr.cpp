@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -3429,14 +3432,14 @@ NABoolean NestedJoin::genLeftChildPartReq(
           physicalPartFunc = new(CmpCommon::statementHeap())
               Hash2PartitioningFunction (partKey, partKey, childNumPartsRequirement);
         }
-    }
-    else
-      // HBase tables can be updated in any way, no restrictions on 
-      // parallelism
-      if (numOfESPsForced && physicalPartFunc)
-        childNumPartsRequirement = numOfESPsForced;
-      else
-        createPartReqForChild = FALSE;
+     }
+     else
+        // HBase tables can be updated in any way, no restrictions on 
+        // parallelism
+        if (numOfESPsForced && physicalPartFunc)
+          childNumPartsRequirement = numOfESPsForced;
+        else
+          createPartReqForChild = FALSE;
     }
     else if (physicalPartFunc == NULL)
     {
@@ -15028,23 +15031,28 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
 
   // colocated ESP logic
   if ( (CmpCommon::getDefault(TRAF_ALLOW_ESP_COLOCATION) == DF_ON) AND
-        ixDescPartFunc AND partnsScaled ) {
+        ixDescPartFunc ) {
     // get region nodeMap which has regions nodeIds populated
-    const NodeMap* regNodeMap = ixDescPartFunc->getNodeMap();
     NodeMap* myNodeMap = (NodeMap*) myPartFunc->getNodeMap();
+    const NodeMap* regNodeMap = ixDescPartFunc->getNodeMap();
+
+    Int32 m=  myNodeMap->getNumEntries();
+    Int32 n = regNodeMap->getNumEntries();
+
     // m : n allocation strategy where m < n using most popular node num
-    if (numESPs < oldPartns) {
-      Lng32 regionsPerEsp = oldPartns / numESPs;
+    if (m < n) {
+      Lng32 regionsPerEsp = n / m;
       Lng32 beginPos = 0;
-      for (Lng32 index = 0; (index < numESPs && beginPos < oldPartns); index++) {
+      for (Lng32 index = 0; (index < m && beginPos < n); index++) {
         Lng32 endPos = beginPos + regionsPerEsp;
         Lng32 popularNodeId =
           regNodeMap->getPopularNodeNumber(beginPos, endPos);
         myNodeMap->setNodeNumber(index, popularNodeId);
         beginPos = endPos;
       }
-    } else if (numESPs == oldPartns ) { // 1:1 allocation strategy
-      for (Lng32 index = 0; index < oldPartns; index++) {
+      myNodeMap->smooth(gpClusterInfo->numOfSMPs());
+    } else if (m == n) { // 1:1 allocation strategy
+      for (Lng32 index = 0; index < n; index++) {
         myNodeMap->setNodeNumber(index, regNodeMap->getNodeNumber(index));
       }
     }
@@ -15163,7 +15171,8 @@ FileScan::synthPhysicalProperty(const Context* myContext,
   // ---------------------------------------------------------------------
   sortOrderVEG.removeCoveredExprs(getGroupAttr()->getCharacteristicInputs());
   sortOrderVEG.complifyAndRemoveUncoveredSuffix(
-    getGroupAttr()->getCharacteristicOutputs()) ;
+       getGroupAttr()->getCharacteristicOutputs(),
+       getGroupAttr());
 
   // ---------------------------------------------------------------------
   // if this is a reverse scan, apply an inversion function to
@@ -16538,26 +16547,54 @@ RelInternalSP::costMethod() const
 } // RelInternalSP::costMethod()
 //<pb>
 
+CostMethod *
+HbaseDelete::costMethod() const
+{
+  if (CmpCommon::getDefault(HBASE_DELETE_COSTING) == DF_OFF)
+    // RelExpr::costMethod() costin returns a cost 1 cost object. This
+    // is the old behavior before the new costing code was written.
+    return RelExpr::costMethod();
+
+  static THREAD_P CostMethodHbaseDelete *m = NULL;
+  if (m == NULL)
+    m = new (GetCliGlobals()->exCollHeap()) CostMethodHbaseDelete();
+  return m;
+} // HbaseDelete::costMethod()
+
 PhysicalProperty*
 HbaseDelete::synthPhysicalProperty(const Context* myContext,
                                    const Lng32     planNumber,
                                    PlanWorkSpace  *pws)
 {
-
-  //----------------------------------------------------------
-  // Create a node map with a single, active, wild-card entry.
-  //----------------------------------------------------------
-  NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-                        NodeMap(CmpCommon::statementHeap(),
-                                1,
-                                NodeMapEntry::ACTIVE);
+  const ReqdPhysicalProperty* rppForMe =
+          myContext->getReqdPhysicalProperty();
+  PartitioningRequirement* partReqForMe =
+    rppForMe->getPartitioningRequirement();
 
   //------------------------------------------------------------
-  // Synthesize a partitioning function with a single partition.
+  // Synthesize a partitioning function with a single partition
+  // unless we have a partitioning requirement that says 
+  // otherwise.
   //------------------------------------------------------------
-  PartitioningFunction* myPartFunc =
-    new(CmpCommon::statementHeap())
-    SinglePartitionPartitioningFunction(myNodeMap);
+  PartitioningFunction* myPartFunc = NULL;
+
+  if (partReqForMe &&
+      partReqForMe->castToRequireReplicateNoBroadcast())
+    {
+      myPartFunc =
+        partReqForMe->castToRequireReplicateNoBroadcast()->
+        getPartitioningFunction()->copy();
+    }
+  else
+    {
+      // Create a node map with a single, active, wild-card entry.
+      NodeMap* myNodeMap = new(CmpCommon::statementHeap())
+                               NodeMap(CmpCommon::statementHeap(),
+                               1,
+                               NodeMapEntry::ACTIVE);
+      myPartFunc = new(CmpCommon::statementHeap())
+      SinglePartitionPartitioningFunction(myNodeMap);
+    }
 
   PhysicalProperty * sppForMe =
     new(CmpCommon::statementHeap())
@@ -16572,26 +16609,54 @@ HbaseDelete::synthPhysicalProperty(const Context* myContext,
 
 } // HbaseDelete::synthPhysicalProperty()
 
+CostMethod *
+HbaseUpdate::costMethod() const
+{
+  if (CmpCommon::getDefault(HBASE_UPDATE_COSTING) == DF_OFF)
+    // RelExpr::costMethod() costing returns a cost 1 cost object. This
+    // is the old behavior before the new costing code was written.
+    return RelExpr::costMethod();
+
+  static THREAD_P CostMethodHbaseUpdate *m = NULL;
+  if (m == NULL)
+    m = new (GetCliGlobals()->exCollHeap()) CostMethodHbaseUpdate();
+  return m;
+} // HbaseUpdate::costMethod()
+
 PhysicalProperty*
 HbaseUpdate::synthPhysicalProperty(const Context* myContext,
                                    const Lng32     planNumber,
                                    PlanWorkSpace  *pws)
 {
-
-  //----------------------------------------------------------
-  // Create a node map with a single, active, wild-card entry.
-  //----------------------------------------------------------
-  NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-                        NodeMap(CmpCommon::statementHeap(),
-                                1,
-                                NodeMapEntry::ACTIVE);
+  const ReqdPhysicalProperty* rppForMe =
+          myContext->getReqdPhysicalProperty();
+  PartitioningRequirement* partReqForMe =
+    rppForMe->getPartitioningRequirement();
 
   //------------------------------------------------------------
-  // Synthesize a partitioning function with a single partition.
+  // Synthesize a partitioning function with a single partition
+  // unless we have a partitioning requirement that says 
+  // otherwise.
   //------------------------------------------------------------
-  PartitioningFunction* myPartFunc =
-    new(CmpCommon::statementHeap())
-    SinglePartitionPartitioningFunction(myNodeMap);
+  PartitioningFunction* myPartFunc = NULL;
+
+  if (partReqForMe &&
+      partReqForMe->castToRequireReplicateNoBroadcast())
+    {
+      myPartFunc =
+        partReqForMe->castToRequireReplicateNoBroadcast()->
+        getPartitioningFunction()->copy();
+    }
+  else
+    {
+      // Create a node map with a single, active, wild-card entry.
+      NodeMap* myNodeMap = new(CmpCommon::statementHeap())
+                               NodeMap(CmpCommon::statementHeap(),
+                               1,
+                               NodeMapEntry::ACTIVE);
+      myPartFunc = new(CmpCommon::statementHeap())
+      SinglePartitionPartitioningFunction(myNodeMap);
+    }
 
   PhysicalProperty * sppForMe =
     new(CmpCommon::statementHeap())
@@ -16646,6 +16711,17 @@ HiveInsert::synthPhysicalProperty(const Context* myContext,
 
 } // HiveInsert::synthPhysicalProperty()
 
+
+CostMethod *
+HbaseInsert::costMethod() const
+{
+  static THREAD_P CostMethodHbaseInsert *m = NULL;
+  if (m == NULL)
+    m = new (GetCliGlobals()->exCollHeap()) CostMethodHbaseInsert();
+  return m;
+} // HbaseInsert::costMethod()
+
+
 PhysicalProperty*
 HbaseInsert::synthPhysicalProperty(const Context* myContext,
                                    const Lng32     planNumber,
@@ -16656,27 +16732,30 @@ HbaseInsert::synthPhysicalProperty(const Context* myContext,
   PartitioningRequirement* partReqForMe =
     rppForMe->getPartitioningRequirement();
 
-  //----------------------------------------------------------
-  // Create a node map with a single, active, wild-card entry.
-  //----------------------------------------------------------
-  NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-                        NodeMap(CmpCommon::statementHeap(),
-                                1,
-                                NodeMapEntry::ACTIVE);
-
   //------------------------------------------------------------
-  // Synthesize a partitioning function with a single partition.
+  // Synthesize a partitioning function with a single partition
+  // unless we have a partitioning requirement that says 
+  // otherwise.
   //------------------------------------------------------------
   PartitioningFunction* myPartFunc = NULL;
 
   if (partReqForMe &&
       partReqForMe->castToRequireReplicateNoBroadcast())
-    myPartFunc = 
-      partReqForMe->castToRequireReplicateNoBroadcast()->
-      getPartitioningFunction()->copy();
+    {
+      myPartFunc =
+        partReqForMe->castToRequireReplicateNoBroadcast()->
+        getPartitioningFunction()->copy();
+    }
   else
-    myPartFunc = new(CmpCommon::statementHeap())
-    SinglePartitionPartitioningFunction(myNodeMap);
+    {
+      // Create a node map with a single, active, wild-card entry.
+      NodeMap* myNodeMap = new(CmpCommon::statementHeap())
+                               NodeMap(CmpCommon::statementHeap(),
+                               1,
+                               NodeMapEntry::ACTIVE);
+      myPartFunc = new(CmpCommon::statementHeap())
+      SinglePartitionPartitioningFunction(myNodeMap);
+    }
 
   PhysicalProperty * sppForMe =
     new(CmpCommon::statementHeap())

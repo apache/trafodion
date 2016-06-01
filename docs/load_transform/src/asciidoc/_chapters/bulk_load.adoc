@@ -1,0 +1,294 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+[[bulk-load]]
+= Bulk Load
+
+The LOAD statement enables batch loading large volumes of data efficiently in a scalable manner.
+
+See the {docs-url}/sql_reference/index.html#load_statement[{project-name} SQL Reference Manual]
+for a full description of this SQL statement.
+
+You can bulk-load data using one of the following methods:
+
+* <<bulk-load-data-from-trafodion-tables,Load Data From {project-name} Tables>>
+* <<bulk-load-data-from-hdfs-files, Load Data From HDFS Files>>
+* <<bulk-load-data-from-hive-tables,Load Data From Hive Tables>>
+* <<bulk-load-data-from-external-databases, Load Data From External Databases>>
+
+[[bulk-load-from-trafodion-tables]]
+== Load Data From {project-name} Tables
+
+You copy data between two {project-name} tables by using the appropriate SELECT statement in the LOAD command.
+
+=== Example
+
+```
+LOAD INTO target_table SELECT * FROM source_table WHERE custkey >= 1000 ;
+```
+
+[[bulk-load-data-from-hdfs-files]]
+== Load Data From HDFS Files
+
+You copy your data (local or remote) into an HDFS folder. Then, you create an external Hive table (with correct fields) that points
+to the HDFS folder containing the data. You may also specify a WHERE clause on the source data as a filter, if needed.
+See the https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-ExternalTables[External Tables]
+page on the https://cwiki.apache.org/confluence/display/Hive[Hive Wiki] for more information.
+
+{project-name} can access columns in Hive tables having integer, string and char types.
+See the https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types[LanguageManual Types]
+page on the https://cwiki.apache.org/confluence/display/Hive[Hive Wiki] for the data types available in Hive.
+
+Overall, you do the following:
+
+1. Export the data on the local or remote cluster.
+2. If applicable, transport files to {project-name} cluster via FTP, scp, or some other method.
+3. Use LOAD referencing HIVE external tables.
+
+=== Example
+
+You have a customer-demographics in a text file, which you need to load into {project-name}.
+The columns are separated by `|`.
+
+Do the following:
+
+1. Using trafci, define the {project-name} table where you want to load the data.
++
+```
+CREATE TABLE customer_demographics_salt
+(
+    cd_demo_sk            INT NOT NULL
+  , cd_gender             CHAR(1)
+  , cd_marital_status     CHAR(1)
+  , cd_education_status   CHAR(20)
+  , cd_purchase_estimate  INT
+  , cd_credit_rating      CHAR(10)
+  , cd_dep_count          INT
+  , cd_dep_employed_count INT
+  , cd_dep_college_count  INT
+  , PRIMARY KEY (cd_demo_sk)
+)
+SALT USING 4 PARTITIONS ON (cd_demo_sk)
+;
+```
+
+2. Copy the data into HDFS 
++
+```
+hadoop fs -copyFromLocal $HOME/data/customer_demographics /hive/tpcds/customer_demographics
+```
+
+3. Using the Hive shell, create an external Hive table:
++
+```
+CREATE EXTERNAL TABLE customer_demographics
+(
+    cd_demo_sk            INT
+  , cd_gender             STRING
+  , cd_marital_status     STRING
+  , cd_education_status   STRING
+  , cd_purchase_estimate  INT
+  , cd_credit_rating      STRING
+  , cd_dep_count          INT
+  , cd_dep_employed_count INT
+  , cd_dep_college_count  INT
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '|'
+LOCATION '/hive/tpcds/customer_demographics'
+;
+```
+
+4. Using trafci, load the {project-name} `customer_demographics_salt` table from the Hive table named
+`hive.hive.customer_demographics`:
++
+```
+>>LOAD INTO customer_demographics_salt
++>SELECT * FROM hive.hive.customer_demographics WHERE cd_demo_sk <= 5000;
+Task: LOAD Status: Started Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task: DISABLE INDEX Status: Started Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task: DISABLE INDEX Status: Ended Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task: PREPARATION Status: Started Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+       Rows Processed: 5000
+Task: PREPARATION Status: Ended ET: 00:00:03.199
+Task: COMPLETION Status: Started Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task: COMPLETION Status: Ended ET: 00:00:00.331
+Task: POPULATE INDEX Status: Started Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task: POPULATE INDEX Status: Ended ET: 00:00:05.262
+```
+
+[[bulk-load-data-from-hive-tables]]
+== Load Data From Hive Tables
+
+You can import data from Hive using the trafci or sqlci command interface. Do the following:
+
+1. Set these required Control Query Defaults (CQDs) to improve load performance:
++
+```
+CQD HIVE_MAX_STRING_LENGTH '1000'; -- if the widest column is 1KB
+```
++
+This setting is required if there are time-related column types in the target {project-name} table.
++
+```
+CQD ALLOW_INCOMPATIBLE_ASSIGNMENT 'on'; 
+```
+
+2. Issue the LOAD statement to load data into {project-name} tables from Hive. For example:
++
+```
+LOAD WITH NO POPULATE INDEXES INTO trafodion.sch.demo SELECT * FROM hive.hive.demo;
+```
+
+See the {docs-url}/sql_reference/index.html#load_statement[{project-name} SQL Reference Manual].
+for the complete syntax of the LOAD statement.
+
+If you use multiple LOAD statements to incrementally load sets of data into a single target table, then several HFiles are created
+for each partition of the target table. This causes inefficient access during SELECT queries and may also cause a compaction
+to be triggered based on the policies configured in the HBase settings.
+
+To avoid this issue, it is good practice to perform a major compaction on a table that has been the target of more than two LOAD statements
+in a short period of time. To perform compaction, use this `hbase shell` command:
+
+```
+major_compact 'TRAFODION.SCH.DEMO'
+```
+
+NOTE: The `major_compact` command returns immediately since it's not waited. Typically, compaction of a large table takes a long time
+(several minutes to hours) to complete. You can monitor the progress of compaction from the HBase Master Web user interface.
+
+=== Example
+
+```
+>> CQD HIVE_MAX_STRING_LENGTH '1000' ;
+>> CQD ALLOW_INCOMPATIBLE_ASSIGNMENT 'on' ;
+>> LOAD WITH NO POPULATE INDEXES INTO trafodion.sch.demo SELECT * FROM hive.hive.demo ;
+```
+
+[[bulk-load-data-from-external-databases]]
+== Load Data From External Databases
+
+You need to import data into Hive when loading data from external databases.
+Use http://sqoop.apache.org/[Apache Sqoop], an open-source tools to move the data from the external database
+into Hive tables on the {project-name} cluster.
+
+Source data can be in the following formats:
+
+[cols="40%,60%", options="header"]
+|===
+| Format | Examples
+| *Structured* | Relational databases such as Oracle or MySQL.
+| *Semi-Structured* | Cassandra or HBase
+| *Unstructured* | HDFS
+|===
+
+You use the Sqoop command-line shell for interactive commands and basic scripting.
+
+Sqoop basics: 
+
+* Generic JDBC Connector: supports JDBC T-4 Driver.
+* Configuration Language for FROM/TO jobs that specify in SQL terms.
+* Partitioner:  Divide/parallelize the data streams; uses primary key by default.
+* Extractor:  Uses FROM configuration for SQL statements, plus partitioner information to query data subsets.
+* Loader:  Uses TO job configuration; INSERT INTO could be generated from col list or explicitly specified.
+* Destroyer:  Copies staging table to final table and deletes staging table.
+
+See the http://sqoop.apache.org/docs/1.99.6/Sqoop5MinutesDemo.html[Sqoop 5 Minutes Demo] for a quick
+introduction to Sqoop.
+ 
+
+=== Install Required Software
+
+By default, Sqoop is not installed on {project-name} clusters. Do the following:
+
+* Install and start Sqoop on the {project-name} cluster using either the Ambari or Cloudera Manager GUI.
+See the http://sqoop.apache.org/docs/1.99.3/Installation.html[Sqoop installation instructions].
+
+* Install http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html[JDK 1.8]
+
+* Install the http://www.oracle.com/technetwork/database/features/jdbc/index-091264.html[Oracle JDBC driver] 
+
+* Set the following environment variables:
++
+```
+export JAVA_HOME=/opt/java/jdk1.8.0_11
+export JAVA_OPTIONS=-Dmapred.child.java.opts=\-Djava.security.egd=file:/dev/urandom+
+```
+
+=== Sample Sqoop Commands
+
+==== List All Oracle Tables
+
+```
+sqoop list-tables --driver oracle.jdbc.OracleDriver 
+--connect jdbc:oracle:thin:@<Oracle host name>:<port>/<database>
+--username <user-name> --password <password>
+```
+
+==== Import Data to Hive
+
+*Syntax*
+
+```
+sqoop import --connect jdbc:oracle:thin:@<Oracle host name:port>/<database>
+--username <user-name> --password <password> --table <tablename>
+--split-by <column-name> --hive-import --create-hive-table
+--hive-table <hive-table-name> --hive-overwrite --null-string ''
+--null-non-string '' --hive-drop-import-delims--verbose
+```
+
+[cols="40%,60%",options="header"]
+|===
+| Parameter | Guidelines
+| `--split-by <column-name>`
+| By default, if not specified, sqoop uses the primary key column as a splitting column, which is not optimal most of the time.
+If the table does not contain a primary key, then you must manually specify the splitting column.
+| `--null-string <null-string>`
+| This is the string to be written for a null value in a string column.
+| `--null-non-string <null-string>`
+| This is the string to be written for a null value in a non-string column.
+| `--hive-drop-import-delims`
+| This drops `\n`, `\r`, and `\01` string fields when importing to Hive. +
+ +
+*NOTE*: If the data contains \n or \r and if you do not use the hive-drop-import-delims option, then data is truncated.
+You need to use additional Sqoop options during migration by specifying the delimiter that you would like to use,
+which does not exist in the data itself.
+|===
+
+=== Example
+
+```
+sqoop import --connect jdbc:oracle:thin:@localhost:1521/orcl
+--username trafdemo --password traf123 --table CUSTOMER
+--split-by CUSTNUM --hive-import --create-hive-table
+--hive-table customers --hive-overwrite --null-string ''
+--null-non-string '' --hive-drop-import-delims--verbose
+```
+
+
+
+
+
+

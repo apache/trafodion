@@ -1,0 +1,1943 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+[[messages]]
+= Messages
+
+[[about-the-message-format]]
+== About the Message Format
+
+Messages are listed in numerical SQLCODE order. Descriptions include:
+
+```
+SQLCODE SQLSTATE message-text
+
+Cause    [ What occurred to trigger the message.]
+Effect   [ What is the result when this occurs. ]
+Recovery [ How to diagnose and fix the problem. ]
+```
+
+[[getting-help]]
+== Getting Help
+
+Some messages have no recovery information. Please contact {project-support} for assistance.
+
+[[type-4-driver-error-messages]]
+== Type 4 Driver Error Messages
+
+=== 01032 08S01
+
+```
+01032 08S01 Communication link failure. The server timed out or disappeared.
+```
+
+*Cause*: The connection timed out.
+
+*Effect*: Operation fails.
+
+*Recovery*: Reconnect. Set the connection timeout to an appropriate value.
+
+=== 01056 25000
+
+```
+01056 25000 Invalid transaction state.
+```
+
+*Cause*: Transaction state is incorrect.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Retry.
+
+=== 01118 S1008
+
+```
+01118 S1008 Operation canceled.
+```
+
+*Cause*: The operation was canceled.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Retry operation.
+
+=== 08001 HY000
+
+```
+08001 HY000 Retry attempts to connect to the datasource failed. May be
+ODBC server not able to register to the ODBC service process.
+```
+
+*Cause*: A server error.
+
+*Effect*:  Operation fails.
+
+
+*Recovery*: Contact {project-support} to check logs for server errors and
+to analyze accompanying errors and warnings.
+
+=== 08004 HY000
+
+```
+08004 HY000 Data source rejected establishment of connection since the
+ODBC server is connected to a different client now
+```
+
+*Cause*: Connection with server has been lost. Server is now connected to a different connection.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Reconnect.
+
+<<<
+=== 29001 HYC00
+
+```
+HYC00 Unsupported feature - {0}
+```
+
+*Cause*: The feature listed is not supported by the JDBC driver.
+
+*Effect*:  An unsupported exception is thrown, and a NULL `resultSet` is returned.
+
+*Recovery*: Remove the feature functionality from the program.
+
+=== 29002 08003
+
+```
+29002 08003 Connection does not exist
+```
+
+*Cause*: An action was attempted when the connection to the database was closed.
+
+*Effect*:  The database is inaccessible.
+
+*Recovery*: Retry the action after the connection to the database is established.
+
+=== 29003 HY000
+
+```
+29003 HY000 Statement does not exist
+```
+
+*Cause*: A validation attempt was made on the getter or exec invocation on a closed statement.
+
+*Effect*:  The getter or exec invocation validation fails.
+
+*Recovery*: Issue `validateGetInvocation()` or `validateExecDirectInvocation` when the statement is open.
+
+<<<
+=== 29004 HY024
+
+```
+29004 HY024 Invalid transaction isolation value.
+```
+
+*Cause*: An attempt was made to set the transaction isolation level to an invalid value.
+
+*Effect*: `HPT4Connection.setTransactionIsolation` does not set the transaction isolation value.
+
+*Recovery*: Valid isolation values are:
+`SQL_TXN_READ_COMMITTED`,
+`SQL_TXN_READ_UNCOMMITTED`,
+`SQL_TXN_REPEATABLE_READ`, and
+`SQL_TXN_SERIALIZABLE`.
+If no isolation value is specified, the default is `SQL_TXN_READ_COMMITTED`.
+
+=== 29005 HY024
+
+```
+29005 HY024 Invalid ResultSet type
+```
+
+*Cause*: An attempt was made to set an invalid `ResultSet` Type value.
+
+*Effect*:  The SQL Statement call with the `resultSetType` parameter fails.
+
+*Recovery*: Valid ResultSet types are:
+`TYPE_FORWARD_ONLY`,
+`TYPE_SCROLL_INSENSITIVE`, and
+`TYPE_SCROLL_SENSITIVE`.
+
+=== 29006 HY000
+
+```
+29006 HY000 Invalid Result Set concurrency
+```
+
+*Cause*: An attempt was made to set an invalid result-set concurrency value.
+
+*Effect*: The `HPT4Statement` call with `resultSetConcurrency` fails.
+
+*Recovery*: Valid resultSetConcurrency values are: CONCUR_READ_ONLY and
+CONCUR_UPDATABLE.
+
+<<<
+=== 29007 07009
+
+```
+29007 07009 Invalid descriptor index
+```
+
+*Cause*: A `ResultSetMetadata` column parameter or a `ParameterMetaData` param
+parameter is outside of the descriptor range.
+
+*Effect*:  The `ResultSetMetadata` or `ParameterMetaData` method data is not returned as expected.
+
+*Recovery*: Validate the column or parameter that is supplied to the method.
+
+=== 29008 24000
+
+```
+29008 24000 Invalid cursor state
+```
+
+*Cause*: The `ResultSet` method was called when the connection was closed.
+
+*Effect*:  The method call does not succeed.
+
+*Recovery*: Make sure the connection is open before making the `ResultSet` method call.
+
+=== 29009 HY109
+
+```
+29009 HY109 Invalid cursor position
+```
+
+*Cause*: An attempt was made to perform a `deleteRow()` method or `updateRow()`
+method or `cancelRowUpdates` method when the `ResultSet` row cursor was on
+the insert row. Or, an attempt was made to perform the `insertRow()` method
+when the `ResultSet` row cursor was not on the insert row.
+
+*Effect*:  The row changes and cursor manipulation do not succeed.
+
+*Recovery*: To insert a row, move the cursor to the insert row. To delete, cancel, or update a row, move the cursor from the insert row.
+
+<<<
+=== 29010 07009
+
+```
+29010 07009 Invalid column name
+```
+
+*Cause*: A column search does not contain `columnName` string.
+
+*Effect*:  The column comparison or searches do not succeed.
+
+*Recovery*: Supply a valid columnName string to the `findColumn()`,
+`validateGetInvocation()`, and `validateUpdInvocation()` methods.
+
+=== 29011 07009
+
+```
+29011 07009 Invalid column index or descriptor index
+```
+
+*Cause*: A `ResultSet` method was issued that has a column parameter that is
+outside of the valid range.
+
+*Effect*:  The `ResultSet` method data is not returned as expected.
+
+*Recovery*: Make sure to validate the column that is supplied to the method.
+
+=== 29012 07006
+
+```
+29012 07006 Restricted data type attribute violation.
+```
+
+*Cause*: An attempt was made to execute a method either while an invalid
+data type was set or the data type did not match the SQL column type.
+
+*Effect*:  The interface method is not executed.
+
+*Recovery*: Make sure the correct method and Java data type is used for the column type.
+
+<<<
+=== 29013 HY024
+
+```
+29013 HY024 Fetch size is less than 0.
+```
+
+*Cause*: The size set for ResultSet.setFetchSize rows to fetch is less than zero.
+
+*Effect*:  The number of rows that need to be fetched from the database when
+more rows are needed for a ResultSet object is not set.
+
+*Recovery*: Set the `setFetchSize()` method rows parameter to a value greater
+than zero.
+
+=== 29015 HY024
+
+```
+29015 HY024 Invalid fetch direction
+```
+
+*Cause*: The `setFetchDirection()` method direction parameter is set to an invalid value.
+
+*Effect*:  The direction in which the rows in this `ResultSet` object are processed is not set.
+
+*Recovery*: Valid fetch directions are: `ResultSet.FETCH_FORWARD`,
+`ResultSet.FETCH_REVERSE`, and `ResultSet.FETCH_UNKNOWN`.
+
+=== 29017 HY004
+
+```
+29017 HY004 SQL data type not supported
+```
+
+*Cause*: An unsupported `getBytes()` or `setBytes()` JDBC method call was
+issued using a `BINARY`, `VARBINARY`, or `LONGVARBINARY` data type.
+
+*Effect*: `BINARY`, `VARBINARY`, and `LONGVARBINARY` data types are not supported.
+
+*Recovery*: Informational message only; no corrective action is needed.
+
+<<<
+=== 29018 22018
+
+```
+29018 2018 Invalid character value in cast specification
+```
+
+*Cause*: An attempt was made to convert a string to a numeric type but the
+string does not have the appropriate format.
+
+*Effect*:  Strings that are obtained through a getter method cannot be cast
+to the method type.
+
+*Recovery*: Validate the string in the database to make sure it is a
+compatible type.
+
+=== 29019 07002
+
+```
+29019 07002 Parameter {0, number, integer} for {1, number, integer} set
+of parameters is not set.
+```
+
+*Cause*: An input descriptor contains a parameter that does not have a value set.
+
+*Effect*:  The method `checkIfAllParamsSet()` reports the parameter that is not set.
+
+*Recovery*: Set a value for the listed parameter.
+
+=== 29020 07009
+
+```
+29020 07009 Invalid parameter index.
+```
+
+*Cause*: A getter or setter method parameter count index is outside of the
+valid input-descriptor range, or the input-descriptor range is null.
+
+*Effect*:  The getter and setter method invocation validation fails.
+
+*Recovery*: Change the getter or setter parameter index to a valid parameter value.
+
+<<<
+=== 29021 HY004
+
+```
+29021 HY004 Object type not supported
+```
+
+*Cause*: A `PreparedStatement.setObject()` method call contains an unsupported Object Type.
+
+*Effect*:  The `setObject()` method does not set a value for the designated parameter.
+
+*Recovery*: Informational message only; no corrective action is needed.
+Valid Object Types are: `null`, `BigDecimal`, `Date`, `Time`, `Timestamp`, `Double`,
+`Float`, `Long`, `Short`, `Byte`, `Boolean`, `String`, and `byte[]`, `Blob`, and `Clob`.
+
+=== 29022 HY010
+
+```
+29022 HY010 Function sequence error.
+```
+
+*Cause*: The `PreparedStatement.execute()` method does not support the use of
+the `PreparedStatement.addBatch()` method.
+
+*Effect*:  An exception is reported; the operation is not completed.
+
+*Recovery*: Use the `PreparedStatement.executeBatch()` method.
+
+=== 29026 HY000
+
+```
+29026 HY000 Transaction can't be committed or rolled back when AutoCommitmode is on.
+```
+
+*Cause*: An attempt was made to commit a transaction while AutoCommit mode is enabled.
+
+*Effect*:  The transaction is not committed.
+
+*Recovery*: Disable AutoCommit. Use the method only when the AutoCommit mode is disabled.
+
+<<<
+=== 29027 HY011
+
+```
+29027 HY011 SetAutoCommit not possible, since a transaction is active.
+```
+
+*Cause*: An attempt was made to call the `setAutoCommit()` mode while a transaction was active.
+
+*Effect*:  The current AutoCommit mode is not modified.
+
+*Recovery*: Complete the transaction, then attempt to set the AutoCommit mode.
+
+=== 29029 HY011
+
+```
+29029 HY011 SetTransactionIsolation not possible, since a transaction is active.
+```
+
+*Cause*: An attempt was made to set transaction isolation level while a
+transaction was active.
+
+*Effect*:  Attempts to change the transaction isolation level for this
+Connection object fail.
+
+*Recovery*: Complete the transaction, then attempt to set the transaction
+isolation level.
+
+=== 29031 HY000
+
+```
+29031 HY000 SQL SELECT statement in batch is illegal
+```
+
+*Cause*: A `SELECT SQL` statement was used in the `executeBatch()` method.
+
+*Effect*:  An exception is reported; the `SELECT SQL` query cannot be used in batch queries.
+
+*Recovery*: Use the `executeQuery()` method to issue the `SELECT SQL` statement.
+
+<<<
+=== 29032 23000
+
+```
+29032 23000 Row has been modified since it is last read.
+```
+
+*Cause*: An attempt was made to update or delete a `ResultSet` object row while the cursor was on the insert row.
+
+*Effect*:  The `ResultSet` row modification does not succeed.
+
+*Recovery*: Move the `ResultSet` object cursor away from the row before updating or deleting the row.
+
+=== 29033 23000
+
+```
+29033 23000 Primary key column value can't be updated.
+```
+
+*Cause*: An attempt was made to update the primary-key column in a table.
+
+*Effect*:  The column is not updated.
+
+*Recovery*: Columns in the primary-key definition cannot be updated and
+cannot contain null values, even if you omit the NOT NULL clause in the
+column definition.
+
+=== 29035 HY000
+
+```
+29035 HY000IO Exception occurred {0}
+
+message_text
+```
+
+*Cause*: An ASCII or Binary or Character stream setter or an updater method
+resulted in a `java.io.IOException`.
+
+*Effect*:  The designated setter or updater method does not modify the ASCII
+or Binary or Character stream.
+
+*Recovery*: Informational message only; no corrective action is needed.
+
+<<<
+=== 29036 HY000
+
+```
+29036 HY000 Unsupported encoding {0}
+```
+
+*Cause*: The character encoding is not supported.
+
+*Effect*:  An exception is thrown when the requested character encoding is not supported.
+
+*Recovery*: `ASCII (ISO88591)`, `KANJI`, `KSC5601`, and `UCS2` are the only
+supported character encodings. 
+
+=== 29037 HY106
+
+```
+29037 HY106 ResultSet type is TYPE_FORWARD_ONLY.
+```
+
+*Cause*: An attempt was made to point a `ResultSet` cursor to a previous row
+when the object type is set as `TYPE_FORWARD_ONLY`.
+
+*Effect*:  The ResultSet object cursor manipulation does not occur.
+
+*Recovery*: `TYPE_FORWARD_ONLYResultSet` object type cursors can move forward
+only. `TYPE_SCROLL_SENSITIVE` and `TYPE_SCROLL_INSENSITIVE` types are
+scrollable.
+
+=== 29038 HY107
+
+```
+29038 HY107 Row number is not valid.
+```
+
+*Cause*: A `ResultSet` `absolute()` method was called when the row number was set to 0.
+
+*Effect*:  The cursor is not moved to the specified row number.
+
+*Recovery*: Supply a positive row number (specifying the row number
+counting from the beginning of the result set), or supply a negative row
+number (specifying the row number counting from the end of the result set).
+
+<<<
+=== 29039 HY092
+
+```
+29039 HY092 Concurrency mode of the ResultSet is CONCUR_READ_ONLY.
+```
+
+*Cause*: An action was attempted on a `ResultSet` object that cannot be
+updated because the concurrency is set to `CONCUR_READ_ONLY`.
+
+*Effect*:  The `ResultSet` object is not modified.
+
+*Recovery*: For updates, you must set the `ResultSet` object concurrency to `CONCUR_UPDATABLE`.
+
+=== 29040 HY000
+
+```
+29040 HY000 Operation invalid. Current row is the insert row.
+```
+
+*Cause*: An attempt was made to retrieve update, delete, or insert information on the current insert row.
+
+*Effect*:  The `ResultSet` row information retrieval does not succeed.
+
+*Recovery*: To retrieve row information, move the `ResultSet` object cursor away from the insert row.
+
+=== 29041 HY000
+
+```
+29041 HY000 Operation invalid. No primary key for the table.
+```
+
+*Cause*: The `getKeyColumns()` method failed on a table that was created without a primary-key column defined.
+
+*Effect*:  No primary-key data is returned for the table.
+
+*Recovery*: Change the table to include a primary-key column.
+
+<<<
+=== 29042 HY000
+
+```
+29042 HY000 Fetch size value is not valid.
+```
+
+*Cause*: An attempt was made to set the fetch-row size to a value that is less than 0.
+
+*Effect*:  The number of rows that are fetched from the database when more rows are needed is not set.
+
+*Recovery*: For the `setFetchSize()` method, supply a valid row value that is greater than or equal to 0.
+
+=== 29043 HY000
+
+```
+29043 HY000 Max rows value is not valid.
+```
+
+*Cause*: An attempt was made to set a limit of less than 0 for the maximum
+number of rows that any `ResultSet` object can contain.
+
+*Effect*:  The limit for the maximum number of rows is not set.
+
+*Recovery*: For the `setMaxRows()` method, use a valid value that is greater than or equal to 0.
+
+=== 29044 HY000
+
+```
+29044 HY000 Query timeout value is not valid.
+```
+
+*Cause*: An attempt was made to set a value of less than 0 for the number
+of seconds the driver waits for a Statement object to execute.
+
+*Effect*:  The query timeout limit is not set.
+
+*Recovery*: For the `setQueryTimeout()` method, supply a valid value that is
+greater than or equal to 0.
+
+<<<
+=== 29045 01S07
+
+```
+29045 01S07 Fractional truncation.
+```
+
+*Cause*: The data retrieved by the `ResultSet` getter method has been truncated.
+
+*Effect*:  The data retrieved is truncated.
+
+*Recovery*: Make sure that the data to be retrieved is within a valid data-type range.
+
+=== 29046 22003
+
+```
+29046 22003 Numeric value out of range.
+```
+
+*Cause*: A value retrieved from the ResultSet getter method is outside the range for the data type.
+
+*Effect*:  The ResultSet getter method does not retrieve the data.
+
+*Recovery*: Make sure the data to be retrieved is within a valid data-type range.
+
+=== 29047 HY000
+
+```
+29047 HY000 Batch update failed. See next exception for details.
+```
+
+*Cause*: One of the commands in a batch update failed to execute properly.
+
+*Effect*:  Not all the batch-update commands succeed. See the subsequent
+exception for more information.
+
+*Recovery*: View the subsequent exception for possible recovery actions.
+
+<<<
+=== 29048 HY009
+
+```
+29048 HY009 Invalid use of null.
+```
+
+*Cause*: A parameter that has an expected table name is set to null.
+
+*Effect*:  The `DatabaseMetadata` method does not report any results.
+
+*Recovery*: For the `DatabaseMetaData` method, supply a valid table name that is not null.
+
+=== 29049 25000
+
+```
+29049 25000 Invalid transaction state.
+```
+
+*Cause*: The `begintransaction()` method was called when a transaction was in progress.
+
+*Effect*:  A new transaction is not started.
+
+*Recovery*: Before calling the `begintransaction()` method, validate whether
+other transactions are currently started.
+
+=== 29050 HY107
+
+```
+29050 HY107 Row value out of range.
+```
+
+*Cause*: A call to `getCurrentRow` retrieved is outside the first and last row range.
+
+*Effect*:  The current row is not retrieved.
+
+*Recovery*: It is an informational message only; no recovery is needed.
+Contact {project-support} and report the entire message.
+
+<<<
+=== 29051 01S02
+
+```
+29051 01S02 ResultSet type changed to TYPE_SCROLL_INSENSITIVE.
+```
+*Cause*: The Result Set Type was changed.
+
+*Effect*:  None.
+
+*Recovery*: This message is reported as an SQL Warning. It is an informational message only; no recovery is needed.
+
+=== 29053 HY000
+
+```
+29053 HY000 SQL SELECT statement is invalid in executeUpdate() methodCause.
+```
+
+*Cause*: A select SQL statement was used in the `executeUpdate()` method.
+
+*Effect*:  The SQL query not performed exception is reported.
+
+*Recovery*: Use the `executeQuery()` method to issue the select SQL statement.
+
+=== 29054 HY000
+
+```
+29054 HY000 Only SQL SELECT statements are valid in executeQuery() method.
+```
+
+*Cause*: A non-select SQL statement was used in the `executeQuery()` method.
+
+*Effect*:  The exception reported is "SQL query not performed".
+
+*Recovery*: Use the `executeUpdate()` method to issue the non-select SQL statement.
+
+<<<
+=== 29056 HY000
+
+```
+29056 HY000 Statement is already closed.
+```
+
+*Cause*: A `validateSetInvocation()` or `validateExecuteInvocation` method was used on a closed statement.
+
+*Effect*:  The validation on the statement fails and returns an exception.
+
+*Recovery*: Use the `validateSetInvocation()` or `validateExecuteInvocation` method prior to the statement close.
+
+
+=== 29057 HY000
+
+```
+29057 HY000 Auto generated keys not supported.
+```
+
+*Cause*: An attempt was made to use the Auto-generated keys feature.
+
+*Effect*:  The attempt does not succeed.
+
+*Recovery*: The Auto-generated keys feature is not supported.
+
+=== 29058 HY000
+
+```
+29058 HY000 Connection is not associated with a PooledConnection object.
+```
+
+*Cause*: The `getPooledConnection()` method was invoked before the `PooledConnection` object was established.
+
+*Effect*:  A connection from the pool cannot be retrieved.
+
+*Recovery*: Make sure a `PooledConnection` object is established before using
+the `getPooledConnection()` method.
+
+<<<
+=== 29059 HY000
+
+```
+29059 HY000 'blobTableName' property is not set or set to null value or set to invalid value.
+```
+
+*Cause*: Attempted to access a BLOB column without setting the property
+`hpt4jdbc.blobTableName`, or the property is set to an invalid value.
+
+*Effect*:  The application cannot access BLOB columns.
+
+*Recovery*: Set the `hpt4jdbc.blobTableName` property to a valid LOB table
+name. The LOB table name is of format `catalog.schema.lobTableName`.
+
+=== 29060 HY000
+
+```
+29060 HY000 'hpt4jdbc.clobTableName' property is not set or set to null value or set to invalid value.
+```
+
+*Cause*: Attempted to access a CLOB column without setting the
+`propertyhpt4jdbc.clobTableName` property, or the property is set to null
+value or set to an invalid value.
+
+*Effect*:  The application cannot access CLOB columns.
+
+*Recovery*: Set the `hpt4jdbc.clobTableName` property to a valid LOB table
+name. The LOB table name is of format `catalog.schema.lobTableName`.
+
+=== 29061 HY00
+
+```
+29061 HY00 Lob object {0} is not current.
+```
+
+*Cause*: Attempted to access LOB column data after the cursor moved or the
+result set from which the LOB data was obtained had been closed.
+
+*Effect*:  The application cannot access LOB data.
+
+*Recovery*: Read the LOB data before moving the cursor or closing the result-set object.
+
+<<<
+=== 29063 HY00
+
+```
+29063 HY00 Transaction error {0} - {1} while obtaining start data locator.
+```
+
+*Cause*: A transaction error occurred when the Type 4 driver attempted to
+reserve the data locators for the given process while inserting or
+updating a LOB column.
+
+*Effect*:  The application cannot insert or update the LOB columns.
+
+*Recovery*: Check the file-system error in the message and take recovery action accordingly.
+
+=== 29067 07009
+
+```
+2067 07009 Invalid input value in the method {0}.
+```
+
+*Cause*: One or more input values in the given method is invalid.
+
+*Effect*:  The given input method failed.
+
+*Recovery*: Check the input values for the given method.
+
+=== 29068 07009
+
+```
+29068 07009 The value for position can be any value between 1 and one more than the length of the LOB data.
+```
+
+*Cause*: The position input value in `Blob.setBinaryStream`,
+`Clob.setCharacterStream`, or `Clob.setAsciiStream` can be between 1 and one
+more than the length of the LOB data.
+
+*Effect*:  The application cannot write the LOB data at the specified position.
+
+*Recovery*: Correct the position input value.
+
+<<<
+=== 29069 HY000
+
+```
+29069 HY000 Autocommit is on and LOB objects are involved.
+```
+
+*Cause*: An attempt was made to access a LOB column when autocommit made is enabled.
+
+*Effect*:  The application cannot access LOB columns.
+
+*Recovery*: Disable the autocommit mode.
+
+=== 29100 HY000
+
+```
+29100 HY000 An internal error occurred.
+```
+
+*Cause*: Internal error.
+
+*Effect*:  Operation fails.
+
+*Recovery*: None. Contact {project-support} and report the entire message.
+
+=== 29101 HY000
+
+```
+29101 HY000 Contact your service provider.
+```
+
+*Cause*: Internal error.
+
+*Effect*:  Operation fails.
+
+*Recovery*: None. Contact {project-support} (the service provider) and report the entire message.
+
+<<<
+=== 29102 HY000
+
+```
+29101 HY000 Error while parsing address <address>.
+```
+*Cause*: The address format was not recognized.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Refer to <<url, url Property>> for the valid address format.
+
+=== 29103 HY000
+
+```
+29103 HY000 Address is null.
+```
+
+*Cause*: The address was empty.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Refer to <<url, url Property>> for the valid address format.
+
+=== 29104 HY000
+
+```
+29104 HY000 Expected suffix: <suffix>.
+```
+
+*Cause*: The address suffix was incorrect or missing.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Refer to <<url, url Property>> for the valid address format.
+
+<<<
+===  29105 HY000
+
+```
+29105 HY000 Unknown prefix for address.
+```
+
+*Cause*: The address prefix was incorrect or missing.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Refer to <<url, url Property>> for the valid address format.
+
+=== 29106 HY000
+
+```
+29016 HY000 Expected address format: jdbc:subprotocol::subname.
+```
+
+*Cause*: Not applicable.
+
+*Effect*:  Not applicable.
+
+*Recovery*: This is an informational message.
+Refer to <<url, url Property>> for the valid address format.
+
+=== 29107 HY000
+
+```
+29107 HY000 Address not long enough to be a valid address.
+```
+
+*Cause*: The address length was too short to be a valid address.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Refer to <<url, url Property>> for the valid address format.
+
+<<<
+=== 29108 HY000
+
+```
+29108 HY000 Expecting \\<machine-name><process-name>/<port-number>.
+```
+
+*Cause*: The DCS address format was invalid.
+
+*Effect*:  Operation fails.
+
+*Recovery*: The address returned by the {project-name} platform was not in
+the expected format. Contact {project-support} and report the entire message.
+
+=== 29109 HY000
+
+```
+29109 HY000 //<{IP Address|Machine Name}[:port]/database name>
+```
+
+*Cause*: Informational message.
+
+*Effect*:  Not applicable.
+
+*Recovery*: Not applicable.
+
+=== 29110 HY000
+
+```
+29110 HY000 Address is missing an IP address or machine name.
+```
+
+*Cause*: An IP address or machine name is required, but missing.
+
+*Effect*:  The operation fails.
+
+*Recovery*: Include a valid IP address or machine name.
+Refer to <<url, url Property>> for the valid address format.
+
+<<<
+=== 29111 HY000
+
+```
+29111 HY000 Unable to evaluate address <address> Cause: <cause>.
+```
+*Cause*: The driver could not determine the IP address for a host.
+
+*Effect*:  The operation fails.
+
+*Recovery*: The address or machine name may not be properly qualified or
+there my exist a security restriction. See the documentation for the
+`getAllByName` method in the `java.net.InetAddress` class. Include a valid
+IP address or machine name. Refer to <<url, url Property>> for the
+valid address format.
+
+
+=== 29112 HY000
+
+```
+29112 HY000 Missing ']'.
+```
+
+*Cause*: The driver could not determine the IP address for a host.
+
+*Effect*:  The operation fails.
+
+*Recovery*: The address or machine name may not be properly formatted.
+Refer to <<url, url Property>> for the valid address format.
+
+===  29113 HY000
+
+```
+29113 HY000 Error while opening socket. Cause: <cause>.
+```
+
+*Cause*: Socket error.
+
+*Effect*:  The operation fails.
+
+*Recovery*: Use the `getCause` method on the `Exception` to determine the
+appropriate recovery action.
+
+<<<
+=== 29114 HY000
+
+```
+29114 HY000 Error while writing to socket.
+```
+
+*Cause*: Socket write error.
+
+*Effect*:  The operation fails.
+
+*Recovery*: Use the `getCause` method on the `Exception` to determine the
+appropriate recovery action.
+
+
+
+=== 29115 HY000
+
+```
+29115 HY000 Error while reading from socket. Cause: <cause>.
+```
+
+*Cause*: Socket read error.
+
+*Effect*:  The operation fails.
+
+*Recovery*: Use the `getCause` method on the `Exception` to determine the
+appropriate recovery action.
+
+=== 29116 HY000
+
+```
+29116 HY000 Socket is closed.
+```
+
+*Cause*: Socket close error.
+
+*Effect*:  The operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+<<<
+=== 29117 HY000
+
+```
+29117 HY000 Error while closing session. Cause: <cause>.
+```
+
+*Cause*: An error was encountered while closing a session.
+
+*Effect*:  The operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+=== 29118 HY000
+
+```
+29118 HY000 A write to a bad map pointer occurred.
+```
+
+*Cause*: Internal error.
+
+*Effect*:  Operation fails.
+
+*Recovery*: None. Contact {project-support} and report the entire message.
+
+=== 29119 HY000
+
+```
+29119 HY000 A write to a bad par pointer occurred.
+```
+
+*Cause*: Internal error.
+
+*Effect*:  Operation fails.
+
+*Recovery*: None. Contact {project-support} and report the entire message.
+
+<<<
+=== 29120 HY000
+
+```
+29120 HY000 An association server connect message error occurred.
+```
+
+*Cause*: Unable to connect to the DCS association server.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+=== 29121 HY000
+
+```
+29121 HY000 A close message error occurred. Cause: <cause>.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+=== 29122 HY000
+
+```
+29122 HY000 An end transaction message error occurred.
+```
+
+*Cause*: Unable to perform the operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+<<<
+=== 29123 HY000
+
+```
+29123 HY000 An execute call message error occurred. Cause: <cause>.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+=== 29124 HY000
+
+```
+29124 HY000 An execute direct message error occurred. Cause: <cause>.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+=== 29125 HY000
+
+```
+29125 HY000 An execute direct rowset message error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+<<<
+=== 29126 HY000
+
+```
+29126 HY000 An execute N message error occurred. Cause: <cause>.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+
+=== 29127 HY000
+
+```
+29127 HY000 An execute rowset message error occurred. Cause: <cause>.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+=== 29128 HY000
+
+```
+29128 HY000 A fetch perf message error occurred. Cause: <cause>.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+<<<
+=== 29129 HY000
+
+```
+29129 HY000 A fetch rowset message error occurred. Cause: <cause>.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+=== 29130 HY000
+
+```
+29130 HY000 A get sql catalogs message error occurred. Cause: <cause>.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+=== 29131 HY000
+
+```
+29131 HY000 An initialize dialogue message error occurred. Cause: <cause>.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+<<<
+=== 29132 HY000
+
+```
+29132 HY000 A prepare message error occurred. Cause: <cause>.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+=== 29133 HY000
+
+```
+29133 HY000 A prepare rowset message error occurred. Cause: <cause>.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+=== 29134 HY000
+
+```
+29134 HY000 A set connection option message error occurred. Cause: <cause>.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+<<<
+=== 29135 HY000
+
+```
+29135 HY000 A terminate dialogue message error occurred. Cause: <cause>.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+
+=== 29136 HY000
+
+```
+29136 HY000 An association server connect reply occurred.
+Exception: <exception> Exception detail: <exception_detail>
+Error text/code: <error text or code>.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate any error or error detail information accompanying
+this message and contact {project-support} to check logs for server
+({project-name} platform) errors and to analyze accompanying errors and
+warnings.
+
+=== 29137 HY000
+
+```
+29137 HY000 A close reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+<<<
+=== 29138 HY000
+
+```
+29138 HY000 An end transaction reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+=== 29139 HY000
+
+```
+29139 HY000 An execute call reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+=== 29140 HY000
+
+```
+29140 HY000 An execute direct reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+<<<
+=== 29141 HY000
+
+```
+29141 HY000 An execute direct rowset reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+=== 29142 HY000
+
+```
+29142 HY000 An execute N reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+=== 29143 HY000
+
+```
+29143 HY000 An execute rowset reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+<<<
+=== 29144 HY000
+
+```
+29144 HY000 A fetch perf reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+=== 29145 HY000
+
+```
+29145 HY000 A fetch rowset reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+=== 29146  HY000
+
+```
+29146 HY000 A get sql catalogs reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+<<<
+=== 29147 HY000
+
+```
+29147 HY000 An initialize dialogue reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+=== 29148 HY000
+
+```
+29148 HY000 A prepare reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+=== 29149 HY000
+
+```
+29149 HY000 A prepare rowset reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+<<<
+=== 29150 HY000
+
+```
+29150 HY000 A set connection option reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+
+=== 29151 HY000
+
+```
+29151 HY000 A terminate dialogue reply error occurred.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate the returned value from the `getCause` method on the
+`Exception` to determine the appropriate recovery action.
+
+=== 29152 HY000
+
+```
+29152 HY000 No more ports available to start ODBC servers.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+
+*Recovery*: Contact {project-support} to check logs for server ({project-name}
+platform) errors. Evaluate the returned value from the `getCause` method
+on the `Exception` to determine the appropriate recovery action.
+
+<<<
+=== 29153 HY000
+
+```
+29153 HY000 Invalid authorization specification.
+```
+
+*Cause*: Incorrect user name and/or password.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Retry with correct user name and/or password.
+
+
+=== 29154 HY000
+
+```
+29154 HY000 Timeout expired.
+```
+
+*Cause*: Unable to perform this operation.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Retry and/or change the timeout value for the operation.
+
+===  29155 HY000
+
+```
+29155 HY000 Unknown message type.
+```
+
+*Cause*: Internal error.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Contact {project-support} to check logs for server ({project-name}
+platform) errors and to analyze errors and warnings.
+
+<<<
+=== 29156 HY000
+
+```
+29156 HY000 An error was returned from the server. Error: <error>
+Error detail: <error_detail>.
+```
+
+*Cause*: The server reported an error.
+
+*Effect*:  Operation fails.
+
+
+*Recovery*: Evaluate any error or error detail information accompanying the
+message. Contact {project-support} to check logs for server ({project-name}
+platform) errors and to analyze accompanying errors and warnings.
+
+
+=== 29157 HY000
+
+```
+29157 HY000 There was a problem reading from the server.
+```
+
+*Cause*: The server reported an error.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate any error or error detail information accompanying the
+message. Contact {project-support} to check logs for server ({project-name}
+platform) errors and to analyze accompanying errors and warnings.
+
+=== 29158 HY000
+
+```
+29158 HY000 The message header contained the wrong version.
+Expected: <expected_version> Actual: <actual_version>.
+```
+
+*Cause*: The server's version differs from the expected version.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate any error or error detail information accompanying the
+message. Install compatible versions of the driver and HP connectivity
+server.
+
+<<<
+=== 29159 HY000
+
+```
+29159 HY000 The message header contained the wrong signature.
+Expected: <expected_signature> Actual: <actual_signature>.
+```
+
+*Cause*: The server's signature differs from the expected version.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Evaluate any error or error detail information accompanying the
+message. Install compatible versions of the driver and HP connectivity
+server.
+
+
+=== 29160 HY000
+
+```
+29160 HY000 The message header was not long enough.
+```
+
+*Cause*: The message returned by the server was too short to be a valid message.
+
+*Effect*:  Operation fails.
+
+*Recovery*: None. Contact {project-support} and report the entire message.
+
+=== 29161 S1000
+
+```
+29161 S1000 Unable to authenticate the user because of an NT error: {0}
+```
+
+*Cause*: A message returned by the server.
+
+*Effect*:  Operation fails.
+
+*Recovery*: None. Contact {project-support} and report the entire message.
+
+<<<
+=== 29162 S1000
+
+```
+29162 S1000 Unexpected programming exception has been found: <exception>.
+```
+
+Check the server event log on node _node_ for details.
+
+*Cause*: A message returned by the server.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Contact {project-support} to check logs for server ({project-name}
+platform) errors and to analyze accompanying errors and warnings.
+
+
+=== 29163 08001
+
+```
+29163 08001 ODBC Services not yet available: <server>.
+```
+
+*Cause*: A message returned by the server.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Retry and/or wait for a server to become available. Configure
+server-side data source with more servers.
+
+=== 29164 08001
+
+```
+29164 08001 DataSource not yet available or not found: <error>.
+```
+
+*Cause*: A message returned by the server.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Create server data source and/or configure server data source
+with more servers.
+
+<<<
+=== 29165 HY000
+
+```
+29165 HY000 Unknown connect reply error: <error>.
+```
+
+*Cause*: A message returned by the server.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Contact {project-support} to check logs for server ({project-name}
+platform) errors and to analyze accompanying errors and warnings.
+
+
+=== 29166 HY000
+
+```
+29166 HY000 This method is not implemented.
+```
+
+*Cause*: Internal error.
+
+*Effect*:  Operation fails.
+
+*Recovery*: None. Contact {project-support} and report the entire message.
+
+=== 29167 HY000
+
+```
+29167 HY000 Internal error. An internal index failed consistency check.
+```
+
+*Cause*: Internal error.
+
+*Effect*:  Operation fails.
+
+*Recovery*: None. Contact {project-support} and report the entire message.
+
+<<<
+=== 29168 HY000
+
+```
+29168 HY000 Unknown reply message error: <error> error detail: <error_detail>.
+```
+
+*Cause*: Server returned an error.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Contact {project-support} to check logs for server ({project-name}
+platform) errors and to analyze accompanying errors and warnings.
+
+
+=== 29169 HY000
+
+```
+29169 HY000 Invalid connection property setting
+```
+
+*Cause*: The message returned by the server was too short to be a valid message.
+
+*Effect*:  Operation fails.
+
+*Recovery*: None. Contact {project-support} and report the entire message.
+
+=== 29170 HY000
+
+```
+29170 HY000 Invalid parameter value.
+```
+
+*Cause*: Internal error.
+
+*Effect*:  Operation fails.
+
+*Recovery*: None. Contact {project-support} and report the entire message.
+
+<<<
+=== 29172 HY000
+
+```
+29172 HY000 Translation of parameter to {0} failed.
+```
+
+*Cause*: Translation errors occurred when translating the parameter into
+the target character set reported in the {0} replacement variable.
+
+*Effect*:  The method fails.
+
+*Recovery*: Set the parameter to use characters within the appropriate
+character set. You can also turn off translation validation by setting
+the `translationVerification` property to FALSE.
+
+
+=== 29173 HY000
+
+```
+29173 HY000 Translation of SQL statement {0} failed.
+```
+
+*Cause*: Translation errors occurred when translating the SQL statement
+into the target character set reported in the {0} replacement
+variable.
+
+*Effect*:  The method fails.
+
+*Recovery*: Edit the SQL statement to use characters within the appropriate
+character set. You can also turn off translation validation by setting
+the `translationVerification` property to FALSE.
+
+=== 29174 HY000
+
+```
+29174 HY000 Autocommit is on and updateRow was called on the ResultSetobject.
+```
+
+*Cause*: The `ResultSet.updateRow()` method is called when autocommit is set on.
+
+*Effect*:  Warning is thrown. Subsequent `ResultSet.next()` calls will fail
+because all the `ResultSet(cursors)` are closed.
+
+*Recovery*: Call the `ResultSet.updateRow()` method with autocommit set to off.
+
+<<<
+=== 29175 HY000
+
+```
+29175 HY000 Unknown Error {0}.
+```
+
+*Cause*: An unknown error occurred during connection {0}.
+
+*Effect*:  The connection fails.
+
+*Recovery*: Retry the connection.
+
+
+=== 29177 HY000
+
+```
+29177 HY000 Data cannot be null.
+```
+
+*Cause*: Attempted to get column value data in String format, but passed a null input value.
+
+*Effect*:  The operation fails.
+
+*Recovery*: Contact {project-support} to check logs for server ({project-name}
+platform) errors regarding the DCS server.
+
+=== 29178 HY000
+
+```
+29178 HY000 No column value has been inserted.
+```
+
+*Cause*: The value for a required column was not specified.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Ensure that all required column values are specified, and retry
+the operation.
+
+<<<
+=== 29182 HY000
+
+```
+29182 HY000 General warning. Connected to the default data source:
+TDM_Default_DataSource
+```
+
+*Cause*: The user application specified a data source that does not exist
+on the server side, the {project-name} platform.
+
+*Effect*:  The connection uses the {project-name} platform default data
+source `TDM_Default_DataSource`.
+
+*Recovery*: Ignore the warning or contact your {project-name} database
+administrator to add the server-side data source that the application
+specified.
+
+
+=== S1000 HY000
+
+```
+S1000 HY000 A TIP transaction error <error> has been detected. Check the
+server event log on Node <segment> for Transaction Error details.
+```
+
+*Cause*: A message was returned by the server.
+
+*Effect*:  Operation fails.
+
+*Recovery*: Contact {project-support} to check for errors in the server event log
+on the reported segment.
+

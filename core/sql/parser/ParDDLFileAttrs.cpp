@@ -1,19 +1,22 @@
 /* -*-C++-*-
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
  *****************************************************************************
@@ -420,19 +423,6 @@ ParDDLFileAttrsAlterIndex::setFileAttr(ElemDDLFileAttr * pFileAttr)
     *SqlParser_Diags << DgSqlCode(-3077);
     break;
 
-  case ELM_FILE_ATTR_LOCK_LENGTH_ELEM :
-    //
-    // The grammar productions allow the locklength phrase
-    // to appear within an Alter Index ... Attribute(s)
-    // statement (syntactically).  Enforces the restriction
-    // by using semantic actions.
-    //
-
-    // LOCKLENGTH phrase not allowed in an Alter Index ... Attribute(s) 
-    // statement.
-    *SqlParser_Diags << DgSqlCode(-3078);
-    break;
-
   case ELM_FILE_ATTR_EXTENT_ELEM :
 	// DOnt allow EXTENT in ALTER statements
     *SqlParser_Diags << DgSqlCode(-3194);
@@ -726,10 +716,6 @@ ParDDLFileAttrsAlterTable::copy(const ParDDLFileAttrsAlterTable &rhs)
   // DEALLOCATE
   isDeallocateSpec_     = rhs.isDeallocateSpec_;
 
-  // LOCKLENGTH
-  isLockLengthSpec_     = rhs.isLockLengthSpec_;
-  lockLength_           = rhs.lockLength_;
-
   // MAXSIZE
   isMaxSizeSpec_        = rhs.isMaxSizeSpec_;
   isMaxSizeUnbounded_   = rhs.isMaxSizeUnbounded_;
@@ -817,13 +803,6 @@ ParDDLFileAttrsAlterTable::initializeDataMembers()
   //   no other data members besides isDeallocateSpec_
   //
 
-  // LOCKLENGTH
-  //
-  //   The following data member has no meaning when the
-  //   LockLength phrase does not appear.
-  //
-  lockLength_           = 0;
-
   // MAXSIZE
   //
   //   The following data members have no meanings when the
@@ -895,9 +874,6 @@ ParDDLFileAttrsAlterTable::resetAllIsSpecDataMembers()
 
   // DEALLOCATE
   isDeallocateSpec_             = FALSE;
-
-  // LOCKLENGTH
-  isLockLengthSpec_             = FALSE;
 
   // MAXSIZE
   isMaxSizeSpec_                = FALSE;
@@ -1055,18 +1031,6 @@ ParDDLFileAttrsAlterTable::setFileAttr(ElemDDLFileAttr * pFileAttr)
     // [NO]ICOMPRESS phrase not allowed in an Alter Table ... Attribute(s) 
     // statement.
     *SqlParser_Diags << DgSqlCode(-3089);
-    break;
-
-  case ELM_FILE_ATTR_LOCK_LENGTH_ELEM :
-    if (isLockLengthSpec_)
-    {
-      // Duplicate LOCKLENGTH phrases.
-      *SqlParser_Diags << DgSqlCode(-3090);
-    }
-    ComASSERT(pFileAttr->castToElemDDLFileAttrLockLength() NEQ NULL);
-    lockLength_ = pFileAttr->castToElemDDLFileAttrLockLength()->
-      getLockLength();
-    isLockLengthSpec_ = TRUE;
     break;
 
   case ELM_FILE_ATTR_EXTENT_ELEM :
@@ -1267,19 +1231,6 @@ ParDDLFileAttrsAlterTable::getDetailInfo() const
     detailTextList.append("deallocate not spec");
   }
 
-  // LOCKLENGTH
-
-  if (isLockLengthSpecified())
-  {
-    detailText = "locklen:       ";
-    detailText += LongToNAString((Lng32)getLockLength());
-    detailTextList.append(detailText);
-  }
-  else
-  {
-    detailTextList.append("locklength not spec");
-  }
-
   // MAXSIZE
 
   if (isMaxSizeSpecified())
@@ -1411,10 +1362,6 @@ ParDDLFileAttrsCreateIndex::copy(const ParDDLFileAttrsCreateIndex &rhs)
   isICompressSpec_      = rhs.isICompressSpec_;
   isICompress_          = rhs.isICompress_;
 
-  // LOCKLENGTH
-  isLockLengthSpec_     = rhs.isLockLengthSpec_;
-  lockLength_           = rhs.lockLength_;
-
   // MAXSIZE
   isMaxSizeSpec_        = rhs.isMaxSizeSpec_;
   isMaxSizeUnbounded_   = rhs.isMaxSizeUnbounded_;
@@ -1515,14 +1462,6 @@ ParDDLFileAttrsCreateIndex::initializeDataMembers()
   //
   isICompress_          = FALSE;
 
-  // LOCKLENGTH
-  //
-  //   Sets number of bytes in key to use for
-  //   generic locks.  Default is 0 which means
-  //   using the entire key.
-  //
-  lockLength_           = 0;
-
   // MAXSIZE
   isMaxSizeUnbounded_   = FALSE;
   ParSetDefaultMaxSize(maxSize_, maxSizeUnit_);
@@ -1580,9 +1519,6 @@ ParDDLFileAttrsCreateIndex::resetAllIsSpecDataMembers()
   // [ NO ] ICOMPRESS
   isICompressSpec_              = FALSE;
 
-  // LOCKLENGTH
-  isLockLengthSpec_             = FALSE;
-
   // MAXSIZE
   isMaxSizeSpec_                = FALSE;
 
@@ -1597,6 +1533,7 @@ ParDDLFileAttrsCreateIndex::resetAllIsSpecDataMembers()
   
   // { ALIGNED | PACKED } FORMAT
   isRowFormatSpec_              = FALSE;
+
 } // ParDDLFileAttrsCreateIndex::resetAllIsSpecDataMembers()
 
 //
@@ -1724,18 +1661,6 @@ ParDDLFileAttrsCreateIndex::setFileAttr(ElemDDLFileAttr * pFileAttr)
     isICompress_ = pFileAttr->castToElemDDLFileAttrICompress()->
       getIsICompress();
     isICompressSpec_ = TRUE;
-    break;
-
-  case ELM_FILE_ATTR_LOCK_LENGTH_ELEM :
-    if (isLockLengthSpec_)
-    {
-      // Duplicate LOCKLENGTH phrases.
-      *SqlParser_Diags << DgSqlCode(-3090);
-    }
-    ComASSERT(pFileAttr->castToElemDDLFileAttrLockLength() NEQ NULL);
-    lockLength_ = pFileAttr->castToElemDDLFileAttrLockLength()->
-      getLockLength();
-    isLockLengthSpec_ = TRUE;
     break;
 
   case ELM_FILE_ATTR_EXTENT_ELEM :
@@ -1878,10 +1803,6 @@ ParDDLFileAttrsCreateIndex::getDetailInfo() const
   detailText += YesNo(getIsICompress());
   detailTextList.append(detailText);
 
-  detailText = "locklen:       ";
-  detailText += LongToNAString((Lng32)getLockLength());
-  detailTextList.append(detailText);
-
   detailText = "maxsizunbound? ";
   detailText += YesNo(isMaxSizeUnbounded());
   detailTextList.append(detailText);
@@ -1999,6 +1920,10 @@ ParDDLFileAttrsCreateTable::copy(const ParDDLFileAttrsCreateTable &rhs)
   // OWNER
   isOwnerSpec_          = rhs.isOwnerSpec_;
   owner_                = rhs.owner_;
+
+  // default column family
+  isColFamSpec_ = rhs.isColFamSpec_;
+  colFam_ = rhs.colFam_;
 
   // [ NO ] AUDITCOMPRESS      
   //   inherits from class ParDDLFileAttrsCreateIndex
@@ -2126,6 +2051,8 @@ ParDDLFileAttrsCreateTable::resetAllIsSpecDataMembers()
   // OWNER
   isOwnerSpec_ = FALSE;
 
+  isColFamSpec_                     = FALSE;
+
   // [ NO ] AUDITCOMPRESS
   //   inherits from class ParDDLFileAttrsCreateIndex
 
@@ -2170,12 +2097,27 @@ ParDDLFileAttrsCreateTable::setFileAttr(ElemDDLFileAttr * pFileAttr)
   case ELM_FILE_ATTR_CLEAR_ON_PURGE_ELEM :
   case ELM_FILE_ATTR_D_COMPRESS_ELEM     :
   case ELM_FILE_ATTR_I_COMPRESS_ELEM     :
-  case ELM_FILE_ATTR_LOCK_LENGTH_ELEM    :
   case ELM_FILE_ATTR_EXTENT_ELEM         :
   case ELM_FILE_ATTR_MAXEXTENTS_ELEM     :
   case ELM_FILE_ATTR_UID_ELEM  :
   case ELM_FILE_ATTR_ROW_FORMAT_ELEM     :
     ParDDLFileAttrsCreateIndex::setFileAttr(pFileAttr);
+    break;
+
+  case ELM_FILE_ATTR_COL_FAM_ELEM :
+    if (isColFamSpec_)
+    {
+      // Duplicate Col Family phrases.
+      *SqlParser_Diags << DgSqlCode(-3183)
+                       << DgString0("Column Family");
+    }
+    isColFamSpec_ = TRUE;
+    ComASSERT(pFileAttr->castToElemDDLFileAttrColFam() NEQ NULL);
+    {
+      ElemDDLFileAttrColFam * pColFam =
+        pFileAttr->castToElemDDLFileAttrColFam();
+      colFam_ = pColFam->getColFam();
+    }
     break;
 
   case ELM_FILE_ATTR_AUDIT_ELEM:

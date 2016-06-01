@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -540,22 +543,11 @@ static void addFunctionParameters(ItemExpr* ie,
 
       case ITM_DATEFORMAT:
         {
-          // Only include the parameter if it is one of the predefined values
-          // DEFAULT, USA, or EUROPEAN. The other possible values indicate that
-          // a format string is used to determine the format, and this takes
-          // the form of an explicit operand in the ItemExpr tree.
           DateFormat* dateFormatFn = static_cast<DateFormat*>(ie);
-          Int32 dateFormat = dateFormatFn->getDateFormat();
-          if (dateFormat == DateFormat::DEFAULT ||
-              dateFormat == DateFormat::USA     ||
-              dateFormat == DateFormat::EUROPEAN)
-            {
-              param->setName("dateFormat");
-              param->setValue(dateFormat);
-              function->addHiddenParam(param);
-            }
-          else
-            deletePtr(param);
+          Int32 dateFormat = dateFormatFn->getExpDatetimeFormat();
+          param->setName("dateFormat");
+          param->setValue(dateFormat);
+          function->addHiddenParam(param);
         }
         break;
 
@@ -761,9 +753,7 @@ QRExplicitExprPtr QRDescGenerator::getExprTree(ItemExpr* itemExpr)
                                        QRDescriptorException,
                                        "Unhandled bytes-per-char: %d",
                                        ((CharType*)type)->getBytesPerChar());
-                    QRWStringValPtr wideScalar = new (mvqrHeap_) QRWStringVal(ADD_MEMCHECK_ARGS(mvqrHeap_));
-                    wideScalar->setWideValue(constVal->getConstWStr());
-                    scalar = wideScalar;
+                    scalar->setValue(constVal->getConstStr(FALSE));
                     valueWasSet = TRUE;
                   }
                 break;

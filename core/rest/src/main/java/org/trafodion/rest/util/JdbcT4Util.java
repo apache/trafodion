@@ -1,17 +1,24 @@
 /**
- *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+* @@@ START COPYRIGHT @@@
+
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+
+* @@@ END COPYRIGHT @@@
  */
 package org.trafodion.rest.util;
 
@@ -43,14 +50,14 @@ import org.trafodion.rest.util.RestConfiguration;
 import org.trafodion.rest.Constants;
 import org.trafodion.jdbc.t4.TrafT4Connection;
 import org.trafodion.jdbc.t4.TrafT4PreparedStatement;
-import org.trafodion.jdbc.t4.HPT4DataSource;
+import org.trafodion.jdbc.t4.TrafT4DataSource;
 
 public final class JdbcT4Util
 {
 	private static final Log LOG = LogFactory.getLog(JdbcT4Util.class);
     private Configuration conf;
     private NetworkConfiguration netConf;
-	private HPT4DataSource cpds = null;
+	private TrafT4DataSource cpds = null;
  
 	static	{
 		try {
@@ -65,7 +72,7 @@ public final class JdbcT4Util
 	public void init(Configuration conf,NetworkConfiguration netConf) throws SQLException {
 		this.conf = conf;
 		this.netConf = netConf;
-	   	cpds = new HPT4DataSource();
+	   	cpds = new TrafT4DataSource();
 		String url = Constants.T4_DRIVER_URL + "//" + netConf.getHostName() + ":" + conf.getInt(Constants.DCS_MASTER_PORT,Constants.DEFAULT_DCS_MASTER_PORT) + "/:";
 		cpds.setURL(url);
 		cpds.setMinPoolSize(conf.getInt(Constants.T4_DRIVER_MIN_POOL_SIZE,Constants.DEFAULT_T4_DRIVER_MIN_POOL_SIZE));

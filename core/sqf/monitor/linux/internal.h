@@ -2,19 +2,22 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //
@@ -36,6 +39,7 @@ enum InternalType
     InternalType_Exit,              // Delete process for monitor
     InternalType_IoData,            // Stdin/Stdout data for a process
     InternalType_Kill,              // Kill monitored process
+    InternalType_NodeName,          // Node Name Change 
     InternalType_Notify,            // Register for monitoring of process death
     InternalType_Process,           // Add process to monitor
     InternalType_ProcessInit,       // Process fork completed
@@ -136,6 +140,13 @@ struct down_def
 {
     int pnid;                       // Physical node id
 };
+
+struct nodename_def
+{
+    char current_name[MAX_PROCESS_NAME];
+    char new_name[MAX_PROCESS_NAME];
+};
+
 
 struct shutdown_def
 {
@@ -359,6 +370,7 @@ struct internal_msg_def
         struct event_def   event;
         ioData_t           iodata;
         struct kill_def    kill;
+	struct nodename_def  nodename;
         struct notify_def  notify;
         struct process_def process;
         struct process_init_def processInit;

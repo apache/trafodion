@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 ********************************************************************/
@@ -234,25 +237,8 @@ typedef enum ERROR_COMPONENT
 #define NO_STRING								"N"
 #define MAX_CAPSULE_NAME_LENGTH					20
 
-#if defined(__LP64__)
-	#if defined(MXLINUX) || defined(MXIA64LINUX) || defined(MXSUNSPARC)
-	#define	DRIVER_DLL_NAME							"libhpodbc64.so"
-	#elif defined(MXHPUX)
-	#define	DRIVER_DLL_NAME							"libhpodbc64.sl"
-	#elif defined(MXAIX)
-	#define	DRIVER_DLL_NAME							"libhpodbc64.a"
-	#endif
-#else
-	#if defined(MXLINUX) || defined(MXIA64LINUX) || defined(MXSUNSPARC) || defined(MXOSS)
-	#define	DRIVER_DLL_NAME							"libhpodbc.so"
-	#elif defined(MXHPUX)
-	#define	DRIVER_DLL_NAME							"libhpodbc.sl"
-	#elif defined(MXAIX)
-	#define	DRIVER_DLL_NAME							"libhpodbc.a"
-	#endif
-#endif /* defined(__LP64__) */
-
-#define TRACE_DLL_NAME							"traf_odbctrace.dll"
+#define	DRIVER_DLL_NAME			        "libtrafodbc64.so"
+#define TRACE_DLL_NAME			        "traf_odbctrace.dll"
 #define TCPIPV4_DLL_NAME                        "traf_tcpipv4.dll"
 #define TCPIPV6_DLL_NAME                        "traf_tcpipv6.dll"
 

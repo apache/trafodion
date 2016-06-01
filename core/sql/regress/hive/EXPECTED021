@@ -1,0 +1,27 @@
+>>obey TEST021(setup);
+>>--------------------------------------------------------------------------
+>>
+>>set schema hive.hive;
+
+--- SQL operation complete.
+>>cqd mode_seahive 'ON';
+
+--- SQL operation complete.
+>>
+>>obey TEST021(tests);
+>>--------------------------------------------------------------------------
+>>-- test update stats on native hive tables
+>>
+>>update statistics for table hive.hive.customer on every column sample random 1 percent;
+
+--- SQL operation complete.
+>>
+>>--showstats for table customer on "C_BIRTH_YEAR" detail;
+>>--explain options 'f' select * from customer ;
+>>--explain options 'f' select * from customer where "C_BIRTH_YEAR" = 1973;
+>>
+>>update statistics for table customer clear;
+
+--- SQL operation complete.
+>>
+>>log;

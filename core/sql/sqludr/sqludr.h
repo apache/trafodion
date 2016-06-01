@@ -8,19 +8,22 @@
  *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
  *
@@ -403,7 +406,8 @@ typedef struct
   sqlstate, msgtext, calltype, statearea, udrinfo
 
 
-/* SQLTMUDF Queue State  */
+/* SQLTMUDF Queue State, also defined in
+   ../src/main/java/org/trafodion/sql/udr/UDR.java  */
 typedef enum SQLUDR_Q_STATE
 {
   SQLUDR_Q_MORE = 1,
@@ -460,7 +464,7 @@ typedef void (*SQLUDR_EmitRow)  (char            *rowData,        /*IN*/
  *  values of parameters, UDR name, etc.
  *
  *  For an introduction, see
- *  https://wiki.trafodion.org/wiki/index.php/Tutorial:_The_object-oriented_UDF_interface
+ *  https://cwiki.apache.org/confluence/display/TRAFODION/Tutorial%3A+The+object-oriented+UDF+interface
  *  
  */
 
@@ -511,7 +515,8 @@ namespace tmudr
     UDRException(int sqlState, const char *printf_format, ...);
     UDRException(const char * sqlState, const char *printf_format, ...);
     const char *getSQLState() const;
-    const std::string &getText() const;
+    const std::string &getMessage() const;
+    const std::string &getText() const; // deprecated, use getMessage()
 
   private:
 
@@ -1484,14 +1489,16 @@ namespace tmudr
                  ///< carry any state between rows it reads from its
                  ///< table-valued inputs. It produces zero or more output
                  ///< rows per input row. Because no state is kept between
-                 ///< rows, the Trafodion compiler can automatically push
-                 ///< predicates down to the table-valued inputs.
+                 ///< rows, the Trafodion compiler can automatically
+                 ///< parallelize execution and push predicates down to
+                 ///< the table-valued inputs.
         REDUCER  ///< A reducer requires the data to be partitioned on
                  ///< a set of columns. The UDF does not carry any state
                  ///< between groups of rows with the same partition column
                  ///< values, but it may carry state within such groups.
-                 ///< This allows the compiler to push predicates on the
-                 ///< partitioning column(s) down to table-valued inputs.
+                 ///< This allows the compiler to parallelize execution and
+                 ///< to push predicates on the partitioning column(s) down
+                 ///< to table-valued inputs.
       };
 
     /**
@@ -1566,7 +1573,7 @@ namespace tmudr
      *
      *  use cqd UDR_DEBUG_FLAGS 'num' in SQL to set these, add up
      *  the flags (in decimal) that you want to set. See
-     *  https://wiki.trafodion.org/wiki/index.php/Tutorial:_The_object-oriented_UDF_interface#Debugging_UDF_code
+     *  https://cwiki.apache.org/confluence/display/TRAFODION/Tutorial%3A+The+object-oriented+UDF+interface#Tutorial:Theobject-orientedUDFinterface-DebuggingUDFcode
      *  for details.
      */
     enum DebugFlags
@@ -1797,7 +1804,7 @@ namespace tmudr
    *  UDR writers can create a derived class and implement these methods
    *  for their specific UDR. The base class also has default methods
    *  for all but the runtime call. See
-   *  https://wiki.trafodion.org/wiki/index.php/Tutorial:_The_object-oriented_UDF_interface
+   *  https://cwiki.apache.org/confluence/display/TRAFODION/Tutorial%3A+The+object-oriented+UDF+interface
    *  for examples.
    *
    *  To use this interface, the UDR writer must provide a function

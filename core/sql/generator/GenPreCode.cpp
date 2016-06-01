@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -55,7 +58,7 @@
 #include "CostMethod.h"
 #include "ItmFlowControlFunction.h"
 #include "UdfDllInteraction.h"
-
+#include "StmtDDLNode.h"
 
 #include "NATable.h"
 #include "NumericType.h"
@@ -151,15 +154,19 @@ static NABoolean processConstHBaseKeys(Generator * generator,
   // convert built-in search key to entries with constants, if possible
   if (skey->areAllKeysConstants(TRUE))
     {
-      ValueIdSet exePreds;
       ValueIdSet nonKeyColumnSet;
       idesc->getNonKeyColumnSet(nonKeyColumnSet);
 
-      // seed exePreds with all predicates, key and non-key
-      // they will be reduced by the method below
-      skey->getKeyPredicates(exePreds);
+      // seed keyPreds with only the full key predicate from skey
+      ValueIdSet keyPreds = skey->getFullKeyPredicates();
+
+      // include executorPreds and selection predicates 
+      // but exclude the full key predicates.
+      ValueIdSet exePreds;
+
       exePreds += executorPreds;
       exePreds += relExpr->getSelectionPred();
+      exePreds.subtractSet(keyPreds);
 
       HbaseSearchKey::makeHBaseSearchKeys(
            skey,
@@ -167,11 +174,15 @@ static NABoolean processConstHBaseKeys(Generator * generator,
            skey->getIndexDesc()->getOrderOfKeyValues(),
            relExpr->getGroupAttr()->getCharacteristicInputs(),
            TRUE, /* forward scan */
-           exePreds,
+           keyPreds,
            nonKeyColumnSet,
            idesc,
            relExpr->getGroupAttr()->getCharacteristicOutputs(),
            mySearchKeys);
+
+      // Include any remaining key predicates that have not been 
+      // picked up (to be used as the HBase search keys).
+      exePreds += keyPreds;
 
       TableDesc *tdesc = NULL;
       if (mySearchKeys.entries()>0)
@@ -2211,9 +2222,9 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 	{
 	  ValueId val_id = compExpr()[i];
 	  ItemExpr * expr = val_id.getItemExpr();
-	  if ((val_id.getType().isLob()) &&
+	  if ((val_id.getType().isLob()))/* &&
 	      ((expr->getOperatorType() == ITM_BASECOLUMN) ||
-	       (expr->getOperatorType() == ITM_INDEXCOLUMN)))
+              (expr->getOperatorType() == ITM_INDEXCOLUMN)))*/
 	    {
 	      LOBconvertHandle * lc = new(generator->wHeap())
 		LOBconvertHandle(val_id.getItemExpr(), LOBoper::STRING_);
@@ -2227,10 +2238,12 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 	      ColumnDesc  *cd = (*cdl)[i];
 	      
 	      NAColumn * col = cd->getValueId().getNAColumn(TRUE);
-	      lc->lobNum() = col->lobNum();
-	      lc->lobStorageType() = col->lobStorageType();
-	      lc->lobStorageLocation() = col->lobStorageLocation();
-	      
+              if (col)
+                {
+                  lc->lobNum() = col->lobNum();
+                  lc->lobStorageType() = col->lobStorageType();
+                  lc->lobStorageLocation() = col->lobStorageLocation();
+                }
 	      cd->setValueId(lc->getValueId());
 
 	      rd->changeNATypeForUserColumnList(i, &lc->getValueId().getType());
@@ -2770,6 +2783,94 @@ RelExpr * ExeUtilExpr::preCodeGen(Generator * generator,
   return this;
 }
 
+// returns true if the whole ddl operation can run in one transaction
+// and transaction can be started by caller(master executor or arkcmp)
+// before executing this ddl.
+short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
+{
+  ExprNode * ddlNode = getDDLNode();
+
+  xnCanBeStarted = TRUE;
+  // no DDL transactions.
+  if ((NOT ddlXns()) &&
+      ((dropHbase()) ||
+       (purgedataHbase()) ||
+       (initHbase()) ||
+       (createMDViews()) ||
+       (dropMDViews()) ||
+       (initAuthorization()) ||
+       (dropAuthorization()) ||
+       (addSeqTable()) ||
+       (createRepos()) ||
+       (dropRepos()) ||
+       (upgradeRepos()) ||
+       (addSchemaObjects()) ||
+       (updateVersion())))
+    {
+      // transaction will be started and commited in called methods.
+      xnCanBeStarted = FALSE;
+    }
+  
+  // no DDL transactions
+  if (((ddlNode) && (ddlNode->castToStmtDDLNode()) &&
+       (NOT ddlNode->castToStmtDDLNode()->ddlXns())) &&
+      ((ddlNode->getOperatorType() == DDL_DROP_SCHEMA) ||
+       (ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
+       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_CONSTRAINT_PRIMARY_KEY) ||
+       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_SET_SG_OPTION) ||
+       (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
+       (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
+       (ddlNode->getOperatorType() == DDL_CREATE_TABLE) ||
+       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
+       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE) ||
+       (ddlNode->getOperatorType() == DDL_DROP_TABLE)))
+    {
+      // transaction will be started and commited in called methods.
+      xnCanBeStarted = FALSE;
+    }
+
+  isDDLxn = FALSE;
+  if ((ddlXns()) || 
+      ((ddlNode && ddlNode->castToStmtDDLNode() &&
+        ddlNode->castToStmtDDLNode()->ddlXns())))
+    isDDLxn = TRUE;
+
+  // ddl transactions are on.
+  // Following commands currently require transactions be started and
+  // committed in the called methods.
+  if ((ddlXns()) &&
+      (
+           (initHbase()) ||
+           (dropHbase()) ||
+           (purgedataHbase()) ||
+           (initHbase()) ||
+           (dropHbase()) ||
+           (initAuthorization()) ||
+           (dropAuthorization()) ||
+           (upgradeRepos())
+       )
+      )
+    {
+      // transaction will be started and commited in called methods.
+      xnCanBeStarted = FALSE;
+    }
+
+  // ddl transactions are on.
+  // Cleanup and alter commands requires transactions to be started and commited
+  // in the called method.
+  if ((ddlNode && ddlNode->castToStmtDDLNode() &&
+       ddlNode->castToStmtDDLNode()->ddlXns()) &&
+      ((ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
+       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
+       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)))
+    {
+      // transaction will be started and commited in called methods.
+      xnCanBeStarted = FALSE;
+    }
+
+  return 0;
+}
+
 RelExpr * DDLExpr::preCodeGen(Generator * generator,
 			      const ValueIdSet & externalInputs,
 			      ValueIdSet &pulledNewInputs)
@@ -2785,6 +2886,16 @@ RelExpr * DDLExpr::preCodeGen(Generator * generator,
       generator->setAqrEnabled(FALSE);
     }
   
+  NABoolean startXn = FALSE;
+  NABoolean ddlXns = FALSE;
+  if (ddlXnsInfo(ddlXns, startXn))
+    return NULL;
+
+  if (ddlXns && startXn)
+    xnNeeded() = TRUE;
+  else
+    xnNeeded() = FALSE;
+
   markAsPreCodeGenned();
   
   // Done.
@@ -4357,14 +4468,6 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
 	  identityCol = valId.getNAColumn();
 	}
 
-      if ((getOperatorType() != REL_HBASE_UPDATE) &&
-	  (mergeInsertRecExpr().entries() > 0))
-	{
-	  *CmpCommon::diags() << DgSqlCode(-3241)
-			      << DgString0(" Non-unique ON clause not allowed with INSERT.");
-	  GenExit();
-	}
-
       if (((getOperatorType() == REL_HBASE_DELETE) ||
            (getOperatorType() == REL_HBASE_UPDATE)) &&
           (getTableDesc()->getNATable()->getClusteringIndex()->hasSyskey()))
@@ -4374,12 +4477,14 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
 	  GenExit();
 	}
 
-      if ((getOperatorType() == REL_HBASE_DELETE) &&
+      if ((getOperatorType() != REL_HBASE_UPDATE) &&
           (mergeInsertRecExpr().entries() > 0) &&
           (CmpCommon::getDefault(COMP_BOOL_175) == DF_OFF))
 	{
+          // MERGE with INSERT is limited to HBase updates unless
+          // the CQD is on
 	  *CmpCommon::diags() << DgSqlCode(-3241)
-			      << DgString0(" MERGE delete not allowed with INSERT.");
+			      << DgString0(" This MERGE is not allowed with INSERT.");
 	  GenExit();
 	}
 
@@ -4433,6 +4538,15 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
     {
       generator->setRIinliningForTrafIUD(TRUE);
     }
+
+  if (precondition_.entries() > 0)
+  {
+    ValueIdSet availableValues;
+    getInputValuesFromParentAndChildren(availableValues);  
+    precondition_.
+      replaceVEGExpressions(availableValues,
+			    getGroupAttr()->getCharacteristicInputs());
+  }
 
   markAsPreCodeGenned();
 
@@ -4490,19 +4604,6 @@ RelExpr * UpdateCursor::preCodeGen(Generator * generator,
     {
       ItemExpr * item_expr = val_id.getItemExpr();
 
-      if (isMerge())
-	{
-	  // column being updated must be from the same table that is being
-	  // updated.
-	  if (((BaseColumn *)(item_expr->child(0)->castToItemExpr()))->getTableDesc() !=
-	      getTableDesc())
-	    {
-	      *CmpCommon::diags() << DgSqlCode(-3241)
-				  << DgString0("Invalid column being updated.");
-	      GenExit();
-	    }
-	}
-
       for (short i = 0; i < getTableDesc()->getNATable()->getKeyCount(); i++)
 	{
 	  const char * key_colname = key_column_array[i]->getColName();
@@ -4526,6 +4627,21 @@ RelExpr * UpdateCursor::preCodeGen(Generator * generator,
 
   return this;
 } // UpdateCursor::preCodeGen()
+
+RelExpr * Delete::preCodeGen(Generator * generator,
+                             const ValueIdSet & externalInputs,
+                             ValueIdSet &pulledNewInputs)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
+  
+  if (! GenericUpdate::preCodeGen(generator,externalInputs,pulledNewInputs))
+    return NULL;
+
+  markAsPreCodeGenned();
+
+  return this;
+}
 
 RelExpr * MergeDelete::preCodeGen(Generator * generator,
 				  const ValueIdSet & externalInputs,
@@ -4793,7 +4909,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
            listOfDelSubsetRows_))
     return NULL;
 
-  if (! GenericUpdate::preCodeGen(generator, externalInputs, pulledNewInputs))
+  if (! Delete::preCodeGen(generator, externalInputs, pulledNewInputs))
     return NULL;
 
   if (((getTableDesc()->getNATable()->isHbaseRowTable()) ||
@@ -4806,8 +4922,9 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
                           << DgString0("Reason: Cannot return values from an hbase insert, update or delete.");
       GenExit();
     }
+   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
 
-  if  (producesOutputs())
+  if  (producesOutputs()) 
     {
       retColRefSet_ = getIndexDesc()->getIndexColumns();
     }
@@ -4834,9 +4951,10 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
             }
         } // index_table
 
+
       if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
 	  (getTableDesc()->getNATable()->isHbaseCellTable()) ||
-          (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+           isAlignedFormat)
 	{
 	  for (Lng32 i = 0; i < getIndexDesc()->getIndexColumns().entries(); i++)
 	    {
@@ -4866,11 +4984,20 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 
       if (NOT ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
                (getTableDesc()->getNATable()->isHbaseCellTable()) ||
-               (getTableDesc()->getNATable()->isSQLMXAlignedTable())))
+               (isAlignedFormat)))
         {
           // add all the key columns. If values are missing in hbase, then atleast the key
           // value is needed to retrieve a row. 
           HbaseAccess::addColReferenceFromVIDlist(getIndexDesc()->getIndexKey(), retColRefSet_);
+        }
+
+      if (getTableDesc()->getNATable()->hasLobColumn())
+        {
+          for (Lng32 i = 0; i < getIndexDesc()->getIndexColumns().entries(); i++)
+            {
+              const ValueId vid = getIndexDesc()->getIndexColumns()[i];
+              retColRefSet_.insert(vid);
+            }
         }
     }
 
@@ -4890,39 +5017,61 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 	       (listOfDelUniqueRows_[0].rowIds_.entries() == 1))
 	isUnique = TRUE;
     }
-
+ 
+  if (getInliningInfo().isIMGU()) {
+     // There is no need to do checkAndDelete for IM
+     canDoCheckAndUpdel() = FALSE;
+     uniqueHbaseOper() = FALSE;
+     if ((generator->oltOptInfo()->multipleRowsReturned()) &&
+	  (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
+         (NOT generator->isRIinliningForTrafIUD()) &&
+         (NOT getTableDesc()->getNATable()->hasLobColumn()))
+       uniqueRowsetHbaseOper() = TRUE;
+  }
+  else
   if (isUnique)
     {
-      // do not cancel unique queries.
-      generator->setMayNotCancel(TRUE);
+      //If this unique delete is not part of a rowset operation , 
+      //don't allow it to be cancelled. 
+      if (!generator->oltOptInfo()->multipleRowsReturned())
+	generator->setMayNotCancel(TRUE);
       uniqueHbaseOper() = TRUE;
-
       canDoCheckAndUpdel() = FALSE;
       if ((NOT producesOutputs()) &&
 	  (NOT  inlinedActions) &&
-	  (executorPred().isEmpty()))
+          (executorPred().isEmpty()))
 	{
 	  if ((generator->oltOptInfo()->multipleRowsReturned()) &&
 	      (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
-	      (NOT generator->isRIinliningForTrafIUD()))
+	      (NOT generator->isRIinliningForTrafIUD()) &&
+              (NOT getTableDesc()->getNATable()->hasLobColumn()))
 	    uniqueRowsetHbaseOper() = TRUE;
 	  else if ((NOT generator->oltOptInfo()->multipleRowsReturned()) &&
 		   (listOfDelUniqueRows_.entries() == 0))
 	    {
 	      if ((CmpCommon::getDefault(HBASE_CHECK_AND_UPDEL_OPT) == DF_ON) &&
 		  (CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON) &&
-                  (NOT getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+                  (NOT isAlignedFormat))
 	      canDoCheckAndUpdel() = TRUE;
 	    }
 	}
     }
-  else if (producesOutputs())
+
+  if ((producesOutputs()) &&
+      ((NOT isUnique) || (getUpdateCKorUniqueIndexKey())))
     {
       // Cannot do olt msg opt if:
       //   -- values are to be returned and unique operation is not being used.
+      //   -- or this delete was transformed from an update of pkey/index key
       // set an indication that multiple rows will be returned.
       generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
       generator->oltOptInfo()->setOltCliOpt(FALSE);
+    }
+
+  if (getTableDesc()->getNATable()->hasLobColumn())
+    {
+      canDoCheckAndUpdel() = FALSE;
+      uniqueRowsetHbaseOper() = FALSE;
     }
 
   generator->setUpdSavepointOnError(FALSE);
@@ -4959,7 +5108,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 
   // flag for hbase tables
   generator->setHdfsAccess(TRUE);
-
+  
   markAsPreCodeGenned();
 
   return this;  
@@ -4989,7 +5138,9 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
     return NULL;
 
   CollIndex totalColCount = getTableDesc()->getColumnList().entries();
-  if ((getTableDesc()->getNATable()->isSQLMXAlignedTable()) &&
+  NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+
+  if (isAlignedFormat &&
       (newRecExprArray().entries() > 0) &&
       (newRecExprArray().entries() <  totalColCount))
     {
@@ -5085,7 +5236,7 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 
       if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
 	  (getTableDesc()->getNATable()->isHbaseCellTable()) ||
-          (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+          (isAlignedFormat))
 	{
 	  for (Lng32 i = 0; i < getIndexDesc()->getIndexColumns().entries(); i++)
 	    {
@@ -5146,11 +5297,22 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 	       (listOfUpdUniqueRows_[0].rowIds_.entries() == 1))
 	isUnique = TRUE;
     }
-
+  if (getInliningInfo().isIMGU()) {
+     // There is no need to checkAndPut for IM
+     canDoCheckAndUpdel() = FALSE;
+     uniqueHbaseOper() = FALSE;
+     if ((generator->oltOptInfo()->multipleRowsReturned()) &&
+	      (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
+	      (NOT generator->isRIinliningForTrafIUD()))
+	 uniqueRowsetHbaseOper() = TRUE;
+  }
+  else
   if (isUnique)
     {
-      // do not cancel unique queries.
-      generator->setMayNotCancel(TRUE);
+      //If this unique delete is not part of a rowset operation , 
+      //don't allow it to be cancelled.
+      if (!generator->oltOptInfo()->multipleRowsReturned())
+	generator->setMayNotCancel(TRUE);
       uniqueHbaseOper() = TRUE;
 
       canDoCheckAndUpdel() = FALSE;
@@ -5169,7 +5331,7 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 		   (listOfUpdUniqueRows_.entries() == 0))
 	    {
 	      if ((CmpCommon::getDefault(HBASE_CHECK_AND_UPDEL_OPT) == DF_ON) &&
-                  (NOT getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+                  (NOT isAlignedFormat))
 		canDoCheckAndUpdel() = TRUE;
 	    }
 	}
@@ -5255,9 +5417,17 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 		append(getTableDesc()->getNATable()->
 		       getTableName().getSchemaName());
 	      lu->updatedTableSchemaName() += "\"";
-
+              lu->lobSize() = col->getType()->getPrecision();
 	      lu->lobNum() = col->lobNum();
-	      lu->lobStorageType() = col->lobStorageType();
+	      // lu->lobStorageType() = col->lobStorageType();
+              if (lu->lobStorageType() != col->lobStorageType())
+                    {
+                      *CmpCommon::diags() << DgSqlCode(-1432)
+                                          << DgInt0((Int32)lu->lobStorageType())
+                                          << DgInt1((Int32)col->lobStorageType())
+                                          << DgString0(col->getColName());
+                      GenExit();
+                    }
 	      lu->lobStorageLocation() = col->lobStorageLocation();
 	    }
 	} // for
@@ -5367,12 +5537,21 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 			   getTableName().getSchemaName());
 		  li->insertedTableSchemaName() += "\"";
 		  
-		  //		  li->lobNum() = col->getPosition();
-		  li->lobSize() = srcValueId.getType().getPrecision();
+		
+                  li->lobSize() = tgtValueId.getType().getPrecision();
 		  li->lobFsType() = tgtValueId.getType().getFSDatatype();
 
 		  li->lobNum() = col->lobNum();
-		  li->lobStorageType() = col->lobStorageType();
+                  if ((child1Expr->getOperatorType() == ITM_CONSTANT) && 
+                      !(((ConstValue *)child1Expr)->isNull()))
+                    if (li->lobStorageType() != col->lobStorageType())
+                      {
+                        *CmpCommon::diags() << DgSqlCode(-1432)
+                                            << DgInt0((Int32)li->lobStorageType())
+                                            << DgInt1((Int32)col->lobStorageType())
+                                            << DgString0(col->getColName());
+                        GenExit();
+                      }
 		  li->lobStorageLocation() = col->lobStorageLocation();
 
 		  li->bindNode(generator->getBindWA());
@@ -5399,10 +5578,17 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 		  li->insertedTableSchemaName() += "\"";
 		  
 		  li->lobNum() = col->lobNum();
-		  li->lobStorageType() = col->lobStorageType();
+                  if (li->lobStorageType() != col->lobStorageType())
+                    {
+                      *CmpCommon::diags() << DgSqlCode(-1432)
+                                          << DgInt0((Int32)li->lobStorageType())
+                                          << DgInt1((Int32)col->lobStorageType())
+                                          << DgString0(col->getColName());
+                        GenExit();
+                      }
 		  li->lobStorageLocation() = col->lobStorageLocation();
 		  
-		  li->lobSize() = srcValueId.getType().getPrecision();
+		  li->lobSize() = tgtValueId.getType().getPrecision();
 
 		  if (li->lobFsType() != tgtValueId.getType().getFSDatatype())
 		    {
@@ -5426,11 +5612,12 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 			       getTableName().getSchemaName());
 		      li->insertedTableSchemaName() += "\"";
 		      
-		      li->lobSize() = srcValueId.getType().getPrecision();
+		      //li->lobSize() = srcValueId.getType().getPrecision();
+                      li->lobSize() = tgtValueId.getType().getPrecision();
 		      li->lobFsType() = tgtValueId.getType().getFSDatatype();
 
 		      li->lobNum() = col->lobNum();
-		      li->lobStorageType() = col->lobStorageType();
+		     
 		      li->lobStorageLocation() = col->lobStorageLocation();
 		      
 		      li->bindNode(generator->getBindWA());
@@ -5440,7 +5627,7 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 		} // lobinsert
 
 	      GenAssert(li, "must have a LobInsert node");
-
+#ifdef __ignore 
 	      LOBload * ll = new(generator->wHeap()) 
 		LOBload(li->child(0), li->getObj());
 	      ll->insertedTableObjectUID() = li->insertedTableObjectUID();
@@ -5451,6 +5638,7 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 	      ll->lobStorageLocation() = col->lobStorageLocation();
 	      ll->bindNode(generator->getBindWA());
 	      lobLoadExpr_.insert(ll->getValueId());
+#endif
 	    } // lob
 	}
     }
@@ -5845,7 +6033,7 @@ RelExpr * MergeUnion::preCodeGen(Generator * generator,
   condExpr().replaceVEGExpressions(availableValues,
 				   getGroupAttr()->getCharacteristicInputs());
 
-  if (!getUnionForIF())
+  if (!getUnionForIF() && !getInliningInfo().isIMUnion())
     generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
 
   markAsPreCodeGenned();
@@ -9433,7 +9621,7 @@ ItemExpr * IndexColumn::preCodeGen(Generator * generator)
   return i;
 }
 
-ItemExpr * Generator::addCompDecodeForDerialization(ItemExpr * ie)
+ItemExpr * Generator::addCompDecodeForDerialization(ItemExpr * ie, NABoolean isAlignedFormat)
 {
   if (!ie)
     return NULL;
@@ -9441,7 +9629,7 @@ ItemExpr * Generator::addCompDecodeForDerialization(ItemExpr * ie)
   if ((ie->getOperatorType() == ITM_BASECOLUMN) ||
       (ie->getOperatorType() == ITM_INDEXCOLUMN))
     {
-      if (HbaseAccess::isEncodingNeededForSerialization(ie))
+      if (! isAlignedFormat && HbaseAccess::isEncodingNeededForSerialization(ie))
 	{
 	  ItemExpr * newNode = new(wHeap()) CompDecode
 	    (ie, &ie->getValueId().getType(), FALSE, TRUE);
@@ -9461,7 +9649,7 @@ ItemExpr * Generator::addCompDecodeForDerialization(ItemExpr * ie)
 
   for (Lng32 i = 0; i < ie->getArity(); i++)
     {
-      ItemExpr * nie = addCompDecodeForDerialization(ie->child(i));
+      ItemExpr * nie = addCompDecodeForDerialization(ie->child(i), isAlignedFormat);
       if (nie)
 	ie->setChild(i, nie);
     }
@@ -10128,7 +10316,7 @@ RelExpr * PhysTranspose::preCodeGen(Generator * generator,
   getGroupAttr()->resolveCharacteristicOutputs
     (availableValues,
      getGroupAttr()->getCharacteristicInputs());
-
+  generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
   markAsPreCodeGenned();
 
   return this;
@@ -10930,6 +11118,7 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
   NABoolean found = FALSE;
   removeFromOrigList = FALSE;
   NABoolean hbaseLookupPred = FALSE;
+  NABoolean flipOp = FALSE;  // set to TRUE when column is child(1)
 
   if (ie && 
       ((ie->getOperatorType() >= ITM_EQUAL) &&
@@ -10949,6 +11138,7 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
 	       (NOT hasColReference(ie->child(0))))
 	{
 	  found = TRUE;
+          flipOp = TRUE;
 	  colVID = ie->child(1)->getValueId();
 	  valueVID = ie->child(0)->getValueId();
 	}
@@ -10963,6 +11153,7 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
 	       (NOT hasColReference(ie->child(0))))
 	{
 	  found = TRUE;
+          flipOp = TRUE;
 	  colVID = ie->child(1)->getValueId();
 	  valueVID = ie->child(0)->getValueId();
 	}
@@ -10977,6 +11168,7 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
 	       (NOT hasColReference(ie->child(0))))
 	{
 	  found = TRUE;
+          flipOp = TRUE;
 	  colVID = ie->child(1)->getValueId();
 	  valueVID = ie->child(0)->getValueId();
 	}
@@ -11010,6 +11202,7 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
 	      newCV = newCV->preCodeGen(generator);
 	      
 	      found = TRUE;
+              flipOp = TRUE;
 	      colVID = newCV->getValueId();
 	      valueVID = ie->child(0)->getValueId();
 	    }
@@ -11123,13 +11316,33 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
 	  else  if (ie->getOperatorType() == ITM_NOT_EQUAL)
 	    op = "NOT_EQUAL";
 	  else  if (ie->getOperatorType() == ITM_LESS)
-	    op = "LESS";
+            {
+            if (flipOp)
+              op = "GREATER";
+            else
+	      op = "LESS";
+            }
 	  else  if (ie->getOperatorType() == ITM_LESS_EQ)
-	    op = "LESS_OR_EQUAL";
+            {
+            if (flipOp)
+              op = "GREATER_OR_EQUAL";
+            else
+	      op = "LESS_OR_EQUAL";
+            }
 	  else  if (ie->getOperatorType() == ITM_GREATER)
-	    op = "GREATER";
+            {
+            if (flipOp)
+              op = "LESS";
+            else
+	      op = "GREATER";
+            }
 	  else  if (ie->getOperatorType() == ITM_GREATER_EQ)
-	    op = "GREATER_OR_EQUAL";
+            {
+            if (flipOp)
+              op = "LESS_OR_EQUAL";
+            else
+	      op = "GREATER_OR_EQUAL";
+            }
 	  else
 	    op = "NO_OP";
 	}
@@ -11138,35 +11351,22 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
   return found;
 }
 
-short HbaseAccess::extractHbaseFilterPreds(Generator * generator,
+short HbaseAccess::extractHbaseFilterPreds(Generator * generator, 
 					   ValueIdSet &preds, ValueIdSet &newExePreds)
 {
-  if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_OFF)
-    return 0;
+   if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_OFF)
+       return 0;
+   // cannot push preds for aligned format row
+   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
 
-  // cannot push preds for aligned format row
-  if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
-      (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
-    return 0;
- 
-  for (ValueId vid = preds.init(); 
+   if (isAlignedFormat)
+     return 0;
+  
+   for (ValueId vid = preds.init(); 
        (preds.next(vid)); 
        preds.advance(vid))
     {
       ItemExpr * ie = vid.getItemExpr();
-
-      // if it is AND operation, recurse through left and right children
-      if (ie->getOperatorType() == ITM_AND)
-        {
-          ValueIdSet leftPreds;
-          ValueIdSet rightPreds;
-          leftPreds += ie->child(0)->castToItemExpr()->getValueId();
-          rightPreds += ie->child(1)->castToItemExpr()->getValueId();
-          extractHbaseFilterPreds(generator, leftPreds, newExePreds);
-          extractHbaseFilterPreds(generator, rightPreds, newExePreds);
-          continue; 
-        }
-      
       ValueId colVID;
       ValueId valueVID;
       NABoolean removeFromOrigList = FALSE;
@@ -11193,6 +11393,389 @@ short HbaseAccess::extractHbaseFilterPreds(Generator * generator,
   
   return 0;
 }
+
+////////////////////////////////////////////////////////////////////////////
+// To push down, the predicate must have the following form:
+//  xp:=  <column>  <op>  <value-expr>
+//  xp:=  <column> is not null (no support for hbase lookup)
+//  xp:=  <column> is null (no support for hbase lookup)
+//    (xp:=<column> like <value-expr> not yet implemented)
+//  xp:=<xp> OR <xp> (not evaluated in isHbaseFilterPredV2, but by extractHbaseFilterPredV2)
+//  xp:=<xp> AND <xp>(not evaluated in isHbaseFilterPredV2, but by extractHbaseFilterPredV2)
+//
+// and all of the following conditions must be met:
+//
+//      <column>:       a base table or index column which can be serialized and belong to the table being scanned.
+//                            serialized: either the column doesn't need encoding, like
+//                                            an unsigned integer,  or the column
+//                                            was declared with the SERIALIZED option.
+//                      it also must not be an added column with default non null.
+//      <op>:              eq, ne, gt, ge, lt, le
+//      <value-expr>:  an expression that only contains const or param values, and
+//                     <value-expr>'s datatype is not a superset of <column>'s datatype.
+//
+// colVID, valueID and op are output parameters.
+/////////////////////////////////////////////////////////////////////////////
+NABoolean HbaseAccess::isHbaseFilterPredV2(Generator * generator, ItemExpr * ie,
+                     ValueId &colVID, ValueId &valueVID,
+                     NAString &op)
+{
+  NABoolean foundBinary = FALSE;
+  NABoolean foundUnary = FALSE;
+  NABoolean hbaseLookupPred = FALSE;
+  NABoolean flipOp = FALSE;  // set to TRUE when column is child(1)
+
+  if (ie &&
+      ((ie->getOperatorType() >= ITM_EQUAL) &&
+       (ie->getOperatorType() <= ITM_GREATER_EQ))) //binary operator case
+    {//begin expression
+      ItemExpr * child0 = ie->child(0)->castToItemExpr();
+      ItemExpr * child1 = ie->child(1)->castToItemExpr();
+
+      if ((ie->child(0)->getOperatorType() == ITM_BASECOLUMN) &&
+      (NOT hasColReference(ie->child(1))))
+    {
+      foundBinary = TRUE;
+      colVID = ie->child(0)->getValueId();
+      valueVID = ie->child(1)->getValueId();
+    }
+      else if ((ie->child(1)->getOperatorType() == ITM_BASECOLUMN) &&
+           (NOT hasColReference(ie->child(0))))
+    {
+      foundBinary = TRUE;
+      flipOp = TRUE;
+      colVID = ie->child(1)->getValueId();
+      valueVID = ie->child(0)->getValueId();
+    }
+      else if ((ie->child(0)->getOperatorType() == ITM_INDEXCOLUMN) &&
+           (NOT hasColReference(ie->child(1))))
+    {
+      foundBinary = TRUE;
+      colVID = ie->child(0)->getValueId();
+      valueVID = ie->child(1)->getValueId();
+    }
+      else if ((ie->child(1)->getOperatorType() == ITM_INDEXCOLUMN) &&
+           (NOT hasColReference(ie->child(0))))
+    {
+      foundBinary = TRUE;
+      flipOp = TRUE;
+      colVID = ie->child(1)->getValueId();
+      valueVID = ie->child(0)->getValueId();
+    }
+      else if ((ie->child(0)->getOperatorType() == ITM_HBASE_COLUMN_LOOKUP) &&
+           (NOT hasColReference(ie->child(1))))
+    {
+      HbaseColumnLookup * hcl = (HbaseColumnLookup*)ie->child(0)->castToItemExpr();
+      if (hcl->getValueId().getType().getTypeQualifier() == NA_CHARACTER_TYPE)
+        {
+          hbaseLookupPred = TRUE;
+
+          ItemExpr * newCV = new(generator->wHeap()) ConstValue(hcl->hbaseCol());
+          newCV = newCV->bindNode(generator->getBindWA());
+          newCV = newCV->preCodeGen(generator);
+
+          foundBinary = TRUE;
+          colVID = newCV->getValueId();
+          valueVID = ie->child(1)->getValueId();
+        }
+    }
+      else if ((ie->child(1)->getOperatorType() == ITM_HBASE_COLUMN_LOOKUP) &&
+           (NOT hasColReference(ie->child(0))))
+    {
+      HbaseColumnLookup * hcl = (HbaseColumnLookup*)ie->child(1)->castToItemExpr();
+      if (hcl->getValueId().getType().getTypeQualifier() == NA_CHARACTER_TYPE)
+        {
+          hbaseLookupPred = TRUE;
+
+          ItemExpr * newCV = new(generator->wHeap()) ConstValue(hcl->hbaseCol());
+          newCV = newCV->bindNode(generator->getBindWA());
+          newCV = newCV->preCodeGen(generator);
+
+          foundBinary = TRUE;
+          flipOp = TRUE;
+          colVID = newCV->getValueId();
+          valueVID = ie->child(0)->getValueId();
+        }
+    }
+    }//end binary operators
+  else if (ie && ((ie->getOperatorType() == ITM_IS_NULL)||(ie->getOperatorType() == ITM_IS_NOT_NULL))){//check for unary operators
+      ItemExpr * child0 = ie->child(0)->castToItemExpr();
+      if ((ie->child(0)->getOperatorType() == ITM_BASECOLUMN) ||
+          (ie->child(0)->getOperatorType() == ITM_INDEXCOLUMN)){
+          foundUnary = TRUE;
+          colVID = ie->child(0)->getValueId();
+          valueVID = NULL_VALUE_ID;
+      }
+
+  }//end unary operators
+
+  //check if found columns belong to table being scanned (so is not an input to the scan node)
+  if (foundBinary || foundUnary){
+    ValueId dummyValueId;
+    if (getGroupAttr()->getCharacteristicInputs().referencesTheGivenValue(colVID,dummyValueId)){
+        foundBinary=FALSE;
+        foundUnary=FALSE;
+    }
+  }
+  //check if not an added column with default non null
+  if ((foundBinary || foundUnary)&& (NOT hbaseLookupPred)){
+        if (colVID.isColumnWithNonNullNonCurrentDefault()){
+            foundBinary=FALSE;
+            foundUnary=FALSE;
+        }
+  }
+
+  if (foundBinary)
+    {
+      const NAType &colType = colVID.getType();
+      const NAType &valueType = valueVID.getType();
+
+      NABoolean generateNarrow = FALSE;
+      if (NOT hbaseLookupPred)
+    {
+      generateNarrow = valueType.errorsCanOccur(colType);
+      if ((generateNarrow)  || // value not a superset of column
+          (NOT columnEnabledForSerialization(colVID.getItemExpr())))
+          foundBinary = FALSE;
+    }
+
+      if (foundBinary)
+    {
+      if (colType.getTypeQualifier() == NA_CHARACTER_TYPE)
+        {
+          const CharType &charColType = (CharType&)colType;
+          const CharType &charValType = (CharType&)valueType;
+
+          if ((charColType.isCaseinsensitive() || charValType.isCaseinsensitive()) ||
+          (charColType.isUpshifted() || charValType.isUpshifted()))
+         foundBinary = FALSE;
+        }
+      else if (colType.getTypeQualifier() == NA_NUMERIC_TYPE)
+        {
+          const NumericType &numType = (NumericType&)colType;
+          const NumericType &valType = (NumericType&)valueType;
+          if (numType.isBigNum() || valType.isBigNum())
+         foundBinary = FALSE;
+        }
+    }
+
+      if (foundBinary)
+    {
+      if ((ie) && (((BiRelat*)ie)->addedForLikePred()) &&
+          (valueVID.getItemExpr()->getOperatorType() == ITM_CONSTANT))
+        {
+          // remove trailing '\0' characters since this is being pushed down to hbase.
+          ConstValue * cv = (ConstValue*)(valueVID.getItemExpr());
+          char * cvv = (char*)cv->getConstValue();
+          Lng32 len = cv->getStorageSize() - 1;
+          while ((len > 0) && (cvv[len] == '\0'))
+            len--;
+
+          NAString newCVV(cvv, len+1);
+
+          ItemExpr * newCV = new(generator->wHeap()) ConstValue(newCVV);
+          newCV = newCV->bindNode(generator->getBindWA());
+          newCV = newCV->preCodeGen(generator);
+          valueVID = newCV->getValueId();
+        }
+
+      ItemExpr * castValue = NULL;
+          if (NOT hbaseLookupPred)
+            castValue = new(generator->wHeap()) Cast(valueVID.getItemExpr(), &colType);
+          else
+            {
+              castValue = new(generator->wHeap()) Cast(valueVID.getItemExpr(), &valueVID.getType());
+            }
+
+      if ((NOT hbaseLookupPred) &&
+          (isEncodingNeededForSerialization(colVID.getItemExpr())))
+        {
+          castValue = new(generator->wHeap()) CompEncode
+        (castValue, FALSE, -1, CollationInfo::Sort, TRUE, FALSE);
+        }
+
+      castValue = castValue->bindNode(generator->getBindWA());
+      castValue = castValue->preCodeGen(generator);
+
+      valueVID = castValue->getValueId();
+
+      NAString nullType;
+
+      if ((colType.supportsSQLnull()) ||
+          (valueType.supportsSQLnull()))
+        {
+          nullType = "_NULL";
+        }
+      else
+        {
+          nullType = "";
+        }
+
+      // append -NULL to the operator to signify the java code generating pushdown filters to handle NULL semantic logic
+      if (ie->getOperatorType() == ITM_EQUAL)
+          op = "EQUAL"+nullType;
+      else  if (ie->getOperatorType() == ITM_NOT_EQUAL)
+        op = "NOT_EQUAL"+nullType;
+      else  if (ie->getOperatorType() == ITM_LESS){
+          if (flipOp)
+              op = "GREATER"+nullType;
+          else
+              op = "LESS"+nullType;
+      }
+      else  if (ie->getOperatorType() == ITM_LESS_EQ){
+          if (flipOp)
+              op = "GREATER_OR_EQUAL"+nullType;
+          else
+              op = "LESS_OR_EQUAL"+nullType;
+      }else  if (ie->getOperatorType() == ITM_GREATER){
+          if (flipOp)
+              op = "LESS"+nullType;
+          else
+              op = "GREATER"+nullType;
+      }else  if (ie->getOperatorType() == ITM_GREATER_EQ){
+          if (flipOp)
+              op = "LESS_OR_EQUAL"+nullType;
+          else
+              op = "GREATER_OR_EQUAL"+nullType;
+      }else
+        op = "NO_OP"+nullType;
+    }
+    }
+  if (foundUnary){
+      const NAType &colType = colVID.getType();
+      NAString nullType;
+
+      if (colType.supportsSQLnull())
+        {
+          nullType = "_NULL";
+        }
+      else
+        {
+          nullType = "";
+        }
+      if (ie->getOperatorType() == ITM_IS_NULL)
+              op = "IS_NULL"+nullType;
+      else if (ie->getOperatorType() == ITM_IS_NOT_NULL)
+              op = "IS_NOT_NULL"+nullType;
+  }
+
+  return foundBinary || foundUnary;
+}
+short HbaseAccess::extractHbaseFilterPredsVX(Generator * generator,
+           ValueIdSet &preds, ValueIdSet &newExePreds){
+    //separate the code that should not belong in the recursive function
+       if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_OFF)
+        return 0;
+       // check if initial (version 1) implementation
+       if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_MINIMUM)
+        return extractHbaseFilterPreds(generator,preds,newExePreds);
+
+       // if here, we are DF_MEDIUM
+       // cannot push preds for aligned format row
+       NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+
+       if (isAlignedFormat)
+         return 0;
+       //recursive function call
+       opList_.insert("V2");//to instruct the java side that we are dealing with predicate pushdown V2 semantic, add "V2" marker
+       extractHbaseFilterPredsV2(generator,preds,newExePreds,FALSE);
+       return 0;
+
+}
+
+// return true if successfull push down of node
+NABoolean HbaseAccess::extractHbaseFilterPredsV2(Generator * generator,
+                       ValueIdSet &preds, ValueIdSet &newExePreds, NABoolean checkOnly)
+{
+
+    // the isFirstAndLayer is used to allow detecting top level predicate that can still be pushed to executor
+    int addedNode=0;
+    for (ValueId vid = preds.init();
+       (preds.next(vid));
+       preds.advance(vid))
+    {
+      ItemExpr * ie = vid.getItemExpr();
+
+      // if it is AND operation, recurse through left and right children
+      if (ie->getOperatorType() == ITM_AND){
+          ValueIdSet leftPreds;
+          ValueIdSet rightPreds;
+          leftPreds += ie->child(0)->castToItemExpr()->getValueId();
+          rightPreds += ie->child(1)->castToItemExpr()->getValueId();
+          //cannot be first AND layer, both left and right must be pushable to get anything pushed
+          if(extractHbaseFilterPredsV2(generator, leftPreds, newExePreds, TRUE)&&
+             extractHbaseFilterPredsV2(generator, rightPreds, newExePreds, TRUE)){// both left and right child must match
+              if(!checkOnly){
+                  extractHbaseFilterPredsV2(generator, leftPreds, newExePreds, FALSE);//generate tree
+                  extractHbaseFilterPredsV2(generator, rightPreds, newExePreds, FALSE);//generate tree
+                  opList_.insert("AND");
+              }
+            if (preds.entries()==1)
+                return TRUE;
+          }
+          else{
+              if(!checkOnly){
+                  newExePreds.insert(vid);
+              }
+              if (preds.entries()==1)
+                    return FALSE;
+          }
+          continue;
+          // the OR case is easier, as we don t have the case of top level expression that can still be pushed to executor
+      }//end if AND
+      else if(ie->getOperatorType() == ITM_OR){
+          ValueIdSet leftPreds;
+          ValueIdSet rightPreds;
+          leftPreds += ie->child(0)->castToItemExpr()->getValueId();
+          rightPreds += ie->child(1)->castToItemExpr()->getValueId();
+          //both left and right must be pushable to get anything pushed
+          if(extractHbaseFilterPredsV2(generator, leftPreds, newExePreds, TRUE)&&
+             extractHbaseFilterPredsV2(generator, rightPreds, newExePreds, TRUE)){// both left and right child must match
+              if(!checkOnly){
+                  extractHbaseFilterPredsV2(generator, leftPreds, newExePreds, FALSE);//generate tree
+                  extractHbaseFilterPredsV2(generator, rightPreds, newExePreds, FALSE);//generate tree
+                  opList_.insert("OR");
+                  if (addedNode>0)opList_.insert("AND"); // if it is not the first node add to the push down, AND it with the rest
+                  addedNode++; // we just pushed it down, so increase the node count pushed down.
+              }
+              if (preds.entries()==1)
+               return TRUE;
+          }
+          else{// if predicate cannot be pushed down
+              if(!checkOnly){
+                  newExePreds.insert(vid);
+              }
+              if (preds.entries()==1)
+                    return FALSE;
+          }
+          continue;
+      }//end if OR
+
+      ValueId colVID;
+      ValueId valueVID;
+
+      NAString op;
+      NABoolean isHFP =
+        isHbaseFilterPredV2(generator, ie, colVID, valueVID, op);
+
+      if (isHFP && !checkOnly){// if pushable, push it
+          hbaseFilterColVIDlist_.insert(colVID);
+          if (valueVID != NULL_VALUE_ID) hbaseFilterValueVIDlist_.insert(valueVID);// don't insert valueID for unary operators.
+          opList_.insert(op);
+          if (addedNode>0)opList_.insert("AND"); // if it is not the first node add to the push down, AND it with the rest
+          addedNode++; // we just pushed it down, so increase the node count pushed down.
+        }else if (!checkOnly){//if not pushable, pass it for executor evaluation.
+            newExePreds.insert(vid);
+        }
+      if (preds.entries()==1){
+          return isHFP; // if we are not on the first call level, where we can have multiple preds, exit returning the pushability
+      }
+
+    } // end for
+
+  return TRUE;//don't really care, means we are top level.
+}
+
 
 void HbaseAccess::computeRetrievedCols()
 {
@@ -11257,6 +11840,38 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
   if (! FileScan::preCodeGen(generator,externalInputs,pulledNewInputs))
     return NULL;
 
+  //compute isUnique:
+  NABoolean isUnique = FALSE;
+  if (listOfRangeRows_.entries() == 0)
+    {
+      if ((searchKey() && searchKey()->isUnique()) &&
+    (listOfUniqueRows_.entries() == 0))
+  isUnique = TRUE;
+      else if ((NOT (searchKey() && searchKey()->isUnique())) &&
+         (listOfUniqueRows_.entries() == 1) &&
+         (listOfUniqueRows_[0].rowIds_.entries() == 1))
+  isUnique = TRUE;
+    }
+
+  // executorPred() contains an ANDed list of predicates.
+  // if hbase filter preds are enabled, then extracts those preds from executorPred()
+  // which could be pushed down to hbase.
+  // Do this only for non-unique scan access.
+  ValueIdSet newExePreds;
+  ValueIdSet* originExePreds = new (generator->wHeap())ValueIdSet(executorPred()) ;//saved for futur nullable column check
+
+  if (CmpCommon::getDefault(HBASE_FILTER_PREDS) != DF_MINIMUM){ // the check for V2 and above is moved up before calculating retrieved columns
+      if ((NOT isUnique) &&
+          (extractHbaseFilterPredsVX(generator, executorPred(), newExePreds)))
+        return this;
+
+      // if some filter preds were found, then initialize executor preds with new exe preds.
+      // newExePreds may be empty which means that all predicates were changed into
+      // hbase preds. In this case, nuke existing exe preds.
+      if (hbaseFilterColVIDlist_.entries() > 0)
+        setExecutorPredicates(newExePreds);
+  }
+
   ValueIdSet colRefSet;
 
   computeRetrievedCols();
@@ -11303,6 +11918,7 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
       // first add all columns referenced in the executor pred.
       HbaseAccess::addReferenceFromVIDset(executorPred(), TRUE, TRUE, colRefSet);
 
+
       HbaseAccess::addReferenceFromVIDset
         (getGroupAttr()->getCharacteristicOutputs(), TRUE, TRUE, colRefSet);
 
@@ -11332,9 +11948,44 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
             }
         }
 
-      // add all the key columns. If values are missing in hbase, then atleast the key
+      // add key columns. If values are missing in hbase, then atleast the key
       // value is needed to retrieve a row.
-      HbaseAccess::addColReferenceFromVIDlist(getIndexDesc()->getIndexKey(), retColRefSet_);
+      //only if needed. If there is already a non nullable non added non nullable with default columns in the set, we should not need to add
+      //any other columns.
+      if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_MEDIUM && getMdamKeyPtr() == NULL){ //only enable column retrieval optimization with DF_MEDIUM and not for MDAM scan
+          bool needAddingNonNullableColumn = true; //assume we need to add one non nullable column
+          for (ValueId vid = retColRefSet_.init();// look for each column in th eresult set if one match the criteria non null non added non nullable with default
+                  retColRefSet_.next(vid);
+                  retColRefSet_.advance(vid))
+          {
+            if (originExePreds->isNotNullable(vid)){// it is non nullable
+                OperatorTypeEnum operatorType = vid.getItemExpr()->getOperatorType();
+                if ((operatorType == ITM_BASECOLUMN || operatorType == ITM_INDEXCOLUMN) && !vid.isColumnWithNonNullNonCurrentDefault()){//check if with non null or non current default... notgood
+                    needAddingNonNullableColumn = false; // we found one column meeting all criteria
+                    break;
+                }
+            }
+          }
+          if (needAddingNonNullableColumn){ // ok now we need to add one key column that is not nullable
+              bool foundAtLeastOneKeyColumnNotNullable = false;
+              for(int i=getIndexDesc()->getIndexKey().entries()-1; i>=0;i--)// doing reverse search is making sure we are trying to avoid to use _SALT_ column
+                                                                         // because _SALT_ is physicaly the last column therefore we don't skip columns optimally if using _SALT_ column
+              {
+                  ValueId vaId = getIndexDesc()->getIndexKey()[i];
+                  if ( (vaId.getItemExpr()->getOperatorType() == ITM_BASECOLUMN && !((BaseColumn*)vaId.getItemExpr())->getNAColumn()->getType()->supportsSQLnullPhysical())||
+                          (vaId.getItemExpr()->getOperatorType() == ITM_INDEXCOLUMN && !((IndexColumn*)vaId.getItemExpr())->getNAColumn()->getType()->supportsSQLnullPhysical())
+                          ){ //found good key column candidate?
+                      HbaseAccess::addReferenceFromItemExprTree(vaId.getItemExpr(),TRUE,FALSE,retColRefSet_); // add it
+                      foundAtLeastOneKeyColumnNotNullable = true; //tag we found it
+                      break; // no need to look further
+                  }
+              }
+              if (!foundAtLeastOneKeyColumnNotNullable){//oh well, did not find any key column non nullable, let s add all key columns
+                  HbaseAccess::addColReferenceFromVIDlist(getIndexDesc()->getIndexKey(), retColRefSet_);
+              }
+          }
+      }else //end if DF_MEDIUM
+          HbaseAccess::addColReferenceFromVIDlist(getIndexDesc()->getIndexKey(), retColRefSet_);
     }
 
   if ((getMdamKeyPtr()) &&
@@ -11349,25 +12000,14 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
   // flag for both hive and hbase tables
   generator->setHdfsAccess(TRUE);
 
-  NABoolean isUnique = FALSE;
-  if (listOfRangeRows_.entries() == 0)
-    {
-      if ((searchKey() && searchKey()->isUnique()) &&
-	  (listOfUniqueRows_.entries() == 0))
-	isUnique = TRUE;
-      else if ((NOT (searchKey() && searchKey()->isUnique())) &&
-	       (listOfUniqueRows_.entries() == 1) &&
-	       (listOfUniqueRows_[0].rowIds_.entries() == 1))
-	isUnique = TRUE;
-    }
-
   if (!isUnique)
       generator->oltOptInfo()->setMultipleRowsReturned(TRUE) ;
 
+  // Do not allow cancel of unique queries but allow cancel of queries 
+  // that are part of a rowset operation. 
   if ((isUnique) &&
       (NOT generator->oltOptInfo()->multipleRowsReturned()))
     {
-      // do not cancel unique queries.
       generator->setMayNotCancel(TRUE);
       uniqueHbaseOper() = TRUE;
     }
@@ -11390,17 +12030,17 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
   // if hbase filter preds are enabled, then extracts those preds from executorPred()
   // which could be pushed down to hbase.
   // Do this only for non-unique scan access.
-  ValueIdSet newExePreds;
-
-  if ((NOT isUnique) &&
-      (extractHbaseFilterPreds(generator, executorPred(), newExePreds)))
-    return this;
+  if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_MINIMUM){ //keep the check for pushdown after column retrieval for pushdown V1.
+    if ((NOT isUnique) &&
+        (extractHbaseFilterPreds(generator, executorPred(), newExePreds)))
+      return this;
 
   // if some filter preds were found, then initialize executor preds with new exe preds.
   // newExePreds may be empty which means that all predicates were changed into
   // hbase preds. In this case, nuke existing exe preds.
   if (hbaseFilterColVIDlist_.entries() > 0)
-    setExecutorPredicates(newExePreds);
+      setExecutorPredicates(newExePreds);
+  }//DF_MINIMUM
 
   snpType_ = SNP_NONE;
   DefaultToken  tok = CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN);

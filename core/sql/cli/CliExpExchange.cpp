@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -204,14 +207,17 @@ ex_expr::exp_return_type InputOutputExpr::describeOutput(void * output_desc_,
 	  
           // Use SQLDESC_CHAR_SET_NAM (one-part name) for charset
 
-	  if ( DFS2REC::isAnyCharacter(operand->getDatatype()) ) {
-	    output_desc->setDescItem(entry, SQLDESC_CHAR_SET_NAM, 0, 
-	      (char*)CharInfo::getCharSetName(operand->getCharSet()));
+	  if ( DFS2REC::isAnyCharacter(operand->getDatatype()) || 
+               (operand->getDatatype() == REC_BLOB) || 
+               (operand->getDatatype() == REC_CLOB )) 
+            {
+              output_desc->setDescItem(entry, SQLDESC_CHAR_SET_NAM, 0, 
+                                       (char*)CharInfo::getCharSetName(operand->getCharSet()));
 
-            // reset the length for Unicode
+              // reset the length for Unicode
             if ( operand->getCharSet() == CharInfo::UNICODE ||
                  CharInfo::is_NCHAR_MP(operand->getCharSet())
-               )
+                 )
 	      {
 		length = operand->getLength()/SQL_DBCHAR_SIZE;
 	      }
@@ -2237,8 +2243,9 @@ ex_expr::exp_return_type InputOutputExpr::describeInput(void * input_desc_,
           }
 	
           // Use SQLDESC_CHAR_SET_NAM (one-part name) for charset
-	  if ((dataType >= REC_MIN_CHARACTER) &&
-              (dataType <= REC_MAX_CHARACTER)) {
+	  if (((dataType >= REC_MIN_CHARACTER) &&
+               (dataType <= REC_MAX_CHARACTER)) )
+            {
 	    input_desc->setDescItem(entry, SQLDESC_CHAR_SET_NAM, 0, 
 	      (char*)CharInfo::getCharSetName(operand->getCharSet()));
 
@@ -4092,6 +4099,8 @@ InputOutputExpr::inputValues(atp_struct *atp,
                         sourceType = REC_BYTE_F_ASCII;
                         sourcePrecision = 0;  // TBD $$$$ add source max chars later
                         sourceScale = SQLCHARSETCODE_ISO88591; // assume target charset is ASCII-compatible
+
+                        convFlags |= CONV_NO_HADOOP_DATE_FIX;
                       }
 		  }
 		else if ((sourceType == targetType) &&

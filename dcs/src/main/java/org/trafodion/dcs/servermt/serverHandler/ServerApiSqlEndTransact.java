@@ -1,17 +1,24 @@
 /**
- *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+* @@@ START COPYRIGHT @@@
+
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+
+*   http://www.apache.org/licenses/LICENSE-2.0
+
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+
+* @@@ END COPYRIGHT @@@
  */
 package org.trafodion.dcs.servermt.serverHandler;
 
@@ -120,6 +127,13 @@ public class ServerApiSqlEndTransact {
             dataLength = serverException.lengthOfData();
             availableBuffer = bbBody.capacity() - bbBody.position();
             
+            // If there is no Exception, serverException.lengthOfData() will return 8;
+            // The driver still need read a int will indicate the number of the exception,
+            // which should be 0;
+            // So here, we add extra 4 bytes for it.
+            if (dataLength == 2 * ServerConstants.INT_FIELD_SIZE) {
+                dataLength = dataLength + ServerConstants.INT_FIELD_SIZE;
+            }
             if(LOG.isDebugEnabled())
                 LOG.debug(serverWorkerName + ". dataLength :" + dataLength + " availableBuffer :" + availableBuffer);
         
@@ -131,6 +145,11 @@ public class ServerApiSqlEndTransact {
 //===================== build output ==============================================
             serverException.insertIntoByteBuffer(bbBody);
             
+            // if there is no exception, we add a extra 4 bytes which indicate the number of
+            // the exception which should be 0;
+            if (serverException.lengthOfData() == 2 * ServerConstants.INT_FIELD_SIZE) {
+                bbBody.putInt(0);
+            }
             bbBody.flip();
 //=========================Update header================================ 
             hdr.setTotalLength(bbBody.limit());

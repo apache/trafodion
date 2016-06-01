@@ -2,19 +2,22 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 #
@@ -101,11 +104,11 @@ countryName_default             = US
 countryName_min                 = 2
 countryName_max                 = 2
 stateOrProvinceName             = State or Province Name (full name)
-stateOrProvinceName_default     = California
+stateOrProvinceName_default     = My State
 localityName                    = Locality Name (eg, city)
-localityName_default            = Cupertino
+localityName_default            = My Location
 0.organizationName              = Organization Name (eg, company)
-0.organizationName_default      = Hewlett-Packard Company
+0.organizationName_default      = My Company
 organizationalUnitName          = Organizational Unit Name (eg, section)
 commonName                      = Common Name (eg, your name or your server's hostname)
 commonName_default              = $HNAME
@@ -141,6 +144,7 @@ generate_csr()
      openssl req -new -nodes -keyout $1 -out $2 -config ca_config.cnf -batch
 }
 
+
 if [ $# -lt 1 ]
 then
     options=ss
@@ -168,11 +172,6 @@ server|ss|selfsigned)
     echo " Certificate/Private key created in directory :"$CERTDIR
     echo "***********************************************************"
     echo
-    echo "***********************************************************"
-    echo " Updating Authentication Configuration"
-    echo "***********************************************************"
-
-    $MY_SQROOT/sql/scripts/update_auth 
     ;; 
 view_pk) 
     if [ x$2 != x ]

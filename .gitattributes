@@ -1,0 +1,3 @@
+# git files
+.gitignore export-ignore
+.gitattributes export-ignore

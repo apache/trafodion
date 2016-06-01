@@ -1,4 +1,0 @@
-96c96
-< *** ERROR[3233] This type of UPDATE is not allowed when NO ROLLBACK transaction setting is in effect. Suggestion: Set ALLOW_RISKY_UPDATE_WITH_NO_ROLLBACK CQD to ON to allow UPDATE command with right-hand side SET clause consisting of columns.
----
-> *** ERROR[3231] WITH NO ROLLBACK clause was used in an INSERT, UPDATE, or DELETE statement when AUTOCOMMIT is OFF.

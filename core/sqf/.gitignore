@@ -42,6 +42,10 @@ Linux-x86_64/
 /sql/local_hadoop/
 /etc/
 
+# get_libhdfs_files
+/sql/libhdfs_files/
+/export/include/hdfs.h
+
 # sqgen / sqstart
 /logs/
 /sqcert/
@@ -55,3 +59,15 @@ Linux-x86_64/
 
 # sql regressions
 /rundir/
+
+# hbase_utilities
+/hbase_utilities/src/main/resources/
+/hbase_utilities/target/
+
+# derived license
+/LICENSE
+/NOTICE
+
+# bundled component links
+/dcs-*
+/rest-*

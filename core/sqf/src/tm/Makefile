@@ -1,18 +1,21 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
@@ -40,6 +43,9 @@ endif
 
 DTMOBJS		= -DTMOBJS
 
+
+#gcc 4.8 need explicit set this flag to allow auto search of dependent shared object during link
+LNK_FLGS       += -Xlinker --copy-dt-needed-entries
 
 LIBSTMOBJS = $(OUTDIR)/tmtransid.o \
 			 $(OUTDIR)/tmtransaction.o \
@@ -143,7 +149,7 @@ all:  $(LIBEXPDIR)/libsxatmlib.so $(LIBEXPDIR)/libstmlib.so $(PROGS) $(LIBEXPDIR
 
 $(OUTDIR)/tm: $(TMOBJS) $(LIBEXPDIR)/libsxatmlib.so $(LIBEXPDIR)/libshbasetmlib.so $(PROGS) $(LIBEXPDIR)/libxarm.so cp_trx_jar
 	@echo "USE_THREADED_IO = " $(USE_THREADED_IO)
-	$(CXX) $(LNK_FLGS) $(LIBJVM) -o $@ $(TMOBJS) $(LIBSTM) -L$(LIBEXPDIR) -L$(LOG4CXX_LIB_DIR) -llog4cxx -DTM_BUILD_
+	$(CXX) $(LNK_FLGS) $(LIBJVM) -o $@ $(TMOBJS) $(LIBSTM) -L$(LIBEXPDIR) -llog4cxx -DTM_BUILD_
 
 	cp -fup $(OUTDIR)/tm $(BINEXPDIR)
 
@@ -155,17 +161,17 @@ $(OUTDIR)/idtmsrv: $(IDSRVOBJS)
 	cp -fup $(OUTDIR)/idtmsrv $(BINEXPDIR)
 
 $(LIBEXPDIR)/libstmlib.so: $(LIBSTMOBJS) 
-	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBSBMSX) $(LIBJVM) -L$(LIBEXPDIR) -L$(LOG4CXX_LIB_DIR) -llog4cxx -shared -o $@ $(LIBSTMOBJS)  
+	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBSBMSX) $(LIBJVM) -L$(LIBEXPDIR) -llog4cxx -shared -o $@ $(LIBSTMOBJS)  
 
 $(LIBEXPDIR)/libsxatmlib.so: $(LIBSXATMOBJS) 
-	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBSXATMOBJS) $(LIBSTMX) -L$(LIBEXPDIR) -L$(LOG4CXX_LIB_DIR) -llog4cxx
+	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBSXATMOBJS) $(LIBSTMX) -L$(LIBEXPDIR) -llog4cxx
 
 $(LIBEXPDIR)/libshbasetmlib.so: $(LIBSXATMOBJS) cp_trx_jar
 	cd $(HBASETMLIB); $(MAKE)
 
 
 $(LIBEXPDIR)/libxarm.so: $(LIBXARMOBJS) 
-	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBXARMOBJS) -L$(LIBEXPDIR) -L$(LOG4CXX_LIB_DIR) -llog4cxx -DXARM_BUILD_
+	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBXARMOBJS) -L$(LIBEXPDIR) -llog4cxx -DXARM_BUILD_
 
 $(OUTDIR)/CommonLogger.o: $(MY_SQROOT)/commonLogger/CommonLogger.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<

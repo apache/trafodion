@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -78,6 +81,7 @@ class VEGRewritePairs;
 class TableDesc;
 class IndexDesc;
 class ConstValue;
+class NATable;
 
 ////////////////////
 class QueryAnalysis;
@@ -189,6 +193,11 @@ public:
   // get the associated base column.
   NABoolean isSaltColumn() const;
 
+  // return TRUE if I am a ValueId associated with an Index Column, or
+  // a base column , and I am a column with a default value that is not
+  // null or not Current.
+  NABoolean isColumnWithNonNullNonCurrentDefault() const;
+
   // ---------------------------------------------------------------------
   // change the ValueId's type to the given type
   // ---------------------------------------------------------------------
@@ -223,6 +232,14 @@ public:
   // to the source table.
   // ---------------------------------------------------------------------
   void replaceBaseColWithExpr(const NAString& colName, const ValueId & vid);
+
+  // -----------------------------------------------------------------------
+  // replace any ColReference (of the given column name) in of this value
+  // expression with the given expression.
+  // used in ValueId::computeEncodedKey() to assign key values into the
+  // salt/DivisionByto expression.
+  // ----------------------------------------------------------------------
+  void replaceColReferenceWithExpr(const NAString& colName, const ValueId & vid);
 
   // ---------------------------------------------------------------------
   // Replace the definition of this valueId to be a new itemexpr
@@ -457,7 +474,8 @@ public:
   // list with the one in the original provided set - i.e. "complify"
   // it.
   // ---------------------------------------------------------------------
-  Int32 complifyAndCheckPrefixCovered (const ValueIdSet& vidSet);
+  Int32 complifyAndCheckPrefixCovered (const ValueIdSet& vidSet,
+                                       const GroupAttributes *ga);
 
   // ---------------------------------------------------------------------
   // Check whether a prefix of this list is covered by the provided set.
@@ -465,7 +483,8 @@ public:
   // their counterparts in the provided set.
   // For the remaining suffix, remove those items from this list.
   // ---------------------------------------------------------------------
-  void complifyAndRemoveUncoveredSuffix (const ValueIdSet& vidSet);
+  void complifyAndRemoveUncoveredSuffix (const ValueIdSet& vidSet,
+                                         const GroupAttributes *ga);
 
   // ---------------------------------------------------------------------
   // simplifyOrderExpr()
@@ -500,11 +519,15 @@ public:
   // ---------------------------------------------------------------------
   // If a table is ordered by the expressions described in this list,
   // does the ordering satisfy a required order or arrangement of columns
+  // (GroupAttributes and predicates can be provided to allow more matches
+  // by applying some optimizations)
   // ---------------------------------------------------------------------
   OrderComparison satisfiesReqdOrder(const ValueIdList &reqdOrder,
-				     const GroupAttributes *ga = NULL) const;
+				     GroupAttributes *ga = NULL,
+                                     const ValueIdSet *preds = NULL) const;
   NABoolean satisfiesReqdArrangement(const ValueIdSet &reqdArrangement,
-				     const GroupAttributes *ga = NULL) const;
+				     GroupAttributes *ga = NULL,
+                                     const ValueIdSet *preds = NULL) const;
 
   // ---------------------------------------------------------------------
   // Calculate the length of the row containing all the value ids
@@ -600,6 +623,14 @@ public:
   // refers to the same VEG as refered to by x, which must be a VEG predicate,
   // or to an equal predicate.
   ValueId extractVEGRefForEquiPredicate(ValueId x) const;
+
+
+  // Encode this list of constants into an encoded key and save the result into
+  // encodedKeyBuffer, and the key length into keyBufLen. Allocate an buffer
+  // if encodedKeyBuffer points at NULL from STMTHEAP. Also return the buffer pointer
+  // if everything is OK.  Return NULL otherwise.
+  char* computeEncodedKey(const TableDesc* tDesc, NABoolean isMaxKey, char*& encodedKeyBuffer, Int32& keyBufLen) const;
+
 
   // ---------------------------------------------------------------------
   // Print

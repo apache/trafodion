@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -406,7 +409,9 @@ enum SQLTYPE_CODE {
 
     /* LONG VARCHAR/ODBC CHARACTER VARYING */
     SQLTYPECODE_VARCHAR_LONG  = -1,		/* ## NEGATIVE??? */
-
+    /* BLOB TYPE */
+    SQLTYPECODE_BLOB  = -602,
+    SQLTYPECODE_CLOB  = -603,
     /* no ANSI value 13 */
 
     /* BIT */
@@ -822,6 +827,7 @@ enum SQLATTRQUERY_TYPE {
      approach to extract data from SQL tables into extrenal files */
   SQL_SELECT_UNLOAD = 19
   
+  
 
 };
 
@@ -834,7 +840,9 @@ enum SQLATTR_SUBQUERY_TYPE
   SQL_DESCRIBE_QUERY = 4,
   SQL_DISPLAY_EXPLAIN = 5,
   SQL_STMT_HBASE_LOAD = 6,
-  SQL_STMT_HBASE_UNLOAD = 7
+  SQL_STMT_HBASE_UNLOAD = 7,
+  /* Used to denote lob access */
+  SQL_LOB_EXTRACT = 8
 };
 
 
@@ -960,7 +968,8 @@ enum STATS_SUB_REQ_TYPE {
   SQLCLI_STATS_REQ_RMS_CHECK = 11,
   SQLCLI_STATS_REQ_MEM_HIGH_WM = 12,
   SQLCLI_STATS_REQ_MEM_ALLOC = 13,
-  SQLCLI_STATS_REQ_PFS_USE = 14
+  SQLCLI_STATS_REQ_PFS_USE = 14,
+  SQLCLI_STATS_REQ_ACTIVE_QUERIES = 15
 };
 
 enum SCRATCH_OVERFLOW_MODE {
@@ -1946,6 +1955,12 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_SETAUTHID(
 		/* OUT OPTIONAL primaryRole*/ char *primaryRole,
 		/* OUT OPTIONAL  role len*/ short *primaryRoleLen,
                 /* OUT OPTIONAL userRedefTime*/ Int64 *redefTime); // NA_64BIT
+
+SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetAuthState(
+   /*OUT*/  bool & authenticationEnabled,
+   /*OUT*/  bool & authorizationEnabled,
+   /*OUT*/  bool & authorizationReady,
+   /*OUT*/  bool & auditingEnabled);
 
 SQLCLI_LIB_FUNC Int32 SQL_EXEC_DecodeAndFormatKey(
                /*IN*/void    * RCB_Pointer_Addr,    

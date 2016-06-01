@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -122,7 +125,7 @@ CharType (const NAString&	adtName,
 	  CharInfo::Collation    co = CharInfo::DefaultCollation,
 	  CharInfo::Coercibility ce = CharInfo::COERCIBLE,
 	  CharInfo::CharSet      encoding = CharInfo::UnknownCharSet,
-	  Int32 iCharLen = 0
+	  Lng32 vcIndLen = 0  // not passed in, need to be computed
          );
 CharType (const NAString&  adtName,
           const CharLenInfo & maxLenInfo,
@@ -336,6 +339,13 @@ virtual NABoolean createSQLLiteral(const char * buf,
                                    NABoolean &isNull,
                                    CollHeap *h) const;
 
+protected:
+void minMaxRepresentableValue(void* bufPtr,
+                              Lng32* bufLen,
+                              NAString ** stringLiteral,
+                              NABoolean isMax,
+                              CollHeap* h) const;
+
 private:
 
 void NONVIRT_METHOD_PLACEHOLDER_1();	// slot for reuse, or delete it!##
@@ -490,7 +500,8 @@ public:
 	     CharInfo::CharSet		= CharInfo::DefaultCharSet, 
 	     CharInfo::Collation	= CharInfo::DefaultCollation,
 	     CharInfo::Coercibility	= CharInfo::COERCIBLE,
-	     CharInfo::CharSet encoding	= CharInfo::UnknownCharSet
+	     CharInfo::CharSet encoding	= CharInfo::UnknownCharSet,
+             Lng32 vcIndLen             = 0
 	    );
   SQLVarChar(const CharLenInfo & maxLenInfo,
 	     NABoolean allowSQLnull	= TRUE,
@@ -738,6 +749,7 @@ public:
    charSet_ = cs;
  }
  LobsStorage getLobStorage() {return lobStorage_;}
+  NABoolean isExternal() { return externalFormat_;}
 private:
  Int64 lobLength_;
  
@@ -768,7 +780,7 @@ public:
 	  NABoolean allowSQLnull	= TRUE,
 	  NABoolean inlineIfPossible = FALSE,
 	  NABoolean externalFormat = FALSE,
-	  Lng32 extFormatLen = 100);
+	  Lng32 extFormatLen = 1024);
  SQLBlob(const SQLBlob & aBlob,NAMemory * heap)
    :SQLlob(aBlob,heap)
     {}
@@ -807,7 +819,7 @@ public:
 	  NABoolean allowSQLnull	= TRUE,
 	  NABoolean inlineIfPossible = FALSE,
 	  NABoolean externalFormat = FALSE,
-	  Lng32 extFormatLen = 100);
+	  Lng32 extFormatLen = 1024);
  SQLClob(const SQLClob & aClob,NAMemory * heap)
    :SQLlob(aClob,heap)
     {}

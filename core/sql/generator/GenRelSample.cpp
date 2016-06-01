@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -189,7 +192,20 @@ PhysSample::codeGen(Generator *generator)
 //       MapInfo *mapInfo = localMapTable->addMapInfoToThis(valId, attr);
 //       mapInfo->codeGenerated();
 //     }
-
+// check if any of the columns inthe sampled columns are lob columns. If so, return an error.
+  ValueId valId;
+  for(valId = sampledColumns().init();
+      sampledColumns().next(valId);
+      sampledColumns().advance(valId))
+    {
+      const NAType &colType = valId.getType();
+      if ((colType.getFSDatatype() == REC_BLOB) ||
+	  (colType.getFSDatatype() == REC_CLOB))
+	{
+	   *CmpCommon::diags() << DgSqlCode(-4322);
+	   GenExit();
+	}
+    }
   // Now, remove all attributes from the map table except the 
   // the stuff in the local map table -- the result of this node.
   //

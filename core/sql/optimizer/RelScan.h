@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -47,6 +50,7 @@
 #include "SchemaDB.h"
 #include "HbaseSearchSpec.h"
 #include "OptHints.h"
+#include "ExpHbaseDefs.h"
 #include <vector>
 
 // -----------------------------------------------------------------------
@@ -809,7 +813,8 @@ public:
     uniqueProbes_(0),
     duplicateSuccProbes_(0),
     failedProbes_(0),
-    tuplesProcessed_(0)
+    tuplesProcessed_(0),
+    computedNumOfActivePartitions_(-1)
   {}
 
   // destructor
@@ -1016,6 +1021,8 @@ public:
            const ValueIdList& partitioningKeyColumnsList,
            const ValueIdList& partitioningKeyColumnsOrder);
 
+  Int32 getComputedNumOfActivePartiions()  const { return computedNumOfActivePartitions_; }
+
 private:
 
 
@@ -1101,6 +1108,10 @@ private:
   CostScalar tuplesProcessed_;
 
   NABoolean doUseSearchKey_;
+
+  // number of active partitions computed only from the Range Part Func
+  // and the search key (partKey_)
+  Int32 computedNumOfActivePartitions_;
 
 }; // class FileScan
 
@@ -1266,7 +1277,8 @@ public:
   //  virtual desc_struct *createVirtualTableDesc();
   static desc_struct *createVirtualTableDesc(const char * name,
 					     NABoolean isRW = FALSE,
-					     NABoolean isCW = FALSE);
+					     NABoolean isCW = FALSE, 
+                                             NAArray<HbaseStr> * hbaseKeys = NULL);
 
   static desc_struct *createVirtualTableDesc(const char * name,
 					     NAList<char*> &colNameList,
@@ -1338,9 +1350,10 @@ public:
   static int createAsciiColAndCastExpr(Generator * generator,
 				       const NAType &givenType,
 				       ItemExpr *&asciiValue,
-				       ItemExpr *&castValue);
+				       ItemExpr *&castValue,
+                                       NABoolean srcIsInt32Varchar = FALSE);
 
- static int createAsciiColAndCastExpr2(Generator * generator,
+  static int createAsciiColAndCastExpr2(Generator * generator,
 				       ItemExpr * colNode,
 				       const NAType &givenType,
 				       ItemExpr *&asciiValue,
@@ -1441,6 +1454,16 @@ public:
 
   short extractHbaseFilterPreds(Generator * generator, ValueIdSet &preds,
                                 ValueIdSet &newExePreds);
+
+  NABoolean isHbaseFilterPredV2(Generator * generator, ItemExpr * ie,
+                                ValueId &colVID, ValueId &valueVID,
+                                NAString &op);
+
+  short extractHbaseFilterPredsVX(Generator * generator,ValueIdSet &preds, ValueIdSet &newExePreds);
+
+  NABoolean extractHbaseFilterPredsV2(Generator * generator, ValueIdSet &preds, ValueIdSet &newExePreds,
+                                      NABoolean checkOnly);
+
   NABoolean isSnapshotScanFeasible(LatestSnpSupportEnum snpNotSupported,
                                    char * tableName);
 

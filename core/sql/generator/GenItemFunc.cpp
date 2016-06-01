@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1261,13 +1264,23 @@ short Cast::codeGen(Generator * generator)
 #pragma warn(1506)  // warning elimination 
     }
 #pragma nowarn(1506)   // warning elimination 		      
-  ex_conv_clause * conv_clause =
-	  new(generator->getSpace()) ex_conv_clause(getOperatorType(), attr,
+  ex_conv_clause * conv_clause;
+  if(attr[0]->getNullFlag())  //if target is nullable
+    conv_clause = new(generator->getSpace()) ex_conv_clause(getOperatorType(), attr,
 						    generator->getSpace(),
 						    1 + getArity(), 
   						    checkTruncationError(),
                                                     reverseDataErrorConversionFlag_,
-                                                    noStringTruncationWarnings());
+                                                    noStringTruncationWarnings(),
+                                                    convertNullWhenError());
+  else
+    conv_clause = new(generator->getSpace()) ex_conv_clause(getOperatorType(), attr,
+                                                    generator->getSpace(),
+                                                    1 + getArity(), 
+                                                    checkTruncationError(),
+                                                    reverseDataErrorConversionFlag_,
+                                                    noStringTruncationWarnings(),
+                                                    FALSE);
 #pragma warn(1506)  // warning elimination 
 
   conv_clause->setTreatAllSpacesAsZero(treatAllSpacesAsZero());
@@ -1734,6 +1747,9 @@ short Translate::codeGen(Generator * generator)
      case UCS2_TO_UTF8:
 	convType = CONV_UCS2_F_UTF8_V;
 	break;
+     case GBK_TO_UTF8:
+        convType = CONV_GBK_F_UTF8_V;
+        break;
      case UNICODE_TO_ISO88591:
 	convType = CONV_UNICODE_F_ASCII_V;
 	break;
@@ -1845,143 +1861,11 @@ short DateFormat::codeGen(Generator * generator)
                                                 -1) == 1)
     return 0;
 
-  Int32 expDateFormat = ExpDatetime::DATETIME_FORMAT_ERROR;
-  switch (getDateFormat())
-    {
-    case DEFAULT: 
-      expDateFormat = ExpDatetime::DATETIME_FORMAT_DEFAULT;
-      break;
-      
-    case USA: 
-      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA;
-      break;
-      
-    case EUROPEAN: 
-      expDateFormat = ExpDatetime::DATETIME_FORMAT_EUROPEAN;
-      break;
-      
-    case DATE_FORMAT_STR:
-      {
-	if (child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT)
-	  {
-	    ConstValue * cv = (ConstValue*)(child(1)->castToItemExpr());
-	    if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYY-MM-DD")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_DEFAULT;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYY-MM")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_DEFAULT2;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "MM/DD/YYYY")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA2;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYY/MM/DD")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA3;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYYMMDD")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA4;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YY/MM/DD")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA5;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "MM/DD/YY")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA6;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "MM-DD-YYYY")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA7;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYYMM")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA8;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "DD.MM.YYYY")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_EUROPEAN;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "DD-MM-YYYY")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_EUROPEAN2;
-	    else if ((NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		      == "DD-MMM-YYYY") ||
-		     (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		      == "DD-MON-YYYY"))
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_EUROPEAN3;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		      == "DDMONYYYY")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_EUROPEAN4;
-	    else
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_DATE_STR;
-	  }
-	else
-	  {
-	    expDateFormat = ExpDatetime::DATETIME_FORMAT_DATE_STR;
-	  }
-      }
-    break;
-    
-    case TIME_FORMAT_STR:
-      {
-	if (child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT)
-	  {
-	    ConstValue * cv = (ConstValue*)(child(1)->castToItemExpr());
-	    if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "99:99:99:99")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TIME1;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "-99:99:99:99")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TIME2;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "HH24:MI:SS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS4;
-	    else
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TIME_STR;
-	  }
-	else
-	  {
-	    expDateFormat = ExpDatetime::DATETIME_FORMAT_TIME_STR;
-	  }
-      }
-    break;
-
-    case TIMESTAMP_FORMAT_STR:
-      {
-	if (child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT)
-	  {
-	    ConstValue * cv = (ConstValue*)(child(1)->castToItemExpr());
-
-	    if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYYMMDDHH24MISS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS1;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "DD.MM.YYYY:HH24:MI:SS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS2;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYY-MM-DD HH24:MI:SS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS3;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYYMMDD:HH24:MI:SS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS5;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "MMDDYYYY HH24:MI:SS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS6;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "MM/DD/YYYY HH24:MI:SS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS7;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-                     == "DD-MON-YYYY HH:MI:SS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS8;
-	    else
-	      {
-		expDateFormat = ExpDatetime::DATETIME_FORMAT_DATE_STR;
-	      }
-	  }
-      }
-    break;
-    
-    };
-
   ex_clause * function_clause = 
     new(generator->getSpace()) ex_function_dateformat(getOperatorType(),
                                                       attr, 
                                                       generator->getSpace(),
-                                                      expDateFormat);
+                                                      getExpDatetimeFormat());
   generator->getExpGenerator()->linkClause(this, function_clause);
   
   return 0;
@@ -2811,6 +2695,7 @@ short LOBinsert::codeGen(Generator * generator)
   ExpLOBinsert * li =
     new(generator->getSpace()) ExpLOBinsert
     (getOperatorType(), 
+     getArity()+1,
      attr, 
      objectUID_,
      (short)insertedTableSchemaName().length(),
@@ -2827,11 +2712,18 @@ short LOBinsert::codeGen(Generator * generator)
     li->setFromLob(TRUE);
   else if (obj_ == LOBoper::EXTERNAL_)
     li->setFromExternal(TRUE);
+  else if (obj_ ==LOBoper::BUFFER_)
+    li->setFromBuffer(TRUE);
 
   li->lobNum() = lobNum();
   li->setLobStorageType(lobStorageType());
   li->setLobStorageLocation((char*)lobStorageLocation().data());
+  li->setLobSize(lobSize());
   li->setLobMaxSize(getLobMaxSize());
+  li->setLobMaxChunkMemSize(getLobMaxChunkMemSize());
+  li->setLobGCLimit(getLobGCLimit());
+  li->setLobHdfsServer((char *)getLobHdfsServer().data());
+  li->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, li);
   
   return 0;
@@ -2857,7 +2749,8 @@ short LOBdelete::codeGen(Generator * generator)
   ld->lobNum() = lobNum();
   ld->setLobStorageType(lobStorageType());
   ld->setLobStorageLocation((char*)lobStorageLocation().data());
-  
+  ld->setLobHdfsServer((char *)getLobHdfsServer().data());
+  ld->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, ld);
  
   return 0;
@@ -2893,11 +2786,17 @@ short LOBupdate::codeGen(Generator * generator)
     lu->setFromLob(TRUE);
   else if (obj_ == LOBoper::EXTERNAL_)
     lu->setFromExternal(TRUE);
+  else if (obj_ == LOBoper::BUFFER_)
+    lu->setFromBuffer(TRUE);
 
   lu->lobNum() = lobNum();
   lu->setLobStorageType(lobStorageType());
   lu->setLobStorageLocation((char*)lobStorageLocation().data());
   lu->setLobMaxSize(getLobMaxSize());
+  lu->setLobMaxChunkMemSize(getLobMaxChunkMemSize());
+  lu->setLobGCLimit(getLobGCLimit());
+  lu->setLobHdfsServer((char *)getLobHdfsServer().data());
+  lu->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, lu);
  
   return 0;
@@ -2919,7 +2818,8 @@ short LOBselect::codeGen(Generator * generator)
   ls->lobNum() = lobNum();
   ls->setLobStorageType(lobStorageType());
   ls->setLobStorageLocation((char*)lobStorageLocation().data());
- 
+  ls->setLobHdfsServer((char *)getLobHdfsServer().data());
+  ls->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, ls);
  
   return 0;
@@ -2947,7 +2847,8 @@ short LOBconvertHandle::codeGen(Generator * generator)
   lu->lobNum() = lobNum();
   lu->setLobStorageType(lobStorageType());
   lu->setLobStorageLocation((char*)lobStorageLocation().data());
-
+  lu->setLobHdfsServer((char *)getLobHdfsServer().data());
+  lu->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, lu);
  
   return 0;
@@ -2977,6 +2878,8 @@ short LOBconvert::codeGen(Generator * generator)
   lc->setLobStorageLocation((char*)lobStorageLocation().data());
   generator->getExpGenerator()->linkClause(this, lc);
   lc->setConvertSize(getTgtSize());
+  lc->setLobHdfsServer((char *)getLobHdfsServer().data());
+  lc->setLobHdfsPort(getLobHdfsPort());
   return 0;
 }
 
@@ -2992,6 +2895,7 @@ short LOBload::codeGen(Generator * generator)
   ExpLOBload * ll =
     new(generator->getSpace()) ExpLOBload
     (getOperatorType(), 
+     getArity()+1,
      attr, 
      objectUID_,
      (short)insertedTableSchemaName().length(),
@@ -3006,6 +2910,7 @@ short LOBload::codeGen(Generator * generator)
     ll->setFromLoad(TRUE);
   else if (obj_ == LOBoper::LOB_)
     ll->setFromLob(TRUE);
+  
 
   ll->lobNum() = lobNum();
   ll->setLobStorageType(lobStorageType());

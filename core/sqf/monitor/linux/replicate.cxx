@@ -2,19 +2,22 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //
@@ -65,7 +68,7 @@ void CReplObj::validateObj()
 // Determine the maximum size of a replication object (excluding CReplEvent)
 int CReplObj::calcAllocSize()
 {
-    return  max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(sizeof(CReplSoftNodeUp),
+    return  max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(sizeof(CReplSoftNodeUp),
                                                                                 sizeof(CReplSoftNodeDown)),
                                                                             sizeof(CReplSchedData)),
                                                                         sizeof(CReplActivateSpare)),
@@ -78,6 +81,7 @@ int CReplObj::calcAllocSize()
                                             sizeof(CReplKill)),
                                         sizeof(CReplDevice)),
                                     sizeof(CReplNodeDown)),
+                                  sizeof(CReplNodeName)),
                                 sizeof(CReplNodeUp)),
                             sizeof(CReplDump)),
                         sizeof(CReplDumpComplete)),
@@ -1196,6 +1200,59 @@ bool CReplShutdown::replicate(struct internal_msg_def *&msg)
     // build message to replicate this process kill to other nodes
     msg->type = InternalType_Shutdown;
     msg->u.shutdown.level = level_;
+
+    // Advance sync buffer pointer
+    Nodes->AddMsg( msg, replSize() );
+
+    TRACE_EXIT;
+
+    return true;
+}
+
+CReplNodeName::CReplNodeName(const char *current_name, const char* new_name)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RPLZ", 4);
+
+    // Compute message size (adjust if needed to conform to
+    // internal_msg_def structure alignment).
+    replSize_ = (MSG_HDR_SIZE + sizeof ( nodename_def ) + msgAlignment_)
+                & ~msgAlignment_;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+    {
+        const char method_name[] = "CReplNodeName::CReplNodeName";
+        trace_printf("%s@%d  - Changing node name, old name =%s, new name = %s\n",
+                     method_name, __LINE__, current_name, new_name);
+    }
+    
+    current_name_ = current_name;
+    new_name_ = new_name;
+}
+
+CReplNodeName::~CReplNodeName()
+{
+    const char method_name[] = "CReplNodeName::~CReplNodeName";
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+        trace_printf("%s@%d - Node name change replication\n", method_name, __LINE__ );
+
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rplz", 4);
+}
+
+bool CReplNodeName::replicate(struct internal_msg_def *&msg)
+{
+    const char method_name[] = "CReplNodeName::replicate";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
+        trace_printf("%s@%d" " - Changing node name (%s to %s)\n", method_name, __LINE__, current_name_.c_str(), new_name_.c_str());
+
+    // build message to replicate this process kill to other nodes
+    msg->type = InternalType_NodeName;
+    strcpy (msg->u.nodename.new_name, new_name_.c_str());
+    strcpy (msg->u.nodename.current_name, current_name_.c_str());
 
     // Advance sync buffer pointer
     Nodes->AddMsg( msg, replSize() );

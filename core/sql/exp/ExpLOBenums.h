@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -88,6 +91,8 @@ typedef enum {
   LOB_OPER_CONTINUE,
   LOB_INVALID_ERROR_VAL,
   LOB_MAX_LIMIT_ERROR = 560,
+  LOB_TARGET_FILE_EXISTS_ERROR,
+  LOB_DATA_MOD_CHECK_ERROR,
   LOB_MAX_ERROR_NUM     // keep this as the last element in enum list.
 } Ex_Lob_Error;
 
@@ -154,6 +159,8 @@ static const char * const lobErrorEnumStr[] =
   "LOB_OPER_CONTINUE",
   "LOB_INVALID_ERROR_VAL", 
   "LOB_MAX_LIMIT_ERROR", //560
+  "LOB_TGT_FILE_EXISTS_ERROR",
+  "LOB_DATA_MOD_CHECK_ERROR",
   "LOB_MAX_ERROR_NUM"     // keep this as the last element in enum list.
 };
 
@@ -168,7 +175,9 @@ typedef enum {
    Lob_None,
    Lob_File,
    Lob_Memory,
-   Lob_Foreign_Lob
+   Lob_Buffer,
+   Lob_Foreign_Lob,
+   Lob_External
 } LobsSubOper;
 
 typedef enum {
@@ -230,8 +239,12 @@ typedef enum {
    Lob_Print, // debugging purposes
 
    Lob_Empty_Directory,
+   Lob_Data_Mod_Check,
 
-   Lob_Cleanup // destroy everything under globals
+   Lob_Cleanup, // destroy everything under globals
+   Lob_PerformGC,
+   Lob_RestoreLobDataFile,
+   Lob_PurgeBackupLobDataFile
 } LobsOper;
 
 typedef enum {
@@ -268,4 +281,12 @@ typedef enum {
    Lob_Cursor_Simple
 } LobsCursorType;
 
+typedef enum { 
+  Lob_Append_Or_Error =0,
+  Lob_Truncate_Or_Error,
+  Lob_Truncate_Or_Create,
+  Lob_Error_Or_Create,
+  Lob_Append_Or_Create
+     
+} LobTgtFileFlags;
 #endif

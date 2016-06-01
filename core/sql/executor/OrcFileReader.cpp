@@ -1,19 +1,22 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
@@ -66,7 +69,7 @@ OrcFileReader::~OrcFileReader()
 //////////////////////////////////////////////////////////////////////////////
 OFR_RetCode OrcFileReader::init()
 {
-  static char className[]="org/apache/hadoop/hive/ql/io/orc/OrcFileReader";
+  static char className[]="org/trafodion/sql/OrcFileReader";
   
   if (JavaMethods_)
     return (OFR_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, TRUE);       
@@ -99,7 +102,7 @@ OFR_RetCode OrcFileReader::init()
 //    JavaMethods_[JM_FETCHROW2 ].jm_name      = "fetchNextRow";
 //    JavaMethods_[JM_FETCHROW2 ].jm_signature = "()[B";
     JavaMethods_[JM_FETCHROW2 ].jm_name      = "fetchNextRowObj";
-    JavaMethods_[JM_FETCHROW2 ].jm_signature = "()Lorg/apache/hadoop/hive/ql/io/orc/OrcFileReader$OrcRowReturnSQL;";
+    JavaMethods_[JM_FETCHROW2 ].jm_signature = "()Lorg/trafodion/sql/OrcFileReader$OrcRowReturnSQL;";
     JavaMethods_[JM_GETNUMROWS ].jm_name      = "getNumberOfRows";
     JavaMethods_[JM_GETNUMROWS ].jm_signature = "()J";
 //    JavaMethods_[JM_FETCHBUFF1].jm_name      = "fetchArrayOfRows";

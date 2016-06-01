@@ -1,19 +1,22 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 //*****************************************************************************
@@ -45,6 +48,8 @@
 #include "NAUserId.h"
 #include "ComUser.h"
 #include "CmpSeabaseDDLutil.h"
+#include "logmxevent_traf.h"
+class ColPrivEntry;
 class ColPrivGrant;
 class ColumnPrivsMDTable;
  
@@ -116,6 +121,9 @@ public:
 // Clear current where current was set and visited was not.
 //  Return True iff some current flag gets cleared.
    NABoolean cascadeLosses();
+
+// Describe a row for tracing
+   void describeRow (std::string &rowDetails);
 
 // -------------------------------------------------------------------
 // Data Members:
@@ -223,6 +231,31 @@ public:
    };
    virtual ~ColumnPrivsMDRow() {};
 
+// Describe a row for tracing
+   void describeRow (std::string &rowDetails);
+
+// sets the privilege and grantable bitmaps to 0
+   void clearVisited() 
+   { 
+     visited_.setColumnOrdinal(columnOrdinal_);
+     visited_.getPrivDesc().setAllPrivAndWgo(false);
+   }
+
+// sets the current entry to match the original privileges
+// before they are adjusted by a revoke command
+   void setCurrentToOriginal() 
+   { 
+     current_.setColumnOrdinal(columnOrdinal_);
+     current_.setPrivBitmap(privsBitmap_);
+     current_.setGrantableBitmap(grantableBitmap_);
+   }
+ 
+// compares the current privileges with the visited grant tree to
+// see if there are any broken branches
+   NABoolean anyNotVisited() 
+   {return current_.getPrivBitmap() != visited_.getPrivBitmap() || 
+           current_.getGrantableBitmap() != visited_.getGrantableBitmap();}
+
 
 // -------------------------------------------------------------------
 // Data Members:
@@ -238,6 +271,9 @@ public:
    PrivColumnBitmap   privsBitmap_;
    PrivColumnBitmap   grantableBitmap_;
    
+   ColPrivEntry       visited_;
+   ColPrivEntry       current_;
+
 };
 
 
@@ -280,41 +316,6 @@ private:
    void setRow(
       OutputInfo *pCliRow, 
       ColumnPrivsMDRow &rowOut);
-};
-
-class ColPrivEntry
-{
-public:
-   int32_t            columnOrdinal;
-   PrivColumnBitmap   privsBitmap;
-   PrivColumnBitmap   grantableBitmap;
-   bool               isUpdate;
-   ColPrivEntry()
-   : columnOrdinal(0),isUpdate(false){};
-};
-
-class ColObjectGrants
-{
-public:
-   ColObjectGrants(int64_t objectUID) : object_uid_(objectUID) {};
-   ~ColObjectGrants();
-   
-   const ColPrivEntry * getColPrivGrant(int32_t columnOrdinal) const
-   {
-      for (size_t i = 0; i < colPrivGrants_.size(); i++)
-         if (colPrivGrants_[i].columnOrdinal == columnOrdinal)
-            return &colPrivGrants_[i];
-      return NULL;
-   }
-   
-   void clear()
-   {
-      colPrivGrants_.clear();
-   }   
-      
-private:
-   int64_t object_uid_;
-   std::vector<ColPrivEntry> colPrivGrants_;
 };
 
 // *****************************************************************************
@@ -369,6 +370,10 @@ static void getColRowsForGranteeGrantor(
    const int32_t grantorID,
    std::vector<ColPrivEntry> &colPrivGrants);
    
+static bool hasAllDMLPrivs(
+   ComObjectType objectType,
+   PrivObjectBitmap privBitmap);   
+   
 static bool hasGrantedColumnPriv(
    const std::vector <PrivMgrMDRow *> & columnRowList,
    int32_t grantorID,
@@ -379,6 +384,25 @@ static bool hasGrantedColumnPriv(
    std::vector<ColPrivEntry> & grantedColPrivs);   
   
 static bool isDelimited( const std::string &identifier);
+
+// *****************************************************************************
+//    ColPrivEntry constructors
+// *****************************************************************************
+ColPrivEntry::ColPrivEntry ( const PrivMgrMDRow &row )
+{
+  PrivMgrMDRow theRow = row;
+  ColumnPrivsMDRow &columnRow = static_cast<ColumnPrivsMDRow &> (theRow);
+  privDesc_.setColumnOrdinal(columnRow.columnOrdinal_);
+  privDesc_.setPrivBitmap(columnRow.privsBitmap_);
+  privDesc_.setWgoBitmap(columnRow.grantableBitmap_);
+  isUpdate_ = false;
+}
+  
+ColPrivEntry::ColPrivEntry ( const ColPrivEntry &other)
+{
+   privDesc_ = other.privDesc_;
+   isUpdate_ = other.isUpdate_;
+}
 
 // *****************************************************************************
 //    PrivMgrPrivileges methods
@@ -424,6 +448,21 @@ PrivMgrPrivileges::PrivMgrPrivileges (
 : PrivMgr(metadataLocation, pDiags),
   objectUID_(((PrivMgrObjectInfo)objectInfo).getObjectUID()),
   objectName_(((PrivMgrObjectInfo)objectInfo).getObjectName()),
+  grantorID_(0)
+{
+  objectTableName_  = metadataLocation + "." + PRIVMGR_OBJECT_PRIVILEGES;
+  columnTableName_  = metadataLocation + "." + PRIVMGR_COLUMN_PRIVILEGES;
+}
+
+// ----------------------------------------------------------------------------
+// Construct a PrivMgrPrivileges object for an objectUID
+// ----------------------------------------------------------------------------
+PrivMgrPrivileges::PrivMgrPrivileges (
+  const int64_t objectUID,
+  const std::string &metadataLocation,
+  ComDiagsArea *pDiags)
+: PrivMgr(metadataLocation, pDiags),
+  objectUID_(objectUID),
   grantorID_(0)
 {
   objectTableName_  = metadataLocation + "." + PRIVMGR_OBJECT_PRIVILEGES;
@@ -542,11 +581,11 @@ PrivStatus PrivMgrPrivileges::getColPrivsForUser(
 
 {
 
-std::vector<ColumnPrivsMDRow> rowList;
+   std::vector<ColumnPrivsMDRow> rowList;
 
-// Get the privileges for the columns of the object granted to the grantee
-PrivStatus privStatus = getColRowsForGrantee(columnRowList_,granteeID,roleIDs,
-                                             rowList,secKeySet);
+   // Get the privileges for the columns of the object granted to the grantee
+   PrivStatus privStatus = getColRowsForGrantee(columnRowList_,granteeID,roleIDs,
+                                                rowList,secKeySet);
                                              
    if (privStatus == STATUS_ERROR)
       return privStatus; 
@@ -569,6 +608,40 @@ PrivStatus privStatus = getColRowsForGrantee(columnRowList_,granteeID,roleIDs,
    return STATUS_GOOD;
 }  
 
+// *****************************************************************************
+// Function: getColRowsForGranteeOrdinal                                     
+//                                                                           
+//    Returns the list of column privileges granted for the object that have 
+//    been granted to the granteeID for a particular column                  
+//
+//  Parameters:                                                             
+//                                                                         
+//  <granteeID> is the authID granted the privileges.                              
+//  <columnOrdinal> is the column number to gather privileges
+//  <roleIDs> is the list of roles assigned the granteeID
+//  <rowList> the privileges granted to <granteeID> on <columnOrdinal>.  
+//                                                                          
+// *****************************************************************************
+void PrivMgrPrivileges::getColRowsForGranteeOrdinal(
+  const int32_t granteeID,
+  const int32_t columnOrdinal,
+  const std::vector<int32_t> &roleIDs,
+  std::vector<PrivMgrMDRow *> &rowList)
+{
+  for (size_t i = 0; i < columnRowList_.size(); ++i)
+  {
+    ColumnPrivsMDRow &row = static_cast<ColumnPrivsMDRow &> (*columnRowList_[i]);
+    ColPrivEntry colPrivGrant;
+
+    if (row.granteeID_ == granteeID && row.columnOrdinal_ == columnOrdinal)
+    {
+       ColumnPrivsMDRow *pRow = new ColumnPrivsMDRow();
+       *pRow = row;
+       rowList.push_back(pRow);
+    }
+  }
+}
+
 
 // *****************************************************************************
 // * Method: getPrivRowsForObject                                
@@ -578,7 +651,6 @@ PrivStatus privStatus = getColRowsForGrantee(columnRowList_,granteeID,roleIDs,
 // *                                                       
 // *  Parameters:    
 // *                                                                       
-// *  <objectUID> The unique ID of the object whose grants are being returned
 // *  <objectPrivsRows> Zero or more rows of grants for the object.
 // *                                                                     
 // * Returns: PrivStatus                                               
@@ -608,7 +680,7 @@ PrivStatus PrivMgrPrivileges::getPrivRowsForObject(
   for (size_t i = 0; i < objectRowList_.size(); i++)
   {
     ObjectPrivsMDRow &row = static_cast<ObjectPrivsMDRow &> (*objectRowList_[i]);
-    if (row.grantorID_ != SYSTEM_AUTH_ID)
+    if (row.grantorID_ != SYSTEM_USER)
     {
       ObjectPrivsRow newRow;
     
@@ -927,7 +999,7 @@ char whereClause[1000];
 
    sprintf(setClause," SET GRANTEE_ID = %d, GRANTEE_NAME = '%s' ",
            newOwnerID,newOwnerName.c_str());
-   sprintf(whereClause," WHERE GRANTOR_ID = %d ",SYSTEM_AUTH_ID);
+   sprintf(whereClause," WHERE GRANTOR_ID = %d ",SYSTEM_USER);
    
    privStatus = objectPrivsTable.updateWhere(setClause,whereClause);
    if (privStatus != STATUS_GOOD)
@@ -970,198 +1042,197 @@ PrivStatus PrivMgrPrivileges::grantColumnPrivileges(
    const bool isWGOSpecified)
 {
 
-PrivStatus privStatus = STATUS_GOOD;
-std::vector<ColPrivSpec> &colPrivsArray = 
+  std::string traceMsg;
+
+  PrivStatus privStatus = STATUS_GOOD;
+  std::vector<ColPrivSpec> &colPrivsArray = 
    const_cast<std::vector<ColPrivSpec> &>(colPrivsArrayIn); 
   
-// generate the list of column privileges granted to the object and store in 
-// class (columnRowList_)
-  if (generateColumnRowList() == STATUS_ERROR)
-    return STATUS_ERROR;
+  log (__FILE__, "Checking column privileges", -1);
 
-// get roleIDs for the grantor
-std::vector<int_32> roleIDs;
+  // generate the list of column privileges granted to the object and store in 
+  // class (columnRowList_)
+  if (generateColumnRowList() == STATUS_ERROR)
+   return STATUS_ERROR;
+
+  // get roleIDs for the grantor
+  std::vector<int_32> roleIDs;
   privStatus = getRoleIDsForUserID(grantorID_,roleIDs);
   if (privStatus == STATUS_ERROR)
     return privStatus;
 
 
-// Determine if the grantor has WITH GRANT OPTION (WGO) for all the
-// columns to be granted.  If not, return an error.
-ObjectPrivsMDTable objectPrivsTable(objectTableName_,pDiags_);
-ColumnPrivsMDTable columnPrivsTable(columnTableName_,pDiags_);
+  // Grantor may have WGO from two sources, object-level grants on the object,
+  // and column-level grants.  hasColumnWGO checks both
+  if (!hasColumnWGO(colPrivsArrayIn,roleIDs,privStatus))
+  {
+    if (privStatus == STATUS_NOTFOUND)
+      *pDiags_ << DgSqlCode(-CAT_PRIVILEGE_NOT_GRANTED);
+    else
+      PRIVMGR_INTERNAL_ERROR("Cannot fetch privileges");
+    return STATUS_ERROR;   
+  }
 
-// Grantor may have WGO from two sources, object-level grants on the object,
-// and column-level grants.  First check the object-level grants.  If there 
-// are privileges still to grant, check for requisite column-level grants.
-  
-std::vector<ColPrivEntry> grantedColPrivs;
-
-   if (!hasColumnWGO(colPrivsArrayIn,roleIDs,privStatus))
-   {
-      if (privStatus == STATUS_NOTFOUND)
-         *pDiags_ << DgSqlCode(-CAT_PRIVILEGE_NOT_GRANTED);
-      else
-         PRIVMGR_INTERNAL_ERROR("Cannot fetch privileges");
-      return STATUS_ERROR;   
-   }
-
-
-// Grantor has authority to grant all privileges requested.  See if some of
-// the grants are already present. (may be adding WGO)
+  // Grantor has authority to grant all privileges requested.  See if some of
+  // the grants are already present. (may be adding WGO)
    
-// Get existing column grants from grantor to the specified grantee.
+  // Get existing column grants from grantor to the specified grantee.
+  std::vector<ColPrivEntry> grantedColPrivs;
   getColRowsForGranteeGrantor(columnRowList_,
                               granteeID,grantorID_,
                               grantedColPrivs);
                                                  
-// Merge the column-privilege-to-grant entries (colPrivArray) into one entry 
-// per column ordinal.
-//
-// Example: Given a commands such as 
-//
-// GRANT SELECT(COL4),INSERT(COL2,COL4) ON TAB TO USER;
-// 
-// three entries are generated by the parser, but only two rows are written;  
-// one for column 2 (insert) and one for column 4 (insert and select).  
-//
-// Input may have same column ordinal in multiple entries, but the input is 
-// guaranteed not to contain same ordinal and privType more than once.
-
-std::vector<ColPrivEntry> colPrivsToGrant;
-
-   for (size_t i = 0; i < colPrivsArray.size(); i++)
-   {
-      const ColPrivSpec &colPrivEntry = colPrivsArray[i];
+  // Merge the column-privilege-to-grant entries (colPrivArray) into one entry 
+  // per column ordinal.
+  //
+  // Example: Given a commands such as 
+  //
+  // GRANT SELECT(COL4),INSERT(COL2,COL4) ON TAB TO USER;
+  // 
+  // three entries are generated by the parser, but only two rows are written;  
+  // one for column 2 (insert) and one for column 4 (insert and select).  
+  //
+  // Input may have same column ordinal in multiple entries, but the input is 
+  // guaranteed not to contain same ordinal and privType more than once.
+  std::vector<ColPrivEntry> colPrivsToGrant;
+  for (size_t i = 0; i < colPrivsArray.size(); i++)
+  {
+    const ColPrivSpec &colPrivSpec = colPrivsArray[i];
       
-      ColPrivEntry *existingEntry = findColumnEntry(colPrivsToGrant,
-                                                    colPrivEntry.columnOrdinal);
-      if (existingEntry != NULL)
-      {
-         existingEntry->privsBitmap.set(colPrivEntry.privType);
-         if (isWGOSpecified)
-            existingEntry->grantableBitmap.set(colPrivEntry.privType);
-      }
-      else
-      {
-         ColPrivEntry colPrivToGrant;
-         
-         colPrivToGrant.columnOrdinal = colPrivEntry.columnOrdinal;   
-         colPrivToGrant.privsBitmap.set(colPrivEntry.privType);
-         if (isWGOSpecified)
-            colPrivToGrant.grantableBitmap.set(colPrivEntry.privType);
+    ColPrivEntry *existingEntry = findColumnEntry(colPrivsToGrant,
+                                                  colPrivSpec.columnOrdinal);
+    if (existingEntry != NULL)
+    {
+      existingEntry->setPriv(colPrivSpec.privType, true);
+      if (isWGOSpecified)
+        existingEntry->setGrantable(colPrivSpec.privType, true);
+    }
+    else
+    {
+      ColPrivEntry colPrivToGrant;
+      colPrivToGrant.setColumnOrdinal(colPrivSpec.columnOrdinal);
+      colPrivToGrant.setPriv(colPrivSpec.privType, true);
+      if (isWGOSpecified)
+        colPrivToGrant.setGrantable(colPrivSpec.privType, true);
             
-         colPrivsToGrant.push_back(colPrivToGrant);
-      }
-   }
+      colPrivsToGrant.push_back(colPrivToGrant);
+    }
+  }
 
-// Walk the list of column privileges to grant, and either insert a new
-// row in the COLUMN_PRIVILEGES table or update an existing row.  
+  // Walk the list of column privileges to grant, and either insert a new
+  // row in the COLUMN_PRIVILEGES table or update an existing row.  
 
-bool rowWritten = false;
+  bool rowWritten = false;
 
-std::string whereBase(" WHERE object_uid = ");
+  std::string whereBase(" WHERE object_uid = ");
 
-   whereBase += UIDToString(objectUID_);
-   whereBase += " AND grantor_id = ";
-   whereBase += authIDToString(grantorID_);
-   whereBase += " AND grantee_id = ";
-   whereBase += authIDToString(granteeID);
-   whereBase += " AND column_number = ";
+  whereBase += UIDToString(objectUID_);
+  whereBase += " AND grantor_id = ";
+  whereBase += authIDToString(grantorID_);
+  whereBase += " AND grantee_id = ";
+  whereBase += authIDToString(granteeID);
+  whereBase += " AND column_number = ";
     
-   for (size_t i = 0; i < colPrivsToGrant.size(); i++)
-   {
-      ColPrivEntry &colPrivToGrant = colPrivsToGrant[i];
-      bool updateOperation = false;
-      bool skipOperation = false; 
+  ColumnPrivsMDTable columnPrivsTable(columnTableName_,pDiags_);
 
-      // Look for any existing granted privileges on the column for which
-      // privileges are to be granted.
-      for (size_t g = 0; g < grantedColPrivs.size(); g++)
+  for (size_t i = 0; i < colPrivsToGrant.size(); i++)
+  {
+    ColPrivEntry &colPrivToGrant = colPrivsToGrant[i];
+
+    colPrivToGrant.describe(traceMsg);
+    log (__FILE__, traceMsg, i);
+
+    bool updateOperation = false;
+    bool skipOperation = false; 
+
+    ColPrivEntry *grantedColPriv = findColumnEntry(grantedColPrivs, colPrivToGrant.getColumnOrdinal());
+    if (grantedColPriv)
+    {
+      // An existing row with the same column has been found, it is one of four cases:
+      //
+      // 1) AuthID had WGO, now trying to take away WGO [error]
+      // 2) Adding a privilege (e.g., authID had SELECT, now granting INSERT) [update operation]
+      // 3) AuthID had privilege, now adding WGO [update operation]
+      // 4) AuthID already has privilege and/or WGO specified [skip operation]
+         
+      // case 1: see if trying to take away WGO -  anyNotSet returns true iff any 
+      // WGO bit set in grantedColPriv is not set in colPrivToGrant - can this 
+      // really occur?
+      if (colPrivToGrant.getPrivBitmap() == grantedColPriv->getPrivBitmap() &&
+          grantedColPriv->getPrivDesc().anyNotSet(colPrivToGrant.getPrivDesc()))
       {
-         const ColPrivEntry &grantedColPriv = grantedColPrivs[g];
-         // See if there is an existing column privilege granted for this column.
-         // If not, check the next granted column privilege.  If none are found
-         // for this column, it is an insert operation.
-         if (colPrivToGrant.columnOrdinal != grantedColPriv.columnOrdinal)
-            continue;
-            
-         // An existing row with the same column has been found, it is one of four cases:
-         //
-         // 1) Adding a privilege (e.g., authID had SELECT, now granting INSERT) [update operation]
-         // 2) AuthID had privilege, now adding WGO [update operation]
-         // 3) AuthID already has privilege and/or WGO specified [skip operation]
-         // 4) AuthID had privilege and WGO, now trying to take away WGO [error]
-         
-         // If the privilege bitmaps are not the same, adding a privilege.
-         // This is an update operation, break out of for loop.
-         if (colPrivToGrant.privsBitmap != grantedColPriv.privsBitmap)
-         {
-            updateOperation = true;  // Case #1
-            colPrivToGrant.privsBitmap |= grantedColPriv.privsBitmap;  
-            colPrivToGrant.grantableBitmap |= grantedColPriv.grantableBitmap; 
-            break;
-         }
-         
-         // Privilege bitmaps are the same, could be adding WGO.
-         if (colPrivToGrant.grantableBitmap.any())
-         {
-            // If WGO was specified, and adding, this is an update.
-            // If user already has WGO, it is a NOP, so skip this entry.
-            if (colPrivToGrant.grantableBitmap == grantedColPriv.grantableBitmap)
-            {
-               skipOperation = true; //Case #3
-               break;
-            }
-            // Adding WGO
-            updateOperation = true; //Case #2
-         }
-         else // WGO not specified
-         {
-            // If user already has WGO, error.  Cannot revoke WGO via GRANT.
-            if (grantedColPriv.grantableBitmap.any())
-            {
-               *pDiags_ << DgSqlCode(-CAT_PRIVILEGE_NOT_GRANTED);  //TODO: Add error for removing WGO in GRANT
-               return STATUS_ERROR;  // Case #4
-            }
-            // WGO not specified, current privs same as privs to grant,
-            // nothing to do.
-            skipOperation = true; //Case #3
-            break;
-         }
-         
-         updateOperation = true;
-         colPrivToGrant.privsBitmap |= grantedColPriv.privsBitmap;  
-         colPrivToGrant.grantableBitmap |= grantedColPriv.grantableBitmap; 
-         // Found an existing row for this column ordinal, so break out of loop.
-         break;  
+         PRIVMGR_INTERNAL_ERROR("trying to remove WGO during grant");
+         return STATUS_ERROR;
       }
-      
-      if (skipOperation)
-         continue;
-      
-      ColumnPrivsMDRow row;  
-       
-      row.objectUID_ = objectUID_;
-      row.objectName_ = objectName_;
-      row.granteeID_ = granteeID;     
-      row.granteeName_ = granteeName;
-      row.grantorID_ = grantorID_; 
-      row.grantorName_ = grantorName;
-      row.privsBitmap_ = colPrivToGrant.privsBitmap;
-      row.grantableBitmap_ = colPrivToGrant.grantableBitmap;
-      row.columnOrdinal_ = colPrivToGrant.columnOrdinal;
-
-      if (updateOperation)
-         privStatus = columnPrivsTable.updateColumnRow(row,whereBase);
-      else
-         privStatus = columnPrivsTable.insert(row);
+ 
+      // Case 2: If the privilege bitmaps are not the same, adding a privilege.
+      // This is an update operation
+      if (colPrivToGrant.getPrivBitmap() != grantedColPriv->getPrivBitmap())
+      {
+        updateOperation = true;  // Case #1
+        colPrivToGrant.getPrivDesc().unionOfPrivs(grantedColPriv->getPrivDesc());
+      }
          
-      if (privStatus == STATUS_ERROR)
-         return privStatus;
+      // Privilege bitmaps are the same
+      else 
+        // Case 3: the privileges match, see if there are any additional WGO privs 
+        // to set and mark updatable 
+        // anyNotSet returns true iff any WGO bit set in colPrivToGrant is not set in 
+        // grantedColPriv, this means more WGO bits need to be set.
+        if (colPrivToGrant.getPrivDesc().anyNotSet(grantedColPriv->getPrivDesc()))
+        {
+          updateOperation = true; 
+          colPrivToGrant.getPrivDesc().unionOfPrivs(grantedColPriv->getPrivDesc());
+        }
+        // Case 4: no changes to priv or WGO bits -  no updates required - skip
+        else
+          skipOperation = true;
+    }
+      
+    // Done with this entry, go to the next one
+    if (skipOperation)
+      continue;
+      
+    // TBD:  need to get the list of referencing views that need to have this
+    // privilege progated.
+    //
+    // SQL ANSI general rules state 
+    // 
+    // - When granting INSERT, UPDATE, or DELETE object or column privilege to
+    //   a table that is referenced by one or more views, then the privilege  
+    //   should be propagated to any updatable views that reference the table. 
+    //   The grant request to the these views should be executed as though the 
+    //   current user is _SYSTEM.
+    //
+    // - If the table already has SELECT privilege and a new grant is 
+    //   performed that adds the WITH GRANT OPTION, then the WITH GRANT OPTION 
+    //   is to be propagated to referencing views.  The grant request should
+    //   be executed as though the current user is _SYSTEM.
 
-      rowWritten = true;
-   } 
+
+    // Prepare for the insert or update request
+    ColumnPrivsMDRow row;  
+       
+    row.objectUID_ = objectUID_;
+    row.objectName_ = objectName_;
+    row.granteeID_ = granteeID;     
+    row.granteeName_ = granteeName;
+    row.grantorID_ = grantorID_; 
+    row.grantorName_ = grantorName;
+    row.privsBitmap_ = colPrivToGrant.getPrivBitmap();
+    row.grantableBitmap_ = colPrivToGrant.getGrantableBitmap();
+    row.columnOrdinal_ = colPrivToGrant.getColumnOrdinal();
+
+    if (updateOperation)
+      privStatus = columnPrivsTable.updateColumnRow(row,whereBase);
+    else
+      privStatus = columnPrivsTable.insert(row);
+         
+    if (privStatus == STATUS_ERROR)
+      return privStatus;
+
+    rowWritten = true;
+  } 
 
 //TODO: Could issue a warning if no privileges were granted; means all 
 // requested grants already exist.
@@ -1211,6 +1282,9 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
       const bool isWGOSpecified)
 {
   PrivStatus retcode = STATUS_GOOD;
+ 
+  std::string traceMsg;
+  log (__FILE__, "****** GRANT operation begins ******", -1);
 
   if (objectUID_ == 0)
   {
@@ -1233,7 +1307,7 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
   nameRequested.erase(std::remove(nameRequested.begin(), nameRequested.end(), theQuote), nameRequested.end());
   nameToCheck.erase(std::remove(nameToCheck.begin(), nameToCheck.end(), theQuote), nameToCheck.end());
 
-  if (nameRequested == nameToCheck && grantorID_ == SYSTEM_AUTH_ID)
+  if (nameRequested == nameToCheck && grantorID_ == SYSTEM_USER)
     return STATUS_GOOD;
 
   // If the granting to self or DB__ROOT, return an error
@@ -1245,6 +1319,10 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
 
   // generate the list of privileges granted to the object and store in class
   if (generateObjectRowList() == STATUS_ERROR)
+    return STATUS_ERROR;
+
+  // generate the list of privileges granted to columns and store in class
+  if (generateColumnRowList() == STATUS_ERROR)
     return STATUS_ERROR;
 
   // get roleIDs for the grantor
@@ -1261,7 +1339,10 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
       return retcode;
     // If only column-level privileges were specified, no problem.  
     if (privsList.empty())
+    {
+      log (__FILE__, "****** GRANT operation succeeded ******", -1);
       return STATUS_GOOD;
+    }
   }
   
   // verify the privileges list and create a desc to contain them
@@ -1297,7 +1378,9 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
   // SQL Ansi states that privileges that can be granted should be done so
   // even if some requested privilege are not grantable.
   PrivMgrDesc privsOfTheGrantor(grantorID_);
-  retcode = getUserPrivs( grantorID_, roleIDs, privsOfTheGrantor, NULL ); 
+  bool hasManagePrivileges;
+  retcode = getUserPrivs(objectType, grantorID_, roleIDs, privsOfTheGrantor, 
+                         hasManagePrivileges, NULL ); 
   if (retcode != STATUS_GOOD)
     return retcode;
   
@@ -1391,15 +1474,18 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
   }
 
   ObjectPrivsMDTable objectPrivsTable (objectTableName_, pDiags_);
+  ColumnPrivsMDTable columnPrivsTable(columnTableName_,pDiags_);
   char buf[1000];
 
   if (foundRow)
   {
     ObjectUsage objectUsage;
     objectUsage.objectUID = objectUID_;
-    objectUsage.objectOwner = granteeID;
+    objectUsage.granteeID = granteeID;
+    objectUsage.grantorIsSystem = false;
     objectUsage.objectName = row.objectName_;
     objectUsage.objectType = row.objectType_;
+    objectUsage.columnReferences = NULL;
 
     PrivMgrDesc originalPrivs (row.granteeID_);
     originalPrivs.setTablePrivs(savedOriginalPrivs);
@@ -1417,14 +1503,38 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
       return retcode;
     }
 
+    traceMsg = "updating all affected objects, number of objects is ";
+    traceMsg += to_string((long long int)listOfObjects.size());
+    log (__FILE__, traceMsg, -1);
+
     // update the OBJECT_PRIVILEGES row for each effected object
     for (size_t i = 0; i < listOfObjects.size(); i++)
     {
-      ObjectUsage *pObj = listOfObjects[i];
-      int32_t theGrantor = (pObj->objectType == COM_VIEW_OBJECT) ? SYSTEM_AUTH_ID : grantorID_;
-      int32_t theGrantee = pObj->objectOwner;
-      int64_t theUID = pObj->objectUID;
-      PrivMgrCoreDesc thePrivs = pObj->updatedPrivs.getTablePrivs();
+      ObjectUsage *pObjectUsage = listOfObjects[i];
+
+      pObjectUsage->describe(traceMsg);
+      log (__FILE__, traceMsg, i);
+
+      // Determine the grantor:
+      // SQL ANSI general rules state 
+      // 
+      // - When granting INSERT, UPDATE, or DELETE object or column privilege to
+      //   a table that is referenced by one or more views, then the privilege  
+      //   should be propagated to any updatable views that reference the table. 
+      //   The grant request to the these views should be executed as though the 
+      //   current user is _SYSTEM.
+      //
+      // - If the table already has SELECT privilege and a new grant is 
+      //   performed that adds the WITH GRANT OPTION, then the WITH GRANT OPTION 
+      //   is to be propagated to referencing views.  The grant request should
+      //   be executed as though the current user is _SYSTEM.
+      //
+      //  The listOfObjects contains referencing views that meet the above 
+      //  criteria.
+      int32_t theGrantor = (pObjectUsage->grantorIsSystem) ? SYSTEM_USER : grantorID_;
+      int32_t theGrantee = pObjectUsage->granteeID;
+      int64_t theUID = pObjectUsage->objectUID;
+      PrivMgrCoreDesc thePrivs = pObjectUsage->updatedPrivs.getTablePrivs();
   
       sprintf(buf, "where grantee_id = %d and grantor_id =  %d and object_uid = %ld",
               theGrantee, theGrantor, theUID);
@@ -1445,8 +1555,16 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
     deleteListOfAffectedObjects(listOfObjects);
   }
   else
-   // insert the row
-   retcode = objectPrivsTable.insert(row);
+  {
+    row.describeRow(traceMsg);
+    traceMsg.insert(0, "adding new privilege row ");
+    log (__FILE__, traceMsg, -1);
+
+    // insert the row
+    retcode = objectPrivsTable.insert(row);
+  }
+
+  log (__FILE__, "****** GRANT operation succeeded ******", -1);
 
   return retcode;
 }
@@ -1474,7 +1592,6 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
 PrivStatus PrivMgrPrivileges::grantObjectPriv(
       const ComObjectType objectType,
       const int32_t granteeID,
-      const std::string &granteeName,
       const PrivObjectBitmap privsBitmap,
       const PrivObjectBitmap grantableBitmap)
 {
@@ -1486,6 +1603,15 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
     return STATUS_ERROR;
   }
 
+  // get the associated grantorName and granteeName
+  std::string grantorName;
+  if (!getAuthNameFromAuthID(grantorID_, grantorName))
+    return STATUS_ERROR;
+
+  std::string granteeName;
+  if (!getAuthNameFromAuthID(granteeID, granteeName))
+    return STATUS_ERROR;
+
   // set up the values of the row to insert
   ObjectPrivsMDRow row;
   row.objectUID_ = objectUID_;
@@ -1494,9 +1620,9 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
   row.granteeID_ = granteeID;
   row.granteeName_ = granteeName;
   row.granteeType_ = USER_GRANTEE_LIT;
-  row.grantorID_ = SYSTEM_AUTH_ID;
-  row.grantorName_ = "_SYSTEM";
-  row.grantorType_ = SYSTEM_GRANTOR_LIT;
+  row.grantorID_ = grantorID_;
+  row.grantorName_ = grantorName;
+  row.grantorType_ = (grantorID_ == SYSTEM_USER) ? SYSTEM_GRANTOR_LIT : USER_GRANTOR_LIT;
   row.privsBitmap_ = privsBitmap;
   row.grantableBitmap_ = grantableBitmap;
 
@@ -1558,7 +1684,7 @@ PrivObjectBitmap grantableBitmap;
    row.granteeID_ = ownerID;
    row.granteeName_ = ownerName;
    row.granteeType_ = USER_GRANTEE_LIT;
-   row.grantorID_ = SYSTEM_AUTH_ID;
+   row.grantorID_ = SYSTEM_USER;
    row.grantorName_ = SYSTEM_AUTH_NAME;  
    row.grantorType_ = COM_SYSTEM_GRANTOR_LIT;
    row.privsBitmap_ = privsBitmap;
@@ -1598,7 +1724,6 @@ PrivStatus privStatus = objectPrivsTable.insert(row);
 // *                                                       
 // *  Parameters:    
 // *                                                                       
-// *  <objectUID> The unique ID of the object that grants are being inserted for
 // *  <objectPrivsRows> One or more rows of grants for the object.
 // *                                                                     
 // * Returns: PrivStatus                                               
@@ -1630,7 +1755,7 @@ PrivStatus PrivMgrPrivileges::insertPrivRowsForObject(
     char granteeTypeString[3] = {0};
     char grantorTypeString[3] = {0};
     
-    row.objectUID_ = objectUID;
+    row.objectUID_ = objectUID_;
     row.objectName_ = rowIn.objectName;
     row.objectType_ = rowIn.objectType;
     row.granteeID_ = rowIn.granteeID;
@@ -1655,7 +1780,6 @@ PrivStatus PrivMgrPrivileges::insertPrivRowsForObject(
 }
 
 
-
 // ****************************************************************************
 // method:  dealWithConstraints
 //
@@ -1677,6 +1801,11 @@ PrivStatus PrivMgrPrivileges::dealWithConstraints(
 {
   PrivStatus retcode = STATUS_GOOD;
 
+  std::string traceMsg;
+  objectUsage.describe(traceMsg);
+  traceMsg.insert (0, "checking referencing constraints for ");
+  log (__FILE__, traceMsg, -1);
+
   // RI constraints can only be defined for base tables
   if (objectUsage.objectType != COM_BASE_TABLE_OBJECT)
     return STATUS_GOOD;
@@ -1685,32 +1814,45 @@ PrivStatus PrivMgrPrivileges::dealWithConstraints(
   std::vector<ObjectReference *> objectList;
   PrivMgrMDAdmin admin(trafMetadataLocation_, metadataLocation_, pDiags_);
   retcode = admin.getReferencingTablesForConstraints(objectUsage, objectList);
+  traceMsg = "getting constraint usages: number usages found ";
+  traceMsg += to_string((long long int)objectList.size());
+  traceMsg += ", retcode is ";
+  traceMsg += privStatusEnumToLit(retcode);
+  log (__FILE__, traceMsg, -1);
+
   if (retcode == STATUS_ERROR)
     return retcode;
 
-  // objectList contain ObjectReferences for all tables that reference the
-  // ObjectUsage (object losing privilege) through an RI constraint
-  PrivMgrDesc originalPrivs;
-  PrivMgrDesc currentPrivs;
   int32_t lastObjectOwnerID = 0;
   std::vector<int32_t> roleIDs;
   
+  // objectList contains the list of objects referencing the referenced table,
+  // see if the requested privilege change causes an RI constraint to be invalid
   for (size_t i = 0; i < objectList.size(); i++)
   {
-    ObjectReference *pObj = objectList[i];
+    ObjectReference *pObjectRef = objectList[i];
+    PrivMgrDesc originalPrivs;
+    PrivMgrDesc currentPrivs;
     
-    if (lastObjectOwnerID != pObj->objectOwner)
+    pObjectRef->describe(traceMsg);
+    log (__FILE__, traceMsg, i);
+ 
+    // getRoleIDsForUserID does I/O to get information.  The referencing 
+    // list is returned by object owner to avoid rereading information for 
+    // the same user
+    // At some time, we should cache user and role information
+    if (lastObjectOwnerID != pObjectRef->objectOwner)
     {
       roleIDs.clear();
-      retcode = getRoleIDsForUserID(pObj->objectOwner,roleIDs);
+      retcode = getRoleIDsForUserID(pObjectRef->objectOwner,roleIDs);
       if (retcode == STATUS_ERROR)
         return retcode;
     }
 
     // get the summarized original and current privs for the referencing table 
-    // current privs contains any adjustments
-    retcode = summarizeCurrentAndOriginalPrivs(pObj->objectUID,
-                                               pObj->objectOwner,
+    // current privs contains any adjustments due to the privilege change
+    retcode = summarizeCurrentAndOriginalPrivs(pObjectRef->objectUID,
+                                               pObjectRef->objectOwner,
                                                roleIDs,
                                                listOfAffectedObjects,
                                                originalPrivs,
@@ -1718,25 +1860,66 @@ PrivStatus PrivMgrPrivileges::dealWithConstraints(
     if (retcode != STATUS_GOOD)
       return retcode;
 
-    // If the underlying table no long has REFERENCES privileges return
-    // a dependency error.
-    PrivMgrCoreDesc thePrivs = objectUsage.updatedPrivs.getTablePrivs();
+    PrivMgrCoreDesc thePrivs = currentPrivs.getTablePrivs();
     if (!thePrivs.getPriv(REFERENCES_PRIV))
     {
-      std::string referencingTable;
-      if (admin.getConstraintName(objectUsage.objectUID, pObj->objectUID, referencingTable) == false)
+      log (__FILE__, "User does not have reference privilege on the object", -1);
+
+      // no longer have REFERENCES privilege on the table, 
+      // see if privileges are granted on all required columns
+      std::vector<ColumnReference *> summarizedColRefs;
+      summarizeColPrivs(*pObjectRef, roleIDs, listOfAffectedObjects, summarizedColRefs);
+
+      // check summarized privileges to see if still have priv through other privs
+      std::vector<ColumnReference *> neededColRefs = *pObjectRef->columnReferences;
+      for (size_t i = 0; i < neededColRefs.size(); i++)
       {
-        referencingTable = "UNKNOWN, Referencing table ID is ";
-        referencingTable += UIDToString(pObj->objectUID);
+
+        // neededColRefs contains the list of all columns referenced by this object
+        // summarizedColRefs are the current privileges with the privilege change
+        //   incorporated.
+        // if user still has necessary privilege through column privileges, then
+        // revoke can proceed
+        ColumnReference *neededColRef = neededColRefs[i];
+        for (size_t j = 0; j < summarizedColRefs.size(); j++)
+        {
+          ColumnReference *existingRef = summarizedColRefs[j];
+          traceMsg = "Checking if have references for col: ";
+          traceMsg += to_string((long long int)existingRef->columnOrdinal);
+          log (__FILE__, traceMsg, -1);
+          if (existingRef->columnOrdinal == neededColRef->columnOrdinal)
+          {
+            PrivMgrCoreDesc colPrivs = existingRef->updatedPrivs;
+            traceMsg = "References setting: ";
+            traceMsg += (colPrivs.getPriv(REFERENCES_PRIV) ? "y" : "n");
+            log (__FILE__, traceMsg, -1);
+            if (!colPrivs.getPriv(REFERENCES_PRIV))
+            {
+              std::string referencingTable;
+              if (!admin.getConstraintName(objectUsage.objectUID, 
+                                          pObjectRef->objectUID, 
+                                          neededColRef->columnOrdinal, referencingTable)) 
+              {
+                referencingTable = "UNKNOWN, Referencing table ID is ";
+                referencingTable += UIDToString(pObjectRef->objectUID         );
+              }
+
+              *pDiags_ << DgSqlCode (-CAT_DEPENDENT_OBJECTS_EXIST)
+                       << DgString0 (referencingTable.c_str());
+              retcode = STATUS_ERROR;
+            }
+            break;
+          }
+        }
       }
 
-      *pDiags_ << DgSqlCode (-CAT_DEPENDENT_OBJECTS_EXIST)
-               << DgString0 (referencingTable.c_str());
-      return STATUS_ERROR;
+      // remove list of summarized columns
+      while (!summarizedColRefs.empty())
+        delete summarizedColRefs.back(), summarizedColRefs.pop_back();
     }
   }
 
-  return STATUS_GOOD;
+  return retcode;
 }
  
   
@@ -1765,14 +1948,25 @@ PrivStatus PrivMgrPrivileges::dealWithUdrs(
   if (objectUsage.objectType != COM_LIBRARY_OBJECT)
     return STATUS_GOOD;
 
+  std::string traceMsg;
+  objectUsage.describe(traceMsg);
+  traceMsg.insert (0, "checking referencing routines for ");
+  log (__FILE__, traceMsg, -1);
+
   // get the udrs that reference the library for the grantee
   std::vector<ObjectReference *> objectList;
   PrivMgrMDAdmin admin(trafMetadataLocation_, metadataLocation_, pDiags_);
   retcode = admin.getUdrsThatReferenceLibrary(objectUsage, objectList);
+  traceMsg = "getting routine usages: number usages found ";
+  traceMsg += to_string((long long int)objectList.size());
+  traceMsg += ", retcode is ";
+  traceMsg += privStatusEnumToLit(retcode);
+  log (__FILE__, traceMsg, -1);
+
   if (retcode == STATUS_ERROR)
     return retcode;
 
- // objectList contain ObjectReferences for all udrs that reference the
+  // objectList contain ObjectReferences for all udrs that reference the
   // ObjectUsage (object losing privilege) through a library
   PrivMgrDesc originalPrivs;
   PrivMgrDesc currentPrivs;
@@ -1780,7 +1974,7 @@ PrivStatus PrivMgrPrivileges::dealWithUdrs(
   if (objectList.size() > 0)
   {
     std::vector<int32_t> roleIDs;
-    retcode = getRoleIDsForUserID(objectUsage.objectOwner,roleIDs);
+    retcode = getRoleIDsForUserID(objectUsage.granteeID,roleIDs);
     if (retcode == STATUS_ERROR)
       return retcode;
     
@@ -1788,7 +1982,7 @@ PrivStatus PrivMgrPrivileges::dealWithUdrs(
     // privs for the library
     // current privs contains any adjustments
     retcode = summarizeCurrentAndOriginalPrivs(objectUsage.objectUID,
-                                               objectUsage.objectOwner,
+                                               objectUsage.granteeID,
                                                roleIDs,
                                                listOfAffectedObjects,
                                                originalPrivs,
@@ -1803,9 +1997,9 @@ PrivStatus PrivMgrPrivileges::dealWithUdrs(
     {
       // There could be multiple udrs, just pick the first one in the list
       // for the error message.
-      ObjectReference *pObj = objectList[0];
+      ObjectReference *pObjectRef = objectList[0];
       *pDiags_ << DgSqlCode (-CAT_DEPENDENT_OBJECTS_EXIST)
-               << DgString0 (pObj->objectName.c_str());
+               << DgString0 (pObjectRef->objectName.c_str());
       return STATUS_ERROR;
     }
   }
@@ -1839,29 +2033,48 @@ PrivStatus PrivMgrPrivileges::dealWithViews(
   std::vector<ObjectUsage *> &listOfAffectedObjects)
 {
   PrivStatus retcode = STATUS_GOOD;
+  std::string traceMsg;
+  objectUsage.describe(traceMsg);
+  traceMsg.insert (0, "checking referencing views for ");
+  log (__FILE__, traceMsg, -1);
 
   // Get any views that referenced this object to see if the privilege changes 
   // should be propagated
   std::vector<ViewUsage> viewUsages;
   PrivMgrMDAdmin admin(trafMetadataLocation_, metadataLocation_, pDiags_);
   retcode = admin.getViewsThatReferenceObject(objectUsage, viewUsages);
+  traceMsg = "getting view usages: number usages found ";
+  traceMsg += to_string((long long int)viewUsages.size());
+  traceMsg += ", retcode is ";
+  traceMsg += privStatusEnumToLit(retcode);
+  log (__FILE__, traceMsg, -1);
   if (retcode == STATUS_NOTFOUND)
    return STATUS_GOOD;
   if (retcode != STATUS_GOOD && retcode != STATUS_WARNING)
     return retcode;
- 
+
   // for each entry in the viewUsages list calculate the changed
   // privileges and call dealWithViews recursively
   for (size_t i = 0; i < viewUsages.size(); i++)
   {
+   
     ViewUsage viewUsage = viewUsages[i];
+
+    viewUsage.describe(traceMsg);
+    log (__FILE__, traceMsg, i);
 
     // this method recreates privileges for the view based on the original
     // and the current.  Updated descriptors are stored in the viewUsage
     // structure.
     retcode = gatherViewPrivileges(viewUsage, listOfAffectedObjects);
+    traceMsg = "gathered view privs: retcode is ";
+    traceMsg += privStatusEnumToLit(retcode);
+    log (__FILE__, traceMsg, -1);
+
     if (retcode != STATUS_GOOD && retcode != STATUS_WARNING)
+    {
       return retcode;
+    }
 
     // check to see if privileges changed
     if (viewUsage.originalPrivs == viewUsage.updatedPrivs)
@@ -1870,17 +2083,28 @@ PrivStatus PrivMgrPrivileges::dealWithViews(
     {
       // this view is affected by the grant/revoke request, add to list
       // and check to see if anything down stream needs to change
-      ObjectUsage *pUsage = new (ObjectUsage);
-      pUsage->objectUID = viewUsage.viewUID;
-      pUsage->objectOwner = viewUsage.viewOwner;
-      pUsage->objectName = viewUsage.viewName;
-      pUsage->objectType = COM_VIEW_OBJECT;
-      pUsage->originalPrivs = viewUsage.originalPrivs;
-      pUsage->updatedPrivs = viewUsage.updatedPrivs;
-      listOfAffectedObjects.push_back(pUsage);
-      retcode = dealWithViews(*pUsage, command, listOfAffectedObjects);
-      if (retcode != STATUS_GOOD && retcode != STATUS_WARNING)
-        return retcode;
+      // We already have select privilege on the view.  So only adjust
+      // view for other privileges if it is updatable and insertable
+      if (viewUsage.isUpdatable && viewUsage.isInsertable)
+      {
+        ObjectUsage *pUsage = new (ObjectUsage);
+        pUsage->objectUID = viewUsage.viewUID;
+        pUsage->granteeID = viewUsage.viewOwner;
+        pUsage->grantorIsSystem = true;
+        pUsage->objectName = viewUsage.viewName;
+        pUsage->objectType = COM_VIEW_OBJECT;
+        pUsage->originalPrivs = viewUsage.originalPrivs;
+        pUsage->updatedPrivs = viewUsage.updatedPrivs;
+        listOfAffectedObjects.push_back(pUsage);
+
+        traceMsg = "adding new objectUsage for ";
+        pUsage->describe(traceMsg);
+        log (__FILE__, traceMsg, i);
+
+        retcode = dealWithViews(*pUsage, command, listOfAffectedObjects);
+        if (retcode != STATUS_GOOD && retcode != STATUS_WARNING)
+          return retcode;
+      }
     }
   } 
   
@@ -1907,6 +2131,7 @@ PrivStatus PrivMgrPrivileges::gatherViewPrivileges(
   const std::vector<ObjectUsage *> listOfAffectedObjects)
 {
   PrivStatus retcode = STATUS_GOOD;
+  std::string traceMsg;
 
   // initialize summarized descriptors and set all applicable privileges
   // TBD:  if view is not updatable, should initialize correctly.
@@ -1921,8 +2146,14 @@ PrivStatus PrivMgrPrivileges::gatherViewPrivileges(
   std::vector<ObjectReference *> objectList;
   PrivMgrMDAdmin admin(trafMetadataLocation_, metadataLocation_, pDiags_);
   retcode = admin.getObjectsThatViewReferences(viewUsage, objectList);
+  traceMsg += "getting object references: number references found ";
+  traceMsg += to_string((long long int)objectList.size());
+  traceMsg += ", retcode is ";
+  traceMsg += privStatusEnumToLit(retcode);
+  log (__FILE__, traceMsg, -1);
   if (retcode == STATUS_ERROR)
     return retcode;
+
 
   // For each referenced object, summarize the original and current
   // privileges
@@ -1933,12 +2164,15 @@ PrivStatus PrivMgrPrivileges::gatherViewPrivileges(
  
   for (size_t i = 0; i < objectList.size(); i++)
   {
-    ObjectReference *pObj = objectList[i];
+    ObjectReference *pObjectRef = objectList[i];
 
-    if (lastObjectOwnerID != pObj->objectOwner)
+    pObjectRef->describe(traceMsg);
+    log (__FILE__, traceMsg, i);
+
+    if (lastObjectOwnerID != pObjectRef->objectOwner)
     {
       roleIDs.clear();
-      retcode = getRoleIDsForUserID(pObj->objectOwner,roleIDs);
+      retcode = getRoleIDsForUserID(pObjectRef->objectOwner,roleIDs);
       if (retcode == STATUS_ERROR)
         return retcode;
     }
@@ -1946,7 +2180,7 @@ PrivStatus PrivMgrPrivileges::gatherViewPrivileges(
     // referenced object that have been granted to the view owner
     // listOfAffectedObjects contain the privilege adjustments needed
     //   to generate the current privs
-    retcode = summarizeCurrentAndOriginalPrivs(pObj->objectUID,
+    retcode = summarizeCurrentAndOriginalPrivs(pObjectRef->objectUID,
                                                viewUsage.viewOwner, 
                                                roleIDs,
                                                listOfAffectedObjects,
@@ -2005,7 +2239,20 @@ PrivStatus PrivMgrPrivileges::generateColumnRowList()
   std::string orderByClause (" order by grantor_id, grantee_id, column_number ");
 
   ColumnPrivsMDTable columnPrivsTable(columnTableName_,pDiags_);
-  return (columnPrivsTable.selectWhere(whereClause, orderByClause, columnRowList_));
+  PrivStatus privStatus = 
+   columnPrivsTable.selectWhere(whereClause, orderByClause, columnRowList_);
+
+  std::string traceMsg ("getting column privileges, number privileges is ");
+  traceMsg += to_string((long long int)columnRowList_.size());
+  log (__FILE__, traceMsg, -1);
+  for (size_t i = 0; i < columnRowList_.size(); i++)
+  {
+    ColumnPrivsMDRow privRow = static_cast<ColumnPrivsMDRow &> (*columnRowList_[i]);
+    privRow.describeRow(traceMsg);
+    log (__FILE__, traceMsg, i);
+  }
+
+  return privStatus;
 }
 
 // ****************************************************************************
@@ -2031,7 +2278,18 @@ PrivStatus PrivMgrPrivileges::generateObjectRowList()
   std::string orderByClause(" order by grantor_id, grantee_id ");
 
   ObjectPrivsMDTable objectPrivsTable(objectTableName_,pDiags_);
-  return objectPrivsTable.selectWhere(whereClause, orderByClause, objectRowList_);
+  PrivStatus privStatus = 
+    objectPrivsTable.selectWhere(whereClause, orderByClause, objectRowList_);
+  std::string traceMsg ("getting object privileges, number privleges is ");
+  traceMsg += to_string((long long int)objectRowList_.size());
+  log (__FILE__, traceMsg, -1);
+  for (size_t i = 0; i < objectRowList_.size(); i++)
+  {
+    ObjectPrivsMDRow privRow = static_cast<ObjectPrivsMDRow &> (*objectRowList_[i]);
+    privRow.describeRow(traceMsg);
+    log (__FILE__, traceMsg, i);
+  }
+  return privStatus;
 }
 
 
@@ -2044,10 +2302,8 @@ PrivStatus PrivMgrPrivileges::generateObjectRowList()
 //
 // Params:
 //   objectUsage - the affected object
+//   command - GRANT or REVOKE RESTRICT or REVOKE CASCADE
 //   listOfAffectedObjects - returns the list of affected objects
-//
-// In the future, we want to cache the lists of objects instead of going to the
-// metadata everytime.
 // ****************************************************************************
 PrivStatus PrivMgrPrivileges::getAffectedObjects(
   const ObjectUsage &objectUsage,
@@ -2055,24 +2311,31 @@ PrivStatus PrivMgrPrivileges::getAffectedObjects(
   std::vector<ObjectUsage *> &listOfAffectedObjects)
 {
   PrivStatus retcode = STATUS_GOOD;
+  std::string traceMsg;
 
   // found an object whose privileges need to be updated
   ObjectUsage *pUsage = new (ObjectUsage);
   pUsage->objectUID = objectUsage.objectUID;
-  pUsage->objectOwner = objectUsage.objectOwner;
+  pUsage->granteeID = objectUsage.granteeID;
+  pUsage->grantorIsSystem = objectUsage.grantorIsSystem;
   pUsage->objectName = objectUsage.objectName;
   pUsage->objectType = objectUsage.objectType;
   pUsage->originalPrivs = objectUsage.originalPrivs;
   pUsage->updatedPrivs = objectUsage.updatedPrivs;
+  pUsage->columnReferences = objectUsage.columnReferences;
+
   listOfAffectedObjects.push_back(pUsage); 
+
 
   // Find list of affected constraints
   if (command != PrivCommand::GRANT_OBJECT)  
   {
+    // TBD optimization: if no "references" privilege has been revoked, skip
     retcode = dealWithConstraints (objectUsage, listOfAffectedObjects);
-    if (retcode != STATUS_GOOD && retcode != STATUS_WARNING)
+    if (retcode == STATUS_ERROR)
      return retcode;
 
+    // TBD optimization: if no "execute" privilege has been revoked, skip
     retcode = dealWithUdrs (objectUsage, listOfAffectedObjects);
     if (retcode != STATUS_GOOD && retcode != STATUS_WARNING)
      return retcode;
@@ -2153,12 +2416,20 @@ short retcode = 0;
   if (!isGrantedBySpecified)
   {
     // If the user is DB__ROOT, a grant or revoke operation is implicitly on
-    // behalf of the object owner.  Otherwise, the grantor is the user.
+    // behalf of the object owner.  Likewise, if a user has been granted the
+    // MANAGE_PRIVILEGES component-level privilege they can grant on 
+    // behalf of the owner implicitly.  Otherwise, the grantor is the user.
     if (!ComUser::isRootUserID())
     {
-      effectiveGrantorName = ComUser::getCurrentUsername();
-      effectiveGrantorID = currentUser;
-      return STATUS_GOOD;
+      PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
+
+      if (!componentPrivileges.hasSQLPriv(currentUser,SQLOperation::MANAGE_PRIVILEGES,
+                                          true))
+      {
+        effectiveGrantorName = ComUser::getCurrentUsername();
+        effectiveGrantorID = currentUser;
+        return STATUS_GOOD; 
+      }
     }
     // User is DB__ROOT.  Get the effective grantor name.
     char authName[MAX_USERNAME_LEN+1];
@@ -2266,20 +2537,26 @@ PrivStatus PrivMgrPrivileges::revokeColumnPrivileges(
    const bool isWGOSpecified)
 {
 
-PrivStatus privStatus = STATUS_GOOD;
+  PrivStatus privStatus = STATUS_GOOD;
 
-std::vector<ColPrivSpec> &colPrivsArray = 
-  const_cast<std::vector<ColPrivSpec> &>(colPrivsArrayIn); 
-ColumnPrivsMDTable columnPrivsTable(columnTableName_,pDiags_);
-std::string privilege;
-std::vector<ColPrivEntry> grantedColPrivs;
+  log (__FILE__, "checking column privileges", -1);
 
-// get the list of column privileges for the object
+  std::vector<ColPrivSpec> &colPrivsArray = 
+    const_cast<std::vector<ColPrivSpec> &>(colPrivsArrayIn); 
+  ColumnPrivsMDTable columnPrivsTable(columnTableName_,pDiags_);
+  std::string privilege;
+  std::vector<ColPrivEntry> grantedColPrivs;
+
+  // get the list of object privileges for the object
+  if (generateObjectRowList() == STATUS_ERROR)
+    return STATUS_ERROR;
+
+  // get the list of column privileges for the object
   if (generateColumnRowList() == STATUS_ERROR)
     return STATUS_ERROR;
 
-// First verify the grantor has granted all the privileges they wish to revoke.
-// If not, report the first privilege that cannot be revoked.
+  // First verify the grantor has granted all the privileges they wish to revoke.
+  // If not, report the first privilege that cannot be revoked.
    if (!hasGrantedColumnPriv(columnRowList_,grantorID_,granteeID,
                              colPrivsArrayIn,privStatus,privilege,grantedColPrivs))
    {
@@ -2299,56 +2576,128 @@ std::vector<ColPrivEntry> grantedColPrivs;
       return privStatus;
    }
    
-// Create a privsToRevoke array using the passed in revoke entries and the
-// list of currently granted column privileges.  Combine multiple privileges 
-// for the same column into one entry.
+   // Create a privsToRevoke array using the passed in revoke entries and the
+   // list of currently granted column privileges.  Combine multiple privileges 
+   // for the same column into one entry.
 
-std::vector<ColPrivEntry> colPrivsToRevoke;
+   std::vector<ColPrivEntry> colPrivsToRevoke;
 
    for (size_t i = 0; i < colPrivsArray.size(); i++)
    {
-      const ColPrivSpec &colPrivSpecEntry = colPrivsArray[i];
+      const ColPrivSpec &colPrivSpec = colPrivsArray[i];
+      PrivType privType = colPrivSpec.privType;
+      int32_t columnOrdinal = colPrivSpec.columnOrdinal;
       
+      // Find the priv details from metadata
+      ColPrivEntry *metadataEntry = findColumnEntry(grantedColPrivs,
+                                                    columnOrdinal);
+      if (metadataEntry == NULL)
+      { 
+         PRIVMGR_INTERNAL_ERROR("Privilege to revoke not found");
+         return STATUS_ERROR;
+      }
+
+      // See if privilege entry has already been created
       ColPrivEntry *existingEntry = findColumnEntry(colPrivsToRevoke,
-                                                    colPrivSpecEntry.columnOrdinal);
+                                                    columnOrdinal);
       if (existingEntry != NULL)
-         existingEntry->privsBitmap.set(colPrivSpecEntry.privType);
+      {
+         existingEntry->setPriv(privType, true);
+
+         // if revoking a privilege and auth ID has WGO, then revoke 
+         // the WGO bit also
+         PrivColumnBitmap grantableBitmap = metadataEntry->getGrantableBitmap();
+         existingEntry->setGrantable(privType, grantableBitmap.test(privType));
+      }
       else
       {
          ColPrivEntry colPrivToRevoke;
          
-         colPrivToRevoke.columnOrdinal = colPrivSpecEntry.columnOrdinal;   
-         colPrivToRevoke.privsBitmap.set(colPrivSpecEntry.privType);
-            
+         colPrivToRevoke.setColumnOrdinal(columnOrdinal);   
+         colPrivToRevoke.setPriv(privType,true);
+        
+         // if revoking a privilege and auth ID has WGO, then revoke 
+         // the WGO bit also
+         colPrivToRevoke.setGrantable(privType, metadataEntry->getGrantableBitmap().test(privType));
+
          colPrivsToRevoke.push_back(colPrivToRevoke);
       }
    }
+
+   // checks to see if can revoke if there are referenced items when
+   // revoke cascade is supported, this returns the list of referenced
+   // items that need to change. 
+   ObjectUsage objectUsage;
+   objectUsage.objectUID = objectUID_;
+   objectUsage.granteeID = granteeID;
+   objectUsage.objectName = objectName_;
+   objectUsage.objectType = objectType;
+
+   // Create list of ColumnReferences
+   objectUsage.columnReferences = new std::vector<ColumnReference *>;
+   for (size_t i = 0; i < colPrivsToRevoke.size(); i++)
+   {
+      ColPrivEntry &colPrivToRevoke = colPrivsToRevoke[i];
+      ColPrivEntry *grantedColPriv = findColumnEntry(grantedColPrivs, colPrivToRevoke.getColumnOrdinal());
+      if (grantedColPriv)
+      {
+         ColumnReference *adjustedCol = new ColumnReference;
+         adjustedCol->columnOrdinal = colPrivToRevoke.getColumnOrdinal();
+         adjustedCol->originalPrivs = grantedColPriv->getPrivDesc();     
+         PrivMgrCoreDesc adjustedPrivs = grantedColPriv->getPrivDesc();
+         adjustedPrivs.AndNot(colPrivToRevoke.getPrivDesc());
+         adjustedCol->updatedPrivs = adjustedPrivs;
+         objectUsage.columnReferences->push_back(adjustedCol);
+      }
+   }
+
+   // get privileges for the object, if they exist
+   ObjectPrivsMDRow row;
+   privStatus = getGrantedPrivs(granteeID, row);
+   if (privStatus == STATUS_GOOD)
+   {
+     PrivMgrCoreDesc coreDesc(row.privsBitmap_, row.grantableBitmap_);
+     objectUsage.originalPrivs.setTablePrivs(coreDesc);
+     objectUsage.updatedPrivs.setTablePrivs(coreDesc); 
+   }
    
-// At this point we have an array of privsToRevoke with column ordinal and 
-// priv bitmap.
-//
-// Three revoke column cases:
-// 
-//   Spec    Spec Priv bitmap compare 
-// GOF Priv  to granted priv bitmap    Action
-//  T    1          NA                 Removing WGO only.  Update operation.  
-//                                     Reset privType bit in grantable bitmap,
-//                                     copy priv bitmap from granted privs.
-//
-//  F    1        Equal                Revoking all privs on this column, plus
-//                                     WGO.  Delete operation.
-//
-//  F    1       Not equal             Revoking some privs on this column plus
-//                                     WGO for the revoked privs.  Reset bits in 
-//                                     both bitmaps.  Update operation.
+   std::vector<ObjectUsage *> listOfObjects;
+   privStatus = getAffectedObjects(objectUsage,
+                                PrivCommand::REVOKE_OBJECT_RESTRICT,
+                                listOfObjects);
+   if (privStatus == STATUS_ERROR)
+   {
+     deleteListOfAffectedObjects(listOfObjects);
+     return privStatus;
+   }
+
+   
+   // At this point we have an array of privsToRevoke with column ordinal and 
+   // priv bitmap.
+   //
+   // Three revoke column cases:
+   // 
+   //   Spec    Spec Priv bitmap compare 
+   // GOF Priv  to granted priv bitmap    Action
+   //  T    1          NA                 Removing WGO only.  Update operation.  
+   //                                     Reset privType bit in grantable bitmap,
+   //                                     copy priv bitmap from granted privs.
+   //
+   //  F    1        Equal                Revoking all privs on this column, plus
+   //                                     WGO.  Delete operation.
+   //
+   //  F    1       Not equal             Revoking some privs on this column plus
+   //                                     WGO for the revoked privs.  Reset bits in 
+   //                                     both bitmaps.  Update operation.
 
 
-//TODO: When revoking WGO, need to check for dependent objects, e.g. views.
+   if (checkColumnRevokeRestrict (granteeID, colPrivsToRevoke, columnRowList_))
+     return STATUS_ERROR;
 
-bool rowRevoked = false;
-PrivColumnBitmap revokedPrivs;
+   bool rowRevoked = false;
+   PrivColumnBitmap revokedPrivs;
 
-std::string whereBase(" WHERE object_uid = ");
+   std::string whereBase(" WHERE object_uid = ");
 
    whereBase += UIDToString(objectUID_);
    whereBase += " AND grantor_id = ";
@@ -2362,56 +2711,51 @@ std::string whereBase(" WHERE object_uid = ");
       ColPrivEntry &colPrivToRevoke = colPrivsToRevoke[i];
       bool updateRow = false;
       bool deleteRow = false;
+
       // Look for any existing granted privileges on the column for which
       // privileges are to be granted.
-      for (size_t g = 0; g < grantedColPrivs.size(); g++)
+      ColPrivEntry *grantedColPriv = findColumnEntry(grantedColPrivs, colPrivToRevoke.getColumnOrdinal());
+      if (grantedColPriv)
       {
-         const ColPrivEntry &grantedColPriv = grantedColPrivs[g];
-         // See if there is an existing column privilege granted for this column.
-         // If not, check the next granted column privilege.  If none are found
-         // for this column, it is an internal error.
-         if (colPrivToRevoke.columnOrdinal != grantedColPriv.columnOrdinal)
-            continue;
-            
          // Found row with grant for this column.
          
-         // Verify privilge(s) being revoked was/were granted.  If not, internal error.
-         if ((colPrivToRevoke.privsBitmap & grantedColPriv.privsBitmap) == 0)
+         // Verify privilege(s) being revoked was/were granted.  If not, internal error.
+         if ((colPrivToRevoke.getPrivBitmap() & grantedColPriv->getPrivBitmap()) == 0)
          {
             PRIVMGR_INTERNAL_ERROR("Privilege to revoke not found");
             return STATUS_ERROR;
          }
          
-         if (isWGOSpecified)
-         {
-            // We want to clear the corresponding bits in the grantable bitmap. 
-            // Flip the bits of the privs to revoke bitmap, then and the
-            // negation with the current grantable bitmap. Not revoking any   
-            // privileges, so update with current priv bitmap.
-            PrivColumnBitmap revokeBitmap = ~colPrivToRevoke.privsBitmap; 
-            colPrivToRevoke.privsBitmap = grantedColPriv.privsBitmap;
-            colPrivToRevoke.grantableBitmap = grantedColPriv.grantableBitmap & revokeBitmap;
-            updateRow = true;
-         }
+         // If all privileges are revoked, delete corresponding row
+         if (!isWGOSpecified && 
+             (colPrivToRevoke.getPrivBitmap() == grantedColPriv->getPrivBitmap()))
+           deleteRow = true;
          else
-         {
-            if (colPrivToRevoke.privsBitmap == grantedColPriv.privsBitmap)
-               deleteRow = true;
-            else
-            {
-               PrivColumnBitmap revokeBitmap = ~colPrivToRevoke.privsBitmap; 
-               colPrivToRevoke.privsBitmap = grantedColPriv.privsBitmap & revokeBitmap;
-               colPrivToRevoke.grantableBitmap = grantedColPriv.grantableBitmap & revokeBitmap;
-               updateRow = true;
-            }
-            revokedPrivs |= colPrivToRevoke.privsBitmap; 
-         }
-         break;   
+           updateRow = true;
+
+         // generate the final bitmaps to store in metadata
+         // removing any privileges that already have been revoked
+         PrivMgrCoreDesc adjustedPrivs = grantedColPriv->getPrivDesc();
+         adjustedPrivs.AndNot(colPrivToRevoke.getPrivDesc());
+
+         // If only removing WGO, then the privsBitmap does not change
+         // Not sure if this is needed ??
+         if (isWGOSpecified)
+           adjustedPrivs.setPrivBitmap(grantedColPriv->getPrivBitmap());
+
+         // set adjusted privileges
+         colPrivToRevoke.setPrivBitmap(adjustedPrivs.getPrivBitmap());
+         colPrivToRevoke.setGrantableBitmap(adjustedPrivs.getWgoBitmap());
+
+         // Using the list of privs to revoke, change so adjustedPrivs contains
+         // Some privileges may have been requested to revoke that aren't
+         // currently granted - flip adjusted bits to final list of privs
+         revokedPrivs |= adjustedPrivs.getPrivBitmap(); 
       }
       
       if (deleteRow)
       {
-         std::string whereClause(whereBase + authIDToString(colPrivToRevoke.columnOrdinal));
+         std::string whereClause(whereBase + authIDToString(colPrivToRevoke.getColumnOrdinal()));
       
          privStatus = columnPrivsTable.deleteWhere(whereClause);
          if (privStatus == STATUS_ERROR)
@@ -2435,9 +2779,9 @@ std::string whereBase(" WHERE object_uid = ");
       row.granteeName_ = granteeName;
       row.grantorID_ = grantorID_; 
       row.grantorName_ = grantorName;
-      row.privsBitmap_ = colPrivToRevoke.privsBitmap;
-      row.grantableBitmap_ = colPrivToRevoke.grantableBitmap;
-      row.columnOrdinal_ = colPrivToRevoke.columnOrdinal;
+      row.privsBitmap_ = colPrivToRevoke.getPrivBitmap();
+      row.grantableBitmap_ = colPrivToRevoke.getGrantableBitmap();
+      row.columnOrdinal_ = colPrivToRevoke.getColumnOrdinal();
 
       privStatus = columnPrivsTable.updateColumnRow(row,whereBase);
          
@@ -2447,9 +2791,9 @@ std::string whereBase(" WHERE object_uid = ");
       rowRevoked = true;
    } 
    
-// Send revoked privs to RMS
-SQL_QIKEY siKeyList[NBR_DML_COL_PRIVS];
-size_t siIndex = 0;
+   // Send revoked privs to RMS
+   SQL_QIKEY siKeyList[NBR_DML_COL_PRIVS];
+   size_t siIndex = 0;
 
    for (size_t i = FIRST_DML_COL_PRIV; i <= LAST_DML_COL_PRIV; i++ )
    {
@@ -2470,14 +2814,14 @@ size_t siIndex = 0;
    if (siIndex > 0)   
       SQL_EXEC_SetSecInvalidKeys(siIndex,siKeyList);
       
-//   if (!rowRevoked)
-   // Warning
- //     ;
+   // if (!rowRevoked)
+   //   Warning
       
    return STATUS_GOOD;
 
 }
 //************* End of PrivMgrPrivileges::revokeColumnPrivileges ***************
+
 
 // *****************************************************************************
 // * Method: revokeObjectPriv                                
@@ -2511,6 +2855,9 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
 {
   PrivStatus retcode = STATUS_GOOD;
 
+  std::string traceMsg;
+  log (__FILE__, "****** REVOKE operation begins ******", -1);
+
   if (objectUID_ == 0)
   {
     PRIVMGR_INTERNAL_ERROR("objectUID is 0 for revoke command");
@@ -2532,7 +2879,10 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
     
     // If only column-level privileges were specified, no problem.  
     if (privsList.empty())
+    {
+      log (__FILE__, "****** REVOKE operation succeeded ******", -1);
       return STATUS_GOOD;
+    }
   }
   
   // Convert the privsList into a PrivMgrDesc
@@ -2561,11 +2911,16 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
   if (generateObjectRowList() == STATUS_ERROR)
     return STATUS_ERROR;
 
+  // generate the list of privileges granted to columns and store in class
+  if (generateColumnRowList() == STATUS_ERROR)
+    return STATUS_ERROR;
+
   // get privileges for the grantor and make sure the grantor can revoke
   // at least one of the requested privileges
   PrivMgrDesc privsOfTheGrantor(grantorID_);
-  
-  retcode = getUserPrivs( grantorID_, roleIDs, privsOfTheGrantor, NULL ); 
+  bool hasManagePrivileges;
+  retcode = getUserPrivs(objectType, grantorID_, roleIDs, privsOfTheGrantor, 
+                         hasManagePrivileges, NULL ); 
   if (retcode != STATUS_GOOD)
     return retcode;
 
@@ -2586,7 +2941,7 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
       // This is ok.  Can specify ALL without having all privileges set.
     }
     else
-      warnNotAll = true;  // Not all the specified privs are grantable.
+      warnNotAll = true;  // Not all the specified privs can be revoked
   }
 
   // If nothing left to revoke, we are done.
@@ -2646,7 +3001,8 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
   // removing the privilege
   ObjectUsage objectUsage;
   objectUsage.objectUID = objectUID_;
-  objectUsage.objectOwner = granteeID;
+  objectUsage.granteeID = granteeID;
+  objectUsage.grantorIsSystem = false;
   objectUsage.objectName = row.objectName_;
   objectUsage.objectType = row.objectType_;
 
@@ -2673,24 +3029,27 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
   // update the OBJECT_PRIVILEGES row for each effected object
   for (size_t i = 0; i < listOfObjects.size(); i++)
   {
-    ObjectUsage *pObj = listOfObjects[i];
-    PrivMgrCoreDesc thePrivs = pObj->updatedPrivs.getTablePrivs();
+    ObjectUsage *pObjectUsage = listOfObjects[i];
+    PrivMgrCoreDesc thePrivs = pObjectUsage->updatedPrivs.getTablePrivs();
 
-    // If view no longer has select privilege, throw an error
-    if (pObj->objectType == COM_VIEW_OBJECT)
-    {
-      if (!thePrivs.getPriv(SELECT_PRIV))
-      {
-         deleteListOfAffectedObjects(listOfObjects);
-         *pDiags_ << DgSqlCode (-CAT_DEPENDENT_OBJECTS_EXIST)
-                  << DgString0 (pObj->objectName.c_str());
-         return STATUS_ERROR;
-      }
-    }
-
-    int32_t theGrantor = (pObj->objectType == COM_VIEW_OBJECT) ? SYSTEM_AUTH_ID : grantorID_;
-    int32_t theGrantee = pObj->objectOwner;
-    int64_t theUID = pObj->objectUID;
+    // Determine the grantor:
+    // SQL ANSI general rules state 
+    // 
+    // - When revoking INSERT, UPDATE, or DELETE object or column privilege from
+    //   a table that is referenced by one or more views, then the privilege  
+    //   should be revoked on any updatable views that reference the table. 
+    //   The revoke request to the these views should be executed as though the 
+    //   current user is _SYSTEM.
+    //
+    // - If the revoke is performed that removes the WITH GRANT OPTION, then 
+    //   the WITH GRANT OPTION is to be removed frome referencing views.  The 
+    //   revoke request should be executed as though the current user is _SYSTEM.
+    //
+    //  The listOfObjects contains referencing views that meet the above 
+    //  criteria.
+    int32_t theGrantor = (pObjectUsage->grantorIsSystem) ? SYSTEM_USER : grantorID_;
+    int32_t theGrantee = pObjectUsage->granteeID;
+    int64_t theUID = pObjectUsage->objectUID;
 
     sprintf(buf, "where grantee_id = %d and grantor_id =  %d and object_uid = %ld",
             theGrantee, theGrantor, theUID);
@@ -2698,15 +3057,11 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
 
     if (thePrivs.isNull())
     {
+      pObjectUsage->describe(traceMsg);
+      traceMsg.insert (0, "deleted object usage ");
+
       // delete the row
       retcode = objectPrivsTable.deleteWhere(whereClause);
-      if (retcode == STATUS_ERROR)
-      {
-        deleteListOfAffectedObjects(listOfObjects);
-        return retcode;
-      }
-      // Delete any corresponding column-level privileges.
-      retcode = columnPrivsTable.deleteWhere(whereClause);
       if (retcode == STATUS_ERROR)
       {
         deleteListOfAffectedObjects(listOfObjects);
@@ -2720,15 +3075,10 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
               thePrivs.getWgoBitmap().to_ulong());
       std::string setClause (buf);
 
+      pObjectUsage->describe(traceMsg);
+      traceMsg.insert (0, "updated object usage ");
       // update the row
       retcode = objectPrivsTable.updateWhere(setClause, whereClause);
-      if (retcode == STATUS_ERROR)
-      {
-        deleteListOfAffectedObjects(listOfObjects);
-        return retcode;
-      }
-      // Update any corresponding column-level privileges.
-      retcode = columnPrivsTable.updateWhere(setClause,whereClause);
       if (retcode == STATUS_ERROR)
       {
         deleteListOfAffectedObjects(listOfObjects);
@@ -2754,6 +3104,8 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
   // TDB:  report which privileges were not revoked
   if (warnNotAll)
     *pDiags_ << DgSqlCode(CAT_NOT_ALL_PRIVILEGES_REVOKED);
+
+  log (__FILE__, "****** REVOKE operation succeeded ******", -1);
 
   return retcode;
 }
@@ -2818,11 +3170,16 @@ bool PrivMgrPrivileges::checkRevokeRestrict (
   // the bitmaps of the current row with the bitmaps of the row sent in (rowIn).  
   // At the same time, clear visited_ and set current_ to row values
   ObjectPrivsMDRow updatedRow = static_cast<ObjectPrivsMDRow &>(rowIn);
+
+  std::string traceMsg;
+  log (__FILE__, "checking grant tree for broken branches", -1);
+
   for (int32_t i = 0; i < rowList.size(); i++)
   {
     //  if rowIn matches this row, then update the bitmaps to use the 
     // updated bitmaps
     ObjectPrivsMDRow &currentRow = static_cast<ObjectPrivsMDRow &> (*rowList[i]);
+
     if (updatedRow.granteeID_ == currentRow.granteeID_ &&
         updatedRow.grantorID_ == currentRow.grantorID_ )
     {
@@ -2840,7 +3197,7 @@ bool PrivMgrPrivileges::checkRevokeRestrict (
   {
     PrivType pType = PrivType(i);
 
-    int32_t systemGrantor = SYSTEM_AUTH_ID;
+    int32_t systemGrantor = SYSTEM_USER;
     scanObjectBranch (pType, systemGrantor, rowList);
     // TDB - add a scan for column privileges
   }
@@ -2852,12 +3209,16 @@ bool PrivMgrPrivileges::checkRevokeRestrict (
   for (size_t i = 0; i < rowList.size(); i++)
   {
     ObjectPrivsMDRow &currentRow = static_cast<ObjectPrivsMDRow &> (*rowList[i]);
+    currentRow.describeRow(traceMsg);
+    log (__FILE__, traceMsg, i);
+
     if (currentRow.anyNotVisited())
     {
       *pDiags_ << DgSqlCode(-CAT_DEPENDENT_PRIV_EXISTS)
                << DgString0(currentRow.grantorName_.c_str())
                << DgString1(currentRow.granteeName_.c_str());
 
+      log (__FILE__, "found a branch that is not accessible", -1);
       notVisited = true;
       break;
     }
@@ -2982,6 +3343,264 @@ void PrivMgrPrivileges::scanPublic( const PrivType pType, // in
 
          if ( current.getWgo(pType) )
            visited.setWgo(pType, true);
+      }
+   }  // end scan privsList over all Grantees/Grantors
+} // end scanPublic
+
+// ----------------------------------------------------------------------------
+// method: checkColumnRevokeRestrict
+//
+// This method starts at the beginning of the privilege tree and rebuilds
+// it from top to bottom.  If the revoke causes part of the tree to be 
+// unaccessible (a broken branch), it returns true; otherwise, revoke can 
+// proceed - returns false.
+//
+// Params:
+//     granteeID - the target AuthID
+//     colPrivsToRevoke - the list of column entries containing proposed 
+//                        changes from the requested revoke statement.
+//     rowList - a list of all the rows associated with the object
+//
+//  true - unable to perform revoke because of dependencies
+//  false - able to perform revoke.privileges
+//
+// The diags area is set up with where the tree was broken
+// ---------------------------------------------------------------------------- 
+bool PrivMgrPrivileges::checkColumnRevokeRestrict (
+  int32_t granteeID,
+  const std::vector<ColPrivEntry> &colPrivsToRevoke,
+  std::vector <PrivMgrMDRow *> &rowList )
+{
+  std::string traceMsg;
+  log (__FILE__, "checking column grant tree for broken branches", -1);
+
+  // Clear visited_ bitmaps and set current_ bitmaps to current priv values
+  // Search the list of privileges associated with the object and turn off 
+  // the bitmaps in current_ that are no longer available when the revoke 
+  // completes - based on colPrivsToRevoke. 
+  for (int32_t i = 0; i < rowList.size(); i++)
+  {
+    ColumnPrivsMDRow &currentRow = static_cast<ColumnPrivsMDRow &> (*rowList[i]);
+    currentRow.setCurrentToOriginal();
+    currentRow.clearVisited();
+
+    // only look at rows for the current grantor and grantee
+    if (currentRow.grantorID_ == grantorID_ &&
+        currentRow.granteeID_ == granteeID)
+    {
+      // Adjust rows that have had their privileges updated
+      for (int32_t j = 0; j < colPrivsToRevoke.size(); j++)
+      {
+        ColPrivEntry updatedEntry = (ColPrivEntry)colPrivsToRevoke[j];
+
+        if (updatedEntry.getColumnOrdinal() == currentRow.columnOrdinal_)
+        {
+          PrivColumnBitmap newPrivBitmap = updatedEntry.getPrivBitmap() ^= currentRow.privsBitmap_;
+          PrivColumnBitmap newGrantableBitmap = updatedEntry.getGrantableBitmap() ^= currentRow.grantableBitmap_;
+          currentRow.current_.setPrivBitmap(newPrivBitmap);
+          currentRow.current_.setGrantableBitmap(newGrantableBitmap);
+          traceMsg = "Adjusted current_ to reflect revoked privileges";
+          traceMsg += ", grantor is ";
+          traceMsg += to_string((long long int)currentRow.grantorID_);
+          traceMsg += ", grantee is ";
+          traceMsg += to_string((long long int) currentRow.granteeID_);
+          log (__FILE__, traceMsg, -1);
+        }
+      }
+    }
+  }
+
+  // Reconstruct the privilege tree based on the adjusted privileges 
+  // starting with the object owner - get the object owner.
+  PrivMgrObjects objects(trafMetadataLocation_,pDiags_);
+  int32_t objectOwner = 0;
+  PrivStatus privStatus = objects.fetchObjectOwner(objectUID_,objectOwner);
+  if (privStatus == STATUS_ERROR)
+  {
+     PRIVMGR_INTERNAL_ERROR("Could not fetch object owner");
+     return true;
+  }
+
+  // Create the list of columns that have been changed, during 
+  // reconstruction, only look at rows that have changes.  
+  // std::set does not add entries if they already exist.
+  std::set<int32_t> listOfColumnOrdinals;
+  for ( size_t i = 0; i < colPrivsToRevoke.size(); i++)
+  {
+    ColPrivEntry colPrivToRevoke = colPrivsToRevoke[i];
+    listOfColumnOrdinals.insert(colPrivToRevoke.getColumnOrdinal());
+  }
+
+  // Reconstruct tree
+  for ( size_t i = 0; i < NBR_DML_COL_PRIVS; i++ )
+  {
+    scanColumnBranch (PrivType(i), objectOwner, listOfColumnOrdinals, rowList);
+  }
+
+  // If a branch of the tree was not visited, then we have a broken
+  // tree.  Therefore, revoke restrict will leave abandoned privileges
+  // in the case, return true.
+  bool  notVisited = false;
+  for (size_t i = 0; i < rowList.size(); i++)
+  {
+    ColumnPrivsMDRow &currentRow = static_cast<ColumnPrivsMDRow &> (*rowList[i]);
+
+    // Only look at rows that have been changed
+    for (std::set<int32_t>::iterator it = listOfColumnOrdinals.begin(); 
+         it!= listOfColumnOrdinals.end(); ++it)
+    {
+      if (*it == currentRow.columnOrdinal_)
+      {
+        currentRow.describeRow(traceMsg);
+        log (__FILE__, traceMsg, i);
+
+        if (currentRow.anyNotVisited())
+        {
+          *pDiags_ << DgSqlCode(-CAT_DEPENDENT_PRIV_EXISTS)
+                   << DgString0(currentRow.grantorName_.c_str())
+                   << DgString1(currentRow.granteeName_.c_str());
+
+          log (__FILE__, "found a branch that is not accessible", -1);
+          notVisited = true;
+          break;
+        }
+      }
+    }
+  }
+  return notVisited;
+}
+
+// ----------------------------------------------------------------------------
+//  method:  scanObjectBranch 
+// 
+//   scans the privsList entries for match on Grantor,
+//   keeping track of which priv/wgo entries have been encountered
+//   by setting "visited" flag in the entry.
+//
+//   For each entry discovered, set visited flag to indicate that
+//   priv and wgo were seen.  For wgo, if the wgo visited flag has not
+//   already been set, call scanObjectBranch recursively with this grantee
+//   as grantor.  (By observing the state of the wgo visited flag
+//   we avoid redundantly exploring the sub-tree rooted in a grantor
+//   which has already been discovered as having wgo from some other
+//   ancestor grantor.)
+//
+//   This algorithm produces a depth-first scan of all nodes of the 
+//   directed graph of privilege settings which can currently be reached
+//   by an uninterrupted chain of wgo values.
+//
+//   The implementation is dependent on the fact that rowList 
+//   entries are ordered by Grantor, Grantee, columnOrdinal
+// -----------------------------------------------------------------------------
+void PrivMgrPrivileges::scanColumnBranch( const PrivType pType,
+  const int32_t& grantor,
+  const std::set<int32_t> &listOfColumnOrdinals,
+  const std::vector<PrivMgrMDRow *> & rowList  ) 
+{
+
+  // The PrivMgrMDRow <list> is maintained in order by
+  //  columnOrdinal within Grantee within Grantor - through an order by clause.
+
+  // Skip over Grantors lower than the specified one.
+  size_t i = 0;
+  while (  i < rowList.size() )
+  {
+    ColumnPrivsMDRow &currentRow = static_cast<ColumnPrivsMDRow &> (*rowList[i]);
+    if (currentRow.grantorID_ < grantor)
+     i++;
+   else
+     break;
+  }
+
+  // For matching Grantor, process each Grantee.
+  while (  i < rowList.size() )
+  {
+    ColumnPrivsMDRow &currentRow = static_cast<ColumnPrivsMDRow &> (*rowList[i]);
+    if (currentRow.grantorID_ == grantor)
+    {
+
+      // Just look at rows that have had privileges changed
+      // The listOfColumnOrdinals has this list
+      ColPrivEntry current = currentRow.current_;
+      std::set<int32_t>::iterator it;
+      it = std::find(listOfColumnOrdinals.begin(), listOfColumnOrdinals.end(), current.getColumnOrdinal());
+      if (it != listOfColumnOrdinals.end())
+      {
+        if ( current.getPrivBitmap().test(pType) )
+        {
+          // This grantee has priv.  Set corresponding visited flag.
+          currentRow.visited_.setPriv(pType, true);
+
+          if ( current.getGrantableBitmap().test(pType))
+          {
+            // This grantee has wgo.  
+            if ( currentRow.visited_.getGrantableBitmap().test(pType) )
+            {   // Already processed this subtree.
+            }
+            else
+            {
+              currentRow.visited_.setGrantable(pType, true);
+ 
+              // To check:  since column level privileges do not have
+              // an anchor, we choose the object owner as the root.
+              int32_t thisGrantee( currentRow.granteeID_ );
+              if ( ComUser::isPublicUserID(thisGrantee) )
+                scanPublic( pType, //  Deal with PUBLIC grantee wgo.
+                            rowList );
+              else
+              {
+                int32_t granteeAsGrantor(thisGrantee);
+                scanColumnBranch( pType, // Scan for this grantee as grantor.
+                               granteeAsGrantor,
+                               listOfColumnOrdinals,
+                               rowList );
+              }
+            }
+          }  // end this grantee has wgo
+        }  // end this grantee has this priv
+      } // correct column ordinal
+      i++;  // on to next rowList entry
+    }
+    else
+      break;  // done with the grantor
+  }  // end scan rowList over Grantees for this Grantor
+}
+
+/* *******************************************************************
+   scanColumnPublic --  a grant wgo to PUBLIC has been encountered for the 
+   current privilege type, so *all* users are able to grant this privilege.
+   Scan the privsList for all grantees who have this priv from any grantor,
+   marking each such entry as visited.
+
+****************************************************************** */
+
+void PrivMgrPrivileges::scanColumnPublic( 
+  const PrivType pType, // in
+  const std::set<int32_t> &listOfColumnOrdinals,
+  const std::vector<PrivMgrMDRow *>& rowList )    // in
+{
+   // PUBLIC has a priv wgo.  So *every* grant of this priv
+   //   is allowed, by any Grantor.
+   for ( size_t i = 0; i < rowList.size(); i++ )
+   {
+      ColumnPrivsMDRow &currentRow = static_cast<ColumnPrivsMDRow &> (*rowList[i]);
+
+      // Just look at rows that have had privileges changed
+      // The listOfColumnOrdinals has this list
+      ColPrivEntry current = currentRow.current_;
+      std::set<int32_t>::iterator it;
+      it = std::find(listOfColumnOrdinals.begin(), listOfColumnOrdinals.end(), current.getColumnOrdinal());
+      if (it != listOfColumnOrdinals.end())
+      {
+        if ( current.getPrivBitmap().test(pType) )
+        {
+           // This grantee has priv.  Set corresponding visited flag.
+           currentRow.visited_.setPriv(pType, true);
+
+            // This grantee has wgo.  
+            if ( currentRow.visited_.getGrantableBitmap().test(pType) )
+              currentRow.visited_.setGrantable(pType, true);
+        }
       }
    }  // end scan privsList over all Grantees/Grantors
 } // end scanPublic
@@ -3223,6 +3842,7 @@ PrivStatus PrivMgrPrivileges::getPrivTextForObject(
 // *****************************************************************************
 PrivStatus PrivMgrPrivileges::getPrivsOnObjectForUser(
   const int64_t objectUID,
+  ComObjectType objectType,
   const int32_t userID,
   PrivObjectBitmap &userPrivs,
   PrivObjectBitmap &grantablePrivs,
@@ -3231,7 +3851,7 @@ PrivStatus PrivMgrPrivileges::getPrivsOnObjectForUser(
   std::vector <ComSecurityKey *>* secKeySet)
 {
   PrivStatus retcode = STATUS_GOOD;
-
+  
   objectUID_ = objectUID;
   if (objectUID == 0)
   {
@@ -3245,19 +3865,27 @@ PrivStatus PrivMgrPrivileges::getPrivsOnObjectForUser(
 
   objectUID_ = objectUID;
   PrivMgrDesc privsOfTheUser(userID);
-
+  bool hasManagePrivileges = false;
   std::vector<int32_t> roleIDs;
   
   retcode = getRoleIDsForUserID(userID,roleIDs);
   if (retcode == STATUS_ERROR)
     return retcode;
 
-  retcode = getUserPrivs( userID, roleIDs, privsOfTheUser, secKeySet);
+  retcode = getUserPrivs(objectType, userID, roleIDs, privsOfTheUser, 
+                         hasManagePrivileges, secKeySet);
   if (retcode != STATUS_GOOD)
     return retcode;
+ 
+  if (hasManagePrivileges && hasAllDMLPrivs(objectType,privsOfTheUser.getTablePrivs().getPrivBitmap()))
+  {
+    userPrivs = privsOfTheUser.getTablePrivs().getPrivBitmap();
+    grantablePrivs = userPrivs;
+    return STATUS_GOOD; 
+  }
     
  // generate the list of column-level privileges granted to the object and store in class
-  if (generateObjectRowList() == STATUS_ERROR)
+  if (generateColumnRowList() == STATUS_ERROR)
     return STATUS_ERROR;
 
   retcode = getColPrivsForUser(userID,roleIDs,colPrivsList,colGrantableList,secKeySet);
@@ -3265,7 +3893,10 @@ PrivStatus PrivMgrPrivileges::getPrivsOnObjectForUser(
     return retcode;
 
   userPrivs = privsOfTheUser.getTablePrivs().getPrivBitmap();
-  grantablePrivs = privsOfTheUser.getTablePrivs().getWgoBitmap();
+  if (hasManagePrivileges)
+    grantablePrivs = userPrivs;
+  else
+    grantablePrivs = privsOfTheUser.getTablePrivs().getWgoBitmap();
   
   return retcode;
 }
@@ -3312,9 +3943,11 @@ std::vector<int32_t> roleDepths;
 // *                                                       
 // *  Parameters:    
 // *                                                                       
+// *  <objectType> is the type of the subject object.
 // *  <granteeID> specifies the userID to accumulate
 // *  <roleIDs> specifies a list of roles granted to the grantee
 // *  <summarizedPrivs> contains the summarized privileges
+// *  <hasManagePrivileges> returns whether the grantee has MANAGE_PRIVILEGES authority
 // *  <secKeySet> if not NULL, returns a set of keys for user
 // *                                                                     
 // * Returns: PrivStatus                                               
@@ -3324,9 +3957,11 @@ std::vector<int32_t> roleDepths;
 // *                                                               
 // *****************************************************************************
 PrivStatus PrivMgrPrivileges::getUserPrivs(
+  ComObjectType objectType,
   const int32_t granteeID,
   const std::vector<int32_t> & roleIDs,
   PrivMgrDesc &summarizedPrivs,
+  bool & hasManagePrivileges,
   std::vector <ComSecurityKey *>* secKeySet 
   )
 {
@@ -3334,9 +3969,11 @@ PrivStatus PrivMgrPrivileges::getUserPrivs(
    PrivMgrDesc temp(granteeID);
 
    retcode = getPrivsFromAllGrantors( objectUID_,
+                                      objectType,
                                       granteeID,
                                       roleIDs,
                                       temp,
+                                      hasManagePrivileges,
                                       secKeySet
                                       );
    if (retcode != STATUS_GOOD)
@@ -3357,8 +3994,10 @@ PrivStatus PrivMgrPrivileges::getUserPrivs(
 // *  Parameters:    
 // *                                                                       
 // *  <objectUID> object to gather privileges for
+// *  <objectType> is the type of the subject object.
 // *  <granteeID> specifies the userID to accumulate
 // *  <roleIDs> is vector of roleIDs granted to the grantee
+// *  <hasManagePrivileges> returns whether the grantee has MANAGE_PRIVILEGES authority
 // *  <summarizedPrivs> contains the summarized privileges
 // *                                                                     
 // * Returns: PrivStatus                                               
@@ -3369,13 +4008,16 @@ PrivStatus PrivMgrPrivileges::getUserPrivs(
 // *****************************************************************************
 PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
    const int64_t objectUID,
+   ComObjectType objectType,
    const int32_t granteeID,
    const std::vector<int32_t> & roleIDs,
    PrivMgrDesc &summarizedPrivs,
+   bool & hasManagePrivileges,
    std::vector <ComSecurityKey *>* secKeySet 
    )
 {
   PrivStatus retcode = STATUS_GOOD;
+  hasManagePrivileges = false;
   
   // Check to see if the granteeID is the system user
   // if so, the system user has all privileges.  Set up appropriately
@@ -3385,9 +4027,23 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
     bitmap.set();
     PrivMgrCoreDesc coreTablePrivs(bitmap, bitmap);
     summarizedPrivs.setTablePrivs(coreTablePrivs);
+    hasManagePrivileges = true;
     return STATUS_GOOD;
   }
+  
+  PrivObjectBitmap systemPrivs;
+  PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
+  
+  componentPrivileges.getSQLDMLPrivileges(granteeID,roleIDs,systemPrivs,
+                                          hasManagePrivileges);
 
+  if (hasManagePrivileges && hasAllDMLPrivs(objectType,systemPrivs))
+  {
+    PrivMgrCoreDesc coreTablePrivs(systemPrivs,systemPrivs);
+    summarizedPrivs.setTablePrivs(coreTablePrivs);
+    return STATUS_GOOD; 
+  }
+  
   std::vector<PrivMgrMDRow *> rowList;
   retcode = getRowsForGrantee(objectUID, granteeID, true, roleIDs, rowList, secKeySet);
   if (retcode == STATUS_ERROR)
@@ -3410,6 +4066,14 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
     PrivMgrCoreDesc temp (row.privsBitmap_, row.grantableBitmap_);
     coreTablePrivs.unionOfPrivs(temp);
   }
+  
+  PrivObjectBitmap grantableBitmap;
+  
+  if (hasManagePrivileges)
+     grantableBitmap = systemPrivs;
+  
+  PrivMgrCoreDesc temp2(systemPrivs,grantableBitmap);
+  coreTablePrivs.unionOfPrivs(temp2);
   
   summarizedPrivs.setTablePrivs(coreTablePrivs);
 
@@ -3471,7 +4135,7 @@ PrivStatus PrivMgrPrivileges::getRowsForGrantee(
   // create the list of row pointers from the cached list
   std::vector<int32_t> authIDs = roleIDs;
   authIDs.push_back(granteeID);
-  authIDs.push_back(PUBLIC_AUTH_ID);
+  authIDs.push_back(PUBLIC_USER);
   std::vector<int32_t>::iterator it;
   std::vector<PrivMgrMDRow *> privRowList;
   if (isObjectTable)
@@ -3506,6 +4170,84 @@ PrivStatus PrivMgrPrivileges::getRowsForGrantee(
   }
 
   return STATUS_GOOD;
+}
+
+// ****************************************************************************
+// method:  summarizeColPrivs
+//
+// This method summarizes column privileges across all grantors.
+//
+// Params:
+//   objectReference - the affected object
+//   roleIDs - list of roles for the current object owner
+//   listOfAffectedObjects - list of affected objects
+//   summarizedColRefs - a list of ColumnReference pointers that contain the
+//                       summarized privileges (the caller is responsible
+//                       for deleting memory for this parameter
+// ****************************************************************************
+void PrivMgrPrivileges::summarizeColPrivs(
+  const ObjectReference &objReference,
+  const std::vector<int32_t> &roleIDs,
+  const std::vector<ObjectUsage *> &listOfAffectedObjects,
+  std::vector<ColumnReference *> &summarizedColRefs)
+{
+  std::string traceMsg;
+  objReference.describe(traceMsg);
+  traceMsg.insert (0, "summarizing column privileges ");
+  log (__FILE__, traceMsg, -1);
+
+  // objReference.columnReferences is the list of columns for RI constraints
+  // referencing the referenced table
+  std::vector<ColumnReference *> *colRefs = objReference.columnReferences;
+  for (size_t i = 0; i < colRefs->size(); i++)
+  {
+    ColumnReference *colRef = (*colRefs)[i];
+    colRef->describe(traceMsg);
+    log (__FILE__, traceMsg, i);
+
+    // get COLUMN_PRIVILEGES rows where the grantee for the column has received 
+    // privileges -  the row list is in memory so this does not require I/O
+    std::vector<PrivMgrMDRow *> rowList;
+    getColRowsForGranteeOrdinal(objReference.objectOwner,
+                                colRef->columnOrdinal,
+                                roleIDs,
+                                rowList);
+    
+    // go through the rowList to summarize the original and current privileges
+    // We do a union operation to capture privileges from all grantors
+    ColumnReference *summarized = new ColumnReference; 
+    summarized->columnOrdinal = colRef->columnOrdinal;
+    for (int32_t i = 0; i < rowList.size();++i)
+    {
+      ColumnPrivsMDRow &row = static_cast<ColumnPrivsMDRow &> (*rowList[i]);
+      PrivMgrCoreDesc originalPrivs(row.privsBitmap_, row.grantableBitmap_);
+
+      ColumnReference ref;
+      ref.columnOrdinal = row.columnOrdinal_;
+      ref.originalPrivs = originalPrivs;
+      ref.updatedPrivs = originalPrivs;
+      
+      // Update if privileges have been changed by request
+      for (size_t j = 0; j < listOfAffectedObjects.size(); j++)
+      {
+        ObjectUsage *currentObj = listOfAffectedObjects[j];
+        if (currentObj->objectUID == row.objectUID_ &&
+            grantorID_ == row.grantorID_ &&
+            objReference.objectOwner == row.granteeID_ )
+        {
+          ColumnReference *changedRef = currentObj->findColumn(row.columnOrdinal_);
+          if (changedRef)
+            ref.updatedPrivs = changedRef->updatedPrivs;
+        }
+      }
+      
+      summarized->originalPrivs.unionOfPrivs(ref.originalPrivs);
+      summarized->updatedPrivs.unionOfPrivs(ref.updatedPrivs);
+    }
+
+    // Add column ref to the list
+    summarizedColRefs.push_back(summarized);
+  }
 }
 
 // *****************************************************************************
@@ -3552,12 +4294,12 @@ PrivStatus PrivMgrPrivileges::summarizeCurrentAndOriginalPrivs(
     PrivMgrCoreDesc current = original;
     for (size_t j = 0; j < listOfChangedPrivs.size(); j++)
     {
-      ObjectUsage *pObj = listOfChangedPrivs[j];
-      if (pObj->objectUID == row.objectUID_ &&
+      ObjectUsage *pObjectUsage = listOfChangedPrivs[j];
+      if (pObjectUsage->objectUID == row.objectUID_ &&
           grantorID_ == row.grantorID_ &&
-          pObj->objectOwner == row.granteeID_ )
+          pObjectUsage->granteeID == row.granteeID_ )
       {
-        current = pObj->updatedPrivs.getTablePrivs();
+        current = pObjectUsage->updatedPrivs.getTablePrivs();
       }
     }
     summarizedOriginalPrivs.unionOfPrivs(original);
@@ -4022,7 +4764,7 @@ void static buildGrantText(
    
 {
 
-   if (grantorID == SYSTEM_AUTH_ID)
+   if (grantorID == SYSTEM_USER)
       grantText += "-- ";
 
    grantText += "GRANT ";
@@ -4041,7 +4783,7 @@ void static buildGrantText(
    else
 
    if (grantorID != objectOwner &&
-       grantorID != SYSTEM_AUTH_ID)
+       grantorID != SYSTEM_USER)
     {
       grantText += " GRANTED BY ";
       bool delimited = isDelimited(grantorName);
@@ -4276,7 +5018,7 @@ static ColPrivEntry * findColumnEntry(
 {
 
    for (size_t i = 0; i < colPrivEntries.size(); i++)
-      if (colPrivEntries[i].columnOrdinal == columnOrdinal)
+      if (colPrivEntries[i].getColumnOrdinal() == columnOrdinal)
          return & colPrivEntries[i];
          
    return NULL;
@@ -4329,7 +5071,7 @@ static PrivStatus getColRowsForGrantee(
 
   std::vector<int32_t> authIDs = roleIDs;
   authIDs.push_back(granteeID);
-  authIDs.push_back(PUBLIC_AUTH_ID);
+  authIDs.push_back(PUBLIC_USER);
   std::vector<int32_t>::iterator it;
 
   std::vector<PrivMgrMDRow *> privRowList;
@@ -4394,9 +5136,9 @@ static void getColRowsForGranteeGrantor(
       
       if (row.grantorID_ == grantorID && row.granteeID_ == granteeID)
       {
-         colPrivGrant.columnOrdinal = row.columnOrdinal_;
-         colPrivGrant.privsBitmap = row.privsBitmap_.to_ulong();
-         colPrivGrant.grantableBitmap = row.grantableBitmap_.to_ulong();
+         colPrivGrant.setColumnOrdinal(row.columnOrdinal_);
+         colPrivGrant.setPrivBitmap(row.privsBitmap_.to_ulong());
+         colPrivGrant.setGrantableBitmap(row.grantableBitmap_.to_ulong());
       
          grantedColPrivs.push_back(colPrivGrant);
       }
@@ -4404,6 +5146,61 @@ static void getColRowsForGranteeGrantor(
    
 }
 //******************* End of getColRowsForGranteeGrantor ***********************
+
+
+// *****************************************************************************
+// * Function: hasAllDMLPrivs                                                  *
+// *                                                                           *
+// *    This function determines if a privilege bitmap has all the DML         *
+// * privileges for a specified object type.                                   *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <objectType>                 ComObjectType                      In       *
+// *    is the type of the object.                                             *
+// *                                                                           *
+// *  <privBitmap>                 PrivObjectBitmap                   In       *
+// *    is the bitmap representing the privileges.                             *
+// *                                                                           *
+// *****************************************************************************
+static bool hasAllDMLPrivs(
+   ComObjectType objectType,
+   PrivObjectBitmap privBitmap)
+
+{
+
+   switch (objectType)
+   {
+      case COM_BASE_TABLE_OBJECT:
+      case COM_VIEW_OBJECT:
+         if (privBitmap.test(DELETE_PRIV) && privBitmap.test(INSERT_PRIV) &&
+             privBitmap.test(REFERENCES_PRIV) && privBitmap.test(SELECT_PRIV) &&
+             privBitmap.test(UPDATE_PRIV))
+            return true;
+         break;
+      case COM_LIBRARY_OBJECT:
+         if (privBitmap.test(UPDATE_PRIV) && privBitmap.test(USAGE_PRIV))
+            return true;
+         break;      
+      case COM_STORED_PROCEDURE_OBJECT:
+      case COM_USER_DEFINED_ROUTINE_OBJECT:
+         if (privBitmap.test(EXECUTE_PRIV))
+            return true;
+         break;
+      case COM_SEQUENCE_GENERATOR_OBJECT:
+         if (privBitmap.test(USAGE_PRIV))
+            return true;
+         break;      
+      default:
+         return false;           
+   }
+   
+   return false;
+
+}
+//************************** End of hasAllDMLPrivs *****************************
 
 
 // *****************************************************************************
@@ -4445,58 +5242,58 @@ std::vector<ColPrivSpec> &colPrivsArray =
 
    privStatus = STATUS_GOOD;
 
-// Grantor may have column WGO from two sources, object-level grants on the  
-// object and column-level grants.  First check the object-level grants. 
+   // Grantor may have column WGO from two sources, object-level grants on the  
+   // object and column-level grants.  First check the object-level grants. 
   
-std::vector<PrivMgrMDRow *> objRowList;
+   std::vector<PrivMgrMDRow *> objRowList;
 
-  // Get object privileges that the grantor has been granted - that is, the 
-  // grantor becomes the grantee.  
-  privStatus = getRowsForGrantee(objectUID_,grantorID_,true,roleIDs,objRowList,NULL);
-  if (privStatus == STATUS_ERROR)
-    return privStatus;
+   // Get object privileges that the grantor has been granted - that is, the 
+   // grantor becomes the grantee.  
+   privStatus = getRowsForGrantee(objectUID_,grantorID_,true,roleIDs,objRowList,NULL);
+   if (privStatus == STATUS_ERROR)
+     return privStatus;
       
-// For each privilege to grant, see if the grantor has been granted that 
-// privilege WITH GRANT OPTION (WGO).  If so, note it in the colPrivsArray entry.
-// If the grantor does not have WGO, note that we have to check column 
-// privileges for at least one grant.
-bool checkColumnPrivs = false;
+   // For each privilege to grant, see if the grantor has been granted that 
+   // privilege WITH GRANT OPTION (WGO).  If so, note it in the colPrivsArray entry.
+   // If the grantor does not have WGO, note that we have to check column 
+   // privileges for at least one grant.
+   bool checkColumnPrivs = false;
  
    for (size_t i = 0; i < colPrivsArray.size(); i++)
    {
-      ColPrivSpec &colPrivEntry = colPrivsArray[i];
-      colPrivEntry.grantorHasWGO = false;
+      ColPrivSpec &colPrivSpec = colPrivsArray[i];
+      colPrivSpec.grantorHasWGO = false;
       for (size_t j = 0; j < objRowList.size(); j++)
       {
          ObjectPrivsMDRow &objectRow = static_cast<ObjectPrivsMDRow &> (*objRowList[j]);
          
-         if (objectRow.grantableBitmap_.test(colPrivEntry.privType))
+         if (objectRow.grantableBitmap_.test(colPrivSpec.privType))
          {
-            colPrivEntry.grantorHasWGO = true;
+            colPrivSpec.grantorHasWGO = true;
             break;
          }
       }
-      if (!colPrivEntry.grantorHasWGO)
+      if (!colPrivSpec.grantorHasWGO)
          checkColumnPrivs = true;
    }
    
-// If object-level privileges are sufficient to grant the column-level 
-// privileges, no need to read COLUMN_PRIVILEGES table.
+   // If object-level privileges are sufficient to grant the column-level 
+   // privileges, no need to read COLUMN_PRIVILEGES table.
    if (!checkColumnPrivs)
       return true;
 
 
-// The grantor did not have WGO at the object level for at least one
-// of the privileges to be granted; see if they have the column privilege WGO.  
+   // The grantor did not have WGO at the object level for at least one
+   // of the privileges to be granted; see if they have the column privilege WGO.  
 
-// Fetch any relevant WGO rows from COLUMN_PRIVILEGES.
-std::vector<PrivMgrMDRow *> colRowList;
+   // Fetch any relevant WGO rows from COLUMN_PRIVILEGES.
+   std::vector<PrivMgrMDRow *> colRowList;
     
-  // Get object privileges that the grantor has been granted - that is, the 
-  // grantor becomes the grantee.  
-  privStatus = getRowsForGrantee(objectUID_,grantorID_,false,roleIDs,colRowList,NULL);
-  if (privStatus == STATUS_ERROR)
-    return privStatus;
+   // Get object privileges that the grantor has been granted - that is, the 
+   // grantor becomes the grantee.  
+   privStatus = getRowsForGrantee(objectUID_,grantorID_,false,roleIDs,colRowList,NULL);
+   if (privStatus == STATUS_ERROR)
+     return privStatus;
 
    for (size_t i = 0; i < colPrivsArray.size(); i++)
    {
@@ -4505,21 +5302,21 @@ std::vector<PrivMgrMDRow *> colRowList;
       if (colPrivsArray[i].grantorHasWGO)
          continue;
          
-      ColPrivSpec &colPrivEntry = colPrivsArray[i];
+      ColPrivSpec &colPrivSpec = colPrivsArray[i];
       
       // See if the grantor has been granted WGO at column-level for priv.  
-      for (size_t j = 0; i < colRowList.size(); j++)
+      for (size_t j = 0; j < colRowList.size(); j++)
       {
          ColumnPrivsMDRow &columnRow = static_cast<ColumnPrivsMDRow &> (*colRowList[i]);
-         if (columnRow.grantableBitmap_.test(colPrivEntry.privType))
+         if (columnRow.grantableBitmap_.test(colPrivSpec.privType))
          {
-            colPrivEntry.grantorHasWGO = true;
+            colPrivSpec.grantorHasWGO = true;
             break;
          }
       }
       // If the grantor does not have an object-level or column-level WGO
       // for one of the privs to grant, return an error.
-      if (!colPrivEntry.grantorHasWGO)
+      if (!colPrivSpec.grantorHasWGO)
       {
          privStatus = STATUS_NOTFOUND;
          return false;
@@ -4594,7 +5391,7 @@ static bool hasGrantedColumnPriv(
  
    for (size_t i = 0; i < colPrivsArray.size(); i++)
    {
-      const ColPrivSpec &colPrivEntry = colPrivsArray[i];
+      const ColPrivSpec &colPrivSpec = colPrivsArray[i];
       bool grantFound = false;
       for (size_t j = 0; j < colRowList.size(); j++)
       {
@@ -4603,8 +5400,8 @@ static bool hasGrantedColumnPriv(
          // Only look at rows with the requested grantor and grantee
          if (columnRow.grantorID_ == grantorID && columnRow.granteeID_ == granteeID)
          {
-            if (columnRow.columnOrdinal_ == colPrivEntry.columnOrdinal &&
-                columnRow.privsBitmap_.test(colPrivEntry.privType))
+            if (columnRow.columnOrdinal_ == colPrivSpec.columnOrdinal &&
+                columnRow.privsBitmap_.test(colPrivSpec.privType))
             {
                grantFound = true;
                break;
@@ -4614,7 +5411,7 @@ static bool hasGrantedColumnPriv(
 
       if (!grantFound)
       {
-         privilege = PrivMgrUserPrivs::convertPrivTypeToLiteral((PrivType)colPrivEntry.privType);
+         privilege = PrivMgrUserPrivs::convertPrivTypeToLiteral((PrivType)colPrivSpec.privType);
          privStatus = STATUS_NOTFOUND;
          return false;
       }
@@ -4629,9 +5426,9 @@ static bool hasGrantedColumnPriv(
       {
          ColPrivEntry grantedColPriv;
       
-         grantedColPriv.columnOrdinal = columnRow.columnOrdinal_;
-         grantedColPriv.grantableBitmap = columnRow.grantableBitmap_;
-         grantedColPriv.privsBitmap = columnRow.privsBitmap_;
+         grantedColPriv.setColumnOrdinal(columnRow.columnOrdinal_);
+         grantedColPriv.setGrantableBitmap(columnRow.grantableBitmap_);
+         grantedColPriv.setPrivBitmap(columnRow.privsBitmap_);
          grantedColPrivs.push_back(grantedColPriv);
       }
    }
@@ -4675,6 +5472,25 @@ static bool isDelimited( const std::string &strToScan)
 }
 //*********************** End of isDelimited ***********************************
    
+
+// *****************************************************************************
+//    ObjectPrivsMDRow methods
+// *****************************************************************************
+
+void ObjectPrivsMDRow::describeRow (std::string &rowDetails)
+{
+  rowDetails = "OBJECT_PRIVILEGES row: type is ";
+  char objectTypeLit[3] = {0};
+  strncpy(objectTypeLit,PrivMgr::ObjectEnumToLit(objectType_),2);
+  rowDetails += objectTypeLit;
+  rowDetails += ", UID is ";
+  rowDetails += to_string((long long int) objectUID_);
+  rowDetails += ", grantor is ";
+  rowDetails += to_string((long long int)grantorID_);
+  rowDetails += ", grantee is ";
+  rowDetails += to_string((long long int) granteeID_);
+}
+
 
 // *****************************************************************************
 //    ObjectPrivsMDTable methods
@@ -5114,9 +5930,10 @@ PrivStatus ObjectPrivsMDTable::updateWhere(const std::string & setClause,
 //    <catalogName> "<schema_name>"."<object_name>", 
 //    object_type,
 //    object_owner, -- granteeID
-//    (select auth_db_name from AUTHS where auth_id = object_owner), --granteeName
+//    coalesce((select auth_db_name from AUTHS where auth_id = object_owner),
+//             'DB__ROOT') --granteeName
 //    USER_GRANTEE_LIT, -- "U"
-//    SYSTEM_AUTH_ID,  -- system grantor ID (-2)
+//    SYSTEM_USER,  -- system grantor ID (-2)
 //    SYSTEM_AUTH_NAME, -- grantorName (_SYSTEM)
 //    SYSTEM_GRANTOR_LIST, -- "S"
 //    case
@@ -5137,6 +5954,10 @@ PrivStatus ObjectPrivsMDTable::updateWhere(const std::string & setClause,
 //    end as grantableBitmap
 //  from OBJECTS 
 //  where object_type in ('VI','BT','LB','UR','SG')
+//
+// The "coalesce" for the granteeName above is in case the auth_id is
+// invalid (that is, does not appear in the AUTHS table). If we don't
+// know who the auth_id is, we'll put DB__ROOT, the super user, there.
 //   
 // The ComDiags area is set up with unexpected errors
 // ----------------------------------------------------------------------------
@@ -5182,7 +6003,7 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
   int64_t sequenceBits = privDesc.getTablePrivs().getPrivBitmap().to_ulong();
 
   // for views, privilegesBitmap is set to 1 (SELECT), wgo to 0 (no)
-  std::string systemGrantor("_SYSTEM");
+  std::string systemGrantor(SYSTEM_AUTH_NAME);
 
   // Generate case stmt for grantable bitmap
   sprintf (buf, "case when object_type = 'BT' then %ld "
@@ -5206,13 +6027,13 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
   sprintf(buf, "insert into %s select distinct object_uid, "
           "trim(catalog_name) || '.\"' || trim(schema_name) ||  '\".\"' || trim(object_name) || '\"', "
           "object_type, object_owner, "
-          "(select auth_db_name from %s where auth_id = o.object_owner) as auth_db_name, "
+          "coalesce((select auth_db_name from %s where auth_id = o.object_owner),'DB__ROOT') as auth_db_name, "
           "'%s', %d, '%s', '%s', %s, %s from %s o " 
           "where o.object_type in ('VI','BT','LB','UR','SG')",
           tableName_.c_str(),
           authsLocation.c_str(),
           USER_GRANTEE_LIT,
-          SYSTEM_AUTH_ID, SYSTEM_AUTH_NAME, SYSTEM_GRANTOR_LIT,
+          SYSTEM_USER, SYSTEM_AUTH_NAME, SYSTEM_GRANTOR_LIT,
           privilegesClause.c_str(), grantableClause.c_str(),
           objectsLocation.c_str());
 
@@ -5314,7 +6135,23 @@ PrivStatus ObjectPrivsMDTable::insertSelectOnAuthsToPublic(
 }
 
 // *****************************************************************************
-//    ObjectPrivsMDTable methods
+//    ColumnPrivsMDRow methods
+// *****************************************************************************
+
+void ColumnPrivsMDRow::describeRow (std::string &rowDetails)
+{
+  rowDetails = "COLUMN_PRIVILEGES row: UID is ";
+  rowDetails += to_string((long long int) objectUID_);
+  rowDetails += ", column number is ";
+  rowDetails += to_string((long long int) columnOrdinal_);
+  rowDetails += ", grantor is ";
+  rowDetails += to_string((long long int)grantorID_);
+  rowDetails += ", grantee is ";
+  rowDetails += to_string((long long int) granteeID_);
+}
+
+// *****************************************************************************
+//    ColumnPrivsMDTable methods
 // *****************************************************************************
 
 // *****************************************************************************
@@ -5396,9 +6233,6 @@ PrivStatus ColumnPrivsMDTable::selectWhere(
       const std::string & orderByClause,
    std::vector<PrivMgrMDRow *> &rowList)
 {
-
-  if ((CmpCommon::getDefault(CAT_TEST_BOOL) == DF_OFF))
-    return STATUS_NOTFOUND;
 
 std::string selectStmt("SELECT object_uid,object_name,"
                        "grantee_id,grantee_name,"
@@ -5601,6 +6435,8 @@ char whereClause[1000];
 
 }
 //*************** End of ColumnPrivsMDTable::updateColumnRow *******************
+
+
 
 
 

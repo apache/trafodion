@@ -2,19 +2,22 @@
 ###############################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 #
@@ -56,6 +59,8 @@ function usage {
    print_usage_line "-major" "Specifies major number in the version string."
    print_usage_line "-minor" "Specifies minor number in the version string."
    print_usage_line "-update" "Specifies update number in the version string."
+   print_usage_line "-prodver" "Specifies product version(open,Ent,EntAdv) in the version string."
+   
 }
 
 #---------------
@@ -98,6 +103,12 @@ static const char * SCMBuildStr = "";
 /* build date */
 #define VERS_DT        $buildDate
 
+/*prodver*/
+#define VERS_PRODVER $prodver
+
+/*copyright*/
+#define COPYRIGHT $copyright
+
 #endif
 
 EOF
@@ -111,7 +122,8 @@ Implementation-Version-6: date $buildDate
 EOF
 	cat > $TMPFILEJ2 <<EOF
 #!/bin/sh
-echo "Implementation-Version-1: Version \$*"
+VER_PROD=`echo \$TRAFODION_VER_PROD | sed 's/ /_/'`
+echo "Implementation-Version-1: Version \$* \$VER_PROD"
 cat \$MY_SQROOT/export/include/SCMBuildMan.mf
 EOF
 	chmod +x $TMPFILEJ2
@@ -158,6 +170,8 @@ typeset buildDate=
 typeset major=
 typeset minor=
 typeset update=
+typeset prodver=
+typeset copyright=
 
 while [ $# -gt 0 ]; do
    case $1 in
@@ -193,6 +207,10 @@ while [ $# -gt 0 ]; do
          update="${2}"
          shift
          ;;
+       -prodver|-pv)
+         prodver="${2}"
+         shift
+         ;;       
       -h|*)
          usage
          exit 1
@@ -221,5 +239,7 @@ fi
 [ -z "$major" ]  && major="$( grep TRAFODION_VER_MAJOR=  $VERFILE | cut -f2 -d=)"
 [ -z "$minor" ]  && minor="$( grep TRAFODION_VER_MINOR=  $VERFILE | cut -f2 -d=)"
 [ -z "$update" ] && update="$(grep TRAFODION_VER_UPDATE= $VERFILE | cut -f2 -d=)"
+[ -z "$prodver" ] && prodver="$(grep TRAFODION_VER_PROD= $VERFILE | cut -f2 -d=| sed 's/ /_/' | sed 's/\"//g')"
+[ -z "$copyright" ] && copyright=" Copyright (c) $(grep PRODUCT_COPYRIGHT_HEADER= $VERFILE | cut -f2 -d=)"
 
 writeVerHdr

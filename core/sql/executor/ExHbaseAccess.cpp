@@ -1,19 +1,22 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
@@ -333,6 +336,12 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
     encodedKeyExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   if (keyColValExpr())
     keyColValExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
+  if (insDelPreCondExpr())
+    insDelPreCondExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
+  if (insConstraintExpr())
+    insConstraintExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
+  if (updConstraintExpr())
+    updConstraintExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   if (hbaseFilterValExpr())
     hbaseFilterValExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   
@@ -379,9 +388,10 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
       latestVersionNumForCols_ = new(glob->getDefaultHeap()) 
 	long[hbaseAccessTdb.workCriDesc_->getTupleDescriptor(hbaseAccessTdb.asciiTuppIndex_)->numAttrs()] ;
     }
-
-  if (hbaseAccessTdb.convertRowLen_ > 0)
-    convertRow_ = new(glob->getDefaultHeap()) char[hbaseAccessTdb.convertRowLen_];
+  
+  convertRowLen_ = hbaseAccessTdb.convertRowLen();
+  if (hbaseAccessTdb.convertRowLen() > 0)
+    convertRow_ = new(glob->getDefaultHeap()) char[hbaseAccessTdb.convertRowLen()];
 
   if (hbaseAccessTdb.updateRowLen_ > 0)
     updateRow_ = new(glob->getDefaultHeap()) char[hbaseAccessTdb.updateRowLen_];
@@ -399,8 +409,8 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
       endRowIdRow_ = new(glob->getDefaultHeap()) char[hbaseAccessTdb.rowIdLen_ + 2];
     }
       
-  if (hbaseAccessTdb.convertRowLen_ > 0)
-    rowwiseRow_ = new(glob->getDefaultHeap()) char[hbaseAccessTdb.convertRowLen_];
+  if (hbaseAccessTdb.convertRowLen() > 0)
+    rowwiseRow_ = new(glob->getDefaultHeap()) char[hbaseAccessTdb.convertRowLen()];
   if (hbaseAccessTdb.rowIdAsciiRowLen_ > 0)
     rowIdAsciiRow_ = new(glob->getDefaultHeap()) char[hbaseAccessTdb.rowIdAsciiRowLen_];
 
@@ -445,6 +455,7 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   colVal_.val = 0;
   colVal_.len = 0;
   asyncCompleteRetryCount_ = 0;
+  asyncOperation_ = FALSE;
   asyncOperationTimeout_ = 2;
   resultArray_ = NULL;
 }
@@ -875,7 +886,7 @@ short ExHbaseAccessTcb::copyCell()
     Lng32 neededLen = 
       sizeof(colNameLen) + colNameLen + sizeof(colValueLen) + colValueLen;
 
-    if (rowwiseRowLen_ + neededLen > hbaseAccessTdb().convertRowLen_)
+    if (rowwiseRowLen_ + neededLen > hbaseAccessTdb().convertRowLen())
       {
         // not enough space. Return error.
         return -HBASE_COPY_ERROR;
@@ -1005,24 +1016,27 @@ short ExHbaseAccessTcb::getColPos(char * colName, Lng32 colNameLen, Lng32 &idx)
     return 0;
 }
 
-Lng32 ExHbaseAccessTcb::createSQRowDirect()
+Lng32 ExHbaseAccessTcb::createSQRowDirect(Int64 *latestRowTimestamp)
 {
   short retcode = 0;
      
   if (hbaseAccessTdb().alignedFormat())
-    retcode = createSQRowFromAlignedFormat();
+    retcode = createSQRowFromAlignedFormat(latestRowTimestamp);
   else
     {
-      if (hbaseAccessTdb().multiVersions())
+      if (hbaseAccessTdb().multiVersions()) {
+        if (latestRowTimestamp != NULL)
+           *latestRowTimestamp = -1;
         retcode = createSQRowFromHbaseFormatMulti();
+      }
       else
-        retcode = createSQRowFromHbaseFormat();
+        retcode = createSQRowFromHbaseFormat(latestRowTimestamp);
     }
 
    return retcode;
 }
 
-Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat()
+Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat(Int64 *latestRowTimestamp)
 {
   // no columns are being fetched from hbase, do not create a row.
   if (hbaseAccessTdb().listOfFetchedColNames()->numEntries() == 0)
@@ -1046,7 +1060,8 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat()
 
   // initialize latest timestamp to 0 for every column
   memset(latestTimestampForCols_, 0, (asciiSourceTD->numAttrs()*sizeof(long)));
-
+  if (latestRowTimestamp != NULL)
+     *latestRowTimestamp = -1;
   // initialize latest version to 0 for every column
   memset(latestVersionNumForCols_, 0, (asciiSourceTD->numAttrs()*sizeof(long)));
   
@@ -1088,6 +1103,8 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat()
       if (timestamp > latestTimestampForCols_[idx])
         latestTimestampForCols_[idx] = timestamp;
 
+      if (latestRowTimestamp != NULL && timestamp  > *latestRowTimestamp)
+         *latestRowTimestamp = timestamp;
       latestVersionNumForCols_[idx] = 1;
 
       Attributes * attr = asciiSourceTD->getAttr(idx);
@@ -1185,12 +1202,16 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat()
 
   if (convertExpr())
     {
+      convertRowLen_ = hbaseAccessTdb().convertRowLen();
+      UInt32 rowLen = convertRowLen_;
       ex_expr::exp_return_type evalRetCode =
-	convertExpr()->eval(pentry_down->getAtp(), workAtp_);
+	convertExpr()->eval(pentry_down->getAtp(), workAtp_, 0, -1, &rowLen);
       if (evalRetCode == ex_expr::EXPR_ERROR)
 	{
 	  return -1;
 	}
+      if (hbaseAccessTdb().getUseCif() && rowLen < convertRowLen_)
+        convertRowLen_= rowLen;
     }
 
   return 0;
@@ -1544,7 +1565,7 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormatMulti()
   return 0;
 }
 
-Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat()
+Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat(Int64 *latestRowTimestamp)
 {
   // no columns are being fetched from hbase, do not create a row.
   if (hbaseAccessTdb().listOfFetchedColNames()->numEntries() == 0)
@@ -1564,6 +1585,8 @@ Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat()
 
   // initialize latest timestamp to 0 for every column
   memset(latestTimestampForCols_, 0, (asciiSourceTD->numAttrs()*sizeof(long)));
+  if (latestRowTimestamp != NULL)
+      *latestRowTimestamp = -1;
 
   hbaseAccessTdb().listOfFetchedColNames()->position();
   Lng32 idx = -1;
@@ -1611,6 +1634,9 @@ Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat()
     if (timestamp > latestTimestampForCols_[idx])
       latestTimestampForCols_[idx] = timestamp;
 
+    if (latestRowTimestamp != NULL && timestamp > *latestRowTimestamp)
+        *latestRowTimestamp = timestamp;
+
     // copy to asciiRow only if this is the latest version seen so far
     // for this column. On 6/10/2014 we get two versions for a newly
     // updated column that has not been committed yet.
@@ -1634,12 +1660,18 @@ Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat()
   
   if (convertExpr())
     {
+      convertRowLen_ = hbaseAccessTdb().convertRowLen();
+      UInt32 rowLen = convertRowLen_;
       ex_expr::exp_return_type evalRetCode =
-	convertExpr()->eval(pentry_down->getAtp(), workAtp_, NULL, asciiRowLen);
+	convertExpr()->eval(pentry_down->getAtp(), workAtp_, NULL, 
+			    asciiRowLen, &rowLen);
       if (evalRetCode == ex_expr::EXPR_ERROR)
 	{
 	  return -1;
 	}
+      if (hbaseAccessTdb().getUseCif() &&
+      rowLen < convertRowLen_)
+        convertRowLen_=rowLen;
     }
 
   return 0;
@@ -1693,7 +1725,7 @@ short ExHbaseAccessTcb::extractColFamilyAndName(char * input,
 							      colFam, colName);
 }
 
-short ExHbaseAccessTcb::evalKeyColValExpr(Text &columnToCheck, Text &colValToCheck)
+short ExHbaseAccessTcb::evalKeyColValExpr(HbaseStr &columnToCheck, HbaseStr &colValToCheck)
 {
   if (! keyColValExpr())
     return -1;
@@ -1713,12 +1745,14 @@ short ExHbaseAccessTcb::evalKeyColValExpr(Text &columnToCheck, Text &colValToChe
       return -1;
     }
   
-  colValToCheck.assign(keyColValRow_, hbaseAccessTdb().keyColValLen_);
+  memcpy(colValToCheck.val, keyColValRow_, hbaseAccessTdb().keyColValLen_);
+  colValToCheck.len = hbaseAccessTdb().keyColValLen_;
 
   char * keyColNamePtr = hbaseAccessTdb().keyColName();
   short nameLen = *(short*)keyColNamePtr;
   char * keyColName = &keyColNamePtr[sizeof(short)];
-  columnToCheck.assign(keyColName, nameLen);
+  memcpy(columnToCheck.val, keyColName, nameLen);
+  columnToCheck.len = nameLen;
 
   return 0;
 }
@@ -1778,6 +1812,51 @@ short ExHbaseAccessTcb::evalRowIdExpr(NABoolean noVarchar)
     }
     
   return 0;
+}
+
+short ExHbaseAccessTcb::evalInsDelPreCondExpr()
+{
+  if (! insDelPreCondExpr()) {
+     return 1;
+  }
+
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+
+  ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
+  
+  exprRetCode =
+    insDelPreCondExpr()->eval(pentry_down->getAtp(), workAtp_);
+
+  switch (exprRetCode) {
+     case ex_expr::EXPR_FALSE:
+        return 0;
+     case ex_expr::EXPR_TRUE:
+        return 1;
+     default:
+        return -1;
+  }
+  return 0; 
+}
+
+short ExHbaseAccessTcb::evalConstraintExpr(ex_expr *expr, UInt16 tuppIndex,
+                                  char * tuppRow)
+{
+  if (expr == NULL) {
+     return 1;
+  }
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+  ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
+  if ((tuppRow) && (tuppIndex > 0))
+    workAtp_->getTupp(tuppIndex).setDataPointer(tuppRow);
+  else
+    workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_).setDataPointer(convertRow_);
+  exprRetCode = expr->eval(pentry_down->getAtp(), workAtp_);
+  if (exprRetCode == ex_expr::EXPR_ERROR)
+     return -1;
+  else if (exprRetCode == ex_expr::EXPR_TRUE)
+     return 1;
+  else
+     return 0;
 }
 
 short ExHbaseAccessTcb::evalRowIdAsciiExpr(const char * inputRowIdVals,
@@ -2431,6 +2510,7 @@ short ExHbaseAccessTcb::copyRowIDToDirectBuffer(HbaseStr &rowID)
 short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex, 
                  char * tuppRow,
                   Queue * listOfColNames, 
+                  Queue * listOfOmittedColNames,
                   NABoolean isUpdate,
                   std::vector<UInt32> * posVec,
                   double samplingRate )
@@ -2469,7 +2549,8 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
   Attributes * attr;
   int numCols = 0;
   short *numColsPtr;
-
+  char *str_1;
+  NABoolean omittedColFound;
   allocateDirectRowBufferForJNI(rowTD->numAttrs());
 
   BYTE *rowCurPtr = (BYTE *)row_.val;
@@ -2477,9 +2558,12 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
   row_.len += sizeof(short);
   rowCurPtr += sizeof(short);
   listOfColNames->position();
+
   for (Lng32 i = 0; i <  rowTD->numAttrs(); i++)
     {
+       
     Attributes * attr;
+   
       if (!posVec)
         attr = rowTD->getAttr(i);
       else
@@ -2493,6 +2577,21 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
          {
            extractColNameFields((char*)listOfColNames->getCurr(),
                                 colNameLen, colName);
+           if (listOfOmittedColNames != NULL) {
+              omittedColFound = FALSE;            
+              listOfOmittedColNames->position();
+              while ((str_1 = (char *)listOfOmittedColNames->getNext()) != NULL) {
+                 str = (char*)listOfColNames->getCurr();
+                 if (memcmp(str, str_1, colNameLen+2) == 0) {
+                    omittedColFound = TRUE;
+                    break;
+                 }
+              }
+              if (omittedColFound) {
+                 listOfColNames->advance();
+                 continue ;
+              }
+           }
          }
          else
          {
@@ -2729,53 +2828,52 @@ short ExHbaseAccessTcb::setupHbaseFilterPreds()
       (hbaseAccessTdb().listOfHbaseFilterColNames()->numEntries() == 0))
     return 0;
 
-  if (! hbaseFilterValExpr())
-    return 0;
+  if (hbaseFilterValExpr()){// with pushdown V2 it can be null if we have only unary operation
+          ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
 
-  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+          workAtp_->getTupp(hbaseAccessTdb().hbaseFilterValTuppIndex_)
+            .setDataPointer(hbaseFilterValRow_);
 
-  workAtp_->getTupp(hbaseAccessTdb().hbaseFilterValTuppIndex_)
-    .setDataPointer(hbaseFilterValRow_);
-  
-  ex_expr::exp_return_type evalRetCode =
-    hbaseFilterValExpr()->eval(pentry_down->getAtp(), workAtp_);
-  if (evalRetCode == ex_expr::EXPR_ERROR)
-    {
-      return -1;
-    }
+          ex_expr::exp_return_type evalRetCode =
+            hbaseFilterValExpr()->eval(pentry_down->getAtp(), workAtp_);
+          if (evalRetCode == ex_expr::EXPR_ERROR)
+            {
+              return -1;
+            }
 
-  ExpTupleDesc * hfrTD =
-    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
-    (hbaseAccessTdb().hbaseFilterValTuppIndex_);
-  
-  hbaseFilterValues_.clear();
-  for (Lng32 i = 0; i <  hfrTD->numAttrs(); i++)
-    {
-      Attributes * attr = hfrTD->getAttr(i);
-  
-      if (attr)
-	{
-	  NAString value(getHeap());
-	  if (attr->getNullFlag())
-	    {
-	      char nullValChar = 0;
+          ExpTupleDesc * hfrTD =
+            hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+            (hbaseAccessTdb().hbaseFilterValTuppIndex_);
 
-	      short nullVal = *(short*)&hbaseFilterValRow_[attr->getNullIndOffset()];
+          hbaseFilterValues_.clear();
+          //for each evaluated value, populate the corresponding hBaseFilterValue
+          for (Lng32 i = 0; i <  hfrTD->numAttrs(); i++)
+          {
+              Attributes * attr = hfrTD->getAttr(i);
 
-	      if (nullVal)
-		nullValChar = -1;
-	      value.append((char*)&nullValChar, sizeof(char));
-	    }	  
+            if (attr)
+                {
+                  NAString value(getHeap());
+                  if (attr->getNullFlag())
+                    {
+                      char nullValChar = 0;
 
-	  char * colVal = &hbaseFilterValRow_[attr->getOffset()];
+                      short nullVal = *(short*)&hbaseFilterValRow_[attr->getNullIndOffset()];
 
-	  value.append(colVal,
-		       attr->getLength(&hbaseFilterValRow_[attr->getVCLenIndOffset()]));
+                      if (nullVal)
+                          nullValChar = -1;
+                      value.append((char*)&nullValChar, sizeof(char));
+                    }
 
-	  hbaseFilterValues_.insert(value);
-	}
-    }
+                  char * colVal = &hbaseFilterValRow_[attr->getOffset()];
 
+                  value.append(colVal,
+                           attr->getLength(&hbaseFilterValRow_[attr->getVCLenIndOffset()]));
+
+                  hbaseFilterValues_.insert(value);
+                }
+            }
+  }
   setupListOfColNames(hbaseAccessTdb().listOfHbaseFilterColNames(),
 		      hbaseFilterColumns_);
 

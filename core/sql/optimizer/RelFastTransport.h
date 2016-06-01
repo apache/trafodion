@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -102,7 +105,7 @@ public :
     targetName_(*targName, oHeap),
     hdfsHostName_(oHeap),
     hdfsPort_(0),
-    isHiveInsert_(FALSE),
+    hiveTableDesc_(NULL),
     delimiter_(*delim, oHeap),
     isAppend_(isAppend),
     includeHeader_(needsHeader),
@@ -111,8 +114,10 @@ public :
     nullString_(*nullString, oHeap),
     recordSeparator_(*recordSep, oHeap),
     overwriteHiveTable_(FALSE),
-    isSequenceFile_(FALSE)
-  { };
+    isSequenceFile_(FALSE),
+    nullStringSpec_((nullString ? TRUE : FALSE))
+  {
+  };
 
   FastExtract(RelExpr* child,
       NAString* targName,
@@ -123,7 +128,7 @@ public :
     targetName_(*targName, oHeap),
     hdfsHostName_(oHeap),
     hdfsPort_(0),
-    isHiveInsert_(FALSE),
+    hiveTableDesc_(NULL),
     delimiter_(oHeap),
     isAppend_(FALSE),
     includeHeader_(FALSE),
@@ -132,7 +137,8 @@ public :
     nullString_(oHeap),
     recordSeparator_(oHeap),
     overwriteHiveTable_(FALSE),
-    isSequenceFile_(FALSE)
+    isSequenceFile_(FALSE),
+    nullStringSpec_(FALSE)
   { };
 
 
@@ -143,7 +149,7 @@ public :
     targetName_(oHeap),
     hdfsHostName_(oHeap),
     hdfsPort_(0),
-    isHiveInsert_(FALSE),
+    hiveTableDesc_(NULL),
     delimiter_(oHeap),
     isAppend_(FALSE),
     includeHeader_(FALSE),
@@ -152,14 +158,15 @@ public :
     nullString_(oHeap),
     recordSeparator_(oHeap),
     overwriteHiveTable_(FALSE),
-    isSequenceFile_(FALSE)
+    isSequenceFile_(FALSE),
+    nullStringSpec_(FALSE)
   { };
 
   FastExtract(RelExpr* child,
       NAString* targName,
       NAString* hostName,
       Int32 portNum,
-      NABoolean isHiveInsert,
+      TableDesc *hiveTableDesc,
       NAString* hiveTableName,
       ExtractDest targType,
       CollHeap *oHeap = CmpCommon::statementHeap())
@@ -168,7 +175,7 @@ public :
     targetName_(*targName, oHeap),
     hdfsHostName_(*hostName, oHeap),
     hdfsPort_(portNum),
-    isHiveInsert_(isHiveInsert),
+    hiveTableDesc_(hiveTableDesc),
     hiveTableName_(*hiveTableName, oHeap),
     delimiter_(oHeap),
     isAppend_(FALSE),
@@ -178,8 +185,10 @@ public :
     nullString_(oHeap),
     recordSeparator_(oHeap),
     overwriteHiveTable_(FALSE),
-    isSequenceFile_(FALSE)
+    isSequenceFile_(FALSE),
+    nullStringSpec_(FALSE)
   { };
+
   //! FastExtract Copy Constructor
   FastExtract(const FastExtract &other);
 
@@ -266,7 +275,8 @@ public :
   const NAString& getHdfsHostName() const {return hdfsHostName_;}
   Int32 getHdfsPort() const {return hdfsPort_;}
   const NAString& getHiveTableName() const {return hiveTableName_;}
-  NABoolean isHiveInsert() const {return isHiveInsert_;}
+  NABoolean isHiveInsert() const {return (hiveTableDesc_ != NULL);}
+  const TableDesc* getHiveTableDesc() const { return hiveTableDesc_; }
   const NAString& getDelimiter() const {return delimiter_;}
   NABoolean isAppend() const {return isAppend_;}
   NABoolean includeHeader() const {return includeHeader_ ;}
@@ -316,9 +326,10 @@ private:
   NAString header_;
   CompressionType cType_;
   NAString nullString_;
+  NABoolean nullStringSpec_; // if null format string is specified
   NAString recordSeparator_;
   NABoolean isAppend_;
-  NABoolean isHiveInsert_;
+  TableDesc *hiveTableDesc_;
   NAString hiveTableName_;
   NABoolean overwriteHiveTable_;
   NABoolean isSequenceFile_;

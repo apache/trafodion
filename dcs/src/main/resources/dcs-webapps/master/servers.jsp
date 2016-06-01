@@ -1,20 +1,7 @@
 <%--
 /**
- *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+ * @@@ START COPYRIGHT @@@
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -23,13 +10,16 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ * @@@ END COPYRIGHT @@@
  */
 --%>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
@@ -53,6 +43,7 @@
     serverItemList = master.getServerManager().getServerItemList();
   String masterServerName = master.getServerName();
   int masterInfoPort = master.getInfoPort();
+  String masterIP = master.getNetConf().getExtHostAddress();
   String version = org.trafodion.dcs.util.VersionInfo.getVersion();
   String revision = org.trafodion.dcs.util.VersionInfo.getRevision();
   String buildDate = org.trafodion.dcs.util.VersionInfo.getDate();
@@ -106,9 +97,9 @@
 <link rel="stylesheet" type="text/css" href="/static/dcs.css" />
 </head>
 <body>
-<h1 id="page_title">DcsMaster: <%= masterServerName %>:<%= masterInfoPort %></h1>
+<h1 id="page_title">DcsMaster: <%= masterIP %>:<%= masterInfoPort %></h1>
 <p id="links_menu">
-  <a href="http://<%= masterServerName %>:<%= masterInfoPort %>?pagesize=<%= pageSize %>">Home</a>,
+  <a href="http://<%= masterIP %>:<%= masterInfoPort %>?pagesize=<%= pageSize %>">Home</a>,
   <a href="/logs/">Dcs local logs</a><% if(! trafodionHome.isEmpty()) { %><% if(trafodionLogs) { %>, <a href="/TrafodionLogs/">Trafodion local logs</a><% } %><% if(trafodionQueryTools) { %>, <a href="repository.jsp?type=<%= Constants.TRAFODION_REPOS_CATALOG_SCHEMA %>">Trafodion query tools</a><% } %><% } %>
 </p>
 <hr id="head_rule" />
@@ -118,7 +109,7 @@
 <col />
 <col style="width: 20%;"/>
 <tr><th>Attribute Name</th><th>Value</th><th>Description</th></tr>
-<tr><td>Version</td><td><%= version %>, r<%= revision %></td><td> The version and revision</td></tr>
+<tr><td>Version</td><td><%= version %>, <%= revision %></td><td> The version and revision</td></tr>
 <tr><td>Compiled</td><td><%= buildDate %>, <%= user %></td><td>When this version was compiled and by whom</td></tr>
 <tr><td>Start Time</td><td><%= startTime %></td><td>When this server was started</td></tr>
 <tr><td>Listener</td><td><%= port %>:<%= portRange %></td><td>Listener starting port and range</td></tr>
@@ -166,8 +157,10 @@ entries
     <%
     if(pageSize.equals("All")) {
     %>
-    <display:table name="serverItemList" id="parent"> 
-        <display:column property="hostname" title="HostName" sortable="true" group="1"/>    
+    <display:table name="serverItemList" id="currow"> 
+        <display:column escapeXml="false" title="Host Name" sortable="true" group="1">
+		        <a href='http://${currow.ipAddress}:${currow.infoPort}'>${currow.hostname}</a>
+		  </display:column>    
         <display:column property="instance" title="Instance" sortable="true" group="2"/>
         <display:column property="startTime" title="Start Time" sortable="true"/>         
         <display:column property="isRegistered" title="Registered" sortable="true"/>
@@ -185,8 +178,10 @@ entries
     <%
     } else {
     %>
-        <display:table name="serverItemList" id="parent" pagesize="<%= pageSizeInteger %>"> 
-        <display:column property="hostname" title="HostName" sortable="true" group="1"/>    
+        <display:table name="serverItemList" id="currow" pagesize="<%= pageSizeInteger %>"> 
+        <display:column escapeXml="false" title="Host Name" sortable="true" group="1">
+		        <a href='http://${currow.ipAddress}:${currow.infoPort}'>${currow.hostname}</a>
+		  </display:column>    
         <display:column property="instance" title="Instance" sortable="true" group="2"/>
         <display:column property="startTime" title="Start Time" sortable="true"/>         
         <display:column property="isRegistered" title="Registered" sortable="true"/>
@@ -204,5 +199,22 @@ entries
     <%
     }  
     %>
+<br>
+<h2> List all configurations</h2>
+<table>
+<tr><th>Properties Name</th><th>Value</th></tr>
+<%
+TreeMap<String, String> sm = new TreeMap<String, String>();
+for(Map.Entry<String, String> obj: conf){
+	sm.put(obj.getKey(), obj.getValue());
+}
+
+for(Map.Entry<String, String> entry: sm.entrySet()){
+%>
+	<tr><td><%=entry.getKey()%></td> <td> <%=entry.getValue()%></td></tr>	
+<%
+}
+%>
+</table>
 </body>
 </html>        

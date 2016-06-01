@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -483,6 +486,22 @@ short CmpSeabaseMDcleanup::deleteMDentries(ExeCliInterface *cliInterface)
   NABoolean errorSeen = FALSE;
 
   // OBJECTS table
+
+  // Must first hide the index to OBJECTS, because the delete plan would otherwise
+  // likely access OBJECTS_UNIQ_IDX first then join that to OBJECTS (as OBJECT_UID
+  // is the leading part of the index key). If the index row were missing, we'd 
+  // fail to delete the base table row. Right now OBJECTS is the only metadata
+  // table with an index, so this is the only place we need to take this precaution.
+
+  cliRC = cliInterface->holdAndSetCQD("HIDE_INDEXES","ALL", NULL);
+  if (cliRC < 0)
+    {
+      if (processCleanupErrors(cliInterface, errorSeen))
+        return -1;
+    } 
+
+  // Now delete from OBJECTS (but not its index)
+
   str_sprintf(query, "delete from %s.\"%s\".%s where object_uid = %Ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               objUID_);
@@ -492,6 +511,15 @@ short CmpSeabaseMDcleanup::deleteMDentries(ExeCliInterface *cliInterface)
       if (processCleanupErrors(cliInterface, errorSeen))
         return -1;
     }
+ 
+  // Restore previous setting of CQD HIDE_INDEXES
+
+  cliRC = cliInterface->restoreCQD("HIDE_INDEXES", NULL);
+  if (cliRC < 0)
+    {
+      if (processCleanupErrors(cliInterface, errorSeen))
+        return -1;
+    } 
   
   // OBJECTS index
   str_sprintf(query, "delete from table(index_table %s.\"%s\".%s) where \"OBJECT_UID@\" = %Ld",
@@ -692,6 +720,9 @@ short CmpSeabaseMDcleanup::deleteMDViewEntries(ExeCliInterface *cliInterface)
 
 short CmpSeabaseMDcleanup::deleteHistogramEntries(ExeCliInterface *cliInterface)
 {
+  if (isHistogramTable(objName_))
+    return 0;
+
   Lng32 cliRC = 0;
   char query[1000];
 
@@ -782,9 +813,12 @@ short CmpSeabaseMDcleanup::dropLOBs(ExeCliInterface *cliInterface)
 
   if (! lobMDName_)
     return 0;
-
+  NABoolean lobTrace=FALSE;
+  if (getenv("TRACE_LOB_ACTIONS"))
+    lobTrace=TRUE;
   NAString newSchName = "\"" + catName_ + "\"" + "." + "\"" + schName_ + "\"";
-
+  const char *lobHdfsServer = CmpCommon::getDefaultString(LOB_HDFS_SERVER);
+  Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
   cliRC = SQL_EXEC_LOBddlInterface((char*)newSchName.data(),
                                    newSchName.length(),
                                    objUID_,
@@ -792,7 +826,9 @@ short CmpSeabaseMDcleanup::dropLOBs(ExeCliInterface *cliInterface)
                                    LOB_CLI_CLEANUP,
                                    lobNumList_,
                                    lobTypList_,
-                                   lobLocList_);
+                                   lobLocList_,
+                                   (char *)lobHdfsServer,
+                                   lobHdfsPort,0,lobTrace);
 
   return 0;
 }
@@ -865,7 +901,7 @@ void CmpSeabaseMDcleanup::cleanupSchemaObjects(ExeCliInterface *cliInterface)
     }
 
   Queue *schObjList = NULL;
-  str_sprintf(query, "select object_uid, object_type from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' ",
+  str_sprintf(query, "select object_uid, object_type, object_name from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName_.data(), schName_.data());
   
@@ -879,6 +915,35 @@ void CmpSeabaseMDcleanup::cleanupSchemaObjects(ExeCliInterface *cliInterface)
   
   stopOnError_ = FALSE;
   NABoolean cannotDropSchema = FALSE;
+ 
+  // Drop histogram tables first
+  schObjList->position();
+  for (size_t i = 0; i < schObjList->numEntries(); i++)
+    {
+      OutputInfo * oi = (OutputInfo*)schObjList->getCurr(); 
+      Int64 uid = *(Int64*)oi->get(0);
+      NAString obj_name((char*)oi->get(2));
+      if (isHistogramTable(obj_name))
+      {
+        str_sprintf(query, "cleanup uid %Ld", uid);
+        cliRC = cliInterface->executeImmediate(query);
+        if (cliRC < 0)
+          {
+            if (processCleanupErrors(NULL, errorSeen))
+              return;
+          }      
+        CorrName cn(objName_, STMTHEAP, schName_, catName_);
+        ActiveSchemaDB()->getNATableDB()->removeNATable
+          (
+               cn,
+               ComQiScope::REMOVE_FROM_ALL_USERS,
+               COM_BASE_TABLE_OBJECT,
+               FALSE, FALSE
+           );
+      }
+   }
+
+  // Now drop remaining objects
   schObjList->position();
   for (size_t i = 0; i < schObjList->numEntries(); i++)
     {
@@ -891,6 +956,7 @@ void CmpSeabaseMDcleanup::cleanupSchemaObjects(ExeCliInterface *cliInterface)
           (obj_type == COM_STORED_PROCEDURE_OBJECT_LIT) ||
           (obj_type == COM_USER_DEFINED_ROUTINE_OBJECT))
         {
+          schObjList->advance();
           cannotDropSchema = TRUE;
           continue;
         }
@@ -900,6 +966,7 @@ void CmpSeabaseMDcleanup::cleanupSchemaObjects(ExeCliInterface *cliInterface)
                (obj_type == COM_VIEW_OBJECT_LIT) ||
                (obj_type == COM_SEQUENCE_GENERATOR_OBJECT_LIT)))
         {
+          schObjList->advance();
           continue;
         }
 
@@ -1030,7 +1097,7 @@ short CmpSeabaseMDcleanup::cleanupOrphanObjectsEntries(ExeCliInterface *cliInter
   NABoolean errorSeen = FALSE;
 
   // find out all entries which do not have corresponsing hbase objects
-  str_sprintf(query, "select object_uid, trim(catalog_name) || '.'  || trim(schema_name) || '.' || trim(object_name)  from %s.\"%s\".%s where catalog_name = '%s' and schema_name not in ( '_MD_', '_REPOS_', 'PRIVMGR_MD') and (object_type = 'BT' or object_type = 'IX') ",
+  str_sprintf(query, "select object_uid, trim(catalog_name) || '.'  || trim(schema_name) || '.' || trim(object_name)  from %s.\"%s\".%s where catalog_name = '%s' and schema_name not in ( '_MD_', '_REPOS_', '_PRIVMGR_MD_') and schema_name not like '|_HV|_%%|_' escape '|'  and schema_name not like '|_HB|_%%|_' escape '|' and (object_type = 'BT' or object_type = 'IX') ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog());
   cliRC = cliInterface->fetchRowsPrologue(query);
@@ -1107,22 +1174,24 @@ short CmpSeabaseMDcleanup::cleanupOrphanHbaseEntries(ExeCliInterface *cliInterfa
   NABoolean errorSeen = FALSE;
 
   // list all hbase objects that start with TRAFODION.* 
-  ByteArrayList* bal = ehi->listAll("TRAFODION\\..*");
-  if (! bal)
+  NAArray<HbaseStr>* listArray = ehi->listAll("TRAFODION\\..*");
+  if (! listArray)
     return -1;
 
   returnDetailsList_ = NULL;
   addReturnDetailsEntry(cliInterface, returnDetailsList_, NULL, TRUE);
 
   numOrphanHbaseEntries_ = 0;
-  for (Int32 i = 0; i < bal->getSize(); i++)
+  for (Int32 i = 0; i < listArray->entries(); i++)
     {
       char cBuf[1000];
       
-      Int32 len = 0;
-      char * c = bal->getEntry(i, cBuf, 1000, len);
-      c[len] = 0;
-      
+      HbaseStr *hbaseStr = &listArray->at(i);
+      if (hbaseStr->len >= sizeof(cBuf))
+         hbaseStr->len = sizeof(cBuf)-1;
+      strncpy(cBuf, hbaseStr->val, hbaseStr->len);
+      cBuf[hbaseStr->len] = '\0';
+      char *c = cBuf;
       Lng32 numParts = 0;
       char *parts[4];
       LateNameInfo::extractParts(c, cBuf, numParts, parts, FALSE);
@@ -1180,7 +1249,7 @@ short CmpSeabaseMDcleanup::cleanupOrphanHbaseEntries(ExeCliInterface *cliInterfa
         }      
       
     } // for
-
+  deleteNAArray(ehi->getHeap(),listArray);
   return 0;
 }
 
@@ -1210,7 +1279,7 @@ short CmpSeabaseMDcleanup::cleanupInconsistentObjectsEntries(ExeCliInterface *cl
     }      
 
   // find out all entries that exist in OBJECTS but not in OBJECTS_UNIQ_IDX
-  str_sprintf(query, "select object_uid, trim(catalog_name) || '.'  || trim(schema_name) || '.' || trim(object_name)  from %s.\"%s\".%s  where catalog_name = '%s' and schema_name not in ( '_MD_', '_REPOS_', 'PRIVMGR_MD') and object_uid not in (select \"OBJECT_UID@\"  from table(index_table %s.\"%s\".%s))",
+  str_sprintf(query, "select object_uid, trim(catalog_name) || '.'  || trim(schema_name) || '.' || trim(object_name)  from %s.\"%s\".%s  where catalog_name = '%s' and schema_name not in ( '_MD_', '_REPOS_', '_PRIVMGR_MD_') and object_uid not in (select \"OBJECT_UID@\"  from table(index_table %s.\"%s\".%s))",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(),
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS_UNIQ_IDX);
@@ -1241,7 +1310,7 @@ short CmpSeabaseMDcleanup::cleanupInconsistentObjectsEntries(ExeCliInterface *cl
         return -1;
     }      
 
-  str_sprintf(query, "select \"OBJECT_UID@\", trim(catalog_name) || '.'  || trim(schema_name) || '.' || trim(object_name)  from table(index_table %s.\"%s\".%s)  where catalog_name = '%s' and schema_name not in ( '_MD_', '_REPOS_', 'PRIVMGR_MD') and \"OBJECT_UID@\" not in (select object_uid from %s.\"%s\".%s)",
+  str_sprintf(query, "select \"OBJECT_UID@\", trim(catalog_name) || '.'  || trim(schema_name) || '.' || trim(object_name)  from table(index_table %s.\"%s\".%s)  where catalog_name = '%s' and schema_name not in ( '_MD_', '_REPOS_', '_PRIVMGR_MD_') and \"OBJECT_UID@\" not in (select object_uid from %s.\"%s\".%s)",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS_UNIQ_IDX,
               getSystemCatalog(),
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS);
@@ -1683,7 +1752,8 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
   if ((xnInProgress(&cliInterface)) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
      {
-      *CmpCommon::diags() << DgSqlCode(-20123);
+       *CmpCommon::diags() << DgSqlCode(-20125)
+                           << DgString0("This CLEANUP");
       return;
     }
 
@@ -1774,7 +1844,7 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
       hbaseObject.len = extNameForHbase_.length();
       
       // drop this object from hbase
-      cliRC = dropHbaseTable(ehi, &hbaseObject, FALSE);
+      cliRC = dropHbaseTable(ehi, &hbaseObject, FALSE, FALSE);
       if (cliRC)
           if (stopOnError_)
             goto label_return;
@@ -1810,10 +1880,12 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
   if (NOT (catName_.isNull() || schName_.isNull() || objName_.isNull()))
     {
       CorrName cn(objName_, STMTHEAP, schName_, catName_);
-      ActiveSchemaDB()->getNATableDB()->removeNATable(
-                                                      cn,
-                                                      NATableDB::REMOVE_FROM_ALL_USERS, 
-                                                      COM_BASE_TABLE_OBJECT);
+      ActiveSchemaDB()->getNATableDB()->removeNATable
+        (
+             cn,
+             ComQiScope::REMOVE_FROM_ALL_USERS, 
+             COM_BASE_TABLE_OBJECT,
+             FALSE, FALSE);
     }
 
   return;
@@ -1823,10 +1895,11 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
       (NOT extNameForHbase_.isNull()))
     {
       CorrName cn(objName_, STMTHEAP, schName_, catName_);
-      ActiveSchemaDB()->getNATableDB()->removeNATable(
-                                                      cn,
-                                                      NATableDB::REMOVE_FROM_ALL_USERS, 
-                                                      COM_BASE_TABLE_OBJECT);
+      ActiveSchemaDB()->getNATableDB()->removeNATable
+        (cn,
+         ComQiScope::REMOVE_FROM_ALL_USERS, 
+         COM_BASE_TABLE_OBJECT,
+         FALSE, FALSE);
     }
 
  label_return:

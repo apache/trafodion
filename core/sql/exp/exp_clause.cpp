@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1629,7 +1632,8 @@ ex_conv_clause::ex_conv_clause(OperatorTypeEnum oper_type,
 			       Space * space,
 			       short num_operands, NABoolean checkTruncErr,
                                NABoolean reverseDataErrorConversionFlag,
-                               NABoolean noStringTruncWarnings)
+                               NABoolean noStringTruncWarnings,
+                               NABoolean convertToNullWhenErrorFlag)
      : ex_clause (ex_clause::CONV_TYPE, oper_type, num_operands, attr, space),
        case_index(CONV_UNKNOWN),
        lastVOAoffset_(0),
@@ -1651,6 +1655,9 @@ ex_conv_clause::ex_conv_clause(OperatorTypeEnum oper_type,
 
   if (noStringTruncWarnings)
     setNoTruncationWarningsFlag();
+  
+  if (convertToNullWhenErrorFlag)
+    flags_ |= CONV_TO_NULL_WHEN_ERROR;
 
   set_case_index(); 
 }
@@ -1997,6 +2004,18 @@ void ExFunctionHbaseVersion::displayContents(Space * space, const char * /*displ
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
   str_sprintf(buf, "    colIndex_ = %d", colIndex_);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea);
+}
+
+void ex_function_dateformat::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
+{
+  char buf[100];
+  str_sprintf(buf, "  Clause #%d: ex_function_dateformat", clauseNum);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  str_sprintf(buf, "    dateformat_ = %d", dateformat_);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
   ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea);

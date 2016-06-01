@@ -1,18 +1,21 @@
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
 --
---  Licensed under the Apache License, Version 2.0 (the "License");
---  you may not use this file except in compliance with the License.
---  You may obtain a copy of the License at
+--   http://www.apache.org/licenses/LICENSE-2.0
 --
---      http://www.apache.org/licenses/LICENSE-2.0
---
---  Unless required by applicable law or agreed to in writing, software
---  distributed under the License is distributed on an "AS IS" BASIS,
---  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
---  See the License for the specific language governing permissions and
---  limitations under the License.
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
 --
 -- @@@ END COPYRIGHT @@@
 --
@@ -36,6 +39,7 @@ obey TEST020(tests);
 obey TEST020(test_10_020913_3920);
 obey TEST020(test_10_030916_9668);
 obey TEST020(test_LP_1360493);
+obey TEST020(trafodion_1700_and_1847);
 log;
 obey TEST020(clean_up);
 exit;
@@ -84,6 +88,9 @@ drop table test020_LP_1360493;
 drop table test020_t34 cascade;
 drop table test020_t33 cascade;
 drop table test020t40 cascade;
+drop table test020t41 cascade;
+drop table test020t42 cascade;
+drop table test020t43 cascade;
 
 ?section tests
 create table  test020t1 (c1 int not null primary key,
@@ -130,11 +137,10 @@ create table test020t31 (g0 smallint default 32768 not null primary key);
 -- Test columns named SYSKEY
 --
 
--- Expecting error 1080 message: Duplicate references to column SYSKEY
---                               in the create request
--- when the following Create Table command is executed.
+-- Expecting error 1269 message: Col name SYSKEY is reserved.
 create table test020t5(syskey int);
 
+cqd traf_allow_reserved_colnames 'ON';
 create table test020t5(c int not null not droppable primary key not droppable,
                     syskey char(4));
 invoke test020t5;
@@ -145,6 +151,9 @@ alter table test020t5 add constraint test020t5c1 check (syskey >= 'aaaa');
 showddl test020t5;
 -- Expecting an error message when the following insert statement is executed.
 insert into test020t5 values (3, '1234');
+
+cqd traf_allow_reserved_colnames reset;
+
 --------------------------------------------
 -- test cases for solution 10-040607-6721 --
 --------------------------------------------
@@ -250,7 +259,6 @@ alter table TEST020T29 drop constraint TEST020T29CNT1;
 insert into TEST020T29 values (1),(null), (3);
         
 alter table TEST020T29 add constraint TEST020T29CNT2 foreign key (a) references TEST020T28(a);
--- expecting error reported
         
 select * from TEST020T29;
 
@@ -758,4 +766,156 @@ insert into test020t40 values (3,3,3);
 insert into test020t40 values (3,3);
 select * from test020t40;
 select * from table(index_table test020t40i1);
+
+?section trafodion_1700_and_1847
+set parserflags 1;
+--test for timestamp column default value
+cqd traf_upsert_mode 'merge';
+cqd traf_aligned_row_format 'off' ;
+create table test020t41(a largeint not null primary key, b char(10),
+c timestamp(6) default current , d int , e int default 3);
+-- check if the timestamp is inserted with the recent timestamp
+insert into test020t41 (a,b) values (1,'a'), (2,'b');
+select a,b,d,e from test020t41 where current_timestamp-c < cast(10 as interval second);
+-- check to ensure the timestamp column is not updated with upsert
+upsert into test020t41 (a,b,e) values (1, 'c', 5);
+select a,b,d,e from test020t41 where a = 1 and c = (select c from test020t41 where a = 2);
+-- check to ensure the value for column e is retained
+upsert into test020t41 (a,b) values (1, 'd');
+select a,b,d,e from test020t41 where a = 1 and c = (select c from test020t41 where a = 2);
+-- upsert with non-matching rows  
+upsert into test020t41 (a,b) values (3, 'e'), (4, 'f');
+select a,b,d,e from test020t41 ;
+upsert into test020t41 (a,b) values (3, 'g');
+select a,b,d,e from test020t41 where a = 3 and c = (select c from test020t41 where a = 4);
+create index test020t41ix on test020t41(e);
+select * from table(index_table test020t41ix) ;
+upsert into test020t41 (a,b,e) values (5,'h',6);
+select * from table(index_table test020t41ix) ;
+-- check if the updated e column is reflected in the index
+upsert into test020t41 (a,b,e) values (1, 'c', 4);
+select * from table(index_table test020t41ix) ;
+
+--  With index it will be merge anyway, but default values needs to be 
+--  populated
+cqd traf_upsert_mode 'replace';
+delete from test020t41 ;
+insert into test020t41 (a,b) values (1,'a'), (2,'b');
+upsert into test020t41 (a,b,e) values (1, 'c', 5);
+-- Should display a row with = 1
+select a,b,d,e from test020t41 where c > (select c from test020t41 where a = 2);
+upsert into test020t41 (a,b) values (1, 'd');
+-- Should display a row with = 1 and e should be 3
+select a,b,d,e from test020t41 where c > (select c from test020t41 where a = 2);
+select * from table(index_table test020t41ix) ;
+drop index test020t41ix ;
+-- Without index 
+delete from test020t41 ;
+insert into test020t41 (a,b) values (1,'a'), (2,'b');
+upsert into test020t41 (a,b,e) values (1, 'c', 5);
+-- Should display a row with = 1
+select a,b,d,e from test020t41 where c > (select c from test020t41 where a = 2);
+upsert into test020t41 (a,b) values (1, 'd');
+-- Should display a row with = 1 and e should be 3
+select a,b,d,e from test020t41 where c > (select c from test020t41 where a = 2);
+
+cqd traf_upsert_mode 'optimal' ;
+-- check if the timestamp is inserted with the recent timestamp
+delete from test020t41 ;
+insert into test020t41 (a,b) values (1,'a'), (2,'b');
+select a,b,d,e from test020t41 where current_timestamp-c < cast(10 as interval second);
+-- check to ensure the timestamp column is not updated with upsert
+upsert into test020t41 (a,b,e) values (1, 'c', 5);
+select a,b,d,e from test020t41 where a = 1 and c = (select c from test020t41 where a = 2);
+-- check to ensure the value for column e is retained
+upsert into test020t41 (a,b) values (1, 'd');
+select a,b,d,e from test020t41 where a = 1 and c = (select c from test020t41 where a = 2);
+-- upsert with non-matching rows  
+upsert into test020t41 (a,b) values (3, 'e'), (4, 'f');
+select a,b,d,e from test020t41 ;
+upsert into test020t41 (a,b) values (3, 'g');
+select a,b,d,e from test020t41 where a = 3 and c = (select c from test020t41 where a = 4);
+create index test020t41ix on test020t41(e);
+select * from table(index_table test020t41ix) ;
+upsert into test020t41 (a,b,e) values (5,'h',6);
+select * from table(index_table test020t41ix) ;
+-- check if the updated e column is reflected in the index
+upsert into test020t41 (a,b,e) values (1, 'c', 4);
+select * from table(index_table test020t41ix) ;
+
+create table test020t42(a largeint not null primary key, b char(10),
+c timestamp(6) default current , d int , e int default 3) attribute aligned format;
+cqd traf_upsert_mode 'merge';
+-- check if the timestamp is inserted with the recent timestamp
+insert into test020t42 (a,b) values (1,'a'), (2,'b');
+select a,b,d,e from test020t42 where current_timestamp-c < cast(10 as interval second);
+-- check to ensure the timestamp column is not updated with upsert
+upsert into test020t42 (a,b,e) values (1, 'c', 5);
+select a,b,d,e from test020t42 where a = 1 and c = (select c from test020t42 where a = 2);
+-- check to ensure the value for column d is retained
+upsert into test020t42 (a,b) values (1, 'd');
+select a,b,d,e from test020t42 where a = 1 and c = (select c from test020t42 where a = 2);
+-- upsert with non-matching rows  
+upsert into test020t42 (a,b) values (3, 'e'), (4, 'f');
+select a,b,d,e from test020t42 ;
+upsert into test020t42 (a,b) values (3, 'g');
+select a,b,d,e from test020t42 where a = 3 and c = (select c from test020t42 where a = 4);
+create index test020t42ix on test020t42(e);
+select * from table(index_table test020t42ix) ;
+upsert into test020t42 (a,b,e) values (5,'h',6);
+select * from table(index_table test020t42ix) ;
+-- check if the updated d column is reflected in the index
+upsert into test020t42 (a,b,e) values (1, 'c', 4);
+select * from table(index_table test020t42ix) ;
+
+--  With index it will be merge anyway, but default values needs to be 
+--  populated
+cqd traf_upsert_mode 'replace';
+delete from test020t42 ;
+insert into test020t42 (a,b) values (1,'a'), (2,'b');
+upsert into test020t42 (a,b,e) values (1, 'c', 5);
+-- Should display a row with = 1
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+upsert into test020t42 (a,b) values (1, 'd');
+-- Should display a row with = 1 and e should be 3
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+select * from table(index_table test020t42ix) ;
+drop index test020t42ix ;
+-- Without index 
+delete from test020t42 ;
+insert into test020t42 (a,b) values (1,'a'), (2,'b');
+upsert into test020t42 (a,b,e) values (1, 'c', 5);
+-- Should display a row with = 1
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+upsert into test020t42 (a,b) values (1, 'd');
+-- Should display a row with = 1 and e should be 3
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+
+cqd traf_upsert_mode 'optimal';
+delete from test020t42 ;
+create index test020t42ix on test020t42(e);
+insert into test020t42 (a,b) values (1,'a'), (2,'b');
+upsert into test020t42 (a,b,e) values (1, 'c', 5);
+-- Should display a row with = 1
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+upsert into test020t42 (a,b) values (1, 'd');
+-- Should display a row with = 1 and e should be 3
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+select * from table(index_table test020t42ix) ;
+drop index test020t42ix ;
+-- Without index 
+delete from test020t42 ;
+insert into test020t42 (a,b) values (1,'a'), (2,'b');
+upsert into test020t42 (a,b,e) values (1, 'c', 5);
+-- Should display a row with = 1
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+upsert into test020t42 (a,b) values (1, 'd');
+-- Should display a row with = 1 and e should be 3
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+
+create table test020t43(c1 int, c2 int ) attribute aligned format ;
+cqd traf_upsert_mode 'merge';
+upsert into test020t43 values (1,1);
+upsert into test020t43 (c1) values(1);
+select * from test020t43 ; 
 

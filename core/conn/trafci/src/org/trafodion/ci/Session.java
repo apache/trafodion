@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -92,6 +95,8 @@ public class Session extends RepObjInterface
    private String processName=null;
    private boolean patternsLoaded=false;
    private String ndcsVersion = null;
+   private String databaseVersion = null;
+   private String databaseEdition = null;
    public String serverType=null;
 
    ValidateQuery     vQryObj    = null;
@@ -1838,34 +1843,19 @@ static {
   	         if (rs!=null && rs.next()) {
 	             {
 	                ndcsVersion = rs.getString(2);
-	                /*
-	                 * TODO . get platform version substring from ndcsVersion output:
-                       ndcs Version 1.0.0 Release 1.1.0 (Build release [15394], date 24Feb12)
-	                 */
 	                if (ndcsVersion != null){
-	                	ndcsVersion = ndcsVersion.substring(ndcsVersion.indexOf("Version"));
-	                	sutVersion = ndcsVersion.substring(ndcsVersion.indexOf("Release"),ndcsVersion.indexOf("("));
-	                	String platformVersion = sutVersion.substring(8);
-	                	if (platformVersion.startsWith("1.0")) 
-	                		versionInfo=SessionDefaults.VERSION_M5;
-	                	else if (platformVersion.startsWith("1.1")) 
-	                		versionInfo=SessionDefaults.VERSION_M6;
-	                	else if (platformVersion.startsWith("1.2")) 
-	                		versionInfo=SessionDefaults.VERSION_M7;
-	                	else if (platformVersion.startsWith("1.3")) 
-	                		versionInfo=SessionDefaults.VERSION_M8;
-	                	else if (platformVersion.startsWith("1.4")) 
-	                		versionInfo=SessionDefaults.VERSION_M9;
-	                	else if (platformVersion.startsWith("1.5")) 
-	                		versionInfo=SessionDefaults.VERSION_M10;
-	                	else if (platformVersion.startsWith("1.6")) 
-	                		versionInfo=SessionDefaults.VERSION_M11;
+	                     ndcsVersion = ndcsVersion.substring(ndcsVersion.indexOf("Version"));
+	                     sutVersion = ndcsVersion.substring(ndcsVersion.indexOf("Release"),ndcsVersion.indexOf("("));
+	                     String platformVersion = sutVersion.substring(8);
 	                }
+                        databaseVersion = rs.getString(5);
+                        databaseEdition = rs.getString(6);
 
 	             }
 	             if (this.debugOn) {
 	                System.out.println("ndcs version:: " + ndcsVersion);
-	                System.out.println("platform version:: " + sutVersion);
+	                System.out.println("database version:: " + databaseVersion);
+	                System.out.println("database edition:: " + databaseEdition);
 	             }
 	             rs.close();
 	             stmt.close();
@@ -1905,6 +1895,14 @@ static {
 
 	public void setServerType(String serverType) {
 		this.serverType = serverType;
+	}
+
+	public String getDatabaseVersion() {
+		return databaseVersion;
+	}
+
+	public String getDatabaseEdition() {
+ 		return databaseEdition;
 	}
 }
 

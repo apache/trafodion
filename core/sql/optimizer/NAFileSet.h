@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -69,7 +72,7 @@ enum FileOrganizationEnum
   KEY_SEQUENCED_FILE,
   HASH_FILE
 };
-  
+
 // -----------------------------------------------------------------------
 // A NAFileSet object describes common attributes of a set of files
 // that are used for implementing a base table, a single-table or a
@@ -90,7 +93,6 @@ public:
 	    Lng32 countOfFiles,
 	    Cardinality estimatedNumberOfRecords,
 	    Lng32 recordLength,
-	    Lng32 lockLength,
 	    Lng32 blockSize,
 	    Int32 indexLevels,
 	    const NAColumnArray & allColumns,
@@ -113,6 +115,7 @@ public:
             Lng32 fileCode,
 	    NABoolean isVolatile,
 	    NABoolean inMemObjectDefn,
+            Int64 indexUID,
             desc_struct *keysDesc,
             HHDFSTableStats *hHDFSTableStats,
             Lng32 numSaltPartns,
@@ -158,6 +161,7 @@ public:
   Lng32 getRecordLength() const             { return recordLength_; }
   Lng32 getLockLength() const             { return lockLength_; }
   Lng32 getKeyLength();
+  Lng32 getEncodedKeyLength();
   Lng32 getBlockSize() const                   { return blockSize_; }
 
   Int32 getIndexLevels() const                   { return indexLevels_; }
@@ -166,6 +170,9 @@ public:
   Lng32 getPackingFactor() const     { return packingFactor_; }
 
   Lng32 getFileCode() const { return fileCode_; }
+
+  const Int64 &getIndexUID() const { return indexUID_; }
+  Int64 &getIndexUID() { return indexUID_; }
 
   const HHDFSTableStats *getHHDFSTableStats() const { return hHDFSTableStats_; }
   HHDFSTableStats *getHHDFSTableStats()             { return hHDFSTableStats_; }
@@ -236,6 +243,8 @@ public:
   const NAColumnArray & getPartitioningKeyColumns() const
                                        { return partitioningKeyColumns_; }
 
+  NAString getBestPartitioningKeyColumns(char separator) const;
+
   PartitioningFunction * getPartitioningFunction() const
                                                      { return partFunc_; }
 
@@ -271,6 +280,11 @@ public:
 
   //For NATable caching, prepare for use by a statement.
   void setupForStatement();
+
+  NABoolean isSqlmxRowFormat() { return rowFormat_ == COM_PACKED_FORMAT_TYPE; }
+  NABoolean isSqlmxAlignedRowFormat() const { return rowFormat_ == COM_ALIGNED_FORMAT_TYPE; }
+
+  void setRowFormat(ComRowFormat rowFormat) { rowFormat_ = rowFormat; }
 
 private:
 
@@ -324,6 +338,11 @@ private:
   Lng32 keyLength_;
 
   // ---------------------------------------------------------------------
+  // Encoded key length in bytes.
+  //----------------------------------------------------------------------
+  Lng32 encodedKeyLength_;
+
+  // ---------------------------------------------------------------------
   // Lock length in bytes.
   //----------------------------------------------------------------------
   Lng32 lockLength_;
@@ -366,6 +385,9 @@ private:
   // file that belongs to this file set.
   // ---------------------------------------------------------------------
   NAColumnArray indexKeyColumns_;
+
+  // uid for index
+  Int64 indexUID_;
 
   desc_struct *keysDesc_;  // needed for parallel label operations.
 
@@ -454,6 +476,8 @@ private:
     // if this index was explicitly created by user and not internally
     // created to implement a unique constraint.
     IS_EXPLICIT_INDEX = 0x00010
+    
+      
   };
   ULng32 bitFlags_;
 
@@ -472,6 +496,8 @@ private:
   Lng32 numMaxVersions_;
 
   NAList<HbaseCreateOption*> * hbaseCreateOptions_;
+
+  ComRowFormat rowFormat_; 
   
 };
 
