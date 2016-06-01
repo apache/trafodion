@@ -3712,6 +3712,71 @@ static NABoolean isSynonymOfSYSTEM(Int32 attrEnum, NAString &value)
   return FALSE;
 }
 
+// Helper class used for holding and restoring CQDs
+class NADefaults::HeldDefaults
+{
+  public:
+   
+    HeldDefaults(void);
+
+    ~HeldDefaults(void);
+
+    // CMPASSERT's on stack overflow
+    void pushDefault(const char * value);
+
+    // returns null if nothing to pop
+    char * popDefault(void);
+
+  private:
+
+    enum { STACK_SIZE = 3 };
+
+    int stackPointer_;
+    char * stackValue_[STACK_SIZE];
+    
+};
+
+// Methods for helper class HeldDefaults
+NADefaults::HeldDefaults::HeldDefaults(void) : stackPointer_(0)
+{            
+  for (int i = 0; i < STACK_SIZE; i++)
+    stackValue_[i] = NULL;
+}
+
+NADefaults::HeldDefaults::~HeldDefaults(void)
+{
+  for (int i = 0; i < STACK_SIZE; i++)
+  {
+    if (stackValue_[i])
+    {
+      NADELETEBASIC(stackValue_[i], NADHEAP);
+    }
+  }
+}
+
+// CMPASSERT's on stack overflow
+void NADefaults::HeldDefaults::pushDefault(const char * value)
+{
+  CMPASSERT(stackPointer_ < STACK_SIZE);
+  stackValue_[stackPointer_] = new NADHEAP char[strlen(value) + 1];
+  strcpy(stackValue_[stackPointer_],value);
+  stackPointer_++;
+}
+
+// returns null if nothing to pop
+char * NADefaults::HeldDefaults::popDefault(void)
+{
+  char * result = 0;
+  if (stackPointer_ > 0)
+  {
+    stackPointer_--;
+    result = stackValue_[stackPointer_];
+    stackValue_[stackPointer_] = NULL;
+  }
+  return result;
+}
+
+
 size_t NADefaults::numDefaultAttributes()
 {
   return (size_t)__NUM_DEFAULT_ATTRIBUTES;
@@ -3775,8 +3840,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   currentFloats_	= new NADHEAP float * [numAttrs];
   currentTokens_	= new NADHEAP DefaultToken * [numAttrs];
   currentState_		= INIT_DEFAULT_DEFAULTS;
-  heldDefaults_	        = new NADHEAP char * [numAttrs];
-  heldHeldDefaults_	= new NADHEAP char * [numAttrs];
+  heldDefaults_	        = new NADHEAP HeldDefaults * [numAttrs];
 
   // reset all entries
   size_t i = 0;
@@ -3791,8 +3855,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   memset( currentDefaults_, 0, sizeof(char *) * numAttrs );
   memset( currentFloats_, 0, sizeof(float *) * numAttrs );
   memset( currentTokens_, 0, sizeof(DefaultToken *) * numAttrs );
-  memset( heldDefaults_, 0, sizeof(char *) * numAttrs );
-  memset( heldHeldDefaults_, 0, sizeof(char *) * numAttrs );
+  memset( heldDefaults_, 0, sizeof(HeldDefaults *) * numAttrs );
 
   #ifndef NDEBUG
     // This env-var turns on consistency checking of default-defaults and
@@ -4044,7 +4107,6 @@ NADefaults::NADefaults(NAMemory * h)
   , currentFloats_(NULL)
   , currentTokens_(NULL)
   , heldDefaults_(NULL)
-  , heldHeldDefaults_(NULL)
   , currentState_(UNINITIALIZED)
   , readFromSQDefaultsTable_(FALSE)
   , SqlParser_NADefaults_(NULL)
@@ -4115,14 +4177,8 @@ void NADefaults::deleteMe()
 
   if (heldDefaults_) {
     for (size_t i = numDefaultAttributes(); i--; )
-      NADELETEBASIC(heldDefaults_[i], NADHEAP);
+      NADELETE(heldDefaults_[i], HeldDefaults, NADHEAP);
     NADELETEBASIC(heldDefaults_, NADHEAP);
-  }
-
-  if (heldHeldDefaults_) {
-    for (size_t i = numDefaultAttributes(); i--; )
-      NADELETEBASIC(heldHeldDefaults_[i], NADHEAP);
-    NADELETEBASIC(heldHeldDefaults_, NADHEAP);
   }
 
   for (CollIndex i = tablesRead_.entries(); i--; )
@@ -6014,15 +6070,6 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
   char * value = NULL;
   if (holdOrRestoreCQD == 1) // hold cqd
     {
-      if (heldHeldDefaults_[attrEnum])
-        {
-          // Gasp! We've done three successive HOLDs... it's off to
-          // the bit bucket for the deepest value
-          CMPASSERT(heldHeldDefaults_[attrEnum] == NULL);  // on second thought, let's assert instead
-          NADELETEBASIC(heldHeldDefaults_[attrEnum], NADHEAP);
-        }
-      heldHeldDefaults_[attrEnum] = heldDefaults_[attrEnum];
-
       if (currentDefaults_[attrEnum])
 	{
 	  value = new NADHEAP char[strlen(currentDefaults_[attrEnum]) + 1];
@@ -6033,32 +6080,39 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
 	  value = new NADHEAP char[strlen(defaultDefaults[defDefIx_[attrEnum]].value) + 1];
 	  strcpy(value, defaultDefaults[defDefIx_[attrEnum]].value);
 	}
-      heldDefaults_[attrEnum] = value;
+
+      if (! heldDefaults_[attrEnum])
+        heldDefaults_[attrEnum] = new NADHEAP HeldDefaults();
+
+      heldDefaults_[attrEnum]->pushDefault(value);
     }
   else
     {
       // restore cqd from heldDefaults_ array, if it was held.
       if (! heldDefaults_[attrEnum])
+        return attrEnum;
+
+      value = heldDefaults_[attrEnum]->popDefault();
+      if (! value)
 	return attrEnum;
 
       // there is an odd semantic that if currentDefaults_[attrEnum]
       // is null, we leave it as null, but pop a held value anyway;
-      // this semantic was preserved when the second level 
-      // (heldHeldDefaults_) was added.
+      // this semantic was preserved when heldDefaults_ was converted
+      // to a stack.
 
       if (currentDefaults_[attrEnum])
         {
           // do a validateAndInsert so the caches (such as currentToken_)
-          // get updated and so appropriate semantic actions are taken
-          NAString value(heldDefaults_[attrEnum]);
+          // get updated and so appropriate semantic actions are taken.
+          // Note that validateAndInsert will take care of deleting the
+          // storage currently held by currentDefaults_[attrEnum].
+          NAString valueS(value);
           validateAndInsert(lookupAttrName(attrEnum), // sad that we have to do a lookup again
-                            value,
+                            valueS,
                             FALSE);
-        }
-      
-      NADELETEBASIC(heldDefaults_[attrEnum], NADHEAP);
-      heldDefaults_[attrEnum] = heldHeldDefaults_[attrEnum];
-      heldHeldDefaults_[attrEnum] = NULL;
+        }     
+      NADELETEBASIC(value, NADHEAP);
     }
 
   return attrEnum;
@@ -7344,3 +7398,5 @@ void NADefaults::setSchemaAsLdapUser(const NAString val)
 			<< DgString1("SCHEMA");
   }
 }
+
+
