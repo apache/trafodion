@@ -38,5 +38,9 @@ s/^\([ ]*TRAF_INDEX_CREATE_OPT[ ]*[\.]*\) .*/\1 removed/g
 s/^\([ ]*embedded_arkcmp[ ]*[\.]*\) .*/\1 removed/g
 s/^\([ ]*EST_TOTAL_COST[ ]*[\.]*\) .*/\1 removed/g
 s/^\([ ]*EST_OPER_COST[ ]*[\.]*\) .*/\1 removed/g
+s/^\(\.*PREPARATION[ ]Status:[ ]*\) .*/removed/g
+s/^\([ ]*Task:[ ]COMPLETION[ ]Status:[ ]*\) .*/removed/g
+s/.*PREPARATION.*/removed/
+s/.*COMPLETION.*/removed/
 s/VOLATILE_SCHEMA_MXID[0-9]*/VOLATILE_SCHEMA_00/
 " $fil
