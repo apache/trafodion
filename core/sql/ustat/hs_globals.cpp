@@ -3023,11 +3023,12 @@ Lng32 HSGlobalsClass::Initialize()
     actualRowCount = objDef->getRowCount(currentRowCountIsEstimate_,
                                          inserts, deletes, updates,
                                          numPartitions,
-                                         minRowCtPerPartition_);
+                                         minRowCtPerPartition_,
+                                         optFlags & SAMPLE_REQUESTED);
     LM->StopTimer();
     if (LM->LogNeeded())
       {
-        sprintf(LM->msg, "\tcurrentRowCountIsEstimate_=%d from GetRowCount()", currentRowCountIsEstimate_);
+        sprintf(LM->msg, "\tcurrentRowCountIsEstimate_=%d from getRowCount()", currentRowCountIsEstimate_);
         LM->Log(LM->msg);
       }
 
@@ -3051,47 +3052,28 @@ Lng32 HSGlobalsClass::Initialize()
                 LM->Log(LM->msg);
               }
           }
-        else if (!((optFlags & SAMPLE_REQUESTED) &&
-                   convertInt64ToDouble(actualRowCount) >=
-                     CmpCommon::getDefaultNumeric(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT)))
+        else if (convertInt64ToDouble(actualRowCount) <   // may be 0 (no estimate) or -1 (error doing estimation)
+                     CmpCommon::getDefaultNumeric(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT))
           {
-            actualRowCount = 0;
-            if (hs_globals->isHbaseTable &&
-                CmpCommon::getDefault(USTAT_ESTIMATE_HBASE_ROW_COUNT) == DF_ON)
+            if (LM->LogNeeded() && actualRowCount > 0)
+            {
+              sprintf(LM->msg, "Estimated row count " PF64 " rejected (below size threshhold).",
+                      actualRowCount);
+              LM->Log(LM->msg);
+            }
+            LM->StartTimer("Execute query to get row count");
+            query  = "SELECT COUNT(*) FROM ";
+            query += getTableName(user_table->data(), nameSpace);
+            query += " FOR READ UNCOMMITTED ACCESS";
+            retcode = cursor.fetchNumColumn(query, NULL, &actualRowCount);
+            LM->StopTimer();
+            HSHandleError(retcode);
+            currentRowCountIsEstimate_ = FALSE;
+            if (LM->LogNeeded())
               {
-                LM->StartTimer("Estimate row count for HBase table");
-                actualRowCount = objDef->getNATable()->estimateHBaseRowCount();
-                LM->StopTimer();
-                if (LM->LogNeeded())
-                  {
-                    snprintf(LM->msg, sizeof(LM->msg),
-                             "Call to estimateHBaseRowCount() returned " PF64 ".",
-                             actualRowCount);
-                    LM->Log(LM->msg);
-                  }
-              }
-
-            // If actualRowCount is still 0 then the table is not an HBase table
-            // (or the cqd is not set). If it is HIST_NO_STATS_ROWCOUNT, then
-            // estimateHBaseRowCount() was not able to produce an estimate. In either
-            // of these cases, we need to resort to a count(*).
-            if (actualRowCount == 0 ||
-                actualRowCount == ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT))
-              {
-                LM->StartTimer("Execute query to get row count");
-                query  = "SELECT COUNT(*) FROM ";
-                query += getTableName(user_table->data(), nameSpace);
-                query += " FOR READ UNCOMMITTED ACCESS";
-                retcode = cursor.fetchNumColumn(query, NULL, &actualRowCount);
-                LM->StopTimer();
-                HSHandleError(retcode);
-                currentRowCountIsEstimate_ = FALSE;
-                if (LM->LogNeeded())
-                  {
-                    convertInt64ToAscii(actualRowCount, intStr);
-                    sprintf(LM->msg, "\n\t\tUsing select count(*): rows=%s", intStr);
-                    LM->Log(LM->msg);
-                  }
+                convertInt64ToAscii(actualRowCount, intStr);
+                sprintf(LM->msg, "\n\t\tUsing select count(*): rows=%s", intStr);
+                LM->Log(LM->msg);
               }
           }
       }

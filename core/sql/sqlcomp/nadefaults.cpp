@@ -1307,8 +1307,6 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDSint__(ESP_PRIORITY,                        "0"),
   DDSint__(ESP_PRIORITY_DELTA,                  "0"),
 
-  DDkwd__(ESTIMATE_HBASE_ROW_COUNT,             "ON"),
-
  // Disable hints - if SYSTEM, enable on SSD, and disable only on HDD
   DDkwd__(EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_HASH,	"SYSTEM"),
   DDkwd__(EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_SORT,	"SYSTEM"),
@@ -3515,7 +3513,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_DEBUG_FORCE_FETCHCOUNT,         "OFF"),
   DD_____(USTAT_DEBUG_TEST,                     ""),
   DDflte_(USTAT_DSHMAX,		                "50.0"),
-  DDkwd__(USTAT_ESTIMATE_HBASE_ROW_COUNT,       "OFF"),
+  DDkwd__(USTAT_ESTIMATE_HBASE_ROW_COUNT,       "ON"),
   DDkwd__(USTAT_FETCHCOUNT_ACTIVE,              "OFF"),
   DDkwd__(USTAT_FORCE_MOM_ESTIMATOR,            "OFF"),
   DDkwd__(USTAT_FORCE_TEMP,                     "OFF"),
