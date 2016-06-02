@@ -311,4 +311,14 @@ select a from hive.hive.thive;
 
 select * from hive.hive.thive;
 
+-- purgedata of hive data
+cqd query_cache '0';
+purgedata hive.hive.thive;
+select * from hive.hive.thive;
+insert into hive.hive.thive values (10, 20);
+select * from hive.hive.thive;
+purgedata hive.hive.thive;
+purgedata hive.hive.thive;
+select * from hive.hive.thive;
+
 log;

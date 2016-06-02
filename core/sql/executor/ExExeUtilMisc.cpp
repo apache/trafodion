@@ -2258,7 +2258,7 @@ Int32 ExExeUtilHiveTruncateTcb::fixup()
   return 0;
 }
 //////////////////////////////////////////////////////
-// work() for ExExePurgedataUtilTcb
+// work() for ExExeUtilHiveTruncateTsb
 //////////////////////////////////////////////////////
 short ExExeUtilHiveTruncateTcb::work()
 {
@@ -2376,27 +2376,14 @@ short ExExeUtilHiveTruncateTcb::work()
         if (qparent_.up->isFull())
           return WORK_OK;
 
-        // Return EOF.
+        // Return Error 
         ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+        up_entry->copyAtp(pentry_down);
 
         up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
 
         up_entry->upState.setMatchNo(0);
         up_entry->upState.status = ex_queue::Q_SQLERROR;
-
-        ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-
-        if (diagsArea == NULL)
-          diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
-        else
-          diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
-
-        if (getDiagsArea())
-          diagsArea->mergeAfter(*getDiagsArea());
-
-        up_entry->setDiagsArea(diagsArea);
-
-        getDiagsArea()->clear();
 
         // insert into parent
         qparent_.up->insert();
@@ -2417,21 +2404,6 @@ short ExExeUtilHiveTruncateTcb::work()
 
         up_entry->upState.setMatchNo(0);
         up_entry->upState.status = ex_queue::Q_NO_DATA;
-
-        if (getDiagsArea()->getNumber(DgSqlCode::WARNING_) > 0) // must be a warning
-        {
-          ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-
-          if (diagsArea == NULL)
-            diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
-          else
-            diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
-
-          if (getDiagsArea())
-            diagsArea->mergeAfter(*getDiagsArea());
-
-          up_entry->setDiagsArea(diagsArea);
-        }
 
         // insert into parent
         qparent_.up->insert();

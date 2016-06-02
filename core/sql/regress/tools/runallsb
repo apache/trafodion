@@ -41,7 +41,7 @@ export SQLMX_REGRESS=1
 
 export SEABASE_REGRESS=2
 
-TEST_SUBDIRS="core compGeneral executor seabase fullstack2 charsets qat privs1 privs2 udr hive" 
+TEST_SUBDIRS="core compGeneral executor seabase hive fullstack2 charsets qat privs1 privs2 udr" 
 
 #
 # Make sure we're running from the regress subdir
