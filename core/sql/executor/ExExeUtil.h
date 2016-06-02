@@ -3079,11 +3079,11 @@ public:
   {
     return (ExExeUtilLobShowddlTdb &) tdb;
   };
-
+  
  private:
   short fetchRows(char * query, short &rc);
   short returnRows(short &rc);
-
+ 
   enum Step
   {
     INITIAL_,
@@ -3108,7 +3108,7 @@ public:
   char * lobMDName_;
   
   Lng32 currLobNum_;
-
+  
   char sdOptionStr_[100];
 };
 
@@ -3299,6 +3299,7 @@ class ExExeUtilHiveTruncateTcb : public ExExeUtilTcb
     {
       INITIAL_,
       ERROR_,
+      DATA_MOD_CHECK_,
       EMPTY_DIRECTORY_,
       DONE_
     };
@@ -3306,18 +3307,10 @@ class ExExeUtilHiveTruncateTcb : public ExExeUtilTcb
   ExExeUtilFastDeleteTdb & fdTdb() const
     {return (ExExeUtilFastDeleteTdb &) tdb;};
 
-
-//  short doHiveTruncate(char * objectName,
-//                     NABoolean isIndex,
-//                     NABoolean fastDelUsingResetEOF);
-
   short injectError(const char * val);
 
   Step step_;
 
-  char  hdfsHost_[500];
-  int  hdfsPort_;
-  char  hiveTableLocation_[513];
   int   numExistingFiles_;
   void * lobGlob_;
 };

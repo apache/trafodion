@@ -7813,7 +7813,7 @@ static RelExpr *checkTupleElementsAreAllScalar(BindWA *bindWA, RelExpr *re)
         *CmpCommon::diags() << DgSqlCode(-4125);
         bindWA->setErrStatus();
         return NULL;
-      }
+      }      
       else if (cols.entries() == 1) {  // if cols.entries() > 1 && subq->getDegree() > 1
           // we do not want to make the transformation velow. We want to keep the 
          // values clause, so that it cann be attached by a tsj to the subquery 
@@ -9195,7 +9195,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
                           TRUE,
                           new (bindWA->wHeap()) NAString(tableDir),
                           new (bindWA->wHeap()) NAString(hostName),
-                          hdfsPort);
+                          hdfsPort,
+                          hTabStats->getModificationTS());
 
       //new root to prevent  error 4056 when binding
       newRelExpr = new (bindWA->wHeap()) RelRoot(newRelExpr);
@@ -16657,10 +16658,32 @@ RelExpr * FastExtract::bindNode(BindWA *bindWA)
   {
     delimiter_ = ActiveSchemaDB()->getDefaults().getValue(TRAF_UNLOAD_DEF_DELIMITER);
   }
-  if (getNullString().length() == 0)
-  {
-    nullString_ = ActiveSchemaDB()->getDefaults().getValue(TRAF_UNLOAD_DEF_NULL_STRING);
-  }
+
+  // if inserting into a hive table and an explicit null string was
+  // not specified in the unload command, and the target table has a user
+  // specified null format string, then use it.
+  if ((isHiveInsert()) &&
+      (hiveTableDesc_ && hiveTableDesc_->getNATable() && 
+       hiveTableDesc_->getNATable()->getClusteringIndex()) &&
+      (NOT nullStringSpec_))
+    {
+      const HHDFSTableStats* hTabStats = 
+        hiveTableDesc_->getNATable()->getClusteringIndex()->getHHDFSTableStats();
+
+      if (hTabStats->getNullFormat())
+        {
+          nullString_ = hTabStats->getNullFormat();
+          nullStringSpec_ = TRUE;
+        }
+    }
+
+  // if an explicit or user specified null format was not used, then
+  // use the default null string.
+  if (NOT nullStringSpec_) 
+    {
+      nullString_ = HIVE_DEFAULT_NULL_STRING;
+    }
+  
   if (getRecordSeparator().length() == 0)
   {
     recordSeparator_ = ActiveSchemaDB()->getDefaults().getValue(TRAF_UNLOAD_DEF_RECORD_SEPARATOR);

@@ -58,10 +58,9 @@ log LOG005 clear;
 set schema hive.hive;
 set terminal_charset utf8;
 
-cqd AUTO_QUERY_RETRY 'OFF';
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
 cqd HIVE_MAX_STRING_LENGTH '25' ;
 cqd mode_seahive 'ON';
-cqd CALL_EMBEDDED_ARKCMP 'OFF';
 cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
 ------------------------------------------------------------
 -- Testing query plan invalidation in the compiler, but
@@ -145,10 +144,8 @@ where c_customer_sk between 20000 and 39999;
 select * from newtable;
 -- no rows, but should know the new table
 insert into newtable values ('abc');
-cqd query_cache '0';
 select * from newtable;
 -- expect to see the row, but only because query cache is off
-cqd query_cache reset;
 
 insert into hiveregr5.newtable2 values ('xyz');
 select * from hiveregr5.newtable2;
@@ -191,7 +188,6 @@ select a,b from newtable;
 -- overwrite the table with auto-generated partitions
 sh regrhive.ksh -v -f $REGRTSTDIR/TEST005_d.hive.sql;
 
-cqd query_cache '0';
 prepare s4 from 
   select c_preferred_cust_flag,
          count(*) 
@@ -283,4 +279,36 @@ c8 smallint
 cqd HIVE_SCAN_SPECIAL_MODE '2';
 insert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 cqd HIVE_SCAN_SPECIAL_MODE reset;
+
+-- tests for hive timestamp mismatch check
+cqd auto_query_retry_warnings 'ON';
+
+sh echo "drop table thive;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+
+sh echo "create table thive(a int);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+
+select a from hive.hive.thive;
+
+sh echo "insert into thive values (1);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+
+select a from hive.hive.thive;
+insert into hive.hive.thive values (2);
+select a from hive.hive.thive;
+
+sh echo "drop table thive;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+
+sh echo "create table thive(a int, b int);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+
+sh echo "insert into thive values (1,2);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+
+select a from hive.hive.thive;
+
+select * from hive.hive.thive;
+
 log;

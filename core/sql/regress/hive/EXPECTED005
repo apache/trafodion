@@ -4,16 +4,13 @@
 --- SQL operation complete.
 >>set terminal_charset utf8;
 >>
->>cqd AUTO_QUERY_RETRY 'OFF';
+>>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
 
 --- SQL operation complete.
 >>cqd HIVE_MAX_STRING_LENGTH '25' ;
 
 --- SQL operation complete.
 >>cqd mode_seahive 'ON';
-
---- SQL operation complete.
->>cqd CALL_EMBEDDED_ARKCMP 'OFF';
 
 --- SQL operation complete.
 >>cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
@@ -72,12 +69,16 @@
 +>  order by 1
 +>  ;
 
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
 
+                                            685
 N                                          9789
 Y                                          9525
-?                                           685
 
 --- 3 row(s) selected.
 >>
@@ -113,9 +114,9 @@ Y                                          9525
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
 
+                                            685
 N                                          9789
 Y                                          9525
-?                                           685
 
 --- 3 row(s) selected.
 >>-- should get an NATable cache
@@ -160,10 +161,11 @@ Y                                          9525
 >>insert into newtable values ('abc');
 
 --- 1 row(s) inserted.
->>cqd query_cache '0';
-
---- SQL operation complete.
 >>select * from newtable;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
 
 A                        
 -------------------------
@@ -172,9 +174,6 @@ abc
 
 --- 1 row(s) selected.
 >>-- expect to see the row, but only because query cache is off
->>cqd query_cache reset;
-
---- SQL operation complete.
 >>
 >>insert into hiveregr5.newtable2 values ('xyz');
 
@@ -218,12 +217,16 @@ xyz
 >>-- s1 should still return 0 rows - for now
 >>execute s2;
 
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
 
-N                                          9789
-Y                                          9525
-?                                           685
+                                           1384
+N                                         19631
+Y                                         18984
 
 --- 3 row(s) selected.
 >>execute s3;
@@ -270,6 +273,10 @@ Y                                          9525
 --- 1 row(s) inserted.
 >>select a,b from newtable;
 
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+
 A            B                        
 -----------  -------------------------
 
@@ -280,9 +287,6 @@ A            B
 >>-- overwrite the table with auto-generated partitions
 >>sh regrhive.ksh -v -f $REGRTSTDIR/TEST005_d.hive.sql;
 >>
->>cqd query_cache '0';
-
---- SQL operation complete.
 >>prepare s4 from 
 +>  select c_preferred_cust_flag,
 +>         count(*) 
@@ -307,9 +311,9 @@ A            B
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
 
-N                                          9789
-Y                                          9525
-?                                           685
+                                           1384
+N                                         19631
+Y                                         18984
 
 --- 3 row(s) selected.
 >>execute s4;
@@ -317,9 +321,9 @@ Y                                          9525
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
 
+                                           1384
 N                                         19631
 Y                                         18984
-?                                          1384
 
 --- 3 row(s) selected.
 >>execute s2part;
@@ -453,21 +457,21 @@ TINT    SM      I            BIG                   STR                        F 
 --- SQL operation complete.
 >>select c1, CONVERTTOHEX(c2) from tbl_gbk;
 
-C1           (EXPR)
+C1           (EXPR)                                            
 -----------  --------------------------------------------------
 
-          3  EC8B90EC978E
-          5  EC8B90EC978E
-          2  EC8B90EC978E
-          4  EC8B90EC978E
-          6  EC8B90EC978E
-          7  EC8B90EC978E
-          8  EC8B90EC978E
-          3  ECBB93EB9F8FECAB97EB9B91
-          2  ECBB93EB9F8FECAB97EB9B91
-          6  ECBB93EB9F8FECAB97EB9B91
-         19  ECBB93EB9F8FECAB97EB9B91
-          8  ECBB93EB9F8FECAB97EB9B91
+          3  EC8B90EC978E                                      
+          5  EC8B90EC978E                                      
+          2  EC8B90EC978E                                      
+          4  EC8B90EC978E                                      
+          6  EC8B90EC978E                                      
+          7  EC8B90EC978E                                      
+          8  EC8B90EC978E                                      
+          3  ECBB93EB9F8FECAB97EB9B91                          
+          2  ECBB93EB9F8FECAB97EB9B91                          
+          6  ECBB93EB9F8FECAB97EB9B91                          
+         19  ECBB93EB9F8FECAB97EB9B91                          
+          8  ECBB93EB9F8FECAB97EB9B91                          
 
 --- 12 row(s) selected.
 >>cqd HIVE_FILE_CHARSET reset;
@@ -516,7 +520,7 @@ C1           C2           C3           C4
 --- 10 row(s) loaded.
 >>select * from trafodion.seabase.tbl_dos_num;
 
-C1           C2
+C1           C2         
 -----------  -----------
 
           0        39478
@@ -544,16 +548,16 @@ C1           C2
 --- SQL operation complete.
 >>select * from tbl_bad;
 
-C1           C2                    C3                         C4               C5      C6                          C7                                                 C8
------------  --------------------  -------------------------  ---------------  ------  --------------------------  -------------------------                          ------
+C1           C2                    C3                         C4               C5      C6                          C7                         C8
+-----------  --------------------  -------------------------  ---------------  ------  --------------------------  -------------------------  ------
 
-          ?                     ?  c                                        ?       ?  ?                                                   ?                               ?
-          ?                     ?  c                                        ?       ?  2017-01-01 10:10:10.000000   1.01000000000000000E+000                               1
-          ?                     ?                                           ?       ?  ?                                                   ?                               ?
-          1                     1  averylongstring            -1.0000000E+000       0  2017-01-01 10:10:10.000000   1.00010000000000000E+002                               1
-          2                     2  good                        1.1000000E+000       2  2017-01-01 10:10:10.000000   2.00000000000000000E+002                            1000
-          3                     3  good                        1.0000000E+000       2  2017-01-01 10:10:10.000000   2.10000000000000000E+002                              10
-          ?            4294967295  good                        3.3999999E+038       ?  2017-01-01 10:10:10.000000   1.69999999999999968E+308                              10
+          ?                     ?  c                                        ?       ?  ?                                                   ?       ?
+          ?                     ?  c                                        ?       ?  2017-01-01 10:10:10.000000   1.01000000000000000E+000       1
+          ?                     ?                                           ?       ?  ?                                                   ?       ?
+          1                     1  averylongstring            -1.0000000E+000       0  2017-01-01 10:10:10.000000   1.00010000000000000E+002       1
+          2                     2  good                        1.1000000E+000       2  2017-01-01 10:10:10.000000   2.00000000000000000E+002    1000
+          3                     3  good                        1.0000000E+000       2  2017-01-01 10:10:10.000000   2.10000000000000000E+002      10
+          ?            4294967295  good                        3.3999999E+038       ?  2017-01-01 10:10:10.000000   1.69999999999999968E+308      10
           0            9999999999  bad                                      ?       ?  ?                                                   ?       ?
 
 --- 8 row(s) selected.
@@ -631,4 +635,79 @@ C1           C2                    C3                         C4               C
 >>cqd HIVE_SCAN_SPECIAL_MODE reset;
 
 --- SQL operation complete.
+>>
+>>-- tests for hive timestamp mismatch check
+>>cqd auto_query_retry_warnings 'ON';
+
+--- SQL operation complete.
+>>
+>>sh echo "drop table thive;" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk;
+>>
+>>sh echo "create table thive(a int);" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk;
+>>
+>>select a from hive.hive.thive;
+
+--- 0 row(s) selected.
+>>
+>>sh echo "insert into thive values (1);" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk;
+>>
+>>select a from hive.hive.thive;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>insert into hive.hive.thive values (2);
+
+--- 1 row(s) inserted.
+>>select a from hive.hive.thive;
+
+A          
+-----------
+
+          1
+          2
+
+--- 2 row(s) selected.
+>>
+>>sh echo "drop table thive;" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk;
+>>
+>>sh echo "create table thive(a int, b int);" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk;
+>>
+>>sh echo "insert into thive values (1,2);" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk;
+>>
+>>select a from hive.hive.thive;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>
+>>select * from hive.hive.thive;
+
+A            B          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
+>>
 >>log;

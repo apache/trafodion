@@ -44,7 +44,7 @@
 //#include "hdfs.h"
 
 #include "ExpORCinterface.h"
-
+#include "ComSmallDefs.h"
 
 ex_tcb * ExHdfsScanTdb::build(ex_globals * glob)
 {
@@ -115,6 +115,7 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   , numBytesProcessedInRange_(0)
   , exception_(FALSE)
   , checkRangeDelimiter_(FALSE)
+  , dataModCheckDone_(FALSE)
 {
   Space * space = (glob ? glob->getSpace() : 0);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
@@ -253,6 +254,7 @@ void ExHdfsScanTcb::freeResources()
 
   ExpLOBinterfaceCleanup
     (lobGlob_, getGlobals()->getDefaultHeap());
+  
 }
 NABoolean ExHdfsScanTcb::needStatsEntry()
 {
@@ -394,7 +396,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
 	    if (hdfsScanTdb().getHdfsFileInfoList()->isEmpty())
 	      {
-		step_ = DONE;
+                step_ = CHECK_FOR_DATA_MOD_AND_DONE;
 		break;
 	      }
 
@@ -410,16 +412,81 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
 	    hdfsScanBufMaxSize_ = hdfsScanTdb().hdfsBufSize_;
 
+            dataModCheckDone_ = FALSE;
+
 	    if (numRanges_ > 0)
-              step_ = INIT_HDFS_CURSOR;
+              step_ = CHECK_FOR_DATA_MOD;
             else
-              step_ = DONE;
+              step_ = CHECK_FOR_DATA_MOD_AND_DONE;
 	  }
 	  break;
 
+        case CHECK_FOR_DATA_MOD:
+        case CHECK_FOR_DATA_MOD_AND_DONE:
+          {
+            char * dirPath = hdfsScanTdb().hdfsRootDir_;
+            if (! dirPath)
+              dataModCheckDone_ = TRUE;
+
+            if (NOT dataModCheckDone_)
+              {
+                Int64 modTS = hdfsScanTdb().modTSforDir_;
+                Lng32 numOfPartLevels = hdfsScanTdb().numOfPartCols_;
+
+                if (hdfsScanTdb().hdfsDirsToCheck())
+                  {
+                    // TBD
+                  }
+
+                retcode = ExpLOBinterfaceDataModCheck
+                  (lobGlob_,
+                   dirPath,
+                   hdfsScanTdb().hostName_,
+                   hdfsScanTdb().port_,
+                   modTS,
+                   numOfPartLevels);
+                
+                if (retcode < 0)
+                  {
+                    Lng32 cliError = 0;
+		    
+                    Lng32 intParam1 = -retcode;
+                    ComDiagsArea * diagsArea = NULL;
+                    ExRaiseSqlError(getHeap(), &diagsArea, 
+                                    (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
+                                    NULL, &intParam1, 
+                                    &cliError, 
+                                    NULL, 
+                                    "HDFS",
+                                    (char*)"ExpLOBInterfaceDataModCheck",
+                                    getLobErrStr(intParam1));
+                    pentry_down->setDiagsArea(diagsArea);
+                    step_ = HANDLE_ERROR_AND_DONE;
+                    break;
+                  }  
+
+                if (retcode == 1) // check failed
+                  {
+                    ComDiagsArea * diagsArea = NULL;
+                    ExRaiseSqlError(getHeap(), &diagsArea, 
+                                    (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+                    pentry_down->setDiagsArea(diagsArea);
+                    step_ = HANDLE_ERROR_AND_DONE;
+                    break;
+                  }
+
+                dataModCheckDone_ = TRUE;
+              }
+
+            if (step_ == CHECK_FOR_DATA_MOD_AND_DONE)
+              step_ = DONE;
+            else
+              step_ = INIT_HDFS_CURSOR;
+          }
+          break;
+
 	case INIT_HDFS_CURSOR:
 	  {
-
             hdfo_ = (HdfsFileInfo*)
               hdfsScanTdb().getHdfsFileInfoList()->get(currRangeNum_);
             if ((hdfo_->getBytesToRead() == 0) && 
@@ -569,10 +636,11 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
             trailingPrevRead_ = 0; 
             firstBufOfFile_ = true;
             numBytesProcessedInRange_ = 0;
+
             step_ = GET_HDFS_DATA;
           }
           break;
-	  
+
 	case GET_HDFS_DATA:
 	  {
 	    Int64 bytesToRead = hdfsScanBufMaxSize_ - trailingPrevRead_;
@@ -1228,8 +1296,10 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
             workAtp_->getDiagsArea()->clear();
 	}
 	break;
+
         case HANDLE_ERROR_WITH_CLOSE:
 	case HANDLE_ERROR:
+	case HANDLE_ERROR_AND_DONE:
 	  {
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
@@ -1258,6 +1328,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	    
             if (step_ == HANDLE_ERROR_WITH_CLOSE)
                step_ = CLOSE_HDFS_CURSOR;
+            else if (step_ == HANDLE_ERROR_AND_DONE)
+              step_ = DONE;
             else
 	       step_ = ERROR_CLOSE_FILE;
 	    break;
@@ -1391,6 +1463,9 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
   ExpTupleDesc * asciiSourceTD =
      hdfsScanTdb().workCriDesc_->getTupleDescriptor(hdfsScanTdb().asciiTuppIndex_);
 
+  ExpTupleDesc * origSourceTD = 
+    hdfsScanTdb().workCriDesc_->getTupleDescriptor(hdfsScanTdb().origTuppIndex_);
+  
   const char cd = hdfsScanTdb().columnDelimiter_;
   const char rd = hdfsScanTdb().recordDelimiter_;
   const char *sourceDataEnd = hdfsScanBuffer_+trailingPrevRead_+ bytesRead_;
@@ -1415,6 +1490,7 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
 
   Lng32 neededColIndex = 0;
   Attributes * attr = NULL;
+  Attributes * tgtAttr = NULL;
   NABoolean rdSeen = FALSE;
 
   for (Lng32 i = 0; i <  hdfsScanTdb().convertSkipListSize_; i++)
@@ -1424,9 +1500,11 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
       if (neededColIndex == asciiSourceTD->numAttrs())
         continue;
 
+      tgtAttr = NULL;
       if (hdfsScanTdb().convertSkipList_[i] > 0)
       {
         attr = asciiSourceTD->getAttr(neededColIndex);
+        tgtAttr = origSourceTD->getAttr(neededColIndex);
         neededColIndex++;
       }
       else
@@ -1465,13 +1543,27 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
 
             if (attr->getNullFlag())
             {
-              if (len == 0)
-                *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
-	      else if (memcmp(sourceData, "\\N", len) == 0)
-                *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
-              else
-                *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = 0;
-            }
+              *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = 0;
+              if (hdfsScanTdb().getNullFormat()) // null format specified by user
+                {
+                  if (((len == 0) && (strlen(hdfsScanTdb().getNullFormat()) == 0)) ||
+                      ((len > 0) && (memcmp(sourceData, hdfsScanTdb().getNullFormat(), len) == 0)))
+                    {
+                       *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
+                    }
+                } // if
+              else // null format not specified by user
+                {
+                  // Use default null format.
+                  // for non-varchar, length of zero indicates a null value.
+                  // For all datatypes, HIVE_DEFAULT_NULL_STRING('\N') indicates a null value.
+                  if (((len == 0) && (tgtAttr && (NOT DFS2REC::isSQLVarChar(tgtAttr->getDatatype())))) ||
+                      ((len > 0) && (memcmp(sourceData, HIVE_DEFAULT_NULL_STRING, len) == 0)))
+                    {
+                      *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
+                    }
+                } // else
+            } // if nullable attr
 
             if (len > 0)
             {
@@ -1697,7 +1789,7 @@ short ExOrcScanTcb::extractAndTransformOrcSourceToSqlRow(
             {
               if (currColLen == 0)
                 *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
-	      else if (memcmp(sourceData, "\\N", currColLen) == 0)
+	      else if (memcmp(sourceData, HIVE_DEFAULT_NULL_STRING, currColLen) == 0)
                 *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
               else
                 *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = 0;

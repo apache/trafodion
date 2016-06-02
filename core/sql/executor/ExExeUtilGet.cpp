@@ -4478,6 +4478,12 @@ ExExeUtilLobShowddlTcb::ExExeUtilLobShowddlTcb
   : ExExeUtilTcb(exe_util_tdb, NULL, glob),
     step_(INITIAL_)
 {
+  strcpy(lobMDNameBuf_,"");
+  lobMDNameLen_=0;
+  lobMDName_ = NULL;
+  
+  Lng32 currLobNum_ = 0;
+  strcpy(sdOptionStr_,"");
 }
 
 short ExExeUtilLobShowddlTcb::fetchRows(char * query, short &rc)
@@ -4698,12 +4704,18 @@ short ExExeUtilLobShowddlTcb::work()
 	      ExpLOBoper::ExpGetLOBname
 	      (lobTdb().objectUID_, lobTdb().getLOBnum(currLobNum_), 
 	       tgtLobNameBuf, 100);
-	    
-	    str_sprintf(query_, "Location: %s", 
+
+	    if (lobTdb().getIsExternalLobCol(currLobNum_))
+              str_sprintf(query_, "<External HDFS location>");
+            else 
+              str_sprintf(query_, "Location: %s", 
 			lobTdb().getLOBloc(currLobNum_));
 	    moveRowToUpQueue(query_);
 
-	    str_sprintf(query_, "DataFile: %s", tgtLobName);
+            if (lobTdb().getIsExternalLobCol(currLobNum_))
+              str_sprintf(query_, "<External HDFS file>");
+            else 
+              str_sprintf(query_, "DataFile: %s", tgtLobName);
 	    moveRowToUpQueue(query_);
 
 	    step_ = FETCH_LOB_DESC_HANDLE_SHOWDDL_;
@@ -6222,21 +6234,40 @@ short ExExeUtilLobInfoTcb::collectAndReturnLobInfo(char * tableName,Int32 currLo
     return rc;
 
   //lob location  
-  strcpy(lobLocation, &((getLItdb().getLobLocList())[offset]));
+ 
+   strcpy(lobLocation, &((getLItdb().getLobLocList())[offset]));
   removeTrailingBlanks(lobLocation, LOBINFO_MAX_FILE_LEN);
+if (getLItdb().getLobTypeList()[(currLobNum-1)*sizeof(Int32)] == Lob_External_HDFS_File)
+  str_sprintf(buf, "  Lob Location :  External HDFS Location");
+else
   str_sprintf(buf, "  Lob Location :  %s", lobLocation);
   if (moveRowToUpQueue(buf, strlen(buf), &rc))
     return rc;      
-                 
+  
+  char lobDescChunkFileBuf[LOBINFO_MAX_FILE_LEN*2];
+  //Get the descriptor chunks table name
+  char *lobDescChunksFile =
+    ExpLOBoper::ExpGetLOBDescChunksName(strlen(schName),schName,
+                                        getLItdb().objectUID_, currLobNum, 
+                                        lobDescChunkFileBuf, LOBINFO_MAX_FILE_LEN*2);
+ 
+  char *query = new(getGlobals()->getDefaultHeap()) char[4096]; 
   // lobDataFile
   char tgtLobNameBuf[LOBINFO_MAX_FILE_LEN];
-  char *lobDataFile = 
-    ExpLOBoper::ExpGetLOBname
-    (getLItdb().objectUID_, currLobNum, 
-     tgtLobNameBuf, LOBINFO_MAX_FILE_LEN);
+ 
+  
+   char *lobDataFile = 
+     ExpLOBoper::ExpGetLOBname
+     (getLItdb().objectUID_, currLobNum, 
+      tgtLobNameBuf, LOBINFO_MAX_FILE_LEN);
+    
+    
  
   removeTrailingBlanks(lobDataFile, LOBINFO_MAX_FILE_LEN);
-  str_sprintf(buf, "  LOB Data File:  %s", lobDataFile);
+  if (getLItdb().getLobTypeList()[(currLobNum-1)*sizeof(Int32)] == Lob_External_HDFS_File)
+    str_sprintf(buf, "  LOB Data File:  External HDFS File");
+  else
+    str_sprintf(buf, "  LOB Data File:  %s", lobDataFile);
   if (moveRowToUpQueue(buf, strlen(buf), &rc))
     return rc;  
                 
@@ -6245,6 +6276,7 @@ short ExExeUtilLobInfoTcb::collectAndReturnLobInfo(char * tableName,Int32 currLo
   if (fs == NULL)
     return LOB_DATA_FILE_OPEN_ERROR;
 
+  
   snprintf(lobDataFilePath, LOBINFO_MAX_FILE_LEN, "%s/%s", lobLocation, lobDataFile);
   hdfsFile fdData = hdfsOpenFile(fs, lobDataFilePath,O_RDONLY,0,0,0);
   if (!fdData) 
@@ -6256,7 +6288,8 @@ short ExExeUtilLobInfoTcb::collectAndReturnLobInfo(char * tableName,Int32 currLo
   hdfsFileInfo *fInfo = hdfsGetPathInfo(fs, lobDataFilePath);
   if (fInfo)
     lobEOD = fInfo->mSize;
- 
+  else
+    lobEOD = 0;
   
   str_sprintf(buf, "  LOB EOD :  %Ld", lobEOD);
   if (moveRowToUpQueue(buf, strlen(buf), &rc))
@@ -6264,23 +6297,17 @@ short ExExeUtilLobInfoTcb::collectAndReturnLobInfo(char * tableName,Int32 currLo
 
   // Sum of all the lobDescChunks for used space
 
-  char lobDescChunkFileBuf[LOBINFO_MAX_FILE_LEN*2];
-  //Get the descriptor chunks table name
-  char *lobDescChunksFile =
-    ExpLOBoper::ExpGetLOBDescChunksName(strlen(schName),schName,
-                                        getLItdb().objectUID_, currLobNum, 
-                                        lobDescChunkFileBuf, LOBINFO_MAX_FILE_LEN*2);
- 
-  char *query = new(getGlobals()->getDefaultHeap()) char[4096];
+   
   str_sprintf (query,  "select sum(chunklen) from  %s ", lobDescChunksFile);
-
   // set parserflags to allow ghost table
-  currContext->setSqlParserFlags(0x1);
-	
+  currContext->setSqlParserFlags(0x1);	
 
   Int64 outlen = 0;Lng32 len = 0;
   Int32 cliRC = cliInterface()->executeImmediate(query,(char *)&outlen, &len, FALSE);
+  if ((len ==0) ||(getLItdb().getLobTypeList()[(currLobNum-1)*sizeof(Int32)] == Lob_External_HDFS_File))
+    outlen = 0;
   NADELETEBASIC(query, getGlobals()->getDefaultHeap());
+  
   currContext->resetSqlParserFlags(0x1);
   if (cliRC <0 )
     {
@@ -6296,7 +6323,7 @@ short ExExeUtilLobInfoTcb::work()
 {
   short retcode = 0;
   Lng32 cliRC = 0;
-   const char *parentQid = NULL;
+  const char *parentQid = NULL;
   char buf[1000];
      short rc = 0;
   // if no parent request, return
@@ -6410,6 +6437,7 @@ short ExExeUtilLobInfoTcb::work()
 
 	case HANDLE_ERROR_:
 	  {
+            
 	    retcode = handleError();
 	    if (retcode == 1)
 	      return WORK_OK;
@@ -6511,18 +6539,39 @@ short ExExeUtilLobInfoTableTcb::collectLobInfo(char * tableName,Int32 currLobNum
   offset = (currLobNum-1)*LOBINFO_MAX_FILE_LEN; 
   str_cpy_all(lobInfo_->columnName, &((getLItdb().getLobColList())[offset]),
               strlen(&((getLItdb().getLobColList())[offset])));
-  
-  //lob location  
-  char *lobLocation = &((getLItdb().getLobLocList())[offset]);
-  str_cpy_all(lobInfo_->lobLocation, lobLocation, strlen(lobLocation));
+
+  char *lobLocation = new(getGlobals()->getDefaultHeap()) char[LOBINFO_MAX_FILE_LEN]  ;
+ 
+   
+  lobLocation = &((getLItdb().getLobLocList())[offset]);
+ if (getLItdb().getLobTypeList()[(currLobNum-1)*sizeof(Int32)] == Lob_External_HDFS_File)
+ str_cpy_all(lobInfo_->lobLocation, "External HDFS Location", strlen("External HDFS Location"));
+ else 
+   str_cpy_all(lobInfo_->lobLocation, (char *)&lobLocation[0], strlen(lobLocation));
                           
   // lobDataFile
   char tgtLobNameBuf[LOBINFO_MAX_FILE_LEN];
-  char *lobDataFile = 
+  char query[4096];
+  char lobDescChunkFileBuf[LOBINFO_MAX_FILE_LEN*2];
+ 
+  //Get the descriptor chunks table name
+  char *lobDescChunksFile =
+    ExpLOBoper::ExpGetLOBDescChunksName(strlen(schName),schName,
+                                        getLItdb().objectUID_, currLobNum, 
+                                        lobDescChunkFileBuf, LOBINFO_MAX_FILE_LEN*2);
+    char *lobDataFile = 
 	      ExpLOBoper::ExpGetLOBname
 	      (getLItdb().objectUID_, currLobNum, 
 	       tgtLobNameBuf, LOBINFO_MAX_FILE_LEN);
-  str_cpy_all(lobInfo_->lobDataFile,  lobDataFile,strlen(lobDataFile));             
+   
+  if (getLItdb().getLobTypeList()[(currLobNum-1)*sizeof(Int32)] == Lob_External_HDFS_File)
+    {
+      str_cpy_all(lobInfo_->lobDataFile, "External HDFS File" ,strlen("External HDFS File"));  
+    }
+  else
+    {
+      str_cpy_all(lobInfo_->lobDataFile,  lobDataFile,strlen(lobDataFile));
+    }             
   //EOD of LOB data file
   hdfsFS fs = hdfsConnect(getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
   if (fs == NULL)
@@ -6530,41 +6579,39 @@ short ExExeUtilLobInfoTableTcb::collectLobInfo(char * tableName,Int32 currLobNum
 
   snprintf(lobDataFilePath, LOBINFO_MAX_FILE_LEN, "%s/%s", lobLocation, lobDataFile);
   hdfsFile fdData = hdfsOpenFile(fs, lobDataFilePath,O_RDONLY,0,0,0);
-   if (!fdData) 
+  if (!fdData) 
     {
       hdfsCloseFile(fs,fdData);
       fdData = NULL;
       return LOB_DATA_FILE_OPEN_ERROR;
     }
-      hdfsFileInfo *fInfo = hdfsGetPathInfo(fs, lobDataFilePath);
-       if (fInfo)
-         lobEOD = fInfo->mSize;
-       lobInfo_->lobDataFileSizeEod=lobEOD;
+  hdfsFileInfo *fInfo = hdfsGetPathInfo(fs, lobDataFilePath);
+  if (fInfo)
+    lobEOD = fInfo->mSize;
+  else
+    lobEOD = 0;
+  lobInfo_->lobDataFileSizeEod=lobEOD;
   // Sum of all the lobDescChunks for used space
 
-       char lobDescChunkFileBuf[LOBINFO_MAX_FILE_LEN*2];
-  //Get the descriptor chunks table name
-       char *lobDescChunksFile =
-       ExpLOBoper::ExpGetLOBDescChunksName(strlen(schName),schName,
-                                        getLItdb().objectUID_, currLobNum, 
-                                        lobDescChunkFileBuf, LOBINFO_MAX_FILE_LEN*2);
-       char query[4096];
-      	str_sprintf (query,  "select sum(chunklen) from  %s ", lobDescChunksFile);
+  str_sprintf (query,  "select sum(chunklen) from  %s ", lobDescChunksFile);
 
-	// set parserflags to allow ghost table
-	currContext->setSqlParserFlags(0x1);
+  // set parserflags to allow ghost table
+  currContext->setSqlParserFlags(0x1);
 	
+  Int64 outlen = 0;Lng32 len = 0;
+  Int32 cliRC = cliInterface()->executeImmediate(query,(char *)&outlen, &len, FALSE);
+  if ((len == 0) || (getLItdb().getLobTypeList()[(currLobNum-1)*sizeof(Int32)] == Lob_External_HDFS_File))
+    outlen = 0;
+  lobInfo_->lobDataFileSizeUsed = outlen;
+  currContext->resetSqlParserFlags(0x1);
+        
 
-	Int64 outlen = 0;Lng32 len = 0;
-	Int32 cliRC = cliInterface()->executeImmediate(query,(char *)&outlen, &len, FALSE);
-        lobInfo_->lobDataFileSizeUsed = outlen;
-        currContext->resetSqlParserFlags(0x1);
-        if (cliRC <0 )
-          {
-            return cliRC;
-          }
+  if (cliRC <0 )
+    {
+      return cliRC;
+    }
   
-   return 0;
+  return 0;
 }
 short ExExeUtilLobInfoTableTcb::work()
 {

@@ -749,6 +749,8 @@ static const QueryString cqdInfo[] =
   {"unique_hash_joins"}, {"OFF"}
 , {"transform_to_sidetree_insert"}, {"OFF"}
 , {"METADATA_CACHE_SIZE"}, {"0"}
+, {"QUERY_CACHE"}, {"0"}
+, {"TRAF_RELOAD_NATABLE_CACHE"}, {"ON"}
 };
 
 static const AQRInfo::AQRErrorMap aqrErrorMap[] = 
@@ -779,6 +781,10 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
 
   // parallel purgedata failed
   AQREntry(   8022,      0,      3,    60,      0,   0, "",    0,     1),
+
+  // hive data modification timestamp mismatch.
+  // query will be AQR'd and hive metadata will be reloaded.
+  AQREntry(   8436,      0,      1,     0,      0,   2, "04:05",  0,     0),
 
   // FS memory errors
   AQREntry(   8550,     30,      1,    60,      0,   0, "",    0,     0),

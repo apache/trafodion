@@ -136,6 +136,12 @@ enum SqlParser_Flags_Enum {
   inline static ULng32 Get_SqlParser_Flags(ULng32 flagbits)
   { return SqlParser_Flags & flagbits; }
 
+  // Deprecated; use Or_SqlParser_Flags or the PushAndSetSqlParserFlags
+  // class instead.
+  // This method tends to be error-prone because callers often are
+  // not aware of the different semantics when flagbits are zero.
+  // Oftentimes this method is coded when the caller really wanted
+  // to do a simple assign instead.
   inline static void Set_SqlParser_Flags(ULng32 flagbits)
   {
     if (flagbits)
@@ -144,18 +150,62 @@ enum SqlParser_Flags_Enum {
       SqlParser_Flags = 0;
   }
 
+  inline static void Or_SqlParser_Flags(ULng32 flagbits)
+  {
+    SqlParser_Flags |= flagbits;
+  }
+
   inline static void Assign_SqlParser_Flags(ULng32 flagbits)
   {
     SqlParser_Flags = flagbits;
   }
 
- inline static void Reset_SqlParser_Flags(ULng32 flagbits)
+  // Deprecated; use UnOr_SqlParser_Flags or the PushAndSetSqlParserFlags
+  // class instead.
+  // This method tends to be error-prone because callers often are
+  // not aware of the different semantics when flagbits are zero. 
+  inline static void Reset_SqlParser_Flags(ULng32 flagbits)
   {
     if (flagbits)
       SqlParser_Flags &= ~flagbits;
     else
       SqlParser_Flags = 0;
   }
+
+  // Turns off the bits given in flagbits. If you want to return
+  // bits to a previous state (whether on or off), use
+  // Assign_SqlParser_Flags or the PushAndSetSqlParserFlags class.
+  inline static void UnOr_SqlParser_Flags(ULng32 flagbits)
+  {
+    SqlParser_Flags &= ~flagbits;
+  }
+
+  // If you simply want to turn on one or more parser flags in the
+  // scope of one method, and then reset those flags to their original
+  // state on exit, use this class. Code a call to the constructor
+  // at the point where you want the flags set. The destructor will
+  // return them to the original state when it is called. When used
+  // as a stack variable this is very convenient; the flags get reset
+  // when the scope is exited. And it is exception-safe.
+  class PushAndSetSqlParserFlags
+  {
+  public:
+
+    PushAndSetSqlParserFlags(ULng32 flagbits) : savedBits_(SqlParser_Flags)
+    {
+      Or_SqlParser_Flags(flagbits); 
+    };
+    
+    ~PushAndSetSqlParserFlags(void)
+    {
+      Assign_SqlParser_Flags(savedBits_);
+    };
+
+  private:
+
+    ULng32 savedBits_;  // the value of SqlParser_Flags at ctor time
+  };
+ 
 #endif
 
 #if defined(SQLPARSERGLOBALS_NADEFAULTS) || defined(SQLPARSERGLOBALSCMN__INITIALIZE)

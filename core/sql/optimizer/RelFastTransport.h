@@ -114,8 +114,10 @@ public :
     nullString_(*nullString, oHeap),
     recordSeparator_(*recordSep, oHeap),
     overwriteHiveTable_(FALSE),
-    isSequenceFile_(FALSE)
-  { };
+    isSequenceFile_(FALSE),
+    nullStringSpec_((nullString ? TRUE : FALSE))
+  {
+  };
 
   FastExtract(RelExpr* child,
       NAString* targName,
@@ -135,7 +137,8 @@ public :
     nullString_(oHeap),
     recordSeparator_(oHeap),
     overwriteHiveTable_(FALSE),
-    isSequenceFile_(FALSE)
+    isSequenceFile_(FALSE),
+    nullStringSpec_(FALSE)
   { };
 
 
@@ -155,7 +158,8 @@ public :
     nullString_(oHeap),
     recordSeparator_(oHeap),
     overwriteHiveTable_(FALSE),
-    isSequenceFile_(FALSE)
+    isSequenceFile_(FALSE),
+    nullStringSpec_(FALSE)
   { };
 
   FastExtract(RelExpr* child,
@@ -181,8 +185,10 @@ public :
     nullString_(oHeap),
     recordSeparator_(oHeap),
     overwriteHiveTable_(FALSE),
-    isSequenceFile_(FALSE)
+    isSequenceFile_(FALSE),
+    nullStringSpec_(FALSE)
   { };
+
   //! FastExtract Copy Constructor
   FastExtract(const FastExtract &other);
 
@@ -270,6 +276,7 @@ public :
   Int32 getHdfsPort() const {return hdfsPort_;}
   const NAString& getHiveTableName() const {return hiveTableName_;}
   NABoolean isHiveInsert() const {return (hiveTableDesc_ != NULL);}
+  const TableDesc* getHiveTableDesc() const { return hiveTableDesc_; }
   const NAString& getDelimiter() const {return delimiter_;}
   NABoolean isAppend() const {return isAppend_;}
   NABoolean includeHeader() const {return includeHeader_ ;}
@@ -319,6 +326,7 @@ private:
   NAString header_;
   CompressionType cType_;
   NAString nullString_;
+  NABoolean nullStringSpec_; // if null format string is specified
   NAString recordSeparator_;
   NABoolean isAppend_;
   TableDesc *hiveTableDesc_;
