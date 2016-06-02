@@ -24,4 +24,46 @@
 
 SQCONFIG_FILE=sqconfig
 
-./regensq.pl $SQCONFIG_FILE
+function Usage {
+    script_name=`/bin/basename $0`
+    echo
+    echo $script_name regenerates various Trafodion files in the $MY_SQROOT/sql/scripts directory.
+    echo
+    echo "Usage: $script_name [-? | -h ] | { -node | -persist } [ <sqconfig_filename> ]"
+    echo "  -?       Help"
+    echo "  -h       Help"
+    echo "  -node    Regenerate the 'node' section in the Trafodion configuration file ($SQCONFIG_FILE)"
+    echo "  -persist Regenerate the 'persist' section in the Trafodion configuration file ($SQCONFIG_FILE)"
+    echo "  <sqconfig_filename> Name of the Trafodion configuration file"
+    echo "                      in $MY_SQROOT/sql/scripts directory (defaults to 'sqconfig')"
+    echo
+    exit 1;
+}
+
+function RegenNodeSection {
+    echo "Regenerating the $SQCONFIG_FILE node section"
+    ./regensq.pl $SQCONFIG_FILE
+    exit $?;
+}
+
+function RegenPersistSection {
+    echo "Not yet implemented!"
+    exit 1;
+}
+
+while [ $# != 0 ]
+  do
+    flag="$1"
+    if [ ! -z $2 ]; then
+        SQCONFIG_FILE=$2
+    fi 
+    case "$flag" in
+        -h)        Usage ;;
+        -?)        Usage ;;
+        -node)     RegenNodeSection ;;
+        -persist)  RegenPersistSection ;;
+    esac
+    shift
+  done
+
+Usage;

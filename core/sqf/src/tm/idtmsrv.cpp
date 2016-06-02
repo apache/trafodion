@@ -107,7 +107,7 @@ void do_init(int pv_argc, char **ppp_argv) {
             gv_verbose = true;
     }
     if (lv_attach)
-        lv_ferr = msg_init_attach(&pv_argc, &ppp_argv, false, (char *) "$TSID");
+        lv_ferr = msg_init_attach(&pv_argc, &ppp_argv, false, (char *) "$TMID");
     else
         lv_ferr = msg_init(&pv_argc, &ppp_argv);
     assert(lv_ferr == XZFIL_ERR_OK);

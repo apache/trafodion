@@ -321,7 +321,7 @@ sub genIDTMSrv {
         printIDTMScript(1, "#!/bin/sh\n");
         printIDTMScript(1, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
         
-        printIDTMScript(1, "sqshell -c persist exec TSID\n");
+        printIDTMScript(1, "sqshell -c persist exec TMID\n");
         printIDTMScript(1, "exit $?\n");
 
         printScript(1, "\nidtmstart\n");
@@ -389,22 +389,27 @@ sub generateRMS {
     printRMSStopScript(0, "\n# Stop the RMS processes\n");
     printRMSStopScript(0, "ssmpstop\n");
     printRMSStopScript(0, "sscpstop\n");
+    printRMSStopScript(0, "\necho RMS Processes Stopped\n");
 
     #generate ssmpstart, ssmpstop, sscpstart, sscpstop scripts
     printRMSScript(1, "#!/bin/sh\n");
     printRMSScript(1, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
     printRMSScript(2, "\n# Start the SSMP processes\n");
     printRMSScript(2, "sqshell -c persist exec SSMP\n");
-    printRMSScript(2, "exit $?\n");
+    printRMSScript(2, "exit \$?\n");
     printRMSScript(3, "\n# Start the SSCP processes\n");
     printRMSScript(3, "sqshell -c persist exec SSCP\n");
-    printRMSScript(3, "exit $?\n");
+    printRMSScript(3, "exit \$?\n");
 
     printRMSStopScript(1, "#!/bin/sh\n");
     printRMSStopScript(1, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
-    printRMSStopScript(1, "sqshell -a << eof\n"); 
-    printRMSStopScript(2, "\n!Stop the SSMP processes\n");
-    printRMSStopScript(3, "\n!Stop the SSCP processes\n");
+    printRMSStopScript(2, "\n# Stop the SSMP processes\n");
+    printRMSStopScript(2, "sqshell -c persist kill SSMP\n");
+    printRMSStopScript(2, "exit \$?\n");
+    printRMSStopScript(3, "\n# Stop the SSCP processes\n");
+    printRMSStopScript(3, "sqshell -c persist kill SSCP\n");
+    printRMSStopScript(3, "exit \$?\n");
+   
 
     printRMSCheckScript(1, "-- Trafodion config/utility file generated @ ",&ctime(time),"\n");
     printRMSCheckScript(1, "prepare rms_check from select current_timestamp, \n");
@@ -413,21 +418,6 @@ sub generateRMS {
     printRMSCheckScript(1, "cast(tokenstr('Status:', variable_info) as varchar(10)) status \n");
     printRMSCheckScript(1, "from table(statistics(null, ?));\n");
 
-    for ($i=0; $i < $gdNumNodes; $i++) {
-
-        my $l_string =  sprintf("execute rms_check using 'RMS_CHECK=%d' ;\n", $i);
-        printRMSCheckScript(1, $l_string);
-
-        my $l_stopString = sprintf("kill {abort} \\\$%s%d\n", "ZSM", $i);
-        printRMSStopScript(2, $l_stopString);
-        my $l_stopString = sprintf("kill {abort} \\\$%s%d\n", "ZSC", $i);
-        printRMSStopScript(3, $l_stopString);
-    }
-
-    printRMSStopScript(1, "delay 1\n");
-    printRMSStopScript(1, "exit\neof\n");
-    printRMSStopScript(1, "echo RMS Processes Stopped\n");
-   
     printRMSScript(1, "\n");
 
     printScript(1, "rmsstart\n");
@@ -475,7 +465,7 @@ sub processNodes {
             if ($bVirtualNodes == 0)
             {
                 if (sqnodes::validateConfig() == 0)
-                {   # Valid configuration, generate cluster.conf
+                {   # Valid configuration, generate sqconfig.db
                     $gdNumNodes = sqnodes::numNodes();
 
                     sqnodes::genConfigDb( );
@@ -502,7 +492,7 @@ sub processNodes {
             }
             else {
                 print "   Error: not a valid node configuration statement.\n";
-                print "Exiting without generating cluster.conf due to errors.\n";
+                print "Exiting without generating sqconfig.db due to errors.\n";
                 exit 1;
             }
         }
@@ -520,7 +510,7 @@ sub processPersist {
             }
             if ($err != 0) {
                 print "   Error: not a valid persist configuration statement.\n";
-                print "Exiting without generating cluster.conf due to errors.\n";
+                print "Exiting without generating sqconfig.db due to errors.\n";
                 exit 1;
             }
             return;

@@ -153,6 +153,8 @@ void  normalize_slashes (char *token);
 void  persist_config_cmd( char *cmd, bool keysOnly );
 void  persist_exec_cmd( char *cmd );
 void  persist_info_cmd( char *cmd );
+void  persist_kill_cmd( char *cmd );
+bool  persist_process_kill( CPersistConfig *persistConfig );
 bool  persist_process_start( CPersistConfig *persistConfig );
 char *remove_white_space (char *cmd);
 void  remove_trailing_white_space (char *buf);
@@ -268,6 +270,9 @@ const char *PersistProcessTypeString( PROCESSTYPE type )
         case ProcessType_SMS:
             str = "SMS";
             break;
+        case ProcessType_TMID:
+            str = "TMID";
+            break;
         default:
             str = "Invalid";
     }
@@ -322,6 +327,9 @@ const char *ProcessTypeString( PROCESSTYPE type )
             break;
         case ProcessType_SMS:
             str = "ProcessType_SMS";
+            break;
+        case ProcessType_TMID:
+            str = "ProcessType_TMID";
             break;
         default:
             str = "ProcessType_Invalid";
@@ -1686,6 +1694,7 @@ bool find_DTM(void)
     msg->u.request.u.process_info.target_pid = -1;
     msg->u.request.u.process_info.target_verifier = -1;
     msg->u.request.u.process_info.target_process_name[0] = 0;
+    msg->u.request.u.process_info.target_process_pattern[0] = 0;
     msg->u.request.u.process_info.type = process_type;
 
     gp_local_mon_io->send_recv( msg );
@@ -1731,7 +1740,7 @@ bool find_process( char *process_name )
     int count;
     bool ret = false;
     MPI_Status status;
-    PROCESSTYPE process_type = ProcessType_DTM;
+    PROCESSTYPE process_type = ProcessType_Undefined;
 
     if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
     {   // Could not acquire a message buffer
@@ -2764,6 +2773,70 @@ bool isNumeric( char * str )
     }
     
     return( isNum );
+}
+
+void kill_process(int nid, int pid, char *name, bool abort)
+{
+    int count;
+    MPI_Status status;
+
+    if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
+    {   // Could not acquire a message buffer
+        printf ("[%s] Unable to acquire message buffer.\n", MyName);
+        return;
+    }
+
+    msg->type = MsgType_Service;
+    msg->noreply = false;
+    msg->reply_tag = REPLY_TAG;
+    msg->u.request.type = ReqType_Kill;
+    msg->u.request.u.kill.nid = MyNid;
+    msg->u.request.u.kill.pid = MyPid;
+    msg->u.request.u.kill.verifier = MyVerifier;
+    msg->u.request.u.kill.process_name[0] = 0;
+    msg->u.request.u.kill.target_nid = nid;
+    msg->u.request.u.kill.target_pid = pid;
+    msg->u.request.u.kill.target_verifier = -1;
+    msg->u.request.u.kill.persistent_abort = abort;
+    msg->u.request.u.kill.target_process_name[0] = 0;
+    if ( name[0] == '$' )
+    {
+        STRCPY (msg->u.request.u.kill.target_process_name, name);
+    }
+
+    gp_local_mon_io->send_recv( msg );
+    count = sizeof( *msg );
+    status.MPI_TAG = msg->reply_tag;
+
+    if ((status.MPI_TAG == REPLY_TAG) &&
+        (count == sizeof (struct message_def)))
+    {
+        if ((msg->type == MsgType_Service) &&
+            (msg->u.reply.type == ReplyType_Generic))
+        {
+            if (msg->u.reply.u.generic.return_code != MPI_SUCCESS)
+            {
+                printf ("[%s] Kill failed, error=%s\n", MyName,
+                    ErrorMsg(msg->u.reply.u.generic.return_code));
+            }
+            else
+            {
+                printf ("[%s] Process %s (%d,%d) killed\n", MyName,
+                    name, nid, pid );
+            }
+        }
+        else
+        {
+            printf ("[%s] Invalid MsgType(%d)/ReplyType(%d) for Kill message\n",
+                 MyName, msg->type, msg->u.reply.type);
+        }
+    }
+    else
+    {
+        printf ("[%s] Kill reply message invalid\n", MyName);
+    }
+
+    gp_local_mon_io->release_msg(msg);
 }
 
 void listZoneInfo( int nid, int zid )
@@ -3977,6 +4050,96 @@ void persist_info( char *prefix )
     }
 }
 
+bool persist_process_kill( CPersistConfig *persistConfig )
+{
+    const char method_name[] = "persist_process_kill";
+    bool integrating = false;
+    bool rs = false;
+    char processName[MAX_PROCESS_NAME];
+    char outfile[MAX_PROCESS_PATH];
+    char persistRetries[MAX_PERSIST_VALUE_STR];
+    char persistZones[MAX_VALUE_SIZE_INT];
+    int nid;
+    int pnid;
+    PROCESSTYPE process_type;
+    STATE nodeState;
+
+    nid = -1;
+    processName[0] = '\0';       // The monitor will assign name if null
+    outfile[0] = '\0';          // The monitor's default outfile is used
+    process_type = ProcessType_Undefined;
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf( "%s@%d Persist process prefix=%s, name format=%s\n "
+                    , method_name, __LINE__
+                    , persistConfig->GetPersistPrefix()
+                    , FormatNidString(persistConfig->GetProcessNameNidFormat()) );
+
+    switch (persistConfig->GetProcessNameNidFormat())
+    {
+    case Nid_ALL:
+        for (int i = 0; i < NumLNodes; i++)
+        {
+            // Check monitors state of the target node
+            rs = get_node_state( i, NULL, pnid, nodeState, integrating );
+            if ( rs == false || nodeState != State_Up || integrating )
+            {
+                continue;
+            }
+            get_persist_process_attributes( persistConfig
+                                          , i
+                                          , process_type
+                                          , processName
+                                          , outfile
+                                          , persistRetries
+                                          , persistZones );
+            if ( !find_process( processName ) )
+            {
+                printf( "Persistent process %s does not exist\n", processName);
+                continue;
+            }
+            kill_process( -1, -1, processName, true );
+        }
+        break;
+
+    case Nid_RELATIVE:
+        nid = 0;
+        get_persist_process_attributes( persistConfig
+                                      , nid
+                                      , process_type
+                                      , processName
+                                      , outfile
+                                      , persistRetries
+                                      , persistZones );
+        if ( !find_process( processName ) )
+        {
+            printf( "Persistent process %s does not exist\n", processName);
+            break;
+        }
+        kill_process( -1, -1, processName, true );
+        break;
+    case Nid_Undefined:
+        nid = 0;
+        get_persist_process_attributes( persistConfig
+                                      , -1
+                                      , process_type
+                                      , processName
+                                      , outfile
+                                      , persistRetries
+                                      , persistZones );
+        if ( !find_process( processName ) )
+        {
+            printf( "Persistent process %s does not exist\n", processName);
+            break;
+        }
+        kill_process( -1, -1, processName, true );
+        break;
+    default:
+        return(false);
+    }
+    return(true);
+}
+
 bool persist_process_start( CPersistConfig *persistConfig )
 {
     const char method_name[] = "persist_process_start";
@@ -4214,7 +4377,7 @@ void process_startup (int nid,char *port)
 }
 
 // Keep string location in sync with PROCESSTYPE typedef in msgdef.h
-const char * processTypeStr [] = {"???", "TSE", "DTM", "ASE", "GEN", "WDG", "AMP", "BO", "VR", "CS", "SPX", "SSMP", "PSD", "SMS"};
+const char * processTypeStr [] = {"???", "TSE", "DTM", "ASE", "GEN", "WDG", "AMP", "BO", "VR", "CS", "SPX", "SSMP", "PSD", "SMS", "TMID"};
 
 void show_proc_info( void )
 {
@@ -5430,6 +5593,10 @@ void event_cmd (char *cmd_tail, char delimiter)
             {
                 process_type = ProcessType_SSMP;
             }
+            else if (strcmp (token, "tmid") == 0)
+            {
+                process_type = ProcessType_TMID;
+            }
             else
             {
                 printf ("[%s] Invalid process type!\n",MyName);
@@ -5664,6 +5831,10 @@ void exec_cmd (char *cmd, char delimiter)
                 {
                     process_type = ProcessType_SSMP;
                 }
+                else if (strcmp (token, "tmid") == 0)
+                {
+                    process_type = ProcessType_TMID;
+                }
                 else
                 {
                     printf ("[%s] Invalid process type!\n",MyName);
@@ -5761,6 +5932,7 @@ void help_cmd (void)
     printf ("[%s] -- persist config [{keys}|<persist-process-prefix>]\n", MyName);
     printf ("[%s] -- persist exec <persist-process-prefix>\n", MyName);
     printf ("[%s] -- persist info [<persist-process-prefix>]\n", MyName);
+    printf ("[%s] -- persist kill <persist-process-prefix>\n", MyName);
     printf ("[%s] -- ps [{CS|DTM|GEN|PSD|SMS|SSMP|WDG}] [<process_name>|<nid,pid>]\n", MyName);
     printf ("[%s] -- pwd\n", MyName);
     printf ("[%s] -- quit\n", MyName);
@@ -5780,17 +5952,16 @@ void help_cmd (void)
 
 void kill_cmd( char *cmd_tail, char delimiter )
 {
-    int count;
     int nid;
     int pid;
     char token[MAX_TOKEN];
     bool abort = false;
     bool found = false;
     bool isValidNidPid = false;
-    MPI_Status status;
     char * token_next;
     char * token_end;
     long number;
+    char process_name[MAX_PROCESS_NAME];
 
     if (delimiter == '{')
     {
@@ -5857,25 +6028,7 @@ void kill_cmd( char *cmd_tail, char delimiter )
         return;
     }
 
-    if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
-    {   // Could not acquire a message buffer
-        printf ("[%s] Unable to acquire message buffer.\n", MyName);
-        return;
-    }
-
-    msg->type = MsgType_Service;
-    msg->noreply = false;
-    msg->reply_tag = REPLY_TAG;
-    msg->u.request.type = ReqType_Kill;
-    msg->u.request.u.kill.nid = MyNid;
-    msg->u.request.u.kill.pid = MyPid;
-    msg->u.request.u.kill.verifier = MyVerifier;
-    msg->u.request.u.kill.process_name[0] = 0;
-    msg->u.request.u.kill.target_nid = nid;
-    msg->u.request.u.kill.target_pid = pid;
-    msg->u.request.u.kill.target_verifier = -1;
-    msg->u.request.u.kill.persistent_abort = abort;
-    msg->u.request.u.kill.target_process_name[0] = 0;
+    process_name[0] = 0;
     if ( token[0] == '$' )
     {
         if (strlen(cmd_tail) >= MAX_PROCESS_NAME)
@@ -5883,38 +6036,10 @@ void kill_cmd( char *cmd_tail, char delimiter )
             cmd_tail[MAX_PROCESS_NAME-1] = '\0';
         }
         remove_trailing_white_space(cmd_tail);
-        STRCPY (msg->u.request.u.kill.target_process_name, cmd_tail);
+        STRCPY (process_name, cmd_tail);
     }
 
-    gp_local_mon_io->send_recv( msg );
-    count = sizeof( *msg );
-    status.MPI_TAG = msg->reply_tag;
-
-    if ((status.MPI_TAG == REPLY_TAG) &&
-        (count == sizeof (struct message_def)))
-    {
-        if ((msg->type == MsgType_Service) &&
-            (msg->u.reply.type == ReplyType_Generic))
-        {
-            if (msg->u.reply.u.generic.return_code != MPI_SUCCESS)
-            {
-                printf ("[%s] Kill failed, error=%s\n", MyName,
-                    ErrorMsg(msg->u.reply.u.generic.return_code));
-            }
-        }
-        else
-        {
-            printf
-                ("[%s] Invalid MsgType(%d)/ReplyType(%d) for Kill message\n",
-                 MyName, msg->type, msg->u.reply.type);
-        }
-    }
-    else
-    {
-        printf ("[%s] Kill reply message invalid\n", MyName);
-    }
-
-    gp_local_mon_io->release_msg(msg);
+    kill_process( nid, pid, process_name, abort );
 }
 
 void ls_cmd (char *cmd_tail, char delimiter)
@@ -6735,6 +6860,22 @@ void persist_cmd (char *cmd)
                 printf( EnvNotStarted, MyName );
             }
         }
+        else if (strcmp( token, "kill" ) == 0)
+        {
+            if (Started)
+            {
+                if (delimiter == '{')
+                {
+                    printf( "[%s] Invalid persist kill syntax!\n", MyName );
+                    return;
+                }
+                persist_kill_cmd( cmd_tail );
+            }
+            else
+            {
+                printf( EnvNotStarted, MyName );
+            }
+        }
         else
         {
             printf( "[%s] Invalid persist syntax!\n", MyName );
@@ -6804,7 +6945,7 @@ void persist_exec_cmd( char *cmd )
 
     if (*cmd_tail == '\0')
     {
-        printf ("[%s] Invalid persistexec syntax, looking for '<persist-process-prefix>'\n", MyName);
+        printf ("[%s] Invalid persist exec syntax, looking for '<persist-process-prefix>'\n", MyName);
         return;
     }
 
@@ -6850,7 +6991,7 @@ void persist_exec_cmd( char *cmd )
         }
         else
         {
-            printf ("[%s] Invalid persistexec syntax, looking for '<persist-process-prefix>'\n", MyName);
+            printf ("[%s] Invalid persist exec syntax, looking for '<persist-process-prefix>'\n", MyName);
         }
     }
 }
@@ -6884,6 +7025,63 @@ void persist_info_cmd( char *cmd )
         {
             // Get persist process info for persist-process-prefix
             persist_info( token );
+        }
+    }
+}
+
+void persist_kill_cmd( char *cmd )
+{
+    const char method_name[] = "persist_kill_cmd";
+    char *cmd_tail = cmd;
+    char delimiter;
+    char *ptr;
+    char token[MAX_TOKEN];
+    CPersistConfig *persistConfig;
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+    {
+        trace_printf( "%s@%d Persist process prefix=%s\n "
+                    , method_name, __LINE__
+                    , cmd );
+    }
+
+    if (*cmd_tail == '\0')
+    {
+        printf ("[%s] Invalid persist kill syntax, looking for '<persist-process-prefix>'\n", MyName);
+        return;
+    }
+
+    if (ClusterConfig.IsConfigReady())
+    {
+        // Parse cmd to get persist-process-prefix
+        ptr = get_token (cmd_tail, token, &delimiter);
+        if (*token != '\0')
+        {
+            // Get persist process configuration
+            persistConfig = ClusterConfig.GetPersistConfig( token );
+            if (persistConfig)
+            {
+                if (persistConfig->GetProcessType() == ProcessType_DTM)
+                {
+                    printf ("[%s] Persist process kill of a DTM process type is not allowed!\n", MyName);
+                }
+                else if (persistConfig->GetProcessType() == ProcessType_TMID)
+                {
+                    printf ("[%s] Persist process kill of a TMID process type is not allowed!\n", MyName);
+                }
+                else
+                {
+                    persist_process_kill( persistConfig );
+                }
+            }
+            else
+            {
+                printf ("[%s] Configuration for persist process prefix '%s' does not exist\n", MyName, token);
+            }
+        }
+        else
+        {
+            printf ("[%s] Invalid persist kill syntax, looking for '<persist-process-prefix>'\n", MyName);
         }
     }
 }
@@ -6931,6 +7129,10 @@ void ps_cmd (char *cmd_tail, char delimiter)
             else if (strcmp (token, "ssmp") == 0)
             {
                 process_type = ProcessType_SSMP;
+            }
+            else if (strcmp (token, "tmid") == 0)
+            {
+                process_type = ProcessType_TMID;
             }
             else if (strcmp (token, "wdg") == 0)
             {

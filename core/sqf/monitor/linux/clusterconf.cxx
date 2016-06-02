@@ -416,6 +416,10 @@ PROCESSTYPE CClusterConfig::GetProcessType( const char *processtype )
     {
         return(ProcessType_SSMP);
     }
+    else if (strcmp( "TMID", processtype) == 0)
+    {
+        return(ProcessType_TMID);
+    }
 
     return(ProcessType_Undefined);
 }

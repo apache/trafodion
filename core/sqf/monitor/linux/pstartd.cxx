@@ -859,6 +859,8 @@ void CPStartD::startProcess(const char * pName, string prefix, map<string,string
             progType = ProcessType_DTM;
         else if (value.compare("SSMP") == 0)
             progType = ProcessType_SSMP;
+        else if (value.compare("TMID") == 0)
+            progType = ProcessType_TMID;
         else if (value.compare("GENERIC") == 0)
             progType = ProcessType_Generic;
     }

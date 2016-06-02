@@ -225,7 +225,7 @@ sub parseStatement {
             my $eq;
             ($eq, $s) = parseEq($s);
             if ($eq) {
-                if ($s =~ /(DTM|GENERIC|SSMP)/) {
+                if ($s =~ /(DTM|GENERIC|SSMP|TMID)/) {
                     $g_processType = $1;
                     $s =~ s:$1::;
                     $g_opts |= 0x2;
@@ -233,7 +233,7 @@ sub parseStatement {
                     parseEnd($s);
                 } else {
                     displayStmt($g_ok);
-                    print "   Error: Expecting { DTM | GENERIC | SSMP }, but saw $s\n"; #T
+                    print "   Error: Expecting { DTM | GENERIC | SSMP | TMID }, but saw $s\n"; #T
                 }
             }
         }

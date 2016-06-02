@@ -82,6 +82,9 @@ const char *ProcessTypeString( PROCESSTYPE type )
         case ProcessType_SMS:
             str = "SMS";
             break;
+        case ProcessType_TMID:
+            str = "TMID";
+            break;
         default:
             str = "Undefined";
             break;

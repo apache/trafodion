@@ -343,7 +343,7 @@ fi
   sqps > $sq_tmp_ps 2>&1
 
   #DTM
-  let act_dtm_cnt=`< $sq_tmp_ps grep -a -i '$TM' | wc -l`
+  let act_dtm_cnt=`< $sq_tmp_ps grep -a ' DTM ' | wc -l`
   if [ $reset_counter '==' 1 ]; then
       let lv_cnt_check=(act_dtm_cnt '>' last_dtm_cnt)
       if [ $lv_cnt_check '==' 1 ]; then

@@ -5615,6 +5615,17 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNod
                         ReqQueue.enqueueDownReq(MyPNID);
                     }
 
+                    if ( process->GetType() == ProcessType_TMID )
+                    {
+                        snprintf(buf, sizeof(buf), "[%s], Critial persistent process %s "
+                                 "not restarted, "
+                                 "scheduling shutdown (abrupt) from node %s (%d)!\n",
+                                 method_name, process->GetName(), MyNode->GetName(), MyPNID);
+                        mon_log_write(MON_PROCESS_PERSIST_5, SQ_LOG_CRIT, buf);
+
+                        ReqQueue.enqueueShutdownReq(ShutdownLevel_Abrupt);
+                    }
+
                     return false;
                 }
             }
@@ -5661,7 +5672,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNod
                     snprintf( buf, sizeof(buf)
                             , "[%s], DTM (%s) persistent restart failed, Node %s going down\n"
                             , method_name, process->GetName(), MyNode->GetName());
-                    mon_log_write(MON_PROCESS_PERSIST_5, SQ_LOG_INFO, buf);
+                    mon_log_write(MON_PROCESS_PERSIST_6, SQ_LOG_INFO, buf);
 
                     snprintf( buf, sizeof(buf),
                               "DTM (%s) persistent restart failed, Node %s going down\n",

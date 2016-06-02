@@ -20,22 +20,5 @@
 #
 # @@@ END COPYRIGHT @@@
 
-function StopLobProcesses
-{
-let count=0
-tmp_node_status=`mktemp -t`
-sqshell -c zone > $tmp_node_status
-let totalNodes=`grep 'Up' $tmp_node_status | wc -l`
-while [ ${count} -lt $totalNodes ]
-do
-sqshell -a > /dev/null << eof
-kill {abort} \$zlobsrv${count}
-eof
-echo stopped \$zlobsrv${count}
-let count=count+1
-done
-}
-
-StopLobProcesses
-
-exit 0
+sqshell -c persist kill LOB
+exit $?

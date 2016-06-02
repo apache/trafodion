@@ -338,6 +338,7 @@ typedef enum {
     ProcessType_SSMP,                       // Identifies a SQL Statistics Merge Process (SSMP)
     ProcessType_PSD,                        // Identifies the monitor's process start daemon processes
     ProcessType_SMS,                        // Identifies a SeaMonster Service process
+    ProcessType_TMID,                       // Identifies a Transaction Management ID process
 
     ProcessType_Invalid                     // marks the end of the process
                                             // types, add any new process
