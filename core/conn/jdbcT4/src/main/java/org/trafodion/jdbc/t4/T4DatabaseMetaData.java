@@ -21,12 +21,7 @@
 
 package org.trafodion.jdbc.t4;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.RowIdLifetime;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -3083,7 +3078,10 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 		if (schemaNm == null) {
 			schemaNm = "%";
 
+		}else{
+			schemaPattern = sqlValueFormat(schemaPattern);
 		}
+
 		if (procedureNamePattern == null) {
 
 			// "If a search
@@ -3092,27 +3090,40 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 			// dropped from the search."
 			procedureNamePattern = "%";
 
+		}else{
+			procedureNamePattern = sqlValueFormat(procedureNamePattern);
 		}
-		getSQLCatalogsInfo(connection_.getServerHandle(), // Server Handle
-				SQL_API_SQLPROCEDURES, // catalogAPI
-				catalogNm, // catalog
-				schemaNm, // schema
-				procedureNamePattern, // table name
-				"", // tableTypeList
-				"", // cloumn name
-				(int) 0, // cloumnType
-				(int) 0, // rowIdScope
-				(long) 0, // nullable
-				(int) 0, // uniqueness
-				(int) 0, // accuracy
-				(short) 0, // sqlType
-				(int) 0, // metadataId
-				"", // fcatalog
-				"", // fschema
-				"" // ftable
-		);
+		MetadataHolder mdHolder = this.connection_.mdHolder_;
+		int retryCnt = 0;
+		while(retryCnt < 3 ) {
+			try {
+				PreparedStatement ps = mdHolder.getPStatement(SQL_API_SQLPROCEDURES, this.connection_);
+				ps.setObject(1, schemaPattern);
+				ps.setObject(2, procedureNamePattern);
+				return ps.executeQuery();
+			} catch (SQLException e) {
+				mdHolder.removePStatement(SQL_API_SQLPROCEDURES);
+				++retryCnt;
+				if( retryCnt >= 3 ) {
+					throw e;
+				}
+			}
+		}
+		return null;
+	}
 
-		return getResultSet();
+	private String sqlValueFormat(String value){
+		if(value != null){
+			value = value.trim();
+		}else{
+			return value;
+		}
+		if(value.startsWith("\"")){
+			value = value.replaceFirst("^\"\\s*(.*?)\\s*\"$","$1");
+		}else{
+			value = value.toUpperCase();
+		}
+		return value.replaceAll("\\s+","%");
 	}
 
 	/*
@@ -3217,6 +3228,8 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 		if (schemaNm == null) {
 			schemaNm = "%";
 
+		}else{
+			schemaNm = sqlValueFormat(schemaNm);
 		}
 		if (procedureNamePattern == null) {
 
@@ -3226,6 +3239,8 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 			// the search."
 			procedureNamePattern = "%";
 
+		}else{
+			procedureNamePattern = sqlValueFormat(procedureNamePattern);
 		}
 		if (columnNamePattern == null) {
 
@@ -3235,33 +3250,27 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 			// the search."
 			columnNamePattern = "%";
 
+		}else{
+			columnNamePattern = sqlValueFormat(columnNamePattern);
 		}
-		getSQLCatalogsInfo(connection_.getServerHandle(), // Server Handle
-				SQL_API_SQLPROCEDURECOLUMNS, // catalogAPI
-				catalogNm, // catalog
-				schemaNm, // schema
-				procedureNamePattern, // table name
-				"", // tableTypeList
-				columnNamePattern, // cloumn name
-				(int) 0, // cloumnType
-				(int) 0, // rowIdScope
-				(long) 0, // nullable
-				(int) 0, // uniqueness
-				(int) 0, // accuracy
-				(short) 0, // sqlType
-				(int) 0, // metadataId
-				"", // fcatalog
-				"", // fschema
-				"" // ftable
-		);
-
-		resultSet = getResultSet();
-		// path column Names as per JDBC specification
-		resultSet.setColumnName(8, "PRECISION");
-		resultSet.setColumnName(9, "LENGTH");
-		resultSet.setColumnName(10, "SCALE");
-		resultSet.setColumnName(11, "RADIX");
-		return resultSet;
+		MetadataHolder mdHolder = this.connection_.mdHolder_;
+		int retryCnt = 0;
+		while(retryCnt < 3 ) {
+			try {
+				PreparedStatement ps = mdHolder.getPStatement(SQL_API_SQLPROCEDURECOLUMNS, this.connection_);
+				ps.setObject(1, schemaPattern);
+				ps.setObject(2, procedureNamePattern);
+				ps.setObject(3, columnNamePattern);
+				return ps.executeQuery();
+			} catch (SQLException e) {
+				mdHolder.removePStatement(SQL_API_SQLPROCEDURES);
+				++retryCnt;
+				if( retryCnt >= 3 ) {
+					throw e;
+				}
+			}
+		}
+		return null;
 	}
 
 	/*
@@ -5804,28 +5813,28 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	TrafT4ResultSet resultSet_;
 
 	// declarations from sql.h
-	private static final short SQL_API_SQLGETTYPEINFO = 47;
-	private static final short SQL_API_SQLCOLUMNS = 40;
-	private static final short SQL_API_SQLSPECIALCOLUMNS = 52;
-	private static final short SQL_API_SQLSTATISTICS = 53;
-	private static final short SQL_API_SQLTABLES = 54;
-	private static final short SQL_API_SQLCOLUMNPRIVILEGES = 56;
-	private static final short SQL_API_SQLFOREIGNKEYS = 60;
+	protected static final short SQL_API_SQLGETTYPEINFO = 47;
+	protected static final short SQL_API_SQLCOLUMNS = 40;
+	protected static final short SQL_API_SQLSPECIALCOLUMNS = 52;
+	protected static final short SQL_API_SQLSTATISTICS = 53;
+	protected static final short SQL_API_SQLTABLES = 54;
+	protected static final short SQL_API_SQLCOLUMNPRIVILEGES = 56;
+	protected static final short SQL_API_SQLFOREIGNKEYS = 60;
 	// private static final short SQL_API_TBLSYNONYM = 63;
 	// //dbscripts_mv_synonym
 	// private static final short SQL_API_TBLMVS = 64; //dbscripts_mv_synonym
-	private static final short SQL_API_SQLPRIMARYKEYS = 65;
-	private static final short SQL_API_SQLPROCEDURECOLUMNS = 66;
-	private static final short SQL_API_SQLPROCEDURES = 67;
-	private static final short SQL_API_SQLTABLEPRIVILEGES = 70;
-	private static final short SQL_API_TBLSYNONYM = 1917; // dbscripts_mv_synonym
-	private static final short SQL_API_TBLMVS = 1918; // dbscripts_mv_synonym
+	protected static final short SQL_API_SQLPRIMARYKEYS = 65;
+	protected static final short SQL_API_SQLPROCEDURECOLUMNS = 66;
+	protected static final short SQL_API_SQLPROCEDURES = 67;
+	protected static final short SQL_API_SQLTABLEPRIVILEGES = 70;
+	protected static final short SQL_API_TBLSYNONYM = 1917; // dbscripts_mv_synonym
+	protected static final short SQL_API_TBLMVS = 1918; // dbscripts_mv_synonym
 
-	private static final short SQL_API_JDBC = 9999;
-	private static final short SQL_API_SQLTABLES_JDBC = (short) (SQL_API_SQLTABLES + SQL_API_JDBC);
-	private static final short SQL_API_SQLCOLUMNS_JDBC = (short) (SQL_API_SQLCOLUMNS + SQL_API_JDBC);
-	private static final short SQL_API_SQLSPECIALCOLUMNS_JDBC = (short) (SQL_API_SQLSPECIALCOLUMNS + SQL_API_JDBC);
-	private static final short SQL_API_SQLGETTYPEINFO_JDBC = (short) (SQL_API_SQLGETTYPEINFO + SQL_API_JDBC);
+	protected static final short SQL_API_JDBC = 9999;
+	protected static final short SQL_API_SQLTABLES_JDBC = (short) (SQL_API_SQLTABLES + SQL_API_JDBC);
+	protected static final short SQL_API_SQLCOLUMNS_JDBC = (short) (SQL_API_SQLCOLUMNS + SQL_API_JDBC);
+	protected static final short SQL_API_SQLSPECIALCOLUMNS_JDBC = (short) (SQL_API_SQLSPECIALCOLUMNS + SQL_API_JDBC);
+	protected static final short SQL_API_SQLGETTYPEINFO_JDBC = (short) (SQL_API_SQLGETTYPEINFO + SQL_API_JDBC);
 
 	// values of NULLABLE field in descriptor
 	private static final long SQL_NO_NULLS = 0;

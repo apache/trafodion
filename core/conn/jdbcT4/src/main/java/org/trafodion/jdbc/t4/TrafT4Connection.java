@@ -1559,7 +1559,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			t4props.getLogWriter().println(temp);
 		}
 		ds_ = ds;
-
+		this.mdHolder_ = new MetadataHolder();
 
 		makeConnection(t4props);
 		holdability_ = TrafT4ResultSet.CLOSE_CURSORS_AT_COMMIT;
@@ -1838,6 +1838,8 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 	byte[] transactionToJoin;
 	
 	private boolean isBeginTransaction = false;
+
+	protected MetadataHolder mdHolder_;
 	
 	protected boolean isBeginTransaction() {
 		return isBeginTransaction;
