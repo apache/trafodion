@@ -3535,7 +3535,11 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
       Int32 len = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
       NAString hiveCharset =
         ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_CHARSET);
-      return new (heap) SQLVarChar(CharLenInfo((hiveCharset == CharInfo::UTF8 ? 0 : len),len),
+      hiveCharset.toUpper();
+      CharInfo::CharSet hiveCharsetEnum = CharInfo::getCharSetEnum(hiveCharset);
+      Int32 maxNumChars = 0;
+      Int32 storageLen = len;
+      return new (heap) SQLVarChar(CharLenInfo(maxNumChars, storageLen),
                                    TRUE, // allow NULL
                                    FALSE, // not upshifted
                                    FALSE, // not case-insensitive
@@ -3586,7 +3590,19 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
     NAString hiveCharset =
         ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_CHARSET);
 
-    return new (heap) SQLVarChar(CharLenInfo((hiveCharset == CharInfo::UTF8 ? 0 : len),len),
+    hiveCharset.toUpper();
+    CharInfo::CharSet hiveCharsetEnum = CharInfo::getCharSetEnum(hiveCharset);
+    Int32 maxNumChars = 0;
+    Int32 storageLen = len;
+    if (CharInfo::isVariableWidthMultiByteCharSet(hiveCharsetEnum))
+    {
+      // For Hive VARCHARs, the number specified is the max. number of characters,
+      // while we count in bytes when using HIVE_MAX_STRING_LENGTH for Hive STRING
+      // columns. Set the max character constraint and also adjust the required storage length.
+       maxNumChars = len;
+       storageLen = len * CharInfo::maxBytesPerChar(hiveCharsetEnum);
+    }
+    return new (heap) SQLVarChar(CharLenInfo(maxNumChars, storageLen),
                                    TRUE, // allow NULL
                                    FALSE, // not upshifted
                                    FALSE, // not case-insensitive

@@ -5214,7 +5214,6 @@ short ExExeUtilHiveMDaccessTcb::work()
 	    if (infoCol->fsDatatype == REC_DATETIME)
 	    {
               if(infoCol->colSize > 10) {
-		// hive currently only supports timestamp
 		infoCol->dtCode = SQLDTCODE_TIMESTAMP;
 		infoCol->colScale = 6;
 		str_cpy(infoCol->dtQualifier, "(6)", 28, ' ');
