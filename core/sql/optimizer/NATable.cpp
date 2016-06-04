@@ -3533,6 +3533,9 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
   if ( !strcmp(hiveType, "string"))
     {
       Int32 len = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
+      Int32 lenInBytes = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
+      if( lenInBytes != 32000 ) 
+        len = lenInBytes;
       NAString hiveCharset =
         ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_CHARSET);
       hiveCharset.toUpper();
@@ -5898,6 +5901,9 @@ NATable::NATable(BindWA *bindWA,
     tableConstructionHadWarnings_=TRUE;
 
   hiveDefaultStringLen_ = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
+  Int32 hiveDefaultStringLenInBytes = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
+  if( hiveDefaultStringLenInBytes != 32000 ) 
+      hiveDefaultStringLen_ = hiveDefaultStringLenInBytes;
 
   if (!(corrName.isSeabaseMD() || corrName.isSpecialTable()))
     setupPrivInfo();
@@ -7410,6 +7416,10 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
               (Int64) CmpCommon::getDefaultLong(HIVE_METADATA_REFRESH_INTERVAL);
             Int32 defaultStringLen = 
               CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
+            Int32 defaultStringLenInBytes = 
+              CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
+            if(defaultStringLenInBytes != 32000)
+              defaultStringLen = defaultStringLenInBytes;
             Int64 expirationTimestamp = refreshInterval;
             NAString defSchema =
               ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_SCHEMA);

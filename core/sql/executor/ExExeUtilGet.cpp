@@ -4933,8 +4933,22 @@ Lng32 ExExeUtilHiveMDaccessTcb::getLengthFromHiveColType(const char* hiveType)
 
   if ( !strcmp(hiveType, "string")) {
     char maxStrLen[100];
+    char maxStrLenInBytes[100];
     cliInterface()->getCQDval("HIVE_MAX_STRING_LENGTH", maxStrLen);
-    return atoi(maxStrLen); // TBD: add cqd.
+    cliInterface()->getCQDval("HIVE_MAX_STRING_LENGTH_IN_BYTES", maxStrLenInBytes);
+    //Hive varchar(n) contains n character instead of n bytes
+    //so trafodion map hive varchar(n) into Trafodion varchar(n)
+    //but hive string will map to Trafodion varchar(n BYTES)
+    //So this CQD will be confusing
+    //We change the CQD name to explicitly indicate it is lenght in bytes
+    //For backward compatibility, HIVE_MAX_STRING_LENGTH still remains now, but is deprecated, user can still use it
+    //But HIVE_MAX_STRING_LENGTH_IN_BYTES will overwrite HIVE_MAX_STRING_LENGTH if changed
+    Int32 hiveMaxLenInBytes = atoi(maxStrLenInBytes);
+    Int32 hiveMaxLen = atoi(maxStrLen);
+    if( hiveMaxLenInBytes != 32000 ) //HIVE_MAX_STRING_LENGTH_IN_BYTES changed
+      return hiveMaxLenInBytes;
+    else
+      return hiveMaxLen;  
   }
 
   if ( !strcmp(hiveType, "float"))
@@ -4954,12 +4968,13 @@ Lng32 ExExeUtilHiveMDaccessTcb::getLengthFromHiveColType(const char* hiveType)
     //try to get the length
     char maxLen[32];
     memset(maxLen, 0, 32);
-    int i=0,j=0;
-    short copyit = 0;
+    Int32 i=0,j=0;
+    Int16 copyit = 0;
+    Int32 hiveTypeLen = strlen(hiveType);
 
-    if(strlen(hiveType) > 39)  return -1;  
+    if( hiveTypeLen  > 39)  return -1;  
  
-    for(i = 0; i < strlen(hiveType) ; i++)
+    for(i = 0; i < hiveTypeLen ; i++)
     {
       if(hiveType[i] == '(')  
       {
