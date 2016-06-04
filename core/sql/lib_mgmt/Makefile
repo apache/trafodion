@@ -29,7 +29,7 @@ all:
 	${CP} src/main/resources/init_libmgmt.sh ${INSTALL_SCRIPTSDIR}/
 	@chmod +x ${INSTALL_SCRIPTSDIR}/init_libmgmt.sh
 clean:
-	@rm ${INSTALL_LIBDIR}/lib_mgmt.jar
+	@rm -f ${INSTALL_LIBDIR}/lib_mgmt.jar
 	@rm -f ${INSTALL_SCRIPTSDIR}/init_libmgmt.sh
 	@$(MAVEN) clean
 cleanall: clean
