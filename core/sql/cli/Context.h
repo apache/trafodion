@@ -961,6 +961,7 @@ SQLCLI_LIB_FUNC
   void resetAttributes();
 
   void createMxcmpSession();
+  Int32 updateMxcmpSession();
 
   void resetVolatileSchemaState();
 
