@@ -5707,22 +5707,43 @@ Lng32 HSGlobalsClass::CollectStatistics()
         group = group->next;
       }
 
-    // If we used cqd USTAT_ESTIMATE_HBASE_ROW_COUNT 'ON', then actualRowCount
-    // is the estimate of the row count given by HBase. If we also did not do
-    // sampling, we know the true row count; this is in sampleRowCount. We
-    // take the opportunity here to correct the actualRowCount in this case.
-    if (!samplingUsed && isHbaseTable &&
-        CmpCommon::getDefault(USTAT_ESTIMATE_HBASE_ROW_COUNT) == DF_ON)
+    // If the current row count for an Hbase table is an estimate, then
+    // actualRowCount is the estimate of the row count given by HBase. This
+    // estimate can sometimes be inaccurate. Now that we have actually read
+    // the data, we can improve the estimate. If we used sampling, we can
+    // divide our sampleRowCount by the sampling ratio. If we did not use
+    // sampling, the sampleRowCount is the true row count.
+
+    // Note: After a recent code change, we no longer do an estimate
+    // when not doing sampling. So the "else" case below is actually dead
+    // code. But I'm leaving the code here on the chance that we change
+    // our minds about estimates in the non-sampling case.
+
+    if (isHbaseTable && currentRowCountIsEstimate_)
       {
-        if (LM->LogNeeded())
-          {
-            sprintf(LM->msg, "Correcting actualRowCount (was " PF64 ") from sampleRowCount (" PF64 ")",
-                             actualRowCount,sampleRowCount);
-            LM->Log(LM->msg);
+        if (samplingUsed)
+          {  
+            HS_ASSERT(sampleTblPercent > 0 && sampleTblPercent <= 100.00);
+            Int64 newActualRowCount = (Int64)((100 * sampleRowCount) / sampleTblPercent);
+            if (LM->LogNeeded())
+              {
+                sprintf(LM->msg, "Re-estimating actualRowCount (was " PF64 ") as " PF64,
+                                 actualRowCount,newActualRowCount);
+                LM->Log(LM->msg);
+              }
+            actualRowCount = newActualRowCount;           
           }
-        actualRowCount = sampleRowCount;
-      }
-         
+        else
+          {
+            if (LM->LogNeeded())
+              {
+                sprintf(LM->msg, "Correcting actualRowCount (was " PF64 ") from sampleRowCount (" PF64 ")",
+                                 actualRowCount,sampleRowCount);
+                LM->Log(LM->msg);
+              }
+            actualRowCount = sampleRowCount;
+          }
+      }         
 
     if (singleGroup && LM->LogNeeded())
       LM->StopTimer();
