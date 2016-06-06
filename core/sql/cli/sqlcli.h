@@ -2086,6 +2086,8 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_SetDescEntryCount(
 		/*IN*/ SQLDESC_ID * sql_descriptor,
 		/*IN*/ Int32 num_entries);
 
+SQLCLI_LIB_FUNC short sqInit();
+
 #endif /*__cplusplus*/
 
 #endif /*SQLCLI_HDR*/
