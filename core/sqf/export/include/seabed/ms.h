@@ -409,15 +409,17 @@ typedef enum {
     MS_ReqType_NodeDelete,
     MS_ReqType_NodeDown,
     MS_ReqType_NodeInfo,
+    MS_ReqType_NodeName,
     MS_ReqType_NodeUp,
     MS_ReqType_Notice,
     MS_ReqType_Notify,
     MS_ReqType_Open,
     MS_ReqType_OpenInfo,
+    MS_ReqType_PersistAdd,
+    MS_ReqType_PersistDelete,
     MS_ReqType_PNodeInfo,
     MS_ReqType_ProcessInfo,
     MS_ReqType_ProcessInfoCont,
-    MS_ReqType_ProcessInfoPat,
     MS_ReqType_Set,
     MS_ReqType_Shutdown,
     MS_ReqType_Startup,
@@ -443,7 +445,8 @@ typedef enum {
     MS_ProcessType_SPX,
     MS_ProcessType_SSMP,
     MS_ProcessType_PSD,
-    MS_ProcessType_SMS
+    MS_ProcessType_SMS,
+    MS_ProcessType_TMID
 } MS_Mon_PROCESSTYPE;
 struct MS_Mon_Change_def {
     MS_Mon_ConfigType type;

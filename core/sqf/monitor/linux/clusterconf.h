@@ -126,7 +126,7 @@ private:
     void  AddPersistConfiguration( void );
     bool  DeleteDbNodeData( int  pnid );
     PROCESSTYPE GetProcessType( const char *processtype );
-    bool  ProcessLNode( int nid
+    void  ProcessLNode( int nid
                       , int pnid
                       , const char *nodename
                       , int excfirstcore

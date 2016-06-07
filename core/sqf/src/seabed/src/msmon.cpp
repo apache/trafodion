@@ -3741,6 +3741,8 @@ void msg_mon_init() {
                           static_cast<int>(ReqType_NodeDown)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_NodeInfo) ==
                           static_cast<int>(ReqType_NodeInfo)); // sw fault
+    SB_util_static_assert(static_cast<int>(MS_ReqType_NodeName) ==
+                          static_cast<int>(ReqType_NodeName)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_NodeUp) ==
                           static_cast<int>(ReqType_NodeUp)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_Notice) ==
@@ -3751,14 +3753,16 @@ void msg_mon_init() {
                           static_cast<int>(ReqType_Open)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_OpenInfo) ==
                           static_cast<int>(ReqType_OpenInfo)); // sw fault
+    SB_util_static_assert(static_cast<int>(MS_ReqType_PersistAdd) ==
+                          static_cast<int>(ReqType_PersistAdd)); // sw fault
+    SB_util_static_assert(static_cast<int>(MS_ReqType_PersistDelete) ==
+                          static_cast<int>(ReqType_PersistDelete)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_PNodeInfo) ==
                           static_cast<int>(ReqType_PNodeInfo)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_ProcessInfo) ==
                           static_cast<int>(ReqType_ProcessInfo)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_ProcessInfoCont) ==
                           static_cast<int>(ReqType_ProcessInfoCont)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_ProcessInfoPat) ==
-                          static_cast<int>(ReqType_ProcessInfoPat)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_Set) ==
                           static_cast<int>(ReqType_Set)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_Shutdown) ==

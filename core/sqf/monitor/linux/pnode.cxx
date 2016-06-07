@@ -1274,7 +1274,7 @@ void CNode::StartPStartDPersistent( void )
     CProcess *process;
 
     // Any DTMs running in cluster?
-    for ( int i=0; !tmCount && i < Nodes->GetNodesCount(); i++ )
+    for ( int i=0; !tmCount && i < Nodes->GetPNodesCount(); i++ )
     {
         node = Nodes->GetNode( i );
         lnode = node->GetFirstLNode();
@@ -1330,7 +1330,7 @@ void CNode::StartPStartDPersistentDTM( int nid )
     CProcess *process;
 
     // Any DTMs running in cluster?
-    for ( int i=0; !tmCount && i < Nodes->GetNodesCount(); i++ )
+    for ( int i=0; !tmCount && i < Nodes->GetPNodesCount(); i++ )
     {
         node = Nodes->GetNode( i );
         lnode = node->GetFirstLNode();
@@ -1447,8 +1447,8 @@ void CNode::StartSMServiceProcess( void )
 }
 
 CNodeContainer::CNodeContainer( void )
-               :NumberPNodes(0)
-               ,NumberLNodes(0)
+               :pnodeCount_(0)
+               ,lnodeCount_(0)
                ,Node(NULL)
                ,LNode(NULL)
                ,clusterConfig_(NULL)
@@ -1579,7 +1579,7 @@ void CNodeContainer::AddNodes( )
         {
             // add physical node to physical nodes array
             Node[pnid] = node;
-            NumberPNodes++;
+            pnodeCount_++;
     
             if (head_ == NULL)
             {
@@ -1656,7 +1656,7 @@ void CNodeContainer::AddLNodes( CNode  *node )
     {
         // add logical node to logical nodes array
         LNode[lnodeConfig->GetNid()] = node->AddLNode( lnodeConfig );
-        NumberLNodes++;
+        lnodeCount_++;
     }
 
     TRACE_EXIT;
@@ -1683,7 +1683,7 @@ void CNodeContainer::AddLNodes( CNode  *node1, CNode *node2 )
     {
         // add logical node to logical nodes array
         LNode[lnodeConfig->GetNid()] = node1->AddLNode( lnodeConfig );
-        NumberLNodes++;
+        lnodeCount_++;
     }
 
     TRACE_EXIT;
@@ -1752,7 +1752,7 @@ void CNodeContainer::UnpackSpareNodesList( intBuffPtr_t &buffer, int spareNodesC
     assert(spareNodesList_.size() == 0);
 
     // reset spareNode_ flag in all nodes.
-    for ( int pnid = 0; pnid < NumberPNodes; pnid++ )
+    for ( int pnid = 0; pnid < GetPNodesCount(); pnid++ )
     {
         Node[pnid]->ResetSpareNode();
     }
@@ -1837,7 +1837,7 @@ void CNodeContainer::PackZids( intBuffPtr_t &buffer )
     const char method_name[] = "CNodeContainer::PackZids";
     TRACE_ENTRY;
 
-    for ( int pnid = 0; pnid < NumberPNodes; pnid++ )
+    for ( int pnid = 0; pnid < GetPNodesCount(); pnid++ )
     {
         *buffer = Node[pnid]->GetZone();
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
@@ -1856,7 +1856,7 @@ void CNodeContainer::UnpackZids( intBuffPtr_t &buffer )
     const char method_name[] = "CNodeContainer::UnpackZids";
     TRACE_ENTRY;
 
-    for ( int pnid = 0; pnid < NumberPNodes; pnid++ )
+    for ( int pnid = 0; pnid < GetPNodesCount(); pnid++ )
     {
         Node[pnid]->SetZone(*buffer);
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
@@ -1995,7 +1995,7 @@ void CNodeContainer::AvgNodeData(ZoneType type, int *avg_pcount, unsigned int *a
     const char method_name[] = "CNodeContainer::AvgNodeData";
     TRACE_ENTRY;
 
-    for ( nid = 0; nid < NumberLNodes; nid++ )
+    for ( nid = 0; nid < GetLNodesCount(); nid++ )
     {
         node = LNode[nid]->GetNode();
         // average only over node of requested type and available logical nodes
@@ -2051,7 +2051,7 @@ CLNode *CNodeContainer::GetLNode (int nid)
     const char method_name[] = "CNodeContainer::GetLNode";
     TRACE_ENTRY;
 
-    if( nid >= 0 && nid < NumberLNodes )
+    if( nid >= 0 && nid < GetLNodesCount() )
     {
         lnode = LNode[nid];
     }
@@ -2127,7 +2127,7 @@ CNode *CNodeContainer::GetNode(int pnid)
     const char method_name[] = "CNodeContainer::GetNode";
     TRACE_ENTRY;
 
-    if( pnid >= 0 && pnid < NumberPNodes )
+    if( pnid >= 0 && pnid < GetPNodesCount() )
     {
         node = Node[pnid];
     }
@@ -2542,7 +2542,7 @@ CNode *CNodeContainer::GetZoneNode(int zid)
     const char method_name[] = "CNodeContainer::GetZoneNode";
     TRACE_ENTRY;
 
-    for ( int pnid = 0; pnid < NumberPNodes; pnid++ )
+    for ( int pnid = 0; pnid < GetPNodesCount(); pnid++ )
     {
         if ( ! Node[pnid]->IsSpareNode() && Node[pnid]->GetZone() == zid )
         {
@@ -2573,7 +2573,7 @@ CNodeContainer::InitSyncBuffer( struct sync_buffer_def *syncBuf
     syncBuf->nodeInfo.seq_num       = seqNum;
     syncBuf->nodeInfo.nodeMask      = upNodes;
 
-    for (int i = 0; i < NumberPNodes; i++)
+    for (int i = 0; i < GetPNodesCount(); i++)
     {
         if (Node[i]->GetChangeState())
         {
@@ -2790,7 +2790,7 @@ void CNodeContainer::SetupCluster( CNode ***pnode_list, CLNode ***lnode_list )
     *lnode_list = LNode;
 
     // Build list of spare nodes
-    for ( int i = 0; i < GetNodesCount(); i++ )
+    for ( int i = 0; i < GetPNodesCount(); i++ )
     {
         if (trace_settings & TRACE_INIT)
             trace_printf( "%s@%d - Node %s (pnid=%d, zid=%d, state=%s) is Spare=%d\n"
@@ -2972,11 +2972,11 @@ CLNode *CNodeContainer::NextPossibleLNode( CProcess *requester, ZoneType type, i
     //   3) node must not be a "not_zone" node
     //   4) if load is considered, node must meet load criteria
     int nodesConsidered = 0;
-    while ( selected_nid == -1  && ++nodesConsidered <= NumberLNodes )
+    while ( selected_nid == -1  && ++nodesConsidered <= GetLNodesCount() )
     {
         // Advance to next logical node number
         ++cNid;
-        if ( cNid >= NumberLNodes )
+        if ( cNid >= GetLNodesCount() )
         {   // Wrap around to node 0
             cNid = 0;
         }

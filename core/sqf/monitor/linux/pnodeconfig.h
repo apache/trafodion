@@ -48,6 +48,7 @@ public:
     inline CPNodeConfig *GetFirstPNodeConfig( void ) { return ( head_ ); }
     inline int    GetNextPNid( void ) { return ( nextPNid_ ); }
     int           GetPNid( char  *nodename );
+    CPNodeConfig *GetPNodeConfig( char *nodename );
     CPNodeConfig *GetPNodeConfig( int pnid );
     inline int    GetPNodesCount( void ) { return ( pnodesCount_ ); }
     inline int    GetSNodesCount( void ) { return ( snodesCount_ ); }

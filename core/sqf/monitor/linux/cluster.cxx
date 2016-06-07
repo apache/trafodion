@@ -184,7 +184,7 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
         }
 
         // Any DTMs running?
-        for ( int i=0; !tmCount && i < Nodes->GetNodesCount(); i++ )
+        for ( int i=0; !tmCount && i < Nodes->GetPNodesCount(); i++ )
         {
             node = Nodes->GetNode( i );
             lnode = node->GetFirstLNode();
@@ -1337,7 +1337,7 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
             if ( Emulate_Down )
             {
                 // Any DTMs running?
-                for ( int i=0; !tmCount && i < Nodes->GetNodesCount(); i++ )
+                for ( int i=0; !tmCount && i < Nodes->GetPNodesCount(); i++ )
                 {
                     CNode  *tempNode = Nodes->GetNode( i );
                     lnode = tempNode->GetFirstLNode();
@@ -1490,7 +1490,7 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
             if ( MyPNID == pnid )
             {
                 // Any DTMs running?
-                for ( int i=0; !tmCount && i < Nodes->GetNodesCount(); i++ )
+                for ( int i=0; !tmCount && i < Nodes->GetPNodesCount(); i++ )
                 {
                     CNode  *tempNode = Nodes->GetNode( i );
                     lnode = tempNode->GetFirstLNode();
@@ -1603,7 +1603,7 @@ int CCluster::SoftNodeUpPrepare( int pnid )
     else
     {
         // Any DTMs running?
-        for ( int i=0; !tmCount && i < Nodes->GetNodesCount(); i++ )
+        for ( int i=0; !tmCount && i < Nodes->GetPNodesCount(); i++ )
         {
             CNode  *tempNode = Nodes->GetNode( i );
             lnode = tempNode->GetFirstLNode();
@@ -1909,7 +1909,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         ReqQueue.enqueueActivateSpareReq( spareNode, downNode );
         break;
 
-    case InternalType_Add:
+    case InternalType_NodeAdd:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf( "%s@%d - Internal node add request for node_name=%s, "
                           "first_core=%d, last_core=%d, "
@@ -1953,7 +1953,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         ReqQueue.enqueueShutdownReq( recv_msg->u.shutdown.level );
         break;
 
-    case InternalType_Delete:
+    case InternalType_NodeDelete:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf( "%s@%d - Internal node delete request for pnid=%d\n"
                         , method_name, __LINE__, recv_msg->u.node_delete.pnid);
@@ -2460,7 +2460,7 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
                         , recv_msg->u.activate_spare.down_pnid);
         break;
 
-    case InternalType_Add:
+    case InternalType_NodeAdd:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf( "%s@%d - Internal node add request for node_name=%s, "
                           "first_core=%d, last_core=%d, "
@@ -2499,7 +2499,7 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
         ReqQueue.enqueueShutdownReq( recv_msg->u.shutdown.level );
         break;
 
-    case InternalType_Delete:
+    case InternalType_NodeDelete:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf( "%s@%d - Internal node delete request for pnid=%d\n"
                         , method_name, __LINE__, recv_msg->u.node_delete.pnid);
@@ -2831,6 +2831,7 @@ bool CCluster::ReinitializeConfigCluster( bool nodeAdded, int pnid )
 
     TRACE_ENTRY;
 
+#ifdef USE_MON_ELASTICY
     // TODO: Reload the static configuration and
     //       update node membership in the cluster:
     // 
@@ -2850,6 +2851,27 @@ bool CCluster::ReinitializeConfigCluster( bool nodeAdded, int pnid )
     //       shell commands will not be functional as the design requires that
     //       the monitor add and delete rows from sqconfig.db which would happen
     //       in parallel across all monitor processes in the cluster.
+    if (nodeAdded)
+    {
+        // Load the new node configuration
+        if (Nodes->GetClusterConfig()->LoadNodeConfig(pnid))
+        {
+            //
+        }
+        else
+        {
+            rs = false;
+        }
+    }
+
+    // 
+    // Resize structures for monitor point-to-point communications
+    int cfgPNodes = Nodes->GetClusterConfig()->GetPNodesCount();
+    comms_        = new MPI_Comm[cfgPNodes];
+    otherMonRank_ = new int[cfgPNodes];
+    socks_        = new int[cfgPNodes];
+    sockPorts_    = new int[cfgPNodes];
+#endif
 
     CNode *node = Nodes->GetNode( pnid );
     if (node)

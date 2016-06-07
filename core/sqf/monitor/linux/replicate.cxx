@@ -1288,7 +1288,7 @@ bool CReplNodeAdd::replicate(struct internal_msg_def *&msg)
                     );
 
     // build message to replicate this node add to other nodes
-    msg->type = InternalType_Add;
+    msg->type = InternalType_NodeAdd;
     msg->u.node_add.req_nid = process_->GetNid();
     msg->u.node_add.req_pid = process_->GetPid();
     msg->u.node_add.req_verifier = process_->GetVerifier();
@@ -1371,7 +1371,7 @@ bool CReplNodeDelete::replicate(struct internal_msg_def *&msg)
                     );
 
     // build message to replicate this node delete to other nodes
-    msg->type = InternalType_Delete;
+    msg->type = InternalType_NodeDelete;
     msg->u.node_delete.req_nid = process_->GetNid();
     msg->u.node_delete.req_pid = process_->GetPid();
     msg->u.node_delete.req_verifier = process_->GetVerifier();

@@ -104,12 +104,12 @@ void CExtNodeInfoReq::performRequest()
     if ( target_nid == -1 )
     {
         nid = 0;
-        end_nid = Nodes->NumberLNodes-1;
+        end_nid = Nodes->GetLNodesCount()-1;
         pnid = 0;
-        end_pnid = Nodes->NumberPNodes-1;
+        end_pnid = Nodes->GetPNodesCount()-1;
     }
-    else if ((target_nid >= 0                 ) ||
-             (target_nid < Nodes->NumberLNodes)   )
+    else if ((target_nid >= 0                     ) ||
+             (target_nid < Nodes->GetLNodesCount())   )
     {
         nid = end_nid = target_nid;
     }
@@ -138,12 +138,12 @@ void CExtNodeInfoReq::performRequest()
 
         // Load the logical nodes first
         msg_->u.reply.u.node_info.num_nodes = Nodes->GetLNodesCount();
-        msg_->u.reply.u.node_info.num_pnodes = Nodes->GetNodesCount();
+        msg_->u.reply.u.node_info.num_pnodes = Nodes->GetPNodesCount();
         msg_->u.reply.u.node_info.num_spares = Nodes->GetSNodesCount();
         msg_->u.reply.u.node_info.num_available_spares = Nodes->GetAvailableSNodesCount();
         if ( nid != -1 )
         {
-            for (num_returned=0; nid < Nodes->NumberLNodes && nid < MAX_NODES && nid <= end_nid; nid++)
+            for (num_returned=0; nid < Nodes->GetLNodesCount() && nid < MAX_NODES && nid <= end_nid; nid++)
             {
                 lnode  = Nodes->GetLNode(nid);
                 if ( lnode )
@@ -253,7 +253,7 @@ void CExtNodeInfoReq::performRequest()
             }
     
             // Now the remainder of physical nodes
-            for ( ; pnid < Nodes->NumberPNodes && pnid < MAX_NODES && pnid <= end_pnid; pnid++)
+            for ( ; pnid < Nodes->GetPNodesCount() && pnid < MAX_NODES && pnid <= end_pnid; pnid++)
             {
                 pnode = Nodes->GetNode( pnid );
                 if ( pnode )

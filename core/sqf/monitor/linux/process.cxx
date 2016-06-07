@@ -5595,6 +5595,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNod
                     mon_log_write(MON_PROCESS_PERSIST_1, SQ_LOG_INFO, buf);
 
                     if ( process->GetType() == ProcessType_DTM ||
+                         process->GetType() == ProcessType_TMID ||
                          process->GetType() == ProcessType_SMS )
                     {
                         if ( process->GetType() == ProcessType_DTM )
@@ -5613,17 +5614,6 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNod
                         mon_log_write(MON_PROCESS_PERSIST_4, SQ_LOG_CRIT, buf);
 
                         ReqQueue.enqueueDownReq(MyPNID);
-                    }
-
-                    if ( process->GetType() == ProcessType_TMID )
-                    {
-                        snprintf(buf, sizeof(buf), "[%s], Critial persistent process %s "
-                                 "not restarted, "
-                                 "scheduling shutdown (abrupt) from node %s (%d)!\n",
-                                 method_name, process->GetName(), MyNode->GetName(), MyPNID);
-                        mon_log_write(MON_PROCESS_PERSIST_5, SQ_LOG_CRIT, buf);
-
-                        ReqQueue.enqueueShutdownReq(ShutdownLevel_Abrupt);
                     }
 
                     return false;

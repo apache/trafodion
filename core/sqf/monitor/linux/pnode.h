@@ -53,12 +53,11 @@ typedef vector<CNode *> NodeVector;
 
 class CNodeContainer
 {
- private:
+private:
     int            eyecatcher_;      // Debuggging aid -- leave as first
                                      // member variable of the class
+
 public:
-    int       NumberPNodes;  // # of physical node objects in array
-    int       NumberLNodes;  // # of logical nodes objects in array
     CNode   **Node;          // array of physical node objects
     CLNode  **LNode;         // array of logical node objects
 
@@ -83,8 +82,8 @@ public:
                      bool checkstate=true );
     inline NodesList *GetSpareNodesList( void ) { return ( &spareNodesList_ ); }
     inline NodesList *GetSpareNodesConfigList( void ) { return ( &spareNodesConfigList_ ); }
-    inline int GetNodesCount( void ) { return ( NumberPNodes ); }
-    inline int GetLNodesCount( void ) { return ( NumberLNodes ); }
+    inline int GetPNodesCount( void ) { return ( pnodeCount_ ); }
+    inline int GetLNodesCount( void ) { return ( lnodeCount_ ); }
     inline int GetSNodesCount( void ) { return ( clusterConfig_->GetSNodesCount() ); }
     inline int GetAvailableSNodesCount( void ) { return ( spareNodesList_.size() ); }
 
@@ -137,6 +136,8 @@ public:
 protected:
 
 private:
+    int         pnodeCount_;  // # of physical node objects in array
+    int         lnodeCount_;  // # of logical nodes objects in array
     CClusterConfig *clusterConfig_;  // 'sqconfig.db' objects
     NodesList  spareNodesList_; // current spare physical nodes list
     NodesList  spareNodesConfigList_; // configured spare physical nodes list

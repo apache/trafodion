@@ -2734,7 +2734,6 @@ char *get_token (char *cmd, char *token, char *delimiter,
         if (*ptr == '{' 
          || *ptr == '}' 
          || *ptr == ':' 
-         || *ptr == '-' 
          || *ptr == ';' 
          || (*ptr == '-' && isDashDelim)
          || (*ptr == '=' && isEqDelim))
@@ -3149,6 +3148,11 @@ void node_add( char *node_name, int first_core, int last_core, int processors, i
                     printf( "[%s] Node add failed, could not access configuration database\n"
                           , MyName );
                 }
+                else if (msg->u.reply.u.generic.return_code == MPI_ERR_NAME)
+                {
+                    printf( "[%s] Node add failed, node %s already exists in cluster configuration\n"
+                          , MyName, node_name );
+                }
                 else if (msg->u.reply.u.generic.return_code == MPI_ERR_INTERN)
                 {
                     printf( "[%s] Node add failed, could not re-establish cluster configuration in monitor\n"
@@ -3459,9 +3463,14 @@ void node_delete( int nid, char *node_name )
                     printf( "[%s] Node deleted failed, could not access configuration database\n"
                           , MyName );
                 }
-                else if (msg->u.reply.u.generic.return_code == MPI_ERR_NO_MEM)
+                else if (msg->u.reply.u.generic.return_code == MPI_ERR_NAME)
                 {
                     printf( "[%s] Node deleted failed, node does not exist in configuration in monitor\n"
+                          , MyName );
+                }
+                else if (msg->u.reply.u.generic.return_code == MPI_ERR_NO_MEM)
+                {
+                    printf( "[%s] Node deleted failed, could not process request in monitor\n"
                           , MyName );
                 }
                 else if (msg->u.reply.u.generic.return_code == MPI_ERR_INTERN)
@@ -4643,8 +4652,22 @@ int start_process (int *nid, PROCESSTYPE type, char *name, bool debug, int prior
     }
     msg->u.request.u.new_process.argc = count;
     if ( trace_settings & TRACE_SHELL_CMD )
-        trace_printf ("%s@%d [%s] starting process %s with %d args.\n",
-                      method_name, __LINE__, MyName, name, count);
+        trace_printf( "%s@%d [%s] starting process %s.\n"
+                    , method_name, __LINE__, MyName, name );
+    if ( trace_settings & TRACE_SHELL_CMD )
+    {
+        trace_printf("%s@%d - Program='%s' argc=%d\n"
+                    , method_name, __LINE__
+                    , program, count);
+        int i = 0;
+        while (i < count)
+        {
+            trace_printf("%s@%d - argv[%d]=%s\n"
+                        , method_name, __LINE__
+                        , i, msg->u.request.u.new_process.argv[i]);
+            i++;
+        }
+    }
     strcpy( path, Path );
     if (strlen (path) + strlen (Wdir) + 1 > MAX_SEARCH_PATH - 1)
     {
@@ -5928,7 +5951,7 @@ void help_cmd (void)
     printf ("[%s] -- node info [<nid>]\n", MyName);
     printf ("[%s] -- node name <old-node-name> <new-node-name>\n", MyName);
     printf ("[%s] -- node up <name>\n", MyName);
-    printf ("[%s] -- path [<directory>[,<directory>]...]\n", MyName);
+        printf ("[%s] -- path [<directory>[,<directory>]...]\n", MyName);
     printf ("[%s] -- persist config [{keys}|<persist-process-prefix>]\n", MyName);
     printf ("[%s] -- persist exec <persist-process-prefix>\n", MyName);
     printf ("[%s] -- persist info [<persist-process-prefix>]\n", MyName);

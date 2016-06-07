@@ -73,11 +73,6 @@ void CExtNodeDeleteReq::performRequest()
     int rc = MPI_SUCCESS;
     CProcess *requester = NULL;
 
-    // TODO:
-    // Record statistics (sonar counters)
-//    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
-//       MonStats->req_type_nodedown_Incr();
-       
     // Trace info about request
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
@@ -100,7 +95,7 @@ void CExtNodeDeleteReq::performRequest()
             CPNodeConfig *pnodeConfig = clusterConfig->GetPNodeConfig( pnid );
             if (pnodeConfig)
             {
-                // Tell all monitors to add this node to the static configuration
+                // Tell all monitors to delete this node from the configuration database
                 // Replicate request to be processed by CIntNodeDelete in all nodes
                 CReplNodeDelete *repl = new CReplNodeDelete( pnodeConfig, requester );
                 if (repl)
@@ -120,14 +115,14 @@ void CExtNodeDeleteReq::performRequest()
                     rc = MPI_ERR_NO_MEM;
                     delete pnodeConfig;
                     char la_buf[MON_STRING_BUF_SIZE];
-                    sprintf(la_buf, "[%s], Failed to allocate CReplNodeAdd, no memory!\n",
+                    sprintf(la_buf, "[%s], Failed to allocate CReplNodeDelete, no memory!\n",
                             method_name);
                     mon_log_write(MON_REQQUEUE_NODE_DELETE_1, SQ_LOG_ERR, la_buf);
                 }
             }
             else
             {
-                rc = MPI_ERR_NO_MEM;
+                rc = MPI_ERR_NAME;
                 char la_buf[MON_STRING_BUF_SIZE];
                 sprintf( la_buf
                        , "[%s], Physical node %d (%s) does not exist in configuration!\n"

@@ -73,15 +73,13 @@ void CExtNodeAddReq::performRequest()
     const char method_name[] = "CExtNodeAddReq::performRequest";
     TRACE_ENTRY;
 
-    int         rc = MPI_SUCCESS;
-    CProcess   *requester = NULL;
-    cpu_set_t   coreMask;
+    int             rc = MPI_SUCCESS;
+    CClusterConfig *clusterConfig = NULL;
+    CLNodeConfig   *lnodeConfig = NULL;
+    CPNodeConfig   *pnodeConfig = NULL; 
+    CProcess       *requester = NULL;
+    cpu_set_t       coreMask;
 
-    // TODO:
-    // Record statistics (sonar counters)
-//    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
-//       MonStats->req_type_nodeadd_Incr();
-       
     // Trace info about request
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
@@ -99,52 +97,64 @@ void CExtNodeAddReq::performRequest()
     requester = MyNode->GetProcess( pid_ );
     if ( requester )
     {
+        clusterConfig = Nodes->GetClusterConfig();
         
-        CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
-        CPNodeConfig *pnodeConfig = new CPNodeConfig( NULL  // pnodesConfig
-                                                    , -1    // pnid
-                                                    , -1    // excludedFirstCore
-                                                    , -1    // excludedLastCore
-                                                    , msg_->u.request.u.node_add.node_name
-                                                    );
-        if (pnodeConfig)
+        // Check for existence of node name in the configuration
+        pnodeConfig = clusterConfig->GetPNodeConfig( msg_->u.request.u.node_add.node_name );
+        if (!pnodeConfig)
         {
-            clusterConfig->SetCoreMask( msg_->u.request.u.node_add.first_core
-                                      , msg_->u.request.u.node_add.last_core
-                                      , coreMask );
-            CLNodeConfig *lnodeConfig = new CLNodeConfig( pnodeConfig
-                                                        , -1    // nid
-                                                        , coreMask
-                                                        , msg_->u.request.u.node_add.first_core
-                                                        , msg_->u.request.u.node_add.last_core
-                                                        , msg_->u.request.u.node_add.processors
-                                                        , (ZoneType)msg_->u.request.u.node_add.roles
-                                                        );
-            if (lnodeConfig)
+            pnodeConfig = new CPNodeConfig( NULL  // pnodesConfig
+                                          , -1    // pnid
+                                          , -1    // excludedFirstCore
+                                          , -1    // excludedLastCore
+                                          , msg_->u.request.u.node_add.node_name
+                                          );
+            if (pnodeConfig)
             {
-                // The replicate logic will delete lnodeConfig and pnodeConfig
-
-                // Tell all monitors to add this node to the static configuration
-                // Replicate request to be processed by CIntNodeAdd in all nodes
-                CReplNodeAdd *repl = new CReplNodeAdd( lnodeConfig, requester );
-                if (repl)
+                clusterConfig->SetCoreMask( msg_->u.request.u.node_add.first_core
+                                          , msg_->u.request.u.node_add.last_core
+                                          , coreMask );
+                lnodeConfig = new CLNodeConfig( pnodeConfig
+                                              , -1    // nid
+                                              , coreMask
+                                              , msg_->u.request.u.node_add.first_core
+                                              , msg_->u.request.u.node_add.last_core
+                                              , msg_->u.request.u.node_add.processors
+                                              , (ZoneType)msg_->u.request.u.node_add.roles
+                                              );
+                if (lnodeConfig)
                 {
-                    // we will not reply at this time ... but wait for 
-                    // node add to be processed in CIntNodeAddReq
-
-                    // Retain reference to requester's request buffer so can
-                    // send completion message.
-                    requester->parentContext( msg_ );
-                    msg_->noreply = true;
-
-                    Replicator.addItem(repl);
+                    // Tell all monitors to add this node to the configuration database
+                    // Replicate request to be processed by CIntNodeAdd in all nodes
+                    CReplNodeAdd *repl = new CReplNodeAdd( lnodeConfig, requester );
+                    if (repl)
+                    {
+                        // we will not reply at this time ... but wait for 
+                        // node add to be processed in CIntNodeAddReq
+    
+                        // Retain reference to requester's request buffer so can
+                        // send completion message.
+                        requester->parentContext( msg_ );
+                        msg_->noreply = true;
+    
+                        Replicator.addItem(repl);
+                    }
+                    else
+                    {
+                        rc = MPI_ERR_NO_MEM;
+                        delete pnodeConfig;
+                        char la_buf[MON_STRING_BUF_SIZE];
+                        sprintf(la_buf, "[%s], Failed to allocate CReplNodeAdd, no memory!\n",
+                                method_name);
+                        mon_log_write(MON_REQQUEUE_NODE_ADD_1, SQ_LOG_ERR, la_buf);
+                    }
                 }
                 else
                 {
                     rc = MPI_ERR_NO_MEM;
                     delete pnodeConfig;
                     char la_buf[MON_STRING_BUF_SIZE];
-                    sprintf(la_buf, "[%s], Failed to allocate CReplNodeAdd, no memory!\n",
+                    sprintf(la_buf, "[%s], Failed to allocate CLNodeConfig, no memory!\n",
                             method_name);
                     mon_log_write(MON_REQQUEUE_NODE_ADD_1, SQ_LOG_ERR, la_buf);
                 }
@@ -152,20 +162,16 @@ void CExtNodeAddReq::performRequest()
             else
             {
                 rc = MPI_ERR_NO_MEM;
-                delete pnodeConfig;
                 char la_buf[MON_STRING_BUF_SIZE];
-                sprintf(la_buf, "[%s], Failed to allocate CLNodeConfig, no memory!\n",
+                sprintf(la_buf, "[%s], Failed to allocate CPNodeConfig, no memory!\n",
                         method_name);
-                mon_log_write(MON_REQQUEUE_NODE_ADD_1, SQ_LOG_ERR, la_buf);
+                mon_log_write(MON_REQQUEUE_NODE_ADD_3, SQ_LOG_ERR, la_buf);
             }
         }
         else
         {
-            rc = MPI_ERR_NO_MEM;
-            char la_buf[MON_STRING_BUF_SIZE];
-            sprintf(la_buf, "[%s], Failed to allocate CPNodeConfig, no memory!\n",
-                    method_name);
-            mon_log_write(MON_REQQUEUE_NODE_ADD_3, SQ_LOG_ERR, la_buf);
+            // Node name already exists 
+            rc = MPI_ERR_NAME;
         }
 
         if (rc != MPI_SUCCESS)

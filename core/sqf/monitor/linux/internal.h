@@ -30,11 +30,7 @@ enum InternalType
 {
       InternalType_Null             // Noop
     , InternalType_ActivateSpare    // activate a spare node
-    , InternalType_Add              // Node add to static configuration
-    , InternalType_Added            // Node added to reload and send notices
     , InternalType_Clone            // Add clone process to monitor
-    , InternalType_Delete           // Node delete from static configuration
-    , InternalType_Deleted          // Node deleted reload and send notices
     , InternalType_Device           // Add or Change device to monitor
     , InternalType_Down             // Node down
     , InternalType_Dump             // Dump process
@@ -43,8 +39,14 @@ enum InternalType
     , InternalType_Exit             // Delete process for monitor
     , InternalType_IoData           // Stdin/Stdout data for a process
     , InternalType_Kill             // Kill monitored process
+    , InternalType_NodeAdd          // Add Node to configuration database
+    , InternalType_NodeAdded        // Reload Node configuration and send node added notice
+    , InternalType_NodeDelete       // Delete Node from configuration database
+    , InternalType_NodeDeleted      // Reload Node configuration and send node deleted notice
     , InternalType_NodeName         // Node Name Change 
     , InternalType_Notify           // Register for monitoring of process death
+    , InternalType_PersistAdd       // Add persist template to configuration database
+    , InternalType_PersistDelete    // Delete persist template from configuration database
     , InternalType_Process          // Add process to monitor
     , InternalType_ProcessInit      // Process fork completed
     , InternalType_Open             // Add open to monitor

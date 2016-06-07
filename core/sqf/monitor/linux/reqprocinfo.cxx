@@ -132,7 +132,7 @@ CProcess * CExtProcInfoBase::ProcessInfo_GetProcess (int &nid, bool getDataForAl
             if (process != 0) return process;
         }
 
-    } while (getDataForAllNodes && ++nid < Nodes->NumberLNodes);
+    } while (getDataForAllNodes && ++nid < Nodes->GetLNodesCount());
 
     return 0;
 }
@@ -147,7 +147,7 @@ int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
                                      bool getDataForAllNodes,
                                      char *pattern)
 {
-    int currentNode = (process != 0) ? process->GetNid() : Nodes->NumberLNodes;
+    int currentNode = (process != 0) ? process->GetNid() : Nodes->GetLNodesCount();
     bool moreToRetrieve;
     bool copy = true;
     bool reg = false;
@@ -192,13 +192,13 @@ int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
                 // of whether there is more data remaining.
                 msg->u.reply.u.process_info.more_data
                     = (process != 0)
-                    || (++currentNode < Nodes->NumberLNodes);
+                    || (++currentNode < Nodes->GetLNodesCount());
                 return count;
             }
         }
 
         moreToRetrieve = false;
-        if (getDataForAllNodes && ++currentNode < Nodes->NumberLNodes)
+        if (getDataForAllNodes && ++currentNode < Nodes->GetLNodesCount())
         {   // Start retrieving process data for next node.  We ask
             // ProcessInfo_GetProcess for the first process on
             // "currentNode" which has just been incremented.  Note
@@ -378,7 +378,7 @@ void CExtProcInfoReq::performRequest()
             if (target_pid == -1)
             {
                 // get info for all processes in node
-                if (target_nid >= 0 && target_nid < Nodes->NumberLNodes)
+                if (target_nid >= 0 && target_nid < Nodes->GetLNodesCount())
                 {
                     count = ProcessInfo_BuildReply(Nodes->GetNode(target_nid)->GetFirstProcess(), 
                                                    msg_,
@@ -400,7 +400,7 @@ void CExtProcInfoReq::performRequest()
                                          msg_->u.reply.u.process_info.process[0]);
                     count = 1;
                 }
-                else if (target_nid >= 0 && target_nid < Nodes->NumberLNodes)
+                else if (target_nid >= 0 && target_nid < Nodes->GetLNodesCount())
                 { // find by nid/pid (check node state, don't check process state, backup is Ok)
                     CProcess *process = Nodes->GetProcess( target_nid
                                                          , target_pid
@@ -498,7 +498,7 @@ void CExtProcInfoContReq::performRequest()
     {
         nid = msg_->u.request.u.process_info_cont.context[i].nid;
         pid = msg_->u.request.u.process_info_cont.context[i].pid;
-        if (nid >= 0 && nid < Nodes->NumberLNodes)
+        if (nid >= 0 && nid < Nodes->GetLNodesCount())
         {
             process = Nodes->GetLNode(nid)->GetProcessL(pid);
         }
@@ -511,7 +511,7 @@ void CExtProcInfoContReq::performRequest()
         nid = msg_->u.request.u.process_info_cont.context[0].nid;
         if (trace_settings & TRACE_REQUEST)
            trace_printf("%s@%d" " could not find context process, restarting for node="  "%d" "\n", method_name, __LINE__, nid);
-        if (nid >= 0 && nid < Nodes->NumberLNodes)
+        if (nid >= 0 && nid < Nodes->GetLNodesCount())
         {
             process = ProcessInfo_GetProcess (nid, msg_->u.request.u.process_info_cont.allNodes);
         }
@@ -525,7 +525,7 @@ void CExtProcInfoContReq::performRequest()
         if (!process)
         {   // We were at the last process on the node.  Get first process
             // on the next node (if there is a next node).
-            if (++nid < Nodes->NumberLNodes)
+            if (++nid < Nodes->GetLNodesCount())
             {
                 process = ProcessInfo_GetProcess(nid,
                                 msg_->u.request.u.process_info_cont.allNodes);
