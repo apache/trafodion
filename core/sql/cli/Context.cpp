@@ -59,6 +59,7 @@
 #include "exp_clause_derived.h"
 #include "ComUser.h"
 #include "CmpSeabaseDDLauth.h"
+#include "StmtCompilationMode.h"
 
 #include "ExCextdecs.h"
 
@@ -3718,19 +3719,27 @@ void ContextCli::createMxcmpSession()
     return;
 
   // Steps to perform
-  // 1. Send the user ID to mxcmp (Linux only)
-  // 2. Send either the user name or session ID to mxcmp
-  // 3. Send the LDAP user name to mxcmp
-  // 4. Set the mxcmpSessionInUse_ flag to TRUE
+  // 1. Send the user details to mxcmp
+  // 2. Send CQD's  to mxcmp
+  // 3. Set the mxcmpSessionInUse_ flag to TRUE
 
-  // Send the user ID
+  // Send the user details (auth state, userID, and username
+  CmpContext *cmpCntxt = CmpCommon::context();
+  ex_assert(cmpCntxt, "No compiler context exists");
+  NABoolean authOn = cmpCntxt->isAuthorizationEnabled();
+
+  // The message contains the following:
+  //   (auth state and user ID are delimited by commas)
+  //     authorization state (0 - off, 1 - on)
+  //     integer user ID
+  //     database user name
+  // See CmpStatement::process (CmpMessageDatabaseUser) for more details
   Int32 userAsInt = (Int32) databaseUserID_;
-  char userMessage [MAX_AUTHID_AS_STRING_LEN + 1 + MAX_USERNAME_LEN + 1];
-  str_sprintf(userMessage, "%d,%s", userAsInt, databaseUserName_);
+  char userMessage [MAX_AUTHID_AS_STRING_LEN + 1 + MAX_USERNAME_LEN + 1 + 2];
+  str_sprintf(userMessage, "%d,%d,%s", authOn, userAsInt, databaseUserName_);
   char *pMessage = (char *)&userMessage;
 
 
-#ifdef NA_CMPDLL
   Int32 cmpStatus = 2;  // assume failure
   if (getSessionDefaults()->callEmbeddedArkcmp() &&
       isEmbeddedArkcmpInitialized() &&
@@ -3766,16 +3775,13 @@ void ContextCli::createMxcmpSession()
        (cmpStatus != 0 || (CmpCommon::context()->getRecursionLevel() > 0) ||
         getArkcmp()->getServer())))
     {
-#endif // NA_CMPDLL
-  short indexIntoCompilerArray = getIndexToCompilerArray();  
-  ExSqlComp *exSqlComp = cliGlobals_->getArkcmp(indexIntoCompilerArray);
-  ex_assert(exSqlComp, "CliGlobals::getArkcmp() returned NULL");
-  exSqlComp->sendRequest(EXSQLCOMP::DATABASE_USER,
-                         (const char *) &pMessage,
-                         (ULng32) sizeof(pMessage));
-#ifdef NA_CMPDLL
+      short indexIntoCompilerArray = getIndexToCompilerArray();  
+      ExSqlComp *exSqlComp = cliGlobals_->getArkcmp(indexIntoCompilerArray);
+      ex_assert(exSqlComp, "CliGlobals::getArkcmp() returned NULL");
+      exSqlComp->sendRequest(EXSQLCOMP::DATABASE_USER,
+                             (const char *) pMessage,
+                             (ULng32) strlen(pMessage));
     }
-#endif // NA_CMPDLL
   
   // Send one of two CQDs to the compiler
   // 
@@ -3826,11 +3832,11 @@ void ContextCli::createMxcmpSession()
     strcpy(userName, externalUsername_);
   else if (databaseUserName_)
     strcpy(userName, databaseUserName_);
-  
+
   if (userName)
   {
-    char * sendCQD1 
-      = new(exHeap()) char[ strlen("CONTROL QUERY DEFAULT ") 
+    char * sendCQD1
+      = new(exHeap()) char[ strlen("CONTROL QUERY DEFAULT ")
                                           + strlen("LDAP_USERNAME ")
                           + strlen("'")
                           + strlen(userName)
@@ -3840,7 +3846,7 @@ void ContextCli::createMxcmpSession()
                 strcat(sendCQD1, "LDAP_USERNAME '");
                 strcat(sendCQD1, userName);
     strcat(sendCQD1, "';");
-  
+
     cliRC = cliInterface.executeImmediate(sendCQD1);
     NADELETEBASIC(sendCQD1, exHeap());
     NADELETEBASIC(userName, exHeap());
@@ -3848,6 +3854,48 @@ void ContextCli::createMxcmpSession()
 
   // Set the "mxcmp in use" flag
   mxcmpSessionInUse_ = TRUE;
+}
+
+// ----------------------------------------------------------------------------
+// Method:  updateMxcmpSession
+//
+// Updates security attributes in child arkcmp
+//
+// Returns: 0 = succeeded; -1 = failed
+// ----------------------------------------------------------------------------
+Int32 ContextCli::updateMxcmpSession()
+{
+  // If no child arkcmp, just return
+  if (getArkcmp()->getServer() == NULL)
+    return 0;
+
+  // Send changed user information to arkcmp process
+  CmpContext *cmpCntxt = CmpCommon::context();
+  ex_assert(cmpCntxt, "No compiler context exists");
+  NABoolean authOn = cmpCntxt->isAuthorizationEnabled();
+
+  // The message contains the following:
+  //   (auth state and user ID are delimited by commas)
+  //     authorization state (0 - off, 1 - on)
+  //     integer user ID
+  //     database user name
+  // See CmpStatement::process (CmpMessageDatabaseUser) for more details
+  Int32 userAsInt = (Int32) databaseUserID_;
+  char userMessage [MAX_AUTHID_AS_STRING_LEN + 1 + MAX_USERNAME_LEN + 1 + 2];
+  str_sprintf(userMessage, "%d,%d,%s", authOn, userAsInt, databaseUserName_);
+  char *pMessage = (char *)&userMessage;
+
+  // Send message to child arkcmp, if one exists
+  ExSqlComp::ReturnStatus cmpStatus;
+  ExSqlComp *exSqlComp = getArkcmp();
+  ex_assert(exSqlComp, "CliGlobals::getArkcmp() returned NULL");
+  cmpStatus = exSqlComp->sendRequest(EXSQLCOMP::DATABASE_USER,
+                     (const char *) pMessage,
+                     (ULng32) strlen(pMessage));
+  if (cmpStatus == ExSqlComp::ERROR)
+    return -1;
+
+  return 0;
 }
 
 void ContextCli::beginSession(char * userSpecifiedSessionName)
@@ -4037,11 +4085,7 @@ void ContextCli::endSession(NABoolean cleanupEsps,
       
       sessionInUse_ = FALSE;
     }
-  // kill mxcmp, if an inMemory table definition was created in mxcmp memory.
-  if (inMemoryObjectDefn())
-    {
-      killAndRecreateMxcmp();
-    }
+    killAndRecreateMxcmp();
   if (rc < 0) 
     {
       // an error was returned during drop of tables in the volatile schema.
@@ -4943,6 +4987,26 @@ Lng32 parse_statsReq(short statsReqType,char *statsReqStr, Lng32 statsReqStrLen,
     return -1;
   }
   return 0;
+
+}
+
+void ContextCli::killIdleMxcmp() 
+{
+  Int64 currentTimestamp;
+  Int32 compilerIdleTimeout;
+  Int64 recentIpcTimestamp ;
+ 
+  if (arkcmpArray_.entries() == 0)
+     return;
+  if (arkcmpArray_[0]->getServer() == NULL)
+     return;
+  compilerIdleTimeout = getSessionDefaults()->getCompilerIdleTimeout();
+  if (compilerIdleTimeout == 0)
+     return;
+  currentTimestamp = NA_JulianTimestamp();
+  recentIpcTimestamp  = arkcmpArray_[0]->getRecentIpcTimestamp();
+  if (recentIpcTimestamp != -1 && (((currentTimestamp - recentIpcTimestamp)/1000000)  >= compilerIdleTimeout))
+     killAndRecreateMxcmp();
 }
 
 void ContextCli::killAndRecreateMxcmp()

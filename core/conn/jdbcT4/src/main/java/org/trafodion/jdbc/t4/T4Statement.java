@@ -67,17 +67,17 @@ final class T4Statement extends T4Connection {
 		} catch (SQLException e) {
 			throw e;
 		} catch (CharacterCodingException e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale,
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale,
 					"translation_of_parameter_failed", "ExecuteMessage", e.getMessage());
 			se.initCause(e);
 			throw se;
 		} catch (UnsupportedCharsetException e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale, "unsupported_encoding", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "unsupported_encoding", e
 					.getCharsetName());
 			se.initCause(e);
 			throw se;
 		} catch (Exception e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale, "execute_message_error", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "execute_message_error", e
 					.getMessage());
 			se.initCause(e);
 			throw se;
@@ -100,7 +100,7 @@ final class T4Statement extends T4Connection {
 		} catch (SQLException se) {
 			throw se;
 		} catch (Exception e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale, "execute_message_error", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "execute_message_error", e
 					.getMessage());
 
 			se.initCause(e);
@@ -134,17 +134,17 @@ final class T4Statement extends T4Connection {
 		} catch (SQLException se) {
 			throw se;
 		} catch (CharacterCodingException e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale,
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale,
 					"translation_of_parameter_failed", "PrepareMessage", e.getMessage());
 			se.initCause(e);
 			throw se;
 		} catch (UnsupportedCharsetException e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale, "unsupported_encoding", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "unsupported_encoding", e
 					.getCharsetName());
 			se.initCause(e);
 			throw se;
 		} catch (Exception e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale, "prepare_message_error", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "prepare_message_error", e
 					.getMessage());
 
 			se.initCause(e);
@@ -169,17 +169,17 @@ final class T4Statement extends T4Connection {
 		} catch (SQLException se) {
 			throw se;
 		} catch (CharacterCodingException e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale,
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale,
 					"translation_of_parameter_failed", "CloseMessage", e.getMessage());
 			se.initCause(e);
 			throw se;
 		} catch (UnsupportedCharsetException e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale, "unsupported_encoding", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "unsupported_encoding", e
 					.getCharsetName());
 			se.initCause(e);
 			throw se;
 		} catch (Exception e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale, "close_message_error", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "close_message_error", e
 					.getMessage());
 
 			se.initCause(e);

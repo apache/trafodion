@@ -57,25 +57,23 @@ Trafodion provides SQL access to structured, semi-structured, and unstructured d
 
 </td></tr></table>
 
-<center><h1>Contributing Companies</h1></center>
+<!-- 20160524 GTA Need more logos before using this part.
 
----
+Powered by Trafodion
 
-<!-- Carousel with logos -->
-
-#### Join Our Community
+#### Join the Trafodion Movement
 
 ![Slide 1](images/logo-carousel/slide-1.png)
 
-Code, test, present, document, web sites, and many other ways to contribute.
+Contribution opportunites: usage, code, tests, presentations, documentations, web sites, and things we didn't think of yet.
 
-#### Add Your Logo Here
+#### Powered By Trafodion
 
 ![Slide 2](images/logo-carousel/slide-2.png)
 
-Already a contributor? We need permission to add your company's logo here. 
+Are you using Trafodion? We need permission to add your company's logo here. 
 
----
+-->
 
 ## About
 

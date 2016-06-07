@@ -390,7 +390,7 @@ Lng32 findNumDigits(Int64 val)
 // <--4--><--4---><----8----><---8---><--8---><-----2----><--vc--->
 void ExpLOBoper::genLOBhandle(Int64 uid, 
 			      Lng32 lobNum,
-			      short lobType,
+			      Int32 lobType,
 			      Int64 descKey, 
 			      Int64 descTS,
 			      Lng32 flags,
@@ -401,8 +401,7 @@ void ExpLOBoper::genLOBhandle(Int64 uid,
 {
   LOBHandle * lobHandle = (LOBHandle*)ptr;
   lobHandle->flags_ = flags;
-  lobHandle->lobType_ = (char)lobType;
-  lobHandle->filler1_ = 0;
+  lobHandle->lobType_ = lobType;
   lobHandle->lobNum_ = lobNum;
   lobHandle->objUID_ = uid;
   lobHandle->descSyskey_ = descKey;
@@ -422,14 +421,12 @@ void ExpLOBoper::genLOBhandle(Int64 uid,
 }
 
 void ExpLOBoper::updLOBhandle(Int64 descSyskey, 
-			      Lng32 flags,
+			      Lng32 flags,                            
 			      char * ptr)
 {
   LOBHandle * lobHandle = (LOBHandle*)ptr;
-  lobHandle->flags_ = flags;
-  //  lobHandle->lobLen_ = lobLen;
+  lobHandle->flags_ = flags;  
   lobHandle->descSyskey_ = descSyskey;
-  //  lobHandle->numChunks_ = numChunks;
 }
 
 // Extracts values from the LOB handle stored at ptr
@@ -479,7 +476,7 @@ void ExpLOBoper::createLOBhandleString(Int16 flags,
 				       char * schName,
 				       char * lobHandleBuf)
 {
-  str_sprintf(lobHandleBuf, "LOBH%04d%02d%04d%020Ld%02d%Ld%02d%Ld%03d%s",
+  str_sprintf(lobHandleBuf, "LOBH%04d%04d%04d%020Ld%02d%Ld%02d%Ld%03d%s",
 	      flags, lobType, lobNum, uid,
 	      findNumDigits(descKey), descKey, 
 	      findNumDigits(descTS), descTS,
@@ -523,7 +520,7 @@ Lng32 ExpLOBoper::extractFromLOBstring(Int64 &uid,
   curPos += 4;
 
   lobType = (Lng32)str_atoi(&handle[curPos], 2);
-  curPos += 2;
+  curPos += 4;
 
   lobNum = (Lng32)str_atoi(&handle[curPos], 4);
   curPos += 4;
@@ -760,6 +757,8 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
     so = Lob_Foreign_Lob;
   else if (fromBuffer())
     so = Lob_Buffer;
+  else if (fromExternal())
+    so = Lob_External;
 
   
 
@@ -789,7 +788,7 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   char * lobData = NULL;
   lobData= new(h) char[lobLen];
   //send lobData only if it's a lob_file operation
-  if (so == Lob_File)
+  if ((so == Lob_File) || (so == Lob_External))
     {
       str_cpy_and_null(lobData,op_data[1],lobLen,'\0',' ',TRUE);
       
@@ -855,7 +854,8 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   // extract and update lob handle with the returned values
   if (outHandleLen_ > 0)
     {
-      ExpLOBoper::extractFromLOBhandle(NULL, NULL, NULL, NULL, &descSyskey,
+      Int32 lobType = 0;
+      ExpLOBoper::extractFromLOBhandle(NULL, &lobType, NULL, NULL, &descSyskey,
 				       NULL, NULL, NULL, outLobHandle_);
       
       ExpLOBoper::updLOBhandle(descSyskey, 0, lobHandle); 
@@ -911,6 +911,11 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
   lobLen = getOperand(1)->getLength();
   
   char * lobData = NULL;
+  if (fromExternal())
+    {
+      //no need to insert any data. All data resides in the external file
+      return ex_expr::EXPR_OK;
+    }
   if(fromFile())
     {
       lobData = new (h) char[lobLen];  
@@ -941,6 +946,8 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
     so = Lob_Foreign_Lob;
   else if(fromBuffer())
     so = Lob_Buffer;
+  else if (fromExternal())
+    so = Lob_External;
 
  
   Lng32 waitedOp = 0;
@@ -1030,9 +1037,6 @@ ex_expr::exp_return_type ExpLOBinsert::eval(char *op_data[],
   if (err == ex_expr::EXPR_ERROR)
     return err;
     
-
-  if (fromExternal())
-    return err;
 
 #ifndef __EID
   char * handle = op_data[0];
@@ -1256,6 +1260,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 		       &sSchNameLen, sSchName,
 		       lobHandle); //op_data[2]);
 
+  
   // get the lob name where data need to be updated
   char tgtLobNameBuf[100];
   char * tgtLobName = ExpGetLOBname(sUid, sLobNum, tgtLobNameBuf, 100);
@@ -1295,6 +1300,8 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
     so = Lob_Foreign_Lob;
   else if (fromBuffer())
     so= Lob_Buffer;
+  else if (fromExternal())
+    so = Lob_External;
   Int64 lobMaxSize = 0;
   if (getLobSize() > 0)
     {

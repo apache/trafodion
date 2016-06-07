@@ -30,7 +30,7 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-class HPT4Messages {
+class TrafT4Messages {
 	static Logger getMessageLogger(T4Properties t4props) {
 		return (t4props != null) ? t4props.t4Logger_ : T4Properties.t4GlobalLogger;
 	}
@@ -40,7 +40,7 @@ class HPT4Messages {
 
 		if (log != null && log.isLoggable(Level.WARNING)) {
 			Object p[] = T4LoggingUtilities.makeParams(t4props, messageId, messageArguments);
-			log.logp(Level.WARNING, "HPT4Messages", "createSQLWarning", "", p);
+			log.logp(Level.WARNING, "TrafT4Messages", "createSQLWarning", "", p);
 		}
 
 		Locale currentLocale = t4props == null ? null : t4props.getLocale();
@@ -95,7 +95,7 @@ class HPT4Messages {
 		return ret;
 	}
 
-	static void setSQLWarning(T4Properties t4props, HPT4Handle handle, SQLWarningOrError[] we1) {
+	static void setSQLWarning(T4Properties t4props, TrafT4Handle handle, SQLWarningOrError[] we1) {
 		Logger log = getMessageLogger(t4props);
 
 		int curErrorNo;
@@ -110,7 +110,7 @@ class HPT4Messages {
 			if (log != null && log.isLoggable(Level.WARNING)) {
 				Object p[] = new Object[] { t4props, "Text: " + we1[curErrorNo].text,
 						"SQLState: " + we1[curErrorNo].sqlState, "SQLCode: " + we1[curErrorNo].sqlCode };
-				log.logp(Level.WARNING, "HPT4Messages", "setSQLWarning", "", p);
+				log.logp(Level.WARNING, "TrafT4Messages", "setSQLWarning", "", p);
 			}
 
 			sqlWarningLeaf = new SQLWarning(we1[curErrorNo].text, we1[curErrorNo].sqlState, we1[curErrorNo].sqlCode);
@@ -119,7 +119,7 @@ class HPT4Messages {
 		return;
 	}
 
-	static void setSQLWarning(T4Properties t4props, HPT4Handle handle, ERROR_DESC_LIST_def sqlWarning) {
+	static void setSQLWarning(T4Properties t4props, TrafT4Handle handle, ERROR_DESC_LIST_def sqlWarning) {
 		Logger log = getMessageLogger(t4props);
 
 		int curErrorNo;
@@ -137,7 +137,7 @@ class HPT4Messages {
 				Object p[] = new Object[] { t4props, "Text: " + error_desc_def[curErrorNo].errorText,
 						"SQLState: " + error_desc_def[curErrorNo].sqlstate,
 						"SQLCode: " + error_desc_def[curErrorNo].sqlcode };
-				log.logp(Level.WARNING, "HPT4Messages", "setSQLWarning", "", p);
+				log.logp(Level.WARNING, "TrafT4Messages", "setSQLWarning", "", p);
 			}
 
 			sqlWarningLeaf = new SQLWarning(error_desc_def[curErrorNo].errorText, error_desc_def[curErrorNo].sqlstate,
@@ -148,12 +148,12 @@ class HPT4Messages {
 	} // end setSQLWarning
 
 	// ------------------------------------------------------------------------------------------------
-	static void throwSQLException(T4Properties t4props, ERROR_DESC_LIST_def SQLError) throws HPT4Exception {
+	static void throwSQLException(T4Properties t4props, ERROR_DESC_LIST_def SQLError) throws TrafT4Exception {
 		Logger log = getMessageLogger(t4props);
 		Locale locale = (t4props != null) ? t4props.getLocale() : Locale.getDefault();
 
-		HPT4Exception sqlException = null;
-		HPT4Exception sqlExceptionHead = null;
+		TrafT4Exception sqlException = null;
+		TrafT4Exception sqlExceptionHead = null;
 		int curErrorNo;
 
 		if (SQLError.length == 0) {
@@ -165,7 +165,7 @@ class HPT4Messages {
 				Object p[] = new Object[] { t4props, "Text: " + SQLError.buffer[curErrorNo].errorText,
 						"SQLState: " + SQLError.buffer[curErrorNo].sqlstate,
 						"SQLCode: " + SQLError.buffer[curErrorNo].sqlcode };
-				log.logp(Level.SEVERE, "HPT4Messages", "throwSQLException", "", p);
+				log.logp(Level.SEVERE, "TrafT4Messages", "throwSQLException", "", p);
 			}
 
 			if (SQLError.buffer[curErrorNo].errorCodeType == TRANSPORT.ESTIMATEDCOSTRGERRWARN) {
@@ -173,9 +173,9 @@ class HPT4Messages {
 				// NCS said it was an SQL error, but it really wasn't it was a
 				// NCS resource governing error
 				//
-				sqlException = HPT4Messages.createSQLException(t4props, locale, "resource_governing", null);
+				sqlException = TrafT4Messages.createSQLException(t4props, locale, "resource_governing", null);
 			} else {
-				sqlException = new HPT4Exception(SQLError.buffer[curErrorNo].errorText,
+				sqlException = new TrafT4Exception(SQLError.buffer[curErrorNo].errorText,
 						SQLError.buffer[curErrorNo].sqlstate, SQLError.buffer[curErrorNo].sqlcode, null);
 			}
 			if (curErrorNo == 0) {
@@ -189,12 +189,12 @@ class HPT4Messages {
 	}
 
 	// ------------------------------------------------------------------------------------------------
-	static void throwSQLException(T4Properties t4props, SQLWarningOrError[] we1) throws HPT4Exception {
+	static void throwSQLException(T4Properties t4props, SQLWarningOrError[] we1) throws TrafT4Exception {
 		Logger log = getMessageLogger(t4props);
 		Locale locale = (t4props != null) ? t4props.getLocale() : Locale.getDefault();
 
-		HPT4Exception sqlException = null;
-		HPT4Exception sqlExceptionHead = null;
+		TrafT4Exception sqlException = null;
+		TrafT4Exception sqlExceptionHead = null;
 		int curErrorNo;
 
 		if (we1.length == 0) {
@@ -205,10 +205,10 @@ class HPT4Messages {
 			if (log != null && log.isLoggable(Level.SEVERE)) {
 				Object p[] = new Object[] { t4props, "Text: " + we1[curErrorNo].text,
 						"SQLState: " + we1[curErrorNo].sqlState, "SQLCode: " + we1[curErrorNo].sqlCode };
-				log.logp(Level.SEVERE, "HPT4Messages", "throwSQLException", "", p);
+				log.logp(Level.SEVERE, "TrafT4Messages", "throwSQLException", "", p);
 			}
 
-			sqlException = new HPT4Exception(we1[curErrorNo].text, we1[curErrorNo].sqlState, we1[curErrorNo].sqlCode,
+			sqlException = new TrafT4Exception(we1[curErrorNo].text, we1[curErrorNo].sqlState, we1[curErrorNo].sqlCode,
 					null);
 			if (curErrorNo == 0) {
 				sqlExceptionHead = sqlException;
@@ -221,7 +221,7 @@ class HPT4Messages {
 	} // end throwSQLException
 
 	// ------------------------------------------------------------------------------------------------
-	static HPT4Exception createSQLException(T4Properties t4props, Locale msgLocale, String messageId, Object mA1,
+	static TrafT4Exception createSQLException(T4Properties t4props, Locale msgLocale, String messageId, Object mA1,
 			Object mA2) {
 
 		Object[] mAs = new Object[2];
@@ -234,7 +234,7 @@ class HPT4Messages {
 	} // end createSQLException
 
 	// ------------------------------------------------------------------------------------------------
-	static HPT4Exception createSQLException(T4Properties t4props, Locale msgLocale, String messageId,
+	static TrafT4Exception createSQLException(T4Properties t4props, Locale msgLocale, String messageId,
 			Object messageArgument) {
 		Object[] mAs = new Object[1];
 
@@ -245,13 +245,13 @@ class HPT4Messages {
 	} // end createSQLException
 
 	// ------------------------------------------------------------------------------------------------
-	static HPT4Exception createSQLException(T4Properties t4props, Locale msgLocale, String messageId,
+	static TrafT4Exception createSQLException(T4Properties t4props, Locale msgLocale, String messageId,
 			Object[] messageArguments) {
 		Logger log = getMessageLogger(t4props);
 
 		if (log != null && log.isLoggable(Level.SEVERE)) {
 			Object p[] = T4LoggingUtilities.makeParams(t4props, messageId, messageArguments);
-			log.logp(Level.SEVERE, "HPT4Messages", "createSQLException", "", p);
+			log.logp(Level.SEVERE, "TrafT4Messages", "createSQLException", "", p);
 		}
 		
 		Locale currentLocale = t4props == null ? null : t4props.getLocale();
@@ -281,7 +281,7 @@ class HPT4Messages {
 				sqlcode = -1;
 
 			}
-			return new HPT4Exception(message, sqlState, sqlcode, messageId);
+			return new TrafT4Exception(message, sqlState, sqlcode, messageId);
 		} catch (MissingResourceException e) {
 			// If the resource bundle is not found, concatenate the messageId
 			// and the parameters
@@ -301,24 +301,24 @@ class HPT4Messages {
 				}
 			} // end if
 
-			return new HPT4Exception(message, "HY000", -1, messageId);
+			return new TrafT4Exception(message, "HY000", -1, messageId);
 		} // end catch
 	} // end createSQLException
 
 	// ------------------------------------------------------------------------------------------------
-	static void throwUnsupportedFeatureException(T4Properties t4props, Locale locale, String s) throws HPT4Exception {
+	static void throwUnsupportedFeatureException(T4Properties t4props, Locale locale, String s) throws TrafT4Exception {
 		Object[] messageArguments = new Object[1];
 
 		messageArguments[0] = s;
-		throw HPT4Messages.createSQLException(t4props, locale, "unsupported_feature", messageArguments);
+		throw TrafT4Messages.createSQLException(t4props, locale, "unsupported_feature", messageArguments);
 	} // end throwUnsupportedFeatureException
 
 	// ------------------------------------------------------------------------------------------------
-	static void throwDeprecatedMethodException(T4Properties t4props, Locale locale, String s) throws HPT4Exception {
+	static void throwDeprecatedMethodException(T4Properties t4props, Locale locale, String s) throws TrafT4Exception {
 		Object[] messageArguments = new Object[1];
 
 		messageArguments[0] = s;
-		throw HPT4Messages.createSQLException(t4props, locale, "deprecated_method", messageArguments);
+		throw TrafT4Messages.createSQLException(t4props, locale, "deprecated_method", messageArguments);
 	} // end throwDeprecatedMethodException
 
-} // end class HPT4Messages
+} // end class TrafT4Messages

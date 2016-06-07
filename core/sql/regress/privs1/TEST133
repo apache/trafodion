@@ -211,7 +211,7 @@ initialize authorization;
 get tables;
 execute get_owner_privs;
 
--- drop components and make sure initialize authorization recreates
+-- drop components and make sure initialize authorization drop removes all
 drop table components;
 get tables;
 initialize authorization, drop;

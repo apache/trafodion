@@ -95,6 +95,8 @@ public class Session extends RepObjInterface
    private String processName=null;
    private boolean patternsLoaded=false;
    private String ndcsVersion = null;
+   private String databaseVersion = null;
+   private String databaseEdition = null;
    public String serverType=null;
 
    ValidateQuery     vQryObj    = null;
@@ -1841,34 +1843,19 @@ static {
   	         if (rs!=null && rs.next()) {
 	             {
 	                ndcsVersion = rs.getString(2);
-	                /*
-	                 * TODO . get platform version substring from ndcsVersion output:
-                       ndcs Version 1.0.0 Release 1.1.0 (Build release [15394], date 24Feb12)
-	                 */
 	                if (ndcsVersion != null){
-	                	ndcsVersion = ndcsVersion.substring(ndcsVersion.indexOf("Version"));
-	                	sutVersion = ndcsVersion.substring(ndcsVersion.indexOf("Release"),ndcsVersion.indexOf("("));
-	                	String platformVersion = sutVersion.substring(8);
-	                	if (platformVersion.startsWith("1.0")) 
-	                		versionInfo=SessionDefaults.VERSION_M5;
-	                	else if (platformVersion.startsWith("1.1")) 
-	                		versionInfo=SessionDefaults.VERSION_M6;
-	                	else if (platformVersion.startsWith("1.2")) 
-	                		versionInfo=SessionDefaults.VERSION_M7;
-	                	else if (platformVersion.startsWith("1.3")) 
-	                		versionInfo=SessionDefaults.VERSION_M8;
-	                	else if (platformVersion.startsWith("1.4")) 
-	                		versionInfo=SessionDefaults.VERSION_M9;
-	                	else if (platformVersion.startsWith("1.5")) 
-	                		versionInfo=SessionDefaults.VERSION_M10;
-	                	else if (platformVersion.startsWith("1.6")) 
-	                		versionInfo=SessionDefaults.VERSION_M11;
+	                     ndcsVersion = ndcsVersion.substring(ndcsVersion.indexOf("Version"));
+	                     sutVersion = ndcsVersion.substring(ndcsVersion.indexOf("Release"),ndcsVersion.indexOf("("));
+	                     String platformVersion = sutVersion.substring(8);
 	                }
+                        databaseVersion = rs.getString(5);
+                        databaseEdition = rs.getString(6);
 
 	             }
 	             if (this.debugOn) {
 	                System.out.println("ndcs version:: " + ndcsVersion);
-	                System.out.println("platform version:: " + sutVersion);
+	                System.out.println("database version:: " + databaseVersion);
+	                System.out.println("database edition:: " + databaseEdition);
 	             }
 	             rs.close();
 	             stmt.close();
@@ -1908,6 +1895,14 @@ static {
 
 	public void setServerType(String serverType) {
 		this.serverType = serverType;
+	}
+
+	public String getDatabaseVersion() {
+		return databaseVersion;
+	}
+
+	public String getDatabaseEdition() {
+ 		return databaseEdition;
 	}
 }
 

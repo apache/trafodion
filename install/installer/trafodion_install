@@ -152,9 +152,9 @@ do
 
 done
 
-HBASE=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services | grep name | grep hbase | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
-HDFS=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services | grep name | grep hdfs | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
-ZOOKEEPER=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services | grep name | grep zookeeper | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
+HBASE=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services | grep \"name\" | grep hbase | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
+HDFS=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services | grep \"name\" | grep hdfs | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
+ZOOKEEPER=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services | grep \"name\" | grep zookeeper | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
 
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/hbaseVersion\=/d' $TRAF_CONFIG
@@ -169,13 +169,6 @@ sed -i '/CDH_VERSION\=/d' $TRAF_CONFIG
 echo "export CDH_VERSION=\"$CDH_VERSION\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 sudo rm -rf hbaseVersion.txt
-
-trafodionFullName=$(basename $TRAF_BUILD)
-echo "***DEBUG: trafodionFullName=$trafodionFullName"
-#Debug version
-trafodionVersion=$(echo $trafodionFullName | sed 's/trafodion_.*server-//' | sed 's/-debug//' | sed 's/.tgz//')
-
-echo "***INFO: Trafodion version = $trafodionVersion"
 
 }
 
@@ -417,57 +410,28 @@ if [[ $CONFIG_COMPLETE ]]; then
 fi
 
 #==============================================
-#Run Trafodion scanner
-
-if [[ $UPGRADE_TRAF == "true" ]]; then
-   echo
-else 
-   if [[ "$RUN_SCANNER" == "Y" ]]; then
-      echo "***INFO: Running Trafodion Scanner"
-      $LOCAL_WORKDIR/tools/trafodion_scanner -l $SCANNER_LOG -t $TRAF_CONFIG \
-      -c $LOCAL_WORKDIR/tools/trafodion_scanner.cfg | tee -a $INSTALL_LOG
-
-      returnCode=${PIPESTATUS[0]}
-
-      case $returnCode in
-
-         2|1)
-         echo "***ERROR: Error while running trafodion_scanner."
-         echo "***ERROR: Please review logs and fix listed issue(s)."
-         exit -1
-         ;;
-         3|0)
-         echo "***INFO: Trafodion scanner ran without error. Install will continue..."
-         ;;
-         *)
-         echo "***ERROR: Error while running trafodion_scanner."
-         exit -1
-         ;;
-      esac
-   fi
-fi
-
-#=============================================
 
 sed -i '/ACCEPT_LICENSE\=/d' $TRAF_CONFIG
 echo "export ACCEPT_LICENSE=\"$ACCEPT_LICENSE\"" >> $TRAF_CONFIG
 
 #==============================================
 # untar package and files into /usr/lib/trafodion (the new TRAF_WORKDIR)
-# This will be a global location that all tar files are untarred into
 
-# if we have the package tar file we need to extract
+# if we have the package tar of tar files we need to extract
 # trafodion core and dcs  and rest-server builds from it
-if [ ! -z $TRAF_PACKAGE ]; then
+# if not then we need to copy to $TRAF_WORKDIR
 
-   # create directory to contain build tar files using the
-   # timestamp from the package filename
-   traf_filename=$(basename "$TRAF_PACKAGE")
-   UNTAR_DIR="$TRAF_WORKDIR/${traf_filename%.tar.gz}"
-   sudo mkdir -p $UNTAR_DIR
-   sudo chmod 755 $UNTAR_DIR
 
-   # untar the package
+# create directory to contain build tar files using the
+# timestamp from the package filename
+
+traf_filename=$(basename "$TRAF_PACKAGE")
+UNTAR_DIR="$TRAF_WORKDIR/${traf_filename%.tar.gz}"
+sudo mkdir -p $UNTAR_DIR
+sudo chmod 755 $UNTAR_DIR
+
+if [[ "$ONE_TAR_INSTALL" == "N" ]]; then
+      
    sudo tar -xzf $TRAF_PACKAGE --directory=$UNTAR_DIR
 
    build_file=$(ls $UNTAR_DIR | grep "trafodion_.*server")
@@ -487,53 +451,38 @@ if [ ! -z $TRAF_PACKAGE ]; then
       REST_BUILD=$UNTAR_DIR/$build_file
    fi
 
+   sed -i '/TRAF_BUILD\=/d' $TRAF_CONFIG
+   echo "export TRAF_BUILD=\"$TRAF_BUILD\"" >> $TRAF_CONFIG
+   sed -i '/DCS_BUILD\=/d' $TRAF_CONFIG
+   echo "export DCS_BUILD=\"$DCS_BUILD\"" >> $TRAF_CONFIG
+   sed -i '/REST_BUILD\=/d' $TRAF_CONFIG
+   echo "export REST_BUILD=\"$REST_BUILD\"" >> $TRAF_CONFIG
+
 else
-   # we don't have a package and only have the trafodion and dcs build tar files
-   # we can't use the package filename timestamp since we don't have a package tar
-   # file so we'll just create a directory using the current time
-   UNTAR_DIR="$TRAF_WORKDIR/traf_$(date +%F_%H%M)"
-   sudo mkdir -p $UNTAR_DIR
-   sudo chmod 777 $UNTAR_DIR
-
-   sudo cp $TRAF_BUILD $UNTAR_DIR
+   sudo cp $TRAF_PACKAGE $UNTAR_DIR
    if [ $? -ne 0 ]; then
-      echo "***ERROR: unable to copy trafodion build ($TRAF_BUILD) to $UNTAR_DIR"
+      echo "***ERROR: unable to copy trafodion package ($TRAF_PACKAGE) to $UNTAR_DIR"
       exit -1
    fi
-
-   sudo cp $DCS_BUILD $UNTAR_DIR
-   if [ $? -ne 0 ]; then
-      echo "***ERROR: unable to copy DCS build ($DCS_BUILD) to $UNTAR_DIR"
-      exit -1
-   fi
-
-   if [ ! -z $REST_BUILD ]; then
-      sudo cp $REST_BUILD $UNTAR_DIR
-      if [ $? -ne 0 ]; then
-         echo "***ERROR: unable to copy REST build ($REST_BUILD) to $UNTAR_DIR"
-         exit -1
-      fi
-   fi
-
-   build_file=$(basename $TRAF_BUILD)
-   TRAF_BUILD=$UNTAR_DIR/$build_file
-
-   sudo tar -xzf $TRAF_BUILD --directory=$UNTAR_DIR
-
-   build_file=$(basename $DCS_BUILD)
-   DCS_BUILD=$UNTAR_DIR/$build_file
-
-   build_file=$(basename $REST_BUILD)
-   REST_BUILD=$UNTAR_DIR/$build_file
-
+      
 fi
 
-sed -i '/TRAF_BUILD\=/d' $TRAF_CONFIG
-echo "export TRAF_BUILD=\"$TRAF_BUILD\"" >> $TRAF_CONFIG
-sed -i '/DCS_BUILD\=/d' $TRAF_CONFIG
-echo "export DCS_BUILD=\"$DCS_BUILD\"" >> $TRAF_CONFIG
-sed -i '/REST_BUILD\=/d' $TRAF_CONFIG
-echo "export REST_BUILD=\"$REST_BUILD\"" >> $TRAF_CONFIG
+cd $UNTAR_DIR
+
+# clean up any old files left lying around
+sudo rm -rf $UNTAR_DIR/export/lib 2>/dev/null
+
+# extract the hbase-trx jar file (and others) from the tar file
+if [[ "$ONE_TAR_INSTALL" == "Y" ]]; then
+   sudo tar -xzf $TRAF_PACKAGE export/lib 2>&1 | tee -a $INSTALL_LOG
+else
+   sudo tar -xzf $TRAF_BUILD export/lib 2>&1 | tee -a $INSTALL_LOG
+fi
+if [ ${PIPESTATUS[0]} != 0 ]; then
+    echo "***ERROR: unable to find export/lib/ directory in $TRAF_BUILD" 2>&1 | tee -a $INSTALL_LOG
+    exit -1
+fi
+
 
 # add the untar directory to the config file
 sed -i '/UNTAR_DIR\=/d' $TRAF_CONFIG
@@ -546,23 +495,6 @@ source $TRAF_CONFIG
 if [[ $HADOOP_TYPE != "apache" ]]; then
    checkHBaseVersion
 fi
-#==============================================
-# Determine Trafodion version by parsing it
-# from the trafodion_server tar file.
-# Determine Java version
-
-cd $UNTAR_DIR
-
-# clean up any old files left lying around
-sudo rm -rf $UNTAR_DIR/export/lib 2>/dev/null
-
-# extract the hbase-trx jar file (and others) from the build tar file
-sudo tar -xzf $TRAF_BUILD export/lib 2>&1 | tee -a $INSTALL_LOG
-if [ ${PIPESTATUS[0]} != 0 ]; then
-    echo "***ERROR: unable to find export/lib/ directory in $TRAF_BUILD" 2>&1 | tee -a $INSTALL_LOG
-    exit -1
-fi
-
 #==============================================
 # Run trafodion_setup
 echo
@@ -610,6 +542,12 @@ else
       echo "***INFO: Trafodion environment setup completed" | tee -a $INSTALL_LOG
    fi
 fi
+
+#Add trafodion to the hbase group
+#testing to see if this will fix test failures
+#*********************************************
+sudo usermod -a -G $HBASE_GROUP $TRAF_USER
+#*********************************************
 
 # create working directories on all nodes
 $TRAF_PDSH sudo mkdir -p $TRAF_WORKDIR
@@ -821,4 +759,8 @@ source $TRAF_CONFIG
 copyConfig
 removePassword
 echo
+echo "******************************"
+echo " TRAFODION INSTALLATION END"
+echo "******************************"
 echo
+

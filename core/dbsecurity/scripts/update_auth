@@ -69,14 +69,7 @@ if [ -z "$CACERTS_DIR" ]; then
   CACERTS_DIR=$HOME/cacerts
 fi
 
-# Creating folders for storing certificates
-
-# Note - For Bright Clusters, installer sets up all files on the head node
-# and then puts the copy of the image on the slave nodes.
-# Hence any file copied to the slave nodes by scripts via pdcp get wiped out.
-# All the files should first get copied to the local node.
-# In case of clusters this is the head node - not part of MY_NODES.
-
+# Creating folders for storing CA certificates
 echo "Creating folders for storing certificates"
 if [ ! -d "$CACERTS_DIR" ]; then
   mkdir -p -m 700 $CACERTS_DIR;

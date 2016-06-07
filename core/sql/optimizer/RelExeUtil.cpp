@@ -4981,9 +4981,43 @@ RelExpr * ExeUtilFastDelete::bindNode(BindWA *bindWA)
     {
       // do not do override schema for this
       bindWA->setToOverrideSchema(FALSE);
-
+      
       naTable = bindWA->getNATable(getTableName());
-      if (getTableName().isSeabase())
+      if (getTableName().isHive())
+        {
+          if (! naTable)
+            {
+              *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("PURGEDATA");
+              bindWA->setErrStatus();
+              return NULL;
+            }
+
+          const HHDFSTableStats* hTabStats = 
+            naTable->getClusteringIndex()->getHHDFSTableStats();
+          
+          isHiveTable_ = TRUE;
+          
+          const char * hiveTablePath = (*hTabStats)[0]->getDirName();
+          NAString hostName;
+          Int32 hdfsPort;
+          NAString tableDir;
+
+          NABoolean result = ((HHDFSTableStats* )hTabStats)->splitLocation
+            (hiveTablePath, hostName, hdfsPort, tableDir) ;       
+          if (!result) 
+            {
+              *CmpCommon::diags() << DgSqlCode(-4224)
+                                  << DgString0(hiveTablePath);
+              bindWA->setErrStatus();
+              return this;
+            }
+          
+          hiveTableLocation_ = tableDir;
+          hiveHostName_ = hostName;
+          hiveHdfsPort_ = hdfsPort;
+          hiveModTS_ = -1;
+        }
+      else if (getTableName().isSeabase())
 	{
 	  if (bindWA->errStatus())
 	    return this;
@@ -5001,7 +5035,6 @@ RelExpr * ExeUtilFastDelete::bindNode(BindWA *bindWA)
 	  naTable = NULL;
 	  CmpCommon::diags()->clear();
 	  bindWA->resetErrStatus();
-
 	}
     }
 

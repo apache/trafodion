@@ -7813,7 +7813,7 @@ static RelExpr *checkTupleElementsAreAllScalar(BindWA *bindWA, RelExpr *re)
         *CmpCommon::diags() << DgSqlCode(-4125);
         bindWA->setErrStatus();
         return NULL;
-      }
+      }      
       else if (cols.entries() == 1) {  // if cols.entries() > 1 && subq->getDegree() > 1
           // we do not want to make the transformation velow. We want to keep the 
          // values clause, so that it cann be attached by a tsj to the subquery 
@@ -9150,6 +9150,14 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
         bindWA->setErrStatus();
         return this;
     }
+
+    // specifying a list of column names to insert to is not yet supported
+    if (insertColTree_) {
+      *CmpCommon::diags() << DgSqlCode(-4223)
+                          << DgString0("Target column list for insert into Hive table");
+      bindWA->setErrStatus();
+      return this;
+    }
      
     //    NABoolean isSequenceFile = (*hTabStats)[0]->isSequenceFile();
     const NABoolean isSequenceFile = hTabStats->isSequenceFile();
@@ -9160,7 +9168,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
                                  new (bindWA->wHeap()) NAString(hiveTablePath),
                                  new (bindWA->wHeap()) NAString(hostName),
                                  hdfsPort,
-                                 TRUE,
+                                 getTableDesc(),
                                  new (bindWA->wHeap()) NAString(getTableName().getQualifiedNameObj().getObjectName()),
                                  FastExtract::FILE,
                                  bindWA->wHeap());
@@ -9187,7 +9195,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
                           TRUE,
                           new (bindWA->wHeap()) NAString(tableDir),
                           new (bindWA->wHeap()) NAString(hostName),
-                          hdfsPort);
+                          hdfsPort,
+                          hTabStats->getModificationTS());
 
       //new root to prevent  error 4056 when binding
       newRelExpr = new (bindWA->wHeap()) RelRoot(newRelExpr);
@@ -10210,6 +10219,9 @@ NABoolean Insert::isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean
      return FALSE;
 }
 
+// take an insert(src) node and transform it into
+// tsj_flow(src, merge_update(input_scan))
+// with a newly created input_scan
 RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA) 
 {
   NATable *naTable = bindWA->getNATable(getTableName());
@@ -10223,11 +10235,24 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
     return NULL;		
   }
 
+  // columns of the target table
   const ValueIdList &tableCols = updateToSelectMap().getTopValues();
   const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
 
   NABoolean isAlignedRowFormat = getTableDesc()->getNATable()->isSQLMXAlignedTable();
 		    
+  // Create a new BindScope, to encompass the new nodes merge_update(input_scan)
+  // and any inlining nodes that will be created. Any values the merge_update
+  // and children will need from src will be marked as outer references in that
+  // new BindScope. We assume that "src" is already bound.
+  ValueIdSet currOuterRefs = bindWA->getCurrentScope()->getOuterRefs();
+
+  CMPASSERT(child(0)->nodeIsBound());
+  bindWA->initNewScope();
+
+  BindScope *mergeScope = bindWA->getCurrentScope();
+
+  // create a new scan of the target table, to be used in the merge
   Scan * inputScan =
     new (bindWA->wHeap())
     Scan(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()));
@@ -10244,8 +10269,9 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
   ColReference * targetColRef;
   int predCount = 0;
   int setCount = 0;
-  ValueIdSet myOuterRefs;
+  ValueIdSet newOuterRefs;
 
+  // loop over the columns of the target table
   for (CollIndex i = 0; i<tableCols.entries(); i++)
   {
     baseCol = (BaseColumn *)(tableCols[i].getItemExpr()) ;
@@ -10257,10 +10283,15 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
               baseCol->getNAColumn()->getFullColRefName(), bindWA->wHeap()));
     if (baseCol->getNAColumn()->isClusteringKey())
     {
+      // create a join/key predicate between source and target table,
+      // on the clustering key columns of the target table, making
+      // ColReference nodes for the target table, so that we can bind
+      // those to the new scan
       keyPredPrev = keyPred;
       keyPred = new (bindWA->wHeap())
         BiRelat(ITM_EQUAL, targetColRef, 
-                sourceVals[i].getItemExpr());
+                sourceVals[i].getItemExpr(),
+                baseCol->getType().supportsSQLnull());
       predCount++;
       if (predCount > 1) 
       {
@@ -10270,8 +10301,13 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
       }
     }
     if (sourceVals[i].getItemExpr()->getOperatorType() != ITM_CONSTANT)
-      myOuterRefs += sourceVals[i];
+      {
+        newOuterRefs += sourceVals[i];
+        mergeScope->addOuterRef(sourceVals[i]);
+      }
 
+    // create the INSERT (WHEN NOT MATCHED) part of the merge for this column, again
+    // with a ColReference that we will then bind to the MergeUpdate target table
     insertValPrev = insertVal;
     insertColPrev = insertCol ;
     insertVal = sourceVals[i].getItemExpr();
@@ -10296,9 +10332,11 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
       else
       if (! col->isClusteringKey()) 
       {
-         // We need to bind in the new = old values
+         // Create the UPDATE (WHEN MATCHED) part of the new MergeUpdate for
+         // a non-key column. We need to bind in the new = old values
          // in GenericUpdate::bindNode. So skip the columns that are not user
-         // specified and 
+         // specified. Note that we had a discussion on whether such a transformed
+         // UPSERT shouldn't update all columns.
          //
          if (assignExpr->isUserSpecified())
              copySetAssign = TRUE;
@@ -10317,40 +10355,45 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
          }
      }
   }
-  RelExpr * re = NULL;
-
-  re = new (bindWA->wHeap())
+  MergeUpdate *mu = new (bindWA->wHeap())
     MergeUpdate(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()),
                 NULL,
                 REL_UNARY_UPDATE,
-                inputScan,
-                setAssign,
-                insertCol, 
-                insertVal,
+                inputScan, // USING
+                setAssign, // WHEN MATCHED THEN UPDATE
+                insertCol, // WHEN NOT MATCHED THEN INSERT (cols) ...
+                insertVal, // ... VALUES()
                 bindWA->wHeap(),
                 NULL);
 
-  ((MergeUpdate *)re)->setXformedUpsert();
-  RelExpr * mu = re;
-    
-  re = new(bindWA->wHeap()) Join
-    (child(0), mu, REL_TSJ_FLOW, NULL);
-  ((Join*)re)->doNotTransformToTSJ();
-  ((Join*)re)->setTSJForMerge(TRUE);	
-  ((Join*)re)->setTSJForMergeWithInsert(TRUE);
-  ((Join*)re)->setTSJForMergeUpsert(TRUE);
-  ((Join*)re)->setTSJForWrite(TRUE);
+  mu->setXformedUpsert();
+  // Use mergeScope, the scope we created here, for the MergeUpdate. We are
+  // creating some expressions with outer references here in this method, so
+  // we need to control the scope from here.
+  mu->setNeedsBindScope(FALSE);
 
-  // if Inputs of current insert are empty (i.e. we have no params/rowsets)
-  // then there will be no pull up of inputs during transform and the join will
-  // not see the inputs of the mergeUpdate due to intermediate nodes. So
-  // add inputs directly to join and use elimination to remove extra inputs
-  if (NOT getGroupAttr()->getCharacteristicInputs().isEmpty())
-    mu->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
-  else
-    re->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
-  
-  re = re->bindNode(bindWA);
+  RelExpr *boundMU = mu->bindNode(bindWA);
+
+  // remove the BindScope created earlier in this method
+  bindWA->removeCurrentScope();
+
+  // Remove the outer refs from the parent scope, they are provided
+  // by the left child of the TSJ_FLOW, unless they were already outer refs
+  // when we started this method. The binder logic doesn't handle
+  // that well, since they come from a child scope, not the current one,
+  // so we help a little.
+  newOuterRefs -= currOuterRefs;
+  bindWA->getCurrentScope()->removeOuterRefs(newOuterRefs);
+
+  Join * jn = new(bindWA->wHeap()) Join(child(0), boundMU, REL_TSJ_FLOW, NULL);
+
+  jn->doNotTransformToTSJ();
+  jn->setTSJForMerge(TRUE);	
+  jn->setTSJForMergeWithInsert(TRUE);
+  jn->setTSJForMergeUpsert(TRUE);
+  jn->setTSJForWrite(TRUE);
+
+  RelExpr *result = jn->bindNode(bindWA);
   if (bindWA->errStatus())
     return NULL;
   // Copy the userSecified and canBeSkipped attribute to mergeUpdateInsertExprArray
@@ -10362,7 +10405,7 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
       ((Assign *)mergeInsertExprArray[i].getItemExpr())->setUserSpecified(assignExpr->isUserSpecified());
   }
  
-  return re;
+  return result;
 }
 
 RelExpr *HBaseBulkLoadPrep::bindNode(BindWA *bindWA)
@@ -10660,8 +10703,9 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
       bindWA->getCurrentScope()->setRETDesc(getRETDesc());
       return this;
     }
-  
-  bindWA->initNewScope();
+
+  if (needsBindScope_)
+    bindWA->initNewScope();
 
   // For an xformaed upsert any UDF or subquery is guaranteed to be 
   // in the using clause. Upsert will not generate a merge without using 
@@ -10818,7 +10862,9 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
     getGroupAttr()->addCharacteristicInputs
       (bindWA->getCurrentScope()->getOuterRefs());
   }
-  bindWA->removeCurrentScope(xformedUpsert()); // keepLocalRefs for Upsert
+
+  if (needsBindScope_)
+    bindWA->removeCurrentScope();
 
   bindWA->setMergeStatement(TRUE);
 
@@ -16649,10 +16695,32 @@ RelExpr * FastExtract::bindNode(BindWA *bindWA)
   {
     delimiter_ = ActiveSchemaDB()->getDefaults().getValue(TRAF_UNLOAD_DEF_DELIMITER);
   }
-  if (getNullString().length() == 0)
-  {
-    nullString_ = ActiveSchemaDB()->getDefaults().getValue(TRAF_UNLOAD_DEF_NULL_STRING);
-  }
+
+  // if inserting into a hive table and an explicit null string was
+  // not specified in the unload command, and the target table has a user
+  // specified null format string, then use it.
+  if ((isHiveInsert()) &&
+      (hiveTableDesc_ && hiveTableDesc_->getNATable() && 
+       hiveTableDesc_->getNATable()->getClusteringIndex()) &&
+      (NOT nullStringSpec_))
+    {
+      const HHDFSTableStats* hTabStats = 
+        hiveTableDesc_->getNATable()->getClusteringIndex()->getHHDFSTableStats();
+
+      if (hTabStats->getNullFormat())
+        {
+          nullString_ = hTabStats->getNullFormat();
+          nullStringSpec_ = TRUE;
+        }
+    }
+
+  // if an explicit or user specified null format was not used, then
+  // use the default null string.
+  if (NOT nullStringSpec_) 
+    {
+      nullString_ = HIVE_DEFAULT_NULL_STRING;
+    }
+  
   if (getRecordSeparator().length() == 0)
   {
     recordSeparator_ = ActiveSchemaDB()->getDefaults().getValue(TRAF_UNLOAD_DEF_RECORD_SEPARATOR);
@@ -16676,6 +16744,40 @@ RelExpr * FastExtract::bindNode(BindWA *bindWA)
   // can also get from child Root compExpr
   ValueIdList vidList;
   childRETDesc->getValueIdList(vidList, USER_COLUMN);
+
+  if (isHiveInsert())
+    {
+      // validate number of columns and column types of the select list
+      ValueIdList tgtCols;
+
+      hiveTableDesc_->getUserColumnList(tgtCols);
+
+      if (vidList.entries() != tgtCols.entries())
+        {
+          // 4023 degree of row value constructor must equal that of target table
+          *CmpCommon::diags() << DgSqlCode(-4023)
+                              << DgInt0(vidList.entries())
+                              << DgInt1(tgtCols.entries());
+          bindWA->setErrStatus();
+          return NULL;
+        }
+
+      // Check that the source and target types are compatible.
+      for (CollIndex j=0; j<vidList.entries(); j++)
+        {
+          Assign *tmpAssign = new(bindWA->wHeap())
+            Assign(tgtCols[j].getItemExpr(), vidList[j].getItemExpr());
+
+          if ( CmpCommon::getDefault(ALLOW_IMPLICIT_CHAR_CASTING) == DF_ON )
+            tmpAssign->tryToDoImplicitCasting(bindWA);
+          const NAType *targetType = tmpAssign->synthesizeType();
+          if (!targetType) {
+            bindWA->setErrStatus();
+            return NULL;
+          }
+        }
+    }
+
   setSelectList(vidList);
 
   if (includeHeader())

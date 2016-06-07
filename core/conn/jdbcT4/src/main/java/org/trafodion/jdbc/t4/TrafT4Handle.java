@@ -24,7 +24,7 @@ package org.trafodion.jdbc.t4;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 
-public abstract class HPT4Handle {
+public abstract class TrafT4Handle {
 	SQLWarning sqlWarning_;
 
 	public void clearWarnings() throws SQLException {
@@ -36,7 +36,7 @@ public abstract class HPT4Handle {
 	}
 
 	void setSQLWarning(T4Properties t4props, String messageId, Object[] messageArguments) {
-		SQLWarning sqlWarningLeaf = HPT4Messages.createSQLWarning(t4props, messageId, messageArguments);
+		SQLWarning sqlWarningLeaf = TrafT4Messages.createSQLWarning(t4props, messageId, messageArguments);
 		if (sqlWarning_ == null) {
 			sqlWarning_ = sqlWarningLeaf;
 		} else {
@@ -57,8 +57,8 @@ public abstract class HPT4Handle {
 	// This calls the abstract method closeErroredConnection()
 	//returns true if a connection error occured
 	boolean performConnectionErrorChecks(SQLException se) {
-		if (se instanceof HPT4Exception) {
-			HPT4Exception sqlmx_e = (HPT4Exception) se;
+		if (se instanceof TrafT4Exception) {
+			TrafT4Exception sqlmx_e = (TrafT4Exception) se;
 			if (sqlmx_e.messageId.equals(ERROR_SOCKET_WRITE_ERROR) || sqlmx_e.messageId.equals(ERROR_SOCKET_READ_ERROR)
 					|| sqlmx_e.messageId.equals(ERROR_SOCKET_IS_CLOSED_ERROR)
 					|| sqlmx_e.messageId.equals(ERROR_INVALID_CONNECTION) || sqlmx_e.messageId.equals(ERROR_IDS_08_S01)
@@ -72,7 +72,7 @@ public abstract class HPT4Handle {
 		return false;
 	}
 
-	abstract void closeErroredConnection(HPT4Exception se);
+	abstract void closeErroredConnection(TrafT4Exception se);
 
 	static final String ERROR_IDS_08_S01 = new String("ids_08_s01");
 	static final String ERROR_INVALID_CONNECTION = new String("invalid_connection");

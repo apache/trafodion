@@ -1,3 +1,5 @@
+package org.trafodion.jdbc.t4;
+
 /*
 * @@@ START COPYRIGHT @@@                                                     
 *

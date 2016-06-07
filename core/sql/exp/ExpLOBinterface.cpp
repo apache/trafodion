@@ -57,7 +57,7 @@ Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap,NABoolean isHive, Int6
                    1, // waited op
 		   lobGlob,
 		   0,
-		   NULL, 0,
+		   lobGlob, 0,
 		   lobMaxSize);
   if (lobGlob)
     {
@@ -178,7 +178,7 @@ Lng32 ExpLOBinterfaceCleanup(void *& lobGlob, void * lobHeap)
                    1, // waited op
 		   lobGlob,
 		   0,
-		   NULL, 0
+		   lobHeap, 0
 		   );
   if (err != LOB_OPER_OK)
     return -1;
@@ -220,10 +220,54 @@ Lng32 ExpLOBinterfaceCreate(
                    bufferSize ,
                    replication,
                    blockSize
-		   
 		   );
 
   if (err != LOB_OPER_OK)
+    return -(short)err;
+  else
+    return 0;
+}
+
+// Return: 1, if check fails. 
+//         0, if check passes. 
+//         -LOB_*_ERROR, if error.
+Lng32 ExpLOBinterfaceDataModCheck(void * lobGlob,
+                                  char * dirPath,
+                                  char * lobHdfsServer,
+                                  Lng32  lobHdfsPort,
+                                  Int64  modTS,
+                                  Lng32  numOfPartLevels)
+{
+  Ex_Lob_Error err;
+
+  Int64 dummyParam=0;
+  Int32 dummyParam2 = 0;
+  Ex_Lob_Error status;
+  Int64 cliError = -1;
+
+  char dirInfoBuf[100];
+  *(Int64*)dirInfoBuf = modTS;
+  *(Lng32*)&dirInfoBuf[sizeof(modTS)] = numOfPartLevels;
+  Lng32 dirInfoBufLen = sizeof(modTS) + sizeof(numOfPartLevels);
+  err = ExLobsOper((char*)"",
+                   NULL, 0,
+                   lobHdfsServer, lobHdfsPort,
+                   NULL, dummyParam2, 0, dummyParam,
+                   dummyParam, 0, dummyParam, status, cliError,
+                   dirPath, (LobsStorage)Lob_HDFS_File,
+                   NULL, 0,
+		   0,NULL,
+                   Lob_Data_Mod_Check,
+                   Lob_None,
+                   1, // waited op
+                   lobGlob,
+                   0, 
+                   dirInfoBuf, dirInfoBufLen
+                   );
+
+  if (err == LOB_DATA_MOD_CHECK_ERROR)
+    return 1;
+  else if (err != LOB_OPER_OK)
     return -(short)err;
   else
     return 0;
@@ -555,7 +599,7 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
   Ex_Lob_Error status;
   Int64 cliError = -1;
   Int64 srcLen = 0;
-  if(so == Lob_Memory)
+  if((so == Lob_Memory) || (so== Lob_External))
     srcLen = strlen(srcLobData);
   else if (so == Lob_Buffer)
     srcLen = tgtLobLen;
@@ -625,7 +669,7 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
   Ex_Lob_Error status;
   Int64 cliError = -1;
   Int64 sourceLen = 0;
-  if(so == Lob_Memory)
+  if((so == Lob_Memory) || (so == Lob_External))
     sourceLen = strlen(srcLobData);
   else if (so == Lob_Buffer)
     sourceLen = tgtLobLen;

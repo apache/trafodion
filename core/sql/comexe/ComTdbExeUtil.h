@@ -1518,7 +1518,8 @@ public:
 			  NABoolean ishiveTruncate = FALSE,
 			  char * hiveTableLocation = NULL,
                           char * hiveHostName = NULL,
-                          Lng32 hivePortNum = 0
+                          Lng32 hivePortNum = 0,
+                          Int64 hiveModTS = -1
 			  );
 
   Long pack(void *);
@@ -1567,6 +1568,11 @@ public:
   Lng32 getHiveHdfsPort() const
   {
     return hiveHdfsPort_;
+  }
+
+  Lng32 getHiveModTS() const
+  {
+    return hiveModTS_;
   }
 
   // ---------------------------------------------------------------------
@@ -1645,7 +1651,9 @@ private:
   NABasicPtr  hiveTableLocation_;                    // 56-63
   NABasicPtr hiveHdfsHost_;                          // 64-71
   Int32 hiveHdfsPort_;                               // 72-75
-  char fillersComTdbExeUtilFastDelete_[52];          // 76-127
+  char fillers1_[4];                                 // 76-79
+  Int64 hiveModTS_;                                  // 80-87
+  char fillersComTdbExeUtilFastDelete_[40];          // 88-127
 };
 
 class ComTdbExeUtilGetStatistics : public ComTdbExeUtil
@@ -2815,6 +2823,7 @@ public:
      Lng32 numLOBs,
      char * lobNumArray,
      char * lobLocArray,
+     char * lobTypeArray,
      short maxLocLen,
      short sdOptions,
      ex_cri_desc * given_cri_desc,
@@ -2845,35 +2854,36 @@ public:
 
   short getLOBnum(short i);
   char * getLOBloc(short i);
-
+  NABoolean getIsExternalLobCol(short i);
   UInt16 numLOBs() { return numLOBs_; }
 
   char * getLOBnumArray() { return lobNumArray_; }
   char * getLOBlocArray() { return lobLocArray_; }
-
+  char * getLOBtypeArray() { return lobTypeArray_;}
+ 
   char * schName() { return schName_; };
 private:
-  UInt32 flags_;                                     // 00-03
+  UInt32 flags_;                                    
 
-  UInt16 numLOBs_;                                   // 04-05
+  UInt16 numLOBs_;                                  
   short maxLocLen_;
   
   // array of shorts. numLOBs entries. 
   // Each entry is the lobNum.
-  NABasicPtr lobNumArray_;                           // 08-15
+  NABasicPtr lobNumArray_;                           
 
   // array of string, null terminated. numLOBs entries. 
   // Each entry is the storage location of lob data file.
-  NABasicPtr lobLocArray_;                           // 16-23
+  NABasicPtr lobLocArray_;                          
+  //array of int32. numLOBs entries
+  NABasicPtr lobTypeArray_; 
+  Int64 objectUID_;                                  
 
-  Int64 objectUID_;                                  // 24-31
+  NABasicPtr schName_;                               
+  short schNameLen_;                                
 
-  NABasicPtr schName_;                               // 32-39
-  short schNameLen_;                                 // 40-41
-
-  short sdOptions_;                                  // 42-43
-
-  char fillersComTdbExeUtilLobShowddl_[4];           // 44-47
+  short sdOptions_;                                 
+  char fillersComTdbExeUtilLobShowddl_[4];           
 };
 
 
@@ -3625,6 +3635,7 @@ public:
   char *getLobColList(){return lobColArray_;}
   char *getLobNumList() {return lobNumArray_;}
   char *getLobLocList() {return lobLocArray_;}
+  char *getLobTypeList(){return lobTypeArray_;}
   Int64 getObjectUID() { return objectUID_;}
   Int32 getHdfsPort() { return hdfsPort_;}
   char *getHdfsServer() {return hdfsServer_;}
@@ -3636,6 +3647,7 @@ public:
        char* lobColArray,
        char* lobNumArray,
        char* lobLocArray,
+       char *lobTypeArray,
        Int32 hdfsPort,
        char *hdfsServer,
        NABoolean tableFormat,
@@ -3690,7 +3702,9 @@ private:
   NABasicPtr lobColArray_;
   // array of shorts. numLOBs entries. 
   // Each entry is the lobNum.
-  NABasicPtr lobNumArray_;                           
+  NABasicPtr lobNumArray_;  
+  //array of int32. numLOBS entries
+  NABasicPtr lobTypeArray_;                         
 
   // array of string, null terminated. numLOBs entries. 
   // Each entry is the storage location of lob data file.

@@ -410,6 +410,7 @@ fi
 
 # -----------------------------------------------------------------------------
 # download hadoop/hdfs libs
+cd $BASEDIR
 echo
 echo "INFO: Hadoop/HDFS libs on $(date)" | tee -a $LOGFILE
 HVER="2.6.0"

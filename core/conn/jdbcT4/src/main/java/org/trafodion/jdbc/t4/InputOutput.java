@@ -260,7 +260,7 @@ class InputOutput {
 				// representitive of the problem
 				// with all addresses.
 				//
-				SQLException se = HPT4Messages.createSQLException(null, m_locale, "socket_open_error", eFirst
+				SQLException se = TrafT4Messages.createSQLException(null, m_locale, "socket_open_error", eFirst
 						.getMessage());
 
 				se.initCause(eFirst);
@@ -373,8 +373,8 @@ class InputOutput {
 			// We didn't even get the header back, so something is seriously
 			// wrong.
 			//
-			SQLException se = HPT4Messages.createSQLException(null, m_locale, "problem_with_server_read", null);
-			SQLException se2 = HPT4Messages.createSQLException(null, m_locale, "header_not_long_enough", null);
+			SQLException se = TrafT4Messages.createSQLException(null, m_locale, "problem_with_server_read", null);
+			SQLException se2 = TrafT4Messages.createSQLException(null, m_locale, "header_not_long_enough", null);
 
 			se.setNextException(se2);
 			throw se;
@@ -393,8 +393,8 @@ class InputOutput {
 					buffer.setByteSwap(true);
 					break;
 				default:
-					SQLException se = HPT4Messages.createSQLException(null, m_locale, "problem_with_server_read", null);
-					SQLException se2 = HPT4Messages.createSQLException(null, m_locale, "wrong_header_version", String.valueOf(m_rheader.version_));
+					SQLException se = TrafT4Messages.createSQLException(null, m_locale, "problem_with_server_read", null);
+					SQLException se2 = TrafT4Messages.createSQLException(null, m_locale, "wrong_header_version", String.valueOf(m_rheader.version_));
 		
 					se.setNextException(se2);
 					throw se;
@@ -402,8 +402,8 @@ class InputOutput {
 		}
 		
 		if (m_rheader.signature_ != Header.SIGNATURE) {
-			SQLException se = HPT4Messages.createSQLException(null, m_locale, "problem_with_server_read", null);
-			SQLException se2 = HPT4Messages.createSQLException(null, m_locale, "wrong_header_signature", String
+			SQLException se = TrafT4Messages.createSQLException(null, m_locale, "problem_with_server_read", null);
+			SQLException se2 = TrafT4Messages.createSQLException(null, m_locale, "wrong_header_signature", String
 					.valueOf(Header.SIGNATURE), String.valueOf(m_rheader.signature_));
 
 			se.setNextException(se2);
@@ -411,7 +411,7 @@ class InputOutput {
 		}
 
 		if (m_rheader.error_ != 0) {
-			SQLException se = HPT4Messages.createSQLException(null, m_locale, "driver_err_error_from_server", String
+			SQLException se = TrafT4Messages.createSQLException(null, m_locale, "driver_err_error_from_server", String
 					.valueOf(m_rheader.error_), String.valueOf(m_rheader.error_detail_));
 
 			throw se;
@@ -450,7 +450,7 @@ class InputOutput {
 			m_socket.close();
 			m_socket = null;
 		} catch (Exception e) {
-			SQLException se = HPT4Messages.createSQLException(null, m_locale, "session_close_error", e.getMessage());
+			SQLException se = TrafT4Messages.createSQLException(null, m_locale, "session_close_error", e.getMessage());
 			se.initCause(e);
 			throw se;
 		} finally {
@@ -461,8 +461,8 @@ class InputOutput {
 	void TCPIPWriteByteBuffer(ByteBuffer buffer) throws SQLException {
 
 		if (m_socket == null) {
-			SQLException se = HPT4Messages.createSQLException(null, m_locale, "socket_write_error", null);
-			SQLException se2 = HPT4Messages.createSQLException(null, m_locale, "socket_is_closed_error", null);
+			SQLException se = TrafT4Messages.createSQLException(null, m_locale, "socket_write_error", null);
+			SQLException se2 = TrafT4Messages.createSQLException(null, m_locale, "socket_is_closed_error", null);
 
 			se.setNextException(se2);
 			throw se;
@@ -472,7 +472,7 @@ class InputOutput {
 			m_wbc.write(buffer);
 			m_os.flush();
 		} catch (Exception e) {
-			SQLException se = HPT4Messages.createSQLException(null, m_locale, "socket_write_error", e.getMessage());
+			SQLException se = TrafT4Messages.createSQLException(null, m_locale, "socket_write_error", e.getMessage());
 
 			se.initCause(e);
 			throw se;
@@ -490,8 +490,8 @@ class InputOutput {
 		int data_length = 0;
 
 		if (m_socket == null) {
-			SQLException se = HPT4Messages.createSQLException(null, m_locale, "socket_write_error", null);
-			SQLException se2 = HPT4Messages.createSQLException(null, m_locale, "socket_is_closed_error", null);
+			SQLException se = TrafT4Messages.createSQLException(null, m_locale, "socket_write_error", null);
+			SQLException se2 = TrafT4Messages.createSQLException(null, m_locale, "socket_is_closed_error", null);
 
 			se.setNextException(se2);
 			throw se;
@@ -508,9 +508,9 @@ class InputOutput {
 			send_nblk(buffer.getBuffer(), buffer_index, data_length);
 			break;
 		default:
-			SQLException se = HPT4Messages.createSQLException(null, m_locale, "unknown_message_type_error", null);
-			SQLException se2 = HPT4Messages.createSQLException(null, m_locale, "internal_error", null);
-			SQLException se3 = HPT4Messages.createSQLException(null, m_locale, "cntact_hp_error", null);
+			SQLException se = TrafT4Messages.createSQLException(null, m_locale, "unknown_message_type_error", null);
+			SQLException se2 = TrafT4Messages.createSQLException(null, m_locale, "internal_error", null);
+			SQLException se3 = TrafT4Messages.createSQLException(null, m_locale, "cntact_traf_error", null);
 
 			se.setNextException(se2);
 			se2.setNextException(se3);
@@ -525,8 +525,8 @@ class InputOutput {
 		int numRead = 0;
 
 		if (m_socket == null) {
-			SQLException se = HPT4Messages.createSQLException(null, m_locale, "socket_read_error", null);
-			SQLException se2 = HPT4Messages.createSQLException(null, m_locale, "socket_is_closed_error", null);
+			SQLException se = TrafT4Messages.createSQLException(null, m_locale, "socket_read_error", null);
+			SQLException se2 = TrafT4Messages.createSQLException(null, m_locale, "socket_is_closed_error", null);
 
 			se.setNextException(se2);
 			throw se;
@@ -539,9 +539,9 @@ class InputOutput {
 //			buffer.setLocation(numRead);
 			break;
 		default:
-			SQLException se = HPT4Messages.createSQLException(null, m_locale, "unknown_message_type_error", null);
-			SQLException se2 = HPT4Messages.createSQLException(null, m_locale, "internal_error", null);
-			SQLException se3 = HPT4Messages.createSQLException(null, m_locale, "cntact_hp_error", null);
+			SQLException se = TrafT4Messages.createSQLException(null, m_locale, "unknown_message_type_error", null);
+			SQLException se2 = TrafT4Messages.createSQLException(null, m_locale, "internal_error", null);
+			SQLException se3 = TrafT4Messages.createSQLException(null, m_locale, "cntact_traf_error", null);
 
 			se.setNextException(se2);
 			se2.setNextException(se3);
@@ -558,7 +558,7 @@ class InputOutput {
 			m_os.write(buf, offset, len);
 			m_os.flush();
 		} catch (Exception e) {
-			SQLException se = HPT4Messages.createSQLException(null, m_locale, "socket_write_error", e.getMessage());
+			SQLException se = TrafT4Messages.createSQLException(null, m_locale, "socket_write_error", e.getMessage());
 
 			se.initCause(e);
 			throw se;
@@ -602,13 +602,13 @@ class InputOutput {
 	
 					throw ste;
 				} catch (Exception e) {
-					SQLException se = HPT4Messages
+					SQLException se = TrafT4Messages
 							.createSQLException(null, m_locale, "session_close_error", e.getMessage());
 					se.initCause(e);
 					throw se;
 				}
 			} catch (Exception e) {
-				SQLException se = HPT4Messages.createSQLException(null, m_locale, "socket_read_error", e.getMessage());
+				SQLException se = TrafT4Messages.createSQLException(null, m_locale, "socket_read_error", e.getMessage());
 	
 				se.initCause(e);
 				throw se;

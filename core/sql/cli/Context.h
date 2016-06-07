@@ -961,6 +961,7 @@ SQLCLI_LIB_FUNC
   void resetAttributes();
 
   void createMxcmpSession();
+  Int32 updateMxcmpSession();
 
   void resetVolatileSchemaState();
 
@@ -981,6 +982,7 @@ SQLCLI_LIB_FUNC
   void initVolTabList();
   void resetVolTabList();
 
+  void killIdleMxcmp();
   void killAndRecreateMxcmp();
 
 #ifdef NA_DEBUG_C_RUNTIME

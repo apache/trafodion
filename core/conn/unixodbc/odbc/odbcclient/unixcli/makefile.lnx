@@ -72,14 +72,10 @@ DRVREXPOBJ = $(addprefix $(OBJDIR), $(EXPOBJS))
 linux64_debug: dmanager cli interface common ipv4 exp trace
 	$(LINK) -fPIC -m64 -shared -rdynamic -Wl,-soname,$(ODBC_SO_FILE)_l64.so -o $(ODBC_SO_FILE)_l64.so $(DRVROBJ) $(DRVRMGROBJ) $(INCLUDE) $(LIBS)
 	$(LINK) -fPIC -m64 -shared -rdynamic -Wl,-soname,$(ODBC_SO_FILE)_l64_drvr.so -o $(ODBC_SO_FILE)_l64_drvr.so $(DRVROBJ) $(DRVREXPOBJ) $(INCLUDE) $(LIBS)
-	ln -s -f $(ODBC_SO_FILE)_l64_drvr.so $(ODBC_SO_FILE)_drvr_l64.so
-	cp -p $(ODBC_SO_FILE)_drvr_l64.so $(LIBEXPDIR)/.
 
 linux64_release: dmanager cli interface common ipv4 exp trace
 	$(LINK) -m64 -shared -rdynamic -Wl,-soname,$(ODBC_SO_FILE)_l64.so -o $(ODBC_SO_FILE)_l64.so $(DRVROBJ) $(DRVRMGROBJ) $(INCLUDE) $(LIBS)
 	$(LINK) -m64 -shared -rdynamic -Wl,-soname,$(ODBC_SO_FILE)_l64_drvr.so -o $(ODBC_SO_FILE)_l64_drvr.so $(DRVROBJ) $(DRVREXPOBJ) $(INCLUDE) $(LIBS)
-	ln -s -f $(ODBC_SO_FILE)_l64_drvr.so $(ODBC_SO_FILE)_drvr_l64.so
-	cp -p $(ODBC_SO_FILE)_drvr_l64.so $(LIBEXPDIR)/.
 
 dmanager: $(DMOBJS)
 
@@ -97,7 +93,7 @@ exp: $(EXPOBJS)
 
 clean:
 	rm -rf obj
-	rm -rf libtrafodbc_*
+	rm -rf libtrafodbc_* 
 	rm -rf trace/version.cpp trace/version_drvr.cpp
 
 .cpp.o:
