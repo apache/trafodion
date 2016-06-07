@@ -681,7 +681,8 @@ enum DefaultConstants
   USTAT_ATTEMPT_ESP_PARALLELISM,  // use parallel plans for reading columns to form histograms
   USTAT_CHECK_HIST_ACCURACY,   // After stats collection, examine full table and calculate accuray of hists
   USTAT_CLUSTER_SAMPLE_BLOCKS, // number of blocks for cluster sampling
-  USTAT_ESTIMATE_HBASE_ROW_COUNT,  // If ON, estimate row count of HBase table instead of count(*)
+  USTAT_ESTIMATE_HBASE_ROW_COUNT,  // If ON, estimate row count of HBase table instead of count(*), subject
+                                   //     to USTAT_MIN_ESTIMATE_FOR_ROWCOUNT setting)
   USTAT_FORCE_TEMP,            // Force temporary table to be used
   USTAT_HBASE_SAMPLE_RETURN_INTERVAL, // When sampling in HBase, adjust sampling rate to return once
                                       //   on average once per this many rows
@@ -3354,6 +3355,7 @@ enum DefaultConstants
   COLLECT_REORG_STATS,
   
   HIVE_MAX_STRING_LENGTH,
+  HIVE_MAX_STRING_LENGTH_IN_BYTES,
   HIVE_USE_FAKE_TABLE_DESC,
   HIVE_LIB_HDFS_PORT_OVERRIDE,
   HIVE_HDFS_STATS_LOG_FILE,
@@ -3450,10 +3452,6 @@ enum DefaultConstants
 
   // if ON, hbase coprocessors could be used, if the query allows it.
   HBASE_COPROCESSORS,
-
-  // If ON, optimizer will estimate HBase row count by looking at info in HFiles
-  // instead of relying on default cardinality estimate.
-  ESTIMATE_HBASE_ROW_COUNT,
 
   // if OFF or '0' is disabled, ON or '1' is simple pushdown, '2' is for advance pushdown
   // It will depends on the query on which predicates or sub-predicates could be pushed.

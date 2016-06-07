@@ -1307,8 +1307,6 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDSint__(ESP_PRIORITY,                        "0"),
   DDSint__(ESP_PRIORITY_DELTA,                  "0"),
 
-  DDkwd__(ESTIMATE_HBASE_ROW_COUNT,             "ON"),
-
  // Disable hints - if SYSTEM, enable on SSD, and disable only on HDD
   DDkwd__(EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_HASH,	"SYSTEM"),
   DDkwd__(EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_SORT,	"SYSTEM"),
@@ -1953,6 +1951,9 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  // Main ones to use:
  // HIVE_MAX_STRING_LENGTH: Hive "string" data type gets converted
  //                         into a VARCHAR with this length
+ //                         This should be deprecated from Trafodion R2.1
+ // HIVE_MAX_STRING_LENGTH_IN_BYTES: Hive "string" data type gets converted
+ //                                  into a VARCHAR with this length
  // HIVE_MIN_BYTES_PER_ESP_PARTITION: Make one ESP for this many bytes
  // HIVE_NUM_ESPS_PER_DATANODE: Equivalent of MAX_ESPS_PER_CPU_PER_OP
  //                             Note that this is really per SeaQuest node
@@ -1970,6 +1971,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDint__(HIVE_LOCALITY_BALANCE_LEVEL,          "0"),
   DDui___(HIVE_MAX_ESPS,                        "9999"),
   DDui___(HIVE_MAX_STRING_LENGTH,               "32000"),
+  DDui___(HIVE_MAX_STRING_LENGTH_IN_BYTES,      "32000"),
   DDkwd__(HIVE_METADATA_JAVA_ACCESS,            "ON"),
   DDint__(HIVE_METADATA_REFRESH_INTERVAL,       "0"),
   DDflt0_(HIVE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
@@ -3517,7 +3519,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_DEBUG_FORCE_FETCHCOUNT,         "OFF"),
   DD_____(USTAT_DEBUG_TEST,                     ""),
   DDflte_(USTAT_DSHMAX,		                "50.0"),
-  DDkwd__(USTAT_ESTIMATE_HBASE_ROW_COUNT,       "OFF"),
+  DDkwd__(USTAT_ESTIMATE_HBASE_ROW_COUNT,       "ON"),
   DDkwd__(USTAT_FETCHCOUNT_ACTIVE,              "OFF"),
   DDkwd__(USTAT_FORCE_MOM_ESTIMATOR,            "OFF"),
   DDkwd__(USTAT_FORCE_TEMP,                     "OFF"),
@@ -3603,7 +3605,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_SIDETREE_INSERT,            "ON"),
   DDkwd__(USTAT_USE_SLIDING_SAMPLE_RATIO,       "ON"), // Trend sampling rate down w/increasing table size, going
                                                        //   flat at 1%.
- XDDui1__(USTAT_YOULL_LIKELY_BE_SORRY,          "100000000"),  // guard against unintentional long-running UPDATE STATS
+ XDDflt1_(USTAT_YOULL_LIKELY_BE_SORRY,          "100000000"),  // guard against unintentional long-running UPDATE STATS
   DDkwd__(VALIDATE_RFORK_REDEF_TS,	        "OFF"),
 
   DDkwd__(VALIDATE_VIEWS_AT_OPEN_TIME,		"OFF"),
@@ -3714,6 +3716,71 @@ static NABoolean isSynonymOfSYSTEM(Int32 attrEnum, NAString &value)
   return FALSE;
 }
 
+// Helper class used for holding and restoring CQDs
+class NADefaults::HeldDefaults
+{
+  public:
+   
+    HeldDefaults(void);
+
+    ~HeldDefaults(void);
+
+    // CMPASSERT's on stack overflow
+    void pushDefault(const char * value);
+
+    // returns null if nothing to pop
+    char * popDefault(void);
+
+  private:
+
+    enum { STACK_SIZE = 3 };
+
+    int stackPointer_;
+    char * stackValue_[STACK_SIZE];
+    
+};
+
+// Methods for helper class HeldDefaults
+NADefaults::HeldDefaults::HeldDefaults(void) : stackPointer_(0)
+{            
+  for (int i = 0; i < STACK_SIZE; i++)
+    stackValue_[i] = NULL;
+}
+
+NADefaults::HeldDefaults::~HeldDefaults(void)
+{
+  for (int i = 0; i < STACK_SIZE; i++)
+  {
+    if (stackValue_[i])
+    {
+      NADELETEBASIC(stackValue_[i], NADHEAP);
+    }
+  }
+}
+
+// CMPASSERT's on stack overflow
+void NADefaults::HeldDefaults::pushDefault(const char * value)
+{
+  CMPASSERT(stackPointer_ < STACK_SIZE);
+  stackValue_[stackPointer_] = new NADHEAP char[strlen(value) + 1];
+  strcpy(stackValue_[stackPointer_],value);
+  stackPointer_++;
+}
+
+// returns null if nothing to pop
+char * NADefaults::HeldDefaults::popDefault(void)
+{
+  char * result = 0;
+  if (stackPointer_ > 0)
+  {
+    stackPointer_--;
+    result = stackValue_[stackPointer_];
+    stackValue_[stackPointer_] = NULL;
+  }
+  return result;
+}
+
+
 size_t NADefaults::numDefaultAttributes()
 {
   return (size_t)__NUM_DEFAULT_ATTRIBUTES;
@@ -3777,8 +3844,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   currentFloats_	= new NADHEAP float * [numAttrs];
   currentTokens_	= new NADHEAP DefaultToken * [numAttrs];
   currentState_		= INIT_DEFAULT_DEFAULTS;
-  heldDefaults_	        = new NADHEAP char * [numAttrs];
-  heldHeldDefaults_	= new NADHEAP char * [numAttrs];
+  heldDefaults_	        = new NADHEAP HeldDefaults * [numAttrs];
 
   // reset all entries
   size_t i = 0;
@@ -3793,8 +3859,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   memset( currentDefaults_, 0, sizeof(char *) * numAttrs );
   memset( currentFloats_, 0, sizeof(float *) * numAttrs );
   memset( currentTokens_, 0, sizeof(DefaultToken *) * numAttrs );
-  memset( heldDefaults_, 0, sizeof(char *) * numAttrs );
-  memset( heldHeldDefaults_, 0, sizeof(char *) * numAttrs );
+  memset( heldDefaults_, 0, sizeof(HeldDefaults *) * numAttrs );
 
   #ifndef NDEBUG
     // This env-var turns on consistency checking of default-defaults and
@@ -4046,7 +4111,6 @@ NADefaults::NADefaults(NAMemory * h)
   , currentFloats_(NULL)
   , currentTokens_(NULL)
   , heldDefaults_(NULL)
-  , heldHeldDefaults_(NULL)
   , currentState_(UNINITIALIZED)
   , readFromSQDefaultsTable_(FALSE)
   , SqlParser_NADefaults_(NULL)
@@ -4117,14 +4181,8 @@ void NADefaults::deleteMe()
 
   if (heldDefaults_) {
     for (size_t i = numDefaultAttributes(); i--; )
-      NADELETEBASIC(heldDefaults_[i], NADHEAP);
+      NADELETE(heldDefaults_[i], HeldDefaults, NADHEAP);
     NADELETEBASIC(heldDefaults_, NADHEAP);
-  }
-
-  if (heldHeldDefaults_) {
-    for (size_t i = numDefaultAttributes(); i--; )
-      NADELETEBASIC(heldHeldDefaults_[i], NADHEAP);
-    NADELETEBASIC(heldHeldDefaults_, NADHEAP);
   }
 
   for (CollIndex i = tablesRead_.entries(); i--; )
@@ -6016,14 +6074,6 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
   char * value = NULL;
   if (holdOrRestoreCQD == 1) // hold cqd
     {
-      if (heldHeldDefaults_[attrEnum])
-        {
-          // Gasp! We've done three successive HOLDs... it's off to
-          // the bit bucket for the deepest value
-          NADELETEBASIC(heldHeldDefaults_[attrEnum], NADHEAP);
-        }
-      heldHeldDefaults_[attrEnum] = heldDefaults_[attrEnum];
-
       if (currentDefaults_[attrEnum])
 	{
 	  value = new NADHEAP char[strlen(currentDefaults_[attrEnum]) + 1];
@@ -6034,32 +6084,39 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
 	  value = new NADHEAP char[strlen(defaultDefaults[defDefIx_[attrEnum]].value) + 1];
 	  strcpy(value, defaultDefaults[defDefIx_[attrEnum]].value);
 	}
-      heldDefaults_[attrEnum] = value;
+
+      if (! heldDefaults_[attrEnum])
+        heldDefaults_[attrEnum] = new NADHEAP HeldDefaults();
+
+      heldDefaults_[attrEnum]->pushDefault(value);
     }
   else
     {
       // restore cqd from heldDefaults_ array, if it was held.
       if (! heldDefaults_[attrEnum])
+        return attrEnum;
+
+      value = heldDefaults_[attrEnum]->popDefault();
+      if (! value)
 	return attrEnum;
 
       // there is an odd semantic that if currentDefaults_[attrEnum]
       // is null, we leave it as null, but pop a held value anyway;
-      // this semantic was preserved when the second level 
-      // (heldHeldDefaults_) was added.
+      // this semantic was preserved when heldDefaults_ was converted
+      // to a stack.
 
       if (currentDefaults_[attrEnum])
         {
           // do a validateAndInsert so the caches (such as currentToken_)
-          // get updated and so appropriate semantic actions are taken
-          NAString value(heldDefaults_[attrEnum]);
+          // get updated and so appropriate semantic actions are taken.
+          // Note that validateAndInsert will take care of deleting the
+          // storage currently held by currentDefaults_[attrEnum].
+          NAString valueS(value);
           validateAndInsert(lookupAttrName(attrEnum), // sad that we have to do a lookup again
-                            value,
+                            valueS,
                             FALSE);
-        }
-      
-      NADELETEBASIC(heldDefaults_[attrEnum], NADHEAP);
-      heldDefaults_[attrEnum] = heldHeldDefaults_[attrEnum];
-      heldHeldDefaults_[attrEnum] = NULL;
+        }     
+      NADELETEBASIC(value, NADHEAP);
     }
 
   return attrEnum;
@@ -7345,3 +7402,5 @@ void NADefaults::setSchemaAsLdapUser(const NAString val)
 			<< DgString1("SCHEMA");
   }
 }
+
+

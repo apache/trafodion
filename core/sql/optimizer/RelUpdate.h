@@ -1446,11 +1446,16 @@ public:
 
   NABoolean xformedUpsert() {return xformedUpsert_;}
   void setXformedUpsert() {xformedUpsert_ = TRUE;}
+
+  NABoolean needsBindScope() const { return needsBindScope_; }
+  void setNeedsBindScope(NABoolean b) { needsBindScope_ = b; }
+
 private:
   ItemExpr *insertCols_;
   ItemExpr *insertValues_;
   ItemExpr *where_;
   NABoolean xformedUpsert_;
+  NABoolean needsBindScope_;
 };
 
 
