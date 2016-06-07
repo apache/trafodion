@@ -173,7 +173,7 @@ void CExtNewProcReq::performRequest()
         if ( msg_->u.request.u.new_process.type == ProcessType_SSMP ) 
         {
             if (( msg_->u.request.u.new_process.nid < 0  ||
-                  msg_->u.request.u.new_process.nid >= Nodes->NumberLNodes )   )
+                  msg_->u.request.u.new_process.nid >= Nodes->GetLNodesCount() )   )
             {
                 // Nid must be specified
                 msg_->u.reply.type = ReplyType_NewProcess;
@@ -205,7 +205,7 @@ void CExtNewProcReq::performRequest()
         if ( msg_->u.request.u.new_process.type == ProcessType_DTM )
         {
             if (( msg_->u.request.u.new_process.nid < 0  ||
-                  msg_->u.request.u.new_process.nid >= Nodes->NumberLNodes )   )
+                  msg_->u.request.u.new_process.nid >= Nodes->GetLNodesCount() )   )
             {
                 // Nid must be specified
                 msg_->u.reply.type = ReplyType_NewProcess;
@@ -244,7 +244,7 @@ void CExtNewProcReq::performRequest()
         if ( msg_->u.request.u.new_process.type == ProcessType_SPX ) 
         {
             if (( msg_->u.request.u.new_process.nid < 0  ||
-                  msg_->u.request.u.new_process.nid >= Nodes->NumberLNodes )   )
+                  msg_->u.request.u.new_process.nid >= Nodes->GetLNodesCount() )   )
             {
                 // Nid must be specified
                 msg_->u.reply.type = ReplyType_NewProcess;
@@ -406,7 +406,7 @@ void CExtNewProcReq::performRequest()
         }
         else if (( msg_->u.request.u.new_process.type == ProcessType_DTM         ) &&
                  (( msg_->u.request.u.new_process.nid < 0                    ) ||
-                  ( msg_->u.request.u.new_process.nid >= Nodes->NumberLNodes )   )   )
+                  ( msg_->u.request.u.new_process.nid >= Nodes->GetLNodesCount() )   )   )
         {
             msg_->u.reply.type = ReplyType_NewProcess;
             msg_->u.reply.u.new_process.return_code = MPI_ERR_SPAWN;
@@ -421,7 +421,7 @@ void CExtNewProcReq::performRequest()
         }
         else if (( msg_->u.request.u.new_process.type != ProcessType_DTM         ) &&
                  (( msg_->u.request.u.new_process.nid < 0                    ) ||
-                  ( msg_->u.request.u.new_process.nid >= Nodes->NumberLNodes )   )   )
+                  ( msg_->u.request.u.new_process.nid >= Nodes->GetLNodesCount() )   )   )
         {
             msg_->u.reply.type = ReplyType_NewProcess;
             msg_->u.reply.u.new_process.return_code = MPI_ERR_SPAWN;

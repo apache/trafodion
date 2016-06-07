@@ -609,23 +609,15 @@ bool CClusterConfig::LoadConfig( void )
             exclastcore = sqlite3_column_int(prepLnodeStmt, 6);
             processors = sqlite3_column_int(prepLnodeStmt, 7);
             roles = (ZoneType) sqlite3_column_int(prepLnodeStmt, 8);
-            if ( ! ProcessLNode( nid
-                               , pnid
-                               , nodename
-                               , excfirstcore
-                               , exclastcore
-                               , firstcore
-                               , lastcore
-                               , processors
-                               , roles ) )
-            {
-                char la_buf[MON_STRING_BUF_SIZE];
-                snprintf( la_buf, sizeof(la_buf)
-                        , "[%s], Error: Invalid node configuration\n"
-                        , method_name);
-                mon_log_write(MON_CLUSTERCONF_LOAD_4, SQ_LOG_ERR, la_buf);
-                return( false );
-            }
+            ProcessLNode( nid
+                        , pnid
+                        , nodename
+                        , excfirstcore
+                        , exclastcore
+                        , firstcore
+                        , lastcore
+                        , processors
+                        , roles );
         }
         else if ( rc == SQLITE_DONE )
         {
@@ -813,7 +805,7 @@ bool CClusterConfig::LoadConfig( void )
     return( configReady_ );
 }
 
-bool CClusterConfig::ProcessLNode( int nid
+void CClusterConfig::ProcessLNode( int nid
                                  , int pnid
                                  , const char *nodename
                                  , int excfirstcore
@@ -866,7 +858,6 @@ bool CClusterConfig::ProcessLNode( int nid
     }
 
     TRACE_EXIT;
-    return( true );
 }
 
 bool CClusterConfig::ProcessSNode( int pnid
@@ -1270,18 +1261,38 @@ bool CClusterConfig::SaveNodeConfig( const char *name
                      , excludedLastCore );
     }
 
+    prevNid_ = -1;
+    prevPNid_ = -1;
+
     // Insert data into pnode and lnode tables
     if (SaveDbPNodeData( name
                        , pnid
                        , excludedFirstCore
                        , excludedLastCore ))
     {
-        if (!SaveDbLNodeData( nid
-                            , pnid
-                            , firstCore
-                            , lastCore
-                            , processors
-                            , roles ))
+        if (SaveDbLNodeData( nid
+                           , pnid
+                           , firstCore
+                           , lastCore
+                           , processors
+                           , roles ))
+        
+        {
+            // Pre-process the Node configuration attributes
+            ProcessLNode( nid
+                        , pnid
+                        , name
+                        , excludedFirstCore
+                        , excludedLastCore
+                        , firstCore
+                        , lastCore
+                        , processors
+                        , roles );
+
+            // Add new Node to static Configuration objects
+            AddNodeConfiguration( false );
+        }
+        else
         {
             rs = false;
         }

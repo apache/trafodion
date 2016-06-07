@@ -91,7 +91,7 @@ void CExtShutdownReq::performRequest()
         shutdownRejected = false;
         if( msg_->u.request.u.shutdown.level != ShutdownLevel_Abrupt )
         {
-            for ( int pnid = 0; pnid < Nodes->NumberPNodes; pnid++ )
+            for ( int pnid = 0; pnid < Nodes->GetPNodesCount(); pnid++ )
             {
                 if ( Nodes->GetNode(pnid)->GetState() == State_Up && Nodes->GetNode(pnid)->isInQuiesceState() )
                 {

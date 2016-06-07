@@ -119,10 +119,10 @@ void CExtPNodeInfoReq::performRequest()
     if ( target_pnid == -1 )
     {
         pnid = 0;
-        end_pnid = Nodes->NumberPNodes-1;
+        end_pnid = Nodes->GetPNodesCount()-1;
     }
-    else if ((target_pnid >= 0                 ) ||
-             (target_pnid < Nodes->NumberPNodes)   )
+    else if ((target_pnid >= 0                     ) ||
+             (target_pnid < Nodes->GetPNodesCount())   )
     {
         pnid = end_pnid = target_pnid;
     }
@@ -143,11 +143,11 @@ void CExtPNodeInfoReq::performRequest()
 
         // Load the node counts first
         msg_->u.reply.u.pnode_info.num_nodes = Nodes->GetLNodesCount();
-        msg_->u.reply.u.pnode_info.num_pnodes = Nodes->GetNodesCount();
+        msg_->u.reply.u.pnode_info.num_pnodes = Nodes->GetPNodesCount();
         msg_->u.reply.u.pnode_info.num_spares = Nodes->GetSNodesCount();
         msg_->u.reply.u.pnode_info.num_available_spares = Nodes->GetAvailableSNodesCount();
     
-        for ( ; pnid < Nodes->NumberPNodes && pnid < MAX_NODES && pnid <= end_pnid; pnid++)
+        for ( ; pnid < Nodes->GetPNodesCount() && pnid < MAX_NODES && pnid <= end_pnid; pnid++)
         {
             pnode = Nodes->GetNode( pnid );
             if ( pnode )

@@ -349,9 +349,28 @@ void CPNodeConfig::SetName( char *newName )
       strcpy(name_, newName); 
 } 
 
+CPNodeConfig *CPNodeConfigContainer::GetPNodeConfig( char *nodename )
+{
+    CPNodeConfig *config = NULL;
+
+    const char method_name[] = "CPNodeConfigContainer::GetPNodeConfig";
+    TRACE_ENTRY;
+
+    for (int i = 0; i < pnodesCount_; i++ )
+    {
+        if ( strcmp( pnodeConfig_[i]->GetName(), nodename ) == 0 )
+        {
+            config = pnodeConfig_[i];
+        }
+    }
+
+    TRACE_EXIT;
+    return config;
+}
+
 CPNodeConfig *CPNodeConfigContainer::GetPNodeConfig( int pnid )
 {
-    CPNodeConfig *config;
+    CPNodeConfig *config = NULL;
 
     const char method_name[] = "CPNodeConfigContainer::GetPNodeConfig";
     TRACE_ENTRY;
@@ -359,10 +378,6 @@ CPNodeConfig *CPNodeConfigContainer::GetPNodeConfig( int pnid )
     if ( pnid >= 0 && pnid < pnodesCount_ )
     {
         config = pnodeConfig_[pnid];
-    }
-    else
-    {
-        config = NULL;
     }
 
     TRACE_EXIT;

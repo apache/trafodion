@@ -106,23 +106,23 @@ void CExtZoneInfoReq::performRequest()
          msg_->u.request.u.zone_info.target_zid == -1 )
     {
         nid = 0;
-        end_nid = Nodes->NumberLNodes-1;
+        end_nid = Nodes->GetLNodesCount()-1;
     }
     else if ((msg_->u.request.u.zone_info.target_zid == -1 &&
               (msg_->u.request.u.zone_info.target_nid >= 0)) ||
              (msg_->u.request.u.zone_info.target_nid < 
-              (Nodes->NumberPNodes - Nodes->GetSNodesCount())) )
+              (Nodes->GetPNodesCount() - Nodes->GetSNodesCount())) )
     {
         nid = 0;
-        end_nid = Nodes->NumberLNodes-1;
+        end_nid = Nodes->GetLNodesCount()-1;
     }
     else if ((msg_->u.request.u.zone_info.target_nid == -1 &&
               (msg_->u.request.u.zone_info.target_zid >= 0)) ||
              (msg_->u.request.u.zone_info.target_zid < 
-              (Nodes->NumberPNodes - Nodes->GetSNodesCount())) )
+              (Nodes->GetPNodesCount() - Nodes->GetSNodesCount())) )
     {
         nid = 0;
-        end_nid = Nodes->NumberLNodes-1;
+        end_nid = Nodes->GetLNodesCount()-1;
     }
     else
     {
@@ -149,7 +149,7 @@ void CExtZoneInfoReq::performRequest()
         msg_->u.reply.u.zone_info.num_nodes = Nodes->GetLNodesCount();
         if ( nid != -1 )
         {
-            for (num_returned=0; nid < Nodes->NumberLNodes && nid < MAX_NODES && nid <= end_nid; nid++)
+            for (num_returned=0; nid < Nodes->GetLNodesCount() && nid < MAX_NODES && nid <= end_nid; nid++)
             {
                 lnode  = Nodes->GetLNode(nid);
                 if ( lnode )

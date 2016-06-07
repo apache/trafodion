@@ -226,25 +226,27 @@ typedef enum {
     ReqType_Dump,                           // dump process
     ReqType_Event,                          // send target processes an Event notice
     ReqType_Exit,                           // process is exiting
-    ReqType_Get,                            // Retrieve information from the registry
+    ReqType_Get,                            // retrieve information from the registry
     ReqType_Kill,                           // stop and cleanup the identified process
     ReqType_MonStats,                       // get monitor statistics
     ReqType_Mount,                          // mount device associated with process    
     ReqType_NewProcess,                     // process is request server to be spawned
-    ReqType_NodeAdd,                        // request to node to the static configuration
-    ReqType_NodeDelete,                     // request to delete node from the static configuration
-    ReqType_NodeDown,                       // request to take down the identified node
-    ReqType_NodeInfo,                       // node information request 
-    ReqType_NodeUp,                         // request to bring up the identified node
+    ReqType_NodeAdd,                        // add node to configuration database
+    ReqType_NodeDelete,                     // delete node from configuration database
+    ReqType_NodeDown,                       // take down the identified node
+    ReqType_NodeInfo,                       // node operational status information request 
+    ReqType_NodeName,                       // change node name in configuration database
+    ReqType_NodeUp,                         // bring up the identified node
     ReqType_Notice,                         // this is a informational message only
     ReqType_Notify,                         // register process to receive death notifications
     ReqType_Open,                           // process opening server request
     ReqType_OpenInfo,                       // request open information for process
+    ReqType_PersistAdd,                     // add persist template to configuration database
+    ReqType_PersistDelete,                  // delete persist template from configuration database
     ReqType_PNodeInfo,                      // physical node information request 
     ReqType_ProcessInfo,                    // process information request
     ReqType_ProcessInfoCont,                // process information request (continuation)
-    ReqType_ProcessInfoPat,                 // process information request (pattern)
-    ReqType_Set,                            // Add configuration infomation to the registry 
+    ReqType_Set,                            // add configuration information to the registry 
     ReqType_Shutdown,                       // request cluster shutdown
     ReqType_Startup,                        // process startup notification
     ReqType_Stfsd,                          // process stfsd request
@@ -254,7 +256,6 @@ typedef enum {
     ReqType_TmSync,                         // request to sync data across all TM's in cluster
     ReqType_TransInfo,                      // request transaction enlistment information
     ReqType_ZoneInfo,                       // zone information request 
-    ReqType_NodeName,                       // change node name request
 
     ReqType_Invalid                         // marks the end of the request
                                             // types, add any new request types 
@@ -273,6 +274,7 @@ typedef enum {
     ReplyType_Mount,                        // reply with mount info
     ReplyType_NewProcess,                   // reply with new process information
     ReplyType_NodeInfo,                     // reply with info on list of nodes
+    ReplyType_NodeName,                     // reply with results
     ReplyType_Open,                         // reply with open server information
     ReplyType_OpenInfo,                     // reply with list of opens for a process
     ReplyType_PNodeInfo,                    // reply with info on list of physical nodes
@@ -283,7 +285,6 @@ typedef enum {
     ReplyType_TmSync,                       // reply from unsolicited TmSync message
     ReplyType_TransInfo,                    // reply with transaction enlistment process list
     ReplyType_ZoneInfo,                     // reply with info on list of zones
-    ReplyType_NodeName,                     // reply with results
 
 
     ReplyType_Invalid                       // marks the end of the reply types,
@@ -1085,6 +1086,7 @@ struct request_def
         struct NodeDelete_def        node_delete;
         struct NodeDeleted_def       node_deleted;
         struct NodeInfo_def          node_info;
+        struct NodeName_def          nodename;
         struct Notify_def            notify;
         struct Open_def              open;
         struct OpenInfo_def          open_info;
@@ -1112,9 +1114,6 @@ struct request_def
         struct PNodeInfo_def         pnode_info;
         struct SpareUp_def           spare_up;
         struct NodeReInt_def         reintegrate;
-        struct NodeAdded_def         added;
-        struct NodeDeleted_def       deleted;
-        struct NodeName_def          nodename;
     } u;
 };
 

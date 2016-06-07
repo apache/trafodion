@@ -600,7 +600,7 @@ int CMonitor::PackProcObjs( char *&buffer )
     char *bufPtr = buffer;
 
     // first copy all primary and generic processes
-    for (nid = 0; nid < Nodes->NumberLNodes; nid++)
+    for (nid = 0; nid < Nodes->GetLNodesCount(); nid++)
     {
         lnode = Nodes->GetLNode(nid);
         process = lnode->GetFirstProcess();
@@ -617,7 +617,7 @@ int CMonitor::PackProcObjs( char *&buffer )
     }
 
     // copy all the backup processes
-    for (nid = 0; nid < Nodes->NumberLNodes; nid++)
+    for (nid = 0; nid < Nodes->GetLNodesCount(); nid++)
     {
         lnode = Nodes->GetLNode(nid);
         process = lnode->GetFirstProcess();

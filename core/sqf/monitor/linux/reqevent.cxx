@@ -215,7 +215,7 @@ void CExtEventReq::performRequest()
 
             // process events
             num_procs = 0;
-            for (; nid < Nodes->NumberLNodes; nid++)
+            for (; nid < Nodes->GetLNodesCount(); nid++)
             {
                 if (target_nid == -1)
                 {

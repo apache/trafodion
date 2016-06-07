@@ -1701,7 +1701,7 @@ void CIntNodeAddReq::populateRequestString( void )
     snprintf( strBuf, sizeof(strBuf), 
               "IntReq(%s) req #=%ld "
               "(node_name=%s/first_core=%d/last_core=%d/processors=%d/roles=%d)"
-            , CReqQueue::intReqType[InternalType_Add]
+            , CReqQueue::intReqType[InternalType_NodeAdd]
             , getId()
             , nodeName_
             , first_core_
@@ -1800,7 +1800,7 @@ void CIntNodeDeleteReq::populateRequestString( void )
     snprintf( strBuf, sizeof(strBuf), 
               "IntReq(%s) req #=%ld "
               "(pnid=%d)"
-            , CReqQueue::intReqType[InternalType_Delete]
+            , CReqQueue::intReqType[InternalType_NodeDelete]
             , getId()
             , pnid_ );
     requestString_.assign( strBuf );
@@ -2818,11 +2818,6 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
-        case ReqType_NodeName:
-            request = new CExtNodeNameReq(msgType, pid, msg);
-            request->setConcurrent(reqConcurrent[msg->u.request.type]);
-            break;
-   
         case ReqType_ProcessInfo:
             request = new CExtProcInfoReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
@@ -2922,11 +2917,26 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
+        case ReqType_NodeName:
+            request = new CExtNodeNameReq(msgType, pid, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+   
         case ReqType_NodeUp:
             request = new CExtNodeUpReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
+#if 0
+        case ReqType_PersistAdd:
+            request = new CExtPersistAddReq(msgType, pid, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
 
+        case ReqType_PersistDelete:
+            request = new CExtPersistDeleteReq(msgType, pid, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+#endif
         case ReqType_Shutdown:
             request = new CExtShutdownReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
@@ -3829,49 +3839,7 @@ void CReqQueue::stats()
     TRACE_EXIT;
 }
 
-
 // Definition of which requests can execute concurrently
-// (final version of table)
-#ifdef Final
-const bool CReqQueue::reqConcurrent[] = {
-   false,    // unused, request types start at 1
-   true,     // ReqType_Close
-   true,     // ReqType_Dump
-   false,    // ReqType_Event
-   true,     // ReqType_Exit
-   true,     // ReqType_Get
-   true,     // ReqType_Kill
-   true,     // ReqType_MonStats
-   false,    // ReqType_Mount
-   true,     // ReqType_NewProcess
-   false,    // ReqType_NodeAdd
-   false,    // ReqType_NodeDelete
-   false,    // ReqType_NodeDown
-   true,     // ReqType_NodeInfo
-   false,    // ReqType_NodeUp
-   false,    // ReqType_Notice -- not an actual request
-   true,     // ReqType_Notify
-   true,     // ReqType_Open
-   true,     // ReqType_OpenInfo
-   true,     // ReqType_PNodeInfo
-   true,     // ReqType_ProcessInfo
-   true,     // ReqType_ProcessInfoCont
-   true,     // ReqType_Set
-   false,    // ReqType_Shutdown
-   true,     // ReqType_Startup
-   false,    // ReqType_Stfsd
-   false,    // ReqType_TmLeader
-   false,    // ReqType_TmReady
-   false,    // ReqType_TmSeqNum
-   false,    // ReqType_TmSync
-   false,    // ReqType_TransInfo
-   true,     // ReqType_ZoneInfo
-   false     // ReqType_NodeName
-};
-#endif
-
-// Definition of which requests can execute concurrently
-// (temporary version of table for experimenation)
 const bool CReqQueue::reqConcurrent[] = {
    false,    // unused, request types start at 1
    false,    // ReqType_Close
@@ -3887,11 +3855,14 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_NodeDelete
    false,    // ReqType_NodeDown
    false,    // ReqType_NodeInfo
+   false,    // ReqType_NodeName 
    false,    // ReqType_NodeUp
    false,    // ReqType_Notice -- not an actual request
    false,    // ReqType_Notify
    true,     // ReqType_Open
    false,    // ReqType_OpenInfo
+   false,    // ReqType_PersistAdd
+   false,    // ReqType_PersistDelete
    false,    // ReqType_PNodeInfo
    false,    // ReqType_ProcessInfo
    false,    // ReqType_ProcessInfoCont
@@ -3905,29 +3876,8 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_TmSync
    false,    // ReqType_TransInfo
    false,    // ReqType_ZoneInfo
-   false,    // ReqType_NodeName 
    false     // ReqType_Invalid
 };
-
-#ifdef final
-
-
-MsgType_Change=1,                       // registry information has changed notification
-MsgType_Close,                          // process close notification
-MsgType_Event,                          // generic event notification
-MsgType_NodeDown       invalid
-MsgType_NodeUp         invalid
-MsgType_Open           invalid
-MsgType_ProcessCreated,                 // process creation completed notification
-MsgType_ProcessDeath   invalid
-MsgType_Service,                        // request a service from the monitor
-MsgType_Shutdown,                       // system shutdown notification
-MsgType_TmSyncAbort,                    // request to abort TM sync data previously received
-MsgType_TmSyncCommit,                   // request to commit previously received TM sync data
-MsgType_UnsolicitedMessage              // Outgoing monitor msg expecting a reply 
-
-
-#endif
 
 // Request names used for trace output
 const char * CReqQueue::svcReqType[] = {
@@ -3945,15 +3895,17 @@ const char * CReqQueue::svcReqType[] = {
     "NodeDelete",
     "NodeDown",
     "NodeInfo",
+    "NodeName",
     "NodeUp",
     "Notice",
     "Notify",
     "Open",
     "OpenInfo",
+    "PersistAdd",
+    "PersistDelete",
     "PNodeInfo",
     "ProcessInfo",
     "ProcessInfoCont",
-    "ProcessInfoPat",
     "Set",
     "Shutdown",
     "Startup",
@@ -3963,19 +3915,14 @@ const char * CReqQueue::svcReqType[] = {
     "TmSeqNum",
     "TmSync",
     "TransInfo",
-    "ZoneInfo",
-    "NodeName"
+    "ZoneInfo"
 };
 
 // Must match internal.h:InternalType 
 const char * CReqQueue::intReqType[] = {
       ""
     , "ActivateSpare"
-    , "Add"
-    , "Added"
     , "Clone"
-    , "Delete"
-    , "Deleted"
     , "Device"
     , "Down"
     , "Dump"
@@ -3984,7 +3931,14 @@ const char * CReqQueue::intReqType[] = {
     , "Exit"
     , "IoData"
     , "Kill"
+    , "NodeAdd"
+    , "NodeAdded"
+    , "NodeDelete"
+    , "NodeDeleted"
+    , "NodeName"
     , "Notify"
+    , "PersistAdd"
+    , "PersistDelete"
     , "Process"
     , "ProcessInit"
     , "Open"

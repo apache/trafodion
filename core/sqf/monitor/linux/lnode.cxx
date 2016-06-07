@@ -951,7 +951,7 @@ CLNode *CLNodeContainer::GetLNode(int nid)
     TRACE_ENTRY;
 
     
-    if( nid >= 0 && nid < Nodes->NumberLNodes )
+    if( nid >= 0 && nid < Nodes->GetLNodesCount() )
     {
         lnode = Nodes->LNode[nid];
     }
