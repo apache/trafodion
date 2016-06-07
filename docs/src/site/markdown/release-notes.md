@@ -16,7 +16,9 @@ The following releases have been created for Trafodion.
 
 Release                               | Description                                                           | Date
 --------------------------------------|-----------------------------------------------------------------------|--------------
-**[1.3.0](release-notes-1-3-0.html)** | First Apache release.                                                 | Pending
+**[2.0.1](release-notes-2-0-1.html)** | Patch release. Client package added to convenience binaries.          | June 2016
+**[2.0.0](release-notes-2-0-0.html)** | Major feature enhancements.                                           | June 2016
+**[1.3.0](release-notes-1-3-0.html)** | First Apache (incubating) release.                                    | January 2016
 **[1.1.0](release-notes-1-1-0.html)** | Major feature enhancements. Non-Apache release.                       | April 2015
 **[1.0.1](release-notes-1-0-1.html)** | Defect repair. Non-Apache release.                                    | February 2015
 **[1.0.0](release-notes-1-0-0.html)** | Performance, stability, and new features. Non-Apache release.         | January 2015
