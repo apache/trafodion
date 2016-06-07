@@ -67,7 +67,7 @@
 1065 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating constraint $0~ConstraintName in metadata schema is not allowed.
 1066 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating index $0~TableName in metadata schema is not allowed.
 1067 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating module $0~String0 in metadata schema is not allowed.
-1068 ZZZZZ 99999 ADVANCED MAJOR DIALOUT An internal error was encountered: cannot create lock $0~TableName in metadata schema.
+1068 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Initialize authorization completed with warnings.
 1069 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Schema $0~SchemaName could not be dropped. $0~String0
 1070 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object $0~TableName could not be created. File error: $1~Int0.
 1071 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object $0~TableName could not be accessed. 

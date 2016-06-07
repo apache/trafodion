@@ -1475,6 +1475,8 @@ void Join::transformNode(NormWA & normWARef,
       // Check to see if we need to turn this into a TSJ.
       ValueIdSet neededInputs;
       neededInputs = child(1).getPtr()->getGroupAttr()->getCharacteristicInputs();
+      // is this ok? Our set of char. inputs may not yet be minimal,
+      // and could contain char. outputs from the left child.
       neededInputs -= getGroupAttr()->getCharacteristicInputs();
 
       ValueIdSet crossReferences;
@@ -1646,7 +1648,7 @@ void Join::pullUpPreds()
   // If outer/semi join then predicates from the right child go to
   // joinPred otherwise they go to the selectionPred.
   // ---------------------------------------------------------------------
-  if (isInnerNonSemiJoin())
+  if (isInnerNonSemiJoin() || getOperatorType() == REL_TSJ_FLOW)
     {
        selectionPred() += child(1)->getSelectionPred();
     }

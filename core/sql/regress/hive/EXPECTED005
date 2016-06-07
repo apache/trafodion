@@ -433,10 +433,10 @@ ID           CHAPTER                    ENGLISH                    TRANSLATOR
 >>
 >>select * from tbl_type;
 
-TINT    SM      I            BIG                   STR                        F                D                          T
-------  ------  -----------  --------------------  -------------------------  ---------------  -------------------------  --------------------------
+TINT    SM      I            BIG                   STR                        F                D                          T                           DT          VC
+------  ------  -----------  --------------------  -------------------------  ---------------  -------------------------  --------------------------  ----------  ----------
 
-   201     202          203                   204  two hundred                 2.0000000E+002   2.00000000000000000E+002  2022-02-02 22:22:22.222222
+   201     202          203                   204  two hundred                 2.0000000E+002   2.00000000000000000E+002  2022-02-02 22:22:22.222222  2022-02-02  varchar
 
 --- 1 row(s) selected.
 >>insert into tbl_type_temp select * from tbl_type;
@@ -444,10 +444,10 @@ TINT    SM      I            BIG                   STR                        F 
 --- 1 row(s) inserted.
 >>select * from tbl_type_temp;
 
-TINT    SM      I            BIG                   STR                        F                D                          T
-------  ------  -----------  --------------------  -------------------------  ---------------  -------------------------  --------------------------
+TINT    SM      I            BIG                   STR                        F                D                          T                           DT          VC
+------  ------  -----------  --------------------  -------------------------  ---------------  -------------------------  --------------------------  ----------  ----------
 
-   201     202          203                   204  two hundred                 2.0000000E+002   2.00000000000000000E+002  2022-02-02 22:22:22.222222
+   201     202          203                   204  two hundred                 2.0000000E+002   2.00000000000000000E+002  2022-02-02 22:22:22.222222  2022-02-02  varchar
 
 --- 1 row(s) selected.
 >>
@@ -709,5 +709,36 @@ A            B
           1            2
 
 --- 1 row(s) selected.
+>>
+>>-- purgedata of hive data
+>>cqd query_cache '0';
+
+--- SQL operation complete.
+>>purgedata hive.hive.thive;
+
+--- SQL operation complete.
+>>select * from hive.hive.thive;
+
+--- 0 row(s) selected.
+>>insert into hive.hive.thive values (10, 20);
+
+--- 1 row(s) inserted.
+>>select * from hive.hive.thive;
+
+A            B          
+-----------  -----------
+
+         10           20
+
+--- 1 row(s) selected.
+>>purgedata hive.hive.thive;
+
+--- SQL operation complete.
+>>purgedata hive.hive.thive;
+
+--- SQL operation complete.
+>>select * from hive.hive.thive;
+
+--- 0 row(s) selected.
 >>
 >>log;

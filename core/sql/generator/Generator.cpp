@@ -517,7 +517,8 @@ RelExpr * Generator::preGenCode(RelExpr * expr_node)
 	      // if internal query from executor for explain, enable aqr.
 	      const NAString * val =
 		ActiveControlDB()->getControlSessionValue("EXPLAIN");
-	      if ((val) && (*val == "ON"))
+	      if (((val) && (*val == "ON")) ||
+                  (exp_generator->getShowplan()))
 		{
 		  aqr = TRUE;
 		}
