@@ -38,6 +38,7 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
 * Convenience Binaries
     * [Installer][ins200]  -  [PGP][inpgp200] [MD5][inmd5200] [SHA1][insha200]
     * [Server][ser200]  -  [PGP][sepgp200] [MD5][semd5200] [SHA1][sesha200]
+    * Clients binary package not available, must be built from source code.
 * [Documentation](documentation.html#20x_Releases)
 
 [src200]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion-2.0.0-incubating-src.tar.gz
