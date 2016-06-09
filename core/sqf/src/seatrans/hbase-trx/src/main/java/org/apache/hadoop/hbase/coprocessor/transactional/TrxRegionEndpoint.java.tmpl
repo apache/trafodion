@@ -2184,7 +2184,7 @@ CoprocessorService, Coprocessor {
      }
      catch (Exception e){
         if (LOG.isTraceEnabled()) LOG.trace("deleteTlogEntries Exception in region: "
-           + regionInfo.getRegionNameAsString() + " getting scanner " + e );
+           + regionInfo.getRegionNameAsString() + " getting scanner ", e );
      }
 
      long count = 0L;
@@ -2224,11 +2224,13 @@ CoprocessorService, Coprocessor {
                        StringTokenizer st = new StringTokenizer(valueString, ",");
                        if (st.hasMoreElements()) {
                           String asnToken = st.nextElement().toString();
-                          String transidToken = st.nextElement().toString();
-                          String stateToken = st.nextElement().toString();
-                          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: deleteTlogEntries transidToken: "
-                                    + transidToken + " asnToken: " + asnToken);
+                          String transidToken = null;
+                          String stateToken = null;
                           if (Long.parseLong(asnToken) < lvAsn) {
+                             transidToken = st.nextElement().toString();
+                             stateToken = st.nextElement().toString();
+                             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: deleteTlogEntries transidToken: "
+                                    + transidToken + " asnToken: " + asnToken);
                              if ( (stateToken.contains("FORGOTTEN")) ||
                                   (stateToken.equals("COMMITTED") && (lvAgeCommitted)) ||
                                   (stateToken.equals("ABORTED") && (lvAgeCommitted))) {
@@ -2238,11 +2240,12 @@ CoprocessorService, Coprocessor {
 
                                 try {
                                    Delete d = new Delete(result.getRow());
+                                   d.setDurability(Durability.SKIP_WAL);
                                    m_Region.delete(d);
                                 }
                                 catch (Exception e) {
                                    LOG.warn("TrxRegionEndpoint coprocessor: deleteTlogEntries -"
-                                       + " txId " + transidToken + ", Executing delete caught an exception " + e);
+                                       + " txId " + transidToken + ", Executing delete caught an exception ", e);
                                    throw new IOException(e.toString());
                                 }
                                 count++;
@@ -2288,15 +2291,17 @@ CoprocessorService, Coprocessor {
                     + e.getMessage() + " " + stackTraceToString(e));
            t = e;
         }
-        if (scanner != null) {
-           try {
-              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: deleteTlogEntries - txId "
-                  + transId + ", closing the scanner, region is " + regionInfo.getRegionNameAsString());
-              scanner.close();
-           } catch(Exception e) {
-              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: deleteTlogEntries -  transaction id "
-                   + transId + ", Caught general exception " + e.getMessage() + " " + stackTraceToString(e));
-              ne = e;
+        finally {
+           if (scanner != null) {
+              try {
+                 if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: deleteTlogEntries - txId "
+                     + transId + ", closing the scanner, region is " + regionInfo.getRegionNameAsString());
+                 scanner.close();
+              } catch(Exception e) {
+                 if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: deleteTlogEntries -  transaction id "
+                      + transId + ", Caught general exception " + e.getMessage() + " " + stackTraceToString(e));
+                 ne = e;
+              }
            }
         }
      }
