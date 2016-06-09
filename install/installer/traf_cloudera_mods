@@ -198,6 +198,9 @@ curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
     "items": [ {
              "name":"dfs_namenode_acls_enabled",
              "value":"true"
+             }, {
+             "name":"fs_permissions_umask-mode",
+             "value":"0002"          
              } ]
 }' \
 $URL/api/v1/clusters/$CLUSTER_NAME/services/$HDFS/config > $LOCAL_WORKDIR/traf_hdfs_config_temp
