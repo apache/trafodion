@@ -1105,6 +1105,15 @@ public class HBaseClient {
       long estimatedTotalPuts = 0;
       boolean more = true;
 
+      // Make sure the config doesn't specify HBase bucket cache. If it does,
+      // then the CacheConfig constructor may fail with a Java OutOfMemory 
+      // exception because our JVM isn't configured with large enough memory.
+
+      String ioEngine = config.get(HConstants.BUCKET_CACHE_IOENGINE_KEY,null);
+      if (ioEngine != null) {
+          config.unset(HConstants.BUCKET_CACHE_IOENGINE_KEY); // delete the property
+      }
+
       // Access the file system to go directly to the table's HFiles.
       // Create a reader for the file to access the entry count stored
       // in the trailer block, and a scanner to iterate over a few

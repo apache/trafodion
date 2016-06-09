@@ -544,9 +544,8 @@ else
 fi
 
 #Add trafodion to the hbase group
-#testing to see if this will fix test failures
 #*********************************************
-sudo usermod -a -G $HBASE_GROUP $TRAF_USER
+$TRAF_PDSH sudo usermod -a -G $HBASE_GROUP $TRAF_USER
 #*********************************************
 
 # create working directories on all nodes
