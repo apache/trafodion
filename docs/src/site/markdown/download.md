@@ -12,144 +12,55 @@
   limitations under the 
   License.
 -->
-This page describes how you download and install a Trafodion evaluation environment. 
 
-Other information:
-
-* [Trafodion Provision Guide](http://trafodion.incubator.apache.org/docs/provisioning_guide/index.html): Complete provisioning documentation.
-* [Trafodion Contributor Guide](https://cwiki.apache.org/confluence/display/TRAFODION/Trafodion+Contributor+Guide): 
-How to set up a Trafodion build and development environment. (Use if you intend to help develop the Trafodion source code.)
-
-# Download
 The Trafodion end-user environment is installed using the Trafodion Installer, which operates on Trafodion binaries only.
 
-## 1.3.0 Binaries
+See release specific installation instructions in [Documentation](documentation.html).
 
+* Server installation is described in the Trafodion Provisioning Guide
+* Client installation is described in the Trafodion Client Installation Guide
+
+To build Trafodion from source code, see the [Trafodion Contributor Guide](https://cwiki.apache.org/confluence/display/TRAFODION/Trafodion+Contributor+Guide).
+
+# Download
+
+## 2.0.1
+
+* Coming Soon
+
+* [Release Notes](release-notes-2-0-1.html)
+* [Documentation](documentation.html#20x_Releases)
+
+## 2.0.0
+
+* [Release Notes](release-notes-2-0-0.html)
+* [Source Code Release][src200]  -  [PGP][pgp200] [MD5][md5200] [SHA1][sha200]
+* Convenience Binaries
+    * [Installer][ins200]  -  [PGP][inpgp200] [MD5][inmd5200] [SHA1][insha200]
+    * [Server][ser200]  -  [PGP][sepgp200] [MD5][semd5200] [SHA1][sesha200]
+    * Clients binary package not available, must be built from source code.
+* [Documentation](documentation.html#20x_Releases)
+
+[src200]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion-2.0.0-incubating-src.tar.gz
+[pgp200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion-2.0.0-incubating-src.tar.gz.asc
+[md5200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion-2.0.0-incubating-src.tar.gz.md5
+[sha200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion-2.0.0-incubating-src.tar.gz.sha
+[ins200]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_installer-2.0.0-incubating.tar.gz
+[inpgp200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_installer-2.0.0-incubating.tar.gz.asc
+[inmd5200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_installer-2.0.0-incubating.tar.gz.md5
+[insha200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_installer-2.0.0-incubating.tar.gz.sha
+[ser200]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_server-2.0.0-incubating.tar.gz
+[sepgp200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_server-2.0.0-incubating.tar.gz.asc
+[semd5200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_server-2.0.0-incubating.tar.gz.md5
+[sesha200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_server-2.0.0-incubating.tar.gz.sha
+
+## 1.3.0
+
+* [Release Notes](release-notes-1-3-0.html)
+* [Source Code Release](http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-1.3.0-incubating/apache-trafodion-1.3.0-incubating-src.tar.gz) -  [PGP](https://www.apache.org/dist/incubator/trafodion/trafodion-1.3.0-incubating/apache-trafodion-1.3.0-incubating-src.tar.gz.asc) [MD5](http://www.apache.org/dist/incubator/trafodion/apache-trafodion-1.3.0-incubating/apache-trafodion-1.3.0-incubating-src.tar.gz.md5) [SHA1](http://www.apache.org/dist/incubator/trafodion/apache-trafodion-1.3.0-incubating/apache-trafodion-1.3.0-incubating-src.tar.gz.sha)
 * [log4c++ RPM](http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/log4cxx-0.10.0-13.el6.x86_64.rpm)
-* [Trafodion Installer](http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-installer-1.3.0-incubating-bin.tar.gz)
-* [Trafodion Server](http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-1.3.0-incubating-bin.tar.gz)
-* [Trafodion Clients](http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-clients-1.3.0-incubating-bin.tar.gz) (JDBC, odb, ODBC, trafci)
+* [Documentation](documentation.html#130_Release)
 
-# Install
+* * * *
 
-The following steps installs a Trafodion evaluation on a 64-bit RHEL/CentOS Hadoop environment running on of the following
-Hadoop distributions:
-
-## Prerequisites
-Trafodion is installed as an add-on to an existing Hadoop environment. Currently, one of the following Hadoop distributions is **required**:
-
-* Cloudera CDH 5.2
-* Cloudera CDH 5.3
-* Hortonworks HDP 2.2
-
-The following Hadoop services **must be** in a STARTED state and fully functional.
-
-* HDFS
-* YARN with MRv2
-* ZooKeeper
-* HBase
-* Hive (optional)
-
-## Create Provisioning User
-
-Create a Linux user on the Hadoop system that you're installing Trafodion on with the following characteristics:
-
-* Privileges to run **`sudo`** with **`root`** access levels.
-* Passwordless ssh access from the Provisioning Node to all other nodes in the cluster.
-* Not named **`trafodion`**.
-
-Perform the remaining steps in this procedure using the Provisioning User.
-
-## Download Binaries
-
-Download all binaries listed above except the **Trafodion Clients** into a diretory of your choosing
-
-**Example**
-
-```
-mkdir $HOME/trafodion
-mkdir $HOME/trafodion/downloads
-cd $HOME/trafodion/downloads
-wget <log4c++ RPM>
-wget <Trafodion Installer>
-wget <Trafodion Server>
-```
-
-## Install log4c++
-
-Use **`yum install`** to install the `log4c++` RPM on all nodes on all nodes in your Hadoop cluster.
-
-## Unpack Trafodion Installer
-
-Use **`tar -zxf`** to unpack the Trafodion Installer.
-
-**Example**
-
-```
-cd $HOME/trafodion/downloads
-tar -zxf apache-trafodion-installer-1.3.0-incubating-bin.tar.gz -C $HOME/trafodion
-```
-
-## Create Configuration File
-
-The Trafodion Installer uses a configuration file that describes your Hadoop environment.
-
-**Copy Configuration Template File**
-
-```
-cd $HOME/trafodion/installer
-cp trafodion_config_default my_config
-```
-
-**Edit Configuration File**
-
-Use the embedded guidance in the configuration file to define each of these settings:
-
-|-------------------|----------------------------------------------|-------------------|--------------------------------|--------------------------------
-**`LOCAL_WORKDIR`** | **`TRAF_USER_PASSWORD`** (change if desired) | **`NODE_LIST`**   | **`node_count`**               | **`MY_NODES`**
-**`JAVA_HOME`**     | **`TRAF_PACKAGE`**                           | **`HADOOP_TYPE`** | **`URL`**                      | **`ADMIN`**
-**`PASSWORD`**      | **`CLUSTER_NAME`**                           | **`SQ_ROOT`**     | **`START`** (set to **`"Y"`**) | **`INIT_TRAFODION`** (set to **`"Y"`**)
-
-## Run `trafodion_install`
-
-You'll use the Trafodion Installer (**`trafodion_install`**) to create the Trafodion Runtime User (**`trafodion`**), 
-modify your system and Hadoop environment, restart ZooKeeper, HDFS, and HBAse to activate configuration changes, 
-and install/starts Trafodion.
-
-**Example**
-
-```
-cd $HOME/trafodion/installer
-./trafodion_install --accept_license --config_file my_config
-```
-
-The Trafodion Installer performs all the operations required to install and start Trafodion. Wait for it to complete before
-continuing to the next step.
-
-## Verify Installation
-
-Perform this step as the **`trafodion`** user.
-
-First, check the status of the Trafodion environment.
-
-**Example**
-
-```
-sudo su trafodion
-swstatus
-```
-
-Second, run a simple smoke test using **`sqlci`**. Use the following commands:
-
-```
-sqlci
->> get schemas;
->> create table table1 (a int);
->> invoke table1;
->> insert into table1 values (1), (2), (3), (4);
->> select * from table1;
->> drop table table1;
->> exit;
-```
-
-The Trafodion installation is complete. Next, follow the steps in [Quick Start](quickstart.html) to get started with Trafodion.
+Note: when downloading from a mirror please check the [md5sum](http://www.apache.org/dev/release-signing#md5) and verify the [OpenPGP](http://www.apache.org/dev/release-signing#openpgp) compatible signature from the main [Apache](http://www.apache.org/) site. Links are provided above (next to the release download link). This [KEYS](http://www.apache.org/dist/incubator/trafodion/KEYS) file contains the public keys used for signing release. It is recommended that (when possible) a [web of trust](http://www.apache.org/dev/release-signing#web-of-trust) is used to confirm the identity of these keys. For more information, please see the [Apache Release FAQ](http://www.apache.org/dev/release.html).
