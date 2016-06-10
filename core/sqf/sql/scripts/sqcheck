@@ -149,6 +149,8 @@ function getDcsInfo {
  fi
 }
 
+jpscmd=$JAVA_HOME/bin/jps
+tmpjps=/tmp/tmpjps-$USER.log
 begin_time_seconds=$(date +%s)
 
 declare -i max_checks
