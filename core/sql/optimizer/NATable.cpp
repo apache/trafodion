@@ -3534,7 +3534,7 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
     {
       Int32 len = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
       Int32 lenInBytes = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
-      if( lenInBytes != 32000 ) 
+      if( lenInBytes != 31999 ) 
         len = lenInBytes;
       NAString hiveCharset =
         ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_CHARSET);
