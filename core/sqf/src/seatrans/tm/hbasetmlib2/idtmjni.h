@@ -46,7 +46,7 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_regionserver_transactional_I
  * Method:    native_string_to_id
  * Signature: (IJLjava/lang/StringjbyteArray;I)I
  */
-JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_regionserver_transactional_IdTm_native_1string_1to_1id (JNIEnv *, jobject, jint, jobject, jbyteArray);
+JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_regionserver_transactional_IdTm_native_1string_1to_1id (JNIEnv *, jobject, jint, jobject, jbyteArray, jint);
 
 /*
  * Class:     org_apache_hadoop_hbase_regionserver_transactional_IdTm

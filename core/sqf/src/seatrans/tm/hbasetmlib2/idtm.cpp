@@ -235,21 +235,16 @@ jint Java_org_apache_hadoop_hbase_regionserver_transactional_IdTm_native_1id_1to
 //
 // return file error
 //
-jint Java_org_apache_hadoop_hbase_regionserver_transactional_IdTm_native_1string_1to_1id(JNIEnv *pp_j_env, jobject, jint j_timeout, jobject j_id, jbyteArray j_id_string) {
+jint Java_org_apache_hadoop_hbase_regionserver_transactional_IdTm_native_1string_1to_1id(JNIEnv *pp_j_env, jobject, jint j_timeout, jobject j_id, jbyteArray j_id_string, jint j_len) {
     int            lv_ferr;
     int            len;
     unsigned long  lv_id = 0L;
     char           la_ascii_time[MAX_DATE_TIME_BUFF_LEN * 2];
-    char          *input;
+    jbyte         *input;
     jclass         lv_id_class;
     jfieldID       lv_id_val;
 
     lv_ferr = do_init(pp_j_env);
-
-    if(strlen(la_ascii_time) > MAX_DATE_TIME_BUFF_LEN) {
-       printf("cli: string_to_id() input string is too long %s\n", la_ascii_time);
-       return XZFIL_ERR_BUFTOOSMALL;
-    }
 
     if (lv_ferr == XZFIL_ERR_OK) {
        len = (int) j_len;

@@ -124,6 +124,11 @@ public class IdTm implements IdTmCb {
               LOG.error("native_id returned: " + err + " Throwing IdTmException");
               throw new IdTmException("ferr=" + err);
            }
+           if (id.val == 0) {
+              LOG.error("native_id returned id: " + id.val + " err: " + err + ", Throwing IdTmException");
+              throw new IdTmException("ferr=" + err);
+           }
+
         } catch (Throwable t) {
            LOG.error("id threw:", t);
            throw new IdTmException("id threw:" + t);
@@ -141,7 +146,7 @@ public class IdTm implements IdTmCb {
     public void idToStr(int timeout, long id, byte [] idString) throws IdTmException {
       if (LOG.isDebugEnabled()) LOG.debug("idToStr begin, id: " + Long.toHexString(id));
 
-        try {
+      try {
            int err = native_id_to_string(timeout, id, idString);
            if (err != 0) {
               LOG.error("native_id_to_string returned: " + err + " Throwing IdTmException");
@@ -161,8 +166,8 @@ public class IdTm implements IdTmCb {
      * @param idString string id to convert
      * @exception IdTmException exception
      */
-    public void strToId(int timeout, IdTmId id, byte [] idString) throws IdTmException {
-        if (LOG.isDebugEnabled()) LOG.debug("strToId begin " + Bytes.toString(idString));
+    public void strToId(int timeout, IdTmId id, String idString) throws IdTmException {
+        if (LOG.isDebugEnabled()) LOG.debug("strToId begin " + idString);
 
         try {
            int err = native_string_to_id(timeout, id, Bytes.toBytes(idString), idString.length());
@@ -234,7 +239,7 @@ public class IdTm implements IdTmCb {
      * @param id id
      * @return file error
      */
-    private native int native_string_to_id(int timeout, IdTmId id, byte [] idString);
+    private native int native_string_to_id(int timeout, IdTmId id, byte [] idString, int len);
 
     /**
      * ping server
