@@ -4844,8 +4844,7 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                     "cast('' as varchar(128)) INDEX_QUALIFIER, " // not support
                     "cast('' as varchar(128)) INDEX_NAME, "
                     "cast(0 as smallint) TYPE, " // not support
-                    "cast((case when (trim(co.COLUMN_CLASS) <> 'S') then co.column_number+1 else "
-                        "co.column_number end) as smallint) ORDINAL_POSITION, "
+                    "cast(co.column_number as smallint) ORDINAL_POSITION, "
                     "cast(trim(co.COLUMN_NAME) as varchar(128)) COLUMN_NAME, "
                     "cast('' as char(1)) ASC_OR_DES, "
                     "cast(sb.rowcount as integer) CARDINALITY, "
@@ -4857,7 +4856,9 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                     "TRAFODION.%s.sb_histograms sb "
                     "where "
                     "ob.OBJECT_UID = co.OBJECT_UID "
+                    "and co.OBJECT_UID = sb.TABLE_UID "
                     "and co.COLUMN_NUMBER = sb.COLUMN_NUMBER "
+                    "and sb.colcount = 1 "
                     "and (ob.SCHEMA_NAME = '%s' or trim(ob.SCHEMA_NAME) LIKE '%s' ESCAPE '\\')  "
                     "and (ob.OBJECT_NAME = '%s' or trim(ob.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
                     "and (ob.OBJECT_TYPE in ('BT', 'VI')) "
