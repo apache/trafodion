@@ -24554,6 +24554,43 @@ table_definition : create_table_start_tokens ddl_qualified_name
                      delete $1; /*TableTokens*/
 		     delete $2 /*ddl_qualified_name*/;
 		   }
+
+table_definition : create_table_start_tokens ddl_qualified_name
+                        like_definition
+	  	   {
+                     $1->setOptions(TableTokens::OPT_NONE);
+		     QualifiedName * qn;
+                     if ($1->isVolatile())
+                       qn = processVolatileDDLName($2, TRUE, TRUE);
+		     else
+                       qn = processVolatileDDLName($2, FALSE, FALSE);
+		     if (! qn)
+                       YYABORT;
+
+		     StmtDDLCreateTable *pNode =
+		       new (PARSERHEAP())
+		       StmtDDLCreateTable(
+			    *qn /*ddl_qualified_name*/,
+			    $3 /*like_definition*/,
+			    NULL,
+			    NULL,
+			    NULL,
+			    PARSERHEAP());
+
+                     $1->setTableTokens(pNode);
+		     pNode->synthesize();
+
+		     if (ParNameCTLocListPtr)
+		       {
+			 delete ParNameCTLocListPtr;
+			 ParNameCTLocListPtr = NULL;
+		       }
+
+		     $$ = pNode;
+                     delete $1; /*TableTokens*/
+		     delete $2 /*ddl_qualified_name*/;
+		   }
+
 		 | TOK_CREATE special_table_name
                         table_definition_body
                         optional_create_table_attribute_list
@@ -24909,7 +24946,6 @@ create_table_as_token: TOK_AS
 
 /* type pElemDDL */
 table_definition_body : table_element_list
-                      | like_definition
                       | external_table_definition
 
 /* type pElemDDL */
@@ -25901,6 +25937,14 @@ like_option : TOK_WITHOUT TOK_CONSTRAINTS
                                 {
                                   $$ = new (PARSERHEAP())
 				    ElemDDLLikeOptWithoutDivision();
+                                }
+                      | salt_by_clause
+                                {
+                                  ElemDDLSaltOptionsClause * saltClause = 
+                                    $1->castToElemDDLSaltOptionsClause();
+                                  ComASSERT($1->castToElemDDLSaltOptionsClause());
+                                  $$ = new (PARSERHEAP())
+                                    ElemDDLLikeSaltClause(saltClause);
                                 }
 
 /* type pElemDDL */

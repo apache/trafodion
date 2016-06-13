@@ -1,0 +1,139 @@
+-- test for CREATE TABLE LIKE
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+set schema $$TEST_SCHEMA$$;
+log LOG040 clear;
+
+-- set-up
+
+?section set_up
+
+create table t040salt(a int not null, b int not null, c int, primary key (a,b))
+ salt using 4 partitions;
+
+showddl t040salt;
+
+create table t040nosalt(a int not null, b int not null, c int, primary key (a,b));
+
+showddl t040nosalt;
+
+-- positive tests
+
+?section positive_tests
+
+create table t040salt1 like t040salt without salt;
+
+showddl t040salt1;
+
+create table t040salt5 like t040salt salt using 5 partitions;
+
+showddl t040salt5;
+
+create table t040salt6 like t040salt salt using 6 partitions on (a);
+
+showddl t040salt6;
+
+create table t040salt7 like t040salt salt using 7 partitions on (b);
+
+showddl t040salt7;
+
+create table t040salt8 like t040salt salt using 8 partitions on (a,b);
+
+showddl t040salt8;
+
+create table t040nosalt1 like t040nosalt without salt;
+
+showddl t040nosalt1;
+
+create table t040nosalt4 like t040nosalt salt using 4 partitions;
+
+showddl t040nosalt4;
+
+create table t040saltsame like t040salt;
+
+showddl t040saltsame;
+
+create table t040nosaltsame like t040nosalt;
+
+showddl t040nosaltsame;
+
+-- negative tests
+
+?section negative_tests
+
+-- non-key column, should fail
+create table t040saltbad1 like t040salt salt using 5 partitions on (c);
+
+-- non-existent column, should fail
+create table t040saltbad2 like t040salt salt using 5 partitions on (d);
+
+-- should fail with error 3154
+create table t040saltbad3 like t040salt without salt salt using 4 partitions;
+
+-- should fail, duplicate clauses
+create table t040saltbad4 like t040salt without salt without salt;
+
+-- and now an extravaganza of errors
+create table t040saltbad5 like t040salt salt using 4 partitions without salt salt using 7 partitions;
+
+-- syntax error; clause not supported with LIKE
+create table t040saltbad6 like t040salt store by (b);
+
+?section clean_up
+
+-- clean up
+
+drop table if exists t040salt;
+
+drop table if exists t040nosalt;
+
+drop table if exists t040salt1;
+
+drop table if exists t040salt5;
+
+drop table if exists t040salt6;
+
+drop table if exists t040salt7;
+
+drop table if exists t040salt8;
+
+drop table if exists t040nosalt1;
+
+drop table if exists t040nosalt4;
+
+drop table if exists t040saltsame;
+
+drop table if exists t040nosaltsame;
+
+drop table if exists t040saltbad1;
+
+drop table if exists t040saltbad2;
+
+drop table if exists t040saltbad3;
+
+drop table if exists t040saltbad4;
+
+drop table if exists t040saltbad5;
+
+drop table if exists t040saltbad6;
+
