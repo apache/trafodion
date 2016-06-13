@@ -1,7 +1,19 @@
 >>
+>>?section set_up
+>>
 >>-- set-up
 >>
->>?section set_up
+>>drop schema if exists t040sch cascade;
+
+--- SQL operation complete.
+>>
+>>create schema t040sch;
+
+--- SQL operation complete.
+>>
+>>set schema t040sch;
+
+--- SQL operation complete.
 >>
 >>create table t040salt(a int not null, b int not null, c int, primary key (a,b))
 +> salt using 4 partitions;
@@ -10,7 +22,7 @@
 >>
 >>showddl t040salt;
 
-CREATE TABLE TRAFODION.SCH.T040SALT
+CREATE TABLE TRAFODION.T040SCH.T040SALT
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -28,7 +40,7 @@ CREATE TABLE TRAFODION.SCH.T040SALT
 >>
 >>showddl t040nosalt;
 
-CREATE TABLE TRAFODION.SCH.T040NOSALT
+CREATE TABLE TRAFODION.T040SCH.T040NOSALT
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -39,9 +51,9 @@ CREATE TABLE TRAFODION.SCH.T040NOSALT
 
 --- SQL operation complete.
 >>
->>-- positive tests
->>
 >>?section positive_tests
+>>
+>>-- positive tests
 >>
 >>create table t040salt1 like t040salt without salt;
 
@@ -49,7 +61,7 @@ CREATE TABLE TRAFODION.SCH.T040NOSALT
 >>
 >>showddl t040salt1;
 
-CREATE TABLE TRAFODION.SCH.T040SALT1
+CREATE TABLE TRAFODION.T040SCH.T040SALT1
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -66,7 +78,7 @@ CREATE TABLE TRAFODION.SCH.T040SALT1
 >>
 >>showddl t040salt5;
 
-CREATE TABLE TRAFODION.SCH.T040SALT5
+CREATE TABLE TRAFODION.T040SCH.T040SALT5
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -84,7 +96,7 @@ CREATE TABLE TRAFODION.SCH.T040SALT5
 >>
 >>showddl t040salt6;
 
-CREATE TABLE TRAFODION.SCH.T040SALT6
+CREATE TABLE TRAFODION.T040SCH.T040SALT6
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -103,7 +115,7 @@ CREATE TABLE TRAFODION.SCH.T040SALT6
 >>
 >>showddl t040salt7;
 
-CREATE TABLE TRAFODION.SCH.T040SALT7
+CREATE TABLE TRAFODION.T040SCH.T040SALT7
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -122,7 +134,7 @@ CREATE TABLE TRAFODION.SCH.T040SALT7
 >>
 >>showddl t040salt8;
 
-CREATE TABLE TRAFODION.SCH.T040SALT8
+CREATE TABLE TRAFODION.T040SCH.T040SALT8
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -140,7 +152,7 @@ CREATE TABLE TRAFODION.SCH.T040SALT8
 >>
 >>showddl t040nosalt1;
 
-CREATE TABLE TRAFODION.SCH.T040NOSALT1
+CREATE TABLE TRAFODION.T040SCH.T040NOSALT1
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -157,7 +169,7 @@ CREATE TABLE TRAFODION.SCH.T040NOSALT1
 >>
 >>showddl t040nosalt4;
 
-CREATE TABLE TRAFODION.SCH.T040NOSALT4
+CREATE TABLE TRAFODION.T040SCH.T040NOSALT4
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -175,7 +187,7 @@ CREATE TABLE TRAFODION.SCH.T040NOSALT4
 >>
 >>showddl t040saltsame;
 
-CREATE TABLE TRAFODION.SCH.T040SALTSAME
+CREATE TABLE TRAFODION.T040SCH.T040SALTSAME
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -193,7 +205,7 @@ CREATE TABLE TRAFODION.SCH.T040SALTSAME
 >>
 >>showddl t040nosaltsame;
 
-CREATE TABLE TRAFODION.SCH.T040NOSALTSAME
+CREATE TABLE TRAFODION.T040SCH.T040NOSALTSAME
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -204,9 +216,9 @@ CREATE TABLE TRAFODION.SCH.T040NOSALTSAME
 
 --- SQL operation complete.
 >>
->>-- negative tests
->>
 >>?section negative_tests
+>>
+>>-- negative tests
 >>
 >>-- non-key column, should fail
 >>create table t040saltbad1 like t040salt salt using 5 partitions on (c);
@@ -260,79 +272,4 @@ create table t040saltbad6 like t040salt store by (b);
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>?section clean_up
->>
->>-- clean up
->>
->>drop table if exists t040salt;
-
---- SQL operation complete.
->>
->>drop table if exists t040nosalt;
-
---- SQL operation complete.
->>
->>drop table if exists t040salt1;
-
---- SQL operation complete.
->>
->>drop table if exists t040salt5;
-
---- SQL operation complete.
->>
->>drop table if exists t040salt6;
-
---- SQL operation complete.
->>
->>drop table if exists t040salt7;
-
---- SQL operation complete.
->>
->>drop table if exists t040salt8;
-
---- SQL operation complete.
->>
->>drop table if exists t040nosalt1;
-
---- SQL operation complete.
->>
->>drop table if exists t040nosalt4;
-
---- SQL operation complete.
->>
->>drop table if exists t040saltsame;
-
---- SQL operation complete.
->>
->>drop table if exists t040nosaltsame;
-
---- SQL operation complete.
->>
->>drop table if exists t040saltbad1;
-
---- SQL operation complete.
->>
->>drop table if exists t040saltbad2;
-
---- SQL operation complete.
->>
->>drop table if exists t040saltbad3;
-
---- SQL operation complete.
->>
->>drop table if exists t040saltbad4;
-
---- SQL operation complete.
->>
->>drop table if exists t040saltbad5;
-
---- SQL operation complete.
->>
->>drop table if exists t040saltbad6;
-
---- SQL operation complete.
->>
->>exit;
-
-End of MXCI Session
-
+>>log;

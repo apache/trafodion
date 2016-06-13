@@ -323,8 +323,7 @@ ALTER TABLE name alter-action
 
 alter-action is:
 
-     ADD [COLUMN] column-definition
-   | ADD IF NOT EXISTS column-definition
+     ADD [IF NOT EXISTS][COLUMN] column-definition
    | ADD [CONSTRAINT constraint-name] table-constraint
    | DROP CONSTRAINT constraint-name [RESTRICT]
    | RENAME TO new-name [CASCADE]
@@ -2234,7 +2233,7 @@ this statement, AUTOCOMMIT must be turned ON (the default) for the
 session.
 
 ```
-CREATE [VOLATILE] TABLE IF NOT EXISTS table
+CREATE [VOLATILE] TABLE [IF NOT EXISTS] table
     table-spec
     [SALT USING num PARTITIONS [ON (column[, column]...)]]
     [STORE BY {PRIMARY KEY | (key-column-list)}]
@@ -2242,7 +2241,7 @@ CREATE [VOLATILE] TABLE IF NOT EXISTS table
     [LOAD IF EXISTS | NO LOAD]
     [AS select-query]
 
-CREATE [VOLATILE] TABLE IF NOT EXISTS table
+CREATE [VOLATILE] TABLE [IF NOT EXISTS] table
     like-spec
     [SALT USING num PARTITIONS [ON (column[, column]...)]]
 

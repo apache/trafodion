@@ -21,12 +21,17 @@
 --
 -- @@@ END COPYRIGHT @@@
 
-set schema $$TEST_SCHEMA$$;
 log LOG040 clear;
+
+?section set_up
 
 -- set-up
 
-?section set_up
+drop schema if exists t040sch cascade;
+
+create schema t040sch;
+
+set schema t040sch;
 
 create table t040salt(a int not null, b int not null, c int, primary key (a,b))
  salt using 4 partitions;
@@ -37,9 +42,9 @@ create table t040nosalt(a int not null, b int not null, c int, primary key (a,b)
 
 showddl t040nosalt;
 
--- positive tests
-
 ?section positive_tests
+
+-- positive tests
 
 create table t040salt1 like t040salt without salt;
 
@@ -77,9 +82,9 @@ create table t040nosaltsame like t040nosalt;
 
 showddl t040nosaltsame;
 
--- negative tests
-
 ?section negative_tests
+
+-- negative tests
 
 -- non-key column, should fail
 create table t040saltbad1 like t040salt salt using 5 partitions on (c);
@@ -99,41 +104,12 @@ create table t040saltbad5 like t040salt salt using 4 partitions without salt sal
 -- syntax error; clause not supported with LIKE
 create table t040saltbad6 like t040salt store by (b);
 
+log;
+
 ?section clean_up
 
 -- clean up
 
-drop table if exists t040salt;
+drop schema if exists t040sch cascade;
 
-drop table if exists t040nosalt;
-
-drop table if exists t040salt1;
-
-drop table if exists t040salt5;
-
-drop table if exists t040salt6;
-
-drop table if exists t040salt7;
-
-drop table if exists t040salt8;
-
-drop table if exists t040nosalt1;
-
-drop table if exists t040nosalt4;
-
-drop table if exists t040saltsame;
-
-drop table if exists t040nosaltsame;
-
-drop table if exists t040saltbad1;
-
-drop table if exists t040saltbad2;
-
-drop table if exists t040saltbad3;
-
-drop table if exists t040saltbad4;
-
-drop table if exists t040saltbad5;
-
-drop table if exists t040saltbad6;
 
