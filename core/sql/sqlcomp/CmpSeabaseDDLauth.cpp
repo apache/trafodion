@@ -1000,19 +1000,6 @@ void CmpSeabaseDDLuser::alterUser (StmtDDLAlterUser * pNode)
     StmtDDLAlterUser::AlterUserCmdSubType cmdSubType = pNode->getAlterUserCmdSubType();
     verifyAuthority(cmdSubType == StmtDDLAlterUser::SET_EXTERNAL_NAME);
 
-    // Verify that that user name being altered is not a reserved name.
-    // Altering of external name for DB__ROOT is the exception.
-    if (isAuthNameReserved(pNode->getDatabaseUsername()))
-    {
-      if (cmdSubType != StmtDDLAlterUser::SET_EXTERNAL_NAME ||
-          !(pNode->getDatabaseUsername() == ComUser::getRootUserName()))
-      {
-        *CmpCommon::diags() << DgSqlCode(-CAT_AUTH_NAME_RESERVED)
-                            << DgString0(pNode->getDatabaseUsername().data());
-        return;
-      }
-    }
-
     // read user details from the AUTHS table
     const NAString dbUserName(pNode->getDatabaseUsername());
     CmpSeabaseDDLauth::AuthStatus retcode = getUserDetails(dbUserName);
@@ -1029,49 +1016,60 @@ void CmpSeabaseDDLuser::alterUser (StmtDDLAlterUser * pNode)
     NAString setClause("set ");
     switch (cmdSubType)
     {
-       case StmtDDLAlterUser::SET_EXTERNAL_NAME:
-       {
-          // Make sure external user has not already been registered
-          if (authExists(pNode->getExternalUsername(), true))
-          {
-            *CmpCommon::diags() << DgSqlCode(-CAT_LDAP_USER_ALREADY_EXISTS)
-                                << DgString0(pNode->getExternalUsername().data());
-             return;
-          }
-          // unexpected error occurred - ?
-          if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
-            return;
+      case StmtDDLAlterUser::SET_EXTERNAL_NAME:
+      {
+        // If authExtName already set to specified name, we are done
+        if (getAuthExtName() == pNode->getExternalUsername()) 
+          return;
 
-          DBUserAuth::AuthenticationConfiguration 
-            configurationNumber = DBUserAuth::DefaultConfiguration;
-          DBUserAuth::AuthenticationConfiguration 
-            foundConfigurationNumber = DBUserAuth::DefaultConfiguration;
+        // Make sure external user has not already been registered
+        if (authExists(pNode->getExternalUsername(), true))
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_LDAP_USER_ALREADY_EXISTS)
+                              << DgString0(pNode->getExternalUsername().data());
+           return;
+        }
+        // unexpected error occurred - ?
+        if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
+          return;
 
-          // Verify that the external user exists in configured identity store
-          if (!validateExternalUsername(pNode->getExternalUsername().data(),
-                                        configurationNumber,
-                                        foundConfigurationNumber))
-             return;
+        DBUserAuth::AuthenticationConfiguration 
+          configurationNumber = DBUserAuth::DefaultConfiguration;
+        DBUserAuth::AuthenticationConfiguration 
+          foundConfigurationNumber = DBUserAuth::DefaultConfiguration;
 
-          setAuthExtName(pNode->getExternalUsername());
-          setClause += "auth_ext_name = '";
-          setClause += getAuthExtName();
-          setClause += "'";
-          break;
-       }
+        // Verify that the external user exists in configured identity store
+        if (!validateExternalUsername(pNode->getExternalUsername().data(),
+                                      configurationNumber,
+                                      foundConfigurationNumber))
+          return;
 
-       case StmtDDLAlterUser::SET_IS_VALID_USER:
-       {
-          setAuthValid(pNode->isValidUser());
-          setClause += (isAuthValid()) ? "auth_is_valid = 'Y'" : "auth_is_valid = 'N'";
-          break;
-       }
+        setAuthExtName(pNode->getExternalUsername());
+        setClause += "auth_ext_name = '";
+        setClause += getAuthExtName();
+        setClause += "'";
+        break;
+     }
 
-       default:
-       {
-         *CmpCommon::diags() << DgSqlCode (-CAT_UNSUPPORTED_COMMAND_ERROR );
-         return;
-       }
+      case StmtDDLAlterUser::SET_IS_VALID_USER:
+      {
+        if (isAuthNameReserved(getAuthDbName()))
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_AUTH_NAME_RESERVED)
+                              << DgString0(getAuthDbName().data());
+          return;
+        }
+
+        setAuthValid(pNode->isValidUser());
+        setClause += (isAuthValid()) ? "auth_is_valid = 'Y'" : "auth_is_valid = 'N'";
+        break;
+      }
+
+      default:
+      {
+        *CmpCommon::diags() << DgSqlCode (-CAT_UNSUPPORTED_COMMAND_ERROR );
+        return;
+      }
     }
     updateRow(setClause);
   }

@@ -634,6 +634,7 @@ public:
   // --------------------------------------------------------------------
   const ValueIdSet &getOuterRefs() const	{ return outerRefs_; }
   void addOuterRef(ValueId vid) 		{ outerRefs_.insert(vid); }
+  void removeOuterRefs(ValueIdSet vids)         { outerRefs_ -= vids; }
 
   // --------------------------------------------------------------------
   // mergeOuterRefs() is called by the parent BindScope to merge the

@@ -85,9 +85,7 @@ select * from t013t1;
 
 create volatile index t013t1i2 on t013t1 (b);
 
-#ifndef SEABASE_REGRESS
 update statistics for table t013t1 on every column;
-#endif
 
 select * from t013_sch.t013t1;
 
@@ -147,10 +145,8 @@ select * from $$TEST_CATALOG$$.volatile_schema_a.t;
 drop table volatile_schema_a.t;
 drop table $$TEST_CATALOG$$.volatile_schema_a.t;
 
-#ifndef SEABASE_REGRESS
 update statistics for table volatile_schema_a.t on every column;
 update statistics for table $$TEST_CATALOG$$.volatile_schema_a.t on every column;
-#endif
 
 -- cannot create volatile index on regular tables and vica-versa
 create volatile index tempi on $$TEST_CATALOG$$.t013_sch.t013t1(a);

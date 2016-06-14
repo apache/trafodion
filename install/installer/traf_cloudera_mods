@@ -335,7 +335,6 @@ restart_info=$(curl -k -X POST -u $ADMIN:$PASSWORD \
     $URL/api/v1/clusters/$CLUSTER_NAME/commands/restart)
 echo $restart_info
 command_id=$(echo $restart_info | grep id | awk '{print $4}' | sed -e 's@,@@' )
-echo "***DEBUG: Cloudera command_id=$command_id"
 
 # poll until restart is completed as a restart can take a while
 active=1

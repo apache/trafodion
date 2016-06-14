@@ -275,7 +275,8 @@ void SessionDefaults::setIsoMappingName(const char * attrValue, Lng32 attrValueL
     }
   
   isoMappingName_ = new(heap_) char[attrValueLen + 1];
-  strcpy(isoMappingName_, attrValue);
+  strncpy(isoMappingName_, attrValue, attrValueLen);
+  isoMappingName_[attrValueLen] = '\0';
   
   // upcase isoMappingName_
   str_cpy_convert(isoMappingName_, isoMappingName_, attrValueLen, 1);
@@ -749,6 +750,8 @@ static const QueryString cqdInfo[] =
   {"unique_hash_joins"}, {"OFF"}
 , {"transform_to_sidetree_insert"}, {"OFF"}
 , {"METADATA_CACHE_SIZE"}, {"0"}
+, {"QUERY_CACHE"}, {"0"}
+, {"TRAF_RELOAD_NATABLE_CACHE"}, {"ON"}
 };
 
 static const AQRInfo::AQRErrorMap aqrErrorMap[] = 
@@ -779,6 +782,10 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
 
   // parallel purgedata failed
   AQREntry(   8022,      0,      3,    60,      0,   0, "",    0,     1),
+
+  // hive data modification timestamp mismatch.
+  // query will be AQR'd and hive metadata will be reloaded.
+  AQREntry(   8436,      0,      1,     0,      0,   2, "04:05",  0,     0),
 
   // FS memory errors
   AQREntry(   8550,     30,      1,    60,      0,   0, "",    0,     0),

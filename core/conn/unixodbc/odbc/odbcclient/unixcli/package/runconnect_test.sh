@@ -1,3 +1,4 @@
+#!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,28 +20,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-[ODBC]
-traceFlags              = ERROR
-TraceStart              = 0
-TraceFile               = tracefile.log
-MaxTraceFileSize        = 1024
+g++ -g connect_test.cpp -L${MY_SQROOT}/export/lib64 -I/usr/include/odbc -ltrafodbc64 -o connect_test
 
-[ODBC Data Sources]
-Default_DataSource      =    TRAFODBC
-
-DataSourceName          = Driver
-
-[DataSourceName]
-Driver                  = TRAFODBC
-
-[Default_DataSource]
-Description                 = Default Data Source
-Catalog                     = TRAFODION
-Schema                      = SEABASE
-DataLang                    = 0
-FetchBufferSize             = SYSTEM_DEFAULT
-Server                      = TCP:localhost:23400
-SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
-SQL_LOGIN_TIMEOUT           = SYSTEM_DEFAULT
-SQL_QUERY_TIMEOUT           = NO_TIMEOUT
+./connect_test -d Default_DataSource -u ss -p ss
 

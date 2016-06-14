@@ -9,17 +9,17 @@ headers, what these files are used for, and why they don't have Apache headers
 To run the RAT report:
 
 1. Install Apache Rat download version 0.11 from  http://creadur.apache.org/rat/
-2. Change to the Apache Trafodion source directory
-3. Source in env.sh
-4. Run rat as follows
-  java -jar apache-rat-0.11.jar  -E $MY_SQROOT/../../.rat-excludes \ 
-       -d $MY_SQROOT/../.. > <RAT output log file>
-5. Look at output in <RAT output log file> for issues
+
+2. Assuming trafodion source tree is in apache-trafodion-XXX directory,
+   run rat as follows:
+
+  java -jar apache-rat-0.11/apache-rat-0.11.jar  -E apache-trafodion-XXX/.rat-excludes \
+       -d apache-trafodion-XXX > rat.out
+
+3. Look at output in rat.out log file for issues
 
 ================================================================================
 
-
-Results for Apache Trafodion release 1.3.0:
 
 --------------------------------------------------------------------------------
 FILE             :  what the file is used for

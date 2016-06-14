@@ -749,6 +749,7 @@ public:
    charSet_ = cs;
  }
  LobsStorage getLobStorage() {return lobStorage_;}
+  NABoolean isExternal() { return externalFormat_;}
 private:
  Int64 lobLength_;
  

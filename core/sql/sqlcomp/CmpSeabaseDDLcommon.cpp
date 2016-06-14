@@ -7667,6 +7667,7 @@ void CmpSeabaseDDL::dropLOBHdfsFiles()
 //
 // Params:
 //   cliInterface - a pointer to a CLI helper class 
+//   ddlXns - TRUE if DDL transactions is enabled
 //   tablesCreated - the list of tables that were created
 //   tablesUpgraded - the list of tables that were upgraded
 //
@@ -7691,10 +7692,13 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
     return -1;
   }
 
-  if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+  if (NOT ddlXns)
   {
-    SEABASEDDL_INTERNAL_ERROR("initialize authorization");
-    return -1;
+    if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+    {
+      SEABASEDDL_INTERNAL_ERROR("initialize authorization");
+      return -1;
+    }
   }
 
   NAString mdLocation;
@@ -7714,46 +7718,12 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
      std::string(colsLocation.data()),
      tablesCreated, tablesUpgraded); 
 
-  if (retcode != STATUS_ERROR)
-  {
-     // Commit the transaction so privmgr schema exists in other processes
-     endXnIfStartedHere(cliInterface, xnWasStartedHere, 0);
-     if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
-     {
-       SEABASEDDL_INTERNAL_ERROR("initialize authorization");
-       return -1;
-     }
-
-     // change authorization status in compiler context and kill arkcmps
-     GetCliGlobals()->currContext()->setAuthStateInCmpContexts(TRUE, TRUE);
-     for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
-       GetCliGlobals()->currContext()->getArkcmp(i)->endConnection();
-
-     // Adjust hive external table ownership - if someone creates external 
-     // tables before initializing authorization, the external schemas are 
-     // owned by DB__ROOT -> change to DB__HIVEROLE.  
-     // Also if you have initialized authorization and created external tables 
-     // before the fix for JIRA 1895, rerunning initialize authorization will 
-     // fix the metadata inconsistencies
-     if (adjustHiveExternalSchemas(cliInterface) != 0)
-       return -1;
-
-     // If someone initializes trafodion with library management but does not 
-     // initialize authorization, then the role DB__LIBMGRROLE has not been 
-     // granted to LIBMGR procedures.  Do this now
-     cliRC = existsInSeabaseMDTable(cliInterface,
-                                    getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, 
-                                    SEABASE_LIBMGR_LIBRARY,
-                                    COM_LIBRARY_OBJECT, TRUE, FALSE);
-     if (cliRC == 1) // library exists
-       cliRC = grantLibmgrPrivs(cliInterface);
-  }
-  else
+  if (retcode == STATUS_ERROR)
   {
     // make sure authorization status is FALSE in compiler context 
     GetCliGlobals()->currContext()->setAuthStateInCmpContexts(FALSE, FALSE);
     
-    // If any tables were created, go drop them now.
+    // If not running in DDL transactions, drop any tables were created
     // Ignore any returned errors
     if (NOT ddlXns)
     {
@@ -7764,30 +7734,79 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
     // Add an error if none yet defined in the diags area
     if ( CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
       SEABASEDDL_INTERNAL_ERROR("initialize authorization");
-    cliRC = -1;
+
+    return -1;
   }
 
-  endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC);
+  // If DDL transactions are not enabled, commit the transaction so privmgr 
+  // schema exists in other processes
+  if (NOT ddlXns)
+  {
+    endXnIfStartedHere(cliInterface, xnWasStartedHere, 0);
+    if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+    {
+      SEABASEDDL_INTERNAL_ERROR("initialize authorization");
+      return -1;
+    }
+  }
 
-  return cliRC;
+  // change authorization status in compiler contexts
+  //CmpCommon::context()->setAuthorizationState (1);
+  GetCliGlobals()->currContext()->setAuthStateInCmpContexts(TRUE, TRUE);
+
+  // change authorization status in compiler processes
+  cliRC = GetCliGlobals()->currContext()->updateMxcmpSession();
+  if (cliRC == -1)
+  {
+    if ( CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      SEABASEDDL_INTERNAL_ERROR("initialize authorization - updating authorization state failed");
+  }
+
+  NABoolean warnings = FALSE;
+
+  // Adjust hive external table ownership - if someone creates external 
+  // tables before initializing authorization, the external schemas are 
+  // owned by DB__ROOT -> change to DB__HIVEROLE.  
+  // Also if you have initialized authorization and created external tables 
+  // before the fix for JIRA 1895, rerunning initialize authorization will 
+  // fix the metadata inconsistencies
+  if (adjustHiveExternalSchemas(cliInterface) != 0)
+    warnings = TRUE;
+
+  // If someone initializes trafodion with library management but does not 
+  // initialize authorization, then the role DB__LIBMGRROLE has not been 
+  // granted to LIBMGR procedures.  Do this now
+  cliRC = existsInSeabaseMDTable(cliInterface,
+                                 getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, 
+                                 SEABASE_LIBMGR_LIBRARY,
+                                 COM_LIBRARY_OBJECT, TRUE, FALSE);
+  if (cliRC == 1) // library exists
+  {
+    cliRC = grantLibmgrPrivs(cliInterface);
+    if (cliRC == -1)
+      warnings = TRUE;
+  }
+  if (NOT ddlXns)
+    endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC);
+  
+  // If not able to adjust hive ownership or grant library management privs
+  // allow operation to continue but return issues as warnings.
+  if (warnings)
+  {
+    CmpCommon::diags()->negateAllErrors();
+    *CmpCommon::diags() << DgSqlCode(CAT_AUTH_COMPLETED_WITH_WARNINGS); 
+  }
+
+  return 0;
 }
 
 void CmpSeabaseDDL::dropSeabaseAuthorization(
   ExeCliInterface *cliInterface,
   NABoolean doCleanup)
 {
-  Lng32 cliRC = 0;
-  NABoolean xnWasStartedHere = FALSE;
-
   if (!ComUser::isRootUserID())
   {
     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-    return;
-  }
-
-  if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
-  {
-    SEABASEDDL_INTERNAL_ERROR("drop authorization");
     return;
   }
 
@@ -7797,19 +7816,21 @@ void CmpSeabaseDDL::dropSeabaseAuthorization(
   PrivStatus retcode = privInterface.dropAuthorizationMetadata(doCleanup); 
   if (retcode == STATUS_ERROR)
   {
-    cliRC = -1; 
     if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-     SEABASEDDL_INTERNAL_ERROR("drop authorization");
+      SEABASEDDL_INTERNAL_ERROR("drop authorization");
+    return;
   }
-  else
+
+  // Turn off authorization in compiler contexts
+  GetCliGlobals()->currContext()->setAuthStateInCmpContexts(FALSE, FALSE);
+
+  // Turn off authorization in arkcmp processes
+  Int32 cliRC = GetCliGlobals()->currContext()->updateMxcmpSession();
+  if (cliRC == -1)
   {
-    GetCliGlobals()->currContext()->setAuthStateInCmpContexts(FALSE, FALSE);
-    // define context changed, kill arkcmps, if they are running.
-    for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
-      GetCliGlobals()->currContext()->getArkcmp(i)->endConnection();
+    if ( CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      SEABASEDDL_INTERNAL_ERROR("drop authorization - updating authorization state failed");
   }
-  
-  endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC);
 
   return;
 }

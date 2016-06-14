@@ -45,7 +45,7 @@
 #include "ComQueue.h"
 //#include "UdfDllInteraction.h"
 #include "RelFastTransport.h"
-
+#include "HDFSHook.h"
 
 
 // Helper function to allocate a string in the plan
@@ -127,6 +127,7 @@ int CreateAllCharsExpr(const NAType &formalType,
   NAType *typ = NULL;
 
   Lng32 maxLength = GetDisplayLength(formalType);
+  maxLength = MAXOF(maxLength, 1);
 
   if (formalType.getTypeQualifier() != NA_CHARACTER_TYPE )
   {
@@ -561,35 +562,47 @@ PhysicalFastExtract::codeGen(Generator *generator)
     newRecordSep[1] = '\0';
   }
 
+  Int64 modTS = -1;
+  if ((CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
+      (isHiveInsert()) &&
+      (getHiveTableDesc() && getHiveTableDesc()->getNATable() && 
+       getHiveTableDesc()->getNATable()->getClusteringIndex()))
+    {
+      const HHDFSTableStats* hTabStats = 
+        getHiveTableDesc()->getNATable()->getClusteringIndex()->getHHDFSTableStats();
+
+      modTS = hTabStats->getModificationTS();
+    }
+
   targetName = AllocStringInSpace(*space, (char *)getTargetName().data());
   hdfsHostName = AllocStringInSpace(*space, (char *)getHdfsHostName().data());
   hiveTableName = AllocStringInSpace(*space, (char *)getHiveTableName().data());
   delimiter = AllocStringInSpace(*space,  newDelimiter);
   header = AllocStringInSpace(*space, (char *)getHeader().data());
-  nullString = AllocStringInSpace(*space, (char *)getNullString().data());
   recordSeparator = AllocStringInSpace(*space, newRecordSep);
+  nullString = AllocStringInSpace(*space, (char *)getNullString().data());
 
-   result = ft_codegen(generator,
-                       *this,              // RelExpr &relExpr
-                       newTdb,             // ComTdbUdr *&newTdb
-                       estimatedRowCount,
-                       targetName,
-                       hdfsHostName,
-                       hdfsPortNum,
-                       hiveTableName,
-                       delimiter,
-                       header,
-                       nullString,
-                       recordSeparator,
-                       downQueueMaxSize,
-                       upQueueMaxSize,
-                       outputBufferSize,
-                       requestBufferSize,
-                       replyBufferSize,
-                       numOutputBuffers,
-                       childTdb,
-                       isSequenceFile());
-
+  result = ft_codegen(generator,
+                      *this,              // RelExpr &relExpr
+                      newTdb,             // ComTdbUdr *&newTdb
+                      estimatedRowCount,
+                      targetName,
+                      hdfsHostName,
+                      hdfsPortNum,
+                      hiveTableName,
+                      delimiter,
+                      header,
+                      nullString,
+                      recordSeparator,
+                      downQueueMaxSize,
+                      upQueueMaxSize,
+                      outputBufferSize,
+                      requestBufferSize,
+                      replyBufferSize,
+                      numOutputBuffers,
+                      childTdb,
+                      isSequenceFile());
+  
   if (!generator->explainDisabled())
   {
     generator->setExplainTuple(addExplainInfo(newTdb, firstExplainTuple, 0, generator));
@@ -611,7 +624,7 @@ PhysicalFastExtract::codeGen(Generator *generator)
   {
     newTdb->setIsHiveInsert(1);
     newTdb->setIncludeHeader(0);
-    setOverwriteHiveTable( getOverwriteHiveTable());
+    newTdb->setOverwriteHiveTable( getOverwriteHiveTable());
   }
   else
   {
@@ -625,8 +638,10 @@ PhysicalFastExtract::codeGen(Generator *generator)
     else
     GenAssert(0, "Unexpected Fast Extract compression type")
   }
-     if((ActiveSchemaDB()->getDefaults()).getToken(FAST_EXTRACT_DIAGS) == DF_ON)
-    	 newTdb->setPrintDiags(1);
+  if((ActiveSchemaDB()->getDefaults()).getToken(FAST_EXTRACT_DIAGS) == DF_ON)
+    newTdb->setPrintDiags(1);
+
+  newTdb->setModTSforDir(modTS);
 
   return result;
 }

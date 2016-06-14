@@ -116,21 +116,22 @@ public class TrafParallelClientScanner extends AbstractClientScanner implements 
     LOG.debug("Found "+locs.size()+" region(s).");
     if (locs.size() == 0) return;
 
+    int threads = parallelScaling>1.0 ?(int)Math.ceil(parallelScaling) : (int)Math.ceil(locs.size() * parallelScaling);
+
     Map<HRegionLocation, Queue<Scan>> tasks = new HashMap<HRegionLocation, Queue<Scan>>(locs.size());
     int i=0;
     // organize region locations by region server
     for (HRegionLocation loc : locs) {
       Scan s = new Scan(scan);
+      s.setCaching(scan.getCaching()/threads);
       s.setStartRow(i==0?scan.getStartRow() : loc.getRegionInfo().getStartKey());
       i++;
       s.setStopRow(i==locs.size()?scan.getStopRow() : loc.getRegionInfo().getEndKey());
       addToMapOfQueues(tasks, loc, s);
     }
-
-    int threads = parallelScaling>1.0 ?(int)Math.ceil(parallelScaling) : (int)Math.ceil(locs.size() * parallelScaling);
     
     createDefaultPool(threads);
-    SingleReaderMultiWriterQueue rw = new SingleReaderMultiWriterQueue(Math.max(scan.getCaching() * threads, threads), locs.size());
+    SingleReaderMultiWriterQueue rw = new SingleReaderMultiWriterQueue(Math.max(scan.getCaching(), threads), locs.size());
     this.reader = rw;
 
     LOG.debug("Scheduling "+threads+" thread(s).");
