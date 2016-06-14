@@ -30,7 +30,6 @@ LDAP_AUTH_FILE="traf_authentication_config_${HOSTNAME}"
 
 HOST_NAME=`hostname -f`
 
-echo "hadoop_type: $HADOOP_TYPE"
 # These differ depending on the distribution
 if [[ $HADOOP_TYPE == "cloudera" ]]; then
   TRAF_KEYTAB_DIR='/etc/trafodion'

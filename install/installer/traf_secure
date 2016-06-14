@@ -54,9 +54,6 @@ if [ "$foundError" -ge "1" ];then
     echo "***ERROR: Security installation failed, continuing.  Check files $SQ_ROOT/logs/securityErrors.txt for details." | tee -a $SQ_ROOT/logs/securityErrors.txt
 fi
 
-# if this script is run multiple times, then the mapping may already be completed,
-# if the mapping has already been completed, then an error is returned.
-# for now, continue with the installation
 echo "***INFO: Please check the install log $SQ_ROOT/logs/securityErrors.txt for any issues" | tee -a $SQ_ROOT/logs/securityErrors.txt
 
 #==========================================

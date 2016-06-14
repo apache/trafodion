@@ -71,7 +71,7 @@ mkdir -p $LOCAL_WORKDIR/keytabs 2>/dev/null
 
 echo "***INFO: Create principals and keytabs for $TRAF_USER" 
 for ITEM in $HADOOP_NODES; do
-  NODE=`ssh -q -n robertablue sudo hostname -f`
+  NODE=`ssh -q -n $ITEM sudo hostname -f`
   PRINCIPAL_EXISTS=$( $KADMIN_CMD "listprincs" | grep "$TRAF_USER/$NODE@$REALM" | wc -l )
   if [[ $PRINCIPAL_EXISTS -eq 1 ]]; then
     echo "***INFO: Principal $TRAF_USER/$NODE@$REALM exists, continuing" 
@@ -128,9 +128,11 @@ for ITEM in $HADOOP_NODES; do
     pdcp -R ssh -w $NODE $LOCAL_WORKDIR/keytabs/$TRAF_KEYTAB $HOME
     ssh -q -n $NODE sudo mv $HOME/$TRAF_KEYTAB $TRAF_KEYTAB_DIR/$TRAF_KEYTAB
     ssh -q -n $NODE sudo chown $TRAF_USER:hadoop $TRAF_KEYTAB_DIR/$TRAF_KEYTAB
+    ssh -q -n $NODE sudo -u $TRAF_USER kinit -kt $TRAF_KEYTAB_DIR/$TRAF_KEYTAB $TRAF_USER/$NODE@$REALM
   else
-    sudo cp $LOCAL_WORKDIR/keytabs/$TRAF_KEYTAB $TRAF_KEYTAB_DIR
+    sudo cp $LOCAL_WORKDIR/keytabs/$TRAF_KEYTAB $TRAF_KEYTAB_DIR/$TRAF_KEYTAB
     sudo chown $TRAF_USER:hadoop $TRAF_KEYTAB_DIR/$TRAF_KEYTAB
+    sudo -u $TRAF_USER kinit -kt $TRAF_KEYTAB_DIR/$TRAF_KEYTAB $TRAF_USER/$NODE@$REALM
   fi
   echo "***INFO: Copied keytab file to $NODE" 
 done
