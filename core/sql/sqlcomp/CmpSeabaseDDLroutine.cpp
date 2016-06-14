@@ -881,6 +881,8 @@ void CmpSeabaseDDL::createSeabaseRoutine(
        // Set subType for special cases detected by LM
        switch ( paramType[i] )
        {
+         case COM_SIGNED_BIN8_FSDT :
+         case COM_UNSIGNED_BIN8_FSDT :
          case COM_SIGNED_BIN16_FSDT :
          case COM_SIGNED_BIN32_FSDT :
          case COM_SIGNED_BIN64_FSDT :
