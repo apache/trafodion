@@ -358,8 +358,9 @@ CoprocessorService, Coprocessor {
   private static final int LEASE_CHECK_FREQUENCY = 1000;
   private static final int DEFAULT_SLEEP = 60 * 1000;
   private static final int DEFAULT_MEMORY_THRESHOLD = 100; // 100% memory used
+  private static final int DEFAULT_STARTUP_MEMORY_THRESHOLD = 90; // initial value : 90% memory used
   private static final int DEFAULT_MEMORY_SLEEP = 15 * 1000;
-  private static final boolean DEFAULT_MEMORY_WARN_ONLY = true;        
+  private static final boolean DEFAULT_MEMORY_WARN_ONLY = false;        
   private static final boolean DEFAULT_MEMORY_PERFORM_GC = false;
   private static final int DEFAULT_ASYNC_WAL = 1;
   private static final boolean DEFAULT_SKIP_WAL = false;
@@ -3519,7 +3520,7 @@ CoprocessorService, Coprocessor {
         this.scannerThreadWakeFrequency = config.getInt(HConstants.THREAD_WAKE_FREQUENCY, 10 * 1000);
 
         this.cleanTimer = config.getInt(SLEEP_CONF, DEFAULT_SLEEP);
-        this.memoryUsageThreshold = config.getInt(MEMORY_THRESHOLD, DEFAULT_MEMORY_THRESHOLD);
+        this.memoryUsageThreshold = config.getInt(MEMORY_THRESHOLD, DEFAULT_STARTUP_MEMORY_THRESHOLD);
         this.memoryUsagePerformGC = config.getBoolean(MEMORY_PERFORM_GC, DEFAULT_MEMORY_PERFORM_GC);
         this.asyncWal = config.getInt(CONF_ASYNC_WAL, DEFAULT_ASYNC_WAL);
         this.skipWal = config.getBoolean(CONF_SKIP_WAL, DEFAULT_SKIP_WAL);
