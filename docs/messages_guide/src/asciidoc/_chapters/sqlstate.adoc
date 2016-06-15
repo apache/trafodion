@@ -1379,6 +1379,7 @@ Suggestion: a) Inspect the CQS in effect; or b) Raise the optimization level to 
 | 42000    | -3150   | Duplicate WITH HEADING phrases in LIKE clause in CREATE TABLE statement.
 | 42000    | -3151   | Duplicate WITH HORIZONTAL PARTITIONS phrases in LIKE clause in CREATE TABLE statement.
 | 42000    | -3153   | The FIRST KEY clause is not allowed with hash partitioning.
+| 42000    | -3154   | The <clause-name-1> clause is not allowed with the <clause-name-2> clause.
 | 42000    | -3155   | The POPULATE and NO POPULATE clauses cannot coexist in the same CREATE INDEX statement.
 | 42000    | -3157   | Catalog name is required.
 | 42000    | -3159   | If you intended <name> to be a character set specifier for a character string literal, you must remove the spaces in front of the single quote delimiter.

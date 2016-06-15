@@ -1,0 +1,275 @@
+>>
+>>?section set_up
+>>
+>>-- set-up
+>>
+>>drop schema if exists t040sch cascade;
+
+--- SQL operation complete.
+>>
+>>create schema t040sch;
+
+--- SQL operation complete.
+>>
+>>set schema t040sch;
+
+--- SQL operation complete.
+>>
+>>create table t040salt(a int not null, b int not null, c int, primary key (a,b))
++> salt using 4 partitions;
+
+--- SQL operation complete.
+>>
+>>showddl t040salt;
+
+CREATE TABLE TRAFODION.T040SCH.T040SALT
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC, B ASC)
+  )
+  SALT USING 4 PARTITIONS
+;
+
+--- SQL operation complete.
+>>
+>>create table t040nosalt(a int not null, b int not null, c int, primary key (a,b));
+
+--- SQL operation complete.
+>>
+>>showddl t040nosalt;
+
+CREATE TABLE TRAFODION.T040SCH.T040NOSALT
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC, B ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>?section positive_tests
+>>
+>>-- positive tests
+>>
+>>create table t040salt1 like t040salt without salt;
+
+--- SQL operation complete.
+>>
+>>showddl t040salt1;
+
+CREATE TABLE TRAFODION.T040SCH.T040SALT1
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC, B ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>create table t040salt5 like t040salt salt using 5 partitions;
+
+--- SQL operation complete.
+>>
+>>showddl t040salt5;
+
+CREATE TABLE TRAFODION.T040SCH.T040SALT5
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC, B ASC)
+  )
+  SALT USING 5 PARTITIONS
+;
+
+--- SQL operation complete.
+>>
+>>create table t040salt6 like t040salt salt using 6 partitions on (a);
+
+--- SQL operation complete.
+>>
+>>showddl t040salt6;
+
+CREATE TABLE TRAFODION.T040SCH.T040SALT6
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC, B ASC)
+  )
+  SALT USING 6 PARTITIONS
+       ON (A)
+;
+
+--- SQL operation complete.
+>>
+>>create table t040salt7 like t040salt salt using 7 partitions on (b);
+
+--- SQL operation complete.
+>>
+>>showddl t040salt7;
+
+CREATE TABLE TRAFODION.T040SCH.T040SALT7
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC, B ASC)
+  )
+  SALT USING 7 PARTITIONS
+       ON (B)
+;
+
+--- SQL operation complete.
+>>
+>>create table t040salt8 like t040salt salt using 8 partitions on (a,b);
+
+--- SQL operation complete.
+>>
+>>showddl t040salt8;
+
+CREATE TABLE TRAFODION.T040SCH.T040SALT8
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC, B ASC)
+  )
+  SALT USING 8 PARTITIONS
+;
+
+--- SQL operation complete.
+>>
+>>create table t040nosalt1 like t040nosalt without salt;
+
+--- SQL operation complete.
+>>
+>>showddl t040nosalt1;
+
+CREATE TABLE TRAFODION.T040SCH.T040NOSALT1
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC, B ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>create table t040nosalt4 like t040nosalt salt using 4 partitions;
+
+--- SQL operation complete.
+>>
+>>showddl t040nosalt4;
+
+CREATE TABLE TRAFODION.T040SCH.T040NOSALT4
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC, B ASC)
+  )
+  SALT USING 4 PARTITIONS
+;
+
+--- SQL operation complete.
+>>
+>>create table t040saltsame like t040salt;
+
+--- SQL operation complete.
+>>
+>>showddl t040saltsame;
+
+CREATE TABLE TRAFODION.T040SCH.T040SALTSAME
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC, B ASC)
+  )
+  SALT USING 4 PARTITIONS
+;
+
+--- SQL operation complete.
+>>
+>>create table t040nosaltsame like t040nosalt;
+
+--- SQL operation complete.
+>>
+>>showddl t040nosaltsame;
+
+CREATE TABLE TRAFODION.T040SCH.T040NOSALTSAME
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC, B ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>?section negative_tests
+>>
+>>-- negative tests
+>>
+>>-- non-key column, should fail
+>>create table t040saltbad1 like t040salt salt using 5 partitions on (c);
+
+*** ERROR[1195] Column C is not allowed as a salt column. Only primary key columns or STORE BY columns are allowed.
+
+--- SQL operation failed with errors.
+>>
+>>-- non-existent column, should fail
+>>create table t040saltbad2 like t040salt salt using 5 partitions on (d);
+
+*** ERROR[1195] Column D is not allowed as a salt column. Only primary key columns or STORE BY columns are allowed.
+
+--- SQL operation failed with errors.
+>>
+>>-- should fail with error 3154
+>>create table t040saltbad3 like t040salt without salt salt using 4 partitions;
+
+*** ERROR[3154] The WITHOUT SALT clause is not allowed with the SALT clause.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- should fail, duplicate clauses
+>>create table t040saltbad4 like t040salt without salt without salt;
+
+*** ERROR[3152] Duplicate WITHOUT SALT phrases were specified in LIKE clause in CREATE TABLE statement.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- and now an extravaganza of errors
+>>create table t040saltbad5 like t040salt salt using 4 partitions without salt salt using 7 partitions;
+
+*** ERROR[3154] The WITHOUT SALT clause is not allowed with the SALT clause.
+
+*** ERROR[3183] Duplicate SALT clauses were specified.
+
+*** ERROR[3154] The WITHOUT SALT clause is not allowed with the SALT clause.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- syntax error; clause not supported with LIKE
+>>create table t040saltbad6 like t040salt store by (b);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create table t040saltbad6 like t040salt store by (b);
+                                            ^ (45 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>log;
