@@ -164,7 +164,7 @@ export TRAF_KEYTAB_DIR=""
 export LDAP_SECURITY="Y"
 
 #Name of LDAP Config file
-export LDAP_AUTH_FILE="traf_authentication_config_`hostname -s`"
+export LDAP_AUTH_FILE="traf_authentication_config_${HOSTNAME}"
 
 #LDAP name to map to database user DB__ROOT
 DB_ROOT_NAME="trafodion"
