@@ -423,7 +423,7 @@ short convertTypeToText_basic(char * text,	   // OUTPUT
       if (!precision)
         str_sprintf(text, "TINYINT UNSIGNED");
       else
-	str_sprintf(text, "NUMERIC(%d, %d)", precision, scale);
+	str_sprintf(text, "NUMERIC(%d, %d)  UNSIGNED", precision, scale);
       break;
 
     case REC_BPINT_UNSIGNED:

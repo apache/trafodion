@@ -268,12 +268,11 @@ class InterfaceResultSet {
 			}
 			break;
 		case SQLTYPECODE_TINYINT:
-                        short sValue1 = (byte) ibuffer[byteIndex];
-			retObj = new Short(sValue1);
+			retObj = new Byte(ibuffer[byteIndex]);
 			break;
 		case SQLTYPECODE_TINYINT_UNSIGNED:
-                        short sValue2 = (byte) ibuffer[byteIndex];
-			retObj = new Short(sValue2);
+                        short sValue1 = Bytes.extractUTiny(ibuffer, byteIndex, this.ic_.getByteSwap());
+			retObj = new Short(sValue1);
 			break;
 		case SQLTYPECODE_SMALLINT:
 			short sValue = Bytes.extractShort(ibuffer, byteIndex, this.ic_.getByteSwap());
@@ -515,10 +514,12 @@ class InterfaceResultSet {
 				break;
 			}
 			break;
-		case SQLTYPECODE_TINYINT:
 		case SQLTYPECODE_TINYINT_UNSIGNED:
-                        short sValue1 = (byte) values[noNullValue];
-			retObj = new Short(sValue1);
+                        short sValue1 = Bytes.extractUTiny(values, noNullValue, swap);
+                        retObj = new Short(sValue1);
+			break;
+		case SQLTYPECODE_TINYINT:
+			retObj = new Byte(values[noNullValue]);
 			break;
 		case SQLTYPECODE_SMALLINT:
 			short sValue = Bytes.extractShort(values, noNullValue, swap);
