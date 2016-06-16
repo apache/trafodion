@@ -23,7 +23,6 @@
 >>-- getting a query cache hit and updating the changed
 >>-- Hive and HDFS metadata
 >>------------------------------------------------------------
->>
 >>prepare s1 from 
 +>  select c_preferred_cust_flag,
 +>         count(*) 
@@ -434,9 +433,9 @@ ID           CHAPTER                    ENGLISH                    TRANSLATOR
 >>select * from tbl_type;
 
 TINT    SM      I            BIG                   STR                        F                D                          T                           DT          VC
-------  ------  -----------  --------------------  -------------------------  ---------------  -------------------------  --------------------------  ----------  ----------
+------  ------  -----------  --------------------  -------------------------  ---------------  -------------------------  --------------------------  ----------  ----------------------------------------
 
-   201     202          203                   204  two hundred                 2.0000000E+002   2.00000000000000000E+002  2022-02-02 22:22:22.222222  2022-02-02  varchar
+   201     202          203                   204  two hundred                 2.0000000E+002   2.00000000000000000E+002  2022-02-02 22:22:22.222222  2022-02-02  varchar                                 
 
 --- 1 row(s) selected.
 >>insert into tbl_type_temp select * from tbl_type;
@@ -445,9 +444,9 @@ TINT    SM      I            BIG                   STR                        F 
 >>select * from tbl_type_temp;
 
 TINT    SM      I            BIG                   STR                        F                D                          T                           DT          VC
-------  ------  -----------  --------------------  -------------------------  ---------------  -------------------------  --------------------------  ----------  ----------
+------  ------  -----------  --------------------  -------------------------  ---------------  -------------------------  --------------------------  ----------  ----------------------------------------
 
-   201     202          203                   204  two hundred                 2.0000000E+002   2.00000000000000000E+002  2022-02-02 22:22:22.222222  2022-02-02  varchar
+   201     202          203                   204  two hundred                 2.0000000E+002   2.00000000000000000E+002  2022-02-02 22:22:22.222222  2022-02-02  varchar                                 
 
 --- 1 row(s) selected.
 >>
@@ -710,11 +709,11 @@ A            B
 
 --- 1 row(s) selected.
 >>
->>-- purgedata of hive data
+>>-- truncate of hive data
 >>cqd query_cache '0';
 
 --- SQL operation complete.
->>purgedata hive.hive.thive;
+>>truncate hive.hive.thive;
 
 --- SQL operation complete.
 >>select * from hive.hive.thive;
@@ -731,14 +730,96 @@ A            B
          10           20
 
 --- 1 row(s) selected.
->>purgedata hive.hive.thive;
+>>truncate hive.hive.thive;
 
 --- SQL operation complete.
->>purgedata hive.hive.thive;
+>>truncate hive.hive.thive;
 
 --- SQL operation complete.
 >>select * from hive.hive.thive;
 
 --- 0 row(s) selected.
+>>
+>>-- truncate of partitioned hive table
+>>sh echo "drop table t005part;" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk;
+>>sh echo "create table t005part(a int) partitioned by (b int, c int);" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk;
+>>
+>>sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk;
+>>sh echo "select * from t005part;" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+t005part.a	t005part.b	t005part.c
+5	10	11
+>>
+>>truncate hive.hive.t005part;
+
+--- SQL operation complete.
+>>sh echo "select * from t005part;" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+t005part.a	t005part.b	t005part.c
+>>
+>>sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk;
+>>truncate hive.hive.t005part partition ('b=10');
+
+--- SQL operation complete.
+>>sh echo "select * from t005part;" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+t005part.a	t005part.b	t005part.c
+>>
+>>
+>>sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk;
+>>truncate hive.hive.t005part partition ('b=10','c=11');
+
+--- SQL operation complete.
+>>sh echo "select * from t005part;" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+t005part.a	t005part.b	t005part.c
+>>
+>>sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk;
+>>sh echo "insert into t005part partition (b=10,c=12) values (6);" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk;
+>>sh echo "select * from t005part;" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+t005part.a	t005part.b	t005part.c
+5	10	11
+6	10	12
+>>
+>>truncate hive.hive.t005part partition ('b=10','c=11');
+
+--- SQL operation complete.
+>>sh echo "select * from t005part;" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+t005part.a	t005part.b	t005part.c
+6	10	12
+>>
+>>truncate hive.hive.t005part partition ('b=10');
+
+--- SQL operation complete.
+>>sh echo "select * from t005part;" > TEST005_junk;
+>>sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+t005part.a	t005part.b	t005part.c
+>>
+>>-- should return error
+>>truncate hive.hive.t005part partition ('b=12');
+
+*** ERROR[8442] Unable to access HDFS interface. Call to ExpLOBInterfaceEmptyDirectory returned error LOB_DIR_NAME_ERROR(535). Error detail 0.
+
+*** ERROR[8034] Truncation of hive table failed. Reason: specified partition does not exist
+
+--- SQL operation failed with errors.
+>>
+>>
+>>-- should return error
+>>purgedata hive.hive.thive;
+
+*** ERROR[3242] This statement is not supported. Reason: Purgedata is not allowed for hive tables. Use Truncate command.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>log;

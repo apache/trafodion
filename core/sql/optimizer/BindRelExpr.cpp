@@ -9183,20 +9183,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     if (getOverwriteHiveTable())
     {
       RelExpr * newRelExpr =  new (bindWA->wHeap())
-        ExeUtilFastDelete(getTableName(),
-                          NULL,
-                          (char*)"hive_truncate",
-                          CharInfo::ISO88591,
-                          FALSE,
-                          TRUE,
-                          TRUE,
-                          TRUE,
-                          bindWA->wHeap(),
-                          TRUE,
-                          new (bindWA->wHeap()) NAString(tableDir),
-                          new (bindWA->wHeap()) NAString(hostName),
-                          hdfsPort,
-                          hTabStats->getModificationTS());
+        ExeUtilHiveTruncate(getTableName(), NULL, bindWA->wHeap());
 
       //new root to prevent  error 4056 when binding
       newRelExpr = new (bindWA->wHeap()) RelRoot(newRelExpr);

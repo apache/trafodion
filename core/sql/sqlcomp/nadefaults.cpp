@@ -1354,10 +1354,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXE_PARALLEL_DDL,                     "ON"),
 
-  DDkwd__(EXE_PARALLEL_PURGEDATA,               "MINIMUM"),
-
-  DDkwd__(EXE_PARALLEL_PURGEDATA_WARNINGS,      "OFF"),
-
   DDui___(EXE_PA_DP2_STATIC_AFFINITY,           "1"),
 
   DDkwd__(EXE_SINGLE_BMO_QUOTA,                 "ON"),
@@ -6670,12 +6666,6 @@ DefaultToken NADefaults::token(Int32 attrEnum,
     case GROUP_BY_USING_ORDINAL:
       if (tok == DF_ALL || tok == DF_MINIMUM ||
 	  tok == DF_OFF)
-	isValid = TRUE;
-      break;
-
-    case EXE_PARALLEL_PURGEDATA:
-      if (tok == DF_ALL || tok == DF_MINIMUM ||
-	  tok == DF_OFF || tok == DF_ON || tok == DF_MEDIUM)
 	isValid = TRUE;
       break;
 

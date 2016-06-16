@@ -2840,6 +2840,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 
 %type <relx>                    exe_util_fast_delete
 %type <longint>                 purgedata_options
+%type <relx>                    exe_util_hive_truncate
 
 %type <relx>                    exe_util_get_metadata_info
 %type <relx>                    exe_util_get_version_info
@@ -14550,6 +14551,10 @@ interactive_query_expression:
                                 {
 				  $$ = finalize($1);
 				}
+              | exe_util_hive_truncate
+                                {
+				  $$ = finalize($1);
+				}
               | exe_util_get_uid
                                 {
 				  $$ = finalize($1);
@@ -17380,11 +17385,6 @@ optional_mt_options :   QUOTED_STRING
 
 exe_util_fast_delete:  TOK_PURGEDATA table_name purgedata_options
 		     {
-		       if (CmpCommon::getDefault(EXE_PARALLEL_PURGEDATA) == DF_OFF)
-			 {
-			   YYERROR;
-			 }
-
 		       short noLog = ($3 & 0x1) != 0;
 		       short ignoreTrigger = ($3 & 0x2) != 0;
 
@@ -17406,8 +17406,6 @@ exe_util_fast_delete:  TOK_PURGEDATA table_name purgedata_options
 					   FALSE,
 					   noLog,
 					   ignoreTrigger,
-					   // (($3 == 1) || ($3 == 3)),
-					   // (($3 == 2) || ($3 == 3)),
 					   TRUE,
 					   PARSERHEAP());
 		       
@@ -17427,6 +17425,24 @@ purgedata_options : /*empty*/ { $$ = 0; }
                   | TOK_NOLOG TOK_WAITEDIO TOK_IGNORE_TRIGGER { $$ = 7; }
                   | TOK_IGNORE_TRIGGER TOK_WAITEDIO TOK_NOLOG { $$ = 7; }
 
+exe_util_hive_truncate:  TOK_TRUNCATE table_name 
+		     {
+		       $$ = new (PARSERHEAP())
+			 ExeUtilHiveTruncate(CorrName(*$2, PARSERHEAP()),
+                                             NULL,
+                                             PARSERHEAP());
+		       
+		       delete $2;
+		     }
+                     | TOK_TRUNCATE table_name TOK_PARTITION '(' quoted_string_list ')'
+		     {
+		       $$ = new (PARSERHEAP())
+			 ExeUtilHiveTruncate(CorrName(*$2, PARSERHEAP()),
+                                             $5,
+                                             PARSERHEAP());
+		       
+		       delete $2;
+		     }
 
 exe_util_aqr: TOK_GET TOK_ALL TOK_AQR TOK_ENTRIES
                {
@@ -17949,6 +17965,13 @@ hbb_unload_option:   hbb_unload_empty_target
 
 
  hbb_unload_empty_target: TOK_PURGEDATA TOK_FROM TOK_TARGET
+                {
+                //purge target folder
+                  UnloadOption *op = 
+                        new (PARSERHEAP ()) UnloadOption(UnloadOption::EMPTY_TARGET_,0,NULL);
+                  $$ = op;
+                }
+                | TOK_TRUNCATE TOK_FROM TOK_TARGET
                 {
                 //purge target folder
                   UnloadOption *op = 
