@@ -1606,12 +1606,10 @@ ex_expr::exp_return_type ExHDPHash::pCodeGenerate(Space *space, UInt32 f)
     break; 
   case REC_BIN32_SIGNED:
   case REC_BIN32_UNSIGNED:
-  case REC_TDM_FLOAT32:
   case REC_IEEE_FLOAT32:
     flags = SWAP_FOUR;
     break;
   case REC_BIN64_SIGNED:
-  case REC_TDM_FLOAT64:
   case REC_IEEE_FLOAT64:
     flags = SWAP_EIGHT;
     break;

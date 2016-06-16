@@ -627,7 +627,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_DOT_STAR
 %token <tokval> TOK_DOUBLE
 %token <tokval> TOK_DOUBLE_IEEE
-%token <tokval> TOK_DOUBLE_TANDEM
 %token <tokval> TOK_DUPLICATE
 %token <tokval> TOK_DYNAMIC
 %token <tokval> TOK_DYNAMIC_FUNCTION    /* ANSI SQL non-reserved word */
@@ -675,7 +674,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_FIRST_FSCODE
 %token <tokval> TOK_FLOAT
 %token <tokval> TOK_FLOAT_IEEE
-%token <tokval> TOK_FLOAT_TANDEM
 %token <tokval> TOK_FLOOR
 %token <tokval> TOK_FN                  /* ODBC extension non-reserved word */
 %token <tokval> TOK_FOLLOWING
@@ -964,7 +962,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_READ
 %token <tokval> TOK_REAL
 %token <tokval> TOK_REAL_IEEE
-%token <tokval> TOK_REAL_TANDEM
 %token <tokval> TOK_RECOMPUTE             
 %token <tokval> TOK_RECORD_SEPARATOR
 %token <tokval> TOK_RECOVER
@@ -2014,6 +2011,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <na_type>   		proc_arg_data_type
 %type <na_type>   		data_type
 %type <na_type>   		Set_Cast_Global_False_and_data_type
+%type <na_type>   		routine_predef_type
 %type <na_type>   		predef_type
 %type <na_type>   		predefined_type
 %type <na_type>   		date_time_type
@@ -10613,7 +10611,10 @@ int_type : TOK_INTEGER signed_option
        {
          // odbc SQL_TINYINT is exact numeric value with precision 3 &
          // scale 0. signed: -128<=n<=127, unsigned: 0<=n<=255.
-         $$ = new (PARSERHEAP()) SQLSmall( $2, TRUE);
+         if (CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF)
+           $$ = new (PARSERHEAP()) SQLSmall( $2, TRUE);
+         else
+           $$ = new (PARSERHEAP()) SQLTiny( $2, TRUE);
          // ((SQLSmall *)$$)->setDisplayDataType("TINYINT");
        }
 	 | TOK_BYTEINT signed_option
@@ -10865,34 +10866,14 @@ proc_arg_float_type : TOK_FLOAT_IEEE
              {
 		$$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, PARSERHEAP(), 0);
              }
-         | TOK_FLOAT_TANDEM
-             {
-		$$ = new (PARSERHEAP()) SQLDoublePrecisionTdm(TRUE, PARSERHEAP(), 0);
-             }
-	 | TOK_FLOAT_TANDEM left_unsigned_right
-             {
-#pragma nowarn(1506)  // warning elimination
-		$$ = new (PARSERHEAP()) SQLDoublePrecisionTdm(TRUE, NULL, $2);
-#pragma warn(1506)  // warning elimination
-                if (! ((SQLDoublePrecision *)$$)->checkValid(SqlParser_Diags))
-                   YYERROR;
-             }
-	 | TOK_REAL_TANDEM
-             {
-		$$ = new (PARSERHEAP()) SQLRealTdm(TRUE, PARSERHEAP(), 0);
-             }
-	 | TOK_DOUBLE_TANDEM
-             {
-		$$ = new (PARSERHEAP()) SQLDoublePrecisionTdm(TRUE, PARSERHEAP(), 0);
-             }
 	 | TOK_FLOAT
              {
-		$$ = new (PARSERHEAP()) SQLDoublePrecisionTdm(TRUE, PARSERHEAP(), 0);
+		$$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, PARSERHEAP(), 0);
              }
 	 | TOK_FLOAT left_unsigned_right
              {
 #pragma nowarn(1506)  // warning elimination
-		$$ = new (PARSERHEAP()) SQLDoublePrecisionTdm(TRUE, NULL, $2);
+		$$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, NULL, $2);
 #pragma warn(1506)  // warning elimination
                 if (! ((SQLDoublePrecision *)$$)->checkValid(SqlParser_Diags))
                    YYERROR;
@@ -23876,7 +23857,7 @@ routine_return_param_list : routine_return_param_optional_not_null
                             }
 
 /* type pElemDDL */
-routine_return_param : optional_return_param_mode optional_param_name predef_type
+routine_return_param : optional_return_param_mode optional_param_name routine_predef_type
                        {
                          ElemDDLParamDef *p = new (PARSERHEAP())
                            ElemDDLParamDef($3 /*predef_type*/,
@@ -23891,7 +23872,7 @@ routine_return_param : optional_return_param_mode optional_param_name predef_typ
 routine_return_param_optional_not_null :
   optional_return_param_mode
   optional_param_name
-  predef_type
+  routine_predef_type
   optional_cast_spec_not_null_spec
   {
     ElemDDLParamDef *p = new (PARSERHEAP())
@@ -24018,7 +23999,7 @@ routine_params : routine_param
                                 }
 
 /* type pElemDDL */
-routine_param : optional_param_mode optional_param_name predef_type
+routine_param : optional_param_mode optional_param_name routine_predef_type
                   optional_cast_spec_not_null_spec
                 {
                   if ($4)
@@ -24031,6 +24012,19 @@ routine_param : optional_param_mode optional_param_name predef_type
                                                   PARSERHEAP());
                   delete $2 /*optional_param_name*/;
                 }
+
+/* type na_type */
+routine_predef_type : predef_type
+               {
+                 if (($1->getTypeName() == LiteralTinyInt) &&
+                     ((CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF) ||
+                      (CmpCommon::getDefault(TRAF_TINYINT_SPJ_SUPPORT) == DF_OFF)))
+                   {
+                     NumericType * nt = (NumericType*)$1;
+                     $$ = new (PARSERHEAP()) 
+                       SQLSmall(NOT nt->isUnsigned(), $1->supportsSQLnull());
+                   }
+               }
 
 /* type pElemDDLParamName */
 optional_param_name : empty
@@ -32868,7 +32862,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_DIVISION
                       | TOK_DO
                       | TOK_DOUBLE_IEEE
-                      | TOK_DOUBLE_TANDEM
                       | TOK_DROP_LIBRARY
                       | TOK_DROP_MV
                       | TOK_DROP_MV_GROUP
@@ -32911,7 +32904,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_FINAL
 		      | TOK_FIRST_FSCODE
                       | TOK_FLOAT_IEEE
-                      | TOK_FLOAT_TANDEM
                       | TOK_FOLLOWING
                       | TOK_FOR_MAXRUNTIME
                       | TOK_FORMAT
@@ -33123,7 +33115,6 @@ nonreserved_word :      TOK_ABORT
 		      | TOK_RANGELOG   // MV 
                       | TOK_RATE 
                       | TOK_REAL_IEEE
-                      | TOK_REAL_TANDEM
                       | TOK_REBUILD
                       | TOK_RECOMPUTE // MV 
                       | TOK_RECORD_SEPARATOR

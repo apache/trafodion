@@ -1544,7 +1544,22 @@ enum conv_case_index {
   CONV_BLOB_BLOB                       =249,
   CONV_BLOB_ASCII_F                    =250,
 
-  CONV_GBK_F_UTF8_V                    =251
+  CONV_GBK_F_UTF8_V                    =251,
+
+  // TINYINT conversions
+  CONV_BIN8S_BIN8S                     =252,
+  CONV_BIN8U_BIN8U                     =253,
+  CONV_BIN8S_BIN16S                    =254,
+  CONV_BIN8U_BIN16U                    =255,
+  CONV_BIN16S_BIN8S                    =256,
+  CONV_BIN16U_BIN8U                    =257,
+  CONV_BIN8S_ASCII                     =258,
+  CONV_BIN8U_ASCII                     =259,
+  CONV_BIN16U_BIN8S                    =260,
+  CONV_BIN16S_BIN8U                    =261,
+  CONV_BIN8U_BIN16S                    =262,
+  CONV_ASCII_BIN8S                     =263,
+  CONV_ASCII_BIN8U                     =264
 };
 
 class SQLEXP_LIB_FUNC  ex_conv_clause : public ex_clause {
@@ -1699,7 +1714,6 @@ public:
   {
     return alignment_;
   }
-
 private:
   // conv_case_index
   Int16            case_index;           // 00-01

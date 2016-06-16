@@ -8605,42 +8605,35 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
         }
     }
 
-  // Conversion to/from a tandem float type is only supported if
-  // the from/to type is a float type.
-  // If target is a tandem float type and source is not float or
-  // target is not float and source is tandem, then convert source
-  // to ieee float type (ieee double).
-  short srcFsType = child(0)->getValueId().getType().getFSDatatype();
-  short tgtFsType = getValueId().getType().getFSDatatype();
+  const NAType &srcNAType = child(0)->getValueId().getType();
+  const NAType &tgtNAType = getValueId().getType();
+  short srcFsType = srcNAType.getFSDatatype();
+  short tgtFsType = tgtNAType.getFSDatatype();
 
-  if ((((tgtFsType == REC_TDM_FLOAT32) ||
-	(tgtFsType == REC_TDM_FLOAT64)) &&
-       ! ((srcFsType >= REC_MIN_FLOAT) &&
-	  (srcFsType <= REC_MAX_FLOAT))) ||
-
-      (((srcFsType == REC_TDM_FLOAT32) ||
-	(srcFsType == REC_TDM_FLOAT64)) &&
-       ! ((tgtFsType >= REC_MIN_FLOAT) &&
-	  (tgtFsType <= REC_MAX_FLOAT))))
+  // Currently, Tinyint conversions are only supported to/from smallint.
+  // if source is TINYINT, then convert it to SMALLINT first.
+  if (((srcNAType.getTypeName() == LiteralTinyInt) &&
+       (tgtNAType.getTypeName() != LiteralSmallInt)) ||
+      ((srcNAType.getTypeName() != LiteralSmallInt) &&
+       (tgtNAType.getTypeName() == LiteralTinyInt)))
     {
-      NAType * intermediateType =
-	new(generator->wHeap()) SQLDoublePrecision(
-	     child(0)->getValueId().getType().supportsSQLnull(),
-	     generator->wHeap());
-
-      // Genesis case 10-040126-9823.
-      // Match the scales of the source with that of the intermediate type. If
-      // this is not done, the cast to the intermediate type does not get scaled
-      // properly, leading to incorrect results.
-      child(0) = generator->getExpGenerator()->matchScales(
-        child(0)->getValueId(), *intermediateType);
-
-      child(0) = new(generator->wHeap()) Cast(child(0),intermediateType);
-
-      child(0)->bindNode(generator->getBindWA());
-
-      sourceTypeQual =
-	child(0)->getValueId().getType().getTypeQualifier();
+      // add a Cast node to convert from/to tinyint to/from small int.
+      ItemExpr * newChild =
+        new (generator->wHeap())
+        Cast(child(0),
+             new (generator->wHeap())
+             SQLSmall(TRUE,
+                      srcNAType.supportsSQLnull()));
+      ((Cast*)newChild)->setFlags(getFlags());
+      //      ((Cast*)newChild)->setSrcIsVarcharPtr(srcIsVarcharPtr());
+      setSrcIsVarcharPtr(FALSE);
+      newChild = newChild->bindNode(generator->getBindWA());
+      newChild = newChild->preCodeGen(generator);
+      if (! newChild)
+        return NULL;
+      
+      setChild(0, newChild);
+      srcFsType = child(0)->getValueId().getType().getFSDatatype();
     }
 
   if ((sourceTypeQual == NA_NUMERIC_TYPE) &&
@@ -8927,18 +8920,6 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 	      {
 		intermediatePrecision = 634; // (2 x 308) + 17 + 1 = 634
 		intermediateScale = 324;  // 308 + 17 - 1 = 324
-	      }
-
-	    else if (sourceNumType->getFSDatatype() == REC_TDM_FLOAT32)
-	      {
-		intermediatePrecision = 164; // (2 x 78) + 7 + 1 = 164
-		intermediateScale = 84;  // 78 + 7 - 1 = 84
-	      }
-
-	    else if (sourceNumType->getFSDatatype() == REC_TDM_FLOAT64)
-	      {
-		intermediatePrecision = 175; // (2 x 78) + 18 + 1 = 175
-		intermediateScale = 95;  // 78 + 18 - 1 = 95
 	      }
 
 	    NAType * intermediateType =

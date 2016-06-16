@@ -67,6 +67,7 @@ public:
   enum Type {
     JT_NONE          = COM_UNKNOWN_FSDT -1,
     JT_VOID          = COM_UNKNOWN_FSDT,
+    JT_TINY          = COM_SIGNED_BIN8_FSDT,
     JT_SHORT         = COM_SIGNED_BIN16_FSDT,
     JT_INT           = COM_SIGNED_BIN32_FSDT,
     JT_LONG          = COM_SIGNED_BIN64_FSDT,

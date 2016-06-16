@@ -1421,8 +1421,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  SDDkwd__(FFDC_DIALOUTS_FOR_MXCMP,		"OFF"),
   DDkwd__(FIND_COMMON_SUBEXPRS_IN_OR,		"ON"),
 
-  DDkwd__(FLOATTYPE,				"IEEE"),
-
   DDui___(FLOAT_ESP_RANDOM_NUM_SEED,    "0"),
 
   DDkwd__(FORCE_BUSHY_CQS,			"ON"),
@@ -3402,6 +3400,11 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TRAF_TABLE_SNAPSHOT_SCAN_TIMEOUT,            "6000"),
   //location for temporary links and files produced by snapshot scan
   DD_____(TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION,       "/bulkload/"),
+
+  DDkwd__(TRAF_TINYINT_INPUT_PARAMS,                   "OFF"),
+  DDkwd__(TRAF_TINYINT_RETURN_VALUES,                  "OFF"),
+  DDkwd__(TRAF_TINYINT_SPJ_SUPPORT,                    "OFF"),
+  DDkwd__(TRAF_TINYINT_SUPPORT,                        "ON"),
 
   // DTM Transaction Type: MVCC, SSCC
   XDDkwd__(TRAF_TRANS_TYPE,                            "MVCC"),
@@ -6659,11 +6662,6 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       if (tok == DF_ALL || tok == DF_MEASURE ||
 	  tok == DF_ACCUMULATED || tok == DF_OPERATOR ||
 	  tok == DF_PERTABLE || tok == DF_OFF)
-	isValid = TRUE;
-      break;
-
-    case FLOATTYPE:
-      if (tok == DF_TANDEM || tok == DF_IEEE)
 	isValid = TRUE;
       break;
 

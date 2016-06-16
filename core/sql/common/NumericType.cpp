@@ -45,6 +45,7 @@
 #define NAME_BUF_LEN 100
 
 NAString LiteralInteger("INTEGER");
+NAString LiteralTinyInt("TINYINT");
 NAString LiteralSmallInt("SMALLINT");
 NAString LiteralBPInt("BIT PRECISION INTEGER");
 NAString LiteralLargeInt("LARGEINT");
@@ -160,6 +161,10 @@ enum NumericType::NumericTypeEnum
     {
       token = SQLSmall_TYPE;
     }
+  else if (adtName == "TINYINT")
+    {
+      token = SQLTiny_TYPE;
+    }
   else if (adtName == "FLOAT")
     {
       token = SQLFloat_TYPE;
@@ -171,14 +176,6 @@ enum NumericType::NumericTypeEnum
   else if (adtName ==  "DOUBLE PRECISION")
     {
       token = SQLDoublePrecision_TYPE;
-    }
-  else if (adtName == "REAL TDM")
-    {
-      token = SQLRealTdm_TYPE;
-    }
-  else if (adtName ==  "DOUBLE PRECISION TDM")
-    {
-      token = SQLDoublePrecisionTdm_TYPE;
     }
   else // issue an error
   {
@@ -324,12 +321,8 @@ NABoolean NumericType::errorsCanOccur (const NAType& target,
             //  (which today always happens to be true) and if the
             //  target precision is greater than or equal to the source
             //  then no conversion error can occur
-	    //  Note: conversion from IEEE 64-bit floating point format to the
-	    //   Tandem 64-bit floating point format can generate an error.
-            if ((getTrueBinaryPrecision() <=
-                 numericTarget.getTrueBinaryPrecision()) &&
-		!((qualifier_ == SQLDoublePrecision_TYPE) &&
-		  (numericTarget.qualifier_ == SQLDoublePrecisionTdm_TYPE)))
+            if (getTrueBinaryPrecision() <=
+                numericTarget.getTrueBinaryPrecision())
               rc = FALSE;
           }
         }
@@ -352,6 +345,9 @@ NAString NumericType::getTypeName(NumericTypeEnum ntev) const
     {
     case SQLBPInt_TYPE :
       adtName = "BIT PRECISION INTEGER";
+      break;
+    case SQLTiny_TYPE :
+      adtName = "TINYINT";
       break;
     case SQLSmall_TYPE :
       adtName = "SMALLINT";
@@ -383,12 +379,6 @@ NAString NumericType::getTypeName(NumericTypeEnum ntev) const
     case SQLDoublePrecision_TYPE :
       adtName = "DOUBLE PRECISION";
       break;
-    case SQLRealTdm_TYPE :
-      adtName = "REAL TDM";
-      break;
-    case SQLDoublePrecisionTdm_TYPE :
-      adtName = "DOUBLE PRECISION TDM";
-      break;
     default :
       assert(0 == 1);  // ****ERROR: data type not supported
       break;
@@ -403,11 +393,6 @@ NAString NumericType::getTypeSQLname(NABoolean terse) const
   NAString rName = getTypeName(qualifier_);
 
   switch (qualifier_) {
-  case SQLDoublePrecisionTdm_TYPE:
-  case SQLRealTdm_TYPE:
-      // internally we treat both them as IEEE dounle precision
-      rName = "DOUBLE PRECISION";
-      break;
   case SQLBigNum_TYPE :
     rName = "NUMERIC";
     if (getScale() > 0) {
@@ -851,6 +836,124 @@ NABoolean NumericType::isEncodingNeeded() const
    else
      return FALSE;
 #endif
+}
+
+// -----------------------------------------------------------------------
+//  Methods for SQLTiny
+// -----------------------------------------------------------------------
+
+SQLTiny::SQLTiny(NABoolean allowNegValues, NABoolean allowSQLnull,CollHeap * heap)
+     : NumericType
+       ( LiteralTinyInt
+         , SQL_TINY_SIZE
+         , (allowNegValues ? SQL_SMALL_PRECISION:SQL_USMALL_PRECISION)
+         , 0
+         , 2
+         , allowNegValues
+         , allowSQLnull
+         ,FALSE
+         ,heap
+         )
+{
+} // SQLTiny()
+
+double SQLTiny::encode (void* bufPtr) const
+{
+  Int8 tempValue;
+  UInt8 usTempValue;
+  char * valPtr = (char *)bufPtr;
+  if (supportsSQLnull())
+    valPtr += getSQLnullHdrSize();
+
+  if(isUnsigned())
+  {
+    str_cpy_all ((char *)&usTempValue, valPtr, getNominalSize());
+    return ((double)usTempValue * pow(10.0, -1 * getScale()));
+  }
+  else
+  {
+    str_cpy_all ((char *)&tempValue, valPtr, getNominalSize());
+    return ((double)tempValue * pow(10.0, -1 * getScale()));
+  }
+}
+
+// -- Min and max permissible values
+
+void SQLTiny::minRepresentableValue(void* bufPtr, Lng32* bufLen,
+                                     NAString ** stringLiteral,
+				     CollHeap* h) const
+{
+  assert(*bufLen >= sizeof(char));
+  Lng32 valueBuf;
+  *bufLen = sizeof(char);
+  if (NumericType::isUnsigned())
+    {
+      *((char*)bufPtr) = 0;
+      valueBuf = 0;
+    }
+  else
+    {
+      char temp = CHAR_MIN;
+      for (Lng32 i = 0; i < sizeof(char); i++)
+	{
+	  ((char *)bufPtr)[i] = ((char *)&temp)[i];
+	}
+      valueBuf = CHAR_MIN;
+    }
+
+  if (stringLiteral != NULL)
+    {
+      // Generate a printable string for the minimum value
+      char nameBuf[NAME_BUF_LEN]; // 2 ** 16 == 65536. Need space for 5 digits only
+      signedLongToAscii(valueBuf, nameBuf);
+      *stringLiteral = new (h) NAString(nameBuf, h);
+    }
+
+} // SQLTiny::minRepresentableValue()
+
+void SQLTiny::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
+                                     NAString ** stringLiteral,
+				     CollHeap* h) const
+{
+  assert(*bufLen >= sizeof(char));
+  Lng32 valueBuf;
+  *bufLen = sizeof(char);
+  if (NumericType::isUnsigned())
+    {
+      unsigned short temp = UCHAR_MAX;
+      for (Lng32 i = 0; i < sizeof(char); i++)
+	{
+	  ((char *)bufPtr)[i] = ((char *)&temp)[i];
+	}
+      valueBuf = UCHAR_MAX;
+    }
+  else
+    {
+      short temp = CHAR_MAX;
+      for (Lng32 i = 0; i < sizeof(char); i++)
+	{
+	  ((char *)bufPtr)[i] = ((char *)&temp)[i];
+	}
+      valueBuf = CHAR_MAX;
+    }
+
+  if (stringLiteral != NULL)
+    {
+      // Generate a printable string for the maximum value
+      char nameBuf[NAME_BUF_LEN]; // 2 ** 16 == 65536. Need space for 5 digits only
+      signedLongToAscii(valueBuf, nameBuf);
+      *stringLiteral = new (h) NAString(nameBuf, h);
+    }
+
+} // SQLTiny::maxRepresentableValue()
+
+NAString* SQLTiny::convertToString(double v, CollHeap* h) const
+{
+   Lng32 valueBuf = (Lng32)v;
+
+   char nameBuf[NAME_BUF_LEN]; // 2 ** 16 == 65536. Need space for 5 digits only
+   signedLongToAscii(valueBuf, nameBuf);
+   return new (h) NAString(nameBuf, h);
 }
 
 // -----------------------------------------------------------------------
