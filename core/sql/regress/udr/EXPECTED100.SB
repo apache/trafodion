@@ -54,6 +54,12 @@
 
 --- SQL operation complete.
 >>
+>>create procedure T100_io_yy(IN IN1 tinyint, OUT OUT2 tinyint)
++>external name 't100.T100_io_yy' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
 >>create procedure T100_io_ss(IN IN1 smallint, OUT OUT2 smallint)
 +>external name 't100.T100_io_ss' language java parameter style java no sql
 +>library T100;
@@ -578,6 +584,39 @@ OUT2
 -----------
 
    2222.222
+
+--- SQL operation complete.
+>>
+>>call T100_io_yy(cast(-9 as tinyint), ?x);
+
+OUT2  
+------
+
+    -9
+
+--- SQL operation complete.
+>>call T100_io_yy(cast(9 as tinyint), ?x);
+
+OUT2  
+------
+
+     9
+
+--- SQL operation complete.
+>>call T100_io_yy(cast(-128 as tinyint), ?x);
+
+OUT2  
+------
+
+  -128
+
+--- SQL operation complete.
+>>call T100_io_yy(cast(127 as tinyint), ?x);
+
+OUT2  
+------
+
+   127
 
 --- SQL operation complete.
 >>
@@ -1146,6 +1185,16 @@ OUT2
 *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-10 Target Type:LARGEINT(IBIN64S) Min Target Value:-9. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW.
 
 --- SQL operation failed with errors.
+>>call T100_io_yy(cast(128 as tinyint), ?x);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:128 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+
+--- SQL operation failed with errors.
+>>call T100_io_yy(cast(-129 as tinyint), ?x);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:-129 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+
+--- SQL operation failed with errors.
 >>call T100_io_ss(cast(32768 as smallint), ?x);
 
 *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER SIGNED(MBIN32S) Source Value:32768 Target Type:LARGEINT(IBIN64S) Max Target Value:32767. Instruction:RANGE_HIGH_S32S64 Operation:RANGE_HIGH.
@@ -1706,8 +1755,8 @@ OUT2
 >>
 >>obey TEST100(udrtrace);
 >>log;
-Apache Trafodion Conversational Interface 2.0.0
-Copyright (c) 2015 Apache Software Foundation
+Apache Trafodion Conversational Interface 2.1.0
+Copyright (c) 2015-2016 Apache Software Foundation
 >>?section udrtrace2
 >>--
 >>-- This section will be executed by the mxci fired off while executing

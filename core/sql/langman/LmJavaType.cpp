@@ -36,12 +36,13 @@
 #include "LmParameter.h"
 #include "LmJavaType.h"
 
-#define JAVATYPETABLE_SIZE  16
+#define JAVATYPETABLE_SIZE  17
 #define LM_JAVATYPE_INVALID_INDEX -1
 
 LmJavaType::TypeElement LmJavaType::javaTypeTable[] =
 {
   {JT_VOID,         "V",                       1, "void",                  4},
+  {JT_TINY,         "T",                       1, "tiny",                  4},
   {JT_SHORT,        "S",                       1, "short",                 5},
   {JT_INT,          "I",                       1, "int",                   3},
   {JT_LONG,         "J",                       1, "long",                  4},
@@ -84,6 +85,23 @@ LmJavaType::LmJavaType(LmParameter *lmParam)
     ComFSDataType data_type = lmParam_->fsType();
     switch(data_type)
     {
+      case COM_SIGNED_BIN8_FSDT:
+      case COM_UNSIGNED_BIN8_FSDT:
+      {
+         if (lmParam_->prec() > 0)
+         {
+            type_ = JT_MATH_BIGDEC;
+         }
+         else
+         {
+           if (lmParam_->objMapping())
+              type_ = (Type) (lmParam_->fsType() + COM_LAST_FSDT);
+           else
+              type_ = JT_TINY;
+         }
+         break;
+      }
+
       case COM_SIGNED_BIN16_FSDT:
       case COM_UNSIGNED_BIN16_FSDT:
       {
@@ -245,6 +263,7 @@ LmJavaType::isJavaTypeObject() const
       return TRUE;
 
     case JT_VOID:
+    case JT_TINY:
     case JT_SHORT:
     case JT_INT:
     case JT_LONG:
