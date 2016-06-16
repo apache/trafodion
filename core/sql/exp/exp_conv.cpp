@@ -136,7 +136,68 @@ void double_varchar_length(
    }
 }
 
+//////////////////////////////////////////////////////////////////
+//
+// A helper function to show buffer in HEX 
+//
+// ///////////////////////////////////////////////////////////////
 
+static char *stringToHex(char * out, Int32 outLen, char * in, Int32 inLen)
+{
+  //clear out buffer first
+  memset(out,0,outLen);
+
+  outLen = (outLen / 2) ;
+
+  if(inLen < outLen) outLen = inLen;
+
+  char hex[3];
+  for(int i = 0; i < outLen; i++)
+  {
+    sprintf(hex, "%02x", in[i]);
+    strcat(out,hex);
+  }
+  return out;
+}
+
+//////////////////////////////////////////////////////////////////
+//
+//A helper function to return charset name
+//
+/////////////////////////////////////////////////////////////////
+static const char* scaleToString(short scale)
+{
+  switch(scale)   
+  {
+    case SQLCHARSETCODE_ISO88591:
+        return "ISO88591";
+    case SQLCHARSETCODE_KANJI:
+        return "KANJI";
+    case SQLCHARSETCODE_KSC5601:
+        return "KSC5601";
+    case SQLCHARSETCODE_SJIS:
+        return "SJIS";
+    case SQLCHARSETCODE_UCS2 :
+        return "UCS2";
+    case SQLCHARSETCODE_EUCJP :
+        return "EUCJP";
+    case SQLCHARSETCODE_BIG5: 
+        return "BIG5";
+    case SQLCHARSETCODE_GB18030:
+        return "GB18030";
+    case SQLCHARSETCODE_UTF8:
+        return "UTF8";
+    case SQLCHARSETCODE_MB_KSC5601:
+        return "MB_KSC5601";
+    case SQLCHARSETCODE_GB2312:
+        return "GB2312";
+    case SQLCHARSETCODE_GBK:
+        return "GBK";
+    default:
+        return "UNKNOWN";
+  }
+  return "UNKNOWN";
+} 
 //////////////////////////////////////////////////////////////////
 //
 // A helper function that multiplies the dvalue by 10 and
@@ -4280,6 +4341,9 @@ unicodeToSByteTarget(
        if ( allowInvalidCodePoint == FALSE )
        {
           ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHAR_IN_TRANSLATE_FUNC);
+          char hexstr[256];
+          memset(hexstr,0,256);
+          *(*diagsArea) << DgString0("UNICODE") << DgString1("ISO88591") << DgString2(stringToHex(hexstr,256,source,sourceLen));
           retcode = ex_expr::EXPR_ERROR;
        }
     }
@@ -4375,6 +4439,12 @@ unicodeToMByteTarget(
        if ( allowInvalidCodePoint == FALSE )
        {
           ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHAR_IN_TRANSLATE_FUNC);
+          char hexstr[256];
+          memset(hexstr,0,256);
+	  if ( targetScale == SQLCHARSETCODE_UTF8 )
+            *(*diagsArea) << DgString0("UNICODE") << DgString1("UTF8") << DgString2(stringToHex(hexstr,256,source,sourceLen));
+          else
+            *(*diagsArea) << DgString0("UNICODE") << DgString1("SJIS") << DgString2(stringToHex(hexstr,256,source,sourceLen));
           retcode = ex_expr::EXPR_ERROR;
           // LCOV_EXCL_STOP
        }
@@ -4505,6 +4575,12 @@ ex_expr::exp_return_type convCharToChar(
             errCode = EXE_INTERNAL_ERROR;
           
           ExRaiseSqlError(heap, diagsArea, errCode);
+          if(errCode == EXE_INVALID_CHAR_IN_TRANSLATE_FUNC)
+          {
+            char hexstr[256];
+            memset(hexstr,0,256);
+            *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,256,source,sourceLen));
+          }
           if (intermediateStr && intermediateStr != stackBuffer)
             NADELETEBASIC(intermediateStr, heap);
           return ex_expr::EXPR_ERROR;
@@ -4642,6 +4718,12 @@ ex_expr::exp_return_type convCharToChar(
                         errCode = EXE_INTERNAL_ERROR;
                       
                       ExRaiseSqlError(heap, diagsArea, errCode);
+                      if(errCode == EXE_INVALID_CHAR_IN_TRANSLATE_FUNC)
+                      {
+                        char hexstr[256];
+                        memset(hexstr,0,256);
+                        *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,256,source,sourceLen));
+                      }
                       if (intermediateStr && intermediateStr != stackBuffer)
                         NADELETEBASIC(intermediateStr, heap);
                       return ex_expr::EXPR_ERROR;
@@ -4684,6 +4766,9 @@ ex_expr::exp_return_type convCharToChar(
          {
              // source string is not valid UTF-8
              ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHAR_IN_TRANSLATE_FUNC);
+             char hexstr[256];
+             memset(hexstr,0,256);
+             *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,256,source,sourceLen));
              return ex_expr::EXPR_ERROR;
          }
       }
@@ -4709,6 +4794,9 @@ ex_expr::exp_return_type convCharToChar(
                 {
                   // source string is not valid UTF-8
                   ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHAR_IN_TRANSLATE_FUNC);
+                  char hexstr[256];
+                  memset(hexstr,0,256);
+                  *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,256,source,sourceLen));
                   return ex_expr::EXPR_ERROR;
                 }
 
