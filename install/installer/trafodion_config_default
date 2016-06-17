@@ -159,7 +159,7 @@ export TRAF_KEYTAB_DIR=""
 
 #Enter in LDAP configuration information
 #Turn on authentication - MUST have existing LDAP configured.
-export LDAP_SECURITY="Y"
+export LDAP_SECURITY="N"
 
 #Name of LDAP Config file
 export LDAP_AUTH_FILE="traf_authentication_config_${HOSTNAME}"
