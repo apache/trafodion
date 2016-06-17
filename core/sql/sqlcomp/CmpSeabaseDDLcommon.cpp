@@ -5419,12 +5419,12 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
                                             const NAString &schName,
                                             const NAString &objName,
                                             const ComObjectType objectType,
-                                            NABoolean ddlXns)
+                                            NABoolean dontForceCleanup)
 {
 
   //if ddlXns are being used, no need of additional cleanup.
   //transactional rollback will take care of cleanup.
-  if (ddlXns)
+  if (dontForceCleanup)
     return;
     
   Lng32 cliRC = 0;
@@ -5459,6 +5459,10 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
 
   return;
 }
+
+// user created traf stored col fam is of the form:  #<1-byte-num>
+//  1-byte-num is character '2' through '9', or 'a' through 'x'.
+// This allows for 32 column families and
 
 // user created traf stored col fam is of the form:  #<1-byte-num>
 //  1-byte-num is character '2' through '9', or 'a' through 'x'.
@@ -8167,7 +8171,6 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
   if (ehi == NULL)
     {
       processReturn();
-      
       return;
     }
 

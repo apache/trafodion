@@ -912,8 +912,8 @@ class CmpSeabaseDDL
                                const NAString &schName,
                                const NAString &objName,
                                const ComObjectType objectType,
-                               NABoolean ddlXns);
-  
+                               NABoolean dontForceCleanup);
+
   short createSeabaseTable2(
                             ExeCliInterface &cliInterface,
                             StmtDDLCreateTable * createTableNode,

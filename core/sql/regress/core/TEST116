@@ -33,6 +33,7 @@ drop table t116t1;
 drop table t116t2;
 drop table t116t3;
 drop table t116t3;
+drop table t116t4;
 
 
 log LOG116 clear;
@@ -214,6 +215,22 @@ purgedata t116t2;
 alter table t116t2 alter column a largeint;
 cleanup table t116t2;
 rollback work;
+set transaction autocommit on;
+
+-- index creation checking
+-- index creation is done with multiple transactions
+-- to avoid populating the index within the transaction
+drop table if exists t116t4;
+create table t116t4 (c1 int not null primary key, c2 int, c3 int) ;
+insert into t116t4 values (1,1,1), (2,2,2), (3,3,2);
+-- create index - Second attempt should fail 
+create index t116t4_i1 on t116t4(c2);
+create index t116t4_i1 on t116t4(c2);
+set parserflags 1;
+select count(*) from table(index_table t116t4_i1);
+-- create unique index - Both attempts should fail with the same error
+create unique index t116t4_i2 on t116t4(c3);
+create unique index t116t4_i2 on t116t4(c3);
 
 log;
 exit;
