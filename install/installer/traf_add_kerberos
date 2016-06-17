@@ -183,7 +183,7 @@ if [[ $? -ne 0 ]]; then
   rm $LOCAL_WORKDIR/kerberos.tmp
 fi
 
-# Grant all privileges to the Trafodion principle in HBase
+# Grant all privileges to the Trafodion principal in HBase
 echo "***INFO: Grant HBase privileges to $TRAF_USER user" 
 sudo -u $HBASE_USER  kinit -kt $HBASE_KEYTAB $HBASE_PRINCIPAL
 if [[ $? -ne 0 ]]; then

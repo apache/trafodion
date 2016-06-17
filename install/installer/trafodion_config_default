@@ -130,8 +130,6 @@ export INIT_TRAFODION="N"
 # Default is to leave as is and this file will be created.
 export SQCONFIG=""
 
-export CONFIG_COMPLETE="true"
-
 #-----------------  security configuration information -----------------
 #Enter in Kerberos details if Kerberos is enabled on your cluster
 
@@ -169,6 +167,8 @@ export LDAP_AUTH_FILE="traf_authentication_config_${HOSTNAME}"
 #LDAP name to map to database user DB__ROOT
 DB_ROOT_NAME="trafodion"
 #-----------------      end security configuration     -----------------
+
+export CONFIG_COMPLETE="true"
 
 #HA configuraton enabled, if want to enable set to true and add valid floating IP address.
 export ENABLE_HA="false"

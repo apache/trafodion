@@ -725,11 +725,27 @@ if [[ "$SECURE_HADOOP" == "Y" ]]; then
       echo "***ERROR: Kerberos not enabled" | tee -a $INSTALL_LOG
       exit -1
    fi
+else
+  echo "***INFO: Skipping Kerberos setup for Trafodion"
 fi
 
 echo "***INFO: Secure Hadoop setup for Trafodion ran successfully."
 
-# setup identity store (LDAP) stuff
+# Install and configure CLI for Cloud environments
+if  [ "$ENABLE_HA" == "true" ] && [[ $CLOUD_CONFIG == "Y" ]] && [[ $all_node_count -gt 1 ]]; then
+  echo "***INFO: Install and configure CLI for Cloud"
+  $TRAF_WORKDIR/installer/cloud_cli_setup
+fi
+
+sudo su $TRAF_USER --login --command "$TRAF_WORKDIR/installer/traf_sqgen" 2>&1 | tee -a $INSTALL_LOG
+if [ ${PIPESTATUS[0]} != "0" ]; then
+   echo "***ERROR: Error while running traf_sqgen" | tee -a $INSTALL_LOG
+   echo "***ERROR: Setup not complete, review logs." | tee -a $INSTALL_LOG
+   echo "***ERROR: Exiting...." | tee -a $INSTALL_LOG
+  exit -1
+fi
+
+# setup identity store (LDAP) stuff - has to be done after traf_sqgen completes
 if [[ "$LDAP_SECURITY" == "Y" ]]; then
    $LOCAL_WORKDIR/traf_add_ldap | tee -a $INSTALL_LOG
    if [ ${PIPESTATUS[0]} != "0" ]; then
@@ -739,14 +755,8 @@ if [[ "$LDAP_SECURITY" == "Y" ]]; then
    fi
 fi
 
-# Install and configure CLI for Cloud environments
-if  [ "$ENABLE_HA" == "true" ] && [[ $CLOUD_CONFIG == "Y" ]] && [[ $all_node_count -gt 1 ]]; then
-  echo "***INFO: Install and configure CLI for Cloud"
-  $TRAF_WORKDIR/installer/cloud_cli_setup
-fi
 
 if [[ $START_ALL == "Y" ]]; then
-   sudo su $TRAF_USER --login --command "$TRAF_WORKDIR/installer/traf_sqgen" 2>&1 | tee -a $INSTALL_LOG
    sudo su $TRAF_USER --login --command "$TRAF_WORKDIR/installer/traf_start" 2>&1 | tee -a $INSTALL_LOG
 
    if [ ${PIPESTATUS[0]} != "0" ]; then

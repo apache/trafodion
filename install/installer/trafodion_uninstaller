@@ -110,9 +110,9 @@ if [[ "$SECURE_HADOOP" == "Y" ]]; then
 
    echo "***INFO: Stopping Kerberos ticket monitoring process"
    if [ $all_node_count -eq 1 ]; then
-      sudo su $TRAF_USER --login --command "$SQ_ROOT/sql/scripts/krb5service stop"
+      sudo su $TRAF_USER --login --command "$SQ_ROOT/sql/scripts/krb5service stop 2>/dev/null"
    else
-      $TRAF_PDSH "sudo su $TRAF_USER --login --command \"$SQ_ROOT/sql/scripts/krb5service stop\""
+      $TRAF_PDSH "sudo su $TRAF_USER --login --command \"$SQ_ROOT/sql/scripts/krb5service stop 2>/dev/null\""
    fi 
 fi
    
