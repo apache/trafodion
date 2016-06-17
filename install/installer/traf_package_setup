@@ -64,6 +64,8 @@ if [[ $SUSE_LINUX == "false" ]]; then
       epel_rpm="epel-release-6-8.noarch.rpm"
       echo "***INFO: Downloading EPEL repo, since not installed."
       
+      sudo yum --assumeyes install wget 2>> $YUM_LOG >> $YUM_LOG
+ 
       wget http://download.fedoraproject.org/pub/epel/6/x86_64/$epel_rpm
       if [ $? != 0 ]; then
          echo "***ERROR: Can't download EPEL rpm $epel_rpm"
@@ -151,7 +153,7 @@ if [[ $SUSE_LINUX == "false" ]]; then
    # it doesn't hurt if it was already enabled and we try to enable it again
    $TRAF_PDSH sudo yum-config-manager --enable RedHat-6-x86_64-Fedora-EPEL 2>> $YUM_LOG >> $YUM_LOG
 
-   package_list="apr apr-util sqlite expect perl-DBD-SQLite* protobuf xerces-c perl-Params-Validate perl-Time-HiRes gzip lzo lzop unzip"
+   package_list="apr apr-util sqlite expect perl-DBD-SQLite* protobuf xerces-c perl-Params-Validate perl-Time-HiRes gzip lzo lzop unzip gcc-c++ unixODBC unixODBC-devel libiodbc libiodbc-devel"
    if [[ $internetAccess == "true" ]]; then
       for package in $package_list
       do

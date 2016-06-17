@@ -174,7 +174,8 @@ public class HiveClient {
     // Because Hive changed the name of the class containing internal constants changed
     // in Hive 0.10, we are using Java Reflection to get the value of the DDL_TIME constant.
     public static String getDDLTimeConstant()
-        throws MetaException {
+        throws MetaException 
+    {
 
         Class constsClass = null;
         Object constsFromReflection = null; 
@@ -208,17 +209,16 @@ public class HiveClient {
         } catch (ClassNotFoundException e) { 
             throw new MetaException("Could not find Hive Metastore constants class");
         } 
-
         // Using Java reflection, get a reference to the DDL_TIME field
-        try {
+       try {
             ddlTimeField = constsClass.getField("DDL_TIME");
         } catch (NoSuchFieldException e) {
             throw new MetaException("Could not find DDL_TIME constant field");
         }
-
         // get the String object that represents the value of this field
-        try {
+      try {
             fieldVal = ddlTimeField.get(constsFromReflection);
+
         } catch (IllegalAccessException e) {
             throw new MetaException("Could not get value for DDL_TIME constant field");
         }
@@ -240,20 +240,12 @@ public class HiveClient {
     return true;
   }
   
-  boolean hdfsWrite(byte[] buff, long len) throws Exception
+  boolean hdfsWrite(byte[] buff, long len) throws IOException
   {
 
     if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsWrite() - started" );
-    try
-    {
-      fsOut.write(buff);
-      fsOut.flush();
-    }
-    catch (Exception e)
-    {
-      if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsWrite() -- exception: " + e);
-      throw e;
-    }
+    fsOut.write(buff);
+    fsOut.flush();
     if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsWrite() - bytes written and flushed:" + len  );
     
     return true;
@@ -262,40 +254,15 @@ public class HiveClient {
   boolean hdfsClose() throws IOException
   {
     if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsClose() - started" );
-    try
-    {
-      fsOut.close();
-    }
-    catch (IOException e)
-    {
-      if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsClose() - exception:" + e);
-      throw e;
-    }
+    fsOut.close();
     return true;
   }
   
   public void executeHiveSQL(String ddl) throws ClassNotFoundException, SQLException
   {
-      try
-      {
-          Class.forName("org.apache.hive.jdbc.HiveDriver");
-      }
- 
-      catch(ClassNotFoundException e) 
-      {
-          throw e;
-      }
-
-      try 
-      {
-          Connection con = DriverManager.getConnection("jdbc:hive2://", "hive", "");
-          Statement stmt = con.createStatement();
-          stmt.execute(ddl);
-      }
- 
-      catch(SQLException e)
-      {
-	  throw e;
-      }
+      Class.forName("org.apache.hive.jdbc.HiveDriver");
+      Connection con = DriverManager.getConnection("jdbc:hive2://", "hive", "");
+      Statement stmt = con.createStatement();
+      stmt.execute(ddl);
   }
 }

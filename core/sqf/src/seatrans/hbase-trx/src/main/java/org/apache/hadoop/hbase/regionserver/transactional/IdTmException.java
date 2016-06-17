@@ -37,5 +37,19 @@ public class IdTmException extends Exception {
    public IdTmException(String message) {
        super(message);
     }
+ /**
+ *    * @param arg0 cause
+ *       */
+  public IdTmException(Throwable arg0) {
+    super(arg0);
+  }
+
+ /**
+ *    * @param arg0 cause
+ *       */
+  public IdTmException(String message, Throwable arg0) {
+    super(message, arg0);
+  }
+
 }
 

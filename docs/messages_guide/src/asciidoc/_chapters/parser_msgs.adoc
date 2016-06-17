@@ -2116,6 +2116,19 @@ partitioning, which is not supported.
 
 *Recovery:* Correct the syntax and resubmit.
 
+[[SQL-3154]]
+== SQL 3154
+
+```
+The <clause-name-1> clause is not allowed with the <clause-name-2> clause.
+```
+
+*Cause:* You attempted to use two mutually exclusive clauses, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
 <<<
 [[SQL-3155]]
 == SQL 3155

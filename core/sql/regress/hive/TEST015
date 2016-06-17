@@ -39,8 +39,9 @@ obey TEST015(setup);
 cqd COMPRESSED_INTERNAL_FORMAT 'ON';
 cqd COMPRESSED_INTERNAL_FORMAT_BMO 'ON';
 cqd COMPRESSED_INTERNAL_FORMAT_DEFRAG_RATIO '100';
-cqd query_cache '0';
 cqd HIVE_NUM_ESPS_PER_DATANODE '3';
+
+cqd auto_query_retry_warnings 'ON';
 
 obey TEST015(test_bulk_load_simple);
 

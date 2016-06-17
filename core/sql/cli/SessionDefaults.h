@@ -98,6 +98,7 @@ public:
     CANCEL_QUERY_ALLOWED,
     CANCEL_UNIQUE_QUERY,
     CATALOG,
+    COMPILER_IDLE_TIMEOUT,
     DBTR_PROCESS,
     ESP_ASSIGN_DEPTH,
     ESP_ASSIGN_TIME_WINDOW,
@@ -191,6 +192,12 @@ public:
     wmsProcess_ = v;
     updateDefaultsValueString(WMS_PROCESS, DisAmbiguate, wmsProcess_);
   }
+
+  void setCompilerIdleTimeout(Lng32 compilerIdleTimeout)
+  {
+    compilerIdleTimeout_ = compilerIdleTimeout;
+    updateDefaultsValueString(COMPILER_IDLE_TIMEOUT, compilerIdleTimeout_);
+  }
   
   void setIsoMappingName(const char * attrValue, Lng32 attrValueLen);
   void setIsoMappingEnum();
@@ -245,7 +252,8 @@ public:
       }
     
     catalog_ = new(heap_) char[attrValueLen + 1];
-    strcpy(catalog_, attrValue);
+    strncpy(catalog_, attrValue, attrValueLen);
+    catalog_[attrValueLen] = '\0';
 
     updateDefaultsValueString(CATALOG, catalog_);
   }
@@ -258,8 +266,8 @@ public:
       }
     
     schema_ = new(heap_) char[attrValueLen + 1];
-    strcpy(schema_, attrValue);
-
+    strncpy(schema_, attrValue, attrValueLen);
+    schema_[attrValueLen] = '\0';
     updateDefaultsValueString(SCHEMA, schema_);
   }
 
@@ -271,8 +279,8 @@ public:
       }
     
     uel_ = new(heap_) char[attrValueLen + 1];
-    strcpy(uel_, attrValue);
-
+    strncpy(uel_, attrValue, attrValueLen);
+    uel_[attrValueLen] = '\0';
     updateDefaultsValueString(USER_EXPERIENCE_LEVEL, uel_);
   }
   void setEspAssignDepth(Lng32 espAssignDepth) 
@@ -470,6 +478,7 @@ public:
   Lng32 getEspAssignTimeWindow(){ return espAssignTimeWindow_; }
   Lng32 getEspStopIdleTimeout() { return espStopIdleTimeout_; }
   Lng32 getEspIdleTimeout() { return espIdleTimeout_; }
+  Lng32 getCompilerIdleTimeout() { return compilerIdleTimeout_; }
   Lng32 getEspInactiveTimeout() { return espInactiveTimeout_; }
   Lng32 getEspReleaseWorkTimeout() { return espReleaseWorkTimeout_; }
   Lng32 getMaxPollingInterval() { return maxPollingInterval_; }
@@ -673,7 +682,9 @@ private:
   Lng32 espStopIdleTimeout_;
   // number of seconds an esp should wait idle before it times out
   Lng32 espIdleTimeout_;
-  // number of seconds an esp should remain inactive before times out
+  // number of seconds the compiler process can remain idle before it is killed by the master 
+  Lng32 compilerIdleTimeout_;
+  // numcompilerIber of seconds an esp should remain inactive before times out
   Lng32 espInactiveTimeout_;
   // number of seconds that master waits for release work reply from esps
   Lng32 espReleaseWorkTimeout_;

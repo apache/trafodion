@@ -63,6 +63,10 @@ class InterfaceResultSet {
 
 	static final int SQLTYPECODE_BPINT_UNSIGNED = -503;
 
+        /* TINYINT */
+        static final int SQLTYPECODE_TINYINT                = -403;
+        static final int SQLTYPECODE_TINYINT_UNSIGNED       = -404;
+
 	/*
 	 * DOUBLE depending on precision
 	 */
@@ -173,7 +177,7 @@ class InterfaceResultSet {
 				break;
 			case SQLDTCODE_TIME:
 				if (ODBCDataType == java.sql.Types.OTHER) // For
-				// HPT4Desc.SQLDTCODE_HOUR_TO_FRACTION
+				// TrafT4Desc.SQLDTCODE_HOUR_TO_FRACTION
 				{
 					allocLength = SQLOctetLength;
 				} else {
@@ -250,18 +254,25 @@ class InterfaceResultSet {
 			case SQLDTCODE_TIME:
 
 				// Need to add code here to check if it's
-				// HPT4Desc.SQLDTCODE_HOUR_TO_FRACTION
+				// TrafT4Desc.SQLDTCODE_HOUR_TO_FRACTION
 				if (ODBCDataType != java.sql.Types.OTHER) {
 					retObj = Time.valueOf(tmpStr);
 					break;
 				} else {
 					// Do default processing as it is
-					// HPT4Desc.SQLDTCODE_HOUR_TO_FRACTION
+					// TrafT4Desc.SQLDTCODE_HOUR_TO_FRACTION
 				}
 			default:
 				retObj = tmpStr;
 				break;
 			}
+			break;
+		case SQLTYPECODE_TINYINT:
+			retObj = new Byte(ibuffer[byteIndex]);
+			break;
+		case SQLTYPECODE_TINYINT_UNSIGNED:
+                        short sValue1 = Bytes.extractUTiny(ibuffer, byteIndex, this.ic_.getByteSwap());
+			retObj = new Short(sValue1);
 			break;
 		case SQLTYPECODE_SMALLINT:
 			short sValue = Bytes.extractShort(ibuffer, byteIndex, this.ic_.getByteSwap());
@@ -311,7 +322,7 @@ class InterfaceResultSet {
 				tmpStr = String.valueOf(Bytes.extractLong(ibuffer, byteIndex, this.ic_.getByteSwap()));
 				break;
 			default:
-				throw HPT4Messages.createSQLException(conn.props_, conn.getLocale(), "restricted_data_type", null);
+				throw TrafT4Messages.createSQLException(conn.props_, conn.getLocale(), "restricted_data_type", null);
 			}
 			retObj = new BigDecimal((new BigInteger(tmpStr)), scale);
 			break;
@@ -344,7 +355,7 @@ class InterfaceResultSet {
 		case SQLTYPECODE_BITVAR:
 		case SQLTYPECODE_BPINT_UNSIGNED:
 		default:
-			throw HPT4Messages.createSQLException(conn.props_, conn.getLocale(), "restricted_data_type", null);
+			throw TrafT4Messages.createSQLException(conn.props_, conn.getLocale(), "restricted_data_type", null);
 		}
 		return retObj;
 	} // end getFetchString
@@ -360,7 +371,7 @@ class InterfaceResultSet {
 
 	// -------------------------------------------------------------------
 	// get the column value data from Execute2 in String format
-	static Object getExecute2FetchString(TrafT4Connection conn, HPT4Desc desc, byte[] values, int noNullValue,
+	static Object getExecute2FetchString(TrafT4Connection conn, TrafT4Desc desc, byte[] values, int noNullValue,
 			int ODBCDataType, boolean useOldDateFormat, boolean swap) throws SQLException {
 		Object retObj;
 		String tmpStr;
@@ -452,7 +463,7 @@ class InterfaceResultSet {
 
 			case SQLDTCODE_TIME:
 				if (ODBCDataType == java.sql.Types.OTHER) // For
-				// HPT4Desc.SQLDTCODE_HOUR_TO_FRACTION
+				// TrafT4Desc.SQLDTCODE_HOUR_TO_FRACTION
 				{
 					length = desc.sqlOctetLength_;
 					retObj = new String(Bytes.read_chars(values, noNullValue, length));
@@ -502,6 +513,13 @@ class InterfaceResultSet {
 				retObj = new String(Bytes.read_chars(values, noNullValue, length));
 				break;
 			}
+			break;
+		case SQLTYPECODE_TINYINT_UNSIGNED:
+                        short sValue1 = Bytes.extractUTiny(values, noNullValue, swap);
+                        retObj = new Short(sValue1);
+			break;
+		case SQLTYPECODE_TINYINT:
+			retObj = new Byte(values[noNullValue]);
 			break;
 		case SQLTYPECODE_SMALLINT:
 			short sValue = Bytes.extractShort(values, noNullValue, swap);
@@ -573,7 +591,7 @@ class InterfaceResultSet {
 		case SQLTYPECODE_BITVAR:
 		case SQLTYPECODE_BPINT_UNSIGNED:
 		default:
-			throw HPT4Messages.createSQLException(conn.props_, conn.getLocale(), "restricted_data_type", null);
+			throw TrafT4Messages.createSQLException(conn.props_, conn.getLocale(), "restricted_data_type", null);
 		}
 		return retObj;
 	} // end getExecute2FetchString
@@ -661,7 +679,7 @@ class InterfaceResultSet {
 					}
 
 					if (columnValue == null) {
-						throw HPT4Messages
+						throw TrafT4Messages
 								.createSQLException(rs.connection_.props_, ic_.getLocale(), "null_data", null);
 					}
 				} else {
@@ -729,7 +747,7 @@ class InterfaceResultSet {
 					columnValue = getExecute2FetchString(rs.connection_, rs.outputDesc_[columnIndex], values,
 							noNullValueOffset, rs.outputDesc_[columnIndex].dataType_, rs.useOldDateFormat(), this.ic_.getByteSwap());
 					if (columnValue == null) {
-						throw HPT4Messages
+						throw TrafT4Messages
 								.createSQLException(rs.connection_.props_, ic_.getLocale(), "null_data", null);
 					}
 				} // end if else
@@ -791,7 +809,7 @@ class InterfaceResultSet {
 
 			// do warning processing
 			if (fr.errorList.length != 0) {
-				HPT4Messages.setSQLWarning(rs.connection_.props_, rs, fr.errorList);
+				TrafT4Messages.setSQLWarning(rs.connection_.props_, rs, fr.errorList);
 			}
 			//endOfData = (fr.rowsAffected < maxRowCnt) ? true : false;
 
@@ -818,7 +836,7 @@ class InterfaceResultSet {
 			break;
 
 		default:
-			HPT4Messages.throwSQLException(rs.connection_.props_, fr.errorList);
+			TrafT4Messages.throwSQLException(rs.connection_.props_, fr.errorList);
 
 		}
 
@@ -865,14 +883,14 @@ class InterfaceResultSet {
 					rs_.connection_.props_.t4Logger_.logp(Level.FINEST, "InterfaceResultSet", "close", temp, p);
 				}
 
-				HPT4Messages.throwSQLException(rs_.connection_.props_, cry_.m_p1.SQLError);
+				TrafT4Messages.throwSQLException(rs_.connection_.props_, cry_.m_p1.SQLError);
 			default:
 				if (ic_.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 					Object p[] = T4LoggingUtilities.makeParams(rs_.connection_.props_);
 					String temp = "UnknownException occurred during close.";
 					rs_.connection_.props_.t4Logger_.logp(Level.FINEST, "InterfaceResultSet", "close", temp, p);
 				}
-				throw HPT4Messages.createSQLException(rs_.connection_.props_, ic_.getLocale(),
+				throw TrafT4Messages.createSQLException(rs_.connection_.props_, ic_.getLocale(),
 						"ids_unknown_reply_error", null);
 			} // end switch
 		} // end if
@@ -885,7 +903,7 @@ class InterfaceResultSet {
 	};
 
 	// ----------------------------------------------------------------------------
-	static Object[] getExecute2Outputs(TrafT4Connection conn, HPT4Desc[] desc, byte[] values, boolean swap) throws SQLException
+	static Object[] getExecute2Outputs(TrafT4Connection conn, TrafT4Desc[] desc, byte[] values, boolean swap) throws SQLException
 
 	{
 		Object[] columnArray;
@@ -907,13 +925,13 @@ class InterfaceResultSet {
 			}
 
 			if ((nullValueOffset != -1 && Bytes.extractShort(values, nullValueOffset, swap) == -1)
-					|| (desc[columnIndex].paramMode_ == HPT4ParameterMetaData.parameterModeIn)) {
+					|| (desc[columnIndex].paramMode_ == TrafT4ParameterMetaData.parameterModeIn)) {
 				columnValue = null;
 			} else {
 				columnValue = getExecute2FetchString(conn, desc[columnIndex], values, noNullValueOffset,
 						desc[columnIndex].dataType_, false, swap);
 				if (columnValue == null) {
-					throw HPT4Messages.createSQLException(conn.props_, conn.getLocale(), "null_data", null);
+					throw TrafT4Messages.createSQLException(conn.props_, conn.getLocale(), "null_data", null);
 				}
 			} // end if else
 

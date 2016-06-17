@@ -4679,8 +4679,8 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
    "else dt.USELENGTH end) as integer) BUFFER_LENGTH, "
   "cast(co.COLUMN_SCALE as smallint) DECIMAL_DIGITS, "
 "cast(dt.NUM_PREC_RADIX as smallint) NUM_PREC_RADIX, "
-  "cast((case when co.NULLABLE = 0 then 0 when co.NULLABLE = 2 then 1 else 2 end) as smallint) NULLABLE, "
- "cast(NULL as varchar(128)) REMARKS, "
+ "cast(co.NULLABLE as smallint) NULLABLE, "
+ "cast('' as varchar(128)) REMARKS, "
 "trim(co.DEFAULT_VALUE) COLUMN_DEF, "
   "cast((case when co.FS_DATA_TYPE = 0 and co.character_set = 'UCS2' then -8 "
      "when co.FS_DATA_TYPE = 64 and co.character_set = 'UCS2' then -9 else dt.SQL_DATA_TYPE end) as smallint) SQL_DATA_TYPE, "
@@ -4811,6 +4811,65 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
 
 			break;
 
+        case SQL_API_SQLSTATISTICS:
+            if (!checkIfWildCard(catalogNm, catalogNmNoEsc) && !metadataId)
+            {
+                exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
+                exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_WILDCARD_NOT_SUPPORTED;
+            }
+            if (tableNm[0] != '$' && tableNm[0] != '\\')
+            {
+                if (strcmp(catalogNm, "") == 0)
+                    strcpy(tableName1, SEABASE_MD_CATALOG);
+                else
+                    strcpy(tableName1, catalogNm);
+            }
+
+            tableParam[0] = tableName1;
+            convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+            convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
+            convertWildcard(metadataId, TRUE, tableNm, expTableNm);
+            convertWildcardNoEsc(metadataId, TRUE, tableNmNoEsc, tableNmNoEsc);
+            inputParam[0] = schemaNmNoEsc;
+            inputParam[1] = expSchemaNm;
+            inputParam[2] = tableNmNoEsc;
+            inputParam[3] = expTableNm;
+
+            snprintf(CatalogQuery, sizeof(CatalogQuery),
+                    "select "
+                    "cast('%s' as varchar(128)) TABLE_CAT, "
+                    "cast(trim(ob.SCHEMA_NAME) as varchar(128)) TABLE_SCHEM, "
+                    "cast(trim(ob.OBJECT_NAME) as varchar(128)) TABLE_NAME, "
+                    "cast(0 as smallint) NON_UNIQUE, " // not support
+                    "cast('' as varchar(128)) INDEX_QUALIFIER, " // not support
+                    "cast('' as varchar(128)) INDEX_NAME, "
+                    "cast(0 as smallint) TYPE, " // not support
+                    "cast(co.column_number as smallint) ORDINAL_POSITION, "
+                    "cast(trim(co.COLUMN_NAME) as varchar(128)) COLUMN_NAME, "
+                    "cast('' as char(1)) ASC_OR_DES, "
+                    "cast(sb.rowcount as integer) CARDINALITY, "
+                    "cast(0 as integer) PAGES, " // not support
+                    "cast('' as varchar(128)) FILTER_CONDITION " // not support
+                    "from "
+                    "TRAFODION.\"_MD_\".OBJECTS ob, "
+                    "TRAFODION.\"_MD_\".COLUMNS co, "
+                    "TRAFODION.%s.sb_histograms sb "
+                    "where "
+                    "ob.OBJECT_UID = co.OBJECT_UID "
+                    "and co.OBJECT_UID = sb.TABLE_UID "
+                    "and co.COLUMN_NUMBER = sb.COLUMN_NUMBER "
+                    "and sb.colcount = 1 "
+                    "and (ob.SCHEMA_NAME = '%s' or trim(ob.SCHEMA_NAME) LIKE '%s' ESCAPE '\\')  "
+                    "and (ob.OBJECT_NAME = '%s' or trim(ob.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
+                    "and (ob.OBJECT_TYPE in ('BT', 'VI')) "
+                    "and (trim(co.COLUMN_CLASS) not in('S', 'M'));",
+                    tableParam[0],
+                    inputParam[0],
+                    inputParam[0], inputParam[1],
+                    inputParam[2], inputParam[3]
+                    );
+
+            break;
                default :
                        exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
                        exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_UNSUPPORTED_SMD_API_TYPE;

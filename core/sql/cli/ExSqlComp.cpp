@@ -413,6 +413,7 @@ ExSqlComp::ReturnStatus ExSqlComp::sendR(CmpMessageObj* c, NABoolean w)
 
   // send the message.
   Int64 transid = cliGlobals_->currContext()->getTransaction()->getExeXnId(); 
+  recentIpcTimestamp_ = NA_JulianTimestamp();
   sqlcompMessage_->send(w, transid);
 
   if (badConnection_) 
@@ -443,6 +444,7 @@ ExSqlComp::ReturnStatus ExSqlComp::sendR(CmpMessageObj* c, NABoolean w)
 void ExSqlComp::completeRequests()
 {
   sqlcompMessage_->waitOnMsgStream(IpcInfiniteTimeout);
+  recentIpcTimestamp_ = NA_JulianTimestamp();
 }
 
 // The return status of ERROR here is only useful for WAITED requests --
@@ -452,6 +454,7 @@ inline
 ExSqlComp::ReturnStatus ExSqlComp::waitForReply()
 {
   sqlcompMessage_->waitOnMsgStream(IpcImmediately);
+  recentIpcTimestamp_ = NA_JulianTimestamp();
   return (outstandingSendBuffers_.ioStatus_ == FINISHED) ? SUCCESS : ERROR;
 }
 
@@ -674,14 +677,19 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
 
   if (ret != ERROR)
   {
-    // Send database credentials in a string as follows:
-    //    Database userID
-    //    Delimiter
-    //    Database username
+    // The message contains the following:
+    //   (auth state and user ID are delimited by commas)
+    //     authorization state (0 - off, 1 - on)
+    //     integer user ID
+    //     database user name
+    // See CmpStatement::process (CmpMessageDatabaseUser) for more details
     Int32 *userID = ctxt->getDatabaseUserID();
     Int32 userAsInt = *userID;
-    char userMessage [MAX_AUTHID_AS_STRING_LEN + 1 + MAX_USERNAME_LEN + 1];
-    str_sprintf(userMessage, "%d,%s", userAsInt, ctxt->getDatabaseUserName());
+    CmpContext *cmpCntxt = CmpCommon::context();
+    NABoolean authOn = cmpCntxt ? cmpCntxt->isAuthorizationEnabled() : FALSE;
+
+    char userMessage [MAX_AUTHID_AS_STRING_LEN + 1 + MAX_USERNAME_LEN + 1 + 2];
+    str_sprintf(userMessage, "%d,%d,%s", authOn, userAsInt, ctxt->getDatabaseUserName());
 
 #if defined(NA_DEBUG_C_RUNTIME)
     NABoolean doDebug = (getenv("DBUSER_DEBUG") ? TRUE : FALSE);
@@ -1007,7 +1015,7 @@ isShared_(FALSE), lastContext_(NULL), resendingControls_(FALSE)
   server_ = 0;
 
   diagArea_ = ComDiagsArea::allocate(h_);  
- 
+  recentIpcTimestamp_ = -1; 
 }
 
 ExSqlComp::~ExSqlComp()

@@ -60,6 +60,12 @@ import java.nio.ByteBuffer;
 
       /**
        *  Constructor, specifying a name and a type
+       *
+       *  @param name       Name of the column to add. Use UPPER CASE letters,
+       *                    digits and underscore, otherwise you will need to
+       *                    use delimited column names with matching case in
+       *                    Trafodion.
+       *  @param type       Type of the column to add.
        */
       public ColumnInfo(String name, TypeInfo type){
           super(TMUDRObjectType.COLUMN_INFO_OBJ, getCurrentVersion());

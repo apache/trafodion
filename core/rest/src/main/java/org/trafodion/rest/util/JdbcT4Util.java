@@ -50,14 +50,14 @@ import org.trafodion.rest.util.RestConfiguration;
 import org.trafodion.rest.Constants;
 import org.trafodion.jdbc.t4.TrafT4Connection;
 import org.trafodion.jdbc.t4.TrafT4PreparedStatement;
-import org.trafodion.jdbc.t4.HPT4DataSource;
+import org.trafodion.jdbc.t4.TrafT4DataSource;
 
 public final class JdbcT4Util
 {
 	private static final Log LOG = LogFactory.getLog(JdbcT4Util.class);
     private Configuration conf;
     private NetworkConfiguration netConf;
-	private HPT4DataSource cpds = null;
+	private TrafT4DataSource cpds = null;
  
 	static	{
 		try {
@@ -72,7 +72,7 @@ public final class JdbcT4Util
 	public void init(Configuration conf,NetworkConfiguration netConf) throws SQLException {
 		this.conf = conf;
 		this.netConf = netConf;
-	   	cpds = new HPT4DataSource();
+	   	cpds = new TrafT4DataSource();
 		String url = Constants.T4_DRIVER_URL + "//" + netConf.getHostName() + ":" + conf.getInt(Constants.DCS_MASTER_PORT,Constants.DEFAULT_DCS_MASTER_PORT) + "/:";
 		cpds.setURL(url);
 		cpds.setMinPoolSize(conf.getInt(Constants.T4_DRIVER_MIN_POOL_SIZE,Constants.DEFAULT_T4_DRIVER_MIN_POOL_SIZE));

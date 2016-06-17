@@ -654,23 +654,10 @@ NA_EIDPROC
   void setPertableStatsTdbId(UInt16 id) { pertableStatsTdbId_ = id; }
 
 NA_EIDPROC
-Float32 getTandemFloatValue(char * v) const;
-
-NA_EIDPROC
-Float64 getTandemDoubleValue(char * v) const;
-
-NA_EIDPROC
   Float32 getFloatValue(char * v) const
   {
     Float32 f;
-    if (floatFieldsAreIEEE())
-      str_cpy_all((char *)&f, v, sizeof(Float32));
-// LCOV_EXCL_START
-    else
-      {
-	f = getTandemFloatValue(v);
-      }
-// LCOV_EXCL_STOP
+    str_cpy_all((char *)&f, v, sizeof(Float32));
 
     return f;
   }
@@ -679,14 +666,7 @@ NA_EIDPROC
   Float64 getDoubleValue(char * v) const
   {
     Float64 f;
-    if (floatFieldsAreIEEE())
-      str_cpy_all((char *)&f, v, sizeof(Float64));
-// LCOV_EXCL_START
-    else
-      {
-	f = getTandemDoubleValue(v);
-      }
-// LCOV_EXCL_STOP
+    str_cpy_all((char *)&f, v, sizeof(Float64));
 
     return f;
   }

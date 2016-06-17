@@ -48,9 +48,10 @@
 #include "org_trafodion_jdbc_t2_T2Driver.h"
 #include "Debug.h"
 #include "GlobalInformation.h"
+#include "CommonLogger.h"
+#include "sqlcli.h"
 
 static bool driverVersionChecked = false;
-
 #ifdef NSK_PLATFORM	// Linux port - ToDo txn related
 int client_initialization(void);
 #endif
@@ -86,28 +87,19 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_T2Driver_SQLMXInitialize(JNIEn
 	//MFC
 	const char					*nModuleCaching;
 	const char					*nCompiledModuleLocation;
+        
+        sqInit();
 
-/*
-	// Seaquest related - Linux port
-	int argc = 0;
-	char *argv[] = {"AAA"};
-	//argv[0] = NULL;
-	// Initialize seabed
-	int	sbResult;
-	char buffer[FILENAME_MAX] = {0};
-	bzero(buffer, sizeof(buffer));
-	
-	sbResult = file_init_attach(&argc, &argv, true, buffer);
-	if(sbResult != XZFIL_ERR_OK){
-		abort();
-	}
-	sbResult = file_mon_process_startup(true);
-	if(sbResult != XZFIL_ERR_OK){
-		abort();
-	}
-	msg_mon_enable_mon_messages(true);
-	// End Seaquest related
-*/
+        int myNid;
+        pid_t myPid;
+        MS_Mon_Process_Info_Type  proc_info;
+        msg_mon_get_process_info_detail(NULL, &proc_info);
+        myNid = proc_info.nid;
+        myPid = proc_info.pid;
+
+        char logNameSuffix[32];
+        sprintf( logNameSuffix, "_%d_%d.log", myNid, myPid );
+        CommonLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config", logNameSuffix);
 
 	if (!driverVersionChecked)
 	{

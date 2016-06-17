@@ -26,10 +26,11 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Locale;
 
-class HPT4Desc {
+class TrafT4Desc {
 
 	String getColumnClassName() throws SQLException {
 		switch (dataType_) {
+		case Types.TINYINT:
 		case Types.SMALLINT:
 			return "java.lang.Integer";
 		case Types.INTEGER:
@@ -61,7 +62,6 @@ class HPT4Desc {
 		case Types.BLOB:
 			return "java.sql.Blob";
 		case Types.BIT:
-		case Types.TINYINT:
 		default:
 			return null;
 		}
@@ -135,15 +135,15 @@ class HPT4Desc {
 		case Types.BLOB:
 			break;
 		default:
-			System.out.println("Data type is " + dataType_);
-			throw HPT4Messages.createSQLException(null, locale, "restricted_data_type", null);
+                        System.out.println("Data type is " + dataType_);
+			throw TrafT4Messages.createSQLException(null, locale, "restricted_data_type", null);
 		}
 		return;
 	} // end checkValidNumericConversion
 
 	// ---------------------------------------------------------------
 	// Constructors
-	HPT4Desc(int dataType, short datetimeCode, int maxLen, short precision, short scale, boolean nullInfo,
+	TrafT4Desc(int dataType, short datetimeCode, int maxLen, short precision, short scale, boolean nullInfo,
 			String colName, boolean signType, int odbcDataType, short odbcPrecision, int sqlCharset, int odbcCharset,
 			String catalogName, String schemaName, String tableName, int fsDataType, int intLeadPrec, int paramMode) {
 		catalogName_ = catalogName;
@@ -382,12 +382,12 @@ class HPT4Desc {
 		fsDataType_ = fsDataType;
 		intLeadPrec_ = intLeadPrec;
 		paramMode_ = paramMode;
-	} // end HPT4Desc
+	} // end TrafT4Desc
 
 	// ---------------------------------------------------------------
 	// Constructors
 
-	HPT4Desc(
+	TrafT4Desc(
 			int noNullValue // Descriptor2 only
 			,
 			int nullValue // Descriptor2 only
@@ -426,7 +426,7 @@ class HPT4Desc {
 
 		maxLen_ = maxLen;
 
-	} // end HPT4Desc
+	} // end TrafT4Desc
 
 	// ---------------------------------------------------------------
 	/***************************************************************************
@@ -539,4 +539,4 @@ class HPT4Desc {
 	int rowLength_;
 	int maxLen_;
 
-} // end class HPT4Desc
+} // end class TrafT4Desc

@@ -49,11 +49,11 @@ import javax.sql.PooledConnection;
  * </p>
  * 
  * <p>
- * The <code>HPT4ConnectionPoolDataSource</code> class should be used to
+ * The <code>TrafT4ConnectionPoolDataSource</code> class should be used to
  * provide JDBC3.0 connection pooling features. The
- * <code>HPT4ConnectionPoolDataSource</code> is used by the application
+ * <code>TrafT4ConnectionPoolDataSource</code> is used by the application
  * servers like WSAS to provide connection pooling features to the J2EE
- * applications. <code>HPT4ConnectionPoolDataSource.getPooledConnection()</code>
+ * applications. <code>TrafT4ConnectionPoolDataSource.getPooledConnection()</code>
  * returns the <code>javax.sql.PooledConnection object</code>.
  * </p>
  * 
@@ -66,10 +66,10 @@ import javax.sql.PooledConnection;
  * </p>
  * 
  * @see T4Properties
- * @see HPT4DataSource
+ * @see TrafT4DataSource
  */
 
-public class HPT4ConnectionPoolDataSource extends T4DSProperties implements javax.sql.ConnectionPoolDataSource,
+public class TrafT4ConnectionPoolDataSource extends T4DSProperties implements javax.sql.ConnectionPoolDataSource,
 		java.io.Serializable, Referenceable
 
 {
@@ -80,30 +80,30 @@ public class HPT4ConnectionPoolDataSource extends T4DSProperties implements java
 	 * 
 	 * @return A <code>PooledConnection</code> object that is a physical
 	 *         connection to the NDCS server that this
-	 *         <code>HPT4ConnectionPoolDataSource</code> object represents.
+	 *         <code>TrafT4ConnectionPoolDataSource</code> object represents.
 	 * @throws SQLException
 	 *             If any NDCS error occurs.
 	 */
 	public PooledConnection getPooledConnection() throws SQLException {
 		if (t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(null);
-			t4Logger_.logp(Level.FINE, "HPT4ConnectionPoolDataSource", "getPooledConnection", "", p);
+			t4Logger_.logp(Level.FINE, "TrafT4ConnectionPoolDataSource", "getPooledConnection", "", p);
 		}
 		if (getLogWriter() != null) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(null);
 			lr.setParameters(p);
-			lr.setSourceClassName("HPT4ConnectionPoolDataSource");
+			lr.setSourceClassName("TrafT4ConnectionPoolDataSource");
 			lr.setSourceMethodName("getPooledConnection");
 			T4LogFormatter lf = new T4LogFormatter();
 			String temp = lf.format(lr);
 			getLogWriter().println(temp);
 		}
-		HPT4PooledConnection connect;
+		TrafT4PooledConnection connect;
 
 		Properties l_props = super.getProperties();
 		T4Properties l_t4props = new T4Properties(l_props);
-		connect = new HPT4PooledConnection(this, l_t4props);
+		connect = new TrafT4PooledConnection(this, l_t4props);
 
 		return connect;
 	}
@@ -118,26 +118,26 @@ public class HPT4ConnectionPoolDataSource extends T4DSProperties implements java
 	 *            Safeguard user password.
 	 * @return A <code>PooledConnection</code> object that is a physical
 	 *         connection to the NDCS server that this
-	 *         <code>HPT4ConnectionPoolDataSource</code> object represents.
+	 *         <code>TrafT4ConnectionPoolDataSource</code> object represents.
 	 * @throws SQLException
 	 *             If any NDCS error occurs.
 	 */
 	public PooledConnection getPooledConnection(String username, String password) throws SQLException {
 		if (t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(null, username);
-			t4Logger_.logp(Level.FINE, "HPT4ConnectionPoolDataSource", "getPooledConnection", "", p);
+			t4Logger_.logp(Level.FINE, "TrafT4ConnectionPoolDataSource", "getPooledConnection", "", p);
 		}
 		if (getLogWriter() != null) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(null, username);
 			lr.setParameters(p);
-			lr.setSourceClassName("HPT4ConnectionPoolDataSource");
+			lr.setSourceClassName("TrafT4ConnectionPoolDataSource");
 			lr.setSourceMethodName("getPooledConnection");
 			T4LogFormatter lf = new T4LogFormatter();
 			String temp = lf.format(lr);
 			getLogWriter().println(temp);
 		}
-		HPT4PooledConnection connect;
+		TrafT4PooledConnection connect;
 
 		setUser(username);
 		setPassword(password);
@@ -155,14 +155,14 @@ public class HPT4ConnectionPoolDataSource extends T4DSProperties implements java
 	public Reference getReference() throws NamingException {
 		if (t4Logger_ != null && t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(null);
-			t4Logger_.logp(Level.FINE, "HPT4ConnectionPoolDataSource", "getReference", "", p);
+			t4Logger_.logp(Level.FINE, "TrafT4ConnectionPoolDataSource", "getReference", "", p);
 		}
 		try {
 			if (getLogWriter() != null) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(null);
 				lr.setParameters(p);
-				lr.setSourceClassName("HPT4ConnectionPoolDataSource");
+				lr.setSourceClassName("TrafT4ConnectionPoolDataSource");
 				lr.setSourceMethodName("getReference");
 				T4LogFormatter lf = new T4LogFormatter();
 				String temp = lf.format(lr);
@@ -172,7 +172,7 @@ public class HPT4ConnectionPoolDataSource extends T4DSProperties implements java
 			// ignore
 		}
 
-		Reference ref = new Reference(this.getClass().getName(), "org.trafodion.jdbc.t4.HPT4ConnectionPoolDataSourceFactory",
+		Reference ref = new Reference(this.getClass().getName(), "org.trafodion.jdbc.t4.TrafT4ConnectionPoolDataSourceFactory",
 				null);
 		ref = addReferences(ref);
 		ref.add(new StringRefAddr("propertyCycle", Integer.toString(propertyCycle_)));
@@ -189,14 +189,14 @@ public class HPT4ConnectionPoolDataSource extends T4DSProperties implements java
 	public void setPropertyCycle(int propertyCycle) {
 		if (t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(null);
-			t4Logger_.logp(Level.FINE, "HPT4ConnectionPoolDataSource", "setPropertyCycle", "", p);
+			t4Logger_.logp(Level.FINE, "TrafT4ConnectionPoolDataSource", "setPropertyCycle", "", p);
 		}
 		try {
 			if (getLogWriter() != null) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(null, propertyCycle);
 				lr.setParameters(p);
-				lr.setSourceClassName("HPT4ConnectionPoolDataSource");
+				lr.setSourceClassName("TrafT4ConnectionPoolDataSource");
 				lr.setSourceMethodName("setPropertyCycle");
 				T4LogFormatter lf = new T4LogFormatter();
 				String temp = lf.format(lr);
@@ -217,14 +217,14 @@ public class HPT4ConnectionPoolDataSource extends T4DSProperties implements java
 	public int getPropertyCycle() {
 		if (t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(null);
-			t4Logger_.logp(Level.FINE, "HPT4ConnectionPoolDataSource", "getPropertyCycle", "", p);
+			t4Logger_.logp(Level.FINE, "TrafT4ConnectionPoolDataSource", "getPropertyCycle", "", p);
 		}
 		try {
 			if (getLogWriter() != null) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(null);
 				lr.setParameters(p);
-				lr.setSourceClassName("HPT4ConnectionPoolDataSource");
+				lr.setSourceClassName("TrafT4ConnectionPoolDataSource");
 				lr.setSourceMethodName("getPropertyCycle");
 				T4LogFormatter lf = new T4LogFormatter();
 				String temp = lf.format(lr);
@@ -262,16 +262,16 @@ public class HPT4ConnectionPoolDataSource extends T4DSProperties implements java
 	/**
 	 * Creates a pooled connection object.
 	 * 
-	 * @see #HPT4ConnectionPoolDataSource(Properties)
+	 * @see #TrafT4ConnectionPoolDataSource(Properties)
 	 * @see T4Properties
 	 */
-	public HPT4ConnectionPoolDataSource() {
+	public TrafT4ConnectionPoolDataSource() {
 		super();
 		if (getT4LogLevel() != Level.OFF)
 			setupLogFileHandler();
 		if (t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(null);
-			t4Logger_.logp(Level.FINE, "HPT4ConnectionPoolDataSource", "HPT4ConnectionPoolDataSource",
+			t4Logger_.logp(Level.FINE, "TrafT4ConnectionPoolDataSource", "TrafT4ConnectionPoolDataSource",
 					"Note, super called before this.", p);
 		}
 		try {
@@ -279,7 +279,7 @@ public class HPT4ConnectionPoolDataSource extends T4DSProperties implements java
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(null);
 				lr.setParameters(p);
-				lr.setSourceClassName("HPT4ConnectionPoolDataSource");
+				lr.setSourceClassName("TrafT4ConnectionPoolDataSource");
 				lr.setSourceMethodName("");
 				T4LogFormatter lf = new T4LogFormatter();
 				String temp = lf.format(lr);
@@ -295,16 +295,16 @@ public class HPT4ConnectionPoolDataSource extends T4DSProperties implements java
 	 * 
 	 * @param props
 	 *            properties for the Type 4 connection
-	 * @see #HPT4ConnectionPoolDataSource()
+	 * @see #TrafT4ConnectionPoolDataSource()
 	 * @link T4Properties
 	 */
-	public HPT4ConnectionPoolDataSource(Properties props) {
+	public TrafT4ConnectionPoolDataSource(Properties props) {
 		super(props);
 		if (getT4LogLevel() != Level.OFF)
 			setupLogFileHandler();
 		if (t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(null, props);
-			t4Logger_.logp(Level.FINE, "HPT4ConnectionPoolDataSource", "HPT4ConnectionPoolDataSource",
+			t4Logger_.logp(Level.FINE, "TrafT4ConnectionPoolDataSource", "TrafT4ConnectionPoolDataSource",
 					"Note, super called before this.", p);
 		}
 		try {
@@ -312,7 +312,7 @@ public class HPT4ConnectionPoolDataSource extends T4DSProperties implements java
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(null, props);
 				lr.setParameters(p);
-				lr.setSourceClassName("HPT4ConnectionPoolDataSource");
+				lr.setSourceClassName("TrafT4ConnectionPoolDataSource");
 				lr.setSourceMethodName("");
 				T4LogFormatter lf = new T4LogFormatter();
 				String temp = lf.format(lr);

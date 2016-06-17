@@ -39,6 +39,7 @@ exit;
 drop table t140helper;
 drop table t140;
 drop table t140b;
+drop table t140c;
 
 ?section ddl
 create table t140helper (a int not null, primary key(a));
@@ -47,6 +48,44 @@ create table t140 (uniq int not null, uniq2 int not null , a int not null, b int
     c int not null, an int, bn int, cn int, d varchar(10),                  primary key (uniq,uniq2)) ;
 create table t140b (uniq int not null, uniq2 int not null , a int not null, b int not null,
     c int not null, an int, bn int, cn int, d varchar(10),                  primary key (uniq,uniq2)) salt using 2 partitions on (uniq,uniq2) ;
+CREATE TABLE t140c
+  (
+    SS_SOLD_DATE_SK                  INT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED
+  , SS_ITEM_SK                       INT NO DEFAULT NOT NULL NOT DROPPABLE NOT
+      SERIALIZED
+  , SS_TICKET_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE NOT
+      SERIALIZED
+  , SS_SOLD_TIME_SK                  INT DEFAULT NULL NOT SERIALIZED
+  , SS_CUSTOMER_SK                   INT DEFAULT NULL NOT SERIALIZED
+  , SS_CDEMO_SK                      INT DEFAULT NULL NOT SERIALIZED
+  , SS_HDEMO_SK                      INT DEFAULT NULL NOT SERIALIZED
+  , SS_ADDR_SK                       INT DEFAULT NULL NOT SERIALIZED
+  , SS_STORE_SK                      INT DEFAULT NULL NOT SERIALIZED
+  , SS_PROMO_SK                      INT DEFAULT NULL NOT SERIALIZED
+  , SS_QUANTITY                      INT DEFAULT NULL NOT SERIALIZED
+  , SS_WHOLESALE_COST                REAL DEFAULT NULL NOT SERIALIZED
+  , SS_LIST_PRICE                    REAL DEFAULT NULL NOT SERIALIZED
+  , SS_SALES_PRICE                   REAL DEFAULT NULL NOT SERIALIZED
+  , SS_EXT_DISCOUNT_AMT              REAL DEFAULT NULL NOT SERIALIZED
+  , SS_EXT_SALES_PRICE               REAL DEFAULT NULL NOT SERIALIZED
+  , SS_EXT_WHOLESALE_COST            REAL DEFAULT NULL NOT SERIALIZED
+  , SS_EXT_LIST_PRICE                REAL DEFAULT NULL NOT SERIALIZED
+  , SS_EXT_TAX                       REAL DEFAULT NULL NOT SERIALIZED
+  , SS_COUPON_AMT                    REAL DEFAULT NULL NOT SERIALIZED
+  , SS_NET_PAID                      REAL DEFAULT NULL NOT SERIALIZED
+  , SS_NET_PAID_INC_TAX              REAL DEFAULT NULL NOT SERIALIZED
+  , SS_NET_PROFIT                    REAL DEFAULT NULL NOT SERIALIZED
+  , PRIMARY KEY (SS_SOLD_DATE_SK ASC, SS_ITEM_SK ASC, SS_TICKET_NUMBER ASC)
+  )
+  SALT USING 8 PARTITIONS
+       ON (SS_ITEM_SK, SS_TICKET_NUMBER)
+ ATTRIBUTES ALIGNED FORMAT
+  HBASE_OPTIONS
+  (
+    DATA_BLOCK_ENCODING = 'FAST_DIFF',
+    BLOCKSIZE = '131072'
+  )
+;
 
 upsert using load 
 into t140
@@ -69,6 +108,35 @@ into t140b
          
   from t140helper
 transpose 0,1,2,3,4,5,6,7,8,9 as x1;
+
+load into t140c select
+   SS_SOLD_DATE_SK 
+  , SS_ITEM_SK       
+  , SS_TICKET_NUMBER
+  , SS_SOLD_TIME_SK
+  , SS_CUSTOMER_SK 
+  , SS_CDEMO_SK  
+  , SS_HDEMO_SK    
+  , SS_ADDR_SK    
+  , SS_STORE_SK   
+  , SS_PROMO_SK  
+  , SS_QUANTITY     
+  , SS_WHOLESALE_COST  
+  , SS_LIST_PRICE   
+  , SS_SALES_PRICE  
+  , SS_EXT_DISCOUNT_AMT  
+  , SS_EXT_SALES_PRICE  
+  , SS_EXT_WHOLESALE_COST   
+  , SS_EXT_LIST_PRICE    
+  , SS_EXT_TAX       
+  , SS_COUPON_AMT    
+  , SS_NET_PAID      
+  , SS_NET_PAID_INC_TAX  
+  , SS_NET_PROFIT     
+from hive.hive.store_sales where ss_sold_date_sk is not null;
+update statistics for table t140c on every column sample;
+cqd cache_histograms_in_kb '0';
+cqd cache_histograms_in_kb reset;
 
 ?section run
 -- test returned rows with or without adding key column and test of all pushdown functions with null or non null column
@@ -113,10 +181,32 @@ select avg(a) from t140b;
 cqd hbase_dop_parallel_scanner '1.0';
 explain select avg(a) from t140b;
 select avg(a) from t140b;
+explain select avg(a) from t140b;
+select avg(a) from t140b;
+cqd parallel_num_esps '1';
+cqd hbase_dop_parallel_scanner '1.0';
+prepare xx from select count(*) from t140c where ss_customer_sk between 1000 and 20000;
+execute xx;
+cqd hbase_dop_parallel_scanner '2';
+prepare xx from select count(*) from t140c where ss_customer_sk between 1000 and 20000;
+execute xx;
+cqd hbase_dop_parallel_scanner '3';
+prepare xx from select count(*) from t140c where ss_customer_sk between 1000 and 20000;
+execute xx;
+cqd hbase_dop_parallel_scanner '4';
+prepare xx from select count(*) from t140c where ss_customer_sk between 1000 and 20000;
+execute xx;
+cqd hbase_dop_parallel_scanner '5';
+prepare xx from select count(*) from t140c where ss_customer_sk between 1000 and 20000;
+execute xx;
+cqd hbase_dop_parallel_scanner '6';
+prepare xx from select count(*) from t140c where ss_customer_sk between 1000 and 20000;
+execute xx;
+cqd hbase_dop_parallel_scanner '7';
+prepare xx from select count(*) from t140c where ss_customer_sk between 1000 and 20000;
+execute xx;
 -- reset to regular scanner
 cqd hbase_dop_parallel_scanner reset;
 cqd hbase_small_scanner reset;
 cqd parallel_num_esps reset;
-explain select avg(a) from t140b;
-select avg(a) from t140b;
 

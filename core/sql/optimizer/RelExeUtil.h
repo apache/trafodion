@@ -1034,7 +1034,8 @@ public:
 		    NABoolean isHiveTable = FALSE,
 		    NAString * hiveTableLocation = NULL,
                     NAString * hiveHostName = NULL,
-                    Int32 hiveHdfsPort = 0)
+                    Int32 hiveHdfsPort = 0,
+                    Int64 hiveModTS = -1)
        : ExeUtilExpr(FAST_DELETE_, name, exprNode, NULL, stmtText, stmtTextCharSet, oHeap),
          doPurgedataCat_(doPurgedataCat),
          noLog_(noLog), ignoreTrigger_(ignoreTrigger),
@@ -1044,7 +1045,8 @@ public:
          offlineTable_(FALSE),
          doLabelPurgedata_(FALSE),
          numLOBs_(0),
-         isHiveTable_(isHiveTable)
+         isHiveTable_(isHiveTable),
+         hiveModTS_(hiveModTS)
   {
     if (isHiveTable )
       {
@@ -1123,6 +1125,9 @@ private:
   NAString  hiveTableLocation_;
   NAString hiveHostName_;
   Int32 hiveHdfsPort_;
+
+  // timestamp of hiveTableLocation. 
+  Int64 hiveModTS_;
 };
 
 class ExeUtilMaintainObject : public ExeUtilExpr

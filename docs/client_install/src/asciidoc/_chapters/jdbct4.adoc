@@ -266,13 +266,12 @@ sample programs that are included with the {project-name} JDBC Type-4 driver.
 Build and run the StatementSample test program to verify the JDBC Type-4 driver installation.
 
 ```
-C:\Development Tools\{project-name} JDBCT4\samples>cd StatementSample
+C:\Development Tools\Trafodion JDBCT4\samples>cd StatementSample
 
-C:\Development Tools\{project-name} JDBCT4\samples\StatementSample>%JAVA_HOME%\bin\javac -classpath ..\..\lib\jdbcT4.jar *.java ..\common\*.java
+C:\Development Tools\Trafodion JDBCT4\samples\StatementSample>%JAVA_HOME%\bin\javac -classpath ..\..\lib\jdbcT4.jar *.java ..\common\*.java
 Note: ..\common\sampleUtils.java uses or overrides a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
-v
-C:\Development Tools\{project-name} JDBCT4\samples\StatementSample>%JAVA_HOME%\bin\java -classpath ..\..\lib\jdbcT4.jar;..;. -Dt4jdbc.properties=..\t4jdbc.properties StatementSample
+C:\Development Tools\Trafodion JDBCT4\samples\StatementSample>%JAVA_HOME%\bin\java -classpath ..\..\lib\jdbcT4.jar -Dt4jdbc.properties=..\t4jdbc.properties StatementSample
 Mar 16, 2016 9:36:54 PM common.sampleUtils getPropertiesConnection
 INFO: DriverManager.getConnection(url, props) passed
 
@@ -341,7 +340,7 @@ Column 12 - -100.12,-100.12
 
 End of Data
 
-C:\Development Tools\{project-name} JDBCT4\samples\StatementSample>
+C:\Development Tools\Trafodion JDBCT4\samples\StatementSample>
 ```
 
 <<<

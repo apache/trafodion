@@ -205,6 +205,8 @@ template <class T> void FSInterval<T>::estimateRowsAndUecs(double sample_rate, f
 
 // Explicit instantiations of template member functions, so their definition
 // can appear in this file instead of in .h file.
+template void FastStatsHist<Int8>::addRowset(Lng32 numRows);
+template void FastStatsHist<UInt8>::addRowset(Lng32 numRows);
 template void FastStatsHist<int>::addRowset(Lng32 numRows);
 template void FastStatsHist<unsigned int>::addRowset(Lng32 numRows);
 template void FastStatsHist<short>::addRowset(Lng32 numRows);
@@ -213,6 +215,8 @@ template void FastStatsHist<long>::addRowset(Lng32 numRows);
 template void FastStatsHist<float>::addRowset(Lng32 numRows);
 template void FastStatsHist<double>::addRowset(Lng32 numRows);
 
+template void FastStatsHist<Int8>::actuate(Lng32);
+template void FastStatsHist<UInt8>::actuate(Lng32);
 template void FastStatsHist<int>::actuate(Lng32);
 template void FastStatsHist<unsigned int>::actuate(Lng32);
 template void FastStatsHist<short>::actuate(Lng32);
@@ -221,6 +225,8 @@ template void FastStatsHist<long>::actuate(Lng32);
 template void FastStatsHist<float>::actuate(Lng32);
 template void FastStatsHist<double>::actuate(Lng32);
 
+template void FSInterval<Int8>::estimateRowsAndUecs(double, float);
+template void FSInterval<UInt8>::estimateRowsAndUecs(double, float);
 template void FSInterval<int>::estimateRowsAndUecs(double, float);
 template void FSInterval<unsigned int>::estimateRowsAndUecs(double, float);
 template void FSInterval<short>::estimateRowsAndUecs(double, float);

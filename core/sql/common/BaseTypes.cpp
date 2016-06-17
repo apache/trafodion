@@ -398,6 +398,13 @@ short convertTypeToText_basic(char * text,	   // OUTPUT
 
       break;
 
+    case REC_BIN8_SIGNED:
+      if (!precision)
+        str_sprintf(text, "TINYINT");
+      else
+	str_sprintf(text, "NUMERIC(%d, %d)", precision, scale);
+      break;
+
     case REC_BIN32_UNSIGNED:
       if (!precision)
 	str_sprintf(text, "INT UNSIGNED");
@@ -410,6 +417,13 @@ short convertTypeToText_basic(char * text,	   // OUTPUT
 	str_sprintf(text, "SMALLINT UNSIGNED");
       else
 	str_sprintf(text, "NUMERIC(%d, %d) UNSIGNED", precision, scale);
+      break;
+
+    case REC_BIN8_UNSIGNED:
+      if (!precision)
+        str_sprintf(text, "TINYINT UNSIGNED");
+      else
+	str_sprintf(text, "NUMERIC(%d, %d)  UNSIGNED", precision, scale);
       break;
 
     case REC_BPINT_UNSIGNED:
@@ -433,7 +447,6 @@ short convertTypeToText_basic(char * text,	   // OUTPUT
       break;
 
     case REC_FLOAT32:
-    case REC_TDM_FLOAT32:
       if (precision == 0)
 	str_sprintf(text, "REAL");
       else
@@ -441,7 +454,6 @@ short convertTypeToText_basic(char * text,	   // OUTPUT
       break;
 
     case REC_FLOAT64:
-    case REC_TDM_FLOAT64:
       if (precision == 0)
 	str_sprintf(text, "DOUBLE PRECISION");
       else
@@ -657,6 +669,14 @@ Lng32 getAnsiTypeFromFSType(Lng32 datatype)
 
    switch (datatype)
    {
+   case REC_BIN8_SIGNED:
+      numeric_value = SQLTYPECODE_TINYINT;
+      break;
+
+   case REC_BIN8_UNSIGNED:
+      numeric_value = SQLTYPECODE_TINYINT_UNSIGNED;
+      break;
+
    case REC_BIN16_SIGNED:
       numeric_value = SQLTYPECODE_SMALLINT;
       break;
@@ -688,14 +708,6 @@ Lng32 getAnsiTypeFromFSType(Lng32 datatype)
 
    case REC_FLOAT64:
       numeric_value = SQLTYPECODE_IEEE_DOUBLE;
-      break;
-
-   case REC_TDM_FLOAT32:
-      numeric_value = SQLTYPECODE_TDM_REAL;
-      break;
-
-   case REC_TDM_FLOAT64:
-      numeric_value = SQLTYPECODE_TDM_DOUBLE;
       break;
 
    case REC_DECIMAL_UNSIGNED:
@@ -767,6 +779,14 @@ const char * getAnsiTypeStrFromFSType(Lng32 datatype)
 {
    switch (datatype)
    {
+   case REC_BIN8_SIGNED:
+     return COM_TINYINT_SIGNED_SDT_LIT;
+     break;
+
+   case REC_BIN8_UNSIGNED:
+      return COM_TINYINT_UNSIGNED_SDT_LIT;
+      break;
+
    case REC_BIN16_SIGNED:
      return COM_SMALLINT_SIGNED_SDT_LIT;
      break;
@@ -1006,6 +1026,14 @@ Lng32 getFSTypeFromANSIType(Lng32 ansitype)
 
    switch (ansitype)
    {
+   case SQLTYPECODE_TINYINT:
+      datatype = REC_BIN8_SIGNED;
+      break;
+
+   case SQLTYPECODE_TINYINT_UNSIGNED:
+      datatype = REC_BIN8_UNSIGNED;
+      break;
+
    case SQLTYPECODE_SMALLINT:
       datatype = REC_BIN16_SIGNED;
       break;
@@ -1048,18 +1076,6 @@ Lng32 getFSTypeFromANSIType(Lng32 ansitype)
 
    case SQLTYPECODE_IEEE_FLOAT:
       datatype = REC_FLOAT64;
-      break;
-
-   case SQLTYPECODE_TDM_REAL:
-      datatype = REC_TDM_FLOAT32;
-      break;
-
-   case SQLTYPECODE_TDM_DOUBLE:
-      datatype = REC_TDM_FLOAT64;
-      break;
-
-   case SQLTYPECODE_TDM_FLOAT:
-      datatype = REC_TDM_FLOAT64;
       break;
 
    case SQLTYPECODE_DECIMAL_UNSIGNED:

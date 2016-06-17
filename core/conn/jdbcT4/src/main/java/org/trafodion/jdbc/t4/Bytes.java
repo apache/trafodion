@@ -45,6 +45,11 @@ package org.trafodion.jdbc.t4;
  */
 class Bytes {
 
+	static short extractUTiny(byte[] array, int offset, boolean swap) {
+                int value =  array[offset] & 0xff;
+		return (short)value;
+	}
+
 	static short extractShort(byte[] array, int offset, boolean swap) {
 		short value;
 

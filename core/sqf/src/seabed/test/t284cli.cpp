@@ -135,6 +135,7 @@ int main(int argc, char *argv[]) {
     long             t_elapsed;
     struct timeval   t_start;
     struct timeval   t_stop;
+    char ascii_buffer[MAX_DATE_TIME_BUFF_LEN + 1];
 
     do_init(argc, argv);
 
@@ -144,9 +145,13 @@ int main(int argc, char *argv[]) {
     for (inx = 0; inx < loop; inx++) {
         if (idt) {
             do_cli_id(&phandle, TO, &id);
+            do_cli_id_to_string(&phandle, TO, id, ascii_buffer);
+            do_cli_string_to_id(&phandle, TO, &id, ascii_buffer);
         } else {
             do_cli_ping(&phandle, TO);
             do_cli_id(&phandle, TO, &id);
+            do_cli_id_to_string(&phandle, TO, id, ascii_buffer);
+            do_cli_string_to_id(&phandle, TO, &id, ascii_buffer);
         }
     }
     gettimeofday(&t_stop, NULL);

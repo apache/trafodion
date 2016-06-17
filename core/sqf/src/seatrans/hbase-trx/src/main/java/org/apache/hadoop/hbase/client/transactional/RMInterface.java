@@ -163,8 +163,8 @@ public class RMInterface {
                  idServer.id(ID_TM_SERVER_TIMEOUT, startId);
                  if (LOG.isTraceEnabled()) LOG.trace("registerTransaction idServer.id returned: " + startId.val);
               } catch (IdTmException exc) {
-                 LOG.error("registerTransaction: IdTm threw exception " + exc);
-                 throw new IOException("registerTransaction: IdTm threw exception " + exc);
+                 LOG.error("registerTransaction: IdTm threw exception " , exc);
+                 throw new IOException("registerTransaction: IdTm threw exception ", exc);
               }
               startIdVal = startId.val;
            }
@@ -224,63 +224,30 @@ public class RMInterface {
     public void createTable(HTableDescriptor desc, byte[][] keys, int numSplits, int keyLength, long transID) throws IOException {
 
         if (LOG.isTraceEnabled()) LOG.trace("createTable ENTER: ");
-
-        try {
             byte[] lv_byte_desc = desc.toByteArray();
             byte[] lv_byte_tblname = desc.getNameAsString().getBytes();
             if (LOG.isTraceEnabled()) LOG.trace("createTable: htabledesc bytearray: " + lv_byte_desc + "desc in hex: " + Hex.encodeHexString(lv_byte_desc));
             createTableReq(lv_byte_desc, keys, numSplits, keyLength, transID, lv_byte_tblname);
-        } catch (Exception e) {
-            if (LOG.isTraceEnabled()) LOG.trace("Unable to createTable or convert table descriptor to byte array " + e);
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            LOG.error("desc.ByteArray error " + sw.toString());
-            throw new IOException("createTable exception. Unable to create table.");
-        }
     }
 
     public void truncateTableOnAbort(String tblName, long transID) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("truncateTableOnAbort ENTER: ");
-
-        try {
             byte[] lv_byte_tblName = tblName.getBytes();
             truncateOnAbortReq(lv_byte_tblName, transID);
-        } catch (Exception e) {
-            if (LOG.isTraceEnabled()) LOG.trace("Unable to truncateTableOnAbort" + e);
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            LOG.error("truncateTableOnAbort error: " + sw.toString());
-            throw new IOException("truncateTableOnAbort exception. Unable to create table.");
-        }
     }
 
     public void dropTable(String tblName, long transID) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("dropTable ENTER: ");
 
-        try {
             byte[] lv_byte_tblname = tblName.getBytes();
             dropTableReq(lv_byte_tblname, transID);
-        } catch (Exception e) {
-            if (LOG.isTraceEnabled()) LOG.trace("Unable to dropTable " + e);
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            LOG.error("dropTable error " + sw.toString());
-        }
     }
 
     public void alter(String tblName, Object[] tableOptions, long transID) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("alter ENTER: ");
 
-        try {
             byte[] lv_byte_tblname = tblName.getBytes();
             alterTableReq(lv_byte_tblname, tableOptions, transID);
-        } catch (Exception e) {
-            if (LOG.isTraceEnabled()) LOG.trace("Unable to alter table, exception: " + e);
-            throw new IOException("alter exception. Unable to create table.");
-        }
     }   
 
     static public void clearTransactionStates(final long transactionID) {
@@ -294,13 +261,7 @@ public class RMInterface {
     static public synchronized void unregisterTransaction(final long transactionID) {
       TransactionState ts = null;
       if (LOG.isTraceEnabled()) LOG.trace("Enter unregisterTransaction txid: " + transactionID);
-      try {
         ts = mapTransactionStates.remove(transactionID);
-      } catch (Exception e) {
-        LOG.warn("Ignoring exception. mapTransactionStates.remove for transid " + transactionID + 
-                 " failed with exception " + e);
-        return;
-      }
       if (ts == null) {
         LOG.warn("mapTransactionStates.remove did not find transid " + transactionID);
       }

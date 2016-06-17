@@ -133,11 +133,11 @@ public class T4Driver extends T4Properties implements java.sql.Driver {
 		}
 
 		if (logger.isLoggable(Level.INFO)) {
-			logger.entering("HPT4DataSource", "getConnection");
+			logger.entering("TrafT4DataSource", "getConnection");
 		}
 
 		String key = null;
-		HPT4DataSource ds = null;
+		TrafT4DataSource ds = null;
 
 		if (acceptsURL(url)) {
 			 synchronized(this) {
@@ -165,21 +165,21 @@ public class T4Driver extends T4Properties implements java.sql.Driver {
 				if (info != null) {
 					initialize(info);
 					if (getSQLException() != null) {
-						throw HPT4Messages.createSQLException(null, getLocale(), "invalid_property", getSQLException());
+						throw TrafT4Messages.createSQLException(null, getLocale(), "invalid_property", getSQLException());
 					}
 				}
 				if (getMaxPoolSize() != -1) {
 					key = getUrl() + getCatalog() + getSchema() + getUser() + getPassword() + getServerDataSource()
 							+ getBlobTableName() + getClobTableName();
 	
-					ds = (HPT4DataSource) dsCache_.get(key);
+					ds = (TrafT4DataSource) dsCache_.get(key);
 	
 					if (ds == null) {
-						ds = new HPT4DataSource(getProperties());
+						ds = new TrafT4DataSource(getProperties());
 						dsCache_.put(key, ds);
 					}
 				} else {
-					ds = new HPT4DataSource(getProperties());
+					ds = new TrafT4DataSource(getProperties());
 				}
 			 }
 			 
@@ -342,7 +342,7 @@ public class T4Driver extends T4Properties implements java.sql.Driver {
 	public T4Driver() {
 		super();
 		if (logger.isLoggable(Level.INFO)) {
-			logger.entering("HPT4DataSource", "getConnection");
+			logger.entering("TrafT4DataSource", "getConnection");
 		}
 	}
 
