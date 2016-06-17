@@ -2674,10 +2674,6 @@ enum DefaultConstants
   UNIQUE_HASH_JOIN_MAX_INNER_SIZE_PER_INSTANCE,
   UNIQUE_HASH_JOIN_MAX_INNER_TABLES,
 
-  // this will turn ON purgedata using ESP parallelism.
-  EXE_PARALLEL_PURGEDATA,
-
-
   // catalog where maintain database is maintained
   MAINTAIN_CATALOG,
 
@@ -2764,8 +2760,6 @@ enum DefaultConstants
   // a statement that creates a sample for another table, or the name will be
   // duplicated. The value used must be an UNQUALIFIED table name.
   USTAT_SAMPLE_TABLE_NAME_CREATE,
-
-  EXE_PARALLEL_PURGEDATA_WARNINGS,
 
   // By default (ON), distribute the metadata tables across all
   // segments.  If set to LOCAL_NODE, distribute metadata tables

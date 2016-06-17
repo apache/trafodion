@@ -5687,6 +5687,16 @@ RelExpr * ExeUtilFastDelete::preCodeGen(Generator * generator,
   return ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs);
 }
 
+RelExpr * ExeUtilHiveTruncate::preCodeGen(Generator * generator,
+                                          const ValueIdSet & externalInputs,
+                                          ValueIdSet &pulledNewInputs)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
+
+  return ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs);
+}
+
 RelExpr * ExeUtilLobExtract::preCodeGen(Generator * generator,
                                        const ValueIdSet & externalInputs,
                                        ValueIdSet &pulledNewInputs)

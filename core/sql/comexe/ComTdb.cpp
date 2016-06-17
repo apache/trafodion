@@ -706,6 +706,14 @@ NA_EIDPROC char *ComTdb::findVTblPtrCom(short classID)
       break;
     }
 
+    case ex_HIVE_TRUNCATE:
+    {
+#pragma nowarn(1506)   // warning elimination 
+      GetVTblPtr(vtblptr,ComTdbExeUtilHiveTruncate);
+#pragma warn(1506)  // warning elimination 
+      break;
+    }
+
     case ex_GET_STATISTICS:
     {
 #pragma nowarn(1506)   // warning elimination 
