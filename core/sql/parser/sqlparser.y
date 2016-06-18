@@ -10567,14 +10567,7 @@ int_type : TOK_INTEGER signed_option
              }
 	 | TOK_LARGEINT signed_option
              {
-                if (!$2) {
-                  // UNSIGNED specified. Error. Largeint must be signed. 
-                  *SqlParser_Diags << DgSqlCode(-3130);
-                  // YYABORT;
-                  yyerror(""); 
-                  YYERROR;
-                }
-		$$ = new (PARSERHEAP()) SQLLargeInt( $2, TRUE);
+               $$ = new (PARSERHEAP()) SQLLargeInt( $2, TRUE);
              }
          | TOK_BIGINT signed_option
              {

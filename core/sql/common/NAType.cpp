@@ -520,6 +520,10 @@ Lng32 NAType::getDisplayLength(Lng32 datatype,
       d_len = SQL_LARGE_DISPLAY_SIZE + scale_len;
       break;
 
+    case REC_BIN64_UNSIGNED:
+      d_len = SQL_ULARGE_DISPLAY_SIZE + scale_len;
+      break;
+
     case REC_BYTE_F_ASCII:
       d_len = length;
       break;

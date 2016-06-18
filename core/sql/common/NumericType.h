@@ -120,9 +120,7 @@ public:
   NABoolean isBigNum() const { return qualifier_ == SQLBigNum_TYPE;}
   NABoolean isInternalType() const { return (isBigNum()); }
  
-  NABoolean supportsSign () const  {return (isExact () &&
-					    SQLLarge_TYPE != qualifier_ );
-  }
+  NABoolean supportsSign () const  {return TRUE;}
 
   // ---------------------------------------------------------------------
   // Accessor functions for the precision, magnitude, scale and unsigned
@@ -745,7 +743,10 @@ public:
 
   short getFSDatatype() const
     {
-      return REC_BIN64_SIGNED;
+      if (isUnsigned())
+        return REC_BIN64_UNSIGNED;
+      else
+        return REC_BIN64_SIGNED;
     }
 
   virtual Lng32 getMagnitude() const { return 189; }
@@ -811,6 +812,9 @@ public:
 
   virtual double getNormalizedValue(void* buf) const 
   { return (double) *(Int64 *)buf; }
+
+  virtual NABoolean expConvSupported
+  (const NAType &otherNAType) const;
 
 private:
 
@@ -907,7 +911,8 @@ public:
 	  else
 	    if (getNominalSize() == sizeof(Lng32))
 	      return REC_BIN32_UNSIGNED;
-	    else return REC_BIN64_SIGNED;
+	    else 
+              return REC_BIN64_UNSIGNED;
 	}
       else
 	{

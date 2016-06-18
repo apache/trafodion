@@ -1341,7 +1341,6 @@ SQLLargeInt::SQLLargeInt(NABoolean allowNegValues, NABoolean allowSQLnull,
 		  ,heap
           )
 {
-  assert(allowNegValues);
 }   // SQLLargeInt()
 
 SQLLargeInt::SQLLargeInt(Lng32 scale,
@@ -1360,19 +1359,28 @@ SQLLargeInt::SQLLargeInt(Lng32 scale,
 		  ,heap
           )
 {
-  assert(allowNegValues);
 }   // SQLLargeInt()
 
 
 double SQLLargeInt::encode (void* bufPtr) const
 {
   Int64 tempValue;
+  UInt64 usTempValue;
+
   char * valPtr = (char *)bufPtr;
   if (supportsSQLnull())
     valPtr += getSQLnullHdrSize();
 
-  str_cpy_all ((char *)&tempValue, valPtr, getNominalSize());
-  return (convertInt64ToDouble(tempValue) * pow(10.0, -1 * getScale()));
+  if (isUnsigned())
+  {
+    str_cpy_all ((char *)&usTempValue, valPtr, getNominalSize());
+    return (convertUInt64ToDouble(tempValue) * pow(10.0, -1 * getScale()));
+  }
+  else
+  {
+    str_cpy_all ((char *)&tempValue, valPtr, getNominalSize());
+    return (convertInt64ToDouble(tempValue) * pow(10.0, -1 * getScale()));
+  }
 }
 
 void SQLLargeInt::minRepresentableValue
@@ -1438,10 +1446,29 @@ NAString* SQLLargeInt::convertToString(double v, CollHeap* h) const
 {
    char nameBuf[NAME_BUF_LEN];   // a reasonably large buffer
 
-   Int64 temp = Int64(v);
-   convertInt64ToAscii(temp, nameBuf);
+   if (NumericType::isUnsigned()) {
+     UInt64 temp = (UInt64)v;
+     convertUInt64ToAscii(temp, nameBuf);
+   } else {
+     Int64 temp = Int64(v);
+     convertInt64ToAscii(temp, nameBuf);
+   }
 
    return new (h) NAString(nameBuf, h);
+}
+
+NABoolean SQLLargeInt::expConvSupported
+(const NAType &otherNAType) const
+{
+  if (NOT isUnsigned())
+    return TRUE;
+
+  if ((otherNAType.getFSDatatype() == REC_BIN64_SIGNED) ||
+      (otherNAType.getFSDatatype() == REC_BIN64_UNSIGNED) ||
+      (DFS2REC::isAnyCharacter(otherNAType.getFSDatatype())))
+    return TRUE;
+
+  return FALSE;
 }
 
 // -----------------------------------------------------------------------

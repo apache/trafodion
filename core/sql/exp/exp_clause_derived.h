@@ -1559,7 +1559,28 @@ enum conv_case_index {
   CONV_BIN16S_BIN8U                    =261,
   CONV_BIN8U_BIN16S                    =262,
   CONV_ASCII_BIN8S                     =263,
-  CONV_ASCII_BIN8U                     =264
+  CONV_ASCII_BIN8U                     =264,
+
+  // unsigned largeint related conversions
+  CONV_BIN16S_BIN64U                   =265,   
+  CONV_BIN16U_BIN64U                   =266,   
+  CONV_BIN32S_BIN64U                   =267,   
+  CONV_BIN32U_BIN64U                   =268,   
+  CONV_BIN64S_BIN64U                   =269,
+  CONV_BIN64U_BIN64U                   =270,
+  CONV_FLOAT32_BIN64U                  =271, 
+  CONV_FLOAT64_BIN64U                  =272,
+
+  CONV_BIN64U_BIN16S                   =273,
+  CONV_BIN64U_BIN16U                   =274,   
+  CONV_BIN64U_BIN32S                   =275,
+  CONV_BIN64U_BIN32U                   =276,
+  CONV_BIN64U_BIN64S                   =277,
+  CONV_BIN64U_FLOAT32                  =278,
+  CONV_BIN64U_FLOAT64                  =279,
+  CONV_BIN64U_ASCII                    =280,
+  CONV_ASCII_BIN64U                    =281
+
 };
 
 class SQLEXP_LIB_FUNC  ex_conv_clause : public ex_clause {

@@ -8635,7 +8635,35 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
              SQLSmall(TRUE,
                       srcNAType.supportsSQLnull()));
       ((Cast*)newChild)->setFlags(getFlags());
-      //      ((Cast*)newChild)->setSrcIsVarcharPtr(srcIsVarcharPtr());
+      setSrcIsVarcharPtr(FALSE);
+      newChild = newChild->bindNode(generator->getBindWA());
+      newChild = newChild->preCodeGen(generator);
+      if (! newChild)
+        return NULL;
+      
+      setChild(0, newChild);
+      srcFsType = child(0)->getValueId().getType().getFSDatatype();
+    }
+
+  if ((srcNAType.getTypeName() == LiteralLargeInt) ||
+      (tgtNAType.getTypeName() == LiteralLargeInt))
+    {
+      Lng32 ij = 1;
+    }
+ 
+  if (((srcNAType.getTypeName() == LiteralLargeInt) &&
+       (NOT srcNAType.expConvSupported(tgtNAType))) ||
+      ((tgtNAType.getTypeName() == LiteralLargeInt) &&
+       (NOT tgtNAType.expConvSupported(srcNAType))))
+    {
+      // add a Cast node to convert to sqllargeint signed.
+      ItemExpr * newChild =
+        new (generator->wHeap())
+        Cast(child(0),
+             new (generator->wHeap())
+             SQLLargeInt(TRUE,
+                         srcNAType.supportsSQLnull()));
+      ((Cast*)newChild)->setFlags(getFlags());
       setSrcIsVarcharPtr(FALSE);
       newChild = newChild->bindNode(generator->getBindWA());
       newChild = newChild->preCodeGen(generator);

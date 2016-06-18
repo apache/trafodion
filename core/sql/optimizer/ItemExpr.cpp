@@ -11153,6 +11153,7 @@ UInt32 ConstValue::computeHashValue(const NAType& columnType)
            flags = ExHDPHash::SWAP_FOUR;
            break;
          case REC_BIN64_SIGNED:
+         case REC_BIN64_UNSIGNED:
          case REC_IEEE_FLOAT64:
            flags = ExHDPHash::SWAP_EIGHT;
            break;
