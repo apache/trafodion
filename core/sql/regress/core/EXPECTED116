@@ -644,7 +644,6 @@ Tables in Schema TRAFODION.T116SCH1
 
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
-T116T4
 
 --- SQL operation complete.
 >>create table t116t2 (a int);
@@ -658,7 +657,6 @@ Tables in Schema TRAFODION.T116SCH1
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 T116T2
-T116T4
 
 --- SQL operation complete.
 >>drop schema t116sch1 cascade;
@@ -687,7 +685,6 @@ Tables in Schema TRAFODION.T116SCH1
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 T116T1
-T116T4
 
 --- SQL operation complete.
 >>
@@ -792,7 +789,7 @@ T116T4
 >>set parserflags 1;
 
 --- SQL operation complete.
->>select count(*) from table(index_table t116t4_i1);
+>>select count(*) from table(index_table t116t5_i1);
 
 (EXPR)              
 --------------------

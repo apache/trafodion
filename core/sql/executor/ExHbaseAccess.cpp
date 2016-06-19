@@ -1153,6 +1153,32 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat(Int64 *latestRowTimestamp)
              ex_assert(FALSE, "Attr not found -2");
 	  
 	  char * defVal = attr->getDefaultValue();
+          if (! defVal)
+            {
+              char * colVal = (char*)
+                hbaseAccessTdb().listOfFetchedColNames()->get(idx);
+
+              Text colFam, colName;
+              extractColFamilyAndName(colVal, colFam, colName);
+
+              Int64 v = 0;
+              if (colName.length() == sizeof(char))
+                v = *(char*)colName.data();
+              else if (colName.length() == sizeof(unsigned short))
+                v = *(UInt16*)colName.data();
+              else if (colName.length() == sizeof(Lng32))
+                v = *(ULng32*)colName.data();
+
+              char buf[10];
+              str_sprintf(buf, "%Ld", v);
+              ComDiagsArea * diagsArea = NULL;
+              ExRaiseSqlError(getHeap(), &diagsArea,
+                              (ExeErrorCode)(8034),
+                              NULL, NULL, NULL, NULL, buf);
+              pentry_down->setDiagsArea(diagsArea);
+              return -1;
+            }
+
 	  char * defValPtr = defVal;
 	  short nullVal = 0;
 	  if (attr->getNullFlag())

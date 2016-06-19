@@ -227,7 +227,7 @@ insert into t116t5 values (1,1,1), (2,2,2), (3,3,2);
 create index t116t5_i1 on t116t5(c2);
 create index t116t5_i1 on t116t5(c2);
 set parserflags 1;
-select count(*) from table(index_table t116t4_i1);
+select count(*) from table(index_table t116t5_i1);
 -- create unique index - Both attempts should fail with the same error
 create unique index t116t5_i2 on t116t5(c3);
 create unique index t116t5_i2 on t116t5(c3);
