@@ -374,11 +374,17 @@ void CmpSeabaseDDL::createSeabaseTableLike(
         done = TRUE;
     }
 
-    if (NOT keyClause.isNull())
-      {
-        // add the keyClause
-        query += keyClause;
-      }
+  if (NOT keyClause.isNull())
+    {
+      // add the keyClause
+      query += keyClause;
+    }
+
+  const NAString * saltClause = likeOptions.getSaltClause();
+  if (saltClause)
+    {
+      query += saltClause->data();
+    }
 
   // send any user CQDs down 
   Lng32 retCode = sendAllControls(FALSE, FALSE, TRUE);

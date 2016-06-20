@@ -905,7 +905,7 @@ $1~String1 --------------------------------
 3151 42000 99999 BEGINNER MAJOR DBADMIN Duplicate WITH HORIZONTAL PARTITIONS phrases were specified in LIKE clause in CREATE TABLE statement.
 3152 42000 99999 BEGINNER MAJOR DBADMIN Duplicate WITHOUT $0~string0 phrases were specified in LIKE clause in CREATE TABLE statement.
 3153 42000 99999 BEGINNER MAJOR DBADMIN The FIRST KEY clause is not allowed with hash or hash2 partitioning.
-3154 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused as of 03/25/04 ---
+3154 42000 99999 BEGINNER MAJOR DBADMIN The $0~String0 clause is not allowed with the $1~String1 clause.
 3155 42000 99999 BEGINNER MAJOR DBADMIN The POPULATE and NO POPULATE clauses cannot coexist in the same CREATE INDEX statement.
 3156 42000 99999 BEGINNER MAJOR DBADMIN The STORE BY clause is not allowed on a vertically partitioned table.
 3157 42000 99999 BEGINNER MAJOR DBADMIN A catalog name is required.
@@ -1492,6 +1492,7 @@ $1~String1 --------------------------------
 8031 HY018 99999 BEGINNER INFRM LOGONLY Server declined cancel request for query ID $0~String0. $1~String1.
 8032 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Explain information for the provided query id is not available in repository.
 8033 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Explain information is too large to be stored in repository.
+8034 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Truncation of hive table failed. $0~String0
 8100 ZZZZZ 99999 BEGINNER MINOR LOGONLY Define $1~string0 does not exist
 8101 23000 99999 BEGINNER MAJOR DBADMIN The operation is prevented by check constraint $0~ConstraintName on table $1~TableName.
 8102 23000 99999 BEGINNER MAJOR DBADMIN The operation is prevented by a unique constraint.

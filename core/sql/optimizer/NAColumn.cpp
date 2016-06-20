@@ -214,7 +214,42 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
       SQLBPInt(column_desc->precision, column_desc->null_flag, FALSE, heap);
       break;
 
-    case REC_BIN16_SIGNED:
+    case REC_BIN8_SIGNED:
+      if (column_desc->precision > 0)
+	type = new (heap)
+	SQLNumeric(column_desc->length,
+		   column_desc->precision,
+		   column_desc->scale,
+		   TRUE,
+		   column_desc->null_flag,
+                   heap
+		   );
+      else
+	type = new (heap)
+	SQLTiny(TRUE,
+		 column_desc->null_flag,
+                 heap
+		 );
+      break;
+    case REC_BIN8_UNSIGNED:
+      if (column_desc->precision > 0)
+	type = new (heap)
+	SQLNumeric(column_desc->length,
+		   column_desc->precision,
+		   column_desc->scale,
+		   FALSE,
+		   column_desc->null_flag,
+                   heap
+		   );
+      else
+	type = new (heap)
+	SQLTiny(FALSE,
+		 column_desc->null_flag,
+                 heap
+		 );
+      break;
+
+   case REC_BIN16_SIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
 	SQLNumeric(column_desc->length,
@@ -248,6 +283,7 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
                  heap
 		 );
       break;
+
     case REC_BIN32_SIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
@@ -336,16 +372,6 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 		  column_desc->null_flag,
 		  heap
 		  );
-      break;
-
-    case REC_TDM_FLOAT32:
-      type = new (heap)
-	SQLRealTdm(column_desc->null_flag, heap, column_desc->precision);
-      break;
-
-    case REC_TDM_FLOAT64:
-      type = new (heap)
-	SQLDoublePrecisionTdm(column_desc->null_flag, heap, column_desc->precision);
       break;
 
     case REC_FLOAT32:
@@ -501,7 +527,7 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 
       }
       break;
-case REC_BLOB :
+    case REC_BLOB :
       type = new (heap)
 	SQLBlob(column_desc->precision, Lob_Invalid_Storage,
 		column_desc->null_flag);

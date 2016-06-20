@@ -52,6 +52,7 @@
 --   d = DATE
 --   t = TIME(0)
 --   m = TIMESTAMP(6)
+--   y - TINYINT
 --
 -- Examples:
 --   (IN int, OUT int) = T100_io_ii
@@ -103,6 +104,7 @@ drop procedure T100_io_nn;
 drop procedure T100_io_bb;
 drop procedure T100_io_bb_2;
 drop procedure T100_io_ee;
+drop procedure T100_io_yy;
 drop procedure T100_io_ss;
 drop procedure T100_io_ii;
 drop procedure T100_io_ll;
@@ -168,6 +170,10 @@ library T100;
 
 create procedure T100_io_ee(IN IN1 decimal(9,3), OUT OUT2 decimal(9,3))
 external name 't100.T100_io_ee' language java no sql
+library T100;
+
+create procedure T100_io_yy(IN IN1 tinyint, OUT OUT2 tinyint)
+external name 't100.T100_io_yy' language java parameter style java no sql
 library T100;
 
 create procedure T100_io_ss(IN IN1 smallint, OUT OUT2 smallint)
@@ -503,6 +509,11 @@ call T100_io_ee(cast(100 as decimal(6,3)), ?x);
 call T100_io_ee(cast(-222222.2 as decimal(7,1) SIGNED), ?x);
 call T100_io_ee(cast(4444.444 as decimal(8,4) UNSIGNED), ?x);
 
+call T100_io_yy(cast(-9 as tinyint), ?x);
+call T100_io_yy(cast(9 as tinyint), ?x);
+call T100_io_yy(cast(-128 as tinyint), ?x);
+call T100_io_yy(cast(127 as tinyint), ?x);
+
 call T100_io_ss(cast(-9 as smallint), ?x);
 call T100_io_ss(cast(9 as smallint), ?x);
 call T100_io_ss(cast(-32768 as smallint), ?x);
@@ -632,6 +643,8 @@ call T100_io_cc(cast(cast('Hello, world!' as char(13)) as char(5)), ?x);
 call T100_io_ee(cast('123.456' as decimal(6)), ?x);
 call T100_io_cc('abc' COLLATE a, ?x);
 call T100_io_nn(cast(-10 as numeric(1)), ?x);
+call T100_io_yy(cast(128 as tinyint), ?x);
+call T100_io_yy(cast(-129 as tinyint), ?x);
 call T100_io_ss(cast(32768 as smallint), ?x);
 call T100_io_ss(cast(-32769 as smallint), ?x);
 call T100_io_ii(1 + 1 / 0, ?x);

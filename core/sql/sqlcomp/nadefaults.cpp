@@ -1354,10 +1354,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXE_PARALLEL_DDL,                     "ON"),
 
-  DDkwd__(EXE_PARALLEL_PURGEDATA,               "MINIMUM"),
-
-  DDkwd__(EXE_PARALLEL_PURGEDATA_WARNINGS,      "OFF"),
-
   DDui___(EXE_PA_DP2_STATIC_AFFINITY,           "1"),
 
   DDkwd__(EXE_SINGLE_BMO_QUOTA,                 "ON"),
@@ -1420,8 +1416,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(FAST_REPLYDATA_MOVE,			"ON"),
  SDDkwd__(FFDC_DIALOUTS_FOR_MXCMP,		"OFF"),
   DDkwd__(FIND_COMMON_SUBEXPRS_IN_OR,		"ON"),
-
-  DDkwd__(FLOATTYPE,				"IEEE"),
 
   DDui___(FLOAT_ESP_RANDOM_NUM_SEED,    "0"),
 
@@ -3402,6 +3396,11 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TRAF_TABLE_SNAPSHOT_SCAN_TIMEOUT,            "6000"),
   //location for temporary links and files produced by snapshot scan
   DD_____(TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION,       "/bulkload/"),
+
+  DDkwd__(TRAF_TINYINT_INPUT_PARAMS,                   "OFF"),
+  DDkwd__(TRAF_TINYINT_RETURN_VALUES,                  "OFF"),
+  DDkwd__(TRAF_TINYINT_SPJ_SUPPORT,                    "OFF"),
+  DDkwd__(TRAF_TINYINT_SUPPORT,                        "ON"),
 
   // DTM Transaction Type: MVCC, SSCC
   XDDkwd__(TRAF_TRANS_TYPE,                            "MVCC"),
@@ -6662,20 +6661,9 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	isValid = TRUE;
       break;
 
-    case FLOATTYPE:
-      if (tok == DF_TANDEM || tok == DF_IEEE)
-	isValid = TRUE;
-      break;
-
     case GROUP_BY_USING_ORDINAL:
       if (tok == DF_ALL || tok == DF_MINIMUM ||
 	  tok == DF_OFF)
-	isValid = TRUE;
-      break;
-
-    case EXE_PARALLEL_PURGEDATA:
-      if (tok == DF_ALL || tok == DF_MINIMUM ||
-	  tok == DF_OFF || tok == DF_ON || tok == DF_MEDIUM)
 	isValid = TRUE;
       break;
 

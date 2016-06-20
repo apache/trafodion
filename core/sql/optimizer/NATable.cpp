@@ -2961,6 +2961,41 @@ NABoolean createNAType(columns_desc_struct *column_desc	/*IN*/,
       SQLBPInt(column_desc->precision, column_desc->null_flag, FALSE, heap);
       break;
 
+    case REC_BIN8_SIGNED:
+      if (column_desc->precision > 0)
+	type = new (heap)
+	SQLNumeric(column_desc->length,
+		   column_desc->precision,
+		   column_desc->scale,
+		   TRUE,
+		   column_desc->null_flag,
+                   heap
+		   );
+      else
+	type = new (heap)
+	SQLTiny(TRUE,
+		 column_desc->null_flag,
+                 heap
+		 );
+      break;
+    case REC_BIN8_UNSIGNED:
+      if (column_desc->precision > 0)
+	type = new (heap)
+	SQLNumeric(column_desc->length,
+		   column_desc->precision,
+		   column_desc->scale,
+		   FALSE,
+		   column_desc->null_flag,
+                   heap
+		   );
+      else
+	type = new (heap)
+	SQLTiny(FALSE,
+		 column_desc->null_flag,
+                 heap
+		 );
+      break;
+
     case REC_BIN16_SIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
@@ -2995,6 +3030,7 @@ NABoolean createNAType(columns_desc_struct *column_desc	/*IN*/,
                  heap
 		 );
       break;
+
     case REC_BIN32_SIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
@@ -3083,16 +3119,6 @@ NABoolean createNAType(columns_desc_struct *column_desc	/*IN*/,
 		  column_desc->null_flag,
 		  heap
 		  );
-      break;
-
-    case REC_TDM_FLOAT32:
-      type = new (heap)
-	SQLRealTdm(column_desc->null_flag, heap, column_desc->precision);
-      break;
-
-    case REC_TDM_FLOAT64:
-      type = new (heap)
-	SQLDoublePrecisionTdm(column_desc->null_flag, heap, column_desc->precision);
       break;
 
     case REC_FLOAT32:
@@ -3520,8 +3546,15 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
       
 NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
 {
-  if ( !strcmp(hiveType, "tinyint") || 
-       !strcmp(hiveType, "smallint")) 
+  if ( !strcmp(hiveType, "tinyint"))
+    {
+      if (CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF)
+        return new (heap) SQLSmall(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+      else
+        return new (heap) SQLTiny(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+    }
+
+  if ( !strcmp(hiveType, "smallint"))
     return new (heap) SQLSmall(TRUE /* neg */, TRUE /* allow NULL*/, heap);
  
   if ( !strcmp(hiveType, "int")) 

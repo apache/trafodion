@@ -1,0 +1,138 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+-- Tests for tinyint datatype
+
+
+obey TEST003(clean_up);
+
+log LOG003 clear;
+
+cqd traf_tinyint_support 'ON';
+cqd traf_tinyint_return_values 'ON';
+cqd traf_tinyint_input_params 'ON';
+
+obey TEST003(setup);
+obey TEST003(dml);
+obey TEST003(tinyhive);
+obey TEST003(errors);
+log;
+exit;
+
+?section setup
+create table t003t1(a tinyint not null primary key, b tinyint, 
+                    c tinyint unsigned default 10 not null, d tinyint unsigned);
+invoke t003t1;
+
+create table t003t1_like like t003t1;
+invoke t003t1_like;
+
+create table t003t1_as as select * from t003t1;
+invoke t003t1_as;
+
+?section dml
+insert into t003t1 values (1, 2, 3, 4);
+insert into t003t1 values (-1, -2, 255, 255);
+insert into t003t1 values (-128, 127, 0, 0);
+
+select * from t003t1;
+
+insert into t003t1_as select * from t003t1;
+select * from t003t1_as;
+
+select * from t003t1 where a = 1;
+select * from t003t1 where a = -1;
+select * from t003t1 where a < 1;
+select * from t003t1 where a <= -1;
+select * from t003t1 where a < 1000;
+select * from t003t1 where a > -1000;
+
+select * from t003t1 where d = 4;
+select * from t003t1 where d < -1;
+select * from t003t1 where d < 1000;
+select * from t003t1 where d > -1000;
+
+select a+10 from t003t1 where a = 1 or a = -1;
+
+select cast(100 as tinyint unsigned) from (values(1)) x(a);
+select cast(-100 as tinyint) from (values(1)) x(a);
+
+select cast(a as char(10)), cast (b as varchar(11)) from t003t1;
+
+prepare s from insert into t003t1 values (?, ?, ?, ?);
+execute s using -3, 10, 251, 0;
+select * from t003t1;
+
+begin work;
+delete from t003t1 where b = -2;
+select * from t003t1;
+rollback work;
+
+begin work;
+update t003t1 set b = b + 1 where b <> 127;
+select * from t003t1;
+rollback work;
+
+?section tinyhive
+sh echo "drop table ttiny;" > TEST003_junk;
+sh regrhive.ksh -f TEST003_junk;
+
+sh echo "create table ttiny(a tinyint, b tinyint);" > TEST003_junk;
+sh regrhive.ksh -f TEST003_junk;
+
+sh echo "insert into ttiny values (1, -1);" > TEST003_junk;
+sh regrhive.ksh -f TEST003_junk;
+
+invoke hive.hive.ttiny;
+select * from hive.hive.ttiny;
+insert into hive.hive.ttiny values (127, 10), (-128, -50);
+select * from hive.hive.ttiny;
+insert overwrite table hive.hive.ttiny select a, b from t003t1;
+select * from hive.hive.ttiny;
+
+?section errors
+update t003t1 set b = b + 1;
+
+delete from t003t1;
+
+insert into t003t1 values (128, 2, 3, 4);
+insert into t003t1 values (2, -129, 3, 4);
+insert into t003t1 values (3, 4, 256, 4);
+insert into t003t1 values (4, 4, 256, -4);
+
+select cast(-1 as tinyint unsigned) from (values(1)) x(a);
+select cast(256 as tinyint unsigned) from (values(1)) x(a);
+select cast(-129 as tinyint) from (values(1)) x(a);
+select cast(128 as tinyint) from (values(1)) x(a);
+
+prepare s from insert into t003t1 values (?, ?, ?, ?);
+execute s using 128, 2, 3, 4;
+execute s using 4, 4, 256, -4;
+
+
+?section clean_up
+drop table t003t1;
+drop table t003t1_like;
+drop table t003t1_as;
+
+
+
+

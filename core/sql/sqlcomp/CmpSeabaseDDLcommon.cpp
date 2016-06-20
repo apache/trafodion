@@ -69,6 +69,8 @@
 #include "CmpSeabaseDDLmd.h"
 #include "CmpSeabaseDDLroutine.h"
 #include "hdfs.h"
+#include "StmtDDLAlterLibrary.h"
+
 void cleanupLOBDataDescFiles(const char*, int, const char *);
 
 class QualifiedSchema
@@ -8903,6 +8905,15 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           
           dropSeabaseLibrary(dropLibraryParseNode, currCatName, currSchName);
         }
+       else if (ddlNode->getOperatorType() == DDL_ALTER_LIBRARY)
+         {
+           // create seabase library
+           StmtDDLAlterLibrary * alterLibraryParseNode =
+             ddlNode->castToStmtDDLNode()->castToStmtDDLAlterLibrary();
+           
+           alterSeabaseLibrary(alterLibraryParseNode, currCatName, 
+                               currSchName);
+         }
       else if (ddlNode->getOperatorType() == DDL_CREATE_ROUTINE)
         {
           // create seabase routine
