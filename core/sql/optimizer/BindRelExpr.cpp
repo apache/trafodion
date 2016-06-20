@@ -1551,19 +1551,20 @@ NATable *BindWA::getNATable(CorrName& corrName,
       NATable *nativeNATable = bindWA->getSchemaDB()->getNATableDB()->
                                   get(externalCorrName, bindWA, inTableDescStruct);
   
-       // Compare column lists
-       // TBD - return what mismatches
-       if ( nativeNATable && !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()))
-         {
-           *CmpCommon::diags() << DgSqlCode(-3078)
-                               << DgString0(adjustedName)
-                               << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
-           bindWA->setErrStatus();
-           nativeNATable->setRemoveFromCacheBNC(TRUE);
-           return NULL;
-         }
+      // Compare column lists
+      // TBD - return what mismatches
+      if ( nativeNATable && !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()) &&
+           (NOT bindWA->externalTableDrop()))
+        {
+          *CmpCommon::diags() << DgSqlCode(-3078)
+                              << DgString0(adjustedName)
+                              << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
+          bindWA->setErrStatus();
+          nativeNATable->setRemoveFromCacheBNC(TRUE);
+          return NULL;
+        }
     }
-    
+  
   HostVar *proto = corrName.getPrototype();
   if (proto && proto->isPrototypeValid())
     corrName.getPrototype()->bindNode(bindWA);

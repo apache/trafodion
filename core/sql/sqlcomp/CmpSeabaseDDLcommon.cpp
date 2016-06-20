@@ -559,7 +559,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
           return resetCQDs(hbaseSerialization, hbVal, -1);
         }
 
-      if (buildKeyInfoArray(&colArray, &keyArray, colInfoArray, keyInfoArray, FALSE,
+      if (buildKeyInfoArray(&colArray, NULL, &keyArray, colInfoArray, keyInfoArray, FALSE,
 			    &keyLength, CTXTHEAP))
 	{
 	  return resetCQDs(hbaseSerialization, hbVal, -1);
@@ -4517,6 +4517,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
   Int32 objOwnerID = (tableInfo) ? tableInfo->objOwnerID : SUPER_USER;
   Int32 schemaOwnerID = (tableInfo) ? tableInfo->schemaOwnerID : SUPER_USER;
   Int64 objectFlags = (tableInfo) ? tableInfo->objectFlags : 0;
+  Int64 tablesFlags = (tableInfo) ? tableInfo->tablesFlags : 0;
   
   if (updateSeabaseMDObjectsTable(cliInterface,catName,schName,objName,objectType,
                                   validDef,objOwnerID, schemaOwnerID, objectFlags, inUID))
@@ -4807,7 +4808,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
           hbaseCreateOptions = tableInfo->hbaseCreateOptions;
         }
 
-      str_sprintf(buf, "upsert into %s.\"%s\".%s values (%Ld, '%s', '%s', %d, %d, %d, %d, 0) ",
+      str_sprintf(buf, "upsert into %s.\"%s\".%s values (%Ld, '%s', '%s', %d, %d, %d, %d, %Ld) ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
                   objUID, 
                   rowFormat,
@@ -4815,7 +4816,8 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
                   rowDataLength,
                   rowTotalLength,
                   keyLength,
-                  numSaltPartns);
+                  numSaltPartns,
+                  tablesFlags);
       cliRC = cliInterface->executeImmediate(buf);
       if (cliRC < 0)
         {
@@ -5809,6 +5811,7 @@ short CmpSeabaseDDL::buildColInfoArray(
 
 short CmpSeabaseDDL::buildKeyInfoArray(
                                        ElemDDLColDefArray *colArray,
+                                       NAColumnArray * nacolArray,
                                        ElemDDLColRefArray *keyArray,
                                        ComTdbVirtTableColumnInfo * colInfoArray,
                                        ComTdbVirtTableKeyInfo * keyInfoArray,
@@ -5829,8 +5832,21 @@ short CmpSeabaseDDL::buildKeyInfoArray(
       keyInfoArray[index].colName = col_name; //(*keyArray)[index]->getColumnName();
 
       keyInfoArray[index].keySeqNum = index+1;
+
+      if ((! colArray) && (! nacolArray))
+        {
+          // this col doesn't exist. Return error.
+          *CmpCommon::diags() << DgSqlCode(-1009)
+                              << DgColumnName(keyInfoArray[index].colName);
+          
+          return -1;
+        }
+ 
+      NAString nas((*keyArray)[index]->getColumnName());
       keyInfoArray[index].tableColNum = (Lng32)
-        colArray->getColumnIndex((*keyArray)[index]->getColumnName());
+        (colArray ?
+         colArray->getColumnIndex((*keyArray)[index]->getColumnName()) :
+         nacolArray->getColumnPosition(nas));
 
       if (keyInfoArray[index].tableColNum == -1)
         {
@@ -5845,7 +5861,8 @@ short CmpSeabaseDDL::buildKeyInfoArray(
         ((*keyArray)[index]->getColumnOrdering() == COM_ASCENDING_ORDER ? 0 : 1);
       keyInfoArray[index].nonKeyCol = 0;
 
-      if ((colInfoArray[keyInfoArray[index].tableColNum].nullable != 0) &&
+      if ((colInfoArray) &&
+          (colInfoArray[keyInfoArray[index].tableColNum].nullable != 0) &&
           (NOT allowNullableUniqueConstr))
         {
           *CmpCommon::diags() << DgSqlCode(-CAT_CLUSTERING_KEY_COL_MUST_BE_NOT_NULL_NOT_DROP)

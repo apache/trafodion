@@ -307,7 +307,7 @@ A     B     C    D
     A                                TINYINT
   , B                                TINYINT
   )
-   /* stored as text */
+   /* stored as textfile */
 
 --- SQL operation complete.
 >>select * from hive.hive.ttiny;

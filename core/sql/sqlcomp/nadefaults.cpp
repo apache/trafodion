@@ -1973,6 +1973,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDpct__(HIVE_NUM_ESPS_ROUND_DEVIATION,        "34"),
   DDint__(HIVE_SCAN_SPECIAL_MODE,                "0"),
   DDkwd__(HIVE_SORT_HDFS_HOSTS,                 "ON"),
+  DDkwd__(HIVE_USE_EXT_TABLE_ATTRS,             "ON"),
   DD_____(HIVE_USE_FAKE_SQ_NODE_NAMES,          "" ),
   DDkwd__(HIVE_USE_FAKE_TABLE_DESC,             "OFF"),
   DDkwd__(HIVE_USE_HASH2_AS_PARTFUNCION,        "ON"),
@@ -6672,6 +6673,11 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	  tok  == DF_VERTICAL    || tok == DF_INDEXES    || tok == DF_KEYINDEXES)
 	isValid = TRUE;
     break;
+
+    case HIVE_USE_EXT_TABLE_ATTRS:
+      if (tok == DF_ALL || tok == DF_OFF || tok == DF_ON )
+	isValid = TRUE;
+      break;
 
     case INDEX_ELIMINATION_LEVEL:
       if  (tok == DF_MINIMUM	 || tok == DF_MEDIUM ||
