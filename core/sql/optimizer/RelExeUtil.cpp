@@ -80,6 +80,7 @@
 #include "StmtDDLCreateRoutine.h"
 #include "StmtDDLDropRoutine.h"
 #include "StmtDDLCleanupObjects.h"
+#include "StmtDDLAlterLibrary.h"
 
 #include <cextdecs/cextdecs.h>
 #include "wstr.h"
@@ -3921,6 +3922,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   NABoolean alterIdentityCol = FALSE;
   NABoolean alterColDatatype = FALSE;
   NABoolean alterColRename = FALSE;
+  NABoolean alterLibrary = FALSE;
   NABoolean externalTable = FALSE;
   
   returnStatus_ = FALSE;
@@ -4315,6 +4317,14 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
       qualObjName_ = getExprNode()->castToStmtDDLNode()->
         castToStmtDDLDropLibrary()->getLibraryNameAsQualifiedName();
     }
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterLibrary())
+    {
+      isAlter_ = TRUE;
+      isLibrary_ = TRUE;
+      alterLibrary = TRUE ;
+      qualObjName_ = getExprNode()->castToStmtDDLNode()->
+	castToStmtDDLAlterLibrary()->getLibraryNameAsQualifiedName();
+    }
     else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateRoutine())
     {
       isCreate_ = TRUE;
@@ -4349,7 +4359,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
           (isAlter_ && (alterAddCol || alterDropCol || alterDisableIndex || alterEnableIndex || 
 			alterAddConstr || alterDropConstr || alterRenameTable ||
                         alterIdentityCol || alterColDatatype || alterColRename ||
-                        alterHBaseOptions || otherAlters)))))
+                        alterHBaseOptions || alterLibrary || otherAlters)))))
       {
 	if (NOT isNative_)
 	  {
