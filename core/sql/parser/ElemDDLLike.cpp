@@ -120,11 +120,13 @@ ElemDDLLike::displayLabel1() const
 ElemDDLLikeCreateTable::ElemDDLLikeCreateTable(
      const CorrName & sourceTableName,
      ElemDDLNode * pLikeOptions,
+     NABoolean forExtTable,
      CollHeap * h)
 : ElemDDLLike(ELM_LIKE_CREATE_TABLE_ELEM,
               sourceTableName,
               pLikeOptions,
-              h)
+              h),
+  forExtTable_(forExtTable)
 {
   if (pLikeOptions NEQ NULL)
   {

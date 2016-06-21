@@ -40,6 +40,7 @@
 #include "NumericType.h"
 #include "CharType.h"
 #include "CmpCommon.h"     /* want to put NAType obj's on statement heap ... */
+#include "str.h"
 
 // extern declaration
 extern short
@@ -672,6 +673,84 @@ short NAType::convertTypeToText(char * text,	   // OUTPUT
                                  CharInfo::getCollationName(collation),
                                  displaydatatype,
 				 displayCaseSpecific);
+}
+
+short NAType::getMyTypeAsHiveText(NAString * outputStr)  // output
+{
+  Lng32		      fs_datatype		= getFSDatatype();
+
+  switch (fs_datatype)
+    {
+    case REC_MIN_F_CHAR_H ... REC_MAX_F_CHAR_H:
+      *outputStr = "string";
+      break;
+
+    case REC_MIN_V_CHAR_H ... REC_MAX_V_CHAR_H:
+      {
+        SQLVarChar * ct = (SQLVarChar*)this;
+        if (ct->wasHiveString())
+          *outputStr = "string";
+        else
+          {
+            char buf[20];
+            Int32 size = getNominalSize() / ct->getBytesPerChar();
+            str_itoa(size, buf);
+            *outputStr = "varchar(";
+            *outputStr += buf;
+            *outputStr += ")";
+          }
+      }
+      break;
+
+    case REC_BIN8_SIGNED:
+    case REC_BIN8_UNSIGNED:
+      *outputStr = "tinyint";
+      break;
+
+    case REC_BIN16_SIGNED:
+    case REC_BIN16_UNSIGNED:
+      *outputStr = "smallint";
+      break;
+
+    case REC_BIN32_SIGNED:
+    case REC_BIN32_UNSIGNED:
+      *outputStr = "int";
+      break;
+
+    case REC_BIN64_SIGNED:
+      *outputStr = "bigint";
+      break;
+
+    case REC_FLOAT32:
+      *outputStr = "float";
+      break;
+
+    case REC_FLOAT64:
+      *outputStr = "double";
+      break;
+
+    case REC_DATETIME:
+      {
+        DatetimeIntervalCommonType & dtiCommonType =
+          (DatetimeIntervalCommonType &) *this;
+         
+        ComDateTimeStartEnd dtEndField = 
+          (ComDateTimeStartEnd)dtiCommonType.getEndField();
+
+        if ((rec_datetime_field)dtEndField == REC_DATE_SECOND)
+          *outputStr = "timestamp";
+        else 
+          *outputStr = "date";
+      }
+      break;
+
+    default:
+      *outputStr = "unknown";
+      break;
+
+    } // switch
+
+  return 0;
 }
 
 short NAType::getMyTypeAsText(NAString * outputStr,  // output

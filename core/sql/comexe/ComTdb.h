@@ -882,7 +882,8 @@ class ComTdbVirtTableTableInfo  : public ComTdbVirtTableBase
   ComRowFormat rowFormat;
   const char * defaultColFam;
   const char * allColFams;
-  Int64 objectFlags; 
+  Int64 objectFlags;  // flags from OBJECTS table
+  Int64 tablesFlags;  // flags from TABLES table
 };
 
 class ComTdbVirtTableColumnInfo : public ComTdbVirtTableBase

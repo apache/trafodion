@@ -563,6 +563,8 @@ public:
   short getMyTypeAsText(NAString * outputStr, 
 			NABoolean addNullability = TRUE); // output
 
+  short getMyTypeAsHiveText(NAString * outputStr);  // output
+
   // used for query caching
   Lng32 getSize() const;
   Lng32 hashKey() const;
