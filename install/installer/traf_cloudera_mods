@@ -199,7 +199,7 @@ curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
              "name":"dfs_namenode_acls_enabled",
              "value":"true"
              }, {
-             "name":"fs_permissions_umask-mode",
+             "name":"dfs_umaskmode",
              "value":"0002"          
              } ]
 }' \
