@@ -69,6 +69,8 @@
 #include "CmpSeabaseDDLmd.h"
 #include "CmpSeabaseDDLroutine.h"
 #include "hdfs.h"
+#include "StmtDDLAlterLibrary.h"
+
 void cleanupLOBDataDescFiles(const char*, int, const char *);
 
 class QualifiedSchema
@@ -5460,9 +5462,54 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
   return;
 }
 
-// user created traf stored col fam is of the form:  #<1-byte-num>
-//  1-byte-num is character '2' through '9', or 'a' through 'x'.
-// This allows for 32 column families and
+void CmpSeabaseDDL::purgedataObjectAfterError(
+                                            ExeCliInterface &cliInterface,
+                                            const NAString &catName, 
+                                            const NAString &schName,
+                                            const NAString &objName,
+                                            const ComObjectType objectType,
+                                            NABoolean dontForceCleanup)
+{
+
+  //if ddlXns are being used, no need of additional cleanup.
+  //transactional rollback will take care of cleanup.
+  if (dontForceCleanup)
+    return;
+
+  PushAndSetSqlParserFlags savedParserFlags(INTERNAL_QUERY_FROM_EXEUTIL);
+    
+  Lng32 cliRC = 0;
+  char buf[1000];
+
+  // save current diags area
+  ComDiagsArea * tempDiags = ComDiagsArea::allocate(heap_);
+  tempDiags->mergeAfter(*CmpCommon::diags());
+  
+  CmpCommon::diags()->clear();
+  if (objectType == COM_BASE_TABLE_OBJECT)
+    str_sprintf(buf, "purgedata \"%s\".\"%s\".\"%s\" ",
+                catName.data(), schName.data(), objName.data());
+  else if (objectType == COM_INDEX_OBJECT)
+    str_sprintf(buf, "purgedata table(index_table \"%s\".\"%s\".\"%s\" ) ",
+                catName.data(), schName.data(), objName.data());
+  else 
+    ex_assert(0, "purgedata object is not supported");
+    
+  cliRC = cliInterface.executeImmediate(buf);
+  CmpCommon::diags()->clear();
+  CmpCommon::diags()->mergeAfter(*tempDiags);
+
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    }
+
+  tempDiags->clear();
+  tempDiags->deAllocate();
+
+  return;
+}
+
 
 // user created traf stored col fam is of the form:  #<1-byte-num>
 //  1-byte-num is character '2' through '9', or 'a' through 'x'.
@@ -8906,6 +8953,15 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           
           dropSeabaseLibrary(dropLibraryParseNode, currCatName, currSchName);
         }
+       else if (ddlNode->getOperatorType() == DDL_ALTER_LIBRARY)
+         {
+           // create seabase library
+           StmtDDLAlterLibrary * alterLibraryParseNode =
+             ddlNode->castToStmtDDLNode()->castToStmtDDLAlterLibrary();
+           
+           alterSeabaseLibrary(alterLibraryParseNode, currCatName, 
+                               currSchName);
+         }
       else if (ddlNode->getOperatorType() == DDL_CREATE_ROUTINE)
         {
           // create seabase routine

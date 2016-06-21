@@ -69,7 +69,6 @@ cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
 -- getting a query cache hit and updating the changed
 -- Hive and HDFS metadata
 ------------------------------------------------------------
-
 prepare s1 from 
   select c_preferred_cust_flag,
          count(*) 
@@ -311,14 +310,64 @@ select a from hive.hive.thive;
 
 select * from hive.hive.thive;
 
--- purgedata of hive data
+-- truncate of hive data
 cqd query_cache '0';
-purgedata hive.hive.thive;
+truncate hive.hive.thive;
 select * from hive.hive.thive;
 insert into hive.hive.thive values (10, 20);
 select * from hive.hive.thive;
-purgedata hive.hive.thive;
-purgedata hive.hive.thive;
+truncate hive.hive.thive;
+truncate hive.hive.thive;
 select * from hive.hive.thive;
+
+-- truncate of partitioned hive table
+sh echo "drop table t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+sh echo "create table t005part(a int) partitioned by (b int, c int);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+
+sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+sh echo "select * from t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+
+truncate hive.hive.t005part;
+sh echo "select * from t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+
+sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+truncate hive.hive.t005part partition ('b=10');
+sh echo "select * from t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+
+
+sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+truncate hive.hive.t005part partition ('b=10','c=11');
+sh echo "select * from t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+
+sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+sh echo "insert into t005part partition (b=10,c=12) values (6);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+sh echo "select * from t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+
+truncate hive.hive.t005part partition ('b=10','c=11');
+sh echo "select * from t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+
+truncate hive.hive.t005part partition ('b=10');
+sh echo "select * from t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+
+-- should return error
+truncate hive.hive.t005part partition ('b=12');
+
+
+-- should return error
+purgedata hive.hive.thive;
 
 log;

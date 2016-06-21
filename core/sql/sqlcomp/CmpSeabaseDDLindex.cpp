@@ -1371,43 +1371,41 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 					    naf->uniqueIndex(),
 					    nafIndexName, tableName, selColList,
 	                                    useLoad))
-	    {
-	      // need to purgedata seabase index. TBD.
-	      
-	      //	      if (cmpDropSeabaseObject(createIndexNode->getIndexName(),
-	      //				     currCatName, currSchName, COM_INDEX_OBJECT_LIT))
-	      //			return;
-
-	      processReturn();
-
-              goto label_return;
-	    }
+	  {
+	    processReturn();
+            goto purgedata_return;
+	  }
       
-      if (updateObjectAuditAttr(&cliInterface, 
+          if (updateObjectAuditAttr(&cliInterface, 
 				catalogNamePart, schemaNamePart, objectNamePart,
 				TRUE, COM_INDEX_OBJECT_LIT))
-	{
-	  processReturn();
-	  
-          goto label_return;
-	}
-      
-      if (updateObjectValidDef(&cliInterface, 
+	  {
+	     processReturn();
+             goto purgedata_return;
+	  }
+
+          if (updateObjectValidDef(&cliInterface, 
 			       catalogNamePart, schemaNamePart, objectNamePart,
 			       COM_INDEX_OBJECT_LIT,
 			       "Y"))
-	{
-	  processReturn();
-
-          goto label_return;
-	}
-
+	  {
+	     processReturn();
+             goto purgedata_return;
+	  }
       }
     } // for
 
  label_return:
   processReturn();
-      
+  return;
+ purgedata_return:
+  updateObjectAuditAttr(&cliInterface, 
+                 catalogNamePart, schemaNamePart, objectNamePart,
+                 TRUE, COM_INDEX_OBJECT_LIT);
+  NABoolean dontForceCleanup = FALSE;
+  purgedataObjectAfterError(cliInterface,
+                               catalogNamePart, schemaNamePart, objectNamePart, COM_INDEX_OBJECT, dontForceCleanup);
+  processReturn();
   return;
 }
 

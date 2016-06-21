@@ -1164,17 +1164,17 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat(Int64 *latestRowTimestamp)
               Int64 v = 0;
               if (colName.length() == sizeof(char))
                 v = *(char*)colName.data();
-              else if (colName.length() == sizeof(unsigned short))
+              else if (colName.length() == sizeof(UInt16))
                 v = *(UInt16*)colName.data();
-              else if (colName.length() == sizeof(Lng32))
+              else if (colName.length() == sizeof(ULng32))
                 v = *(ULng32*)colName.data();
 
-              char buf[10];
+              char buf[20];
               str_sprintf(buf, "%Ld", v);
               ComDiagsArea * diagsArea = NULL;
               ExRaiseSqlError(getHeap(), &diagsArea,
-                              (ExeErrorCode)(8034),
-                              NULL, NULL, NULL, NULL, buf);
+                              (ExeErrorCode)(EXE_DEFAULT_VALUE_INCONSISTENT_ERROR),
+                              NULL, NULL, NULL, NULL, buf, hbaseAccessTdb().getTableName());
               pentry_down->setDiagsArea(diagsArea);
               return -1;
             }

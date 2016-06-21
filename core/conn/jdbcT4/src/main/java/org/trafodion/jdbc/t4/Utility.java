@@ -223,10 +223,18 @@ class Utility {
 	 * @return none
 	 * 
 	 */
-	static void checkTinyintBoundary(Locale locale, BigDecimal inbd) throws SQLException {
+	static void checkSignedTinyintBoundary(Locale locale, BigDecimal inbd) throws SQLException {
 		long inlong = inbd.longValue();
 		if ((inlong > Byte.MAX_VALUE) || (inlong < Byte.MIN_VALUE)) {
-			throw TrafT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inlong));
+			throw TrafT4Messages.createSQLException(null, locale, "signed_tinyint_out_of_range", String.valueOf(inlong));
+		}
+	} // end checkTinyintBoundary
+
+	static void checkUnsignedTinyintBoundary(Locale locale, BigDecimal inbd) throws SQLException {
+		long inlong = inbd.longValue();
+		long maxutiny = (Byte.MAX_VALUE * 2) + 1;
+		if ((inlong < 0) || (inlong > maxutiny)) {
+			throw TrafT4Messages.createSQLException(null, locale, "unsigned_tinyint_out_of_range", String.valueOf(inlong));
 		}
 	} // end checkTinyintBoundary
 

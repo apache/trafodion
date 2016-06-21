@@ -2436,10 +2436,6 @@ public:
   NABoolean checkTruncationError()	{ return checkForTruncation_; }
   void setCheckTruncationError(NABoolean v) { checkForTruncation_ = v; }
 
-  NABoolean noStringTruncationWarnings() { return noStringTruncationWarnings_; }
-
-  NABoolean convertNullWhenError() { return convertNullWhenError_; }
-
   // get and set for flags_. See enum Flags.
   NABoolean matchChildType()   { return (flags_ & MATCH_CHILD_TYPE) != 0; }
   void setMatchChildType(NABoolean v)
@@ -2465,16 +2461,23 @@ public:
   NA_EIDPROC void setAllowSignInInterval(NABoolean v)
     { (v) ? flags_ |= ALLOW_SIGN_IN_INTERVAL : flags_ &= ~ALLOW_SIGN_IN_INTERVAL; }
 
+  NABoolean convertNullWhenError() 
+  { return (flags_ & CONV_NULL_WHEN_ERROR) != 0; }
+  void setConvertNullWhenError(NABoolean v)
+  { (v ? flags_ |= CONV_NULL_WHEN_ERROR : flags_ &= ~CONV_NULL_WHEN_ERROR); }
+
+  NABoolean noStringTruncationWarnings() 
+  { return (flags_ & NO_STRING_TRUNC_WARNINGS) != 0; }
+  void setNoStringTruncationWarnings(NABoolean v)
+  { (v ? flags_ |= NO_STRING_TRUNC_WARNINGS: flags_ &= ~NO_STRING_TRUNC_WARNINGS); }
+
   const NAType * pushDownType(NAType& desiredType,
                       enum NABuiltInTypeEnum defaultQualifier);
 
   virtual NABoolean hasEquivalentProperties(ItemExpr * other);
 
-  void setNoStringTruncationWarnings(NABoolean v)
-  { noStringTruncationWarnings_ = v; }
-
-  void setConvertNullWhenError(NABoolean v)
-  { convertNullWhenError_= v; }
+  UInt16 getFlags() { return flags_; }
+  void setFlags(UInt16 f) { flags_ = f; }
 
 private:
 
@@ -2495,7 +2498,13 @@ private:
     // source is a varchar value which is a pointer to the actual data.
     SRC_IS_VARCHAR_PTR = 0x0008,
 
-    ALLOW_SIGN_IN_INTERVAL             = 0x0010
+    ALLOW_SIGN_IN_INTERVAL             = 0x0010,
+
+    // convert error will not be returned, null will be moved into target
+    CONV_NULL_WHEN_ERROR               = 0x0020,
+
+    // string truncation warnings are not to be returned
+    NO_STRING_TRUNC_WARNINGS           = 0x0040
   
   };
 
@@ -2508,13 +2517,6 @@ private:
   // If true, the run-time data error conversion flag must be reversed.
   // This is a Narrow-only issue.
   NABoolean reverseDataErrorConversionFlag_;
-
-  // If true, string truncation warnings are not returned. This is set to true
-  
-  NABoolean noStringTruncationWarnings_;
-
-  // If true, convert error will not returned, move null into target
-  NABoolean convertNullWhenError_; 
 
   UInt32 flags_;
 

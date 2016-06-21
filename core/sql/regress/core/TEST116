@@ -29,12 +29,7 @@
 
 
 ?section main
-drop table t116t1;
-drop table t116t2;
-drop table t116t3;
-drop table t116t3;
-drop table t116t4;
-drop table t116t5;
+obey TEST116(clean_up);
 
 log LOG116 clear;
 control query default DDL_TRANSACTIONS 'ON';
@@ -220,7 +215,6 @@ set transaction autocommit on;
 -- index creation checking
 -- index creation is done with multiple transactions
 -- to avoid populating the index within the transaction
-drop table if exists t116t5;
 create table t116t5 (c1 int not null primary key, c2 int, c3 int) ;
 insert into t116t5 values (1,1,1), (2,2,2), (3,3,2);
 -- create index - Second attempt should fail 
@@ -231,7 +225,13 @@ select count(*) from table(index_table t116t5_i1);
 -- create unique index - Both attempts should fail with the same error
 create unique index t116t5_i2 on t116t5(c3);
 create unique index t116t5_i2 on t116t5(c3);
-drop table t116t5 ;
+-- create unique index with no populate
+create unique index t116t5_i2 on t116t5(c3) no populate;
+-- Both attempts should fail with the same error
+populate index t116t5_i2 on t116t5;
+populate index t116t5_i2 on t116t5;
+
+obey TEST116(clean_up);
 log;
 exit;
 
@@ -242,3 +242,11 @@ begin work;
 -- should fail
 create table t116t1 (a int);
 commit work;
+
+?section clean_up
+drop table t116t1;
+drop table t116t2;
+drop table t116t3;
+drop table t116t4;
+drop table t116t5;
+
