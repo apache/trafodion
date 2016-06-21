@@ -72,7 +72,8 @@ extern short CmpDescribeSeabaseTable (
                              char * colName = NULL,
                              short ada = 0, // 0,add. 1,drop. 2,alter
                              const NAColumn * nacol = NULL,
-                             const NAType * natype = NULL);
+                             const NAType * natype = NULL,
+                             Space *inSpace = NULL);
 
 // type:  1, invoke. 2, showddl. 3, create_like
 extern short cmpDisplayColumn(const NAColumn *nac,
@@ -431,6 +432,8 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
 
   // go create the schema - if it does not already exist.
   NAString createSchemaStmt ("CREATE SCHEMA IF NOT EXISTS ");
+  createSchemaStmt += tgtTableName.getCatalogNamePartAsAnsiString();
+  createSchemaStmt += ".";
   createSchemaStmt += tgtTableName.getSchemaNamePartAsAnsiString();
   if (isAuthorizationEnabled())
     {
@@ -480,7 +483,7 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
   tableInfo->createTime = 0;
   tableInfo->redefTime = 0;
   tableInfo->objUID = 0;
-  tableInfo->isAudited = 0;
+  tableInfo->isAudited = 1;
   tableInfo->validDef = 1;
   tableInfo->hbaseCreateOptions = NULL;
   tableInfo->numSaltPartns = 0;
@@ -488,6 +491,7 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
                                      COM_HBASE_EXTERNAL_FORMAT_TYPE;
   tableInfo->objectFlags = (isHive) ?  SEABASE_OBJECT_IS_EXTERNAL_HIVE : 
                                        SEABASE_OBJECT_IS_EXTERNAL_HBASE;
+  tableInfo->tablesFlags = 0;
 
   if (isAuthorizationEnabled())
     {
@@ -531,16 +535,94 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
       return -1;
     }
 
+  ElemDDLColDefArray &colArray = createTableNode->getColDefArray();
+  ElemDDLColRefArray &keyArray =
+    (createTableNode->getIsConstraintPKSpecified() ?
+     createTableNode->getPrimaryKeyColRefArray() :
+     (createTableNode->getStoreOption() == COM_KEY_COLUMN_LIST_STORE_OPTION ?
+      createTableNode->getKeyColumnArray() :
+      createTableNode->getPrimaryKeyColRefArray()));
+
+  // cqd HIVE_USE_EXT_TABLE_ATTRS:
+  //  if OFF, col or key attrs cannot be specified during ext table creation.
+  //  if ON,  col attrs could be specified.
+  //  if ALL, col and key attrs could be specified
+  NABoolean extTableAttrsSpecified = FALSE;
+  if (colArray.entries() > 0)
+    {
+      if (CmpCommon::getDefault(HIVE_USE_EXT_TABLE_ATTRS) == DF_OFF)
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-3242)
+            << DgString0("Cannot specify column attributes for external tables.");
+          return -1;
+        }
+
+      extTableAttrsSpecified = TRUE;
+      CmpSeabaseDDL::setMDflags
+        (tableInfo->tablesFlags, MD_TABLES_HIVE_EXT_COL_ATTRS);
+    }
+  
+  if (keyArray.entries() > 0)
+    {
+      if (CmpCommon::getDefault(HIVE_USE_EXT_TABLE_ATTRS) != DF_ALL)
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-3242)
+            << DgString0("Cannot specify key attribute for external tables.");
+          return -1;
+        }
+
+      extTableAttrsSpecified = TRUE;
+      CmpSeabaseDDL::setMDflags
+        (tableInfo->tablesFlags, MD_TABLES_HIVE_EXT_KEY_ATTRS);
+     }
+  
   // convert column array from NATable into a ComTdbVirtTableColumnInfo struct
-  const NAColumnArray &naColArray = naTable->getNAColumnArray();
+  NAColumnArray naColArray;
+  const NAColumnArray &origColArray = naTable->getNAColumnArray();
+
+  for (CollIndex c=0; c<origColArray.entries(); c++)
+    naColArray.insert(origColArray[c]);
+
   numCols = naColArray.entries();
+
+  // make sure all columns specified in colArray are part of naColArray
+  if (colArray.entries() > 0)
+    {
+      for (CollIndex colIndex = 0; colIndex < colArray.entries(); colIndex++)
+        {
+          const ElemDDLColDef *edcd = colArray[colIndex];          
+          
+          if (naColArray.getColumnPosition((NAString&)edcd->getColumnName()) < 0)
+            {
+              // not found. return error.
+              *CmpCommon::diags() << DgSqlCode(-1009) 
+                                  << DgColumnName(ToAnsiIdentifier(edcd->getColumnName()));
+	 
+              return -1;
+             }
+        }
+    }
+
   colInfoArray = new(STMTHEAP) ComTdbVirtTableColumnInfo[numCols];
   for (CollIndex index = 0; index < numCols; index++)
     {
       const NAColumn *naCol = naColArray[index];
+      const NAType * type = naCol->getType();
+      
+      // if colArray has been specified, then look for this column in
+      // that array and use the type specified there.
+      Int32 colIndex = -1;
+      if ((colArray.entries() > 0) &&
+          ((colIndex = colArray.getColumnIndex(naCol->getColName())) >= 0))
+        {
+          ElemDDLColDef *edcd = colArray[colIndex];
+          type = edcd->getColumnDataType();
+        }
 
       // call:  CmpSeabaseDDL::getTypeInfo to get column details
-      retcode = getTypeInfo(naCol->getType(), alignedFormat, serializedOption,
+      retcode = getTypeInfo(type, alignedFormat, serializedOption,
                    datatype, length, precision, scale, dtStart, dtEnd, upshifted, nullable,
                    charset, collationSequence, hbaseColFlags);
 
@@ -568,6 +650,32 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
       strcpy(colInfoArray[index].paramDirection, COM_UNKNOWN_PARAM_DIRECTION_LIT);
       colInfoArray[index].isOptional = FALSE;
       colInfoArray[index].colFlags = 0;
+    }
+
+  ComTdbVirtTableKeyInfo * keyInfoArray = NULL;
+  Lng32 numKeys = 0;
+  numKeys = keyArray.entries();
+  if (numKeys > 0)
+    {
+      if (isHive)
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-4222)
+            << DgString0("\"PRIMARY KEY on external hive table\"");
+          
+          return -1;
+        }
+
+      keyInfoArray = new(STMTHEAP) ComTdbVirtTableKeyInfo[numKeys];
+      if (buildKeyInfoArray(NULL, (NAColumnArray*)&naColArray, &keyArray, 
+                            colInfoArray, keyInfoArray, TRUE))
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-CAT_UNABLE_TO_CREATE_OBJECT)
+            << DgTableName(extTgtTableName);
+          
+          return -1;
+        }
     }
 
   Int64 objUID = -1;
@@ -1770,7 +1878,9 @@ short CmpSeabaseDDL::createSeabaseTable2(
           return -1;
         }
 
-      if (buildKeyInfoArray(&colArray, &keyArray, colInfoArray, keyInfoArray, allowNullableUniqueConstr))
+      if (buildKeyInfoArray(&colArray, NULL,
+                            &keyArray, colInfoArray, keyInfoArray, 
+                            allowNullableUniqueConstr))
         {
           processReturn();
 
@@ -1962,6 +2072,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
   tableInfo->validDef = 1;
   tableInfo->hbaseCreateOptions = NULL;
   tableInfo->objectFlags = 0;
+  tableInfo->tablesFlags = 0;
   
   if (fileAttribs.isOwnerSpecified())
     {
@@ -2981,8 +3092,10 @@ short CmpSeabaseDDL::dropSeabaseTable2(
               schemaNamePart,
               catalogNamePart);
 
+  bindWA.setExternalTableDrop(TRUE);
   NATable *naTable = bindWA.getNATable(cn); 
- 
+  bindWA.setExternalTableDrop(FALSE);
+
   const NAColumnArray &nacolArr =  naTable->getNAColumnArray();
   // Restore parser flags settings to what they originally were
   Set_SqlParser_Flags (savedParserFlags);
@@ -9419,6 +9532,7 @@ short CmpSeabaseDDL::getSpecialTableInfo
       tableInfo->schemaOwnerID = schemaOwner;
       tableInfo->hbaseCreateOptions = NULL;
       tableInfo->objectFlags = objectFlags;
+      tableInfo->tablesFlags = 0;
       tableInfo->rowFormat = COM_UNKNOWN_FORMAT_TYPE;
     }
 
@@ -10017,6 +10131,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseSequenceDesc(const NAString &catName,
   tableInfo->schemaOwnerID = schemaOwner;
   tableInfo->hbaseCreateOptions = NULL;
   tableInfo->objectFlags = 0;
+  tableInfo->tablesFlags = 0;
 
   tableDesc =
     Generator::createVirtualTableDesc
@@ -10136,10 +10251,10 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
     }
   }
 
-  str_sprintf(query, "select is_audited, num_salt_partns, row_format from %s.\"%s\".%s where table_uid = %Ld for read committed access",
+  str_sprintf(query, "select is_audited, num_salt_partns, row_format, flags from %s.\"%s\".%s where table_uid = %Ld for read committed access",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
               objUID);
-
+  
   Queue * tableAttrQueue = NULL;
   cliRC = cliInterface.fetchAllRows(tableAttrQueue, query, 0, FALSE, FALSE, TRUE);
 
@@ -10152,6 +10267,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       return NULL;
     }
 
+  Int64 tablesFlags = 0;
   NABoolean isAudited = TRUE;
   Lng32 numSaltPartns = 0;
   NABoolean alignedFormat = FALSE;
@@ -10176,6 +10292,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       char * format = vi->get(2);
       alignedFormat = (memcmp(format, COM_ALIGNED_FORMAT_LIT, 2) == 0);
      
+      tablesFlags = *(Int64*)vi->get(3);
+
       if (getTextFromMD(&cliInterface, objUID, COM_HBASE_OPTIONS_TEXT, 0,
                         *hbaseCreateOptions))
         {
@@ -10792,6 +10910,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       tableInfo->allColFams = NULL;
     }
   tableInfo->objectFlags = objectFlags;
+  tableInfo->tablesFlags = tablesFlags;
 
   tableDesc =
     Generator::createVirtualTableDesc

@@ -3830,6 +3830,9 @@ enum DefaultConstants
   // Otherwise typed as smallint.
   TRAF_TINYINT_SPJ_SUPPORT,
 
+  // use info from external table created on this hive table
+  HIVE_USE_EXT_TABLE_ATTRS,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

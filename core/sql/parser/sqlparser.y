@@ -8813,6 +8813,15 @@ string_function :
 		    $$ = new (PARSERHEAP()) Repeat ($3, $5);
 		  }
 
+     | TOK_REPEAT '(' value_expression ',' value_expression ',' NUMERIC_LITERAL_EXACT_NO_SCALE ')'
+                  {
+                    Int64 value = atoInt64($7->data()); 
+                    if (value == 0)
+                      value = -1; 
+		    $$ = new (PARSERHEAP()) Repeat 
+                      ($3, $5, (Int32)value);
+		  }
+
      | TOK_REPLACE '(' value_expression ',' value_expression ',' value_expression ')'
                   {
 		    $$ = new (PARSERHEAP()) Replace ($3, $5, $7);
@@ -24964,6 +24973,13 @@ create_table_as_token: TOK_AS
 /* type pElemDDL */
 table_definition_body : table_element_list
                       | external_table_definition
+                      | table_element_list external_table_definition
+                        {
+                          $$ = new (PARSERHEAP())
+                            ElemDDLList(
+                                 $1 /*table_elements*/,
+                                 $2 /*table_element*/);
+                        }
 
 /* type pElemDDL */
 table_element_list : '(' table_elements ')'
@@ -25820,6 +25836,7 @@ like_definition : TOK_LIKE source_table optional_like_option_list
 				    ElemDDLLikeCreateTable(
                                         *$2 /*source_table*/,
                                          $3 /*optional_like_option_list*/,
+                                        FALSE,
                                         PARSERHEAP());
                                   delete $2 /*source_table*/;
                                 }
@@ -25831,6 +25848,7 @@ external_table_definition : TOK_FOR source_table
 				    ElemDDLLikeCreateTable(
                                         *$2 /*source_table*/,
                                         NULL,
+                                        TRUE, 
                                         PARSERHEAP());
                                   delete $2 /*source_table*/;
                                 }

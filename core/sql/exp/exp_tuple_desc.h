@@ -825,7 +825,7 @@ public:
       else // indirect varchar, get offset from loop variable.
         tgtOffset = varOffset + nullIndLen;  // skip over the null indicator len
 
-      setVoaValue(tgt, voaEntryOffset, varOffset, (UInt16)vcIndLen); 
+      setVoaValue(tgt, voaEntryOffset, varOffset, (UInt32)vcIndLen); 
 
       varOffset += len + nullIndLen + vcIndLen; 
     }

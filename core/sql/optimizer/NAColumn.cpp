@@ -68,6 +68,12 @@ NABoolean NAColumn::operator==(const NAColumn& other) const
 	  (*getType() == *other.getType()));
 }
 
+
+NABoolean NAColumn::operator==(const NAString& otherColName) const
+{
+  return (getColName() == otherColName);
+}
+
 void NAColumn::deepDelete()
 {
   if(defaultValue_)
@@ -860,6 +866,15 @@ Int32 NAColumnArray::getColumnPosition(NAColumn& nc) const
   for (CollIndex j = 0; j < entries(); j++) {
      if ( nc == (* at(j)) )  // compare via NAColumn::operator==()
        return j;
+  }
+  return -1;
+}
+
+Int32 NAColumnArray::getColumnPosition(NAString& nc) const
+{
+  for (CollIndex j = 0; j < entries(); j++) {
+    if ( (* at(j)) == nc )  // compare via NAColumn::operator==()
+      return j;
   }
   return -1;
 }

@@ -836,8 +836,9 @@ short FileScan::codeGenForHive(Generator * generator)
   //   account for this when we generate the move expression
   //   by making sure that the output ValueIds created during
   //   binding refer to the outputs of the move expression
-
   ValueIdList origExprVids;
+
+  NABoolean longVC = FALSE;
   for (int ii = 0; ii < (int)hdfsVals.entries();ii++)
   {
     if (convertSkipList[ii] == 0)
@@ -874,15 +875,22 @@ short FileScan::codeGenForHive(Generator * generator)
     orcRowLen += sizeof(Lng32);
     orcRowLen += givenType.getDisplayLength();
 
+    if ((DFS2REC::isAnyVarChar(givenType.getFSDatatype())) &&
+        (givenType.getTotalSize() > 1024))
+      longVC = TRUE;
   } // for (ii = 0; ii < hdfsVals; ii++)
     
-
   UInt32 hiveScanMode = CmpCommon::getDefaultLong(HIVE_SCAN_SPECIAL_MODE);
   //enhance pCode to handle this mode in the future
   //this is for JIRA 1920
   if((hiveScanMode & 2 ) > 0)   //if HIVE_SCAN_SPECIAL_MODE is 2, disable pCode
     exp_gen->setPCodeMode(ex_expr::PCODE_NONE);
 
+  // use CIF if there are long varchars (> 1K length) and CIF has not
+  // been explicitly turned off.
+  if (longVC && (CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT) != DF_OFF))
+    generator->setCompressedInternalFormat();
+ 
   // Add ascii columns to the MapTable. After this call the MapTable
   // has ascii values in the work ATP at index asciiTuppIndex.
   exp_gen->processValIdList(
@@ -1131,15 +1139,28 @@ short FileScan::codeGenForHive(Generator * generator)
   // Try to get enough buffer space to hold twice as many records
   // as the up queue.
   //
-  // This should be more sophisticate than this, and should maybe be done
-  // within the buffer class, but for now this will do.
-  // 
+  
+  UInt32 FiveM = 5*1024*1024;
+
+  // If returnedrowlen > 5M, then set upqueue entries to 2.
+  if (returnedRowlen > FiveM)
+    upqueuelength = 2;
+
   ULng32 cbuffersize = 
     SqlBufferNeededSize((upqueuelength * 2 / numBuffers),
 			returnedRowlen);
   // But use at least the default buffer size.
   //
   buffersize = buffersize > cbuffersize ? buffersize : cbuffersize;
+
+  // Cap the buffer size at 5M and adjust upqueue entries.
+  // Do this only if returnrowlen is not > 5M
+  if ((returnedRowlen <= FiveM) && (buffersize > FiveM))
+    {
+      buffersize = FiveM;
+
+      upqueuelength = ((buffersize / returnedRowlen) * numBuffers)/2;
+    }
 
   // default value is in K bytes
   Int64 hdfsBufSize = 0;
@@ -2402,6 +2423,7 @@ short HbaseAccess::codeGen(Generator * generator)
   ValueIdArray encodedKeyExprVidArr(getIndexDesc()->getIndexKey().entries());
   const CollIndex numColumns = columnList.entries();
 
+  NABoolean longVC = FALSE;
   for (CollIndex ii = 0; ii < numColumns; ii++)
     {
      ItemExpr * col_node = ((columnList[ii]).getValueDesc())->getItemExpr();
@@ -2458,7 +2480,16 @@ short HbaseAccess::codeGen(Generator * generator)
      HbaseAccess_updateHbaseInfoNode(hbTsVIDlist, nac->getColName(), ii);
      HbaseAccess_updateHbaseInfoNode(hbVersVIDlist, nac->getColName(), ii);
 
+     if ((DFS2REC::isAnyVarChar(givenType.getFSDatatype())) &&
+          (givenType.getTotalSize() > 1024))
+        longVC = TRUE;
+
     } // for (ii = 0; ii < numCols; ii++)
+
+  // use CIF if there are long varchars (> 1K length) and CIF has not
+  // been explicitly turned off.
+  if (longVC && (CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT) != DF_OFF))
+    generator->setCompressedInternalFormat();
 
   ValueIdList encodedKeyExprVids(encodedKeyExprVidArr);
 
@@ -2804,12 +2835,28 @@ short HbaseAccess::codeGen(Generator * generator)
   // This should be more sophisticate than this, and should maybe be done
   // within the buffer class, but for now this will do.
   // 
+  UInt32 FiveM = 5*1024*1024;
+
+  // If returnedrowlen > 5M, then set upqueue entries to 2.
+  UInt32 bufRowlen = MAXOF(convertRowLen, 1000);
+  if (bufRowlen > FiveM)
+    upqueuelength = 2;
+
   ULng32 cbuffersize = 
     SqlBufferNeededSize((upqueuelength * 2 / numBuffers),
-			1000); //returnedRowlen);
+			bufRowlen); //returnedRowlen);
   // But use at least the default buffer size.
   //
   buffersize = buffersize > cbuffersize ? buffersize : cbuffersize;
+
+  // Cap the buffer size at 5M and adjust upqueue entries.
+  // Do this only if returnrowlen is not > 5M
+  if ((bufRowlen <= FiveM) && (buffersize > FiveM))
+    {
+      buffersize = FiveM;
+
+      upqueuelength = ((buffersize / bufRowlen) * numBuffers)/2;
+    }
 
   Int32 computedHBaseRowSizeFromMetaData = getTableDesc()->getNATable()->computeHBaseRowSizeFromMetaData();
   if (computedHBaseRowSizeFromMetaData * getEstRowsAccessed().getValue()  <

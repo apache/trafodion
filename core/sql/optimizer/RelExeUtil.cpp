@@ -3989,13 +3989,16 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
           (createTableNode->isSetTable()))
       {
         // these options not supported in open source
-        *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("DDL");
+        *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("InMemory/Set/Multiset");
         bindWA->setErrStatus();
         return NULL;
       }
 
       // Hive tables can only be specified as external and must be created
       // with the FOR clause
+       if (createTableNode->isExternal())
+         qualObjName_.applyDefaults(bindWA->getDefaultSchema());
+
       if (qualObjName_.isHive()) 
       {
         if (createTableNode->isExternal())
@@ -4005,7 +4008,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         }
         else
         {
-          *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("DDL");
+          *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("External tables supported on hive tables only.");
           bindWA->setErrStatus();
           return NULL;
         }
@@ -4414,7 +4417,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   if (isHbase_ || externalTable)
     return boundExpr;
 
-  *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("DDL");
+  *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("DDL operations can only be done on trafodion or external tables.");
   bindWA->setErrStatus();
   return NULL;
 }
@@ -4506,7 +4509,7 @@ RelExpr * ExeUtilProcessVolatileTable::bindNode(BindWA *bindWA)
   if (NOT isHbase_)
     {
       // non-hbase tables not supported in open source
-      *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("DDL");
+      *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Non-hbase tables not supported.");
       bindWA->setErrStatus();
       return NULL;
     }
