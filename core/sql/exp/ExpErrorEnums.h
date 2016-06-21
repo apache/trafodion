@@ -77,8 +77,8 @@ enum ExeErrorCode
 
   EXE_NO_QID_EXPLAIN_INFO               = 8032,
   EXE_EXPLAIN_PLAN_TOO_LARGE            = 8033,
-
-  EXE_HIVE_TRUNCATE_ERROR               = 8034,
+  EXE_DEFAULT_VALUE_INCONSISTENT_ERROR  = 8034,
+  EXE_HIVE_TRUNCATE_ERROR               = 8035,
 
   // ---------------------------------------------------------------------
   // Data integrity errors

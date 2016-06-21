@@ -2783,17 +2783,17 @@ RelExpr * ExeUtilExpr::preCodeGen(Generator * generator,
   return this;
 }
 
-// returns true if the whole ddl operation can run in one transaction
-// and transaction can be started by caller(master executor or arkcmp)
-// before executing this ddl.
+// xnCanBeStarted is set to true if the whole ddl operation can run in one transaction
+// It is set to false, then the DDL implementation methods manages the transaction
 short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
 {
   ExprNode * ddlNode = getDDLNode();
 
   xnCanBeStarted = TRUE;
-  // no DDL transactions.
-  if ((NOT ddlXns()) &&
-      ((dropHbase()) ||
+  // When the DDL transaction is not turned on via CQD
+  if (NOT ddlXns()) 
+  { 
+     if ((dropHbase()) ||
        (purgedataHbase()) ||
        (initHbase()) ||
        (createMDViews()) ||
@@ -2805,14 +2805,13 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
        (dropRepos()) ||
        (upgradeRepos()) ||
        (addSchemaObjects()) ||
-       (updateVersion())))
-    {
-      // transaction will be started and commited in called methods.
-      xnCanBeStarted = FALSE;
-    }
+       (updateVersion()))
+     {
+        // transaction will be started and commited in called methods.
+         xnCanBeStarted = FALSE;
+     }
   
-  // no DDL transactions
-  if (((ddlNode) && (ddlNode->castToStmtDDLNode()) &&
+     if (((ddlNode) && (ddlNode->castToStmtDDLNode()) &&
        (NOT ddlNode->castToStmtDDLNode()->ddlXns())) &&
       ((ddlNode->getOperatorType() == DDL_DROP_SCHEMA) ||
        (ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
@@ -2824,44 +2823,34 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE) ||
        (ddlNode->getOperatorType() == DDL_DROP_TABLE)))
-    {
-      // transaction will be started and commited in called methods.
-      xnCanBeStarted = FALSE;
-    }
+     {
+        // transaction will be started and commited in called methods.
+        xnCanBeStarted = FALSE;
+     }
+     isDDLxn = FALSE;
+  }
+  else  // When the DDL transaction is turned on
+  {
+     isDDLxn = FALSE;
+     if (ddlNode && ddlNode->castToStmtDDLNode() &&
+        ddlNode->castToStmtDDLNode()->ddlXns())
+     isDDLxn = TRUE;
 
-  isDDLxn = FALSE;
-  if ((ddlXns()) || 
-      ((ddlNode && ddlNode->castToStmtDDLNode() &&
-        ddlNode->castToStmtDDLNode()->ddlXns())))
-    isDDLxn = TRUE;
-
-  // ddl transactions are on.
-  // Following commands currently require transactions be started and
-  // committed in the called methods.
-  if ((ddlXns()) &&
-      (
-           (purgedataHbase()) ||
-           (upgradeRepos())
-       )
-      )
-    {
-      // transaction will be started and commited in called methods.
-      xnCanBeStarted = FALSE;
-    }
-
-  // ddl transactions are on.
-  // Cleanup and alter commands requires transactions to be started and commited
-  // in the called method.
-  if ((ddlNode && ddlNode->castToStmtDDLNode() &&
-       ddlNode->castToStmtDDLNode()->ddlXns()) &&
-      ((ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
-       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
-       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)))
-    {
-      // transaction will be started and commited in called methods.
-      xnCanBeStarted = FALSE;
-    }
-
+     if (purgedataHbase() || upgradeRepos())
+        // transaction will be started and commited in called methods.
+        xnCanBeStarted = FALSE;
+     if ((ddlNode && ddlNode->castToStmtDDLNode() &&
+          ddlNode->castToStmtDDLNode()->ddlXns()) &&
+            ((ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
+             (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
+             (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)))
+     {
+        // transaction will be started and commited in called methods.
+        xnCanBeStarted = FALSE;
+     }
+  } 
   return 0;
 }
 

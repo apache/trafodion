@@ -1423,7 +1423,6 @@ short CmpSeabaseDDL::createSeabaseTable2(
   if (ehi == NULL)
     {
       processReturn();
-
       return -1;
     }
 
@@ -4244,6 +4243,11 @@ short CmpSeabaseDDL::cloneHbaseTable(
 
   ExpHbaseInterface * ehi = (inEHI ? inEHI : allocEHI());
 
+  if (ehi == NULL) {
+     processReturn();
+     return -1;
+  }
+
   // copy hbaseTable as clonedHbaseTable
   if (ehi->copy(hbaseTable, clonedHbaseTable, TRUE))
     {
@@ -4962,6 +4966,9 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
   tempTable += str_ltoa(objUID, objUIDbuf);
 
   ExpHbaseInterface * ehi = allocEHI();
+  if (ehi == NULL) 
+     return -1; 
+  
   ExeCliInterface cliInterface
     (STMTHEAP, NULL, NULL, 
      CmpCommon::context()->sqlSession()->getParentQid());
@@ -5229,7 +5236,6 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
   if (ehi == NULL)
     {
       processReturn();
-      
       return;
     }
 
@@ -5841,6 +5847,8 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumnAttr
   tempTable += str_ltoa(objUID, objUIDbuf);
 
   ExpHbaseInterface * ehi = allocEHI();
+  if (ehi == NULL)
+     return -1;
   ExeCliInterface cliInterface
     (STMTHEAP, NULL, NULL, 
      CmpCommon::context()->sqlSession()->getParentQid());
@@ -6936,7 +6944,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
   if (ehi == NULL)
     {
       processReturn();
-      
       return;
     }
 
@@ -7235,7 +7242,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
   if (ehi == NULL)
     {
       processReturn();
-      
       return;
     }
 
@@ -7466,7 +7472,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
   if (ehi == NULL)
     {
       processReturn();
-      
       return;
     }
 
@@ -8215,7 +8220,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
   if (ehi == NULL)
     {
       processReturn();
-      
       return;
     }
 
@@ -8427,7 +8431,6 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
   if (ehi == NULL)
     {
       processReturn();
-      
       return;
     }
 
@@ -9104,7 +9107,6 @@ void CmpSeabaseDDL::seabaseGrantRevokeHBase(
   if (ehi == NULL)
     {
       processReturn();
-
       return;
     }
 
@@ -9255,7 +9257,6 @@ void CmpSeabaseDDL::createNativeHbaseTable(
   if (ehi == NULL)
     {
       processReturn();
-
       return;
     }
 
@@ -9314,7 +9315,6 @@ void CmpSeabaseDDL::dropNativeHbaseTable(
   if (ehi == NULL)
     {
       processReturn();
-
       return;
     }
 
@@ -10817,6 +10817,9 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
 
        // request the default
       ExpHbaseInterface* ehi =CmpSeabaseDDL::allocEHI();
+      if (ehi == NULL) 
+         return NULL;
+      
       NAArray<HbaseStr>* endKeyArray  = ehi->getRegionEndKeys(extNameForHbase);
 
       // create a list of region descriptors

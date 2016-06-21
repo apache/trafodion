@@ -912,8 +912,16 @@ class CmpSeabaseDDL
                                const NAString &schName,
                                const NAString &objName,
                                const ComObjectType objectType,
-                               NABoolean ddlXns);
-  
+                               NABoolean dontForceCleanup);
+
+  void purgedataObjectAfterError(
+                               ExeCliInterface &cliInterface,
+                               const NAString &catName, 
+                               const NAString &schName,
+                               const NAString &objName,
+                               const ComObjectType objectType,
+                               NABoolean dontForceCleanup);
+
   short createSeabaseTable2(
                             ExeCliInterface &cliInterface,
                             StmtDDLCreateTable * createTableNode,
