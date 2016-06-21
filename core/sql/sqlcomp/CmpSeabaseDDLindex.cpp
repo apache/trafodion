@@ -1911,12 +1911,6 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
   const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
   const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
 
-  // If you try to perform an alter table <table> disable/enable all constraints
-  // and the current schema does not match the schema where the table resides, the
-  // following CMPASSERT will fail.
-  CMPASSERT (catalogNamePart == currCatName);
-  CMPASSERT (schemaNamePart == currSchName);
-
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
        CmpCommon::context()->sqlSession()->getParentQid());
 
