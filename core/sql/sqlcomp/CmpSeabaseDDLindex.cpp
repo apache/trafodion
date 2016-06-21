@@ -1313,6 +1313,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
     }
 
   const NAFileSetList &indexList = naTable->getIndexList();
+  NABoolean xnWasStartedHere = FALSE;
   for (Int32 i = 0; i < indexList.entries(); i++)
     {
       const NAFileSet * naf = indexList[i];
@@ -1383,7 +1384,11 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 	     processReturn();
              goto purgedata_return;
 	  }
-
+          if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+          {
+	     processReturn();
+             goto purgedata_return;
+          }
           if (updateObjectValidDef(&cliInterface, 
 			       catalogNamePart, schemaNamePart, objectNamePart,
 			       COM_INDEX_OBJECT_LIT,
@@ -1392,6 +1397,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 	     processReturn();
              goto purgedata_return;
 	  }
+          endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
       }
     } // for
 
@@ -1399,6 +1405,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
   processReturn();
   return;
  purgedata_return:
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
   updateObjectAuditAttr(&cliInterface, 
                  catalogNamePart, schemaNamePart, objectNamePart,
                  TRUE, COM_INDEX_OBJECT_LIT);
