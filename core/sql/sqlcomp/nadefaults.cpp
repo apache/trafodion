@@ -1961,6 +1961,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DD_____(HIVE_FILE_CHARSET,                    ""),
   DD_____(HIVE_FILE_NAME,     "/hive/tpcds/customer/customer.dat" ),
   DD_____(HIVE_HDFS_STATS_LOG_FILE,             ""),
+  DDui___(HIVE_INSERT_ERROR_MODE,               "1"),
   DDint__(HIVE_LIB_HDFS_PORT_OVERRIDE,          "-1"),
   DDint__(HIVE_LOCALITY_BALANCE_LEVEL,          "0"),
   DDui___(HIVE_MAX_ESPS,                        "9999"),
@@ -4825,7 +4826,21 @@ Int32 NADefaults::validateFloat(const char *value, float &result,
 {
   Int32 n = -1;	// NT's scanf("%n") is not quite correct; hence this code-around
   sscanf(value, "%g%n", &result, &n);
-  if (n > 0 && value[n] == '\0') return TRUE;	// a valid float
+  if (n > 0 && value[n] == '\0') 
+    {
+      switch (attrEnum)
+        {
+        case HIVE_INSERT_ERROR_MODE:
+          {
+            Lng32 v = str_atoi(value, str_len(value));
+            if (v >= 0 && v <= 3)
+              return TRUE;
+          }
+          break;
+        default:
+          return TRUE;	// a valid float
+        }
+    }
 
   NAString v(value);
   NABoolean silentIf = (errOrWarn == SilentIfSYSTEM);
@@ -6578,12 +6593,13 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	  case '3':	return DF_MAXIMUM;
 	}
       // HBASE_FILTER_PREDS
-        if ((attrEnum == HBASE_FILTER_PREDS) && value.length()==1)
+      if ((attrEnum == HBASE_FILTER_PREDS) && value.length()==1)
       switch (*value.data()){
         case '0': return DF_OFF;
         case '1': return DF_MINIMUM;
         case '2': return DF_MEDIUM;
-        // in the future add DF_HIGH and DF_MAXIMUM when we implement more pushdown capabilities
+        // in the future add DF_HIGH and DF_MAXIMUM when we implement more 
+        // pushdown capabilities
       }
     if ( attrEnum == TEMPORARY_TABLE_HASH_PARTITIONS ||
          attrEnum == MVQR_REWRITE_CANDIDATES ||
