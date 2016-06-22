@@ -282,7 +282,7 @@ PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_
 
 PKG_BIN_OBJS += trafci
 PKG_BIN_OBJS += export/limited-support-tools
-PKG_BIN_OBJS += LICENSE NOTICE
+PKG_BIN_OBJS += LICENSE NOTICE DISCLAIMER
 PKG_BIN_OBJS += rest-${TRAFODION_VER} dcs-${TRAFODION_VER}
 
 PKG_BIN_DIRS ?= sql export
@@ -320,6 +320,12 @@ NOTICE: ../../licenses/NOTICE-server
 	cp -f $? $@
 
 ../../licenses/NOTICE-server:
+	cd $(@D) && $(MAKE) $(@F)
+
+DISCLAIMER: ../../licenses/DISCLAIMER-server
+	cp -f $? $@
+
+../../licenses/DISCLAIMER-server:
 	cd $(@D) && $(MAKE) $(@F)
 
 rest-${TRAFODION_VER}:
