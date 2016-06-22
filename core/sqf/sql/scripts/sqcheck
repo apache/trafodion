@@ -33,7 +33,7 @@ function Usage {
     echo 
     echo "Usage: $0 [ -c <cc> | -i <nn> | -d <nn> | -h | -f | -q | -v | -r | -j ]"
     echo 
-    echo "-i <nn>  Number of times the check for Trafodion processes be done (Default $max_checks)"
+    echo "-i <nn>  Number of times the check for Trafodion processes will be done (Default $max_checks)"
     echo "-d <nn>  Duration of sleep (in seconds) between each check  (Default $sleep_duration)"
     echo "-c <cc>  Which component to check: [all | dtm | dcs | rms | rest ] (Default $sqck_component)"
     echo "-f       fast - (it's like running $0 -i 1 -d 0)"
