@@ -420,11 +420,18 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
       break;
     }
 
-
     case ex_FAST_DELETE:
     {
 #pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ExExeUtilFastDeleteTdb);
+#pragma warn(1506)  // warning elimination 
+      break;
+    }
+
+    case ex_HIVE_TRUNCATE:
+    {
+#pragma nowarn(1506)   // warning elimination 
+      GetVTblPtr(vtblptr,ExExeUtilHiveTruncateTdb);
 #pragma warn(1506)  // warning elimination 
       break;
     }

@@ -1278,7 +1278,14 @@ SQLRETURN CConnect::generateConnectionString(CONNECT_KEYWORD_TREE *KeywordTree,
 			sprintf(tempBuffer, "%s=%s;", ConnectKeywords[i], ConnectFieldItems->password);
 			break;
 		case KEY_CATALOG:
-			sprintf(tempBuffer, "%s=%s;", ConnectKeywords[i], ConnectFieldItems->catalog);
+			if (strlen(ConnectFieldItems->catalog) == 0)
+			{
+				sprintf(tempBuffer, "%s=TRAFODION;", ConnectKeywords[i]);
+			}
+			else
+			{
+				sprintf(tempBuffer, "%s=%s;", ConnectKeywords[i], ConnectFieldItems->catalog);
+			}
 			break;
 		case KEY_SCHEMA:
 			sprintf(tempBuffer, "%s=%s;", ConnectKeywords[i], ConnectFieldItems->schema);

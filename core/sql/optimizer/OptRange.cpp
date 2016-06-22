@@ -849,7 +849,6 @@ void OptRangeSpec::intersectTypeConstraint(QRDescGenerator* descGen,
     {
       switch (colType.getFSDatatype())
         {
-          case REC_TDM_FLOAT32:
           case REC_IEEE_FLOAT32:
             {
               typeRange = new(mvqrHeap_) OptRangeSpec(descGen, mvqrHeap_);
@@ -866,7 +865,6 @@ void OptRangeSpec::intersectTypeConstraint(QRDescGenerator* descGen,
             }
             break;
 
-          case REC_TDM_FLOAT64:
           case REC_IEEE_FLOAT64:
             // No range restriction needed.
             break;

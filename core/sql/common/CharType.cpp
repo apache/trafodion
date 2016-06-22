@@ -942,7 +942,8 @@ SQLVarChar::SQLVarChar(Lng32 maxLen,
 	       FALSE, allowSQLnull, isUpShifted, isCaseInsensitive,
 	       TRUE, cs, co, ce,
 	       encoding, vcIndLen),
-      clientDataType_(collHeap())  // Get heap from NABasicObject. Can't allocate on stack.
+      clientDataType_(collHeap()),  // Get heap from NABasicObject. Can't allocate on stack.
+      wasHiveString_(FALSE)
 {}
 #pragma warn(1506)  // warning elimination
 
@@ -961,7 +962,8 @@ SQLVarChar::SQLVarChar(const CharLenInfo & maxLenInfo,
 	       FALSE, allowSQLnull, isUpShifted, isCaseInsensitive,
 	       TRUE, cs, co, ce,
 	       encoding),
-      clientDataType_(collHeap())  // Get heap from NABasicObject. Can't allocate on stack.
+      clientDataType_(collHeap()),  // Get heap from NABasicObject. Can't allocate on stack.
+      wasHiveString_(FALSE)
 {}
 
 // -----------------------------------------------------------------------
@@ -1496,6 +1498,10 @@ SQLlob::SQLlob(
     lobStorage_(ls),
     lobLength_(lobLength)
 {
+  if (externalFormat_)
+    lobStorage_ = Lob_External_HDFS_File;
+  else
+    lobStorage_ = Lob_HDFS_File;
 }
 
 // ---------------------------------------------------------------------

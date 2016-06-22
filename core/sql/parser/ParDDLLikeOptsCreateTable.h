@@ -119,6 +119,12 @@ public:
     return isLikeOptWithoutSalt_;
   }
 
+  const NAString *
+  getSaltClause() const
+  {
+    return isLikeOptSaltClause_;
+  }
+
   const NABoolean
   getIsWithoutDivision() const
   {
@@ -195,6 +201,7 @@ private:
   NABoolean isLikeOptWithHelpTextSpec_;
   NABoolean isLikeOptWithHorizontalPartitionsSpec_;
   NABoolean isLikeOptWithoutSaltSpec_;
+  NABoolean isLikeOptSaltClauseSpec_;
   NABoolean isLikeOptWithoutDivisionSpec_;
 
   // legal Like options in DDL Create Table statements
@@ -205,6 +212,7 @@ private:
   NABoolean isLikeOptWithHelpText_;
   NABoolean isLikeOptWithHorizontalPartitions_;
   NABoolean isLikeOptWithoutSalt_;
+  NAString * isLikeOptSaltClause_;
   NABoolean isLikeOptWithoutDivision_;
 
 }; // class ParDDLLikeOptsCreateTable

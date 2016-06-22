@@ -62,22 +62,6 @@ class ExHbaseAccessStats;
 
 Int64 getTransactionIDFromContext();
 
-using namespace apache::thrift;
-using namespace apache::thrift::protocol;
-using namespace apache::thrift::transport;
-
-using namespace apache::hadoop::hbase::thrift;
-
-namespace {
-
-  typedef std::vector<std::string> StrVec;
-  typedef std::map<std::string,std::string> StrMap;
-  typedef std::vector<ColumnDescriptor> ColVec;
-  typedef std::map<std::string,ColumnDescriptor> ColMap;
-  typedef std::vector<TCell> CellVec;
-  typedef std::map<std::string,TCell> CellMap;
-  typedef std::vector<Text> ColNames;
-}
 
 // ===========================================================================
 class ExpHbaseInterface : public NABasicObject

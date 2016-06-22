@@ -3462,6 +3462,12 @@ ScanOptimizer::isMdamEnabled() const
       return TRUE;
     }
 
+    // If the input logical property indicates exactly one, then we
+    // allow MDAM in spite of NJ.
+    NABoolean isInputCardinalityOne = 
+      getContext().getInputLogProp()->isCardinalityEqOne();
+    if (isInputCardinalityOne)
+      return TRUE;
 
     /*
      Right side Scan of a Nested Join will use MDAM disjuncts if and only if

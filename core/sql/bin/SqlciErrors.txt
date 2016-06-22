@@ -67,7 +67,7 @@
 1065 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating constraint $0~ConstraintName in metadata schema is not allowed.
 1066 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating index $0~TableName in metadata schema is not allowed.
 1067 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating module $0~String0 in metadata schema is not allowed.
-1068 ZZZZZ 99999 ADVANCED MAJOR DIALOUT An internal error was encountered: cannot create lock $0~TableName in metadata schema.
+1068 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Initialize authorization completed with warnings.
 1069 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Schema $0~SchemaName could not be dropped. $0~String0
 1070 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object $0~TableName could not be created. File error: $1~Int0.
 1071 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object $0~TableName could not be accessed. 
@@ -409,6 +409,7 @@
 1429 ZZZZZ 99999 BEGINNER MINOR DBADMIN Inserts into _ROW_ format external hbase tables can only use the VALUES clause and must use the column_create function to create values.
 1430 3F000 99999 BEGINNER MAJOR DBADMIN A schema name that starts and ends with an "_"(underscore) is reserved for internal usage. It cannot be used to create a user schema.
 1431 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 exists in HBase. This could be due to a concurrent transactional ddl operation in progress on this table.
+1432 ZZZZZ 99999 BEGINNER MINOR DBADMIN Input LOB type $0~Int0 does not match column's storage type: $1~Int1 Column name: $0~String0 .
 1500 ZZZZZ 99999 ADVANCED CRTCL DIALOUT The CATSYS - CAT_REFERENCES system schema relationship for catalog $0~CatalogName might be corrupt.
 1501 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 5/7/12 ---
 1502 ZZZZZ 99999 ADVANCED CRTCL DIALOUT The OBJECTS - REPLICAS definition schema relationship for $0~String0 $1~TableName might be corrupt.
@@ -904,7 +905,7 @@ $1~String1 --------------------------------
 3151 42000 99999 BEGINNER MAJOR DBADMIN Duplicate WITH HORIZONTAL PARTITIONS phrases were specified in LIKE clause in CREATE TABLE statement.
 3152 42000 99999 BEGINNER MAJOR DBADMIN Duplicate WITHOUT $0~string0 phrases were specified in LIKE clause in CREATE TABLE statement.
 3153 42000 99999 BEGINNER MAJOR DBADMIN The FIRST KEY clause is not allowed with hash or hash2 partitioning.
-3154 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused as of 03/25/04 ---
+3154 42000 99999 BEGINNER MAJOR DBADMIN The $0~String0 clause is not allowed with the $1~String1 clause.
 3155 42000 99999 BEGINNER MAJOR DBADMIN The POPULATE and NO POPULATE clauses cannot coexist in the same CREATE INDEX statement.
 3156 42000 99999 BEGINNER MAJOR DBADMIN The STORE BY clause is not allowed on a vertically partitioned table.
 3157 42000 99999 BEGINNER MAJOR DBADMIN A catalog name is required.
@@ -1491,6 +1492,8 @@ $1~String1 --------------------------------
 8031 HY018 99999 BEGINNER INFRM LOGONLY Server declined cancel request for query ID $0~String0. $1~String1.
 8032 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Explain information for the provided query id is not available in repository.
 8033 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Explain information is too large to be stored in repository.
+8034 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Column $0~String0 of object $1~string0 does not have a default clause but it is missing in database. This indicates inconsistent data.
+8035 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Truncation of hive table failed. $0~String0
 8100 ZZZZZ 99999 BEGINNER MINOR LOGONLY Define $1~string0 does not exist
 8101 23000 99999 BEGINNER MAJOR DBADMIN The operation is prevented by check constraint $0~ConstraintName on table $1~TableName.
 8102 23000 99999 BEGINNER MAJOR DBADMIN The operation is prevented by a unique constraint.
@@ -1550,6 +1553,9 @@ $1~String1 --------------------------------
 8432 22003 99999 BEGINNER MINOR LOGONLY A negative value cannot be converted to an unsigned numeric datatype.$0~string0
 8433 22003 99999 BEGINNER MINOR LOGONLY Invalid $0~string0 character encountered in $1~string1.
 8434 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Invalid target column for LOB function. The column needs to be blob/clob type. 
+8435 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
+8436 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mismatch detected between compiletime and runtime hive table definitions.
+8437 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mismatch detected between external table and underlying hive table definitions.
 8440 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The size of the history buffer is too small to execute one or more of the OLAP Windowed Functions in the query. 
 8441 ZZZZZ 99999 BEGINNER MAJOR DBADMIN one or more of the OLAP Windowed Functions in the query may require overflow which is not supported yet.
 8442 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to access $0~string0 interface. Call to $1~string1 returned error $2~string2($0~int0). Error detail $1~int1.
@@ -1649,7 +1655,7 @@ $1~String1 --------------------------------
 8675 ZZZZZ 99999 ADVANCED INFRM DBADMIN SQL error $0~int0 from internal statement to query statistics stored procedure.
 8676 ZZZZZ 99999 ADVANCED INFRM DBADMIN Cannot suspend the query because it is already suspended.
 8677 ZZZZZ 99999 ADVANCED INFRM DBADMIN Cannot activate the query because it is not suspended.
-8690 ZZZZZ 99999 BEGINNER MINOR LOGONLY An invalid character value encountered in TRANSLATE function.
+8690 ZZZZZ 99999 BEGINNER MINOR LOGONLY An invalid character value encountered in TRANSLATE function. Source charset $0~string0 , Target charset $1~string1. Error data in HEX: $2~string2 .
 8691 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
 8692 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
 8693 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
@@ -1878,6 +1884,7 @@ drop the default context
 9244 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UPDATE STATISTICS is not allowed in a user transaction.
 9245 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
 9246 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UPDATE STATISTICS is not supported on LOB columns. Column $0~String0 is a LOB column.
+9247 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UPDATE STATISTICS is not supported on volatile tables presently.
 9250 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Last UPDATE STATISTICS error.
 10000 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Sort Error: First Sort error
 10001 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Sort Error : No error text defined. Unexpected error. $0~String0

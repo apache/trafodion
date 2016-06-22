@@ -398,8 +398,10 @@ private:
   float            **currentFloats_;
   DefaultToken	   **currentTokens_;
 
+  class HeldDefaults;  // forward reference for helper class used below
+
   // these default values were 'held' through a cqd HOLD stmt.
-  char             **heldDefaults_;
+  HeldDefaults     **heldDefaults_;
 
   Provenance       currentState_;
   LIST(NAString)   tablesRead_;

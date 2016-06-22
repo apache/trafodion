@@ -42,6 +42,7 @@ package-src: $(SRCDIR)-${TRAFODION_VER}-incubating/LICENSE
 	git archive --format tar --prefix $(SRCDIR)-${TRAFODION_VER}-incubating/ HEAD > distribution/$(SRCDIR)-${TRAFODION_VER}-incubating-src.tar
 	tar rf distribution/$(SRCDIR)-${TRAFODION_VER}-incubating-src.tar $^
 	gzip distribution/$(SRCDIR)-${TRAFODION_VER}-incubating-src.tar
+	rm -rf $(SRCDIR)-${TRAFODION_VER}-incubating LICENSE
 
 $(SRCDIR)-${TRAFODION_VER}-incubating/LICENSE:
 	cd licenses && $(MAKE) LICENSE-src

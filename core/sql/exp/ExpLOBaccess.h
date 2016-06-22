@@ -436,41 +436,41 @@ class ExLob
   Ex_Lob_Error insertData(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize,char *handleIn,Int32 handleInLen, char *blackBox, Int32 blackBoxLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
   Ex_Lob_Error append(char *data, Int64 size, LobsSubOper so, Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemLen,Int64 lobGCLimit, char *handleIn,Int32 handleInLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
   Ex_Lob_Error update(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize,Int64 lobMaxChunkMemLen,Int64 lobGCLimit,char *handleIn,Int32 handleInLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
-    Ex_Lob_Error readSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
-    Ex_Lob_Error readHdfsSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
-    Ex_Lob_Error readLocalSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
-    Ex_Lob_Error readExternalSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
-    Ex_Lob_Error statSourceFile(char *srcfile, Int64 &sourceEOF);
-    Ex_Lob_Error delDesc(char *handleIn, Int32 handleInLen, Int64 transId);
-    Ex_Lob_Error purgeLob();
-    Ex_Lob_Error closeFile();
-    LobInputOutputFileType fileType(char *ioFileName);
-    Ex_Lob_Error closeCursor(char *handleIn, Int32 handleInLen);
-    Ex_Lob_Error closeDataCursorSimple(char *fileName, ExLobGlobals *lobGlobals);
-   
-    Ex_Lob_Error doSanityChecks(char *dir, LobsStorage storage,
-                                Int32 handleInLen, Int32 handleOutLen, 
-                                Int32 blackBoxLen);
-  Ex_Lob_Error allocateDesc(unsigned int size, Int64 &descNum, Int64 &dataOffset,Int64 lobMaxSize,Int64 lobMaxChunkMemSize, char *handleIn, Int32 handleInLen,Int64 lobGCLimit, void *lobGlobals);
-    Ex_Lob_Error readStats(char *buffer);
-    Ex_Lob_Error initStats();
-
-    Ex_Lob_Error insertDesc(Int64 offset, Int64 size,  char *handleIn, Int32 handleInLen,  char *handleOut, Int32 &handleOutLen, char *blackBox, Int32 blackBoxLen,void *lobGlobals) ;
-
-    Ex_Lob_Error lockDesc();
-    Ex_Lob_Error unlockDesc();
-    char *getDataFileName() { return lobDataFile_; }
-   
-    int getErrNo();
-
+  Ex_Lob_Error readSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
+  Ex_Lob_Error readHdfsSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
+  Ex_Lob_Error readLocalSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
+  Ex_Lob_Error readExternalSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
+  Ex_Lob_Error statSourceFile(char *srcfile, Int64 &sourceEOF);
+  Ex_Lob_Error delDesc(char *handleIn, Int32 handleInLen, Int64 transId);
+  Ex_Lob_Error purgeLob();
+  Ex_Lob_Error closeFile();
+  LobInputOutputFileType fileType(char *ioFileName);
+  Ex_Lob_Error closeCursor(char *handleIn, Int32 handleInLen);
+  Ex_Lob_Error closeDataCursorSimple(char *fileName, ExLobGlobals *lobGlobals);
   
-    Ex_Lob_Error getDesc(ExLobDesc &desc,char * handleIn, Int32 handleInLen, char *blackBox, Int32 *blackBoxLen, char * handleOut, Int32 &handleOutLen, Int64 transId);
-
-    Ex_Lob_Error writeData(Int64 offset, char *data, Int32 size, Int64 &operLen);
+  Ex_Lob_Error doSanityChecks(char *dir, LobsStorage storage,
+                              Int32 handleInLen, Int32 handleOutLen, 
+                              Int32 blackBoxLen);
+  Ex_Lob_Error allocateDesc(unsigned int size, Int64 &descNum, Int64 &dataOffset,Int64 lobMaxSize,Int64 lobMaxChunkMemSize, char *handleIn, Int32 handleInLen,Int64 lobGCLimit, void *lobGlobals);
+  Ex_Lob_Error readStats(char *buffer);
+  Ex_Lob_Error initStats();
+  
+  Ex_Lob_Error insertDesc(Int64 offset, Int64 size,  char *handleIn, Int32 handleInLen,  char *handleOut, Int32 &handleOutLen, char *blackBox, Int32 blackBoxLen,void *lobGlobals) ;
+  
+  Ex_Lob_Error lockDesc();
+  Ex_Lob_Error unlockDesc();
+  char *getDataFileName() { return lobDataFile_; }
+  
+  int getErrNo();
+  
+  
+  Ex_Lob_Error getDesc(ExLobDesc &desc,char * handleIn, Int32 handleInLen, char *blackBox, Int32 *blackBoxLen, char * handleOut, Int32 &handleOutLen, Int64 transId);
+  
+  Ex_Lob_Error writeData(Int64 offset, char *data, Int32 size, Int64 &operLen);
   Ex_Lob_Error readDataToMem(char *memAddr, Int64 offset, Int64 size,
                              Int64 &operLen,char *handleIn, Int32 handleLenIn, 
                              NABoolean multipleChunks, Int64 transId);
-   
+  
   Ex_Lob_Error readDataToLocalFile(char *fileName, Int64 offset, Int64 size,Int64 &operLen,Int64 lobMaxChunkMemLen ,Int32 fileFlags,char *handleIn,Int32 handleInLen, NABoolean multipleChunks,Int64 transId);
   Ex_Lob_Error readDataToHdfsFile(char *fileName, Int64 offset, Int64 size, Int64 &operLen,Int64 lobMaxChunkMemLen, Int32 fileflags,char *handleIn,Int32 handleInLen, NABoolean multipleChunks,Int64 transId);
   Ex_Lob_Error readDataToExternalFile(char *tgtFileName,  Int64 offset, Int64 size, Int64 &operLen, Int64 lobMaxChunkMemLen, Int32 fileflags,char *handleIn,Int32 handleInLen, NABoolean multipleChunks,Int64 transId);
@@ -479,9 +479,25 @@ class ExLob
   Ex_Lob_Error  restoreLobDataFile();
   Ex_Lob_Error purgeBackupLobDataFile();
 
-    Ex_Lob_Error emptyDirectory();
-    ExLobStats *getStats() { return &stats_; }
-    NAHeap *getLobGlobalHeap() { return lobGlobalHeap_;}
+  // dirPath: path to needed directory (includes directory name)
+  // modTS is the latest timestamp on any file/dir under dirPath.
+  // This method validates that current modTS is not greater then input modTS.
+  // Return: LOB_OPER_OK, if passes. LOB_DATA_MOD_CHECK_ERROR, if fails.
+  Ex_Lob_Error dataModCheck(
+       char * dirPath, 
+       Int64  modTS,
+       Lng32  numOfPartLevels,
+       ExLobGlobals *lobGlobals);
+
+  Ex_Lob_Error dataModCheck2(
+       char * dirPath, 
+       Int64  modTS,
+       Lng32  numOfPartLevels);
+
+  Ex_Lob_Error emptyDirectory(char* dirPath, ExLobGlobals* lobGlobals);
+
+  ExLobStats *getStats() { return &stats_; }
+  NAHeap *getLobGlobalHeap() { return lobGlobalHeap_;}
   ExLobRequest *getRequest() { return &request_; }
   
   //The next 2 functions are not active at this point. They serve as an example

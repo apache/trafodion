@@ -1185,11 +1185,7 @@ ComTdbExeUtilFastDelete::ComTdbExeUtilFastDelete(
      queue_index down,
      queue_index up,
      Lng32 num_buffers,
-     ULng32 buffer_size,
-     NABoolean isHiveTruncate,
-     char * hiveTableLocation,
-     char * hiveHostName,
-     Lng32 hivePortNum)
+     ULng32 buffer_size)
      : ComTdbExeUtil(ComTdbExeUtil::FAST_DELETE_,
 		     NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
 		     tableName, tableNameLen,
@@ -1208,12 +1204,8 @@ ComTdbExeUtilFastDelete::ComTdbExeUtilFastDelete(
        numEsps_(numEsps),
        objectUID_(objectUID),
        numLOBs_(numLOBs),
-       lobNumArray_(lobNumArray),
-       hiveTableLocation_(hiveTableLocation),
-       hiveHdfsHost_(hiveHostName),
-       hiveHdfsPort_(hivePortNum)
+       lobNumArray_(lobNumArray)
 {
-  setIsHiveTruncate(isHiveTruncate);
   setNodeType(ComTdb::ex_FAST_DELETE);
 }
 
@@ -1230,13 +1222,6 @@ Long ComTdbExeUtilFastDelete::pack(void * space)
   if (lobNumArray_) 
     lobNumArray_.pack(space);
 
-  if (hiveTableLocation_)
-    hiveTableLocation_.pack(space);
-
-  if (hiveHdfsHost_)
-    hiveHdfsHost_.pack(space);
-
-
   return ComTdbExeUtil::pack(space);
 }
 
@@ -1252,12 +1237,6 @@ Lng32 ComTdbExeUtilFastDelete::unpack(void * base, void * reallocator)
 
   if(lobNumArray_.unpack(base)) 
     return -1;
-
-  if(hiveTableLocation_.unpack(base))
-      return -1;
-
-  if(hiveHdfsHost_.unpack(base))
-      return -1;
 
   return ComTdbExeUtil::unpack(base, reallocator);
 }
@@ -1303,8 +1282,118 @@ void ComTdbExeUtilFastDelete::displayContents(Space * space,
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), 
 					       sizeof(short));
 	}
+ 
     }
 
+  
+  if (flag & 0x00000001)
+    {
+      displayExpression(space,flag);
+      displayChildren(space,flag);
+    }
+
+}
+
+///////////////////////////////////////////////////////////////////////////
+//
+// Methods for class ComTdbExeUtilHiveTruncate
+//
+///////////////////////////////////////////////////////////////////////////
+ComTdbExeUtilHiveTruncate::ComTdbExeUtilHiveTruncate(
+     char * tableName,
+     ULng32 tableNameLen,
+     char * tableLocation,
+     char * partnLocation,
+     char * hostName,
+     Lng32 portNum,
+     Int64 modTS,
+     ex_cri_desc * given_cri_desc,
+     ex_cri_desc * returned_cri_desc,
+     queue_index down,
+     queue_index up,
+     Lng32 num_buffers,
+     ULng32 buffer_size)
+     : ComTdbExeUtil(ComTdbExeUtil::HIVE_TRUNCATE_,
+		     NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
+		     tableName, tableNameLen,
+		     NULL, 0,
+		     NULL, 0,
+		     NULL,
+                     NULL, 0,
+		     given_cri_desc, returned_cri_desc,
+		     down, up, 
+		     num_buffers, buffer_size),
+       flags_(0),
+       tableLocation_(tableLocation),
+       partnLocation_(partnLocation),
+       hdfsHost_(hostName),
+       hdfsPort_(portNum),
+       modTS_(modTS)
+{
+  setNodeType(ComTdb::ex_HIVE_TRUNCATE);
+}
+
+Long ComTdbExeUtilHiveTruncate::pack(void * space)
+{
+  if (tableLocation_)
+    tableLocation_.pack(space);
+
+  if (hdfsHost_)
+    hdfsHost_.pack(space);
+
+  if (partnLocation_)
+    partnLocation_.pack(space);
+
+  return ComTdbExeUtil::pack(space);
+}
+
+Lng32 ComTdbExeUtilHiveTruncate::unpack(void * base, void * reallocator)
+{
+  if(tableLocation_.unpack(base))
+    return -1;
+  
+  if(hdfsHost_.unpack(base))
+    return -1;
+
+  if (partnLocation_.unpack(base))
+    return -1;
+
+  return ComTdbExeUtil::unpack(base, reallocator);
+}
+
+void ComTdbExeUtilHiveTruncate::displayContents(Space * space,
+					      ULng32 flag)
+{
+  ComTdb::displayContents(space,flag & 0xFFFFFFFE);
+  
+  if(flag & 0x00000008)
+    {
+      char buf[500];
+      str_sprintf(buf, "\nFor ComTdbExeUtilHiveTruncate :");
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+      
+      if (getTableName() != NULL)
+	{
+	  str_sprintf(buf,"Tablename = %s ",getTableName());
+	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), 
+					       sizeof(short));
+	}
+
+      if (getTableLocation() != NULL)
+	{
+	  str_sprintf(buf,"tableLocation_ = %s ", getTableLocation());
+	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), 
+					       sizeof(short));
+	}
+
+      if (getPartnLocation() != NULL)
+	{
+	  str_sprintf(buf,"partnLocation_ = %s ", getPartnLocation());
+	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), 
+					       sizeof(short));
+	}
+ 
+    }
   
   if (flag & 0x00000001)
     {
@@ -2329,6 +2418,7 @@ ComTdbExeUtilLobShowddl::ComTdbExeUtilLobShowddl
  Lng32 numLOBs,
  char * lobNumArray,
  char * lobLocArray,
+ char * lobTypeArray,
  short maxLocLen,
  short sdOptions,
  ex_cri_desc * given_cri_desc,
@@ -2352,6 +2442,7 @@ ComTdbExeUtilLobShowddl::ComTdbExeUtilLobShowddl
     numLOBs_(numLOBs),
     lobNumArray_(lobNumArray),
     lobLocArray_(lobLocArray),
+    lobTypeArray_(lobTypeArray),
     maxLocLen_(maxLocLen),
     sdOptions_(sdOptions),
     schName_(schName),
@@ -2371,6 +2462,9 @@ Long ComTdbExeUtilLobShowddl::pack(void * space)
  if (lobLocArray_) 
     lobLocArray_.pack(space);
 
+ if (lobTypeArray_)
+   lobTypeArray_.pack(space);
+
   return ComTdbExeUtil::pack(space);
 }
 
@@ -2383,6 +2477,9 @@ Lng32 ComTdbExeUtilLobShowddl::unpack(void * base, void * reallocator)
     return -1;
 
   if(lobLocArray_.unpack(base)) 
+    return -1;
+
+  if(lobTypeArray_.unpack(base))
     return -1;
 
   return ComTdbExeUtil::unpack(base, reallocator);
@@ -2417,6 +2514,13 @@ short ComTdbExeUtilLobShowddl::getLOBnum(short i)
   return lobNum;
 }
 
+NABoolean ComTdbExeUtilLobShowddl::getIsExternalLobCol(short i)
+{
+
+  NABoolean isExternal = (*((Int32*)&getLOBtypeArray()[4*(i-1)]) == Lob_External_HDFS_File);
+
+  return isExternal;
+}
 char * ComTdbExeUtilLobShowddl::getLOBloc(short i)
 {
   if ((i > numLOBs_) || (i <= 0))
@@ -2812,6 +2916,7 @@ ComTdbExeUtilLobInfo::ComTdbExeUtilLobInfo
      char *lobColArray,
      char * lobNumArray,
      char * lobLocArray,
+     char *lobTypeArray,
      Int32 hdfsPort,
      char *hdfsServer,
      NABoolean tableFormat,
@@ -2839,6 +2944,7 @@ ComTdbExeUtilLobInfo::ComTdbExeUtilLobInfo
        lobColArray_(lobColArray),
        lobNumArray_(lobNumArray),
        lobLocArray_(lobLocArray),
+       lobTypeArray_(lobTypeArray),
        hdfsPort_(0),
        hdfsServer_(hdfsServer),
        tableFormat_(tableFormat)
@@ -2857,6 +2963,9 @@ Long ComTdbExeUtilLobInfo::pack(void * space)
  if (lobLocArray_) 
     lobLocArray_.pack(space);
 
+ if(lobTypeArray_)
+   lobTypeArray_.pack(space);
+
  if (hdfsServer_) 
     hdfsServer_.pack(space);
   return ComTdbExeUtil::pack(space);
@@ -2871,6 +2980,9 @@ Lng32 ComTdbExeUtilLobInfo::unpack(void * base, void * reallocator)
     return -1;
 
   if(lobLocArray_.unpack(base)) 
+    return -1;
+
+  if(lobTypeArray_.unpack(base))
     return -1;
 
   if(hdfsServer_.unpack(base)) 

@@ -134,7 +134,7 @@ public:
     isSaltColumn_(isSaltColumn),
     isDivisioningColumn_(isDivisioningColumn),
     lobNum_(-1),
-    lobStorageType_(Lob_Invalid_Storage),
+    lobStorageType_(Lob_HDFS_File),
     lobStorageLocation_(NULL),
     hbaseColFlags_(0)
   {
@@ -339,6 +339,7 @@ public:
   // Standard operators
   // ---------------------------------------------------------------------
   NABoolean operator==(const NAColumn& other) const;
+  NABoolean operator==(const NAString& other) const;
 
   // needed by priority_queue for printing column names in order
   // do NOT use this operator for any other purpose because it
@@ -640,6 +641,8 @@ public:
   //    i (i>=0) if the column is found in the array via NAColumn::operator==
   //    -1 if the column is not found in the array
   Int32 getColumnPosition(NAColumn&) const;
+
+  Int32 getColumnPosition(NAString&) const;
 
   // get total storage size (aggregated over each element)
   Int32 getTotalStorageSize() const;

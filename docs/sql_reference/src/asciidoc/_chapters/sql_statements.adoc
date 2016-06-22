@@ -323,8 +323,7 @@ ALTER TABLE name alter-action
 
 alter-action is:
 
-     ADD [COLUMN] column-definition
-   | ADD IF NOT EXISTS column-definition
+     ADD [IF NOT EXISTS][COLUMN] column-definition
    | ADD [CONSTRAINT constraint-name] table-constraint
    | DROP CONSTRAINT constraint-name [RESTRICT]
    | RENAME TO new-name [CASCADE]
@@ -2234,13 +2233,19 @@ this statement, AUTOCOMMIT must be turned ON (the default) for the
 session.
 
 ```
-CREATE [VOLATILE] TABLE IF NOT EXISTS table
-    { table-spec | like-spec }
+CREATE [VOLATILE] TABLE [IF NOT EXISTS] table
+    table-spec
     [SALT USING num PARTITIONS [ON (column[, column]...)]]
     [STORE BY {PRIMARY KEY | (key-column-list)}]
-    [HBASEOPTIONS (hbase-options-list)]
+    [HBASE_OPTIONS (hbase-options-list)]
     [LOAD IF EXISTS | NO LOAD]
     [AS select-query]
+
+CREATE [VOLATILE] TABLE [IF NOT EXISTS] table
+    like-spec
+    [SALT USING num PARTITIONS [ON (column[, column]...)]]
+
+Note: Support for SALT on CREATE TABLE LIKE is added in Trafodion release 2.1.
 
 table-spec is:
     (table-element [,table-element]...)
@@ -2313,7 +2318,7 @@ key-column-list is:
     [,column-name [ASC[ENDING] | DESC[ENDING]]]...
 
 like-spec is:
-    LIKE source-table [include-option]
+    LIKE source-table [include-option]...
 
 hbase-options-list is:
     hbase-option = 'value'[, hbase-option = 'value']...
@@ -2341,6 +2346,10 @@ pre-splits the table into multiple regions when the table is created. Salting ad
 prefix, thus avoiding hot spots for sequential keys. The number of partitions that you specify can be a function of the
 number of region servers present in the HBase cluster. You can specify a number from 2 to 1024. If you do not specify
 columns, the default is to use all primary key columns.
++
+If SALT is specified with LIKE, then this specification overrides that of the _source-table_. Note:
+this is a new feature in Trafodion 2.1. In earlier releases, the SALT clause is ignored if specified
+with LIKE.
 
 <<<
 * `STORE BY { PRIMARY KEY | (_key-column-list_)}`
@@ -2455,8 +2464,7 @@ See <<null,Null>>.
 * `UNIQUE, or, UNIQUE (_column-list_)`
 +
 is a column or table constraint, respectively, that specifies that the column or set of columns cannot contain more than
-one occurrence of the same value or set of values. If you omit UNIQUE, duplicate values are allowed unless the column is
-part of the PRIMARY KEY.
+one occurrence of the same value or set of values. If you omit UNIQUE, duplicate values are allowed unless the column or set of columns is the PRIMARY KEY.
 
 ** _column-list_ cannot include more than one occurrence of the same column. In addition, the set of columns that you
 specify on a UNIQUE constraint cannot match the set of columns on any other UNIQUE constraint for the table or on the
@@ -2545,6 +2553,19 @@ Instead, {project-name} SQL generates new names based on the physical file locat
 +
 If you specify the LIKE clause and the SALT USING _num_ PARTITIONS clause, you cannot specify WITH PARTITIONS.
 
+*** `WITHOUT DIVISION`
++
+directs {project-name} SQL to not use divisioning from _source-table_. If this clause is omitted, then 
+the _table_ will have the same divisioning as the _source-table_.
+
+*** `WITHOUT SALT`
++
+directs {project-name} SQL to not use salting for _table_. If this clause is omitted,
+and no SALT clause is specified,
+the _table_ will have the same divisioning as the _source-table_.
++
+This option cannot be specified if a SALT clause is also specified.
+
 <<<
 [[create_table_considerations]]
 === Considerations for CREATE TABLE
@@ -2593,8 +2614,7 @@ any conflicts.
 * Volatile tables are partitioned by the system. The number of partitions is limited to four partitions by default.
 The partitions will be distributed across the cluster. The default value is four partitions regardless of the system
 configuration.
-* Statistics are not automatically updated for volatile tables. If you need statistics, you must explicitly run
-UPDATE STATISTICS.
+* UPDATE STATISTICS is not supported for volatile tables. If you need statistics, you must use a non-volatile table instead.
 * Volatile tables can be created and accessed using one-part, two-part, or three-part names. However, you must use the
 same name (one part, two part, or three part) for any further DDL or DML statements on the created volatile table.
 See <<create_table_examples,Examples of CREATE TABLE>>.

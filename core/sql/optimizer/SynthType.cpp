@@ -3571,7 +3571,16 @@ const NAType *Repeat::synthesizeType()
 
   // figure out the max length of result.
   NABoolean negate;
-  if ((child(1)->getOperatorType() == ITM_CONSTANT) &&
+  if (maxLengthWasExplicitlySet_)
+    {
+      // cap max len at traf_max_character_col_length
+      size_in_bytes = 
+        MINOF(CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH), 
+              getMaxLength());
+      size_in_chars = 
+        size_in_bytes / CharInfo::minBytesPerChar(ctyp1.getCharSet());
+    }
+  else if ((child(1)->getOperatorType() == ITM_CONSTANT) &&
       (child(1)->castToConstValue(negate)))
     {
       ConstValue * cv = child(1)->castToConstValue(negate);

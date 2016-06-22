@@ -107,6 +107,8 @@ public:
 
   NABoolean getLikeTable() const;
 
+  void unparseIt(NAString & result) const;
+
 private:
 
   //

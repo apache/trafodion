@@ -543,6 +543,11 @@ else
    fi
 fi
 
+#Add trafodion to the hbase group
+#*********************************************
+$TRAF_PDSH sudo usermod -a -G $HBASE_GROUP $TRAF_USER
+#*********************************************
+
 # create working directories on all nodes
 $TRAF_PDSH sudo mkdir -p $TRAF_WORKDIR
 $TRAF_PDSH sudo chmod 777 $TRAF_WORKDIR

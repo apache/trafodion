@@ -1011,9 +1011,8 @@ Lng32 ExeCliInterface::executeImmediateExec(const char * stmtStr,
 	{
 	  char * ptr;
 	  Lng32 len;
-	  getPtrAndLen(1, ptr, len);
-
-	  str_cpy_all(outputBuf, ptr, len);
+	  getPtrAndLen(1, ptr, len);         
+          str_cpy_all(outputBuf, ptr, len);
 	  
 	  if (nullTerminate)
 	    outputBuf[len] = 0;
