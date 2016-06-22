@@ -143,15 +143,25 @@ export HBASE_DEP_VER_CDH=1.0.0-cdh5.4.4
 export HIVE_DEP_VER_CDH=1.1.0-cdh5.4.4
 export HBASE_DEP_VER_HDP=1.1.2
 export HIVE_DEP_VER_HDP=1.2.1
-export HBASE_DEP_VER_APACHE=1.0.2
+export HBASE_DEP_VER_APACHE=1.1.2
 export HIVE_DEP_VER_APACHE=1.1.0
 export HBASE_TRX_ID_CDH=hbase-trx-cdh5_4
-export HBASE_TRX_ID_APACHE=hbase-trx-apache1_0_2
+
+install_features_path=$MY_SQROOT/conf/install_features
+source $install_features_path
+if [[ "$APACHE_1_0_X_SUPPORT" = "Y" ]]; then
+   export HBVER=apache1_0_2
+   export VANILLA_HBASE_VER=HBASE1.0
+fi
+if [[ "$APACHE_1_1_X_SUPPORT" = "Y" ]]; then
+   export HBVER=apache1_1_2
+   export VANILLA_HBASE_VER=HBASE1.1
+fi
+export HBASE_TRX_ID_APACHE=hbase-trx-${HBVER}
 export HBASE_TRX_ID_HDP=hbase-trx-hdp2_3
 export THRIFT_DEP_VER=0.9.0
 export HIVE_DEP_VER=0.13.1
 export HADOOP_DEP_VER=2.6.0
-
 # staged build-time dependencies
 export HADOOP_BLD_LIB=${TOOLSDIR}/hadoop-${HADOOP_DEP_VER}/lib/native
 export HADOOP_BLD_INC=${TOOLSDIR}/hadoop-${HADOOP_DEP_VER}/include
@@ -164,7 +174,7 @@ export SQL_JAR=trafodion-sql-${TRAFODION_VER}.jar
 export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
 export JDBCT4_JAR=jdbcT4-${TRAFODION_VER}.jar
 
-HBVER=""
+
 if [[ "$HBASE_DISTRO" = "HDP" ]]; then
     export HBASE_TRX_JAR=${HBASE_TRX_ID_HDP}-${TRAFODION_VER}.jar
     HBVER="hdp2_3"
@@ -173,7 +183,6 @@ if [[ "$HBASE_DISTRO" = "HDP" ]]; then
 fi
 if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
     export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
-    HBVER="apache1_0_2"
     export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
     export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
 fi
@@ -556,7 +565,6 @@ EOF
 
     # end of code for Apache Hadoop/HBase installation w/o distro
     export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
-    HBVER="apache1_0_2"
     export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
     export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
   else

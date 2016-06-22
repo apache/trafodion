@@ -30,7 +30,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <hadoop.version>2.6.0</hadoop.version>
     <hbase.version>${env.HBASE_DEP_VER_APACHE}</hbase.version>
-    <hbase-flavor-id>apache1_0_2</hbase-flavor-id>
+    <hbase-flavor-id>${env.HBVER}</hbase-flavor-id>
     <hbase-trx.id>${env.HBASE_TRX_ID_APACHE}</hbase-trx.id>
     <java.version>1.7</java.version>
   </properties>
@@ -89,7 +89,7 @@
 
   <groupId>org.trafodion.dtm</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>trafodion-dtm-apache1_0_2</artifactId>
+  <artifactId>trafodion-dtm-${env.HBVER}</artifactId>
   <version>${env.TRAFODION_VER}</version>
   <name>trafodion-dtm</name>
   <description>Java code for the Trafodion DTM (Distributed Transaction Manager)</description>
