@@ -346,7 +346,7 @@ pkglist-files: pkglist-symlinks
 	find -L $(PKG_BIN_OBJS) -type d -o -type f | grep -v -xf pkglist-symlinks > $@
 
 # simple symlinks that point to filename (does not start with . or /)
-pkglist-symlinks: LICENSE NOTICE rest-${TRAFODION_VER} dcs-${TRAFODION_VER}
+pkglist-symlinks: LICENSE NOTICE DISCLAIMER rest-${TRAFODION_VER} dcs-${TRAFODION_VER}
 	find $(PKG_BIN_OBJS) -lname '[^./]*' > $@
 
 #	Targets to tar/gzip the self installer
