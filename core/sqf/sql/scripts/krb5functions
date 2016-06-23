@@ -1,0 +1,128 @@
+#!/bin/bash
+ 
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+
+# -----------------------------------------------------------------------------
+# script: krb5functions
+#
+# This script contains common functions used between krb5service and krb5check
+# ------------------------------------------------------------------------------
+
+# =========================================================
+# getCachedTicket
+#   gets the location of the cached ticket
+#   and places it in CACHE_FILE
+#
+# returns:
+#   0 = cached file found
+#   1 = cached file not found, ticket needs to be init'd
+# =========================================================
+function getCachedTicket
+{
+  kname="krb5cc_"
+  trafodionId=`id -u trafodion`
+  kname=$kname$trafodionId
+  CACHE_FILE=`find /tmp -maxdepth 1 -type f -name $kname`
+  if [ "$CACHE_FILE" == "" ]; then
+    return 1
+  fi
+  return 0
+}
+
+# =========================================================
+# getStatus
+#   reports status of the ticket
+#   details are identical to what krb5check reports
+#
+#  TICKET_STATUS is generated with ticket information
+#  CACHE_FILE is setup up, if not already
+#
+# returns:
+#   0 = ticket information found
+#   1 = ticket information not found
+#   2 = ticket has expired or is ready to expire
+# =========================================================
+function getStatus
+{
+  # if ticket not available, then return with message
+  if [[ ! -e $CACHE_FILE ]]; then
+    getCachedTicket
+    if [[ $? -eq 1 ]]; then
+      TICKET_STATUS="Ticket has not been created or it has expired"
+      return 1
+    fi
+  fi
+
+  # determine time remaining for current ticket
+  expireTime=$( date -d "$( klist -c $CACHE_FILE | grep krbtgt | awk '{print $3, $4}' )" +%s )
+  timeInSecs=0
+  timeInMins=0
+  timeInHours=0
+  timeInSecs=$( expr $expireTime - $( date +%s ) )
+  if [ $timeInSecs -gt 60 ]; then
+    timeInMins=$( expr $timeInSecs / 60 )
+    if [ $timeInMins -gt 60 ]; then
+      timeInHours=$( expr $timeInMins / 60 )
+    fi
+  fi
+
+  units=""
+  if [ $timeInHours -ne 0 ]; then
+    units="$timeInHours hours"
+  elif [ $timeInMins -ne 0 ]; then
+    units="$timeInMins minutes"
+  else
+    units="$timeInSecs seconds"
+  fi
+
+  startTime=$( date -d "$( klist -c $CACHE_FILE | grep krbtgt | awk '{print $1, $2}' )" +%s )
+  renewTime=$( date -d "$( klist -c $CACHE_FILE | grep "renew until" | awk '{print $3, $4}' )" +%s )
+  renewInterval=$( expr $expireTime - $startTime )
+
+  numberRenews=$( expr $renewTime - $expireTime )
+  numberRenews=$( expr $numberRenews / $renewInterval )
+
+  if [[ $timeInSecs -lt 300 ]]; then
+    TICKET_STATUS="Ticket has or is about to expire, please init a new ticket"
+    return 2
+  else
+    TICKET_STATUS="Time remaining before ticket expires: $units, renewals available $numberRenews"
+  fi
+
+  return 0
+}
+
+function getLogFile
+{
+  LOG_FILE=$MY_SQROOT/logs/krb5check
+}
+
+function getLockFile
+{
+  LOCK_FILE=$MY_SQROOT/tmp/krb5check
+}
+
+function getKeytab
+{
+   KEYTAB=`grep "trafodion keytab:" ~/.bashrc | awk '{print $4}'`
+} 
