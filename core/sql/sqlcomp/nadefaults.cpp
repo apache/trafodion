@@ -575,7 +575,7 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
 
 // This forces an rcb to be created with a different version number
 // A "0" means to take the current mxv version
-  DDui1__(CAT_RCB_VERSION,     "0"),
+  DDui___(CAT_RCB_VERSION,     "0"),
 
 // Controls creation of column privileges for object-level privileges
   DDkwd__(CAT_REDUNDANT_COLUMN_PRIVS, "ON"),
@@ -1367,7 +1367,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXPAND_DP2_SHORT_ROWS,		"ON"),
 
- XDDui___(EXPLAIN_DESCRIPTION_COLUMN_SIZE,    "-1"),
+ XDDint__(EXPLAIN_DESCRIPTION_COLUMN_SIZE,    "-1"),
 
   DDkwd__(EXPLAIN_DETAIL_COST_FOR_CALIBRATION,  "FALSE"),
 
@@ -2432,7 +2432,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(MVQR_USE_RI_FOR_EXTRA_HUB_TABLES, "OFF"),
   DD_____(MVQR_WORKLOAD_ANALYSIS_MV_NAME, ""),
 
- XDDMVA__(MV_AGE,				""),
+ XDDMVA__(MV_AGE,				"0 MINUTES"),
  XDDkwd__(MV_ALLOW_SELECT_SYSTEM_ADDED_COLUMNS, "OFF"),
   DDkwd__(MV_AS_ROW_TRIGGER,			"OFF"),
   DDkwd__(MV_AUTOMATIC_LOGGABLE_COLUMN_MAINTENANCE, "ON"),
@@ -3549,7 +3549,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDui___(USTAT_IUS_MAX_PERSISTENT_DATA_IN_MB,        "50000"), // 50GB
   DDflt0_(USTAT_IUS_MAX_PERSISTENT_DATA_IN_PERCENTAGE,  "0.20"), // 20% of the total
 
-  DDui1_6(USTAT_IUS_MAX_TRANSACTION_DURATION,  "20"),   // in minutes
+  DDui1_6(USTAT_IUS_MAX_TRANSACTION_DURATION,  "5"),   // in minutes
   DDkwd__(USTAT_IUS_NO_BLOCK,                   "OFF"),
   DDansi_(USTAT_IUS_PERSISTENT_CBF_PATH,        "SYSTEM"),
 
@@ -3916,10 +3916,26 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
         }
       prevAttrName = defaultDefaults[i].attrName;
 
+      // validate initial default default values
+      CMPASSERT(defaultDefaults[i].validator);
+      if (! defaultDefaults[i].validator->validate(
+               defaultDefaults[i].value,
+               this,
+               defaultDefaults[i].attrEnum,
+               +1/*warning*/))
+        {
+          SqlParser_NADefaults_ = NULL;
+
+          cerr << "\nERROR: " << defaultDefaults[i].attrName
+               << " has invalid value" << defaultDefaults[i].value << endl;
+
+          return;
+         }
+
       // LCOV_EXCL_START
       // for debugging only
       #ifndef NDEBUG
-	if (nadval) {	// additional sanity checking we want to do occasionally
+       if (nadval) {	// additional sanity checking we want to do occasionally
 
 	  NAString v;
 
@@ -3978,8 +3994,8 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 	      CMPASSERT(v == keywords_[j]);
 
 	      CMPASSERT(v.first(' ') == NA_NPOS);
-	    }
 
+	    }
 	}	// if env-var
       #endif	// NDEBUG
       // LCOV_EXCL_STOP
@@ -6783,16 +6799,8 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       // sent using sendAllControls method, all values are valid. This will
       // ensure that if this default is not set and is sent over to secondary
       // mxcmp using an internal CQD statement, it doesn't return an error.
-      if (cmpCurrentContext->isSecondaryMxcmp())
-	{
-	  if (tok == DF_ON		 || tok == DF_OFF)
-	    isValid = TRUE;
-	}
-      else
-	{
-	  if (tok == DF_ON)
-	    isValid = TRUE;
-	}
+      if (tok == DF_ON		 || tok == DF_OFF)
+        isValid = TRUE;
       break;
 
     case NVCI_PROCESS:
@@ -6804,16 +6812,8 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       // sent using sendAllControls method, all values are valid. This will
       // ensure that if this default is not set and is sent over to secondary
       // mxcmp using an internal CQD statement, it doesn't return an error.
-      if (cmpCurrentContext->isSecondaryMxcmp())
-	{
-	  if (tok == DF_ON		 || tok == DF_OFF)
-	    isValid = TRUE;
-	}
-      else
-	{
-	  if (tok == DF_ON)
-	    isValid = TRUE;
-	}
+      if (tok == DF_ON		 || tok == DF_OFF)
+        isValid = TRUE;
       break;
 
     case NAMETYPE:
