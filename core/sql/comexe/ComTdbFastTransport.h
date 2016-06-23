@@ -72,7 +72,8 @@ public:
     PRINT_DIAGS                 = 0x0100,
     HDFS_COMPRESSED             = 0x0200,
     SKIP_WRITING_TO_FILES       = 0x0400,
-    BYPASS_LIBHDFS              = 0x0800
+    BYPASS_LIBHDFS              = 0x0800,
+    CONTINUE_ON_ERROR           = 0x1000
   };
 
   ComTdbFastExtract ()
@@ -365,6 +366,11 @@ public:
     return ((flags_ & BYPASS_LIBHDFS) != 0);
   }
 
+  void setContinueOnError(NABoolean value)
+  { value ? flags_ |= CONTINUE_ON_ERROR : flags_ &= ~CONTINUE_ON_ERROR; }
+  NABoolean getContinueOnError() const
+  { return ((flags_ & CONTINUE_ON_ERROR) != 0); }
+  
   NA_EIDPROC inline const char *getTargetName() const { return targetName_; }
   NA_EIDPROC inline const char *getHdfsHostName() const { return hdfsHostName_; }
   NA_EIDPROC inline const Int32 getHdfsPortNum() const {return (Int32)hdfsPortNum_;}
