@@ -1249,7 +1249,7 @@ a                     bbbbbbbbbb  c                                         dddd
 >>-- negative test
 >>create table t011t5 (a char(200000), b varchar(200000), c char(200000 bytes) character set utf8, d varchar(1000001 bytes) character set utf8);
 
-*** ERROR[4247] Specified size in bytes (1000001) exceeds the maximum size allowed (1000000) for column D.
+*** ERROR[4247] Specified size in bytes (1000001) exceeds the maximum size allowed (200000) for column D.
 
 --- SQL operation failed with errors.
 >>
