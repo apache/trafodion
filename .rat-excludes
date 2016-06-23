@@ -60,6 +60,7 @@ LICENSE.rtf*
 lic-.*-src
 lic-.*-bin
 note-.*-bin
+DISCLAIMER
 # win generated
 SetCertificateDirReg_os.vcxproj*
 SetCertificateDirReg_os.vcxproj.*
