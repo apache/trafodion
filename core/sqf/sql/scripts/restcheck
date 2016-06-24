@@ -62,7 +62,6 @@ if [[ $actual_restserver_cnt > 0 ]]; then
    echo "TrafodionRest is up on node: "$restserver_node",pid: "$restserver_pid
 fi
 
-echo
 echo -e "Process\t\tActual\t"
 echo -e "---------\t------\t"
 echo -e "TrafodionRest\t$actual_restserver_cnt\t"

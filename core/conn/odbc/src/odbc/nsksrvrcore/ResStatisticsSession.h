@@ -419,6 +419,7 @@ public:
                                        
 		SessionWlStats							sessWlStats;
 public:
+        void sendSessionInfo(string, long long,long long);
         void start(struct collect_info  *setInit);
         void end();
         void accumulateStatistics(passSession *ps);

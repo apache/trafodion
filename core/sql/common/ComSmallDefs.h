@@ -187,8 +187,8 @@ typedef NABoolean               ComBoolean;
 // length of explain_plan column in metric_query_table.
 // explain_plan greater than this length are chunked and store in multiple
 // rows in metric_text_table
-#define REPOS_MAX_EXPLAIN_PLAN_LEN 200000
-#define REPOS_MAX_EXPLAIN_PLAN_LEN_STR "200000"
+#define REPOS_MAX_EXPLAIN_PLAN_LEN 1000000
+#define REPOS_MAX_EXPLAIN_PLAN_LEN_STR "1000000"
 
 /******    *****/
 enum ComActivationTime { COM_UNKNOWN_TIME, COM_BEFORE , COM_AFTER };

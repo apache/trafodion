@@ -86,7 +86,6 @@
 #include "ResStatisticsSession.h"
 #include "ResStatisticsStatement.h"
 #include "ComDllload.h"
-//#include "QSExceptions.h"
 #include <dlfcn.h>
 #include "secsrvrmxo.h"
 
@@ -102,7 +101,6 @@ PerformanceMeasure *perf = 0;
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include "zookeeper/zookeeper.h"
-//extern ZK_GLOBAL_Def zkGlobals;
 
 #include <tr1/memory>
 #include <pthread.h>
@@ -140,6 +138,7 @@ int interval_count=0;
 int interval_max=1;
 int limit_count=0;
 int limit_max=-1;
+long long lastUpdatedTime = 0;
 
 bool updateZKState(DCS_SERVER_STATE currState, DCS_SERVER_STATE newState);
 
@@ -188,17 +187,15 @@ short qrysrvc_ExecuteFinished(
 		);
 
 extern char zkHost[256];
-//extern void sendAggrStats(pub_struct_type pub_type, pSESSION_AGGREGATION pAggr_info);
 extern void sendAggrStats(pub_struct_type pub_type, std::tr1::shared_ptr<SESSION_AGGREGATION> pAggr_info);
-//extern void sendSessionEnd(pSESSION_END pSession_info);
-extern void sendSessionEnd(std::tr1::shared_ptr<SESSION_END> pSession_info);
+extern void sendSessionStats(std::tr1::shared_ptr<SESSION_INFO> pSession_info);
 extern void sendQueryStats(pub_struct_type pub_type, std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQuery_info);
 CEE_handle_def StatisticsTimerHandle;
 SRVR_STMT_HDL * pQueryStmt = NULL;
 
 typedef struct _REPOS_STATS
 {
-	std::tr1::shared_ptr<SESSION_END> m_pSessionStats;
+	std::tr1::shared_ptr<SESSION_INFO> m_pSessionStats;
 	std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> m_pQuery_stats;
 	std::tr1::shared_ptr<SESSION_AGGREGATION> m_pAggr_stats;
 	pub_struct_type m_pub_type;
@@ -535,10 +532,10 @@ static void* SessionWatchDog(void* arg)
 			ss.str("");
 			ss.clear();
 
-			if (repos_stats.m_pub_type == PUB_TYPE_SESSION_END)
+			if (repos_stats.m_pub_type == PUB_TYPE_SESSION_START || repos_stats.m_pub_type == PUB_TYPE_SESSION_END)
 			{
-				std::tr1::shared_ptr<SESSION_END> pSessionEnd = repos_stats.m_pSessionStats;
-				if(NULL == pSessionEnd)
+				std::tr1::shared_ptr<SESSION_INFO> pSessionInfo = repos_stats.m_pSessionStats;
+				if(NULL == pSessionInfo)
 				{
 					SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
 							0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
@@ -546,49 +543,54 @@ static void* SessionWatchDog(void* arg)
 					break;
 				}
 
-				ss << "insert into Trafodion.\"_REPOS_\".metric_session_table values(";
-				ss << pSessionEnd->m_instance_id << ",";
-				ss << pSessionEnd->m_tenant_id << ",";
-				ss << pSessionEnd->m_component_id << ",";
-				ss << pSessionEnd->m_process_id << ",";
-				ss << pSessionEnd->m_thread_id << ",";
-				ss << pSessionEnd->m_node_id << ",";
-				ss << pSessionEnd->m_pnid_id << ",";
-				ss << pSessionEnd->m_host_id << ",'";
-				ss << pSessionEnd->m_ip_address_id.c_str() << "',";
-				ss << pSessionEnd->m_sequence_number << ",'";
-				ss << pSessionEnd->m_process_name.c_str() << "','";
-				ss << pSessionEnd->m_sessionId.c_str() << "','";
-				ss << pSessionEnd->m_session_status.c_str() << "',CONVERTTIMESTAMP(";
-				ss << pSessionEnd->m_session_start_utc_ts << "),CONVERTTIMESTAMP(";
-				ss << pSessionEnd->m_session_end_utc_ts << "),";
-				ss << pSessionEnd->m_user_id << ",'";
-				ss << pSessionEnd->m_user_name.c_str() << "','";
-				ss << pSessionEnd->m_role_name.c_str() << "','";
-				ss << pSessionEnd->m_client_name.c_str() << "','";
-				ss << pSessionEnd->m_client_user_name.c_str() << "','";
-				ss << pSessionEnd->m_application_name.c_str() << "',";
-				ss << pSessionEnd->m_total_odbc_exection_time << ",";
-				ss << pSessionEnd->m_total_odbc_elapsed_time << ",";
-				ss << pSessionEnd->m_total_insert_stmts_executed << ",";
-				ss << pSessionEnd->m_total_delete_stmts_executed << ",";
-				ss << pSessionEnd->m_total_update_stmts_executed << ",";
-				ss << pSessionEnd->m_total_select_stmts_executed << ",";
-				ss << pSessionEnd->m_total_catalog_stmts << ",";
-				ss << pSessionEnd->m_total_prepares << ",";
-				ss << pSessionEnd->m_total_executes << ",";
-				ss << pSessionEnd->m_total_fetches << ",";
-				ss << pSessionEnd->m_total_closes << ",";
-				ss << pSessionEnd->m_total_execdirects << ",";
-				ss << pSessionEnd->m_total_errors << ",";
-				ss << pSessionEnd->m_total_warnings << ",";
-				ss << pSessionEnd->m_total_login_elapsed_time_mcsec << ",";
-				ss << pSessionEnd->m_ldap_login_elapsed_time_mcsec << ",";
-				ss << pSessionEnd->m_sql_user_elapsed_time_mcsec << ",";
-				ss << pSessionEnd->m_search_connection_elapsed_time_mcsec << ",";
-				ss << pSessionEnd->m_search_elapsed_time_mcsec << ",";
-				ss << pSessionEnd->m_authentication_connection_elapsed_time_mcsec << ",";
-				ss << pSessionEnd->m_authentication_elapsed_time_mcsec << ")";
+				ss << "upsert into Trafodion.\"_REPOS_\".metric_session_table values(";
+				ss << pSessionInfo->m_instance_id << ",";
+				ss << pSessionInfo->m_tenant_id << ",";
+				ss << pSessionInfo->m_component_id << ",";
+				ss << pSessionInfo->m_process_id << ",";
+				ss << pSessionInfo->m_thread_id << ",";
+				ss << pSessionInfo->m_node_id << ",";
+				ss << pSessionInfo->m_pnid_id << ",";
+				ss << pSessionInfo->m_host_id << ",'";
+				ss << pSessionInfo->m_ip_address_id.c_str() << "',";
+				ss << pSessionInfo->m_sequence_number << ",'";
+				ss << pSessionInfo->m_process_name.c_str() << "','";
+				ss << pSessionInfo->m_sessionId.c_str() << "','";
+				ss << pSessionInfo->m_session_status.c_str() << "',CONVERTTIMESTAMP(";
+				ss << pSessionInfo->m_session_start_utc_ts << "),";
+                                if (pSessionInfo->m_session_end_utc_ts > 0)
+                                        ss << "CONVERTTIMESTAMP(" << pSessionInfo->m_session_end_utc_ts << "),";
+                                else
+                                        ss << "NULL,";
+				ss << pSessionInfo->m_user_id << ",'";
+				ss << pSessionInfo->m_user_name.c_str() << "','";
+				ss << pSessionInfo->m_role_name.c_str() << "','";
+				ss << pSessionInfo->m_client_name.c_str() << "','";
+				ss << pSessionInfo->m_client_user_name.c_str() << "','";
+				ss << pSessionInfo->m_application_name.c_str() << "','";
+ 				ss << pSessionInfo->m_profile_name.c_str() << "','";
+                                ss << pSessionInfo->m_sla_name.c_str() << "',";
+				ss << pSessionInfo->m_total_odbc_exection_time << ",";
+				ss << pSessionInfo->m_total_odbc_elapsed_time << ",";
+				ss << pSessionInfo->m_total_insert_stmts_executed << ",";
+				ss << pSessionInfo->m_total_delete_stmts_executed << ",";
+				ss << pSessionInfo->m_total_update_stmts_executed << ",";
+				ss << pSessionInfo->m_total_select_stmts_executed << ",";
+				ss << pSessionInfo->m_total_catalog_stmts << ",";
+				ss << pSessionInfo->m_total_prepares << ",";
+				ss << pSessionInfo->m_total_executes << ",";
+				ss << pSessionInfo->m_total_fetches << ",";
+				ss << pSessionInfo->m_total_closes << ",";
+				ss << pSessionInfo->m_total_execdirects << ",";
+				ss << pSessionInfo->m_total_errors << ",";
+				ss << pSessionInfo->m_total_warnings << ",";
+				ss << pSessionInfo->m_total_login_elapsed_time_mcsec << ",";
+				ss << pSessionInfo->m_ldap_login_elapsed_time_mcsec << ",";
+				ss << pSessionInfo->m_sql_user_elapsed_time_mcsec << ",";
+				ss << pSessionInfo->m_search_connection_elapsed_time_mcsec << ",";
+				ss << pSessionInfo->m_search_elapsed_time_mcsec << ",";
+				ss << pSessionInfo->m_authentication_connection_elapsed_time_mcsec << ",";
+				ss << pSessionInfo->m_authentication_elapsed_time_mcsec << ")";
 
 			}
 			else if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_NEW_QUERYEXECUTION)
@@ -601,6 +603,7 @@ static void* SessionWatchDog(void* arg)
                                                         1, "Invalid data pointer founded in SessionWatchDog()");
 					break;
 				}
+                                lastUpdatedTime = JULIANTIMESTAMP();
 
 				ss << "insert into Trafodion.\"_REPOS_\".metric_query_table values(";
 				ss << pQueryAdd->m_instance_id << ",";
@@ -616,6 +619,7 @@ static void* SessionWatchDog(void* arg)
 				ss << pQueryAdd->m_process_name.c_str() << "',CONVERTTIMESTAMP(";
 				ss << pQueryAdd->m_exec_start_utc_ts << "),'";
 				ss << pQueryAdd->m_query_id.c_str() << "','";
+				ss << pQueryAdd->m_query_signature_id.c_str() << "','";
 				ss << pQueryAdd->m_user_name.c_str() << "','";
 				ss << pQueryAdd->m_role_name.c_str() << "',";
 				ss << pQueryAdd->m_start_priority << ",'";
@@ -742,7 +746,14 @@ static void* SessionWatchDog(void* arg)
 				ss << pQueryAdd->m_ovf_buffer_bytes_read << ",";
 				ss << pQueryAdd->m_num_nodes << ",";
 				ss << pQueryAdd->m_udr_process_busy_time << ",";
-				ss << pQueryAdd->m_pertable_stats << ")";
+				ss << pQueryAdd->m_pertable_stats << ",";
+				if ( lastUpdatedTime > 0)
+                                        ss << "CONVERTTIMESTAMP(" << lastUpdatedTime << ")";
+                                else
+                                        ss << "NULL";
+
+                                ss <<")";
+
 			}
 			else if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_UPDATE_QUERYEXECUTION)
 			{
@@ -755,6 +766,7 @@ static void* SessionWatchDog(void* arg)
 					break;
 				}
 
+                                lastUpdatedTime = JULIANTIMESTAMP();
 				ss << "update Trafodion.\"_REPOS_\".metric_query_table ";
 				ss << "set STATEMENT_TYPE= '" << pQueryUpdate->m_statement_type.c_str() << "',";
 				ss << "STATEMENT_SUBTYPE= '" << pQueryUpdate->m_statement_subtype.c_str() << "',";
@@ -811,6 +823,7 @@ static void* SessionWatchDog(void* arg)
 				ss << "NUM_NODES= " << pQueryUpdate->m_num_nodes << ",";
 				ss << "UDR_PROCESS_BUSY_TIME= " << pQueryUpdate->m_udr_process_busy_time << ",";
 				ss << "PERTABLE_STATS= " << pQueryUpdate->m_pertable_stats;
+                                ss << "LAST_UPDATED_TIME= CONVERTTIMESTAMP(" << lastUpdatedTime << ")";
 				ss << " where QUERY_ID = '" << pQueryUpdate->m_query_id.c_str() << "'";
 				ss << " and EXEC_START_UTC_TS = CONVERTTIMESTAMP(" << pQueryUpdate->m_exec_start_utc_ts << ")";
 			}
@@ -887,7 +900,9 @@ static void* SessionWatchDog(void* arg)
 				ss << pAggrStat->m_delta_ddl_errors << ",";
 				ss << pAggrStat->m_delta_util_errors << ",";
 				ss << pAggrStat->m_delta_catalog_errors << ",";
-				ss << pAggrStat->m_delta_other_errors << ")";
+				ss << pAggrStat->m_delta_other_errors << ",";
+				ss << pAggrStat->m_average_response_time << ",";
+				ss << pAggrStat->m_throughput_per_sec << ")";
 			}
 			else if (repos_stats.m_pub_type == PUB_TYPE_SESSION_UPDATE_AGGREGATION || repos_stats.m_pub_type == PUB_TYPE_SESSION_END_AGGREGATION)
 			{
@@ -944,7 +959,9 @@ static void* SessionWatchDog(void* arg)
 				ss << "DELTA_DDL_ERRORS = " << pAggrStat->m_delta_ddl_errors << ",";
 				ss << "DELTA_UTIL_ERRORS = " << pAggrStat->m_delta_util_errors << ",";
 				ss << "DELTA_CATALOG_ERRORS = " << pAggrStat->m_delta_catalog_errors << ",";
-				ss << "DELTA_OTHER_ERRORS = " << pAggrStat->m_delta_other_errors;
+				ss << "DELTA_OTHER_ERRORS = " << pAggrStat->m_delta_other_errors << ",";
+				ss << "AVERAGE_RESPONSE_TIME = " << pAggrStat->m_average_response_time << ",";
+				ss << "THROUGHPUT_PER_SECOND = " << pAggrStat->m_throughput_per_sec;
 				ss << " where SESSION_START_UTC_TS = CONVERTTIMESTAMP(" << pAggrStat->m_session_start_utc_ts << ")";
 				ss << " and SESSION_ID = '" << pAggrStat->m_sessionId.c_str() << "'";
 
@@ -9477,17 +9494,17 @@ short qrysrvc_ExecuteFinished(
 	return 0;
 }
 
-void sendSessionEnd(std::tr1::shared_ptr<SESSION_END> pSession_info)
+void sendSessionStats(std::tr1::shared_ptr<SESSION_INFO> pSession_info)
 {
 	REPOS_STATS session_stats;
 	session_stats.m_pSessionStats = pSession_info;
-	session_stats.m_pub_type = PUB_TYPE_SESSION_END;
 	if (record_session_done)
 	{
-		//boost::thread thrd(&SessionWatchDog);
+	        session_stats.m_pub_type = PUB_TYPE_SESSION_END;
 		pthread_t thrd;
 		pthread_create(&thrd, NULL, SessionWatchDog, NULL);
-	}
+	} else
+                session_stats.m_pub_type = PUB_TYPE_SESSION_START;
 	repos_queue.push_task(session_stats);
 }
 
@@ -9498,7 +9515,6 @@ void sendAggrStats(pub_struct_type pub_type, std::tr1::shared_ptr<SESSION_AGGREG
 	aggr_stats.m_pub_type = pub_type;
 	if (record_session_done)
 	{
-		//boost::thread thrd(&SessionWatchDog);
 		pthread_t thrd;
 		pthread_create(&thrd, NULL, SessionWatchDog, NULL);
 	}
@@ -9512,7 +9528,6 @@ void sendQueryStats(pub_struct_type pub_type, std::tr1::shared_ptr<STATEMENT_QUE
 	query_stats.m_pub_type = pub_type;
 	if (record_session_done)
 	{
-		//boost::thread thrd(&SessionWatchDog);
 		pthread_t thrd;
 		pthread_create(&thrd, NULL, SessionWatchDog, NULL);
 	}

@@ -29,6 +29,7 @@ using namespace std;
 enum pub_struct_type
 {
 	PUB_TYPE_INIT = 0,
+	PUB_TYPE_SESSION_START,
 	PUB_TYPE_SESSION_END,
 	PUB_TYPE_STATEMENT_NEW_QUERYEXECUTION,
 	PUB_TYPE_STATEMENT_UPDATE_QUERYEXECUTION,
@@ -43,7 +44,7 @@ enum statistics_type
 	STATISTICS_SESSION	
 };
 
-typedef struct _SESSION_END
+typedef struct _SESSION_INFO
 {
 	unsigned int m_instance_id;
 	unsigned int m_tenant_id;
@@ -66,6 +67,8 @@ typedef struct _SESSION_END
 	string m_client_name;
 	string m_client_user_name;
 	string m_application_name;
+        string m_profile_name;
+        string m_sla_name;
 	long long m_total_odbc_exection_time;
 	long long m_total_odbc_elapsed_time;
 	long m_total_insert_stmts_executed;
@@ -87,7 +90,7 @@ typedef struct _SESSION_END
 	long long m_search_elapsed_time_mcsec;
 	long long m_authentication_connection_elapsed_time_mcsec;
 	long long m_authentication_elapsed_time_mcsec;
-}SESSION_END, *pSESSION_END;
+}SESSION_INFO, *pSESSION_INFO;
 
 typedef struct _STATEMENT_QUERYEXECUTION
 {
@@ -109,6 +112,7 @@ typedef struct _STATEMENT_QUERYEXECUTION
 	string m_process_name;
 	long long m_exec_start_utc_ts;
 	string m_query_id;
+	string m_query_signature_id;
 	string m_user_name;
 	string m_role_name;
 	unsigned int m_start_priority;
@@ -222,6 +226,7 @@ typedef struct _STATEMENT_QUERYEXECUTION
 	long m_num_nodes;
 	long long m_udr_process_busy_time;
 	int m_pertable_stats;
+        long long m_last_updated_time;
 }STATEMENT_QUERYEXECUTION, *pSTATEMENT_QUERYEXECUTION;
 
 typedef struct _SESSION_AGGREGATION
@@ -288,6 +293,8 @@ typedef struct _SESSION_AGGREGATION
 	long m_delta_util_errors;
 	long m_delta_catalog_errors;
 	long m_delta_other_errors;
+	long m_average_response_time;
+	long m_throughput_per_sec;
 }SESSION_AGGREGATION, *pSESSION_AGGREGATION;
 
 #endif
