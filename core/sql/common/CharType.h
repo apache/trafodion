@@ -517,7 +517,8 @@ public:
 //copy ctor
   SQLVarChar(const SQLVarChar& varChar, NAMemory * heap):
 				CharType(varChar,heap),
-				clientDataType_(varChar.getClientDataTypeName(),heap)
+				clientDataType_(varChar.getClientDataTypeName(),heap),
+                                wasHiveString_(varChar.wasHiveString())
 				{}
 virtual void minRepresentableValue(void*, Lng32*,
 				     NAString** stringLiteral = NULL,
@@ -554,9 +555,14 @@ NAString getClientDataTypeName() const
 
 void setClientDataType(NAString clientName) { clientDataType_ = clientName; }
 
+NABoolean wasHiveString() const {return wasHiveString_;}
+void setWasHiveString(NABoolean v) { wasHiveString_ = v;}
 private:
 
-NAString clientDataType_;
+  NAString clientDataType_;
+
+  // if original datatype was hive 'string' type
+  NABoolean wasHiveString_;
 
 }; // class SQLVarChar
 

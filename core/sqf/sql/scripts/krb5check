@@ -1,0 +1,133 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+source krb5functions
+
+function msg
+{
+  echo "krb5check[$$] `date`: $1" >> $LOG_FILE
+}
+
+# ******* main ******
+WAIT_INTERVAL=300
+REPORT_INTERVAL=12
+LOCK_FILE=$MY_SQROOT/tmp/krb5check
+LOG_FILE=$MY_SQROOT/logs/krb5check
+CACHE_FILE=""
+HOST_NAME=`hostname -f`
+getKeytab
+echo "keytab: $KEYTAB"
+
+introMessage="Starting krb5check "
+
+# Echo this process's id to the LOCK_FILE
+echo $$ > $LOCK_FILE
+
+while [ $# -gt 0 ]; do
+
+  case $1 in
+    -h)
+        echo $"Usage: $0 {-c |-h |-r | -w}"
+        exit
+        ;;
+    -c)
+        shift
+        CACHE_FILE=$1
+        ;;
+    -r)
+        shift
+        REPORT_INTERVAL=$1
+        ;;
+    -w)
+        shift
+        WAIT_INTERVAL=$1
+        ;;
+    *)
+        introMessage=$introMessage"Invalid option detected"
+        echo "$introMessage"
+        echo $"Usage: $0 {-c |-h |-r | -w}"
+        exit 1
+        ;;
+  esac
+  shift
+done
+
+# get keytab
+introMessage=$introMessage"using keytab $KEYTAB "
+
+# get principal from the cached entry
+getCachedTicket
+noTicket=$?
+if [[ $noTicket -eq 1 ]]; then
+  PRINCIPAL="Not Available"
+else
+  PRINCIPAL="$( klist -c $CACHE_FILE | grep 'Default principal' | awk '{print $3}' )"
+fi
+
+introMessage=$introMessage" and principal $PRINCIPAL "
+msg "$introMessage"
+
+# go into an infinite loop with a WAIT_INTERVAL second pause between each iteration
+# print a report the first time
+reportCount=$( expr $REPORT_INTERVAL + 1 )
+while :; do
+  
+  # go see if a new ticket has been initd
+  getCachedTicket
+  noTicket=$?
+  if [[ $noTicket -eq 0 ]]; then
+    # expire time could change between iterations
+    EXPIRE_TIME=$( date -d "$( klist -c $CACHE_FILE | grep krbtgt | awk '{print $3, $4}' )" +%s )
+
+    # report time left every REPORT_INTERVAL times
+    if [ $reportCount -gt $REPORT_INTERVAL ]; then
+      getStatus
+      msg "$TICKET_STATUS"
+      reportCount=0
+    else
+      reportCount=$( expr $reportCount + 1 )
+    fi
+
+    # If ticket has expired, destroy cached entry
+    if [ $( date +%s ) -ge $EXPIRE_TIME ]; then
+      kdestroy -c $CACHE_FILE &> /dev/null
+      msg "Removed expired ticket cache ($CACHE_FILE) for user $PRINCIPAL"
+
+    # Otherwise renew it
+    elif [ $( expr $EXPIRE_TIME - $( date +%s ) ) -le $WAIT_INTERVAL ]; then
+      msg "Time to renew ticket for $PRINCIPAL"
+      kinit -R -k -t $KEYTAB $PRINCIPAL
+      #if [ $? -ne 0 ]; then
+      #  msg "An error occurred while renewing $PRINCIPAL, continuing"
+      #else
+        msg "Renewed ticket cache ($CACHE_FILE) for principal $PRINCIPAL"
+        msg "`klist`"
+      #fi
+    fi
+  else
+    msg="Ticket has not been created or it has expired"
+  fi
+
+  # wait a bit then go round again
+  sleep $WAIT_INTERVAL
+done

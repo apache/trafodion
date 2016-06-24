@@ -986,9 +986,19 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
 
           if (expStatus == ex_expr::EXPR_ERROR)
           {
-            updateWorkATPDiagsArea(centry);
-            pstate.step_ = EXTRACT_ERROR;
-            break;
+            if (myTdb().getContinueOnError())
+              {
+                // ignore this row and continue to the next row
+                if (workAtp_->getDiagsArea())
+                  workAtp_->getDiagsArea()->clear();
+                break;
+              }
+            else
+              {
+                updateWorkATPDiagsArea(centry);
+                pstate.step_ = EXTRACT_ERROR;
+                break;
+              }
           }
         } // if (myTdb().getChildDataExpr())
         ///////////////////////

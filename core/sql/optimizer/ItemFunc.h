@@ -3527,10 +3527,16 @@ public:
 class Repeat : public BuiltinFunction
 {
 public:
-  Repeat(ItemExpr *val1Ptr, ItemExpr *val2Ptr)
+  Repeat(ItemExpr *val1Ptr, ItemExpr *val2Ptr, Int32 maxLength = -1)
        : BuiltinFunction(ITM_REPEAT, CmpCommon::statementHeap(),
-                         2, val1Ptr, val2Ptr)
-  { allowsSQLnullArg() = FALSE; maxLength_ = -1; }
+                         2, val1Ptr, val2Ptr),
+         maxLength_(maxLength),
+         maxLengthWasExplicitlySet_(FALSE)
+  { 
+    allowsSQLnullArg() = FALSE; 
+    if (maxLength > 0)
+      maxLengthWasExplicitlySet_ = TRUE;
+  }
 
   // a virtual function for type propagating the node
   virtual const NAType * synthesizeType();
@@ -3550,14 +3556,18 @@ public:
 
  private:
 
- // max length of Repeat expression. Currently this is set only when Repeat
- // is used certain expansions of LPAD and RPAD. Initialized to the value -1,
- // which indicates that maxLength has not been computed.
- Int32 maxLength_;
+  // max length of Repeat expression. 
+  // If not passed in during constrtuctor, then it is set only when Repeat
+  // is used certain expansions of LPAD and RPAD. 
+  // It is initialized to the value -1, which indicates that maxLength 
+  // has not been computed or passed in.
+  Int32 maxLength_;
+
+  // if max length was specified in REPEAT function 
+  // and passed in during constructor.
+  NABoolean maxLengthWasExplicitlySet_;
 
   virtual NABoolean hasEquivalentProperties(ItemExpr * other) { return TRUE;}
-
-  
 
 }; // class Repeat
 

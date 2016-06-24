@@ -1551,19 +1551,20 @@ NATable *BindWA::getNATable(CorrName& corrName,
       NATable *nativeNATable = bindWA->getSchemaDB()->getNATableDB()->
                                   get(externalCorrName, bindWA, inTableDescStruct);
   
-       // Compare column lists
-       // TBD - return what mismatches
-       if ( nativeNATable && !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()))
-         {
-           *CmpCommon::diags() << DgSqlCode(-3078)
-                               << DgString0(adjustedName)
-                               << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
-           bindWA->setErrStatus();
-           nativeNATable->setRemoveFromCacheBNC(TRUE);
-           return NULL;
-         }
+      // Compare column lists
+      // TBD - return what mismatches
+      if ( nativeNATable && !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()) &&
+           (NOT bindWA->externalTableDrop()))
+        {
+          *CmpCommon::diags() << DgSqlCode(-3078)
+                              << DgString0(adjustedName)
+                              << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
+          bindWA->setErrStatus();
+          nativeNATable->setRemoveFromCacheBNC(TRUE);
+          return NULL;
+        }
     }
-    
+  
   HostVar *proto = corrName.getPrototype();
   if (proto && proto->isPrototypeValid())
     corrName.getPrototype()->bindNode(bindWA);
@@ -9130,20 +9131,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     if (getOverwriteHiveTable())
     {
       RelExpr * newRelExpr =  new (bindWA->wHeap())
-        ExeUtilFastDelete(getTableName(),
-                          NULL,
-                          (char*)"hive_truncate",
-                          CharInfo::ISO88591,
-                          FALSE,
-                          TRUE,
-                          TRUE,
-                          TRUE,
-                          bindWA->wHeap(),
-                          TRUE,
-                          new (bindWA->wHeap()) NAString(tableDir),
-                          new (bindWA->wHeap()) NAString(hostName),
-                          hdfsPort,
-                          hTabStats->getModificationTS());
+        ExeUtilHiveTruncate(getTableName(), NULL, bindWA->wHeap());
 
       //new root to prevent  error 4056 when binding
       newRelExpr = new (bindWA->wHeap()) RelRoot(newRelExpr);

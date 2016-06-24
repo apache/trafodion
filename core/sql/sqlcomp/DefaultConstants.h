@@ -2674,10 +2674,6 @@ enum DefaultConstants
   UNIQUE_HASH_JOIN_MAX_INNER_SIZE_PER_INSTANCE,
   UNIQUE_HASH_JOIN_MAX_INNER_TABLES,
 
-  // this will turn ON purgedata using ESP parallelism.
-  EXE_PARALLEL_PURGEDATA,
-
-
   // catalog where maintain database is maintained
   MAINTAIN_CATALOG,
 
@@ -2764,8 +2760,6 @@ enum DefaultConstants
   // a statement that creates a sample for another table, or the name will be
   // duplicated. The value used must be an UNQUALIFIED table name.
   USTAT_SAMPLE_TABLE_NAME_CREATE,
-
-  EXE_PARALLEL_PURGEDATA_WARNINGS,
 
   // By default (ON), distribute the metadata tables across all
   // segments.  If set to LOCAL_NODE, distribute metadata tables
@@ -3836,6 +3830,18 @@ enum DefaultConstants
   // Otherwise typed as smallint.
   TRAF_TINYINT_SPJ_SUPPORT,
 
+  // use info from external table created on this hive table
+  HIVE_USE_EXT_TABLE_ATTRS,
+
+  // if 0, datatype error check is not done during inserts into hive tables.
+  //       Invalid values may get inserted.
+  // if 1, error check done, row is not inserted if conversion error,
+  //       and further processing stops.
+  // if 2, error check done, row is not inserted if conversion error,
+  //       and further processing continues.
+  // if 3, null inserted if conversion error, and processing continues.
+  HIVE_INSERT_ERROR_MODE,
+  
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

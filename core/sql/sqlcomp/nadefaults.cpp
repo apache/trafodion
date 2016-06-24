@@ -575,7 +575,7 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
 
 // This forces an rcb to be created with a different version number
 // A "0" means to take the current mxv version
-  DDui1__(CAT_RCB_VERSION,     "0"),
+  DDui___(CAT_RCB_VERSION,     "0"),
 
 // Controls creation of column privileges for object-level privileges
   DDkwd__(CAT_REDUNDANT_COLUMN_PRIVS, "ON"),
@@ -1354,10 +1354,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXE_PARALLEL_DDL,                     "ON"),
 
-  DDkwd__(EXE_PARALLEL_PURGEDATA,               "MINIMUM"),
-
-  DDkwd__(EXE_PARALLEL_PURGEDATA_WARNINGS,      "OFF"),
-
   DDui___(EXE_PA_DP2_STATIC_AFFINITY,           "1"),
 
   DDkwd__(EXE_SINGLE_BMO_QUOTA,                 "ON"),
@@ -1371,7 +1367,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXPAND_DP2_SHORT_ROWS,		"ON"),
 
- XDDui___(EXPLAIN_DESCRIPTION_COLUMN_SIZE,    "-1"),
+ XDDint__(EXPLAIN_DESCRIPTION_COLUMN_SIZE,    "-1"),
 
   DDkwd__(EXPLAIN_DETAIL_COST_FOR_CALIBRATION,  "FALSE"),
 
@@ -1965,6 +1961,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DD_____(HIVE_FILE_CHARSET,                    ""),
   DD_____(HIVE_FILE_NAME,     "/hive/tpcds/customer/customer.dat" ),
   DD_____(HIVE_HDFS_STATS_LOG_FILE,             ""),
+  DDui___(HIVE_INSERT_ERROR_MODE,               "1"),
   DDint__(HIVE_LIB_HDFS_PORT_OVERRIDE,          "-1"),
   DDint__(HIVE_LOCALITY_BALANCE_LEVEL,          "0"),
   DDui___(HIVE_MAX_ESPS,                        "9999"),
@@ -1977,6 +1974,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDpct__(HIVE_NUM_ESPS_ROUND_DEVIATION,        "34"),
   DDint__(HIVE_SCAN_SPECIAL_MODE,                "0"),
   DDkwd__(HIVE_SORT_HDFS_HOSTS,                 "ON"),
+  DDkwd__(HIVE_USE_EXT_TABLE_ATTRS,             "ON"),
   DD_____(HIVE_USE_FAKE_SQ_NODE_NAMES,          "" ),
   DDkwd__(HIVE_USE_FAKE_TABLE_DESC,             "OFF"),
   DDkwd__(HIVE_USE_HASH2_AS_PARTFUNCION,        "ON"),
@@ -2434,7 +2432,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(MVQR_USE_RI_FOR_EXTRA_HUB_TABLES, "OFF"),
   DD_____(MVQR_WORKLOAD_ANALYSIS_MV_NAME, ""),
 
- XDDMVA__(MV_AGE,				""),
+ XDDMVA__(MV_AGE,				"0 MINUTES"),
  XDDkwd__(MV_ALLOW_SELECT_SYSTEM_ADDED_COLUMNS, "OFF"),
   DDkwd__(MV_AS_ROW_TRIGGER,			"OFF"),
   DDkwd__(MV_AUTOMATIC_LOGGABLE_COLUMN_MAINTENANCE, "ON"),
@@ -3551,7 +3549,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDui___(USTAT_IUS_MAX_PERSISTENT_DATA_IN_MB,        "50000"), // 50GB
   DDflt0_(USTAT_IUS_MAX_PERSISTENT_DATA_IN_PERCENTAGE,  "0.20"), // 20% of the total
 
-  DDui1_6(USTAT_IUS_MAX_TRANSACTION_DURATION,  "20"),   // in minutes
+  DDui1_6(USTAT_IUS_MAX_TRANSACTION_DURATION,  "5"),   // in minutes
   DDkwd__(USTAT_IUS_NO_BLOCK,                   "OFF"),
   DDansi_(USTAT_IUS_PERSISTENT_CBF_PATH,        "SYSTEM"),
 
@@ -3918,10 +3916,26 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
         }
       prevAttrName = defaultDefaults[i].attrName;
 
+      // validate initial default default values
+      CMPASSERT(defaultDefaults[i].validator);
+      if (! defaultDefaults[i].validator->validate(
+               defaultDefaults[i].value,
+               this,
+               defaultDefaults[i].attrEnum,
+               +1/*warning*/))
+        {
+          SqlParser_NADefaults_ = NULL;
+
+          cerr << "\nERROR: " << defaultDefaults[i].attrName
+               << " has invalid value" << defaultDefaults[i].value << endl;
+
+          return;
+         }
+
       // LCOV_EXCL_START
       // for debugging only
       #ifndef NDEBUG
-	if (nadval) {	// additional sanity checking we want to do occasionally
+       if (nadval) {	// additional sanity checking we want to do occasionally
 
 	  NAString v;
 
@@ -3980,8 +3994,8 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 	      CMPASSERT(v == keywords_[j]);
 
 	      CMPASSERT(v.first(' ') == NA_NPOS);
-	    }
 
+	    }
 	}	// if env-var
       #endif	// NDEBUG
       // LCOV_EXCL_STOP
@@ -4828,7 +4842,21 @@ Int32 NADefaults::validateFloat(const char *value, float &result,
 {
   Int32 n = -1;	// NT's scanf("%n") is not quite correct; hence this code-around
   sscanf(value, "%g%n", &result, &n);
-  if (n > 0 && value[n] == '\0') return TRUE;	// a valid float
+  if (n > 0 && value[n] == '\0') 
+    {
+      switch (attrEnum)
+        {
+        case HIVE_INSERT_ERROR_MODE:
+          {
+            Lng32 v = str_atoi(value, str_len(value));
+            if (v >= 0 && v <= 3)
+              return TRUE;
+          }
+          break;
+        default:
+          return TRUE;	// a valid float
+        }
+    }
 
   NAString v(value);
   NABoolean silentIf = (errOrWarn == SilentIfSYSTEM);
@@ -6581,12 +6609,13 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	  case '3':	return DF_MAXIMUM;
 	}
       // HBASE_FILTER_PREDS
-        if ((attrEnum == HBASE_FILTER_PREDS) && value.length()==1)
+      if ((attrEnum == HBASE_FILTER_PREDS) && value.length()==1)
       switch (*value.data()){
         case '0': return DF_OFF;
         case '1': return DF_MINIMUM;
         case '2': return DF_MEDIUM;
-        // in the future add DF_HIGH and DF_MAXIMUM when we implement more pushdown capabilities
+        // in the future add DF_HIGH and DF_MAXIMUM when we implement more 
+        // pushdown capabilities
       }
     if ( attrEnum == TEMPORARY_TABLE_HASH_PARTITIONS ||
          attrEnum == MVQR_REWRITE_CANDIDATES ||
@@ -6671,17 +6700,16 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	isValid = TRUE;
       break;
 
-    case EXE_PARALLEL_PURGEDATA:
-      if (tok == DF_ALL || tok == DF_MINIMUM ||
-	  tok == DF_OFF || tok == DF_ON || tok == DF_MEDIUM)
-	isValid = TRUE;
-      break;
-
     case HIDE_INDEXES:
       if (tok  == DF_NONE        || tok == DF_ALL        ||
 	  tok  == DF_VERTICAL    || tok == DF_INDEXES    || tok == DF_KEYINDEXES)
 	isValid = TRUE;
     break;
+
+    case HIVE_USE_EXT_TABLE_ATTRS:
+      if (tok == DF_ALL || tok == DF_OFF || tok == DF_ON )
+	isValid = TRUE;
+      break;
 
     case INDEX_ELIMINATION_LEVEL:
       if  (tok == DF_MINIMUM	 || tok == DF_MEDIUM ||
@@ -6771,16 +6799,8 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       // sent using sendAllControls method, all values are valid. This will
       // ensure that if this default is not set and is sent over to secondary
       // mxcmp using an internal CQD statement, it doesn't return an error.
-      if (cmpCurrentContext->isSecondaryMxcmp())
-	{
-	  if (tok == DF_ON		 || tok == DF_OFF)
-	    isValid = TRUE;
-	}
-      else
-	{
-	  if (tok == DF_ON)
-	    isValid = TRUE;
-	}
+      if (tok == DF_ON		 || tok == DF_OFF)
+        isValid = TRUE;
       break;
 
     case NVCI_PROCESS:
@@ -6792,16 +6812,8 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       // sent using sendAllControls method, all values are valid. This will
       // ensure that if this default is not set and is sent over to secondary
       // mxcmp using an internal CQD statement, it doesn't return an error.
-      if (cmpCurrentContext->isSecondaryMxcmp())
-	{
-	  if (tok == DF_ON		 || tok == DF_OFF)
-	    isValid = TRUE;
-	}
-      else
-	{
-	  if (tok == DF_ON)
-	    isValid = TRUE;
-	}
+      if (tok == DF_ON		 || tok == DF_OFF)
+        isValid = TRUE;
       break;
 
     case NAMETYPE:

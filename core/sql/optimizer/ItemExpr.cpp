@@ -12928,6 +12928,7 @@ ItemExpr * Repeat::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
     result = derivedNode;
   
   ((Repeat *) result)->setMaxLength(getMaxLength());
+  ((Repeat *) result)->maxLengthWasExplicitlySet_ = maxLengthWasExplicitlySet_;
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 }

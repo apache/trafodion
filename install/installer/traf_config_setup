@@ -33,7 +33,6 @@ TRAF_WORKDIR="/usr/lib/trafodion"
 TRAF_CONFIG="/etc/trafodion/trafodion_config"
 TRAF_CONFIG_DIR=$(dirname $TRAF_CONFIG)
 LOCAL_TRAF_CONFIG="$LOCAL_WORKDIR/trafodion_config"
-LDAP_AUTH_FILE="traf_authentication_config_${HOSTNAME}"
 TRAF_USER="trafodion"
 TRAF_USER_PASSWORD="traf123"   # must be 6-8 chars
 userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
@@ -67,7 +66,6 @@ DCS_SERVERS_PARM="2"
 ENABLE_HA="false"
 FLOATING_IP=""
 BACKUP_DCS_NODES=""
-LDAP_SECURITY="N"
 SCANNER_MODE="N"
 DCS_PRIMARY_MASTER_NODE=`hostname -f`
 DCS_MASTER_PORT="23400"
@@ -79,7 +77,6 @@ OPEN_STACK=""
 OTHER_CLOUD=""
 MANAGEMENT_ENABLED="N"
 MANAGEMENT_NODES=""
-LDAP_LEVEL="0"
 #==============================================
 
 function print_usage {
@@ -809,162 +806,6 @@ if [[ "$ENABLE_HA" == "true" ]]; then
    fi
    echo "export BACKUP_DCS_NODES=\"$BACKUP_DCS_NODES\"" >> $LOCAL_TRAF_CONFIG
 fi 
-
-#==============================================
-#Simple security
-if [[ $SCANNER_MODE == "N" ]]; then
-   echo -n "Enable simple LDAP security (Y/N), default is N: "
-   read answer
-
-   if [ ! -z $answer ]; then
-      if [[ "${answer}" =~ ^[Yy]$ ]]; then
-         LDAP_SECURITY="Y"
-      fi
-   else 
-      LDAP_SECURITY="N"
-   fi
-
-   echo "export LDAP_SECURITY=\"$LDAP_SECURITY\"" >> $LOCAL_TRAF_CONFIG
-
-   if [[ "$LDAP_SECURITY" == "Y" ]]; then
-      #Hostnames
-      echo -n "Enter list of LDAP Hostnames (blank separated), default [$LDAP_HOSTS]: "
-      read answer1
-      if [[ -z "$answer1" ]]; then
-         if [ -z "$LDAP_HOSTS" ]; then
-            echo "***ERROR: Must enter list of LDAP Hostnames."
-            exit -1
-         fi
-      else
-         LDAP_HOSTS=$answer1
-      fi
-      echo "export LDAP_HOSTS=\"$LDAP_HOSTS\"" >> $LOCAL_TRAF_CONFIG
-      cp -rf traf_authentication_conf_default $LOCAL_WORKDIR/$LDAP_AUTH_FILE
-      echo "export LDAP_AUTH_FILE=\"$LDAP_AUTH_FILE\"" >> $LOCAL_TRAF_CONFIG
-
-      counter=0
-      for host in $LDAP_HOSTS
-      do
-        counter=$[$counter+1]
-        if [ $counter -eq "1" ]; then
-           list=" LdapHostname: $host"
-        elif [ $counter -eq "$node_count" ]; then
-           list="LdapHostname: $host\n $list"
-        else
-           list=" LdapHostname: $host\n $list"
-        fi
-      done
-      sed -i -e "s/LdapHostname:/$list/g" $LDAP_AUTH_FILE
-
-      #Port numbers
-      echo -n "Enter LDAP Port number (Example: 389 for no encryption or TLS, 636 for SSL), default [$LDAP_PORT]: "
-      read answer2
-      if [[ -z "$answer2" ]]; then
-         if [ -z "$LDAP_PORT" ]; then
-            echo "***ERROR: Must enter LDAP port."
-            exit -1
-         fi
-      else
-         LDAP_PORT=$answer2
-      fi
-
-      echo "export LDAP_PORT=\"$LDAP_PORT\"" >> $LOCAL_TRAF_CONFIG
-      port="LdapPort: $LDAP_PORT"
-      sed -i -e "s/LdapPort:389/$port/g" $LDAP_AUTH_FILE
-
-      #Unique IDs
-      echo -n "Enter all LDAP unique identifiers (blank separated), default [$LDAP_ID]: "
-      read answer3
-      if [[ -z "$answer3" ]]; then
-         if [ -z "$LDAP_ID" ]; then
-            echo "***ERROR: Must enter LDAP unique identifiers."
-            exit -1
-         fi
-      else
-         LDAP_ID=$answer3
-      fi
-      echo "export LDAP_ID=\"$LDAP_ID\"" >> $LOCAL_TRAF_CONFIG
-
-      counter=0
-      for id in $LDAP_ID
-      do
-        counter=$[$counter+1]
-        if [ $counter -eq "1" ]; then
-           list=" UniqueIdentifier: $id"
-        elif [ $counter -eq "$node_count" ]; then
-           list="UniqueIdentifier: $id\n $list"
-        else
-           list=" LdapHostname: $id\n $list"
-        fi
-      done
-
-      sed -i -e "s/UniqueIdentifier:/$list/g" $LDAP_AUTH_FILE
-
-      #Encryption level
-      echo -n "Enter LDAP Encryption Level (0: Encryption not used, 1: SSL, 2: TLS), default [$LDAP_LEVEL]: "
-      read answer4
-      if [[ -z "$answer4" ]]; then
-         if [ -z "$LDAP_LEVEL" ]; then
-            echo "***ERROR: Must enter LDAP Encryption level."
-            exit -1
-         fi
-      else
-         LDAP_LEVEL=$answer4
-      fi
-      echo "export LDAP_LEVEL=\"$LDAP_LEVEL\"" >> $LOCAL_TRAF_CONFIG
-
-      level="LDAPSSL: $LDAP_LEVEL"
-      sed -i -e "s/LDAPSSL:0/$level/g" $LDAP_AUTH_FILE
-
-
-      if [[ "$LDAP_LEVEL" -eq "1" ]] || [[ "$LDAP_LEVEL" -eq "2" ]]; then
-         echo -n "Enter full path to TLS certificate, default [$LDAP_CERT]: "
-         read answer7
-         if [[ -z "$answer7" ]]; then
-            if [ -z "$LDAP_CERT" ]; then
-               echo "***ERROR: Encryption level 2(TLS) requires a certificate file (*.pem)"
-               exit -1
-            fi
-         else
-            LDAP_CERT=$answer7
-            LDAP_CERT_BASE=$(basename $LDAP_CERT)
-
-            if [[ ! -f $LDAP_CERT ]]; then
-               echo "***ERROR: File does not exist."
-               echo "***ERROR: Please enter full path or check for errors."
-               exit -1
-            fi
-
-         fi
-         echo "export LDAP_CERT=\"$LDAP_CERT\"" >> $LOCAL_TRAF_CONFIG
-         echo "export LDAP_CERT_BASE=\"$LDAP_CERT_BASE\"" >> $LOCAL_TRAF_CONFIG
-
-         list="TLS_CACERTFilename: $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE"
-
-         sed -i -e "s@TLS\_CACERTFilename:@$list@" $LDAP_AUTH_FILE
-      fi
-
-      #Search username and password
-      echo -n "Enter Search user name (if required), default [$LDAP_USER]: "
-      read answer5
-      if [[ ! -z "$answer5" ]]; then
-         LDAP_USER=$answer5
-         echo "export LDAP_USER=\"$LDAP_USER\"" >> $LOCAL_TRAF_CONFIG
-         
-         echo -n "Enter Search password (if required), default [$LDAP_PASSWORD]: "
-         read answer6
-         if [[ ! -z "$answer6" ]]; then
-            LDAP_PASSWORD=$answer6
-            echo "export LDAP_PASSWORD=\"$LDAP_PASSWORD\"" >> $LOCAL_TRAF_CONFIG
-         fi
-      fi
-      user="LDAPSearchDN: $LDAP_USER"
-      sed -i -e "s/LDAPSearchDN:/$user/g" $LDAP_AUTH_FILE
-      password="LDAPSearchPwd: $LDAP_PASSWORD"
-      sed -i -e "s/LDAPSearchPwd:/$password/g" $LDAP_AUTH_FILE
-   fi
-
-fi
 
 #==============================================
 #All items added to config file

@@ -2838,6 +2838,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 
 %type <relx>                    exe_util_fast_delete
 %type <longint>                 purgedata_options
+%type <relx>                    exe_util_hive_truncate
 
 %type <relx>                    exe_util_get_metadata_info
 %type <relx>                    exe_util_get_version_info
@@ -8812,6 +8813,15 @@ string_function :
 		    $$ = new (PARSERHEAP()) Repeat ($3, $5);
 		  }
 
+     | TOK_REPEAT '(' value_expression ',' value_expression ',' NUMERIC_LITERAL_EXACT_NO_SCALE ')'
+                  {
+                    Int64 value = atoInt64($7->data()); 
+                    if (value == 0)
+                      value = -1; 
+		    $$ = new (PARSERHEAP()) Repeat 
+                      ($3, $5, (Int32)value);
+		  }
+
      | TOK_REPLACE '(' value_expression ',' value_expression ',' value_expression ')'
                   {
 		    $$ = new (PARSERHEAP()) Replace ($3, $5, $7);
@@ -14531,6 +14541,10 @@ interactive_query_expression:
                                 {
 				  $$ = finalize($1);
 				}
+              | exe_util_hive_truncate
+                                {
+				  $$ = finalize($1);
+				}
               | exe_util_get_uid
                                 {
 				  $$ = finalize($1);
@@ -17361,11 +17375,6 @@ optional_mt_options :   QUOTED_STRING
 
 exe_util_fast_delete:  TOK_PURGEDATA table_name purgedata_options
 		     {
-		       if (CmpCommon::getDefault(EXE_PARALLEL_PURGEDATA) == DF_OFF)
-			 {
-			   YYERROR;
-			 }
-
 		       short noLog = ($3 & 0x1) != 0;
 		       short ignoreTrigger = ($3 & 0x2) != 0;
 
@@ -17387,8 +17396,6 @@ exe_util_fast_delete:  TOK_PURGEDATA table_name purgedata_options
 					   FALSE,
 					   noLog,
 					   ignoreTrigger,
-					   // (($3 == 1) || ($3 == 3)),
-					   // (($3 == 2) || ($3 == 3)),
 					   TRUE,
 					   PARSERHEAP());
 		       
@@ -17408,6 +17415,24 @@ purgedata_options : /*empty*/ { $$ = 0; }
                   | TOK_NOLOG TOK_WAITEDIO TOK_IGNORE_TRIGGER { $$ = 7; }
                   | TOK_IGNORE_TRIGGER TOK_WAITEDIO TOK_NOLOG { $$ = 7; }
 
+exe_util_hive_truncate:  TOK_TRUNCATE table_name 
+		     {
+		       $$ = new (PARSERHEAP())
+			 ExeUtilHiveTruncate(CorrName(*$2, PARSERHEAP()),
+                                             NULL,
+                                             PARSERHEAP());
+		       
+		       delete $2;
+		     }
+                     | TOK_TRUNCATE table_name TOK_PARTITION '(' quoted_string_list ')'
+		     {
+		       $$ = new (PARSERHEAP())
+			 ExeUtilHiveTruncate(CorrName(*$2, PARSERHEAP()),
+                                             $5,
+                                             PARSERHEAP());
+		       
+		       delete $2;
+		     }
 
 exe_util_aqr: TOK_GET TOK_ALL TOK_AQR TOK_ENTRIES
                {
@@ -17930,6 +17955,13 @@ hbb_unload_option:   hbb_unload_empty_target
 
 
  hbb_unload_empty_target: TOK_PURGEDATA TOK_FROM TOK_TARGET
+                {
+                //purge target folder
+                  UnloadOption *op = 
+                        new (PARSERHEAP ()) UnloadOption(UnloadOption::EMPTY_TARGET_,0,NULL);
+                  $$ = op;
+                }
+                | TOK_TRUNCATE TOK_FROM TOK_TARGET
                 {
                 //purge target folder
                   UnloadOption *op = 
@@ -24941,6 +24973,13 @@ create_table_as_token: TOK_AS
 /* type pElemDDL */
 table_definition_body : table_element_list
                       | external_table_definition
+                      | table_element_list external_table_definition
+                        {
+                          $$ = new (PARSERHEAP())
+                            ElemDDLList(
+                                 $1 /*table_elements*/,
+                                 $2 /*table_element*/);
+                        }
 
 /* type pElemDDL */
 table_element_list : '(' table_elements ')'
@@ -25797,6 +25836,7 @@ like_definition : TOK_LIKE source_table optional_like_option_list
 				    ElemDDLLikeCreateTable(
                                         *$2 /*source_table*/,
                                          $3 /*optional_like_option_list*/,
+                                        FALSE,
                                         PARSERHEAP());
                                   delete $2 /*source_table*/;
                                 }
@@ -25808,6 +25848,7 @@ external_table_definition : TOK_FOR source_table
 				    ElemDDLLikeCreateTable(
                                         *$2 /*source_table*/,
                                         NULL,
+                                        TRUE, 
                                         PARSERHEAP());
                                   delete $2 /*source_table*/;
                                 }
