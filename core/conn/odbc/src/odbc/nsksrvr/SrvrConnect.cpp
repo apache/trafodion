@@ -1880,6 +1880,8 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	bzero(srvrGlobal->QSUserName, sizeof(srvrGlobal->QSUserName));
 	bzero(srvrGlobal->QSDBUserName, sizeof(srvrGlobal->QSDBUserName));
 	bzero(srvrGlobal->ApplicationName, sizeof(srvrGlobal->ApplicationName));
+        bzero(srvrGlobal->mappedProfileName, sizeof(srvrGlobal->mappedProfileName));
+        bzero(srvrGlobal->mappedSLAName, sizeof(srvrGlobal->mappedSLAName));
 	bzero(&outContext, sizeof(outContext));
 	srvrGlobal->bSpjEnableProxy = FALSE;
 	srvrGlobal->bspjTxnJoined = FALSE;
@@ -6753,7 +6755,7 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
                                     delete explainData;
                                   explainData = 0;
                                 }
-				else if (iqqcode < 0)
+				if (iqqcode < 0)
 				{
 					char errStr[256];
 					sprintf( errStr, "Error retrieving packed explain. SQL_EXEC_GetExplainData() returned: %d", iqqcode );
