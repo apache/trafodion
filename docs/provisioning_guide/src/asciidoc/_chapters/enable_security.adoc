@@ -26,25 +26,100 @@
 [[enable-security]]
 = Enable Security
 
-If you do not enable security in {project-name}, then a client interface to {project-name} may request a user name and password,
-but {project-name} ignores the user name and password entered in the client interface, and the session runs as the database *root* user,
-`DB__ROOT`, without restrictions. If you want to restrict users, restrict access to certain users only, or restrict access to an
-object or operation, then you must enable security, which enforces authentication and authorization. You can enable security
-during installation by answering the {project-name} Installer's prompts or after installation by running the `traf_authentication_setup`
-script, which enables both authentication and authorization. For more information, see
-<<enable-security-authentication-setup-script,Authentication Setup Script>> below.
+{project-name} supports user authentication with LDAP, integrates in Hadoop's Kerberos environment and
+supports authorization through database grant and revoke requests (privileges).
 
-{project-name} does not manage user names and passwords internally but does support authentication via directory servers that support
+If this is an initial installation, both LDAP and Kerberos can be configured by running {project-name} installer.
+If {project-name} is already installed, then both LDAP and Kerberos can be configured by running {project-name} 
+security installer. 
+
+* If Hadoop has enabled Kerberos, then {project-name} must also enable Kerberos.
+* If Kerberos is enabled, then LDAP must be enabled.
+* If LDAP is enabled, then database authorization (privilege support) is automatically enabled.
+* If Kerberos is not enabled, then enabling LDAP is optional.
+
+[[enable-security-kerberos]]
+== Configuring {project-name} for Kerberos
+Kerberos is a protocol for authenticating a request for a service or operation.  It uses the notion of a ticket to verify accessibility.  
+The ticket is proof of identity encrypted with a secret key for the particular requested service.  Tickets exist for a short time and 
+then expire. Therefore, you can use the service as long as your ticket is valid (i.e. not expired).  Hadoop uses Kerberos to provide 
+security for its services, as such {project-name} needs to function properly with Hadoop that has Kerberos enabled.  
+
+=== Kerberos configuration file
+It is assumed that Kerberos has already been setup on all the nodes by the time Trafodion is installed. 
+This section briefly discusses the Kerberos configuration file for reference.
+
+The Kerberos configuration file defaults to /etc/krb5.conf and contains, among other attributes:
+
+```
+* log location: location where Kerberos errors and other information is logged
+* KDC location: host location where the KDC (Key Distribution Center) is located
+* admin server location: host location where the Kerberos admin server is located
+* realm: the set of nodes that share a Kerberos database 
+* ticket defaults: contains defaults for ticket lifetimes, encoding, and other attributes
+```
+
+You need to have access to a Kerberos administrator account to enable Kerberos for Trafodion.  The following is an example request that lists principals defined in the Kerberos database that can be used to test connectivity: 
+
+```
+kadmin -p 'kdcadmin/admin' -w 'kdcadmin123' -s 'kdc.server' -q 'listprincs'
+* -p (principal): please replace 'kdcadmin/admin' with your admin principal
+* -w (password): please replace 'kdadmin123' with the password for the admin principal
+* -s (server location): please replace 'kdc.server' with your KDC admin server location
+* -q (command): defines the command to run, in this case principals are returned
+```
+=== Ticket Management
+When Kerberos is enabled in {project-name}, the security installation process:
+
+* Adds a Trafodion principal in Kerberos, one per node with the name trafodion/hostname@realm.
+* Creates a keytab for each principal and distributes the keytab to each node. The keytab name is the same for all nodes 
+and defaults to a value based on the distribution, for example: etc/trafodion/keytabs/trafodion.service.keytab.
+* Performs a "kinit" on all nodes in the cluster for the `trafodion` user.
+* Add commands to perform "kinit" and to start the ticket renewal procedure to the `trafodion` .bashrc scripts on each node. 
+
+The ticket renewal service renews tickets up until the maximum number of renewals allowed.  So if your ticket lifetime is 
+one day and the number of renewals is seven days, the ticket renewal service automatically renews tickets six times.  Once 
+the ticket expires, it must be initialized again to continue running Trafodion.  Connecting to each node as the `trafodion` 
+user initializes the ticket if one does not exist.
+
+TBD - add details on how tickets can be managed at the cluster level.
+
+=== Kerberos installation
+The {project-name} installation scripts automatically determine if Kerberos is enabled on the node.  If it is enabled,
+then the environment variable SECURE_HADOOP is set to "Y".  
+
+The following are questions that will be asked related to Kerberos:
+
+* Enter KDC server address, default is []: – no default
+* Enter admin principal (include realm), default is []:  - no default
+* Enter fully qualified name for HBase keytab, default is []: - Installer searches for a valid keytab based on the distribution
+* Enter fully qualified name for HBase keytab, default is []: - Installer searches for a valid keytab based on the distribution
+* Enter max lifetime for Trafodion principal (valid format required), default is [24hours]:
+* Enter renew lifetime for Trafodion principal (valid format required), default is [7days]:
+* Enter Trafodion keytab name, default is []:  - Installer determines default name based on the distribution
+* Enter keytab location, default is []:  - Installer determins default name based on the distribution
+
+NOTE: The {project-name} installer always asked for the KDC admin password when enabling Kerberos independent on whether running in Automated
+of Guided mode. It does not save this password.
+
+[[enable-security-ldap]]
+== Configuring LDAP
+{project-name} does not manage user names and passwords internally but supports authentication via directory servers using
 the OpenLDAP protocol, also known as LDAP servers. You can configure the LDAP servers during installation by answering the {project-name}
-Installer's prompts, or you can configure the LDAP servers manually after installation. For more information, please refer to
-<<enable-security-configuring-ldap-servers,Configuring LDAP Servers>> below.
+Installer's prompts. To configure LDAP after installation run security installer directly.  Installing LDAP also enables database
+authorization (privilege support). 
 
 Once authentication and authorization are enabled, {project-name} allows users to be registered in the database and allows privileges
 on objects to be granted to users and roles (which are granted to users). {project-name} also supports component-level (or system-level)
 privileges, such as MANAGE_USERS, which can be granted to users and roles. Refer to <<enable-security-manage-users,Manage Users>> below.
 
+NOTE: If you do not enable LDAP in {project-name}, then a client interface to {project-name} may request a user name and password,
+but {project-name} ignores the user name and password entered in the client interface, and the session runs as the database *root* user,
+`DB__ROOT`, without restrictions. If you want to restrict users, restrict access to certain users only, or restrict access to an
+object or operation, then you must enable security, which enforces authentication and authorization.
+
 [[enable-security-configuring-ldap-servers]]
-== Configuring LDAP Servers
+=== Configuring LDAP Servers
 To specify the LDAP server(s) to be used for authentication, you need to configure the text file `.traf_authentication_config`,
 located (by default) in `$MY_SQROOT/sql/scripts`. This file is a flat file, organized as a series of attribute/value pairs.
 Details on all the attributes and values accepted in the authentication configuration file and how to configure alternate locations
@@ -146,9 +221,9 @@ Authentication successful
 
 <<<
 [[enable-security-generate-trafodion-certificate]]
-== Generate {project-name} Certificate
+=== Generate {project-name} Certificate
 {project-name} clients such as `trafci` encrypt the password before sending it to {project-name}. A self-signed certificate is used to encrypt the password.
-The certificate and key should be generated when the `sqgen` script is invoked. By default, the files `server.key` and `server.crt` are located
+The certificate and key is generated when the `sqgen` script is invoked. By default, the files `server.key` and `server.crt` are located
 in `$HOME/sqcert`. If those files are not present and since {project-name} clients does not send unencrypted passwords, then you need to manually generate
 those files. To do so, run the script `sqcertgen` located in `$MY_SQROOT/sql/scripts`. The script runs `openssl` to generate the certificate and key.
 
@@ -187,94 +262,12 @@ then the default filename `server.key` or `server.crt` is appended to the value 
 * If the filename environment variable is not set and the directory environment variable is not set,
 then {project-name} uses the default location (`$HOME/sqcert`) and the default filename.
 
-[[enable-security-authentication-setup-script]]
-==  Authentication Setup Script
-The final step to enable security is to change the value of the environment variable `TRAFODION_ENABLE_AUTHENTICATION` from `NO` to `YES`
-and turn on authorization. This is achieved by invoking the `traf_authentication_setup` script, which is located in `$MY_SQROOT/sql/scripts`.
-
-*Usage*
-
-```
-Usage: traf_authentication_setup [options]
-
-Options:
-    --file <loc>  Optional location of OpenLDAP configuration file
-    --help        Prints this message
-    --off         Disables authentication and authorization                               
-    --on          Enables authentication and authorization
-    --setup       Enables authentication                             
-    --status      Returns status of authentication enablement
-```
-
-[cols="30%,90%",options="header"]
-|===
-| Option | Description
-| `--file` | If specified, then `filename` is copied to `$MY_SQROOT/`. Users working in their own private environment can refer to a
-site-specific configuration file from a central location.
-| `--on`   | `traf_authentication_setup` invokes <<enable-security-ldapconfigcheck,ldapconfigcheck>> to verify the configuration file is
-syntactically correct. It also invokes <<enable-security-ldapcheck,ldapcheck>> to verify that a connection can be made to an LDAP server. +
- +
-If both checks pass, the script sets the environment variable `TRAFODION_ENABLE_AUTHENTICATION` to `YES` in the file `$MY_SQROOT/sqenvcom.sh`,
-and propagates `sqenvcom.sh` and `.traf_authentication_config` to all nodes in the cluster. +
- +
-The last step is to enable authorization by creating privilege-related metadata tables and set up default permissions with a call to the database.
-The list of privilege-related metadata tables, users, roles, and component privileges are logged in `$MY_SQROOT/logs/authEnable.log`. +
- +
-Specifying `--on` requires that a valid `.traf_authentication_config` file exists and the {project-name} metadata initialized.
-| `--off` | If specified, then `traf_authentication_setup` sets the environment variable `TRAFODION_ENABLE_AUTHENTICATION` to `NO` in
-`$MY_SQROOT/sqenvcom.sh` and propagates the file to all the nodes in the cluster. +
- +
-The last step is to disable authorization by removing any privilege-related metadata and permissions with a call to the database.
-The results of this operation is logged in `$MY_SQROOT/logs/authEnable.log`.
-| `--setup` | Use this option if the {project-name} metadata has not been initialized. This option enables authentication but does not call the database
-to create privilege-related metadata tables. Later, when {project-name} metadata is initialized, privilege-related metadata tables and default permissions
-are automatically created.
-| `--status` | Reports the value of the environment variable `TRAFODION_ENABLE_AUTHENTICATION` in `$MY_SQROOT/sqenvcom.sh` on the current node and
-reports the status of security features in the database.
-|===
-
-*Example*
-
-```
-INFO: Start of security (authentication and authorization) script Wed Mar 25 15:12:50 PDT 2xxx.
-
-INFO:  *** Trafodion security (authentication and authorization) status *** 
-   Authentication is ENABLED
-   Authorization (grant/revoke) is ENABLED
-
-INFO: End of security (authorization and authentication) script Wed Mar 25 15:12:54 PDT 2xxx.
-```
-
-NOTE: Any time the environment file (`sqenvcom.sh`) is changed (and propagated to all nodes), Database Connectivity Services (DCS) must be restarted to
-pick up the new value. If the configuration file is changed, it re-reads in 30 minutes (by default), but you can have changes take effect
-immediately by restarting DCS.
-
-To restart DCS, run the scripts `stop-dcs.sh` and `start-dcs.sh`, located in `$MY_SQROOT/dcs-<x>.<y>.<z>/bin`.
-
-[[enable-security-manage-users]]
-== Manage Users
-Users are registered in the Trafodion database and are used to enforce authorization. If security is disabled, any user can register any user at any time.
-However, once security is enabled, user administration is considered a secure operation, and registration of users is restricted to `DB__ROOT` or any user
-granted the `MANAGE_USERS` component privilege. To initially register a user, connect to Trafodion with the external user mapped to `DB__ROOT`
-(also known as the Trafodion ID).
-
-When security is enabled, the `DB__ROOT` user is registered as the `TRAFODION` external user name. It is recommended that the `DB__ROOT` user be mapped
-to the external user name that is used to connect for root operations. To do this, start a `sqlci` session and perform the `ALTER USER` command, for example:
-
-```
-ALTER USER DB__ROOT SET EXTERNAL NAME trafodion_rootuser_in_ldap;
-```
-
-To learn more about how to register users, grant object and component privileges, and manage users and roles, please see the
-{docs-url}/sql_reference/index.html[Trafodion SQL Reference Manual].
-
-
 [[enable-security-traf-authentication-config]]
-== .traf_authentication_config
+=== Creating the LDAP configuration file
 The `.traf_authentication_config` file is user to enable the Trafodion security features.
 
-=== File Location
-By default, the Trafodion authentication configuration file is located in `$MY_SQROOT/sql/scripts/.traf_authentication_config`.
+==== File Location
+By default, the {project-name} authentication configuration file is located in `$MY_SQROOT/sql/scripts/.traf_authentication_config`.
 If you want to store the configuration file in a different location and/or use a different filename, then Trafodion supports environment
 variables to specify the alternate location/name.
 
@@ -288,13 +281,12 @@ If neither is set, Trafodion defaults to `$MY_SQROOT/sql/scripts/.traf_authentic
 
 <<<
 [[enable-security-template]]
-=== Template
+==== Template
 
 ```
 # To use authentication in Trafodion, this file must be configured
 # as described below and placed in $MY_SQROOT/sql/scripts and be named
-# .traf_authentication_config.  You must also enable authentication by
-# running the script traf_authentication_setup in $MY_SQROOT/sql/scripts.
+# .traf_authentication_config.  
 #
 # NOTE: the format of this configuration file is expected to change in the 
 # next release of Trafodion.  Backward compatibility is not guaranteed.
@@ -341,7 +333,7 @@ SECTION: local
 ```
 
 [[enable-security-configuration-attributes]]
-=== Configuration Attributes
+==== Configuration Attributes
 
 [cols="25%,20%,20%l,35%",options="header"]
 |===
@@ -405,9 +397,9 @@ Legal values are `LOCAL` and `ENTERPRISE`. This syntax is likely to change.
 
 
 [[enable-security-ldapcheck]]
-== ldapcheck
+=== Verifying configuration and users through ldapcheck
 
-=== Usage
+==== Usage
 
 ```
 ldapcheck  [<option>]...
@@ -424,7 +416,7 @@ ldapcheck  [<option>]...
                                   and LDAP errors
 ```
 
-=== Considerations
+==== Considerations
 
 * Aliases for primary include enterprise and local. Aliases for secondary include cluster and remote. If no configuration is specified, primary is assumed.
 * The equals sign is required when supplying a value to username or password.
@@ -434,11 +426,11 @@ ldapcheck  [<option>]...
 to the configured LDAP server(s) without knowing a valid username or password.
 
 [[enable-security-ldapconfigcheck]]
-== ldapconfigcheck
+=== Verifying contents of configuration file through ldapconfigcheck
 This page describes the `ldapconfigcheck` tool, which validates the syntactic correctness of a Trafodion authentication configuration file. Trafodion does not need to be running to run the tool.
 
 [[enable-security-ldapconfigcheck-considerations]]
-=== Considerations
+==== Considerations
 If the configuration filename is not specified, then the tool  looks for a file using environment variables. Those environment variables and the search order are:
 
 1. `TRAFAUTH_CONFIGFILE`
@@ -455,7 +447,7 @@ Filename `.traf_authentication_config/` is appended to the specified directory
     
 <<<
 [[enable-security-ldapconfigcheck-errors]]
-=== Errors
+==== Errors
 One of the following is output when the tool is run. Only the first error encountered is reported.
 
 [cols="15%l,85%",options="header"]
@@ -489,3 +481,46 @@ Each LDAP connection configuration section must provide at least one unique iden
 | 11     | At least one LDAP connection configuration section must be specified.
 | 12     | Internal error parsing `.traf_authentication_config`.
 |===
+
+[[enable-security-manage-users]]
+== Manage Users
+Kerberos is enabled for installations that require a secure Hadoop environment.  LDAP is enabled to enforce authentication for any 
+user connecting to {project-name}.  The {project-name} database enforces privileges on the database, database schemas, database 
+objects (table, views, etc) and database operations.  Privileges are enforced when authorization is enabled.  When LDAP or Kerberos 
+is enabled, authorization is automatically enabled.  
+
+To determine the status of authentication and authorization, bring up sqlci and perform "env;". 
+
+```
+>>env;
+----------------------------------
+Current Environment
+----------------------------------
+AUTHENTICATION     enabled
+AUTHORIZATION      enabled
+CURRENT DIRECTORY  /.../incubator-trafodion/install/installer
+LIST_COUNT         4294967295
+LOG FILE
+MESSAGEFILE        /.../incubator-trafodion/core/sqf/export/ ...
+MESSAGEFILE LANG   US English
+MESSAGEFILE VRSN   {2016-06-14 22:27 LINUX:host/user} 
+SQL CATALOG        TRAFODION
+SQL SCHEMA         SCH
+SQL USER CONNECTED user not connected
+SQL USER DB NAME   SQLUSER1
+SQL USER ID        33367
+TERMINAL CHARSET   ISO88591
+TRANSACTION ID     
+TRANSACTION STATE  not in progress
+WARNINGS           on
+```
+
+Once authorization is enabled, there is one predefined database user called DB__ROOT associated with your specified LDAP username.
+Please connect to the database and this user and register users that will perform database admin management. The database
+admin can then connect and setup required users, roles, and privileges.
+
+TBD - add pointer to the security best practices guide.
+
+To learn more about how to register users, grant object and component privileges, and manage users and roles, please see the
+{docs-url}/sql_reference/index.html[Trafodion SQL Reference Manual].
+

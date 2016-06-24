@@ -84,6 +84,7 @@ Schemas in Catalog TRAFODION
 
 SEABASE
 _MD_
+_LIBMGR_
 _REPOS_
 
 --- SQL operation complete.

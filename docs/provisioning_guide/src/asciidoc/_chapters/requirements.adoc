@@ -31,12 +31,14 @@
 The current release of {project-name} has been tested with:
 
 * 64-bit Red Hat Enterprise Linux (RHEL) or CentOS 6.5, 6.6, and 6.7
-* SUSE SLES 11.3
-* Cloudera CDH 5.2
-* Cloudera CDH 5.3
+* SUSE SLES 11.3 SP2
+* Cloudera CDH 5.4
 * Hortonworks HDP 2.2
+* Hortonworks HDP 2.3
 
-Other OS releases may work, too. The {project-name} project is currently working on better support for non-distribution version of Hadoop.
+
+Other OS releases may work, too. The {project-name} project is currently working on better support for more distribution and non-distribution versions of Hadoop.
+
 
 [[requirements-general-cluster-and-os-requirements-and-recommendations]]
 == General Cluster and OS Requirements and Recommendations
@@ -152,6 +154,8 @@ On top of the ports identified above, you also need the ports required by your H
 * http://www.cloudera.com/content/www/en-us/documentation/enterprise/latest/topics/cdh_ig_ports_cdh5.html[_Cloudera Ports_]
 * http://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.3.0-Win/bk_HDP_Install_Win/content/ref-79239257-778e-42a9-9059-d982d0c08885.1.html[_Hortonworks Ports_]
 
+If you have Kerberos or LDAP enabled, then ports required by these products need to be opened as well.
+
 Although not all the ports will be used on every node of the cluster, you need to open most of them for all the nodes in the cluster that
 have {project-name}, HBase, or HDFS servers on them.
 
@@ -237,10 +241,8 @@ The {project-name} Installer requires Internet access to install the required so
 
 The `trafodion:trafodion` user ID is created as part of the installation process. The default password is: `traf123`.
 
-{project-name} requires that either HDFS ACL support or Kerberos is enabled. The {project-name} Installer will enable HDFS ACL support.
-Kerberos-based security settings are outside the scope of this guide. Please refer to the security information in
-https://hbase.apache.org/book.html#security[Apache HBase(TM) Reference Guide] for information about how to set up
-HBase security with Kerberos.
+{project-name} requires that either HDFS ACL support or Kerberos is enabled. The {project-name} Installer will enable HDFS ACL and Kerberos support. Refer to <<enable-security-kerberos,Kerberos>> for more information about the requirements and usage of Kerberos in Trafodion.
+Refer to https://hbase.apache.org/book.html#security[Apache HBase(TM) Reference Guide] for security in HBase. 
 
 Also, {project-name} requires `sudo` access to `ip` and `arping` so that floating or elastic IP addresses can be moved from one node to
 another in case of node failures.
@@ -302,15 +304,26 @@ The {project-name} Installer uses `su` to run commands under this user ID.
 
 * HDFS Administrator user name.
 * Write access to home directory on the node where the Distribution Manager is running.
+* For Kerberos enabled installations, location of the keytab for the HDFS service principal.
 
 [[requirements-hbase-administrator-user]]
 ==== HBase Administrator User
-The HBase super user. Required to change directory ownership in HDFS.
+The HBase super user. Required to change directory ownership in HDFS. For Kerberos enabled installations, the HBase super user is needed to grant the `trafodion` user create, read, write, and execute privileges.
 
 *Requirements*:
 
 * HBase Administrator user name and group.
 * Read access to `hbase-site.xml`.
+* For Kerberos enabled installations, location of the keytab for the HBase service principal.
+
+[[requirements-kerberos-administrator-user]]
+==== Kerberos Administrator User
+The Kerberos adminstrator. Required to create Trafodion principals and keytabs on a cluster where Kerberos is enabled. 
+
+*Requirements*:
+
+* Kerberos Administrator admin name including the realm.
+* Kerberos Administrator password
 
 [[requirements-required-configuration-changes]]
 == Required Configuration Changes
@@ -349,6 +362,8 @@ NOTE: These changes require a restart of ZooKeeper on all nodes in the cluster.
 | Setting        | New Value | Purpose
 | maxClientCnxns | 0         | Tell ZooKeeper to impose no limit to the number of connections to enable better {project-name} concurrency.
 |===
+
+NOTE: If Kerberos is enabled, it is not possible to secure the {project-name} data in ZooKeeper at this time. 
 
 [[requirements-hdfs-changes]]
 === HDFS Changes
@@ -403,6 +418,7 @@ NOTE: These changes require a restart of ZooKeeper and HBase on all nodes in the
 &#8226; `/usr/share/cmf/lib/plugins/` (Cloudera) +
 &#8226; `/usr/hdp/current/hbase-regionserver/lib` (Hortonworks) |
 TODO: Add purpose here.
+|For Kerberos enabled clusters, grant `trafodion` user privileges | not applicable | privileges: create, read, write, and execute access |
 |===
 
 The following changes are required in `hbase-site.xml`. Please refer to the 
