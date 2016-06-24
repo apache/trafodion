@@ -264,7 +264,7 @@ public class HTableClient {
 	 }
 
 	class ScanHelper implements Callable {
-            public Result[] call() throws Exception {
+            public Result[] call() throws IOException {
                 return scanner.next(numRowsCached);
             }
         }
@@ -796,7 +796,7 @@ public class HTableClient {
                                  String tmpLoc,
                                  int espNum,
                                  int versions)
-	        throws IOException, Exception {
+	        throws IOException {
 	  if (logger.isTraceEnabled()) logger.trace("Enter startScan() " + tableName + " txid: " + transID+ " CacheBlocks: " + cacheBlocks + " numCacheRows: " + numCacheRows + " Bulkread: " + useSnapshotScan);
 
 	  Scan scan;
@@ -1006,8 +1006,13 @@ public class HTableClient {
 	    
 	    if (!snapHelper.snapshotExists())
 	      throw new IOException ("Snapshot " + snapHelper.getSnapshotName() + " does not exist.");
-
-	    snapHelper.createTableSnapshotScanner(snapTimeout, 5, espNum, scan);
+ 
+            try { 
+	      snapHelper.createTableSnapshotScanner(snapTimeout, 5, espNum, scan);
+            }
+            catch (InterruptedException ie) {
+               throw new IOException(ie);
+            }
 	  }
     
           if (useSnapshotScan)
@@ -1366,7 +1371,7 @@ public class HTableClient {
 		}
                	if (asyncOperation) {
 			future = executorService.submit(new Callable() {
- 				public Object call() throws Exception {
+ 				public Object call() throws IOException {
 					boolean res = true;
 					if (useTRex && (transID != 0)) 
 				           table.delete(transID, del);
@@ -1419,7 +1424,7 @@ public class HTableClient {
 		}
                 if (asyncOperation) {
                         future = executorService.submit(new Callable() {
-                                public Object call() throws Exception {
+                                public Object call() throws IOException {
                                     boolean res = true;
 				   if (useTRex && (transID != 0)) 
 				      table.delete(transID, listOfDeletes);
@@ -1522,7 +1527,7 @@ public class HTableClient {
 		final byte[] qualifier1 = qualifier;
 		if (asyncOperation) {
 			future = executorService.submit(new Callable() {
-				public Object call() throws Exception {
+				public Object call() throws IOException {
 					boolean res = true;
 
 					if (checkAndPut) {
@@ -1618,7 +1623,7 @@ public class HTableClient {
 		}
 		if (asyncOperation) {
 			future = executorService.submit(new Callable() {
-				public Object call() throws Exception {
+				public Object call() throws IOException {
 					boolean res = true;
 					if (useTRex && (transID != 0)) 
 						table.put(transID, listOfPuts);

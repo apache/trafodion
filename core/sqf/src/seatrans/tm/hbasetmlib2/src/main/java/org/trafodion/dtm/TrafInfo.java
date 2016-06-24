@@ -54,15 +54,7 @@ public class TrafInfo {
     public void init() throws IOException {
         this.config = HBaseConfiguration.create();
         this.connection = HConnectionManager.createConnection(config);
-
-        try {
-            hbadmin = new HBaseAdmin(config);
-	    //H98            hmaster = hbadmin.getMaster();
-        } catch(Exception e) {
-            System.out.println("ERROR: Unable to obtain HBase accessors, Exiting");
-            e.printStackTrace();
-            System.exit(1);
-        }
+        hbadmin = new HBaseAdmin(config);
     }
 
     public static void printHelp() {
@@ -156,8 +148,6 @@ public class TrafInfo {
             }
         }
 	*/
-	
-
     }
 
     public static void main(String[] args) throws IOException {

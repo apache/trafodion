@@ -286,7 +286,7 @@ public class HBulkLoadClient
   }
 
   private boolean createSnapshot( String tableName, String snapshotName)
-      throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException, Exception
+      throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException
   {
     HBaseAdmin admin = null;
     try 
@@ -338,7 +338,7 @@ public class HBulkLoadClient
     return true;
   }
   private boolean deleteSnapshot( String snapshotName, String tableName)
-      throws IOException, Exception
+      throws IOException
   {
     
     HBaseAdmin admin = null;
@@ -376,7 +376,7 @@ public class HBulkLoadClient
   }
   
   private void doSnapshotNBulkLoad(Path hFilePath, String tableName, HTable table, LoadIncrementalHFiles loader, boolean snapshot)
-      throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException, RestoreSnapshotException, Exception
+      throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException, RestoreSnapshotException
   {
     HBaseAdmin admin = new HBaseAdmin(config);
     String snapshotName= null;
@@ -394,7 +394,7 @@ public class HBulkLoadClient
     }
     catch (IOException e)
     {
-      if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - Exception: " + e.toString());
+      if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - Exception: ", e);
       if (snapshot)
       {
         restoreSnapshot(snapshotName, tableName);
@@ -414,7 +414,8 @@ public class HBulkLoadClient
     }
     
   }
-  public boolean doBulkLoad(String prepLocation, String tableName, boolean quasiSecure, boolean snapshot) throws Exception
+  public boolean doBulkLoad(String prepLocation, String tableName, boolean quasiSecure, boolean snapshot) throws UnsupportedOperationException, 
+     MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException, RestoreSnapshotException
   {
     if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.doBulkLoad() - start");
     if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.doBulkLoad() - Prep Location: " + prepLocation + 
@@ -424,7 +425,15 @@ public class HBulkLoadClient
 
       
     HTable table = new HTable(config, tableName);
-    LoadIncrementalHFiles loader = new LoadIncrementalHFiles(config);    
+    LoadIncrementalHFiles loader = null;
+    // The constructor below throws Exception, so it is caught
+    // and thrown as IOException
+    try {
+       loader = new LoadIncrementalHFiles(config);    
+    }
+    catch (Exception e) {
+       throw new IOException(e);
+    }
     Path prepPath = new Path(prepLocation );
     prepPath = prepPath.makeQualified(prepPath.toUri(), null);
     FileSystem prepFs = FileSystem.get(prepPath.toUri(),config);
@@ -458,7 +467,7 @@ public class HBulkLoadClient
     return true;
   }
 
-  public boolean bulkLoadCleanup(String location) throws Exception
+  public boolean bulkLoadCleanup(String location) throws IOException
   {
       Path dir = new Path(location );
       dir = dir.makeQualified(dir.toUri(), null);

@@ -68,9 +68,9 @@ public class HBaseTmZK implements Abortable{
 	
 	/**
 	 * @param conf
-	 * @throws Exception
+	 * @throws IOException
 	 */
-	public HBaseTmZK(final Configuration conf) throws Exception {
+	public HBaseTmZK(final Configuration conf) throws IOException {
                 if (LOG.isTraceEnabled()) LOG.trace("HBaseTmZK(conf) -- ENTRY");
 		this.dtmID = 0;
 		this.zkNode = baseNode + "0";
@@ -80,9 +80,9 @@ public class HBaseTmZK implements Abortable{
 	/**
 	 * @param conf
 	 * @param dtmID
-	 * @throws Exception
+	 * @throws IOException
 	 */
-	public HBaseTmZK(final Configuration conf, final short dtmID) throws Exception {
+	public HBaseTmZK(final Configuration conf, final short dtmID) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("HBaseTmZK(conf, dtmID) -- ENTRY");
 		this.dtmID = dtmID;
 		this.zkNode = baseNode + String.format("%d", dtmID);
@@ -176,7 +176,7 @@ public class HBaseTmZK implements Abortable{
               }
               ZKUtil.createAndFailSilent(zooKeeper, zkNode + "/" + zNodeKey, data);
            } catch (KeeperException e) {
-              throw new IOException("HBaseTmZK:createRecoveryzNode: ZKW Unable to create recovery zNode: " + zkNode + " , throwing IOException " + e);
+              throw new IOException("HBaseTmZK:createRecoveryzNode: ZKW Unable to create recovery zNode: " + zkNode + " , throwing IOException ", e);
            }
         }
         /**
@@ -193,7 +193,7 @@ public class HBaseTmZK implements Abortable{
                 String zNodeKey = dtmID+"";
                 ZKUtil.createSetData(zooKeeper, zNodeGCPath + "/" + zNodeKey, data);
             } catch (KeeperException e) {
-                throw new IOException("HBaseTmZK:createGCzNode: ZKW Unable to create GC zNode: " + zNodeGCPath +"  , throwing IOException " + e);
+                throw new IOException("HBaseTmZK:createGCzNode: ZKW Unable to create GC zNode: " + zNodeGCPath +"  , throwing IOException ", e);
             }
         }
 
@@ -216,14 +216,8 @@ public class HBaseTmZK implements Abortable{
               String hostName = new String(tok.nextElement().toString());
               int portNumber = Integer.parseInt(tok.nextElement().toString());
               byte [] lv_byte_region_info = region.toByteArray();
-              try{
-                 LOG.info("Calling createRecoveryzNode for encoded region: " + region.getEncodedName());
-                 createRecoveryzNode(hostName, portNumber, region.getEncodedName(), lv_byte_region_info);
-              }
-              catch (Exception e2){
-                 LOG.error("postAllRegionEntries exception in createRecoveryzNode " + region.getTable().getNameAsString() +
-                           " exception: " + e2);
-              }
+              LOG.info("Calling createRecoveryzNode for encoded region: " + region.getEncodedName());
+              createRecoveryzNode(hostName, portNumber, region.getEncodedName(), lv_byte_region_info);
            }// while
         }
 	
