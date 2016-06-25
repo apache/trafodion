@@ -1010,21 +1010,21 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
     if (col->getValueId().getType().getTypeQualifier() == NA_ROWSET_TYPE) {
       return;
     }
-    const NAType &naType = col->getValueId().getType();
+    NAType *naType = &(NAType&)col->getValueId().getType();
     //
     // Note: the unsupported and DATETIME cases are mutually exclusive with the LARGEDEC case below.
     //
-    if (!naType.isSupportedType()) {
+    if (!naType->isSupportedType()) {
       // Unsupported types are displayed as strings of '#' to their display length
       ItemExpr *theRepeat =
         new (bindWA->wHeap()) Repeat(new (bindWA->wHeap()) SystemLiteral("#"),
                                        new (bindWA->wHeap()) SystemLiteral(
-                                         naType.getDisplayLength(
-                                           naType.getFSDatatype(),
-                                           0,
-                                           naType.getPrecision(),
-                                           naType.getScale(),
-                                           0)));
+                                            naType->getDisplayLength(
+                                                 naType->getFSDatatype(),
+                                                 0,
+                                                 naType->getPrecision(),
+                                                 naType->getScale(),
+                                                 0)));
       theRepeat = theRepeat->bindNode(bindWA);
       col->setValueId(theRepeat->getValueId());
       compExpr[i] = theRepeat->getValueId();
@@ -1033,8 +1033,8 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
              (NOT bindWA->inViewDefinition()) &&
              (NOT bindWA->inMVDefinition()) &&
              (NOT bindWA->inCTAS()) &&
-             (naType.getTypeQualifier()== NA_DATETIME_TYPE &&
-              ((const DatetimeType &)naType).getSubtype() == 
+             (naType->getTypeQualifier()== NA_DATETIME_TYPE &&
+              ((const DatetimeType *)naType)->getSubtype() == 
               DatetimeType::SUBTYPE_SQLDate) &&
              (! CmpCommon::context()->getSqlmxRegress()) &&
              (strcmp(ActiveSchemaDB()->getDefaults().getValue(OUTPUT_DATE_FORMAT),
@@ -1048,26 +1048,50 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         compExpr[i] = newChild->getValueId();
       }
 
-    // if ON, return tinyint as smallint.
+    if ((naType->getFSDatatype() == REC_BIN64_UNSIGNED) &&
+        (CmpCommon::getDefault(TRAF_LARGEINT_UNSIGNED_IO) == DF_OFF) &&
+        (NOT bindWA->inCTAS()))
+      {
+        NumericType *nTyp = (NumericType *)naType;
+        
+        ItemExpr * cast = new (bindWA->wHeap())
+          Cast(col->getValueId().getItemExpr(),
+               new (bindWA->wHeap())
+               SQLBigNum(MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION,
+                         nTyp->getScale(),
+                         FALSE,
+                         FALSE,
+                         naType->supportsSQLnull(),
+                         NULL));
+        
+        cast = cast->bindNode(bindWA);
+        if (bindWA->errStatus()) 
+          return;
+        col->setValueId(cast->getValueId());
+        compExpr[i] = cast->getValueId();
+
+        naType = (NAType*)&cast->getValueId().getType();
+      }
+    
+    // if OFF, return tinyint as smallint.
     // This is needed until all callers/drivers have full support to
     // handle IO of tinyint datatypes.
-    if ((naType.getTypeName() == LiteralTinyInt) &&
+    if ((naType->getTypeName() == LiteralTinyInt) &&
         ((CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF) ||
          (CmpCommon::getDefault(TRAF_TINYINT_RETURN_VALUES) == DF_OFF)))
       {
         ItemExpr * cast = new (bindWA->wHeap())
           Cast(col->getValueId().getItemExpr(),
-               new (bindWA->wHeap()) SQLSmall(TRUE, naType.supportsSQLnull()));
+               new (bindWA->wHeap()) SQLSmall(TRUE, naType->supportsSQLnull()));
         cast = cast->bindNode(bindWA);
         if (bindWA->errStatus()) 
           return;
         col->setValueId(cast->getValueId());
         compExpr[i] = cast->getValueId();
       }
-    
-    else if (naType.getTypeQualifier() == NA_NUMERIC_TYPE && 
+    else if (naType->getTypeQualifier() == NA_NUMERIC_TYPE && 
              !((NumericType &)col->getValueId().getType()).binaryPrecision()) {
-      NumericType &nTyp = (NumericType &)col->getValueId().getType();
+      NumericType *nTyp = (NumericType *)naType;
       
       ItemExpr * ie = col->getValueId().getItemExpr();
       NAType *newTyp = NULL;
@@ -1082,8 +1106,8 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         bignumIO = FALSE; // explicitely set to OFF
       else if (CmpCommon::getDefault(BIGNUM_IO) == DF_SYSTEM)
         {
-          if ((((NumericType &)col->getValueId().getType()).isBigNum()) &&
-              (((SQLBigNum &)col->getValueId().getType()).isARealBigNum()))
+          if ((nTyp->isBigNum()) &&
+              (((SQLBigNum*)nTyp)->isARealBigNum()))
             bignumIO = TRUE;
         }
 
@@ -1092,14 +1116,14 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         bignumIO = FALSE;
 
       if (bignumIO)
-        bignumOflow = nTyp.getPrecision() - 
+        bignumOflow = nTyp->getPrecision() - 
           (Lng32)CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED);
       else
         {
-          if (nTyp.isSigned())
-            oflow = nTyp.getPrecision() - MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION;
+          if (nTyp->isSigned())
+            oflow = nTyp->getPrecision() - MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION;
           else
-            oflow = nTyp.getPrecision() - MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION;
+            oflow = nTyp->getPrecision() - MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION;
         }
 
       if ((bignumOflow > 0) || (oflow > 0))
@@ -1107,7 +1131,7 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
           if (bignumOflow > 0) {
             newPrec = 
               (Lng32)CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED);
-            Lng32 orgMagnitude = nTyp.getPrecision() - nTyp.getScale();
+            Lng32 orgMagnitude = nTyp->getPrecision() - nTyp->getScale();
         
             // set the newScale
             // IF there is overflow in magnitude set the scale to 0.
@@ -1127,17 +1151,16 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
               SQLBigNum(newPrec,
                         newScale,
                         ((SQLBigNum &)col->getValueId().getType()).isARealBigNum(),
-                        nTyp.isSigned(),
-                        nTyp.supportsSQLnull(),
+                        nTyp->isSigned(),
+                        nTyp->supportsSQLnull(),
                         NULL);
           }
           else if (oflow > 0) {
             // If it's not a computed expr, but a column w/ a legal type, re-loop
             if (col->getValueId().getNAColumn(TRUE/*don't assert*/)) {
-              //CMPASSERT(!nTyp.isInternalType());
+              //CMPASSERT(!nTyp->isInternalType());
               //continue;
             }
-            CMPASSERT(nTyp.isInternalType());
             
             OperatorTypeEnum op = ie->origOpType();
             CMPASSERT(op != NO_OPERATOR_TYPE &&      // Init'd correctly?
@@ -1154,7 +1177,7 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
 
             // ANSI 6.5 SR 7 - 9:  aggregates must be exact if column is exact.
             newPrec  = MAX_NUMERIC_PRECISION;
-            Lng32 orgMagnitude = (nTyp.getMagnitude() + 9) / 10;
+            Lng32 orgMagnitude = (nTyp->getMagnitude() + 9) / 10;
             // set the newScale
             // IF there is overflow in magnitude set the scale to 0.
             // ELSE set the accomodate the magnitude part and truncate the scale
@@ -1198,14 +1221,14 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
             if (newScale == 0)
               newTyp = new (bindWA->wHeap())
                          SQLLargeInt(TRUE, // hardware only supports signed
-                                     nTyp.supportsSQLnull());
+                                     nTyp->supportsSQLnull());
             else
               newTyp = new (bindWA->wHeap())
                          SQLNumeric(sizeof(Int64),
                                     newPrec,
                                     newScale,
-                                    nTyp.isSigned(),
-                                    nTyp.supportsSQLnull());
+                                    nTyp->isSigned(),
+                                    nTyp->supportsSQLnull());
             
           } // overflow
           

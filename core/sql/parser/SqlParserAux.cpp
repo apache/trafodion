@@ -847,7 +847,10 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
   // and the descaled one to be converted by atoxxx (cvtstr).
   //
   size_t strSize = cvtstr->length();
+  NABoolean createSignedDatatype = 
+    ((CmpCommon::getDefault(TRAF_CREATE_SIGNED_NUMERIC_LITERAL)) == DF_ON);
   if (sign == '-') {
+    createSignedDatatype = TRUE;
     strptr->prepend(sign);
     if (strptr != cvtstr)
       cvtstr->prepend(sign);
@@ -867,15 +870,20 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
   short datatype = -1;
   Lng32 length = -1;
   if (strSize < 5) {
-    datatype = REC_BIN16_SIGNED;
+    datatype = (createSignedDatatype ? REC_BIN16_SIGNED : REC_BIN16_UNSIGNED);
     length = sizeof(short);
   } else if (strSize < 10) {
-    datatype = REC_BIN32_SIGNED;
+    datatype = (createSignedDatatype ? REC_BIN32_SIGNED : REC_BIN32_UNSIGNED);
     length = sizeof(Lng32);
   } else if (strSize <= 19) {
-    datatype = REC_BIN64_SIGNED;
+    datatype = (createSignedDatatype ? REC_BIN64_SIGNED : REC_BIN64_UNSIGNED);
     length = sizeof(Int64);
-  }  
+  } else if (strSize == 20) {
+    createSignedDatatype = FALSE;
+    datatype = REC_BIN64_UNSIGNED;
+    length = sizeof(Int64);
+  }    
+    
   if (datatype != -1) {
     rc = convDoIt((char*)cvtstr->data(),
 		  (Lng32)cvtstr->length(),
@@ -909,7 +917,7 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
 	   (length,
 	    (Lng32)strSize, // precision
 	    (Lng32)scale, 
-	    TRUE,
+	    createSignedDatatype,
 	    FALSE),
 	   (void *)numericVal,
 	   (UInt32) length,
@@ -1028,7 +1036,7 @@ NABoolean literalToNumeric(NAString *strptr, double &val, char sign)
       val = convertInt64ToDouble(i64Val) * pow(10, -scale);
     else {
       ComASSERT(BigNumHelper::ConvBigNumWithSignToInt64Helper
-                (bigNumSize, bigNum, &i64Val) == 0);
+                (bigNumSize, bigNum, (void*)&i64Val,FALSE) == 0);
       val = convertInt64ToDouble(i64Val) * pow(10, -scale);
       NADELETEBASIC(bigNum, (PARSERHEAP()));
     }

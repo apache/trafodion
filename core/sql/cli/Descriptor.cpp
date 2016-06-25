@@ -2058,7 +2058,7 @@ RETCODE Descriptor::processNumericDatatypeWithPrecision(desc_struct &descItem,
 	      ((descItem.datatype == REC_BIN32_UNSIGNED) &&
 	       (descItem.precision > 9)) ||
 	      ((descItem.datatype == REC_BIN64_UNSIGNED) &&
-	       (descItem.precision > 18)) ||
+	       (descItem.precision > 19)) ||
 	      ((descItem.datatype == REC_NUM_BIG_UNSIGNED) &&
 	       (descItem.precision > 128)))
 	    {
@@ -2068,7 +2068,7 @@ RETCODE Descriptor::processNumericDatatypeWithPrecision(desc_struct &descItem,
 	      else if (descItem.datatype == REC_BIN32_UNSIGNED)
 		maxPrec = 9;
 	      else if (descItem.datatype == REC_BIN64_UNSIGNED)
-		maxPrec = 18;
+		maxPrec = 19;
 	      else
 		maxPrec = 128;
 	      diags << DgSqlCode(-3008) 

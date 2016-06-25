@@ -78,7 +78,7 @@ typedef          Int32          ComSInt32;
 #define MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION 18
 
 //Unsigned NUMERICs upto this range are supported by hardware.
-#define MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION 9
+#define MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION 20
 
 typedef NAString                ComString;
 

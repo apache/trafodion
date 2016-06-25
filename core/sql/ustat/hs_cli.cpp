@@ -3305,6 +3305,12 @@ Lng32 HSCursor::buildNAType()
                                       TRUE, nullflag, heap_);
 #pragma warn(1506)  // warning elimination
           break;
+        case REC_BIN64_UNSIGNED:
+          if (precision <= 0)
+            length = 8;
+          type = ConstructNumericType(addr, i, length, precision, scale,
+                                      FALSE, nullflag, heap_);
+          break;
         //
         //----------------------------------------------------------------
 	case REC_FLOAT32:
@@ -6008,6 +6014,9 @@ void profileGaps(HSColGroupStruct *, boundarySet<unsigned short>*, double&, Int6
                  NABoolean);
 template
 void profileGaps(HSColGroupStruct *, boundarySet<Int64>*, double&, Int64&,
+                 NABoolean);
+template
+void profileGaps(HSColGroupStruct *, boundarySet<UInt64>*, double&, Int64&,
                  NABoolean);
 template
 void profileGaps(HSColGroupStruct *, boundarySet<ISFixedChar>*, double&, Int64&,

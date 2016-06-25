@@ -10691,22 +10691,6 @@ non_int_type : numeric_type_token left_uint_uint_right signed_option
 		 YYABORT;
 	       }
 
-	       // old behavior, if max allowed is 18.
-	       if ($2->left() > MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION
-		   AND $2->left() <=  MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION
-		   AND NOT $3 /*is unsigned int*/ AND
-		   (CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED)
-		    == MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION)) {
-		 // Precision of $0~string0 UNSIGNED data type,
-		 // $1~int0, cannot exceed 9. 
-		 *SqlParser_Diags << DgSqlCode(-3008)
-				  << DgString0("NUMERIC")
-				  << DgInt0($2->left())
-				  << DgInt1(9);
-		 delete $2;
-		 YYABORT;
-	       }
-	       
 	       if (($2->left() > MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION) ||
 		   (($2->left() > MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION) AND NOT $3))
 		 $$ = new (PARSERHEAP())
@@ -10717,7 +10701,6 @@ non_int_type : numeric_type_token left_uint_uint_right signed_option
 		   SQLNumeric( $3,$2->left(), $2->right(), DisAmbiguate );
 	       }
 	       delete $2;
-#pragma warn(1506)  // warning elimination
              }
          | TOK_NUMERIC signed_option
 	     {

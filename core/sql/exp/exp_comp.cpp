@@ -272,6 +272,18 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] == *(Int64 *)op_data[2]);
       break;
   
+    case EQ_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] == *(UInt64 *)op_data[2]);
+      break;
+  
+    case EQ_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] == *(Int64 *)op_data[2]);
+      break;
+  
+    case EQ_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] == *(UInt64 *)op_data[2]);
+      break;
+  
   
     case EQ_DECU_DECU:
     case EQ_DECS_DECS:
@@ -384,14 +396,21 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       *(Lng32 *)op_data[0] = (*(ULng32 *)op_data[1] != *(ULng32 *)op_data[2]);
       break;
   
-  
-  
     case NE_BIN64S_BIN64S:
-     // LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] != *(Int64 *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
+
+    case NE_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] != *(UInt64 *)op_data[2]);
+      break;
   
+    case NE_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] != *(Int64 *)op_data[2]);
+      break;
+  
+    case NE_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] != *(UInt64 *)op_data[2]);
+      break;
   
     case NE_DECU_DECU:
     case NE_DECS_DECS:
@@ -510,6 +529,22 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       
     case LT_BIN64S_BIN64S:
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] < *(Int64 *)op_data[2]);
+      break;
+  
+    case LT_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] < *(UInt64 *)op_data[2]);
+      break;
+  
+    case LT_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[2] < 0) ? 0 :
+         (*(UInt64 *)op_data[1] < *(Int64 *)op_data[2]));
+      break;
+  
+    case LT_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[1] < 0) ? 1 :
+         (*(Int64 *)op_data[1] < *(UInt64 *)op_data[2]));
       break;
   
     case LT_DECS_DECS:
@@ -674,7 +709,22 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] <= *(Int64 *)op_data[2]);
       break;
   
+    case LE_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] <= *(UInt64 *)op_data[2]);
+      break;
   
+    case LE_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[2] < 0) ? 0 :
+         (*(UInt64 *)op_data[1] <= *(Int64 *)op_data[2]));
+      break;
+  
+    case LE_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[1] < 0) ? 1 :
+         (*(Int64 *)op_data[1] <= *(UInt64 *)op_data[2]));
+      break;
+   
    case LE_DECS_DECS:
       {
   	if ((op_data[1][0] & 0200) == 0)
@@ -837,6 +887,22 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] > *(Int64 *)op_data[2]);
       break;
   
+    case GT_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] > *(UInt64 *)op_data[2]);
+      break;
+  
+    case GT_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[2] < 0) ? 1 :
+         (*(UInt64 *)op_data[1] > *(Int64 *)op_data[2]));
+      break;
+  
+    case GT_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[1] < 0) ? 0 :
+         (*(Int64 *)op_data[1] > *(UInt64 *)op_data[2]));
+      break;
+  
     case GT_DECS_DECS:
       {
   	if ((op_data[1][0] & 0200) == 0)
@@ -996,6 +1062,22 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       
     case GE_BIN64S_BIN64S:
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] >= *(Int64 *)op_data[2]);
+      break;
+  
+    case GE_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] >= *(UInt64 *)op_data[2]);
+      break;
+  
+    case GE_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[2] < 0) ? 1 :
+         (*(UInt64 *)op_data[1] >= *(Int64 *)op_data[2]));
+      break;
+  
+    case GE_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[1] < 0) ? 0 :
+         (*(Int64 *)op_data[1] >= *(UInt64 *)op_data[2]));
       break;
   
     case GE_DECS_DECS:

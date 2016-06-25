@@ -1007,11 +1007,38 @@ ex_expr::exp_return_type convInt64ToBigNum(char *target,
 
   short retCode = BigNumHelper::ConvInt64ToBigNumWithSignHelper(targetLen,
                                                                 source,
-                                                                target);
+                                                                target,
+                                                                FALSE);
   if (retCode == -1) {
     // target is not long enough - overflow
     ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,(char*)&source,
                           sizeof(Int64), REC_BIN64_SIGNED, 0, REC_NUM_BIG_SIGNED,
+                          flags);
+    return ex_expr::EXPR_ERROR;
+  };
+
+  return ex_expr::EXPR_OK;
+};
+
+//////////////////////////////////////////////////////////////////
+// function to convert a UInt64 to a Big Num
+///////////////////////////////////////////////////////////////////
+NA_EIDPROC
+ex_expr::exp_return_type convUInt64ToBigNum(char *target,
+                                            Lng32 targetLen,
+                                            UInt64 source,
+                                            NAMemory *heap,
+                                            ComDiagsArea** diagsArea,
+                                            ULng32 flags) {
+
+  short retCode = BigNumHelper::ConvInt64ToBigNumWithSignHelper(targetLen,
+                                                                source,
+                                                                target,
+                                                                TRUE);
+  if (retCode == -1) {
+    // target is not long enough - overflow
+    ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,(char*)&source,
+                          sizeof(Int64), REC_BIN64_UNSIGNED, 0, REC_NUM_BIG_SIGNED,
                           flags);
     return ex_expr::EXPR_ERROR;
   };
@@ -2018,9 +2045,9 @@ ex_expr::exp_return_type convAsciiToUInt64base(UInt64 &target,
   }
 
 ///////////////////////////////////////////////////////////////////
-// function to convert an ASCII string to Int64
+// function to convert an ASCII string to UInt64
 // The function assumes that source is at least
-// sourceLen long. Trailing '\0' is not recongnized
+// sourceLen long. Trailing '\0' is not recognized
 ///////////////////////////////////////////////////////////////////
 ex_expr::exp_return_type convAsciiToUInt64(UInt64 &target,
                                            Lng32 targetScale,
@@ -2099,261 +2126,6 @@ ex_expr::exp_return_type convAsciiToInt64(Int64 &target,
 
   return ex_expr::EXPR_OK;
 }
-
-#ifdef __ignore
-///////////////////////////////////////////////////////////////////
-// function to convert an ASCII string to Int64
-// The function assumes that source is at least
-// sourceLen long. Trailing '\0' is not recongnized
-///////////////////////////////////////////////////////////////////
-NA_EIDPROC
-ex_expr::exp_return_type convAsciiToInt64(Int64 &target,
-					  Lng32 targetScale,
-					  char *source,
-					  Lng32 sourceLen,
-					  CollHeap *heap,
-					  ComDiagsArea** diagsArea,
-                                          ULng32 flags)
-  {
-  NABoolean SignFound = FALSE;   // did we find a sign (+/-)
-  NABoolean DigitsAllowed = TRUE;
-  NABoolean negative = FALSE;    // default is a positive value
-  NABoolean pointFound = FALSE;  // did we find a decimal point
-  Lng32 currPos = 0;              // current position in the string
-  short digitCnt = 0;            // digits found so far
-  Lng32 sourceScale = 0;          // default is a scale of 0
-
-  target = 0;
-  while (currPos < sourceLen)
-    {
-    if ((source[currPos] >= '0') && (source[currPos] <= '9'))
-      { // process digits
-      if (!DigitsAllowed)
-        {
-	// syntax error in the input
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	return ex_expr::EXPR_ERROR;
-        }
-      digitCnt++;
-
-      // if we've read enough source characters to achieve the needed 
-      // targetScale, then stop appending digits to the target value.
-      //   They would only be thrown away later.
-      if ( !pointFound || sourceScale < targetScale )
-	{           // this digit needs to be processed.
-
-        // if we found a decimal point before, another digit increases
-        // the source scale
-        if (pointFound)
-	  sourceScale++;
-
-        Int32 thisDigit = source[currPos] - '0';
-        if (digitCnt > 18)
-          {
-          // check overflow/underflow
-          if (negative)
-            {
-            if (digitCnt == 19)
-              target = -target; // target is alway positive before
-
-            if (target < (LLONG_MIN / 10))
-              { // next power of 10 causes an underflow
-              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
-                                    source, sourceLen, REC_BYTE_F_ASCII,
-                                    SQLCHARSETCODE_ISO88591,
-                                    REC_BIN64_SIGNED, flags);
-              return ex_expr::EXPR_ERROR;
-              }
-            target *= 10;
-            Int64 tempMin = LLONG_MIN;
-            tempMin += thisDigit; // this was done because the following
-            // generates bade code using MSDEV _int64 (??? Larry Schumacher ???)
-            // if (target < (LLONG_MIN + thisDigit));
-            if (target < tempMin)
-              { // subtracting this digit causes an underflow
-              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
-                                    source, sourceLen, REC_BYTE_F_ASCII,
-                                    SQLCHARSETCODE_ISO88591,
-                                    REC_BIN64_SIGNED, flags);
-              return ex_expr::EXPR_ERROR;
-              }
-            target = target - (Int64)thisDigit;
-            // LCOV_EXCL_STOP
-            }
-          else
-            {
-            if (target > (LLONG_MAX / 10))
-              { // next power of 10 causes an overflow
-              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
-                                    source, sourceLen, REC_BYTE_F_ASCII,
-                                    SQLCHARSETCODE_ISO88591,
-                                    REC_BIN64_SIGNED, flags);
-              return ex_expr::EXPR_ERROR;
-              }
-            target *= 10;
-            Int64 tempMax = LLONG_MAX;
-            tempMax -= thisDigit; // this was done because the following
-            // generates bade code using MSDEV _int64 (??? Larry Schumacher ???)
-            // if (target > (LLONG_MAX - thisDigit));
-            if (target > tempMax)
-              { // adding this digit causes an overflow
-              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
-                                    source, sourceLen, REC_BYTE_F_ASCII,
-                                    SQLCHARSETCODE_ISO88591,
-                                    REC_BIN64_SIGNED, flags);
-              return ex_expr::EXPR_ERROR;
-              }
-            target = target + (Int64)thisDigit;
-            }
-          }   // if digitCnt > 18, check overflow or underflow
-        else
-          {
-          // at this point we never consider overflow
-          // and target is alway potitive or absolute value
-          target = target * 10 + thisDigit;
-          }
-        }   // fi ( sourceScale < targetScale )
-      }
-    else if (source[currPos] == ' ')
-      { // process blanks
-      if (digitCnt || pointFound)	
-	// we found already some digits or a decimal point. A blank now 
-        // means, that from now on we should not see any digits anymore.
-	DigitsAllowed = FALSE;
-      }
-    else if ((source[currPos] == '+') || (source[currPos] == '-'))
-      { // process sign
-      if (SignFound || digitCnt || pointFound) 
-        {
-	// we found already a sign or we found already digits
-        // or we found a point already.
-        // A sign is an error now!
-	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	return ex_expr::EXPR_ERROR;
-        }
-      SignFound = TRUE;
-      negative = (source[currPos] == '-');
-      }
-    else if (source[currPos] == '.')
-      { // process decimal point
-      if (pointFound || !DigitsAllowed)    
-        {
-	// we found a second decimal point. This is an error
-        // we are already not allowing anymore digits because of illegal
-        // blank space(s)
-	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	return ex_expr::EXPR_ERROR;
-        }
-      pointFound = TRUE;
-      }
-    else
-      { // process illegal characters
-      // if the illegal character is a 'E' or 'e', the input
-      // might be a float value. Try to convert the input
-      // to double and then to Int64
-      if ((source[currPos] == 'E') || (source[currPos] == 'e'))
-        {
-	  if (currPos == 0)
-	    {
-	      // 'E' alone is not a valid numeric.
-	      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	      return ex_expr::EXPR_ERROR;
-	    }
-
-	  double intermediate;
-	  if (convAsciiToFloat64((char*)&intermediate,
-				 source,
-				 sourceLen,
-				 heap,
-				 diagsArea,
-                                 flags | CONV_INTERMEDIATE_CONVERSION) != ex_expr::EXPR_OK)
-	    return ex_expr::EXPR_ERROR;
-
-	  // scale the intermediate
-	  for (Lng32 i = 0; i < targetScale; i++)
-	    intermediate *= 10.0;
-
-	  if ((intermediate < LLONG_MIN) || (intermediate > LLONG_MAX))
-	    {
-	      ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
-                                    source, sourceLen, REC_BYTE_F_ASCII,
-                                    SQLCHARSETCODE_ISO88591,
-                                    REC_BIN64_SIGNED, flags);
-	      return ex_expr::EXPR_ERROR;
-	    }
-	  
-	  target = (Int64) intermediate;
-
-	  return ex_expr::EXPR_OK;
-	}
-      else
-        {
-	  // illegal character in this input string
-	  ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	  return ex_expr::EXPR_ERROR;
-        }
-      }
-    currPos++;
-    }
-
-  // if we didn't find any digits, it is an error
-  if (!digitCnt)
-    {
-      if ((flags & CONV_TREAT_ALL_SPACES_AS_ZERO) &&
-	  (NOT (pointFound || SignFound)))
-	{
-	  target = 0;
-	  return ex_expr::EXPR_OK;
-	}
-      
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-      return ex_expr::EXPR_ERROR;
-    }
-
-  // if we didn't set the sign at overflow checking above, set it here
-  if (negative && digitCnt <= 18)
-    target = -target;
-
-  // up- or downscale
-  if (sourceScale < targetScale)
-    {
-    for (Int32 i = 0; i < (targetScale - sourceScale); i++)
-      {
-      if (negative)
-        {
-        if (target < (LLONG_MIN / 10))
-          { // next power of 10 causes an underflow
-          ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW, source,
-                                sourceLen, REC_BYTE_F_ASCII, 
-                                SQLCHARSETCODE_ISO88591,
-                                REC_BIN64_SIGNED,
-                                flags);
-          return ex_expr::EXPR_ERROR;
-          }
-        }
-      else
-        {
-        if (target > (LLONG_MAX / 10))
-          { // next power of 10 causes an overflow
-          ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW, source,
-                                sourceLen, REC_BYTE_F_ASCII,
-                                SQLCHARSETCODE_ISO88591,REC_BIN64_SIGNED,
-                                flags);
-          return ex_expr::EXPR_ERROR;
-          }
-        }
-      target *= 10;
-      }
-    }
-  else
-    {
-    for (Int32 i = 0; i < sourceScale - targetScale; i++)
-      target /= 10;
-    }
-  
-  return ex_expr::EXPR_OK;
-  }
-#endif
 
 //////////////////////////////////////////////////////////////////
 // function to convert an Int64  to Decimal
@@ -3335,13 +3107,38 @@ ex_expr::exp_return_type convBigNumToInt64(Int64 *target,
 					   ComDiagsArea** diagsArea,
                                            ULng32 flags)
 
-{ short retCode = BigNumHelper::ConvBigNumWithSignToInt64Helper(sourceLen,
+{ 
+  short retCode = BigNumHelper::ConvBigNumWithSignToInt64Helper(sourceLen,
                                                                 source,
-                                                                target);
+                                                                (void*)target,
+                                                                FALSE);
   if (retCode == -1) {
     // target is not long enough - overflow
     ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW, source,
 		          sourceLen, REC_NUM_BIG_SIGNED, 0, REC_BIN64_SIGNED,
+                          flags);
+    return ex_expr::EXPR_ERROR;
+  };
+
+  return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type convBigNumToUInt64(UInt64 *target,
+                                            char *source,
+                                            Lng32 sourceLen,
+                                            NAMemory *heap,
+                                            ComDiagsArea** diagsArea,
+                                            ULng32 flags)
+
+{ 
+  short retCode = BigNumHelper::ConvBigNumWithSignToInt64Helper(sourceLen,
+                                                                source,
+                                                                (void*)target,
+                                                                TRUE);
+  if (retCode == -1) {
+    // target is not long enough - overflow
+    ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW, source,
+		          sourceLen, REC_NUM_BIG_SIGNED, 0, REC_BIN64_UNSIGNED,
                           flags);
     return ex_expr::EXPR_ERROR;
   };
@@ -5689,12 +5486,6 @@ convDoIt(char * source,
     }
   break;
  
-  case CONV_BIN16S_BIN64U: 
-    {
-      *(UInt64 *)target = *(short *)source;
-    }
-  break;
- 
   case CONV_BIN16S_DECU:
   case CONV_BIN16S_DECS:
     {
@@ -5888,11 +5679,6 @@ convDoIt(char * source,
       
   case CONV_BIN16U_BIN64S: {
     *(Int64 *)target = *(unsigned short *)source;
-  };
-  break;
-
-  case CONV_BIN16U_BIN64U: {
-    *(UInt64 *)target = *(unsigned short *)source;
   };
   break;
 
@@ -6201,12 +5987,6 @@ convDoIt(char * source,
     }
   break;
 
-  case CONV_BIN32S_BIN64U: 
-    {
-      *(UInt64 *)target = *(Lng32 *)source;
-    }
-  break;
-
   case CONV_BIN32S_DECU:
   case CONV_BIN32S_DECS:
     {
@@ -6478,12 +6258,6 @@ convDoIt(char * source,
   case CONV_BIN32U_BIN64S: 
     {
       *(Int64 *)target = (Int64)(*(ULng32 *)source);
-    }
-  break;
-
-  case CONV_BIN32U_BIN64U: 
-    {
-      *(UInt64 *)target = (UInt64)(*(ULng32 *)source);
     }
   break;
 
@@ -6905,228 +6679,6 @@ convDoIt(char * source,
     }
   break;
 
-  case CONV_BIN64U_BIN16S:
-    {
-      if (*(UInt64 *)source < SHRT_MIN)
-        {
-          if (dataConversionErrorFlag != 0)  // Capture error in variable?
-            {
-              *(short *)target = SHRT_MIN;
-              *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN;
-            }
-          else
-            {
-              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
-                                    source, sourceLen, sourceType, sourceScale,
-                                    targetType, tempFlags);
-              return ex_expr::EXPR_ERROR;
-            }
-        }
-      else if (*(UInt64 *)source > SHRT_MAX)
-        {
-          if (dataConversionErrorFlag != 0)  // Capture error in variable?
-            {
-              *(short *)target = SHRT_MAX;
-              *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
-            }
-          else
-            {
-              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
-                                    source, sourceLen, sourceType, sourceScale,
-                                    targetType, tempFlags);
-              return ex_expr::EXPR_ERROR;
-            }
-        }
-      else
-        {
-          if (dataConversionErrorFlag != 0)
-            { // Set the target value.
-              *(short *)target = (short) *(UInt64 *)source;
-            }
-          else
-            { // Check target precision. Then set target value.
-              if (checkPrecision(*(Int64 *)source,                 
-				 sourceLen,
-                                 sourceType,
-		                 sourcePrecision,
-                                 sourceScale,
-		                 targetType,
-		                 targetPrecision,
-                                 targetScale,
-		                 heap,
-                                 diagsArea,
-                                 tempFlags) == ex_expr::EXPR_OK)
-                {
-                  *(short *)target = (short) *(UInt64 *)source;
-                }
-              else
-                {
-                  return ex_expr::EXPR_ERROR;
-                }
-            }
-        }
-    }
-  break;
-
-  case CONV_BIN64U_BIN16U:
-    {
-      if (*(UInt64 *)source > USHRT_MAX)
-        {
-          if (dataConversionErrorFlag != 0)  // Capture error in variable?
-            {
-              *(unsigned short *)target = USHRT_MAX;
-              *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
-            }
-          else
-            {
-              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
-                                    source, sourceLen, sourceType, sourceScale,
-                                    targetType, tempFlags);
-              return ex_expr::EXPR_ERROR;
-            }
-        }
-      else
-        {
-          if (dataConversionErrorFlag != 0)
-            { // Set the target value.
-              *(unsigned short *)target = (unsigned short) *(UInt64 *)source;
-            }
-          else
-            { // Check target precision. Then set target value.
-              if (checkPrecision(*(Int64 *)source,
-				 sourceLen,
-                                 sourceType,
-                                 sourcePrecision,
-                                 sourceScale,
-                                 targetType,
-                                 targetPrecision,
-                                 targetScale,
-                                 heap,
-                                 diagsArea,
-                                 tempFlags) == ex_expr::EXPR_OK)
-                {
-                  *(unsigned short *)target = (unsigned short) *(UInt64 *)source;
-                }
-              else
-                {
-                  return ex_expr::EXPR_ERROR;
-                }
-            }
-        }
-    }
-  break;
-
-  case CONV_BIN64U_BIN32S:
-    {
-      if (*(UInt64 *)source < INT_MIN)
-        {
-          if (dataConversionErrorFlag != 0)  // Capture error in variable?
-            {
-              *(Lng32 *)target = INT_MIN;
-              *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN;
-            }
-          else
-            {
-              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
-                                    source, sourceLen, sourceType, sourceScale,
-                                    targetType, tempFlags);
-              return ex_expr::EXPR_ERROR;
-            }
-        }
-      else if (*(UInt64 *)source > INT_MAX)
-        {
-          if (dataConversionErrorFlag != 0)  // Capture error in variable?
-            {
-              *(Lng32 *)target = INT_MAX;
-              *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
-            }
-          else
-            {
-              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
-                                    source, sourceLen, sourceType, sourceScale,
-                                    targetType, tempFlags);
-              return ex_expr::EXPR_ERROR;
-            }
-        }
-      else
-        {
-          if (dataConversionErrorFlag != 0)
-            { // Set the target value.
-              *(Lng32 *)target = (Lng32) *(UInt64 *)source;
-            }
-          else
-            { // Check target precision. Then set target value.
-              if (checkPrecision(*(Int64 *)source,
-				 sourceLen,
-		                 sourceType,
-		                 sourcePrecision,
-                                 sourceScale,
-		                 targetType,
-		                 targetPrecision,
-                                 targetScale,
-		                 heap,
-		                 diagsArea,
-                                 tempFlags) == ex_expr::EXPR_OK)
-                {
-                  *(Lng32 *)target = (Lng32) *(UInt64 *)source;
-                }
-              else
-                {
-                  return ex_expr::EXPR_ERROR;
-                }
-            }
-        }
-    }
-  break;
-
-  case CONV_BIN64U_BIN32U:
-    {
-      if (*(UInt64 *)source > UINT_MAX)
-        {
-          if (dataConversionErrorFlag != 0)  // Capture error in variable?
-            {
-              *(ULng32 *)target = UINT_MAX;
-              *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
-            }
-          else
-            {
-              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
-                                    source, sourceLen, sourceType, sourceScale,
-                                    targetType, tempFlags);
-              return ex_expr::EXPR_ERROR; 
-            }
-        }
-      else
-        {
-          if (dataConversionErrorFlag != 0)
-            { // Set the target value.
-              *(ULng32 *)target = (ULng32) *(UInt64 *)source;
-            }
-          else
-            { // Check target precision. Then set target value.
-              if (checkPrecision(*(Int64 *)source,
-				 sourceLen,
-		                 sourceType,
-		                 sourcePrecision,
-                                 sourceScale,
-		                 targetType,
-		                 targetPrecision,
-                                 targetScale,
-		                 heap,
-		                 diagsArea,
-                                 tempFlags) == ex_expr::EXPR_OK)
-                {
-                  *(ULng32 *)target = (ULng32) *(UInt64 *)source;
-                }
-              else
-                {
-                  return ex_expr::EXPR_ERROR;
-                }
-            }
-        }
-    }
-  break;
-
   case CONV_BIN64U_BIN64U:
     {
       if (dataConversionErrorFlag != 0)
@@ -7239,6 +6791,16 @@ convDoIt(char * source,
 
   case CONV_BIN64U_FLOAT64: {
     *doubleTgtPtr = (double) *(UInt64 *)source;
+  };
+  break;
+
+  case CONV_BIN64U_BIGNUM: {
+    return convUInt64ToBigNum(target,
+			     targetLen,
+			     *(UInt64 *) source,
+			     heap,
+			     diagsArea,
+                             tempFlags);
   };
   break;
 
@@ -9057,6 +8619,48 @@ convDoIt(char * source,
       }
  
     *(Int64 *)target = intermediate;
+  };
+  break;
+
+  case CONV_BIGNUM_BIN64U: {
+    UInt64 intermediate;
+    if (dataConversionErrorFlag)
+      {
+        Int64 intermediateTemp;
+      // want conversion errors in a variable
+      *dataConversionErrorFlag
+           = convBigNumToInt64AndScale(&intermediateTemp,
+                                       source,
+                                       sourceLen,
+                                       targetScale-sourceScale,
+                                       heap);     
+      }
+    else
+      {
+      // want conversion errors in diagsArea
+      if (convBigNumToUInt64(&intermediate,
+                             source,
+                             sourceLen,
+                             heap,
+                             diagsArea,
+                             tempFlags) != ex_expr::EXPR_OK)
+        return ex_expr::EXPR_ERROR;
+
+      if (checkPrecision(intermediate,
+			 sourceLen,
+                         sourceType,
+                         sourcePrecision,
+                         sourceScale,
+                         targetType,
+	                 targetPrecision,
+                         targetScale,
+                         heap,
+                         diagsArea,
+                         tempFlags) != ex_expr::EXPR_OK)
+        return ex_expr::EXPR_ERROR;
+      }
+ 
+    *(UInt64 *)target = intermediate;
   };
   break;
 
@@ -11615,17 +11219,24 @@ convDoIt(char * source,
     break;
 
   case CONV_NOT_SUPPORTED:
+  default:
     {
-      // this conversion is not supported.
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_NOT_SUPPORTED);
+    ExRaiseDetailSqlError(heap, diagsArea, EXE_CONVERT_NOT_SUPPORTED,
+                          source,
+                          sourceLen,
+                          sourceType,
+                          sourceScale,
+                          targetType,
+                          0,
+                          targetLen,
+                          targetScale);
+    
+    // this conversion is not supported.
+    //      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_NOT_SUPPORTED);
       return ex_expr::EXPR_ERROR;
     }
   break;
 
-  default: {
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_NOT_SUPPORTED);
-      return ex_expr::EXPR_ERROR;
-    };
   };
   return ex_expr::EXPR_OK;
 }

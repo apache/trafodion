@@ -1532,7 +1532,7 @@ $1~String1 --------------------------------
 8411 22003 99999 BEGINNER MINOR LOGONLY A numeric overflow occurred during an arithmetic computation or data conversion.$0~string0
 8412 22024 99999 BEGINNER MINOR LOGONLY An input character host variable is missing its null terminator.
 8413 22007 99999 BEGINNER MINOR LOGONLY The string argument contains characters that cannot be converted.
-8414 0A000 99999 BEGINNER MINOR LOGONLY The attempted conversion is not supported on this platform.
+8414 0A000 99999 BEGINNER MINOR LOGONLY The attempted conversion is not supported on this platform.$0~string0
 8415 22007 99999 BEGINNER MINOR LOGONLY The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 8416 22008 99999 BEGINNER MINOR LOGONLY A datetime expression evaluated to an invalid datetime value.
 8417 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during the evaluation of USER function. The provided userid $0~string0 is invalid, incorrect, obsolete or inexistent and could not be converted to username.

@@ -482,12 +482,15 @@ void SqlciEnv::generateExplain()
     }
 }
 
-void SqlciEnv::tinyintSupport()
+void SqlciEnv::datatypeSupport()
 {
   // Can handle tinyint datatype
   SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_TINYINT_SUPPORT 'ON';", this);
   SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_TINYINT_RETURN_VALUES 'ON';", this);
   SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_TINYINT_INPUT_PARAMS 'ON';", this);
+
+  // can handle largeint unsigned datatype
+  SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_LARGEINT_UNSIGNED_IO 'ON';", this);
   if (!specialError_)
     {
       exit(EXIT_FAILURE);
@@ -548,7 +551,7 @@ static void SqlciEnv_prologue_to_run(SqlciEnv *sqlciEnv)
   sqlciEnv->readonlyCursors();
   sqlciEnv->pertableStatistics();
   sqlciEnv->generateExplain();
-  sqlciEnv->tinyintSupport();
+  sqlciEnv->datatypeSupport();
   sqlciEnv->sqlmxRegress();
 
   // see catman/CatWellKnownTables.cpp for this envvar need.

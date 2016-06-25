@@ -142,7 +142,7 @@ void convertInt64ToAscii(const Int64 &src, char* tgt)
 
 void convertUInt64ToAscii(const UInt64 &src, char* tgt)
 {
-  UInt64 temp = src;  // (src >= 0) ? src : - src;
+  UInt64 temp = src;
   char buffer[21];
   char *s = &buffer[21];
   *--s = '\0';

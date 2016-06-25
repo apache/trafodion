@@ -10416,11 +10416,19 @@ NABoolean ConstValue::isExactNumeric() const
 	  ((NumericType *)type_)->isExact());
 }
 
+// exact numeric value can only be returned for certain types
+// and if the value is within max largeint range.
 NABoolean ConstValue::canGetExactNumericValue() const
 {
   if (isExactNumeric())
     {
       NumericType &t = (NumericType &) *type_;
+
+      // if unsigned largeint and value greater than largeint max,
+      // cannot return exact numeric value.
+      if ((t.getFSDatatype() == REC_BIN64_UNSIGNED) &&
+          ((*(UInt64*)value_) > LLONG_MAX))
+        return FALSE;
 
       // for now we can't do it for arbitrary exact numeric types, sorry
       if (NOT t.isDecimal() AND
@@ -10460,8 +10468,17 @@ Int64 ConstValue::getExactNumericValue(Lng32 &scale) const
       break;
 
     case 8:
-      CMPASSERT(t.isSigned());
-      result = *((Int64 *) value_);
+      if (t.isUnsigned())
+        {
+          if ((*(UInt64*)value_) > LLONG_MAX)
+            {
+              CMPASSERT(0);
+            }
+          else
+            result = *(UInt64*)value_;
+        }
+      else
+        result = *((Int64 *) value_);
       break;
 
     default:
