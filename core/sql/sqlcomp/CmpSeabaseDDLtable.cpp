@@ -10585,6 +10585,17 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       if ((strcmp(constrType, COM_UNIQUE_CONSTRAINT_LIT) == 0) ||
           (strcmp(constrType, COM_PRIMARY_KEY_CONSTRAINT_LIT) == 0))
         {
+          // force the query plan; without this we tend to do full scans of
+          // TABLE_CONSTRAINTS which reduces DDL concurrency
+          str_sprintf(query,"control query shape sort(nested_join(nested_join(nested_join(scan('U'),scan('O')), scan('T','TRAFODION.\"_MD_\".TABLE_CONSTRAINTS_IDX')),cut))");
+          cliRC = cliInterface.setCQS(query);
+          if (cliRC < 0)
+            {
+              cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());             
+              processReturn();
+              return NULL;
+            }
+
           str_sprintf(query, "select trim(O.catalog_name || '.' || '\"' || O.schema_name || '\"' || '.' || '\"' || O.object_name || '\"' ) constr_name, trim(O2.catalog_name || '.' || '\"' || O2.schema_name || '\"' || '.' || '\"' || O2.object_name || '\"' ) table_name from %s.\"%s\".%s U, %s.\"%s\".%s O, %s.\"%s\".%s O2, %s.\"%s\".%s T where  O.object_uid = U.foreign_constraint_uid and O2.object_uid = T.table_uid and T.constraint_uid = U.foreign_constraint_uid and U.unique_constraint_uid = %Ld order by 2, 1",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_UNIQUE_REF_CONSTR_USAGE,
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
@@ -10600,9 +10611,13 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
               cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
               
               processReturn();
+
+              cliInterface.resetCQS();
               
               return NULL;
             }
+      
+          cliInterface.resetCQS();
 
           ComTdbVirtTableRefConstraints * ringInfoArray = NULL;
           if (ringInfoQueue->numEntries() > 0)

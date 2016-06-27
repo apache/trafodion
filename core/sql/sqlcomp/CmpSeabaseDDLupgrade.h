@@ -38,6 +38,9 @@ CmpSeabaseDDLmd.h
      to START_OLD_MD_v23 section. 
    -- Change name to *_OLD_MD.  (Ex: SEABASE_COLUMNS_OLD_MD)
    -- Change definition name to seabaseOldMDv23* (Ex: seabaseOldMDv23ColumnsDDL)
+      (Note: There was a reset in version numbers when Trafodion Release 1.1
+      went out. So, use "OldTrafMDvxx" now instead of "OldMDvxx", to avoid
+      conflicts should those numbering schemes overlap.)
    -- modify current definition to reflect new definition(Ex: seabaseColumnsDDL)
 
 CmpSeabaseDDLupgrade.h
@@ -46,7 +49,7 @@ CmpSeabaseDDLupgrade.h
        -- add old defn, insert/select col list, added/dropped col flag, etc.
   -- see struct MDUpgradeInfo for details on what fields need to be modified.
 
-CmpSeabaseDDL.h
+CmpSeabaseDDLincludes.h
 -- modify enum METADATA_MAJOR/MINOR, OLD_MAJOR/MINOR versions
 
 CmpSeabaseDDLcommon.cpp and other files:
@@ -129,8 +132,8 @@ struct MDDescsInfo
 // This section should reflect the upgrade steps needed to go from
 // previous to current version.
 // Modify it as needed.
-// Currently it is set to upgrade from V30(source major version 3, minor version 0)
-// to V31.
+// Currently it is set to upgrade from V11(source major version 1, minor version 1)
+// to V21.
 //////////////////////////////////////////////////////////////
 static const MDUpgradeInfo allMDupgradeInfo[] = {
   {SEABASE_AUTHS, SEABASE_AUTHS_OLD_MD,
@@ -147,9 +150,12 @@ static const MDUpgradeInfo allMDupgradeInfo[] = {
 
   {SEABASE_DEFAULTS, SEABASE_DEFAULTS_OLD_MD,
    seabaseDefaultsDDL, sizeof(seabaseDefaultsDDL),
+   seabaseOldTrafMDv11DefaultsDDL, sizeof(seabaseOldTrafMDv11DefaultsDDL),
    NULL, 0,
-   NULL, 0,
-   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+   TRUE, 
+   "attribute,attr_value,attr_comment,flags",
+   "attribute,attr_value,attr_comment,0",
+   NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_INDEXES, SEABASE_INDEXES_OLD_MD,
    seabaseIndexesDDL, sizeof(seabaseIndexesDDL),
@@ -165,15 +171,21 @@ static const MDUpgradeInfo allMDupgradeInfo[] = {
 
   {SEABASE_LIBRARIES, SEABASE_LIBRARIES_OLD_MD,
    seabaseLibrariesDDL, sizeof(seabaseLibrariesDDL),
+   seabaseOldTrafMDv11LibrariesDDL, sizeof(seabaseOldTrafMDv11LibrariesDDL),
    NULL, 0,
-   NULL, 0,
-   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+   TRUE, 
+   "library_uid,library_filename,version,flags",
+   "library_uid,library_filename,version,0", 
+   NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_LIBRARIES_USAGE, SEABASE_LIBRARIES_USAGE_OLD_MD,
    seabaseLibrariesUsageDDL, sizeof(seabaseLibrariesUsageDDL),
+   seabaseOldTrafMDv11LibrariesUsageDDL, sizeof(seabaseOldTrafMDv11LibrariesUsageDDL),
    NULL, 0,
-   NULL, 0,
-   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+   TRUE, 
+   "using_library_uid,used_udr_uid,flags",
+   "using_library_uid,used_udr_uid,0",
+   NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_OBJECTS, SEABASE_OBJECTS_OLD_MD,
    seabaseObjectsDDL, sizeof(seabaseObjectsDDL),
@@ -195,9 +207,20 @@ static const MDUpgradeInfo allMDupgradeInfo[] = {
 
   {SEABASE_ROUTINES, SEABASE_ROUTINES_OLD_MD,
    seabaseRoutinesDDL, sizeof(seabaseRoutinesDDL),
+   seabaseOldTrafMDv11RoutinesDDL, sizeof(seabaseOldTrafMDv11RoutinesDDL),
    NULL, 0,
-   NULL, 0,
-   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+   TRUE,
+   "udr_uid,udr_type,language_type,deterministic_bool,sql_access,"
+   "call_on_null,isolate_bool,param_style,transaction_attributes,"
+   "max_results,state_area_size,external_name,parallelism,"
+   "user_version,external_security,execution_mode,library_uid,"
+   "signature,flags",
+   "udr_uid,udr_type,language_type,deterministic_bool,sql_access,"
+   "call_on_null,isolate_bool,param_style,transaction_attributes,"
+   "max_results,state_area_size,external_name,parallelism,"
+   "user_version,external_security,execution_mode,library_uid,"
+   "signature,0",   
+   NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_SEQ_GEN, SEABASE_SEQ_GEN_OLD_MD,
    seabaseSeqGenDDL, sizeof(seabaseSeqGenDDL),
@@ -216,6 +239,13 @@ static const MDUpgradeInfo allMDupgradeInfo[] = {
    NULL, 0,
    NULL, 0,
    FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+   // For next metadata upgrade, replace NULL with SEABASE_TABLE_CONSTRAINTS_IDX_OLD_MD below
+  {SEABASE_TABLE_CONSTRAINTS_IDX, NULL /* index didn't exist before Trafodion 2.1 */,
+   seabaseTableConstraintsIdxDDL, sizeof(seabaseTableConstraintsIdxDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, TRUE, FALSE},
 
   {SEABASE_TEXT, SEABASE_TEXT_OLD_MD,
    seabaseTextDDL, sizeof(seabaseTextDDL),
@@ -251,7 +281,7 @@ static const MDUpgradeInfo allMDupgradeInfo[] = {
    NULL, 0,
    NULL, 0,
    NULL, 0,
-   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE},
 
   {SEABASE_VALIDATE_LIBRARY, SEABASE_VALIDATE_LIBRARY_OLD_MD,
    NULL, 0,

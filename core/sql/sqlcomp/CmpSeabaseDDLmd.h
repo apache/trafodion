@@ -33,8 +33,8 @@
  *               The remaining sections contain metadata definitions for prior
  *               versions.
  *
- *               Version definitions are defined in CmpSeabaseDDL.h and are
- *               persistent in the VERSIONS metadata table.
+ *               Version definitions are defined in CmpSeabaseDDLincludes.h and
+ *               are persistent in the VERSIONS metadata table.
  *
  * *****************************************************************************
  */
@@ -132,7 +132,8 @@ static const QString seabaseDefaultsDDL[] =
   {" ( "},
   {"   attribute varchar(100 bytes) character set utf8 not null not serialized, "},
   {"   attr_value varchar(1000 bytes) character set utf8 not null not serialized, "},
-  {"   attr_comment varchar(1000 bytes) character set utf8 not null not serialized "},
+  {"   attr_comment varchar(1000 bytes) character set utf8 not null not serialized, "},
+  {"   flags largeint not null not serialized "},
   {" ) "},
   {" primary key (attribute) "},
   {" ; "}
@@ -177,7 +178,8 @@ static const QString seabaseLibrariesDDL[] =
   {" ( "},
   {"   library_uid largeint not null not serialized, "},
   {"   library_filename varchar(512) character set iso88591 not null not serialized, "},
-  {"   version int not null not serialized "},
+  {"   version int not null not serialized, "},
+  {"   flags largeint not null not serialized "},
   {" ) "},
   {" primary key (library_uid) "},
   {" ; "}
@@ -188,7 +190,8 @@ static const QString seabaseLibrariesUsageDDL[] =
   {" create table "SEABASE_LIBRARIES_USAGE" "},
   {" ( "},
   {"   using_library_uid largeint not null not serialized, "},
-  {"   used_udr_uid largeint not null not serialized "},
+  {"   used_udr_uid largeint not null not serialized, "},
+  {"   flags largeint not null not serialized "},
   {" ) "},
   {" primary key (using_library_uid, used_udr_uid) "},
   {" ; "}
@@ -284,7 +287,8 @@ static const QString seabaseRoutinesDDL[] =
   {"   external_security char(2) character set iso88591 not null not serialized, "},
   {"   execution_mode char(2) character set iso88591 not null not serialized, "},
   {"   library_uid largeint not null not serialized, "},
-  {"   signature varchar(8192 bytes) character set utf8 not null not serialized "},
+  {"   signature varchar(8192 bytes) character set utf8 not null not serialized, "},
+  {"   flags largeint not null not serialized "},
   {" ) "},
   {" primary key (udr_uid) "},
   {" ; "}
@@ -354,6 +358,27 @@ static const QString seabaseTableConstraintsDDL[] =
   {"   flags largeint not null not serialized "},
   {" ) "},
   {" primary key (table_uid, constraint_uid, constraint_type) "},
+  {" ; "}
+};
+
+static const QString seabaseTableConstraintsIdxIndexDDL[] =
+{
+  {" create index "SEABASE_TABLE_CONSTRAINTS_IDX" on "TRAFODION_SYSCAT_LIT".\""SEABASE_MD_SCHEMA"\"."SEABASE_TABLE_CONSTRAINTS" "},
+  {" ( "},
+  {"   constraint_uid "},
+  {" ) "},
+  {" ; "}
+};
+
+static const QString seabaseTableConstraintsIdxDDL[] =
+{
+  {" create table "SEABASE_TABLE_CONSTRAINTS_IDX" "},
+  {" ( "},
+  {"   \"CONSTRAINT_UID@\" largeint not null not serialized, "},
+  {"   table_uid largeint not null not serialized, "},
+  {"   constraint_type char(2) character set iso88591 not null not serialized "},
+  {" ) "},
+  {" primary key (\"CONSTRAINT_UID@\", table_uid, constraint_type) "},
   {" ; "}
 };
 
@@ -574,7 +599,11 @@ static const MDTableInfo allMDtablesInfo[] = {
 
   {SEABASE_TABLE_CONSTRAINTS, 
    seabaseTableConstraintsDDL, sizeof(seabaseTableConstraintsDDL),
-   NULL, 0, FALSE},
+   seabaseTableConstraintsIdxIndexDDL, sizeof(seabaseTableConstraintsIdxIndexDDL), FALSE},
+
+  {SEABASE_TABLE_CONSTRAINTS_IDX,
+   seabaseTableConstraintsIdxDDL, sizeof(seabaseTableConstraintsIdxDDL),
+   NULL, 0, TRUE},
 
   {SEABASE_TEXT, 
    seabaseTextDDL, sizeof(seabaseTextDDL),
@@ -651,6 +680,452 @@ static const MDTableInfo allMDHistInfo[] = {
 #define SEABASE_VERSIONS_OLD_MD          SEABASE_VERSIONS"_OLD_MD"
 #define SEABASE_VALIDATE_SPJ_OLD_MD      SEABASE_VALIDATE_SPJ"_OLD_MD"
 #define SEABASE_VALIDATE_LIBRARY_OLD_MD  SEABASE_VALIDATE_LIBRARY"_OLD_MD"
+
+////////////////////////////////////////////////////////////////////////
+//// START_OLD_MD_v11: 
+////        OLD metadata Version 1.1 (Major version = 1, Minor version = 1).
+//////////////////////////////////////////////////////////////////////////
+
+static const QString seabaseOldTrafMDv11AuthsDDL[] =
+{
+  {" create table "SEABASE_AUTHS_OLD_MD" "},
+  {" ( "},
+  {"  auth_id int unsigned not null not serialized, "},
+  {"  auth_db_name varchar(256 bytes) character set utf8 not null not serialized, "},
+  {"  auth_ext_name varchar(256 bytes) character set utf8 not null not serialized, "},
+  {"  auth_type char(2) character set iso88591 not null not serialized, "},
+  {"  auth_creator int unsigned not null not serialized, "},
+  {"  auth_is_valid char(2) character set iso88591 not null not serialized, "},
+  {"  auth_create_time largeint not null not serialized, "},
+  {"  auth_redef_time largeint not null not serialized, "},
+  {"  flags largeint not null not serialized "},
+  {" ) "},
+  {" primary key (auth_id) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11ColumnsDDL[] =
+{
+  {" create table "SEABASE_COLUMNS_OLD_MD" "},
+  {" ( "},
+  {"   object_uid largeint not null not serialized, "},
+  {"   column_name varchar(256 bytes) character set utf8 not null not serialized, "},
+  {"   column_number int not null not serialized, "},
+  {"   column_class char(2) character set iso88591 not null not serialized, "},
+  {"   fs_data_type int not null not serialized, "},
+  {"   sql_data_type char(32) character set iso88591 not null not serialized, "},
+  {"   column_size int not null not serialized, "},
+  {"   column_precision int not null not serialized, "},
+  {"   column_scale int not null not serialized, "},
+  {"   datetime_start_field int not null not serialized, "},
+  {"   datetime_end_field int not null not serialized, "},
+  {"   is_upshifted char(2) character set iso88591 not null not serialized, "},
+  {"   column_flags int unsigned not null not serialized, "},
+  {"   nullable int not null not serialized, "},
+  {"   character_set char(40) character set iso88591 not null not serialized, "},
+  {"   default_class int not null not serialized, "},
+  {"   default_value varchar(1024 bytes) character set utf8 not null not serialized, "},
+  {"   column_heading varchar(256 bytes) character set utf8 not null not serialized, "},
+  {"   hbase_col_family varchar(40) character set iso88591 not null not serialized, "},
+  {"   hbase_col_qualifier varchar(40) character set iso88591 not null not serialized, "},
+  {"   direction char(2) character set iso88591 not null not serialized, "},
+  {"   is_optional char(2) character set iso88591 not null not serialized, "},
+  {"   flags largeint not null not serialized "},
+  {" ) "},
+  {" primary key (object_uid, column_name) "},
+  {" ; "}
+};
+
+enum SeabaseOldTrafMDv11ColumnsFlags {
+  SEABASE_COLUMN_IS_SALT_V11   = 0x0000000000000001, // don't rely on this quite yet,
+                                                     // since some older tables
+                                                     // don't have this flag set
+  SEABASE_COLUMN_IS_DIVISION_V11 = 0x0000000000000002
+};
+
+static const QString seabaseOldTrafMDv11DefaultsDDL[] =
+{
+  {" create table "SEABASE_DEFAULTS_OLD_MD" "},
+  {" ( "},
+  {"   attribute varchar(100 bytes) character set utf8 not null not serialized, "},
+  {"   attr_value varchar(1000 bytes) character set utf8 not null not serialized, "},
+  {"   attr_comment varchar(1000 bytes) character set utf8 not null not serialized "},
+  {" ) "},
+  {" primary key (attribute) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11KeysDDL[] =
+{
+  {" create table "SEABASE_KEYS_OLD_MD" "},
+  {" ( "},
+  {"   object_uid largeint not null not serialized, "},
+  {"   column_name varchar( 256 bytes ) character set utf8 not null not serialized, "},
+  {"   keyseq_number int not null not serialized, "},
+  {"   column_number int not null not serialized, "},
+  {"   ordering int not null not serialized, "},
+  {"   nonkeycol int not null not serialized, "},
+  {"   flags largeint not null not serialized "},
+  {" ) "},
+  {" primary key (object_uid, keyseq_number) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11IndexesDDL[] =
+{
+  {" create table "SEABASE_INDEXES_OLD_MD" "},
+  {" ( "},
+  {"   base_table_uid largeint not null not serialized, "},
+  {"   keytag int not null not serialized, "},
+  {"   is_unique int not null not serialized, "},
+  {"   key_colcount int not null not serialized, "},
+  {"   nonkey_colcount int not null not serialized, "},
+  {"   is_explicit int not null not serialized, "},
+  {"   index_uid largeint not null not serialized, "},
+  {"   flags largeint not null not serialized "},
+  {" ) "},
+  {" primary key (base_table_uid, index_uid) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11LibrariesDDL[] =
+{
+  {" create table "SEABASE_LIBRARIES_OLD_MD" "},
+  {" ( "},
+  {"   library_uid largeint not null not serialized, "},
+  {"   library_filename varchar(512) character set iso88591 not null not serialized, "},
+  {"   version int not null not serialized "},
+  {" ) "},
+  {" primary key (library_uid) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11LibrariesUsageDDL[] =
+{
+  {" create table "SEABASE_LIBRARIES_USAGE_OLD_MD" "},
+  {" ( "},
+  {"   using_library_uid largeint not null not serialized, "},
+  {"   used_udr_uid largeint not null not serialized "},
+  {" ) "},
+  {" primary key (using_library_uid, used_udr_uid) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11ObjectsDDL[] =
+{
+  {" create table "SEABASE_OBJECTS_OLD_MD" "},
+  {" ( "},
+  {"   catalog_name varchar ( 256 bytes ) character set utf8 not null not serialized, "},
+  {"   schema_name varchar ( 256 bytes ) character set utf8 not null not serialized, "},
+  {"   object_name varchar ( 256 bytes ) character set utf8 not null not serialized, "},
+  {"   object_type char(2) character set iso88591 not null not serialized, "},
+  {"   object_uid largeint not null not serialized, "},
+  {"   create_time largeint not null not serialized, "},
+  {"   redef_time largeint not null not serialized, "},
+  {"   valid_def char(2) character set iso88591 not null not serialized, "},
+  {"   droppable char(2) character set iso88591 not null not serialized, "},
+  {"   object_owner int not null not serialized, "},
+  {"   schema_owner int not null not serialized, "},
+  {"   flags largeint not null not serialized "},
+  {" ) "},
+  {" primary key (catalog_name, schema_name, object_name, object_type) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11ObjectsUniqIdxIndexDDL[] =
+{
+  {" create unique index "SEABASE_OBJECTS_UNIQ_IDX_OLD_MD" on "TRAFODION_SYSCAT_LIT".\""SEABASE_MD_SCHEMA"\"."SEABASE_OBJECTS_OLD_MD" "},
+  {" ( "},
+  {"   object_uid "},
+  {" ) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11ObjectsUniqIdxDDL[] =
+{
+  {" create table "SEABASE_OBJECTS_UNIQ_IDX_OLD_MD" "},
+  {" ( "},
+  {"   \"OBJECT_UID@\" largeint not null not serialized, "},
+  {"   catalog_name varchar(256 bytes) character set utf8 not null not serialized, "},
+  {"   schema_name varchar(256 bytes) character set utf8 not null not serialized, "},
+  {"   object_name varchar(256 bytes) character set utf8 not null not serialized, "},
+  {"   object_type char(2) character set iso88591 not null not serialized "},
+  {" ) "},
+  {" primary key (\"OBJECT_UID@\") "},
+  {" ; "}
+};
+
+enum SeabaseOldTrafMDv11ObjectsFlags {
+  SEABASE_OBJECT_IS_EXTERNAL_HIVE_V11 = 0x0000000000000001, // set if this object
+                                                         // references external
+                                                         // HIVE table
+  SEABASE_OBJECT_IS_EXTERNAL_HBASE_V11 = 0x0000000000000002 // set if this object
+                                                         // references external
+                                                         // HBASE table
+
+};
+
+static const QString seabaseOldTrafMDv11RefConstraintsDDL[] =
+{
+  {" create table "SEABASE_REF_CONSTRAINTS_OLD_MD" "},
+  {" ( "},
+  {"   ref_constraint_uid largeint not null not serialized, "},
+  {"   unique_constraint_uid largeint not null not serialized, "},
+  {"   match_option char(2) not null not serialized, "},
+  {"   update_rule char(2) character set iso88591 not null not serialized, "},
+  {"   delete_rule char(2) character set iso88591 not null not serialized, "},
+  {"   flags largeint not null not serialized "},
+  {" ) "},
+  {" primary key (ref_constraint_uid, unique_constraint_uid) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11RoutinesDDL[] =
+{
+  {" create table "SEABASE_ROUTINES_OLD_MD" "},
+  {" ( "},
+  {"   udr_uid largeint not null not serialized, "},
+  {"   udr_type char(2) not  null, "},
+  {"   language_type char(2) character set iso88591 not null not serialized, "},
+  {"   deterministic_bool char(2) character set iso88591 not null not serialized, "},
+  {"   sql_access char(2) character set iso88591 not null not serialized, "},
+  {"   call_on_null char(2) character set iso88591 not null not serialized, "},
+  {"   isolate_bool char(2) character set iso88591 not null not serialized, "},
+  {"   param_style char(2) character set iso88591 not null not serialized, "},
+  {"   transaction_attributes char(2) character set iso88591 not null not serialized, "},
+  {"   max_results int not null not serialized, "},
+  {"   state_area_size int not null not serialized, "},
+  {"   external_name varchar(1024 bytes) character set utf8 not null not serialized, "},
+  {"   parallelism char(2) character set iso88591 not null not serialized, "},
+  {"   user_version varchar(32) character set iso88591 not null not serialized, "},
+  {"   external_security char(2) character set iso88591 not null not serialized, "},
+  {"   execution_mode char(2) character set iso88591 not null not serialized, "},
+  {"   library_uid largeint not null not serialized, "},
+  {"   signature varchar(8192 bytes) character set utf8 not null not serialized "},
+  {" ) "},
+  {" primary key (udr_uid) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11SeqGenDDL[] =
+{
+  {" create table "SEABASE_SEQ_GEN_OLD_MD" "},
+  {" ( "},
+  {"   seq_type char(2) character set iso88591 not null not serialized, "},
+  {"   seq_uid largeint not null not serialized, "},
+  {"   fs_data_type integer not null not serialized, "},
+  {"   start_value largeint not null not serialized, "},
+  {"   increment largeint not null not serialized, "},
+  {"   max_value largeint not null not serialized, "},
+  {"   min_value largeint not null not serialized, "},
+  {"   cycle_option char(2) character set iso88591 not null not serialized, "},
+  {"   cache_size largeint not null not serialized, "},
+
+  // next value that seq generator will return
+  {"   next_value largeint not null not serialized, "},
+
+  // number of seq generator calls accessing this metadata table
+  {"   num_calls largeint not null not serialized, "},
+
+  {"   redef_ts largeint not null serialized, "},
+  {"   upd_ts largeint not null serialized, "},
+
+  {"   flags largeint not null not serialized "},
+  {" ) "},
+  {" primary key (seq_uid) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11TablesDDL[] =
+{
+  {" create table "SEABASE_TABLES_OLD_MD" "},
+  {" ( "},
+  {"   table_uid largeint not null not serialized, "},
+  {"   row_format char(2) character set iso88591 not null not serialized, "},
+  {"   is_audited char(2) character set iso88591 not null not serialized, "},
+  {"   row_data_length int not null not serialized, "},
+  {"   row_total_length int not null not serialized, "},
+  {"   key_length int not null not serialized, "},
+  {"   num_salt_partns int not null not serialized, "},
+  {"   flags largeint not null not serialized "},
+  {" ) "},
+  {" primary key (table_uid) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11TableConstraintsDDL[] =
+{
+  {" create table "SEABASE_TABLE_CONSTRAINTS_OLD_MD" "},
+  {" ( "},
+  {"   table_uid largeint not null not serialized, "},
+  {"   constraint_uid largeint not null not serialized, "},
+  {"   constraint_type char(2) character set iso88591 not null not serialized, "},
+  {"   disabled char(2) character set iso88591 not null not serialized, "},
+  {"   droppable char(2) character set iso88591 not null not serialized, "},
+  {"   is_deferrable char(2) character set iso88591 not null not serialized, "},
+  {"   enforced char(2) character set iso88591 not null not serialized, "},
+  {"   validated char(2) character set iso88591 not null not serialized, "},
+  {"   last_validated largeint not null not serialized, "},
+  {"   col_count int not null not serialized, "},
+  {"   index_uid largeint not null not serialized, "},
+  {"   flags largeint not null not serialized "},
+  {" ) "},
+  {" primary key (table_uid, constraint_uid, constraint_type) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11TextDDL[] =
+{
+  {" create table "SEABASE_TEXT_OLD_MD" "},
+  {" ( "},
+  {"   text_uid largeint not null not serialized, "},
+  {"   text_type int not null not serialized, "},
+  {"   sub_id int not null not serialized, "},
+  {"   seq_num int not null not serialized, "},
+  {"   flags largeint not null not serialized, "},
+  {"   text varchar(10000 bytes) character set utf8 not null not serialized "},
+  {" ) "},
+  {" primary key (text_uid, text_type, sub_id, seq_num) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11UniqueRefConstrUsageDDL[] =
+{
+  {" create table "SEABASE_UNIQUE_REF_CONSTR_USAGE_OLD_MD" "},
+  {" ( "},
+  {"   unique_constraint_uid largeint not null not serialized, "},
+  {"   foreign_constraint_uid largeint not null not serialized, "},
+  {"   flags largeint not null not serialized "},
+  {" ) "},
+  {" primary key (unique_constraint_uid, foreign_constraint_uid) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11VersionsDDL[] =
+{
+  {" create table "SEABASE_VERSIONS_OLD_MD" "},
+  {" ( "},
+  {"   version_type char(50 bytes) character set utf8 not null not serialized, "},
+  {"   major_version largeint not null not serialized, "},
+  {"   minor_version largeint not null not serialized, "},
+  {"   init_time largeint not null not serialized, "},
+  {"   comment varchar(1000 bytes) character set utf8 not null not serialized "},
+  {" ) "},
+  {" primary key (version_type) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11ViewsDDL[] =
+{
+  {" create table "SEABASE_VIEWS_OLD_MD" "},
+  {" ( "},
+  {"   view_uid largeint not null not serialized, "},
+  {"   check_option char(2) character set iso88591 not null not serialized, "},
+  {"   is_updatable int not null not serialized, "},
+  {"   is_insertable int not null not serialized, "},
+  {"   flags largeint not null not serialized "},
+  {" ) "},
+  {" primary key (view_uid) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11ViewsUsageDDL[] =
+{
+  {" create table "SEABASE_VIEWS_USAGE_OLD_MD" "},
+  {" ( "},
+  {"   using_view_uid largeint not null not serialized, "},
+  {"   used_object_uid largeint not null not serialized, "},
+  {"   used_object_type char(2) character set iso88591 not null not serialized, "},
+  {"   flags largeint not null not serialized "},
+  {" ) "},
+  {" primary key (using_view_uid, used_object_uid) "},
+  {" ; "}
+};
+
+static const ComTdbVirtTableRoutineInfo seabaseOldTrafMDv11MDValidateRoutineInfo =
+  {
+    "VALIDATEROUTINE", COM_PROCEDURE_TYPE_LIT,  COM_LANGUAGE_JAVA_LIT, 1, COM_NO_SQL_LIT, 0, 0, COM_STYLE_JAVA_CALL_LIT, COM_NO_TRANSACTION_REQUIRED_LIT, 0, 0, "org.trafodion.sql.udr.LmUtility.validateMethod", COM_ROUTINE_NO_PARALLELISM_LIT, " ", COM_ROUTINE_EXTERNAL_SECURITY_INVOKER_LIT, COM_ROUTINE_SAFE_EXECUTION_LIT, " ", 1, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III[Ljava/lang/String;[I[Ljava/lang/String;)V", " "
+  };
+
+static const ComTdbVirtTableColumnInfo seabaseOldTrafMDv11MDValidateRoutineColInfo[] =
+  {        
+    { "CLASSNAME", 0,  COM_USER_COLUMN, REC_BYTE_V_ASCII, 256, FALSE , SQLCHARSETCODE_ISO88591, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_INPUT_COLUMN_LIT, 0},
+    { "METHODNAME", 1,  COM_USER_COLUMN, REC_BYTE_V_ASCII, 256, FALSE , SQLCHARSETCODE_ISO88591, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_INPUT_COLUMN_LIT, 0},
+    { "EXTERNALPATH", 2,  COM_USER_COLUMN, REC_BYTE_V_ASCII, 256, FALSE , SQLCHARSETCODE_ISO88591, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_INPUT_COLUMN_LIT, 0},
+    { "SIGNATURE", 3,  COM_USER_COLUMN, REC_BYTE_V_ASCII, 8192, FALSE , SQLCHARSETCODE_ISO88591, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"4", COM_INPUT_COLUMN_LIT, 0},
+    { "NUMPARAM", 4,  COM_USER_COLUMN, REC_BIN32_SIGNED, 4, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"5", COM_INPUT_COLUMN_LIT, 0},
+    { "MAXRESULTSETS", 5,  COM_USER_COLUMN, REC_BIN32_SIGNED, 4, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"6", COM_INPUT_COLUMN_LIT, 0},
+    { "OPTIONALSIG", 6,  COM_USER_COLUMN, REC_BIN32_SIGNED, 4, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"7", COM_INPUT_COLUMN_LIT, 0},
+     { "RETSIG", 7,  COM_USER_COLUMN, REC_BYTE_V_ASCII, 8192, FALSE , SQLCHARSETCODE_ISO88591, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"8", COM_OUTPUT_COLUMN_LIT, 0},
+    { "ERRCODE", 8,  COM_USER_COLUMN, REC_BIN32_SIGNED, 4, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"9", COM_OUTPUT_COLUMN_LIT, 0},
+     { "ERRDETAIL", 9,  COM_USER_COLUMN, REC_BYTE_V_ASCII, 8192, FALSE , SQLCHARSETCODE_ISO88591, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"10", COM_OUTPUT_COLUMN_LIT, 0}
+  };
+
+static const QString seabaseOldTrafMDv11HistogramsDDL[] =
+{
+  {" create table "HBASE_HIST_NAME"_OLD_MD "},
+  {" ( "},
+  {"   table_uid largeint not null not serialized, "},
+  {"   histogram_id int unsigned not null not serialized, "},
+  {"   col_position int not null not serialized, "},
+  {"   column_number int not null not serialized, "},
+  {"   colcount int not null not serialized, "},
+  {"   interval_count smallint not null not serialized, "},
+  {"   rowcount largeint not null not serialized, "},
+  {"   total_uec largeint not null not serialized, "},
+  {"   stats_time timestamp(0) not null not serialized, "},
+  {"   low_value varchar(250) character set ucs2 not null not serialized, "},
+  {"   high_value varchar(250) character set ucs2 not null not serialized, "},
+  {"   read_time timestamp(0) not null not serialized, "},
+  {"   read_count smallint not null not serialized, "},
+  {"   sample_secs largeint not null not serialized, "},
+  {"   col_secs largeint not null not serialized, "},
+  {"   sample_percent smallint not null not serialized, "},
+  {"   cv double precision not null not serialized, "},
+  {"   reason char(1) character set iso88591 not null not serialized, "},
+  {"   v1 largeint not null not serialized, "},
+  {"   v2 largeint not null not serialized, "},
+  {"   v3 largeint not null not serialized, "},
+  {"   v4 largeint not null not serialized, "},
+  {"   v5 varchar(250) character set ucs2 not null not serialized, "},
+  {"   v6 varchar(250) character set ucs2 not null not serialized "},
+  {" , constraint "HBASE_HIST_PK" primary key "},
+  {"     (table_uid, histogram_id, col_position) "},
+  {" ) "},
+  {" ; "}
+};
+
+static const QString seabaseOldTrafMDv11HistogramIntervalsDDL[] =
+{
+  {" create table "HBASE_HISTINT_NAME"_OLD_MD "},
+  {" ( "},
+  {"   table_uid largeint not null not serialized, "},
+  {"   histogram_id int unsigned not null not serialized, "},
+  {"   interval_number smallint not null not serialized, "},
+  {"   interval_rowcount largeint not null not serialized, "},
+  {"   interval_uec largeint not null not serialized, "},
+  {"   interval_boundary varchar(250) character set ucs2 not null not serialized, "},
+  {"   std_dev_of_freq numeric(12,3) not null not serialized, "},
+  {"   v1 largeint not null not serialized, "},
+  {"   v2 largeint not null not serialized, "},
+  {"   v3 largeint not null not serialized, "},
+  {"   v4 largeint not null not serialized, "},
+  {"   v5 varchar(250) character set ucs2 not null not serialized, "},
+  {"   v6 varchar(250) character set ucs2 not null not serialized"},
+  {" , constraint "HBASE_HISTINT_PK" primary key "},
+  {"    (table_uid, histogram_id, interval_number) "},
+  {" ) "},
+  {" ; "}
+};
+
+////////////////////////////////////////////////////////////////////////
+//// END_OLD_MD_v11: 
+////        OLD metadata Version 1.1  (Major version = 1, Minor version = 1).
+//////////////////////////////////////////////////////////////////////////
+
+// Note: The older metadata definitions below were from before we
+// reset the version to 1.1 with the early Trafodion releases. (We
+// went backwards to match the Trafodion release number.)
 
 ////////////////////////////////////////////////////////////////////////
 //// START_OLD_MD_v23: 

@@ -975,7 +975,8 @@ class ComTdbVirtTableKeyInfo : public ComTdbVirtTableBase
   const char * colName;
   Lng32   keySeqNum;
   Lng32   tableColNum;
-  Lng32   ordering;
+  Lng32   ordering;  // 0 means ascending, 1 means descending
+                     // (see, for example, CmpSeabaseDDL::buildKeyInfoArray)
 
   Lng32 nonKeyCol; // if 1, this is a base table pkey col for unique indexes
 
