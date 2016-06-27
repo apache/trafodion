@@ -337,12 +337,12 @@ public class HBaseTxClient {
        rt.stopThread();
        boolean loopBack = false;
        do {
-       try {
-           rt.join();
-       } catch (InterruptedException e) { 
-          LOG.warn("Problem while waiting for the recovery thread to stop for node ID: " + nodeID, e);
-          loopBack = true; 
-       }
+          try {
+             rt.join();
+          } catch (InterruptedException e) { 
+             LOG.warn("Problem while waiting for the recovery thread to stop for node ID: " + nodeID, e);
+             loopBack = true; 
+          }
        } while (loopBack);
        mapRecoveryThreads.remove(nodeID);
        if(LOG.isTraceEnabled()) LOG.trace("nodeUp -- mapRecoveryThreads size: " + mapRecoveryThreads.size());
@@ -407,10 +407,12 @@ public class HBaseTxClient {
       if ((stallWhere == 1) || (stallWhere == 3)) {
          LOG.info("Stalling in phase 2 for abortTransaction");
          boolean loopBack = true;
-         try {
-            Thread.sleep(300000); // Initially set to run every 5 min
-         } catch(InterruptedException ie) {
+         do {
+            try {
+               Thread.sleep(300000); // Initially set to run every 5 min
+            } catch(InterruptedException ie) {
                loopBack = true;
+            }
          } while (loopBack);
       }
 
@@ -437,11 +439,13 @@ public class HBaseTxClient {
           synchronized(commitDDLLock)
           {
              boolean loopBack = false;
-             try {
-                commitDDLLock.wait();
-             } catch(InterruptedException ie) {
-                 LOG.warn("Interrupting commitDDLLock.wait,  but retrying ", ie);
-                 loopBack = true;
+             do {
+                try {
+                    commitDDLLock.wait();
+                } catch(InterruptedException ie) {
+                    LOG.warn("Interrupting commitDDLLock.wait,  but retrying ", ie);
+                    loopBack = true;
+                }
              } while (loopBack);
           }
           return TransReturnCode.RET_EXCEPTION.getShort();
@@ -542,10 +546,12 @@ public class HBaseTxClient {
        if ((stallWhere == 2) || (stallWhere == 3)) {
           LOG.info("Stalling in phase 2 for doCommit");
           boolean loopBack = false;
-          try {
-             Thread.sleep(300000); // Initially set to run every 5 min
-          } catch(InterruptedException ie) {
-               loopBack = true;
+          do {
+             try {
+                Thread.sleep(300000); // Initially set to run every 5 min
+             } catch(InterruptedException ie) {
+                 loopBack = true;
+             }
           } while (loopBack);
        }
 
@@ -569,11 +575,13 @@ public class HBaseTxClient {
           synchronized(commitDDLLock)
           {
              boolean loopBack = false;
-             try {
-               commitDDLLock.wait();
-             } catch(InterruptedException ie) {
-                 LOG.warn("Interrupting commitDDLLock.wait,  but retrying ", ie);
-                 loopBack = true;
+             do {
+                try {
+                   commitDDLLock.wait();
+                } catch(InterruptedException ie) {
+                    LOG.warn("Interrupting commitDDLLock.wait,  but retrying ", ie);
+                    loopBack = true;
+                }
              } while (loopBack);
           }
           return TransReturnCode.RET_EXCEPTION.getShort();
@@ -604,14 +612,14 @@ public class HBaseTxClient {
        }
   
        boolean loopBack = false;
-       try {
-
-       if (LOG.isTraceEnabled()) LOG.trace("TEMP completeRequest Calling CompleteRequest() Txid :" + transactionId);
-
-          ts.completeRequest();
-       } catch(InterruptedException ie) {
-          LOG.warn("Interrupting HBaseTxClient:completeRequest but retrying, ts.completeRequest: txid: " + transactionId + ", EXCEPTION: ", ie);
-          loopBack = true;
+       do {
+          try {
+             if (LOG.isTraceEnabled()) LOG.trace("TEMP completeRequest Calling CompleteRequest() Txid :" + transactionId);
+             ts.completeRequest();
+          } catch(InterruptedException ie) {
+              LOG.warn("Interrupting HBaseTxClient:completeRequest but retrying, ts.completeRequest: txid: " + transactionId + ", EXCEPTION: ", ie);
+              loopBack = true;
+          } 
        } while (loopBack);
 
      synchronized(mapLock) {
@@ -955,12 +963,13 @@ public class HBaseTxClient {
                                 new HashMap<Long, TransactionState>();
                         boolean loopBack = false;
                         do {
-                        try {
-                             regions = zookeeper.checkForRecovery();
-                        } catch(InterruptedException ie) {
-                           loopBack = true;
-                        } catch (KeeperException ze) {
-                        }
+                           try {
+                               regions = zookeeper.checkForRecovery();
+                           } catch(InterruptedException ie) {
+                              loopBack = true;
+                           } catch (KeeperException ze) {
+                              loopBack = true;
+                           }
                         } while (loopBack);
 
                         if(regions != null) {
