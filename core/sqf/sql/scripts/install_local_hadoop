@@ -847,26 +847,26 @@ EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstatus
 #!/bin/sh
-cd ${MY_SW_ROOT}
-. $MY_SW_SCRIPTS_DIR/sw_env.sh
-JPS_OUTPUT=`jps`
+cd \${MY_SW_ROOT}
+. \$MY_SW_SCRIPTS_DIR/sw_env.sh
+JPS_OUTPUT=\`jps\`
 SERVICES='HMaster NodeManager ResourceManager NameNode DataNode SecondaryNameNode'
-for s in $SERVICES; do
-    if [[ ! $JPS_OUTPUT =~ $s ]]; then
-        MISS_SERVICE="$s $MISS_SERVICE"
+for s in \$SERVICES; do
+    if [[ ! \$JPS_OUTPUT =~ \$s ]]; then
+        MISS_SERVICE="\$s \$MISS_SERVICE"
     fi
 done
 
-if [[ $MISS_SERVICE != '' ]]; then
-    echo "ERROR: Service \"$MISS_SERVICE\" are not up!"
+if [[ \$MISS_SERVICE != '' ]]; then
+    echo "ERROR: Service \"\$MISS_SERVICE\" are not up!"
     exit 1
 else
     echo "The local hadoop services are up!"
 fi
 
-NUM_MYSQLD_PROCS=`ps -aef | grep $USER | grep mysqld | grep -v grep | wc -l`
-if [[ $NUM_MYSQLD_PROCS -ne 0 ]]; then
-    echo "$NUM_MYSQLD_PROCS mysqld processes are running"
+NUM_MYSQLD_PROCS=\`ps -aef | grep \$USER | grep mysqld | grep -v grep | wc -l\`
+if [[ \$NUM_MYSQLD_PROCS -ne 0 ]]; then
+    echo "\$NUM_MYSQLD_PROCS mysqld processes are running"
     exit 0
 else
     echo "ERROR: mysqld process is not running!"
