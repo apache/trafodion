@@ -590,6 +590,20 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit
         strcpy(srvrGlobal->CurrentSchema, "SEABASE");
 
     }
+ 
+    odbc_SQLSvc_SetConnectionOption_sme_(NULL, NULL,
+                 &setConnectException,
+                 dialogueId,
+                 BEGIN_SESSION,
+                 0,
+                 NULL,
+                 &sqlWarning);
+    if (setConnectException.exception_nr != CEE_SUCCESS)
+    {
+        throwSetConnectionException(jenv, &setConnectException);
+        FUNCTION_RETURN_VOID(("BEGIN_SESSION - setConnectException.exception_nr(%s) is not CEE_SUCCESS",
+                        CliDebugSqlError(setConnectException.exception_nr)));
+    }
 
     if(blnDoomUsrTxn)
     {
