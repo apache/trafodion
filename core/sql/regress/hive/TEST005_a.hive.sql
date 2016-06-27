@@ -201,3 +201,10 @@ ROW FORMAT DELIMITED
   FIELDS TERMINATED BY '|'
 LOCATION
 '/user/hive/exttables/tbl_bad';
+
+drop table thive_insert_smallint;
+create table thive_insert_smallint (a smallint);
+drop table thive_insert_varchar;
+create table thive_insert_varchar (a varchar(1), b string);
+
+

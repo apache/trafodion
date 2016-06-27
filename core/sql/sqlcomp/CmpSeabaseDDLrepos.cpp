@@ -47,8 +47,17 @@ short CmpSeabaseDDL::createRepos(ExeCliInterface * cliInterface)
 
   NABoolean xnWasStartedHere = FALSE;
 
+  cliRC = cliInterface->holdAndSetCQD
+    ("TRAF_MAX_CHARACTER_COL_LENGTH", "1000000");
+
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
   if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
-    return -1;
+    goto label_error;
 
   // Create the _REPOS_ schema
   str_sprintf(queryBuf, "create schema %s.\"%s\" ; ",
@@ -66,7 +75,7 @@ short CmpSeabaseDDL::createRepos(ExeCliInterface * cliInterface)
     }
 
   if (endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC) < 0)
-    return -1;
+    goto label_error;
 
   for (Int32 i = 0; i < sizeof(allReposUpgradeInfo)/sizeof(MDUpgradeInfo); i++)
     {
@@ -100,7 +109,7 @@ short CmpSeabaseDDL::createRepos(ExeCliInterface * cliInterface)
       NADELETEBASIC(gluedQuery, STMTHEAP);
 
       if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
-        return -1;
+        goto label_error;
       
       cliRC = cliInterface->executeImmediate(queryBuf);
       if (cliRC == -1390)  // table already exists
@@ -114,11 +123,16 @@ short CmpSeabaseDDL::createRepos(ExeCliInterface * cliInterface)
 	}
 
       if (endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC) < 0)
-        return -1;
+        goto label_error;
       
     } // for
   
+  cliRC = cliInterface->restoreCQD("TRAF_MAX_CHARACTER_COL_LENGTH");
   return 0;
+
+  label_error:
+   cliRC = cliInterface->restoreCQD("TRAF_MAX_CHARACTER_COL_LENGTH");
+   return -1;
 }
 
 short CmpSeabaseDDL::dropRepos(ExeCliInterface * cliInterface,

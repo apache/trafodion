@@ -297,14 +297,14 @@ public:
          ( (bitmapOffset_ == 0) && (firstFixedOffset == hdrSz) ) )
       return 0;
     else
-      return ( *((UInt16 *)(((char *)this) + hdrSz)) );
+      return ( *((UInt32 *)(((char *)this) + hdrSz)) );
   }
 
   //
   // Get the offset at the specified VOA entry
   UInt32 getVoaEntry( UInt32                    voaOffset )
   {
-    return( *((UInt16 *)((char *)this + voaOffset)) );
+    return( *((UInt32 *)((char *)this + voaOffset)) );
   }
 
   //
@@ -312,7 +312,7 @@ public:
   void setVoaOffset( UInt32                     voaOffset,
                      UInt32                     voaEntryValue )
   {
-    *((UInt16 *)(((char *)this) + voaOffset)) = (UInt16)voaEntryValue;
+    *((UInt32 *)(((char *)this) + voaOffset)) = (UInt32)voaEntryValue;
   }
 
   static void incrVoaOffset( UInt32            &voaOffset )
@@ -402,7 +402,7 @@ public:
 
   static UInt32 getVarLength( char             *dataPtr )
   {
-    UInt16 len;
+    UInt32 len;
     str_cpy_all( (char *)&len, dataPtr, sizeof(len) );
     return len;
   }
@@ -452,7 +452,7 @@ public:
       UInt32 endVoa = firstFixedOffset - OFFSET_SIZE;
       while( endVoa >= hdrSz )
       {
-        if ( *(UInt16 *)(dataPtr + endVoa) > 0 )
+        if ( *(UInt32 *)(dataPtr + endVoa) > 0 )
         break;
 
         endVoa -= OFFSET_SIZE;

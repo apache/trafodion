@@ -1004,19 +1004,6 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
   CollIndex i = cols.entries();
   CMPASSERT(i == compExpr.entries());
 
-  NAString tmp;
-  // For a SELECT query that is part of a CREATE VIEW statement, force use of IEEE floating-point
-  // because SQL/MX Catalog Manager does not support Tandem floating-point, and would return an
-  // internal error if it is encountered.
-  if (bindWA->inViewDefinition() || bindWA->inMVDefinition())
-    tmp = "IEEE";
-  else
-    CmpCommon::getDefault(FLOATTYPE, tmp, -1);
-  NABoolean outputFloattypeIEEE =
-    ((tmp == "IEEE") ||
-     (CmpCommon::getDefault(ODBC_PROCESS) == DF_ON) ||
-     (CmpCommon::getDefault(JDBC_PROCESS) == DF_ON));
-
   while (i--) {
     ColumnDesc *col = cols[i];
 
@@ -1061,65 +1048,25 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         compExpr[i] = newChild->getValueId();
       }
 
-    // For dynamic queries that are not part of a CREATE VIEW, change the returned type based on the
-    // 'floattype' CQD. The default is Tandem type.
-    // This is done to be upward compatible with
-    // pre-R2 dynamic programs which are coded to expect tandem float
-    // types in dynamic statements (describe, get descriptor, etc...).
-    // The static statements are ok as we would convert from/to
-    // tandem float hostvariables at runtime.
-    // For the SELECT query that is part of a CREATE VIEW statement, do not convert to any
-    // Tandem floating-point type because SQL/MX catalog manager does not support Tandem floating-point
-    // and would give internal error.
-    if ((naType.getTypeQualifier() == NA_NUMERIC_TYPE) &&
-        (CmpCommon::context()->GetMode() == STMT_DYNAMIC))
-       {
-         NumericType &nTyp = (NumericType &)col->getValueId().getType();
-
-        if ((outputFloattypeIEEE &&
-             (nTyp.getFSDatatype() == REC_TDM_FLOAT32 ||
-              nTyp.getFSDatatype() == REC_TDM_FLOAT64)) ||
-            (! outputFloattypeIEEE &&
-             (nTyp.getFSDatatype() == REC_IEEE_FLOAT32 ||
-              nTyp.getFSDatatype() == REC_IEEE_FLOAT64)))
-          {
-            NAType *newTyp;
-
-            if (outputFloattypeIEEE)
-              {
-                // convert to IEEE floating point.
-                newTyp = new (bindWA->wHeap())
-                  SQLDoublePrecision(nTyp.supportsSQLnull(),
-                                     bindWA->wHeap(),
-                                     nTyp.getBinaryPrecision());
-              }
-            else
-              {
-                // convert to Tandem floating point.
-                if (nTyp.getFSDatatype() == REC_IEEE_FLOAT32)
-                  newTyp = new (bindWA->wHeap())
-                    SQLRealTdm(nTyp.supportsSQLnull(),
-                               bindWA->wHeap(),
-                               nTyp.getBinaryPrecision());
-                else
-                  newTyp = new (bindWA->wHeap())
-                    SQLDoublePrecisionTdm(nTyp.supportsSQLnull(),
-                                          bindWA->wHeap(),
-                                          nTyp.getBinaryPrecision());
-              }
-
-            ItemExpr *ie = col->getValueId().getItemExpr();
-            ItemExpr *cast = new (bindWA->wHeap())
-              Cast(ie, newTyp, ITM_CAST);
-            cast = cast->bindNode(bindWA);
-            if (bindWA->errStatus()) return;
-
-            col->setValueId(cast->getValueId());
-            compExpr[i] = cast->getValueId();
-          }
+    // if ON, return tinyint as smallint.
+    // This is needed until all callers/drivers have full support to
+    // handle IO of tinyint datatypes.
+    if ((naType.getTypeName() == LiteralTinyInt) &&
+        ((CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF) ||
+         (CmpCommon::getDefault(TRAF_TINYINT_RETURN_VALUES) == DF_OFF)))
+      {
+        ItemExpr * cast = new (bindWA->wHeap())
+          Cast(col->getValueId().getItemExpr(),
+               new (bindWA->wHeap()) SQLSmall(TRUE, naType.supportsSQLnull()));
+        cast = cast->bindNode(bindWA);
+        if (bindWA->errStatus()) 
+          return;
+        col->setValueId(cast->getValueId());
+        compExpr[i] = cast->getValueId();
       }
-
-    if (naType.getTypeQualifier() == NA_NUMERIC_TYPE && !((NumericType &)col->getValueId().getType()).binaryPrecision()) {
+    
+    else if (naType.getTypeQualifier() == NA_NUMERIC_TYPE && 
+             !((NumericType &)col->getValueId().getType()).binaryPrecision()) {
       NumericType &nTyp = (NumericType &)col->getValueId().getType();
       
       ItemExpr * ie = col->getValueId().getItemExpr();
@@ -1604,19 +1551,20 @@ NATable *BindWA::getNATable(CorrName& corrName,
       NATable *nativeNATable = bindWA->getSchemaDB()->getNATableDB()->
                                   get(externalCorrName, bindWA, inTableDescStruct);
   
-       // Compare column lists
-       // TBD - return what mismatches
-       if ( nativeNATable && !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()))
-         {
-           *CmpCommon::diags() << DgSqlCode(-3078)
-                               << DgString0(adjustedName)
-                               << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
-           bindWA->setErrStatus();
-           nativeNATable->setRemoveFromCacheBNC(TRUE);
-           return NULL;
-         }
+      // Compare column lists
+      // TBD - return what mismatches
+      if ( nativeNATable && !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()) &&
+           (NOT bindWA->externalTableDrop()))
+        {
+          *CmpCommon::diags() << DgSqlCode(-3078)
+                              << DgString0(adjustedName)
+                              << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
+          bindWA->setErrStatus();
+          nativeNATable->setRemoveFromCacheBNC(TRUE);
+          return NULL;
+        }
     }
-    
+  
   HostVar *proto = corrName.getPrototype();
   if (proto && proto->isPrototypeValid())
     corrName.getPrototype()->bindNode(bindWA);
@@ -9183,20 +9131,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     if (getOverwriteHiveTable())
     {
       RelExpr * newRelExpr =  new (bindWA->wHeap())
-        ExeUtilFastDelete(getTableName(),
-                          NULL,
-                          (char*)"hive_truncate",
-                          CharInfo::ISO88591,
-                          FALSE,
-                          TRUE,
-                          TRUE,
-                          TRUE,
-                          bindWA->wHeap(),
-                          TRUE,
-                          new (bindWA->wHeap()) NAString(tableDir),
-                          new (bindWA->wHeap()) NAString(hostName),
-                          hdfsPort,
-                          hTabStats->getModificationTS());
+        ExeUtilHiveTruncate(getTableName(), NULL, bindWA->wHeap());
 
       //new root to prevent  error 4056 when binding
       newRelExpr = new (bindWA->wHeap()) RelRoot(newRelExpr);

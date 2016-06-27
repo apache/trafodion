@@ -38,6 +38,7 @@ obey TEST009(create_db);
 obey TEST009(test_hive1);
 obey TEST009(test_hive2);
 obey TEST009(test_hbase);
+obey TEST009(test_ext);
 log;
 obey TEST009(clean_up);
 exit;
@@ -45,6 +46,9 @@ exit;
 ?section clean_up
 
 -- remove messed up table
+drop external table t009t1 for hive.sch_t009.t009t1;
+drop external table t009t2 for hive.sch_t009.t009t2;
+
 cleanup table "_HV_SCH_T009_".t009t1;
 -- remove schemas from Trafodion
 drop schema if exists "_HV_HIVE_" cascade;
@@ -54,6 +58,11 @@ drop schema if exists hive_t009 cascade;
 -- remove data from hdfs
 sh regrhadoop.ksh fs -rm   /user/hive/exttables/t009t1/*;
 sh regrhadoop.ksh fs -rm   /user/hive/exttables/t009t2/*;
+
+-- Remove external hive tables used by this test
+drop external table if exists customer for hive.hive.customer;
+drop external table if exists item for hive.hive.item;
+drop external table if exists promotion for hive.hive.promotion;
 
 -- drop hbase tables
 drop schema if exists "_HB__ROW__" cascade;
@@ -69,6 +78,9 @@ drop schema "_HIVESTATS_" cascade;
 cleanup table "_HB__CELL__".t028tbl1;
 drop schema "_HB__CELL__" cascade;
 reset parserflags 131072;
+
+--cqd hive_use_ext_table_attrs 'ON';
+cqd hive_max_string_length '20';
  
 ?section create_db
 
@@ -97,7 +109,7 @@ create external table customer for hive.hive.customer;
 create external table item for hive.hive.item;
 create external table promotion for hive.hive.promotion;
 
--- should create an schema called "_HV_HIVE_"
+-- should see a schema called "_HV_HIVE_"
 execute get_hv_schemas;
 
 -- Verify tables were created
@@ -141,10 +153,11 @@ create table hive_customer like hive.hive.customer;
 create table newtable1 like hive.hive.customer;
 create external table seabase.customer like hive.hive.customer;
 create external table customer1 like hive.hive.customer;
-create table t009t1 like "_HV_SCH_T009_".t009t1;
 create table t009t2 as select * from "_HV_SCH_T009_".t009t2;
 
 -- this create succeeds
+create table t009t1 like "_HV_SCH_T009_".t009t1;
+drop table t009t1;
 create table t009t1 as select * from hive.sch_t009.t009t1;
 
 get tables;
@@ -163,7 +176,6 @@ sh regrhive.ksh -v -f $REGRTSTDIR/TEST009_b.hive.sql &> $REGRRUNDIR/LOG009_b.hiv
 
 -- should fail - column mismatch
 select count(*) from hive.sch_t009.t009t1;
-
 sh sqlci -i "TEST009(select_stmts)";
 
 -- drop and recreate external table
@@ -172,9 +184,12 @@ drop external table t009t1 for hive.sch_t009.t009t1;
 get tables in schema "_HV_SCH_T009_";
 select row_id, catalog_name, schema_name, object_name from table(natablecacheentries('user','local')) order by 2,3,4;
 create external table t009t1 for hive.sch_t009.t009t1;
+invoke hive.sch_t009.t009t1;
+showddl trafodion."_HV_SCH_T009_".t009t1;
 
 -- select should now succeed
 select count(*) from hive.sch_t009.t009t1;
+select * from hive.sch_t009.t009t1;
 
 ?section select_stmts
 log LOG009;
@@ -190,6 +205,8 @@ create external table "baseball" for hbase."_CELL_"."baseball";
 execute get_hb_schemas;
 
 -- Verify tables were created
+invoke trafodion."_HB__ROW__"."baseball";
+invoke trafodion."_HB__CELL__"."baseball";
 showddl trafodion."_HB__ROW__"."baseball";
 showddl trafodion."_HB__CELL__"."baseball";
 
@@ -204,3 +221,71 @@ select * from trafodion."_HB__ROW__"."baseball";
 drop external table trafodion."_HB__ROW__"."baseball";
 drop external table "baseball" for hbase."_CELL_"."baseball";
 
+?section test_ext
+-- test external table attributes
+set schema trafodion.sch;
+drop external table if exists store_sales for hive.hive.store_sales;
+create external table store_sales 
+  for hive.hive.store_sales;
+invoke hive.hive.store_sales;
+
+set schema hive.hive;
+prepare s from select * from store_sales where ss_item_sk = 1;
+explain s;
+
+-- join with nested join
+control query shape nested_join(scan(path 'CUSTOMER'), 
+      scan(path 'STORE_SALES'));
+prepare s from select * from customer, store_sales 
+    where store_sales.ss_item_sk = customer.c_customer_sk;
+explain options 'f' s;
+explain s;
+
+control query shape cut;
+set schema trafodion.sch;
+drop external table if exists date_dim for hive.hive.date_dim;
+cqd volatile_table_find_suitable_key 'SYSTEM';
+create external table date_dim 
+  (d_date_sk int, d_date_id varchar(100 bytes) character set utf8, d_date date, 
+   d_month_seq int, d_week_seq int, d_quarter_seq int, d_year int, d_dow int,
+   d_moy int, d_dom int, d_qoy int, d_fy_year int, d_fy_quarter_seq int,
+   d_fy_week_seq int,
+   d_day_name varchar(120 bytes) character set utf8, d_quarter_name varchar(200 bytes) character set utf8, d_holiday varchar(100 bytes) character set utf8,
+   d_weekend varchar(100 bytes) character set utf8, d_following_holiday varchar(100 bytes) character set utf8, 
+   d_first_dom int, d_last_dom int, d_same_day_ly int, d_same_day_lq int,
+   d_current_day varchar(100 bytes) character set utf8, d_current_week varchar(111 bytes) character set utf8,
+   d_current_month varchar(200 bytes) character set utf8, d_current_quarter varchar(100 bytes) character set utf8, 
+   d_current_year varchar(100 bytes) character set utf8)
+  for hive.hive.date_dim;
+invoke hive.hive.date_dim;
+showddl hive.hive.date_dim;
+prepare s from select * from hive.hive.date_dim where d_date = date '2016-01-27';
+explain s;
+
+drop external table if exists date_dim for hive.hive.date_dim;
+create external table date_dim 
+  (d_date_sk int, d_date_id varchar(100 bytes) character set utf8, d_date date)
+  for hive.hive.date_dim;
+invoke hive.hive.date_dim;
+showddl hive.hive.date_dim;
+prepare s from select * from hive.hive.date_dim where d_date = date '2016-01-27';
+explain s;
+
+
+-- error cases
+drop external table if exists date_dim for hive.hive.date_dim;
+
+-- column d_date_skk doesn't exist in native hive table
+create external table date_dim 
+  (d_date_skk int)
+  for hive.hive.date_dim;
+
+-- cannot have primary key on hive/text tables
+drop external table if exists store_sales for hive.hive.store_sales;
+create external table store_sales 
+  for hive.hive.store_sales primary key (ss_item_sk);
+
+-- column d_date_sk has incompatible type
+create external table date_dim 
+  (d_date_sk date)
+  for hive.hive.date_dim;

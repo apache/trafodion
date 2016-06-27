@@ -80,6 +80,7 @@ enum FileOrganizationEnum
 // -----------------------------------------------------------------------
 class NAFileSet : public NABasicObject
 {
+  friend class NATable;
 public:
 
   // ---------------------------------------------------------------------
@@ -153,6 +154,7 @@ public:
                                               { return indexKeyColumns_; }
 
   const desc_struct * getKeysDesc() const { return keysDesc_; }
+  desc_struct * getKeysDesc() { return keysDesc_; }
 
   Lng32 getCountOfFiles() const                  { return countOfFiles_; }
 

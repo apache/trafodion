@@ -41,6 +41,10 @@ class t100
         BigDecimal two = new BigDecimal(2);
         OUT2[0] = IN1.divide(two, BigDecimal.ROUND_HALF_UP);
     }
+    public static void T100_io_yy(short IN1, short[] OUT2)
+    {
+        OUT2[0] = IN1;
+    }
     public static void T100_io_ss(short IN1, short[] OUT2)
     {
         OUT2[0] = IN1;
