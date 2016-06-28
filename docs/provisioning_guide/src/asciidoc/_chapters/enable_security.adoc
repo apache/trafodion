@@ -26,11 +26,11 @@
 [[enable-security]]
 = Enable Security
 
-{project-name} supports user authentication with LDAP, integrates in Hadoop's Kerberos environment and
+{project-name} supports user authentication with LDAP, integrates with Hadoop's Kerberos environment and
 supports authorization through database grant and revoke requests (privileges).
 
-If this is an initial installation, both LDAP and Kerberos can be configured by running {project-name} installer.
-If {project-name} is already installed, then both LDAP and Kerberos can be configured by running {project-name} 
+If this is an initial installation, both LDAP and Kerberos can be configured by running the {project-name} installer.
+If {project-name} is already installed, then both LDAP and Kerberos can be configured by running the {project-name} 
 security installer. 
 
 * If Hadoop has enabled Kerberos, then {project-name} must also enable Kerberos.
@@ -43,16 +43,16 @@ security installer.
 Kerberos is a protocol for authenticating a request for a service or operation.  It uses the notion of a ticket to verify accessibility.  
 The ticket is proof of identity encrypted with a secret key for the particular requested service.  Tickets exist for a short time and 
 then expire. Therefore, you can use the service as long as your ticket is valid (i.e. not expired).  Hadoop uses Kerberos to provide 
-security for its services, as such {project-name} needs to function properly with Hadoop that has Kerberos enabled.  
+security for its services, as such {project-name} needs to function properly with Hadoop that have Kerberos enabled.  
 
 === Kerberos configuration file
-It is assumed that Kerberos has already been setup on all the nodes by the time Trafodion is installed. 
+It is assumed that Kerberos has already been set up on all the nodes by the time Trafodion is installed. 
 This section briefly discusses the Kerberos configuration file for reference.
 
 The Kerberos configuration file defaults to /etc/krb5.conf and contains, among other attributes:
 
 ```
-* log location: location where Kerberos errors and other information is logged
+* log location: location where Kerberos errors and other information are logged
 * KDC location: host location where the KDC (Key Distribution Center) is located
 * admin server location: host location where the Kerberos admin server is located
 * realm: the set of nodes that share a Kerberos database 
@@ -75,14 +75,14 @@ When Kerberos is enabled in {project-name}, the security installation process:
 * Creates a keytab for each principal and distributes the keytab to each node. The keytab name is the same for all nodes 
 and defaults to a value based on the distribution, for example: etc/trafodion/keytabs/trafodion.service.keytab.
 * Performs a "kinit" on all nodes in the cluster for the `trafodion` user.
-* Add commands to perform "kinit" and to start the ticket renewal procedure to the `trafodion` .bashrc scripts on each node. 
+* Adds commands to perform "kinit" and to start the ticket renewal procedure to the `trafodion` .bashrc scripts on each node. 
 
 The ticket renewal service renews tickets up until the maximum number of renewals allowed.  So if your ticket lifetime is 
 one day and the number of renewals is seven days, the ticket renewal service automatically renews tickets six times.  Once 
 the ticket expires, it must be initialized again to continue running Trafodion.  Connecting to each node as the `trafodion` 
 user initializes the ticket if one does not exist.
 
-TBD - add details on how tickets can be managed at the cluster level.
+TBD - A future update will include details on how tickets can be managed at the cluster level.
 
 === Kerberos installation
 The {project-name} installation scripts automatically determine if Kerberos is enabled on the node.  If it is enabled,
@@ -93,7 +93,7 @@ The following are questions that will be asked related to Kerberos:
 * Enter KDC server address, default is []: – no default
 * Enter admin principal (include realm), default is []:  - no default
 * Enter fully qualified name for HBase keytab, default is []: - Installer searches for a valid keytab based on the distribution
-* Enter fully qualified name for HBase keytab, default is []: - Installer searches for a valid keytab based on the distribution
+* Enter fully qualified name for HDFS keytab, default is []: - Installer searches for a valid keytab based on the distribution
 * Enter max lifetime for Trafodion principal (valid format required), default is [24hours]:
 * Enter renew lifetime for Trafodion principal (valid format required), default is [7days]:
 * Enter Trafodion keytab name, default is []:  - Installer determines default name based on the distribution
@@ -106,7 +106,7 @@ of Guided mode. It does not save this password.
 == Configuring LDAP
 {project-name} does not manage user names and passwords internally but supports authentication via directory servers using
 the OpenLDAP protocol, also known as LDAP servers. You can configure the LDAP servers during installation by answering the {project-name}
-Installer's prompts. To configure LDAP after installation run security installer directly.  Installing LDAP also enables database
+Installer's prompts. To configure LDAP after installation run the {project-name} security installer directly.  Installing LDAP also enables database
 authorization (privilege support). 
 
 Once authentication and authorization are enabled, {project-name} allows users to be registered in the database and allows privileges
@@ -223,7 +223,7 @@ Authentication successful
 [[enable-security-generate-trafodion-certificate]]
 === Generate {project-name} Certificate
 {project-name} clients such as `trafci` encrypt the password before sending it to {project-name}. A self-signed certificate is used to encrypt the password.
-The certificate and key is generated when the `sqgen` script is invoked. By default, the files `server.key` and `server.crt` are located
+The certificate and key are generated when the `sqgen` script is invoked. By default, the files `server.key` and `server.crt` are located
 in `$HOME/sqcert`. If those files are not present and since {project-name} clients does not send unencrypted passwords, then you need to manually generate
 those files. To do so, run the script `sqcertgen` located in `$MY_SQROOT/sql/scripts`. The script runs `openssl` to generate the certificate and key.
 
@@ -519,7 +519,7 @@ Once authorization is enabled, there is one predefined database user called DB__
 Please connect to the database and this user and register users that will perform database admin management. The database
 admin can then connect and setup required users, roles, and privileges.
 
-TBD - add pointer to the security best practices guide.
+TBD - A future update should include a pointer to the security best practices guide.
 
 To learn more about how to register users, grant object and component privileges, and manage users and roles, please see the
 {docs-url}/sql_reference/index.html[Trafodion SQL Reference Manual].

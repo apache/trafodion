@@ -67,21 +67,21 @@ more information about managing {project-name} Database Users.
  +
 If your environment has been provisioned with Kerberos, then the following additional information is required. 
 
-* *HDFS keytab location*: {project-name} requires administrator access to HDFS to create directories that store files needed to perform SQL requests 
-such as data loads and backups.  Refer to
-<<enable-security-kerberos,Kerberos>> for more information about the requirements and usage associated with this keytab.
+* *KDC admin principal*: {project-name} requires administrator access to Kerberos to create principals 
+and keytabs for the `trafodion` user, and to look-up principal names for HDFS and HBase keytabs.  Refer to 
+<<enable-security-kerberos,Kerberos>> for more information about the requirements and usage associated with this principal.
 
 * *HBase keytab location*: {project-name} requires administrator access to HBase to grant required privileges to the `trafodion` user.  Refer to
 <<enable-security-kerberos,Kerberos>> for more information about the requirements and usage associated with this keytab.
 
-* *KDC admin principal*: {project-name} requires administrator access to Kerberos to create principals 
-and keytabs for the `trafodion` user, and to look-up principal names for HDFS and HBase keytabs.  Refer to 
-<<enable-security-kerberos,Kerberos>> for more information about the requirements and usage associated with this principal.
+* *HDFS keytab location*: {project-name} requires administrator access to HDFS to create directories that store files needed to perform SQL requests 
+such as data loads and backups.  Refer to
+<<enable-security-kerberos,Kerberos>> for more information about the requirements and usage associated with this keytab.
  +
  +
 If your environment is using LDAP for authentication, then the following additional information is required.
 
-* *LDAP username for database root access*:  When {project-name} is installed, it creates a predefined database user called DB\__ROOT.  
+* *LDAP username for database root access*:  When {project-name} is installed, it creates a predefined database user referred to as the DB\__ROOT user.  
 In order to connect to the database as database root, there must be a mapping between the database user DB__ROOT and an LDAP user. Refer to  
 <<enable-security-ldap,LDAP>> for more information about this option.
 
@@ -123,31 +123,30 @@ administrative tasks if using Recipe-Based Provisioning.
 * *<<requirements,Requirements>>*: Activities and documentation required to install the {project-name} software.
 These activities include tasks such as understanding hardware and operating system requirements,
 Hadoop requirements, what software packages that need to be downloaded, configuration settings that need to be changed,
-user IDs requirements, and so on.
+and user ID requirements.
 
 * *<<prepare,Prepare>>*: Activities to prepare the operating system and the Hadoop ecosystem to run
 {project-name}. These activities include tasks such as installing required software packages, configure
-the {project-name} Installation User, gather information about the Hadoop environment, modify configuration
-for different Hadoop services, and so forth.
+the {project-name} Installation User, gather information about the Hadoop environment, and the modify configuration
+for different Hadoop services.
 
 * *<<install,Install>>*: Activities related to installing the {project-name} software. These activities
 include tasks such as unpacking the {project-name} tar files, creating the {project-name} Runtime User,
-creating {project-name} HDFS directories, installing the {project-name} software, enabling security features and so forth.
+creating {project-name} HDFS directories, installing the {project-name} software, and enabling security features.
 
 * *<<upgrade,Upgrade>>*: Activities related to the upgrading the {project-name} software. These activities
-include tasks such as shutting down {project-name}, installing a new version of the {project-name} software,
-and so on. The upgrade tasks vary depending on the differences between the current and new release of
+include tasks such as shutting down {project-name} and installing a new version of the {project-name} software.
+The upgrade tasks vary depending on the differences between the current and new release of
 {project-name}. For example, an upgrade may or may not include an upgrade of the {project-name} metadata.
 
 * *<<activate,Activate>>*: Activities related to starting the {project-name} software. These actives
-include basic management tasks such as starting and checking the status of the {project-name} components,
-performing basic smoke tests, and so forth.
+include basic management tasks such as starting and checking the status of the {project-name} components and performing basic smoke tests.
 
 * *<<remove,Remove>>*: Activities related to removing {project-name} from your Hadoop cluster.
 
 * *<<enable-security,Enable Security>>*: Activities related to enabling security features on an already installed
 {project-name} installation.  These activities include tasks such as adding Kerberos principals and keytabs,
-setting up LDAP configuration files, and so forth.
+and setting up the LDAP configuration files.
 
 [[introduction-provisioning-master-node]]
 == Provisioning Master Node
@@ -266,7 +265,7 @@ NOTE: Your {project-name} Configuration File contains the password for the {proj
 and for the Distribution Manager. Therefore, we recommend that you secure the file in a manner
 that matches the security policies of your organization. 
 
-NOTE: If you installing {project-name} on a version of Hadoop that has been instrumented with Kerberos,
+NOTE: If you are installing {project-name} on a version of Hadoop that has been instrumented with Kerberos,
 you will be asked for a password associated with a Kerberos administrator.  
 
 ==== Example: Creating a {project-name} Configuration File
