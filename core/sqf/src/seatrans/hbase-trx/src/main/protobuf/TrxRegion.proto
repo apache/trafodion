@@ -92,8 +92,9 @@ message CommitMultipleResponse {
 message CommitRequestRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
-  required int32 participantNum = 3;
-  required bool dropTableRecorded = 4;
+  required int64 startEpoc = 3;
+  required int32 participantNum = 4;
+  required bool dropTableRecorded = 5;
 }
 
 message CommitRequestResponse {
@@ -105,7 +106,8 @@ message CommitRequestResponse {
 message CommitRequestMultipleRequest{
   repeated bytes regionName = 1;
   required int64 transactionId = 2;
-  required int32 participantNum = 3;
+  required int64 startEpoc = 3;
+  required int32 participantNum = 4;
 }
 
 message CommitRequestMultipleResponse {
@@ -117,7 +119,9 @@ message CommitRequestMultipleResponse {
 message CommitIfPossibleRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
-  required int32 participantNum = 3;
+  required int64 startEpoc = 3;
+  required int64 commitId = 4;
+  required int32 participantNum = 5;
 }
 
 message CommitIfPossibleResponse {
@@ -355,6 +359,7 @@ message TransactionPersist {
   repeated int64 seqNoListSeq = 2;
   repeated int64 seqNoListTxn = 3;
   required int64 nextSeqId = 4;
+  required int64 onlineEpoc = 5;
 }
 
 message TransactionStateMsg {

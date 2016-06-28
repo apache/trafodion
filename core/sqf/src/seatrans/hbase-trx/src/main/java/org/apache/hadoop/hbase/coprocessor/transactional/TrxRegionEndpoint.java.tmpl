@@ -304,6 +304,7 @@ CoprocessorService, Coprocessor {
   private int regionState = 0; 
   private Path recoveryTrxPath = null;
   private int cleanAT = 0;
+  private long onlineEpoc = EnvironmentEdgeManager.currentTime();  
   
   private long[] commitCheckTimes   = new long[50];
   private long[] hasConflictTimes   = new long[50];
@@ -787,6 +788,8 @@ CoprocessorService, Coprocessor {
 
     boolean reply = false;
     long transactionId = request.getTransactionId();
+    long commitId = request.getCommitId();
+    long startEpoc = request.getStartEpoc();
     final int participantNum = request.getParticipantNum();
     Throwable t = null;
     WrongRegionException wre = null;
@@ -807,8 +810,8 @@ CoprocessorService, Coprocessor {
      {
        // Process local memory
        try {
-    	 if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commitIfPossible - txId "  + transactionId + ", regionName, " + regionInfo.getRegionNameAsString() + "calling internal commitIfPossible");
-         reply = commitIfPossible(transactionId, participantNum);
+    	 if (LOG.isDebugEnabled()) LOG.debug("commitIfPossible - txId "  + transactionId + ", regionName, " + regionInfo.getRegionNameAsString() + "calling internal commitIfPossible");
+         reply = commitIfPossible(transactionId, startEpoc, commitId, participantNum);
        } catch (Throwable e) {
           if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible - txId " + transactionId + ", Caught exception after internal commitIfPossible call "
                    + e.getMessage() + " " + stackTraceToString(e));
@@ -849,11 +852,12 @@ CoprocessorService, Coprocessor {
     Throwable t = null;
     WrongRegionException wre = null;
     long transactionId = request.getTransactionId();
+    long startEpoc = request.getStartEpoc();
     int participantNum = request.getParticipantNum();
     boolean dropTableRecorded = request.getDropTableRecorded();
 
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId "
-         + transactionId + ", participantNum " + participantNum + ", dropTableRecorded " + dropTableRecorded + 
+    if (LOG.isTraceEnabled()) LOG.trace("commitRequest - txId "
+         + transactionId + ", startEpoc " + startEpoc + ", participantNum " + participantNum + ", dropTableRecorded " + dropTableRecorded + 
          ", regionName " + regionInfo.getRegionNameAsString());
 
     /*  commenting out for the time being
@@ -872,7 +876,7 @@ CoprocessorService, Coprocessor {
     {
       // Process local memory
       try {
-        status = commitRequest(transactionId, participantNum, dropTableRecorded);
+        status = commitRequest(transactionId, startEpoc, participantNum, dropTableRecorded);
       } catch (UnknownTransactionException u) {
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId " + transactionId + ", Caught UnknownTransactionException after internal commitRequest call - " + u.toString());
         ute = u;
@@ -931,6 +935,7 @@ CoprocessorService, Coprocessor {
     Throwable t = null;
     WrongRegionException wre = null;
     long transactionId = request.getTransactionId();
+    long startEpoc = request.getStartEpoc();
     int i = 0;
     int numOfRegion = request.getRegionNameCount();
     String requestRegionName;
@@ -973,8 +978,8 @@ CoprocessorService, Coprocessor {
                  commitRequestMultipleResponseBuilder.setException(i, BatchException.EXCEPTION_REGIONNOTFOUND_ERR.toString());
               }
               else {
-                 if (i == (numOfRegion - 1)) {status = regionEPCP.commitRequest(transactionId, i, true);} // only the last region flush
-                 else {status = regionEPCP.commitRequest(transactionId, i, false);}
+                 if (i == (numOfRegion - 1)) {status = regionEPCP.commitRequest(transactionId, startEpoc, i, true);} // only the last region flush
+                 else {status = regionEPCP.commitRequest(transactionId, startEpoc, i, false);}
               }
               if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint commitRequestMultiple ends");
              //status = commitRequest(transactionId);
@@ -2970,7 +2975,7 @@ CoprocessorService, Coprocessor {
                              if (LOG.isInfoEnabled()) LOG.info("TrxRegionEndpoint coprocessor: recoveryRequest - Trafodion Recovery: region " + regionInfo.getEncodedName() + " in-doubt transaction " + tid + " has been added into the recovery reply to TM " + tmId + " during start ");
                          }
                      }
-                     // now remove the ZK node after TM has initiated the ecovery request   
+                     // now remove the ZK node after TM has initiated the recovery request   
                     String lv_encoded = m_Region.getRegionInfo().getEncodedName();
                     try {
                        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: recoveryRequest - Trafodion Recovery: delete recovery zNode TM "
@@ -5094,16 +5099,16 @@ CoprocessorService, Coprocessor {
    * @return TransactionRegionInterface commit code
    * @throws IOException
    */
-  public int commitRequest(final long transactionId, final int participantNum) throws IOException, UnknownTransactionException {
-     return commitRequest(transactionId, participantNum, true, false);
+  public int commitRequest(final long transactionId, final long startEpoc, final int participantNum) throws IOException, UnknownTransactionException {
+     return commitRequest(transactionId, startEpoc, participantNum, true, false);
   }
 
-  public int commitRequest(final long transactionId, final int participantNum, final boolean dropTableRecorded)
+  public int commitRequest(final long transactionId, final long startEpoc, final int participantNum, final boolean dropTableRecorded)
                                                     throws IOException, UnknownTransactionException {
-      return commitRequest(transactionId, participantNum, true, dropTableRecorded);
+      return commitRequest(transactionId, startEpoc, participantNum, true, dropTableRecorded);
   }
   
-  public int commitRequest(final long transactionId, final int participantNum, boolean flushHLOG,
+  public int commitRequest(final long transactionId, final long startEpoc, final int participantNum, boolean flushHLOG,
                                                                boolean dropTableRecorded) throws IOException,
                                                                                 UnknownTransactionException {
     long txid = 0;
@@ -5114,7 +5119,13 @@ CoprocessorService, Coprocessor {
     checkBlockNonPhase2(transactionId);
 
     TrxTransactionState state;
-
+    if (startEpoc < onlineEpoc) {
+        LOG.info("commitRequest txId: "
+               + transactionId + " startEpoc " + startEpoc + " is less than region's onlineEpoc " + onlineEpoc
+               + " for regionName " + lv_regionName
+               + " must return COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR ");
+        return COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR;
+    }
     int lv_totalCommits = 0;
     int lv_timeIndex = 0;
     if (LOG.isInfoEnabled()) {
@@ -5516,7 +5527,7 @@ CoprocessorService, Coprocessor {
    * @return boolean
    * @throws IOException
    */
-  public boolean commitIfPossible(final long transactionId, final int participantNum)
+  public boolean commitIfPossible(final long transactionId, final long startEpoc, final long commitId, final int participantNum)
     throws IOException {
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- ENTRY txId: "
@@ -5524,7 +5535,7 @@ CoprocessorService, Coprocessor {
 
     checkBlockNonPhase2(transactionId);
 
-    int status = commitRequest(transactionId, participantNum);
+    int status = commitRequest(transactionId, startEpoc, participantNum);
   
     if (status == COMMIT_OK) {
 
@@ -6078,11 +6089,13 @@ CoprocessorService, Coprocessor {
       }
     }
     txnPersistBuilder.setNextSeqId(nextSequenceId.get());
+    txnPersistBuilder.setOnlineEpoc(this.onlineEpoc);
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     for(TrxTransactionState ts : transactionMap.values()) {
       TransactionStateMsg.Builder tsBuilder =  TransactionStateMsg.newBuilder();
+      tsBuilder.setTxId(ts.getTransactionId());
       tsBuilder.setTxId(ts.getTransactionId());
       tsBuilder.setStartSeqNum(ts.getStartSequenceNumber());
       tsBuilder.setSeqNum(ts.getHLogStartSequenceId());
@@ -6236,8 +6249,10 @@ CoprocessorService, Coprocessor {
                 if (ts!=null)
                   commitedTransactionsBySequenceNumber.put(txnPersistMsg.getSeqNoListSeq(i), ts);
               }
-
+              
               this.nextSequenceId = new AtomicLong(txnPersistMsg.getNextSeqId());
+              this.onlineEpoc = txnPersistMsg.getOnlineEpoc();
+              LOG.info("Setting onlineEpoc after split to " + this.onlineEpoc);
             } catch(IOException e) {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
