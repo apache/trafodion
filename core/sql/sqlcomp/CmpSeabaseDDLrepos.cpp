@@ -140,7 +140,7 @@ short CmpSeabaseDDL::dropRepos(ExeCliInterface * cliInterface,
                                NABoolean dropSchema)
 {
   Lng32 cliRC = 0;
-
+  NABoolean xnWasStartedHere = FALSE;
   char queryBuf[1000];
 
   for (Int32 i = 0; i < sizeof(allReposUpgradeInfo)/sizeof(MDUpgradeInfo); i++)
@@ -153,18 +153,34 @@ short CmpSeabaseDDL::dropRepos(ExeCliInterface * cliInterface,
       str_sprintf(queryBuf, "drop table %s.\"%s\".%s cascade; ",
                   getSystemCatalog(), SEABASE_REPOS_SCHEMA,
                   (oldRepos ? rti.oldName : rti.newName));
-      
+    
+      if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }    
+
       cliRC = cliInterface->executeImmediate(queryBuf);
-      if (cliRC == -1389)  // table doesnt exist
+      if (cliRC == -1389)  // table doesn't exist
 	{
 	  // ignore the error.
-          //          CmpCommon::diags()->clear();
+          cliRC = 0;
 	}
       else if (cliRC < 0)
-	{
-	  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-	  return -1;
-	}
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+        }
+ 
+      if (endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC) < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
+ 
+      if (cliRC < 0)
+        {
+          return -1;  
+        }
 
     }
 
@@ -173,15 +189,33 @@ short CmpSeabaseDDL::dropRepos(ExeCliInterface * cliInterface,
       // Drop the _REPOS_ schema
       str_sprintf(queryBuf, "drop schema %s.\"%s\" cascade; ",
                   getSystemCatalog(),SEABASE_REPOS_SCHEMA);
+
+      if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        } 
+
       cliRC = cliInterface->executeImmediate(queryBuf);
       if (cliRC == -1003)  // schema doesnt exist
         {
           // ignore the error.
+          cliRC = 0;
         }
       else if (cliRC < 0)
         {
           cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+        }
+
+      if (endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC) < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
           return -1;
+        }
+ 
+      if (cliRC < 0)
+        {
+          return -1;  
         }
     }
 
@@ -306,10 +340,10 @@ short CmpSeabaseDDL::copyOldReposToNew(ExeCliInterface * cliInterface)
 
       cliRC = cliInterface->executeImmediate(queryBuf);
       if (cliRC < 0)
-	{
-	  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
           return -1;
-	}
+        }
 
     } // for
 

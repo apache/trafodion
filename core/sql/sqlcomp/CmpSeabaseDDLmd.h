@@ -65,8 +65,8 @@ public:
 ///////////////////////////////////////////////////////////////////////////////
 // *** Current Definition ***
 //
-// Current metadata tables definition for Metadata Version 2.3
-//  (Major version = 2, Minor version = 3)
+// Current metadata tables definition for Metadata Version 2.1
+//  (Major version = 2, Minor version = 1)
 ///////////////////////////////////////////////////////////////////////////////
 
 static const QString seabaseAuthsDDL[] =

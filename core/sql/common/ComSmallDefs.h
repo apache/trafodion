@@ -188,6 +188,9 @@ typedef NABoolean               ComBoolean;
 // length of explain_plan column in metric_query_table.
 // explain_plan greater than this length are chunked and store in multiple
 // rows in metric_text_table
+// Note: This symbol is used in the DDL for the Repository tables.
+// If you change it, consider whether the Repository tables will need
+// an upgrade. See file sqlcomp/CmpSeabaseDDLrepos.h.
 #define REPOS_MAX_EXPLAIN_PLAN_LEN 1000000
 #define REPOS_MAX_EXPLAIN_PLAN_LEN_STR "1000000"
 

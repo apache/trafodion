@@ -33,6 +33,13 @@
 
 #define TRAF_METRIC_QUERY_VIEW "METRIC_QUERY_VIEW"
 
+///////////////////////////////////////////////////////////////////////////////
+// *** Current Definition ***
+//
+// Current repository tables definition for Metadata Version 2.1
+//  (Major version = 2, Minor version = 1)
+///////////////////////////////////////////////////////////////////////////////
+
 //----------------------------------------------------------------
 //-- METRIC_QUERY_TABLE
 //----------------------------------------------------------------
@@ -326,11 +333,332 @@ static const QString createMetricTextTable[] =
     {" ; "}
   };
 
+
+/////////////////////////////////////////////////////////////////////
+//
+// Information about changed old metadata tables from which upgrade
+// is being done to the current version.
+// These definitions have changed in the current version of code.
+// 
+// Old definitions have the form (for ex for METRIC_QUERY_TABLE table):
+//            createOldTrafv??MetricQueryTable[]
+// v?? is the old version.
+//
+// When definitions change, make new entries between
+// START_OLD_MD_v?? and END_OLD_MD_v??.
+// Do not remove older entries. We want to keep them around for
+// historical purpose.
+//
+// Change entries in allReposUpgradeInfo[] struct in this file
+// to reflect the 'old' repository tables.
+//
+//////////////////////////////////////////////////////////////////////
+
 #define TRAF_METRIC_QUERY_TABLE_OLD_REPOS REPOS_METRIC_QUERY_TABLE"_OLD_REPOS"
 #define TRAF_METRIC_SESSION_TABLE_OLD_REPOS REPOS_METRIC_SESSION_TABLE"_OLD_REPOS"
 #define TRAF_METRIC_QUERY_AGGR_TABLE_OLD_REPOS REPOS_METRIC_QUERY_AGGR_TABLE"_OLD_REPOS"
 
-static const QString createOldReposMetricQueryTable[] =
+//----------------------------------------------------------------
+//-- METRIC_QUERY_TABLE
+//----------------------------------------------------------------
+static const QString createOldTrafv11MetricQueryTable[] =
+{
+{" create table %s.\"%s\"."TRAF_METRIC_QUERY_TABLE_OLD_REPOS" "},
+ {" ( "},
+ {" instance_id                            integer unsigned no default not null not droppable serialized, "},
+ {" tenant_id                              integer unsigned no default not null not droppable serialized, "},
+ {" component_id                           integer unsigned default null serialized, "},
+ {" process_id                             integer default null serialized, "},
+ {" thread_id                              integer unsigned default null serialized, "},
+ {" node_id                                integer unsigned default null serialized, "},   
+ {" pnid_id                                integer unsigned default null serialized, "}, 
+ {" host_id                                integer unsigned no default not null not droppable serialized, "},
+ {" ip_address_id                          char(32) character set iso88591 casespecific default null serialized, "}, 
+ {" sequence_number                        integer unsigned default null serialized, "},             
+ {" process_name                           char(32) character set iso88591 casespecific default null serialized, "},
+ {" exec_start_utc_ts                      timestamp(6) no default not null not droppable not serialized, "}, 
+ {" query_id                               char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific no default not null not droppable serialized, "},
+ {" user_name                              char(256 bytes) character set utf8 casespecific default null serialized, "},
+ {" role_name                              char(256 bytes) character set utf8 casespecific default null serialized, "},
+ {" start_priority                         integer unsigned default null serialized, "},
+ {" master_process_id                      char(64) character set iso88591 casespecific       default null serialized, "},
+ {" session_id                             char(108) character set iso88591 casespecific      default null serialized, "},
+ {" client_name                            varchar(1024) character set iso88591 casespecific  default null serialized, "},
+ {" application_name                       char(130) character set iso88591 casespecific      default null serialized, "},
+ {" statement_id                           char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific      default null serialized, "},
+ {" statement_type                         char(36) character set iso88591 casespecific       default null serialized, "},
+ {" statement_subtype                      char(36) character set iso88591 casespecific       default null serialized, "},
+ {" submit_utc_ts				   timestamp(6) default null not serialized, "},
+ {" compile_start_utc_ts			   timestamp(6) default null not serialized, "},
+ {" compile_end_utc_ts			   timestamp(6) default null not serialized, "},
+ {" compile_elapsed_time			   largeint default null serialized, "},
+ {" cmp_affinity_num				   largeint default null serialized, "},
+ {" cmp_dop					   largeint default null serialized, "},
+ {" cmp_txn_needed				   largeint default null serialized, "},
+ {" cmp_mandatory_x_prod			   largeint default null serialized, "},
+ {" cmp_missing_stats				   largeint default null serialized, "},
+ {" cmp_num_joins				   largeint default null serialized, "},
+ {" cmp_full_scan_on_table			   largeint default null serialized, "},
+ {" cmp_rows_accessed_full_scan		   double precision default null not serialized, "},
+ {" est_accessed_rows       		   double precision default null not serialized, "}, 
+ {" est_used_rows				   double precision default null not serialized, "}, 
+ {" cmp_compiler_id				   char(28) character set iso88591 casespecific default null serialized, "},
+ {" cmp_cpu_path_length			   largeint default null serialized, "},
+ {" cmp_cpu_binder				   largeint default null serialized, "},
+ {" cmp_cpu_normalizer			   largeint default null serialized, "},
+ {" cmp_cpu_analyzer				   largeint default null serialized, "},
+ {" cmp_cpu_optimizer				   largeint default null serialized, "},
+ {" cmp_cpu_generator				   largeint default null serialized, "},
+ {" cmp_metadata_cache_hits			   largeint default null serialized, "},
+ {" cmp_metadata_cache_lookups		   largeint default null serialized, "},
+ {" cmp_query_cache_status	largeint                    default null serialized, "},
+ {" cmp_histogram_cache_hits	largeint                default null serialized, "},
+ {" cmp_histogram_cache_lookups	largeint                default null serialized, "},
+ {" cmp_stmt_heap_size	largeint                        default null serialized, "},
+ {" cmp_context_heap_size	largeint                    default null serialized, "},
+ {" cmp_optimization_tasks	largeint                    default null serialized, "},
+ {" cmp_optimization_contexts	largeint                default null serialized, "},
+ {" cmp_is_recompile	smallint                        default null serialized, "},
+ {" est_num_seq_ios	double precision                  	default null not serialized, "},
+ {" est_num_rand_ios	double precision                default null not serialized, "},
+ {" est_cost	double precision                  		default null not serialized, "},
+ {" est_cardinality	double precision                  	default null not serialized, "},
+ {" est_io_time	double precision                  		default null not serialized, "},
+ {" est_msg_time	double precision                  	default null not serialized, "},
+ {" est_idle_time	double precision                  	default null not serialized, "},
+ {" est_cpu_time	double precision                  	default null not serialized, "},
+ {" est_total_time	double precision                  	default null not serialized, "},
+ {" est_total_mem	double precision                  	default null not serialized, "},
+ {" est_resource_usage	largeint                        default null serialized, "},
+ {" aggregate_option	char(3)   character set iso88591 casespecific    	default null serialized, "},
+ {" cmp_number_of_bmos	integer                         default null serialized, "},
+ {" cmp_overflow_mode	char(10) character set iso88591 casespecific      	default null serialized, "},
+ {" cmp_overflow_size	largeint                        default null serialized, "},
+ {" aggregate_total     largeint                        default null serialized, "},
+ {" stats_error_code                       integer                           default null serialized, "},
+ {" query_elapsed_time                     largeint                          default null serialized, "},
+ {" sql_process_busy_time                  largeint                          default null serialized, "},
+ {" disk_process_busy_time                 largeint                          default null serialized, "},
+ {" disk_ios                               largeint                          default null serialized, "},
+ {" num_sql_processes                      largeint                          default null serialized, "},
+ {" sql_space_allocated                    largeint                          default null serialized, "},
+ {" sql_space_used                         largeint                          default null serialized, "},
+ {" sql_heap_allocated                     largeint                          default null serialized, "},
+ {" sql_heap_used                          largeint                          default null serialized, "},
+ {" total_mem_alloc                        largeint                          default null serialized, "},
+ {" max_mem_used                           largeint                          default null serialized, "},
+ {" transaction_id                         char(25) character set iso88591 casespecific       default null serialized, "},
+ {" num_request_msgs                       largeint                          default null serialized, "},
+ {" num_request_msg_bytes                  largeint                          default null serialized, "},
+ {" num_reply_msgs                         largeint                          default null serialized, "},
+ {" num_reply_msg_bytes                    largeint                          default null serialized, "},
+ {" first_result_return_utc_ts             timestamp(6)                      default null not serialized, "},
+ {" rows_returned_to_master                largeint                          default null serialized, "},
+ {" parent_query_id                        char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific      default null serialized, "},
+ {" parent_system_name                     char(128) character set iso88591 casespecific      default null serialized, "},
+ {" exec_end_utc_ts                        timestamp(6)                      default null not serialized, "},
+ {" master_execution_time                  largeint                          default null serialized, "},
+ {" master_elapsed_time                    largeint                          default null serialized, "},
+{" query_status                            char(21) character set utf8 casespecific default null serialized, "},
+ {" query_sub_status                       char(30) character set utf8 casespecific default null serialized, "},
+ {" error_code                             integer                           default null serialized, "},
+ {" sql_error_code                         integer                           default null serialized, "},
+ {" error_text                             varchar(2000) character set utf8 casespecific default null serialized, "},
+ {" query_text                             varchar(50000) character set utf8 casespecific default null serialized, "},
+ {" explain_plan                           varchar(200000) character set iso88591 casespecific default null serialized, "},
+ {" last_error_before_aqr                  integer                           default null serialized, "},
+ {" delay_time_before_aqr_sec              largeint                          default null serialized, "},
+ {" total_num_aqr_retries                  largeint                          default null serialized, "},
+ {" msg_bytes_to_disk                      largeint                          default null serialized, "},
+ {" msgs_to_disk                           largeint                          default null serialized, "},
+ {" rows_accessed                          largeint                          default null serialized, "},
+ {" rows_retrieved                         largeint                          default null serialized, "},
+ {" num_rows_iud                           largeint                          default null serialized, "},
+ {" processes_created                      largeint                          default null serialized, "},
+ {" process_create_busy_time               largeint                          default null serialized, "},
+ {" ovf_file_count                         largeint                          default null serialized, "},
+ {" ovf_space_allocated                    largeint                          default null serialized, "},
+ {" ovf_space_used                         largeint                          default null serialized, "},
+ {" ovf_block_size                         largeint                          default null serialized, "},
+ {" ovf_write_read_count                   largeint                          default null serialized, "},
+ {" ovf_write_count                        largeint                          default null serialized, "},
+ {" ovf_buffer_blocks_written              largeint                          default null serialized, "},
+ {" ovf_buffer_bytes_written               largeint                          default null serialized, "},
+ {" ovf_read_count                         largeint                          default null serialized, "},
+ {" ovf_buffer_blocks_read                 largeint                          default null serialized, "},
+ {" ovf_buffer_bytes_read                  largeint                          default null serialized, "},
+ {" num_nodes                              largeint                          default null serialized, "},
+ {" udr_process_busy_time                  largeint                          default null serialized, "},
+ {" pertable_stats                         integer                           default null serialized "},
+ {" "},
+ {" ) "},
+ {" primary key ( exec_start_utc_ts, query_id ) salt using 8 partitions on ( query_id ) "},
+ {" hbase_options ( DATA_BLOCK_ENCODING = 'FAST_DIFF', COMPRESSION = 'GZ' ) "},
+ {" ; "}
+ };
+
+//----------------------------------------------------------------
+// -- METRIC_SESSION_TABLE
+// ----------------------------------------------------------------
+static const QString createOldTrafv11MetricSessionTable[] =
+{
+ {" create table %s.\"%s\"."TRAF_METRIC_SESSION_TABLE_OLD_REPOS"  "},
+ {" ( "},
+ {" instance_id                            integer unsigned no default not null not droppable serialized, "},
+ {" tenant_id                              integer unsigned no default not null not droppable serialized, "},
+ {" component_id                           integer unsigned default null serialized, "},
+ {" process_id                             integer default null serialized, "},
+ {" thread_id                              integer unsigned default null serialized, "},
+ {" node_id                                integer unsigned default null serialized, "},   
+ {" pnid_id                                integer unsigned default null serialized, "}, 
+ {" host_id                                integer unsigned no default not null not droppable serialized, "},
+ {" ip_address_id                          char(32) character set iso88591 casespecific default null serialized, "}, 
+ {" sequence_number                        integer unsigned default null serialized, "},                 
+ {" process_name                           char(32) character set iso88591 casespecific default null serialized, "},
+ {" session_id                             char(108)     character set iso88591 casespecific no default not null not droppable serialized, "},
+ {" session_status                         char(5)       character set iso88591 casespecific  default null serialized, "},
+ {" session_start_utc_ts               timestamp(6) no default not null not droppable not serialized, "},
+ {" session_end_utc_ts                     timestamp(6)                      default null not serialized, "},
+ {" user_id                                largeint                          default null serialized, "},
+ {" user_name                              char(256 bytes)     character set utf8 casespecific  default null serialized, "},
+ {" role_name                              char(256 bytes)     character set utf8 casespecific  default null serialized, "},
+ {" client_name                            varchar(256) character set utf8 casespecific  default null serialized, "},
+ {" client_user_name                       char(256 bytes)     character set utf8 casespecific  default null serialized, "},
+ {" application_name                       char(130)     character set iso88591 casespecific  default null serialized, "},
+ {" total_execution_time                   largeint                          default null serialized, "},
+ {" total_elapsed_time                     largeint                          default null serialized, "},
+ {" total_insert_stmts_executed            largeint                          default null serialized, "},
+ {" total_delete_stmts_executed            largeint                          default null serialized, "},
+ {" total_update_stmts_executed            largeint                          default null serialized, "},
+ {" total_select_stmts_executed            largeint                          default null serialized, "},
+ {" total_catalog_stmts                    largeint                          default null serialized, "},     
+ {" total_prepares                         largeint                          default null serialized, "},
+ {" total_executes                         largeint                          default null serialized, "},
+ {" total_fetches                          largeint                          default null serialized, "},
+ {" total_closes                           largeint                          default null serialized, "},
+ {" total_execdirects                      largeint                          default null serialized, "},
+ {" total_errors                           largeint                          default null serialized, "},
+ {" total_warnings                         largeint                          default null serialized, "},
+ {" total_login_elapsed_time_mcsec         largeint                          default null serialized, "},
+ {" ldap_login_elapsed_time_mcsec          largeint                          default null serialized, "},
+ {" sql_user_elapsed_time_mcsec            largeint                          default null serialized, "},
+ {" search_connection_elapsed_time_mcsec   largeint                          default null serialized, "},
+ {" search_elapsed_time_mcsec              largeint                          default null serialized, "},
+ {" authentication_connection_elapsed_time_mcsec     largeint                default null serialized, "},
+ {" authentication_elapsed_time_mcsec      largeint                          default null serialized "},
+ {" ) "},
+{" primary key (session_start_utc_ts, session_id ) salt using 8 partitions on ( session_id ) "},
+ {" hbase_options ( DATA_BLOCK_ENCODING = 'FAST_DIFF', COMPRESSION = 'GZ' ) "},
+ {" ; "},
+ };
+
+ //----------------------------------------------------------------
+ //- METRIC_QUERY_AGGREGATION_TABLE
+ //----------------------------------------------------------------
+static const QString createOldTrafv11MetricQueryAggrTable[] =
+{
+ {" create table %s.\"%s\"."TRAF_METRIC_QUERY_AGGR_TABLE_OLD_REPOS"  "},
+ {" ( "},
+ {" instance_id                            integer unsigned no default not null not droppable serialized, "},
+ {" tenant_id                              integer unsigned no default not null not droppable serialized, "},
+ {" component_id                           integer unsigned default null serialized, "},
+ {" process_id                             integer default null serialized, "},
+ {" thread_id                              integer unsigned default null serialized, "},
+ {" node_id                                integer unsigned default null serialized, "},   
+ {" pnid_id                                integer unsigned default null serialized, "}, 
+ {" host_id                                integer unsigned no default not null not droppable serialized, "},
+ {" ip_address_id                          char(32) character set iso88591 casespecific default null serialized, "}, 
+ {" sequence_number                        integer unsigned default null serialized, "},                 
+ {" process_name                           char(32) character set iso88591 casespecific default null serialized, "},
+ {" session_id                             char(108)     character set iso88591 casespecific no default not null not droppable serialized, "},
+ {" session_start_utc_ts               timestamp(6) no default not null not droppable not serialized, "},
+ {" aggregation_last_update_utc_ts         timestamp(6)                      default null not serialized, "},
+ {" aggregation_last_elapsed_time          largeint                          default null serialized, "},
+ {" user_id                                largeint                          default null serialized, "},
+ {" user_name                              char(256 bytes)     character set utf8 casespecific  default null serialized, "},
+ {" role_name                              char(256 bytes)     character set utf8 casespecific  default null serialized, "},
+ {" client_name                            varchar(256) character set utf8 casespecific  default null serialized, "},
+ {" client_user_name                       char(256 bytes)     character set utf8 casespecific  default null serialized, "},
+ {" application_name                       char(130)     character set iso88591 casespecific  default null serialized, "},
+ {" total_est_rows_accessed			   largeint default null serialized, "},
+ {" total_est_rows_used			   largeint default null serialized, "},
+ {" total_rows_retrieved			   largeint default null serialized, "},
+ {" total_num_rows_iud			   largeint default null serialized, "},
+ {" total_selects			   	   largeint default null serialized, "},
+ {" total_inserts			   largeint default null serialized, "},
+ {" total_updates			   largeint default null serialized, "},
+ {" total_deletes			   largeint default null serialized, "},
+
+ {" total_ddl_stmts			   largeint default null serialized, "},
+ {" total_util_stmts			   largeint default null serialized, "},
+ {" total_catalog_stmts			   largeint default null serialized, "},
+ {" total_other_stmts			   largeint default null serialized, "},
+
+ {" total_insert_errors			          largeint default null serialized, "},
+ {" total_delete_errors			          largeint default null serialized, "},
+ {" total_update_errors			   largeint default null serialized, "},
+ {" total_select_errors			   largeint default null serialized, "},
+
+ {" total_ddl_errors			          largeint default null serialized, "},
+ {" total_util_errors			          largeint default null serialized, "},
+ {" total_catalog_errors			   largeint default null serialized, "},
+ {" total_other_errors			   largeint default null serialized, "},
+
+ {" delta_estimated_rows_accessed			   largeint default null serialized, "},
+ {" delta_estimated_rows_used			   largeint default null serialized, "},
+ {" delta_rows_accessed			   largeint default null serialized, "},
+ {" delta_rows_retrieved			   largeint default null serialized, "},
+ {" delta_num_rows_iud			   largeint default null serialized, "},
+
+ {" delta_selects			   largeint default null serialized, "},
+ {" delta_inserts			   largeint default null serialized, "},
+ {" delta_updates			   largeint default null serialized, "},
+ {" delta_deletes			   largeint default null serialized, "},
+
+ {" delta_ddl_stmts			          largeint default null serialized, "},
+ {" delta_util_stmts			          largeint default null serialized, "},
+ {" delta_catalog_stmts			   largeint default null serialized, "},
+ {" delta_other_stmts			   largeint default null serialized, "},
+
+ {" delta_insert_errors			          largeint default null serialized, "},
+ {" delta_delete_errors			          largeint default null serialized, "},
+ {" delta_update_errors			   largeint default null serialized, "},
+ {" delta_select_errors			   largeint default null serialized, "},
+
+ {" delta_ddl_errors			          largeint default null serialized, "},
+ {" delta_util_errors			          largeint default null serialized, "},
+ {" delta_catalog_errors			   largeint default null serialized, "},
+ {" delta_other_errors			   largeint default null serialized "},
+
+ {" ) "},
+ {" primary key ( session_start_utc_ts, session_id ) salt using 8 partitions on ( session_id ) "},
+ {" hbase_options ( DATA_BLOCK_ENCODING = 'FAST_DIFF', COMPRESSION = 'GZ' ) "},
+ {" ; "}
+};
+
+//----------------------------------------------------------------
+//-- METRIC_TEXT_TABLE
+//----------------------------------------------------------------
+static const QString createOldTrafv11MetricTextTable[] =
+  {
+    {" create table %s.\"%s\"."REPOS_METRIC_TEXT_TABLE" "},  // table didn't change when moving from 1.1 to 2.1
+    {" ( "},
+    {"  query_id                               char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific no default not null not droppable serialized, "},
+    {"   text_type int not null serialized, "},
+    {"   sub_id int not null serialized, "},
+    {"   seq_num int not null serialized, "},
+    {"   flags largeint not null serialized, "},
+    {"   text varchar(50000 bytes) character set iso88591 not null serialized "},
+    {" ) "},
+    {" primary key (query_id, text_type, sub_id, seq_num) "},
+    {" ; "}
+  };
+
+// The following are the repository definitions for Metadata version 2.3 (before we 
+// reset the numbering for Trafodion; 2.3 preceeds Trafodion 1.1). These are
+// kept solely for historical purposes.
+
+static const QString createOldv23ReposMetricQueryTable[] =
 {
  {" create table %s.\"%s\"."TRAF_METRIC_QUERY_TABLE_OLD_REPOS" "},
  {" ( "},
@@ -463,7 +791,7 @@ static const QString createOldReposMetricQueryTable[] =
  {" ; "}
  };
 
-static const QString createOldReposMetricSessionTable[] =
+static const QString createOldv23ReposMetricSessionTable[] =
 {
  {" create table %s.\"%s\"."TRAF_METRIC_SESSION_TABLE_OLD_REPOS"  "},
  {" ( "},
@@ -517,7 +845,7 @@ static const QString createOldReposMetricSessionTable[] =
  //----------------------------------------------------------------
  //- Old METRIC_QUERY_AGGREGATION_TABLE
  //----------------------------------------------------------------
-static const QString createOldReposMetricQueryAggrTable[] =
+static const QString createOldv23ReposMetricQueryAggrTable[] =
 {
  {" create table %s.\"%s\"."TRAF_METRIC_QUERY_AGGR_TABLE_OLD_REPOS"  "},
  {" ( "},
@@ -568,10 +896,11 @@ static const MDUpgradeInfo allReposUpgradeInfo[] = {
   // TRAF_METRIC_QUERY_TABLE
   { REPOS_METRIC_QUERY_TABLE,  TRAF_METRIC_QUERY_TABLE_OLD_REPOS,
     createMetricQueryTable,  sizeof(createMetricQueryTable),
-    createOldReposMetricQueryTable,  sizeof(createOldReposMetricQueryTable),
+    createOldTrafv11MetricQueryTable,  sizeof(createOldTrafv11MetricQueryTable),
     NULL, 0,
-    FALSE, 
+    TRUE, 
 
+    // new table columns
     "instance_id,"
     "tenant_id,"
     "component_id,"
@@ -585,6 +914,7 @@ static const MDUpgradeInfo allReposUpgradeInfo[] = {
     "process_name,"
     "exec_start_utc_ts,"
     "query_id,"
+    "query_signature_id,"
     "user_name,"
     "role_name,"
     "start_priority,"
@@ -696,8 +1026,10 @@ static const MDUpgradeInfo allReposUpgradeInfo[] = {
     "ovf_buffer_bytes_read,"
     "num_nodes,"
     "udr_process_busy_time,"
-    "pertable_stats",
+    "pertable_stats,"
+    "last_updated_time",
 
+    // values from old table to be inserted into new
     "instance_id,"
     "tenant_id,"
     "component_id,"
@@ -711,6 +1043,7 @@ static const MDUpgradeInfo allReposUpgradeInfo[] = {
     "process_name,"
     "exec_start_utc_ts,"
     "query_id,"
+    "NULL,"
     "user_name,"
     "role_name,"
     "start_priority,"
@@ -792,8 +1125,8 @@ static const MDUpgradeInfo allReposUpgradeInfo[] = {
     "exec_end_utc_ts,"
     "master_execution_time,"
     "master_elapsed_time,"
-    "'COMPLETED',"
-    "'COMPLETED',"
+    "query_status,"
+    "query_sub_status,"
     "error_code,"
     "sql_error_code,"
     "error_text,"
@@ -822,25 +1155,118 @@ static const MDUpgradeInfo allReposUpgradeInfo[] = {
     "ovf_buffer_bytes_read,"
     "num_nodes,"
     "udr_process_busy_time,"
-    "pertable_stats",
+    "pertable_stats,"
+    "NULL",
 
     NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
  
   // REPOS_METRIC_SESSION_TABLE
   { REPOS_METRIC_SESSION_TABLE,  TRAF_METRIC_SESSION_TABLE_OLD_REPOS,
     createMetricSessionTable,  sizeof(createMetricSessionTable),
-    createOldReposMetricSessionTable,  sizeof(createOldReposMetricSessionTable),
+    createOldTrafv11MetricSessionTable,  sizeof(createOldTrafv11MetricSessionTable),
     NULL, 0,
-    FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+    TRUE, 
+
+    // new table columns
+    "instance_id,"
+    "tenant_id,"
+    "component_id,"
+    "process_id,"
+    "thread_id,"
+    "node_id,"   
+    "pnid_id,"
+    "host_id,"
+    "ip_address_id," 
+    "sequence_number,"                 
+    "process_name,"
+    "session_id,"
+    "session_status,"
+    "session_start_utc_ts,"
+    "session_end_utc_ts,"
+    "user_id,"
+    "user_name,"
+    "role_name,"
+    "client_name,"
+    "client_user_name,"
+    "application_name,"
+    "profile_name,"
+    "sla_name,"
+    "total_execution_time,"
+    "total_elapsed_time,"
+    "total_insert_stmts_executed,"
+    "total_delete_stmts_executed,"
+    "total_update_stmts_executed,"
+    "total_select_stmts_executed,"
+    "total_catalog_stmts,"
+    "total_executes,"
+    "total_fetches,"
+    "total_closes,"
+    "total_execdirects,"
+    "total_errors,"
+    "total_warnings,"
+    "total_login_elapsed_time_mcsec,"
+    "ldap_login_elapsed_time_mcsec,"
+    "sql_user_elapsed_time_mcsec,"
+    "search_connection_elapsed_time_mcsec,"
+    "search_elapsed_time_mcsec,"
+    "authentication_connection_elapsed_time_mcsec,"
+    "authentication_elapsed_time_mcsec",   
+
+    // values from old table to be inserted into new
+    "instance_id,"
+    "tenant_id,"
+    "component_id,"
+    "process_id,"
+    "thread_id,"
+    "node_id,"   
+    "pnid_id,"
+    "host_id,"
+    "ip_address_id," 
+    "sequence_number,"                 
+    "process_name,"
+    "session_id,"
+    "session_status,"
+    "session_start_utc_ts,"
+    "session_end_utc_ts,"
+    "user_id,"
+    "user_name,"
+    "role_name,"
+    "client_name,"
+    "client_user_name,"
+    "application_name,"
+    "NULL,"
+    "NULL,"
+    "total_execution_time,"
+    "total_elapsed_time,"
+    "total_insert_stmts_executed,"
+    "total_delete_stmts_executed,"
+    "total_update_stmts_executed,"
+    "total_select_stmts_executed,"
+    "total_catalog_stmts,"
+    "total_executes,"
+    "total_fetches,"
+    "total_closes,"
+    "total_execdirects,"
+    "total_errors,"
+    "total_warnings,"
+    "total_login_elapsed_time_mcsec,"
+    "ldap_login_elapsed_time_mcsec,"
+    "sql_user_elapsed_time_mcsec,"
+    "search_connection_elapsed_time_mcsec,"
+    "search_elapsed_time_mcsec,"
+    "authentication_connection_elapsed_time_mcsec,"
+    "authentication_elapsed_time_mcsec",  
+
+    NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   // REPOS_METRIC_QUERY_AGGR_TABLE
   { REPOS_METRIC_QUERY_AGGR_TABLE,  TRAF_METRIC_QUERY_AGGR_TABLE_OLD_REPOS,
     createMetricQueryAggrTable,  sizeof(createMetricQueryAggrTable),
-    createOldReposMetricQueryAggrTable,  sizeof(createOldReposMetricQueryAggrTable),
+    createOldTrafv11MetricQueryAggrTable,  sizeof(createOldTrafv11MetricQueryAggrTable),
     NULL, 0,
-    FALSE, 
+    TRUE, 
 
-    // INSERTED columns
+    // new table columns
     "instance_id, tenant_id, component_id, process_id, thread_id, node_id, pnid_id, host_id,"
     "ip_address_id, sequence_number, process_name, session_id, "
     "session_start_utc_ts, aggregation_last_update_utc_ts, aggregation_last_elapsed_time," 
@@ -858,28 +1284,31 @@ static const MDUpgradeInfo allReposUpgradeInfo[] = {
 
     "delta_ddl_stmts, delta_util_stmts, delta_catalog_stmts, delta_other_stmts, "
     "delta_insert_errors, delta_delete_errors, delta_update_errors, delta_select_errors, "
-    "delta_ddl_errors, delta_util_errors, delta_catalog_errors, delta_other_errors ",
+    "delta_ddl_errors, delta_util_errors, delta_catalog_errors, delta_other_errors, "
+    
+    "average_response_time, throughput_per_second ",
 
-    // SELECTED columns
+    // values from old table to be inserted into new
     "instance_id, tenant_id, component_id, process_id, thread_id, node_id, pnid_id, host_id,"
     "ip_address_id, sequence_number, process_name, session_id, "
-    " current_timestamp, aggregation_start_utc_ts, cast((aggregation_end_utc_ts - aggregation_start_utc_ts) as largeint),"
+    "session_start_utc_ts, aggregation_last_update_utc_ts, aggregation_last_elapsed_time," 
     "user_id, user_name, role_name, client_name, client_user_name,"
     "application_name, total_est_rows_accessed, total_est_rows_used, total_rows_retrieved,"
+    "total_num_rows_iud, total_selects, total_inserts, total_updates, total_deletes,"
 
-    "total_num_rows_iud, total_selects, total_inserts, total_updates, total_deletes, "
-
-    "0, 0, 0, 0, "
-    "0, 0, 0, 0, "
-    "0, 0, 0, 0, "
+    "total_ddl_stmts, total_util_stmts, total_catalog_stmts, total_other_stmts, "
+    "total_insert_errors, total_delete_errors, total_update_errors, total_select_errors, "
+    "total_ddl_errors, total_util_errors, total_catalog_errors, total_other_errors, "
 
     "delta_estimated_rows_accessed, delta_estimated_rows_used, delta_rows_accessed,"
-    "delta_rows_retrieved, delta_num_rows_uid, delta_total_selects, delta_total_inserts,"
-    "delta_total_updates, delta_total_deletes, "
+    "delta_rows_retrieved, delta_num_rows_iud, "
+    "delta_selects, delta_inserts, delta_updates, delta_deletes,"
 
-    "0, 0, 0, 0, "
-    "0, 0, 0, 0, "
-    "0, 0, 0, 0",
+    "delta_ddl_stmts, delta_util_stmts, delta_catalog_stmts, delta_other_stmts, "
+    "delta_insert_errors, delta_delete_errors, delta_update_errors, delta_select_errors, "
+    "delta_ddl_errors, delta_util_errors, delta_catalog_errors, delta_other_errors, "
+
+    "NULL, NULL",
 
     NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
