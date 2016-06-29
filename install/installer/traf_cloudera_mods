@@ -214,6 +214,9 @@ curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
     "items": [ {
              "name":"dfs_namenode_acls_enabled",
              "value":"true"
+             }, {
+             "name":"dfs_umaskmode",
+             "value":"0002"          
              } ]
 }' \
 $URL/api/v1/clusters/$CLUSTER_NAME/services/$HDFS/config > $LOCAL_WORKDIR/traf_hdfs_config_temp
@@ -367,27 +370,37 @@ ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfsadmi
 #       enabled and HDFS has been restarted
 echo "***INFO: Setting HDFS ACLs for snapshot scan support"
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -mkdir -p /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+echo "ERROR Code: $errorFound"
+if [ $errorFound != 0 ]; then
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -mkdir -p /hbase/archive) command failed"
    exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -chown hbase:hbase /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+echo "ERROR Code: $errorFound"
+if [ $errorFound != 0 ]; then
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -chown hbase:hbase /hbase/archive) command failed"
    exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -setfacl -R -m user:'"$TRAF_USER"':rwx /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+echo "ERROR Code: $errorFound"
+if [ $errorFound != 0 ]; then
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive) command failed"
    exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -setfacl -R -m default:user:'"$TRAF_USER"':rwx /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+echo "ERROR Code: $errorFound"
+if [ $errorFound != 0 ]; then
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /hbase/archive) command failed"
    exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -setfacl -R -m mask::rwx /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+echo "ERROR Code: $errorFound"
+if [ $errorFound != 0 ]; then
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m mask::rwx /hbase/archive) command failed"
    exit -1
 fi
