@@ -53,22 +53,6 @@ if [ $NSK -eq 1 -o $LINUX -eq 1 ]; then
   USE_NDCS=1
 fi
 
-#
-# getJavaCompFuncs contains functions to display vprocs for Java
-# components on NSK only. Here we simply load the shell functions that
-# do the work. The functions will be called later.
-#
-typeset -i DISPLAY_NSK_JAVA_COMPS=0
-if [ $NSK -ne 0 -a "$SKIP_JAVA_CHECKS" != "" ]; then
-  if [ -s $scriptsdir/tools/getJavaCompFuncs ]; then
-    . $scriptsdir/tools/getJavaCompFuncs
-    DISPLAY_NSK_JAVA_COMPS=1
-  else
-    echo "\n*** WARNING: Unable to locate $scriptsdir/tools/getJavaCompFuncs"
-    echo "*** Continuing"
-  fi
-fi
-
 function USAGE
 {
     cat <<EOF
@@ -183,25 +167,8 @@ function PRINT_SKIP_FILES
 
 function PRINT_JAVA_COMPONENTS
 {
-  if [ $DISPLAY_NSK_JAVA_COMPS -eq 1 ]; then
-
-    HEADER "Java components"
-
-    getJdbcMxJarComp v
-    getJavaComp T0083 v
-    getJavaComp T1225 v
-    getLMComp v
-    getMxServerComp MXUDR T0083 v
-    getMxServerComp MXUDR T1225 v
-    getMxServerComp MXUDR T1231 v
-
-    testJdbcInJavaAndUdrServer
-    testJdbcAndUdrServer
-    testJavaAndUdrServer
-    testJdbcInJarAndJava
-    testLMInJarAndUdrServer
-
-  fi
+  # empty for now
+  true
 }
 
 # TESTS that make a JDBC Connection. These tests need ODBC assoc server
@@ -366,8 +333,6 @@ typeset TESTFILES="$*"
 TESTFILES=`echo $TESTFILES | tr a-z A-Z`
 if [ "$TESTFILES" = "" ]; then
   TESTFILES="TEST???"
-else
-  DISPLAY_NSK_JAVA_COMPS=0
 fi
 PRETTY_FILES "$TESTFILES"
 TESTFILES="$PFILES"
@@ -481,7 +446,7 @@ done
 seabase="$SEABASE_REGRESS"
 # sbtestfiles contains the list of tests to be run in seabase mode
 if [ "$seabase" -ne 0 ]; then
-  TESTFILES="TEST001 TEST002 TEST100 TEST101 TEST107 TEST108 TEST163"
+  TESTFILES="TEST001 TEST002 TEST100 TEST101 TEST102 TEST103 TEST107 TEST108 TEST163"
   SBPFILES=
   for i in $PFILES; do
     for j in $TESTFILES; do
@@ -613,7 +578,7 @@ function DO_DIFF
     if [ $OK -eq 0 ]; then
 	RESULT="### FAIL (missing files) ###"
 	printf "\n$RESULT\n"
-	printf "$(date '+%m/%d/%Y %R')    $T\t  $RESULT\n" >> $rgrlog
+	printf "$(date '+%m/%d/%Y %R')  $T  $RESULT\n" >> $rgrlog
 	return
     fi
 
@@ -741,9 +706,10 @@ function DO_DIFF
 	fi
     fi
 
-    printf "$RESULT\n"
-    printf "$(date '+%m/%d/%Y %R')    $T\t  $RESULT\n" >> $rgrlog
-
+#    printf "$RESULT\n"
+#    printf "$(date '+%m/%d/%Y %R')    $T\t  $RESULT\n" >> $rgrlog
+    modtime=`stat --printf=%y $LOG | cut -d'.' -f1`
+    printf "$modtime  $T  $RESULT\n" >> $rgrlog
 }
 
 function DO_TEST
@@ -757,12 +723,6 @@ function DO_TEST
          HEADER "COPYING TEST810 over for you"
          cp -f $REGRTSTDIR/TEST810 $REGRRUNDIR/TEST810 2>$NULL
        fi
-    fi
-
-    # On NSK and LINUX, set CLASSPATH. If tests use a JDBC application,
-    # CLASSPATH should have JDBC jar.
-    if [ $NSK -ne 0 ]; then
-      export CLASSPATH=$SQLMX_JAVA_EXTENSIONS:$CLASSPATH:.
     fi
 
     # create a tempfile which is used as timestamp for deleting
@@ -834,26 +794,10 @@ echo "schema=$TEST_SCHEMA" >schema.prop
 
 echo "$(date '+%m/%d/%Y %R')" >> $rgrlog
 
-# Following export is to workaround an MXCI problem where
-# mxci crashes when a command such as  set envvar X '$x:abc' used and
-# x is not defined.
-#
-# _RLD_LIB_PATH is not used on MIPS and 'set envvar' crashes mxci. Right now
-# there is no way to differentiate between MIPS and YOS from mxci prompt.
-# So we are adding this workaround in this shell script.
-#
-if [ $NSK -ne 0 -a `uname -r` != H06 ]; then
-  export _RLD_LIB_PATH=/G/system/system
-fi
-
-if [ $LINUX -ne 0 ]; then
-   export CLASSPATH=$MY_SQROOT/export/lib/hpt4jdbc.jar:$CLASSPATH:.
-fi
-
 export JDBC_T4_URL="jdbc:t4jdbc://localhost:23400/:"
-if [ -r $MY_SQROOT/sql/scripts/swenv.sh ]; then
+if [ -r $MY_SQROOT/sql/scripts/sw_env.sh ]; then
   # use a custom port for the JDBC Type 4 driver
-  . $MY_SQROOT/sql/scripts/swenv.sh
+  . $MY_SQROOT/sql/scripts/sw_env.sh
   export JDBC_T4_URL="jdbc:t4jdbc://localhost:${MY_DCS_MASTER_PORT}/:"
 fi
 
@@ -884,7 +828,7 @@ do
              TEST_CAN_BE_RUN=0
 	     RESULT="### FAIL (!! Test SKIPPED because NDCS SETUP is NOT RIGHT !! ) ###"
 	     printf "\n$RESULT\n"
-	     printf "$(date '+%m/%d/%Y %R')    $T\t  $RESULT\n" >> $rgrlog
+	     printf "$(date '+%m/%d/%Y %R')  $T  $RESULT\n" >> $rgrlog
 	     break;
            fi
         done
@@ -895,7 +839,7 @@ do
         fi
     fi
 done
-echo "$(date '+%m/%d/%Y %R')" >> $rgrlog
+#echo "$(date '+%m/%d/%Y %R')" >> $rgrlog
 
 # stop the ODBC server
 if [ $MXODBC_USABLE -eq 1 ]; then

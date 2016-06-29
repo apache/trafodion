@@ -1,0 +1,244 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+[[type-4-driver-properties]]
+= Type 4 Driver Properties
+
+[[summary-of-type-4-driver-properties]]
+== Summary of Type 4 Driver Properties
+
+Type 4 driver properties that effect client-side operations are
+summarized in the following tables. For the detailed description, click
+the link provided in the property name.
+
+NOTE: Unless otherwise noted in the brief description, the particular
+property applies to the `DataSource` object, `DriverManager` object, and
+`ConnectionPoolDataSource` object.
+
+[[client-side-properties]]
+=== Client-Side Properties
+
+*Connection-Control Properties*
+[cols="25%,55%,30%",options="header" ]
+|===
+| Property Name                          | Description | Default Value
+| `<<dataSourceName, dataSourceName>>`   | Specifies the registered DataSource or ConnectionPoolDataSource name. (Can be set only on the DriverManager object.) | None.
+| `<<loginTimeout, loginTimeout>>`       | Sets the time limit that a connection can be attempted before the connection disconnects. | 60 (seconds)
+| `<<networkTimeout, networkTimeout>>`   | Sets a time limit that the driver waits for a reply from the database server. | 0 (No network timeout is specified. 
+|===
+
+*Pooling Management Properties*
+[cols="25%,55%,30%",options="header" ]
+|===
+| Property Name                          | Description | Default Value
+| `<<initialPoolSize, initialPoolSize>>` | Sets the initial connection pool size when connection pooling is used with the Type 4 driver. (Ignored for
+connections made through the ConnectionPoolDataSource object.) | -1 (Do not create an initial connection pool.)
+| `<<maxIdleTime, maxIdleTime>>`         | Sets the number of seconds that a physical connection can remain unused in the pool before the connection is closed. | 0 (Specifies no limit.)
+| `<<maxPoolSize, maxPoolSize>>`         | Sets the maximum number of physical connections that the pool can contain. | -1 (Disables connection pooling.) 
+| `<<maxStatements, maxStatements>>`     | Sets the total number of PreparedStatement objects that the connection pool should cache. | 0 (Disables statement pooling.)
+| `<<minPoolSize, minPoolSize>>`         | Limits the number of physical connections that can be in the free connection pool. | -1 (The minPoolSize value is ignored.)
+|===
+
+////
+*Operations on CLOB and BLOB Data*
+[cols="25%,55%,30%",options="header" ]
+|===
+| Property Name                          | Description | Default Value
+| `<<blobTableName, blobTableName>>`     | Specifies the LOB table for using BLOB columns. | None.
+| `<<clobTableName, clobTableName>>`     | Specifies the LOB table for using CLOB columns. | None.
+| `<<reserveDataLocators,reserveDataLocators>>` | Sets the number of data locators to be reserved for a process that stores data in a LOB table. | 100 
+|===
+////
+
+<<<
+*Internationalization Properties*
+[cols="25%,55%,30%",options="header" ]
+|===
+| Property Name                          | Description | Default Value
+| `<<ISO88591, ISO88591>>`               | Sets character-set mapping that corresponds to the ISO88591 character set. | ISO88591_1
+| `<<KANJI, KANJI>>`                     | Sets character-set mapping that corresponds to the KANJI character set. | SJIS (which is shift-JIS, Japanese)
+| `<<KSC5601, KSC5601>>`                 | Sets character-set mapping that corresponds to the KSC5601 character set. | ECU_KR (which is KS C 5601, ECU encoding, Korean)
+| `<<language, language>>`               | Sets the language used for error messages. | None.
+| `<<translationVerification, translationVerification>>` | Defines the behavior of the driver if the driver cannot translate all or part of an SQL statement or SQL parameter. | FALSE 
+|===
+
+*Logging and Tracing Properties*
+[cols="25%,55%,30%",options="header" ]
+|===
+| Property Name                          | Description | Default Value
+| `<<T4LogFile, T4LogFile>>`             | Sets the name of the logging file for the Type 4 driver. | The name is defined by the following pattern: `%h/t4jdbc%u.log`
+| `<<T4LogLevel, T4LogLevel>>`           | Sets the logging levels that control logging output for the Type 4 driver. | OFF
+|===
+
+*Miscellaneous Client-Side Properties*
+[cols="25%,55%,30%",options="header" ]
+|===
+| Property Name                          | Description | Default Value
+| `<<description, description>>`         | Specifies the registered source name. | None.
+| `<<fetchBufferSize, fetchBufferSize>>` | Provides the benefits of bulk fetch when rows are fetched from a `ResultSet` object. | 4 kilobytes
+| `<<properties, properties>>`           | Specifies the location of the properties file that contains keyword-value pairs
+that specify property values for configuring the Type 4 driver. | None.
+| `<<roundingMode, roundingMode>>`       | Specifies the rounding behavior of the Type 4 driver. | ROUND_DOWN
+|===
+
+<<<
+[[server-side-properties]]
+=== Server-Side Properties
+
+The Type 4 driver properties that effect server-side operations are
+summarized in the following tables. Unless otherwise noted in the
+description, the particular property applies to the DataSource object,
+`DriverManager` object, and `ConnectionPoolDataSource` object.
+
+*Type 4 Driver Server-Side Properties*
+[cols="25%,55%,30%",options="header" ]
+|===
+| Property Name                          | Description                                                                | Default Value
+| `<<catalog, catalog>>`                 | Sets the default catalog used to access SQL objects referenced in SQL
+statements if the SQL objects are not fully qualified. | None. Must be "TRAFODION" in the current release.
+| `<<connectionTimeout, connectionTimeout>>` | Sets the number of seconds a connection can be idle before the connection is physically closed by DCS. |
+-1 (Use the ConnTimeout value set on the server data source.)
+| `<<password, password>>`               | Sets the password value for passing to the database. Can also change the password. | Empty string.
+| `<<schema, schema>>`                   | Sets the database schema that accesses SQL objects referenced in SQL statements if the SQL objects are not fully qualified. | None.
+| `<<url, url>>`                         | Sets the URL value for the database. Can be set only on the `DriverManager` object. | None.
+| `<<user, user>>`                       | Sets the user value for the database. | None.
+|===
+
+[[how-to-specify-jdbc-type-4-properties]]
+== How to Specify JDBC Type 4 Properties
+
+The Type 4 JDBC driver properties configure the driver. These properties
+can be specified in a data source, a connection URL (the primary IP
+address or host name on the database), a properties file,
+or in the java command line.
+
+Java properties have the form:
+
+```
+key=value
+```
+
+At run time, the driver looks for a specific set of property keys and
+takes action based on their associated values.
+
+<<<
+[[where-to-set-properties]]
+=== Where to Set Properties
+
+* For connections made through a `DataSource` or a `ConnectionPoolDataSource`,
+set the property on the `DataSource` or the `ConnectionPoolDataSource` object.
+
+* For the `DriverManager` class, set properties in either of two ways:
++
+1. Using the option `-Dproperty_name=property_value` in the command line.
+2. Using the `java.util.Properties` parameter in the `getConnection()` method
+of the `DriverManager` class.
+
+[[creating-and-using-a-properties-file]]
+=== Creating and Using a Properties File
+
+JDBC applications can provide property values to configure a connection
+by using a file that contains properties for the JDBC driver. This
+property file is passed as a java command-line parameter. The format to
+enter the properties file in the command line is:
+
+```
+-Dt4jdbc.properties=<path of the properties file on disk>`
+```
+
+*Example*
+
+```
+-Dt4jdbc.properties=C:\temp\t4props\myprops.properties
+```
+
+To create the file, use the editor of your choice on your workstation to
+type in the property values. The entries in properties file must have a
+`property_name=property_value` value-pair format:
+
+```
+property_name=property_value
+```
+
+*Example*
+
+```
+maxStatements=1024
+```
+
+To configure a `DataSource` connection, the properties file might contain
+property names and values as indicated in the following list:
+
+```
+url=jdbc:t4jdbc://<primary IP addr or host name of database>:23400/
+user=database_username
+password=mypassword
+description=<a string>
+catalog=TRAFODION
+schema=myschema
+maxPoolSize=20
+minPoolSize=5
+maxStatements=20
+loginTimeout=15
+initialPoolSize=10
+connectionTimeout=10
+T4LogLevel=OFF
+T4LogFile=/mylogdirectory/mylogfile
+```
+
+[[setting-properties-in-the-command-line]]
+=== Setting Properties in the Command Line
+
+When a Type 4 driver property is specified on the command line through
+the java `-D` option, the property must include the prefix: `t4jdbc`.
+
+This notation, which includes the period (.), ensures that all the Type
+4 driver property names are unique for a Java application.
+
+*Example*
+
+The maxStatements property becomes:
+
+```
+-Dt4jdbc.maxStatements=10
+```
+
+[[precedence-of-property-specifications]]
+=== Precedence of Property Specifications
+
+If a particular property is set several ways by an application, the
+value used depends on how the value was set according to the following
+order of precedence:
+
+1.  Set on the `DataSource` object, `DriverManager` object, or
+`ConnectionPoolDataSource` object.
+
+2.  Set through the `java.util.Properties` parameter in the `getConnection`
+method of `DriverManager` class.
+
+3.  Set the property in a properties file specified by the
+`t4jdbc.properties` property.
+
+4.  Set the `-Dt4jdbc.property_name=<property value>` in the java command line.
+
+For more information, see order of precedence for properties specified
+in various ways for use with the Driver Manager.

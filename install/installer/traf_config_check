@@ -33,6 +33,7 @@ source $TRAF_CONFIG
 function majorErrorFound {
    if [[ "$errorFound" == "1" ]]; then
       cat $ERROR_LOG
+      cat /etc/trafodion/trafodion_config
       echo
       exit -1
    fi
@@ -211,19 +212,162 @@ else
    echo "export MY_NODES=\"$MY_NODES\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 
-   if [ $node_count -eq 1 ]; then
-      TRAF_PDSH=""
-      echo "export TRAF_PDSH=\"\"" >> $TRAF_CONFIG
-   else
-       TRAF_PDSH="pdsh -S $MY_NODES"
-       echo "export TRAF_PDSH=\"$TRAF_PDSH\"" >> $TRAF_CONFIG
-   fi
 fi
 source $TRAF_CONFIG
 }
 
-function checkJavaVersion {
+function checkManageNodeList {
 
+if [[ -z $MANAGEMENT_NODES ]]; then
+   errorFound=1
+   echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
+   echo "***ERROR: MANAGEMENT_NODES variable not set in config file." >> $ERROR_LOG
+else
+
+   ERROR_NODES=""
+   NODES=""
+
+   for node in $MANAGEMENT_NODES
+   do
+      newNode=$(ssh -q -n $node hostname)
+
+      if [[ $? -ne "0" ]]; then
+         errorFound=1
+          echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
+         echo "***ERROR: Could not ssh to $node." >> $ERROR_LOG
+         echo "***ERROR: Please check node names for typos" >> $ERROR_LOG
+         majorErrorFound
+      fi
+
+      nodeName=$(echo $newNode | sed 's/[^a-zA-Z0-9\ \.\-]//g')
+
+      if [[ "$nodeName" != "$newNode" ]]; then
+         errorFound=1
+         echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
+         echo "***ERROR: Nodes are not named properly." >> $ERROR_LOG
+         echo "***ERROR: Nodes can have no special characters other than '-' and '.'" >> $ERROR_LOG
+      fi
+
+      if [[ "$newNode" =~ ^([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})$ ]]; then
+         errorFound=1
+          echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
+         echo "***ERROR: Nodes are not named properly." >> $ERROR_LOG
+         echo "***ERROR: IP addresses are not supported. Please use node names." >> $ERROR_LOG
+      fi
+
+      #Testing sudo access on all nodes
+      ssh -q -n $newNode sudo echo "***INFO: Testing sudo access on node $newNode"
+      if [ $? -ne "0" ]; then
+         error=1
+         ERROR_NODES="$ERROR_NODES $newNode"
+      fi
+      NODES="$NODES $newNode"
+   done
+
+   NODE_LIST=$NODES
+ if [[ $error == "1" ]]; then
+      errorFound=1
+       echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
+      echo "***ERROR: $ERROR_NODES does not have sudo access." >> $ERROR_LOG
+      echo "***ERROR: Must have sudo access on all nodes." >> $ERROR_LOG
+   fi
+
+
+   for node in $MANAGEMENT_NODES
+   do
+      ssh -q -n $node echo "***INFO: Testing ssh on $node"
+      if [[ $? -ne "0" ]]; then
+         error=1
+         ERROR_NODES="$ERROR_NODES $node"
+      fi
+   done
+
+   if [[ $error == "1" ]]; then
+      errorFound=1
+      echo "TRAFODION NODE LIST" >> $ERROR_LOG
+      echo "***ERROR: Could not ssh to $ERROR_NODES." >> $ERROR_LOG
+      echo "***ERROR: Check permissions and known hosts files." >> $ERROR_LOG
+   fi
+
+
+   sudo chmod 777 $TRAF_CONFIG
+   sed -i '/MANAGEMENT_NODES\=/d' $TRAF_CONFIG
+   echo "export MANAGEMENT_NODES=\"$MANAGEMENT_NODES\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+
+   manage_node_count=$(echo $MANAGEMENT_NODES | wc -w)
+
+   sudo chmod 777 $TRAF_CONFIG
+   sed -i '/manage_node_count\=/d' $TRAF_CONFIG
+   echo "export manage_node_count=\"$manage_node_count\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+   
+
+   MY_MANAGEMENT_NODES=""
+
+   for node in $MANAGEMENT_NODES
+   do
+      MY_MANAGEMENT_NODES="$MY_MANAGEMENT_NODES -w $node"
+   done
+
+   sudo chmod 777 $TRAF_CONFIG
+   sed -i '/MY_MANAGEMENT_NODES\=/d' $TRAF_CONFIG
+   echo "export MY_MANAGEMENT_NODES=\"$MY_MANAGEMENT_NODES\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+
+fi
+source $TRAF_CONFIG
+}
+
+function createAllNodes {
+
+ALL_NODE_LIST="$NODE_LIST $MANAGEMENT_NODES"
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/ALL_NODE_LIST\=/d' $TRAF_CONFIG
+echo "export ALL_NODE_LIST=\"$ALL_NODE_LIST\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+
+all_node_count=$(echo $ALL_NODE_LIST | wc -w)
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/all_node_count\=/d' $TRAF_CONFIG
+echo "export all_node_count=\"$all_node_count\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+
+ALL_NODES="$MY_MANAGEMENT_NODES $MY_NODES"
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/ALL_NODES\=/d' $TRAF_CONFIG
+echo "export ALL_NODES=\"$ALL_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+
+}
+
+function createPDSH {
+
+source $TRAF_CONFIG
+export PDSH_SSH_CMD="ssh -q -n %h"
+
+if [ $all_node_count -eq 1 ]; then
+    TRAF_PDSH=""
+    TRAF_PDCP=""
+else
+    TRAF_PDSH="pdsh -R exec $ALL_NODES $PDSH_SSH_CMD"
+    TRAF_PDCP="pdcp -R ssh $ALL_NODES"
+fi
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/TRAF_PDSH\=/d' $TRAF_CONFIG
+echo "export TRAF_PDSH=\"$TRAF_PDSH\"" >> $TRAF_CONFIG
+sed -i '/TRAF_PDCP\=/d' $TRAF_CONFIG
+echo "export TRAF_PDCP=\"$TRAF_PDCP\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+
+
+}
+
+function checkJavaVersion {
 if [[ -z "$JAVA_HOME" ]]; then
    errorFound=1
    echo "JAVA HOME" >> $ERROR_LOG
@@ -270,7 +414,13 @@ else
          #Checking if using 1.7.0_n
          if [[ "${THIS_JVM_VER:18:1}" -eq "0" ]] && [[ "$temp_JAVA" -eq "$JAVA7" ]]; then
             if [[ "${THIS_JVM_VER:20:1}" -eq "0" ]] || [[ "${THIS_JVM_VER:20:2}" -lt $JAVA65 ]]; then
-               error="true"
+               #If Java is **less** than than 1.7.0_65 the next command will fail.
+               #Install will fail anyways if less than 1.7.0_65
+               #Will not fail if Java is 1.7.0_100 or greater
+               #Temporary fix to support Java 7 upgrades greater than 100
+               if [[ "${THIS_JVM_VER:20:3}" -lt $JAVA_65 ]]; then
+                  error="true"
+               fi
             fi
          fi
 
@@ -283,6 +433,17 @@ else
          fi
        done
     fi
+    hadoopPath="$HADOOP_PATH"
+    hadoopBinPath="$HADOOP_BIN_PATH"
+
+    export PATH="$JAVA_HOME/bin:$PATH"
+    sudo chmod 777 $TRAF_CONFIG
+    sed -i '/PATH\=/d' $TRAF_CONFIG
+    echo "export PATH=\"$PATH\"" >>$TRAF_CONFIG
+    echo "export HADOOP_BIN_PATH=\"$hadoopBinPath\"" >>$TRAF_CONFIG
+    echo "export HADOOP_PATH=\"$hadoopPath\"" >>$TRAF_CONFIG
+    sudo chmod 777 $TRAF_CONFIG
+    source $TRAF_CONFIG
 fi
 
 }
@@ -338,6 +499,22 @@ if [[ "$SUSE_LINUX" != "true" ]]; then
 fi
 }
 
+function checkBackupUser {
+
+TRAF_CONFIG="/etc/trafodion/trafodion_config"
+
+source $TRAF_CONFIG
+
+if [ -z $BACKUP_USER ]; then
+   echo "***ERROR: BACKUP_USER variable not set in config file."
+   echo "***WARNING: BACKUP_USER will be set to trafodion."
+   sudo chmod 777 $TRAF_CONFIG
+   sudo echo "export BACKUP_USER=\"trafodion\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+fi
+
+}
+
 function checkHadoopUserPass {
 
 if [ -z $ADMIN ]; then
@@ -363,21 +540,20 @@ if [[ -z "$URL" ]]; then
    echo "***ERROR: Hadoop URL variable not set in config file."
    majorErrorFound  
 else
-   validURL=$(curl -s --head $URL | head -n 1 | grep "OK" | wc -l)
+   validURL=$(curl -k -s --head $URL | head -n 1 | grep "OK" | wc -l)
 
    if [[ $validURL -ne "1" ]]; then
       errorFound=1
       echo "HADOOP URL" >> $ERROR_LOG
-      echo "***ERROR: Could not access http://$URL" >> $ERROR_LOG
-      echo "***ERROR: Do not include 'http or https'" >> $ERROR_LOG
+      echo "***ERROR: Could not access $URL" >> $ERROR_LOG
       echo "***ERROR: Check that URL and port are correct or if $HADOOP_TYPE is up" >> $ERROR_LOG
       majorErrorFound
    fi
 
-   hadoopVersion=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters | grep version | grep -c CDH)
+   hadoopVersion=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters | grep version | grep -c CDH)
 
-   if [[ $hadoopVersion -ne "1" ]]; then
-      hadoopVersion=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters | grep version | grep -c HDP)
+   if [[ $hadoopVersion -lt "1" ]]; then
+      hadoopVersion=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters | grep version | grep -c HDP)
       if [[ $hadoopVersion -ne "1" ]]; then
          errorFound=1
          echo "HADOOP URL" >> $ERROR_LOG
@@ -393,17 +569,20 @@ else
    sudo chmod 777 $TRAF_CONFIG
    sed -i '/HADOOP_TYPE\=/d' $TRAF_CONFIG
    echo "export HADOOP_TYPE=\"$HADOOP_TYPE\"" >> $TRAF_CONFIG
+   echo "export MULTI_CLUSTER=\"N\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
    source $TRAF_CONFIG
 
-   temp=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | sed 's/^[^\:]* ://')
-   CLUSTER_NAME=$(echo $temp | sed -e 's/^"//' -e 's/"$//')
+    if [[ $MULTI_CLUSTER == "N" ]]; then
+      temp=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | sed 's/^[^\:]* ://')
+      CLUSTER_NAME=$(echo $temp | sed -e 's/^"//' -e 's/"$//')
+   fi
    CLUSTER_NAME=${CLUSTER_NAME// /%20}
 
    if [ -z $CLUSTER_NAME ]; then
       errorFound=1
       echo "HADOOP URL" >> $ERROR_LOG
-      echo "***ERROR: Could not access http://$URL" >> $ERROR_LOG
+      echo "***ERROR: Could not access $URL" >> $ERROR_LOG
       echo "***ERROR: Check URL and port are correct or if $hadoop_type is up." >> $ERROR_LOG
       majorErrorFound
    fi
@@ -415,9 +594,10 @@ else
    source $TRAF_CONFIG
 
    if [[ $node_count -ne 1 ]]; then
+      nameOfInstallNode=$(hostname -s)
       sudo chmod 777 $TRAF_CONFIG
       sed -i '/CLUSTERNAME\=/d' $TRAF_CONFIG
-      echo "export CLUSTERNAME=\"$CLUSTER_NAME\"" >> $TRAF_CONFIG
+      echo "export CLUSTERNAME=\"$nameOfInstallNode\"" >> $TRAF_CONFIG
       sudo chmod 777 $TRAF_CONFIG
       source $TRAF_CONFIG
    fi
@@ -425,10 +605,44 @@ else
 fi
 }
 
+function setPath {
+
+export PATH=$PATH:$HADOOP_PREFIX/bin:$HADOOP_PREFIX/sbin:$HBASE_HOME/bin
+
+if [ ! -z $HIVE_HOME ]; then
+   export PATH=$PATH:$HIVE_HOME/bin
+fi
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/PATH\=/d' $TRAF_CONFIG
+echo "export PATH=\"$PATH\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+source $TRAF_CONFIG
+
+}
+
+function setHBaseDistro {
+
+export HBASE_DISTRO="APACHE" 
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/HBASE_DISTRO\=/d' $TRAF_CONFIG
+echo "export HBASE_DISTRO=\"$HBASE_DISTRO\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+source $TRAF_CONFIG
+
+}
+
 function getHadoopNodes {
 
 echo "***INFO: Getting list of all $HADOOP_TYPE nodes"
-$LOCAL_WORKDIR/traf_getHadoopNodes
+
+if [[ $MULTI_CLUSTER == "N" ]] && [[ $HADOOP_TYPE != "apache" ]]; then
+   $LOCAL_WORKDIR/traf_getHadoopNodes
+else
+   $LOCAL_WORKDIR/traf_getMultiHadoopNodes
+fi
+
 
 if [ $? -ne "0" ]; then
    errorFound=1
@@ -471,7 +685,7 @@ done
 
 function checkRoleGroups {
 
-   regionGroup1=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v10/clusters/$CLUSTER_NAME/services/hbase/roleConfigGroups | grep displayName | grep "RegionServer Group 1" | wc -l)
+   regionGroup1=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v10/clusters/$CLUSTER_NAME/services/hbase/roleConfigGroups | grep displayName | grep "RegionServer Group 1" | wc -l)
 
    if [[ $regionGroup1 -ge "1" ]]; then
       errorFound=1
@@ -482,6 +696,7 @@ function checkRoleGroups {
 
 }
 
+
 function checkClouderaVersion {
 
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
@@ -490,7 +705,7 @@ if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
       nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.4.*)
       #Check that Cloudera 5.[n>4].* is not installed.
       if [[ -z $nameOfVersion ]]; then
-         versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[5-6].[0-9].* | wc -l)
+         versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[5-9].[7-9].* | wc -l)
          if [[ $versionInstalled -gt "0" ]]; then
             errorFound=1
             echo "HADOOP VERSION" >> $ERROR_LOG
@@ -500,8 +715,8 @@ if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
          fi
       fi
    else
-      versionInstalled=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].* | wc -l)
-      nameOfVersion=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].*)
+      versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].* | wc -l)
+      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].*)
       if [[ $versionInstalled -eq "0" ]]; then
          errorFound=1
          echo "HADOOP VERSION" >> $ERROR_LOG
@@ -511,10 +726,10 @@ if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
       fi
    fi
 else
-   nameOfVersion=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[2-3].*)
+   nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[2-3].*)
    #Check that Cloudera 5.[n>3].* is not installed.
    if [[ -z $nameOfVersion ]]; then
-      versionInstalled=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[4-6].[0-9].* | wc -l)
+      versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[4-6].[0-9].* | wc -l)
        if [[ $versionInstalled -gt "0" ]]; then
           errorFound=1
           echo "HADOOP VERSION" >> $ERROR_LOG
@@ -525,18 +740,7 @@ else
    fi
 fi
 
-export HADOOP_PATH="/usr/lib/hbase/lib"
-#Check for Cloudera parcels of packages.
-parcelsInstalled=$(ssh -q -n $node sudo ls /opt/cloudera/parcels/ | wc -l)
-if [[ $parcelsInstalled -gt "0" ]]; then
-   export HADOOP_PATH="/opt/cloudera/parcels/CDH/lib/hbase/lib"
-fi
-
 echo "***INFO: nameOfVersion=$nameOfVersion"
-echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
-sudo chmod 777 $TRAF_CONFIG
-sed -i '/HADOOP_PATH\=/d' $TRAF_CONFIG
-echo "export HADOOP_PATH=\"$HADOOP_PATH\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 source $TRAF_CONFIG
 
@@ -566,9 +770,8 @@ if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
             ssh -q -n $node cat hbaseVersion.txt >> $ERROR_LOG
          fi
        fi
-       export HADOOP_PATH="/usr/lib/hbase/lib"
    else
-       nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.3.*)
+       nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.[3-4].*)
        #Check that HDP 2.[n>3].* is not installed.
        if [[ -z $nameOfVersion ]]; then
           versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | sed 's/Version [0-9]*.[0-9]*.[0-9].//g' | grep [1-3].[0-9].* | wc -l)
@@ -580,7 +783,6 @@ if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
              ssh -q -n $node cat hbaseVersion.txt >> $ERROR_LOG
           fi
        fi
-   export HADOOP_PATH="/usr/hdp/current/hbase-regionserver/lib"
    fi
 else
    nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.2.*)
@@ -597,14 +799,9 @@ if [[ -z $nameOfVersion ]]; then
       ssh -q -n $node cat hbaseVersion.txt >> $ERROR_LOG
    fi
 fi
-export HADOOP_PATH="/usr/hdp/current/hbase-regionserver/lib"
 
 echo "***INFO: nameOfVersion=$nameOfVersion"
 echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
-sudo chmod 777 $TRAF_CONFIG
-sed -i '/HADOOP_PATH\=/d' $TRAF_CONFIG
-echo "export HADOOP_PATH=\"$HADOOP_PATH\"" >> $TRAF_CONFIG
-sudo chmod 777 $TRAF_CONFIG
 source $TRAF_CONFIG
 
 }
@@ -678,6 +875,25 @@ else
    fi
 fi
 
+
+if [[ -z "$DCS_MASTER_PORT" ]]; then
+   sudo chmod 777 $TRAF_CONFIG
+   echo "export DCS_MASTER_PORT=\"23400\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+fi
+
+if [[ -z "$DCS_MASTER_HOST" ]]; then
+   if [[ "$ENABLE_HA" == "true" ]]; then
+      sudo chmod 777 $TRAF_CONFIG
+      echo "export DCS_MASTER_HOST=\"$FLOATING_IP\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG
+   else
+      sudo chmod 777 $TRAF_CONFIG
+      echo "export DCS_MASTER_HOST=\"$DCS_PRIMARY_MASTER_NODE\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG
+   fi
+fi
+
 }
 
 function checkLDAP {
@@ -700,22 +916,48 @@ fi
 
 function checkHadoopSupport {
 
-if [[ -z $TRAF_BUILD ]]; then
-   TRAF_BUILD=$(tar -tf $TRAF_PACKAGE | grep "trafodion_server")
+if [[ "$ONE_TAR_INSTALL" == "N" ]] || [[ -z "$ONE_TAR_INSTALL" ]] ; then
+   TRAF_BUILD=$(tar -tf $TRAF_PACKAGE | grep "trafodion_.*server")
    tar -xzf $TRAF_PACKAGE --directory $LOCAL_WORKDIR
    TRAF_BUILD_PATH=$LOCAL_WORKDIR/$TRAF_BUILD
+   install_features_path=$(tar -tf $TRAF_BUILD_PATH | grep "install_features")
+
 else
-   TRAF_BUILD_PATH=$TRAF_BUILD
+   TRAF_BUILD_PATH=$TRAF_PACKAGE
+   install_features_path=$(tar -tf $TRAF_PACKAGE | grep "install_features")
+
 fi
 
-install_features_path=$(tar -tf $TRAF_BUILD_PATH | grep "install_features")
 
 if [[ ! -z $install_features_path ]]; then
-   tar -xzf $TRAF_BUILD_PATH $install_features_path
+   if [[ "$ONE_TAR_INSTALL" == "N" ]]; then
+      tar -xzf $TRAF_BUILD_PATH $install_features_path
+      if [[ $? -ne "0" ]]; then
+         echo "***ERROR: Error with untar of $TRAF_BUILD_PATH"
+         exit -1
+      fi
+   else
+      tar -xzf $TRAF_PACKAGE $install_features_path
+      if [[ $? -ne "0" ]]; then
+         echo "***ERROR: Error with untar of $TRAF_BUILD_PATH"
+         exit -1
+      fi           
+   fi
    source $install_features_path
+   #cat $install_features_path
+
    sudo chmod 777 $TRAF_CONFIG
    echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
+   if [[ -z $CDH_5_5_SUPPORT ]]; then
+      sudo chmod 777 $TRAF_CONFIG
+      echo "export CDH_5_5_SUPPORT=\"N\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG
+   else
+      sudo chmod 777 $TRAF_CONFIG
+      echo "export CDH_5_5_SUPPORT=\"$CDH_5_5_SUPPORT\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG
+   fi 
    if [[ -z $CDH_5_4_SUPPORT ]]; then
       sudo chmod 777 $TRAF_CONFIG
       echo "export CDH_5_4_SUPPORT=\"N\"" >> $TRAF_CONFIG
@@ -734,14 +976,27 @@ if [[ ! -z $install_features_path ]]; then
       echo "export HDP_2_3_SUPPORT=\"$HDP_2_3_SUPPORT\"" >> $TRAF_CONFIG
       sudo chmod 777 $TRAF_CONFIG
    fi
+   if [[ -z $APACHE_1.0_X_SUPPORT ]]; then
+      sudo chmod 777 $TRAF_CONFIG
+      echo "export APACHE_1_0_X_SUPPORT=\"N\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG
+   else
+      sudo chmod 777 $TRAF_CONFIG
+      echo "export APACHE_1_0_X_SUPPORT=\"Y\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG      
+   fi
 else
    CDH_5_3_HDP_2_2_SUPPORT="N"
    CDH_5_4_SUPPORT="N"
+   CDH_5_5_SUPPORT="N"
    HDP_2_3_SUPPORT="N"
+   APACHE_1_0_X_SUPPORT="N"
    sudo chmod 777 $TRAF_CONFIG
    echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
    echo "export CDH_5_4_SUPPORT=\"$CDH_5_4_SUPPORT\"" >> $TRAF_CONFIG
+   echo "export CDH_5_5_SUPPORT=\"$CDH_5_5_SUPPORT\"" >> $TRAF_CONFIG
    echo "export HDP_2_3_SUPPORT=\"$HDP_2_3_SUPPORT\"" >> $TRAF_CONFIG
+   echo "export APACHE_1_0_X_SUPPORT=\"$APACHE_1_0_X_SUPPORT\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 fi
 
@@ -751,11 +1006,7 @@ fi
 #===========================================
 #Main 
 
-echo
-echo "************************************"
-echo " Trafodion Configuration File Check"
-echo "************************************"
-echo
+echo "***INFO: Trafodion Configuration File Check"
 
 setUpErrorLog
 
@@ -769,6 +1020,14 @@ checkTrafPassword
 
 checkNodeList
 
+if [[ $MANAGEMENT_ENABLED == "Y" ]]; then
+   checkManageNodeList
+fi
+
+createAllNodes
+
+createPDSH
+
 checkJavaVersion
 
 checkHomeDir
@@ -777,9 +1036,19 @@ checkEPEL
 
 checkHadoopSupport
 
-checkHadoopUserPass
+if [[ "$HADOOP_TYPE" != "apache" ]]; then
+   checkBackupUser
 
-checkHadoopURL
+   checkHadoopUserPass
+
+   checkHadoopURL
+
+fi
+
+if [[ "$HADOOP_TYPE" == "apache" ]]; then
+   setPath
+   setHBaseDistro
+fi
 
 getHadoopNodes
 
@@ -794,3 +1063,4 @@ checkDCS
 checkLDAP
 
 majorErrorFound
+

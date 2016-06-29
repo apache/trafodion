@@ -575,7 +575,7 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
 
 // This forces an rcb to be created with a different version number
 // A "0" means to take the current mxv version
-  DDui1__(CAT_RCB_VERSION,     "0"),
+  DDui___(CAT_RCB_VERSION,     "0"),
 
 // Controls creation of column privileges for object-level privileges
   DDkwd__(CAT_REDUNDANT_COLUMN_PRIVS, "ON"),
@@ -592,6 +592,8 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DD_____(CMP_ERR_LOG_FILE,    "tdm_arkcmp_errors.log"),
 
   DDkwd__(COLLECT_REORG_STATS,                                  "ON"),
+
+  DDint__(COMPILER_IDLE_TIMEOUT,                    "1800"), // To match with set session defaults value
 
   // tracking compilers specific defaults
   DDint__(COMPILER_TRACKING_INTERVAL, "0"),
@@ -1171,7 +1173,7 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
  DDdskNS(DDL_DEFAULT_LOCATIONS,                ""),
 
   DDkwd__(DDL_EXPLAIN,                           "OFF"),
-  DDkwd__(DDL_TRANSACTIONS,         "OFF"),
+  DDkwd__(DDL_TRANSACTIONS,         "ON"),
 
     // We ignore this setting for the first (SYSTEM_DEFAULTS) table open+read.
   DDkwd__(DEFAULTS_TABLE_ACCESS_WARNINGS,	"OFF"),
@@ -1293,7 +1295,7 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDSint__(ESP_ASSIGN_DEPTH,                    "0"),
 
   DDSint__(ESP_FIXUP_PRIORITY_DELTA,            "0"),
-  DDSint__(ESP_IDLE_TIMEOUT,                    "0"),
+  DDint__(ESP_IDLE_TIMEOUT,                    "1800"), // To match with set session defaults value
   DDkwd__(ESP_MULTI_FRAGMENTS,			"ON"),
   DDkwd__(ESP_MULTI_FRAGMENT_QUOTAS,		"ON"),
   DDui1500_4000(ESP_MULTI_FRAGMENT_QUOTA_VM,	"4000"),
@@ -1304,8 +1306,6 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
 
   DDSint__(ESP_PRIORITY,                        "0"),
   DDSint__(ESP_PRIORITY_DELTA,                  "0"),
-
-  DDkwd__(ESTIMATE_HBASE_ROW_COUNT,             "ON"),
 
  // Disable hints - if SYSTEM, enable on SSD, and disable only on HDD
   DDkwd__(EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_HASH,	"SYSTEM"),
@@ -1354,10 +1354,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXE_PARALLEL_DDL,                     "ON"),
 
-  DDkwd__(EXE_PARALLEL_PURGEDATA,               "MINIMUM"),
-
-  DDkwd__(EXE_PARALLEL_PURGEDATA_WARNINGS,      "OFF"),
-
   DDui___(EXE_PA_DP2_STATIC_AFFINITY,           "1"),
 
   DDkwd__(EXE_SINGLE_BMO_QUOTA,                 "ON"),
@@ -1371,7 +1367,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXPAND_DP2_SHORT_ROWS,		"ON"),
 
- XDDui___(EXPLAIN_DESCRIPTION_COLUMN_SIZE,    "-1"),
+ XDDint__(EXPLAIN_DESCRIPTION_COLUMN_SIZE,    "-1"),
 
   DDkwd__(EXPLAIN_DETAIL_COST_FOR_CALIBRATION,  "FALSE"),
 
@@ -1420,8 +1416,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(FAST_REPLYDATA_MOVE,			"ON"),
  SDDkwd__(FFDC_DIALOUTS_FOR_MXCMP,		"OFF"),
   DDkwd__(FIND_COMMON_SUBEXPRS_IN_OR,		"ON"),
-
-  DDkwd__(FLOATTYPE,				"IEEE"),
 
   DDui___(FLOAT_ESP_RANDOM_NUM_SEED,    "0"),
 
@@ -1757,7 +1751,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  // We can remove this once the delete costing code has broader
  // exposure.
  DDkwd__(HBASE_DELETE_COSTING,		             "ON"),
-
+ DDflt0_(HBASE_DOP_PARALLEL_SCANNER,             "0."),
  DDkwd__(HBASE_FILTER_PREDS,		             "OFF"),
  DDkwd__(HBASE_HASH2_PARTITIONING,                   "ON"),
  DDui___(HBASE_INDEX_LEVEL,                          "0"),
@@ -1785,6 +1779,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  DDkwd__(HBASE_SERIALIZATION,		"ON"),
  
   DD_____(HBASE_SERVER,                         ""), 
+  DDkwd__(HBASE_SMALL_SCANNER,      "OFF"),
   DDkwd__(HBASE_SQL_IUD_SEMANTICS,		"ON"),
   DDkwd__(HBASE_STATS_PARTITIONING,           	"ON"),
   DDkwd__(HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT,		"OFF"),
@@ -1950,26 +1945,36 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  // Main ones to use:
  // HIVE_MAX_STRING_LENGTH: Hive "string" data type gets converted
  //                         into a VARCHAR with this length
+ //                         This should be deprecated from Trafodion R2.1
+ // HIVE_MAX_STRING_LENGTH_IN_BYTES: Hive "string" data type gets converted
+ //                                  into a VARCHAR with this length
  // HIVE_MIN_BYTES_PER_ESP_PARTITION: Make one ESP for this many bytes
  // HIVE_NUM_ESPS_PER_DATANODE: Equivalent of MAX_ESPS_PER_CPU_PER_OP
  //                             Note that this is really per SeaQuest node
 
   DD_____(HIVE_CATALOG,                                ""),
 
+  DDkwd__(HIVE_DATA_MOD_CHECK,                  "ON"),
+
   DDkwd__(HIVE_DEFAULT_CHARSET,            (char *)SQLCHARSETSTRING_UTF8),
   DD_____(HIVE_DEFAULT_SCHEMA,                  "HIVE"),
+  DD_____(HIVE_FILE_CHARSET,                    ""),
   DD_____(HIVE_FILE_NAME,     "/hive/tpcds/customer/customer.dat" ),
   DD_____(HIVE_HDFS_STATS_LOG_FILE,             ""),
+  DDui___(HIVE_INSERT_ERROR_MODE,               "1"),
   DDint__(HIVE_LIB_HDFS_PORT_OVERRIDE,          "-1"),
   DDint__(HIVE_LOCALITY_BALANCE_LEVEL,          "0"),
   DDui___(HIVE_MAX_ESPS,                        "9999"),
   DDui___(HIVE_MAX_STRING_LENGTH,               "32000"),
+  DDui___(HIVE_MAX_STRING_LENGTH_IN_BYTES,      "32000"),
   DDkwd__(HIVE_METADATA_JAVA_ACCESS,            "ON"),
   DDint__(HIVE_METADATA_REFRESH_INTERVAL,       "0"),
   DDflt0_(HIVE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
   DDui___(HIVE_NUM_ESPS_PER_DATANODE,           "2"),
   DDpct__(HIVE_NUM_ESPS_ROUND_DEVIATION,        "34"),
+  DDint__(HIVE_SCAN_SPECIAL_MODE,                "0"),
   DDkwd__(HIVE_SORT_HDFS_HOSTS,                 "ON"),
+  DDkwd__(HIVE_USE_EXT_TABLE_ATTRS,             "ON"),
   DD_____(HIVE_USE_FAKE_SQ_NODE_NAMES,          "" ),
   DDkwd__(HIVE_USE_FAKE_TABLE_DESC,             "OFF"),
   DDkwd__(HIVE_USE_HASH2_AS_PARTFUNCION,        "ON"),
@@ -2071,12 +2076,16 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // precision but degraded performance.
   SDDkwd__(LIMIT_MAX_NUMERIC_PRECISION,		"SYSTEM"),
 
+ // Size in bytes  used to perform garbage collection  to lob data file 
+  // default size is 5GB   . Change to adjust disk usage. 
+  DDint__(LOB_GC_LIMIT_SIZE,            "5000"),
+  
   DDint__(LOB_HDFS_PORT,                       "0"),
   DD_____(LOB_HDFS_SERVER,                 "default"), 
-   
+ 
    // Size of memoryin bytes  used to perform I/O to lob data file 
   // default size is 512MB   . Change to adjust memory usage. 
-  DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "536870912"), 
+  DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "512"), 
   // default size is 10 G  (10000 M)
   DDint__(LOB_MAX_SIZE,                         "10000"),
   // default size is 32000. Change this to extract more data into memory.
@@ -2423,7 +2432,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(MVQR_USE_RI_FOR_EXTRA_HUB_TABLES, "OFF"),
   DD_____(MVQR_WORKLOAD_ANALYSIS_MV_NAME, ""),
 
- XDDMVA__(MV_AGE,				""),
+ XDDMVA__(MV_AGE,				"0 MINUTES"),
  XDDkwd__(MV_ALLOW_SELECT_SYSTEM_ADDED_COLUMNS, "OFF"),
   DDkwd__(MV_AS_ROW_TRIGGER,			"OFF"),
   DDkwd__(MV_AUTOMATIC_LOGGABLE_COLUMN_MAINTENANCE, "ON"),
@@ -3175,7 +3184,7 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   DDkwd__(SHOW_MEMO_STATS,		"OFF"),
 
   DDkwd__(SIMILARITY_CHECK,			"ON "),
-  DDkwd__(SIMPLE_COST_MODEL,                    "ON"),
+ DDkwd__(SIMPLE_COST_MODEL,                    "ON"),
 
  XDDkwd__(SKEW_EXPLAIN,                         "ON"),
  XDDflt__(SKEW_ROWCOUNT_THRESHOLD,              "1000000"), // Column row count
@@ -3293,26 +3302,30 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TEST_PASS_ONE_ASSERT_TASK_NUMBER,	"-1"),
   DDint__(TEST_PASS_TWO_ASSERT_TASK_NUMBER,	"-1"),
 
- XDDintN2(TIMEOUT,				"6000"),
-
+  XDDintN2(TIMEOUT,				"6000"),
+ 
   DDflt0_(TMUDF_CARDINALITY_FACTOR, "1"),
   DDflt0_(TMUDF_LEAF_CARDINALITY, "1"),
 
   DDkwd__(TOTAL_RESOURCE_COSTING,               "ON"),
-
+ 
   DDint__(TRAF_ALIGNED_FORMAT_ADD_COL_METHOD,	"2"),
-
- DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "OFF"),   
-
+ 
+  DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "OFF"),   
+ 
   DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
+ 
+  DDkwd__(TRAF_ALLOW_RESERVED_COLNAMES,          "OFF"),   
+ 
+  DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
 
- DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
+  DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
 
- DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
+  DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
- DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),   
+  DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),   
 
- DDkwd__(TRAF_CLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
+  DDkwd__(TRAF_CLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
   DDkwd__(TRAF_COL_LENGTH_IS_CHAR,                 "ON"),   
 
@@ -3386,17 +3399,21 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   //location for temporary links and files produced by snapshot scan
   DD_____(TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION,       "/bulkload/"),
 
+  DDkwd__(TRAF_TINYINT_INPUT_PARAMS,                   "OFF"),
+  DDkwd__(TRAF_TINYINT_RETURN_VALUES,                  "OFF"),
+  DDkwd__(TRAF_TINYINT_SPJ_SUPPORT,                    "OFF"),
+  DDkwd__(TRAF_TINYINT_SUPPORT,                        "ON"),
+
   // DTM Transaction Type: MVCC, SSCC
   XDDkwd__(TRAF_TRANS_TYPE,                            "MVCC"),
 
   DDkwd__(TRAF_UNLOAD_BYPASS_LIBHDFS,                  "ON"),
   DD_____(TRAF_UNLOAD_DEF_DELIMITER,                   "|" ),
-  DD_____(TRAF_UNLOAD_DEF_NULL_STRING,                 "" ),
   DD_____(TRAF_UNLOAD_DEF_RECORD_SEPARATOR,            "\n" ),
   DDint__(TRAF_UNLOAD_HDFS_COMPRESS,                   "0"),
   DDkwd__(TRAF_UNLOAD_SKIP_WRITING_TO_FILES,           "OFF"),
   DDkwd__(TRAF_UPSERT_ADJUST_PARAMS,                   "OFF"),
-  DDkwd__(TRAF_UPSERT_AUTO_FLUSH,                      "OFF"),
+  DDkwd__(TRAF_UPSERT_MODE,                            "MERGE"),
   DDint__(TRAF_UPSERT_WB_SIZE,                         "2097152"),
   DDkwd__(TRAF_UPSERT_WRITE_TO_WAL,                    "OFF"),
 
@@ -3461,13 +3478,16 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USE_LARGE_QUEUES,                     "ON"),
 
   DDkwd__(USE_MAINTAIN_CONTROL_TABLE,          "OFF"),
+
+  DDkwd__(USE_OLD_DT_CONSTRUCTOR,      "OFF"),
+
   // Adaptive segmentation, use operator max to determine degree of parallelism
   DDui___(USE_OPERATOR_MAX_FOR_DOP,     "1"),
 
 // Specify the number of partitions before invoking parallel label operations
   DDui1__(USE_PARALLEL_FOR_NUM_PARTITIONS,       "32"),
 
-  DDkwd__(USTAT_ADD_SALTED_KEY_PREFIXES_FOR_MC, "OFF"),  // When ON, generate MCs for primary key prefixes as well as full key
+  DDkwd__(USTAT_ADD_SALTED_KEY_PREFIXES_FOR_MC, "ON"),   // When ON, generate MCs for primary key prefixes as well as full key
                                                          //   of salted table when ON EVERY KEY or ON EVERY COLUMN is specified.
   DDkwd__(USTAT_ATTEMPT_ESP_PARALLELISM,        "ON"),   // for reading column values
   DDui___(USTAT_AUTOMATION_INTERVAL,            "0"),
@@ -3500,7 +3520,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_DEBUG_FORCE_FETCHCOUNT,         "OFF"),
   DD_____(USTAT_DEBUG_TEST,                     ""),
   DDflte_(USTAT_DSHMAX,		                "50.0"),
-  DDkwd__(USTAT_ESTIMATE_HBASE_ROW_COUNT,       "OFF"),
+  DDkwd__(USTAT_ESTIMATE_HBASE_ROW_COUNT,       "ON"),
   DDkwd__(USTAT_FETCHCOUNT_ACTIVE,              "OFF"),
   DDkwd__(USTAT_FORCE_MOM_ESTIMATOR,            "OFF"),
   DDkwd__(USTAT_FORCE_TEMP,                     "OFF"),
@@ -3529,7 +3549,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDui___(USTAT_IUS_MAX_PERSISTENT_DATA_IN_MB,        "50000"), // 50GB
   DDflt0_(USTAT_IUS_MAX_PERSISTENT_DATA_IN_PERCENTAGE,  "0.20"), // 20% of the total
 
-  DDui1_6(USTAT_IUS_MAX_TRANSACTION_DURATION,  "20"),   // in minutes
+  DDui1_6(USTAT_IUS_MAX_TRANSACTION_DURATION,  "5"),   // in minutes
   DDkwd__(USTAT_IUS_NO_BLOCK,                   "OFF"),
   DDansi_(USTAT_IUS_PERSISTENT_CBF_PATH,        "SYSTEM"),
 
@@ -3555,7 +3575,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDflt0_(USTAT_MIN_CHAR_UEC_FOR_IS,            "0.2"),  // minimum UEC for char type to use internal sort
   DDflt0_(USTAT_MIN_DEC_BIN_UEC_FOR_IS,         "0.0"),  // minimum UEC for binary types to use internal sort
 
-  DDflt0_(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT,      "10000000"),
+ DDflt0_(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT,      "10000000"),
   DDui1__(USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE,    "10000"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_LOW_SAMPLE,    "1000000"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_SAMPLE,        "10000"),
@@ -3586,6 +3606,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_SIDETREE_INSERT,            "ON"),
   DDkwd__(USTAT_USE_SLIDING_SAMPLE_RATIO,       "ON"), // Trend sampling rate down w/increasing table size, going
                                                        //   flat at 1%.
+ XDDflt1_(USTAT_YOULL_LIKELY_BE_SORRY,          "100000000"),  // guard against unintentional long-running UPDATE STATS
   DDkwd__(VALIDATE_RFORK_REDEF_TS,	        "OFF"),
 
   DDkwd__(VALIDATE_VIEWS_AT_OPEN_TIME,		"OFF"),
@@ -3696,6 +3717,71 @@ static NABoolean isSynonymOfSYSTEM(Int32 attrEnum, NAString &value)
   return FALSE;
 }
 
+// Helper class used for holding and restoring CQDs
+class NADefaults::HeldDefaults
+{
+  public:
+   
+    HeldDefaults(void);
+
+    ~HeldDefaults(void);
+
+    // CMPASSERT's on stack overflow
+    void pushDefault(const char * value);
+
+    // returns null if nothing to pop
+    char * popDefault(void);
+
+  private:
+
+    enum { STACK_SIZE = 3 };
+
+    int stackPointer_;
+    char * stackValue_[STACK_SIZE];
+    
+};
+
+// Methods for helper class HeldDefaults
+NADefaults::HeldDefaults::HeldDefaults(void) : stackPointer_(0)
+{            
+  for (int i = 0; i < STACK_SIZE; i++)
+    stackValue_[i] = NULL;
+}
+
+NADefaults::HeldDefaults::~HeldDefaults(void)
+{
+  for (int i = 0; i < STACK_SIZE; i++)
+  {
+    if (stackValue_[i])
+    {
+      NADELETEBASIC(stackValue_[i], NADHEAP);
+    }
+  }
+}
+
+// CMPASSERT's on stack overflow
+void NADefaults::HeldDefaults::pushDefault(const char * value)
+{
+  CMPASSERT(stackPointer_ < STACK_SIZE);
+  stackValue_[stackPointer_] = new NADHEAP char[strlen(value) + 1];
+  strcpy(stackValue_[stackPointer_],value);
+  stackPointer_++;
+}
+
+// returns null if nothing to pop
+char * NADefaults::HeldDefaults::popDefault(void)
+{
+  char * result = 0;
+  if (stackPointer_ > 0)
+  {
+    stackPointer_--;
+    result = stackValue_[stackPointer_];
+    stackValue_[stackPointer_] = NULL;
+  }
+  return result;
+}
+
+
 size_t NADefaults::numDefaultAttributes()
 {
   return (size_t)__NUM_DEFAULT_ATTRIBUTES;
@@ -3739,12 +3825,15 @@ const char *NADefaults::getCurrentDefaultsAttrNameAndValue(
 // -----------------------------------------------------------------------
 void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 {
+  deleteMe();
+
   const size_t numAttrs = numDefaultAttributes();
+  if (numAttrs != sizeof(defaultDefaults) / sizeof(DefaultDefault))
+    return;
+
   CMPASSERT_STRING
     (numAttrs == sizeof(defaultDefaults) / sizeof(DefaultDefault),
      "Check sqlcomp/DefaultConstants.h for a gap in enum DefaultConstants or sqlcomp/nadefaults.cpp for duplicate entries in array defaultDefaults[].");
-
-  deleteMe();
 
   SqlParser_NADefaults_Glob =
   SqlParser_NADefaults_ = new NADHEAP SqlParser_NADefaults();
@@ -3756,7 +3845,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   currentFloats_	= new NADHEAP float * [numAttrs];
   currentTokens_	= new NADHEAP DefaultToken * [numAttrs];
   currentState_		= INIT_DEFAULT_DEFAULTS;
-  heldDefaults_	        = new NADHEAP char * [numAttrs];
+  heldDefaults_	        = new NADHEAP HeldDefaults * [numAttrs];
 
   // reset all entries
   size_t i = 0;
@@ -3771,7 +3860,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   memset( currentDefaults_, 0, sizeof(char *) * numAttrs );
   memset( currentFloats_, 0, sizeof(float *) * numAttrs );
   memset( currentTokens_, 0, sizeof(DefaultToken *) * numAttrs );
-  memset( heldDefaults_, 0, sizeof(char *) * numAttrs );
+  memset( heldDefaults_, 0, sizeof(HeldDefaults *) * numAttrs );
 
   #ifndef NDEBUG
     // This env-var turns on consistency checking of default-defaults and
@@ -3784,6 +3873,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   // for each entry of the (alphabetically sorted) default defaults
   // table, enter the default default into the current default table
   // which is sorted by enum values
+  NAString prevAttrName;
   for (i = 0; i < numAttrs; i++)
     {
       // the enum must be less than the max (if this assert fails
@@ -3817,10 +3907,35 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
       // set up our backlink which maps [enum] to its defaultDefaults entry
       defDefIx_[defaultDefaults[i].attrEnum] = i;
 
+      // attrs must be in ascending sorted order. If not, error out.
+      if (prevAttrName > defaultDefaults[i].attrName)
+        {
+          SqlParser_NADefaults_ = NULL;
+
+          return;
+        }
+      prevAttrName = defaultDefaults[i].attrName;
+
+      // validate initial default default values
+      CMPASSERT(defaultDefaults[i].validator);
+      if (! defaultDefaults[i].validator->validate(
+               defaultDefaults[i].value,
+               this,
+               defaultDefaults[i].attrEnum,
+               +1/*warning*/))
+        {
+          SqlParser_NADefaults_ = NULL;
+
+          cerr << "\nERROR: " << defaultDefaults[i].attrName
+               << " has invalid value" << defaultDefaults[i].value << endl;
+
+          return;
+         }
+
       // LCOV_EXCL_START
       // for debugging only
       #ifndef NDEBUG
-	if (nadval) {	// additional sanity checking we want to do occasionally
+       if (nadval) {	// additional sanity checking we want to do occasionally
 
 	  NAString v;
 
@@ -3879,8 +3994,8 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 	      CMPASSERT(v == keywords_[j]);
 
 	      CMPASSERT(v.first(' ') == NA_NPOS);
-	    }
 
+	    }
 	}	// if env-var
       #endif	// NDEBUG
       // LCOV_EXCL_STOP
@@ -4046,6 +4161,7 @@ NADefaults::NADefaults(NAMemory * h)
   setFlagOn(ZIG_ZAG_TREES, DEFAULT_ALLOWS_SEPARATE_SYSTEM);
   setFlagOn(COMPRESSED_INTERNAL_FORMAT, DEFAULT_ALLOWS_SEPARATE_SYSTEM);
   setFlagOn(COMPRESSED_INTERNAL_FORMAT_BMO, DEFAULT_ALLOWS_SEPARATE_SYSTEM);
+  setFlagOn(HBASE_SMALL_SCANNER, DEFAULT_ALLOWS_SEPARATE_SYSTEM);
 }
 
 NADefaults::~NADefaults()
@@ -4082,7 +4198,7 @@ void NADefaults::deleteMe()
 
   if (heldDefaults_) {
     for (size_t i = numDefaultAttributes(); i--; )
-      NADELETEBASIC(heldDefaults_[i], NADHEAP);
+      NADELETE(heldDefaults_[i], HeldDefaults, NADHEAP);
     NADELETEBASIC(heldDefaults_, NADHEAP);
   }
 
@@ -4726,7 +4842,21 @@ Int32 NADefaults::validateFloat(const char *value, float &result,
 {
   Int32 n = -1;	// NT's scanf("%n") is not quite correct; hence this code-around
   sscanf(value, "%g%n", &result, &n);
-  if (n > 0 && value[n] == '\0') return TRUE;	// a valid float
+  if (n > 0 && value[n] == '\0') 
+    {
+      switch (attrEnum)
+        {
+        case HIVE_INSERT_ERROR_MODE:
+          {
+            Lng32 v = str_atoi(value, str_len(value));
+            if (v >= 0 && v <= 3)
+              return TRUE;
+          }
+          break;
+        default:
+          return TRUE;	// a valid float
+        }
+    }
 
   NAString v(value);
   NABoolean silentIf = (errOrWarn == SilentIfSYSTEM);
@@ -5975,11 +6105,6 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
   char * value = NULL;
   if (holdOrRestoreCQD == 1) // hold cqd
     {
-      if (heldDefaults_[attrEnum])
-	{
-	  NADELETEBASIC(heldDefaults_[attrEnum], NADHEAP);
-	}
-
       if (currentDefaults_[attrEnum])
 	{
 	  value = new NADHEAP char[strlen(currentDefaults_[attrEnum]) + 1];
@@ -5990,23 +6115,39 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
 	  value = new NADHEAP char[strlen(defaultDefaults[defDefIx_[attrEnum]].value) + 1];
 	  strcpy(value, defaultDefaults[defDefIx_[attrEnum]].value);
 	}
-      heldDefaults_[attrEnum] = value;
+
+      if (! heldDefaults_[attrEnum])
+        heldDefaults_[attrEnum] = new NADHEAP HeldDefaults();
+
+      heldDefaults_[attrEnum]->pushDefault(value);
     }
   else
     {
       // restore cqd from heldDefaults_ array, if it was held.
       if (! heldDefaults_[attrEnum])
+        return attrEnum;
+
+      value = heldDefaults_[attrEnum]->popDefault();
+      if (! value)
 	return attrEnum;
 
+      // there is an odd semantic that if currentDefaults_[attrEnum]
+      // is null, we leave it as null, but pop a held value anyway;
+      // this semantic was preserved when heldDefaults_ was converted
+      // to a stack.
+
       if (currentDefaults_[attrEnum])
-	{
-	  NADELETEBASIC(currentDefaults_[attrEnum], NADHEAP);
-	  value = new NADHEAP char[strlen(heldDefaults_[attrEnum]) + 1];
-	  strcpy(value, heldDefaults_[attrEnum]);
-	  currentDefaults_[attrEnum] = value;
-	}
-      NADELETEBASIC(heldDefaults_[attrEnum], NADHEAP);
-      heldDefaults_[attrEnum] = NULL;
+        {
+          // do a validateAndInsert so the caches (such as currentToken_)
+          // get updated and so appropriate semantic actions are taken.
+          // Note that validateAndInsert will take care of deleting the
+          // storage currently held by currentDefaults_[attrEnum].
+          NAString valueS(value);
+          validateAndInsert(lookupAttrName(attrEnum), // sad that we have to do a lookup again
+                            valueS,
+                            FALSE);
+        }     
+      NADELETEBASIC(value, NADHEAP);
     }
 
   return attrEnum;
@@ -6303,6 +6444,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "MEASURE",
   "MEDIUM",
   "MEDIUM_LOW",
+  "MERGE",
   "MINIMUM",
   "MMAP",
   "MULTI_NODE",
@@ -6313,6 +6455,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "ON",
   "OPENS_FOR_WRITE",
   "OPERATOR",
+  "OPTIMAL",
   "ORDERED",
   "PERTABLE",
   "PRINT",
@@ -6324,6 +6467,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "RELEASE",
   "REMOTE",
   "REPEATABLE_READ",
+  "REPLACE",
   "REPSEL",
   "RESOURCES",
   "RETURN",
@@ -6390,6 +6534,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
   else {
     if ((attrEnum == TERMINAL_CHARSET) ||
         (attrEnum == USE_HIVE_SOURCE) ||
+        (attrEnum == HIVE_FILE_CHARSET) ||
         (attrEnum == HBASE_DATA_BLOCK_ENCODING_OPTION) ||
         (attrEnum == HBASE_COMPRESSION_OPTION))
       return DF_USER;
@@ -6463,6 +6608,15 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	  case '2':	return DF_HIGH;
 	  case '3':	return DF_MAXIMUM;
 	}
+      // HBASE_FILTER_PREDS
+      if ((attrEnum == HBASE_FILTER_PREDS) && value.length()==1)
+      switch (*value.data()){
+        case '0': return DF_OFF;
+        case '1': return DF_MINIMUM;
+        case '2': return DF_MEDIUM;
+        // in the future add DF_HIGH and DF_MAXIMUM when we implement more 
+        // pushdown capabilities
+      }
     if ( attrEnum == TEMPORARY_TABLE_HASH_PARTITIONS ||
          attrEnum == MVQR_REWRITE_CANDIDATES ||
          attrEnum == MVQR_PUBLISH_TABLE_LOCATION ||
@@ -6540,20 +6694,9 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	isValid = TRUE;
       break;
 
-    case FLOATTYPE:
-      if (tok == DF_TANDEM || tok == DF_IEEE)
-	isValid = TRUE;
-      break;
-
     case GROUP_BY_USING_ORDINAL:
       if (tok == DF_ALL || tok == DF_MINIMUM ||
 	  tok == DF_OFF)
-	isValid = TRUE;
-      break;
-
-    case EXE_PARALLEL_PURGEDATA:
-      if (tok == DF_ALL || tok == DF_MINIMUM ||
-	  tok == DF_OFF || tok == DF_ON || tok == DF_MEDIUM)
 	isValid = TRUE;
       break;
 
@@ -6562,6 +6705,11 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	  tok  == DF_VERTICAL    || tok == DF_INDEXES    || tok == DF_KEYINDEXES)
 	isValid = TRUE;
     break;
+
+    case HIVE_USE_EXT_TABLE_ATTRS:
+      if (tok == DF_ALL || tok == DF_OFF || tok == DF_ON )
+	isValid = TRUE;
+      break;
 
     case INDEX_ELIMINATION_LEVEL:
       if  (tok == DF_MINIMUM	 || tok == DF_MEDIUM ||
@@ -6638,6 +6786,10 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	isValid = TRUE;
       break;
 
+    case HIVE_SCAN_SPECIAL_MODE:
+	isValid = TRUE;
+	break;
+
     case IS_SQLCI:
       // for primary mxcmp that is invoked for user queries, the only valid
       // value for mxci_process cqd is TRUE. This cqd is set once by mxci
@@ -6647,16 +6799,8 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       // sent using sendAllControls method, all values are valid. This will
       // ensure that if this default is not set and is sent over to secondary
       // mxcmp using an internal CQD statement, it doesn't return an error.
-      if (cmpCurrentContext->isSecondaryMxcmp())
-	{
-	  if (tok == DF_ON		 || tok == DF_OFF)
-	    isValid = TRUE;
-	}
-      else
-	{
-	  if (tok == DF_ON)
-	    isValid = TRUE;
-	}
+      if (tok == DF_ON		 || tok == DF_OFF)
+        isValid = TRUE;
       break;
 
     case NVCI_PROCESS:
@@ -6668,16 +6812,8 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       // sent using sendAllControls method, all values are valid. This will
       // ensure that if this default is not set and is sent over to secondary
       // mxcmp using an internal CQD statement, it doesn't return an error.
-      if (cmpCurrentContext->isSecondaryMxcmp())
-	{
-	  if (tok == DF_ON		 || tok == DF_OFF)
-	    isValid = TRUE;
-	}
-      else
-	{
-	  if (tok == DF_ON)
-	    isValid = TRUE;
-	}
+      if (tok == DF_ON		 || tok == DF_OFF)
+        isValid = TRUE;
       break;
 
     case NAMETYPE:
@@ -6718,6 +6854,15 @@ DefaultToken NADefaults::token(Int32 attrEnum,
           tok == DF_MEDIUM	 || tok == DF_MAXIMUM)
         isValid = TRUE;
       break;
+
+    case HBASE_FILTER_PREDS:
+        if(tok == DF_OFF || tok == DF_ON)
+        {
+            if (tok == DF_ON)
+                tok = DF_MINIMUM; // to keep backward compatibility
+        isValid= TRUE;
+        }
+        break;
 
     case ROBUST_QUERY_OPTIMIZATION:
       if (tok == DF_MINIMUM || tok == DF_SYSTEM || tok == DF_MAXIMUM ||
@@ -6955,6 +7100,10 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	isValid = TRUE;
       break;
 
+    case LOB_GC_LIMIT_SIZE:
+      if (tok >= 0 )
+        isValid=TRUE;
+
     case TRAF_TRANS_TYPE:
       if (tok  == DF_MVCC || tok == DF_SSCC)
         isValid = TRUE;
@@ -6964,6 +7113,11 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       if (tok == DF_OFF || tok == DF_MINIMUM ||
           tok == DF_MEDIUM || tok == DF_MAXIMUM || tok == DF_ON)
         isValid = TRUE;
+      break;
+    case TRAF_UPSERT_MODE:
+      if (tok == DF_MERGE || tok == DF_REPLACE || tok == DF_OPTIMAL)
+	isValid = TRUE;
+      break;
 
     // Nothing needs to be added here for ON/OFF/SYSTEM keywords --
     // instead, add to DEFAULT_ALLOWS_SEPARATE_SYSTEM code in the ctor.
@@ -7258,3 +7412,5 @@ void NADefaults::setSchemaAsLdapUser(const NAString val)
 			<< DgString1("SCHEMA");
   }
 }
+
+

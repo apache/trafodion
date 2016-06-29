@@ -1,0 +1,123 @@
+#!/bin/bash
+#
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+#
+# This script cleans up the HBase env 
+# that was setup by install_local_hadoop.
+# It requires Hadoop to be up.
+#
+# - kills the HBase Master process (if it exists)
+# - deletes the HBase log files
+# - deletes the HDFS directory /hbase
+#
+# After running this script:
+# - swstarthbase
+# - sqstart
+# - initialize trafodion
+#
+
+function getMyNameNode {
+    jps | grep -w NameNode | cut -d' ' -f1
+}
+
+function getMyDataNode {
+    jps | grep -w DataNode | cut -d' ' -f1
+}
+
+function getMyHMaster {
+    jps | grep HMaster | cut -d' ' -f1
+}
+
+function killMyHMaster {
+
+    lv_hbpid=`getMyHMaster`
+    if [ ! -z ${lv_hbpid} ]; then
+	echo "Killing HMaster pid: ${lv_hbpid}"
+	kill -9 ${lv_hbpid}
+    else
+	echo "There's no HMaster process to kill"
+    fi
+
+}
+
+if [[ $# -eq 0 || $1 == "-h" ]]; then
+  echo " "
+  echo "Usage: $0 [ 0 | 1 | 2 ]"
+  echo " "
+  echo "   0: Clean HBase log files"
+  echo "   1: Clean HBase log files + zookeeper data"
+  echo "   2: Clean HBase log files + zookeeper data + /hbase in HDFS"
+  echo " "
+  exit 1
+fi
+
+lv_clean_hb_data=$1
+
+lv_nnpid=`getMyNameNode`
+if [[ -z ${lv_nnpid} ]]; then
+    echo "NameNode is not up - please run swstarthadoop to start it or check the Hadoop logs - exitting..."
+    exit 1
+fi
+echo "NameNode pid: ${lv_nnpid}"
+
+lv_dnpid=`getMyDataNode`
+if [[ -z ${lv_dnpid} ]]; then
+    echo "DataNode is not up - please run swstarthadoop to start it or check the Hadoop logs - exitting..."
+    exit 1
+fi
+echo "DataNode pid: ${lv_dnpid}"
+
+# stop / kill the HMaster process
+killMyHMaster
+
+# delete the zookeeper info
+if [[ ${lv_clean_hb_data} -gt 0 ]]; then
+    # old value, which was actually a typo, remove this later, once
+    # everyone has switched over to the new value
+    old_lv_zk_dir="${MY_SW_ROOT}/hdfs:"
+    if [[ -d ${old_lv_zk_dir} ]]; then
+        echo "Deleting the zookeeper directory: ${old_lv_zk_dir}"
+        rm -rf ${old_lv_zk_dir}
+    elif [[ -d "${MY_ZOOKEEPER_DATA_DIR}" ]]; then
+        echo "Deleting the zookeeper directory: ${MY_ZOOKEEPER_DATA_DIR}"
+        rm -rf ${MY_ZOOKEEPER_DATA_DIR}
+    else
+        echo "Could not find zookeeper directory: ${MY_ZOOKEEPER_DATA_DIR}"
+    fi
+fi
+
+#delete the logs
+echo "Deleting HBase logs in: ${MY_SQROOT}/sql/local_hadoop/hbase/logs"
+if [ ! -z ${MY_SQROOT} ]; then
+    rm -rf ${MY_SQROOT}/sql/local_hadoop/hbase/logs/*.log
+    rm -rf ${MY_SQROOT}/sql/local_hadoop/hbase/logs/*log.[0-9]*
+    rm -rf ${MY_SQROOT}/sql/local_hadoop/hbase/logs/*.out
+    rm -rf ${MY_SQROOT}/sql/local_hadoop/hbase/logs/*.out.[0-9]*
+fi
+
+if [[ ${lv_clean_hb_data} -gt 1 ]]; then
+# delete the HBase table data from HDFS
+    echo  "Deleting the HBase data directory (hdfs) /hbase"
+    swhdfs dfs -rm -f -r -skipTrash /hbase
+fi

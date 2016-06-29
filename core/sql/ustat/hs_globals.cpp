@@ -287,6 +287,14 @@ Lng32 MCWrapper::setupMCColumnIterator (HSColGroupStruct *group, MCIterator** it
 
   switch (group->ISdatatype)
     {
+      case REC_BIN8_SIGNED:
+        iter[currentLoc] = new (STMTHEAP) MCNonCharIterator<char>((char *)group->mcis_data);
+        break;
+
+      case REC_BIN8_UNSIGNED:
+        iter[currentLoc] = new (STMTHEAP) MCNonCharIterator<unsigned char>((unsigned char *)group->mcis_data);
+        break;
+
       case REC_BIN16_SIGNED:
         iter[currentLoc] = new (STMTHEAP) MCNonCharIterator<short>((short *)group->mcis_data);
         break;
@@ -308,12 +316,10 @@ Lng32 MCWrapper::setupMCColumnIterator (HSColGroupStruct *group, MCIterator** it
         break;
 
       case REC_IEEE_FLOAT32:
-      case REC_TDM_FLOAT32:
         iter[currentLoc] = new (STMTHEAP) MCNonCharIterator<float>((float *)group->mcis_data);
         break;
 
       case REC_IEEE_FLOAT64:
-      case REC_TDM_FLOAT64:
         iter[currentLoc] = new (STMTHEAP) MCNonCharIterator<double>((double *)group->mcis_data);
         break;
 
@@ -506,6 +512,80 @@ Int32 getMissingCols (const NABitVector &map1, const NABitVector &map2, NABitVec
   missing_bits->addSet(new_missing_bits);
 
   return (Int32) (missing_bits->entries() - initial);
+}
+
+// If an HBase table is very large, we risk time-outs because the
+// sample scan doesn't return rows fast enough. In this case, we
+// want to reduce the HBase row cache size to a smaller number to
+// force more frequent returns. Experience shows that a value of
+// '10' worked well with a 17.7 billion row table with 128 regions
+// on six nodes (one million row sample). We'll assume a workable
+// HBase cache size value scales linearly with the sampling ratio.
+// That is, we'll assume the model:
+//
+//   workable value = (sample row count / actual row count) * c,
+//   where c is chosen so that we get 10 when the sample row count
+//   is 1,000,000 and the actual row count is 17.7 billion.
+//
+//   Solving for c, we get c = 10 * (17.7 billion/1 million).
+//
+// Note that the Generator does a similar calculation in
+// Generator::setHBaseNumCacheRows. The calculation here is more
+// conservative because we care more about getting UPDATE STATISTICS
+// done without a timeout, trading off possible speed improvements
+// by using a smaller cache size.
+//
+// Another issue is that it's been observed that time-outs also
+// depend on system load. Through experimentation we've discovered
+// that a value of 50 works well in loaded scenarios, assuming the
+// table is not too large. So, we use a maximum of the workable
+// value computed above and 50.
+//
+// Another note: If the user has already set HBASE_NUM_CACHE_ROWS_MAX,
+// then we don't do anything here. We respect the user's choices
+// instead.
+//
+// We had hoped that HBase 1.1, with its heartbeat protocol, would
+// solve this time-out problem for good. But early testing seems
+// to suggest that this is not the case.
+//
+// Input:
+// sampleRatio -- Percentage of rows being sampled.
+//
+// Return:
+// TRUE if the CQDs were altered, FALSE otherwise. The caller should use this
+// information to reset the CQDs following execution of the sample query to
+// avoid a performance penalty for subsequent queries (notably those that
+// read the sample table).
+NABoolean HSGlobalsClass::setHBaseCacheSize(double sampleRatio)
+{
+  double calibrationFactor = 10 * (17700000000/1000000);
+  Int64 workableCacheSize = (Int64)(sampleRatio * calibrationFactor);
+  if (workableCacheSize < 1)
+    workableCacheSize = 1;  // can't go below 1 unfortunately
+  else if (workableCacheSize > 50)
+    workableCacheSize = 50; 
+
+  // Do this only if the user didn't set the CQD in this session
+  // (So, for example, if the CQD was set in the DEFAULTS table
+  // but not in this session, we'll still override it.)
+  NADefaults &defs = ActiveSchemaDB()->getDefaults();
+  if (defs.getProvenance(HBASE_NUM_CACHE_ROWS_MAX) < 
+      NADefaults::SET_BY_CQD)
+    {
+      char temp1[40];  // way more space than needed, but it's safe
+      Lng32 wcs = (Lng32)workableCacheSize;
+      sprintf(temp1,"'%d'",wcs);
+      NAString minCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN ";
+      minCQD += temp1;
+      HSFuncExecQuery(minCQD);
+      NAString maxCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX ";
+      maxCQD += temp1;
+      HSFuncExecQuery(maxCQD);
+      return TRUE;
+    }
+  else
+    return FALSE;
 }
 
 // rearrange the MCs so that the larger groups are listed first
@@ -2949,11 +3029,12 @@ Lng32 HSGlobalsClass::Initialize()
     actualRowCount = objDef->getRowCount(currentRowCountIsEstimate_,
                                          inserts, deletes, updates,
                                          numPartitions,
-                                         minRowCtPerPartition_);
+                                         minRowCtPerPartition_,
+                                         optFlags & SAMPLE_REQUESTED);
     LM->StopTimer();
     if (LM->LogNeeded())
       {
-        sprintf(LM->msg, "\tcurrentRowCountIsEstimate_=%d from GetRowCount()", currentRowCountIsEstimate_);
+        sprintf(LM->msg, "\tcurrentRowCountIsEstimate_=%d from getRowCount()", currentRowCountIsEstimate_);
         LM->Log(LM->msg);
       }
 
@@ -2977,47 +3058,28 @@ Lng32 HSGlobalsClass::Initialize()
                 LM->Log(LM->msg);
               }
           }
-        else if (!((optFlags & SAMPLE_REQUESTED) &&
-                   convertInt64ToDouble(actualRowCount) >=
-                     CmpCommon::getDefaultNumeric(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT)))
+        else if (convertInt64ToDouble(actualRowCount) <   // may be 0 (no estimate) or -1 (error doing estimation)
+                     CmpCommon::getDefaultNumeric(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT))
           {
-            actualRowCount = 0;
-            if (hs_globals->isHbaseTable &&
-                CmpCommon::getDefault(USTAT_ESTIMATE_HBASE_ROW_COUNT) == DF_ON)
+            if (LM->LogNeeded() && actualRowCount > 0)
+            {
+              sprintf(LM->msg, "Estimated row count " PF64 " rejected (below size threshhold).",
+                      actualRowCount);
+              LM->Log(LM->msg);
+            }
+            LM->StartTimer("Execute query to get row count");
+            query  = "SELECT COUNT(*) FROM ";
+            query += getTableName(user_table->data(), nameSpace);
+            query += " FOR READ UNCOMMITTED ACCESS";
+            retcode = cursor.fetchNumColumn(query, NULL, &actualRowCount);
+            LM->StopTimer();
+            HSHandleError(retcode);
+            currentRowCountIsEstimate_ = FALSE;
+            if (LM->LogNeeded())
               {
-                LM->StartTimer("Estimate row count for HBase table");
-                actualRowCount = objDef->getNATable()->estimateHBaseRowCount();
-                LM->StopTimer();
-                if (LM->LogNeeded())
-                  {
-                    snprintf(LM->msg, sizeof(LM->msg),
-                             "Call to estimateHBaseRowCount() returned " PF64 ".",
-                             actualRowCount);
-                    LM->Log(LM->msg);
-                  }
-              }
-
-            // If actualRowCount is still 0 then the table is not an HBase table
-            // (or the cqd is not set). If it is HIST_NO_STATS_ROWCOUNT, then
-            // estimateHBaseRowCount() was not able to produce an estimate. In either
-            // of these cases, we need to resort to a count(*).
-            if (actualRowCount == 0 ||
-                actualRowCount == ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT))
-              {
-                LM->StartTimer("Execute query to get row count");
-                query  = "SELECT COUNT(*) FROM ";
-                query += getTableName(user_table->data(), nameSpace);
-                query += " FOR READ UNCOMMITTED ACCESS";
-                retcode = cursor.fetchNumColumn(query, NULL, &actualRowCount);
-                LM->StopTimer();
-                HSHandleError(retcode);
-                currentRowCountIsEstimate_ = FALSE;
-                if (LM->LogNeeded())
-                  {
-                    convertInt64ToAscii(actualRowCount, intStr);
-                    sprintf(LM->msg, "\n\t\tUsing select count(*): rows=%s", intStr);
-                    LM->Log(LM->msg);
-                  }
+                convertInt64ToAscii(actualRowCount, intStr);
+                sprintf(LM->msg, "\n\t\tUsing select count(*): rows=%s", intStr);
+                LM->Log(LM->msg);
               }
           }
       }
@@ -3025,6 +3087,25 @@ Lng32 HSGlobalsClass::Initialize()
       rowChangeCount = inserts + deletes + updates;
 
     HS_ASSERT(actualRowCount >= 0);
+
+    Int64 youWillLikelyBeSorry = 
+      ActiveSchemaDB()->getDefaults().getAsDouble(USTAT_YOULL_LIKELY_BE_SORRY);
+    if ((actualRowCount >= youWillLikelyBeSorry) &&
+       !(optFlags & CLEAR_OPT) &&
+       !(optFlags & SAMPLE_REQUESTED) &&
+       !(optFlags & IUS_OPT))
+      {
+        // attempt to do UPDATE STATISTICS on a big table without sampling,
+        // which could take a really long time
+        if ((optFlags & NO_SAMPLE) == 0)  // if explicit NO SAMPLE is missing
+          {
+            // raise an error on the chance that omitting the SAMPLE clause
+            // was accidental
+            HSFuncMergeDiags(-UERR_YOU_WILL_LIKELY_BE_SORRY);
+            retcode = -1;
+            HSHandleError(retcode);
+          }
+      }
 
 
                                              /*===================================*/
@@ -3779,53 +3860,11 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
             EspCQDUsed = TRUE;  // remember to reset later
           }
 
-        // If the table is very large, we risk HBase time-outs because the
-        // sample scan doesn't return rows fast enough. In this case, we
-        // want to reduce the HBase row cache size to a smaller number to
-        // force more frequent returns. Experience shows that a value of
-        // '10' worked well with a 17.7 billion row table with 128 regions
-        // on six nodes (one million row sample). We'll assume a workable
-        // HBase cache size value scales linearly with the sampling ratio.
-        // That is, we'll assume the model:
-        //
-        //   workable value = (sample row count / actual row count) * c,
-        //   where c is chosen so that we get 10 when the sample row count
-        //   is 1,000,000 and the actual row count is 17.7 billion.
-        //
-        //   Solving for c, we get c = 10 * (17.7 billion/1 million).
-        //
-        // Note that the Generator does a similar calculation in
-        // Generator::setHBaseNumCacheRows. The calculation here is more
-        // conservative because we care more about getting UPDATE STATISTICS
-        // done without a timeout, trading off possible speed improvements
-        // by using a smaller cache size.
-        //
-        // Note that when we move to HBase 1.1, with its heartbeat protocol,
-        // this time-out problem goes away and we can remove these CQDs.
+        // Set CQDs controlling HBase cache size (number of rows returned by HBase
+        // in a batch) to avoid scanner timeout. Reset these after the sample query
+        // has executed.
         if (hs_globals->isHbaseTable)
-          {
-            double sampleRatio = (double)(sampleRowCnt) / hs_globals->actualRowCount;
-            double calibrationFactor = 10 * (17700000000/1000000);
-            Int64 workableCacheSize = (Int64)(sampleRatio * calibrationFactor);
-            if (workableCacheSize < 1)
-              workableCacheSize = 1;  // can't go below 1 unfortunately
-
-            Int32 max = getDefaultAsLong(HBASE_NUM_CACHE_ROWS_MAX);
-            if ((workableCacheSize < 10000) && // don't bother if 10000 works
-                (max == 10000))  // don't do it if user has already set this CQD
-              {
-                char temp1[40];  // way more space than needed, but it's safe
-                Lng32 wcs = (Lng32)workableCacheSize;  
-                sprintf(temp1,"'%d'",wcs);
-                NAString minCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN ";
-                minCQD += temp1;
-                HSFuncExecQuery(minCQD); 
-                NAString maxCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX ";
-                maxCQD += temp1;
-                HSFuncExecQuery(maxCQD); 
-                HBaseCQDsUsed = TRUE;  // remember to reset these later          
-              }
-          }          
+          HBaseCQDsUsed = HSGlobalsClass::setHBaseCacheSize(samplePercent);
 
         if (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_STATS) == DF_ON)
           {
@@ -4338,7 +4377,13 @@ NAString* getIntTypeForInterval(HSColGroupStruct *group, Int64 maxIntValue)
   NAString* typeName;
   group->ISprecision = 0;
   group->ISscale = 0;
-  if (maxIntValue <= SHRT_MAX)
+  if (maxIntValue <= CHAR_MAX)
+    {
+      group->ISdatatype = REC_BIN8_SIGNED;
+      group->ISlength = 1;
+      typeName = &LiteralTinyInt;  // from NumericTypes.h
+    }
+  else if (maxIntValue <= SHRT_MAX)
     {
       group->ISdatatype = REC_BIN16_SIGNED;
       group->ISlength = 2;
@@ -4818,6 +4863,11 @@ void HSGlobalsClass::getMemoryRequirementsForOneGroup(HSColGroupStruct* group, I
   
       switch (group->ISdatatype)
         {
+          case REC_BIN8_SIGNED:
+          case REC_BIN8_UNSIGNED:
+            elementSize = 1;
+            break;
+
           case REC_BIN16_SIGNED:
           case REC_BIN16_UNSIGNED:
             elementSize = 2;
@@ -4826,13 +4876,11 @@ void HSGlobalsClass::getMemoryRequirementsForOneGroup(HSColGroupStruct* group, I
           case REC_BIN32_SIGNED:
           case REC_BIN32_UNSIGNED:
           case REC_IEEE_FLOAT32:
-          case REC_TDM_FLOAT32:
             elementSize = 4;
             break;
 
           case REC_BIN64_SIGNED:
           case REC_IEEE_FLOAT64:
-          case REC_TDM_FLOAT64:
             elementSize = 8;
             break;
 
@@ -4928,9 +4976,10 @@ Int64 HSGlobalsClass::getInternalSortMemoryRequirements(NABoolean performISForMC
 Lng32 HSGlobalsClass::validateIUSWhereClause()
 {
   Lng32 retcode = 0;
-  ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
 
-  Set_SqlParser_Flags(PARSING_IUS_WHERE_CLAUSE);
+  // set PARSING_IUS_WHERE_CLAUSE bit in Sql_ParserFlags; return it to
+  // its entry value on exit
+  PushAndSetSqlParserFlags savedParserFlags(PARSING_IUS_WHERE_CLAUSE);
 
   NAString query = "select count(*) from ";
   query.append(getTableName(strrchr(user_table->data(), '.')+1, nameSpace));
@@ -4967,9 +5016,6 @@ Lng32 HSGlobalsClass::validateIUSWhereClause()
       else
         retcode = diagsArea.mainSQLCODE();
     }
-
-  // Restore parser flags to prior settings.
-  Set_SqlParser_Flags (savedParserFlags);
 
   return retcode;
 }
@@ -5393,10 +5439,7 @@ Lng32 HSGlobalsClass::CollectStatistics()
         }
 
         // Set CQDs for internal sort:
-        // 1. Floating point type to IEEE, 
-        // 2. Do not limit precision, this can cause internal sort failure.
-        retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT FLOATTYPE 'IEEE'");
-        HSHandleError(retcode);
+        // Do not limit precision, this can cause internal sort failure.
         retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT LIMIT_MAX_NUMERIC_PRECISION 'OFF'");
         HSHandleError(retcode);
 
@@ -5451,6 +5494,7 @@ Lng32 HSGlobalsClass::CollectStatistics()
         numColsToProcess = getColsToProcess(maxRowsToRead,
                                               internalSortWhenBetter,
                                               trySampleTableBypassForIS);
+        NABoolean hbaseCQDsUsed = FALSE;
 
         if (trySampleTableBypassForIS && numColsToProcess == singleGroupCount)
           {
@@ -5465,6 +5509,12 @@ Lng32 HSGlobalsClass::CollectStatistics()
               HSHandleError(retcode);
               sampleTableUsed = FALSE;
               samplingUsed    = TRUE;
+
+              // Set CQDs controlling HBase cache size (number of rows returned by HBase
+              // in a batch) to avoid scanner timeout. Reset these after the sample query
+              // has executed.
+              if (isHbaseTable)
+                hbaseCQDsUsed = HSGlobalsClass::setHBaseCacheSize(sampleTblPercent);
           }
         else
           {
@@ -5490,6 +5540,11 @@ Lng32 HSGlobalsClass::CollectStatistics()
    
             retcode = readColumnsIntoMem(&cursor, maxRowsToRead);
             HSHandleError(retcode);
+            if (hbaseCQDsUsed)
+              {
+                HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN RESET");
+                HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX RESET");
+              }
             checkTime("after reading pending columns into memory for internal sort");
             columnSeconds = getTimeDiff() / numColsToProcess;  // saved for automation
 
@@ -5534,7 +5589,6 @@ Lng32 HSGlobalsClass::CollectStatistics()
             numColsToProcess = getColsToProcess(maxRowsToRead, internalSortWhenBetter);
           }
 
-        HSFuncExecQuery("CONTROL QUERY DEFAULT FLOATTYPE RESET");
         HSFuncExecQuery("CONTROL QUERY DEFAULT LIMIT_MAX_NUMERIC_PRECISION RESET");
       }
 
@@ -5549,16 +5603,6 @@ Lng32 HSGlobalsClass::CollectStatistics()
     //      SELECT column, COUNT(*) FROM table GROUP BY column ORDER BY column
     //The result will always be a VARCHAR(len) CHARACTER SET UCS2
     //In most cases, this will reduce the number of fetches.
-
-    //10-040618-7112: temporary workaround for compiler issue
-    //make sure no parallel plans get generated for single partitioned tables
-    //The sample table for SQLMP tables are always single partition. Whereas for
-    //SQLMX, the table may be partitioned based on the HIST_SCRATCH_VOL cqd.
-    if ((sampleTableUsed && tableFormat == SQLMP) ||
-        (NOT sampleTableUsed && objDef->getNumPartitions() == 1))
-      {
-        HSFuncExecQuery("CONTROL QUERY DEFAULT ATTEMPT_ESP_PARALLELISM 'OFF'");
-      }
 
     if (CmpCommon::getDefault(USTAT_ATTEMPT_ESP_PARALLELISM) == DF_OFF)
       HSFuncExecQuery("CONTROL QUERY DEFAULT ATTEMPT_ESP_PARALLELISM 'OFF'");
@@ -5663,7 +5707,7 @@ Lng32 HSGlobalsClass::CollectStatistics()
                                           /* sampled UEC -> est UEC          */
                                           /* sampled ROWCOUNT -> est ROWCOUNT*/
                                           /*=================================*/
-        if (sampleRowCount > 0 && actualRowCount > sampleRowCount)
+        if (samplingUsed && sampleRowCount > 0 && actualRowCount > sampleRowCount)
           {
             LM->StartTimer("fix sample row counts");
             retcode = FixSamplingCounts(group);
@@ -5673,6 +5717,45 @@ Lng32 HSGlobalsClass::CollectStatistics()
           }
         group = group->next;
       }
+
+    // If the current row count for an Hbase table is an estimate, then
+    // actualRowCount is the estimate of the row count given by HBase. This
+    // estimate can sometimes be inaccurate. Now that we have actually read
+    // the data, we can improve the estimate. If we used sampling, we can
+    // divide our sampleRowCount by the sampling ratio. If we did not use
+    // sampling, the sampleRowCount is the true row count.
+
+    // Note: After a recent code change, we no longer do an estimate
+    // when not doing sampling. So the "else" case below is actually dead
+    // code. But I'm leaving the code here on the chance that we change
+    // our minds about estimates in the non-sampling case.
+
+    if (isHbaseTable && currentRowCountIsEstimate_)
+      {
+        if (samplingUsed)
+          {  
+            HS_ASSERT(sampleTblPercent > 0 && sampleTblPercent <= 100.00);
+            Int64 newActualRowCount = (Int64)((100 * sampleRowCount) / sampleTblPercent);
+            if (LM->LogNeeded())
+              {
+                sprintf(LM->msg, "Re-estimating actualRowCount (was " PF64 ") as " PF64,
+                                 actualRowCount,newActualRowCount);
+                LM->Log(LM->msg);
+              }
+            actualRowCount = newActualRowCount;           
+          }
+        else
+          {
+            if (LM->LogNeeded())
+              {
+                sprintf(LM->msg, "Correcting actualRowCount (was " PF64 ") from sampleRowCount (" PF64 ")",
+                                 actualRowCount,sampleRowCount);
+                LM->Log(LM->msg);
+              }
+            actualRowCount = sampleRowCount;
+          }
+      }         
+
     if (singleGroup && LM->LogNeeded())
       LM->StopTimer();
 
@@ -5704,7 +5787,7 @@ Lng32 HSGlobalsClass::CollectStatistics()
 
         LM->StartTimer("MC: fix MC stats");
 
-        if (sampleRowCount > 0 && actualRowCount > sampleRowCount)
+        if (samplingUsed && sampleRowCount > 0 && actualRowCount > sampleRowCount)
           {
             group = multiGroup;
             while (group != NULL)
@@ -5716,16 +5799,6 @@ Lng32 HSGlobalsClass::CollectStatistics()
             }
           }
         LM->StopTimer();
-      }
-
-    //10-040618-7112: temporary workaround for compiler issue
-    //make sure no parallel plans get generated for single partitioned tables
-    //The sample table for SQLMP tables are always single partition. Whereas for
-    //SQLMX, the table may be partitioned based on the HIST_SCRATCH_VOL cqd.
-    if ((sampleTableUsed && tableFormat == SQLMP) ||
-        (NOT sampleTableUsed && objDef->getNumPartitions() == 1))
-      {
-        HSFuncExecQuery("CONTROL QUERY DEFAULT ATTEMPT_ESP_PARALLELISM RESET");
       }
 
     if (CmpCommon::getDefault(USTAT_ATTEMPT_ESP_PARALLELISM) == DF_OFF)
@@ -6986,6 +7059,12 @@ Int32 HSGlobalsClass::processIUSColumn(HSColGroupStruct* smplGroup,
   // non-integral fixed numerics are all converted to one of these types.
   switch (datatype)
     {
+      case REC_BIN8_SIGNED:
+        return processIUSColumn((Int8*)smplGroup->data, L"%hd", smplGroup, delGroup, insGroup);
+        break;
+      case REC_BIN8_UNSIGNED:
+        return processIUSColumn((UInt8*)smplGroup->data, L"%hu", smplGroup, delGroup, insGroup);
+        break;
       case REC_BIN16_SIGNED:
         return processIUSColumn((Int16*)smplGroup->data, L"%hd", smplGroup, delGroup, insGroup);
         break;
@@ -7003,11 +7082,9 @@ Int32 HSGlobalsClass::processIUSColumn(HSColGroupStruct* smplGroup,
         return processIUSColumn((Int64*)smplGroup->data, L"%lld", smplGroup, delGroup, insGroup);
         break;
       case REC_FLOAT32:
-      case REC_TDM_FLOAT32:
         return processIUSColumn((Float32*)smplGroup->data, L"%f", smplGroup, delGroup, insGroup);
         break;
       case REC_FLOAT64:
-      case REC_TDM_FLOAT64:
         return processIUSColumn((Float64*)smplGroup->data, L"%lf", smplGroup, delGroup, insGroup);
         break;
       case REC_BYTE_F_ASCII:
@@ -7745,7 +7822,7 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
 #else // NA_USTAT_USE_STATIC not defined, use dynamic query
     char sbuf[25];
     NAString qry = "SELECT HISTOGRAM_ID, COL_POSITION, COLUMN_NUMBER, COLCOUNT, "
-                          "cast(READ_TIME as char(19)), REASON "
+                          "cast(READ_TIME as char(19) character set iso88591), REASON "
                    "FROM ";
     qry.append(hstogram_table->data());
     qry.append(    " WHERE TABLE_UID = ");
@@ -9959,6 +10036,14 @@ Lng32 HSGlobalsClass::processInternalSortNulls(Lng32 rowsRead, HSColGroupStruct 
 
       switch (group->ISdatatype)
         {
+          case REC_BIN8_SIGNED:
+            processNullsForColumn(group, rowsRead, (Int8*)NULL);
+            break;
+
+          case REC_BIN8_UNSIGNED:
+            processNullsForColumn(group, rowsRead, (UInt8*)NULL);
+            break;
+
           case REC_BIN16_SIGNED:
             processNullsForColumn(group, rowsRead, (short*)NULL);
             break;
@@ -9980,12 +10065,10 @@ Lng32 HSGlobalsClass::processInternalSortNulls(Lng32 rowsRead, HSColGroupStruct 
             break;
 
           case REC_IEEE_FLOAT32:
-          case REC_TDM_FLOAT32:
             processNullsForColumn(group, rowsRead, (float*)NULL);
             break;
 
           case REC_IEEE_FLOAT64:
-          case REC_TDM_FLOAT64:
             processNullsForColumn(group, rowsRead, (double*)NULL);
             break;
 
@@ -10124,6 +10207,8 @@ bool isInternalSortType(HSColumnStruct &col)
 
   switch (col.datatype)
     {
+      case REC_BIN8_SIGNED:
+      case REC_BIN8_UNSIGNED:
       case REC_BIN16_SIGNED:
       case REC_BIN16_UNSIGNED:
       case REC_BIN32_SIGNED:
@@ -10186,18 +10271,6 @@ bool isInternalSortType(HSColumnStruct &col)
       case REC_INT_HOUR_SECOND:
       case REC_INT_DAY_SECOND:
         return true;
-
-      // Can't handle Tandem floating point format
-      case REC_TDM_FLOAT32:
-      case REC_TDM_FLOAT64:
-        if (LM->LogNeeded())
-          {
-            sprintf(LM->msg, "Type %d should have been returned as IEEE floating point type: column %s",
-                             col.datatype,
-                             col.colname->data());
-            LM->Log(LM->msg);
-          }
-        return false;
 
       default:
         if (LM->LogNeeded())
@@ -10846,6 +10919,16 @@ Lng32 doSort(HSColGroupStruct *group)
 
   switch (group->ISdatatype)
     {
+      case REC_BIN8_SIGNED:
+        quicksort((Int8*)group->data, 0,
+                  (Int8*)group->nextData - (Int8*)group->data - 1);
+        break;
+
+      case REC_BIN8_UNSIGNED:
+        quicksort((UInt8*)group->data, 0,
+                  (UInt8*)group->nextData - (UInt8*)group->data - 1);
+        break;
+
       case REC_BIN16_SIGNED:
         quicksort((short*)group->data, 0,
                        (short*)group->nextData - (short*)group->data - 1);
@@ -10856,7 +10939,7 @@ Lng32 doSort(HSColGroupStruct *group)
                        (unsigned short*)group->nextData - (unsigned short*)group->data - 1);
         break;
 
-      case REC_BIN32_SIGNED:
+       case REC_BIN32_SIGNED:
         quicksort((Int32*)group->data, 0,
                        (Int32*)group->nextData - (Int32*)group->data - 1);
         break;
@@ -10872,13 +10955,11 @@ Lng32 doSort(HSColGroupStruct *group)
         break;
 
       case REC_IEEE_FLOAT32:
-      case REC_TDM_FLOAT32:
         quicksort((float*)group->data, 0,
                        (float*)group->nextData - (float*)group->data - 1);
         break;
 
       case REC_IEEE_FLOAT64:
-      case REC_TDM_FLOAT64:
         quicksort((double*)group->data, 0,
                        (double*)group->nextData - (double*)group->data - 1);
         break;
@@ -11328,7 +11409,15 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
     // Invoke template function to create histogram for the column's type.
     switch (group->ISdatatype)
     {
-      case REC_BIN16_SIGNED:
+      case REC_BIN8_SIGNED:
+        createHistogram(group, intCount, sampleRowCount, samplingUsed, (Int8*)NULL);
+        break;
+
+      case REC_BIN8_UNSIGNED:
+        createHistogram(group, intCount, sampleRowCount, samplingUsed, (UInt8*)NULL);
+        break;
+
+       case REC_BIN16_SIGNED:
         createHistogram(group, intCount, sampleRowCount, samplingUsed, (short*)NULL);
         break;
 
@@ -11336,7 +11425,7 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
         createHistogram(group, intCount, sampleRowCount, samplingUsed, (unsigned short*)NULL);
         break;
 
-      case REC_BIN32_SIGNED:
+     case REC_BIN32_SIGNED:
         createHistogram(group, intCount, sampleRowCount, samplingUsed, (Int32*)NULL);
         break;
 
@@ -11374,12 +11463,10 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
         break;
 
       case REC_IEEE_FLOAT32:
-      case REC_TDM_FLOAT32:
         createHistogram(group, intCount, sampleRowCount, samplingUsed, (float*)NULL);
         break;
 
       case REC_IEEE_FLOAT64:
-      case REC_TDM_FLOAT64:
         createHistogram(group, intCount, sampleRowCount, samplingUsed, (double*)NULL);
         break;
 
@@ -11416,7 +11503,7 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
     }
 
     // Upscale rowcounts and estimate UECs when sampling.
-    if (sampleRowCount > 0 && actualRowCount > sampleRowCount)
+    if (samplingUsed && sampleRowCount > 0 && actualRowCount > sampleRowCount)
     {
       retcode = FixSamplingCounts(group);
       HSHandleError(retcode);
@@ -11695,12 +11782,10 @@ Int32 computeKeyLengthInfo(Lng32 datatype)
       case REC_BIN32_SIGNED:
       case REC_BIN32_UNSIGNED:
       case REC_FLOAT32:
-      case REC_TDM_FLOAT32:
         return ExHDPHash::SWAP_FOUR;
 
       case REC_BIN64_SIGNED:
       case REC_FLOAT64:
-      case REC_TDM_FLOAT64:
         return ExHDPHash::SWAP_EIGHT;
 
       default:
@@ -12580,6 +12665,14 @@ Lng32 HSGlobalsClass::mergeDatasetsForIUS(
   // same type is used for both template parameters.
   switch (datatype)
     {
+      case REC_BIN8_SIGNED:
+        return mergeDatasetsForIUS((Int8*)smplGroup->data, (Int8*)NULL,
+                                   smplGroup, smplrows, delGroup, delrows, insGroup, insrows);
+        break;
+      case REC_BIN8_UNSIGNED:
+        return mergeDatasetsForIUS((UInt8*)smplGroup->data, (UInt8*)NULL,
+                                   smplGroup, smplrows, delGroup, delrows, insGroup, insrows);
+        break;
       case REC_BIN16_SIGNED:
         return mergeDatasetsForIUS((Int16*)smplGroup->data, (Int16*)NULL,
                                    smplGroup, smplrows, delGroup, delrows, insGroup, insrows);
@@ -12602,12 +12695,10 @@ Lng32 HSGlobalsClass::mergeDatasetsForIUS(
                                    smplGroup, smplrows, delGroup, delrows, insGroup, insrows);
         break;
       case REC_FLOAT32:
-      case REC_TDM_FLOAT32:
         return mergeDatasetsForIUS((Float32*)smplGroup->data, (Float32*)NULL,
                                    smplGroup, smplrows, delGroup, delrows, insGroup, insrows);
         break;
       case REC_FLOAT64:
-      case REC_TDM_FLOAT64:
         return mergeDatasetsForIUS((Float64*)smplGroup->data, (Float64*)NULL,
                                    smplGroup, smplrows, delGroup, delrows, insGroup, insrows);
         break;
@@ -13536,6 +13627,12 @@ Lng32 setBufferValue(MCWrapper& value,
        {
           switch (value.allCols_[i]->ISdatatype)
           {
+             case REC_BIN8_SIGNED:
+                retcode = copyValue(*((MCNonCharIterator<Int8>*)(value.allCols_[i]))->getContent(value.index_), valueBuff, mgroup->colSet[i], len);
+                break;
+             case REC_BIN8_UNSIGNED:
+                retcode = copyValue(*((MCNonCharIterator<UInt8>*)(value.allCols_[i]))->getContent(value.index_), valueBuff, mgroup->colSet[i], len);
+                break;
              case REC_BIN16_SIGNED:
                 retcode = copyValue(*((MCNonCharIterator<short>*)(value.allCols_[i]))->getContent(value.index_), valueBuff, mgroup->colSet[i], len);
                 break;
@@ -13552,11 +13649,9 @@ Lng32 setBufferValue(MCWrapper& value,
                 retcode = copyValue(*((MCNonCharIterator<Int64>*)(value.allCols_[i]))->getContent(value.index_), valueBuff, mgroup->colSet[i], len);
                 break;
              case REC_IEEE_FLOAT32:
-             case REC_TDM_FLOAT32:
                 retcode = copyValue(*((MCNonCharIterator<float>*)(value.allCols_[i]))->getContent(value.index_), valueBuff, mgroup->colSet[i], len);
                 break;
              case REC_IEEE_FLOAT64:
-             case REC_TDM_FLOAT64:
                 retcode = copyValue(*((MCNonCharIterator<double>*)(value.allCols_[i]))->getContent(value.index_), valueBuff, mgroup->colSet[i], len);
                break;
              case REC_BYTE_F_ASCII:
@@ -15385,6 +15480,14 @@ Lng32 HSGlobalsClass::processFastStatsBatch(CollIndex numCols, HSColGroupStruct*
 
       switch (group->ISdatatype)
       {
+        case REC_BIN8_SIGNED:
+          group->fastStatsHist = new(STMTHEAP) FastStatsHist<Int8>(group, cbf);
+          break;
+
+        case REC_BIN8_UNSIGNED:
+          group->fastStatsHist = new(STMTHEAP) FastStatsHist<UInt8>(group, cbf);
+          break;
+
         case REC_BIN16_SIGNED:
           group->fastStatsHist = new(STMTHEAP) FastStatsHist<Int16>(group, cbf);
           break;
@@ -15406,12 +15509,10 @@ Lng32 HSGlobalsClass::processFastStatsBatch(CollIndex numCols, HSColGroupStruct*
           break;
 
         case REC_IEEE_FLOAT32:
-        case REC_TDM_FLOAT32:
           group->fastStatsHist = new(STMTHEAP) FastStatsHist<Float32>(group, cbf);
           break;
 
         case REC_IEEE_FLOAT64:
-        case REC_TDM_FLOAT64:
           group->fastStatsHist = new(STMTHEAP) FastStatsHist<Float64>(group, cbf);
           break;
 

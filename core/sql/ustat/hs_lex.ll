@@ -312,6 +312,10 @@ CMNT_START              "/*"
                           return(VALUES);
                         }
 
+[Nn][Oo]                {
+                          return(NO);
+                        }
+
 {R_IDENTIFIER}          {
                           yylval->stringval = new(STMTHEAP) NAString(STMTHEAP);
                           *yylval->stringval = yytext;

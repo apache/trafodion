@@ -39,7 +39,6 @@ obey TEST029(ddbMX);
 drop   table MT;
 create table MT(a int);		-- empty table, for NULL data source
 #ifMX
-
 log  LOG029 clear;
 obey TEST029(tests);
 obey TEST029(ddbMXMP);

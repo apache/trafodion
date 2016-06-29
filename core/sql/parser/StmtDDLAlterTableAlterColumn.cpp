@@ -51,20 +51,25 @@ StmtDDLAlterTableAlterColumn::getText() const
 }
 	
 
-
 //----------------------------------------------------------------------------
 // CLASS StmtDDLAlterTableAlterColumnDatatype
 //----------------------------------------------------------------------------
-StmtDDLAlterTableAlterColumnDatatype::StmtDDLAlterTableAlterColumnDatatype( 
-     const NAString &columnName 
-     , NAType * natype
-     , CollHeap *heap)
+StmtDDLAlterTableAlterColumnDatatype::StmtDDLAlterTableAlterColumnDatatype(
+     ElemDDLNode * pColumnToAlter
+     ,CollHeap    * heap)
      : StmtDDLAlterTableAlterColumn(DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE,
-                                    columnName,
+                                    NAString(""),
                                     NULL,
-                                    heap)
+                                    heap),
+       pColumnToAlter_(pColumnToAlter)
 {
-  natype_ = natype->newCopy(heap);
+  ElemDDLColDef *pColDef = pColumnToAlter->castToElemDDLColDef();
+  if (pColDef NEQ NULL)
+    {
+      getColDefArray().insert(pColDef);
+    }
+  else
+    *SqlParser_Diags << DgSqlCode(-1001);
 }
 
 //
@@ -88,6 +93,44 @@ const NAString
 StmtDDLAlterTableAlterColumnDatatype::getText() const
 {
   return "StmtDDLAlterTableAlterColumnDatatype" ;
+}
+	
+//----------------------------------------------------------------------------
+// CLASS StmtDDLAlterTableAlterColumnRename
+//----------------------------------------------------------------------------
+StmtDDLAlterTableAlterColumnRename::StmtDDLAlterTableAlterColumnRename( 
+     const NAString &columnName,
+     const NAString &renamedColumnName,
+     CollHeap *heap)
+    : StmtDDLAlterTableAlterColumn(DDL_ALTER_TABLE_ALTER_COLUMN_RENAME, 
+                                   columnName,
+                                   NULL,
+                                   heap),
+      renamedColumnName_(renamedColumnName)
+{
+}
+
+//
+// Virtual destructor
+//
+
+StmtDDLAlterTableAlterColumnRename::~StmtDDLAlterTableAlterColumnRename()
+{}
+
+//
+// Cast function: to provide the safe castdown to the current object
+//
+
+StmtDDLAlterTableAlterColumnRename *
+StmtDDLAlterTableAlterColumnRename::castToStmtDDLAlterTableAlterColumnRename()
+{
+  return this;
+}
+
+const NAString
+StmtDDLAlterTableAlterColumnRename::getText() const
+{
+  return "StmtDDLAlterTableAlterColumnRename" ;
 }
 	
 

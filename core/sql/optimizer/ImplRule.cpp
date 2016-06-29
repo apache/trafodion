@@ -2134,6 +2134,9 @@ NABoolean HbaseDeleteRule::topMatch(RelExpr * relExpr, Context *context)
   Delete * del = (Delete *) relExpr;
   if (del->getTableDesc()->getNATable()->isHbaseTable() == FALSE)
     return FALSE;
+
+  if (del->getTableDesc()->getNATable()->hasLobColumn())
+    return FALSE;
   
   // HbaseDelete can only execute above DP2
   if (context->getReqdPhysicalProperty()->executeInDP2())

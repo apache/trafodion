@@ -34,19 +34,8 @@
   <artifactId>rest</artifactId>
   <packaging>jar</packaging>
   <version>${env.TRAFODION_VER}</version>
-  <name>rest</name>
-  <url>http://wiki.trafodion.org</url>
-  
-  <developers>
-    <developer>
-      <id>matbrown</id>
-      <name>Matt Brown</name>
-      <email>mattbrown@hp.com</email>
-      <timezone>-8</timezone>
-      <organization>HP</organization>
-      <organizationUrl>http://www.hp.com</organizationUrl>
-    </developer>
-  </developers>
+  <name>Trafodion REST</name>
+  <url>http://trafodion.apache.org</url>
   
   <build>
    <resources>
@@ -87,36 +76,6 @@
               <goal>run</goal>
             </goals>
           </execution>
-          <execution>
-            <id>package</id>
-            <phase>package</phase>
-            <configuration>
-              <target>
-                <!-- Complements the assembly -->
-
-                <mkdir dir="${project.build.directory}/${project.build.finalName}/${project.build.finalName}"/>
- 
-                <!-- Using Unix tar to preserve symlinks -->
-				<echo file="${project.build.directory}/maketar.sh">
-					which cygpath 2&gt; /dev/null
-					if [ $? = 1 ]; then
-						BUILD_DIR="${project.build.directory}"
-					else
-						BUILD_DIR=`cygpath --unix '${project.build.directory}'`
-					fi
-
-					cd $BUILD_DIR/${project.build.finalName}
-					tar czf $BUILD_DIR/${project.build.finalName}.tar.gz ${project.build.finalName}
-				</echo>
-                <exec executable="sh" dir="${project.build.directory}" failonerror="yes">
-                    <arg line="./maketar.sh"/>
-                </exec>
-              </target>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>          
         </executions>
     </plugin>
     <plugin>
@@ -141,15 +100,15 @@
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
-          <tarLongFileMode>gnu</tarLongFileMode>
           <appendAssemblyId>false</appendAssemblyId>
           <descriptors>
             <descriptor>src/assembly/all.xml</descriptor>
           </descriptors>
+          <ouputDirectory>target</ouputDirectory>
         </configuration>
         <executions>
           <execution>
-            <id>tarball</id>
+            <id>dir</id>
             <phase>package</phase>
             <goals>
               <goal>single</goal>
@@ -202,7 +161,7 @@
         </dependencies>
         <configuration>
           <additionalClasspathElements>
-             <additionalClasspathElement>${basedir}/target/test-classes/jdbcT4.jar</additionalClasspathElement>
+             <additionalClasspathElement>${basedir}/target/test-classes/jdbcT4-${TRAFODION_VER}.jar</additionalClasspathElement>
           </additionalClasspathElements>
           <includes>
             <include>${integrationtest.include}</include>
@@ -320,7 +279,46 @@
           </execution>
         </executions>
     </plugin> 
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.8</version>
+        <inherited>false</inherited>
+        <executions>
+          <execution>
+            <id>populate-release-directories</id>
+            <phase>post-site</phase>
+            <configuration>
+              <target name="Populate Release Directories">
+                <!-- The website uses the following organization for the docs/target/docs directory:
+                                       - To ensure a known location, the base directory contains the LATEST version of the web book and the PDF files.
+                  - The know location is docs/target/docs/<document>
+                  - target/docs/<version>/<document> contains version-specific renderings of the documents.
+                  - target/docs/<version>/<document> contains the PDF version and the web book. The web book is named index.html
+                -->
+                <!-- Copy the PDF file to its target directories -->
+                   <!-- None for REST -->
+                <!-- Copy the Web Book files to their target directories -->
+                <copy todir="${basedir}/../../docs/target/docs/rest_reference">
+                  <fileset dir="${basedir}/target/site">
+                    <include name="**/*.*"/>  <!--All sub-directories, too-->
+                  </fileset>
+                </copy>
+                <copy todir="${basedir}/../../docs/target/docs/${project.version}/rest_reference">
+                  <fileset dir="${basedir}/target/site">
+                    <include name="**/*.*"/>  <!--All sub-directories, too-->
+                  </fileset>
+                </copy>
+              </target>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
   </plugins>
+
   <pluginManagement>
   	<plugins>
   		<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
@@ -378,29 +376,19 @@
   	<compileSource>1.6</compileSource>
     
   	<!-- Dependencies -->
-    <hadoop.version>2.4.0</hadoop.version>
+    <hadoop.version>${env.HADOOP_DEP_VER}</hadoop.version>
   	<commons-cli.version>1.2</commons-cli.version>
-  	<commons-codec.version>1.4</commons-codec.version>
   	<commons-io.version>2.1</commons-io.version>
-  	<commons-lang.version>2.5</commons-lang.version>
   	<commons-logging.version>1.1.1</commons-logging.version>
- 	<commons-math.version>2.1</commons-math.version>
-  	<commons-configuration.version>1.6</commons-configuration.version>
-  	<metrics-core.version>2.1.2</metrics-core.version>
-  	<guava.version>11.0.2</guava.version>
-  	<jackson.version>1.8.8</jackson.version>
-  	<jasper.version>5.5.23</jasper.version>
   	<jaxb-api.version>2.1</jaxb-api.version>
-    <jetty.version>9.2.10.v20150310</jetty.version>  
-  	<jetty.jspapi.version>6.1.14</jetty.jspapi.version>
+        <jetty.version>9.2.10.v20150310</jetty.version>  
   	<jersey.version>1.8</jersey.version>
   	<junit.version>4.10</junit.version>
-    <slf4j.version>1.6.6</slf4j.version>
+        <slf4j.version>1.6.6</slf4j.version>
   	<log4j.version>1.2.16</log4j.version>
   	<zookeeper.version>3.4.5</zookeeper.version>
   	<jython-standalone.version>2.5.3</jython-standalone.version>
   	<jettison.version>1.3.5</jettison.version>
-  	<displaytag.version>1.1.1</displaytag.version>
   	<jdbct4.version>${project.version}</jdbct4.version>
    	
     <!-- Plugin Dependencies -->
@@ -442,55 +430,20 @@
     </dependency>
 
       <!-- General dependencies -->
-  	<dependency>
-      <groupId>com.yammer.metrics</groupId>
-      <artifactId>metrics-core</artifactId>
-      <version>${metrics-core.version}</version>
-  	</dependency>
-  	<dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
-  	</dependency>
-    <dependency>
-	  <groupId>org.python</groupId>
-	  <artifactId>jython-standalone</artifactId>
-	  <version>${jython-standalone.version}</version>
-    </dependency>
  	<dependency>
       <groupId>commons-cli</groupId>
       <artifactId>commons-cli</artifactId>
       <version>${commons-cli.version}</version>
   	</dependency>
     <dependency>
-      <groupId>commons-configuration</groupId>
-      <artifactId>commons-configuration</artifactId>
-      <version>${commons-configuration.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
-      <version>${commons-codec.version}</version>
-    </dependency>
-    <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>${commons-io.version}</version>
     </dependency>
     <dependency>
-      <groupId>commons-lang</groupId>
-      <artifactId>commons-lang</artifactId>
-      <version>${commons-lang.version}</version>
-    </dependency>
-    <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
       <version>${commons-logging.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <version>${log4j.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
@@ -524,26 +477,6 @@
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-continuation</artifactId>
-      <version>${jetty.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-http</artifactId>
-      <version>${jetty.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-io</artifactId>
-      <version>${jetty.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-security</artifactId>
-      <version>${jetty.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-server</artifactId>
       <version>${jetty.version}</version>
     </dependency>
@@ -557,77 +490,11 @@
       <artifactId>jetty-util</artifactId>
       <version>${jetty.version}</version>
     </dependency>
-    <!-- While jackson is also a dependency of both jersey and avro, these
-         can bring in jars from different, incompatible versions. We force
-         the same version with these dependencies -->
     <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-core-asl</artifactId>
-      <version>${jackson.version}</version>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-security</artifactId>
+      <version>${jetty.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-mapper-asl</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-jaxrs</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-xc</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
-    </dependency>
-    <dependency>
-      <!--If this is not in the runtime lib, we get odd
-      "2009-02-27 11:38:39.504::WARN:  failed jsp
-       java.lang.NoSuchFieldError: IS_SECURITY_ENABLED"
-       exceptions out of jetty deploying webapps.
-       St.Ack Thu May 20 01:04:41 PDT 2010
-      -->
-      <groupId>tomcat</groupId>
-      <artifactId>jasper-compiler</artifactId>
-      <version>${jasper.version}</version>
-      <scope>runtime</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>jsp-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>servlet-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>ant</groupId>
-          <artifactId>ant</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>tomcat</groupId>
-      <artifactId>jasper-runtime</artifactId>
-      <version>${jasper.version}</version>
-      <scope>runtime</scope>
-      <exclusions>
-       <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>jsp-api</artifactId>
-        </exclusion>          
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>servlet-api</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
      <!-- REST dependencies -->
     <dependency>
       <groupId>com.sun.jersey</groupId>
@@ -660,16 +527,31 @@
       <artifactId>jettison</artifactId>
       <version>${jettison.version}</version>
     </dependency>
-    <!-- JDBCT4 dependencies -->    
-    <dependency>    
-      <groupId>org.trafodion.jdbc.t4.T4Driver</groupId>
-      <artifactId>t4driver</artifactId>
-      <version>${jdbct4.version}</version>
+
+    <dependency>
+    	<groupId>org.python</groupId>
+    	<artifactId>jython-standalone</artifactId>
+    	<version>${jython-standalone.version}</version>
     </dependency>
- 
   </dependencies>
   
   <profiles>
+    <!-- JDBC drivers needed for compile, but not site docs
+         This allows turning off dependency on command line (-P '!jdbc') -->
+    <profile>
+      <id>jdbc</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>    
+        <!-- JDBCT4 dependencies -->    
+        <dependency>    
+          <groupId>org.trafodion.jdbc.t4</groupId>
+          <artifactId>jdbcT4</artifactId>
+          <version>${jdbct4.version}</version>
+        </dependency>
+      </dependencies>    
+    </profile>
     <profile>
       <id>runSmallTests</id>
       <activation>

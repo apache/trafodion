@@ -308,7 +308,7 @@ upsert into t011t4 values ('a', repeat('b', 100000), 'c', repeat('d', 100000)),
 select left (a, 20), left(b, 10), left(c, 10), left (d, 11) from t011t4;
 
 -- negative test
-create table t011t5 (a char(200000), b varchar(200000), c char(200000 bytes) character set utf8, d varchar(200001 bytes) character set utf8);
+create table t011t5 (a char(200000), b varchar(200000), c char(200000 bytes) character set utf8, d varchar(1000001 bytes) character set utf8);
 
 -- tests for repository explain
 -- check for repository tables
@@ -557,22 +557,6 @@ select count(*) from t011t6b;
 drop table t011t6a ;
 drop table t011t6b ;
 
--- tests for alter column
-create table t011t7(a int not null, b varchar(2), 
-   c varchar(4) character set utf8 not null);
-invoke t011t7;
-alter table t011t7 alter column b varchar(3);
-invoke t011t7;
-alter table t011t7 alter column c varchar(5) character set utf8;
-invoke t011t7;
-
--- negative tests for alter column
-alter table t011t7 alter column a largeint;
-alter table t011t7 alter column b int;
-alter table t011t7 alter column b varchar(4) character set utf8;
-alter table t011t7 alter column c varchar(6);
-alter table t011t7 alter column b varchar(2);
-alter table t011t7 alter column c varchar(4) character set utf8;
 
 
 

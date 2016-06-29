@@ -5189,6 +5189,7 @@ RelExpr * Join::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->tsjForSetNFError_ = tsjForSetNFError_;
   result->tsjForMerge_ = tsjForMerge_;
   result->tsjForMergeWithInsert_ = tsjForMergeWithInsert_;
+  result->tsjForMergeUpsert_ = tsjForMergeUpsert_;
   result->tsjForSideTreeInsert_ = tsjForSideTreeInsert_;
   result->enableTransformToSTI_ = enableTransformToSTI_;
 
@@ -12796,7 +12797,7 @@ MergeUpdate::MergeUpdate(const CorrName &name,
 			 ItemExpr *where)
      : Update(name,tabId,otype,child,setExpr,NULL,oHeap),
        insertCols_(insertCols), insertValues_(insertValues),
-       where_(where),xformedUpsert_(FALSE)
+       where_(where), xformedUpsert_(FALSE), needsBindScope_(TRUE)
 {
   setCacheableNode(CmpMain::BIND);
   

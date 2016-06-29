@@ -42,7 +42,6 @@
 
 #include <iostream>
 
-#include <boost/lexical_cast.hpp>
 #include <protocol/TBinaryProtocol.h>
 #include <transport/TSocket.h>
 #include <transport/TTransportUtils.h>
@@ -63,27 +62,12 @@ class ExHbaseAccessStats;
 
 Int64 getTransactionIDFromContext();
 
-using namespace apache::thrift;
-using namespace apache::thrift::protocol;
-using namespace apache::thrift::transport;
-
-using namespace apache::hadoop::hbase::thrift;
-
-namespace {
-
-  typedef std::vector<std::string> StrVec;
-  typedef std::map<std::string,std::string> StrMap;
-  typedef std::vector<ColumnDescriptor> ColVec;
-  typedef std::map<std::string,ColumnDescriptor> ColMap;
-  typedef std::vector<TCell> CellVec;
-  typedef std::map<std::string,TCell> CellMap;
-  typedef std::vector<Text> ColNames;
-}
 
 // ===========================================================================
 class ExpHbaseInterface : public NABasicObject
 {
  public:
+  NAHeap *getHeap() { return (NAHeap*)heap_; }
 
   static ExpHbaseInterface* newInstance(CollHeap* heap, 
                                         const char* server = NULL, 
@@ -130,13 +114,15 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn) = 0;
 
   // drops all objects from hbase that match the pattern
-  virtual Lng32 dropAll(const char * pattern, NABoolean async) = 0;
+  virtual Lng32 dropAll(const char * pattern, NABoolean async, NABoolean noXn) = 0;
 
   // retrieve all objects from hbase that match the pattern
-  virtual ByteArrayList* listAll(const char * pattern) = 0;
+  virtual NAArray<HbaseStr> *listAll(const char * pattern) = 0;
 
-  // make a copy of currTableName as oldTblName.
-  virtual Lng32 copy(HbaseStr &currTblName, HbaseStr &oldTblName);
+  // make a copy of srcTblName as tgtTblName
+  // if force is true, remove target before copying.
+  virtual Lng32 copy(HbaseStr &srcTblName, HbaseStr &tgtTblName,
+                     NABoolean force = FALSE);
 
   virtual Lng32 exists(HbaseStr &tblName) = 0;
 
@@ -151,11 +137,13 @@ class ExpHbaseInterface : public NABasicObject
 			 const int64_t timestamp,
 			 const NABoolean readUncommitted,
 			 const NABoolean cacheBlocks,
+			 const NABoolean smallScanner,
 			 const Lng32 numCacheRows,
-                         const NABoolean preFetch,
+             const NABoolean preFetch,
 			 const LIST(NAString) *inColNamesToFilter, 
 			 const LIST(NAString) *inCompareOpList,
 			 const LIST(NAString) *inColValuesToCompare,
+	         Float32 dopParallelScanner = 0.0f,
 			 Float32 samplePercent = -1.0f,
 			 NABoolean useSnapshotScan = FALSE,
 			 Lng32 snapTimeout = 0,
@@ -270,8 +258,7 @@ class ExpHbaseInterface : public NABasicObject
                   HbaseStr rows,
 		  NABoolean noXn,
 		  const int64_t timestamp,
-		  NABoolean autoFlush = TRUE,
-                  NABoolean asyncOperation = FALSE) = 0; // by default, flush rows after put
+                  NABoolean asyncOperation) = 0; 
  
  virtual Lng32 setWriteBufferSize(
                  HbaseStr &tblName,
@@ -357,11 +344,8 @@ class ExpHbaseInterface : public NABasicObject
 		      const Text& tblName,
 		      const std::vector<Text> & actionCodes) = 0;
 
-  virtual ByteArrayList* getRegionBeginKeys(const char*) = 0;
-  virtual ByteArrayList* getRegionEndKeys(const char*) = 0;
-
-  virtual Lng32 flushTable() = 0;
-  static Lng32 flushAllTables();
+  virtual NAArray<HbaseStr>* getRegionBeginKeys(const char*) = 0;
+  virtual NAArray<HbaseStr>* getRegionEndKeys(const char*) = 0;
 
   virtual Lng32 estimateRowCount(HbaseStr& tblName,
                                  Int32 partialRowSize,
@@ -381,7 +365,7 @@ class ExpHbaseInterface : public NABasicObject
                                    ARRAY(const char *)& nodeNames) = 0;
 
   // get regions and size
-  virtual ByteArrayList* getRegionStats(const HbaseStr& tblName) = 0;
+  virtual NAArray<HbaseStr> *getRegionStats(const HbaseStr& tblName) = 0;
 
 protected:
   enum 
@@ -443,12 +427,14 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn);
 
   virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn);
-  virtual Lng32 dropAll(const char * pattern, NABoolean async);
+  virtual Lng32 dropAll(const char * pattern, NABoolean async, NABoolean noXn);
 
-  virtual ByteArrayList* listAll(const char * pattern);
+  virtual NAArray<HbaseStr>* listAll(const char * pattern);
 
-  // make a copy of currTableName as oldTblName.
-  virtual Lng32 copy(HbaseStr &currTblName, HbaseStr &oldTblName);
+  // make a copy of srcTblName as tgtTblName
+  // if force is true, remove target before copying.
+  virtual Lng32 copy(HbaseStr &srcTblName, HbaseStr &tgtTblName,
+                     NABoolean force = FALSE);
 
   // -1, if table exists. 0, if doesn't. -ve num, error.
   virtual Lng32 exists(HbaseStr &tblName);
@@ -464,11 +450,13 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 			 const int64_t timestamp,
 			 const NABoolean readUncommitted,
 			 const NABoolean cacheBlocks,
+			 const NABoolean smallScanner,
 			 const Lng32 numCacheRows,
-                         const NABoolean preFetch,
+             const NABoolean preFetch,
 			 const LIST(NAString) *inColNamesToFilter, 
 			 const LIST(NAString) *inCompareOpList,
 			 const LIST(NAString) *inColValuesToCompare,
+	         Float32 DOPparallelScanner = 0.0f,
 			 Float32 samplePercent = -1.0f,
 			 NABoolean useSnapshotScan = FALSE,
 			 Lng32 snapTimeout = 0,
@@ -571,8 +559,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                   HbaseStr rows,
 		  NABoolean noXn,
 		  const int64_t timestamp,
-		  NABoolean autoFlush = TRUE,
-                  NABoolean asyncOperation = FALSE); // by default, flush rows after put
+                  NABoolean asyncOperation); 
   
   virtual Lng32 setWriteBufferSize(
                   HbaseStr &tblName,
@@ -659,11 +646,9 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 		      const Text& tblName,
   		      const std::vector<Text> & actionCodes);
 
+  virtual NAArray<HbaseStr>* getRegionBeginKeys(const char*);
+  virtual NAArray<HbaseStr>* getRegionEndKeys(const char*);
 
-  virtual ByteArrayList* getRegionBeginKeys(const char*);
-  virtual ByteArrayList* getRegionEndKeys(const char*);
-
-  virtual Lng32 flushTable();
   virtual Lng32 estimateRowCount(HbaseStr& tblName,
                                  Int32 partialRowSize,
                                  Int32 numCols,
@@ -681,7 +666,7 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
                                    Int32 partns,
                                    ARRAY(const char *)& nodeNames) ;
 
-  virtual ByteArrayList* getRegionStats(const HbaseStr& tblName);
+  virtual NAArray<HbaseStr>* getRegionStats(const HbaseStr& tblName);
 
 private:
   bool  useTRex_;

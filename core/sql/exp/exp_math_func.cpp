@@ -102,44 +102,6 @@ ex_expr::exp_return_type ex_function_abs::eval(char *op_data[],
       *(double *)op_data[0] = fabs(*(double *)op_data[1]);
       break;
 
-    case REC_TDM_FLOAT64:
-      {
-	// convert tdm float to ieee float, do the abs and
-	// convert result back from ieee to tdm float.
-	double op1Double;
-    // LCOV_EXCL_START
-	if (convDoIt(op_data[1],
-		     getOperand(1)->getLength(),
-		     getOperand(1)->getDatatype(),
-		     getOperand(1)->getPrecision(),
-		     getOperand(1)->getScale(),
-		     (char*)&op1Double,
-		     (Lng32)sizeof(double),
-		     REC_FLOAT64,
-		     0,
-		     0, NULL, 0, heap, diagsArea,
-		     CONV_UNKNOWN) != ex_expr::EXPR_OK)
-	  return ex_expr::EXPR_ERROR;
-	
-	if (op1Double < 0)
-	  op1Double = -op1Double;
-
-	// convert to result type.
-	if (convDoIt((char*)&op1Double,
-		     (Lng32)sizeof(double),
-		     REC_FLOAT64,
-		     0, 0,
-		     op_data[0],
-		     getOperand(0)->getLength(),
-		     getOperand(0)->getDatatype(),
-		     getOperand(0)->getPrecision(),
-		     getOperand(0)->getScale(),
-		     NULL, 0, heap, diagsArea,
-		     CONV_UNKNOWN) != ex_expr::EXPR_OK)
-	  return ex_expr::EXPR_ERROR;
-      }
-    break;
-
     default:
       ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
       retcode = ex_expr::EXPR_ERROR;
@@ -158,73 +120,8 @@ ex_expr::exp_return_type ExFunctionMath::evalUnsupportedOperations(
      CollHeap *heap,
      ComDiagsArea** diagsArea)
 {
-  if (getOperand(0)->getDatatype() == REC_TDM_FLOAT64)
-    {
-      // convert all child operands to double.
-      // Do the math function operation and convert result back to the
-      // type of result operand.
-      double op1Double;
-      double op2Double;
-      double op0Double; // result
-
-      char * opDoubleData[3];
-      opDoubleData[0] = (char *)&op0Double;
-      opDoubleData[1] = (char *)&op1Double;
-      opDoubleData[2] = (char *)&op2Double;
-
-      SimpleType op1DoubleAttr(REC_FLOAT64, sizeof(double), 0, 0,
-			       ExpTupleDesc::SQLMX_FORMAT,
-			       8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-      SimpleType op2DoubleAttr(REC_FLOAT64, sizeof(double), 0, 0,
-			       ExpTupleDesc::SQLMX_FORMAT,
-			       8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-      SimpleType op0DoubleAttr(REC_FLOAT64, sizeof(double), 0, 0,
-			       ExpTupleDesc::SQLMX_FORMAT,
-			       8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-
-      for (Int32 i = 1; i < getNumOperands(); i++)
-	{
-#pragma nowarn(1506)   // warning elimination 
-	  if (convDoIt(op_data[i],
-		       getOperand(i)->getLength(),
-		       getOperand(i)->getDatatype(),
-		       getOperand(i)->getPrecision(),
-		       getOperand(i)->getScale(),
-		       opDoubleData[i],
-		       (Lng32)sizeof(double),
-		       REC_FLOAT64,
-		       0,
-		       0, NULL, 0, heap, diagsArea,
-		       CONV_UNKNOWN) != ex_expr::EXPR_OK)
-	    return ex_expr::EXPR_ERROR;
-#pragma warn(1506)  // warning elimination 
-	}
-
-      ExFunctionMath tempMath(getOperType(), getNumOperands(), NULL, NULL);
-      if (tempMath.eval(opDoubleData, heap, diagsArea) != ex_expr::EXPR_OK)
-	return ex_expr::EXPR_ERROR;
-
-      // convert double result to the actual result type.
-      if (convDoIt(opDoubleData[0],
-		   (Lng32)sizeof(double),
-		   REC_FLOAT64,
-		   0, 0,
-		   op_data[0],
-		   getOperand(0)->getLength(),
-		   getOperand(0)->getDatatype(),
-		   getOperand(0)->getPrecision(),
-		   getOperand(0)->getScale(),
-		   NULL, 0, heap, diagsArea,
-		   CONV_UNKNOWN) != ex_expr::EXPR_OK)
-	return ex_expr::EXPR_ERROR;
-    }
-  else
-    {
-      ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
-      return ex_expr::EXPR_ERROR;
-    }
-
-  return ex_expr::EXPR_OK;
+  ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
+  return ex_expr::EXPR_ERROR;
 }
 // LCOV_EXCL_STOP
 ex_expr::exp_return_type ExFunctionMath::eval(char *op_data[],

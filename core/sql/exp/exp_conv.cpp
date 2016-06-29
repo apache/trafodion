@@ -136,7 +136,68 @@ void double_varchar_length(
    }
 }
 
+//////////////////////////////////////////////////////////////////
+//
+// A helper function to show buffer in HEX 
+//
+// ///////////////////////////////////////////////////////////////
 
+static char *stringToHex(char * out, Int32 outLen, char * in, Int32 inLen)
+{
+  //clear out buffer first
+  memset(out,0,outLen);
+
+  outLen = (outLen / 2) ;
+
+  if(inLen < outLen) outLen = inLen;
+
+  char hex[3];
+  for(int i = 0; i < outLen; i++)
+  {
+    sprintf(hex, "%02x", in[i]);
+    strcat(out,hex);
+  }
+  return out;
+}
+
+//////////////////////////////////////////////////////////////////
+//
+//A helper function to return charset name
+//
+/////////////////////////////////////////////////////////////////
+static const char* scaleToString(short scale)
+{
+  switch(scale)   
+  {
+    case SQLCHARSETCODE_ISO88591:
+        return "ISO88591";
+    case SQLCHARSETCODE_KANJI:
+        return "KANJI";
+    case SQLCHARSETCODE_KSC5601:
+        return "KSC5601";
+    case SQLCHARSETCODE_SJIS:
+        return "SJIS";
+    case SQLCHARSETCODE_UCS2 :
+        return "UCS2";
+    case SQLCHARSETCODE_EUCJP :
+        return "EUCJP";
+    case SQLCHARSETCODE_BIG5: 
+        return "BIG5";
+    case SQLCHARSETCODE_GB18030:
+        return "GB18030";
+    case SQLCHARSETCODE_UTF8:
+        return "UTF8";
+    case SQLCHARSETCODE_MB_KSC5601:
+        return "MB_KSC5601";
+    case SQLCHARSETCODE_GB2312:
+        return "GB2312";
+    case SQLCHARSETCODE_GBK:
+        return "GBK";
+    default:
+        return "UNKNOWN";
+  }
+  return "UNKNOWN";
+} 
 //////////////////////////////////////////////////////////////////
 //
 // A helper function that multiplies the dvalue by 10 and
@@ -1325,53 +1386,24 @@ ex_expr::exp_return_type convAsciiToDatetime(char *target,
   // Setup attribute for the destination.
   //
   dstOpType.setPrecision(code);
+  dstOpType.setScale(fractionPrecision);
 
-  switch (code) {
-  case REC_DTCODE_DATE :
-  case REC_DTCODE_YEAR_DAY :
-    {
-    ret = dstOpType.convAsciiToDate(source,
-                                    sourceLen,
-                                    target,
-                                    targetLen,
-				    ExpDatetime::DATETIME_FORMAT_NONE,
-                                    heap,
-                                    diagsArea,
-				    flags);
-    }
-    break;
-  case REC_DTCODE_TIME :
-  case REC_DTCODE_HOUR_SECOND :
-    {
-    dstOpType.setScale(fractionPrecision);
-    ret = dstOpType.convAsciiToTime(source,
-                                    sourceLen,
-                                    target,
-                                    targetLen,
-                                    heap,
-                                    diagsArea,
-				    flags);
-    }
-    break;
-  default :
-    {
-    dstOpType.setScale(fractionPrecision);
-    ret = dstOpType.convAsciiToDatetime(source,
-                                        sourceLen,
-                                        target,
-                                        targetLen,
-                                        heap,
-                                        diagsArea,
-					flags);
-    }
-  }
-
+  ret = dstOpType.convAsciiToDatetime(source,
+                                      sourceLen,
+                                      target,
+                                      targetLen,
+                                      ExpDatetime::DATETIME_FORMAT_NONE,
+                                      heap,
+                                      diagsArea,
+                                      flags);
+  
   if (ret < 0)
     return ex_expr::EXPR_ERROR;
-
+  
   return ex_expr::EXPR_OK;
   
 }
+
 // LCOV_EXCL_START
 NA_EIDPROC
 ex_expr::exp_return_type convUnicodeToDatetime(char *target,
@@ -1496,6 +1528,7 @@ ex_expr::exp_return_type convDatetimeDatetime(char * target,
                                              dstEndField,
                                              (short)targetScale,
                                              target,
+                                             targetLen,
                                              validateFlag,
                                              &roundedDown) != 0) {
 
@@ -3945,7 +3978,7 @@ ex_expr::exp_return_type checkPrecision(Int64 source,
       // We've satisfied the above criteria.  Check that the source value
       // will fit in the target NUMERIC.
       //
-      if (targetPrecision <= 18) // ??? Larry Schumacher ???
+      if (targetPrecision <= 18)
 
       if ((source < getMinDecValue(targetPrecision, targetType)) ||
           (source > getMaxDecValue(targetPrecision)) ) {
@@ -4308,6 +4341,9 @@ unicodeToSByteTarget(
        if ( allowInvalidCodePoint == FALSE )
        {
           ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHAR_IN_TRANSLATE_FUNC);
+          char hexstr[256];
+          memset(hexstr,0,256);
+          *(*diagsArea) << DgString0("UNICODE") << DgString1("ISO88591") << DgString2(stringToHex(hexstr,256,source,sourceLen));
           retcode = ex_expr::EXPR_ERROR;
        }
     }
@@ -4403,6 +4439,12 @@ unicodeToMByteTarget(
        if ( allowInvalidCodePoint == FALSE )
        {
           ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHAR_IN_TRANSLATE_FUNC);
+          char hexstr[256];
+          memset(hexstr,0,256);
+	  if ( targetScale == SQLCHARSETCODE_UTF8 )
+            *(*diagsArea) << DgString0("UNICODE") << DgString1("UTF8") << DgString2(stringToHex(hexstr,256,source,sourceLen));
+          else
+            *(*diagsArea) << DgString0("UNICODE") << DgString1("SJIS") << DgString2(stringToHex(hexstr,256,source,sourceLen));
           retcode = ex_expr::EXPR_ERROR;
           // LCOV_EXCL_STOP
        }
@@ -4533,6 +4575,12 @@ ex_expr::exp_return_type convCharToChar(
             errCode = EXE_INTERNAL_ERROR;
           
           ExRaiseSqlError(heap, diagsArea, errCode);
+          if(errCode == EXE_INVALID_CHAR_IN_TRANSLATE_FUNC)
+          {
+            char hexstr[256];
+            memset(hexstr,0,256);
+            *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,256,source,sourceLen));
+          }
           if (intermediateStr && intermediateStr != stackBuffer)
             NADELETEBASIC(intermediateStr, heap);
           return ex_expr::EXPR_ERROR;
@@ -4670,6 +4718,12 @@ ex_expr::exp_return_type convCharToChar(
                         errCode = EXE_INTERNAL_ERROR;
                       
                       ExRaiseSqlError(heap, diagsArea, errCode);
+                      if(errCode == EXE_INVALID_CHAR_IN_TRANSLATE_FUNC)
+                      {
+                        char hexstr[256];
+                        memset(hexstr,0,256);
+                        *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,256,source,sourceLen));
+                      }
                       if (intermediateStr && intermediateStr != stackBuffer)
                         NADELETEBASIC(intermediateStr, heap);
                       return ex_expr::EXPR_ERROR;
@@ -4712,6 +4766,9 @@ ex_expr::exp_return_type convCharToChar(
          {
              // source string is not valid UTF-8
              ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHAR_IN_TRANSLATE_FUNC);
+             char hexstr[256];
+             memset(hexstr,0,256);
+             *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,256,source,sourceLen));
              return ex_expr::EXPR_ERROR;
          }
       }
@@ -4737,6 +4794,9 @@ ex_expr::exp_return_type convCharToChar(
                 {
                   // source string is not valid UTF-8
                   ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHAR_IN_TRANSLATE_FUNC);
+                  char hexstr[256];
+                  memset(hexstr,0,256);
+                  *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,256,source,sourceLen));
                   return ex_expr::EXPR_ERROR;
                 }
 
@@ -4939,6 +4999,292 @@ convDoIt(char * source,
         *(unsigned short *)target = (unsigned short) *(short *)source;
       }
     }
+
+  case CONV_BIN8S_BIN8S:
+    {
+      *(Int8 *)target = *(Int8 *)source;
+    }
+  break;
+
+  case CONV_BIN8U_BIN8U:
+    {
+      *(UInt8 *)target = *(UInt8 *)source;
+    }
+  break;
+
+  case CONV_BIN8S_BIN16S:
+    {
+      *(Int16 *)target = *(Int8 *)source;
+    }
+  break;
+
+  case CONV_BIN8U_BIN16U:
+    {
+      *(UInt16 *)target = *(UInt8 *)source;
+    }
+  break;
+ 
+  case CONV_BIN8U_BIN16S:
+    {
+      *(Int16 *)target = *(UInt8 *)source;
+    }
+  break;
+ 
+  case CONV_BIN16U_BIN8S:
+    {
+      if (*(UInt16 *)source > CHAR_MAX)
+        {
+          if (dataConversionErrorFlag != 0)  // Capture error in variable?
+            {
+              *(Int8 *)target = CHAR_MAX;
+              *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
+            }
+          else
+            {
+              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
+                                    source, sourceLen, sourceType, sourceScale,
+                                    targetType, tempFlags);
+              return ex_expr::EXPR_ERROR;
+            }
+        }
+      else
+        {
+          if (dataConversionErrorFlag != 0)
+            { // Set the target value.
+              *(Int8 *)target = (Int8) *(UInt16 *)source;
+            }
+          else
+            { // Check target precision. Then set target value.
+              if (checkPrecision((Int64)*(UInt16 *)source,
+				 sourceLen,
+		                 sourceType,
+		                 sourcePrecision,
+                                 sourceScale,
+		                 targetType,
+		                 targetPrecision,
+                                 targetScale,
+		                 heap,
+		                 diagsArea,
+                                 tempFlags) == ex_expr::EXPR_OK)
+                {
+                  *(Int8 *)target = (Int8) *(UInt16 *)source;
+                }
+              else
+                {
+                  return ex_expr::EXPR_ERROR;
+                }
+            }
+        }
+    }
+  break;
+
+  case CONV_BIN16S_BIN8U:
+    {
+      if (*(Int16 *)source < 0)
+        {
+          if (dataConversionErrorFlag != 0)  // Capture error in variable?
+            {
+              *(UInt8 *)target = 0;
+              *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN;
+            }
+          else
+            {
+              ExRaiseSqlError(heap, diagsArea, EXE_UNSIGNED_OVERFLOW);
+              return ex_expr::EXPR_ERROR;
+            }
+        }
+      else if (*(Int16 *)source > UCHAR_MAX)
+        {
+          if (dataConversionErrorFlag != 0)
+            {
+              *(UInt8 *)target = UCHAR_MAX;
+              *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
+            }
+          else
+            {
+              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
+                                    source, sourceLen, sourceType, sourceScale,
+                                    targetType, tempFlags);
+              return ex_expr::EXPR_ERROR;
+            }
+        }
+      else
+        {
+          if (dataConversionErrorFlag != 0)
+            {
+              *(UInt8 *)target = (UInt8) *(Int16 *)source;
+            }
+          else
+            {
+              if (checkPrecision((Int64)*(Int16 *)source,
+				 sourceLen,
+		                 sourceType,
+		                 sourcePrecision,
+                                 sourceScale,
+		                 targetType,
+		                 targetPrecision,
+                                 targetScale,
+		                 heap,
+		                 diagsArea,
+                                 tempFlags) == ex_expr::EXPR_OK)
+                {
+                  *(UInt8 *)target = (UInt8) *(Int16 *)source;
+                }
+              else
+                {
+                  return ex_expr::EXPR_ERROR;
+                }
+            }
+        }
+    }
+  break;
+
+  case CONV_BIN16S_BIN8S:
+    {
+      if (*(Int16 *)source < CHAR_MIN)
+        {
+          if (dataConversionErrorFlag != 0)  // Capture error in variable?
+            {
+              *(Int8 *)target = CHAR_MIN;
+              *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN;
+            }
+          else
+            {
+              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
+                                    source, sourceLen, sourceType, sourceScale,
+                                    targetType, tempFlags);
+              return ex_expr::EXPR_ERROR;
+            }
+        }
+      else if (*(Int16 *)source > CHAR_MAX)
+        {
+          if (dataConversionErrorFlag != 0)  // Capture error in variable?
+            {
+              *(Int8 *)target = CHAR_MAX;
+              *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
+            }
+          else
+            {
+              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
+                                    source, sourceLen, sourceType, sourceScale,
+                                    targetType, tempFlags);
+              return ex_expr::EXPR_ERROR;
+            }
+        }
+      else
+        {
+          if (dataConversionErrorFlag != 0)
+            { // Set the target value.
+              *(Int8 *)target = (Int8) *(Int16 *)source;
+            }
+          else
+            { // Check target precision. Then set target value.
+              if (checkPrecision((Int64)*(Int16 *)source,
+				 sourceLen,
+	                         sourceType,
+		                 sourcePrecision,
+                                 sourceScale,
+		                 targetType,
+		                 targetPrecision,
+                                 targetScale,
+		                 heap,
+		                 diagsArea,
+                                 tempFlags) == ex_expr::EXPR_OK)
+                {
+                  *(Int8 *)target = (Int8) *(Int16 *)source;
+                }
+              else
+                {
+                  return ex_expr::EXPR_ERROR;
+                }
+            }
+        }
+    }
+  break;
+
+  case CONV_BIN16U_BIN8U:
+    {
+      if (*(UInt16 *)source > UCHAR_MAX)
+        {
+          if (dataConversionErrorFlag != 0)  // Capture error in variable?
+            {
+              *(UInt8 *)target = UCHAR_MAX;
+              *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
+            }
+          else
+            {
+              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
+                                    source, sourceLen, sourceType, sourceScale,
+                                    targetType, tempFlags);
+              return ex_expr::EXPR_ERROR;
+            }
+        }
+      else
+        {
+          if (dataConversionErrorFlag != 0)
+            { // Set the target value.
+              *(UInt8 *)target = (UInt8) *(UInt16 *)source;
+            }
+          else
+            { // Check target precision. Then set target value.
+              if (checkPrecision((Int64)*(UInt16 *)source,
+				 sourceLen,
+		                 sourceType,
+		                 sourcePrecision,
+                                 sourceScale,
+		                 targetType,
+		                 targetPrecision,
+                                 targetScale,
+		                 heap,
+		                 diagsArea,
+                                 tempFlags) == ex_expr::EXPR_OK)
+                {
+                  *(UInt8 *)target = (UInt8) *(UInt16 *)source;
+                }
+              else
+                {
+                  return ex_expr::EXPR_ERROR;
+                }
+            }
+        }
+    }
+  break;
+
+  case CONV_BIN8S_ASCII: {
+    if (convInt64ToAscii(target,
+			 targetLen,
+                         targetPrecision,
+                         targetScale,
+			 (Int64) *(Int8 *)source,
+			 sourceScale,
+			 varCharLen,
+			 varCharLenSize,
+			 ' ', // filler character
+			 FALSE,
+			 leftPad,
+			 heap,
+			 diagsArea) != ex_expr::EXPR_OK)
+      return ex_expr::EXPR_ERROR;
+  };
+  break;
+
+  case CONV_BIN8U_ASCII: {
+    if (convInt64ToAscii(target,
+			 targetLen,
+                         targetPrecision,
+                         targetScale,
+			 (Int64) *(UInt8 *)source,
+			 sourceScale,
+			 varCharLen,
+			 varCharLenSize,
+			 ' ', // filler character
+			 FALSE,
+			 leftPad,
+			 heap,
+			 diagsArea) != ex_expr::EXPR_OK)
+      return ex_expr::EXPR_ERROR;
+  };
+  break;
 
   case CONV_BIN16S_BIN16S:
     {
@@ -8620,6 +8966,8 @@ convDoIt(char * source,
   };
   break;
   
+  case CONV_ASCII_BIN8S:
+  case CONV_ASCII_BIN8U:
   case CONV_ASCII_BIN16S:
   case CONV_ASCII_BIN16U:
   case CONV_ASCII_BIN32S:
@@ -8636,6 +8984,129 @@ convDoIt(char * source,
 
     switch (index)
       {
+      case CONV_ASCII_BIN8S: {
+           if (interm < CHAR_MIN)
+             {
+             if (dataConversionErrorFlag != 0)  // Capture error in variable?
+               {
+               *(Target<Int8> *)target = CHAR_MIN;
+               *dataConversionErrorFlag =
+                        ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN;
+               }
+             else
+               {
+               ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
+                                     source, sourceLen, sourceType, sourceScale,
+                                     targetType, tempFlags);
+               return ex_expr::EXPR_ERROR;
+               }
+             }
+           else if (interm > CHAR_MAX)
+             {
+             if (dataConversionErrorFlag != 0)  // Capture error in variable?
+                 {
+                   *(Target<Int8> *)target = CHAR_MAX;
+                   *dataConversionErrorFlag =
+                        ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
+                 }
+               else
+                 {
+                   ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
+                                         source, sourceLen, sourceType,
+                                         sourceScale, targetType, tempFlags);
+                   return ex_expr::EXPR_ERROR;
+                 }
+             }
+           else
+             {
+             if (dataConversionErrorFlag != 0)
+               { // Set the target value.
+               *(Target<Int8> *)target = (Int8) interm;
+               }
+             else
+               { // Check target precision. Then set target value.
+               if ((targetPrecision > 0) &&
+                   (checkPrecision(interm,
+				   8,
+                                   REC_BIN64_SIGNED,
+                                   0,
+                                   0,
+                                   targetType,
+                                   targetPrecision,
+                                   targetScale,
+                                   heap,
+                                   diagsArea,
+                                   tempFlags) != ex_expr::EXPR_OK))
+                  {
+                  return ex_expr::EXPR_ERROR;
+                  }
+                *(Target<Int8> *)target = (Int8) interm;
+               }
+             }
+           };
+           break;
+      case CONV_ASCII_BIN8U: {
+           if (interm < 0)
+             {
+             if (dataConversionErrorFlag != 0)  // Capture error in variable?
+               {
+               *(Target<unsigned short> *)target = 0;
+               *dataConversionErrorFlag =
+                        ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN;
+               }
+             else
+               {
+               ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
+                                     source, sourceLen, sourceType, sourceScale,
+                                     targetType, tempFlags);
+               return ex_expr::EXPR_ERROR;
+               }
+             }
+           else if (interm > UCHAR_MAX)
+             {
+             if (dataConversionErrorFlag != 0)  // Capture error in variable?
+                 {
+                   *(Target<UInt8> *)target = UCHAR_MAX;
+                   *dataConversionErrorFlag =
+                        ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
+                 }
+               else
+                 {
+                   ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
+                                         source, sourceLen, sourceType,
+                                         sourceScale,
+                                         targetType, tempFlags);
+                   return ex_expr::EXPR_ERROR;
+                 }
+             }
+           else
+             {
+             if (dataConversionErrorFlag != 0)
+               { // Set the target value.
+               *(Target<UInt8> *)target = (UInt8) interm;
+               }
+             else
+               { // Check target precision. Then set target value.
+               if ((targetPrecision > 0) &&
+                   (checkPrecision(interm,
+				   8,
+                                   REC_BIN64_SIGNED,
+                                   0,
+                                   0,
+                                   targetType,
+                                   targetPrecision,
+                                   targetScale,
+                                   heap,
+                                   diagsArea,
+                                   tempFlags) != ex_expr::EXPR_OK))
+                  {
+                  return ex_expr::EXPR_ERROR;
+                  }
+                *(Target<UInt8> *)target = (UInt8) interm;
+               }
+             }
+           };
+           break;
       case CONV_ASCII_BIN16S: {
            if (interm < SHRT_MIN)
              {
@@ -9321,6 +9792,32 @@ convDoIt(char * source,
   };
   break;
 
+// gb2312 -> utf8
+// JIRA 1720
+  case CONV_GBK_F_UTF8_V:
+  {
+    int copyLen = 0;
+    int convLen = gbkToUtf8( source, sourceLen, target, targetLen);
+    if (convLen >= 0) {
+      copyLen = convLen; 
+      if ( varCharLen )
+        setVCLength(varCharLen, varCharLenSize, copyLen);
+      //if the target length is not enough, instead of truncate, raise a SQL Error
+      if (convLen > targetLen)
+        ExRaiseSqlError(heap, diagsArea, EXE_STRING_OVERFLOW);
+    }
+    else {
+      // LCOV_EXCL_START
+      convLen = 0;
+      copyLen = 0;
+      if ( varCharLen )
+        setVCLength(varCharLen, varCharLenSize, copyLen);
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+      return ex_expr::EXPR_ERROR;
+      // LCOV_EXCL_STOP
+    }
+  };
+  break;
 // 5/10/98: sjis -> unicode
   case CONV_SJIS_F_UNICODE_F: 
   case CONV_SJIS_F_UNICODE_V: 
@@ -10249,58 +10746,8 @@ convDoIt(char * source,
   case CONV_NOT_SUPPORTED:
     {
       // this conversion is not supported.
-
-      // if this conversion could be done by converting to an
-      // intermediate datatype, do it.
-
-      // Conversion to/from a tandem float type is only supported if
-      // the from/to type is a float type.
-      // Conversion source to ieee double type and then
-      // convert from ieee double to target type.
-      if ((targetType == REC_TDM_FLOAT32) ||
-	  (targetType == REC_TDM_FLOAT64) ||
-	  (sourceType == REC_TDM_FLOAT32) ||
-	  (sourceType == REC_TDM_FLOAT64))
-	{
-	  double dintermediate;
-
-	  if (convDoIt(source,
-		       sourceLen,
-		       sourceType,
-		       sourcePrecision,
-		       sourceScale,
-		       (char*)&dintermediate,
-		       (Lng32)sizeof(double),
-		       REC_FLOAT64,
-		       0, 0,
-		       NULL, 0, heap, diagsArea,
-		       CONV_UNKNOWN, 0,
-                       tempFlags | CONV_INTERMEDIATE_CONVERSION) != ex_expr::EXPR_OK)
-	    return ex_expr::EXPR_ERROR;
-
-	  if (convDoIt((char*)&dintermediate,
-		       sizeof(double),
-		       REC_FLOAT64,
-		       0,
-		       0,
-		       target,
-		       targetLen,
-		       targetType,
-		       targetPrecision,
-		       targetScale, 
-		       varCharLen, 
-		       varCharLenSize, 
-		       heap, diagsArea,
-		       CONV_UNKNOWN,
-		       dataConversionErrorFlag,
-		       flags | CONV_INTERMEDIATE_CONVERSION) != ex_expr::EXPR_OK)
-	    return ex_expr::EXPR_ERROR;
-	}
-      else
-	{
-	  ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_NOT_SUPPORTED);
-	  return ex_expr::EXPR_ERROR;
-	}
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_NOT_SUPPORTED);
+      return ex_expr::EXPR_ERROR;
     }
   break;
 
@@ -10475,7 +10922,18 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
             *dataConversionErrorFlag = -(*dataConversionErrorFlag);
           }
       }
-//    return retcode;
+
+    if( retcode != ex_expr::EXPR_OK && ( flags_ & CONV_TO_NULL_WHEN_ERROR ) != 0)
+    {
+      //move null to target
+      if(tgt->getNullFlag())
+      {
+        ExpTupleDesc::setNullValue( op_data[-2*MAX_OPERANDS],
+                                    tgt->getNullBitIndex(),
+                                    tgt->getTupleFormat() );
+        retcode = ex_expr::EXPR_OK;
+      }
+    } 
   };
   }; // switch
 
@@ -10704,47 +11162,6 @@ ex_expr::exp_return_type scaleDoIt(char *operand,
     intermediateDouble = *doubleOperandPtr; //*(double*)operand;
   }
   break;
-	// LCOV_EXCL_START
-  case REC_TDM_FLOAT32: {
-#pragma nowarn(1506)   // warning elimination 
-    if (convDoIt(operand,
-		 operandLen,
-		 operandType,
-		 0,
-		 0,
-		 (char*)&intermediateDouble,
-		  (Lng32)sizeof(double),
-		 REC_FLOAT64,
-		 0,
-		 0, NULL, 0, heap, NULL,
-#pragma warning (disable : 4244)  //warning elimination
-		 CONV_UNKNOWN) != ex_expr::EXPR_OK)
-#pragma warning (default : 4244)  //warning elimination
-      return ex_expr::EXPR_ERROR;
-#pragma warn(1506)  // warning elimination 
-  }
-  break;
-
-  case REC_TDM_FLOAT64: {
-#pragma nowarn(1506)   // warning elimination 
-    if (convDoIt(operand,
-		 operandLen,
-		 operandType,
-		 0,
-		 0,
-		 (char*)&intermediateDouble,
-		  (Lng32)sizeof(double),
-		 REC_FLOAT64,
-		 0,
-		 0, NULL, 0, heap, NULL,
-#pragma warning (disable : 4244)  //warning elimination
-		 CONV_UNKNOWN) != ex_expr::EXPR_OK)
-#pragma warning (default : 4244)  //warning elimination
-      return ex_expr::EXPR_ERROR;
-#pragma warn(1506)  // warning elimination 
-  }
-  break;
-
   case REC_DECIMAL_LSE: {
   case REC_DECIMAL_UNSIGNED:
     // Check if the first bit is set
@@ -10908,27 +11325,6 @@ ex_expr::exp_return_type scaleDoIt(char *operand,
   }
   break;
 
-  case REC_TDM_FLOAT32: 
-  case REC_TDM_FLOAT64: {
-#pragma nowarn(1506)   // warning elimination 
-	  // LCOV_EXCL_START
-    if (convDoIt((char*)&intermediateDouble,
-		 sizeof(double),
-		 REC_FLOAT64,
-		 0,
-		 0,
-		 operand,
-		 operandLen,
-		 operandType,
-		 0,
-		 0, NULL, 0, heap, NULL,
-#pragma warning (disable : 4244)  //warning elimination
-		 CONV_UNKNOWN) != ex_expr::EXPR_OK)
-#pragma warning (default : 4244)  //warning elimination
-#pragma warn(1506)  // warning elimination 
-      return ex_expr::EXPR_ERROR;
-  }
-  break;
   case REC_DECIMAL_LS: {
     str_cpy_all(&operand[1], &intermediateString[1], operandLen -1);
     NADELETEBASIC(intermediateString, heap);

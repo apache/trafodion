@@ -33,9 +33,9 @@ function Usage {
     echo 
     echo "Usage: $0 [ -c <cc> | -i <nn> | -d <nn> | -h | -f | -q | -v | -r | -j ]"
     echo 
-    echo "-i <nn>  Number of times the check for SQ processes be done (Default $max_checks)"
+    echo "-i <nn>  Number of times the check for Trafodion processes will be done (Default $max_checks)"
     echo "-d <nn>  Duration of sleep (in seconds) between each check  (Default $sleep_duration)"
-    echo "-c <cc>  Which component to check: [all | dtm | dcs | rms ] (Default $sqck_component)"
+    echo "-c <cc>  Which component to check: [all | dtm | dcs | rms | rest ] (Default $sqck_component)"
     echo "-f       fast - (it's like running $0 -i 1 -d 0)"
     echo "-r       reset the iteration counter if the process count increases (as compared to the count in the last iteration)"
     echo "-j       Format the output in JSON. Used by REST server"
@@ -58,7 +58,8 @@ function GetOpts {
               [ $t_ck == "all" ] || 
               [ $t_ck == "dtm" ] ||
               [ $t_ck == "dcs" ] ||
-              [ $t_ck == "rms" ]
+              [ $t_ck == "rms" ] ||
+              [ $t_ck == "rest" ] 
           ); then 
               sqck_component=${OPTARG}
           else
@@ -108,7 +109,6 @@ function fillArray {
 
 function getDcsInfo {
  dcsznode=/$USER/dcs/master
- jpscmd=$JAVA_HOME/bin/jps
 
  if [ -d $DCS_INSTALL_DIR ];then
 
@@ -127,13 +127,8 @@ function getDcsInfo {
    fi
 
 ### Check if there are any DcsMaster and DcsServer's that are started 
-   if [ -e $SQ_PDSH ]; then
-     actual_dcsmaster_cnt=`$SQ_PDSH $MY_NODES $jpscmd |grep DcsMaster |wc -l` 
-     actual_dcsserver_cnt=`$SQ_PDSH $MY_NODES $jpscmd |grep DcsServer |wc -l` 
-   else
-     actual_dcsmaster_cnt=`$jpscmd |grep DcsMaster |wc -l`
-     actual_dcsserver_cnt=`$jpscmd |grep DcsServer |wc -l`
-   fi
+   actual_dcsmaster_cnt=`cat $tmpjps |grep DcsMaster |wc -l` 
+   actual_dcsserver_cnt=`cat $tmpjps |grep DcsServer |wc -l` 
 
    if ( [ "$cfg_dcsserver_cnt" '!=' "$actual_dcsserver_cnt" ] ); then
      let down_dcsserver_cnt=cfg_dcsserver_cnt-actual_dcsserver_cnt
@@ -149,6 +144,24 @@ function getDcsInfo {
  fi
 }
 
+function getRestInfo {
+
+ if [ -d $REST_INSTALL_DIR ];then
+
+### Check if there are any DcsMaster and DcsServer's that are started
+   actual_restserver_cnt=`cat $tmpjps |grep TrafodionRest |wc -l`
+   let cfg_restserver_cnt=actual_restserver_cnt
+   if ( [ "$cfg_restserver_cnt" '!=' "$actual_restserver_cnt" ] ); then
+     let down_restserver_cnt=cfg_restserver_cnt-actual_restserver_cnt
+   else
+     down_restserver_cnt=''
+   fi
+ fi
+
+}
+
+jpscmd=$JAVA_HOME/bin/jps
+tmpjps=/tmp/tmpjps-$USER.log
 begin_time_seconds=$(date +%s)
 
 declare -i max_checks
@@ -172,7 +185,7 @@ ft_pair=""
 GetOpts $1 $2 $3 $4 $5 $6 $7 $8 $9
 
 if [ $sqc_verbose '==' 1 ]; then
-    echo "Max number of times to check the SQ environment: $max_checks, Sleep Duration: $sleep_duration seconds"
+    echo "Max number of times to check the Trafodion environment: $max_checks, Sleep Duration: $sleep_duration seconds"
 fi
 
 declare -i num_checks
@@ -186,6 +199,8 @@ declare -i cfg_rms_cnt
 declare -i cfg_mxo_cnt
 declare -i cfg_lnode_cnt
 declare -i cfg_pnode_cnt
+declare -i exc_lnode_cnt
+declare -i exc_pnode_cnt
 
 let act_dtm_cnt=0
 let act_rms_cnt=0
@@ -195,6 +210,10 @@ let act_lnode_down_cnt=0
 let act_pnode_down_cnt=0
 let act_lnode_up_cnt=0
 let act_pnode_up_cnt=0
+let cfg_lnode_cnt=0
+let cfg_pnode_cnt=0
+let exc_lnode_cnt=0
+let exc_pnode_cnt=0
 
 let cfg_mxo_cnt=0
 let act_mxo_down_cnt=0
@@ -243,23 +262,37 @@ for pnodedn in `cat $sq_tmp_pnode_dn`; do
     let ++act_pnode_down_cnt
 done
 
-cfg_lnode_cnt=(act_lnode_up_cnt+act_lnode_down_cnt)
-cfg_pnode_cnt=(act_pnode_up_cnt+act_pnode_down_cnt)
+### EXCLUDED NODEs (assumes 1:1 logical node to physical node mapping)
+sq_exc_node=`mktemp -t`
+echo $TRAF_EXCLUDE_LIST > $sq_exc_node
+for enode in `cat $sq_exc_node`; do
+    let ++exc_lnode_cnt
+    let ++exc_pnode_cnt
+done
+
+if [ $act_lnode_up_cnt '>' 0 ]; then
+    cfg_lnode_cnt=(act_lnode_up_cnt+act_lnode_down_cnt)
+    cfg_pnode_cnt=(act_pnode_up_cnt+act_pnode_down_cnt)
+fi
 
 rm -f $sq_tmp_lnode_up
 rm -f $sq_tmp_pnode_up
 rm -f $sq_tmp_lnode_dn
 rm -f $sq_tmp_pnode_dn
 rm -f $sq_tmp_node_info
+rm -f $sq_exc_node
 
 ### CONFIGURED DTMs
 let cfg_dtm_cnt=`grep -i 'type dtm,' $SQSCRIPT_FILE | wc -l`
+let cfg_dtm_cnt=$cfg_dtm_cnt-$exc_lnode_cnt
 sq_tmp_dtms_names=`mktemp -t`
 let num_dtms=0
 grep -i 'type dtm,' $SQSCRIPT_FILE | grep -o 'name \\\$[A-Za-z]*[0-9]*' | grep -o '\\\$[A-Za-z]*[0-9]*' > $sq_tmp_dtms_names
 for dtms in `cat $sq_tmp_dtms_names`; do
-    cfg_dtms[num_dtms]=$dtms
-    let ++num_dtms
+    if ( [ "$num_dtms" '<' "$cfg_dtm_cnt" ] ); then 
+        cfg_dtms[num_dtms]=$dtms
+        let ++num_dtms
+    fi
 done
 #echo ${cfg_dtms[*]}
 rm -f $sq_tmp_dtms_names
@@ -278,14 +311,29 @@ fi
 if [[ $SQ_START_RMS == "1" ]]; then
     let cfg_sscp_cnt=`grep -i 'exec ' $STARTSSCP_FILE | egrep -i ' mxsscp' | wc -l`
     let cfg_ssmp_cnt=`grep -i 'exec ' $STARTSSMP_FILE | egrep -i ' mxssmp' | wc -l`
+      # Adjust the configured counts with the number of excluded elastic nodes
+    let cfg_sscp_cnt=$cfg_sscp_cnt-$exc_lnode_cnt
+    let cfg_ssmp_cnt=$cfg_ssmp_cnt-$exc_lnode_cnt
     let cfg_rms_cnt=$cfg_sscp_cnt+$cfg_ssmp_cnt
     sq_tmp_rms_names=`mktemp -t`
+    let num_sscp=0
+    let num_ssmp=0
     let num_rms=0
     grep -i 'exec ' $STARTSSCP_FILE | egrep -i 'mxsscp' | grep -o 'name \\\$[A-Za-z]*[0-9]*' | grep -o '\\\$[A-Za-z]*[0-9]*' > $sq_tmp_rms_names
-    grep -i 'exec ' $STARTSSMP_FILE | egrep -i 'mxssmp' | grep -o 'name \\\$[A-Za-z]*[0-9]*' | grep -o '\\\$[A-Za-z]*[0-9]*' >> $sq_tmp_rms_names
     for rms in `cat $sq_tmp_rms_names`; do
-        cfg_rms[num_rms]=$rms
-        let ++num_rms
+        if ( [ "$num_sscp" '<' "$cfg_sscp_cnt" ] ); then 
+            cfg_rms[num_rms]=$rms
+            let ++num_sscp
+            let ++num_rms
+        fi
+    done
+    grep -i 'exec ' $STARTSSMP_FILE | egrep -i 'mxssmp' | grep -o 'name \\\$[A-Za-z]*[0-9]*' | grep -o '\\\$[A-Za-z]*[0-9]*' > $sq_tmp_rms_names
+    for rms in `cat $sq_tmp_rms_names`; do
+        if ( [ "$num_ssmp" '<' "$cfg_ssmp_cnt" ] ); then 
+            cfg_rms[num_rms]=$rms
+            let ++num_ssmp
+            let ++num_rms
+        fi
     done
     rm -f $sq_tmp_rms_names
 else
@@ -299,6 +347,9 @@ if [[ $? != 0 ]]; then
 fi
 
 if [ $json_output '==' 0 ]; then
+    echo
+    echo  "*** Checking Trafodion Environment ***"
+    echo
     echo  "Checking if processes are up."
 fi
 
@@ -348,6 +399,16 @@ fi
           fi
       done
   fi
+  
+  #Get the list of DcsMaster, DcsServer and TrafodionRest
+  if [ -e $SQ_PDSH ]; then
+     $SQ_PDSH $MY_NODES $jpscmd |egrep 'DcsMaster|DcsServer|TrafodionRest' > $tmpjps
+  else
+     $jpscmd |egrep 'DcsMaster|DcsServer|TrafodionRest' > $tmpjps
+  fi
+
+  #TrafodionRestServer
+  getRestInfo
 
   #MXOSRVR
   getDcsInfo
@@ -357,6 +418,9 @@ fi
   else
     act_mxo_down_cnt=''
   fi 
+
+  #Cleanup the tmpjps file
+  rm -f $tmpjps
 
   #RMS
   let act_rms_cnt=`< $sq_tmp_ps egrep -a -i ' mxssmp| mxsscp' | wc -l`
@@ -454,11 +518,11 @@ fi
               if ([ $act_lnode_up_cnt == $cfg_lnode_cnt ] ); then
                   echo
                   echo
-                  echo "The SQ environment is up!"
+                  echo "The Trafodion environment is up!"
               else
                   echo
                   echo
-                  echo "The SQ environment is up! Node(s) are down and environment is in a degraded state."
+                  echo "The Trafodion environment is up! Node(s) are down and environment is in a degraded state."
                   echo
                   echo
                   sqshell -c node info
@@ -490,11 +554,11 @@ if [ $json_output '==' 0 ]; then
         if [ $sq_up '==' 1 ]; then
             if [ $pcmp_result '==' 1 ]; then
                 echo
-                echo "The SQ environment is partially up and operational."
+                echo "The Trafodion environment is partially up and operational."
             fi
         else
             echo
-            echo "The SQ environment is not up all, or partially up and not operational. Check the logs."
+            echo "The Trafodion environment is not up at all, or partially up and not operational. Check the logs."
         fi
     fi
 fi
@@ -504,7 +568,9 @@ if [ $json_output '==' 1 ]; then
         json_dtm=""\""PROCESS"\"":"\""DTM"\"","\""CONFIGURED"\"":$cfg_dtm_cnt,"\""ACTUAL"\"":$act_dtm_cnt,"\""DOWN"\"":\"${down_dtms[*]}\""
         json_rms=""\""PROCESS"\"":"\""RMS"\"","\""CONFIGURED"\"":$cfg_rms_cnt,"\""ACTUAL"\"":$act_rms_cnt,"\""DOWN"\"":\"${down_rms[*]}\""
         json_mxosrvr=""\""PROCESS"\"":"\""MXOSRVR"\"","\""CONFIGURED"\"":$cfg_mxo_cnt,"\""ACTUAL"\"":$act_mxo_cnt,"\""DOWN"\"":\"${act_mxo_down_cnt}\""
-        echo "[{$json_dtm},{$json_rms},{$json_mxosrvr}]" 
+        json_dcsmaster=""\""PROCESS"\"":"\""DCSMASTER"\"","\""CONFIGURED"\"":$cfg_dcsmaster_cnt,"\""ACTUAL"\"":$actual_dcsmaster_cnt,"\""DOWN"\"":\"${down_dcsmaster_cnt}\""        
+        json_restserver=""\""PROCESS"\"":"\""RESTSERVER"\"","\""CONFIGURED"\"":$cfg_restserver_cnt,"\""ACTUAL"\"":$actual_restserver_cnt,"\""DOWN"\"":\"${down_restserver_cnt}\""
+        echo "[{$json_dtm},{$json_rms},{$json_dcsmaster},{$json_mxosrvr}, {$json_restserver}]" 
     elif [[ $sqck_component == "dtm" ]]; then
         json_dtm=""\""PROCESS"\"":"\""DTM"\"","\""CONFIGURED"\"":$cfg_dtm_cnt,"\""ACTUAL"\"":$act_dtm_cnt,"\""DOWN"\"":\"${down_dtms[*]}\""
         echo "[{$json_dtm}]" 
@@ -513,7 +579,11 @@ if [ $json_output '==' 1 ]; then
         echo "[{$json_rms}]" 
     elif [[ $sqck_component == "dcs" ]]; then
         json_mxosrvr=""\""PROCESS"\"":"\""MXOSRVR"\"","\""CONFIGURED"\"":$cfg_mxo_cnt,"\""ACTUAL"\"":$act_mxo_cnt,"\""DOWN"\"":\"${act_mxo_down_cnt}\""
-        echo "[{$json_mxosrvr}]" 
+        json_dcsmaster=""\""PROCESS"\"":"\""DCSMASTER"\"","\""CONFIGURED"\"":$cfg_dcsmaster_cnt,"\""ACTUAL"\"":$actual_dcsmaster_cnt,"\""DOWN"\"":\"${down_dcsmaster_cnt}\""        
+        echo "[{$json_dcsmaster},{$json_mxosrvr}]" 
+    elif [[ $sqck_component == "rest" ]]; then
+        json_restserver=""\""PROCESS"\"":"\""RESTSERVER"\"","\""CONFIGURED"\"":$cfg_restserver_cnt,"\""ACTUAL"\"":$actual_restserver_cnt,"\""DOWN"\"":\"${down_restserver_cnt}\""
+        echo "[{$json_restserver}]"
     fi
 else
     echo
@@ -525,6 +595,7 @@ else
         echo -e "DcsMaster\t$cfg_dcsmaster_cnt\t\t$actual_dcsmaster_cnt\t    $down_dcsmaster_cnt"
         echo -e "DcsServer\t$cfg_dcsserver_cnt\t\t$actual_dcsserver_cnt\t    $down_dcsserver_cnt"
         echo -e "mxosrvr\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t    ${act_mxo_down_cnt}\n"
+        echo -e "RestServer\t$cfg_restserver_cnt\t\t$actual_restserver_cnt\t    $down_restserver_cnt\n"
     elif [[ $sqck_component == "dtm" ]]; then
         echo -e "DTM\t\t$cfg_dtm_cnt\t\t$act_dtm_cnt\t    ${down_dtms[*]}\n"
     elif [[ $sqck_component == "rms" ]]; then
@@ -533,6 +604,8 @@ else
         echo -e "DcsMaster\t$cfg_dcsmaster_cnt\t\t$actual_dcsmaster_cnt\t    $down_dcsmaster_cnt"
         echo -e "DcsServer\t$cfg_dcsserver_cnt\t\t$actual_dcsserver_cnt\t    $down_dcsserver_cnt"
         echo -e "mxosrvr\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t    ${act_mxo_down_cnt}\n"
+    elif [[ $sqck_component == "rest" ]]; then
+        echo -e "RestServer\t$cfg_restserver_cnt\t\t$actual_restserver_cnt\t    $down_restserver_cnt\n"
     fi
 fi
 
@@ -545,7 +618,7 @@ if [ $sq_up '==' 1 ]; then
 elif ( [ $total_procs_result '==' 0 ] ); then
     if [ $json_output '==' 0 ]; then
         echo
-        echo "The SQ environment is down."
+        echo "The Trafodion environment is down."
     fi
     exit -1;
 else

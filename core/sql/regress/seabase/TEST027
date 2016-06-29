@@ -20,14 +20,13 @@
 -- @@@ END COPYRIGHT @@@
 --
 -- tests for support of multiple column families
+-- tests for alter table alter column
+-- tests for reserved words usage in create/add/alter stmts
 
 create schema trafodion.sch027;
 set schema trafodion.sch027;
 
-drop table if exists t027t01;
-drop table if exists t027t011;
-drop table t027t02;
-drop table t027t03;
+obey TEST027(clean_up);
 
 log LOG027 clear;
 
@@ -178,8 +177,156 @@ create table t027t02 (
      a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
     a30.a30 int, a31.a31 int) attribute default column family 'cf';
 
+-- tests for alter varchar column 
+drop table if exists t027t7;
+create table t027t7(a int not null, b varchar(2), 
+   c varchar(4) character set utf8 not null, z int not null primary key)
+salt using 2 partitions;
+
+invoke t027t7;
+insert into t027t7 values (1, 'ab', 'cd', 10);
+select * from t027t7;
+alter table t027t7 alter column b varchar(3);
+invoke t027t7;
+alter table t027t7 alter column c varchar(5) character set utf8;
+invoke t027t7;
+alter table t027t7 alter column c varchar(4) character set utf8;
+invoke t027t7;
+
+alter table t027t7 alter column a largeint;
+invoke t027t7;
+alter table t027t7 alter column b varchar(4) character set utf8;
+invoke t027t7;
+alter table t027t7 alter column c varchar(6);
+invoke t027t7;
+alter table t027t7 alter column b varchar(2);
+invoke t027t7;
+alter table t027t7 alter column a int;
+invoke t027t7;
+alter table t027t7 alter column a smallint default 0 not null;
+invoke t027t7;
+select * from t027t7;
+
+-- aligned format
+drop table if exists t027t7 cascade;
+create table t027t7(a int not null, b varchar(2), 
+   c varchar(4) character set utf8 not null, z int not null primary key)
+salt using 2 partitions attribute aligned format;
+invoke t027t7;
+insert into t027t7 values (1, 'ab', 'cd', 10);
+select * from t027t7;
+alter table t027t7 alter column a largeint;
+invoke t027t7;
+select * from t027t7;
+alter table t027t7 drop column b;
+invoke t027t7;
+select * from t027t7;
+alter table t027t7 add column b char(10) default 'abc' not null;
+invoke t027t7;
+select * from t027t7;
+alter table t027t7 drop column b;
+invoke t027t7;
+select * from t027t7;
+create view t027v1 as select * from t027t7;
+get all views on table t027t7;
+invoke t027v1;
+alter table t027t7 alter column a smallint;
+invoke t027v1;
+
+-- negative tests for alter/drop column
+alter table t027t7 alter column b int;
+alter table t027t7 alter column a char(10);
+alter table t027t7 alter column c char(1);
+alter table t027t7 drop column e;
+alter table t027t7 drop column a;
+alter table t027v1 alter column a smallint;
+get all views on table t027t7;
+
+-- tests for alter column rename
+drop table if exists t027t7 cascade;
+create table t027t7(a int not null, b varchar(2), 
+   c varchar(4) character set utf8 not null, z int not null primary key)
+salt using 2 partitions;
+create index t027t7i1 on t027t7(b);
+insert into t027t7 values (1, 'ab', 'cd', 10);
+invoke t027t7;
+select * from t027t7;
+alter table t027t7 alter column b rename to bb;
+invoke t027t7;
+select * from t027t7;
+alter table t027t7 alter column z rename to zz;
+invoke t027t7;
+select * from t027t7;
+create view t027v1(zz) as select zz from t027t7;
+alter table t027t7 alter column c rename to cc;
+create view t027v2(zz) as select zz from t027t7 where cc = 'a';
+showddl t027v2;
+
+-- negative tests for alter column rename
+alter table t027t7 alter column zz rename to a;
+alter table t027t7 alter column "_SALT_" rename to nosalt;
+alter table t027t7 alter column cc rename to "_SALT_";
+alter table t027t7 alter column zz rename to zzz;
+alter table t027t7 alter column cc rename to ccc;
+
+-- alter col with views
+drop table if exists t027t7 cascade;
+create table t027t7 (a varchar(10), b int);
+create view t027v1 as select * from t027t7;
+create view t027v12 as select * from t027v1;
+create view t027v11 as select * from t027t7;
+create view t027v122 as select * from t027v12;
+create view t027v113 as select * from t027v11;
+get all views on table t027t7;
+alter table t027t7 alter column a varchar(20);
+get all views on table t027t7;
+
+-- some alter operations cannot be performed within a user xn
+cqd ddl_transactions 'ON';
+begin work;
+alter table t027t7 drop column b;
+rollback work;
+begin work;
+alter table t027t7 alter column b largeint;
+rollback work;
+
+-- reserved words cannot be used as colnames in create/add/alter stmts
+drop table if exists t027t7 cascade;
+create table t027t7 (syskey int);
+create table t027t7 ("_SALT_" int);
+create table t027t7 ("_DIVISION_2_" int);
+create table t027t7 (a int not null primary key);
+alter table t027t7 add column "_SALT_" int;
+alter table t027t7 alter column a rename to SYSKEY;
+
+-- if cqd is specified, then reserved cols can be used. 
+-- Use this cqd carefully.
+cqd traf_allow_reserved_colnames 'ON';
+drop table if exists t027t7 cascade;
+create table t027t7 (syskey int not null primary key, b int);
+alter table t027t7 add column "_DIVISION_1" int;
+alter table t027t7 alter column b rename to "_SALT_";
+invoke t027t7;
+
+-- not null and default clause can appear in any order
+drop table if exists t027t1 cascade;
+create table t027t1 (a int, b int not null, c int default 10,
+   d int default 10 not null, e int not null default 10, 
+   f int not null default 10 check (f > 0),
+   g int not null not droppable default 10);
+invoke t027t1;
+insert into t027t1 (b) values (10);
+select * from t027t1;
+alter table t027t1 add column h int not null default 10;
+invoke t027t1;
+select * from t027t1;
+
+--should give error
+create table t027t2 (a int default 10 not null default 20);
 
 -- cleanup
+?section clean_up
+drop table if exists t027t7 cascade;
 drop table if exists t027t01;
 drop table if exists t027t02;
 drop table if exists t027t011;

@@ -94,7 +94,7 @@ char * ExpLOBoper::ExpGetLOBDescHandleObjNamePrefix(Int64 uid,
   if (outBufLen < 512)
     return NULL;
   
-  str_sprintf(outBuf, "LOBDescHandle_%020Ld", uid);
+  str_sprintf(outBuf, "%s_%020Ld", LOB_DESC_HANDLE_PREFIX,uid);
   
   return outBuf;
 }
@@ -107,8 +107,8 @@ char * ExpLOBoper::ExpGetLOBDescHandleName(Lng32 schNameLen, char * schName,
       (schName == NULL))
     return NULL;
   
-  str_sprintf(outBuf, "%s.\"LOBDescHandle_%020Ld_%04d\"",
-	      schName, uid, num);
+  str_sprintf(outBuf, "%s.\"%s_%020Ld_%04d\"",
+	      schName, LOB_DESC_HANDLE_PREFIX,uid, num);
   
   return outBuf;
 }
@@ -116,7 +116,7 @@ char * ExpLOBoper::ExpGetLOBDescHandleName(Lng32 schNameLen, char * schName,
 Lng32 ExpLOBoper::ExpGetLOBnumFromDescName(char * descName, Lng32 descNameLen)
 {
   // Desc Name Format: LOBDescHandle_%020Ld_%04d
-  char * lobNumPtr = &descName[strlen("LOBDescHandle_") + 20 + 1];
+  char * lobNumPtr = &descName[sizeof(LOB_DESC_HANDLE_PREFIX) + 20 + 1];
   Lng32 lobNum = str_atoi(lobNumPtr, 4);
   
   return lobNum;
@@ -131,26 +131,13 @@ char * ExpLOBoper::ExpGetLOBDescChunksName(Lng32 schNameLen, char * schName,
       (schName == NULL))
     return NULL;
   
-  str_sprintf(outBuf, "%s.\"LOBDescChunks_%020Ld_%04d\"",
-	      schName, uid, num);
+  str_sprintf(outBuf, "%s.\"%s_%020Ld_%04d\"",
+	      schName, LOB_DESC_CHUNK_PREFIX,uid, num);
 
   return outBuf;
 }
 
-char * ExpLOBoper::ExpGetLOBHdrName(Lng32 schNameLen, char * schName,
-				    Int64 uid, Lng32 num, 
-				    char * outBuf, Lng32 outBufLen)
-{
-  if ((outBufLen < 512) ||
-      (schNameLen == 0) ||
-      (schName == NULL))
-    return NULL;
 
-  str_sprintf(outBuf, "%s.\"LOBHdr_%020Ld_%04d\"",
-	      schName, uid, num);
-
-  return outBuf;
-}
 
 char * ExpLOBoper::ExpGetLOBMDName(Lng32 schNameLen, char * schName,
 				    Int64 uid,  
@@ -159,14 +146,14 @@ char * ExpLOBoper::ExpGetLOBMDName(Lng32 schNameLen, char * schName,
   if (outBufLen < 512)
     return NULL;
 
-  str_sprintf(outBuf, "%s.\"LOBMD_%020Ld\"",
-	      schName, uid);
+  str_sprintf(outBuf, "%s.\"%s_%020Ld\"",
+	      schName, LOB_MD_PREFIX,uid);
 
   return outBuf;
 }
 Lng32 ExpLOBoper::createLOB(void * lobGlob, void * lobHeap, 
-			    char * lobLoc,
-			    Int64 uid, Lng32 num, Int64 lobMaxSize)
+			    char * lobLoc,Int32 hdfsPort,char *hdfsServer,
+			    Int64 uid, Lng32 num, Int64 lobMaxSize )
 {
   char buf[100];
   
@@ -186,13 +173,114 @@ Lng32 ExpLOBoper::createLOB(void * lobGlob, void * lobHeap,
   else
     lobGlobL = lobGlob;
 
-  rc = ExpLOBinterfaceCreate(lobGlobL, lobName, lobLoc, Lob_HDFS_File,(char *)"default",lobMaxSize);
+  rc = ExpLOBinterfaceCreate(lobGlobL, lobName, lobLoc, Lob_HDFS_File,hdfsServer,lobMaxSize, hdfsPort);
 
   return rc;
 }
+void ExpLOBoper::calculateNewOffsets(ExLobInMemoryDescChunksEntry *dcArray, Lng32 numEntries)
+{
+  Int32 i = 0;
+  //Check if there is a hole right up front for the first entry. If so start compacting with the first entry.
+  if (dcArray[0].getCurrentOffset() != 0)
+    {
+      dcArray[0].setNewOffset(0);
+      for (i = 1; i < numEntries; i++)
+        {
+          dcArray[i].setNewOffset(dcArray[i-1].getNewOffset() + dcArray[i-1].getChunkLen());
+        }
+    }
+  else
+    //Look for the first unused section and start compacting from there.
+    {
+      NABoolean done = FALSE;
+      i = 0;
+      Int32 j = 0;
+      while (i < numEntries && !done )
+        {
+          if ((dcArray[i].getCurrentOffset()+dcArray[i].getChunkLen()) != 
+              dcArray[i+1].getCurrentOffset())
+            {
+              j = i+1;
+              while (j < numEntries)
+                {
+                   dcArray[j].setNewOffset(dcArray[j-1].getNewOffset()+dcArray[j-1].getChunkLen());
+                   j++;
+                }
+              done = TRUE;
+            }
+          i++;
+        }
+    }
+  return ;
+}
+
+Lng32 ExpLOBoper::compactLobDataFile(void *lobGlob,ExLobInMemoryDescChunksEntry *dcArray,Int32 numEntries,char *tgtLobName,Int64 lobMaxChunkMemSize, void *lobHeap, char *hdfsServer, Int32 hdfsPort, char *lobLoc)
+{
+  Int32 rc = 0;
+  void * lobGlobL = NULL;
+  // Call ExeLOBinterface to create the LOB
+  if (lobGlob == NULL)
+    {
+      rc = initLOBglobal(lobGlobL, lobHeap);
+      if (rc)
+	return -1;
+    }
+  else
+    lobGlobL = lobGlob;
+ 
+  if (rc)
+	return -1;
+   
+  rc = ExpLOBinterfacePerformGC(lobGlobL,tgtLobName, (void *)dcArray, numEntries,hdfsServer,hdfsPort,lobLoc,lobMaxChunkMemSize);
+  
+  return rc;
+}
+
+Int32 ExpLOBoper::restoreLobDataFile(void *lobGlob, char *lobName, void *lobHeap, char *hdfsServer, Int32 hdfsPort, char *lobLoc)
+{
+  Int32 rc = 0;
+  void * lobGlobL = NULL;
+   if (lobGlob == NULL)
+    {
+      rc = initLOBglobal(lobGlobL, lobHeap);
+      if (rc)
+	return -1;
+    }
+  else
+    lobGlobL = lobGlob;
+ 
+  if (rc)
+    return -1;
+    
+  rc = ExpLOBinterfaceRestoreLobDataFile(lobGlobL,hdfsServer,hdfsPort,lobLoc,lobName);
+   return rc;
+
+}
+
+Int32 ExpLOBoper::purgeBackupLobDataFile(void *lobGlob,char *lobName, void *lobHeap, char * hdfsServer, Int32 hdfsPort, char *lobLoc)
+{
+  Int32 rc = 0;
+  void * lobGlobL = NULL;
+  if (lobGlob == NULL)
+    {
+      rc = initLOBglobal(lobGlobL, lobHeap);
+      if (rc)
+	return -1;
+    }
+  else
+    lobGlobL = lobGlob;
+  
+  if (rc)
+    return -1;
+  
+
+  rc = ExpLOBinterfacePurgeBackupLobDataFile(lobGlobL,(char *)hdfsServer,hdfsPort,lobLoc,lobName);
+  return rc;
+}
+
 
 Lng32 ExpLOBoper::dropLOB(void * lobGlob, void * lobHeap,
-			  char * lobLoc,
+			  char * lobLoc,Int32 hdfsPort, char *hdfsServer,
 			  Int64 uid, Lng32 num)
 {
   char buf[101];
@@ -214,12 +302,13 @@ Lng32 ExpLOBoper::dropLOB(void * lobGlob, void * lobHeap,
     lobGlobL = lobGlob;
 
   // Call ExeLOBinterface to drop the LOB
-  rc = ExpLOBinterfaceDrop(lobGlobL,(char *)"default", 0, lobName, lobLoc);
+  rc = ExpLOBinterfaceDrop(lobGlobL,hdfsServer, hdfsPort, lobName, lobLoc);
 
   return rc;
 }
 
 Lng32 ExpLOBoper::purgedataLOB(void * lobGlob, char * lobLoc, 
+                               
 			       Int64 uid, Lng32 num)
 {
   char buf[100];
@@ -229,7 +318,7 @@ Lng32 ExpLOBoper::purgedataLOB(void * lobGlob, char * lobLoc,
     return -1;
 
   // Call ExeLOBinterface to purgedata the LOB
-  Lng32 rc = ExpLOBInterfacePurgedata(lobGlob,(char *)"default", 0, lobName, lobLoc);
+  Lng32 rc = ExpLOBInterfacePurgedata(lobGlob, lobName, lobLoc);
   if (rc < 0)
     return ex_expr::EXPR_ERROR;
 
@@ -252,11 +341,13 @@ ExpLOBoper::ExpLOBoper(OperatorTypeEnum oper_type,
   lobHandleSaved_[0] = 0;
   lobStorageLocation_[0] = 0;
   lobHdfsServer_[0] = 0;
-  strcpy(lobHdfsServer_,"default");
-  lobHdfsPort_ = 0;
+  strcpy(lobHdfsServer_,"");
+  lobHdfsPort_ = -1;
   descSchName_[0] = 0;
+  lobSize_ = 0;
   lobMaxSize_ = 0;
   lobMaxChunkMemSize_ = 0;
+  lobGCLimit_ = 0;
 };
 
 
@@ -299,7 +390,7 @@ Lng32 findNumDigits(Int64 val)
 // <--4--><--4---><----8----><---8---><--8---><-----2----><--vc--->
 void ExpLOBoper::genLOBhandle(Int64 uid, 
 			      Lng32 lobNum,
-			      short lobType,
+			      Int32 lobType,
 			      Int64 descKey, 
 			      Int64 descTS,
 			      Lng32 flags,
@@ -310,8 +401,7 @@ void ExpLOBoper::genLOBhandle(Int64 uid,
 {
   LOBHandle * lobHandle = (LOBHandle*)ptr;
   lobHandle->flags_ = flags;
-  lobHandle->lobType_ = (char)lobType;
-  lobHandle->filler1_ = 0;
+  lobHandle->lobType_ = lobType;
   lobHandle->lobNum_ = lobNum;
   lobHandle->objUID_ = uid;
   lobHandle->descSyskey_ = descKey;
@@ -331,14 +421,12 @@ void ExpLOBoper::genLOBhandle(Int64 uid,
 }
 
 void ExpLOBoper::updLOBhandle(Int64 descSyskey, 
-			      Lng32 flags,
+			      Lng32 flags,                            
 			      char * ptr)
 {
   LOBHandle * lobHandle = (LOBHandle*)ptr;
-  lobHandle->flags_ = flags;
-  //  lobHandle->lobLen_ = lobLen;
+  lobHandle->flags_ = flags;  
   lobHandle->descSyskey_ = descSyskey;
-  //  lobHandle->numChunks_ = numChunks;
 }
 
 // Extracts values from the LOB handle stored at ptr
@@ -388,7 +476,7 @@ void ExpLOBoper::createLOBhandleString(Int16 flags,
 				       char * schName,
 				       char * lobHandleBuf)
 {
-  str_sprintf(lobHandleBuf, "LOBH%04d%02d%04d%020Ld%02d%Ld%02d%Ld%03d%s",
+  str_sprintf(lobHandleBuf, "LOBH%04d%04d%04d%020Ld%02d%Ld%02d%Ld%03d%s",
 	      flags, lobType, lobNum, uid,
 	      findNumDigits(descKey), descKey, 
 	      findNumDigits(descTS), descTS,
@@ -432,7 +520,7 @@ Lng32 ExpLOBoper::extractFromLOBstring(Int64 &uid,
   curPos += 4;
 
   lobType = (Lng32)str_atoi(&handle[curPos], 2);
-  curPos += 2;
+  curPos += 4;
 
   lobNum = (Lng32)str_atoi(&handle[curPos], 4);
   curPos += 4;
@@ -620,6 +708,15 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   char * result = op_data[0];
 
   // get the lob name where data need to be inserted
+  if (lobNum() == -1)
+    {
+      Int32 intparam = LOB_PTR_ERROR;
+      Int32 detailError = 0;
+     
+      ExRaiseSqlError(h, diagsArea, 
+		      (ExeErrorCode)(8434));
+      return ex_expr::EXPR_ERROR;
+    }
   char tgtLobNameBuf[100];
   char * tgtLobName = ExpGetLOBname(objectUID_, lobNum(), tgtLobNameBuf, 100);
 
@@ -660,6 +757,8 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
     so = Lob_Foreign_Lob;
   else if (fromBuffer())
     so = Lob_Buffer;
+  else if (fromExternal())
+    so = Lob_External;
 
   
 
@@ -689,7 +788,7 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   char * lobData = NULL;
   lobData= new(h) char[lobLen];
   //send lobData only if it's a lob_file operation
-  if (so == Lob_File)
+  if ((so == Lob_File) || (so == Lob_External))
     {
       str_cpy_and_null(lobData,op_data[1],lobLen,'\0',' ',TRUE);
       
@@ -706,7 +805,13 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
     lo = Lob_InsertDataSimple;
   else
     lo = Lob_InsertDesc;
-  
+  Int64 lobMaxSize = 0;
+  if (getLobSize() > 0)
+    {
+      lobMaxSize = MINOF(getLobSize(), getLobMaxSize());
+    }
+  else
+    lobMaxSize = getLobMaxSize();
     
   rc = ExpLOBInterfaceInsert
     (getExeGlobals()->lobGlobal(), 
@@ -725,7 +830,7 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
      &cliError,
      so,
      waitedOp,
-     lobData, lobLen, getLobMaxSize(), getLobMaxChunkMemSize());
+     lobData, lobLen, lobMaxSize, getLobMaxChunkMemSize(),getLobGCLimit());
   
   if (rc == LOB_ACCESS_PREEMPT)
     {
@@ -742,14 +847,15 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
       ExRaiseSqlError(h, diagsArea, 
 		      (ExeErrorCode)(8442), NULL, &intParam1, 
 		      &cliError, NULL, (char*)"ExpLOBInterfaceInsert",
-		      getLobErrStr(intParam1));
+		      (char*)"ExpLOBInterfaceInsert",getLobErrStr(intParam1));
       return ex_expr::EXPR_ERROR;
     }
 
   // extract and update lob handle with the returned values
   if (outHandleLen_ > 0)
     {
-      ExpLOBoper::extractFromLOBhandle(NULL, NULL, NULL, NULL, &descSyskey,
+      Int32 lobType = 0;
+      ExpLOBoper::extractFromLOBhandle(NULL, &lobType, NULL, NULL, &descSyskey,
 				       NULL, NULL, NULL, outLobHandle_);
       
       ExpLOBoper::updLOBhandle(descSyskey, 0, lobHandle); 
@@ -805,6 +911,11 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
   lobLen = getOperand(1)->getLength();
   
   char * lobData = NULL;
+  if (fromExternal())
+    {
+      //no need to insert any data. All data resides in the external file
+      return ex_expr::EXPR_OK;
+    }
   if(fromFile())
     {
       lobData = new (h) char[lobLen];  
@@ -835,6 +946,8 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
     so = Lob_Foreign_Lob;
   else if(fromBuffer())
     so = Lob_Buffer;
+  else if (fromExternal())
+    so = Lob_External;
 
  
   Lng32 waitedOp = 0;
@@ -891,7 +1004,9 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
 				 so,
 				 waitedOp,				 
 				 lobData,
-				 lobLen,getLobMaxSize(), getLobMaxChunkMemSize());
+				 lobLen,getLobMaxSize(),
+                                 getLobMaxChunkMemSize(),
+                                 getLobGCLimit());
     }
 
   if (rc == LOB_ACCESS_PREEMPT)
@@ -905,7 +1020,7 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
       ExRaiseSqlError(h, diagsArea, 
 		      (ExeErrorCode)(8442), NULL, &intParam1, 
 		      &cliError, NULL, (char*)"ExpLOBInterfaceInsert",
-		      getLobErrStr(intParam1));
+		      (char*)"ExpLOBInterfaceInsert",getLobErrStr(intParam1));
       return ex_expr::EXPR_ERROR;
     }
 
@@ -921,9 +1036,7 @@ ex_expr::exp_return_type ExpLOBinsert::eval(char *op_data[],
   err = insertDesc(op_data, h, diagsArea);
   if (err == ex_expr::EXPR_ERROR)
     return err;
-
-  if (fromExternal())
-    return err;
+    
 
 #ifndef __EID
   char * handle = op_data[0];
@@ -1023,7 +1136,7 @@ ex_expr::exp_return_type ExpLOBdelete::eval(char *op_data[],
       ExRaiseSqlError(h, diagsArea, 
 		      (ExeErrorCode)(8442), NULL, &intParam1, 
 		      &cliError, NULL, (char*)"ExpLOBInterfaceDelete",
-		      getLobErrStr(intParam1));
+		      (char*)"ExpLOBInterfaceDelete",getLobErrStr(intParam1));
       return ex_expr::EXPR_ERROR;
     }
 
@@ -1147,6 +1260,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 		       &sSchNameLen, sSchName,
 		       lobHandle); //op_data[2]);
 
+  
   // get the lob name where data need to be updated
   char tgtLobNameBuf[100];
   char * tgtLobName = ExpGetLOBname(sUid, sLobNum, tgtLobNameBuf, 100);
@@ -1186,7 +1300,15 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
     so = Lob_Foreign_Lob;
   else if (fromBuffer())
     so= Lob_Buffer;
-
+  else if (fromExternal())
+    so = Lob_External;
+  Int64 lobMaxSize = 0;
+  if (getLobSize() > 0)
+    {
+      lobMaxSize = MINOF(getLobSize(), getLobMaxSize());
+    }
+  else
+    lobMaxSize = getLobMaxSize();
   Lng32 waitedOp = 0;
 #ifdef __EID
   waitedOp = 0; // nowaited op from EID/TSE process
@@ -1231,7 +1353,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 	 data,
 	 fromLobName, fromSchNameLen, fromSchName,
 	 fromDescKey, fromDescTS,
-	 getLobMaxSize(), getLobMaxChunkMemSize());
+	 lobMaxSize, getLobMaxChunkMemSize(),getLobGCLimit());
     }
   else
     {
@@ -1254,7 +1376,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 	 data,
 	 fromLobName, fromSchNameLen, fromSchName,
 	 fromDescKey, fromDescTS,
-	 getLobMaxSize(), getLobMaxChunkMemSize());
+	 lobMaxSize, getLobMaxChunkMemSize(),getLobGCLimit());
     }
 
   if (rc < 0)
@@ -1263,7 +1385,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
       ExRaiseSqlError(h, diagsArea, 
 		      (ExeErrorCode)(8442), NULL, &intParam1, 
 		      &cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
-		      getLobErrStr(intParam1));
+		      (char*)"ExpLOBInterfaceUpdate",getLobErrStr(intParam1));
       return ex_expr::EXPR_ERROR;
     }
 
@@ -1457,7 +1579,7 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
 	  ExRaiseSqlError(h, diagsArea, 
 			  (ExeErrorCode)(8442), NULL, &intParam1, 
 			  &cliError, NULL, (char*)"ExpLOBInterfaceSelect",
-			  getLobErrStr(intParam1));
+			  (char*)"ExpLOBInterfaceSelect",getLobErrStr(intParam1));
 	  return ex_expr::EXPR_ERROR;
 	}
 

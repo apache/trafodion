@@ -39,8 +39,9 @@ obey TEST015(setup);
 cqd COMPRESSED_INTERNAL_FORMAT 'ON';
 cqd COMPRESSED_INTERNAL_FORMAT_BMO 'ON';
 cqd COMPRESSED_INTERNAL_FORMAT_DEFRAG_RATIO '100';
-cqd query_cache '0';
 cqd HIVE_NUM_ESPS_PER_DATANODE '3';
+
+cqd auto_query_retry_warnings 'ON';
 
 obey TEST015(test_bulk_load_simple);
 
@@ -64,6 +65,7 @@ drop table t015t3 cascade;
 drop table t015t4 cascade;
 drop table t015t5 cascade;
 drop table t015t6 cascade;
+drop table "customer_address_delim" ;
 
 ?section setup
 --------------------------------------------------------------------------
@@ -523,7 +525,7 @@ drop index cd_dep_college_count_IDX2;
 -----
 drop table customer_address cascade;
 
-create table customer_address
+create table "customer_address_delim"
 (
   ca_address_sk        int not null,
   ca_address_id        char(16),
@@ -541,24 +543,23 @@ create table customer_address
   primary key (ca_address_sk)
 )
 salt using 4 partitions
-
 HBASE_OPTIONS (data_block_encoding = 'FAST_DIFF', compression = 'GZ') 
 ;
 
 select count(*) from hive.hive.customer_address  where ca_address_sk <= 5000;
-select count(*) from customer_address;
+select count(*) from "customer_address_delim";
 
 prepare s from 
-load transform into customer_address 
+load transform into "customer_address_delim" 
 select * from hive.hive.customer_address  where ca_address_sk <= 5000;                                                                                              
 explain options 'f' s;
 
-load   into customer_address 
+load   into "customer_address_delim" 
 select * from hive.hive.customer_address  where ca_address_sk <= 5000;                                                                                                   
 
-select count(*) from customer_address;
+select count(*) from "customer_address_delim";
 
-select [first 20] * from customer_address order by ca_address_sk ;
+select [first 20] * from "customer_address_delim" order by ca_address_sk ;
 
 cqd attempt_esp_parallelism 'off';
 load with no output into t015t4 select a,a,a from t015t1;

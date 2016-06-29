@@ -88,20 +88,7 @@ typedef Int32			ComUserID;
 
 typedef NABoolean               ComBoolean;
 
-
-// Defines for special users and roles
-#define DB__HIVEROLE      "DB__HIVEROLE"
-#define DB__HBASEROLE      "DB__HBASEROLE"
-#define DB__ROOTROLE            "DB__ROOTROLE"
-#define DB__ROOT                "DB__ROOT"
-#define SUPER_USER_LIT "33333"
-
-#define SYSTEM_USER -2
-#define PUBLIC_USER -1
-#define SUPER_USER 33333          // user id of DB__ROOT
-
-#define HIVE_ROLE_ID 1490000      // role id of DB__HIVEROLE
-#define HBASE_ROLE_ID 1490001     // role id of DB__HBASEROLE
+// user and role definitions have been moved to NAUserId.h
 
 // Defaults for system attributes
 #define SMD_LOCATION  "$SYSTEM"
@@ -130,12 +117,17 @@ typedef NABoolean               ComBoolean;
 #define HBASE_STATS_CATALOG          "TRAFODION"
 #define HBASE_STATS_SCHEMA           "\"_HBASESTATS_\""
 
+// default null format for data in hive files.
+#define HIVE_DEFAULT_NULL_STRING             "\\N"
+
 #define TRAFODION_SYSCAT_LIT              "TRAFODION"
 #define SEABASE_SYSTEM_SCHEMA           "SEABASE"
 #define SEABASE_OLD_PRIVMGR_SCHEMA         "PRIVMGR_MD"
 #define SEABASE_PRIVMGR_SCHEMA         "_PRIVMGR_MD_"
 #define SEABASE_UDF_SCHEMA             "_UDF_"
-
+#define LOB_MD_PREFIX                  "LOBMD_"
+#define LOB_DESC_CHUNK_PREFIX          "LOBDescChunks_"
+#define LOB_DESC_HANDLE_PREFIX         "LOBDescHandle_"
 #define SEABASE_DEFAULT_COL_FAMILY "#1"
 
 // reserved names for seabase metadata where SQL table information is kept
@@ -181,6 +173,16 @@ typedef NABoolean               ComBoolean;
 #define REPOS_METRIC_TEXT_TABLE  "METRIC_TEXT_TABLE"
 
 #define SEABASE_REGRESS_DEFAULT_SCHEMA "SCH"
+
+// Trafodion system library and procedures reserved schema
+// Procedures are defined in CmpSeabaseDDLroutine.h
+#define SEABASE_LIBMGR_SCHEMA "_LIBMGR_"
+#define SEABASE_LIBMGR_LIBRARY "DB__LIBMGRNAME"
+
+// reserved column names for traf internal system usage
+#define TRAF_SALT_COLNAME "_SALT_"
+#define TRAF_DIVISION_COLNAME_PREFIX "_DIVISION_"
+#define TRAF_SYSKEY_COLNAME "SYSKEY"
 
 // length of explain_plan column in metric_query_table.
 // explain_plan greater than this length are chunked and store in multiple
@@ -573,6 +575,7 @@ enum ComColumnClass { COM_UNKNOWN_CLASS
                     , COM_USER_COLUMN
                     , COM_ADDED_USER_COLUMN
                     , COM_MV_SYSTEM_ADDED_COLUMN
+                    , COM_ALTERED_USER_COLUMN
                     };
 
 #define COM_UNKNOWN_CLASS_LIT               "  "
@@ -580,6 +583,7 @@ enum ComColumnClass { COM_UNKNOWN_CLASS
 #define COM_USER_COLUMN_LIT                 "U "
 #define COM_ADDED_USER_COLUMN_LIT           "A "
 #define COM_MV_SYSTEM_ADDED_COLUMN_LIT      "M "
+#define COM_ALTERED_USER_COLUMN_LIT         "C "
 
 enum ComColumnDefaultClass { COM_CURRENT_DEFAULT
                            , COM_NO_DEFAULT
@@ -790,6 +794,8 @@ enum ComFSDataType { COM_UNKNOWN_FSDT              = -1
                    , COM_VCHAR_FSDT                = REC_BYTE_V_ASCII
                    , COM_VCHAR_DBL_FSDT            = REC_BYTE_V_DOUBLE
                    , COM_VCHAR_LONG_FSDT           = REC_BYTE_V_ASCII_LONG
+                   , COM_SIGNED_BIN8_FSDT          = REC_BIN8_SIGNED
+                   , COM_UNSIGNED_BIN8_FSDT        = REC_BIN8_UNSIGNED
                    , COM_SIGNED_BIN16_FSDT         = REC_BIN16_SIGNED
                    , COM_UNSIGNED_BIN16_FSDT       = REC_BIN16_UNSIGNED
                    , COM_SIGNED_BIN32_FSDT         = REC_BIN32_SIGNED
@@ -987,6 +993,8 @@ enum ComODBCDataType { COM_UNKNOWN_ODT
                      , COM_LONG_VARCHAR_ODT
                      , COM_NUMERIC_SIGNED_ODT
                      , COM_NUMERIC_UNSIGNED_ODT
+                     , COM_TINYINT_SIGNED_ODT
+                     , COM_TINYINT_UNSIGNED_ODT
                      , COM_SMALLINT_SIGNED_ODT
                      , COM_SMALLINT_UNSIGNED_ODT
                      , COM_INTEGER_SIGNED_ODT
@@ -1015,6 +1023,8 @@ enum ComODBCDataType { COM_UNKNOWN_ODT
 #define COM_LONG_VARCHAR_ODT_LIT               "LONG VARCHAR      "
 #define COM_NUMERIC_SIGNED_ODT_LIT             "SIGNED NUMERIC    "
 #define COM_NUMERIC_UNSIGNED_ODT_LIT           "UNSIGNED NUMERIC  "
+#define COM_TINYINT_SIGNED_ODT_LIT             "SIGNED TINYINT    "
+#define COM_TINYINT_UNSIGNED_ODT_LIT           "UNSIGNED TINYINT  "
 #define COM_SMALLINT_SIGNED_ODT_LIT            "SIGNED SMALLINT   "
 #define COM_SMALLINT_UNSIGNED_ODT_LIT          "UNSIGNED SMALLINT "
 #define COM_INTEGER_SIGNED_ODT_LIT             "SIGNED INTEGER    "
@@ -1542,6 +1552,8 @@ enum ComSQLDataType { COM_UNKNOWN_SDT
                     , COM_BPINT_UNSIGNED_SDT
                     , COM_NUMERIC_SIGNED_SDT
                     , COM_NUMERIC_UNSIGNED_SDT
+                    , COM_TINYINT_SIGNED_SDT
+                    , COM_TINYINT_UNSIGNED_SDT
                     , COM_SMALLINT_SIGNED_SDT
                     , COM_SMALLINT_UNSIGNED_SDT
                     , COM_INTEGER_SIGNED_SDT
@@ -1569,6 +1581,8 @@ enum ComSQLDataType { COM_UNKNOWN_SDT
 #define COM_LONG_VARCHAR_SDT_LIT               "LONG VARCHAR      "
 #define COM_NUMERIC_SIGNED_SDT_LIT             "SIGNED NUMERIC    "
 #define COM_NUMERIC_UNSIGNED_SDT_LIT           "UNSIGNED NUMERIC  "
+#define COM_TINYINT_SIGNED_SDT_LIT             "SIGNED TINYINT   "
+#define COM_TINYINT_UNSIGNED_SDT_LIT           "UNSIGNED TINYINT "
 #define COM_SMALLINT_SIGNED_SDT_LIT            "SIGNED SMALLINT   "
 #define COM_SMALLINT_UNSIGNED_SDT_LIT          "UNSIGNED SMALLINT "
 #define COM_INTEGER_SIGNED_SDT_LIT             "SIGNED INTEGER    "
@@ -1860,6 +1874,15 @@ enum ComAuthenticationType{
 #define COM_DBS_FAIL_LIT       "F"
 #define COM_DBS_YES_LIT        "Y"
 #define COM_DBS_NO_LIT         "N"
+
+// used with removeNATable for QI support
+enum ComQiScope 
+  {
+    REMOVE_FROM_ALL_USERS = 100,
+    REMOVE_MINE_ONLY
+  };
+
+
 //
 // (Maximum) size of TEXT.TEXT metadata column in bytes (for NSK) or NAWchars (for SeaQuest)
 //

@@ -225,43 +225,8 @@ skippedfiles=
 testfiles="$prettyfiles"
 prettyfiles=
 
-# skip these tests on all platforms.
-skipTheseTests=""
-
-# skip these tests for SQLMX and SQLMP tables on NSK platform
-if [ $nsk -eq 1 ]; then
-  skipTheseTests="TEST*"
-fi
-
-# skip these tests for RELEASE ONLY tests on NSK
-#if [ "$BUILD_FLAVOR" = "RELEASE" ]; then
-#  skipTheseTests="$skipTheseTests TESTxxx"
-#fi
-
-# skip these tests for DEBUG ONLY tests on NSK
-#if [ "$BUILD_FLAVOR" = "DEBUG" ]; then
-#  skipTheseTests="$skipTheseTests TESTxxx"
-#fi
-
-# skip these tests for NT
-if [ `uname` = "Windows_NT" ]; then
-  skipTheseTests="TEST*"
-fi
-
-
-#skip these tests for Linux
-#if [ `uname` = "Linux" ]; then
-#  skipTheseTests="$skipTheseTests TESTxxx"
-#fi
-
-#skip these tests when seabase eq 1.
-if [ "$seabase" -ne 0 ]; then
-  if [ "$seabase" -eq 1 ]; then
-    skipTheseTests="TEST004"
-  fi
-fi
-#skipTheseTests="TEST020"
-skipTheseTests=
+# skip these tests
+skipTheseTests="TEST020"
 
 # Skip exclusive tests during concurrent execution
 if [ "$REGRCONCURRENT" -ne 0 ]; then
@@ -662,9 +627,9 @@ for i in $prettyfiles; do
     logtxt="### FAIL ($diffsize lines$knownsize)     ###$logtxt"
   fi
   echo $logtxt
-  echo "`date +'%D %T'`  $test 	$logtxt" >> $rgrlog
+  modtime=`stat --printf=%y $log | cut -d'.' -f1`
+  echo "$modtime  $test  $logtxt" >> $rgrlog
   echo
-
 
   # save off the DIFF file for debugging
   if [ $nsk -eq 1 ]; then

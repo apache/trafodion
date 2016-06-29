@@ -81,6 +81,7 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 					   tcb_->columns_, -1,
 					   tcb_->hbaseAccessTdb().readUncommittedScan(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
+					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->useSmallScanner(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
 					   FALSE, 
 					   (tcb_->hbaseFilterColumns_.entries() > 0 ?
@@ -89,6 +90,7 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 					    &tcb_->hbaseFilterOps_ : NULL),
 					   (tcb_->hbaseFilterValues_.entries() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
+                       tcb_->hbaseAccessTdb().getHbasePerfAttributes()->dopParallelScanner(),
 					   tcb_->getSamplePercentage(),
                                            FALSE, 0, NULL, NULL, 0,
                                            (tcb_->hbaseAccessTdb().getHbaseAccessOptions() 
@@ -265,6 +267,7 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 					   tcb_->columns_, -1,
 					   tcb_->hbaseAccessTdb().readUncommittedScan(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
+					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->useSmallScanner(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
 					   FALSE, 
 					   (tcb_->hbaseFilterColumns_.entries() > 0 ?
@@ -273,6 +276,7 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 					    &tcb_->hbaseFilterOps_ : NULL),
 					   (tcb_->hbaseFilterValues_.entries() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
+                       tcb_->hbaseAccessTdb().getHbasePerfAttributes()->dopParallelScanner(),
 					   tcb_->getSamplePercentage(),
                                            FALSE, 0, NULL, NULL, 0,
                                            (tcb_->hbaseAccessTdb().getHbaseAccessOptions() 
@@ -442,6 +446,16 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
   Lng32 retcode = 0;
   rc = 0;
   Lng32 remainingInBatch = batchSize_;
+  NABoolean isFirstBatch = false;
+  // isFirstInBatch is a stack variable for optimization reason. It is used for the mdam small scanner optimization heuristic that
+  // is performed at runtime. Since this function is invoke intensively for all scan (mdam or regular scan), minimizing CPU/memory access
+  // impact on runtime code to a strict minimum is attempted. Given that we are trying to detect if the actual scan is bellow the size
+  // of an HBase block, having the runtime logic performing the detection only affect the first work invoke looks like the right idea.
+  // and leveraging an existing counter (remainingInBatch) instead of creating a new one. The reasonable asumption to allow this is that
+  // 1- batchSize_ being 8K, most likely times the row size, we are good in assuming that first hbase block will fit in batchSize
+  // 2- parent buffer size will be large enough to deal with one HBAse_Block_size without having to rely on re-invoking work in the middle.
+  // and anyway, if none of the reasonable assumption is true, then that's fine, the heuristic won't work, and we will use regular scanner,
+  // meaning optimization is off for the scan part of MDAM (still on for the probe side of it).
 
   while (1)
     {
@@ -465,12 +479,13 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-
+	    isFirstBatch = true;
 	    retcode = tcb_->ehi_->scanOpen(tcb_->table_, 
 					   tcb_->beginRowId_, tcb_->endRowId_,
 					   tcb_->columns_, -1,
 					   tcb_->hbaseAccessTdb().readUncommittedScan(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
+					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->useSmallScanner(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
                                            TRUE,
 					   (tcb_->hbaseFilterColumns_.entries() > 0 ?
@@ -479,6 +494,7 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 					    &tcb_->hbaseFilterOps_ : NULL),
 					   (tcb_->hbaseFilterValues_.entries() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
+                       tcb_->hbaseAccessTdb().getHbasePerfAttributes()->dopParallelScanner(),
                                            tcb_->getSamplePercentage(),
                                            tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getUseSnapshotScan(),
                                            tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getSnapshotScanTimeout(),
@@ -603,6 +619,8 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 
 	case SCAN_CLOSE:
 	  {
+	      if (isFirstBatch) //only if closed happen in a single batch, batchSize - remainingInBatch = nb rows retrieved
+	          tcb_->hbaseAccessTdb().getHbasePerfAttributes()->setUseSmallScannerForMDAMifNeeded(batchSize_ - remainingInBatch); //calculate MDAM small scanner flag for next scan if it was MDAM
 	    retcode = tcb_->ehi_->scanClose();
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanClose"))
 	      step_ = HANDLE_ERROR;
@@ -644,7 +662,9 @@ Lng32 ExHbaseScanSQTaskTcb::getProbeResult(char* &keyData)
 				 tcb_->beginRowId_, tcb_->endRowId_,
 				 tcb_->columns_, -1,
 				 tcb_->hbaseAccessTdb().readUncommittedScan(),
-				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
+				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks() ||
+				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->useSmallScannerForProbes(), // when small scanner feature is ON or SYSTEM force cache ON
+				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->useSmallScannerForProbes(),
 				 probeSize,
 				 TRUE, NULL, NULL, NULL);
   if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))

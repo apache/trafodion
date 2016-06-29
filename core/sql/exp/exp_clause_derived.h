@@ -1542,7 +1542,24 @@ enum conv_case_index {
   CONV_UTF8_F_UCS2_V                   =248,
 
   CONV_BLOB_BLOB                       =249,
-  CONV_BLOB_ASCII_F                    =250
+  CONV_BLOB_ASCII_F                    =250,
+
+  CONV_GBK_F_UTF8_V                    =251,
+
+  // TINYINT conversions
+  CONV_BIN8S_BIN8S                     =252,
+  CONV_BIN8U_BIN8U                     =253,
+  CONV_BIN8S_BIN16S                    =254,
+  CONV_BIN8U_BIN16U                    =255,
+  CONV_BIN16S_BIN8S                    =256,
+  CONV_BIN16U_BIN8U                    =257,
+  CONV_BIN8S_ASCII                     =258,
+  CONV_BIN8U_ASCII                     =259,
+  CONV_BIN16U_BIN8S                    =260,
+  CONV_BIN16S_BIN8U                    =261,
+  CONV_BIN8U_BIN16S                    =262,
+  CONV_ASCII_BIN8S                     =263,
+  CONV_ASCII_BIN8U                     =264
 };
 
 class SQLEXP_LIB_FUNC  ex_conv_clause : public ex_clause {
@@ -1563,7 +1580,8 @@ public:
                             short num_operands = 2, 
 			    NABoolean checkTruncErr = FALSE,
                             NABoolean reverseDataErrorConversionFlag = FALSE,
-                            NABoolean noStringTruncWarnings = FALSE);
+                            NABoolean noStringTruncWarnings = FALSE,
+                            NABoolean convertToNullWhenErrorFlag = FALSE);
 
 
   // Values used for dataConvErrorFlag.
@@ -1696,7 +1714,6 @@ public:
   {
     return alignment_;
   }
-
 private:
   // conv_case_index
   Int16            case_index;           // 00-01
@@ -1718,9 +1735,11 @@ private:
       TREAT_ALL_SPACES_AS_ZERO           = 0x0002,
       ALLOW_SIGN_IN_INTERVAL             = 0x0004,
       NO_DATETIME_VALIDATION             = 0x0008,
-
+       
       // source is a varchar value which is a pointer to the actual data.
-      SRC_IS_VARCHAR_PTR                     = 0x0010
+      SRC_IS_VARCHAR_PTR                     = 0x0010,
+      // when convert into error, suppress error, move null into convert target
+      CONV_TO_NULL_WHEN_ERROR                = 0x0020
     };
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
@@ -1773,7 +1792,13 @@ enum ConvDoItFlags
   //The following flag is set when performing intermediate conversions so
   //that if the conversion fails, error report would specify it as a failure
   //of an intermediate conversion.
-  CONV_INTERMEDIATE_CONVERSION = 0x0080
+  CONV_INTERMEDIATE_CONVERSION = 0x0080,
+
+  // during CAST from string to timestamp, a date value is extended with
+  // zeroed out time part. This flag, if set, disables it.
+  // Used when a TIMESTAMP literal is being created which requires the value
+  // to exactly match the specified type. 
+  CONV_NO_HADOOP_DATE_FIX  = 0x0010
 };
 
 // helper function for convDoIt and ex_conv_clause::pCodeGenerate:

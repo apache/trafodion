@@ -255,7 +255,6 @@ const ComResWord ComResWords::resWords_[] = {
   ComResWord("OCTET_LENGTH",     ANS_|RESWORD_),
   ComResWord("OF",               ANS_|RESWORD_|MPWORD_),
   ComResWord("OFF",              POTANS_|RESWORD_),
-  ComResWord("OID",              POTANS_|RESWORD_),
   ComResWord("OLD",              POTANS_|RESWORD_|ALLOWOLDNEW_),
   ComResWord("ON",               ANS_|RESWORD_|MPWORD_),
   ComResWord("ONLY",             ANS_|RESWORD_),

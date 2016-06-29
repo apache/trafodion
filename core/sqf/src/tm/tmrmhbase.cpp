@@ -402,7 +402,6 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
 
    int len;
    int len_aligned;
-   int buffer_size;
    int index;
    char *ddlbuffer;
    char **buffer_keys;
@@ -437,7 +436,6 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
                          0);
          }
          else {
-            buffer_size = pv_numsplits*pv_keylen;
             buffer_keys = new char *[pv_numsplits];
 
             index = len_aligned;
@@ -480,7 +478,6 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
 
          ddlbuffer = pp_msg->getBuffer();
 
-         buffer_size = pv_numtblopts*pv_tbloptslen;
          buffer_opts = new char *[pv_numtblopts];
 
          index = len_aligned;

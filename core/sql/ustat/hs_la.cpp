@@ -129,9 +129,14 @@ void HSTableDef::setNATable()
     if (isVolatile())
       corrName.setIsVolatile(TRUE);
     Scan scan(corrName, NULL, REL_SCAN, STMTHEAP);
-    ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+    ULng32 flagToSet = 0;  // don't turn on flag unless next 'if' is true
     if (CmpCommon::context()->sqlSession()->volatileSchemaInUse())
-      Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
+      flagToSet = ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME;
+
+    // set ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME bit in Sql_ParserFlags
+    // if needed, and return it to its entry value on exit
+    PushAndSetSqlParserFlags savedParserFlags(flagToSet);
+
     scan.bindNode(&bindWA);
     if (!bindWA.errStatus())
       {
@@ -139,8 +144,6 @@ void HSTableDef::setNATable()
         HS_ASSERT(naTbl_);
         objectType_ = naTbl_->getObjectType();
       }
-    // Restore parser flags to prior settings.
-    Set_SqlParser_Flags (savedParserFlags);
   }
 
 void HSSqTableDef::GetLabelInfo(labelDetail detail)
@@ -444,10 +447,11 @@ void HSSqTableDef::resetRowCounts()
   }
 #endif
 
-Int64 HSSqTableDef::getRowCount(NABoolean &isEstimate)
+Int64 HSSqTableDef::getRowCount(NABoolean &isEstimate,
+                                NABoolean estimateIfNecessary)
   {
     Int64 bogus;
-    return getRowCount(isEstimate, bogus, bogus, bogus, bogus, bogus);
+    return getRowCount(isEstimate, bogus, bogus, bogus, bogus, bogus, estimateIfNecessary);
   }
 
 /***************************************************************************/
@@ -468,6 +472,7 @@ Int64 HSSqTableDef::getRowCount(NABoolean &isEstimate)
 /*              the table since the last update stats using NECESSARY.     */
 /*            numUpdates: an output value, set to the number of updates on */
 /*              the table since the last update stats using NECESSARY.     */
+/*            estimateIfNecessary: not used in this redefinition.          */
 /* RETURN VALUE: The number of rows in the table, -1 if there is an error  */
 /*               reading a partition.                                      */
 /***************************************************************************/
@@ -476,7 +481,8 @@ Int64 HSSqTableDef::getRowCount(NABoolean &isEstimate,
                               Int64 &numDeletes,
                               Int64 &numUpdates,
                               Int64 &numPartitions,
-                              Int64 &minRowCtPerPartition)
+                              Int64 &minRowCtPerPartition,
+                              NABoolean estimateIfNecessary)
   {
     isEstimate = TRUE;
     numInserts =
@@ -652,6 +658,19 @@ Lng32 HSTableDef::getColNum(const char *colName, NABoolean errIfNotFound) const
         if ((&colInfo_[i] != NULL) &&
             (ansiForm == *colInfo_[i].colname))
           {
+            // raise an error when a LOB column is explicitly specified
+            if (DFS2REC::isLOB(colInfo_[i].datatype))
+              {
+                if (LM->LogNeeded())
+                  {
+                    sprintf(LM->msg, "***[ERROR]:  Column (%s) is a LOB column.", colName);
+                    LM->Log(LM->msg);
+                  }
+                HSFuncMergeDiags(-UERR_LOB_STATS_NOT_SUPPORTED, colName);
+                HSHandleError(retcode);
+                return retcode;               
+              }
+
             return i;
           }
       }
@@ -943,7 +962,8 @@ Int64 HSHiveTableDef::getRowCount(NABoolean &isEstimate,
                                   Int64 &numDeletes,
                                   Int64 &numUpdates,
                                   Int64 &numPartitions,
-                                  Int64 &minRowCtPerPartition)
+                                  Int64 &minRowCtPerPartition,
+                                  NABoolean estimateIfNecessary)
 {
   if (minPartitionRows_ == -1)
     {
@@ -960,7 +980,7 @@ Int64 HSHiveTableDef::getRowCount(NABoolean &isEstimate,
   numPartitions = getNumPartitions();
   minRowCtPerPartition = minPartitionRows_;
 
-  return getRowCount(isEstimate);
+  return getRowCount(isEstimate, estimateIfNecessary);
 }
 
 Lng32 HSHiveTableDef::DescribeColumnNames()
@@ -1141,10 +1161,12 @@ Lng32 HSHbaseTableDef::getNumPartitions() const
   return getNATable()->getClusteringIndex()->getCountOfPartitions();
 }
 
-Int64 HSHbaseTableDef::getRowCount(NABoolean &isEstimate)
+Int64 HSHbaseTableDef::getRowCount(NABoolean &isEstimate, NABoolean estimateIfNecessary)
 {
   isEstimate = TRUE;
-  if (!naTbl_->isSeabaseMDTable() && CmpCommon::getDefault(ESTIMATE_HBASE_ROW_COUNT) == DF_ON)
+  if (estimateIfNecessary &&
+      !naTbl_->isSeabaseMDTable() &&
+      CmpCommon::getDefault(USTAT_ESTIMATE_HBASE_ROW_COUNT) == DF_ON)
     return naTbl_->estimateHBaseRowCount();
   else
     return 0;
@@ -1155,7 +1177,8 @@ Int64 HSHbaseTableDef::getRowCount(NABoolean &isEstimate,
                                   Int64 &numDeletes,
                                   Int64 &numUpdates,
                                   Int64 &numPartitions,
-                                  Int64 &minRowCtPerPartition)
+                                  Int64 &minRowCtPerPartition,
+                                  NABoolean estimateIfNecessary)
 {
   // Comparable code for Hive tables:
   //if (minPartitionRows_ == -1)
@@ -1172,7 +1195,7 @@ Int64 HSHbaseTableDef::getRowCount(NABoolean &isEstimate,
   //numPartitions = getNumPartitions();
   //minRowCtPerPartition = minPartitionRows_;
 
-  return getRowCount(isEstimate);
+  return getRowCount(isEstimate, estimateIfNecessary);
 }
 
 Lng32 HSHbaseTableDef::DescribeColumnNames()

@@ -163,11 +163,10 @@ public:
    }
    static Ctimeval now()
    {  
-      struct timezone lv_tz =  {0, NULL};
       Ctimeval lv_now;
       //char la_buf[DTM_STRING_BUF_SIZE];
 
-      int lv_success = gettimeofday(&lv_now, &lv_tz);
+      int lv_success = gettimeofday(&lv_now, NULL);
       if (lv_success != 0)
       {
          // EMS DTM_GETTIME_FAIL

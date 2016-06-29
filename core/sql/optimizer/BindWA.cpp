@@ -93,21 +93,24 @@ BindScope::~BindScope()
 // ***********************************************************************
 // BindScope::mergeOuterRefs()
 // ***********************************************************************
-void BindScope::mergeOuterRefs(const ValueIdSet& other)
+void BindScope::mergeOuterRefs(const ValueIdSet& other, NABoolean keepLocalRefs)
 {
   outerRefs_ += other;
 
-  // Get the list of valueIds that this scope exposes and remove
-  // them from the local references
-  ValueIdList localRefList;
-  if (RETDesc_)
-    RETDesc_->getValueIdList(localRefList,USER_AND_SYSTEM_COLUMNS);
-
-  ValueIdSet localRefSet = localRefList;
-  outerRefs_ -= localRefSet;
-
-  // subtract any other local references
-  outerRefs_ -= localRefs_;
+  if (!keepLocalRefs)
+  {
+    // Get the list of valueIds that this scope exposes and remove
+    // them from the local references
+    ValueIdList localRefList;
+    if (RETDesc_)
+      RETDesc_->getValueIdList(localRefList,USER_AND_SYSTEM_COLUMNS);
+    
+    ValueIdSet localRefSet = localRefList;
+    outerRefs_ -= localRefSet;
+    
+    // subtract any other local references
+    outerRefs_ -= localRefs_;
+  }
 } // BindScope::mergeOuterRefs()
 
 
@@ -131,7 +134,6 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL, NABo
   //     , inRIMaint_(FALSE)
      , inViewWithCheckOption_(NULL)
      , viewCount_(0)
-     , allowExternalTables_(allowExtTables)
      , errFlag_(FALSE)
      , uniqueNum_(0)
      , uniqueIudNum_(0) //++Triggers,
@@ -184,6 +186,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL, NABo
      , outerAggScope_(NULL)
      , hasCallStmts_(FALSE)
      , isTrafLoadPrep_(FALSE)
+     , flags_(0)
 {
   // get current default schema, using NAMETYPE NSK or ANSI rules
   defaultSchema_ = schemaDB_->getDefaultSchema(SchemaDB::APPLY_NAMETYPE_RULES);
@@ -193,6 +196,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL, NABo
 
   hcui_ = new(cmpContext->statementHeap()) HbaseColUsageInfo(cmpContext->statementHeap());
 
+  setAllowExternalTables(allowExtTables);
 } // BindWA::BindWA()
 
 // ***********************************************************************
@@ -373,7 +377,7 @@ BindScope* BindWA::getSubqueryScope (BindScope *currentScope) const
 // ***********************************************************************
 // BindWA::removeCurrentScope()
 // ***********************************************************************
-void BindWA::removeCurrentScope()
+void BindWA::removeCurrentScope(NABoolean keepLocalRefs)
 {
   //
   // Remove the current scope from the BindScope list.  If there is a parent
@@ -385,7 +389,7 @@ void BindWA::removeCurrentScope()
   BindScope *currScope;
   scopes_.getLast(currScope);
   if (NOT scopes_.isEmpty())
-    getCurrentScope()->mergeOuterRefs(currScope->getOuterRefs());
+    getCurrentScope()->mergeOuterRefs(currScope->getOuterRefs(),keepLocalRefs);
 
   delete currScope;
 } // BindWA::removeCurrentScope()

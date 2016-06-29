@@ -173,6 +173,31 @@ const NAString ElemDDLLikeOptWithoutSalt::getText() const
   return "ElemDDLLikeOptWithoutSalt";
 }
 
+// -----------------------------------------------------------------------
+// methods for class ElemDDLLikeSaltClause
+// -----------------------------------------------------------------------
+
+// virtual destructor
+ElemDDLLikeSaltClause::~ElemDDLLikeSaltClause()
+{
+  delete saltClause_;
+}
+
+// casting
+ElemDDLLikeSaltClause * ElemDDLLikeSaltClause::castToElemDDLLikeSaltClause()
+{
+  return this;
+}
+
+//
+// methods for tracing
+//
+
+const NAString ElemDDLLikeSaltClause::getText() const
+{
+  return "ElemDDLLikeSaltClause";
+}
+
 
 // -----------------------------------------------------------------------
 // methods for class ElemDDLLikeOptWithoutDivision

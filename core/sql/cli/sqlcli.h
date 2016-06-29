@@ -349,6 +349,10 @@ enum SQLTYPE_CODE {
     SQLTYPECODE_INTEGER_UNSIGNED       = -401,
     SQLTYPECODE_LARGEINT               = -402,
 
+    /* TINYINT */
+    SQLTYPECODE_TINYINT                = -403,
+    SQLTYPECODE_TINYINT_UNSIGNED       = -404,
+
     /* SMALLINT */
     SQLTYPECODE_SMALLINT = 5,
 
@@ -1956,6 +1960,12 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_SETAUTHID(
 		/* OUT OPTIONAL  role len*/ short *primaryRoleLen,
                 /* OUT OPTIONAL userRedefTime*/ Int64 *redefTime); // NA_64BIT
 
+SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetAuthState(
+   /*OUT*/  bool & authenticationEnabled,
+   /*OUT*/  bool & authorizationEnabled,
+   /*OUT*/  bool & authorizationReady,
+   /*OUT*/  bool & auditingEnabled);
+
 SQLCLI_LIB_FUNC Int32 SQL_EXEC_DecodeAndFormatKey(
                /*IN*/void    * RCB_Pointer_Addr,    
 	       /*IN*/void    * KeyAddr,             
@@ -2079,6 +2089,8 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetDescEntryCount(
 SQLCLI_LIB_FUNC Int32 SQL_EXEC_SetDescEntryCount(
 		/*IN*/ SQLDESC_ID * sql_descriptor,
 		/*IN*/ Int32 num_entries);
+
+SQLCLI_LIB_FUNC short sqInit();
 
 #endif /*__cplusplus*/
 

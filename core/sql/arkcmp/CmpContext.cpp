@@ -203,6 +203,10 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
     // globals for Optimizer -- also causes NADefaults table to be read in
     schemaDB_ = new(heap_) SchemaDB(readTableDef_);
 
+    // error during nadefault creation. Cannot proceed. Return.
+    if (! schemaDB_->getDefaults().getSqlParser_NADefaults_Ptr())
+      return;
+
     size_t memLimit = (size_t) 1024 * CmpCommon::getDefaultLong(MEMORY_LIMIT_NATABLECACHE_UPPER_KB);
     schemaDB_->getNATableDB()->getHeap()->setUpperLimit(memLimit);
 
@@ -906,7 +910,17 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         break;
       } // end of case (CmpMessageObj::SET_TRANS)
 
-      case (CmpMessageObj::INTERNALSP_REQUEST) :
+       case (CmpMessageObj::DDL_NATABLE_INVALIDATE) :
+      {
+        cmpStatement = new CTXTHEAP CmpStatement(this);
+        CmpMessageDDLNATableInvalidate ddlInvalidateStmt(data, data_len, CTXTHEAP);
+        Assign_SqlParser_Flags(parserFlags);
+        rs = cmpStatement->process(ddlInvalidateStmt);
+        copyData = TRUE;
+        break;
+      } // end of case (CmpMessageObj::DDL_NATABLE_INVALIDATE)
+
+     case (CmpMessageObj::INTERNALSP_REQUEST) :
       { 
         //request is from ExStoredProcTcb::work(), 
         cmpStatement = new CTXTHEAP CmpStatementISP(this);

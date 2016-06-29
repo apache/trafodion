@@ -103,7 +103,7 @@ public class TmDDL {
       table = new HTable(config, tablename);
    }
 
-   public void putRow(final long transid, final String Operation, final String tableName) throws Exception {
+   public void putRow(final long transid, final String Operation, final String tableName) throws IOException {
 
         long threadId = Thread.currentThread().getId();
         if (LOG.isTraceEnabled()) LOG.trace("TmDDL putRow Operation, TxID: " + transid + "Thread ID:" + threadId 
@@ -116,14 +116,7 @@ public class TmDDL {
 
         //Retrieve the row if it exists so we can append.
         Get g = new Get(Bytes.toBytes(transid));
-        try {
-                r = table.get(g);
-        }
-        catch(Exception e){
-          LOG.error("TmDDL putRow method, Get Exception TxID:" + transid + "Exception:" + e);
-          throw e;
-        }
-
+        r = table.get(g);
         //Check and set State
         if(! r.isEmpty())
         {
@@ -216,24 +209,11 @@ public class TmDDL {
 
         }
 
-        try {
             synchronized (tablePutLock) {
-            try {
                   if (LOG.isTraceEnabled()) LOG.trace("TmDDL table.put, TxID: " + transid + "Put :" + p );
 
                   table.put(p);
-               }
-               catch (Exception e2){
-                  //Avoiding logging within a lock. Throwing Exception.
-                  throw e2;
-               }
             } // End global synchronization
-         }
-         catch (Exception e) {
-             //create record of the exception
-            LOG.error("TmDDL tablePutLock or Table.put Exception, TxID: " + transid + "Exception:" + e);
-            throw e;
-         }
       if (LOG.isTraceEnabled()) LOG.trace("TmDDL putRow exit, TxId:" + transid);
    }
 

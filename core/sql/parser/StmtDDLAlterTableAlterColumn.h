@@ -135,7 +135,6 @@ private:
 
 }; // class StmtDDLAlterTableAlterColumnDefaultValue
 
-
 // -----------------------------------------------------------------------
 // definition of class StmtDDLAlterTableAlterColumnDatatype
 // -----------------------------------------------------------------------
@@ -144,9 +143,8 @@ class StmtDDLAlterTableAlterColumnDatatype : public StmtDDLAlterTableAlterColumn
 public:
 
   // constructor
-  StmtDDLAlterTableAlterColumnDatatype( const NAString &columnName
-                                        , NAType * natype
-                                          , CollHeap    *heap = PARSERHEAP());
+  StmtDDLAlterTableAlterColumnDatatype( ElemDDLNode * pColumnToAlter
+                                        ,CollHeap    * heap = PARSERHEAP());
 
     // virtual destructor
   virtual ~StmtDDLAlterTableAlterColumnDatatype();
@@ -157,12 +155,17 @@ public:
   // method for tracing
   virtual const NAString getText() const;
 
-  const NAType * getDatatype() const { return natype_; }
-   NAType * getType() { return natype_; }
+  inline ElemDDLNode * getColToAlter() { return pColumnToAlter_; };
+  inline ElemDDLColDefArray & getColDefArray() { return columnDefArray_; };
 
 private: 
 
-  NAType * natype_;
+  // column definition
+  ElemDDLNode * pColumnToAlter_;
+
+  // list of (only one) column definition
+  ElemDDLColDefArray columnDefArray_;
+
   //
   // please do not use the following methods
   //
@@ -174,5 +177,43 @@ private:
 
 }; // class StmtDDLAlterTableAlterColumnDatatype
 
+// -----------------------------------------------------------------------
+// definition of class StmtDDLAlterTableAlterColumnRename
+// -----------------------------------------------------------------------
+class StmtDDLAlterTableAlterColumnRename : public StmtDDLAlterTableAlterColumn
+{
+public:
+  
+  // constructor
+  StmtDDLAlterTableAlterColumnRename( const NAString &columnName,
+                                      const NAString &renamedColumnName,
+                                      CollHeap    * heap = PARSERHEAP());
+  
+  // virtual destructor
+  virtual ~StmtDDLAlterTableAlterColumnRename();
+  
+  // cast
+  virtual StmtDDLAlterTableAlterColumnRename * castToStmtDDLAlterTableAlterColumnRename();
+  
+  // accessors
+  NAString getRenamedColumnName() { return renamedColumnName_; }
+  const NAString getRenamedColumnName() const { return renamedColumnName_; }
+  
+  // method for tracing
+  virtual const NAString getText() const;
+  
+private: 
+  // column name
+  NAString renamedColumnName_;
+  
+  //
+  // please do not use the following methods
+  //
+  
+  StmtDDLAlterTableAlterColumnRename();   // DO NOT USE
+  StmtDDLAlterTableAlterColumnRename(const StmtDDLAlterTableAlterColumnRename &);   // DO NOT USE
+  StmtDDLAlterTableAlterColumnRename & operator=(const StmtDDLAlterTableAlterColumnRename &);  // DO NOT USE
+  
+}; // class StmtDDLAlterTableAlterColumnRename
 
 #endif //STMTDDLALTERTABLEALTERCOLUMN_H

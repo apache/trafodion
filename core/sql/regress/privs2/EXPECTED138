@@ -14,6 +14,12 @@
 --- SQL operation complete.
 >>get tables;
 
+Tables in Schema TRAFODION.T138SCH
+==================================
+
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
+
 --- SQL operation complete.
 >>
 >>-- Verify sql_user1 does not have CREATE or CREATE_TABLE privilege
@@ -22,6 +28,12 @@
 --- SQL operation complete.
 >>sh sqlci -i "TEST138(create_tbl)" -u sql_user1;
 >>get tables;
+
+Tables in Schema TRAFODION.T138SCH
+==================================
+
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 
 --- SQL operation complete.
 >>create table user1_t1 (c1 int not null primary key, c2 int);
@@ -101,6 +113,12 @@ CREATE_TABLE
 >>sh sqlci -i "TEST138(create_tbl)" -u sql_user1;
 >>get tables;
 
+Tables in Schema TRAFODION.T138SCH
+==================================
+
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
+
 --- SQL operation complete.
 >>create table user1_t1 (c1 int not null primary key, c2 int);
 
@@ -178,6 +196,8 @@ End of MXCI Session
 Tables in Schema TRAFODION.T138SCH
 ==================================
 
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 USER1_T1
 USER1_T2
 
@@ -364,6 +384,8 @@ End of MXCI Session
 Tables in Schema TRAFODION.T138SCH
 ==================================
 
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 USER1_T1
 USER1_T2
 
@@ -383,6 +405,8 @@ USER1_T2
 Tables in Schema TRAFODION.T138SCH
 ==================================
 
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 USER1_T1
 USER1_T2
 
@@ -398,6 +422,8 @@ End of MXCI Session
 Tables in Schema TRAFODION.T138SCH
 ==================================
 
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 USER1_T1
 USER1_T2
 
@@ -416,6 +442,8 @@ USER1_T2
 Tables in Schema TRAFODION.T138SCH
 ==================================
 
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 USER1_T1
 USER1_T2
 
@@ -428,10 +456,22 @@ USER1_T2
 --- SQL operation complete.
 >>get tables;
 
+Tables in Schema TRAFODION.T138SCH
+==================================
+
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
+
 --- SQL operation complete.
 >>
 >>
 >>get tables;
+
+Tables in Schema TRAFODION.T138SCH
+==================================
+
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 
 --- SQL operation complete.
 >>
@@ -448,6 +488,12 @@ USER1_T2
 --- SQL operation complete.
 >>get tables;
 
+Tables in Schema TRAFODION.T138SCH
+==================================
+
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
+
 --- SQL operation complete.
 >>
 >>-- Verify sql_user2 does not have ALTER or ALTER_TABLE privilege
@@ -461,6 +507,12 @@ USER1_T2
 --- SQL operation complete.
 >>sh sqlci -i "TEST138(create_tbl)" -u sql_user1;
 >>get tables;
+
+Tables in Schema TRAFODION.T138SCH
+==================================
+
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 
 --- SQL operation complete.
 >>create table user1_t1 (c1 int not null primary key, c2 int);
@@ -543,6 +595,8 @@ End of MXCI Session
 Tables in Schema TRAFODION.T138SCH
 ==================================
 
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 USER1_T1
 USER1_T2
 
@@ -734,6 +788,8 @@ End of MXCI Session
 Tables in Schema TRAFODION.T138SCH
 ==================================
 
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 USER1_T1
 USER1_T2
 
@@ -774,7 +830,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
   (
     C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
   , C2                               INT DEFAULT NULL
-  , C3                               INT DEFAULT 0 /* added col */
+  , C3                               INT DEFAULT 0 /*added_col*/
   , PRIMARY KEY (C1 ASC)
   )
 ;
@@ -941,6 +997,8 @@ ALTER_VIEW
 Tables in Schema TRAFODION.T138SCH
 ==================================
 
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 USER1_T1
 USER1_T2
 
@@ -1141,6 +1199,8 @@ End of MXCI Session
 Tables in Schema TRAFODION.T138SCH
 ==================================
 
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 USER1_T1
 USER1_T2
 
@@ -1152,6 +1212,12 @@ USER1_T2
 
 --- SQL operation complete.
 >>get tables;
+
+Tables in Schema TRAFODION.T138SCH
+==================================
+
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 
 --- SQL operation complete.
 >>
@@ -1200,6 +1266,12 @@ SHOW
 --- SQL operation complete.
 >>sh sqlci -i "TEST138(create_tbl)" -u sql_user1;
 >>get tables;
+
+Tables in Schema TRAFODION.T138SCH
+==================================
+
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 
 --- SQL operation complete.
 >>create table user1_t1 (c1 int not null primary key, c2 int);
@@ -1437,6 +1509,8 @@ End of MXCI Session
 Tables in Schema TRAFODION.T138SCH
 ==================================
 
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 USER1_T1
 USER1_T2
 
@@ -1448,6 +1522,12 @@ USER1_T2
 
 --- SQL operation complete.
 >>get tables;
+
+Tables in Schema TRAFODION.T138SCH
+==================================
+
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
 
 --- SQL operation complete.
 >>
@@ -1659,7 +1739,7 @@ End of MXCI Session
 (EXPR)              
 --------------------
 
-                   7
+                  11
 
 --- 1 row(s) selected.
 >>
@@ -1673,7 +1753,7 @@ End of MXCI Session
 (EXPR)              
 --------------------
 
-                   7
+                  11
 
 --- 1 row(s) selected.
 >>

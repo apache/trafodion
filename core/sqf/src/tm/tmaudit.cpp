@@ -298,11 +298,11 @@ int32 TM_Audit::write_trans_state(TM_Transid_Type *pv_transid,
 {
     Audit_Transaction_State lv_state_rec;
     char      lv_write_buffer[REC_SIZE];
-    bool      lv_force = true;
+    //bool      lv_force = true;
     int32     lv_notify = 0;
 
     TMTrace(2, ("TM_Audit::write_trans_state: ENTRY \n"));
-    lv_force = prepare_trans_state(&lv_state_rec, lv_write_buffer, pv_transid,
+    prepare_trans_state(&lv_state_rec, lv_write_buffer, pv_transid,
                                    pv_nid, pv_state, pv_abort_flags);
 
 #ifdef USE_FILE_AUDIT
@@ -316,7 +316,7 @@ int32 TM_Audit::write_trans_state(TM_Transid_Type *pv_transid,
 void TM_Audit::write_shutdown(int32 pv_nid, int32 pv_state)
 {
     Audit_TM_Shutdown       lv_rec;
-    int64                   lv_vsn;
+    //int64                   lv_vsn;
     char                    lv_write_buffer[REC_SIZE];
 
     pv_nid = pv_nid; // 810
@@ -334,7 +334,7 @@ void TM_Audit::write_shutdown(int32 pv_nid, int32 pv_state)
 #endif
 
     iv_mutex.lock();
-    lv_vsn = iv_vsn++;
+    iv_vsn++;
     iv_mutex.unlock();
 
 
@@ -481,15 +481,15 @@ void TM_Audit::adp_module_terminate()
 void TM_Audit::adp_activate_cursor()
 {
    // If we're using a TLOG/TM then the index is nid.
-   AuditTrailPosition_Struct lv_low_pos, lv_high_pos;
+   //AuditTrailPosition_Struct lv_low_pos, lv_high_pos;
 
     if (!iv_initialized)
        return; // for now
 
-    lv_low_pos.Sequence = 0;
-    lv_low_pos.rba = 0;
-    lv_high_pos.Sequence = 0;
-    lv_high_pos.rba = 0;
+    //lv_low_pos.Sequence = 0;
+    //lv_low_pos.rba = 0;
+    //lv_high_pos.Sequence = 0;
+    //lv_high_pos.rba = 0;
 
 }
 

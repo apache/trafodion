@@ -125,7 +125,7 @@ CharType (const NAString&	adtName,
 	  CharInfo::Collation    co = CharInfo::DefaultCollation,
 	  CharInfo::Coercibility ce = CharInfo::COERCIBLE,
 	  CharInfo::CharSet      encoding = CharInfo::UnknownCharSet,
-	  Int32 iCharLen = 0
+	  Lng32 vcIndLen = 0  // not passed in, need to be computed
          );
 CharType (const NAString&  adtName,
           const CharLenInfo & maxLenInfo,
@@ -500,7 +500,8 @@ public:
 	     CharInfo::CharSet		= CharInfo::DefaultCharSet, 
 	     CharInfo::Collation	= CharInfo::DefaultCollation,
 	     CharInfo::Coercibility	= CharInfo::COERCIBLE,
-	     CharInfo::CharSet encoding	= CharInfo::UnknownCharSet
+	     CharInfo::CharSet encoding	= CharInfo::UnknownCharSet,
+             Lng32 vcIndLen             = 0
 	    );
   SQLVarChar(const CharLenInfo & maxLenInfo,
 	     NABoolean allowSQLnull	= TRUE,
@@ -516,7 +517,8 @@ public:
 //copy ctor
   SQLVarChar(const SQLVarChar& varChar, NAMemory * heap):
 				CharType(varChar,heap),
-				clientDataType_(varChar.getClientDataTypeName(),heap)
+				clientDataType_(varChar.getClientDataTypeName(),heap),
+                                wasHiveString_(varChar.wasHiveString())
 				{}
 virtual void minRepresentableValue(void*, Lng32*,
 				     NAString** stringLiteral = NULL,
@@ -553,9 +555,14 @@ NAString getClientDataTypeName() const
 
 void setClientDataType(NAString clientName) { clientDataType_ = clientName; }
 
+NABoolean wasHiveString() const {return wasHiveString_;}
+void setWasHiveString(NABoolean v) { wasHiveString_ = v;}
 private:
 
-NAString clientDataType_;
+  NAString clientDataType_;
+
+  // if original datatype was hive 'string' type
+  NABoolean wasHiveString_;
 
 }; // class SQLVarChar
 
@@ -748,6 +755,7 @@ public:
    charSet_ = cs;
  }
  LobsStorage getLobStorage() {return lobStorage_;}
+  NABoolean isExternal() { return externalFormat_;}
 private:
  Int64 lobLength_;
  
@@ -817,7 +825,7 @@ public:
 	  NABoolean allowSQLnull	= TRUE,
 	  NABoolean inlineIfPossible = FALSE,
 	  NABoolean externalFormat = FALSE,
-	  Lng32 extFormatLen = 100);
+	  Lng32 extFormatLen = 1024);
  SQLClob(const SQLClob & aClob,NAMemory * heap)
    :SQLlob(aClob,heap)
     {}

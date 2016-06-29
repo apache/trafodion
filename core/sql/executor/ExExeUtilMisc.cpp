@@ -69,15 +69,7 @@ ex_tcb * ExExeUtilFastDeleteTdb::build(ex_globals * glob)
 {
   ExExeUtilTcb * exe_util_tcb;
 
-
-  if (!isHiveTruncate())
-  {
-     exe_util_tcb = new(glob->getSpace()) ExExeUtilFastDeleteTcb(*this, glob);
-  }
-  else
-  {
-    exe_util_tcb = new(glob->getSpace()) ExExeUtilHiveTruncateTcb(*this, glob);
-  }
+  exe_util_tcb = new(glob->getSpace()) ExExeUtilFastDeleteTcb(*this, glob);
   exe_util_tcb->registerSubtasks();
 
   return (exe_util_tcb);
@@ -2229,10 +2221,24 @@ ExExeUtilPopulateInMemStatsPrivateState::~ExExeUtilPopulateInMemStatsPrivateStat
 
 
 ////////////////////////////////////////////////////////////////
+// Constructor for class ExExeUtilHiveTruncateTdb
+///////////////////////////////////////////////////////////////
+ex_tcb * ExExeUtilHiveTruncateTdb::build(ex_globals * glob)
+{
+  ExExeUtilTcb * exe_util_tcb;
+
+  exe_util_tcb = new(glob->getSpace()) ExExeUtilHiveTruncateTcb(*this, glob);
+  exe_util_tcb->registerSubtasks();
+
+  return (exe_util_tcb);
+}
+
+
+////////////////////////////////////////////////////////////////
 // Constructor for class ExExeUtilHiveTruncateTcb
 ///////////////////////////////////////////////////////////////
 ExExeUtilHiveTruncateTcb::ExExeUtilHiveTruncateTcb(
-     const ComTdbExeUtilFastDelete & exe_util_tdb,
+     const ComTdbExeUtilHiveTruncate & exe_util_tdb,
      ex_globals * glob)
      : ExExeUtilTcb( exe_util_tdb, NULL, glob)
 {
@@ -2240,13 +2246,7 @@ ExExeUtilHiveTruncateTcb::ExExeUtilHiveTruncateTcb(
   qparent_.down->allocatePstate(this);
 
   numExistingFiles_ = 0;
-  memset (hdfsHost_, '\0', sizeof(hdfsHost_));
-  memset (hiveTableLocation_, '\0', sizeof(hiveTableLocation_));
 
-  strncpy(hdfsHost_, fdTdb().getHiveHdfsHost(), sizeof(hdfsHost_));
-  hdfsPort_ = fdTdb().getHiveHdfsPort();
-  char * outputPath =  fdTdb().getHiveTableLocation();
-  strncpy(hiveTableLocation_, outputPath, 512);
   step_ = INITIAL_;
 }
 
@@ -2264,7 +2264,7 @@ Int32 ExExeUtilHiveTruncateTcb::fixup()
   return 0;
 }
 //////////////////////////////////////////////////////
-// work() for ExExePurgedataUtilTcb
+// work() for ExExeUtilHiveTruncateTsb
 //////////////////////////////////////////////////////
 short ExExeUtilHiveTruncateTcb::work()
 {
@@ -2290,26 +2290,110 @@ short ExExeUtilHiveTruncateTcb::work()
       case INITIAL_:
       {
 
-        //nothing for now --
-        // more stuff later
+        if (htTdb().getModTS() > 0)
+          step_ = DATA_MOD_CHECK_;
+        else
+          step_ = EMPTY_DIRECTORY_;
+      }
+      break;
+
+      case DATA_MOD_CHECK_:
+      {
+        cliRC = ExpLOBinterfaceDataModCheck
+          (lobGlob_,
+           (htTdb().getPartnLocation() ? 
+            htTdb().getPartnLocation() : 
+            htTdb().getTableLocation()),
+           htTdb().getHdfsHost(),
+           htTdb().getHdfsPort(),
+           htTdb().getModTS(),
+           0);
+
+        if (cliRC < 0)
+        {
+          Lng32 cliError = 0;
+          
+          Lng32 intParam1 = -cliRC;
+          ComDiagsArea * diagsArea = NULL;
+          ExRaiseSqlError(getHeap(), &diagsArea, 
+                          (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
+                          NULL, &intParam1, 
+                          &cliError, 
+                          NULL, 
+                          "HDFS",
+                          (char*)"ExpLOBInterfaceEmptyDirectory",
+                          getLobErrStr(intParam1));
+          pentry_down->setDiagsArea(diagsArea);
+          step_ = ERROR_;
+          break;
+        }
+
+        if (cliRC == 1) // data mod check failed
+        {
+          ComDiagsArea * diagsArea = NULL;
+          ExRaiseSqlError(getHeap(), &diagsArea, 
+                          (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+          pentry_down->setDiagsArea(diagsArea);
+          
+          step_ = ERROR_;
+          break;
+        }
+   
         step_ = EMPTY_DIRECTORY_;
       }
-        break;
+      break;
 
       case EMPTY_DIRECTORY_:
       {
-        Lng32 retCode= ExpLOBinterfaceEmptyDirectory(
-                                    lobGlob_,
-                                    (char*)"",                  //name is empty
-                                    hiveTableLocation_,
-                                    Lob_HDFS_File,
-                                    hdfsHost_,
-                                    hdfsPort_,
-                                    0 ,
-                                    1 ,
-                                    0);
-        if (retCode != 0)
+        cliRC = ExpLOBinterfaceEmptyDirectory(
+             lobGlob_,
+             (char*)"",                  //name is empty
+             (htTdb().getPartnLocation() ? 
+              htTdb().getPartnLocation() : 
+              htTdb().getTableLocation()),
+             Lob_HDFS_File,
+             htTdb().getHdfsHost(),
+             htTdb().getHdfsPort(),
+             0 ,
+             1 ,
+             0);
+        if (cliRC != 0)
         {
+          Lng32 cliError = 0;
+          
+          Lng32 intParam1 = -cliRC;
+          ComDiagsArea * diagsArea = NULL;
+          ExRaiseSqlError(getHeap(), &diagsArea, 
+                          (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
+                          NULL, &intParam1, 
+                          &cliError, 
+                          NULL, 
+                          "HDFS",
+                          (char*)"ExpLOBInterfaceEmptyDirectory",
+                          getLobErrStr(intParam1));
+
+          char reason[200];
+          
+          strcpy(reason, " ");
+          if (intParam1 == LOB_DIR_NAME_ERROR)
+            {
+              if (htTdb().getPartnLocation())
+                strcpy(reason, "Reason: specified partition does not exist");
+              else
+                strcpy(reason, "Reason: specified table location does not exist");
+            }
+          else if (intParam1 == LOB_DATA_FILE_DELETE_ERROR)
+            {
+              strcpy(reason, "Reason: error occurred during deletion of one or more files at the specified location");
+            }
+          
+          ExRaiseSqlError(getHeap(), &diagsArea, 
+                          (ExeErrorCode)(EXE_HIVE_TRUNCATE_ERROR), NULL,
+                          NULL, NULL, NULL,
+                          reason,
+                          NULL, NULL);
+          
+          pentry_down->setDiagsArea(diagsArea);
           step_ = ERROR_;
         }
         else
@@ -2318,39 +2402,27 @@ short ExExeUtilHiveTruncateTcb::work()
         }
       }
       break;
+
       case ERROR_:
       {
         if (qparent_.up->isFull())
           return WORK_OK;
 
-        // Return EOF.
+        // Return Error 
         ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+        up_entry->copyAtp(pentry_down);
 
         up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
 
         up_entry->upState.setMatchNo(0);
         up_entry->upState.status = ex_queue::Q_SQLERROR;
 
-        ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-
-        if (diagsArea == NULL)
-          diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
-        else
-          diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
-
-        if (getDiagsArea())
-          diagsArea->mergeAfter(*getDiagsArea());
-
-        up_entry->setDiagsArea(diagsArea);
-
-        getDiagsArea()->clear();
-
         // insert into parent
         qparent_.up->insert();
 
         step_ = DONE_;
       }
-        break;
+      break;
 
       case DONE_:
       {
@@ -2364,21 +2436,6 @@ short ExExeUtilHiveTruncateTcb::work()
 
         up_entry->upState.setMatchNo(0);
         up_entry->upState.status = ex_queue::Q_NO_DATA;
-
-        if (getDiagsArea()->getNumber(DgSqlCode::WARNING_) > 0) // must be a warning
-        {
-          ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-
-          if (diagsArea == NULL)
-            diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
-          else
-            diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
-
-          if (getDiagsArea())
-            diagsArea->mergeAfter(*getDiagsArea());
-
-          up_entry->setDiagsArea(diagsArea);
-        }
 
         // insert into parent
         qparent_.up->insert();

@@ -1,0 +1,5 @@
+/target/
+*.log
+/LICENSE
+/NOTICE
+src/main/java/org/trafodion/jdbc/t4/Vproc.java

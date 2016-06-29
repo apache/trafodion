@@ -207,14 +207,17 @@ ex_expr::exp_return_type InputOutputExpr::describeOutput(void * output_desc_,
 	  
           // Use SQLDESC_CHAR_SET_NAM (one-part name) for charset
 
-	  if ( DFS2REC::isAnyCharacter(operand->getDatatype()) ) {
-	    output_desc->setDescItem(entry, SQLDESC_CHAR_SET_NAM, 0, 
-	      (char*)CharInfo::getCharSetName(operand->getCharSet()));
+	  if ( DFS2REC::isAnyCharacter(operand->getDatatype()) || 
+               (operand->getDatatype() == REC_BLOB) || 
+               (operand->getDatatype() == REC_CLOB )) 
+            {
+              output_desc->setDescItem(entry, SQLDESC_CHAR_SET_NAM, 0, 
+                                       (char*)CharInfo::getCharSetName(operand->getCharSet()));
 
-            // reset the length for Unicode
+              // reset the length for Unicode
             if ( operand->getCharSet() == CharInfo::UNICODE ||
                  CharInfo::is_NCHAR_MP(operand->getCharSet())
-               )
+                 )
 	      {
 		length = operand->getLength()/SQL_DBCHAR_SIZE;
 	      }
@@ -1108,7 +1111,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
 	  if (getenv("DISABLE_ROWWISE_ROWSET"))
 	    output_desc->setRowwiseRowsetDisabled(TRUE);
 #endif
-	    
+
 	  setupBulkMoveInfo(output_desc, heap, FALSE /* output desc*/, flags);
 	  if (
 	      // rowwise rowsets V1 are only supported if bulk move
@@ -1144,6 +1147,8 @@ InputOutputExpr::outputValues(atp_struct *atp,
 	    } // rowwise rowset
 	}
       
+
+
       if (NOT output_desc->bulkMoveDisabled())
 	{
 	  // bulk move is enabled and setup has been done.
@@ -2240,8 +2245,9 @@ ex_expr::exp_return_type InputOutputExpr::describeInput(void * input_desc_,
           }
 	
           // Use SQLDESC_CHAR_SET_NAM (one-part name) for charset
-	  if ((dataType >= REC_MIN_CHARACTER) &&
-              (dataType <= REC_MAX_CHARACTER)) {
+	  if (((dataType >= REC_MIN_CHARACTER) &&
+               (dataType <= REC_MAX_CHARACTER)) )
+            {
 	    input_desc->setDescItem(entry, SQLDESC_CHAR_SET_NAM, 0, 
 	      (char*)CharInfo::getCharSetName(operand->getCharSet()));
 
@@ -4095,6 +4101,8 @@ InputOutputExpr::inputValues(atp_struct *atp,
                         sourceType = REC_BYTE_F_ASCII;
                         sourcePrecision = 0;  // TBD $$$$ add source max chars later
                         sourceScale = SQLCHARSETCODE_ISO88591; // assume target charset is ASCII-compatible
+
+                        convFlags |= CONV_NO_HADOOP_DATE_FIX;
                       }
 		  }
 		else if ((sourceType == targetType) &&
@@ -4234,6 +4242,31 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	        operand->getHVRowsetLocalSize()) {
               short targetType = operand->getDatatype();
               switch (targetType) {
+              case REC_BIN8_SIGNED :
+                if (*((Int8 *) target) <= 0) {
+                  //raise error
+                  ExRaiseSqlError(heap, &diagsArea, EXE_ROWSET_NEGATIVE_SIZE);
+		  if (diagsArea != atp->getDiagsArea()) 
+		    atp->setDiagsArea(diagsArea);	    
+                  return ex_expr::EXPR_ERROR;
+                }
+                else {
+		  dynamicRowsetSize = *((Int8 *) target);
+		  break;
+                }
+              case REC_BIN8_UNSIGNED :
+                if (*((UInt8 *) target) == 0) {
+                  //raise error
+                  ExRaiseSqlError(heap, &diagsArea, EXE_ROWSET_NEGATIVE_SIZE);
+		  if (diagsArea != atp->getDiagsArea()) 
+		    atp->setDiagsArea(diagsArea);	    
+                  return ex_expr::EXPR_ERROR;
+                }
+                else {
+		  dynamicRowsetSize = *((UInt8 *) target);
+		  break;
+                }
+		
               case REC_BIN16_SIGNED :
                 if (*((short *) target) <= 0) {
                   //raise error

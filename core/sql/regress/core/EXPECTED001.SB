@@ -13,11 +13,12 @@
 >>
 >>invoke t001t1;
 
--- Definition of Seabase table SEABASE.SCH.T001T1
--- Definition current  Wed Jul 31 14:25:27 2013
+-- Definition of Trafodion table TRAFODION.SCH.T001T1
+-- Definition current  Mon Mar  7 19:30:10 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   , B                                CHAR(9) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   , C                                INT DEFAULT NULL
@@ -30,11 +31,12 @@
 >>#ifMX
 >>invoke $$TEST_SCHEMA$$.t001ut1;
 
--- Definition of Seabase table SEABASE.SCH.T001UT1
--- Definition current  Wed Jul 31 14:25:27 2013
+-- Definition of Trafodion table TRAFODION.SCH.T001UT1
+-- Definition current  Mon Mar  7 19:30:10 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   , B                                CHAR(9) CHARACTER SET UCS2 COLLATE DEFAULT
       DEFAULT NULL
   , C                                INT DEFAULT NULL
@@ -184,19 +186,19 @@ A
 >>
 >>select b || NULL from t001t1;
 
-*** ERROR[4097] A NULL operand is not allowed in function (SEABASE.SCH.T001T1.B || NULL).
+*** ERROR[4097] A NULL operand is not allowed in function (TRAFODION.SCH.T001T1.B || NULL).
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select NULL || b from t001t1;
 
-*** ERROR[4097] A NULL operand is not allowed in function (NULL || SEABASE.SCH.T001T1.B).
+*** ERROR[4097] A NULL operand is not allowed in function (NULL || TRAFODION.SCH.T001T1.B).
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select a from t001t1 where c between 2 and null;
 
-*** ERROR[4099] A NULL operand is not allowed in predicate (SEABASE.SCH.T001T1.C BETWEEN 2 AND NULL).
+*** ERROR[4099] A NULL operand is not allowed in predicate (TRAFODION.SCH.T001T1.C BETWEEN 2 AND NULL).
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -208,13 +210,13 @@ A
 
 >>select a from t001t1 where b like null;
 
-*** ERROR[4099] A NULL operand is not allowed in predicate (SEABASE.SCH.T001T1.B LIKE NULL).
+*** ERROR[4099] A NULL operand is not allowed in predicate (TRAFODION.SCH.T001T1.B LIKE NULL).
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select a from t001t1 where b like 'x' escape null;
 
-*** ERROR[4099] A NULL operand is not allowed in predicate (SEABASE.SCH.T001T1.B like 'x' escape NULL).
+*** ERROR[4099] A NULL operand is not allowed in predicate (TRAFODION.SCH.T001T1.B like 'x' escape NULL).
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -261,7 +263,7 @@ A
 
 >>select DateFormat 	(null, usa) from t001t1;
 
-*** ERROR[4097] A NULL operand is not allowed in function (DATEFORMAT(NULL)).
+*** ERROR[4097] A NULL operand is not allowed in function (DATEFORMAT(NULL, USA)).
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -345,6 +347,18 @@ A
 
 *** ERROR[8822] The statement was not prepared.
 
+>>select To_char   	(null, 'YYYYMMDD') from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (TO_CHAR(NULL, 'YYYYMMDD')).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select To_date   	(null, 'YYYYMMDD') from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (TO_DATE(NULL, 'YYYYMMDD')).
+
+*** ERROR[8822] The statement was not prepared.
+
 >>select Trim  		(null) from t001t1;
 
 *** ERROR[4097] A NULL operand is not allowed in function TRIM, LTRIM or RTRIM.
@@ -379,7 +393,7 @@ A
 
 >>select a from t001t1 where c in (1,null,2);
 
-*** ERROR[4099] A NULL operand is not allowed in predicate (SEABASE.SCH.T001T1.C = NULL).
+*** ERROR[4099] A NULL operand is not allowed in predicate (TRAFODION.SCH.T001T1.C = NULL).
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -398,13 +412,13 @@ A
 
 >>select (case a when null then 1 else 2 end) from t001t1;
 
-*** ERROR[4099] A NULL operand is not allowed in predicate (SEABASE.SCH.T001T1.A = NULL).
+*** ERROR[4099] A NULL operand is not allowed in predicate (TRAFODION.SCH.T001T1.A = NULL).
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select (case a when 1 then 1 when null then 2 else 3 end) from t001t1;
 
-*** ERROR[4099] A NULL operand is not allowed in predicate (SEABASE.SCH.T001T1.A = NULL).
+*** ERROR[4099] A NULL operand is not allowed in predicate (TRAFODION.SCH.T001T1.A = NULL).
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -485,8 +499,8 @@ A            B          C            D     (EXPR)
 A            B          C            D   
 -----------  ---------  -----------  ----
 
-         20  defg                30  wx  
         101  abc                 20  xy  
+         20  defg                30  wx  
 
 --- 2 row(s) selected.
 >>
@@ -501,8 +515,8 @@ A            B          C            D
 A            B          C            D   
 -----------  ---------  -----------  ----
 
-         20  defg                30  wx  
         101  abc                 20  xy  
+         20  defg                30  wx  
 
 --- 2 row(s) selected.
 >>

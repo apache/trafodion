@@ -433,6 +433,18 @@ short ExControlTcb::work()
 			  currContext->getSessionDefaults()->setCallEmbeddedArkcmp(FALSE);
                         }
 		      }
+                   else if (strcmp(value[1], "ESP_IDLE_TIMEOUT") == 0)
+                   {
+                      int lvl = (int) strtoul(value[2], NULL, 10);
+                      currContext->getSessionDefaults()->
+                        setEspIdleTimeout(lvl);
+                   }
+                   else if (strcmp(value[1], "COMPILER_IDLE_TIMEOUT") == 0)
+                   {
+                      int lvl = (int) strtoul(value[2], NULL, 10);
+                      currContext->getSessionDefaults()->
+                        setCompilerIdleTimeout(lvl);
+                   }
 		  }
 	      }
   }
@@ -510,6 +522,7 @@ short ExSetSessionDefaultTcb::work()
       (strcmp(defaultName, "ESP_ASSIGN_TIME_WINDOW") != 0) &&
       (strcmp(defaultName, "ESP_STOP_IDLE_TIMEOUT") != 0) &&
       (strcmp(defaultName, "ESP_IDLE_TIMEOUT") != 0) &&
+      (strcmp(defaultName, "COMPILER_IDLE_TIMEOUT") != 0) &&
       (strcmp(defaultName, "ESP_INACTIVE_TIMEOUT") != 0) &&
       (strcmp(defaultName, "ESP_RELEASE_WORK_TIMEOUT") != 0) &&
       (strcmp(defaultName, "MAX_POLLING_INTERVAL") != 0) &&
@@ -668,6 +681,11 @@ short ExSetSessionDefaultTcb::work()
     {
       currContext->getSessionDefaults()
                  ->setEspIdleTimeout(defaultValueAsLong);
+    }
+  else if (strcmp(defaultName, "COMPILER_IDLE_TIMEOUT") == 0)
+    {
+      currContext->getSessionDefaults()
+                 ->setCompilerIdleTimeout(defaultValueAsLong);
     }
   else if (strcmp(defaultName, "ESP_INACTIVE_TIMEOUT") == 0)
     {
@@ -850,12 +868,6 @@ short ExSetSessionDefaultTcb::work()
 	{
 	  currContext->dropSession();
 	} // DROP
-      else if (strcmp(defaultValue, "FLUSH_TABLES") == 0)
-	{
-	  // add call to flushAllTables to flush all tables populated in this session.
-	  ExpHbaseInterface::flushAllTables();
-	} // FLUSH_BUFFERS
-
     } // USER_SESSION
   else if (strcmp(defaultName, "SQL_USER") == 0)
     {

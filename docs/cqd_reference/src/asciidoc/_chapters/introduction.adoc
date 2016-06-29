@@ -1,0 +1,102 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+[[introduction]]
+= Introduction
+
+Refer to the 
+http://trafodion.apache.org/docs/sql_reference/index.html#control_query_cancel_statement[{project-name} SQL Reference Manual]
+full documentation of the CQD (CONTROL QUERY DEFAULT) statement.
+
+The CONTROL QUERY DEFAULT statement changes the default settings for the current process. You can execute
+the CONTROL QUERY DEFAULT statement in a client-based tool like TrafCI or through any ODBC or JDBC application.
+
+*Syntax*
+
+```
+{ CONTROL QUERY DEFAULT | CQD } control-default-option
+
+control-default-option is:
+  attribute {'attr-value' | RESET}
+```
+
+The result of the execution of a CONTROL QUERY DEFAULT statement stays in effect until the current process
+terminates or until the execution of another statement for the same attribute overrides it.
+CQDs are applied at compile time, so CQDs do not affect any statements that are already prepared. For example:
+
+```
+PREPARE x FROM SELECT * FROM t;
+CONTROL QUERY DEFAULT SCHEMA 'myschema';
+EXECUTE x;                              -- uses the default schema SEABASE
+SELECT * FROM t2;                       -- uses MYSCHEMA;
+PREPARE y FROM SELECT * FROM t3;
+CONTROL QUERY DEFAULT SCHEMA 'seabase';
+EXECUTE y;                              -- uses MYSCHEMA;
+```
+
+*Examples*
+
+* Change the maximum supported length of the column names to 200 for the current process:
++
+```
+CONTROL QUERY DEFAULT HBASE_MAX_COLUMN_NAME_LENGTH '200';
+```
+
+* Reset the HBASE_MAX_COLUMN_NAME_LENGTH attribute to its initial value in the current process:
++
+```
+CONTROL QUERY DEFAULT HBASE_MAX_COLUMN_NAME_LENGTH RESET;
+```
+
+<<<
+[[introduction-cqd-descriptions]]
+== CQD Descriptions
+
+The following information is provided for each CQD:
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Describes the purpose of the CQD.
+| *Values*                    | Identifies this information: +
+ +
+&#8226; Values, in the form of a character string, that specify the applicable attribute values for the CQD. +
+&#8226; The default attribute value. +
+&#8226; If applicable, the {project-name} release in which the attribute values or default changed.
+| *Usage*                     | Describes the conditions when the CQD is helpful, and how to detect the conditions.
+| *Production Usage*          | Identifies when the CQD is not safe to be used as a permanent setting in production. 
+| *Impact*                    | Describes any positive and negative implications of using the CQD.
+| *Level*                     | Indicates one of these levels at which the CQD should be used: +
+ +
+&#8226; Query +
+&#8226; Session +
+&#8226; Service +
+&#8226; Any +
+ +
+NOTE: This level indicates that the CQD can be used at the Query, Session or Service level as long as you fully understands the scope of the impact of the CQD.
+| *Conflicts/Synergies*       | Describes CQDs that are in conflict with or can be used in conjunction with the CQD.
+| *Real Problem Addressed*    | Describes any design or solution that the CQD may be a workaround for and how you can directly address the real problem.
+| *Introduced In Release*     | Indicates the {project-name} release when the CQD was introduced.
+| *Deprecated In Release*     | Indicates in what release the CQD was deprecated.
+|===

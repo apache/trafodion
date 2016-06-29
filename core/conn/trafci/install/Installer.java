@@ -1920,7 +1920,7 @@ public class Installer
            c.insets = new Insets(0,0,5,0);
            legalPanel.add(componentsLabel,c);
            
-           JTextArea disclaimerText = new JTextArea("The ability to download open source extensions is provided for your convenience only.  HP neither recommends nor requires you to download this software.  The decision to download or use any non-HP branded software is at your sole risk and discretion.  Software provided under any open source licensing model is governed solely by such open source licensing terms.");
+           JTextArea disclaimerText = new JTextArea("The ability to download open source extensions is provided for your convenience only. Software provided under any open source licensing model is governed solely by such open source licensing terms.");
            c.gridheight = 15;
            c.gridwidth=20;
            c.ipadx = 150;
@@ -2288,7 +2288,7 @@ public class Installer
              {
                 System.out.print("\n"+ NEW_JDBC +
                    "\n--------------------------------------"+
-                   "\nEnter the location and file name: " + defaultInstallJDBC);
+                   "\nEnter the location and file name [" + defaultInstallJDBC +"]:");
                 line=bufReader.readLine();
                 Thread.sleep(100);
              } catch (IOException ioe)
@@ -2483,10 +2483,7 @@ public class Installer
        System.out.println("***                  Terms and Conditions                      ***");
        System.out.println("***                                                            ***");
        System.out.println("*** The ability to download open source extensions is provided ***");
-       System.out.println("*** for your convenience only. HP neither recommends nor       ***");
-       System.out.println("*** requires you to download this software.  The decision to   ***");
-       System.out.println("*** download or use any non-HP branded software is at your     ***");
-       System.out.println("*** sole risk and discretion.  Software provided under any     ***");
+       System.out.println("*** for your convenience only. Software provided under any     ***");
        System.out.println("*** open source licensing model is governed solely by such     ***");
        System.out.println("*** open source licensing terms.                               ***");
        System.out.println("***                                                            ***");

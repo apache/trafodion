@@ -825,7 +825,7 @@ public:
       else // indirect varchar, get offset from loop variable.
         tgtOffset = varOffset + nullIndLen;  // skip over the null indicator len
 
-      setVoaValue(tgt, voaEntryOffset, varOffset, (UInt16)vcIndLen); 
+      setVoaValue(tgt, voaEntryOffset, varOffset, (UInt32)vcIndLen); 
 
       varOffset += len + nullIndLen + vcIndLen; 
     }
@@ -906,6 +906,9 @@ public:
   {
     return ( tdf == SQLMX_ALIGNED_FORMAT );
   }
+
+
+  void display(const char* title = NULL);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.

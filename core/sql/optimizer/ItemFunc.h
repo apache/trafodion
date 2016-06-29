@@ -1703,22 +1703,23 @@ public:
 class DateFormat : public CacheableBuiltinFunction
 {
 public:
-  enum 
-  { 
-    DEFAULT,  // YYYY-MM-DD
-    USA,      // MM/DD/YYYY AM|PM
-    EUROPEAN, // DD.MM.YYYY
-    DATE_FORMAT_STR, // formatStr_ contains date format    
-    TIME_FORMAT_STR, // formatStr_ contains time format
-    TIMESTAMP_FORMAT_STR  // formatStr_ contains time format
+  enum FormatType
+  {
+    FORMAT_GENERIC = 0,
+    FORMAT_TO_DATE,
+    FORMAT_TO_CHAR
   };
 
-  DateFormat(ItemExpr *val1Ptr, ItemExpr *formatStrPtr,
-	     Int32 dateFormat)
-	: CacheableBuiltinFunction(ITM_DATEFORMAT,
-			  2, val1Ptr, formatStrPtr),
-	  dateFormat_(dateFormat)
-	{ allowsSQLnullArg() = FALSE; }
+  enum 
+  { 
+    DATE_FORMAT_NONE = 0,
+    DATE_FORMAT_STR,       // formatStr_ contains date format    
+    TIME_FORMAT_STR,       // formatStr_ contains time format
+    TIMESTAMP_FORMAT_STR   // formatStr_ contains timestamp format
+  };
+
+  DateFormat(ItemExpr *val1Ptr, const NAString &formatStr,
+             Lng32 formatType, NABoolean wasDateformat = FALSE);
 
   // virtual destructor
   virtual ~DateFormat();
@@ -1726,12 +1727,20 @@ public:
   // accessor functions
   Int32 getDateFormat() const { return dateFormat_; }
 
+  Int32 getExpDatetimeFormat() const { return frmt_; }
+
   // do not change format literals of DateFormat into constant parameters
   virtual ItemExpr* normalizeForCache(CacheWA& cwa, BindWA& bindWA)
     { return this; } 
 
   // append an ascii-version of ItemExpr into cachewa.qryText_
   virtual void generateCacheKey(CacheWA& cwa) const;
+
+  NABoolean errorChecks(Lng32 frmt, BindWA *bindWA, const NAType* opType);
+
+  ItemExpr * quickDateFormatOpt(BindWA * bindWA);
+
+  ItemExpr * bindNode(BindWA * bindWA);
 
   // a virtual function for type propagating the node
   virtual const NAType * synthesizeType();
@@ -1742,7 +1751,11 @@ public:
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
 				 CollHeap* outHeap = 0);
   
-  
+  void unparse(NAString &result,
+               PhaseEnum phase,
+               UnparseFormatEnum form,
+               TableDesc * tabId) const;
+    
   virtual NABoolean hasEquivalentProperties(ItemExpr * other);
 
   virtual QR::ExprElement getQRExprElem() const
@@ -1751,8 +1764,20 @@ public:
   }
 
 private:
+  // string contains user specified format string
+  NAString formatStr_;
 
+  // TO_DATE or TO_CHAR
+  Lng32 formatType_;
+
+  // DATE, TIME or TIMESTAMP
   Int32 dateFormat_;
+
+  // original function was DATEFORMAT
+  NABoolean wasDateformat_; 
+
+  // actual datetime format (defined in class ExpDatetime in exp_datetime.h)
+  Lng32 frmt_;
 }; // class DateFormat
 
 class DayOfWeek : public CacheableBuiltinFunction
@@ -2112,6 +2137,7 @@ public:
         UTF8_TO_SJIS, SJIS_TO_UTF8, UTF8_TO_ISO88591,
         ISO88591_TO_UTF8,
         KANJI_MP_TO_ISO88591, KSC5601_MP_TO_ISO88591,
+        GBK_TO_UTF8,
         UNKNOWN_TRANSLATION};
 
   Translate(ItemExpr *valPtr, NAString* map_table_name);
@@ -2410,8 +2436,6 @@ public:
   NABoolean checkTruncationError()	{ return checkForTruncation_; }
   void setCheckTruncationError(NABoolean v) { checkForTruncation_ = v; }
 
-  NABoolean noStringTruncationWarnings() { return noStringTruncationWarnings_; }
-
   // get and set for flags_. See enum Flags.
   NABoolean matchChildType()   { return (flags_ & MATCH_CHILD_TYPE) != 0; }
   void setMatchChildType(NABoolean v)
@@ -2437,13 +2461,23 @@ public:
   NA_EIDPROC void setAllowSignInInterval(NABoolean v)
     { (v) ? flags_ |= ALLOW_SIGN_IN_INTERVAL : flags_ &= ~ALLOW_SIGN_IN_INTERVAL; }
 
+  NABoolean convertNullWhenError() 
+  { return (flags_ & CONV_NULL_WHEN_ERROR) != 0; }
+  void setConvertNullWhenError(NABoolean v)
+  { (v ? flags_ |= CONV_NULL_WHEN_ERROR : flags_ &= ~CONV_NULL_WHEN_ERROR); }
+
+  NABoolean noStringTruncationWarnings() 
+  { return (flags_ & NO_STRING_TRUNC_WARNINGS) != 0; }
+  void setNoStringTruncationWarnings(NABoolean v)
+  { (v ? flags_ |= NO_STRING_TRUNC_WARNINGS: flags_ &= ~NO_STRING_TRUNC_WARNINGS); }
+
   const NAType * pushDownType(NAType& desiredType,
                       enum NABuiltInTypeEnum defaultQualifier);
 
   virtual NABoolean hasEquivalentProperties(ItemExpr * other);
 
-  void setNoStringTruncationWarnings(NABoolean v)
-  { noStringTruncationWarnings_ = v; }
+  UInt16 getFlags() { return flags_; }
+  void setFlags(UInt16 f) { flags_ = f; }
 
 private:
 
@@ -2464,7 +2498,13 @@ private:
     // source is a varchar value which is a pointer to the actual data.
     SRC_IS_VARCHAR_PTR = 0x0008,
 
-    ALLOW_SIGN_IN_INTERVAL             = 0x0010
+    ALLOW_SIGN_IN_INTERVAL             = 0x0010,
+
+    // convert error will not be returned, null will be moved into target
+    CONV_NULL_WHEN_ERROR               = 0x0020,
+
+    // string truncation warnings are not to be returned
+    NO_STRING_TRUNC_WARNINGS           = 0x0040
   
   };
 
@@ -2477,10 +2517,6 @@ private:
   // If true, the run-time data error conversion flag must be reversed.
   // This is a Narrow-only issue.
   NABoolean reverseDataErrorConversionFlag_;
-
-  // If true, string truncation warnings are not returned. This is set to true
-  
-  NABoolean noStringTruncationWarnings_;
 
   UInt32 flags_;
 
@@ -2663,6 +2699,8 @@ public:
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
 				 CollHeap* outHeap = 0);
 
+  ItemExpr * quickDateFormatOpt(BindWA * bindWA);
+
   const NAString& getFormatStr() const
   {
     return formatStr_;
@@ -2708,8 +2746,17 @@ public:
    lobNum_(-1),
    lobStorageType_(Lob_Invalid_Storage),
    lobMaxSize_(CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)),
-   lobMaxChunkMemSize_(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE))
-   {}
+     lobMaxChunkMemSize_(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)),
+     lobGCLimit_(CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE)),
+     hdfsPort_((Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT)),
+     hdfsServer_( CmpCommon::getDefaultString(LOB_HDFS_SERVER))
+   {
+     if ((obj == STRING_) || (obj == BUFFER_) || (obj == FILE_))
+       lobStorageType_ = Lob_HDFS_File;
+     else if (obj == EXTERNAL_)
+       lobStorageType_ = Lob_External_HDFS_File;
+    
+   }
 
  // copyTopNode method
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
@@ -2736,8 +2783,10 @@ public:
   LobsStorage &lobStorageType() { return lobStorageType_; }
   NAString &lobStorageLocation() { return lobStorageLocation_; }
   Int64 getLobMaxSize() {return lobMaxSize_*1024*1024; }
-  Int64 getLobMaxChunkMemSize() { return lobMaxChunkMemSize_;}
-  
+  Int64 getLobMaxChunkMemSize() { return lobMaxChunkMemSize_*1024*1024;}
+  Int64 getLobGCLimit() { return lobGCLimit_*1025*1024;}
+  Int32 getLobHdfsPort() { return hdfsPort_;}
+  NAString &getLobHdfsServer(){return hdfsServer_;}
  protected:
   ObjectType obj_;
 
@@ -2746,6 +2795,9 @@ public:
   NAString lobStorageLocation_;
   Int32 lobMaxSize_; // In MB units
   Int32 lobMaxChunkMemSize_; //In MB Units
+  Int32 lobGCLimit_ ;//In MB Units
+  Int32 hdfsPort_;
+  NAString hdfsServer_;
   
 }; // LOBoper
 
@@ -3475,10 +3527,16 @@ public:
 class Repeat : public BuiltinFunction
 {
 public:
-  Repeat(ItemExpr *val1Ptr, ItemExpr *val2Ptr)
+  Repeat(ItemExpr *val1Ptr, ItemExpr *val2Ptr, Int32 maxLength = -1)
        : BuiltinFunction(ITM_REPEAT, CmpCommon::statementHeap(),
-                         2, val1Ptr, val2Ptr)
-  { allowsSQLnullArg() = FALSE; maxLength_ = -1; }
+                         2, val1Ptr, val2Ptr),
+         maxLength_(maxLength),
+         maxLengthWasExplicitlySet_(FALSE)
+  { 
+    allowsSQLnullArg() = FALSE; 
+    if (maxLength > 0)
+      maxLengthWasExplicitlySet_ = TRUE;
+  }
 
   // a virtual function for type propagating the node
   virtual const NAType * synthesizeType();
@@ -3498,14 +3556,18 @@ public:
 
  private:
 
- // max length of Repeat expression. Currently this is set only when Repeat
- // is used certain expansions of LPAD and RPAD. Initialized to the value -1,
- // which indicates that maxLength has not been computed.
- Int32 maxLength_;
+  // max length of Repeat expression. 
+  // If not passed in during constrtuctor, then it is set only when Repeat
+  // is used certain expansions of LPAD and RPAD. 
+  // It is initialized to the value -1, which indicates that maxLength 
+  // has not been computed or passed in.
+  Int32 maxLength_;
+
+  // if max length was specified in REPEAT function 
+  // and passed in during constructor.
+  NABoolean maxLengthWasExplicitlySet_;
 
   virtual NABoolean hasEquivalentProperties(ItemExpr * other) { return TRUE;}
-
-  
 
 }; // class Repeat
 

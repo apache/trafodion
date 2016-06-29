@@ -37,6 +37,10 @@
 #include <time.h>
 #include "ExHbaseAccess.h"
 #include "ExpHbaseInterface.h"
+
+#define HIVE_MODE_DOSFORMAT    1
+#define HIVE_MODE_CONV_ERROR_TO_NULL 2
+
 // -----------------------------------------------------------------------
 // Classes defined in this file
 // -----------------------------------------------------------------------
@@ -158,18 +162,21 @@ protected:
     NOT_STARTED
   , INIT_HDFS_CURSOR
   , OPEN_HDFS_CURSOR
+  , CHECK_FOR_DATA_MOD
+  , CHECK_FOR_DATA_MOD_AND_DONE
   , GET_HDFS_DATA
   , CLOSE_HDFS_CURSOR
   , PROCESS_HDFS_ROW
   , RETURN_ROW
   , REPOS_HDFS_DATA
-  ,CLOSE_FILE
-  ,ERROR_CLOSE_FILE
-  ,COLLECT_STATS
+  , CLOSE_FILE
+  , ERROR_CLOSE_FILE
+  , COLLECT_STATS
   , HANDLE_ERROR
-  ,HANDLE_EXCEPTION
+  , HANDLE_EXCEPTION
   , DONE
   , HANDLE_ERROR_WITH_CLOSE
+  , HANDLE_ERROR_AND_DONE
   } step_,nextStep_;
 
   /////////////////////////////////////////////////////
@@ -200,7 +207,7 @@ protected:
   // hdfsRead. Or it could be the eof (in which case there is a good
   // row still waiting to be processed).
   char * extractAndTransformAsciiSourceToSqlRow(int &err,
-						ComDiagsArea * &diagsArea);
+						ComDiagsArea * &diagsArea, int mode);
 
   short moveRowToUpQueue(const char * row, Lng32 len, 
                          short * rc, NABoolean isVarchar);
@@ -283,6 +290,8 @@ protected:
   NABoolean exception_;
   ComCondition * lastErrorCnd_;
   NABoolean checkRangeDelimiter_;
+
+  NABoolean dataModCheckDone_;
 };
 
 class ExOrcScanTcb  : public ExHdfsScanTcb
@@ -429,41 +438,97 @@ protected:
 
 #define RANGE_DELIMITER '\002'
 
-inline char *hdfs_strchr(const char *s, int c, const char *end, NABoolean checkRangeDelimiter)
+inline char *hdfs_strchr(char *s, int c, const char *end, NABoolean checkRangeDelimiter, int mode , int *changedLen)
 {
   char *curr = (char *)s;
-
-  while (curr < end) {
+  int count=0;
+  //changedLen is lenght of \r which removed by this function
+  *changedLen = 0;
+  if( (mode & HIVE_MODE_DOSFORMAT ) == 0)
+  {
+   while (curr < end) {
     if (*curr == c)
+    {
        return curr;
+    }
     if (checkRangeDelimiter &&*curr == RANGE_DELIMITER)
        return NULL;
     curr++;
+   }
+  }
+  else
+  {
+   while (curr < end) {
+     if (*curr == c)
+     {
+         if(count>0 && c == '\n')
+         {
+           if(s[count-1] == '\r') 
+             *changedLen = 1;
+         }
+         return curr - *changedLen;
+      }
+      if (checkRangeDelimiter &&*curr == RANGE_DELIMITER)
+         return NULL;
+    curr++;
+    count++;
+   }
   }
   return NULL;
 }
 
 
-inline char *hdfs_strchr(const char *s, int rd, int cd, const char *end, NABoolean checkRangeDelimiter, NABoolean *rdSeen)
+inline char *hdfs_strchr(char *s, int rd, int cd, const char *end, NABoolean checkRangeDelimiter, NABoolean *rdSeen, int mode, int* changedLen)
 {
   char *curr = (char *)s;
-
-  while (curr < end) {
-    if (*curr == rd) {
-       *rdSeen = TRUE;
-       return curr;
+  int count = 0;
+  //changedLen is lenght of \r which removed by this function
+  *changedLen = 0;
+  if( (mode & HIVE_MODE_DOSFORMAT)>0 )  //check outside the while loop to make it faster
+  {
+    while (curr < end) {
+      if (*curr == rd) {
+         if(count>0 && rd == '\n')
+         {
+             if(s[count-1] == '\r') 
+               *changedLen = 1;
+         }
+         *rdSeen = TRUE;
+         return curr - *changedLen;
+      }
+      else
+      if (*curr == cd) {
+         *rdSeen = FALSE;
+         return curr;
+      }
+      else
+      if (checkRangeDelimiter && *curr == RANGE_DELIMITER) {
+         *rdSeen = TRUE;
+         return NULL;
+      }
+      curr++;
+      count++;
     }
-    else
-    if (*curr == cd) {
-       *rdSeen = FALSE;
-       return curr;
+  }
+  else
+  {
+    while (curr < end) {
+      if (*curr == rd) {
+         *rdSeen = TRUE;
+         return curr;
+      }
+      else
+      if (*curr == cd) {
+         *rdSeen = FALSE;
+         return curr;
+      }
+      else
+      if (checkRangeDelimiter && *curr == RANGE_DELIMITER) {
+         *rdSeen = TRUE;
+         return NULL;
+      }
+      curr++;
     }
-    else
-    if (checkRangeDelimiter && *curr == RANGE_DELIMITER) {
-       *rdSeen = TRUE;
-       return NULL;
-    }
-    curr++;
   }
   *rdSeen = FALSE;
   return NULL;

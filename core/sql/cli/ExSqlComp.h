@@ -179,6 +179,7 @@ public:
   inline NABoolean badConnection() {return badConnection_; }
   inline NABoolean breakReceived() { return breakReceived_; }
   inline IpcServer *getServer() { return server_; }
+  inline Int64 getRecentIpcTimestamp() { return recentIpcTimestamp_; }
 
   ReturnStatus setDefaultCatAndSch();
 
@@ -269,6 +270,7 @@ private:
   char* replyData_;
   ULng32 replyDatalen_;
   ReturnStatus retval_;
+  Int64 recentIpcTimestamp_;
 }; // end of ExSqlComp
   
 // -----------------------------------------------------------------------

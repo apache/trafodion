@@ -327,6 +327,8 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
 
 
   switch(targetType) {
+  case REC_BIN8_SIGNED:
+  case REC_BIN8_UNSIGNED:
   case REC_BIN16_SIGNED:
   case REC_BIN16_UNSIGNED:
   case REC_BPINT_UNSIGNED:
@@ -337,8 +339,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
   case REC_DECIMAL_LSE:
   case REC_FLOAT32:
   case REC_FLOAT64:
-  case REC_TDM_FLOAT32:
-  case REC_TDM_FLOAT64:
   case REC_BYTE_F_ASCII:
   case REC_BYTE_V_ASCII:
   case REC_BYTE_V_ASCII_LONG:
@@ -426,6 +426,9 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
     short VCLenSize = 0;
     converted_value = new char[targetLen + 1];
 
+    UInt32 flags = 0;
+    flags |= CONV_NO_HADOOP_DATE_FIX;
+
 #pragma nowarn(1506)   // warning elimination 
     ex_expr::exp_return_type ok = convDoIt(value,
 					   sourceLen, 
@@ -440,7 +443,10 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
 					   VCLen,
 					   VCLenSize,
 					   0,
-					   &diags);
+					   &diags,
+                                           CONV_UNKNOWN,
+                                           NULL,
+                                           flags);
     
     if ( ok != ex_expr::EXPR_OK)
       {

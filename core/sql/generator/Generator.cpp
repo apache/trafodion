@@ -517,7 +517,8 @@ RelExpr * Generator::preGenCode(RelExpr * expr_node)
 	      // if internal query from executor for explain, enable aqr.
 	      const NAString * val =
 		ActiveControlDB()->getControlSessionValue("EXPLAIN");
-	      if ((val) && (*val == "ON"))
+	      if (((val) && (*val == "ON")) ||
+                  (exp_generator->getShowplan()))
 		{
 		  aqr = TRUE;
 		}
@@ -1594,6 +1595,11 @@ desc_struct* Generator::createColDescs(
 	  col_desc->body.columns_desc.colclass = 'A';
 	  col_desc->body.columns_desc.addedColumn = 1;
 	}
+      else if (info->columnClass == COM_ALTERED_USER_COLUMN)
+	{
+	  col_desc->body.columns_desc.colclass = 'C';
+	  col_desc->body.columns_desc.addedColumn = 1;
+	}
 
       if (info->colHeading)
 	col_desc->body.columns_desc.heading = (char*)info->colHeading;
@@ -1868,7 +1874,8 @@ desc_struct * Generator::createVirtualTableDesc(
       strcpy(table_desc->body.table_desc.all_col_fams, tableInfo->allColFams);
     }
 
-  table_desc->body.table_desc.tableFlags = (tableInfo ? tableInfo->objectFlags : 0);
+  table_desc->body.table_desc.objectFlags = (tableInfo ? tableInfo->objectFlags : 0);
+  table_desc->body.table_desc.tablesFlags = (tableInfo ? tableInfo->tablesFlags : 0);
 
   desc_struct * files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
   //  files_desc->body.files_desc.audit = -1; // audited table
@@ -1974,6 +1981,7 @@ desc_struct * Generator::createVirtualTableDesc(
   index_desc->body.indexes_desc.tablename = table_desc->body.table_desc.tablename;
   index_desc->body.indexes_desc.indexname = table_desc->body.table_desc.tablename;
   index_desc->body.indexes_desc.keytag = 0; // primary index
+  index_desc->body.indexes_desc.indexUID = 0;
   index_desc->body.indexes_desc.record_length = table_desc->body.table_desc.record_length;
   index_desc->body.indexes_desc.colcount = table_desc->body.table_desc.colcount;
   index_desc->body.indexes_desc.isVerticalPartition = 0;
@@ -1984,8 +1992,10 @@ desc_struct * Generator::createVirtualTableDesc(
   index_desc->body.indexes_desc.rowFormat = table_desc->body.table_desc.rowFormat;
   if (tableInfo)
   {
-      index_desc->body.indexes_desc.numSaltPartns = tableInfo->numSaltPartns;
-      if (tableInfo->hbaseCreateOptions)
+    index_desc->body.indexes_desc.indexUID = tableInfo->objUID;
+    
+    index_desc->body.indexes_desc.numSaltPartns = tableInfo->numSaltPartns;
+    if (tableInfo->hbaseCreateOptions)
       {
         index_desc->body.indexes_desc.hbaseCreateOptions  = 
           new HEAP char[strlen(tableInfo->hbaseCreateOptions) + 1];
@@ -1993,7 +2003,7 @@ desc_struct * Generator::createVirtualTableDesc(
                tableInfo->hbaseCreateOptions);
       }
   }
-
+  
   if (numIndexes > 0)
     {
       desc_struct * prev_desc = index_desc;
@@ -2009,6 +2019,7 @@ desc_struct * Generator::createVirtualTableDesc(
 	  curr_index_desc->body.indexes_desc.indexname = new HEAP char[strlen(indexInfo[i].indexName)+1];
 	  strcpy(curr_index_desc->body.indexes_desc.indexname, indexInfo[i].indexName);
 
+          curr_index_desc->body.indexes_desc.indexUID = indexInfo[i].indexUID;
 	  curr_index_desc->body.indexes_desc.keytag = indexInfo[i].keytag;
 	  curr_index_desc->body.indexes_desc.unique = indexInfo[i].isUnique;
 	  curr_index_desc->body.indexes_desc.isCreatedExplicitly = indexInfo[i].isExplicit;
@@ -3132,3 +3143,24 @@ void Generator::setHBaseCacheBlocks(Int32 hbaseRowSize, double estRowsAccessed,
       hbpa->setCacheBlocks(TRUE);
   }
 }
+
+void Generator::setHBaseSmallScanner(Int32 hbaseRowSize, double estRowsAccessed,
+                      Lng32 hbaseBlockSize, ComTdbHbaseAccess::HbasePerfAttributes * hbpa)
+{
+  if (CmpCommon::getDefault(HBASE_SMALL_SCANNER) == DF_SYSTEM)
+  {
+    if(((hbaseRowSize*estRowsAccessed)<hbaseBlockSize) && (estRowsAccessed>0))//added estRowsAccessed > 0 because MDAM costing is not populating this field correctly
+        hbpa->setUseSmallScanner(TRUE);
+    hbpa->setUseSmallScannerForProbes(TRUE);
+  }else if (CmpCommon::getDefault(HBASE_SMALL_SCANNER) == DF_ON)
+  {
+      hbpa->setUseSmallScanner(TRUE);
+      hbpa->setUseSmallScannerForProbes(TRUE);
+  }
+  hbpa->setMaxNumRowsPerHbaseBlock(hbaseBlockSize/hbaseRowSize);
+}
+
+void Generator::setHBaseParallelScanner(ComTdbHbaseAccess::HbasePerfAttributes * hbpa){
+    hbpa->setDopParallelScanner(CmpCommon::getDefaultNumeric(HBASE_DOP_PARALLEL_SCANNER));
+}
+

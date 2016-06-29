@@ -44,6 +44,8 @@
 #   and group services.
 # Thrift: Communications and data serialization tool
 # Maven: Build tool that is only installed if compatible version does not exist
+# log4cxx: standard logging framework for C++
+# hadoop: shared libraries for libhadoop, libhdfs, and hdfs header file
 #
 # Script can be modified to meet the needs of your environment
 # May need root or SUDO access to install tools in desired location
@@ -64,41 +66,63 @@ function Usage {
 
 # -----------------------------------------------------------------------------
 # function: downloadSource - downloads and un-tars the requested file
-#    $1 - tar file to download 
-#    $2 - directory where source is untarred
+#    $1 - tar file URL to download
+#    $2 - directory where source is untarred (leave empty to skip untar)
 #
-# Suggestion:  instead use a single argument $1 and figure out the name of the
-#              file to extract with basename $1
 # -----------------------------------------------------------------------------
 function downloadSource
 {
-  # currently only tar files ending in "tar.gz" and "tgz" are recognized
-  TARSUFFIX="tar.gz"
-  if [[ ! $1 == *$"$TARSUFFIX" ]]; then
-    TARSUFFIX="tgz"
-  fi
+  URL="$1"
+  SRCDIR="$2"
+  TARFILE="${URL##*/}"
 
-  if [ ! -e $BASEDIR/$2.$TARSUFFIX ]; then
-    wget $1  >>$LOGFILE 2>&1
+  if [ ! -e $BASEDIR/$TARFILE ]; then
+    wget $URL  >>$LOGFILE 2>&1
+    echo "INFO:   downloaded tar file: $TARFILE " | tee -a $LOGFILE
   else
-    echo "INFO:   tar file already downloaded, step skipped" | tee -a $LOGFIL
+    echo "INFO:   tar file already downloaded, step skipped" | tee -a $LOGFILE
   fi
 
-  if [ ! -e $BASEDIR/$2 ]; then
-    tar -xzf $BASEDIR/$2.$TARSUFFIX
-    echo "INFO:   downloaded tar file: $2.$TARSUFFIX " | tee -a $LOGFILE
+  if [ ! -e $BASEDIR/$SRCDIR ]; then
+    cd $BASEDIR
+    tar -xzf $BASEDIR/$TARFILE
   else
     echo "INFO:   source tree already exists" | tee -a $LOGFILE
   fi
 }
 
+LOGDIR=$(pwd)
+LOGFILE=$LOGDIR/traf_tools_setup.log
+BLDLOG=$LOGDIR/traf_tools_bld
+
+# -----------------------------------------------------------------------------
+# execute build functions in background
+# $1 - short name of component (single word, also used in logfile name)
+# $2 - first make target (usually empty string for the default target)
+# $3 - second make target
+# $4 - dir/file to check for success
+# -----------------------------------------------------------------------------
+function bkgBuild
+{
+  LOG=${BLDLOG}-${1}.log
+  echo "INFO:   Starting background make and install for $1" | tee -a $LOGFILE
+
+ (make $2 > $LOG 2>&1
+  echo "INFO:   make completed" > $LOG
+  make $3 > $LOG 2>&1
+  if [[ ! -e $4 ]]; then
+    echo "ERROR:  failed to install $1" | tee -a $LOGFILE
+    echo "  see details in $LOG" | tee -a $LOGFILE
+    exit 2;
+  fi
+  echo "INFO:   $1 install complete at $(date), files placed in $TOOLSDIR" | tee -a $LOGFILE
+ ) &
+}
 
 # main code
 
 TOOLSDIR=
 BASEDIR=
-LOGDIR=`pwd`
-LOGFILE=$LOGDIR/traf_tools_setup.log
 rm $LOGFILE 2>/dev/null
 echo
 echo "INFO: Starting tools build on $(date)" | tee -a $LOGFILE
@@ -130,6 +154,11 @@ if [ "$BASEDIR" == "" ]; then
   Usage;
   exit 1;
 fi
+# handle relative path
+if [[ ! $BASEDIR =~ ^/ ]]
+then
+  BASEDIR=$(pwd)/$BASEDIR
+fi
 
 if [ ! -d "$BASEDIR" ]; then
   echo
@@ -143,6 +172,11 @@ if [ "$TOOLSDIR" == "" ]; then
   echo "ERROR: install directory (-t)  is not specified"
   Usage;
   exit 1;
+fi
+# handle relative path
+if [[ ! $TOOLSDIR =~ ^/ ]]
+then
+  TOOLSDIR=$(pwd)/$TOOLSDIR
 fi
 
 if [ ! -d "$TOOLSDIR" ]; then                                                    
@@ -172,58 +206,6 @@ echo " *********************************************************** " | tee -a $L
 
 
 # -----------------------------------------------------------------------------
-# install mpi
-cd $BASEDIR
-echo
-echo "INFO: Installing MPI on $(date)" | tee -a $LOGFILE
-if [ -d $TOOLSDIR/dest-mpich-3.0.4/bin ]; then
-  echo "INFO: MPI is already installed, skipping to next tool" | tee -a $LOGFILE
-else	
-  downloadSource http://www.mpich.org/static/downloads/3.0.4/mpich-3.0.4.tar.gz mpich-3.0.4 
-  cd mpich-3.0.4
-  ./configure --prefix=$TOOLSDIR/dest-mpich-3.0.4 --with-device=ch3:sock --disable-f77 --disable-fc >>$LOGFILE 2>&1
-  echo "INFO:   configure complete" | tee -a $LOGFILE
-  make  >>$LOGFILE 2>&1
-  echo "INFO:   make completed" | tee -a $LOGFILE
-  make install  >>$LOGFILE 2>&1
-  if [ ! -d $TOOLSDIR/dest-mpich-3.0.4/bin ]; then
-    echo "ERROR:  failed to install MPI" | tee -a $LOGFILE
-    echo "  see details in $LOGFILE" | tee -a $LOGFILE
-    exit 2;
-  fi
-  echo "INFO:   make install complete, files placed in $TOOLSDIR"
-fi
-echo "INFO: MPI installation complete" | tee -a $LOGFILE
-echo " *********************************************************** " | tee -a $LOGFILE
-
-
-# -----------------------------------------------------------------------------
-# install bison
-cd $BASEDIR
-echo
-echo "INFO: Installing Bison on $(date)" | tee -a $LOGFILE
-if [ -d $TOOLSDIR/bison_3_linux/bin ]; then
-  echo "INFO: Bison is already installed, skipping to next tool" | tee -a $LOGFILE
-else	
-  downloadSource http://ftp.gnu.org/gnu/bison/bison-3.0.tar.gz bison-3.0
-  cd bison-3.0
-  ./configure --prefix=$TOOLSDIR/bison_3_linux >>$LOGFILE 2>&1
-  echo "INFO:   configure complete" | tee -a $LOGFILE
-  make >>$LOGFILE 2>&1
-  echo "INFO:   make completed" | tee -a $LOGFILE
-  make install >>$LOGFILE 2>&1
-  if [ ! -d $TOOLSDIR/bison_3_linux/bin ]; then
-    echo "ERROR:  failed to install Bison" | tee -a $LOGFILE
-    echo "  see details in $LOGFILE" | tee -a $LOGFILE
-    exit 2;
-  fi
-  echo "INFO:   make install complete, files placed in $TOOLSDIR"
-fi
-echo "INFO: Bison installation complete" | tee -a $LOGFILE
-echo " *********************************************************** " | tee -a $LOGFILE
-
-
-# -----------------------------------------------------------------------------
 # install udis
 cd $BASEDIR
 echo
@@ -235,17 +217,8 @@ else
   cd udis86-1.7.2
   ./configure --prefix=$TOOLSDIR/udis86-1.7.2 --enable-shared >>$LOGFILE 2>&1
   echo "INFO:   configure complete" | tee -a $LOGFILE
-  make >>$LOGFILE 2>&1
-  echo "INFO:   make completed" | tee -a $LOGFILE
-  make install >>$LOGFILE 2>&1
-  if [ ! -d $TOOLSDIR/udis86-1.7.2/bin ]; then
-    echo "ERROR:  failed to install UDIS" | tee -a $LOGFILE
-    echo "  see details in $LOGFILE" | tee -a $LOGFILE
-    exit 2;
-  fi
-  echo "INFO:   make install complete, files placed in $TOOLSDIR"
+  bkgBuild "udis86" "" "install" "$TOOLSDIR/udis86-1.7.2/bin"
 fi
-echo "INFO: UDIS installation complete" | tee -a $LOGFILE
 echo " *********************************************************** " | tee -a $LOGFILE
 
 
@@ -259,6 +232,9 @@ if [ -d $TOOLSDIR/dest-llvm-3.2/release/bin -a -d $TOOLSDIR/dest-llvm-3.2/debug/
 else
   downloadSource http://llvm.org/releases/3.2/llvm-3.2.src.tar.gz llvm-3.2.src
   
+  # Depends on UDIS, so make sure it is done
+  wait
+
   export MY_UDIS_INSTALL_DIR=$TOOLSDIR/udis86-1.7.2
   export MY_LLVM_INSTALL_DIR=$TOOLSDIR/dest-llvm-3.2/
   export MY_LLVM_SRC_DIR=$BASEDIR/llvm-3.2.src
@@ -278,20 +254,11 @@ else
        CFLAGS=-fgnu89-inline >>$LOGFILE 2>&1
     echo "INFO:   release configure complete" | tee -a $LOGFILE
 
-    echo "INFO:   building release - this will take some time"
-    make libs-only >>$LOGFILE 2>&1
-    echo "INFO:   release make completed" | tee -a $LOGFILE
-    make install-libs >>$LOGFILE 2>&1
-    if [ ! -d $TOOLSDIR/dest-llvm-3.2/release/bin ]; then
-      echo "ERROR:  failed to install release LLVM" | tee -a $LOGFILE
-      echo "  see details in $LOGFILE" | tee -a $LOGFILE
-      exit 2;
-    fi
+    bkgBuild "llvm-release" "libs-only" "install-libs" "$TOOLSDIR/dest-llvm-3.2/release/bin"
   fi
-  echo "INFO:   release make install complete, files placed in $TOOLSDIR"
 
   # Build debug version
-  if [ ! -d $TOOLSDIR/dest-llvm-3.2/debut/bin ]; then
+  if [ ! -d $TOOLSDIR/dest-llvm-3.2/debug/bin ]; then
     mkdir -p $MY_LLVM_OBJ_DIR/debug
     cd $MY_LLVM_OBJ_DIR/debug
 
@@ -302,44 +269,60 @@ else
        --with-udis86=$MY_UDIS_INSTALL_DIR/lib \
        CFLAGS=-fgnu89-inline >>$LOGFILE 2>&1
     echo "INFO:   debug configure complete" | tee -a $LOGFILE
-    echo "INFO:   building debug - this will take some time"
-    make libs-only >>$LOGFILE 2>&1
-    echo "INFO:   debug make completed" | tee -a $LOGFILE
-    make install-libs >>$LOGFILE 2>&1
-    if [ ! -d $TOOLSDIR/dest-llvm-3.2/debug/bin ]; then
-      echo "ERROR:  failed to install debug LLVM" | tee -a $LOGFILE
-      echo "  see details in $LOGFILE" | tee -a $LOGFILE
-      exit 2;
-    fi
+    bkgBuild "llvm-debug" "libs-only" "install-libs" "$TOOLSDIR/dest-llvm-3.2/debug/bin"
   fi
-  echo "INFO:   debug make install complete, files placed in $TOOLSDIR"
 fi
-echo "INFO: LLVM installation complete" | tee -a $LOGFILE
 echo " *********************************************************** " | tee -a $LOGFILE
 
 
+# -----------------------------------------------------------------------------
+# install mpi
+cd $BASEDIR
+echo
+echo "INFO: Installing MPI on $(date)" | tee -a $LOGFILE
+if [ -d $TOOLSDIR/dest-mpich-3.0.4/bin ]; then
+  echo "INFO: MPI is already installed, skipping to next tool" | tee -a $LOGFILE
+else	
+  downloadSource http://www.mpich.org/static/downloads/3.0.4/mpich-3.0.4.tar.gz mpich-3.0.4 
+  cd mpich-3.0.4
+  ./configure --prefix=$TOOLSDIR/dest-mpich-3.0.4 --with-device=ch3:sock --disable-f77 --disable-fc >>$LOGFILE 2>&1
+  echo "INFO:   configure complete" | tee -a $LOGFILE
+  bkgBuild "MPI" "" "install" "$TOOLSDIR/dest-mpich-3.0.4/bin"
+fi
+echo " *********************************************************** " | tee -a $LOGFILE
+
+
+# -----------------------------------------------------------------------------
+# install bison
+cd $BASEDIR
+echo
+echo "INFO: Installing Bison on $(date)" | tee -a $LOGFILE
+if [ -d $TOOLSDIR/bison_3_linux/bin ]; then
+  echo "INFO: Bison is already installed, skipping to next tool" | tee -a $LOGFILE
+else	
+  downloadSource http://ftp.gnu.org/gnu/bison/bison-3.0.tar.gz bison-3.0
+  cd bison-3.0
+  ./configure --prefix=$TOOLSDIR/bison_3_linux >>$LOGFILE 2>&1
+  echo "INFO:   configure complete" | tee -a $LOGFILE
+  bkgBuild "bison" "" "install" "$TOOLSDIR/bison_3_linux/bin"
+fi
+echo " *********************************************************** " | tee -a $LOGFILE
+
+
+# -----------------------------------------------------------------------------
 # Build ICU
 cd $BASEDIR
 echo
 echo "INFO: Installing ICU on $(date)" | tee -a $LOGFILE
-if [ -d $TOOLSDIR/icu4.4/linux64/bin ]; then
+if [ -d $TOOLSDIR/icu4c_4.4/linux64/bin ]; then
   echo "INFO: ICU is already installed, skipping to next tool" | tee -a $LOGFILE
 else
   downloadSource http://download.icu-project.org/files/icu4c/4.4/icu4c-4_4-src.tgz icu4c-4_4-src
   cd icu/source
-  ./configure --with-library-suffix=Nv44 --prefix=$TOOLSDIR/icu4.4/linux64 >>$LOGFILE 2>&1
+  ./configure --prefix=$TOOLSDIR/icu4c_4.4/linux64 >>$LOGFILE 2>&1
   echo "INFO:   configure complete" | tee -a $LOGFILE
-  make >>$LOGFILE 2>&1
-  echo "INFO:   make completed" | tee -a $LOGFILE
-  make install  >>$LOGFILE 2>&1
-  if [ ! -d $TOOLSDIR/icu4.4/linux64/bin ]; then
-    echo "ERROR:  failed to install ICU" | tee -a $LOGFILE
-    echo "  see details in $LOGFILE" | tee -a $LOGFILE
-    exit 2;
-  fi
-  echo "INFO:   make install complete, files placed in $TOOLSDIR"
+  bkgBuild "ICU" "" "install" "$TOOLSDIR/icu4c_4.4/linux64/bin"
 fi
-echo "INFO: ICU installation complete" | tee -a $LOGFILE
 echo " *********************************************************** " | tee -a $LOGFILE
 
 
@@ -355,17 +338,8 @@ else
   cd zookeeper-3.4.5/src/c
   ./configure --prefix=$TOOLSDIR/zookeeper-3.4.5 >>$LOGFILE 2>&1
   echo "INFO:   configure complete" | tee -a $LOGFILE
-  make >>$LOGFILE 2>&1
-  echo "INFO:   make completed" | tee -a $LOGFILE
-  make install  >>$LOGFILE 2>&1
-  if [ ! -d $TOOLSDIR/zookeeper-3.4.5/bin ]; then
-    echo "ERROR:  failed to install ZooKeeper" | tee -a $LOGFILE
-    echo "  see details in $LOGFILE" | tee -a $LOGFILE
-    exit 2;
-  fi
-  echo "INFO:   make install complete, files placed in $TOOLSDIR"
+  bkgBuild "zookeeper" "" "install" "$TOOLSDIR/zookeeper-3.4.5/bin"
 fi
-echo "INFO: ZooKeeper installation complete" | tee -a $LOGFILE
 echo " *********************************************************** " | tee -a $LOGFILE
 
 
@@ -381,17 +355,8 @@ else
   cd thrift-0.9.0
   ./configure --prefix=$TOOLSDIR/thrift-0.9.0 -without-qt >>$LOGFILE 2>&1
   echo "INFO:   configure complete" | tee -a $LOGFILE
-  make >>$LOGFILE 2>&1
-  echo "INFO:   make completed" | tee -a $LOGFILE
-  make install  >>$LOGFILE 2>&1
-  if [ ! -d $TOOLSDIR/thrift-0.9.0/bin ]; then
-    echo "ERROR:  failed to install Thrift" | tee -a $LOGFILE
-    echo "  see details in $LOGFILE" | tee -a $LOGFILE
-    exit 2;
-  fi
-  echo "INFO:   make install complete, files placed in $TOOLSDIR"
+  bkgBuild "thrift" "" "install" "$TOOLSDIR/thrift-0.9.0/bin"
 fi
-echo "INFO: Thrift installation complete" | tee -a $LOGFILE
 echo " *********************************************************** " | tee -a $LOGFILE
 
 
@@ -417,8 +382,57 @@ else
   echo "INFO:  Maven is already installed, skipping to next tool" | tee -a $LOGFILE
 fi
 
+# -----------------------------------------------------------------------------
+# install log4cxx, if not installed
+if [[ !  -e /usr/lib64/liblog4cxx.so ]]; then
+  cd $BASEDIR
+  echo
+  echo "INFO: Installing log4cxx on $(date)" | tee -a $LOGFILE
+  if [ -d $TOOLSDIR/apache-log4cxx-0.10.0/lib ]; then
+    echo "INFO: log4cxx is already installed, skipping to next tool" | tee -a $LOGFILE
+  else
+    downloadSource https://dist.apache.org/repos/dist/release/logging/log4cxx/0.10.0/apache-log4cxx-0.10.0.tar.gz apache-log4cxx-0.10.0
+    cd apache-log4cxx-0.10.0
+    echo "INFO:   headerfile patch - per LOG4CXX-360" | tee -a $LOGFILE
+    sed -i '1 i#include <string.h>' src/main/cpp/inputstreamreader.cpp
+    sed -i '1 i#include <string.h>' src/main/cpp/socketoutputstream.cpp
+    sed -i '1 i#include <string.h>' src/examples/cpp/console.cpp
+    sed -i '2 i#include <stdio.h>' src/examples/cpp/console.cpp
+    ./configure --prefix=$TOOLSDIR/apache-log4cxx-0.10.0 >>$LOGFILE 2>&1
+    echo "INFO:   configure complete" | tee -a $LOGFILE
+    echo "INFO:   Be sure dependencies apr-devel and apr-util-devel are installed" | tee -a $LOGFILE
+    bkgBuild "log4cxx" "" "install" "$TOOLSDIR/apache-log4cxx-0.10.0/lib"
+  fi
+  echo " *********************************************************** " | tee -a $LOGFILE
+else
+  echo "INFO:  log4cxx is already installed, skipping to next tool" | tee -a $LOGFILE
+fi
+
+# -----------------------------------------------------------------------------
+# download hadoop/hdfs libs
+cd $BASEDIR
 echo
-echo "INFO: Completed tools build on $(date)" | tee -a $LOGFILE
+echo "INFO: Hadoop/HDFS libs on $(date)" | tee -a $LOGFILE
+HVER="2.6.0"
+if [ -d $TOOLSDIR/hadoop-${HVER} ]; then
+  echo "INFO: Hadoop/HDFS is already installed, skipping to next tool" | tee -a $LOGFILE
+else
+  downloadSource http://archive.apache.org/dist/hadoop/common/hadoop-${HVER}/hadoop-${HVER}.tar.gz # no un-tar
+  cd $TOOLSDIR
+  tar -xzf $BASEDIR/hadoop-${HVER}.tar.gz \
+    hadoop-${HVER}/lib/native/libhadoop\*so\* \
+    hadoop-${HVER}/lib/native/libhdfs\*so\* \
+    hadoop-${HVER}/include/hdfs.h
+  echo "INFO:   extraction complete" | tee -a $LOGFILE
+fi
+echo " *********************************************************** " | tee -a $LOGFILE
+
+# -----------------------------------------------------------------------------
+
+echo
+echo "INFO: Waiting for all background builds. This might take a while." | tee -a $LOGFILE
+wait
+echo "INFO: Completed tools builds on $(date)" | tee -a $LOGFILE
 echo "INFO: List of tools directory: " | tee -a $LOGFILE
 ls $TOOLSDIR | echo | tee -a $LOGFILE
 echo "`ls $TOOLSDIR`" | tee -a $LOGFILE

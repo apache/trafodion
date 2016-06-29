@@ -111,6 +111,12 @@ Response Body:
       "DOWN":""
     },
     {
+      "PROCESS":"DCSMASTER",
+      "CONFIGURED":2,
+      "ACTUAL":2,
+      "DOWN":""
+    },
+    {
       "PROCESS":"MXOSRVR",
       "CONFIGURED":4,
       "ACTUAL":4,
@@ -181,6 +187,12 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/
       "ACTUAL":4,"DOWN":""
     },
     {
+      "PROCESS":"DCSMASTER",
+      "CONFIGURED":2,
+      "ACTUAL":2,
+      "DOWN":""
+    },
+    {
       "PROCESS":"MXOSRVR",
       "CONFIGURED":4,
       "ACTUAL":0,
@@ -241,7 +253,7 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/rms
 }
 ----
 
-In this example the user wishes to know the status of Trafodion DCS. 
+In this example the user wishes to know the status of Trafodion DCS components. 
 This a jsonized version of the _sqcheck -c dcs_ command.
 
 .Http command
@@ -257,12 +269,38 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/dcs
   "PROCESSES":
   [
     {
+      "PROCESS":"DCSMASTER",
+      "CONFIGURED":2,
+      "ACTUAL":2,
+      "DOWN":""
+    },
+    {
       "PROCESS":"MXOSRVR",
       "CONFIGURED":4,
       "ACTUAL":4,
       "DOWN":""
     },
   ]
+}
+----
+
+In this example the user wishes to see a summary of the Trafodion DCS configuration.
+The server retrieves this information by executing dcscheck script.
+
+.Http command
+----
+curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/dcs/summary
+----
+
+.Response
+----
+{
+  "Cluster Configuration": "HA",
+  "Zookeeper listen port": "2181",
+  "DcsMaster listen port": "23400",
+  "Configured Primary DcsMaster": "\"node1\"",
+  "Configured Backup DcsMasters": "\"node2 node3\"",
+  "Active DcsMaster": "\"node1\", pid 8526"
 }
 ----
 

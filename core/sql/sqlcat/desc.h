@@ -61,7 +61,6 @@ enum desc_nodetype {
   DESC_VIEW_TYPE,
   DESC_SCHEMA_LABEL_TYPE,
   DESC_SEQUENCE_GENERATOR_TYPE,
-  DESC_HBASE_HASH2_REGION_TYPE,
   DESC_HBASE_RANGE_REGION_TYPE,
   DESC_ROUTINE_TYPE,
   DESC_LIBRARY_TYPE
@@ -126,7 +125,8 @@ struct table_desc_struct {
   char * snapshotName;
   char * default_col_fam;
   char * all_col_fams;
-  Int64 tableFlags;
+  Int64 objectFlags;
+  Int64 tablesFlags;
   desc_struct *columns_desc;
   desc_struct *indexes_desc;
   desc_struct *constrnts_desc;
@@ -172,6 +172,7 @@ struct indexes_desc_struct {
   char *indexname;  // physical name of index. Different from ext_indexname
                     // for ARK tables.
   ULng32 redeftime[2];
+  Int64 indexUID;
   Int32 issystemtablecode;	// ...but too much bother in ReadTableDef.C
   // Indicates whether it is a vertical partition or an index
   ComPartitioningScheme partitioningScheme;     // round robin, range, etc.

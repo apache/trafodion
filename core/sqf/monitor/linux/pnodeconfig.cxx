@@ -292,6 +292,12 @@ int CPNodeConfigContainer::GetPNid( char *nodename )
     return( pnid );
 }
 
+void CPNodeConfig::SetName( char *newName ) 
+{ 
+    if (newName) 
+      strcpy(name_, newName); 
+} 
+
 CPNodeConfig *CPNodeConfigContainer::GetPNodeConfig( int pnid )
 {
     CPNodeConfig *config;

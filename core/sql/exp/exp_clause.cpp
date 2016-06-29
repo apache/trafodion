@@ -1632,7 +1632,8 @@ ex_conv_clause::ex_conv_clause(OperatorTypeEnum oper_type,
 			       Space * space,
 			       short num_operands, NABoolean checkTruncErr,
                                NABoolean reverseDataErrorConversionFlag,
-                               NABoolean noStringTruncWarnings)
+                               NABoolean noStringTruncWarnings,
+                               NABoolean convertToNullWhenErrorFlag)
      : ex_clause (ex_clause::CONV_TYPE, oper_type, num_operands, attr, space),
        case_index(CONV_UNKNOWN),
        lastVOAoffset_(0),
@@ -1654,6 +1655,9 @@ ex_conv_clause::ex_conv_clause(OperatorTypeEnum oper_type,
 
   if (noStringTruncWarnings)
     setNoTruncationWarningsFlag();
+  
+  if (convertToNullWhenErrorFlag)
+    flags_ |= CONV_TO_NULL_WHEN_ERROR;
 
   set_case_index(); 
 }
@@ -2000,6 +2004,18 @@ void ExFunctionHbaseVersion::displayContents(Space * space, const char * /*displ
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
   str_sprintf(buf, "    colIndex_ = %d", colIndex_);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea);
+}
+
+void ex_function_dateformat::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
+{
+  char buf[100];
+  str_sprintf(buf, "  Clause #%d: ex_function_dateformat", clauseNum);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  str_sprintf(buf, "    dateformat_ = %d", dateformat_);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
   ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea);

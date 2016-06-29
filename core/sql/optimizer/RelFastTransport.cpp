@@ -49,7 +49,7 @@ FastExtract::FastExtract(const FastExtract & other)
   targetName_ = other.targetName_;
   hdfsHostName_ = other.hdfsHostName_;
   hdfsPort_ = other.hdfsPort_;
-  isHiveInsert_ = other.isHiveInsert_;
+  hiveTableDesc_ = other.hiveTableDesc_;
   hiveTableName_ = other.hiveTableName_;
   delimiter_ = other.delimiter_;
   isAppend_ = other.isAppend_;
@@ -87,7 +87,7 @@ RelExpr * FastExtract::copyTopNode(RelExpr *derivedNode,
   result->targetName_ = targetName_;
   result->hdfsHostName_ = hdfsHostName_;
   result->hdfsPort_ = hdfsPort_;
-  result->isHiveInsert_= isHiveInsert_;
+  result->hiveTableDesc_= hiveTableDesc_;
   result->hiveTableName_ = hiveTableName_;
   result->delimiter_ = delimiter_;
   result->isAppend_ = isAppend_;
@@ -98,6 +98,7 @@ RelExpr * FastExtract::copyTopNode(RelExpr *derivedNode,
   result->recordSeparator_ = recordSeparator_ ;
   result->selectList_ = selectList_;
   result->isSequenceFile_ = isSequenceFile_;
+  result->overwriteHiveTable_ = overwriteHiveTable_;
 
   return RelExpr::copyTopNode(result, outHeap);
 }
@@ -203,7 +204,7 @@ short FastExtract::setOptions(NAList<UnloadOption*> *
 
   for (CollIndex i = 0; i < fastExtractOptionList->entries(); i++)
   {
-    UnloadOption::UnloadOption * feo = (*fastExtractOptionList)[i];
+    UnloadOption * feo = (*fastExtractOptionList)[i];
     switch (feo->option_)
     {
       case UnloadOption::DELIMITER_:
@@ -226,6 +227,7 @@ short FastExtract::setOptions(NAList<UnloadOption*> *
           *da << DgSqlCode(-4376) << DgString0("NULL_STRING");
           return 1;
         }
+        nullStringSpec_ = TRUE;
       }
       break;
       case UnloadOption::RECORD_SEP_:

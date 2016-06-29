@@ -89,7 +89,6 @@ CLISemaphore globalSemaphore ;
 #include "SqlStats.h"
 #include "ComExeTrace.h"
 #include "Context.h"
-#include "HBaseClient_JNI.h"
 
 
 #ifndef CLI_PRIV_SRL
@@ -853,7 +852,6 @@ short my_mpi_setup (Int32* argc, char** argv[] );
 };
 
 
-static 
 short sqInit()
 {
   static bool sbInitialized = false;
@@ -4613,7 +4611,7 @@ Lng32 SQL_EXEC_GetDatabaseUserID_Internal (/*IN*/   char   *string_value,
 }
 
 SQLCLI_LIB_FUNC
-Int32 SQL_EXEC_GetAuthState_Internal(
+Int32 SQL_EXEC_GetAuthState(
    /*OUT*/  bool & authenticationEnabled,
    /*OUT*/  bool & authorizationEnabled,
    /*OUT*/  bool & authorizationReady,
@@ -6301,41 +6299,6 @@ Lng32 SQL_EXEC_ResetParserFlagsForExSqlComp_Internal2(ULng32 flagbits)
    return retcode;
 }
 
-Lng32 SQL_EXEC_DeleteHbaseJNI()
-{
-   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
-
-   CLI_NONPRIV_PROLOGUE(retcode);
-
-   try
-   {
-      tmpSemaphore = getCliSemaphore(threadContext);
-      tmpSemaphore->get();
-      threadContext->incrNumOfCliCalls();
-
-      HBaseClient_JNI::deleteInstance();
-      HiveClient_JNI::deleteInstance();
-   }
-   catch(...)
-   {
-     retcode = -CLI_INTERNAL_ERROR;
-#if defined(_THROW_EXCEPTIONS)
-     if (cliWillThrow())
-     {
-         threadContext->decrNumOfCliCalls();
-         tmpSemaphore->release();
-         throw;
-     }
-#endif
-   }
-   threadContext->decrNumOfCliCalls();
-   tmpSemaphore->release();
-
-   return retcode;
-}
-
 //LCOV_EXCL_START
 // For internal use only -- do not document!
 SQLCLI_LIB_FUNC const char *const *const
@@ -7359,7 +7322,7 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_LOBcliInterface
  /*IN*/     char * inLobHandle,
  /*IN*/     Lng32  inLobHandleLen,
  /*IN*/     char * blackBox,
- /*IN*/     Lng32* blackBoxLen,
+ /*IN*/     Int32* blackBoxLen,
  /*OUT*/    char * outLobHandle,
  /*OUT*/    Lng32 * outLobHandleLen,
  /*IN*/     LOBcliQueryType qType,
@@ -7370,7 +7333,8 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_LOBcliInterface
  /*OUT*/    Int64 * outDescPartnKey,  /* returned after insert and select */
  /*OUT*/    Int64 * outDescSyskey,
  /*INOUT*/  void* *inCliInterface,
- /*IN*/     Int64 xnId          /* xn id of the parent process, if non-zero */
+ /*IN*/     Int64 xnId,          /* xn id of the parent process, if non-zero */
+ /*IN*/     NABoolean lobTrace
  )
 {
   Lng32 retcode;
@@ -7396,7 +7360,7 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_LOBcliInterface
 				       outDescPartnKey,
 				       outDescSyskey,
 				       inCliInterface,
-				       xnId);
+				       xnId,lobTrace);
     }
   catch(...)
     {
@@ -7415,6 +7379,52 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_LOBcliInterface
   RecordError(NULL, retcode);
   return retcode;
 }
+Lng32 SQL_EXEC_LOB_GC_Interface
+(
+ /*IN*/     void *lobGlobals, // can be passed or NULL
+ /*IN*/     char * handle,
+ /*IN*/     Lng32  handleLen,
+ /*IN*/     char*  hdfsServer,
+ /*IN*/     Lng32  hdfsPort,
+ /*IN*/     char *lobLocation,
+ /*IN*/    Int64 lobMaxMemChunkLen, // if passed in as 0, will use default value of 1G for the in memory buffer to do compaction.
+ /*IN*/    NABoolean lobTrace
+ )
+{
+  Lng32 retcode;
+ CLISemaphore *tmpSemaphore;
+   ContextCli   *threadContext;
+  CLI_NONPRIV_PROLOGUE(retcode);
+  try
+    {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode = SQLCLI_LOB_GC_Interface(GetCliGlobals(),
+                                        lobGlobals,
+                                        handle,
+                                        handleLen,
+                                        hdfsServer,
+                                        hdfsPort,lobLocation,
+                                        lobMaxMemChunkLen,lobTrace);
+    }
+  catch(...)
+    {
+      retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+      if (cliWillThrow())
+	{
+          threadContext->decrNumOfCliCalls();
+	  tmpSemaphore->release();
+	  throw;
+	}
+#endif
+     }
+  threadContext->decrNumOfCliCalls();
+  tmpSemaphore->release();
+  RecordError(NULL, retcode);
+  return retcode;
+ }
 
 Lng32 SQL_EXEC_LOBddlInterface
 (
@@ -7426,7 +7436,10 @@ Lng32 SQL_EXEC_LOBddlInterface
  /*IN*/     short *lobNumList,
  /*IN*/     short *lobTypList,
  /*IN*/     char* *lobLocList,
- /*IN */    Int64 lobMaxSize
+ /*IN*/     char *hdfsServer,
+ /*IN*/     Int32 hdfsPort,
+ /*IN */    Int64 lobMaxSize,
+ /*IN*/     NABoolean lobTrace
  )
 {
   Lng32 retcode;
@@ -7446,7 +7459,11 @@ Lng32 SQL_EXEC_LOBddlInterface
 				      qType,
 				      lobNumList,
 				      lobTypList,
-				       lobLocList, lobMaxSize);
+				       lobLocList,
+                                       hdfsServer,
+                                       hdfsPort, 
+                                       lobMaxSize,
+                                       lobTrace);
     }
   catch(...)
     {

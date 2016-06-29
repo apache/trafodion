@@ -36,6 +36,7 @@ message AbortTransactionRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
   required int32 participantNum = 3;
+  required bool dropTableRecorded = 4;
 }
 
 message AbortTransactionResponse {
@@ -92,6 +93,7 @@ message CommitRequestRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
   required int32 participantNum = 3;
+  required bool dropTableRecorded = 4;
 }
 
 message CommitRequestResponse {
@@ -268,6 +270,59 @@ message RecoveryRequestResponse {
   optional bool hasException = 3;
 }
 
+message TlogDeleteRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required Scan scan = 3;
+  required int64 auditSeqNum = 4;
+  required bool ageCommitted = 5;
+}
+
+message TlogDeleteResponse {
+  repeated Result result = 1;
+  required int64  count = 2;
+  optional string exception = 3;
+  optional bool hasException = 4;
+}
+
+message TlogWriteRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required MutationProto put = 3;
+  required bytes row = 4;
+  required bytes family = 5;
+  required bytes qualifier = 6;
+  required bytes value = 7;
+  required int64 commitId = 8;
+  optional bool forced = 9;
+}
+
+message TlogWriteResponse {
+  repeated int64 result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message TlogTransactionStatesFromIntervalRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required int64 clusterId = 3;
+  required int64 auditSeqNum =4;
+  required int64 scannerId = 5;
+  required int32 numberOfRows = 6;
+  required int64 nextCallSeq = 7;
+  required bool  closeScanner = 8;
+}
+
+message TlogTransactionStatesFromIntervalResponse {
+  repeated Result result = 1;
+  required int64  count = 2;
+  required int64  nextCallSeq = 3;
+  required bool   hasMore = 4;
+  optional string exception = 5;
+  optional bool hasException = 6;
+}
+
 message TransactionalAggregateRequest {
   /** The request passed to the TransactionalAggregateService consists of three parts
    *  (1) the (canonical) classname of the ColumnInterpreter implementation
@@ -355,6 +410,12 @@ service TrxRegionService {
     returns(PutMultipleTransactionalResponse);
   rpc recoveryRequest(RecoveryRequestRequest)
     returns(RecoveryRequestResponse);
+  rpc deleteTlogEntries(TlogDeleteRequest)
+    returns(TlogDeleteResponse);
+  rpc putTlog(TlogWriteRequest)
+    returns(TlogWriteResponse);
+  rpc getTransactionStatesPriorToAsn(TlogTransactionStatesFromIntervalRequest)
+    returns(TlogTransactionStatesFromIntervalResponse);
   rpc GetMax (TransactionalAggregateRequest)
     returns (TransactionalAggregateResponse);
   rpc GetMin (TransactionalAggregateRequest) 
@@ -370,4 +431,3 @@ service TrxRegionService {
   rpc GetMedian (TransactionalAggregateRequest) 
     returns (TransactionalAggregateResponse);
 }
-

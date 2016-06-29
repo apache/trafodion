@@ -33,7 +33,6 @@ log LOG006 clear;
 set schema hive.hive;
 set terminal_charset utf8;
 
-cqd AUTO_QUERY_RETRY 'OFF';
 cqd HIVE_MAX_STRING_LENGTH '25' ;
 cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
 cqd mode_seahive 'ON';

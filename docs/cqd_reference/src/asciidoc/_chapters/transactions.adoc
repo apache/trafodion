@@ -1,0 +1,92 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+[[transaction-control-and-locking]]
+= Transaction Control and Locking
+
+This section describes CQDs that are used for transaction control and locking.
+
+[[isolation-level]]
+== ISOLATION_LEVEL
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Specifies the default transaction isolation level that queries use.
+| *Values*                    | *'READ UNCOMMITTED'*, *'READ COMMITTED'*, *'REPEATABLE READ'*, or *'SERIALIZABLE'*. +
+ +
+The default value is *'READ COMMITTED'* (ANSI).
+| *Usage*                     | If you use uncommitted access (reading "dirty" data when queries are accessing data that is
+being simultaneously updated), then you can set the default isolation level as READ UNCOMMITTED. The default isolation level
+of READ COMMITTED can cause concurrency issues because reads would wait on locked rows. If rows are locked by long-running
+transactions with infrequent commits, this can cause severe concurrency issues for SELECT queries. See Conflicts/Synergies.
+| *Production Usage*          | Not applicable.
+| *Impact*                    | Using this CQD has implications on locking and concurrency. +
+ +
+If set to READ UNCOMMITTED, then select queries read through locks and don't have to wait on locks. But they won't see committed consistent data. +
+ +
+If set to READ COMMITTED (the default setting), then the reads wait on locked rows before they proceed with the scan.
+The read can proceed only when the rows locked by another transaction are released after that transaction commits. The reader does not lock rows. +
+ +
+If set to REPEATABLE READ or SERIALIZABLE, then it has severe implications on concurrency because every row read is also locked.
+| *Level*                     | While you can use this at a query or a service level, the most common use is a system-wide setting.
+If query tools are being used, then the query level setting cannot be used. +
+ +
+A service level setting may provide uncommitted access to certain users while providing the default committed access to the other users,
+depending which users need to see consistent data. +
+ +
+If however, access to tables during updates is well controlled and read uncommitted is acceptable, then this can be set at the system level.
+| *Conflicts/Synergies*       | The problem with using READ UNCOMMITTED as the isolation level default value is that in a SET TRANSACTION statement,
+the only possible access mode is READ ONLY. Any query that attempts to update the database would fail. +
+ +
+To facilitate updates and DDL statements while the isolation level is set to READ UNCOMMITTED, a new default attribute ISOLATION_LEVEL_FOR_UPDATES
+is provided. This default attribute specifies the isolation level for update and DDL statements. If not specified, or if not present in the
+SYSTEM_DEFAULTS table, the default value is the same as the ISOLATION_LEVEL default attribute. However, if specified or present in the SYSTEM_DEFAULTS table,
+then its value is used as the isolation level for updates and DDL statements. UPDATE in ISOLATION_LEVEL_FOR_UPDATES refers to INSERT, UPDATE, and DELETE statements.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | {project-name} 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[isolation-level-for-updates]]
+== ISOLATION_LEVEL_FOR_UPDATES
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Specifies the default transaction isolation level for these update operations: INSERT, UPDATE, or DELETE.
+| *Values*                    | *'READ UNCOMMITTED'*, *'READ COMMITTED'*, *'REPEATABLE READ'*, or *'SERIALIZABLE'*. +
+ +
+The default value is *'READ COMMITTED'* (ANSI).
+| *Usage*                     | Set this CQD to READ UNCOMMITTED to prevent users from performing any updates. 
+| *Production Usage*          | Not applicable.
+| *Impact*                    | When set, this CQD prevents users from doing any of these update operations: INSERT, UPDATE, or DELETE.
+| *Level*                     | Service.
+| *Conflicts/Synergies*       | Works with the ISOLATION_LEVEL setting. Both settings are READ COMMITTED by default.
+ISOLATION_LEVEL can be set to READ UNCOMMITTED. This CQD still remains READ COMMITTED. You can change it to READ UNCOMMITTED to prevent queries
+running at the service level to not perform any updates.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | {project-name} 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===

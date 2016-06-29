@@ -66,6 +66,10 @@ function Check_VirtualIP_InUse_And_Unbind {
 
 #Main program
 
+if [[ $ENABLE_HA == "false" ]]; then
+ exit 0
+fi
+
 gv_float_internal_ip=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f2`
 gv_float_external_ip=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f2`
 gv_float_interface=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f1`
@@ -73,20 +77,20 @@ gv_port=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f3`
 if [[ -z $gv_port ]]; then
    gv_port=23400
 fi
-awscmd=/usr/local/bin/aws
 gv_externalip_set=1
 gv_internalip_set=1
 
-if [[ ! -z $AWS_CLOUD ]]; then
+if [[ $AWS_CLOUD == "true" ]]; then
+   awscmd="/usr/local/bin/aws ec2 --output text "
    #Get the network interface
-   NETWORKINTERFACE=`$awscmd ec2 describe-network-interfaces| grep -i networkinterfaces| grep -i $gv_float_internal_ip|cut -f5`
+   NETWORKINTERFACE=`$awscmd describe-network-interfaces| grep -i networkinterfaces| grep -i $gv_float_internal_ip|cut -f5`
 
    # Get the attachment id for the network interface
-   ATTACH_ID=`$awscmd ec2 describe-network-interfaces --network-interface-ids $NETWORKINTERFACE |grep -i attachment |cut -f3`
+   ATTACH_ID=`$awscmd describe-network-interfaces --network-interface-ids $NETWORKINTERFACE |grep -i attachment |cut -f3`
 
    echo "Detaching attachment Id:" $ATTACH_ID
    if [ ! -z "$ATTACH_ID" ]; then
-      $awscmd ec2 detach-network-interface --attachment-id $ATTACH_ID
+      $awscmd detach-network-interface --attachment-id $ATTACH_ID
       echo "Detached interface :" $NETWORKINTERFACE
    fi
 else

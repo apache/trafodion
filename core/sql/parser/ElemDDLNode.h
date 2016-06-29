@@ -135,6 +135,7 @@ class ElemDDLLikeOptWithoutConstraints;
 class ElemDDLLikeOptWithHeadings;
 class ElemDDLLikeOptWithHorizontalPartitions;
 class ElemDDLLikeOptWithoutSalt;
+class ElemDDLLikeSaltClause;
 class ElemDDLLikeOptWithoutDivision;
 class ElemDDLList;
 class ElemDDLLocation;
@@ -275,6 +276,7 @@ class StmtDDLAlterTablePartition;
 class StmtDDLAlterTableRename;
 class StmtDDLAlterTableNamespace;
 class StmtDDLAlterTableAlterColumnDatatype;
+class StmtDDLAlterTableAlterColumnRename;
 class StmtDDLAlterTableAlterColumnDefaultValue;
 class StmtDDLAlterTableAlterColumnSetSGOption;
 class StmtDDLAlterTableSetConstraint;
@@ -454,6 +456,7 @@ public:
   virtual ElemDDLLikeOptWithHeadings    * castToElemDDLLikeOptWithHeadings();
   virtual ElemDDLLikeOptWithHorizontalPartitions    * castToElemDDLLikeOptWithHorizontalPartitions();
   virtual ElemDDLLikeOptWithoutSalt     * castToElemDDLLikeOptWithoutSalt();
+  virtual ElemDDLLikeSaltClause         * castToElemDDLLikeSaltClause();
   virtual ElemDDLLikeOptWithoutDivision * castToElemDDLLikeOptWithoutDivision();
   virtual ElemDDLList                   * castToElemDDLList();
   virtual ElemDDLLocation               * castToElemDDLLocation();
@@ -606,6 +609,8 @@ public:
                 castToStmtDDLAlterTableAlterColumnDefaultValue();
   virtual StmtDDLAlterTableAlterColumnDatatype* 
                 castToStmtDDLAlterTableAlterColumnDatatype();
+  virtual StmtDDLAlterTableAlterColumnRename* 
+                castToStmtDDLAlterTableAlterColumnRename();
   virtual StmtDDLAlterTableSetConstraint*
                 castToStmtDDLAlterTableSetConstraint();
   virtual StmtDDLAlterTableToggleConstraint*

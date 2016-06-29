@@ -75,8 +75,10 @@ enum ExeErrorCode
   EXE_CANCEL_NOT_AUTHORIZED             = 8029,
   EXE_CANCEL_NOT_POSSIBLE               = 8031,
 
-  EXE_NO_QID_EXPLAIN_INFO                   = 8032,
+  EXE_NO_QID_EXPLAIN_INFO               = 8032,
   EXE_EXPLAIN_PLAN_TOO_LARGE            = 8033,
+  EXE_DEFAULT_VALUE_INCONSISTENT_ERROR  = 8034,
+  EXE_HIVE_TRUNCATE_ERROR               = 8035,
 
   // ---------------------------------------------------------------------
   // Data integrity errors
@@ -153,6 +155,7 @@ enum ExeErrorCode
   EXE_IS_BITWISE_AND_ERROR		= 8431,
   EXE_UNSIGNED_OVERFLOW                 = 8432,
   EXE_INVALID_CHARACTER                 = 8433,
+  EXE_HIVE_DATA_MOD_CHECK_ERROR         = 8436,
   EXE_HISTORY_BUFFER_TOO_SMALL		= 8440,
   EXE_OLAP_OVERFLOW_NOT_SUPPORTED       = 8441,
   EXE_ERROR_FROM_LOB_INTERFACE          = 8442,
@@ -223,6 +226,7 @@ enum ExeErrorCode
   EXE_CANT_COMMIT_OR_ROLLBACK           = 8613,
   EXE_CANT_BEGIN_WITH_MULTIPLE_CONTEXTS = 8614,
   EXE_CANT_BEGIN_USER_TRANS_WITH_LRU    = 8615,
+  EXE_COMMIT_CONFLICT_FROM_TRANS_SUBSYS	= 8616,
   EXE_LAST_CONCURRENCY_CONTROL_ERROR	= 8629,
 
   //-------------------------------------------------------------

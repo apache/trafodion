@@ -288,6 +288,7 @@ public:
     ex_LONG_RUNNING = 116,
     ex_GET_METADATA_INFO = 117,
     ex_GET_VERSION_INFO  = 118,
+    ex_LOB_INFO =119,
     ex_SUSPEND_ACTIVATE  = 121,
     ex_DISK_LABEL_STATISTICS = 122,
     ex_REGION_STATS = 123,
@@ -318,6 +319,7 @@ public:
     ex_ORC_AGGR    = 150,
     ex_DDL_WITH_STATUS = 151,
     ex_GET_QID = 152,
+    ex_HIVE_TRUNCATE = 153,
     ex_LAST = 9999              // not used
   };
 
@@ -653,23 +655,10 @@ NA_EIDPROC
   void setPertableStatsTdbId(UInt16 id) { pertableStatsTdbId_ = id; }
 
 NA_EIDPROC
-Float32 getTandemFloatValue(char * v) const;
-
-NA_EIDPROC
-Float64 getTandemDoubleValue(char * v) const;
-
-NA_EIDPROC
   Float32 getFloatValue(char * v) const
   {
     Float32 f;
-    if (floatFieldsAreIEEE())
-      str_cpy_all((char *)&f, v, sizeof(Float32));
-// LCOV_EXCL_START
-    else
-      {
-	f = getTandemFloatValue(v);
-      }
-// LCOV_EXCL_STOP
+    str_cpy_all((char *)&f, v, sizeof(Float32));
 
     return f;
   }
@@ -678,14 +667,7 @@ NA_EIDPROC
   Float64 getDoubleValue(char * v) const
   {
     Float64 f;
-    if (floatFieldsAreIEEE())
-      str_cpy_all((char *)&f, v, sizeof(Float64));
-// LCOV_EXCL_START
-    else
-      {
-	f = getTandemDoubleValue(v);
-      }
-// LCOV_EXCL_STOP
+    str_cpy_all((char *)&f, v, sizeof(Float64));
 
     return f;
   }
@@ -900,7 +882,8 @@ class ComTdbVirtTableTableInfo  : public ComTdbVirtTableBase
   ComRowFormat rowFormat;
   const char * defaultColFam;
   const char * allColFams;
-  Int64 objectFlags; 
+  Int64 objectFlags;  // flags from OBJECTS table
+  Int64 tablesFlags;  // flags from TABLES table
 };
 
 class ComTdbVirtTableColumnInfo : public ComTdbVirtTableBase
@@ -995,6 +978,7 @@ class ComTdbVirtTableIndexInfo : public ComTdbVirtTableBase
 
   const char * baseTableName;
   const char * indexName;
+  Int64 indexUID;
   Lng32 keytag;
   Lng32 isUnique;
   Lng32 isExplicit;

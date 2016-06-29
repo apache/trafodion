@@ -228,4 +228,17 @@ NAString ComConvertTrafNameToNativeName(
   return convertedName;
 }
 
+NABoolean ComTrafReservedColName(
+     const NAString &colName)
+{
 
+  if ((colName == TRAF_SALT_COLNAME) ||
+      (colName == TRAF_SYSKEY_COLNAME))
+    return TRUE;
+
+  if ((memcmp(colName.data(), TRAF_DIVISION_COLNAME_PREFIX, strlen(TRAF_DIVISION_COLNAME_PREFIX)) == 0) &&
+      (colName.data()[colName.length()-1] == '_'))
+    return TRUE;
+
+  return FALSE;
+}

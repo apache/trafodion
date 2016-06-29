@@ -237,7 +237,7 @@ skippedfiles=
 
 # sbtestfiles contains the list of tests to be run in seabase mode
 if [ "$seabase" -ne 0 ]; then
-  sbtestfiles="TEST001 TEST002 TEST012 TEST013 TEST014 TEST015 TEST016 TEST020 TEST022 TEST025 TEST050 TEST063 TEST088 TEST101 TEST106 TEST107 TEST122 TEST130"
+  sbtestfiles="TEST001 TEST002 TEST012 TEST013 TEST014 TEST015 TEST016 TEST020 TEST022 TEST025 TEST050 TEST063 TEST088 TEST101 TEST106 TEST107 TEST122 TEST130 TEST131 TEST140"
   sbprettyfiles=
   for i in $prettyfiles; do
     for j in $sbtestfiles; do
@@ -908,7 +908,8 @@ for i in $prettyfiles; do
     fi
   fi
   echo $logtxt
-  echo "`date +'%D %T'`  $test 	$logtxt" >> $rgrlog
+  modtime=`stat --printf=%y $log | cut -d'.' -f1`
+  echo "$modtime  $test  $logtxt" >> $rgrlog
   echo
 
 done # for i in $prettyfiles

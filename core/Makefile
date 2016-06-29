@@ -28,16 +28,16 @@ include macros.gmk
 
 # Make Targets
 .PHONY: all dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr dcs rest odb
-.PHONY: package package-all pkg-product pkg-sql-regress pkg-phx-tests pkg-dcs-tests check-copyrights
+.PHONY: package package-all pkg-product pkg-sql-regress pkg-phx-tests pkg-dcs-tests check-copyrights pkg-installer
 
 ################
 ### Main targets
 # Server-side only
 
 # Default target (all components)
-all: $(MPI_TARGET) dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar dcs rest odb
+all: $(MPI_TARGET) dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar dcs rest odb lib_mgmt
 
-package: pkg-product pkg-client
+package: pkg-product pkg-client pkg-installer
 
 #############
 # Components
@@ -68,10 +68,7 @@ foundation: sqroot dbsecurity $(MPI_TARGET) $(SEAMONSTER_TARGET)
 	cd sqf && $(MAKE) all
 
 jdbc_jar: verhdr
-	cd conn/jdbc_type4 && $(ANT) deploy 2>&1 | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
-	$(MAVEN) install:install-file -Dfile=conn/jdbc_type4/lib/jdbcT4.jar \
-	    -DgroupId=org.trafodion.jdbc.t4.T4Driver -DartifactId=t4driver -Dversion="$$TRAFODION_VER" \
-	    -Dpackaging=jar -DgeneratePom=true | sed -e "s/$$/        ##(JDBCT4)/";exit $${PIPESTATUS[0]}
+	cd conn/jdbcT4 && $(MAKE) 2>&1 && $(MAVEN) install | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
 
 dcs: jdbc_jar jdbc_type2_jar
 	cd ../dcs && $(MAKE) 2>&1 | sed -e "s/$$/  ##(DCS)/" ; exit $${PIPESTATUS[0]}
@@ -109,12 +106,14 @@ clean: sqroot
 	cd sqf &&			$(MAKE) clean
 	cd conn/odbc/src/odbc &&	$(MAKE) clean
 	cd conn/trafci        &&	$(ANT) clean
-	cd conn/jdbc_type4    &&	$(ANT) clean
+	cd conn/jdbcT4        &&	$(MAKE) clean
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&		$(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
 	cd ../dcs &&			$(MAKE) clean 
+	cd sql/lib_mgmt &&		$(MAKE) clean
+	cd ../install &&                $(MAKE) clean
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
 cleanall: sqroot eclipseclean cleantests
@@ -123,17 +122,19 @@ cleanall: sqroot eclipseclean cleantests
 	cd sqf &&			$(MAKE) cleanall
 	cd conn/odbc/src/odbc &&	$(MAKE) cleanall
 	cd conn/trafci        &&	$(ANT) clean
-	cd conn/jdbc_type4    &&	$(ANT) clean
+	cd conn/jdbcT4        &&	$(MAKE) clean
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&	        $(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
 	cd ../dcs &&			$(MAKE) clean
+	cd sql/lib_mgmt &&		$(MAKE) cleanall
+	cd ../install &&                $(MAKE) clean
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
-package-all: package pkg-sql-regress pkg-phx-tests pkg-dcs-tests
+package-all: package pkg-sql-regress pkg-phx-tests pkg-dcs-tests 
 
-pkg-product: all  
+pkg-product: all dcs rest 
 	cd sqf && $(MAKE) package 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
 
 pkg-client: ci ndcs odb
@@ -144,12 +145,16 @@ pkg-sql-regress: all
 	cd sqf && $(MAKE) package-regress 2>&1 | sed -e "s/$$/	##(Package sql regress)/";exit $${PIPESTATUS[0]}
 
 # Package Phoenix test
-pkg-phx-tests: all
+pkg-phx-tests: all 
 	cd sqf && $(MAKE) package-phx 2>&1 | sed -e "s/$$/	##(Package phoenix)/";exit $${PIPESTATUS[0]}
 
 # Package dcs tests
 pkg-dcs-tests: all
 	cd sqf && $(MAKE) package-dcs 2>&1 | sed -e "s/$$/	##(Package dcs tests)/";exit $${PIPESTATUS[0]}
+
+# Package installer
+pkg-installer: 
+	cd ../install && $(MAKE) 2>&1 | sed -e "s/$$/	##(Package installer)/";exit $${PIPESTATUS[0]}
 
 version:
 	@cd sqf; unset SQ_VERBOSE; source sqenv.sh ; echo "$${TRAFODION_VER}"
@@ -204,3 +209,6 @@ eclipseclean:
 
 trafinstall:
 	cd $(MY_SQROOT)/sql/scripts && install_traf_components
+
+lib_mgmt:
+	cd sql/lib_mgmt && $(MAKE) all

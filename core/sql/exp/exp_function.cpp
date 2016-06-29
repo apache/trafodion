@@ -2534,9 +2534,8 @@ ex_expr::exp_return_type ex_function_dateformat::eval(char *op_data[],
   char *formatStr = op_data[2];
   char *result = op_data[0];
   
-  if ((getDateFormat() == ExpDatetime::DATETIME_FORMAT_TIME1) ||
-      (getDateFormat() == ExpDatetime::DATETIME_FORMAT_TIME2) ||
-      (getDateFormat() == ExpDatetime::DATETIME_FORMAT_TIME_STR))
+  if ((getDateFormat() == ExpDatetime::DATETIME_FORMAT_NUM1) ||
+      (getDateFormat() == ExpDatetime::DATETIME_FORMAT_NUM2))
     {
       // numeric to TIME conversion.
       if(ExpDatetime::convNumericTimeToASCII(opData, 
@@ -2563,20 +2562,25 @@ ex_expr::exp_return_type ex_function_dateformat::eval(char *op_data[],
       if ((DFS2REC::isAnyCharacter(getOperand(1)->getDatatype())) &&
 	  (DFS2REC::isDateTime(getOperand(0)->getDatatype())))
 	{
+          Lng32 sourceLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+
 	  ExpDatetime *datetimeOpType = (ExpDatetime *) getOperand(0);
 	  if(datetimeOpType->convAsciiToDate(opData, 
-					     getOperand(1)->getLength(),
-					     result,
-					     getOperand(0)->getLength(),
-					     getDateFormat(),
-					     heap,
-					     diagsArea,
-                                	     0) < 0) {
-	
-	    ExRaiseFunctionSqlError(heap, diagsArea, EXE_INTERNAL_ERROR,
-				    derivedFunction(),
-				    origFunctionOperType());
-	    
+                                             sourceLen,
+                                             result,
+                                             getOperand(0)->getLength(),
+                                             getDateFormat(),
+                                             heap,
+                                             diagsArea,
+                                             0) < 0) {
+            
+            if (diagsArea && (*diagsArea) && 
+                (*diagsArea)->getNumber(DgSqlCode::ERROR_) == 0)
+              {
+                ExRaiseFunctionSqlError(heap, diagsArea, EXE_INTERNAL_ERROR,
+                                        derivedFunction(),
+                                        origFunctionOperType());
+              }
 	    return ex_expr::EXPR_ERROR;
 	  }
 	}
@@ -2584,7 +2588,7 @@ ex_expr::exp_return_type ex_function_dateformat::eval(char *op_data[],
 	{
 	  ExpDatetime *datetimeOpType = (ExpDatetime *) getOperand(1);
 	  if(datetimeOpType->convDatetimeToASCII(opData, 
-					     result,
+                                                 result,
 						 getOperand(0)->getLength(),
 						 getDateFormat(),
 						 formatStr,
@@ -3174,6 +3178,18 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
   
   switch (fsDatatype) {
 #if defined( NA_LITTLE_ENDIAN )
+  case REC_BIN8_SIGNED:
+    //
+    // Flip the sign bit.
+    //
+    *(UInt8*)target = *(UInt8*)source;
+    target[0] ^= 0200;
+    break;
+
+  case REC_BIN8_UNSIGNED:
+    *(UInt8*)target = *(UInt8*)source;
+    break;
+
   case REC_BIN16_SIGNED:
     //
     // Flip the sign bit.
@@ -3292,6 +3308,7 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
     break;
   }
 #else
+  case REC_BIN8_SIGNED:
   case REC_BIN16_SIGNED:
   case REC_BIN32_SIGNED:
   case REC_BIN64_SIGNED:
@@ -3316,6 +3333,7 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
     target[0] ^= 0200;
     break;
 #endif
+
   case REC_DECIMAL_LSE:
     //
     // If the number is negative, complement all the bytes.  Otherwise, set
@@ -3436,58 +3454,6 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
     break;
   }
 
- case REC_TDM_FLOAT32: {
-    //
-    // Unencoded float (NSK):
-    //
-    // +-+----------------------+---------+
-    // | | Mantissa             |Exponent |
-    // | | (22 bits)            |(9 bits) |
-    // +-+----------------------+---------+
-    //  |
-    //  +- Sign bit
-    //
-    // Encoded float (NSK):
-    //
-    // +-+--------+-----------------------+
-    // | |Exponent| Mantissa              |
-    // | |(9 bits)| (22 bits)             |
-    // +-+--------+-----------------------+
-    //  ||                                |
-    //  |+- Complemented if sign was neg.-+
-    //  |
-    //  +- Sign bit complement
-    //
-
-
-    break;
-  }
-  case REC_TDM_FLOAT64: {
-    //
-    // Unencoded double (NSK):
-    //
-    // +-+----------------------+---------+
-    // | | Mantissa             |Exponent |
-    // | | (54 bits)            |(9 bits) |
-    // +-+----------------------+---------+
-    //  |
-    //  +- Sign bit
-    //
-    //
-    // Encoded double:
-    //
-    // +-+----------+---------------------+
-    // | | Exponent | Mantissa            |
-    // | | (9 bits) | (54 bits)           |
-    // +-+----------+---------------------+
-    //  ||                                |
-    //  |+- Complemented if sign was neg.-+
-    //  |
-    //  +- Sign bit complement
-    //
-
-    break;
-  }
   // LCOV_EXCL_START
   case REC_BYTE_F_ASCII: {
       if (CollationInfo::isSystemCollation(collation )) 
@@ -4434,12 +4400,14 @@ Lng32 ex_function_hivehash::hashForCharType(char* data, Lng32 length)
 {
   // To compute: SUM (i from 0 to n-1) (s(i) * 31^(n-1-i)
 
+  ULng32 resultCopy = 0;
   ULng32 result = (ULng32)data[0];
   for (Lng32 i=1; i<length; i++ ) {
 
      // perform result * 31, optimized as (result <<5 - result)
-     result << 5;
-     result -= result;
+     resultCopy = result;
+     result <<= 5;
+     result -= resultCopy;
 
      result += (ULng32)(data[i]);
   }
@@ -4713,12 +4681,10 @@ ex_expr::exp_return_type ExHDPHash::eval(char *op_data[],
       break; 
     case REC_BIN32_SIGNED:
     case REC_BIN32_UNSIGNED:
-    case REC_TDM_FLOAT32:
     case REC_IEEE_FLOAT32:
       flags = SWAP_FOUR;
       break;
     case REC_BIN64_SIGNED:
-    case REC_TDM_FLOAT64:
     case REC_IEEE_FLOAT64:
       flags = SWAP_EIGHT;
       break;
@@ -5026,24 +4992,6 @@ ex_expr::exp_return_type getDoubleValue(double *dest,
   case REC_FLOAT64:
     *dest = *(double *)(source);
     return ex_expr::EXPR_OK;
-  case REC_TDM_FLOAT64:
-    // Convert source from TDM_FLOAT64 -> double
-    //
-    if (convDoIt(source,
-                 operand->getLength(),
-                 operand->getDatatype(),
-                 operand->getPrecision(),
-                 operand->getScale(),
-                 (char *)dest,
-                 (Lng32)sizeof(double),
-                 REC_FLOAT64,
-                 0,
-                 0,
-                 NULL, 0, heap, diagsArea,
-                 CONV_UNKNOWN) != ex_expr::EXPR_OK) {
-      return ex_expr::EXPR_ERROR;
-    }
-    return ex_expr::EXPR_OK;
   default:
     ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
     return ex_expr::EXPR_ERROR;
@@ -5061,24 +5009,6 @@ ex_expr::exp_return_type setDoubleValue(char *dest,
   switch(operand->getDatatype()) {
   case REC_FLOAT64:
     *(double *)dest = *source;
-    return ex_expr::EXPR_OK;
-  case REC_TDM_FLOAT64:
-    // Convert source from double -> TDM_FLOAT64
-    //
-    if (convDoIt((char *)source,
-                 (Lng32)sizeof(double),
-                 REC_FLOAT64,
-                 0,
-                 0,
-                 dest,
-                 operand->getLength(),
-                 operand->getDatatype(),
-                 operand->getPrecision(),
-                 operand->getScale(),
-                 NULL, 0, heap, diagsArea,
-                 CONV_UNKNOWN) != ex_expr::EXPR_OK) {
-      return ex_expr::EXPR_ERROR;
-    }
     return ex_expr::EXPR_OK;
   default:
     ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
@@ -7187,6 +7117,18 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
 
   switch (fsDatatype) {
 #if defined( NA_LITTLE_ENDIAN )
+  case REC_BIN8_SIGNED:
+    //
+    // Flip the sign bit.
+    //
+    *(UInt8*)target = *(UInt8*)source;
+    target[0] ^= 0200;
+    break;
+
+  case REC_BIN8_UNSIGNED:
+    *(UInt8*)target = *(UInt8*)source;
+    break;
+
   case REC_BIN16_SIGNED:
     //
     // Flip the sign bit.
@@ -7307,6 +7249,7 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     break;
   }
 #else
+  case REC_BIN8_SIGNED:
   case REC_BIN16_SIGNED:
   case REC_BIN32_SIGNED:
   case REC_BIN64_SIGNED:
@@ -7452,54 +7395,6 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     *(Int64 *) target = reversebytes(*(Int64 *)target);
 #endif
 
-    break;
-  }
-  case REC_TDM_FLOAT32: {
-    //
-    // Encoded float (NSK):
-    //
-    // +-+--------+-----------------------+
-    // | |Exponent| Mantissa              |
-    // | |(9 bits)| (22 bits)             |
-    // +-+--------+-----------------------+
-    //  ||                                |
-    //  |+- Complemented if sign was neg.-+
-    //  |
-    //  +- Sign bit complement
-    //
-    // Unencoded float (NSK):
-    //
-    // +-+----------------------+---------+
-    // | | Mantissa             |Exponent |
-    // | | (22 bits)            |(9 bits) |
-    // +-+----------------------+---------+
-    //  |
-    //  +- Sign bit
-    //
-    break;
-  }
-  case REC_TDM_FLOAT64: {
-    //
-    // Encoded double:
-    //
-    // +-+----------+---------------------+
-    // | | Exponent | Mantissa            |
-    // | | (9 bits) | (54 bits)           |
-    // +-+----------+---------------------+
-    //  ||                                |
-    //  |+- Complemented if sign was neg.-+
-    //  |
-    //  +- Sign bit complement
-    //
-    // Unencoded double (NSK):
-    //
-    // +-+----------------------+---------+
-    // | | Mantissa             |Exponent |
-    // | | (54 bits)            |(9 bits) |
-    // +-+----------------------+---------+
-    //  |
-    //  +- Sign bit
-    //
     break;
   }
   case REC_BYTE_V_ASCII: 

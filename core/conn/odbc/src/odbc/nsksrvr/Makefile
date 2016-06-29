@@ -121,7 +121,7 @@ DBT_LIBS =
 
 EARLY_LIBS = -ljsig
 
-COMMON_LIBS = -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli -larkcmp_dll -L../nsksrvrcore -lmxocore -L$(LOG4CXX_LIB_DIR) -llog4cxx
+COMMON_LIBS = -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli -larkcmp_dll -L../nsksrvrcore -lmxocore -llog4cxx
 
 ifeq ($(SQ_MTYPE),64)
 LOC_JSIG=$(JAVA_HOME)/jre/lib/amd64/server
@@ -130,6 +130,8 @@ LOC_JSIG=$(JAVA_HOME)/jre/lib/i386/server
 endif
 
 
+#gcc 4.8 need explicit enable this flag, otherwise ld must explicitly link with all so using '-l'
+GCCMODE        += -Xlinker --copy-dt-needed-entries
 # Produce mxosrvr
 $(BINEXPDIR)/mxosrvr: $(OBJS) $(LIBEXPDIR)/libzookeeper_mt.so
 	$(CXX) $(GCCMODE) -o $@ $(DBG_FLGS)  -L$(LIBEXPDIR) -D_SQ64 -L$(LOC_JSIG) $(EARLY_LIBS) $(COMMON_LIBS) $(DBT_LIBS) -lzookeeper_mt $(HADOOP_LIBS) $(OBJS) -lz

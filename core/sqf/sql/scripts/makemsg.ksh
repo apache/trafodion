@@ -81,10 +81,5 @@ echo "generating sql message catalog: $error_cat ... "
 gencat $error_cat SqlciErrors.m
 fi
 
-# On a cluster, copy it to all the nodes
-if [ -e $SQ_PDCP ]; then
-   echo "Doing a $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $error_cat `dirname $error_cat`"
-   $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $error_cat `dirname $error_cat`
-fi
 #exit 0
 

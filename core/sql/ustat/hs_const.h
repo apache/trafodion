@@ -97,6 +97,7 @@ enum hs_table_type { UNKNOWN_TYPE = 0,
 #define SAMPLE_PERIODIC   0x00010000               /* SAMPLE PERIODIC         */
 #define SAMPLE_REQUESTED  0x0001F000               /* 'OR' sampling options   */
 #define SAMPLE_ALL        0x00020000               /* For REMOVE SAMPLE       */
+#define NO_SAMPLE         0x00200000               /* NO SAMPLE (explicit)    */
 
                                                    /*===    IUS OPTIONS    ===*/
 #define IUS_OPT           0x00040000               /* INCREMENTAL UPDATE STATS*/
@@ -104,6 +105,7 @@ enum hs_table_type { UNKNOWN_TYPE = 0,
 
                                                    /*=== SHOWSTATS OPTIONS ===*/
 #define SHOWSTATS_OPT     0x00100000               /* SHOWSTATS COMMAND       */
+//  note 0x00200000 taken above
 #define DETAIL_OPT        0x00000001               /* DETAILS                 */
 
 
@@ -164,6 +166,10 @@ enum USTAT_ERROR_CODES {UERR_SYNTAX_ERROR                    = 15001,
                         UERR_NO_ONEVERYKEY                   = 9240,
                         UERR_NO_PRIVILEGE                    = 9241,
                         UERR_CANT_CREATE_HIVE_STATS_SCHEMA   = 9242,
+                        UERR_YOU_WILL_LIKELY_BE_SORRY        = 9243,
+                        UERR_USER_TRANSACTION                = 9244,
+                        UERR_LOB_STATS_NOT_SUPPORTED         = 9246,
+                        UERR_VOLATILE_TABLES_NOT_SUPPORTED   = 9247,
                         UERR_NO_ERROR                        = 9250,
                         UERR_LAST_ERROR                      = 9250
                        };

@@ -69,7 +69,7 @@ CharType::CharType( const NAString&  adtName,
 		    CharInfo::Collation    co,
 		    CharInfo::Coercibility ce,
 		    CharInfo::CharSet      encoding,
-		    Int32 iCharLen // default is 0
+		    Int32 vcIndLen // default is 0
 		  )
       : NAType( adtName
 		, NA_CHARACTER_TYPE
@@ -77,11 +77,13 @@ CharType::CharType( const NAString&  adtName,
 		, allowSQLnull
 		, allowSQLnull ? SQL_NULL_HDR_SIZE : 0
 		, varLenFlag
-                , (varLenFlag ? (((maxLenInBytesOrNAWchars*CharInfo::minBytesPerChar(cs)) & 0xFFFF8000)
-                                         ? SQL_VARCHAR_HDR_SIZE_4
-                                         : SQL_VARCHAR_HDR_SIZE)
-                              : 0) // computes length of VarCharLen field (0 or 2 or 4 bytes)
-                                   // see also ../sqludr/sqludr.cpp, method TypeInfo::TypeInfo
+                // computes length of VarCharLen field (0 or 2 or 4 bytes)
+                // if not passed in
+                , (varLenFlag ? ((vcIndLen > 0) ? vcIndLen :
+                                 (((maxLenInBytesOrNAWchars*CharInfo::minBytesPerChar(cs)) & 0xFFFF8000)
+                                  ? SQL_VARCHAR_HDR_SIZE_4
+                                  : SQL_VARCHAR_HDR_SIZE))
+                   : 0) 
 		, CharInfo::minBytesPerChar(cs)
 	      ),
 	qualifier_	(CHARACTER_STRING_TYPE),
@@ -932,14 +934,16 @@ SQLVarChar::SQLVarChar(Lng32 maxLen,
 		       CharInfo::CharSet cs,
 		       CharInfo::Collation co,
 		       CharInfo::Coercibility ce,
-		       CharInfo::CharSet encoding
+		       CharInfo::CharSet encoding,
+                       Lng32 vcIndLen
 		      )
     : CharType(LiteralVARCHAR,
 	       maxLen, CharInfo::maxBytesPerChar(cs),
 	       FALSE, allowSQLnull, isUpShifted, isCaseInsensitive,
 	       TRUE, cs, co, ce,
-	       encoding),
-      clientDataType_(collHeap())  // Get heap from NABasicObject. Can't allocate on stack.
+	       encoding, vcIndLen),
+      clientDataType_(collHeap()),  // Get heap from NABasicObject. Can't allocate on stack.
+      wasHiveString_(FALSE)
 {}
 #pragma warn(1506)  // warning elimination
 
@@ -958,7 +962,8 @@ SQLVarChar::SQLVarChar(const CharLenInfo & maxLenInfo,
 	       FALSE, allowSQLnull, isUpShifted, isCaseInsensitive,
 	       TRUE, cs, co, ce,
 	       encoding),
-      clientDataType_(collHeap())  // Get heap from NABasicObject. Can't allocate on stack.
+      clientDataType_(collHeap()),  // Get heap from NABasicObject. Can't allocate on stack.
+      wasHiveString_(FALSE)
 {}
 
 // -----------------------------------------------------------------------
@@ -1493,6 +1498,10 @@ SQLlob::SQLlob(
     lobStorage_(ls),
     lobLength_(lobLength)
 {
+  if (externalFormat_)
+    lobStorage_ = Lob_External_HDFS_File;
+  else
+    lobStorage_ = Lob_HDFS_File;
 }
 
 // ---------------------------------------------------------------------
@@ -1536,6 +1545,7 @@ SQLBlob::SQLBlob(
 	   externalFormat,
 	   extFormatLen)
 {
+  setCharSet(CharInfo::ISO88591);//lobhandle can only be in ISO format
 }
 
 NAType *SQLBlob::newCopy(NAMemory* h) const
@@ -1588,7 +1598,7 @@ SQLClob::SQLClob(
 	   externalFormat,
 	   extFormatLen)
 {
-  setCharSet(CharInfo::DefaultCharSet);
+  setCharSet(CharInfo::ISO88591); //lob handle can only be in this format
 }
 
 NAType *SQLClob::newCopy(NAMemory* h) const

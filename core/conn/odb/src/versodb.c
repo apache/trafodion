@@ -21,5 +21,7 @@
 
 #include "verslib.h"
 
+#ifndef _WIN32
 VERS_BIN(odb64luo)
 DEFINE_COMP_DOVERS(odb64luo)
+#endif

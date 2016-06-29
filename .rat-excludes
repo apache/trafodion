@@ -1,4 +1,4 @@
-# List of files to exclude from RAT, see RAT_README.txt for details
+# List of files to exclude from RAT, see RAT_README for details
 # this file
 .rat-excludes*
 # git files
@@ -30,7 +30,7 @@ package.exclude
 # readme files
 readme*
 README*
-RAT_README.txt
+RAT_README
 readme.md
 run_me*
 # documentation and build info 
@@ -57,10 +57,9 @@ Sortingicons.psd*
 # licenses
 license*.txt*
 LICENSE.rtf*
-LICENSE-bsd2
-LICENSE-bsd4
-LICENSE-js
-LICENSE-salesforce
+lic-.*-src
+lic-.*-bin
+note-.*-bin
 # win generated
 SetCertificateDirReg_os.vcxproj*
 SetCertificateDirReg_os.vcxproj.*
@@ -110,6 +109,8 @@ TCPIPV6_os.*
 .ism*
 resource.h*
 resource.hm*
+odb.sln
+odb.vcxproj.*
 # BSD licensed files
 swscanf.cpp
 swsprintf.cpp
@@ -159,7 +160,7 @@ UpsertSelectAutoCommitTest.java
 UpsertSelectTest.java
 UpsertValuesTest.java
 VariableLengthPKTest.java
-
-
+# asciidoc extention file -- MIT license
+google-analytics-postprocessor.rb
 
 

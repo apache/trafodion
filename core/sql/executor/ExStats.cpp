@@ -8083,20 +8083,26 @@ Lng32 ExStatisticsArea::getStatsDesc(short *statsCollectType,
         *no_returned_stats_desc = numEntries()+1;
     if (max_stats_desc < numEntries()+1)
       return -CLI_INSUFFICIENT_STATS_DESC;
-    sqlstats_desc[0].tdb_id = (short)_UNINITIALIZED_TDB_ID;
-    sqlstats_desc[0].stats_type = ExOperStats::MASTER_STATS;
-    sqlstats_desc[0].tdb_name[0] = '\0';
-    // Leave the index 1 for ROOT_OPER_STATS
+    i=0;
+    sqlstats_desc[i].tdb_id = (short)_UNINITIALIZED_TDB_ID;
+    sqlstats_desc[i].stats_type = ExOperStats::MASTER_STATS;
+    sqlstats_desc[i].tdb_name[0] = '\0';
+    i++;
+    // Populate the stats descriptor for ROOT_OPER_STATS first
     position();
-    for (i=2; (stat = getNext()) != NULL; )
+    for (; (stat = getNext()) != NULL; )
     {
       if (stat->statType() == ExOperStats::ROOT_OPER_STATS)
       {
-        sqlstats_desc[1].tdb_id = (short)stat->getTdbId();
-        sqlstats_desc[1].stats_type = ExOperStats::ROOT_OPER_STATS;
-        sqlstats_desc[1].tdb_name[0] = '\0';
+        sqlstats_desc[i].tdb_id = (short)stat->getTdbId();
+        sqlstats_desc[i].stats_type = ExOperStats::ROOT_OPER_STATS;
+        sqlstats_desc[i].tdb_name[0] = '\0';
+        i++;
       }
-      else 
+    } 
+    position();
+    for (; (stat = getNext()) != NULL; )
+    {
       if (stat->statType() == ExOperStats::PERTABLE_STATS )
       {
         sqlstats_desc[i].tdb_id = (short)stat->getPertableStatsId();
@@ -9994,7 +10000,6 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
           		  Lng32 maxLen)
 {
   char *buf = dataBuffer;
-  char transIdText[129];
   
   Int64 exeElapsedTime;
   Int64 compElapsedTime;
@@ -10021,10 +10026,6 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
   }
   else
     exeElapsedTime = exeEndTime_ - exeStartTime_;
-  {
-    str_cpy_all(transIdText, "-1", 2);
-    transIdText[2] = '\0';
-  }
   short stmtState = stmtState_;
 
 #ifndef __EID
@@ -10039,7 +10040,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
     "subqueryType: %s EstRowsAccessed: %f EstRowsUsed: %f compElapsedTime: %Ld "
     "exeElapsedTime: %Ld parentQid: %s parentQidSystem: %s childQid: %s "
     "rowsReturned: %Ld firstRowReturnTime: %Ld numSqlProcs: %d  numCpus: %d "
-    "exePriority: %d transId: %s suspended: %s lastSuspendTime: %Ld "
+    "exePriority: %d transId: %Ld suspended: %s lastSuspendTime: %Ld "
     "LastErrorBeforeAQR: %d AQRNumRetries: %d DelayBeforeAQR: %d "
     "reclaimSpaceCnt: %d "
     "blockedInSQL: %d blockedInClient: %d  lastActivity: %d "
@@ -10071,7 +10072,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
               numSqlProcs_,
               numCpus_,
               exePriority_,
-              transIdText,
+              transId_,
               (isQuerySuspended_ ? "yes" : "no" ),
               querySuspendedTime_,
               aqrLastErrorCode_,
@@ -10094,7 +10095,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
     "subqueryType: %d EstRowsAccessed: %f EstRowsUsed: %f compElapsedTime: %Ld "
     "exeElapsedTime: %Ld parentQid: %s parentQidSystem: %s childQid: %s "
     "rowsReturned: %Ld firstRowReturnTime: %Ld numSqlProcs: %d  numCpus: %d "
-    "exePriority: %d transId: %s suspended: %s lastSuspendTime: %Ld "
+    "exePriority: %d transId: %Ld suspended: %s lastSuspendTime: %Ld "
     "LastErrorBeforeAQR: %d AQRNumRetries: %d DelayBeforeAQR: %d reclaimSpaceCnt: %d "
     "blockedInSQL: %d blockedInClient: %d  lastActivity: %d "
                   "sqlSrcLen: %d sqlSrc: \"%s\"",
@@ -10125,7 +10126,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
               numSqlProcs_,
               numCpus_,
               exePriority_,
-              transIdText,
+              transId_,
               (isQuerySuspended_ ? "yes" : "no" ),
               querySuspendedTime_,
               aqrLastErrorCode_,

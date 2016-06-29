@@ -266,10 +266,10 @@ const static int32_t NBR_OF_PRIVS = NBR_DML_PRIVS+NBR_DDL_PRIVS;
 //using PrivMgrBitmap = std::bitset<NBR_OF_PRIVS>;
 #define PrivMgrBitmap std::bitset<NBR_OF_PRIVS>
 typedef std::bitset<NBR_OF_PRIVS> PrivObjectBitmap;
-typedef std::bitset<NBR_DML_COL_PRIVS> PrivColumnBitmap;
+typedef std::bitset<NBR_OF_PRIVS> PrivColumnBitmap;
 typedef std::bitset<NBR_OF_PRIVS> PrivSchemaBitmap;
 typedef std::map<size_t,PrivColumnBitmap> PrivColList;
-typedef std::map<size_t,std::bitset<NBR_DML_COL_PRIVS> >::const_iterator PrivColIterator;
+typedef std::map<size_t,std::bitset<NBR_OF_PRIVS> >::const_iterator PrivColIterator;
 
 inline bool isDMLPrivType(PrivType privType)
 {
@@ -298,15 +298,6 @@ inline bool isDMLPrivType(PrivType privType)
 #define UNKNOWN_GRANTEE_TYPE_LIT               "  "
 #define PUBLIC_GRANTEE_LIT                     "P "
 #define USER_GRANTEE_LIT                       "U "
-
-#define SYSTEM_AUTH_ID          -2
-#define PUBLIC_AUTH_ID          -1
-
-#define PUBLIC_AUTH_NAME "PUBLIC"
-#define SYSTEM_AUTH_NAME "_SYSTEM"
-
-#define DB_ROOTROLE_NAME "DB__ROOTROLE"
-#define DB_ROOTROLE_ID 1000000
 
 #define MAX_SQL_IDENTIFIER_NAME_LEN 256
 

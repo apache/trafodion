@@ -2333,30 +2333,21 @@ public class InterfaceQuery extends QueryWrapper implements SessionDefaults {
 
 	private void displayVersionInfo(boolean srvrErrMsg) throws IOException {
 		String platformVersion = sessObj.getSutVersion();
-		String mxoSrvrVersion = sessObj.getNdcsVersion();
+		String mxoSrvrVersion  = sessObj.getNdcsVersion();
+                String databaseVersion = sessObj.getDatabaseVersion();
+                String databaseEdition = sessObj.getDatabaseEdition();
 
-		if (platformVersion != null && !platformVersion.startsWith("*ERROR*")
-				&& !platformVersion.startsWith("An internal server error")) {
-			handleOutput("Trafodion Platform              :", platformVersion);
-		} else
-			handleOutput("Trafodion Platform              :",
-					this.infoNotAvailable);
-
-		if (mxoSrvrVersion != null && !mxoSrvrVersion.equals(""))
-			handleOutput("Trafodion Connectivity Services :",
-					mxoSrvrVersion.trim(), false);
-		else
-			handleOutput("Trafodion Connectivity Services :",
-					this.infoNotAvailable, false);
-
-		handleOutput("Trafodion JDBC Type 4 Driver    :", JDBCVproc.getVproc(),
-				false);
-		handleOutput(SessionDefaults.PROD_NAME + "    :", Vproc.getVproc(), false);
-
+		if (databaseVersion != null &&  databaseEdition != null) {
+                    handleOutput("Database Version            : Release ", databaseVersion);
+                    handleOutput("Database Edition            :", databaseEdition,false);
+                } else {
+                    handleOutput("Database Version            :", this.infoNotAvailable, false);
+                    handleOutput("Database Edition            :", this.infoNotAvailable, false);
+                }
+                handleOutput("JDBC Type 4 Driver Build ID :", JDBCVproc.getVproc(), false);
+                handleOutput("Command Interface Build ID  :", Vproc.getVproc(), false);
+               
 		writer.writeEndTags(sessObj);
-
-		if ((srvrErrMsg) && (sessObj.getT4verNum() >= 2.2))
-			sessionError('E', SessionError.SERVER_PRODUCT_ERR);
 	}
 
 	private void handleConnect() throws IOException, UserInterruption {
@@ -2495,14 +2486,14 @@ public class InterfaceQuery extends QueryWrapper implements SessionDefaults {
 					sessObj.setStmtObj(siObj.getStatement(newConn));
 					sessObj.qsOpen = false;
 					sessObj.setDBConnExists(true);
+                                        boolean trafver = sessObj.getPlatformObjectVersions();
 
 					// Uncomment this line if you need to reset role to DEFAULT;
 					// TempSessionRole is set using SET CONNECTIOPT command
 					// sessObj.setTempSessionRole("");
-
 					//writer.writeln();
-			                writer.writeln("Connected to Trafodion "
-);
+
+			                writer.writeln("Connected to " + sessObj.getDatabaseEdition());
 
 					sessObj.setQryEndTime();
 					if (printConnTime) {
@@ -2619,8 +2610,9 @@ public class InterfaceQuery extends QueryWrapper implements SessionDefaults {
 				sessObj.setStmtObj(rcSIObj.getStatement(sessObj.getConnObj()));
 				sessObj.qsOpen = false;
 				sessObj.setDBConnExists(true);
+                                boolean trafver = sessObj.getPlatformObjectVersions();
 				writer.writeln();
-				writer.writeln("Connected to Trafodion ");
+				writer.writeln("Connected to " + sessObj.getDatabaseEdition());
 				rcPaObj.retryCnt = 0;
 
 				sessObj.setQryEndTime();

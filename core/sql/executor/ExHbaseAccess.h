@@ -205,6 +205,9 @@ protected:
   inline ex_expr *mergeInsertExpr() const 
     { return hbaseAccessTdb().mergeInsertExpr_; }
 
+  inline ex_expr *lobDelExpr() const 
+    { return hbaseAccessTdb().mergeInsertExpr_; }
+
   inline ex_expr *mergeInsertRowIdExpr() const 
     { return hbaseAccessTdb().mergeInsertRowIdExpr_; }
 
@@ -329,6 +332,7 @@ protected:
 
   short createDirectRowBuffer(UInt16 tuppIndex, char * tuppRow, 
                         Queue * listOfColNames,
+                        Queue * listOfOmittedColNames,
 			NABoolean isUpdate = FALSE,
 			std::vector<UInt32> * posVec = NULL,
 			double sampleRate = 0.0);
@@ -836,15 +840,14 @@ public:
     , CHECK_AND_INSERT
     , PROCESS_INSERT
     , PROCESS_INSERT_AND_CLOSE
-    , PROCESS_INSERT_FLUSH_AND_CLOSE
     , RETURN_ROW
     , INSERT_CLOSE
-    , FLUSH_BUFFERS
     , HANDLE_EXCEPTION
     , HANDLE_ERROR
     , DONE
     , ALL_DONE
     , COMPLETE_ASYNC_INSERT
+    , CLOSE_AND_DONE
 
   } step_;
 
@@ -1141,10 +1144,8 @@ public:
     , SETUP_UMD
     , SETUP_SELECT
     , CREATE_UPDATED_ROW
-    , PROCESS_DELETE
     , PROCESS_DELETE_AND_CLOSE
     , EVAL_CONSTRAINT
-    , PROCESS_UPDATE
     , PROCESS_UPDATE_AND_CLOSE
     , PROCESS_SELECT
     , NEXT_ROW
@@ -1157,6 +1158,7 @@ public:
     , APPLY_PRED
     , RETURN_ROW
     , COMPLETE_ASYNC_OPERATION
+    , CLOSE_AND_DONE
   } step_;
 
   ExHbaseAccessSQRowsetTcb( const ExHbaseAccessTdb &tdb,

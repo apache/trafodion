@@ -60,6 +60,7 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.TrafParallelClientScanner;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndDeleteRequest;
@@ -132,12 +133,6 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
        super(tableName, connection, threadPool);      
     }
 
-    public void resetConnection() throws IOException {
-        if (LOG.isDebugEnabled()) LOG.debug("Resetting connection for " + this.getTableDescriptor().getTableName());
-        HConnection conn = this.getConnection();
-        conn = HConnectionManager.createConnection(this.getConfiguration());
-    }
-
     private void addLocation(final TransactionState transactionState, HRegionLocation location) {
       if (LOG.isTraceEnabled()) LOG.trace("addLocation ENTRY");
       if (transactionState.addRegion(location)){
@@ -208,20 +203,8 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
           }
         } while (retryCount < TransactionalTable.retries && retry == true);
       } catch (Throwable e) {
-        e.printStackTrace();    
-        throw new IOException("ERROR while calling coprocessor");
-      }            
-      //Collection<GetTransactionalResponse> results = result.values();
-      // Should only be one result, if more than one. Can't handle.
-      // Need to test whether '!=' or '>' is correct
-      //if (LOG.isTraceEnabled()) LOG.trace("Results count: " + results.size());
-      //if(results.size() != 1)
-      //  throw new IOException("Incorrect number of results from coprocessor call");      
-      //GetTransactionalResponse[] resultArray = new GetTransactionalResponse[results.size()];    		  
-      //results.toArray(resultArray);            
-      //if(resultArray.length == 0) 
-    	//  throw new IOException("Problem with calling coprocessor, no regions returned result");
-      
+        throw new IOException("ERROR while calling coprocessor", e);
+      } 
       if(result == null)
         throw new IOException(retryErrMsg);
       else if(result.hasException())
@@ -288,14 +271,9 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
               retryCount++;
             }
           } while (retryCount < TransactionalTable.retries && retry == true);
-        } catch (ServiceException e) {
-          e.printStackTrace();
-          throw new IOException();
         } catch (Throwable t) {
-          t.printStackTrace();
-          throw new IOException();
+          throw new IOException("ERROR while calling coprocessor",t);
         } 
-
         if(result == null)
           throw new IOException(retryErrMsg);
         else if(result.hasException())
@@ -367,8 +345,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 
       } while(retryCount < TransactionalTable.retries && retry == true);
     } catch (Throwable e) {
-      e.printStackTrace();
-      throw new IOException("ERROR while calling coprocessor");
+      throw new IOException("ERROR while calling coprocessor", e);
     }    
     if(result == null)
       throw new IOException(retryErrMsg);
@@ -459,8 +436,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
           }
         } while (retryCount < TransactionalTable.retries && retry == true);
       } catch (Throwable e) {
-        e.printStackTrace();
-        throw new IOException("ERROR while calling coprocessor");
+        throw new IOException("ERROR while calling coprocessor",e);
       }
       if(result == null)
         throw new IOException(retryErrMsg);
@@ -541,10 +517,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
           }
         } while (retryCount < TransactionalTable.retries && retry == true);
       } catch (Throwable e) {        
-          StringWriter sw = new StringWriter();
-          PrintWriter pw = new PrintWriter(sw);
-          e.printStackTrace(pw);
-        throw new IOException("ERROR while calling coprocessor " + sw.toString());       
+        throw new IOException("ERROR while calling coprocessor ",e);       
       }
 
       if(result == null)
@@ -641,8 +614,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
  	        } while (retryCount < TransactionalTable.retries && retry == true);
  	        
  	      } catch (Throwable e) {
- 	        e.printStackTrace();
-	        throw new IOException("ERROR while calling coprocessor");
+	        throw new IOException("ERROR while calling coprocessor", e);
  	      }
 
              if(result == null)
@@ -736,8 +708,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
           }
         } while (retryCount < TransactionalTable.retries && retry == true);
       } catch (Throwable e) {
-        e.printStackTrace();
-        throw new IOException("ERROR while calling coprocessor");
+        throw new IOException("ERROR while calling coprocessor",e);
       }
       if(result == null)
         throw new IOException(retryErrMsg);
@@ -778,8 +749,7 @@ public HRegionLocation getRegionLocation(byte[] row, boolean f)
         return super.getConfiguration();
     }
     public void flushCommits()
-                  throws InterruptedIOException,
-                RetriesExhaustedWithDetailsException {
+                  throws IOException {
          super.flushCommits();
     }
     public HConnection getConnection()
@@ -807,9 +777,12 @@ public HRegionLocation getRegionLocation(byte[] row, boolean f)
     {
         return super.getTableName();
     }
-    public ResultScanner getScanner(Scan scan) throws IOException
+    public ResultScanner getScanner(Scan scan, float DOPparallelScanner) throws IOException
     {
-        return super.getScanner(scan);
+        if (scan.isSmall() || DOPparallelScanner == 0)
+            return super.getScanner(scan);
+        else
+            return new TrafParallelClientScanner(this.connection, scan, getName(), DOPparallelScanner);       
     }
     public Result get(Get g) throws IOException
     {
@@ -832,11 +805,11 @@ public HRegionLocation getRegionLocation(byte[] row, boolean f)
     {
         return super.checkAndPut(row,family,qualifier,value,put);
     }
-    public void put(Put p) throws  InterruptedIOException,RetriesExhaustedWithDetailsException
+    public void put(Put p) throws IOException
     {
         super.put(p);
     }
-    public void put(List<Put> p) throws  InterruptedIOException,RetriesExhaustedWithDetailsException
+    public void put(List<Put> p) throws IOException
     {
         super.put(p);
     }

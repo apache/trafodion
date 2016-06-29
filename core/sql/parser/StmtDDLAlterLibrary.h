@@ -70,6 +70,8 @@ public:
    inline const NAString getFilename() const;  
    inline const NAString &getClientName() const;  
    inline const NAString &getClientFilename() const;  
+   inline const QualifiedName & getLibraryNameAsQualifiedName() const;
+   inline       QualifiedName & getLibraryNameAsQualifiedName();
 
 // for tracing
 
@@ -113,4 +115,16 @@ inline const  NAString &StmtDDLAlterLibrary::getClientFilename() const
 {
    return clientFilename_;
 }
+
+inline QualifiedName &
+ StmtDDLAlterLibrary::getLibraryNameAsQualifiedName()
+ {
+   return libraryName_;
+ }
+ 
+ inline const QualifiedName &
+ StmtDDLAlterLibrary::getLibraryNameAsQualifiedName() const
+ {
+   return libraryName_;
+ }
 #endif  // STMTDDLALTERLIBRARY

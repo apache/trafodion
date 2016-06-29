@@ -2193,22 +2193,31 @@ static PartitioningFunction * createHash2PartitioningFunction
 
 
 static 
-NodeMap* createNodeMapForHbase(desc_struct* desc, const NATable* table, NAMemory* heap)
+NodeMap* createNodeMapForHbase(desc_struct* desc, const NATable* table,
+                               int numSaltBuckets, NAMemory* heap)
 {
    Int32 partns = 0;
+   Int32 numRegions = 0;
    desc_struct* hrk = desc;
  
    while ( hrk ) {
-      partns++;
-      hrk=hrk->header.next;
+     numRegions++;
+     hrk=hrk->header.next;
    }
+
+   if (numSaltBuckets <= 1)
+     partns = numRegions;
+   else
+     partns = numSaltBuckets;
 
    NodeMap* nodeMap = new (heap) 
        NodeMap(heap, partns, NodeMapEntry::ACTIVE, NodeMap::HBASE);
 
    // get nodeNames of region servers by making a JNI call
    // do it only for multiple partition table
-   if (partns > 1 && (CmpCommon::getDefault(TRAF_ALLOW_ESP_COLOCATION) == DF_ON)) {
+   // TBD: co-location for tables where # of salt buckets and # regions don't match
+   if (partns > 1 && (CmpCommon::getDefault(TRAF_ALLOW_ESP_COLOCATION) == DF_ON) &&
+       (numSaltBuckets <= 1 || numSaltBuckets == numRegions)) {
      ARRAY(const char *) nodeNames(heap, partns);
      if (table->getRegionsNodeName(partns, nodeNames)) {
        for (Int32 p=0; p < partns; p++) {
@@ -2229,13 +2238,15 @@ NodeMap* createNodeMapForHbase(desc_struct* desc, const NATable* table, NAMemory
 
 static 
 PartitioningFunction*
-createHash2PartitioningFunctionForHBase(desc_struct* desc, const NATable * table, 
+createHash2PartitioningFunctionForHBase(desc_struct* desc,
+                                        const NATable * table,
+                                        int numSaltBuckets,
                                         NAMemory* heap)
 {
 
    desc_struct* hrk = desc;
  
-   NodeMap* nodeMap = createNodeMapForHbase(desc, table, heap);
+   NodeMap* nodeMap = createNodeMapForHbase(desc, table, numSaltBuckets, heap);
 
    Int32 partns = nodeMap->getNumEntries();
 
@@ -2634,7 +2645,7 @@ createRangePartitioningFunctionForMultiRegionHBase(Int32 partns,
 			                const NAColumnArray & partKeyColArray,
                                         NAMemory* heap)
 {
-   NodeMap* nodeMap = createNodeMapForHbase(desc, table, heap);
+   NodeMap* nodeMap = createNodeMapForHbase(desc, table, -1, heap);
 
    struct desc_struct* 
       partns_desc = ( table->isHbaseCellTable() || table->isHbaseRowTable()) ?
@@ -2950,6 +2961,41 @@ NABoolean createNAType(columns_desc_struct *column_desc	/*IN*/,
       SQLBPInt(column_desc->precision, column_desc->null_flag, FALSE, heap);
       break;
 
+    case REC_BIN8_SIGNED:
+      if (column_desc->precision > 0)
+	type = new (heap)
+	SQLNumeric(column_desc->length,
+		   column_desc->precision,
+		   column_desc->scale,
+		   TRUE,
+		   column_desc->null_flag,
+                   heap
+		   );
+      else
+	type = new (heap)
+	SQLTiny(TRUE,
+		 column_desc->null_flag,
+                 heap
+		 );
+      break;
+    case REC_BIN8_UNSIGNED:
+      if (column_desc->precision > 0)
+	type = new (heap)
+	SQLNumeric(column_desc->length,
+		   column_desc->precision,
+		   column_desc->scale,
+		   FALSE,
+		   column_desc->null_flag,
+                   heap
+		   );
+      else
+	type = new (heap)
+	SQLTiny(FALSE,
+		 column_desc->null_flag,
+                 heap
+		 );
+      break;
+
     case REC_BIN16_SIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
@@ -2984,6 +3030,7 @@ NABoolean createNAType(columns_desc_struct *column_desc	/*IN*/,
                  heap
 		 );
       break;
+
     case REC_BIN32_SIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
@@ -3072,16 +3119,6 @@ NABoolean createNAType(columns_desc_struct *column_desc	/*IN*/,
 		  column_desc->null_flag,
 		  heap
 		  );
-      break;
-
-    case REC_TDM_FLOAT32:
-      type = new (heap)
-	SQLRealTdm(column_desc->null_flag, heap, column_desc->precision);
-      break;
-
-    case REC_TDM_FLOAT64:
-      type = new (heap)
-	SQLDoublePrecisionTdm(column_desc->null_flag, heap, column_desc->precision);
       break;
 
     case REC_FLOAT32:
@@ -3368,6 +3405,7 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
 	  colClass = USER_COLUMN;
 	  break;
         case 'A':
+        case 'C':
 	  colClass = USER_COLUMN;
 	  break;
         case 'M':  // MVs --
@@ -3443,14 +3481,16 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
 			       defaultValue,
                                heading,
 			       column_desc->upshift,
-			       (column_desc->colclass == 'A'),
+			       ((column_desc->colclass == 'A') ||
+                                (column_desc->colclass == 'C')),
                                COM_UNKNOWN_DIRECTION,
                                FALSE,
                                NULL,
                                column_desc->stored_on_disk,
                                computed_column_text,
                                isSaltColumn,
-                               isDivisioningColumn);
+                               isDivisioningColumn,
+                               (column_desc->colclass == 'C'));
 	}
       else
         {
@@ -3506,8 +3546,15 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
       
 NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
 {
-  if ( !strcmp(hiveType, "tinyint") || 
-       !strcmp(hiveType, "smallint")) 
+  if ( !strcmp(hiveType, "tinyint"))
+    {
+      if (CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF)
+        return new (heap) SQLSmall(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+      else
+        return new (heap) SQLTiny(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+    }
+
+  if ( !strcmp(hiveType, "smallint"))
     return new (heap) SQLSmall(TRUE /* neg */, TRUE /* allow NULL*/, heap);
  
   if ( !strcmp(hiveType, "int")) 
@@ -3519,15 +3566,25 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
   if ( !strcmp(hiveType, "string"))
     {
       Int32 len = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
+      Int32 lenInBytes = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
+      if( lenInBytes != 32000 ) 
+        len = lenInBytes;
       NAString hiveCharset =
         ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_CHARSET);
-      return new (heap) SQLVarChar(CharLenInfo((hiveCharset == CharInfo::UTF8 ? 0 : len),len),
-                                   TRUE, // allow NULL
-                                   FALSE, // not upshifted
-                                   FALSE, // not case-insensitive
-                                   CharInfo::getCharSetEnum(hiveCharset),
-                                   CharInfo::DefaultCollation,
-                                   CharInfo::IMPLICIT);
+      hiveCharset.toUpper();
+      CharInfo::CharSet hiveCharsetEnum = CharInfo::getCharSetEnum(hiveCharset);
+      Int32 maxNumChars = 0;
+      Int32 storageLen = len;
+      SQLVarChar * nat = 
+        new (heap) SQLVarChar(CharLenInfo(maxNumChars, storageLen),
+                              TRUE, // allow NULL
+                              FALSE, // not upshifted
+                              FALSE, // not case-insensitive
+                              CharInfo::getCharSetEnum(hiveCharset),
+                              CharInfo::DefaultCollation,
+                              CharInfo::IMPLICIT);
+      nat->setWasHiveString(TRUE);
+      return nat;
     }
   
   if ( !strcmp(hiveType, "float"))
@@ -3538,6 +3595,60 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
 
   if ( !strcmp(hiveType, "timestamp"))
     return new (heap) SQLTimestamp(TRUE /* allow NULL */ , 6, heap);
+
+  if ( !strcmp(hiveType, "date"))
+    return new (heap) SQLDate(TRUE /* allow NULL */ , heap);
+
+  if ( !strncmp(hiveType, "varchar", 7) )
+  {
+    char maxLen[32];
+    memset(maxLen, 0, 32);
+    int i=0,j=0;
+    int copyit = 0;
+
+    //get length
+    for(i = 0; i < strlen(hiveType) ; i++)
+    {
+      if(hiveType[i] == '(') //start
+      {
+        copyit=1;
+        continue;
+      }
+      else if(hiveType[i] == ')') //stop
+        break; 
+      if(copyit > 0)
+      {
+        maxLen[j] = hiveType[i];
+        j++;
+      }
+    }
+    Int32 len = atoi(maxLen);
+
+    if(len == 0) return NULL;  //cannot parse correctly
+
+    NAString hiveCharset =
+        ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_CHARSET);
+
+    hiveCharset.toUpper();
+    CharInfo::CharSet hiveCharsetEnum = CharInfo::getCharSetEnum(hiveCharset);
+    Int32 maxNumChars = 0;
+    Int32 storageLen = len;
+    if (CharInfo::isVariableWidthMultiByteCharSet(hiveCharsetEnum))
+    {
+      // For Hive VARCHARs, the number specified is the max. number of characters,
+      // while we count in bytes when using HIVE_MAX_STRING_LENGTH for Hive STRING
+      // columns. Set the max character constraint and also adjust the required storage length.
+       maxNumChars = len;
+       storageLen = len * CharInfo::maxBytesPerChar(hiveCharsetEnum);
+    }
+    return new (heap) SQLVarChar(CharLenInfo(maxNumChars, storageLen),
+                                   TRUE, // allow NULL
+                                   FALSE, // not upshifted
+                                   FALSE, // not case-insensitive
+                                   CharInfo::getCharSetEnum(hiveCharset),
+                                   CharInfo::DefaultCollation,
+                                   CharInfo::IMPLICIT);
+  } 
 
   return NULL;
 }
@@ -3842,7 +3953,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
                                        order == ASCENDING);
           
           if ( table->isHbaseTable() && 
-               indexColumn->isComputedColumnAlways() ) 
+               indexColumn->isSaltColumn() ) 
             {
               
               // examples of the saltClause string:
@@ -3855,27 +3966,24 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
                                                           strlen(saltClause), 
                                                           CharInfo::ISO88591);
               
-              if ( saltExpr &&
-                   saltExpr->getOperatorType() == ITM_HASH2_DISTRIB) {
+              CMPASSERT(saltExpr &&
+                        saltExpr->getOperatorType() == ITM_HASH2_DISTRIB);
                 
-                // get the # of salted partitions from saltClause
-                ItemExprList csList(CmpCommon::statementHeap());
-                saltExpr->findAll(ITM_CONSTANT, csList, FALSE, FALSE);
-                
-                // get #salted partitions from last ConstValue in the list
-                if ( csList.entries() > 0 ) {
-                  ConstValue* ct = (ConstValue*)csList[csList.entries()-1];
-                  
-                  if ( ct->canGetExactNumericValue() )  {
-                    numOfSaltedPartitions = ct->getExactNumericValue();
-                  }
+              // get the # of salted partitions from saltClause
+              ItemExprList csList(CmpCommon::statementHeap());
+              saltExpr->findAll(ITM_CONSTANT, csList, FALSE, FALSE);
+
+              // get #salted partitions from last ConstValue in the list
+              if ( csList.entries() > 0 ) {
+                ConstValue* ct = (ConstValue*)csList[csList.entries()-1];
+
+                if ( ct->canGetExactNumericValue() )  {
+                  numOfSaltedPartitions = ct->getExactNumericValue();
                 }
               }
-              
+
               // collect all ColReference objects into hbaseSaltColumnList.
-              CMPASSERT(saltExpr != NULL);
               saltExpr->findAll(ITM_REFERENCE, hbaseSaltColumnList, FALSE, FALSE);
-              
             }
           
 	  if (isTheClusteringKey)
@@ -4121,22 +4229,21 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
               Int32 splits = findDescEntries(hbd);
 
               // Do Hash2 only if the table is salted orignally 
-              // and the current number of partitions is greater than 1.
+              // and the current number of HBase regions is greater than 1.
               if ( doHash2 )
                  doHash2 = (numOfSaltedPartitions > 0 && splits > 1);
 
-              if ( doHash2 && hbd && hbd->header.nodetype == DESC_HBASE_HASH2_REGION_TYPE ) {
+              if ( hbd )
+                if ( doHash2 ) {
 	           partFunc = createHash2PartitioningFunctionForHBase(
 	    	      ((table_desc_struct*)table_desc)->hbase_regionkey_desc,
                       table,
-		      heap);
+                      numOfSaltedPartitions,
+                      heap);
 
                    partitioningKeyColumns = hbaseSaltOnColumns;
-
-              } else 
-                if ((!doHash2 && (hbd && hbd->header.nodetype == DESC_HBASE_HASH2_REGION_TYPE))
-                      ||
-                (hbd && hbd->header.nodetype == DESC_HBASE_RANGE_REGION_TYPE))
+                }
+                else
 	           partFunc = createRangePartitioningFunctionForHBase(
 	    	      ((table_desc_struct*)table_desc)->hbase_regionkey_desc,
                       table,
@@ -4144,7 +4251,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 		      heap);
               else {
 
-	        // Range partitioned or single partition table
+	        // no region descriptor, range partitioned or single partition table
 	        partFunc = createRangePartitioningFunction(
 	    	   files_desc->body.files_desc.partns_desc,
 	    	   partitioningKeyColumns,
@@ -4290,6 +4397,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
                   files_desc ? files_desc->body.files_desc.fileCode : 0,
 		  (indexes_desc->body.indexes_desc.isVolatile != 0),
 		  (indexes_desc->body.indexes_desc.isInMemoryObjectDefn != 0),
+                  indexes_desc->body.indexes_desc.indexUID,
                   indexes_desc->body.indexes_desc.keys_desc,
                   NULL, // no Hive stats
                   indexes_desc->body.indexes_desc.numSaltPartns,
@@ -4625,6 +4733,7 @@ NABoolean createNAFileSets(hive_tbl_desc* hvt_desc        /*IN*/,
                   0, // file code
 		  0, // not a volatile
 		  0, // inMemObjectDefn
+                  0,
                   NULL, // indexes_desc->body.indexes_desc.keys_desc,
                   hiveHDFSTableStats,
                   0, // saltPartns
@@ -4912,6 +5021,8 @@ NATable::NATable(BindWA *bindWA,
     resetAfterStatement_(FALSE),
     hitCount_(0),
     replacementCounter_(2),
+    sizeInCache_(0),
+    recentlyUsed_(TRUE),
     tableConstructionHadWarnings_(FALSE),
     isAnMPTableWithAnsiName_(FALSE),
     isUMDTable_(FALSE),
@@ -5105,12 +5216,21 @@ NATable::NATable(BindWA *bindWA,
   objectType_ = table_desc->body.table_desc.objectType;
   partitioningScheme_ = table_desc->body.table_desc.partitioningScheme;
 
-  if (!(corrName.isSeabaseMD() || corrName.isSpecialTable()))
-    setupPrivInfo();
+  // Set up privs
+  if ((corrName.getSpecialType() == ExtendedQualName::SG_TABLE) ||
+      (!(corrName.isSeabaseMD() || corrName.isSpecialTable())))
+     setupPrivInfo();
 
-  if ((table_desc->body.table_desc.tableFlags & SEABASE_OBJECT_IS_EXTERNAL_HIVE) != 0 ||
-      (table_desc->body.table_desc.tableFlags & SEABASE_OBJECT_IS_EXTERNAL_HBASE) != 0)
+  if ((table_desc->body.table_desc.objectFlags & SEABASE_OBJECT_IS_EXTERNAL_HIVE) != 0 ||
+      (table_desc->body.table_desc.objectFlags & SEABASE_OBJECT_IS_EXTERNAL_HBASE) != 0)
     setIsExternalTable(TRUE);
+
+  if (CmpSeabaseDDL::isMDflagsSet
+      (table_desc->body.table_desc.tablesFlags, MD_TABLES_HIVE_EXT_COL_ATTRS))
+    setHiveExtColAttrs(TRUE);
+  if (CmpSeabaseDDL::isMDflagsSet
+      (table_desc->body.table_desc.tablesFlags, MD_TABLES_HIVE_EXT_KEY_ATTRS))
+    setHiveExtKeyAttrs(TRUE);
 
   rcb_ = table_desc->body.table_desc.rcb;
   rcbLen_ = table_desc->body.table_desc.rcbLen;
@@ -5506,7 +5626,8 @@ NATable::NATable(BindWA *bindWA,
 
   if(postCreateNATableWarnings != preCreateNATableWarnings)
     tableConstructionHadWarnings_=TRUE;
-
+  const char *lobHdfsServer = CmpCommon::getDefaultString(LOB_HDFS_SERVER);
+  Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
   if (hasLobColumn())
     {
       // read lob related information from lob metadata
@@ -5546,7 +5667,7 @@ NATable::NATable(BindWA *bindWA,
 	 LOB_CLI_SELECT_CURSOR,
 	 lobNumList,
 	 lobTypList,
-	 lobLocList,0);
+	 lobLocList,(char *)lobHdfsServer,lobHdfsPort,0,FALSE);
       
       if (cliRC == 0)
 	{
@@ -5634,6 +5755,8 @@ NATable::NATable(BindWA *bindWA,
     resetAfterStatement_(FALSE),
     hitCount_(0),
     replacementCounter_(2),
+    sizeInCache_(0),
+    recentlyUsed_(TRUE),
     tableConstructionHadWarnings_(FALSE),
     isAnMPTableWithAnsiName_(FALSE),
     isUMDTable_(FALSE),
@@ -5821,6 +5944,9 @@ NATable::NATable(BindWA *bindWA,
     tableConstructionHadWarnings_=TRUE;
 
   hiveDefaultStringLen_ = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
+  Int32 hiveDefaultStringLenInBytes = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
+  if( hiveDefaultStringLenInBytes != 32000 ) 
+      hiveDefaultStringLen_ = hiveDefaultStringLenInBytes;
 
   if (!(corrName.isSeabaseMD() || corrName.isSpecialTable()))
     setupPrivInfo();
@@ -7289,6 +7415,16 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
      }
   }
 
+  // the reload cqd will be set during aqr after compiletime and runtime
+  // timestamp mismatch is detected.
+  // If set, reload hive metadata.
+  if ((cachedNATable->isHiveTable()) &&
+      (CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
+      (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON))
+    {
+      removeEntry = TRUE;
+    }
+
   //Found in cache.  If that's all the caller wanted, return now.
   if ( !removeEntry && findInCacheOnly )
      return cachedNATable;
@@ -7333,6 +7469,10 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
               (Int64) CmpCommon::getDefaultLong(HIVE_METADATA_REFRESH_INTERVAL);
             Int32 defaultStringLen = 
               CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
+            Int32 defaultStringLenInBytes = 
+              CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
+            if(defaultStringLenInBytes != 32000)
+              defaultStringLen = defaultStringLenInBytes;
             Int64 expirationTimestamp = refreshInterval;
             NAString defSchema =
               ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_SCHEMA);
@@ -7527,12 +7667,30 @@ ExtendedQualName::SpecialTableType NATable::getTableType()
   return qualifiedName_.getSpecialType();
 }
 
-NABoolean NATable::hasSaltedColumn()
+NABoolean NATable::hasSaltedColumn(Lng32 * saltColPos)
 {
   for (CollIndex i=0; i<colArray_.entries(); i++ )
   {
     if ( colArray_[i]->isSaltColumn() ) 
-      return TRUE;
+      {
+        if (saltColPos)
+          *saltColPos = i;
+        return TRUE;
+      }
+  }
+  return FALSE;
+}
+
+NABoolean NATable::hasDivisioningColumn(Lng32 * divColPos)
+{
+  for (CollIndex i=0; i<colArray_.entries(); i++ )
+  {
+    if ( colArray_[i]->isDivisioningColumn() ) 
+      {
+        if (divColPos)
+          *divColPos = i;
+        return TRUE;
+      }
   }
   return FALSE;
 }
@@ -7675,20 +7833,20 @@ ExpHbaseInterface* NATable::getHBaseInterfaceRaw()
   return ehi;
 }
 
-ByteArrayList* NATable::getRegionsBeginKey(const char* hbaseName) 
+NAArray<HbaseStr> *NATable::getRegionsBeginKey(const char* hbaseName) 
 {
   ExpHbaseInterface* ehi = getHBaseInterfaceRaw();
-  ByteArrayList* bal = NULL;
+  NAArray<HbaseStr> *keyArray = NULL;
 
   if (!ehi)
     return NULL;
   else
   {
-    bal = ehi->getRegionBeginKeys(hbaseName);
+    keyArray = ehi->getRegionBeginKeys(hbaseName);
 
     delete ehi;
   }
-  return bal;
+  return keyArray;
 }
 
 
@@ -7753,6 +7911,39 @@ NABoolean  NATable::getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize
   return TRUE;
 }
 
+// This method is called on a hive NATable.
+// If that table has a corresponding external table,
+// then this method moves the relevant attributes from 
+// NATable of external table (etTable) to this.
+// Currently, column and clustering key info is moved.
+short NATable::updateExtTableAttrs(NATable *etTable)
+{
+  NAFileSet *fileset = this->getClusteringIndex();
+  NAFileSet *etFileset = etTable->getClusteringIndex();
+
+  colcount_ = etTable->getColumnCount();
+  colArray_ = etTable->getNAColumnArray();
+  fileset->allColumns_ = etFileset->getAllColumns();
+  if (NOT etFileset->hasOnlySyskey()) // explicit key was specified
+    {
+      keyLength_ = etTable->getKeyLength();
+      recordLength_ = etTable->getRecordLength();
+      
+      fileset->keysDesc_ = etFileset->getKeysDesc();
+      fileset->indexKeyColumns_ = etFileset->getIndexKeyColumns();
+      fileset->keyLength_ = etFileset->getKeyLength();
+      fileset->encodedKeyLength_ = etFileset->getEncodedKeyLength();
+    }
+
+  /*
+  fileset->partitioningKeyColumns_ = etFileset->getPartitioningKeyColumns();
+  fileset->partFunc_ = etFileset->getPartitioningFunction();
+  fileset->countOfFiles_ = etFileset->getCountOfFiles();
+  */
+
+  return 0;
+}
+
 // get details of this NATable cache entry
 void NATableDB::getEntryDetails(
      Int32 ii,                      // (IN) : NATable cache iterator entry
@@ -7778,6 +7969,8 @@ void NATableDB::getEntryDetails(
     partLen = QNO.getObjectName().length();
     strncpy(details.object, (char *)(QNO.getObjectName().data()), partLen );
     details.object[partLen] = '\0';
+
+    details.size = object->sizeInCache_;
   }
 }
 
@@ -7857,12 +8050,10 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
       table = NULL;
     }
 
-  if (0) //(table && (corrName.isHbase() || corrName.isSeabase()))
+  if (table && ((table->isHbaseTable() || table->isSeabaseTable()) && 
+                !(table->isSeabaseMDTable())))
     {
-      const NAString * val =
-	ActiveControlDB()->getControlSessionValue("SHOWPLAN");
-      if ( ( (val) && (*val == "ON") ) &&
-	   (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON))
+      if ((CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON))
 	{
 	  remove(table->getKey());
 	  table = NULL;
@@ -7914,6 +8105,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 
     //Heap used by the NATable object
     NAMemory * naTableHeap = CmpCommon::statementHeap();
+    size_t allocSizeBefore = 0;
 
     //if NATable caching is on check if this table is not already
     //in the NATable cache. If it is in the cache create this NATable
@@ -7927,20 +8119,22 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
     if (((NOT table) && cacheMetaData_ && useCache_) &&
         corrName.isCacheable()){
       naTableHeap = getHeap();
+      allocSizeBefore = naTableHeap->getAllocSize();
     }
 
     //if table is in cache tableInCache will be non-NULL
     //otherwise it is NULL.
     NATable * tableInCache = table;
 
+    CmpSeabaseDDL cmpSBD((NAHeap *)CmpCommon::statementHeap());
     if ((corrName.isHbase() || corrName.isSeabase()) &&
 	(!isSQUmdTable(corrName)) &&
 	(!isSQUtiDisplayExplain(corrName)) &&
 	(!isSQInternalStoredProcedure(corrName))
 	) {
-      CmpSeabaseDDL cmpSBD((NAHeap *)CmpCommon::statementHeap());
-
-
+      // ------------------------------------------------------------------
+      // Create an NATable object for a Trafodion/HBase table
+      // ------------------------------------------------------------------
       desc_struct *tableDesc = NULL;
 
       NABoolean isSeabase = FALSE;
@@ -7961,14 +8155,13 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	      return NULL;
 	    }
 
-          ByteArrayList* bal = NATable::getRegionsBeginKey(extHBaseName);
+          NAArray<HbaseStr> *keyArray = NATable::getRegionsBeginKey(extHBaseName);
 
 	  tableDesc = 
 	    HbaseAccess::createVirtualTableDesc
 	    (corrName.getExposedNameAsAnsiString(FALSE, TRUE).data(),
-	     isHbaseRow, isHbaseCell, bal);
-
-          delete bal;
+	     isHbaseRow, isHbaseCell, keyArray);
+          deleteNAArray(STMTHEAP, keyArray);
 
 	  isSeabase = FALSE;
 
@@ -8076,6 +8269,9 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	(!corrName.isSpecialTable()) &&
 	(!isSQInternalStoredProcedure(corrName))
 	) {
+      // ------------------------------------------------------------------
+      // Create an NATable object for a Hive table
+      // ------------------------------------------------------------------
       if ( hiveMetaDB_ == NULL ) {
 	if (CmpCommon::getDefault(HIVE_USE_FAKE_TABLE_DESC) != DF_ON)
 	  {
@@ -8120,9 +8316,63 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
          htbl = hiveMetaDB_->getTableDesc(schemaNameInt, tableNameInt);
 
        if ( htbl )
-	 {
-	   table = new (naTableHeap) NATable(bindWA, corrName, naTableHeap, htbl);
-	 }
+         {
+           table = new (naTableHeap) NATable
+             (bindWA, corrName, naTableHeap, htbl);
+
+           // 'table' is the NATable for underlying hive table.
+           // That table may also have an associated external table.
+           // Skip processing the external table defn, if only the 
+           // underlying hive table is needed.
+           if (NOT bindWA->returnHiveTableDefn())
+             {
+               // if this hive/orc table has an associated external table, 
+               // get table desc for it.
+               NAString extName = ComConvertNativeNameToTrafName(
+                    corrName.getQualifiedNameObj().getCatalogName(),
+                    corrName.getQualifiedNameObj().getSchemaName(),
+                    corrName.getQualifiedNameObj().getObjectName());
+               
+               QualifiedName qn(extName, 3);
+               desc_struct *etDesc = cmpSBD.getSeabaseTableDesc(
+                    qn.getCatalogName(),
+                    qn.getSchemaName(),
+                    qn.getObjectName(),
+                    COM_BASE_TABLE_OBJECT);
+               
+               if (table && etDesc)
+                 {
+                   CorrName cn(qn);
+                   NATable * etTable = new (naTableHeap) NATable
+                     (bindWA, cn, naTableHeap, etDesc);
+                   
+                   // if ext and hive columns dont match, return error
+                   // unless it is a drop stmt.
+                   if ((table->getUserColumnCount() != etTable->getUserColumnCount()) &&
+                       (NOT bindWA->externalTableDrop()))
+                     {
+                       *CmpCommon::diags()
+                         << DgSqlCode(-8437);
+                       
+                       bindWA->setErrStatus();
+                       return NULL;
+                     }
+                   
+                   if (etTable->hiveExtColAttrs() || etTable->hiveExtKeyAttrs())
+                     {
+                       // attrs were explicitly specified for this external
+                       // table. Merge them with the hive table attrs.
+                       short rc = table->updateExtTableAttrs(etTable);
+                       if (rc)
+                         {
+                           bindWA->setErrStatus();
+                           return NULL;
+                         }
+                     }
+                   table->setHasHiveExtTable(TRUE);
+                 } // ext table 
+             } // allowExternalTables
+         } // htbl
        else 
          {
            if ((hiveMetaDB_->getErrCode() == 0)||
@@ -8149,6 +8399,9 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
        }
 
     } else
+      // ------------------------------------------------------------------
+      // Neither Trafodion nor Hive (probably dead code below)
+      // ------------------------------------------------------------------
        table = new (naTableHeap)
          NATable(bindWA, corrName, naTableHeap, inTableDescStruct);
     
@@ -8205,7 +8458,10 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
         //if metadata caching is ON then adjust the size of the cache
         //since we are adding an entry to the cache
         if(cacheMetaData_)
-          currentCacheSize_ = heap_->getAllocSize();
+          {
+            currentCacheSize_ = heap_->getAllocSize();
+            table->sizeInCache_ = currentCacheSize_ - allocSizeBefore;
+          }
 
 	//update the high watermark for caching statistics
 	if (currentCacheSize_ > highWatermarkCache_)        
@@ -8265,8 +8521,8 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
   return table;
 }
 
-void NATableDB::removeNATable(CorrName &corrName, QiScope qiScope,
-                              ComObjectType ot)
+void NATableDB::removeNATable2(CorrName &corrName, ComQiScope qiScope,
+                               ComObjectType ot)
 {
   const ExtendedQualName* toRemove = &(corrName.getExtendedQualNameObj());
   NAHashDictionaryIterator<ExtendedQualName,NATable> iter(*this); 
@@ -8355,6 +8611,54 @@ void NATableDB::removeNATable(CorrName &corrName, QiScope qiScope,
         long retcode = SQL_EXEC_SetSecInvalidKeys(numKeys, qiKeys);
       }
     }
+}
+
+void NATableDB::removeNATable(CorrName &corrName, ComQiScope qiScope,
+                              ComObjectType ot, 
+                              NABoolean ddlXns, NABoolean atCommit)
+{
+  // if ddl xns are being used, add this name to ddlObjsList and
+  // invalidate NATable in my environment. This will allow subsequent 
+  // operations running in my environemnt under my current transaction 
+  // to access the latest definition.
+  // 
+  // NATable removal for other users will happen at xn commit/rollback time.
+  //
+  // If atCommit is set, then this is being called at commit time.
+  // In that case, do NATable removal processing for all users 
+  // instead of adding to ddlObjsList.
+  //
+  // If ddl xns are not being used, then invalidate NATable cache for
+  // all users.
+  if ((ddlXns) &&
+      (NOT atCommit))
+    {
+      CmpContext::DDLObjInfo ddlObj;
+      ddlObj.ddlObjName = corrName.getQualifiedNameAsString();
+      ddlObj.qiScope = qiScope;
+      ddlObj.ot = ot;
+      ddlObj.objUID = -1;
+
+      NABoolean found = FALSE;
+      for (Lng32 i = 0;
+           ((NOT found) && (i <  CmpCommon::context()->ddlObjsList().entries()));
+           i++)
+        {
+          CmpContext::DDLObjInfo &ddlObjInList = 
+            CmpCommon::context()->ddlObjsList()[i];
+          if (ddlObj.ddlObjName == ddlObjInList.ddlObjName)
+            found = TRUE;
+        }
+
+      removeNATable2(corrName, qiScope, ot); //ComQiScope::REMOVE_MINE_ONLY, ot);
+
+      if (NOT found)
+        CmpCommon::context()->ddlObjsList().insert(ddlObj);
+ 
+      return;
+    }
+
+  removeNATable2(corrName, qiScope, ot);
 }
 
 //This method is called at the end of each statement to reset statement
@@ -8661,8 +8965,8 @@ NATableDB::free_entries_with_QI_key(Int32 numKeys, SQL_QIKEY* qiKeyArray)
   {
     NATable * currTable = cachedTableList_[currIndx];
 
-    // Only need to remove seabase tables
-    if (!currTable->isSeabaseTable())
+    // Only need to remove seabase tables and external Hive/hbase tables
+    if (!currTable->isSeabaseTable() && !currTable->hasExternalTable())
     {
       currIndx++;
       continue;
@@ -8753,6 +9057,7 @@ NATableDB::unmark_entries_marked_for_removal()
 
 void NATableDB::getCacheStats(NATableCacheStats & stats)
 {
+  memset(stats.contextType, ' ', sizeof(stats.contextType));
   stats.numLookups = totalLookupsCount_;
   stats.numCacheHits = totalCacheHits_;
   stats.currentCacheSize = currentCacheSize_;

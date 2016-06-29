@@ -57,9 +57,11 @@
 # ===========================================================
 #
 
-# Trafodion core only works with CDH 5.3 and HDP 2.2
+# Trafodion core only works with CDH 5.4 [and HDP 2.3 not yet]
 # This env var will signal that to the installer which will
 # verify the hadoop distro versions are correct as well as 
 # perform some additional support for this.
-export CDH_5_3_HDP_2_2_SUPPORT="Y"
-
+export CDH_5_3_HDP_2_2_SUPPORT="N"
+export HDP_2_3_SUPPORT="Y"
+export CDH_5_4_SUPPORT="Y"
+export APACHE_1_0_X_SUPPORT="Y"

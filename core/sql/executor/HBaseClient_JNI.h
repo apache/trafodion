@@ -57,70 +57,6 @@ typedef enum {
  ,HBC_Req_Drop
 } HBaseClientReqType;
 
-// ===========================================================================
-// ===== The ByteArrayList class implements access to the Java 
-// ===== ByteArrayList class.
-// ===========================================================================
-
-typedef enum {
-  BAL_OK     = JOI_OK
- ,BAL_FIRST  = JOI_LAST
- ,BAL_ERROR_ADD_PARAM = BAL_FIRST
- ,BAL_ERROR_ADD_EXCEPTION
- ,BAL_ERROR_GET_EXCEPTION
- ,BAL_LAST
-} BAL_RetCode;
-
-class ByteArrayList : public JavaObjectInterface
-{
-public:
-  ByteArrayList(NAHeap *heap, jobject jObj = NULL)
-    :  JavaObjectInterface(heap, jObj)
-  {}
-
-  // Destructor
-  virtual ~ByteArrayList();
-  
-  // Initialize JVM and all the JNI configuration.
-  // Must be called.
-  BAL_RetCode    init();
-  
-  BAL_RetCode add(const Text& str);
-    
-  // Add a Text vector.
-  BAL_RetCode add(const TextVec& vec);
-
-  BAL_RetCode addElement(const char * data, int keyLength);
-    
-  // Get a Text element
-  Text* get(Int32 i);
-
-  // Get the error description.
-  virtual char* getErrorText(BAL_RetCode errEnum);
-
-  Int32 getSize();
-  Int32 getEntrySize(Int32 i);
-  char* getEntry(Int32 i, char* buf, Int32 bufLen, Int32& dataLen);
-
-
-private:  
-  enum JAVA_METHODS {
-    JM_CTOR = 0, 
-    JM_ADD,
-    JM_GET,
-    JM_GETSIZE,
-    JM_GETENTRY,
-    JM_GETENTRYSIZE,
-    JM_LAST
-  };
-  
-  static jclass          javaClass_;  
-  static JavaMethodInit* JavaMethods_;
-  static bool javaMethodsInitialized_;
-  // this mutex protects both JaveMethods_ and javaClass_ initialization
-  static pthread_mutex_t javaMethodsInitMutex_;
-};
-
 class HBaseClientRequest
 {
 public :
@@ -135,7 +71,6 @@ public :
   NAHeap *heap_;
 };
 
-
 // ===========================================================================
 // ===== The HTableClient class implements access to the Java 
 // ===== HTableClient class.
@@ -143,7 +78,7 @@ public :
 
 typedef enum {
   HTC_OK     = JOI_OK
- ,HTC_FIRST  = BAL_LAST
+ ,HTC_FIRST  = JOI_LAST
  ,HTC_DONE   = HTC_FIRST
  ,HTC_DONE_RESULT = 1000
  ,HTC_DONE_DATA
@@ -167,15 +102,11 @@ typedef enum {
  ,HTC_ERROR_EXISTS_EXCEPTION
  ,HTC_ERROR_COPROC_AGGR_PARAM
  ,HTC_ERROR_COPROC_AGGR_EXCEPTION
- ,HTC_ERROR_COPROC_AGGR_GET_RESULT_PARAM
- ,HTC_ERROR_COPROC_AGGR_GET_RESULT_EXCEPTION
  ,HTC_ERROR_GRANT_PARAM
  ,HTC_ERROR_GRANT_EXCEPTION
  ,HTC_ERROR_REVOKE_PARAM
  ,HTC_ERROR_REVOKE_EXCEPTION
- ,HTC_GETENDKEYS
  ,HTC_ERROR_GETHTABLENAME_EXCEPTION
- ,HTC_ERROR_FLUSHTABLE_EXCEPTION
  ,HTC_GET_COLNAME_EXCEPTION
  ,HTC_GET_COLVAL_EXCEPTION
  ,HTC_GET_ROWID_EXCEPTION
@@ -245,11 +176,12 @@ public:
   
   HTC_RetCode init();
   
-  HTC_RetCode startScan(Int64 transID, const Text& startRowID, const Text& stopRowID, const LIST(HbaseStr) & cols, Int64 timestamp, bool cacheBlocks, Lng32 numCacheRows,
+  HTC_RetCode startScan(Int64 transID, const Text& startRowID, const Text& stopRowID, const LIST(HbaseStr) & cols, Int64 timestamp, bool cacheBlocks, bool smallScanner, Lng32 numCacheRows,
                         NABoolean preFetch,
 			const LIST(NAString) *inColNamesToFilter, 
 			const LIST(NAString) *inCompareOpList,
 			const LIST(NAString) *inColValuesToCompare,
+            Float32 dopParallelScanner = 0.0f,
 			Float32 samplePercent = -1.0f,
 			NABoolean useSnapshotScan = FALSE,
 			Lng32 snapTimeout = 0,
@@ -309,10 +241,6 @@ public:
   // Get the error description.
   virtual char* getErrorText(HTC_RetCode errEnum);
 
-  ByteArrayList* getBeginKeys();
-  ByteArrayList* getEndKeys();
-
-  HTC_RetCode flushTable(); 
   void setTableName(const char *tableName)
   {
     Int32 len = strlen(tableName);
@@ -343,7 +271,6 @@ public:
 
 private:
   NAString getLastJavaError();
-  ByteArrayList* getKeys(Int32 funcIndex);
 
   enum JAVA_METHODS {
     JM_CTOR = 0
@@ -353,13 +280,10 @@ private:
    ,JM_COPROC_AGGR
    ,JM_GET_NAME
    ,JM_GET_HTNAME
-   ,JM_GETENDKEYS
-   ,JM_FLUSHT
    ,JM_SET_WB_SIZE
    ,JM_SET_WRITE_TO_WAL
    ,JM_FETCH_ROWS
    ,JM_COMPLETE_PUT
-   ,JM_GETBEGINKEYS
    ,JM_LAST
   };
   char *tableName_; 
@@ -431,8 +355,6 @@ typedef enum {
  ,HBC_ERROR_LIST_EXCEPTION
  ,HBC_ERROR_EXISTS_PARAM
  ,HBC_ERROR_EXISTS_EXCEPTION
- ,HBC_ERROR_FLUSHALL_PARAM
- ,HBC_ERROR_FLUSHALL_EXCEPTION
  ,HBC_ERROR_GRANT_PARAM
  ,HBC_ERROR_GRANT_EXCEPTION
  ,HBC_ERROR_REVOKE_PARAM
@@ -475,6 +397,9 @@ typedef enum {
  ,HBC_ERROR_CHECKANDDELETEROW_PARAM
  ,HBC_ERROR_CHECKANDDELETEROW_EXCEPTION
  ,HBC_ERROR_CHECKANDDELETEROW_NOTFOUND
+ ,HBC_ERROR_GETKEYS
+ ,HBC_ERROR_LISTALL
+ ,HBC_ERROR_REGION_STATS
  ,HBC_LAST
 } HBC_RetCode;
 
@@ -510,13 +435,13 @@ public:
   HBC_RetCode registerTruncateOnAbort(const char* fileName, Int64 transID);
   HBC_RetCode drop(const char* fileName, bool async, Int64 transID);
   HBC_RetCode drop(const char* fileName, JNIEnv* jenv, Int64 transID); // thread specific
-  HBC_RetCode dropAll(const char* pattern, bool async);
-  HBC_RetCode copy(const char* currTblName, const char* oldTblName);
-  ByteArrayList* listAll(const char* pattern);
-  ByteArrayList* getRegionStats(const char* tblName);
-  static HBC_RetCode flushAllTablesStatic();
-  HBC_RetCode flushAllTables();
-  HBC_RetCode exists(const char* fileName);
+  HBC_RetCode dropAll(const char* pattern, bool async, Int64 transID);
+  HBC_RetCode copy(const char* srcTblName, const char* tgtTblName,
+                   NABoolean force);
+  NAArray<HbaseStr>* listAll(NAHeap *heap, const char* pattern);
+  NAArray<HbaseStr>* getRegionStats(NAHeap *heap, const char* tblName);
+
+  HBC_RetCode exists(const char* fileName, Int64 transID);
   HBC_RetCode grant(const Text& user, const Text& tableName, const TextVec& actionCodes); 
   HBC_RetCode revoke(const Text& user, const Text& tableName, const TextVec& actionCodes);
   HBC_RetCode estimateRowCount(const char* tblName, Int32 partialRowSize,
@@ -558,7 +483,7 @@ public:
       HTableClient_JNI **outHtc);
   HBC_RetCode insertRows(NAHeap *heap, const char *tableName,
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, short rowIDLen, HbaseStr rowIDs,
-      HbaseStr rows, Int64 timestamp, bool autoFlush, bool asyncOperation,
+      HbaseStr rows, Int64 timestamp,  bool asyncOperation,
       HTableClient_JNI **outHtc);
   HBC_RetCode checkAndUpdateRow(NAHeap *heap, const char *tableName,
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID,
@@ -575,10 +500,13 @@ public:
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, 
       HbaseStr columnToCheck, HbaseStr columnValToCheck,
       Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
+  NAArray<HbaseStr>* getStartKeys(NAHeap *heap, const char *tableName, bool useTRex);
+  NAArray<HbaseStr>* getEndKeys(NAHeap *heap, const char * tableName, bool useTRex);
 
 private:   
   // private default constructor
   HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout);
+  NAArray<HbaseStr>* getKeys(Int32 funcIndex, NAHeap *heap, const char *tableName, bool useTRex);
 
 private:
   NAString  getLastJavaError();
@@ -601,7 +529,6 @@ private:
    ,JM_GET_REGION_STATS
    ,JM_COPY
    ,JM_EXISTS
-   ,JM_FLUSHALL
    ,JM_GRANT
    ,JM_REVOKE
    ,JM_GET_HBLC
@@ -624,6 +551,8 @@ private:
    ,JM_HBC_DELETE_ROW
    ,JM_HBC_DIRECT_DELETE_ROWS
    ,JM_HBC_CHECKANDDELETE_ROW
+   ,JM_HBC_GETSTARTKEYS
+   ,JM_HBC_GETENDKEYS
    ,JM_LAST
   };
   static jclass          javaClass_; 
@@ -832,6 +761,9 @@ jobjectArray convertToStringObjectArray(const HBASE_NAMELIST& nameList);
 jobjectArray convertToStringObjectArray(const NAText *text, int arrayLen);
 int convertStringObjectArrayToList(NAHeap *heap, jarray j_objArray, 
                                          LIST(Text *)&list);
+int convertByteArrayObjectArrayToNAArray(NAHeap *heap, jarray j_objArray, 
+             NAArray<HbaseStr> **retArray);
+void deleteNAArray(CollHeap *heap, NAArray<HbaseStr> *array);
 #endif
 
 

@@ -170,8 +170,8 @@ static const PrivMgrTableStruct privMgrTables[] =
     { PRIVMGR_COMPONENTS, componentsDDL, false },
     { PRIVMGR_COMPONENT_OPERATIONS, componentOperationsDDL, false },
     { PRIVMGR_COMPONENT_PRIVILEGES, componentPrivilegesDDL, false },
-    { PRIVMGR_ROLE_USAGE, roleUsageDDL, false }
-   ,{ PRIVMGR_SCHEMA_PRIVILEGES, schemaPrivilegesDDL, false } 
+    { PRIVMGR_ROLE_USAGE, roleUsageDDL, false },
+    { PRIVMGR_SCHEMA_PRIVILEGES, schemaPrivilegesDDL, false } 
   };
 
 

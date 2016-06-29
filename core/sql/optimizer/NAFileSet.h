@@ -80,6 +80,7 @@ enum FileOrganizationEnum
 // -----------------------------------------------------------------------
 class NAFileSet : public NABasicObject
 {
+  friend class NATable;
 public:
 
   // ---------------------------------------------------------------------
@@ -115,6 +116,7 @@ public:
             Lng32 fileCode,
 	    NABoolean isVolatile,
 	    NABoolean inMemObjectDefn,
+            Int64 indexUID,
             desc_struct *keysDesc,
             HHDFSTableStats *hHDFSTableStats,
             Lng32 numSaltPartns,
@@ -152,6 +154,7 @@ public:
                                               { return indexKeyColumns_; }
 
   const desc_struct * getKeysDesc() const { return keysDesc_; }
+  desc_struct * getKeysDesc() { return keysDesc_; }
 
   Lng32 getCountOfFiles() const                  { return countOfFiles_; }
 
@@ -169,6 +172,9 @@ public:
   Lng32 getPackingFactor() const     { return packingFactor_; }
 
   Lng32 getFileCode() const { return fileCode_; }
+
+  const Int64 &getIndexUID() const { return indexUID_; }
+  Int64 &getIndexUID() { return indexUID_; }
 
   const HHDFSTableStats *getHHDFSTableStats() const { return hHDFSTableStats_; }
   HHDFSTableStats *getHHDFSTableStats()             { return hHDFSTableStats_; }
@@ -381,6 +387,9 @@ private:
   // file that belongs to this file set.
   // ---------------------------------------------------------------------
   NAColumnArray indexKeyColumns_;
+
+  // uid for index
+  Int64 indexUID_;
 
   desc_struct *keysDesc_;  // needed for parallel label operations.
 

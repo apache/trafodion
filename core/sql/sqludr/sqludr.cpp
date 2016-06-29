@@ -696,6 +696,10 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
       // length is the length in characters, but d_.length_ is
       // the byte length, multiply by min bytes per char
       d_.length_ = length * minBytesPerChar();
+      if (d_.length_ < 0)
+        throw UDRException(38900,
+                           "Length of a character type must not be negative, got %d",
+                           d_.length_);
       if (d_.collation_ == UNDEFINED_COLLATION)
         throw UDRException(38900,"Collation must be specified for CHAR type in TypeInfo::TypeInfo");
       break;
@@ -711,6 +715,10 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
       if (d_.length_ > 32767)
         // see also CharType::CharType in ../common/CharType.cpp
         d_.flags_ |= TYPE_FLAG_4_BYTE_VC_LEN;
+      if (d_.length_ < 0)
+        throw UDRException(38900,
+                           "Length of a varchar type must not be negative, got %d",
+                           d_.length_);
       break;
 
     case CLOB:
@@ -2012,13 +2020,16 @@ void TypeInfo::setString(const char *val, int stringLen, char *row) const
     case DECIMAL_UNSIGNED:
       {
         char buf[200];
-        long lval;
-        double dval;
+        long lval = 0;
+        double dval = 0.0;
         int numCharsConsumed = 0;
         int rc = 0;
+        int vScale = 0;
+        bool sawMinusDot = false;
 
         // ignore trailing blanks
-        while (val[stringLen-1] == ' ')
+        while (val[stringLen-1] == ' ' ||
+               val[stringLen-1] == '\t')
           stringLen--;
 
         if (stringLen+1 > sizeof(buf))
@@ -2032,15 +2043,89 @@ void TypeInfo::setString(const char *val, int stringLen, char *row) const
         buf[stringLen] = 0;
 
         if (isApproxNumeric)
-          rc = sscanf(buf,"%lf%n", &dval, &numCharsConsumed) < 0;
+          rc = sscanf(buf,"%lf%n", &dval, &numCharsConsumed);
         else
-          rc = sscanf(buf,"%ld%n", &lval, &numCharsConsumed) < 0;
+          rc = sscanf(buf,"%ld%n", &lval, &numCharsConsumed);
 
-        if (rc < 0)
-          throw UDRException(
-               38900,
-               "Error in setString(), \"%s\" is not a numeric value",
-               buf);
+        if (rc <= 0)
+          {
+            bool isOK = false;
+
+            // could not read a long or float value, this could be an error
+            // or a number that starts with '.' or '-.' with optional
+            // leading white space. Check for this special case before
+            // raising an exception.
+            if (!isApproxNumeric && d_.scale_ > 0 && numCharsConsumed == 0)
+              {
+                while (buf[numCharsConsumed] == ' ' ||
+                       buf[numCharsConsumed] == '\t')
+                  numCharsConsumed++;
+                if (buf[numCharsConsumed] == '-' &&
+                    buf[numCharsConsumed+1] == '.')
+                  {
+                    // the number starts with "-.", remember
+                    // to negate it at the end and go on
+                    sawMinusDot = true;
+                    numCharsConsumed++; // skip over the '-'
+                    isOK = true;
+                  }
+                else if (buf[numCharsConsumed] == '.')
+                  {
+                    // the number starts with '.', that's
+                    // ok, continue on
+                    isOK = true;
+                  }
+              }
+
+            if (!isOK)
+              throw UDRException(
+                   38900,
+                   "Error in setString(), \"%s\" is not a numeric value",
+                   buf);
+          }
+
+        if (d_.scale_ > 0 && !isApproxNumeric)
+          {
+            if (buf[numCharsConsumed] == '.')
+              {
+                int sign = (lval < 0 ? -1 : 1);
+
+                // skip over the decimal dot
+                numCharsConsumed++;
+
+                // process digits following the dot
+                while (numCharsConsumed < stringLen &&
+                       buf[numCharsConsumed] >= '0' &&
+                       buf[numCharsConsumed] <= '9' &&
+                       lval <= LONG_MAX/10)
+                  {
+                    lval = 10*lval +
+                      ((int)(buf[numCharsConsumed++] - '0')) * sign;
+                    vScale++;
+                  }
+              }
+
+            if (sawMinusDot)
+              lval = -lval;
+
+            while (vScale < d_.scale_)
+              if (lval <= LONG_MAX/10)
+                {
+                  lval *= 10;
+                  vScale++;
+                }
+              else
+                throw UDRException(
+                     38900,
+                     "Error in setString(): Value %s exceeds range for a long",
+                     buf);
+
+            if (vScale > d_.scale_)
+              throw UDRException(
+                     38900,
+                     "Error in setString(): Value %s exceeds scale %d",
+                     buf, d_.scale_);
+          }
 
         // check for any non-white space left after conversion
         while (numCharsConsumed < stringLen)
@@ -2048,7 +2133,7 @@ void TypeInfo::setString(const char *val, int stringLen, char *row) const
               buf[numCharsConsumed] != '\t')
             throw UDRException(
                  38900,
-                 "Found non-numeric character in setString for a numeric column: %s",
+                 "Error in setString(): \"%s\" is not a valid, in-range numeric value",
                  buf);
           else
             numCharsConsumed++;
@@ -2599,6 +2684,12 @@ ColumnInfo::ColumnInfo() :
 
 /**
  *  Constructor, specifying a name and a type
+ *
+ *  @param name       Name of the column to add. Use UPPER CASE letters,
+ *                    digits and underscore, otherwise you will need to
+ *                    use delimited column names with matching case in
+ *                    Trafodion.
+ *  @param type       Type of the column to add.
  */
 ColumnInfo::ColumnInfo(const char *name,
                        const TypeInfo &type) :

@@ -99,9 +99,14 @@ public:
 		       ValueIdSet &pulledNewInputs);
   virtual short codeGen(Generator*);
 
+  // no return from this method, the atp and atpindex is changed to
+  // returned atp (= 0) and returned atp index (last entry of returnedDesc).
+  // If noAtpOrIndexChange flag is set, then they are not changed.
   short processOutputRow(Generator * generator,
-                         const Int32 work_atp, const Int32 output_row_atp_index,
-                         ex_cri_desc * returnedDesc);
+                         const Int32 work_atp, 
+                         const Int32 output_row_atp_index,
+                         ex_cri_desc * returnedDesc,
+                         NABoolean noAtpOrIndexChange = FALSE);
 
   // The set of values that I can potentially produce as output.
   virtual void getPotentialOutputValues(ValueIdSet & vs) const;
@@ -197,6 +202,14 @@ public:
 // -----------------------------------------------------------------------
 class DDLExpr : public GenericUtilExpr
 {
+  void setDDLXns(NABoolean v)
+  {
+    if (v)
+      ddlXns_ = (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_ON);
+    else
+      ddlXns_ = FALSE;
+  }
+
 public:
   DDLExpr(ExprNode * ddlNode,
 	  char * ddlStmtText,
@@ -234,6 +247,8 @@ public:
   {
     if (explObjName)
       explObjName_ = *explObjName;
+
+    setDDLXns(TRUE);
   };
 
  DDLExpr(NABoolean initHbase, NABoolean dropHbase,
@@ -273,6 +288,8 @@ public:
     
     if (dropMDviews)
       setDropMDViews(TRUE);
+
+    setDDLXns(TRUE);
   };
 
  DDLExpr(NABoolean purgedataHbase,
@@ -306,6 +323,8 @@ public:
   {
     purgedataTableName_ = purgedataTableName;
     qualObjName_ = purgedataTableName.getQualifiedNameObj();
+
+    setDDLXns(TRUE);
   };
 
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
@@ -372,6 +391,8 @@ public:
   NABoolean addSeqTable() { return addSeqTable_; }
   NABoolean addSchemaObjects() { return addSchemaObjects_; }
 
+  short ddlXnsInfo(NABoolean &ddlXns, NABoolean &xnCanBeStarted);
+
   NAString getQualObjName() { return qualObjName_.getQualifiedNameAsString(); }
 
   void setCreateMDViews(NABoolean v)
@@ -386,6 +407,18 @@ public:
   {(v ? flags_ |= GET_MD_VERSION : flags_ &= ~GET_MD_VERSION); }
   NABoolean getMDVersion() { return (flags_ & GET_MD_VERSION) != 0;}
 
+  void setCreateLibmgr(NABoolean v)
+  {(v ? flags_ |= CREATE_LIBMGR : flags_ &= ~CREATE_LIBMGR); }
+  NABoolean createLibmgr() { return (flags_ & CREATE_LIBMGR) != 0;}
+
+  void setDropLibmgr(NABoolean v)
+  {(v ? flags_ |= DROP_LIBMGR : flags_ &= ~DROP_LIBMGR); }
+  NABoolean dropLibmgr() { return (flags_ & DROP_LIBMGR) != 0;}
+
+  void setUpgradeLibmgr(NABoolean v)
+  {(v ? flags_ |= UPGRADE_LIBMGR : flags_ &= ~UPGRADE_LIBMGR); }
+  NABoolean upgradeLibmgr() { return (flags_ & UPGRADE_LIBMGR) != 0;}
+
   void setCreateRepos(NABoolean v)
   {(v ? flags_ |= CREATE_REPOS : flags_ &= ~CREATE_REPOS); }
   NABoolean createRepos() { return (flags_ & CREATE_REPOS) != 0;}
@@ -398,15 +431,25 @@ public:
   {(v ? flags_ |= UPGRADE_REPOS : flags_ &= ~UPGRADE_REPOS); }
   NABoolean upgradeRepos() { return (flags_ & UPGRADE_REPOS) != 0;}
 
+  void setCleanupAuth(NABoolean v)
+  {(v ? flags_ |= CLEANUP_AUTH : flags_ &= ~CLEANUP_AUTH); }
+  NABoolean cleanupAuth() { return (flags_ & CLEANUP_AUTH) != 0;}
+
+  NABoolean ddlXns() { return ddlXns_; }
+
  protected:
   enum Flags
   {
-    CREATE_MD_VIEWS      = 0x0001,
-    DROP_MD_VIEWS          = 0x0002,
-    GET_MD_VERSION        = 0x0004,
+    CREATE_MD_VIEWS         = 0x0001,
+    DROP_MD_VIEWS           = 0x0002,
+    GET_MD_VERSION          = 0x0004,
     CREATE_REPOS            = 0x0008,
-    DROP_REPOS                = 0x0010,
-    UPGRADE_REPOS            = 0x0020
+    DROP_REPOS              = 0x0010,
+    UPGRADE_REPOS           = 0x0020,
+    CLEANUP_AUTH            = 0X0040,
+    CREATE_LIBMGR           = 0x0080,
+    DROP_LIBMGR             = 0x0100,
+    UPGRADE_LIBMGR          = 0x0200
   };
 
   // see method processSpecialDDL in sqlcomp/parser.cpp
@@ -467,6 +510,11 @@ public:
   NABoolean returnStatus_;
 
   UInt32 flags_;
+
+  // if TRUE, ddl transactions are enabled. Actual operation may
+  // run under one transaction or multiple transactions.
+  // Details in sqlcomp/CmpSeabaseDDL*.cpp.
+  NABoolean ddlXns_;
 };
 
 // -----------------------------------------------------------------------
@@ -496,6 +544,7 @@ public:
     GET_VERSION_INFO_         = 13,
     SUSPEND_ACTIVATE_         = 14,
     REGION_STATS_         = 15,
+    LOB_INFO_             =16,
     SHOWSET_DEFAULTS_         = 18,
     AQR_                      = 19,
     DISPLAY_EXPLAIN_COMPLEX_  = 20,
@@ -514,7 +563,8 @@ public:
     HBASE_UNLOAD_             = 35,
     HBASE_UNLOAD_TASK_        = 36,
     ORC_FAST_AGGR_            = 37,
-    GET_QID_                         = 38
+    GET_QID_                  = 38,
+    HIVE_TRUNCATE_            = 39
   };
 
   ExeUtilExpr(ExeUtilType type,
@@ -981,11 +1031,7 @@ public:
 		    NABoolean noLog = FALSE,
 		    NABoolean ignoreTrigger = FALSE,
 		    NABoolean isPurgedata = FALSE,
-		    CollHeap *oHeap = CmpCommon::statementHeap(),
-		    NABoolean isHiveTable = FALSE,
-		    NAString * hiveTableLocation = NULL,
-                    NAString * hiveHostName = NULL,
-                    Int32 hiveHdfsPort = 0)
+		    CollHeap *oHeap = CmpCommon::statementHeap())
        : ExeUtilExpr(FAST_DELETE_, name, exprNode, NULL, stmtText, stmtTextCharSet, oHeap),
          doPurgedataCat_(doPurgedataCat),
          noLog_(noLog), ignoreTrigger_(ignoreTrigger),
@@ -994,17 +1040,8 @@ public:
          doParallelDeleteIfXn_(FALSE),
          offlineTable_(FALSE),
          doLabelPurgedata_(FALSE),
-         numLOBs_(0),
-         isHiveTable_(isHiveTable)
+         numLOBs_(0)
   {
-    if (isHiveTable )
-      {
-        CMPASSERT(hiveTableLocation != NULL);
-        hiveTableLocation_ = *hiveTableLocation;
-        if (hiveHostName)
-          hiveHostName_ = *hiveHostName;
-        hiveHdfsPort_ = hiveHdfsPort;
-      }
   };
 
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
@@ -1022,27 +1059,6 @@ public:
   virtual short codeGen(Generator*);
   
   virtual NABoolean aqrSupported() { return TRUE; }
-
-
-  NABoolean isHiveTable()
-  {
-    return isHiveTable_;
-  }
-
-  const NAString &getHiveTableLocation() const
-  {
-    return hiveTableLocation_;
-  }
-
-  const NAString &getHiveHostName() const
-  {
-    return hiveHostName_;
-  }
-
-  const Int32 getHiveHdfsPort() const
-  {
-    return hiveHdfsPort_;
-  }
 
 private:
   NABoolean doPurgedataCat_;
@@ -1069,11 +1085,63 @@ private:
   // if there are LOB columns.
   Lng32 numLOBs_; // number of LOB columns
   NAList<short> lobNumArray_; // array of shorts. Each short is the lob num
+};
 
-  NABoolean isHiveTable_;
+class ExeUtilHiveTruncate : public ExeUtilExpr
+{
+public:
+  ExeUtilHiveTruncate(const CorrName &name,
+                      ConstStringList * pl,
+                      CollHeap *oHeap = CmpCommon::statementHeap())
+       : ExeUtilExpr(HIVE_TRUNCATE_, name, NULL, NULL, NULL, 
+                     CharInfo::UnknownCharSet, oHeap),
+         pl_(pl)
+  {
+  };
+
+  virtual NABoolean isExeUtilQueryType() { return TRUE; }
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  virtual RelExpr * preCodeGen(Generator * generator,
+			       const ValueIdSet & externalInputs,
+			       ValueIdSet &pulledNewInputs);
+
+  // method to do code generation
+  virtual short codeGen(Generator*);
+  
+  virtual NABoolean aqrSupported() { return FALSE; }
+
+  const NAString &getHiveTableLocation() const
+  {
+    return hiveTableLocation_;
+  }
+
+  const NAString &getHiveHostName() const
+  {
+    return hiveHostName_;
+  }
+
+  const Int32 getHiveHdfsPort() const
+  {
+    return hiveHdfsPort_;
+  }
+
+  ConstStringList* &partnList() { return pl_; }
+
+private:
   NAString  hiveTableLocation_;
   NAString hiveHostName_;
   Int32 hiveHdfsPort_;
+
+  // timestamp of hiveTableLocation. 
+  Int64 hiveModTS_;
+
+  // list of partitions to be truncated
+  ConstStringList * pl_;
 };
 
 class ExeUtilMaintainObject : public ExeUtilExpr
@@ -1713,6 +1781,47 @@ private:
 
   NABoolean displayFormat_;
 
+  NABoolean errorInParams_;
+};
+
+class ExeUtilLobInfo : public ExeUtilExpr 
+{
+public:
+  
+  ExeUtilLobInfo(const CorrName &objectName,
+                 NABoolean tableFormat = FALSE,
+                     RelExpr * child = NULL,
+                     CollHeap *oHeap = CmpCommon::statementHeap());
+  
+  ExeUtilLobInfo()       
+  {}
+ 
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  // a method used for recomputing the outer references (external dataflow
+  // input values) that are needed by this operator.
+  virtual void recomputeOuterReferences();
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+  virtual const char 	*getVirtualTableName();
+  static const char * getVirtualTableNameStr() 
+  { return "EXE_UTIL_LOB_INFO__";}
+  virtual desc_struct 	*createVirtualTableDesc();
+
+  virtual NABoolean producesOutput() { return TRUE; }
+
+  virtual int getArity() const { return ((child(0) == NULL) ? 0 : 1); }
+
+ virtual NABoolean aqrSupported() { return TRUE; }
+
+private:
+  Int64 objectUID_;
+  NABoolean tableFormat_;
   NABoolean errorInParams_;
 };
 

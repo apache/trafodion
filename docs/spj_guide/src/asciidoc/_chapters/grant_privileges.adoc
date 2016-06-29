@@ -1,0 +1,336 @@
+////
+/**
+*@@@ START COPYRIGHT @@@
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements. See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+[[grant-privileges]]
+= Grant Privileges
+
+Security for SPJs is implemented by schema ownership rules and by
+granting privileges to specified database users and roles.
+
+The schema in which an SPJ is registered is the unit of ownership. The
+database user who creates the schema is the owner of that schema and all
+objects associated with it. In {project-name}, the schema owner
+automatically has these privileges:
+
+* Ability to create and drop SPJs in the schema. You can create SPJs in
+the schema provided that you also have the CREATE_PROCEDURE privilege
+for the SQL_OPERATIONS component. 
+* EXECUTE and WITH GRANT OPTION privileges on the SPJs in the schema
+
+To create or drop an SPJ in a schema, you must be the schema owner or
+have the appropriate create or drop privileges for the schema. For more
+information, see
+<<required-privileges-for-creating-or-dropping-an-spj, Required Privileges for Creating or Dropping an SPJ>>.
+
+You must have the EXECUTE privilege on the SPJ to it. The EXECUTE privilege
+allows a user to invoke an SPJ by issuing a CALL statement. The WITH GRANT
+OPTION privilege allows a user to grant the EXECUTE and WITH GRANT
+OPTION privileges to other users and roles. For more information, see:
+
+* <<granting-execute-privileges-on-an-spj, Granting Execute Privileges on an SPJ>>
+* <<granting-privileges-on-referenced-database-objects, Granting Privileges on Referenced Database Objects>>
+* <<revoking-execute-privileges-on-an-spj, Revoking Execute Privileges on an SPJ>>
+* <<using-script-files-to-grant-and-revoke-privileges, Using Script Files to Grant and Revoke Privileges>>
+
+To display the current ownership and privileges, see
+<<display-procedures-and-their-properties, Display Procedures and Their Properties>>.
+
+<<<
+[[granting-execute-privileges-on-an-spj]]
+== Granting Execute Privileges on an SPJ
+
+Use the GRANT PROCEDURE or GRANT statement to assign the EXECUTE and
+WITH GRANT OPTION privileges on an SPJ to specific database users and
+roles. In a GRANT statement, specify ALL PRIVILEGES to grant the EXECUTE
+privilege on an SPJ. For the syntax of the GRANT PROCEDURE and GRANT
+statements, see the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual].
+
+If you own the SPJ, then you can grant the EXECUTE and WITH GRANT OPTION
+privileges on the SPJ to any database user or role. If you are not the
+owner of the SPJ, then you must have been granted the EXECUTE and WITH GRANT
+OPTION privileges on the SPJ to grant privileges to other database users
+and roles, or you must be associated with a role that has the EXECUTE
+and WITH GRANT OPTION privileges on the SPJ.
+
+As the owner of an SPJ, you can selectively grant the EXECUTE and WITH
+GRANT OPTION privileges to specified database users and roles. For some
+SPJs, particularly ones that handle sensitive information or modify
+data, you should grant the EXECUTE and WITH GRANT OPTION privileges to a
+restricted group of users or roles.
+
+For example, the SPJ named ADJUSTSALARY changes an employee's salary in the
+database. Therefore, only specific users or roles should be allowed to invoke
+this SPJ. In this example, the SPJ owner (or creator) grants the EXECUTE and
+WITH GRANT OPTION privileges on ADJUSTSALARY to the Payroll directors.
+
+[source, sql]
+----
+GRANT EXECUTE
+ON PROCEDURE trafodion.persnl.adjustsalary
+TO "payrolldir1", "payrolldir2" WITH GRANT OPTION ;
+----
+
+One of the Payroll directors grants the EXECUTE privilege on
+ADJUSTSALARY to the regional department managers:
+
+[source, sql]
+----
+GRANT EXECUTE
+ON PROCEDURE trafodion.persnl.adjustsalary TO "rgn1mgr", "rgn2mgr", "rgn3mgr"
+WITH GRANT OPTION ;
+----
+
+In some cases, all users of a database system might need to invoke an
+SPJ.
+
+For example, the SPJ named TOTALPRICE calculates the total price of
+an item, including tax and shipping charges. This SPJ does not handle
+sensitive information or modify data and might be useful to customers or
+anyone within the company.
+
+Therefore, the SPJ owner (or creator) grants the EXECUTE privilege on
+TOTALPRICE to PUBLIC, meaning all present and future database users and roles:
+
+[source, sql]
+----
+GRANT EXECUTE
+ON PROCEDURE trafodion.sales.totalprice TO PUBLIC ;
+----
+
+After granting the EXECUTE privilege to PUBLIC, you cannot revoke the
+privilege from a subset of database users or roles. You must revoke the
+privilege from PUBLIC and then grant the privilege to specific database
+users and roles.
+
+[[granting-privileges-on-referenced-database-objects]]
+== Granting Privileges on Referenced Database Objects
+
+If the SPJ operates on a database object and the SPJ has been created
+with the external security specified as invoker (EXTERNAL SECURITY
+INVOKER), then the database users that invoke the SPJ must have the
+appropriate privileges on that database object.
+
+If the SPJ has been created with the external security specified as definer (EXTERNAL
+SECURITY DEFINER), then users other than the procedure's creator may invoke
+the SPJ without needing privileges on the underlying database objects.
+
+When the SPJ's external security is definer, users execute, or invoke,
+the stored procedure using the privileges of the user who created the
+stored procedure. The user who creates the stored procedure must have
+the appropriate privileges on the underlying database objects. For more
+information, see <<understand-external-security, Understand External Security>>.
+
+For example, users with the EXECUTE privilege on the SPJ named
+ADJUSTSALARY, which is defined with EXTERNAL SECURITY INVOKER and which
+selects data from and updates the EMPLOYEE table, must have the SELECT
+and UPDATE privileges on that SQL table. The SPJ owner (or creator)
+grants these access privileges to the Payroll directors:
+
+[source, sql]
+----
+GRANT SELECT, UPDATE (salary)
+ON TABLE trafodion.persnl.employee
+TO "payrolldir1", "payrolldir2" WITH GRANT OPTION ;
+----
+
+One of the Payroll directors then grants these access privileges to the
+regional department managers:
+
+[source, sql]
+----
+GRANT SELECT, UPDATE (salary)
+ON TABLE trafodion.persnl.employee
+TO "rgn1mgr", "rgn2mgr", "rgn3mgr" ;
+----
+
+Users with the EXECUTE privilege on the SPJ named TOTALPRICE, which does
+not access the database, are not required to have privileges on any
+database tables because that SPJ does not access any database tables.
+
+The types of SQL statements in the underlying SPJ method, such as
+SELECT, UPDATE, DELETE, and INSERT, indicate which types of privileges
+are required for the referenced database objects.
+
+For the syntax of the GRANT statement, see the
+{docs-url}/sql_reference/index.html#grant_statement[{project-name} SQL Reference Manual].
+
+[[revoking-execute-privileges-on-an-spj]]
+== Revoking Execute Privileges on an SPJ
+
+Use the REVOKE PROCEDURE or REVOKE statement to remove the EXECUTE or
+WITH GRANT OPTION privilege on an SPJ from specific database users or
+roles. In a REVOKE statement, specify ALL PRIVILEGES to revoke the
+EXECUTE privilege on an SPJ. For the syntax of the REVOKE PROCEDURE and
+REVOKE statements, see the
+{docs-url}/sql_reference/index.html#revoke_statement[{project-name} SQL Reference Manual].
+
+If you own the SPJ, then you can revoke the EXECUTE and WITH GRANT OPTION
+privileges on the SPJ from any database user or role to whom you granted
+those privileges or, if you did not directly grant those privileges, on
+behalf of the role that granted those privileges, provided that you were
+granted that role.
+
+If you are not the owner of the SPJ, then you must have been granted the
+EXECUTE and WITH GRANT OPTION privileges on the SPJ to
+revoke privileges from other database users or roles, and you can revoke
+the privileges only from other users or roles to whom you have granted
+those privileges or, if you did not directly grant those privileges, on
+behalf of the role that granted those privileges, provided that you were
+granted that role.
+
+For example, the `payrolldir1` user can revoke the EXECUTE privilege on
+ADJUSTSALARY from one or more regional department managers to whom the
+`payrolldir1` user granted those privileges.
+
+In this example, the `payrolldir1` user revokes the EXECUTE privilege from the
+Region 2 department manager:
+
+[source, sql]
+----
+REVOKE EXECUTE
+ON PROCEDURE trafodion.persnl.adjustsalary FROM "rgn2mgr" ;
+----
+
+The `payrolldir1` user cannot revoke the EXECUTE or WITH GRANT OPTION
+privilege from the `payrolldir2` user because it was the SPJ owner (or
+creator) who granted those privileges.
+
+A user can revoke the WITH GRANT OPTION privilege on ADJUSTSALARY from
+any user or role to whom the user granted this privilege.
+
+In this example, the SPJ owner (or creator) revokes the WITH GRANT OPTION
+privilege from the `payrolldir1` user:
+
+[source, sql]
+----
+REVOKE GRANT OPTION FOR EXECUTE
+ON PROCEDURE trafodion.persnl.adjustsalary FROM "payrolldir1" ;
+----
+
+A user can also revoke the EXECUTE privilege from any user or role to
+whom the user granted this privilege and from any dependent privileges
+by using the CASCADE option.
+
+In this example, the SPJ owner (or creator) revokes the EXECUTE privilege
+from the `payrolldir1` user and from the regional department managers to
+whom the `payrolldir1` user granted privileges:
+
+[source, sql]
+----
+REVOKE GRANT OPTION FOR EXECUTE
+ON PROCEDURE trafodion.persnl.adjustsalary FROM "payrolldir1"
+CASCADE ;
+----
+
+For SPJs on which all users (that is, PUBLIC) have privileges, you can
+revoke privileges from PUBLIC but not from one or more specific users or
+roles.
+
+For example, this statement revokes the EXECUTE privilege on the
+SPJ named TOTALPRICE from all users and roles (that is, PUBLIC):
+
+[source, sql]
+----
+REVOKE EXECUTE
+ON PROCEDURE trafodion.sales.totalprice FROM PUBLIC;
+----
+
+== Using Script Files to Grant and Revoke Privileges
+
+Consider keeping your GRANT or REVOKE statements in script files. That
+way, you can quickly and easily grant or revoke privileges to the SPJs,
+as needed.
+
+=== Script File for Granting Privileges
+
+You can use another or the same script file to grant privileges on a
+series of SPJs.
+
+For example, the script file, `grantprocs.sql`, contains a series of
+GRANT PROCEDURE and GRANT statements:
+
+[source, sql]
+----
+?SECTION GrantSalesProcs
+
+GRANT EXECUTE
+ON trafodion.sales.monthlyorders
+TO PUBLIC ;
+
+GRANT SELECT
+ON TABLE trafodion.sales.orders TO PUBLIC ;
+
+?SECTION GrantPersnlProcs
+
+GRANT EXECUTE
+ON PROCEDURE trafodion.persnl.adjustsalary TO "payrolldir1", "payrolldir2"
+WITH GRANT OPTION ;
+
+GRANT SELECT, UPDATE(salary)
+ON TABLE trafodion.persnl.employee
+TO "payrolldir1", "payrolldir2" WITH GRANT OPTION ;
+----
+
+To grant privileges on the SPJs, run the script file in the trafci
+interface:
+
+```
+OBEY c:\grantprocs.sql (GrantSalesProcs)
+```
+
+=== Script File for Revoking Privileges
+
+You can use another or the same script file to revoke privileges on a
+series of SPJs.
+
+For example, the script file, `revokeprocs.sql`, contains
+a series of REVOKE PROCEDURE and REVOKE statements:
+
+[source, sql]
+----
+?SECTION RevokeSalesProcs
+
+REVOKE EXECUTE
+ON PROCEDURE trafodion.sales.monthlyorders FROM PUBLIC ;
+
+REVOKE SELECT
+ON TABLE trafodion.sales.orders FROM PUBLIC ;
+
+?SECTION RevokePersnlProcs
+
+REVOKE EXECUTE
+ON PROCEDURE trafodion.persnl.adjustsalary FROM "payrolldir1", "payrolldir2"
+CASCADE ;
+
+REVOKE SELECT, UPDATE(salary)
+ON TABLE trafodion.persnl.employee
+FROM "payrolldir1", "payrolldir2" CASCADE ;
+----
+
+To revoke privileges on the SPJs, run the script file in the trafci
+interface:
+
+```
+OBEY c:\revokeprocs.sql (RevokeSalesProcs)
+```
+

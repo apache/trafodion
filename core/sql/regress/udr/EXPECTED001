@@ -82,8 +82,8 @@
 +>c_interval interval year to month,
 +>c_intervals86 interval second(8,6),
 +>c_intervald6s interval day(6) to second(6),
-+>c_blob blob (length 100),
-+>c_clob clob (length 100)
++>c_blob blob (100),
++>c_clob clob (100)
 +>);
 
 --- SQL operation complete.
@@ -188,7 +188,7 @@
 *** ERROR[11246] An error occurred locating function or class 'SESSIONIZE_NON_EXISTENT' in library 'TEST001.dll'.
 
 *** ERROR[11248] A call to dlsym returned errors 0 and 0. Details: 
-/opt/home/zellerh/trafodion/core/sqf/rundir/udr/TEST001.dll: undefined symbol: SESSIONIZE_NON_EXISTENT.
+/mnt/ssubbiah/incubator-trafodion/core/sqf/rundir/udr/TEST001.dll: undefined symbol: SESSIONIZE_NON_EXISTENT.
 
 --- SQL operation failed with errors.
 >>-- For now this will succeed, since we don't load the library during
@@ -305,10 +305,10 @@ CREATE TABLE_MAPPING FUNCTION TRAFODION.SCH.SESSIONIZE_JAVA
 SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
 --------------------  --------------------  --------------------------------  --------------------  ---------------
 
-                   1                     1  super-user                          212294253599500000  12.345.567.345 
-                   2                     1  super-user                          212294260799500000  12.345.567.345 
-                   2                     2  super-services                      212294260799500000  12.345.567.345 
-                   2                     3  super-services                      212294260799550000  12.345.567.345 
+                   1                     1  super-user                          212332183199500000  12.345.567.345 
+                   2                     1  super-user                          212332190399500000  12.345.567.345 
+                   2                     2  super-services                      212332190399500000  12.345.567.345 
+                   2                     3  super-services                      212332190399550000  12.345.567.345 
 
 --- 4 row(s) selected.
 >>
@@ -366,7 +366,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
 --------------------  --------------------  --------------------------------  --------------------  ---------------
 
-                   1                     1  super-user                          212294253599500000  12.345.567.345 
+                   1                     1  super-user                          212332183199500000  12.345.567.345 
 
 --- 1 row(s) selected.
 >>
@@ -459,7 +459,7 @@ IPADDR           SESSION_ID            SEQUENCE_NO
 SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
 --------------------  --------------------  --------------------------------  --------------------  ---------------
 
-                   1                     1  super-user                          212303930399500000  12.345.567.345 
+                   1                     1  super-user                          212332183199500000  12.345.567.345 
 
 --- 1 row(s) selected.
 >>
@@ -707,4 +707,12 @@ ER BY ts), cast('TS' as char(2)),                     'USERID',
 *** ERROR[8822] The statement was not prepared.
 
 >>-- PARTITION BY 3 has an invalid column number
+>>
+>> CREATE LIBRARY TRAFODION.SCH.ALTERTEST FILE $$QUOTE$$ $$REGRRUNDIR$$/TEST001.dll $$QUOTE$$;
+
+--- SQL operation complete.
+>> ALTER LIBRARY TRAFODION.SCH.ALTERTEST FILE $$QUOTE$$ $$REGRRUNDIR$$/TEST001.jar $$QUOTE$$;
+
+--- SQL operation complete.
+>>
 >>log;

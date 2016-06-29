@@ -28,10 +28,11 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <hbase.version>0.98.1-cdh5.1.0</hbase.version>
-    <hbase-trx.id>hbase-trx-cdh5_3</hbase-trx.id>
-    <hive.version>0.13.1</hive.version>
-    <thrift.version>0.9.0</thrift.version>
+    <hadoop.version>2.6.0-cdh5.4.4</hadoop.version>
+    <hbase.version>${env.HBASE_DEP_VER_CDH}</hbase.version>
+    <hbase-trx.id>${env.HBASE_TRX_ID_CDH}</hbase-trx.id>
+    <hive.version>${env.HIVE_DEP_VER_CDH}</hive.version>
+    <thrift.version>${env.THRIFT_DEP_VER}</thrift.version>
     <java.version>1.7</java.version>
   </properties>
 
@@ -51,7 +52,7 @@
       <artifactId>${hbase-trx.id}</artifactId>
       <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
-      <systemPath>${env.MY_SQROOT}/export/lib/${hbase-trx.id}-${env.TRAFODION_VER}.jar</systemPath>
+      <systemPath>${env.HBASE_TRXDIR}/${env.HBASE_TRX_JAR}</systemPath>
     </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>
@@ -72,6 +73,11 @@
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
       <version>${thrift.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-configuration</groupId>
+      <artifactId>commons-configuration</artifactId>
+      <version>1.6</version>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>

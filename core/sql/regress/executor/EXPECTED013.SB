@@ -21,10 +21,11 @@
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Fri Dec 12 13:13:55 2014
+-- Definition current  Tue May 24 21:30:23 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   )
 
 --- SQL operation complete.
@@ -49,12 +50,13 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Fri Dec 12 13:14:07 2014
+-- Definition current  Tue May 24 21:30:37 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                INT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>insert into t013t1 values (1,2);
@@ -89,9 +91,11 @@ A            B
 
 --- SQL operation complete.
 >>
->>#ifndef SEABASE_REGRESS
 >>update statistics for table t013t1 on every column;
->>#endif
+
+*** ERROR[9247] UPDATE STATISTICS is not supported on volatile tables presently.
+
+--- SQL operation failed with errors.
 >>
 >>select * from t013_sch.t013t1;
 
@@ -111,10 +115,11 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Fri Dec 12 13:14:47 2014
+-- Definition current  Tue May 24 21:31:43 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   )
 
 --- SQL operation complete.
@@ -136,13 +141,14 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Fri Dec 12 13:14:57 2014
+-- Definition current  Tue May 24 21:32:04 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                INT DEFAULT NULL
   , C                                INT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>insert into t013t1 values (1,2,3);
@@ -175,10 +181,11 @@ A            B            C
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Fri Dec 12 13:15:08 2014
+-- Definition current  Tue May 24 21:32:16 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   )
 
 --- SQL operation complete.
@@ -197,7 +204,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Fri Dec 12 13:15:10 2014
+-- Definition current  Tue May 24 21:32:22 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -205,6 +212,7 @@ A
   , C                                INT DEFAULT NULL
   , D                                INT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>insert into t013t1 values (1,2,3,4);
@@ -285,10 +293,16 @@ A            B            C            D
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>#ifndef SEABASE_REGRESS
 >>update statistics for table volatile_schema_a.t on every column;
+
+*** ERROR[4082] Object TRAFODION.VOLATILE_SCHEMA_A.T does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
 >>update statistics for table $$TEST_CATALOG$$.volatile_schema_a.t on every column;
->>#endif
+
+*** ERROR[4082] Object TRAFODION.VOLATILE_SCHEMA_A.T does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
 >>
 >>-- cannot create volatile index on regular tables and vica-versa
 >>create volatile index tempi on $$TEST_CATALOG$$.t013_sch.t013t1(a);
@@ -335,7 +349,7 @@ CREATE VIEW TRAFODION.T013_SCH.TEMPV AS
 >>-- this will return an error, no permanent table exists
 >>alter table t013t2 add column z int default 0 not null;
 
-*** ERROR[4082] Object TRAFODION.T013_SCH.T013T2 does not exist or is inaccessible.
+*** ERROR[1146] Object TRAFODION.T013_SCH.T013T2 could not be altered because it either does not exist or is not a table.
 
 --- SQL operation failed with errors.
 >>
@@ -433,7 +447,8 @@ CONTROL QUERY DEFAULT
   MODE_SEABASE                  	ON
   SEABASE_VOLATILE_TABLES       	ON
   HBASE_SERIALIZATION           	ON
-  HBASE_FILTER_PREDS            	ON
+  HBASE_SMALL_SCANNER           	SYSTEM
+  HBASE_FILTER_PREDS            	2
   TRAF_INDEX_CREATE_OPT         	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
   POS                           	OFF
@@ -447,12 +462,13 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Fri Dec 12 13:15:54 2014
+-- Definition current  Tue May 24 21:33:35 2016
 
   (
-    A                                INT DEFAULT NULL
-  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE /*
-      added col */
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE
+      /*added_col*/
   )
 
 --- SQL operation complete.
@@ -467,12 +483,13 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Fri Dec 12 13:15:59 2014
+-- Definition current  Tue May 24 21:33:43 2016
 
   (
-    A                                INT DEFAULT NULL
-  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE /*
-      added col */
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE
+      /*added_col*/
   )
 
 --- SQL operation complete.
@@ -558,10 +575,11 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Fri Dec 12 13:16:42 2014
+-- Definition current  Tue May 24 21:34:35 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   , B                                INT DEFAULT NULL
   )
 
@@ -575,11 +593,12 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion volatile table T013T3
--- Definition current  Fri Dec 12 13:16:44 2014
+-- Definition current  Tue May 24 21:34:42 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>
@@ -590,10 +609,11 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Fri Dec 12 13:16:51 2014
+-- Definition current  Tue May 24 21:34:55 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   , B                                INT DEFAULT NULL
   )
 
@@ -655,10 +675,11 @@ CREATE VOLATILE TABLE T013T3
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Fri Dec 12 13:17:19 2014
+-- Definition current  Tue May 24 21:35:47 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   , B                                INT DEFAULT NULL
   )
 
@@ -1276,12 +1297,13 @@ CREATE VOLATILE TABLE T013T1
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Fri Dec 12 13:21:07 2014
+-- Definition current  Tue May 24 21:42:50 2016
 
   (
-    A                                INT DEFAULT NULL
-  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE /*
-      added col */
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE
+      /*added_col*/
   )
 
 --- SQL operation complete.

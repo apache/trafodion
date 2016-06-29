@@ -36,10 +36,18 @@ package-all:
 	@echo "Packaging all Trafodion components"
 	cd core && $(MAKE) package-all 
 
-package-src:
+package-src: $(SRCDIR)-${TRAFODION_VER}-incubating/LICENSE
 	@echo "Packaging source for $(TRAFODION_VER_PROD) $(TRAFODION_VER)"
 	mkdir -p distribution
-	git archive --format tar --prefix $(SRCDIR)-${TRAFODION_VER}-incubating/ HEAD | gzip > distribution/$(SRCDIR)-${TRAFODION_VER}-incubating-src.tar.gz
+	git archive --format tar --prefix $(SRCDIR)-${TRAFODION_VER}-incubating/ HEAD > distribution/$(SRCDIR)-${TRAFODION_VER}-incubating-src.tar
+	tar rf distribution/$(SRCDIR)-${TRAFODION_VER}-incubating-src.tar $^
+	gzip distribution/$(SRCDIR)-${TRAFODION_VER}-incubating-src.tar
+	rm -rf $(SRCDIR)-${TRAFODION_VER}-incubating LICENSE
+
+$(SRCDIR)-${TRAFODION_VER}-incubating/LICENSE:
+	cd licenses && $(MAKE) LICENSE-src
+	mkdir -p $(@D)
+	cp licenses/LICENSE-src $@
 
 eclipse: 
 	@echo "Making eclipse projects for Trafodion components"
@@ -48,6 +56,8 @@ eclipse:
 clean:
 	@echo "Removing Trafodion objects"
 	cd core && $(MAKE) clean 
+	cd licenses && $(MAKE) clean
+	rm -rf $(SRCDIR)-${TRAFODION_VER}-incubating LICENSE
 
 cleanall:
 	@echo "Removing all Trafodion objects"

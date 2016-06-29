@@ -29,7 +29,7 @@ VPATH = ./DrvrManager:./trace:./cli:./TCPIPV4:./Interface:./common:./platform:./
 
 C_FLAGS = -m64 -Dunixcli -DVERSION3 -DMXLINUX -DDISABLE_TRACE -DSIZEOF_LONG=8 -DSIZEOF_LONG_INT=8 -Wall -fPIC -w -DASYNCIO -DTRACE_COMPRESSION -I$(ICU)/linux64/include -I/usr/include/openssl
 
-LIBS = -lpthread -lrt -ldl -lz -L$(ICU)/linux64/lib -licuucNv44 -Wl,--hash-style=both /usr/lib64/libssl.a /usr/lib64/libcrypto.a -Wl,--version-script=linux.exports
+LIBS = -lpthread -lrt -ldl -lz -L$(ICU)/linux64/lib -licuuc -Wl,--hash-style=both -lssl -llber -Wl,--version-script=linux.exports
 
 ifeq ($(MAKECMDGOALS),linux64_release)
 	OBJDIR = ./obj/linux64/release/
@@ -72,14 +72,10 @@ DRVREXPOBJ = $(addprefix $(OBJDIR), $(EXPOBJS))
 linux64_debug: dmanager cli interface common ipv4 exp trace
 	$(LINK) -fPIC -m64 -shared -rdynamic -Wl,-soname,$(ODBC_SO_FILE)_l64.so -o $(ODBC_SO_FILE)_l64.so $(DRVROBJ) $(DRVRMGROBJ) $(INCLUDE) $(LIBS)
 	$(LINK) -fPIC -m64 -shared -rdynamic -Wl,-soname,$(ODBC_SO_FILE)_l64_drvr.so -o $(ODBC_SO_FILE)_l64_drvr.so $(DRVROBJ) $(DRVREXPOBJ) $(INCLUDE) $(LIBS)
-	ln -s -f $(ODBC_SO_FILE)_l64_drvr.so $(ODBC_SO_FILE)_drvr_l64.so
-	cp -p $(ODBC_SO_FILE)_drvr_l64.so $(LIBEXPDIR)/.
 
 linux64_release: dmanager cli interface common ipv4 exp trace
 	$(LINK) -m64 -shared -rdynamic -Wl,-soname,$(ODBC_SO_FILE)_l64.so -o $(ODBC_SO_FILE)_l64.so $(DRVROBJ) $(DRVRMGROBJ) $(INCLUDE) $(LIBS)
 	$(LINK) -m64 -shared -rdynamic -Wl,-soname,$(ODBC_SO_FILE)_l64_drvr.so -o $(ODBC_SO_FILE)_l64_drvr.so $(DRVROBJ) $(DRVREXPOBJ) $(INCLUDE) $(LIBS)
-	ln -s -f $(ODBC_SO_FILE)_l64_drvr.so $(ODBC_SO_FILE)_drvr_l64.so
-	cp -p $(ODBC_SO_FILE)_drvr_l64.so $(LIBEXPDIR)/.
 
 dmanager: $(DMOBJS)
 
@@ -97,7 +93,7 @@ exp: $(EXPOBJS)
 
 clean:
 	rm -rf obj
-	rm -rf libtrafodbc_*
+	rm -rf libtrafodbc_* 
 	rm -rf trace/version.cpp trace/version_drvr.cpp
 
 .cpp.o:

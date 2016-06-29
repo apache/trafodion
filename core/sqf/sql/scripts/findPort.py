@@ -63,23 +63,39 @@ args = parser.parse_args()  # exits and prints help if args are incorrect
 
 exitCode = 0
 
-# get the set of lines to process ( netstat | grep localhost )
 
-p1 = subprocess.Popen(["netstat"], stdout=subprocess.PIPE)
-p2 = subprocess.Popen(["grep","localhost"], stdin=p1.stdout, stdout=subprocess.PIPE, close_fds=True)
-
-# process the lines, looking for port numbers
-
-pattern = r'localhost:(?P<portNumber>[0-9]{5})'
-matcher = re.compile(pattern)
+retcode = subprocess.call("sudo -ll lsof", shell=True) 
 
 inUseRanges = sets.Set()
 
-for line in p2.stdout: 
-    result = matcher.findall(line)
-    for occurrance in result:
-        rangeInUse = int(occurrance)/200
+if retcode == 0:
+    # sudo lsof can be run successfully
+    # get the ips in use to process ( sudo lsof -i | awk -f lsof.awk )
+    print "Use sudo lsof to get port numbers";
+    p1 = subprocess.Popen(["sudo", "lsof", "-i"], stdout=subprocess.PIPE)
+    p2 = subprocess.Popen(["awk", "-f", "lsof.awk"], stdin=p1.stdout, stdout=subprocess.PIPE, close_fds=True)
+
+    for ip in p2.stdout: 
+        rangeInUse = int(ip)/200
         inUseRanges.add(rangeInUse)
+else :
+    # no sudo permission on lsof 
+    # get the set of lines to process ( netstat | grep localhost )
+    print "Use netstat to get port numbers";
+    p1 = subprocess.Popen(["netstat"], stdout=subprocess.PIPE)
+    p2 = subprocess.Popen(["grep","localhost"], stdin=p1.stdout, stdout=subprocess.PIPE, close_fds=True)
+    
+    # process the lines, looking for port numbers
+    
+    pattern = r'localhost:(?P<portNumber>[0-9]{5})'
+    matcher = re.compile(pattern)
+    
+    
+    for line in p2.stdout: 
+        result = matcher.findall(line)
+        for occurrance in result:
+            rangeInUse = int(occurrance)/200
+            inUseRanges.add(rangeInUse)
 
 # avoid recommending low ranges; our lowest recommendation
 # will be the first unused range above the lowest in-use range

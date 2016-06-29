@@ -167,7 +167,31 @@ create table t_013 ( a int not null,
 
 insert into t_013 values (1, 'abc', 'def'), (2, 'ghi', 'jkl');
 
+create table fksalta ( id int not null, PRIMARY KEY (id))SALT USING 4 PARTITIONS;
 
+CREATE TABLE fksaltb ( id int not null, val int,
+  PRIMARY KEY (id),
+  CONSTRAINT FKsalt FOREIGN KEY (val) REFERENCES fksalta (id))
+  SALT USING 4 PARTITIONS;
+
+INSERT INTO fksalta VALUES ( 1 );
+
+INSERT INTO fksaltb VALUES ( 1, 1);
+
+INSERT INTO fksaltb VALUES ( 2, 2);
+
+CREATE TABLE fkdiva( store_id integer not null,
+                   item_id  integer not null,
+                sale_date date default date '2000-01-01' not null,
+                  sale_amt numeric(10,2),
+                   primary key (store_id, item_id, sale_date))
+ division by (date_part('YEARMONTH', sale_date));
+
+create table fkdivb(c1 int not null, c2 int , c3 int, c4  date, primary key(c1), CONSTRAINT FKDIV FOREIGN KEY (c2,c3, c4) REFERENCES fkdiva (store_id,item_id, sale_date));
+
+INSERT INTO fkdiva VALUES ( 1 , 1, date'2016-03-05', 10.2 );
+INSERT INTO fkdivb VALUES ( 1 , 1, 1, date'2016-03-05');
+INSERT INTO fkdivb VALUES ( 2 , 2, 1, date'2016-01-25');
 
 --- uk0 should be eliminated
 -- two table RI constraint join
@@ -347,5 +371,9 @@ drop table uk1;
 drop table uk2;
 drop table uk3;
 drop table t_013;
+drop table fksalta CASCADE;
+drop table fksaltb CASCADE;
+drop table fkdiva  CASCADE;
+drop table fkdivb  CASCADE;
 
 

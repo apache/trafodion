@@ -95,6 +95,7 @@ public:
   ReturnStatus process(const CmpMessageDescribe&);
   ReturnStatus process(const CmpMessageUpdateHist&);
   ReturnStatus process(const CmpMessageSetTrans&);
+  ReturnStatus process(const CmpMessageDDLNATableInvalidate&);
   ReturnStatus process(const CmpMessageDatabaseUser&);
   ReturnStatus process(const CmpMessageEndSession&);
   ReturnStatus process(const CmpMessageDDLwithStatus&);

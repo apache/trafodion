@@ -39,12 +39,12 @@ REST_SRC=$MY_SQROOT/../rest
 PHX_SRC=$MY_SQROOT/../../tests/phx
 TRAF_TARS=$MY_SQROOT/../../distribution
 
-if [ -z "$DCS_TAR" ]; then
-  DCS_TAR=$(ls $TRAF_TARS/dcs*tar.gz 2>/dev/null)
+if [ -z "$DCS_BLD" ]; then
+  DCS_BLD=$(ls -d $DCS_SRC/target/dcs-*/dcs-* 2>/dev/null)
 fi
 
-if [ -z "$REST_TAR" ]; then
-  REST_TAR=$(ls $TRAF_TARS/rest*tar.gz 2>/dev/null)
+if [ -z "$REST_BLD" ]; then
+  REST_BLD=$(ls -d $REST_SRC/target/rest-*/rest-* 2>/dev/null)
 fi
 
 if [ -z "$PHX_TAR" ]; then
@@ -56,7 +56,7 @@ if [ -z "$DCSTEST_TAR" ]; then
 fi
 
 if [ -z "$CLIENT_TAR" ]; then
-    CLIENT_TAR=$(ls $TRAF_TARS/*clients*.tgz 2>/dev/null)
+    CLIENT_TAR=$(ls $TRAF_TARS/*clients* 2>/dev/null)
 fi
 
 if [[ -f $CLIENT_TAR ]]; then
@@ -84,8 +84,8 @@ else
 fi
 
 echo "   For local hadoop... $MY_SW_ROOT" | tee -a ${MY_LOG_FILE}
-echo "   For DCS_TAR... $DCS_TAR" | tee -a ${MY_LOG_FILE}
-echo "   For REST_TAR... $REST_TAR" | tee -a ${MY_LOG_FILE}
+echo "   For DCS_BLD... $DCS_BLD" | tee -a ${MY_LOG_FILE}
+echo "   For REST_BLD... $REST_BLD" | tee -a ${MY_LOG_FILE}
 
 if [[ -f $PHX_TAR ]]; then
   echo "   For PHX_TAR... $PHX_TAR" | tee -a ${MY_LOG_FILE}
@@ -105,31 +105,31 @@ echo | tee -a ${MY_LOG_FILE}
 if [ -d dcs-* ]; then
   echo "DCS files already exist, skipping DCS setup" | tee -a ${MY_LOG_FILE}
 else
-  if [[ -f $DCS_TAR ]]; then
-      echo "Using DCS Tar: $DCS_TAR" | tee -a ${MY_LOG_FILE}
+  if [[ -d $DCS_BLD ]]; then
+      echo "Using DCS Build: $DCS_BLD" | tee -a ${MY_LOG_FILE}
   elif [[ -d $DCS_SRC ]]; then
-      echo "DCS tar file was not found in $TRAF_TARS" | tee -a ${MY_LOG_FILE}
-      echo "Building DCS tar file" | tee -a ${MY_LOG_FILE}
-      if [[ -f $MY_SQROOT/export/lib/jdbcT4.jar ]]; then
+      echo "DCS built target was not found in $DCS_SRC" | tee -a ${MY_LOG_FILE}
+      echo "Building DCS" | tee -a ${MY_LOG_FILE}
+      if [[ -f $MY_SQROOT/export/lib/jdbcT4-${TRAFODION_VER}.jar ]]; then
          echo "JDBCT4 jar file exist. Proceeding to build DCS from $DCS_SRC" | tee -a ${MY_LOG_FILE}
          cd $DCS_SRC
          ${MAVEN:-mvn} clean site package >>${MY_LOG_FILE} 2>&1
-         mv $DCS_SRC/target/dcs*.gz $TRAF_TARS
          cd $MY_SW_ROOT
       else
          echo "JDBCT4 jar file does not exist $MY_SQROOT/export/lib folder. " | tee -a ${MY_LOG_FILE}
          echo "Please build the core Trafodion component"  | tee -a ${MY_LOG_FILE}
          exit 2
       fi
+      DCS_BLD=$(ls -d $DCS_SRC/target/dcs-*/dcs-* 2>/dev/null)
   fi
 
-  if [[ ! -f $DCS_TAR ]]; then
-    echo "**** ERROR: DCS tar file not found. "  | tee -a ${MY_LOG_FILE}
+  if [[ ! -d $DCS_BLD ]]; then
+    echo "**** ERROR: DCS built target not found. "  | tee -a ${MY_LOG_FILE}
     exit 2
   fi
 # Install DCS
-  echo "Installing DCS from: $DCS_TAR"  | tee -a ${MY_LOG_FILE}
-  tar xzf $DCS_TAR | tee -a ${MY_LOG_FILE}
+  echo "Installing DCS from: $DCS_BLD"  | tee -a ${MY_LOG_FILE}
+  cp -r $DCS_BLD $MY_SW_ROOT/$(basename $DCS_BLD)
   DCS_HOME=$(/bin/ls -d $MY_SW_ROOT/dcs-*)
 
 # Configure DCS
@@ -188,31 +188,31 @@ echo | tee -a ${MY_LOG_FILE}
 if [ -d rest-* ]; then
   echo "REST files already exist, skipping REST setup"
 else
-  if [[ -f $REST_TAR ]]; then
-        echo "Using REST Tar: $REST_TAR" | tee -a ${MY_LOG_FILE}
+  if [[ -d $REST_BLD ]]; then
+        echo "Using REST Build: $REST_BLD" | tee -a ${MY_LOG_FILE}
   elif [[ -d $REST_SRC ]]; then
-      echo "REST tar file was not found in $TRAF_TARS" | tee -a ${MY_LOG_FILE}
-      echo "Building REST tar file" | tee -a ${MY_LOG_FILE}
-      if [[ -f $MY_SQROOT/export/lib/jdbcT4.jar ]]; then
+      echo "REST built target was not found in $REST_SRC" | tee -a ${MY_LOG_FILE}
+      echo "Building REST" | tee -a ${MY_LOG_FILE}
+      if [[ -f $MY_SQROOT/export/lib/jdbcT4-${TRAFODION_VER}.jar ]]; then
          echo "JDBCT4 jar file exist. Proceeding to build REST from $REST_SRC" | tee -a ${MY_LOG_FILE}
          cd $REST_SRC
          ${MAVEN:-mvn} clean site package >>${MY_LOG_FILE} 2>&1
-         mv $REST_SRC/target/rest*.gz $TRAF_TARS
          cd $MY_SW_ROOT
        else
          echo "JDBCT4 jar file does not exist $MY_SQROOT/export/lib folder. Please build the core Trafodion components" | tee -a ${MY_LOG_FILE}
        exit 2
       fi
+      REST_BLD=$(ls -d $REST_SRC/target/rest-*/rest-* 2>/dev/null)
   fi
 
-  if [[ ! -f $REST_TAR ]]; then
-    echo "**** ERROR: REST tar file not found"  | tee -a ${MY_LOG_FILE}
+  if [[ ! -d $REST_BLD ]]; then
+    echo "**** ERROR: REST build target not found"  | tee -a ${MY_LOG_FILE}
     exit 2
   fi
 
 # Install REST
-  echo "Installing REST from: $REST_TAR"  | tee -a ${MY_LOG_FILE}
-  tar xzf $REST_TAR | tee -a ${MY_LOG_FILE}
+  echo "Installing REST from: $REST_BLD"  | tee -a ${MY_LOG_FILE}
+  cp -r $REST_BLD $MY_SW_ROOT/$(basename $REST_BLD)
   REST_HOME=$(/bin/ls -d $MY_SW_ROOT/rest-*)
 
 # Configure REST
@@ -329,7 +329,7 @@ cd $PHXDIR
 if [[ \$1 == "t4" ]]
 then
   ./phoenix_test.py --target=localhost:$MY_DCS_MASTER_PORT --user=dontcare --pw=dontcare \\
-     --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar
+     --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$MY_SQROOT/export/lib/jdbcT4-${TRAFODION_VER}.jar
 elif [[ \$1 == "t2" ]]
 then
   export LD_PRELOAD=\$JAVA_HOME/jre/lib/amd64/libjsig.so:\$MY_SQROOT/export/lib\$SQ_MBTYPE/libseabasesig.so
@@ -369,10 +369,58 @@ YES
 ../
 ../
 EOF
-    cd .. | tee -a ${MY_LOG_FILE}
-    mv TRAFDSN TRAFDSN.orig | tee -a ${MY_LOG_FILE}
-    sed -e "s@TCP:1.2.3.4:23400@TCP:localhost:$MY_DCS_MASTER_PORT@" TRAFDSN.orig >> TRAFDSN | tee -a ${MY_LOG_FILE}
+    cd .. 
+    mv TRAFDSN TRAFDSN.orig 
+    sed -e "s@TCP:localhost:23400@TCP:localhost:$MY_DCS_MASTER_PORT@" TRAFDSN.orig >> TRAFDSN 
+    cp -p TRAFDSN $MY_SQROOT/samples
     echo "Successfully installed linux driver in $LNXDRVR"| tee -a ${MY_LOG_FILE}
+    echo "Creating odbcinst.ini file..." |tee -a ${MY_LOG_FILE}
+    cat <<EOF >$LNXDRVR/odbcinst.ini
+[Trafodion]
+Description = Trafodion ODBC Stand Alone Driver
+Driver = $LNXDRVR/libtrafodbc_drvr64.so
+FileUsage = 1
+UsageCount = 1
+AppUnicodeType = utf16
+
+[ODBC]
+Threading = 1
+Trace = Off
+Tracefile = uodbc.trc
+EOF
+    echo "Creating odbc.ini file..." |tee -a ${MY_LOG_FILE}
+    cat <<EOF >$LNXDRVR/odbc.ini
+[ODBC]
+traceFlags              = ERROR
+TraceStart              = 0
+TraceFile               = tracefile.log
+MaxTraceFileSize        = 1024
+
+[ODBC Data Sources]
+traf                        = Trafodion Database
+
+[traf]
+Description                 = Trafodion DSN
+Driver                      = Trafodion
+Catalog                     = TRAFODION
+Schema                      = SEABASE
+DataLang                    = 0
+FetchBufferSize             = SYSTEM_DEFAULT
+Server                      = TCP:localhost:$MY_DCS_MASTER_PORT
+SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
+SQL_LOGIN_TIMEOUT           = SYSTEM_DEFAULT
+SQL_QUERY_TIMEOUT           = NO_TIMEOUT
+
+EOF
+    echo "Adding swlnx script..." | tee -a ${MY_LOG_FILE}
+  cat <<EOF >$MY_SQROOT/sql/scripts/swlnx
+#!/bin/sh
+# command to run lnx sample
+  cd $LNXDRVR
+  g++ -g connect_test.cpp -L$LNXDRVR -I/usr/include/odbc -ltrafodbc64 -o connect_test
+  ./connect_test -d Default_DataSource -u ss -p ss
+EOF
+  chmod +x $MY_SQROOT/sql/scripts/swlnx
   fi
 fi
 
@@ -394,6 +442,21 @@ else
     cd $ODBLOC 
     tar -xzf $ODB_TAR | tee -a ${MY_LOG_FILE}
     echo "Successfully installed ODB tool in $ODBLOC"| tee -a ${MY_LOG_FILE}
+    echo "Adding swodb script..." | tee -a ${MY_LOG_FILE}
+  cat <<EOF >$MY_SQROOT/sql/scripts/swodb
+#!/bin/sh
+# command to run odb sample
+cd $ODBLOC/bin
+export ODBCHOME=$LNXDRVR
+export ODBCSYSINI=\$ODBCHOME
+export ODBCINI=\$ODBCHOME/odbc.ini
+export AppUnicodeType=utf16
+
+export LD_LIBRARY_PATH=\$ODBCHOME:$LD_LIBRARY_PATH
+
+./odb64luo -d traf -u ss -p ss -i
+EOF
+  chmod +x $MY_SQROOT/sql/scripts/swodb
   fi
 fi
 
@@ -432,7 +495,7 @@ else
 cd $JDBCTEST_DIR
 ./jdbc_test.py --appid=jdbc_test --user=SOMEUSER --pw=SOMEPASSWORD --javahome=\$JAVA_HOME \\
   --target=localhost:$MY_DCS_MASTER_PORT --dbmaj=\$TRAFODION_VER_MAJOR --dbmin=\$TRAFODION_VER_MINOR \\
-  --jdbctype=T4 --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar "\$@"
+  --jdbctype=T4 --jdbccp=\$MY_SQROOT/export/lib/jdbcT4-${TRAFODION_VER}.jar "\$@"
 EOF
     chmod +x $MY_SQROOT/sql/scripts/swjdbc
 

@@ -350,53 +350,37 @@ void ValueId::coerceType(const NAType& desiredType,
   //
   if (NotaCharType &&          // We do not want to force a characters storage values to be float
      (desiredType.getFSDatatype() == REC_FLOAT32 ||
-      desiredType.getFSDatatype() == REC_FLOAT64 ||
-      desiredType.getFSDatatype() == REC_TDM_FLOAT32 ||
-      desiredType.getFSDatatype() == REC_TDM_FLOAT64))
+      desiredType.getFSDatatype() == REC_FLOAT64 ))
     {
-      // type untyped params according to floattype CQD.
-      NAString tmp;
-      CmpCommon::getDefault(FLOATTYPE, tmp, -1);
-      NABoolean inputFloattypeIEEE =
-	((tmp == "IEEE") ||
-	 (CmpCommon::getDefault(ODBC_PROCESS) == DF_ON) ||
-	 (CmpCommon::getDefault(JDBC_PROCESS) == DF_ON));
-
-      if (NOT inputFloattypeIEEE)
-	{
-	  if (desiredType.getFSDatatype() == REC_TDM_FLOAT32)
-	    newType = new STMTHEAP
-	      SQLRealTdm(desiredType.supportsSQLnull(),
-			 STMTHEAP,
-			 desiredType.getPrecision());
-	  else
-	    newType = new STMTHEAP
-	      SQLDoublePrecisionTdm(desiredType.supportsSQLnull(),
-				    STMTHEAP,
-				    desiredType.getPrecision());
-	}
+      if (desiredType.getFSDatatype() == REC_FLOAT32)
+        newType = new STMTHEAP
+          SQLReal(desiredType.supportsSQLnull(),
+                  STMTHEAP,
+                  desiredType.getPrecision());
       else
-	{
-	  if (desiredType.getFSDatatype() == REC_FLOAT32)
-	    newType = new STMTHEAP
-	      SQLReal(desiredType.supportsSQLnull(),
-		      STMTHEAP,
-		      desiredType.getPrecision());
-	  else
-	    // ieee double, tandem real and tandem double are all
-	    // cast as IEEE double. Tandem real is cast as ieee double as
-	    // it won't 'fit' into ieee real.
-	    newType = new STMTHEAP
-	      SQLDoublePrecision(desiredType.supportsSQLnull(),
-				 STMTHEAP,
-				 desiredType.getPrecision());
-	}
-
+        // ieee double, tandem real and tandem double are all
+        // cast as IEEE double. Tandem real is cast as ieee double as
+        // it won't 'fit' into ieee real.
+        newType = new STMTHEAP
+          SQLDoublePrecision(desiredType.supportsSQLnull(),
+                             STMTHEAP,
+                             desiredType.getPrecision());
     }
   else {
      if ( newType == NULL )
        {
-	 if (DFS2REC::isBigNum(desiredType.getFSDatatype()))
+         // if param default is OFF, type tinyint as smallint.
+         // This is needed until all callers/drivers have full support to
+         // handle IO of tinyint datatypes.
+	 if ((desiredType.getTypeName() == LiteralTinyInt) &&
+             ((CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF) ||
+              (CmpCommon::getDefault(TRAF_TINYINT_INPUT_PARAMS) == DF_OFF)))
+	   {
+             NABoolean isSigned = ((NumericType&)desiredType).isSigned();
+             newType = new (STMTHEAP)
+               SQLSmall(isSigned, desiredType.supportsSQLnull());
+	   } // TinyInt
+	 else if (DFS2REC::isBigNum(desiredType.getFSDatatype()))
 	   {
 	     // If bignum IO is not enabled or
 	     // if max numeric precision allowed is what is supported in
@@ -512,6 +496,29 @@ ValueId::getNAColumn(NABoolean okIfNotColumn) const
   }
   return NULL;  // NT_PORT
 }
+
+
+NABoolean ValueId::isColumnWithNonNullNonCurrentDefault() const{
+  NAColumn * nac = NULL;
+  ItemExpr *ck = getItemExpr();
+  if ( ck == NULL )
+     return FALSE;
+  switch (ck->getOperatorType()){
+  case ITM_BASECOLUMN:
+      nac = ((BaseColumn*)ck)->getNAColumn();
+      break;
+  case ITM_INDEXCOLUMN:
+      nac = ((IndexColumn*)ck)->getNAColumn();
+      break;
+  default:
+      break;
+  }
+  if (nac &&  nac->getDefaultValue() && nac->getDefaultClass()!=COM_NULL_DEFAULT && nac->getDefaultClass()!=COM_CURRENT_DEFAULT)
+      return TRUE;
+  else
+      return FALSE;
+}
+
 
 // Since we *can* have an INSTANTIATE_NULL inside a VEG_REFERENCE, a loop
 // was required for the function below.
@@ -3165,7 +3172,12 @@ void ValueIdSet::replaceVEGExpressions
           if (iePtr != exprId.getItemExpr())  // a replacement was done
 	    {
 	      subtractElement(exprId);        // remove existing ValueId
-	      newExpr += iePtr->getValueId(); // replace with a new one
+          //insert new expression(s)
+          if (iePtr->getOperatorType() == ITM_AND)
+              //The replacement of a RangeSpec could be an AND, convert ANDed predicates into additional values in newExpr.
+              iePtr->convertToValueIdSet(newExpr, NULL, ITM_AND, FALSE, FALSE);
+          else
+              newExpr += iePtr->getValueId(); // replace with a new one
 	    }
 	}
       else // delete the ValueId of the VEGPredicate/VEGReference from the set
@@ -6381,6 +6393,7 @@ ValueIdSet& ValueIdSet::intersectSetDeep(const ValueIdSet & v)
   return *this;
 }
 
+
 // --------------------------------------------------------------------
 // return true iff ValueIdSet has predicates that guarantee
 // that opd is not nullable
@@ -6501,6 +6514,11 @@ ValueIdList::computeEncodedKey(const TableDesc* tDesc, NABoolean isMaxKey,
           
           ConstValue* value = NULL;
           if ( ie->doesExprEvaluateToConstant(TRUE, TRUE) ) {
+             ValueIdSet availableValues;
+             // do a simple VEG replacement with no available values
+             // and no inputs, all VEGies should have constants in
+             // them and should be replaced with those
+             ie = ie->replaceVEGExpressions(availableValues, availableValues);
              value = ie->evaluate(STMTHEAP);
              if ( !value )
                 return NULL;

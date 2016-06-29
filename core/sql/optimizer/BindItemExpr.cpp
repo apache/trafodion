@@ -77,6 +77,9 @@
 #include "ItemFuncUDF.h"
 #include "CmpSeabaseDDL.h"
 #include "QCache.h"
+
+#include "exp_datetime.h"
+
 #include <stack>
 
 
@@ -1236,6 +1239,7 @@ Int32 ItemExpr::shouldPushTranslateDown(CharInfo::CharSet chrset) const
      case ITM_CAST:                  // a) output is of a specific charset
      case ITM_CAST_CONVERT:          // a) internal node, too late to do ICAT
      case ITM_CAST_TYPE:
+     case ITM_DATEFORMAT:
        return -1;
 
      case ITM_LEFT:                  // b) counts characters
@@ -1497,10 +1501,10 @@ ItemExpr* Assign::tryToRelaxCharTypeMatchRules(BindWA *bindWA)
 ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
 {
   ItemExpr *result = this;
-  enum {iUCS2 = 0, iISO = 1, iUTF8 = 2, iSJIS = 3, iUNK = 4};
-  Int32 Literals_involved[5] = { 0, 0, 0, 0, 0 };
-  Int32 nonLiterals_involved[5] = { 0, 0, 0, 0, 0 };
-  Int32 charsets_involved[5] = { 0, 0, 0, 0, 0 };
+  enum {iUCS2 = 0, iISO = 1, iUTF8 = 2, iSJIS = 3, iGBK = 4, iUNK = 5};
+  Int32 Literals_involved[6] = { 0, 0, 0, 0, 0, 0};
+  Int32 nonLiterals_involved[6] = { 0, 0, 0, 0, 0, 0 };
+  Int32 charsets_involved[6] = { 0, 0, 0, 0, 0, 0 };
   Int32 charsetsCount = 0;
   CharInfo::CharSet cs          = CharInfo::UnknownCharSet;
   CharInfo::CharSet curr_chld_cs= CharInfo::UnknownCharSet;
@@ -1543,6 +1547,10 @@ ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
 
         case CharInfo::SJIS:
           cur_chld_cs_ndx = iSJIS;
+          break;
+
+        case CharInfo::GBK:
+          cur_chld_cs_ndx = iGBK;
           break;
 
         //case CharInfo::KANJI_MP:
@@ -1593,6 +1601,8 @@ ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
           cs = CharInfo::UTF8;
        else if ( Literals_involved[iSJIS] > 0 )
           cs = CharInfo::SJIS;
+       else if ( Literals_involved[iGBK] > 0 )
+          cs = CharInfo::GBK;
 
        //
        // Now, we may be able to optimize by translating the 1st child
@@ -1601,7 +1611,7 @@ ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
        //
        if ( ( cs == chld0_cs ) &&  ( arity == 2 ) &&
                ( curr_chld_opType != ITM_TRANSLATE ) &&
-               ( charsetsCount == (charsets_involved[iUCS2] + charsets_involved[iUTF8]) ) )
+               ( charsetsCount == (charsets_involved[iUCS2] + charsets_involved[iUTF8] + charsets_involved[iGBK]) ) )
        {
           if ( chld0_opType == ITM_TRANSLATE )
              cs = curr_chld_cs;  //...because we will eliminate a translate op
@@ -1631,7 +1641,22 @@ ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
         if ( desiredType->getTypeQualifier() == NA_CHARACTER_TYPE )
         {
            CharInfo::CharSet Desired_cs = ((const CharType*)desiredType)->getCharSet();
-           if ( (chld_cs != Desired_cs) && ( ! ((Cast *)this)->tgtCharSetSpecified() ) )
+           /*
+           * this is a special handling for jira 1720, only used in a bulkload scenario
+           * that is, when user set the HIVE_FILE_CHARSET to 'gbk', it means the data saved in hive
+           * table is encoded as GBK. Trafodion default all Hive data charset as 'UTF8', so 
+           * this will allow the auto charset converting to happen during bulk load
+           * the reason is:
+           * hive scan will mark the source column as GBK when HIVE_FILE_CHARSET is set to GBK
+           * which is the only value it can be 
+           * So the bind will invoke this implicit casting method to check if an auto charset 
+           * converting is needed. 
+           * In the hive scan, it does not set the tgtCharSetSpecified field, so in order to 
+           * force it to perform a translate, add a checking here
+           */
+           if( (chld_cs != Desired_cs) && CmpCommon::getDefaultString(HIVE_FILE_CHARSET) == "GBK" )
+              result = performImplicitCasting( Desired_cs, bindWA );
+           else if ( (chld_cs != Desired_cs) && ( ! ((Cast *)this)->tgtCharSetSpecified() ) )
            {
               //
               // Looks like user said CAST( ... as [var]char(NNN) ) 
@@ -1695,6 +1720,9 @@ ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
         case Translate::UCS2_TO_SJIS:
         case Translate::UCS2_TO_UTF8:
              Required_cs = CharInfo::UNICODE;
+             break;
+	case Translate::GBK_TO_UTF8:
+	     Required_cs = CharInfo::GBK;
              break;
         default:
              break;
@@ -3684,19 +3712,10 @@ ItemExpr * ExtractOdbc::bindNode(BindWA * bindWA)
   return ie ;
 }
 
-ItemExpr * Format::bindNode(BindWA * bindWA)
+ItemExpr * DateFormat::quickDateFormatOpt(BindWA * bindWA)
 {
-  //  if (nodeIsBound()) 
-  //    return this;
-
-  bindSelf(bindWA);
-  if (bindWA->errStatus()) 
-    return this;
-
   const NAType *naType0 = &child(0)->getValueId().getType();
-  const NumericType * nType0 = NULL;
 
-  // a quick optimization for the date format.
   if ((CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON) &&
       (child(0)->getOperatorType() == ITM_CONSTANT) &&
       (formatStr_ == "DD-MON-YYYY") &&
@@ -3777,188 +3796,29 @@ ItemExpr * Format::bindNode(BindWA * bindWA)
       bindWA->resetErrStatus();
     }
 
+  return NULL;
+}
 
-  Int32 dateFormat = DateFormat::DEFAULT;
-  NABoolean formatAsDate = FALSE;
+ItemExpr * Format::bindNode(BindWA * bindWA)
+{
+  bindChildren(bindWA);
+  if (bindWA->errStatus()) 
+    return this;
+
+  const NAType *naType0 = &child(0)->getValueId().getType();
+  const NumericType * nType0 = NULL;
+
   NABoolean formatX = FALSE;
   NABoolean format9 = FALSE;
   NABoolean formatExtract = FALSE;
   Lng32 dotPos = 0;
   NABoolean formatNumericAsX = FALSE;
   NABoolean formatStringAsX  = FALSE;
-  if ((formatStr_ == "YYYY-MM-DD") ||
-      (formatStr_ == "MM/DD/YYYY") ||
-      (formatStr_ == "YY/MM/DD") ||
-      (formatStr_ == "YYYY/MM/DD") ||
-      (formatStr_ == "MM/DD/YY") ||
-      (formatStr_ == "YYYYMMDD") ||
-      (formatStr_ == "DD.MM.YYYY") ||
-      (formatStr_ == "DD-MM-YYYY") ||
-      (formatStr_ == "DD-MMM-YYYY") ||
-      (formatStr_ == "DD-MON-YYYY") ||
-      (formatStr_ == "DDMONYYYY") ||
-      (formatStr_ == "YYYYMMDDHH24MISS") ||
-      (formatStr_ == "YYYYMMDD:HH24:MI:SS") ||
-      (formatStr_ == "DD.MM.YYYY:HH24:MI:SS") ||
-      (formatStr_ == "YYYY-MM-DD HH24:MI:SS") ||
-      (formatStr_ == "MMDDYYYY HH24:MI:SS") ||
-      (formatStr_ == "MM/DD/YYYY HH24:MI:SS") ||
-      (formatStr_ == "DD-MON-YYYY HH:MI:SS") ||
-      (formatStr_ == "HH24:MI:SS") ||
-      (formatStr_ == "YYYYMM") ||
-      (formatStr_ == "YYYY-MM") ||
-      (formatStr_ == "SYYYYMM") ||
-      (formatStr_ == "MM-DD-YYYY"))
-    {
-      if (formatType_ == FORMAT_TO_CHAR)
-	{
-	  if (naType0->getTypeQualifier() != NA_DATETIME_TYPE)
-	    {
-	      *CmpCommon::diags() << DgSqlCode(-4071) << DgString0("TO_CHAR");
-	      bindWA->setErrStatus();
-	      return this;
-	    }
 
-	  if ((formatStr_ == "HH24:MI:SS") &&
-	      (naType0->getPrecision() != SQLDTCODE_TIMESTAMP) &&
-	      (naType0->getPrecision() != SQLDTCODE_TIME))
-	    {
-	      *CmpCommon::diags() << DgSqlCode(-4072) << DgString0("TO_CHAR") << DgString1("time");;
-	      bindWA->setErrStatus();
-	      return this;
-	    }
-	}
-
-      if ((formatType_ == FORMAT_TO_DATE) &&
-	  ((naType0->getTypeQualifier() != NA_CHARACTER_TYPE) &&
-	   (naType0->getTypeQualifier() != NA_NUMERIC_TYPE)))
-	{
-	  *CmpCommon::diags() << DgSqlCode(-4043) << DgString0("TO_DATE");
-	  bindWA->setErrStatus();
-	  return this;
-	}
-      
-      if ((naType0->getTypeQualifier() == NA_CHARACTER_TYPE) &&
-          (formatCharToDate_ == FALSE))
-	{
-	  *CmpCommon::diags() << DgSqlCode(-4065) << DgString0(formatStr_)
-			      << DgString1(formatType_ == FORMAT_GENERIC ? "FORMAT" 
-					   : (formatType_ == FORMAT_TO_CHAR ? "TO_CHAR" : "TO_DATE"));
-	  
-	  bindWA->setErrStatus();
-	  return this;
-	}
-      
-      if (((formatStr_ == "YYYYMMDDHH24MISS") ||
-	   (formatStr_ == "YYYYMMDD:HH24:MI:SS") ||
-	   (formatStr_ == "DD.MM.YYYY:HH24:MI:SS") ||
-	   (formatStr_ == "YYYY-MM-DD HH24:MI:SS") ||
-	   (formatStr_ == "MMDDYYYY HH24:MI:SS") ||
-	   (formatStr_ == "MM/DD/YYYY HH24:MI:SS") ||
-	   (formatStr_ == "HH24:MI:SS") ||
-	   (formatStr_ == "MM/DD/YY") ||
-	   (formatStr_ == "YYYYMM") ||
-	   (formatStr_ == "YYYY-MM") ||
-	   (formatStr_ == "SYYYYMM") ||
-	   (formatStr_ == "DDMONYYYY") ||
-	   (formatStr_ == "MM-DD-YYYY")) &&
-	  (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_OFF))
-	{
-	  *CmpCommon::diags() << DgSqlCode(-4065) << DgString0(formatStr_)
-			      << DgString1(formatType_ == FORMAT_GENERIC ? "FORMAT" 
-					   : (formatType_ == FORMAT_TO_CHAR ? "TO_CHAR" : "TO_DATE"));
-	  bindWA->setErrStatus();
-	  return this;
-	}
-
-      if (formatStr_ == "SYYYYMM")
-	formatStr_ = "YYYYMM";
-
-      NAString newStr;
-      if (((formatStr_ == "YYYYMM") ||
-	   (formatStr_ == "YYYY-MM")) &&
-	  (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON) &&
-	  (formatCharToDate_) &&
-	  (naType0->getTypeQualifier() == NA_NUMERIC_TYPE))
-	{
-	  // currently only supports formatting of a numeric constant string literal
-	  // of the form '200906'. Missing day is filled with value '01' and
-	  // a new constant is added as child(0).
-	  ConstValue * cv = (ConstValue *)child(0)->castToItemExpr();
-	  if ((cv->getOperatorType() != ITM_CONSTANT) ||
-	      (NOT cv->canGetExactNumericValue()))
-	    {
-	      *CmpCommon::diags() << DgSqlCode(-4065) << DgString0(formatStr_)
-				  << DgString1(formatType_ == FORMAT_GENERIC ? "FORMAT" 
-					       : (formatType_ == FORMAT_TO_CHAR ? "TO_CHAR" : "TO_DATE"));
-	      bindWA->setErrStatus();
-	      return this;
-	    }
-
-	  Lng32 val = (Lng32)cv->getExactNumericValue();
-	  char nBuf[40];
-	  sprintf(nBuf, "%d", val);
-	  newStr = nBuf;
-	  
-	  ConstValue *newChild = 
-	    new (bindWA->wHeap()) ConstValue(newStr, bindWA->wHeap());
-	  setChild(0, newChild->bindNode(bindWA));
-	  
-	  naType0 = &child(0)->getValueId().getType();
-	} // if YYYYMM
-
-      if (naType0->getTypeQualifier() == NA_NUMERIC_TYPE)
-	{
-	  if (formatCharToDate_ == FALSE)
-	    {
-	      *CmpCommon::diags() << DgSqlCode(-4065) << DgString0(formatStr_)
-				  << DgString1(formatType_ == FORMAT_GENERIC ? "FORMAT" 
-					       : (formatType_ == FORMAT_TO_CHAR ? "TO_CHAR" : "TO_DATE"));
-	      bindWA->setErrStatus();
-	      return this;
-	    }
-	  
-	  // convert number to char before formatting.
-	  // Length of target char is equal to formatStr_.
-	  ItemExpr * newChild =
-	    new (bindWA->wHeap())
-	    Cast(child(0),
-		 new (bindWA->wHeap())
-		 SQLChar(formatStr_.length(),
-			 child(0)->castToItemExpr()->
-			 getValueId().getType().supportsSQLnull()));
-	  setChild(0, newChild->bindNode(bindWA));
-	  naType0 = &child(0)->getValueId().getType();
-	}
-      
-      if ((CmpCommon::getDefault(MODE_SPECIAL_2) == DF_OFF) &&
-	  (formatCharToDate_ == FALSE) &&
-	  (naType0->getTypeQualifier() != NA_DATETIME_TYPE)) 
-	{
-	  // 4071 The operand of a DATEFORMAT function must be a datetime.
-	  *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
-	  return NULL;
-	}
-
-      formatAsDate = TRUE;
-      if ((formatStr_ == "YYYYMMDDHH24MISS") ||
-	  (formatStr_ == "YYYYMMDD:HH24:MI:SS") ||
-	  (formatStr_ == "DD.MM.YYYY:HH24:MI:SS") ||
-	  (formatStr_ == "YYYY-MM-DD HH24:MI:SS") ||
-	  (formatStr_ == "MMDDYYYY HH24:MI:SS") ||
-	  (formatStr_ == "MM/DD/YYYY HH24:MI:SS") ||
-          (formatStr_ == "DD-MON-YYYY HH:MI:SS"))
-	dateFormat = DateFormat::TIMESTAMP_FORMAT_STR;
-      else if (formatStr_ == "HH24:MI:SS")
-	dateFormat = DateFormat::TIME_FORMAT_STR;
-      else
-	dateFormat = DateFormat::DATE_FORMAT_STR;
-    }
-
-  else if ((formatStr_ == "HH24") ||
-           (formatStr_ == "D") ||
-           (formatStr_ == "MM") ||
-           (formatStr_ == "YYYY"))
+  if ((formatStr_ == "HH24") ||
+      (formatStr_ == "D") ||
+      (formatStr_ == "MM") ||
+      (formatStr_ == "YYYY"))
     {
       if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_OFF)
         {
@@ -3986,22 +3846,6 @@ ItemExpr * Format::bindNode(BindWA * bindWA)
 	}
       
       formatExtract = TRUE;
-    }
-
-  else if ((formatStr_ == "99:99:99:99") ||
-	   (formatStr_ == "-99:99:99:99"))
-    {
-      if (naType0->getTypeQualifier() == NA_NUMERIC_TYPE)
-	{
-	  formatAsDate = TRUE;
-	  dateFormat = DateFormat::TIME_FORMAT_STR;
-	}
-      else
-	{
-	  *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("FORMAT");
-	  bindWA->setErrStatus();
-	  return this;
-	}
     }
   else
     {
@@ -4049,88 +3893,7 @@ ItemExpr * Format::bindNode(BindWA * bindWA)
     }
 
   ItemExpr * newIE= NULL;
-  if (formatAsDate)
-    {
-      ConstValue * cv = new(bindWA->wHeap()) SystemLiteral(formatStr_);
-
-      if ((dateFormat == DateFormat::TIME_FORMAT_STR) &&
-	  (formatStr_ != "HH24:MI:SS"))
-	{
-	  if (naType0->getTypeName() != LiteralLargeInt)
-	    {
-	      // convert to largeint. We have already verified that
-	      // child is exact with scale of 0.
-	      ItemExpr * newChild =
-		new (bindWA->wHeap())
-		Cast(child(0),
-		     new (bindWA->wHeap())
-		     SQLLargeInt(TRUE,
-				 child(0)->castToItemExpr()->
-				 getValueId().getType().supportsSQLnull()));
-	      setChild(0, newChild->bindNode(bindWA));
-	    }
-	}
-
-      ItemExpr * newChild = NULL;
-	  
-      if ((CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON) &&
-	  (formatCharToDate_ == FALSE) &&
-	  (naType0->getPrecision() == SQLDTCODE_TIMESTAMP))
-	{
-	  if (formatStr_ == "HH24:MI:SS")
-	    {
-	      newChild =
-		new (bindWA->wHeap())
-		Cast(child(0),
-		     new (bindWA->wHeap())
-		     SQLTime(child(0)->castToItemExpr()->
-			     getValueId().getType().supportsSQLnull(),
-			     0));
-	    }
-	  else if ((formatStr_ == "YYYYMMDDHH24MISS") ||
-		   (formatStr_ == "YYYYMMDD:HH24:MI:SS") ||
-		   (formatStr_ == "DD.MM.YYYY:HH24:MI:SS") ||
-		   (formatStr_ == "YYYY-MM-DD HH24:MI:SS") ||
-		   (formatStr_ == "MMDDYYYY HH24:MI:SS") ||
-		   (formatStr_ == "MM/DD/YYYY HH24:MI:SS") ||
-                   (formatStr_ == "DD-MON-YYYY HH:MI:SS"))
-	    {
-	      // do nothing
-	    }
-	  else 
-	    {
-	      newChild =
-		new (bindWA->wHeap())
-		Cast(child(0),
-		     new (bindWA->wHeap())
-		     SQLDate(child(0)->castToItemExpr()->
-			     getValueId().getType().supportsSQLnull()));
-	    }
-	    
-	  if (newChild)
-	    setChild(0, newChild->bindNode(bindWA));
-	}
-
-      naType0 = &child(0)->getValueId().getType();
-      if (DFS2REC::isAnyVarChar(naType0->getFSDatatype()))
-	{
-	  // convert to fixed char.
-	  newChild =
-	    new (bindWA->wHeap())
-	    Cast(child(0),
-		 new (bindWA->wHeap())
-		 SQLChar(naType0->getNominalSize(),
-			 naType0->supportsSQLnull()));
-	  setChild(0, newChild->bindNode(bindWA));
-	}
-
-      newIE=
-	new (bindWA->wHeap()) DateFormat(child(0), cv, dateFormat);
-      newIE = newIE->bindNode(bindWA);
-      if (bindWA->errStatus())
-	return NULL;
-    }
-  else if ((formatX) || (format9) || (formatExtract))
+  if ((formatX) || (format9) || (formatExtract))
     {
       Parser parser(bindWA->currentCmpContext());
       char buf[200];
@@ -4216,19 +3979,293 @@ ItemExpr * Format::bindNode(BindWA * bindWA)
   else
     {
       if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_OFF)
-      {
-        *CmpCommon::diags() << DgSqlCode(-4065) << DgString0(formatStr_)
-			  << DgString1(formatType_ == FORMAT_GENERIC ? "FORMAT" 
-				       : (formatType_ == FORMAT_TO_CHAR ? "TO_CHAR" : "TO_DATE"));
-        bindWA->setErrStatus();
-        return this;
-      }
-
+        {
+          *CmpCommon::diags() << DgSqlCode(-4065) << DgString0(formatStr_)
+                              << DgString1(formatType_ == FORMAT_GENERIC ? "FORMAT" 
+                                           : (formatType_ == FORMAT_TO_CHAR ? "TO_CHAR" : "TO_DATE"));
+          bindWA->setErrStatus();
+          return this;
+        }
+      
       // In mode_special_1, ignore this format and return the child pointer.
       newIE = child(0);
     }
-
+  
   return newIE;
+}
+
+///////////////////////////////////////////////////////
+// various error checks, details below.
+//////////////////////////////////////////////////////
+NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA, 
+                                  const NAType* opType)
+{
+  Lng32 error = 0;
+
+  NABoolean tc  = (formatType_ == FORMAT_TO_CHAR);
+  NABoolean td  = (formatType_ == FORMAT_TO_DATE);
+  NABoolean df  = ExpDatetime::isDateFormat(frmt);
+  NABoolean tf  = ExpDatetime::isTimeFormat(frmt);
+  NABoolean tsf = ExpDatetime::isTimestampFormat(frmt);
+  NABoolean nf  = ExpDatetime::isNumericFormat(frmt);
+  NABoolean ms4 = (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON);
+  
+  if (NOT (df || tf || tsf || nf))
+    {
+      // format must be date, time, timestamp or numeric
+      error = 1; // error 4065
+    }
+  else if ((NOT ms4) && nf)
+    {
+      // format can only be numeric in mode_special_4
+      error = 1; // error 4065
+    }
+
+  if (!error && tc)
+    {
+      // source must be datetime with to_char function
+      if (opType->getTypeQualifier() != NA_DATETIME_TYPE)
+        error = 2; // error 4071
+
+      // cannot convert date source to time format
+      else if (tf && (opType->getPrecision() == SQLDTCODE_DATE))
+        error = 3; // error 4072
+    }
+
+  if (!error && td)
+    {
+      // source must be char or numeric with to_date
+      if ((opType->getTypeQualifier() != NA_CHARACTER_TYPE) &&
+          (opType->getTypeQualifier() != NA_NUMERIC_TYPE))
+        error = 4; //error 4043
+
+      // source can only be numeric in mode_special_4
+      else if ((NOT ms4) && (opType->getTypeQualifier() != NA_CHARACTER_TYPE))
+        error = 4; // error 4043
+
+      // operand must be numeric with nf (numeric format)
+      else if (ms4 && nf && (opType->getTypeQualifier() != NA_NUMERIC_TYPE))
+        {
+          error = 7; // error 4045
+        }
+
+      // numeric must be exact with scale of 0
+      else if (ms4 && (opType->getTypeQualifier() == NA_NUMERIC_TYPE))
+        {
+          if (NOT ((NumericType*)opType)->isExact())
+            error = 5; // error 4046
+          else if (NOT ((NumericType*)opType)->getScale() == 0)
+            error = 6; // error 4047
+        }
+    }
+
+  if (error)
+    {
+      switch (error)
+        {
+        case 1: 
+          {
+            *CmpCommon::diags() << DgSqlCode(-4065) << DgString0(formatStr_)
+                                << DgString1((formatType_ == FORMAT_TO_CHAR
+                                              ? "TO_CHAR" : "TO_DATE"));
+            bindWA->setErrStatus();
+          }
+          break;
+
+        case 2:
+          {
+            *CmpCommon::diags() << DgSqlCode(-4071) << DgString0("TO_CHAR");
+            bindWA->setErrStatus();
+          }
+          break;
+
+        case 3:
+          {
+            *CmpCommon::diags() << DgSqlCode(-4072) << DgString0("TO_CHAR") << DgString1("time");;
+            bindWA->setErrStatus();
+          }
+          break;
+
+        case 4:
+          {
+            *CmpCommon::diags() << DgSqlCode(-4043) << DgString0("TO_DATE");
+            bindWA->setErrStatus();
+          }
+          break;
+          
+        case 5:
+          {
+            *CmpCommon::diags() << DgSqlCode(-4046) << DgString0("TO_DATE");
+            bindWA->setErrStatus();
+          }
+          break;
+          
+        case 6:
+          {
+            *CmpCommon::diags() << DgSqlCode(-4047) << DgString0("TO_DATE");
+            bindWA->setErrStatus();
+          }
+          break;
+
+        case 7:
+          {
+            *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("TO_DATE");
+            bindWA->setErrStatus();
+          }
+          break;
+
+        } // switch
+
+      return TRUE;
+    }
+  
+  return FALSE;
+}
+
+// used for TO_DATE, TO_CHAR, TO_TIME, DATEFORMAT functions.
+DateFormat::DateFormat(ItemExpr *val1Ptr, const NAString &formatStr,
+                       Lng32 formatType, NABoolean wasDateformat)
+     : CacheableBuiltinFunction(ITM_DATEFORMAT,
+                                1, val1Ptr),
+       formatStr_(formatStr),
+       wasDateformat_(wasDateformat),
+       formatType_(formatType),
+       frmt_(-1),
+       dateFormat_(DATE_FORMAT_NONE)
+{ 
+  allowsSQLnullArg() = FALSE; 
+
+  if (formatStr_ == "SYYYYMM")
+    formatStr_ = "YYYYMM";
+  else if (formatStr_ == "HH:MI:SS")
+    formatStr_ = "HH24:MI:SS";
+
+  frmt_ = ExpDatetime::getDatetimeFormat(formatStr_.data());
+}
+
+ItemExpr * DateFormat::bindNode(BindWA * bindWA)
+{
+  if (checkForSQLnullChild(bindWA, this, allowsSQLnullArg(), FUNCTION_))
+    return this;
+
+  bindChildren(bindWA);
+  if (bindWA->errStatus()) 
+    return this;
+
+  const NAType *naType0 = &child(0)->getValueId().getType();
+  const NumericType * nType0 = NULL;
+
+  // a quick optimization for the date format.
+  ItemExpr *newNode = quickDateFormatOpt(bindWA);
+  if (newNode)
+    return newNode;
+
+  if (errorChecks(frmt_, bindWA, naType0))
+    {
+      return this;
+    }
+
+  dateFormat_ = DateFormat::DATE_FORMAT_NONE;
+
+  if (ExpDatetime::isDateTimeFormat(frmt_))
+    {
+      // if DATEFORMAT function was specified, then time portion of the
+      // format depends on the operand. Date portion remains the same as
+      // what was specified (DEFAULT, USA, EUROPEAN).
+      if ((wasDateformat_) &&
+          (naType0->getTypeQualifier() == NA_DATETIME_TYPE))
+        {
+          const DatetimeType* operand = (DatetimeType *)naType0;
+          if (operand->getPrecision() == SQLDTCODE_TIMESTAMP)
+            {
+              if (frmt_ == ExpDatetime::DATETIME_FORMAT_DEFAULT)
+                frmt_ = ExpDatetime::DATETIME_FORMAT_TS3;// YYYY-MM-DD HH24:MI:SS
+              else if (frmt_ == ExpDatetime::DATETIME_FORMAT_USA)
+                frmt_ = ExpDatetime::DATETIME_FORMAT_TS7;// MM/DD/YYYY HH24:MI:SS AM|PM
+              else if (frmt_ == ExpDatetime::DATETIME_FORMAT_EUROPEAN)
+                frmt_ = ExpDatetime::DATETIME_FORMAT_TS10;// DD.MM.YYYY HH24:MI:SS
+            }
+        }
+
+       if (ExpDatetime::isTimestampFormat(frmt_))
+        dateFormat_ = DateFormat::TIMESTAMP_FORMAT_STR;
+      else if (ExpDatetime::isTimeFormat(frmt_))
+        dateFormat_ = DateFormat::TIME_FORMAT_STR;
+      else
+        dateFormat_ = DateFormat::DATE_FORMAT_STR;
+
+     if (naType0->getTypeQualifier() == NA_NUMERIC_TYPE)
+        {
+          // convert number to char before formatting.
+          // Length of target char is equal to formatStr_.
+          ItemExpr * newChild =
+            new (bindWA->wHeap())
+            Cast(child(0),
+                 new (bindWA->wHeap())
+                 SQLChar(formatStr_.length(),
+                         child(0)->castToItemExpr()->
+                         getValueId().getType().supportsSQLnull()));
+          setChild(0, newChild->bindNode(bindWA));
+          naType0 = &child(0)->getValueId().getType();
+        }
+    }
+  else if (ExpDatetime::isNumericFormat(frmt_))
+    {
+      dateFormat_ = DateFormat::TIME_FORMAT_STR;
+
+      if (naType0->getTypeName() != LiteralLargeInt)
+        {
+          // convert to largeint. We have already verified that
+          // child is exact with scale of 0.
+          ItemExpr * newChild =
+            new (bindWA->wHeap())
+            Cast(child(0),
+                 new (bindWA->wHeap())
+                 SQLLargeInt(TRUE,
+                             child(0)->castToItemExpr()->
+                             getValueId().getType().supportsSQLnull()));
+          setChild(0, newChild->bindNode(bindWA));
+        }
+    }
+  else
+    {
+      CMPASSERT(FALSE); // should not reach here
+    }
+
+  // if source is a timestamp and target is date or time, extract
+  // date or time part from source before formatting.
+  ItemExpr * newChild = NULL;
+  if (naType0->getPrecision() == SQLDTCODE_TIMESTAMP)
+    {
+      if (ExpDatetime::isTimeFormat(frmt_))
+        {
+          newChild =
+            new (bindWA->wHeap())
+            Cast(child(0),
+                 new (bindWA->wHeap())
+                 SQLTime(child(0)->castToItemExpr()->
+                         getValueId().getType().supportsSQLnull(),
+                         0));
+        }
+      else if (ExpDatetime::isDateFormat(frmt_))
+        {
+          newChild =
+            new (bindWA->wHeap())
+            Cast(child(0),
+                 new (bindWA->wHeap())
+                 SQLDate(child(0)->castToItemExpr()->
+                         getValueId().getType().supportsSQLnull()));
+        }
+      
+      if (newChild)
+        setChild(0, newChild->bindNode(bindWA));
+    }
+
+  BuiltinFunction::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return this;
+
+  return getValueId().getItemExpr();  
 }
 
 ItemExpr *Trim::bindNode(BindWA *bindWA)
@@ -11804,27 +11841,6 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 	  }
       }
     
-    break;
-    case ITM_DATEFMT:
-      {
-    Lng32 datefmt;
-	ItemExpr *secondOpExpr = child(1)->castToItemExpr(); 
-	secondOpExpr->bindNode(bindWA);
-	if (bindWA->errStatus()) 
-	      return this;
-	    
-	datefmt = (Lng32)((ConstValue*)secondOpExpr)->getExactNumericValue();
-
-	strcpy(buf, "TRANSLATE(DATEFMT_INTN");
-        if (datefmt == DateFormat::USA)
-	  strcat(buf, "(@A1,USA)");
-
-        else if (datefmt == DateFormat::EUROPEAN)
-	  strcat(buf, "(@A1,EUROPEAN)");
-        else
-	  strcat(buf, "(@A1,DEFAULT)");
-	strcat(buf, " USING ISO88591ToUCS2);");
-      }
     break;
     case ITM_CURRNT_USER:
       {

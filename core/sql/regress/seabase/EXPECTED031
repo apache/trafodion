@@ -1,0 +1,475 @@
+>>
+>>-- tests for PRIMARY KEY constraint usage
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (a int not null, b int not null, constraint ppk primary key(a));
+
+--- SQL operation complete.
+>>alter table t031t1 add constraint ppk primary key(b);
+
+*** ERROR[1043] Constraint TRAFODION.SCH.PPK already exists.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 add constraint ppk2 primary key(b);
+
+*** ERROR[1256] PRIMARY KEY constraint cannot be added since table TRAFODION.SCH.T031T1 already has a user specified clustering key.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 add constraint ppk unique(b);
+
+*** ERROR[1043] Constraint TRAFODION.SCH.PPK already exists.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 drop constraint ppk;
+
+*** ERROR[1255] Constraint TRAFODION.SCH.PPK is the clustering key constraint for table TRAFODION.SCH.T031T1 and cannot be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (a int not null, b int not null);
+
+--- SQL operation complete.
+>>alter table t031t1 add constraint ppk primary key(a);
+
+--- SQL operation complete.
+>>alter table t031t1 add constraint ppk primary key(b);
+
+*** ERROR[1043] Constraint TRAFODION.SCH.PPK already exists.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 add constraint ppk2 primary key(b);
+
+--- SQL operation complete.
+>>alter table t031t1 add constraint ppk unique(b);
+
+*** ERROR[1043] Constraint TRAFODION.SCH.PPK already exists.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 drop constraint ppk;
+
+--- SQL operation complete.
+>>
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (a int not null, b int not null) store by (a);
+
+--- SQL operation complete.
+>>alter table t031t1 add constraint ppk primary key(a);
+
+*** ERROR[1256] PRIMARY KEY constraint cannot be added since table TRAFODION.SCH.T031T1 already has a user specified clustering key.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 add constraint ppk unique(b);
+
+--- SQL operation complete.
+>>alter table t031t1 drop constraint ppk;
+
+--- SQL operation complete.
+>>
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (a int not null primary key, b int not null);
+
+--- SQL operation complete.
+>>alter table t031t1 add constraint ppk primary key(a);
+
+*** ERROR[1254] Duplicate unique constraints are not allowed with same set of columns.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 add constraint ppk primary key(b);
+
+*** ERROR[1256] PRIMARY KEY constraint cannot be added since table TRAFODION.SCH.T031T1 already has a user specified clustering key.
+
+--- SQL operation failed with errors.
+>>
+>>-- primary key update transformed into delete/insert incorrectly 
+>>-- deletes row after conflict
+>>create table if not exists t031t1 (a int not null primary key, b int not null);
+
+--- SQL operation complete.
+>>delete from t031t1;
+
+--- 0 row(s) deleted.
+>>insert into t031t1 values (1,1), (2,2), (3,3), (4,4);
+
+--- 4 row(s) inserted.
+>>update t031t1 set a = 4 where a = 2;
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) updated.
+>>select * from t031t1;
+
+A            B          
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+
+--- 4 row(s) selected.
+>>
+>>-- incorrect ddl with salt clause should not crash
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (
++>T2C1 int not null not droppable,
++>T2C1 int not null not droppable,
++>T2C1 int)
++>salt using 2 partitions on (T2C1, T2C2)
++>store by (T2C1, T2C2);
+
+*** ERROR[1009] Column T2C2 does not exist in the specified table.
+
+--- SQL operation failed with errors.
+>>
+>>-- cannot rename table with check constraints.
+>>-- cascade option with rename not supported.
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (a int);
+
+--- SQL operation complete.
+>>alter table t031t1 add constraint t031t1_c1 check (a > 0);
+
+--- SQL operation complete.
+>>alter table t031t1 rename to t031t1_ren cascade;
+
+*** ERROR[1427] Table cannot be renamed. Reason: Cascade option not supported.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 rename to t031t1_ren;
+
+*** ERROR[1427] Table cannot be renamed. Reason: Operation not allowed if check constraints are present. Drop the constraints and recreate them after rename.
+
+--- SQL operation failed with errors.
+>>
+>>-- time datatype conversion was returning incorrect results
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1
++>(id int not null,
++>time1 time default null,
++>time2 time default null,
++>type1 time default null,
++>type2 char(5) default null,
++>diff char(6) default null,
++>primary key (id));
+
+--- SQL operation complete.
+>>insert into t031t1 (id, time1, time2, diff) values (1, time '00:00:30.758788', time '00:00:29.615308', 'MATCH');
+
+--- 1 row(s) inserted.
+>>select * from t031t1 order by 1;
+
+ID           TIME1     TIME2     TYPE1     TYPE2  DIFF  
+-----------  --------  --------  --------  -----  ------
+
+          1  00:00:30  00:00:29  ?         ?      MATCH 
+
+--- 1 row(s) selected.
+>>update t031t1
++>set type1 =
++>case when (time1 + interval '1' second) < time2 then time1 else time2
++>end,
++>type2 =
++>case when (time1 + interval '1' second) < time2 then 'T1' else 'T2'
++>end
++>where id = 1;
+
+--- 1 row(s) updated.
+>>select
++>type2, diff, type1,
++>case
++>when diff = 'MATCH' then 'PASS' else 'FAIL'
++>end
++>from t031t1
++>where id = 1;
+
+TYPE2  DIFF    TYPE1     (EXPR)
+-----  ------  --------  ------
+
+T2     MATCH   00:00:29  PASS  
+
+--- 1 row(s) selected.
+>>select * from t031t1;
+
+ID           TIME1     TIME2     TYPE1     TYPE2  DIFF  
+-----------  --------  --------  --------  -----  ------
+
+          1  00:00:30  00:00:29  00:00:29  T2     MATCH 
+
+--- 1 row(s) selected.
+>>
+>>-- varchar default values were not being handled correctly
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create  table t031t1 (a varchar(6) not null default 'ABC',
++>                      b varchar(6) default 'ABC');
+
+--- SQL operation complete.
+>>insert into t031t1 default values;
+
+--- 1 row(s) inserted.
+>>upsert into t031t1 default values;
+
+--- 1 row(s) inserted.
+>>select * from t031t1;
+
+A       B     
+------  ------
+
+ABC     ABC   
+ABC     ABC   
+
+--- 2 row(s) selected.
+>>
+>>-- long varchars
+>>cqd traf_max_character_col_length '1000000';
+
+--- SQL operation complete.
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (z int not null primary key, a varchar(1000000), b char(1000000));
+
+--- SQL operation complete.
+>>insert into t031t1 values (1, repeat('a', 1000000, 1000000) , 'def');
+
+--- 1 row(s) inserted.
+>>insert into t031t1 values (2, repeat('a', 1000, 1000) , 'zzz');
+
+--- 1 row(s) inserted.
+>>insert into t031t1 values (3, repeat('a', 10000, 10000) , 'zzz');
+
+--- 1 row(s) inserted.
+>>insert into t031t1 values (4, repeat('a', 100000, 100000) , 'zzz');
+
+--- 1 row(s) inserted.
+>>insert into t031t1 values (5, repeat('a', 100, 100) , 'zzz');
+
+--- 1 row(s) inserted.
+>>insert into t031t1 values (6, repeat('a', 10, 10) , 'zzz');
+
+--- 1 row(s) inserted.
+>>insert into t031t1 values (7, repeat('a', 1, 1) , 'zzz');
+
+--- 1 row(s) inserted.
+>>insert into t031t1 values (8, repeat('a', 1000000, 1000000) , null);
+
+--- 1 row(s) inserted.
+>>insert into t031t1 values (9, repeat('a', 500000, 500000) , null);
+
+--- 1 row(s) inserted.
+>>insert into t031t1 values (10, repeat('a', 100, 100) , null);
+
+--- 1 row(s) inserted.
+>>
+>>select char_length(a), char_length(b) from t031t1;
+
+(EXPR)      (EXPR)    
+----------  ----------
+
+   1000000     1000000
+      1000     1000000
+     10000     1000000
+    100000     1000000
+       100     1000000
+        10     1000000
+         1     1000000
+   1000000           ?
+    500000           ?
+       100           ?
+
+--- 10 row(s) selected.
+>>select substring(a, 1, 10), cast(b as char(10)) from t031t1;
+
+(EXPR)      (EXPR)    
+----------  ----------
+
+aaaaaaaaaa  def       
+aaaaaaaaaa  zzz       
+aaaaaaaaaa  zzz       
+aaaaaaaaaa  zzz       
+aaaaaaaaaa  zzz       
+aaaaaaaaaa  zzz       
+a           zzz       
+aaaaaaaaaa  ?         
+aaaaaaaaaa  ?         
+aaaaaaaaaa  ?         
+
+--- 10 row(s) selected.
+>>select [last 0] * from t031t1;
+
+--- 0 row(s) selected.
+>>
+>>drop table if exists t031t2;
+
+--- SQL operation complete.
+>>create table t031t2 (z int, a varchar(1000000), b char(1000000)) attribute aligned format;
+
+--- SQL operation complete.
+>>insert into t031t2 select * from t031t1;
+
+--- 10 row(s) inserted.
+>>select char_length(a), char_length(b) from t031t2;
+
+(EXPR)      (EXPR)    
+----------  ----------
+
+   1000000     1000000
+      1000     1000000
+     10000     1000000
+    100000     1000000
+       100     1000000
+        10     1000000
+         1     1000000
+   1000000           ?
+    500000           ?
+       100           ?
+
+--- 10 row(s) selected.
+>>select substring(a, 1, 10), cast(b as char(10)) from t031t2;
+
+(EXPR)      (EXPR)    
+----------  ----------
+
+aaaaaaaaaa  def       
+aaaaaaaaaa  zzz       
+aaaaaaaaaa  zzz       
+aaaaaaaaaa  zzz       
+aaaaaaaaaa  zzz       
+aaaaaaaaaa  zzz       
+a           zzz       
+aaaaaaaaaa  ?         
+aaaaaaaaaa  ?         
+aaaaaaaaaa  ?         
+
+--- 10 row(s) selected.
+>>select [last 0] * from t031t2;
+
+--- 0 row(s) selected.
+>>
+>>select count(*) from t031t1 x, t031t2 y where x.a = y.a;
+
+(EXPR)              
+--------------------
+
+                  14
+
+--- 1 row(s) selected.
+>>select x.z, y.z, substring(x.a, 1, 5), substring(y.a,1,5) 
++>  from t031t1 x, t031t2 y where x.a = y.a
++>  order by x.z, y.z;
+
+Z            Z            (EXPR)  (EXPR)
+-----------  -----------  ------  ------
+
+          1            1  aaaaa   aaaaa 
+          1            8  aaaaa   aaaaa 
+          2            2  aaaaa   aaaaa 
+          3            3  aaaaa   aaaaa 
+          4            4  aaaaa   aaaaa 
+          5            5  aaaaa   aaaaa 
+          5           10  aaaaa   aaaaa 
+          6            6  aaaaa   aaaaa 
+          7            7  a       a     
+          8            1  aaaaa   aaaaa 
+          8            8  aaaaa   aaaaa 
+          9            9  aaaaa   aaaaa 
+         10            5  aaaaa   aaaaa 
+         10           10  aaaaa   aaaaa 
+
+--- 14 row(s) selected.
+>>select x.z, y.z, substring(x.a, 1, 5), substring(y.a,1,5) 
++>  from t031t1 x, t031t2 y where x.a = y.a and x.b = y.b
++>  order by x.z, y.z;
+
+Z            Z            (EXPR)  (EXPR)
+-----------  -----------  ------  ------
+
+          1            1  aaaaa   aaaaa 
+          2            2  aaaaa   aaaaa 
+          3            3  aaaaa   aaaaa 
+          4            4  aaaaa   aaaaa 
+          5            5  aaaaa   aaaaa 
+          6            6  aaaaa   aaaaa 
+          7            7  a       a     
+
+--- 7 row(s) selected.
+>>
+>>sh echo "drop table t031hive;" > TEST031_junk;
+>>sh regrhive.ksh -f TEST031_junk;
+>>
+>>sh echo "create table t031hive(z int, a string, b string);" > TEST031_junk;
+>>sh regrhive.ksh -f TEST031_junk;
+>>
+>>cqd hive_max_string_length '1000000';
+
+--- SQL operation complete.
+>>insert into hive.hive.t031hive select * from t031t1;
+
+--- 10 row(s) inserted.
+>>select count(*) from hive.hive.t031hive;
+
+(EXPR)              
+--------------------
+
+                  10
+
+--- 1 row(s) selected.
+>>select substring(a, 1, 10), cast(b as char(10)) from hive.hive.t031hive;
+
+(EXPR)                                    (EXPR)
+----------------------------------------  ----------------------------------------
+
+aaaaaaaaaa                                def                                     
+aaaaaaaaaa                                zzz                                     
+aaaaaaaaaa                                zzz                                     
+aaaaaaaaaa                                zzz                                     
+aaaaaaaaaa                                zzz                                     
+aaaaaaaaaa                                zzz                                     
+a                                         zzz                                     
+aaaaaaaaaa                                ?                                       
+aaaaaaaaaa                                ?                                       
+aaaaaaaaaa                                ?                                       
+
+--- 10 row(s) selected.
+>>select [last 0] * from hive.hive.t031hive;
+
+--- 0 row(s) selected.
+>>
+>>drop external table if exists t031hive for hive.hive.t031hive;
+
+--- SQL operation complete.
+>>create external table t031hive (z int, a varchar(1000000), b varchar(1000000))
++>for hive.hive.t031hive;
+
+--- SQL operation complete.
+>>delete from t031t1;
+
+--- 10 row(s) deleted.
+>>insert into t031t1 select * from hive.hive.t031hive;
+
+--- 10 row(s) inserted.
+>>select count(*) from t031t1;
+
+(EXPR)              
+--------------------
+
+                  10
+
+--- 1 row(s) selected.
+>>
+>>log;

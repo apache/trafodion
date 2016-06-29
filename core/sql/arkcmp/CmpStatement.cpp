@@ -70,6 +70,7 @@
 #include "ReadTableDef.h"
 #include "SchemaDB.h"
 #include "ControlDB.h"
+#include "Context.h"
 
 #include "CmpErrors.h"
 #include "CmpErrLog.h"
@@ -1097,7 +1098,8 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
     {
       CmpSeabaseMDupgrade cmpMDU(heap_);
       
-      if (cmpMDU.executeSeabaseMDupgrade(dws,
+      NABoolean ddlXns = (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_ON);
+      if (cmpMDU.executeSeabaseMDupgrade(dws, ddlXns,
                                          currCatName, currSchName))
         return CmpStatement_ERROR;
     }
@@ -1237,21 +1239,50 @@ CmpStatement::process (const CmpMessageSetTrans& statement)
 }
 
 CmpStatement::ReturnStatus
+CmpStatement::process (const CmpMessageDDLNATableInvalidate& statement)
+{
+  CmpSeabaseDDL cmpSBD(heap_);
+  if (cmpSBD.ddlInvalidateNATables())
+    {
+      return CmpStatement_ERROR;
+    }
+
+  return CmpStatement_SUCCESS;
+}
+
+CmpStatement::ReturnStatus
 CmpStatement::process(const CmpMessageDatabaseUser &statement)
 {
   NABoolean doDebug = FALSE;
 
-  NAString message = statement.data();
+  // The message contains the following:
+  //   (auth state and user ID are delimited by commas)
+  //     authorization state (0 - off, 1 - on)
+  //     integer user ID
+  //     database user name
+  //
+  // TDB:  change this message structure into a class with methods that 
+  //       generate the message and later decomposes it into its pieces
+  
+  // the first character is authState following by a comma
+  NABoolean authState = (statement.data()[0] == '0') ? FALSE : TRUE;
+  NAString message = statement.data() + 2;
+
+  // The next value is the user ID, convert from ASCII to integer
   size_t delimPos = message.first(',');
   CMPASSERT(delimPos <= MAX_AUTHID_AS_STRING_LEN);
-
   NAString userIDStr (message.data(), delimPos);
   Int32 userID = atoi(userIDStr.data());
+
+  // The last value is the user name
   char * userName = (char *)message.data();
   userName += delimPos + 1;
 
   if (doDebug)
   {
+    if (statement.data()[0] = '0')
+    printf("[DBUSER:%d]   Received auth state %d\n",
+           (int) getpid(), (Int32) authState);
     printf("[DBUSER:%d]   Received user ID %d\n",
            (int) getpid(), (int) userID);
     printf("[DBUSER:%d]   Received username %s\n",
@@ -1265,14 +1296,28 @@ CmpStatement::process(const CmpMessageDatabaseUser &statement)
   if (doDebug)
     printf("[DBUSER:%d]   session->setDatabaseUser() returned %d\n",
            (int) getpid(), (int) sqlcode);
+  if (sqlcode < 0)
+    return CmpStatement_ERROR;
+  
+  CmpCommon::context()->setAuthorizationState((int)authState);
+  CMPASSERT(GetCliGlobals()->currContext());
+  GetCliGlobals()->currContext()->setAuthStateInCmpContexts(authState, authState);
+    
+  // Security session attributes may need to be propagated to child arkcmp
+  // processes. Call updateMxcmpSession found in cli/Context.cpp.
+  // Also may want to do things like clear caches.
+    sqlcode = GetCliGlobals()->currContext()->updateMxcmpSession();
+    if (doDebug)
+      printf("[DBUSER:%d]   ContextCli->updateMxcmpSession() returned %d\n",
+           (int) getpid(), (int) sqlcode);
+  
+    if (sqlcode < 0)
+      return CmpStatement_ERROR;
   
   if (doDebug)
     printf("[DBUSER:%d] END process(CmpMessageDatabaseUser)\n",
            (int) getpid());
 
-  if (sqlcode < 0)
-    return CmpStatement_ERROR;
-  
   return CmpStatement_SUCCESS;
 
 }
@@ -1297,8 +1342,6 @@ CmpStatement::process (const CmpMessageEndSession& es)
     {
       CURRENTQCACHE->makeEmpty();
     }
-
-  SQL_EXEC_DeleteHbaseJNI();
 
   return CmpStatement_SUCCESS;
 }
@@ -1347,6 +1390,10 @@ CmpStatement::process (const CmpMessageObj& request)
 
       case (CmpMessageObj::SET_TRANS) :
 	ret = process(*(CmpMessageSetTrans*)(&request));
+	break;
+
+      case (CmpMessageObj::DDL_NATABLE_INVALIDATE) :
+	ret = process(*(CmpMessageDDLNATableInvalidate*)(&request));
 	break;
 
       case (CmpMessageObj::DATABASE_USER) :

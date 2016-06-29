@@ -4418,9 +4418,9 @@ StmtDDLCreateTable::synthesize()
 	  col->setColumnAttribute(pk);
 
 	  ElemDDLNode * pColAttrList = NULL;
-	  if (col->getChild(1))
+	  if (col->getChild(ElemDDLColDef::INDEX_ELEM_DDL_COL_ATTR_LIST))
 	    pColAttrList =
-	      col->getChild(1)->castToElemDDLNode(); //INDEX_ELEM_DDL_COL_ATTR_LIST);
+	      col->getChild(ElemDDLColDef::INDEX_ELEM_DDL_COL_ATTR_LIST)->castToElemDDLNode();
 	  
 	  ElemDDLNode * newColAttrList = NULL;
 	  if (pColAttrList)
@@ -4428,7 +4428,8 @@ StmtDDLCreateTable::synthesize()
 	      new (PARSERHEAP()) ElemDDLList(pColAttrList, pk);
 	  else
 	    newColAttrList = pk;
-	  col->setChild(1 /*INDEX_ELEM_DDL_COL_ATTR_LIST*/, newColAttrList);
+	  col->setChild(ElemDDLColDef::INDEX_ELEM_DDL_COL_ATTR_LIST, 
+                        newColAttrList);
 
 	  userSpecifiedPKey = TRUE;
 	}
@@ -4575,8 +4576,6 @@ StmtDDLCreateTable::synthesize()
       if (pTableDefBody->castToElemDDLLikeCreateTable() NEQ NULL)
 	{
 	  
-	  // LIKE clause currently not supported.
-	  
 	  if (isLikeClauseSpec_)
 	    {
 	      // Duplicate LIKE clauses.
@@ -4588,6 +4587,21 @@ StmtDDLCreateTable::synthesize()
 	    ->getDDLLikeNameAsCorrName();
 	  likeOptions_ = pTableDefBody->castToElemDDLLikeCreateTable()
 	    ->getLikeOptions();
+
+          if ((NOT isExternal()) &&
+              (pTableDefBody->castToElemDDLLikeCreateTable()->forExtTable()))
+            {
+              *SqlParser_Diags << DgSqlCode(-3242)
+                               << DgString0("'for' clause can only be specified when creating an 'external' table.");
+              return;
+            }
+          else if ((isExternal()) &&
+                   (NOT pTableDefBody->castToElemDDLLikeCreateTable()->forExtTable()))
+            {
+              *SqlParser_Diags << DgSqlCode(-3242)
+                               << DgString0("'like' clause cannot be specified when creating an external table.");
+              return;
+            }
 	}
       else
 	{
@@ -5006,7 +5020,31 @@ StmtDDLCreateTable_visitTableDefElement(ElemDDLNode * pCreateTableNode,
   StmtDDLCreateTable * pCreateTable =
     pCreateTableNode->castToStmtDDLCreateTable();
 
-  if (pElement->castToElemDDLConstraint() NEQ NULL)
+  if (pElement->castToElemDDLLikeCreateTable() NEQ NULL)
+    {
+      pCreateTable->likeSourceTableCorrName_ = 
+        pElement->castToElemDDLLikeCreateTable()
+        ->getDDLLikeNameAsCorrName();
+      pCreateTable->likeOptions_ = 
+        pElement->castToElemDDLLikeCreateTable()
+        ->getLikeOptions();
+
+      if ((NOT pCreateTable->isExternal()) &&
+          (pElement->castToElemDDLLikeCreateTable()->forExtTable()))
+        {
+          *SqlParser_Diags << DgSqlCode(-3242)
+                           << DgString0("'for' clause can only be specified when creating an 'external' table.");
+          return;
+        }
+      else if ((pCreateTable->isExternal()) &&
+               (NOT pElement->castToElemDDLLikeCreateTable()->forExtTable()))
+        {
+          *SqlParser_Diags << DgSqlCode(-3242)
+                           << DgString0("'like' clause cannot be specified when creating an external table.");
+          return;
+        }
+    }
+  else if (pElement->castToElemDDLConstraint() NEQ NULL)
   {
     //
     // table constraint definition

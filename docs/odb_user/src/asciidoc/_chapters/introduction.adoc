@@ -1,0 +1,50 @@
+////
+/**
+*@@@ START COPYRIGHT @@@
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+= Introduction
+== What is odb
+odb is a platform independent, multi-threaded, ODBC command-line tool you can use as a:
+
+* Parallel data loader/extractor
+* Query driver (Technology Preview)
+* SQL interpreter (Technology Preview)
+
+odb is written in ANSI C. Currently, odb is available only in a 64-bit version for the Linux platform,
+linked to the unixODBC driver manager.
+
+odb executables use the following naming convention, `*_odbAABCC_*`, where:
+
+* `*AA*` can be 64 (bit) (32 bit is not currently supported).
+* `*B*` identifies the platform/compiler:
+* `l` = Linux/gcc
+* `w` = Windows/MS Visual Studio (not yet tested)
+* `*CC*` identifies the ODBC Driver Manager to which odb was linked:
+* `uo` = unixODBC Driver Manager
+* `ms` = Microsoft ODBC Driver Manager (not yet tested)
+
+So, for example:
+
+* `*odb64luo*` is the 64-bit executable for Linux linked with the unixODBC Driver Manager.
+
+This document contains examples run with the `*odb64luo*` executable.
+
+

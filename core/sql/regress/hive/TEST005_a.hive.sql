@@ -136,7 +136,9 @@ create external table tbl_type
      str         string,
      f           float,
      d           double,
-     t           timestamp
+     t           timestamp,
+     dt          date,
+     vc          varchar(10)
 )
 row format delimited fields terminated by '|'
 location '/user/hive/exttables/tbl_type';
@@ -151,6 +153,58 @@ create table tbl_type_temp
      str         string,
      f           float,
      d           double,
-     t           timestamp
+     t           timestamp,
+     dt          date,
+     vc          varchar(10)
 )
 row format delimited fields terminated by '|';
+
+drop table tbl_gbk;
+create external table tbl_gbk
+(
+    c1           int,
+    c2           string
+)
+row format delimited fields terminated by '\t'
+location '/user/hive/exttables/tbl_gbk';
+
+drop table tbl_dos;
+CREATE  external TABLE  tbl_dos(
+   c1  int,
+   c2  int,
+   c3  int,
+   c4  string)
+row format delimited fields terminated by '|' 
+location '/user/hive/exttables/tbl_dos'
+;
+
+drop table tbl_dos_num;
+CREATE  external TABLE  tbl_dos_num(
+   c1  int,
+   c2  int)
+row format delimited fields terminated by '|' 
+location '/user/hive/exttables/tbl_dos_num'
+;
+
+drop table tbl_bad;
+CREATE EXTERNAL TABLE tbl_bad (
+c1 int,
+c2 bigint,
+c3 string,
+c4 float,
+c5 smallint,
+c6 timestamp,
+c7 double,
+c8 tinyint
+)
+ROW FORMAT DELIMITED
+  FIELDS TERMINATED BY '|'
+LOCATION
+'/user/hive/exttables/tbl_bad';
+
+drop table thive_insert_smallint;
+create table thive_insert_smallint (a smallint);
+drop table thive_insert_varchar;
+create table thive_insert_varchar (a varchar(1), b string);
+
+

@@ -49,7 +49,7 @@
 #include "exp_function.h" // for calling ExHDPHash::hash(data, len)
 #include "ItemFuncUDF.h"
 #include "CmpStatement.h"
-//#include "ItmFlowControlFunction.h"
+#include "exp_datetime.h"
 
 #include "OptRange.h"
 
@@ -8241,12 +8241,16 @@ DateFormat::~DateFormat() {}
 ItemExpr * DateFormat::copyTopNode(ItemExpr *derivedNode,
 				   CollHeap* outHeap)
 {
-  ItemExpr *result;
+  DateFormat *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) DateFormat(child(0), child(1), getDateFormat());
+    result = new (outHeap) DateFormat(child(0), 
+                                      formatStr_, formatType_, 
+                                      wasDateformat_);
   else
-    result = derivedNode;
+    result = (DateFormat*)derivedNode;
+
+  frmt_ = result->frmt_;
 
   return BuiltinFunction::copyTopNode(result,outHeap);
 
@@ -8265,6 +8269,46 @@ NABoolean DateFormat::hasEquivalentProperties(ItemExpr * other)
   return 
       (this->dateFormat_ == df->dateFormat_);
 }
+
+void DateFormat::unparse(NAString &result,
+		      PhaseEnum phase,
+                      UnparseFormatEnum form,
+		      TableDesc * tabId) const
+{
+  if (wasDateformat_)
+    result += "DATEFORMAT(";
+  else if (formatType_ == FORMAT_TO_DATE)
+    result += "TO_DATE(";
+  else if (formatType_ == FORMAT_TO_CHAR)
+    result += "TO_CHAR(";
+  else
+    result += "unknown(";
+
+  child(0)->unparse(result, phase, form, tabId);
+
+  result += ", ";
+
+  if (wasDateformat_)
+    {
+      if (frmt_ == ExpDatetime::DATETIME_FORMAT_DEFAULT)
+        result += "DEFAULT";
+      else if (frmt_ == ExpDatetime::DATETIME_FORMAT_USA)
+        result += "USA";
+      else if (frmt_ == ExpDatetime::DATETIME_FORMAT_EUROPEAN)
+        result += "EUROPEAN";
+      else
+        result += "unknown";
+    }
+  else
+    {
+      result += "'";
+      result += formatStr_;
+      result += "'";
+    }
+
+  result += ")";  
+}
+
 // -----------------------------------------------------------------------
 // member functions for class DayOfWeek
 // -----------------------------------------------------------------------
@@ -10519,8 +10563,11 @@ ConstValue * ConstValue::castToConstValue(NABoolean & negate_it)
 
 Int32 ConstValue::getArity() const { return 0; }
 
-NAString ConstValue::getConstStr(NABoolean transformeNeeded) const
+NAString ConstValue::getConstStr(NABoolean transformNeeded) const
 {
+  if ((*text_ == "<min>") || (*text_ == "<max>"))
+    return *text_ ;
+
   if (getType()->getTypeQualifier() == NA_DATETIME_TYPE &&
       getType()->getPrecision() != SQLDTCODE_MPDATETIME)
   {
@@ -10532,7 +10579,7 @@ NAString ConstValue::getConstStr(NABoolean transformeNeeded) const
 
     // 4/8/96: added the Boolean switch so that displayable
     // and non-displayable version can be differed.
-    if ( transformeNeeded )
+    if ( transformNeeded )
       return chType->getCharSetAsPrefix() + getText();
     else
       return chType->getCharSetAsPrefix() + getTextForQuery(QUERY_FORMAT);
@@ -11102,12 +11149,10 @@ UInt32 ConstValue::computeHashValue(const NAType& columnType)
            break; 
          case REC_BIN32_SIGNED:
          case REC_BIN32_UNSIGNED:
-         case REC_TDM_FLOAT32:
          case REC_IEEE_FLOAT32:
            flags = ExHDPHash::SWAP_FOUR;
            break;
          case REC_BIN64_SIGNED:
-         case REC_TDM_FLOAT64:
          case REC_IEEE_FLOAT64:
            flags = ExHDPHash::SWAP_EIGHT;
            break;
@@ -11986,7 +12031,7 @@ Cast::Cast(ItemExpr *val1Ptr, const NAType *type, OperatorTypeEnum otype,
        }
     }
              
-  noStringTruncationWarnings_ = noStringTrunWarnings;
+  setNoStringTruncationWarnings(noStringTrunWarnings);
 }
 
 Cast::Cast(ItemExpr *val1Ptr, ItemExpr *errorOutPtr, const NAType *type,
@@ -11999,7 +12044,7 @@ Cast::Cast(ItemExpr *val1Ptr, ItemExpr *errorOutPtr, const NAType *type,
   flags_(0)
 {
   checkForTruncation_ = checkForTrunc;
-  noStringTruncationWarnings_ = noStringTrunWarnings;
+  setNoStringTruncationWarnings(noStringTrunWarnings);
 }
 
 Cast::~Cast() {}
@@ -12155,7 +12200,7 @@ NABoolean Cast::hasEquivalentProperties(ItemExpr * other)
       (this->type_->operator == (*(tmp->type_) )) &&
       (this->checkForTruncation_ == tmp->checkForTruncation_ ) &&
       (this->reverseDataErrorConversionFlag_ == tmp->reverseDataErrorConversionFlag_ ) &&
-      (this->noStringTruncationWarnings_ == tmp->noStringTruncationWarnings_  ) &&
+    //      (this->noStringTruncationWarnings_ == tmp->noStringTruncationWarnings_  ) &&
       (this->flags_ == tmp->flags_);
 }
 // --------------------------------------------------------------
@@ -12883,6 +12928,7 @@ ItemExpr * Repeat::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
     result = derivedNode;
   
   ((Repeat *) result)->setMaxLength(getMaxLength());
+  ((Repeat *) result)->maxLengthWasExplicitlySet_ = maxLengthWasExplicitlySet_;
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 }
@@ -13408,6 +13454,8 @@ Translate::Translate(ItemExpr *valPtr, NAString* map_table_name)
     map_table_id_ = Translate::SJIS_TO_UTF8;
   else if ( _strcmpi(map_table_name->data(), "UTF8TOSJIS") == 0 )
     map_table_id_ = Translate::UTF8_TO_SJIS;
+  else if ( _strcmpi(map_table_name->data(), "GBKTOUTF8") == 0 )
+    map_table_id_ = Translate::GBK_TO_UTF8;
 
                 else
                   if ( _strcmpi(map_table_name->data(), "KANJITOISO88591") == 0 )

@@ -271,57 +271,6 @@ NA_EIDPROC void ComTdb::displayContents(Space * space,ULng32 flag)
     }
 }
 
-// LCOV_EXCL_START
-Float32 ComTdb::getTandemFloatValue(char * v) const
-{
-  Float32 f = 0;
-  double d;
-
-  // convert tandem REAL(4 byte) to IEEE FLOAT(4 byte).
-  // If overflow, return FLT max.
-  if (convDoIt(v,
-	       4,
-	       REC_TDM_FLOAT32,
-	       0,
-	       0,
-	       (char*)&d,
-	       (Lng32)sizeof(double),
-	       REC_FLOAT64,
-	       0, 0,
-	       NULL, 0, NULL, NULL,
-	       CONV_UNKNOWN) != ex_expr::EXPR_OK)
-    f = -1;
-  else if (d > FLT_MAX)
-    f = FLT_MAX;
-  else
-    f = (Float32) d;
-  
-  return f;
-}
-
-Float64 ComTdb::getTandemDoubleValue(char * v) const
-{
-  Float64 f = 0;
-
-  // convert tandem DOUBLE(8 bytes) to IEEE DOUBLE(8 bytes).
-  // If overflow, return FLT max.
-  if (convDoIt(v,
-	       4,
-	       REC_TDM_FLOAT64,
-	       0,
-	       0,
-	       (char*)&f,
-	       (Lng32)sizeof(double),
-	       REC_FLOAT64,
-	       0, 0,
-	       NULL, 0, NULL, NULL,
-	       CONV_UNKNOWN) != ex_expr::EXPR_OK)
-    f = -1;
-  
-  return f;
-}
-// LCOV_EXCL_STOP
-
 NA_EIDPROC void ComTdb::displayExpression(Space *space,ULng32 flag)
 {
   char buf[100];
@@ -757,6 +706,14 @@ NA_EIDPROC char *ComTdb::findVTblPtrCom(short classID)
       break;
     }
 
+    case ex_HIVE_TRUNCATE:
+    {
+#pragma nowarn(1506)   // warning elimination 
+      GetVTblPtr(vtblptr,ComTdbExeUtilHiveTruncate);
+#pragma warn(1506)  // warning elimination 
+      break;
+    }
+
     case ex_GET_STATISTICS:
     {
 #pragma nowarn(1506)   // warning elimination 
@@ -764,7 +721,13 @@ NA_EIDPROC char *ComTdb::findVTblPtrCom(short classID)
 #pragma warn(1506)  // warning elimination 
       break;
     }
-
+ case ex_LOB_INFO:
+    {
+#pragma nowarn(1506)   // warning elimination 
+      GetVTblPtr(vtblptr,ComTdbExeUtilLobInfo);
+#pragma warn(1506)  // warning elimination 
+      break;
+    }
    case ex_GET_METADATA_INFO:
     {
 #pragma nowarn(1506)   // warning elimination 

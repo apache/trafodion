@@ -1,0 +1,1353 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+[[sql_runtime_statistics]]
+= SQL Runtime Statistics
+
+The Runtime Management System (RMS) shows the status of queries while
+they are running. RMS can service on-demand requests from the {project-name}
+Command Interface (TrafCI) to get statistics for a given query ID or for
+active queries in a given process. RMS also provides information about
+itself to determine the health of the RMS infrastructure.
+
+RMS provides the summary statistics for each fragment instance and
+detailed statistics for each operator (TDB_ID) of a given active query.
+A query is considered active if either the compilation or execution is
+in progress. The variable_input column output is returned as a multiple
+value pair of the form _token=value_. For more information, see
+<<considerations_obtaining_stats_fragment,
+Considerations For Obtaining Statistics For Each Fragment-Instance of an Active Query>>.
+
+RMS is enabled and available all the time.
+
+== PERTABLE and OPERATOR Statistics
+
+The SQL database engine determines which type of statistics collection
+is appropriate for the query. The RMS infrastructure provides the
+runtime metrics about a query while a query is executing. You can
+identify queries that are using excessive resources, suspend a query to
+determine its impact on resources, and cancel a query, when necessary.
+PERTABLE statistics count rows and report rows estimated in the
+operators in the disk processes and time spent in the ESP processes.
+Although PERTABLE statistics can deduce when all the rows have been read
+from the disks, it is impossible to correctly assess the current state
+of the query.
+
+Complex queries such as joins, sorts, and group result sets are often
+too large to fit into memory, so intermediate results must overflow to
+scratch files. These operators are called Big Memory Operators (BMOs).
+Because of the BMOs, RMS provides OPERATOR statistics, which provide a
+richer set of statistics so that the current state of a query can be
+determined at any time.
+
+With OPERATOR statistics, all SQL operators are instrumented and the
+following statistics are collected:
+
+* Node time spent in the operator
+* Actual number of rows flowing to the parent operator
+* Estimated number of rows flowing to the parent operator (estimated by the optimizer)
+* Virtual memory used in the BMO
+* Amount of data overflowed to scratch files and read back to the query
+
+For more information,
+see <<displaying_sql_runtimestatistics,Displaying SQL Runtime Statistics>>.
+
+[[adaptive_statistics_collection]]
+== Adaptive Statistics Collection
+
+The SQL database engine chooses the appropriate statistics collection
+type based on the type of query. By default, the SQL database engine
+statistics collection is OPERATOR statistics. You can view the
+statistics in different formats: PERTABLE, ACCUMULATED, PROGRESS, and
+DEFAULT. Statistics Collection is adaptive to ensure that sufficient
+statistics information is available without
+
+causing any performance impact to the query's execution. For some
+queries, either no statistics or PERTABLE statistics are collected.
+
+[cols="50%,50%l",options="header"]
+|===
+| Query Type                      | Statistics Collection Type
+| OLT optimized queries           | PERTABLE
+| Unique queries                  | PERTABLE
+| CQD                             | No statistics
+| SET commands                    | No statistics
+| EXPLAIN                         | No statistics
+| GET STATISTICS                  | No statistics
+| All other queries               | DEFAULT
+|===
+
+<<<
+[[retrieving_sql_runtime_statistics]]
+== Retrieving SQL Runtime Statistics
+
+[[using_the_get_statistics_command]]
+=== Using the GET STATISTICS Command
+
+The GET STATISTICS command shows statistical information for:
+
+* A single query ID (QID)
+* Active queries for a process ID (PID)
+* RMS itself
+
+A query is considered active if either compilation or execution is in
+progress. In the case of a SELECT statement, a query is in execution
+until the statement or result set is closed. Logically, a query is
+considered to be active when the compile end time is -1 and the compile
+start time is not -1, or when the execute end time is -1 and the execute
+start time is not -1.
+
+[[syntax_of_get_statistics]]
+=== Syntax of GET STATISTICS
+
+```
+GET STATISTICS FOR QID { query-id | CURRENT } [stats-view-type] }
+               | PID { process-name | [ nodeid, pid ] } [ ACTIVE n ][ stats-view-type ]
+               | RMS node-num | ALL [ RESET ]
+
+stats-view-type is:
+  ACCUMULATED | PERTABLE | PROGRESS | DEFAULT
+
+```
+
+* `QID`
++
+Required keyword if requesting statistics for a specific query.
+
+* `_query-id_`
++
+is the query ID. You must put the _query-id_ in double quotes if the
+user name in the query ID contains lower case letters or if the user
+name contains a period.
++
+NOTE: The _query-id_ is a unique identifier for the SQL statement
+generated when the query is compiled (prepared). The _query-id_ is
+visible for queries executed through certain TrafCI commands.
+
+* `CURRENT`
++
+provides statistics for the most recently prepared or executed statement
+in the same session where you run the GET STATISTICS FOR QID CURRENT
+command. You must issue the GET STATISTICS FOR QID CURRENT command
+immediately after the PREPARE or EXECUTE statement.
+
+* `PID`
++
+Required keyword if requesting statistics for an active query in a given
+process.
+
+* `_process-name_`
++
+is the name of the process ID (PID) in the format: $Z_nnn_. The
+process name can be for the master (MXOSRVR) or executor server process
+(ESP). If the process name corresponds to the ESP, the ACTIVE _n_ query
+is just the _n_th query in that ESP and might not be the currently
+active query in the ESP.
+
+* `ACTIVE _n_`
++
+describes which of the active queries for which RMS returns statistics.
+ACTIVE 1 is the default. ACTIVE 1 returns statistics for the first
+active query. ACTIVE 2 returns statistics for the second active query.
+
+* `_stats-view-type_`
++
+sets the statistics view type to a different format. Statistics are
+collected at the operator level by default. For exceptions, see
+<<adaptive_statistics_collection,Adaptive Statistics Collection>>.
+
+* `ACCUMULATED`
++
+causes the statistics to be displayed in an aggregated summary across
+all tables in the query.
+
+* `PERTABLE`
++
+displays statistics for each table in the query. This is the default
+_stats-view-type_ although statistics are collected at the operator
+level. If the collection occurs at a lower level due to Adaptive
+Statistics, the default is the lowered collection level. For more
+information, 
+see <<adaptive_statistics_collection,Adaptive Statistics Collection>>.
+
+* `progress`
++
+displays rows of information corresponding to each of the big memory
+operators (BMO) operators involved in the query, in addition to pertable
+_stats-view-type_. For more information about BMOs,
+see <<pertable_and_operator_statistics,Pertable and Operator Statistics>>.
+
+* `PROGRESS`
++
+displays rows of information corresponding to each of the big memory
+operators (BMO) operators involved in the query, in addition to pertable
+_stats-view-type_. For more information about BMOs, 
+see <<pertable_and_operator_statistics,Pertable and Operator Statistics>>.
+
+* `default`
++
+displays statistics in the same way as it is collected.
+
+* `RMS`
++
+required keyword if requesting statistics about RMS itself.
+
+* `_node-num_`
++
+returns the statistics about the RMS infrastructure for a given node.
+
+* `ALL`
++
+returns the statistics about the RMS infrastructure for every node in the cluster.
+
+* `RESET`
++
+resets the cumulative RMS statistics counters.
+
+[[examples_of_get_statistics]]
+=== Examples of GET STATISTICS
+
+These examples show the runtime statistics that various get statistics
+commands return. for more information about the runtime statistics and
+RMS counters,
+see <<displaying_sql_runtime_statistics,Displaying SQL Runtime Statistics>>.
+
+* This GET STATISTICS command returns PERTABLE statistics for the most
+recently executed statement in the same session:
++
+```
+SQL> GET STATISTICS FOR QID CURRENT;
+
+Qid                      MXID1100801837021216821167247667200000000030000_59_SQL_CUR_6
+Compile Start Time       2011/03/30 07:29:15.332216
+Compile End Time         2011/03/30 07:29:15.339467
+Compile Elapsed Time                 0:00:00.007251
+Execute Start Time       2011/03/30 07:29:15.383077
+Execute End Time         2011/03/30 07:29:15.470222
+Execute Elapsed Time                 0:00:00.087145
+State                    CLOSE
+Rows Affected            0
+SQL Error Code           100
+Stats Error Code         0
+Query Type               SQL_SELECT_NON_UNIQUE Estimated Accessed Rows 0
+Estimated Used Rows      0
+Parent Qid               NONE
+Child Qid                NONE
+Number of SQL Processes  1
+Number of Cpus           1
+Execution Priority       -1
+Transaction Id           -1
+Source String            SELECT
+CUR_SERVICE,PLAN,TEXT,CUR_SCHEMA,RULE_NAME,APPL_NAME,SESSION_NAME,DSN_NAME,ROLE_NAME,DEFAULT_SCHEMA_ACCESS_ONLY
+ FROM(VALUES(CAST('HP_DEFAULT_SERVICE' as VARCHAR(50)),CAST(0 AS INT),CAST(0 AS INT),CAST('NEO.USR' as
+VARCHAR(260)),CAST('' as VARCHAR(
+SQL Source Length        548
+Rows Returned            1
+First Row Returned Time  2011/03/30 07:29:15.469778
+Last Error before AQR    0
+Number of AQR retries    0
+Delay before AQR         0
+No. of times reclaimed   0
+Stats Collection Type    OPERATOR_STATS
+SQL Process Busy Time    0
+UDR Process Busy Time    0
+SQL Space Allocated      32 KB
+SQL Space Used           3 KB
+SQL Heap Allocated       7 KB
+SQL Heap Used            1 KB
+EID Space Allocated      0 KB
+EID Space Used           0 KB
+EID Heap Allocated       0 KB
+EID Heap Used            0 KB
+Processes Created        0
+Process Create Time      0
+Request Message Count    0
+Request Message Bytes    0
+Reply Message Count      0
+Reply Message Bytes      0
+Scr. Overflow Mode       DISK
+Scr File Count           0
+Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
+Scr. Buffer Blks Written 0
+Scr. Read Count          0
+Scr. Write Count         0
+
+--- SQL operation complete.
+```
+
+<<<
+* This GET STATISTICS command returns PERTABLE statistics for the
+specified query ID (note that this command should be issued in the same
+session):
++
+```
+SQL> GET STATISTICS FOR QID
++> "MXID1100800517921216818752807267200000000030000_48_SQL_CUR_2"
++> ;
+
+Qid                      MXID1100800517921216818752807267200000000030000_48_SQL_CUR_2
+Compile Start Time       2011/03/30 00:53:21.382211
+Compile End Time         2011/03/30 00:53:22.980201
+Compile Elapsed Time                 0:00:01.597990
+Execute Start Time       2011/03/30 00:53:23.079979
+Execute End Time         -1
+Execute Elapsed Time                 7:16:13.494563
+State                    OPEN
+Rows Affected            -1
+SQL Error Code           0
+Stats Error Code         0
+Query Type               SQL_SELECT_NON_UNIQUE
+Estimated Accessed Rows  2,487,984
+Estimated Used Rows      2,487,984
+Parent Qid               NONE
+Child Qid                NONE
+Number of SQL Processes  129
+Number of Cpus           9
+Execution Priority       -1
+Transaction Id           34359956800
+Source String            select count(*) from
+MANAGEABILITY.INSTANCE_REPOSITORY.EVENTS_TEXT K,
+MANAGEABILITY.INSTANCE_REPOSITORY.EVENTS_TEXT J,
+MANAGEABILITY.INSTANCE_REPOSITORY.EVENTS_TEXT H,
+MANAGEABILITY.INSTANCE_REPOSITORY.EVENTS_TEXT G
+SQL Source Length        220
+Rows Returned            0
+First Row Returned Time  -1
+Last Error before AQR    0
+Number of AQR retries    0
+Delay before AQR         0
+No. of times reclaimed   0
+Stats Collection Type    OPERATOR_STATS
+SQL Process Busy Time    830,910,830,000
+UDR Process Busy Time    0
+SQL Space Allocated      179,049                  KB
+SQL Space Used           171,746                  KB
+SQL Heap Allocated       1,140,503                KB
+SQL Heap Used            1,138,033                KB
+EID Space Allocated      46,080                   KB
+EID Space Used           42,816                   KB
+EID Heap Allocated       18,624                   KB
+EID Heap Used            192                      KB
+Processes Created        32
+Process Create Time      799,702
+Request Message Count    202,214
+Request Message Bytes    27,091,104
+Reply Message Count      197,563
+Reply Message Bytes      1,008,451,688
+Scr. Overflow Mode       DISK
+Scr File Count           0
+Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
+Scr. Buffer Blks Written 0
+Scr. Read Count          0
+Scr. Write Count         0 
+
+Table Name
+   Records Accessed       Records Used   Disk   Message     Message   Lock   Lock   Disk Process   Open   Open
+   Estimated/Actual   Estimated/Actual   I/Os     Count     Bytes     Escl   wait   Busy Time      Count  Time
+MANAGEABILITY.INSTANCE_REPOSITORY.EVENTS_TEXT(H)
+            621,996            621,996
+            621,998            621,998      0       441  10,666,384      0       0       303,955      32  15,967
+MANAGEABILITY.INSTANCE_REPOSITORY.EVENTS_TEXT(J) 621,996 621,996
+            621,996            621,996
+            621,998            621,998      0       439  10,666,384      0        0      289,949      32  19,680
+MANAGEABILITY.INSTANCE_REPOSITORY.EVENTS_TEXT(K) 621,996 621,996
+            621,996            621,996
+            621,998            621,998      0       439  10,666,384      0        0      301,956      32  14,419
+MANAGEABILITY.INSTANCE_REPOSITORY.EVENTS_TEXT(G)
+                  0            621,996
+                  0                  0      0       192   4,548,048      0         0           0      32  40,019
+
+--- SQL operation complete.
+```
+
+<<<
+* This GET STATISTICS command returns ACCUMULATED statistics for the
+most recently executed statement in the same session:
++
+```
+SQL> GET STATISTICS FOR QID CURRENT ACCUMULATED;
+
+Qid                      MXID1100802517321216821277534304000000000340000_957_SQL_CUR_6
+Compile Start Time       2011/03/30 08:05:07.646667
+Compile End Time         2011/03/30 08:05:07.647622
+Compile Elapsed Time                0:00:00.000955
+Execute Start Time       2011/03/30 08:05:07.652710
+Execute End Time         2011/03/30 08:05:07.740461
+Execute Elapsed Time                0:00:00.087751
+State                    CLOSE
+Rows Affected            0
+SQL Error Code           100
+Stats Error Code         0
+Query Type               SQL_SELECT_NON_UNIQUE
+Estimated Accessed Rows  0
+Estimated Used Rows      0
+Parent Qid               NONE
+Child Qid                NONE
+Number of SQL Processes  0
+Number of Cpus           0
+Execution Priority       -1
+Transaction Id           -1
+Source String            SELECT
+CUR_SERVICE,PLAN,TEXT,CUR_SCHEMA,RULE_NAME,APPL_NAME,SESSION_NAME,DSN_NAME,ROLE_NAME,DEFAULT_SCHEMA_ACCESS_ONLY
+FROM(VALUES(CAST('HP_DEFAULT_SERVICE' as VARCHAR(50)),CAST(0 AS INT),CAST(0 AS INT),CAST('NEO.SCH' as
+VARCHAR(260)),CAST('' as VARCHAR(
+SQL Source Length        548
+Rows Returned            1
+First Row Returned Time  2011/03/30 08:05:07.739827
+Last Error before AQR    0
+Number of AQR retries    0
+Delay before AQR         0
+No. of times reclaimed   0
+Stats Collection Type    OPERATOR_STATS
+Accessed Rows            0
+Used Rows                0
+Message Count            0
+Message Bytes            0
+Stats Bytes              0
+Disk IOs                 0
+Lock Waits               0
+Lock Escalations         0
+Disk Process Busy Time   0
+SQL Process Busy Time    0
+UDR Process Busy Time    0
+SQL Space Allocated      32                       KB
+SQL Space Used           3                        KB
+SQL Heap Allocated       7                        KB
+SQL Heap Used            1                        KB
+EID Space Allocated      0                        KB
+EID Space Used           0                        KB
+EID Heap Allocated       0                        KB
+EID Heap Used            0                        KB
+Opens                    0
+Open Time                0
+Processes Created        0
+Process Create Time      0
+Request Message Count    0
+Request Message Bytes    0
+Reply Message Count      0
+Reply Message Bytes      0
+Scr. Overflow Mode       UNKNOWN
+Scr. File Count          0
+Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
+Scr. Buffer Blks Written 0
+Scr. Read Count          0
+Scr. Write Count         0
+
+--- SQL operation complete.
+```
+
+<<<
+* These GET STATISTICS commands return PERTABLE statistics for the first
+active query in the specified process ID:
++
+```
+SQL> GET STATISTICS FOR PID 0,27195;
+SQL> GET STATISTICS FOR PID $Z000F3R;
+```
+
+[[displaying_sql_runtime_statistics]]
+== Displaying SQL Runtime Statistics
+
+By default, GET STATISTICS displays table-wise statistics (PERTABLE). If
+you want to view the statistics in a different format, use the
+appropriate view option of the GET STATISTICS command.
+
+RMS provides abbreviated statistics information for prepared statements
+and full runtime statistics for executed statements.
+
+The following table shows the RMS counters that are returned by GET
+STATISTICS, tokens from the STATISTICS table-valued function that relate
+to the RMS counters, and descriptions of the counters and tokens.
+
+[cols="25%l,25%l,50%",options="header"]
+|===
+| Counter Name         | Tokens in STATISTICS Table-Valued Function | Description
+| Qid                  | Qid                                        | A unique ID generated for each query. Each time a SQL statement is prepared, a new query ID is generated.
+| Compile Start Time   | CompStartTime                              | Time when the query compilation started or time when PREPARE for this query started.
+| Compile End Time     | CompEndTime                                | Time when the query compilation ended or time when PREPARE for this query ended.
+| Compile Elapsed Time | CompElapsedTime                            | Amount of actual time to prepare the query.
+| Execute Start Time   | ExeStartTime                               | Time when query execution started. 
+| Execute End Time     | ExeEndTime                                 | Time when query execution ended. When a query is executing, Execute End Time is -1.
+| Execute Elapsed Time | ExeElapsedTime                             | Amount of actual time used by the SQL executor to execute the query.
+| State                | State                                      | Internally used.
+| Rows Affected        | RowsAffected                               | Represents the number of rows affected by the INSERT, UPDATE, or DELETE (IUD) SQL statements.
+Value of -1 for SELECT statements or non-IUD SQL statements.
+| SQL Error Code       | SQLErrorCode                               | Top-level error code returned by the query, indicating whether the query completed with warnings, errors,
+or successfully. A positive number indicates a warning. A negative number indicates an error. The value returned may not be accurate up to the point GET STATISTICS was executed.
+| Stats Error Code     | StatsErrorCode                             | Error code returned to the statistics collector while obtaining statistics from RMS. If an error code,
+counter values may be incorrect. Reissue the GET STATISTICS command.
+| Query Type           | Estimated Accessed Rows                    |  Type of DML statement and enum value: +
+ +
+- SQL_SELECT_UNIQUE=1 +
+- SQL_SELECT_NON_UNIQUE=2 +
+- SQL_INSERT_UNIQUE=3 +
+- SQL_INSERT_NON_UNIQUE=4 +
+- SQL_UPDATE_UNIQUE=5 +
+- SQL_UPDATE_NON_UNIQUE=6 +
+- SQL_DELETE_UNIQUE=7 +
+- SQL_DELETE_NON_UNIQUE=8 +
+- SQL_CONTROL=9 +
+- SQL_SET_TRANSACTION=10 +
+- SQL_SET_CATALOG=11 +
+- SQL_SET_SCHEMA=12 +
+- SQL_CALL_NO_RESULT_SETS=13 +
+- SQL_CALL_WITH_RESULT_SETS=14 +
+- SQL_SP_RESULT_SET=15 +
+- SQL_INSERT_ROWSET_SIDETREE=16 +
+- SQL_CAT_UTIL=17 +
+- SQL_EXE_UTIL=18 +
+- SQL_OTHER=1 +
+- SQL_UNKNOWN=0
+| QueryType            | EstRowsAccessed                            | Compiler's estimated number of rows accessed by the executor in TSE.
+| Estimated Used Rows  | EstRowsUsed                                | Compiler's estimated number of rows returned by the executor in TSE after applying the predicates.
+| Parent Qid           | parentQid                                  | A unique ID for the parent query. If there is no parent query ID associated with the query, RMS returns NONE.
+For more information, see <<using_the_parent_query_id,Using the Parent Query ID>>.
+| Child Qid            | childQid                                   | A unique ID for the child query. If there is no child query, then there will be no child query ID and
+RMS returns NONE. For more information, see <<child_query_id,Child Query ID>>.
+| Number of SQL Processes | numSqlProcs                             | Represents the number of SQL processes (excluding TSE processes) involved in executing the query.
+| Number of CPUs       | numCpus                                    | Represents the number of nodes that SQL is processing the query.
+| Transaction ID       | transId                                    | Represents the transaction ID of the transaction involved in executing the query. When no transaction exists,
+the Transaction ID is -1.
+| Source String        | sqlSrc                                     | Contains the first 254 bytes of source string.
+| SQL Source Length    | sqlSrcLen                                  | The actual length of the SQL source string.
+| Rows Returned        | rowsReturned                               | Represents the number of rows returned from the root operator at the master executor process.
+| First Row Returned Time | firstRowReturnTime                      | Represents the actual time that the first row is returned by the master root operator.
+| Last Error Before AQR | LastErrorBeforeAQR                        | The error code that triggered Automatic Query Retry (AQR) for the most recent retry. If the value is not 0,
+this is the error code that triggered the most recent AQR.
+| Number of AQR retries | AQRNumRetries                             | The number of retries for the current query until now.
+| Delay before AQR     | DelayBeforeAQR                             | Delay in seconds that SQL waited before initiating AQR.
+| No. of times reclaimed | reclaimSpaceCnt                          | When a process is under virtual memory pressure, the execution space occupied by the queries executed much
+earlier will be reclaimed to free up space for the upcoming queries. This counter represents how many times this particular query is reclaimed.
+|                      | statsRowType                               | statsRowType can be one of the following: +
+ +
+- SQLSTATS_DESC_OPER_STATS=0 +
+- SQLSTATS_DESC_ROOT_OPER_STATS=1 +
+- SQLSTATS_DESC_PERTABLE_STATS=11 +
+- SQLSTATS_DESC_UDR_STATS=13 +
+- SQLSTATS_DESC_MASTER_STATS=15 +
+- SQLSTATS_DESC_RMS_STATS=16 +
+- SQLSTATS_DESC_BMO_STATS=17 
+| Stats Collection Type | StatsType                                 | Collection type, which is OPERATOR_STATS by default. StatsType can be one of the following: +
+ +
+- SQLCLI_NO_STATS=0 +
+- SQLCLI_ACCUMULATED_STATS=2 +
+- SQLCLI_PERTABLE_STATS=3 +
+- SQLCLI_OPERATOR_STATS=5
+| Accessed Rows (Rows Accessed) | AccessedRows                      | Actual number of rows accessed by the executor in TSE.
+| Used Rows (Rows Used) | UsedRows                                  | Number of rows returned by TSE after applying the predicates. In a push down plan, TSE may not return all the used rows.
+| Message Count        | NumMessages                                | Count of the number of messages sent to TSE.
+| Message Bytes        | MessageBytes                               | Count of the message bytes exchanged with TSE.
+| Stats Bytes          | StatsBytes                                 | Number of bytes returned for statistics counters from TSE.
+| Disk IOs             | DiskIOs                                    | Number of physical disk reads for accessing the tables.
+| Lock Waits           | LockWaits                                  | Number of times this statement had to wait on a conflicting lock.
+| Lock Escalations     | Escalations                                | Number of times row locks escalated to a file lock during the execution of this statement.
+| Disk Process Busy Time | ProcessBusyTime                          | An approximation of the total node time in microseconds spent by TSE for executing the query.
+| SQL Process Busy Time | CpuTime                                   | An approximation of the total node time in microseconds spent in the master and ESPs involved in the query.
+| UDR Process Busy Time (same as UDR CPU Time) | udrCpuTime         | An approximation of the total node time in microseconds spent in the UDR server process.
+| UDR Server ID        | UDRServerId                                | MXUDR process ID.
+| Recent Request Timestamp |                                        | Actual timestamp of the recent request sent to MXUDR.
+| Recent Reply Timestamp |                                          | Actual timestamp of the recent request received by MXUDR.
+| SQL Space Allocated^1^ | SpaceTotal^1^                            | The amount of "space" type of memory in KB allocated in the master and ESPs involved in the query.
+| SQL Space Used^1^      | SpaceUsed^1^                             | Amount of "space" type of memory in KB used in master and ESPs involved in the query.
+| SQL Heap Allocated^2^  | HeapTotal^2^                             | Amount of "heap" type of memory in KB allocated in master and ESPs involved in the query.
+| SQL Heap Used^2^       | HeapUsed^2^                              | Amount of "heap" type of memory in KB used in master and ESPs involved in the query.
+| EID Space Allocated^1^ | Dp2SpaceTotal                            | Amount of "space" type of memory in KB allocated in the executor in TSEs involved in the query.
+| EID Space Used^1^      | Dp2SpaceUsed                             | Amount of "space" type of memory in KB used in the executor in TSEs involved in the query.
+| EID Heap Allocated^2^  | Dp2HeapTotal                             | Amount of "heap" memory in KB allocated in the executor in TSEs involved in the query.
+| EID Heap Used2         | Dp2HeapUsed                              | Amount of "heap" memory in KB used in the executor in TSEs involved in the query.
+| Opens                  | Opens                                    | Number of OPEN calls performed by the SQL executor on behalf of this statement.
+| Open Time              | OpenTime                                 | Time (in microseconds) this process spent doing opens on behalf of this statement.
+| Processes Created      | Newprocess                               | The number of processes (ESPs and MXCMPs) created by the master executor for this statement.
+| Process Create Time    | NewprocessTime                           | The elapsed time taken to create these processes.
+| Table Name             | AnsiName                                 | Name of a table in the query.
+| Request Message Count  | reqMsgCnt                                | Number of messages initiated from the master to ESPs or from the ESP to ESPs.
+| Request Message Bytes  | regMsgBytes                              | Number of message bytes that are sent from the master to ESPs or from the ESP to ESPs as part of the request messages.
+| Reply Message Count    | replyMsgCnt                              | Number of reply messages from the ESPs for the message requests.
+| Reply Message Bytes    | replyMsgBytes                            | Number of bytes sent as part of the reply messages.
+| Scr. Overflow Mode     | scrOverFlowMode                          | Represents the scratch overflow mode. Modes are DISK_TYPE or SSD_TYPE.
+| Scr. File Count        | scrFileCount                             | Number of scratch files created to execute the query. Default file size is 2 GB.
+| Scr. Buffer Blk Size   | scrBufferBlockSize                       | Size of buffer block that is used to read from/write to the scratch file.
+| Scr. Buffer Blks Read  | scrBufferRead                            | Number of scratch buffer blocks read from the scratch file.
+| Scr. Buffer Blks Written | scrBufferWritten                       | Number of scratch buffer blocks written to the scratch file. Exact size of scratch file can be obtained
+by multiplying Scr. Buffer Blk Size by this counter.
+| Scr. Read Count        | scrReadCount                             | Number of file-system calls involved in reading buffer blocks from scratch files. One call reads multiple
+buffer blocks at once.
+| Scr. Write Count       | scrWriteCount                            | Number of file-system calls involved in writing buffer blocks to scratch files. One call writes multiple
+buffer blocks at once.
+| BMO Heap Used          | bmoHeapUsed                              | Amount of "heap" type of memory in KB used in the BMO operator(s). The BMO operators are HASH_JOIN (and
+all varieties of HASH_JOIN), HASH_GROUPBY (and all varieties of HASH_GROUPBY), and SORT (and all varieties of SORT).
+| BMO Heap Total         | bmoHeapTotal                             | Amount of "heap" type of memory in KB allocated in the BMO operator(s).
+| BMO Heap High Watermark | bmoHeapWM                               | Maximum amount of memory used in the BMO operator.
+| BMO Space Buffer Size  | bmoSpaceBufferSize                       | Size in KB for space buffers allocated for the type of memory.
+| BMO Space Buffer Count | bmoSpaceBufferCount                      | Count of space buffers allocated for the type of memory.
+| Records Accessed (Estimated / Actual) |                           | Actual number of rows accessed by the executor in TSE. 
+| Records Used (Estimated / Actual) |                               | Number of rows returned by TSE after applying the predicates. In a push-down plan, TSE may not return all the used rows.
+| ID                     |                                          | TDB ID of the operator at the time of execution of the query.
+| LCID                   |                                          | Left child operator ID.
+| RCID                   |                                          | Right child operator ID.
+| PaID                   |                                          | Parent operator ID (TDB-ID).
+| ExID                   |                                          | Explain plan operator ID.
+| Frag                   |                                          | Fragment ID to which this operator belongs.
+| Dispatches             |                                          | Number of times the operator is scheduled in SQL executor.
+| Oper CPU Time          | OperCpuTime                              | Approximation of the node time spent by the operator to execute the query.
+| Est. Records Used      |                                          | Approximation of the number of tuples that would flow up to the parent operator.
+| Act. Records Used      |                                          | Actual number of tuples that flowed up to the parent operator.
+|                        | ProcessId                                | Name of the process ID (PID) in the format: $Znnn. The process name can be for the master (MXOSRVR) or executor
+server process (ESP).
+|===
+
+1. Space is memory allocated from a pool owned by the executor. The executor
+operators requesting the memory are not expected to return the memory until
+the statement is deallocated.
+
+2. Heap memory is used for temporary allocations. Operators may return heap memory before the statement is deallocated.
+This allows the memory to be reused as needed.
+
+<<<
+[[examples_of_displaying_sql_runtime_statistics]]
+=== Examples of Displaying SQL Runtime Statistics
+
+NOTE: Some of the output has been reformatted for better document readability.
+
+[[statistics_of_a_prepared_statement]]
+==== Statistics of a Prepared Statement
+
+* This example shows the output of the currently prepared statement:
++
+```
+SQL> GET STATISTICS FOR QID CURRENT;
+
+Qid                      MXID1100000649721215837305997952000000001930000_4200_Q1
+Compile Start Time       2010/12/06 10:55:40.931000
+Compile End Time         2010/12/06 10:55:42.131845
+Compile Elapsed Time                 0:00:01.200845
+ExecuteStart Time        -1
+Execute End Time         -1
+Execute Elapsed Time                 0:00:00.000000
+State                    CLOSE
+Rows Affected            -1
+SQL Error Code           0
+Stats Error Code         0
+Query Type               SQL_SELECT_NON_UNIQUE
+Estimated Accessed Rows  100,010
+Estimated Used Rows      100,010
+Parent Qid               NONE
+Child Qid                NONE
+Number of SQL Processes  0
+Number of Cpus           0
+Execution Priority       -1
+Transaction Id           -1
+Source String            select * from t100k where b in (select b from t10)
+SQL Source Length        50
+Rows Returned            0
+First Row Returned Time  -1
+Last Error before AQR    0
+Number of AQR retries    0
+Delay before AQR         0
+No. of times reclaimed   0
+Stats Collection Type   OPERATOR_STATS
+--- SQL operation complete.
+```
+
+<<<
+[[pertable_statistics_of_an_executing_statement]]
+=== PERTABLE Statistics of an Executing Statement
+
+* This example shows the PERTABLE statistics of an executing statement:
++
+```
+SQL> GET STATISTICS FOR QID CURRENT;
+
+Qid                      MXID1100000649721215837305997952000000001930000_4200_Q1
+Compile Start Time       2010/12/06 10:55:40.931000
+Compile End Time         2010/12/06 10:55:42.131845
+Compile Elapsed Time                 0:00:01.200845
+Execute Start Time       2010/12/06 10:56:16.254686
+Execute End Time         2010/12/06 10:56:18.434873
+Execute Elapsed Time                 0:00:02.180187
+State                    CLOSE
+Rows Affected            0
+SQL Error Code           100
+Stats Error Code         0
+Query Type               SQL_SELECT_NON_UNIQUE
+Estimated Accessed Rows  100,010
+Estimated Used Rows      100,010
+Parent Qid               NONE
+Child Qid                NONE
+Number of SQL Processes  7
+Number of Cpus           1
+Execution Priority       -1
+Transaction Id           18121
+Source String            select * from t100k where b in (select b from t10)
+SQL Source Length        50
+Rows Returned            100
+First Row Returned Time  2010/12/06 10:56:18.150977
+Last Error before AQR    0
+Number of AQR retries    0
+Delay before AQR         0
+No. of times reclaimed   0
+Stats Collection Type    OPERATOR_STATS
+SQL Process Busy Time    600,000
+UDR Process Busy Time    0
+SQL Space Allocated      1,576                    KB
+SQL Space Used           1,450                    KB
+SQL Heap Allocated       199                      KB
+SQL Heap Used            30                       KB
+EID Space Allocated      704                      KB
+EID Space Used           549                      KB
+EID Heap Allocated       582                      KB
+EID Heap Used            6                        KB
+Processes Created        4
+Process Create Time      750,762
+Request Message Count    701
+Request Message Bytes    135,088
+Reply Message Count      667
+Reply Message Bytes      3,427,664
+Scr. Overflow Mode       DISK
+Scr File Count           0
+Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
+Scr. Buffer Blks Written 0
+
+Table Name
+   Records Accessed       Records Used   Disk   Message     Message   Lock   Lock   Disk Process   Open   Open
+   Estimated/Actual   Estimated/Actual   I/Os     Count     Bytes     Escl   wait   Busy Time      Count  Time
+NEO.SCTEST.T10
+                 10                 10
+                 10                 10      0         2        5,280     0      0          2,000      32  15,967
+NEO.SCTEST.T100K
+           100,000            100,000
+           100,000            100,000       0       110   3,235,720      0      0        351,941       4  48,747
+
+--- SQL operation complete.
+```
+
+<<<
+[[accumulated_statistics_of_an_executing_statement]]
+=== ACCUMULATED Statistics of an Executing Statement
+
+* This example shows the ACCUMULATED statistics of an executing statement:
++
+```
+SQL> GET STATISTICS FOR QID CURRENT ACCUMULATED;
+
+Qid                      MXID1100000649721215837305997952000000001930000_4200_Q1
+Compile Start Time       2010/12/06 10:55:40.931000
+Compile End Time         2010/12/06 10:55:42.131845
+Compile Elapsed Time                 0:00:01.200845
+Execute Start Time       2010/12/06 10:56:16.254686
+Execute End Time         2010/12/06 10:56:18.434873
+Execute Elapsed Time                 0:00:02.180187
+State                    CLOSE
+Rows Affected            0
+SQL Error Code           100
+Stats Error Code         0
+Query Type               SQL_SELECT_NON_UNIQUE
+Estimated Accessed Rows  100,010
+Estimated Used Rows      100,010
+Parent Qid               NONE
+Child Qid                NONE
+Number of SQL Processes  7
+Number of Cpus           1
+Execution Priority       -1
+Transaction Id           18121
+Source String            select * from t100k where b in (select b from t10)
+SQL Source Length        50
+Rows Returned            100
+First Row Returned Time  2010/12/06 10:56:18.150977
+Last Error before AQR    0
+Number of AQR retries    0
+Delay before AQR         0
+No. of times reclaimed   0
+Stats Collection Type    OPERATOR_STATS
+Accessed Rows            100,010
+Used Rows                100,010
+Message Count            112
+Message Bytes            3,241,000
+Stats Bytes              2,904
+Disk IOs                 0
+Lock Waits               0
+Lock Escalations         0
+Disk Process Busy Time   353,941
+SQL Process Busy Time    600,000
+UDR Process Busy Time    0
+SQL Space Allocated      1,576                    KB
+SQL Space Used           1,450                    KB
+SQL Heap Allocated       199                      KB
+SQL Heap Used            30                       KB
+EID Space Allocated      704                      KB
+EID Space Used           549                      KB
+EID Heap Allocated       582                      KB
+EID Heap Used            6                        KB
+Opens                    4
+Open Time                48,747
+Processes Created        4
+Process Create Time      750,762
+Request Message Count    701
+Request Message Bytes    135,088
+Reply Message Count      667
+Reply Message Bytes      3,427,664
+Scr. Overflow Mode       DISK
+Scr. File Count          0
+Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
+Scr. Buffer Blks Written 0
+--- SQL operation complete.
+```
+
+<<<
+[[progress-statistics-of-an-executing-statement]]
+=== PROGRESS Statistics of an Executing Statement
+
+* This example shows the PROGRESS statistics of an executing statement:
++
+```
+SQL> GET STATISTICS FOR QID CURRENT PROGRESS;
+
+Qid                      MXID1100000649721215837305997952000000001930000_4200_Q1
+Compile Start Time       2010/12/06 10:55:40.931000
+Compile End Time         2010/12/06 10:55:42.131845
+Compile Elapsed Time                 0:00:01.200845
+Execute Start Time       2010/12/06 10:56:16.254686
+Execute End Time         2010/12/06 10:56:18.434873
+Execute Elapsed Time                 0:00:02.180187
+State                    CLOSE
+Rows Affected            0
+SQL Error Code           100
+Stats Error Code         0
+Query Type               SQL_SELECT_NON_UNIQUE
+Estimated Accessed Rows  100,010
+Estimated Used Rows      100,010
+Parent Qid               NONE
+Child Qid                NONE
+Number of SQL Processes  7
+Number of Cpus           1
+Execution Priority       -1
+Transaction Id           18121
+Source String            select * from t100k where b in (select b from t10)
+SQL Source Length        50
+Rows Returned            100
+First Row Returned Time  2010/12/06 10:56:18.150977
+Last Error before AQR    0
+Number of AQR retries    0
+Delay before AQR         0
+No. of times reclaimed   0
+Stats Collection Type    OPERATOR_STATS
+SQL Process Busy Time    600,000
+SQL Space Allocated      1,576                    KB
+SQL Space Used           1,450                    KB
+SQL Heap Allocated       199                      KB
+SQL Heap Used            30                       KB
+EID Space Allocated      704                      KB
+EID Space Used           549                      KB
+EID Heap Allocated       582                      KB
+EID Heap Used            6                        KB
+Processes Created        4
+Process Create Time      750,762
+Request Message Count    701
+Request Message Bytes    135,088
+Reply Message Count      667
+Reply Message Bytes      3,427,664
+Table Name
+   Records Accessed       Records Used   Disk   Message     Message   Lock   Lock   Disk Process   Open   Open
+   Estimated/Actual   Estimated/Actual   I/Os     Count     Bytes     Escl   wait   Busy Time      Count  Time
+NEO.SCTEST.T10
+                 10                 10
+                 10                 10       0        2       5,280      0      0          2,000        0 0
+NEO.SCTEST.T100K
+            100,000            100,000
+            100,000            100,000       0      110   3,235,720      0      0        351,941        4 48,747
+
+Id TDB       Mode Phase  Phase  BMO   BMO    BMO   BMO    BMO     File   Scratch Buffer     Cpu 
+   Name      Phase       Start  Heap  Heap   Heap  Space  Spacez  Count  Size/Read/Written  Time
+                         Time   Used  Total  WM    BufSz  BufCnt
+16 EX_HASHJ  DISK        0      0     56     0     0      -1      0      0                  60,000
+```
+
+<<<
+[[default_statistics_of_an_executing_statement]]
+=== DEFAULT Statistics of an Executing Statement
+
+* This example shows the DEFAULT statistics of an executing statement:
++
+```
+SQL> GET STATISTICS FOR QID CURRENT DEFAULT;
+
+Qid                      MXID1100000649721215837305997952000000001930000_4200_Q1
+Compile Start Time       2010/12/06 10:55:40.931000
+Compile End Time         2010/12/06 10:55:42.131845
+Compile Elapsed Time                 0:00:01.200845
+Execute Start Time       2010/12/06 10:56:16.254686
+Execute End Time         2010/12/06 10:56:18.434873
+Execute Elapsed Time                 0:00:02.180187
+State                    CLOSE
+Rows Affected            0
+SQL Error Code           100
+Stats Error Code         0
+Query Type               SQL_SELECT_NON_UNIQUE
+Estimated Accessed Rows  100,010
+Estimated Used Rows      100,010
+Parent Qid               NONE
+Child Qid                NONE
+Number of SQL Processes  7
+Number of Cpus           1
+Execution Priority       -1
+Transaction Id           18121
+Source String            select * from t100k where b in (select b from t10)
+SQL Source Length        50
+Rows Returned            100
+First Row Returned Time  2010/12/06 10:56:18.150977
+Last Error before AQR    0
+Number of AQR retries    0
+Delay before AQR         0
+No. of times reclaimed   0
+Stats Collection Type   OPERATOR_STATS
+
+Id  LCId  RCId PaId ExId Frag TDB Name         Dispatches  Oper CPU   Records    Records 
+                                                           Time Est.  Used Act.  Used Details
+21  20    .    .    10   0    EX_ROOT                  15          0          0           100
+20  19    .    21   9    0    EX_SPLIT_TOP             13          0        100           100
+19  18    .    20   9    0    EX_SEND_TOP              20          0        100           100
+18  17    .    19   9    2    EX_SEND_BOTTOM           72          0        100           100
+17  16    .    18   9    2    EX_SPLIT_BOTTOM          88          0        100           100
+16  15    .    17   8    2    EX_HASHJ              1,314     60,000        100           100
+15  14    .    16   7    2    EX_SPLIT_TOP          1,343     20,000    100,000       100,000
+14  13    .    15   7    2    EX_SEND_TOP           1,342    120,000    100,000       100,000
+13  12    .    14   7    5    EX_SEND_BOTTOM        1,534    200,000    100,000       100,000
+12  11    .    13   7    5    EX_SPLIT_BOTTOM         493     70,000    100,000       100,000
+11  10    .    12   6    5    EX_SPLIT_TOP            486     70,000    100,000       100,000
+10  9     .    11   5    5    EX_PARTN_ACCESS       1,634     60,000    100,000             0  
+9   8     .    10   5    6    EX_EID_ROOT              12          0    100,000       100,000
+8   7     .    9    4    6    EX_DP2_SUBS_OPER        160    170,000    100,000            10 
+7   6     .    8    3    2    EX_SPLIT_TOP             16          0         10            10
+6   5     .    7    3    2    EX_SEND_TOP              17          0         10            10
+5   4     .    6    3    3    EX_SEND_BOTTOM           17          0         10            10
+4   3     .    5    3    3    EX_SPLIT_BOTTOM           9          0         10            10
+3   2     .    4    2    3    EX_PARTN_ACCESS           6          0         10            10
+2   1     .    3    2    4    EX_EID_ROOT               3          0         10             0
+1   .     .    1    1    4    EX_DP2_SUBS_OPER          3    100,000         10            10
+
+--- SQL operation complete.
+```
+
+<<<
+[[using_the_parent_query_id]]
+=== Using the Parent Query ID
+
+When executed, some SQL statements execute additional SQL statements,
+resulting in a parent-child relationship. For example, when executed,
+the UPDATE STATISTICS, MAINTAIN, and CALL statements execute other SQL
+statements called child queries. The child queries might execute even
+more child queries, thus introducing a hierarchy of SQL statements with
+parent-child relationships. The parent query ID maps the child query to
+the immediate parent SQL statement, helping you to trace the child SQL
+statement back to the user-issued SQL statement.
+
+The parent query ID is available as a counter, Parent Qid, in the
+runtime statistics output. See Table 1-1 . A query directly
+issued by a user will not have a parent query ID and the counter will
+indicate "None."
+
+[[child_query_id]]
+=== Child Query ID
+
+In many cases, a child query will execute in the same node as its
+parent. In such cases, the GET STATISTICS report on the parent query ID
+will contain a query ID value for the child query which executed most
+recently. Conversely, if no child query exists, or the child query is
+executing in a different node, no child query ID will be reported.
+
+The following examples shows GET STATISTICS output for both the parent
+and one child query which are executed when the user issues a CREATE
+TABLE AS command:
+
+<<<
+```
+SQL> -- get statistics for the parent query
+
+SQL> GET STATISTICS FOR QID
++> MXID01001091200212164828759544076000000000217DEFAULT_MXCI_USER00_34SQLCI_DML_LAST
++> ;
+
+Qid                      MXID11001091200212164828759544076000000000217DEFAULT_MXCI_USER00_34SQLCI_DML_LAST
+Compile Start Time       2011/02/18 14:49:04.606513
+Compile End Time         2011/02/18 14:49:04.631802
+Compile Elapsed Time                 0:00:00.025289
+Execute Start Time       2011/02/18 14:49:04.632142
+Execute End Time         -1
+Execute Elapsed Time                 0:03:29.473604
+State                    CLOSE
+Rows Affected            -1
+SQL Error Code           0
+Stats Error Code         0
+Query Type               SQL_INSERT_NON_UNIQUE
+Estimated Accessed Rows  0
+Estimated Used Rows      0
+Parent Qid               NONE
+Child Qid                MXID11001091200212164828759544076000000000217DEFAULT_MXCI_USER00_37_86
+Number of SQL Processes  1
+Number of Cpus           1
+Execution Priority       148
+Transaction Id           -1
+Source String            create table odetail hash partition by (ordernum, partnum)
+as select * from SALES.ODETAIL;
+SQL Source Length        91
+Rows Returned            0
+First Row Returned Time  -1
+Last Error before AQR    0
+Number of AQR retries    0
+Delay before AQR         0
+No. of times reclaimed   0 
+Stats Collection Type    OPERATOR_STATS
+
+Id  LCId  RCId PaId ExId Frag TDB Name         Dispatches  Oper CPU   Records    Records 
+                                                           Time Est.  Used Act.  Used Details
+ 2  1     .     .   2     0    EX_ROOT         0           0    0     0          
+ 1  .     .     2   1     0    CREATE_TABLE_AS 0           0    0     0
+
+--- SQL operation complete.
+```
+<<<
+```
+SQL> --  get statistics for the child query
+SQL> GET STATISTICS FOR QID
++> MXID11001091200212164828759544076000000000217DEFAULT_MXCI_USER00_37_86
++> ;
+
+Qid                      MXID01001091200212164828759544076000000000217DEFAULT_MXCI_USER00_37_86
+Compile Start Time       2011/02/18 14:49:07.632898
+Compile End Time         2011/02/18 14:49:07.987334 
+Compile Elapsed Time                 0:00:00.354436
+Execute Start Time       2011/02/18 14:49:07.987539
+Execute End Time         -1
+Execute Elapsed Time                 0:02:33.173486
+State                    OPEN
+Rows Affected            -1
+SQL Error Code           0
+Stats Error Code         0
+Query Type               SQL_INSERT_NON_UNIQUE
+Estimated Accessed Rows  101
+Estimated Used Rows      101
+Parent Qid               MXID101001091200212164828759544076000000000217DEFAULT_MXCI_USER00_34SQLCI_DML_LAST
+Child Qid                NONE
+Number of SQL Processes  1
+Number of Cpus           1
+Execution Priority       148
+Transaction Id           \ARC0101(2).9.9114503
+Source String            insert using sideinserts into CAT.SCH.ODETAIL select * from SALES.ODETAIL;
+SQL Source Length        75
+Rows Returned            0
+First Row Returned Time  -1
+Last Error before AQR    0
+Number of AQR retries    0
+Delay before AQR         0
+No. of times reclaimed   0
+Stats Collection Type    OPERATOR_STATS
+
+Id  LCId  RCId PaId ExId Frag TDB Name         Dispatches  Oper CPU   Records    Records 
+                                                           Time Est.  Used Act.  Used Details
+ 4  3     .    9    3     0   EX_SPLIT_TOP     1           10,062     100        0
+ 3  2     .    4    2     0   EX_PARTN_ACCESS  66          9,649      100        0
+
+--- SQL operation complete.
+```
+
+<<<
+== Gathering Statistics About RMS
+
+Use the GET STATISTICS FOR RMS command to get information about RMS
+itself. The GET STATISTICS FOR RMS statement can be used to retrieve
+information about one node or all nodes. An individual report is
+provided for each node.
+
+[cols="30%l,70%",options="header"]
+|===
+| Counter                      | Description
+| CPU                          | The node number of the {project-name} cluster.
+| RMS Version                  | Internal version of RMS.
+| SSCP PID                     | SQL Statistics control process ID.
+| SSCP Creation Timestamp      | Actual timestamp when SQL statistics control process was created.
+| SSMP PID                     | SQL statistics merge process ID.
+| SSMP Creation Timestamp      | Timestamp when SQL statistics merge was created.
+| Source String Store Len      | Storage length of source string.
+| Stats Heap Allocated         | Amount of memory allocated by all the queries executing in the given node in the RMS shared segments at this instance of time.
+| Stats Heap Used              | Amount of memory used by all the queries executing in the given node in the RMS shared segment at this instance of time.
+| Stats Heap High WM           | High amount of memory used by all the queries executing in the given node in the RMS shared segment until now.
+| No. of Process Regd.         | Number of processes registered in the shared segment.
+| No. of Query Fragments Regd. | Number of query fragments registered in the shared segment.
+| RMS Semaphore Owner          | Process ID that locked the semaphore at this instance of time.
+| No. of SSCPs Opened          | Number of Statistics Control Processes opened. Normally, this should be equal to the number of nodes in the {project-name} cluster.
+| No. of SSCPs Open Deleted    | Number of Statistics Control Processes with broken communication. Usually, this should be 0.
+| Last GC Time                 | The recent timestamp at which the shared segment was garbage collected.
+| Queries GCed in Last Run     | Number of queries that were garbage collected in the recent GC run.
+| Total Queries GCed           | Total number of queries that were garbage collected since the statistics reset timestamp.
+| SSMP Request Message Count   | Count of the number of messages sent from the SSMP process since the statistics reset timestamp.
+| SSMP Request Message Bytes   | Number of messages bytes that are sent as part of the request from the SSMP process since the statistics reset timestamp.
+| SSMP Reply Message Count     | Count of the number of reply messages received by the SSMP process since the statistics reset timestamp.
+| SSMP Reply Message Bytes     | Number of messages bytes that are sent as part of the reply messages received by the SSMP process since the statistics reset timestamp.
+| SSCP Request Message Count   | Count of the number of messages sent from the SSCP process since the statistics reset timestamp.
+| SSCP Request Message Bytes   | Number of messages bytes are sent as part of the request from the SSCP process since the statistics reset timestamp.
+| SSCP Reply Message Count     | Count of the number of reply messages received by the SSCP process since the statistics reset timestamp.
+| SSCP Reply Message Bytes     | Number of messages bytes that are sent as part of the reply messages received by the SSCP process since the statistics reset timestamp.
+| RMS Stats Reset Timestamp    | Timestamp for resetting RMS statistics.
+|===
+
+```
+SQL> GET STATISTICS FOR RMS ALL;
+
+Node name
+CPU                         0
+RMS Version                 2511
+SSCP PID                    19521
+SSCP Priority               0
+SSCP Creation Timestamp     2010/12/05 02:32:33.642752
+SSMP PID                    19527
+SSMP Priority               0
+SSMP Creation Timestamp     2010/12/05 02:32:33.893440
+Source String Store Len     254
+Stats Heap Allocated        0
+Stats Heap Used             3,002,416
+Stats Heap High WM          3,298,976
+No.of Process Regd.         157
+No.of Query Fragments Regd. 296 RMS Semaphore Owner -1
+No.of SSCPs Opened          1
+No.of SSCPs Open Deleted    0
+Last GC Time                2010/12/06 10:53:46.777432
+Queries GCed in Last Run    55
+Total Queries GCed          167
+SSMP Request Message Count  58,071
+SSMP Request Message Bytes  14,161,144
+SSMP Reply Message Count    33,466
+SSMP Reply Message Bytes    15,400,424
+SSCP Request Message Count  3,737
+SSCP Request Message Bytes  837,744
+SSCP Reply Message Count    3,736 SSCP
+Reply Message Bytes         5,015,176
+RMS Stats Reset Timestamp   2010/12/05 14:32:33.891083
+
+--- SQL operation complete.
+```
+
+<<<
+[[using_the_queryid_extract_function]]
+== Using the QUERYID_EXTRACT Function
+
+Use the QUERYID_EXTRACT function within an SQL statement to extract
+components of a query ID for use in a SQL query. The query ID, or QID,
+is a unique, cluster-wide identifier for a query and
+is generated for dynamic SQL statements whenever a SQL string is
+prepared.
+
+=== Syntax of QUERYID_EXTRACT
+
+```
+QUERYID_EXTRACT ('query-id', 'attribute')
+```
+
+The syntax of the QUERYID_EXTRACT function is:
+
+* `_query-id_`
++
+is the query ID in string format.
+
+* `_attribute_`
++
+is the attribute to be extracted. The value of _attribute_ can be one of
+these parts of the query ID:
++
+[cols="30%l,70%",options="header"]
+|===
+| Attribute Value         | Description
+| SEGMENTNUM              | Logical node ID in {project-name} cluster
+| CPUNUM or CPU           | Logical node ID in {project-name} cluster
+| PIN                     | Linux process ID number
+| EXESTARTTIME            | Executor start time
+| SESSIONNUM              | Session number
+| USERNAME                | User name
+| SESSIONNAME             | Session name
+| SESSIONID               | Session ID
+| QUERYNUM                | Query number
+| STMTNAME                | Statement ID or handle
+|===
++
+NOTE: The SEGMENTNUM and CPUNUM attributes are the same.
+
+The result data type of the QUERYID_EXTRACT function is a VARCHAR with a
+length sufficient to hold the result. All values are returned in string
+format. Here is the QUERYID_EXTRACT function in a SELECT statement:
+
+```
+SELECT QUERYID_EXTRACT('_query-id_', '_attribute-value_') FROM (VALUES(1)) AS t1;
+```
+
+<<<
+[[examples_of_queryid_extract]]
+=== Examples of QUERYID_EXTRACT
+
+* This command returns the node number of the query ID:
++
+```
+SQL> SELECT 
++> SUBSTR(
++>   QUERYID_EXTRACT(
++>     'MXID11000022675212170554548762240000000000206U6553500_21_S1','CPU'
++>   ), 1, 20
++>  ) FROM (VALUES(1))
++> AS t1;
+
+(EXPR)
+---------------------------------------------------------------------------
+0
+
+--- 1 row(s) selected.
+```
+
+* This command returns the PIN of the query ID:
++
+```
+SQL> SELECT
++> SUBSTR(
++>   QUERYID_EXTRACT(
++>     'MXID11000022675212170554548762240000000000206U6553500_21_S1','PIN'
++>   ), 1, 20
++> ) FROM (VALUES(1)) AS t1;
+
+(EXPR)
+---------------------------------------------------------------------------
+22675
+
+--- 1 row(s) selected.
+```
+
+<<<
+[[stats_each_fragment_instance_active_query]]
+== Statistics for Each Fragment-Instance of an Active Query
+
+You can retrieve statistics for a query while it executes by using the
+STATISTICS table-valued function. Depending on the syntax used, you can
+obtain statistics summarizing each parallel fragment-instance of the
+query, or for any operator in each fragment-instance.
+
+[[syntax_of_statistics_table-valued_function]]
+=== Syntax of STATISTICS Table-Valued Function
+
+```
+TABLE(STATISTICS (NULL, 'qid-str'))
+
+qid-str is:
+   QID=query-id [ ,{ TDBID_DETAIL=tdb-id | DETAIL=1 } ]
+```
+
+* `_query-id_`
++
+is the system-generated query ID. For example:
++
+```
+QID=MXID11000022675212170554548762240000000000206U6553500_21_S1
+```
+
+* `_tdb-id_`
++
+is the TDB ID of a given operator. TDB values can be obtained from the
+report returned from the GET STATISTICS command.
+
+[[considerations_obtaining_stats_fragment]]
+=== Considerations For Obtaining Statistics For Each Fragment-Instance of an Active Query
+
+If the DETAIL=1 or TDBID_DETAIL=_tdb_id_ options are used when the
+query is not executing, the STATISTICS table-valued function will not
+return any results.
+
+The STATISTICS table-valued function can be used with a SELECT statement
+to return several columns. Many different counters exist in the
+_variable_info_ column. The counters in this column are formatted as
+token-value pairs and the counters reported will depend on which option
+is used: DETAIL=1 or TDBID_DETAIL=_tdb_id_. If the TDBID_DETAIL option
+is used, the counters reported will also depend on the type of operator
+specified by the _tdb_id_. The reported counters can also be
+determined by the statsRowType counter.
+
+The tokens for these counters are listed in the column 
+<<displaying_sql_runtime_statistics>>,Displaying SQL Runtime Statistics>>.
+
+* This query lists process names of all ESPs of an executing query
+identified by the given QID:
++
+```
+SQL> SELECT
++> SUBSTR(VARIABLE_INFO,
++> POSITION('ProcessId:' IN variable_info), 20) AS processes
++>FROM
++>TABLE(statistics(NULL,
++>'QID=MXID11000032684212170811581160672000000000206U6553500_19_S1,DETAIL=1'))
++>GROUP BY 1;
+
+PROCESSES
+--------------------
+ProcessId: $Z0000GS
+ProcessId: $Z0000GT
+ProcessId: $Z0000GU
+ProcessId: $Z0000GV
+ProcessId: $Z0102IQ
+ProcessId: $Z000RNU
+ProcessId: $Z0102IR
+ProcessId: $Z0102IS
+ProcessId: $Z0102IT
+
+--- 9 row(s) selected.
+```
+
+<<<
+* This query gives BMO heap used for the hash join identified as TDB #15
+in an executing query identified by the given QID:
++
+```
+SQL>SELECT CAST (
++> SUBSTR(variable_info,
++> POSITION('bmoHeapUsed:' IN variable_info),
++> POSITION('bmoHeapUsed:' in variable_info) +
++> 13 + (POSITION(' ' IN
++> SUBSTR(variable_info,
++> 13 + POSITION('bmoHeapUsed:' IN variable_info))) -
++> POSITION('bmoHeapUsed:' IN variable_info)))
++> AS CHAR(25))
++> FROM TABLE(statistics(NULL,
++>'QID=MXID11000021706212170733911504160000000000206U6553500_25_S1,TDBID_DETAIL=15'));
+
+(EXPR)
+-------------------------
+bmoHeapUsed: 3147
+bmoHeapUsed: 3147
+bmoHeapUsed: 3147
+bmoHeapUsed: 3147
+bmoHeapUsed: 3147
+bmoHeapUsed: 3147
+bmoHeapUsed: 3147
+bmoHeapUsed: 3147
+--- 8 row(s) selected.
+```

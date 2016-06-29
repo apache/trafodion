@@ -282,6 +282,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   listOfUpDeldColNames_(NULL),
   listOfMergedColNames_(NULL),
   listOfIndexesAndTable_(NULL),
+  listOfOmittedColNames_(NULL),
 
   keyInfo_(NULL),
   keyColName_(NULL),
@@ -334,7 +335,7 @@ ComTdbHbaseAccess::getExpressionName(Int32 expNum) const
     case 3: 
       return "UpdateExpr";
     case 4: 
-      return "MergeInsertExpr";
+      return ((getAccessType() == DELETE_) ? "LobDeleteExpr" : "MergeInsertExpr");
     case 5:
       return "LowKeyExpr";
     case 6:
@@ -438,6 +439,7 @@ Long ComTdbHbaseAccess::pack(void * space)
   listOfFetchedColNames_.pack(space);
   listOfUpDeldColNames_.pack(space);
   listOfMergedColNames_.pack(space);
+  listOfOmittedColNames_.pack(space);
   listOfIndexesAndTable_.pack(space);
   keyInfo_.pack(space);
   keyColName_.pack(space);
@@ -508,6 +510,7 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
   if(listOfFetchedColNames_.unpack(base, reallocator)) return -1;
   if(listOfUpDeldColNames_.unpack(base, reallocator)) return -1;
   if(listOfMergedColNames_.unpack(base, reallocator)) return -1;
+  if(listOfOmittedColNames_.unpack(base, reallocator)) return -1;
   if(listOfIndexesAndTable_.unpack(base, reallocator)) return -1;
   if(keyInfo_.unpack(base, reallocator)) return -1;
   if(keyColName_.unpack(base)) return -1;
@@ -638,14 +641,12 @@ static void showColNames(Queue * listOfColNames, Space * space)
       char colFam[100];
       while (currPtr[currPos] != ':')
 	{
-	  colFam[jj] = currPtr[currPos];
 	  currPos++;
 	  jj++;
 	}
-      colFam[jj] = ':';
       jj++;
       currPos++;
-      colFam[jj] = 0;
+      snprintf(colFam,sizeof(colFam),"%.*s",jj,currPtr+sizeof(short));
       colNameLen -= jj;
       
       NABoolean withAt = FALSE;
@@ -696,19 +697,9 @@ static void showStrColNames(Queue * listOfColNames, Space * space,
 	}
       else
 	{
-	  Lng32 currPos = 0;
 	  short colNameLen = *(short*)currPtr;
-	  currPos += sizeof(short);
 	  char colName[500];
-	  
-	  for (Lng32 i = 0; i < colNameLen; i++)
-	    {
-	      colName[i] = currPtr[currPos];
-	      currPos++;
-	    }
-	  
-	  colName[colNameLen] = 0;
-	  
+	  snprintf(colName,sizeof(colName),"%.*s",colNameLen,currPtr+sizeof(short));
 	  colNamePtr = colName;
 	}
 

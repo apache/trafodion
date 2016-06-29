@@ -45,7 +45,7 @@
 #include "ComQueue.h"
 //#include "UdfDllInteraction.h"
 #include "RelFastTransport.h"
-
+#include "HDFSHook.h"
 
 
 // Helper function to allocate a string in the plan
@@ -127,6 +127,7 @@ int CreateAllCharsExpr(const NAType &formalType,
   NAType *typ = NULL;
 
   Lng32 maxLength = GetDisplayLength(formalType);
+  maxLength = MAXOF(maxLength, 1);
 
   if (formalType.getTypeQualifier() != NA_CHARACTER_TYPE )
   {
@@ -302,6 +303,24 @@ static short ft_codegen(Generator *generator,
   ValueIdList cnvChildDataVids;
   const ValueIdList& childVals = fastExtract->getSelectList();
 
+  const NATable *hiveNATable = NULL;
+  const NAColumnArray *hiveNAColArray = NULL;
+
+  // hiveInsertErrMode: 
+  //    if 0, do not do error checks.
+  //    if 1, do error check and return error.
+  //    if 2, do error check and ignore row, if error
+  //    if 3, insert null if an error occurs
+  Lng32 hiveInsertErrMode = 0;
+  if ((fastExtract) && (fastExtract->isHiveInsert()) &&
+      (fastExtract->getHiveTableDesc()) &&
+      (fastExtract->getHiveTableDesc()->getNATable()) &&
+      ((hiveInsertErrMode = CmpCommon::getDefaultNumeric(HIVE_INSERT_ERROR_MODE)) > 0))
+    {
+      hiveNATable = fastExtract->getHiveTableDesc()->getNATable();
+      hiveNAColArray = &hiveNATable->getNAColumnArray();
+    }
+
   for (i = 0; i < childVals.entries(); i++)
   {
     ItemExpr &inputExpr = *(childVals[i].getItemExpr());
@@ -310,7 +329,41 @@ static short ft_codegen(Generator *generator,
     ItemExpr *lmExpr2 = NULL;
     int res;
 
-    lmExpr = &inputExpr; //CreateCastExpr(inputExpr, *inputExpr.getValueId().getType().newCopy(), cmpContext);
+    lmExpr = &inputExpr; 
+    lmExpr = lmExpr->bindNode(generator->getBindWA());
+    if (!lmExpr || generator->getBindWA()->errStatus())
+      {
+        GenAssert(0, "lmExpr->bindNode failed");
+      }
+
+    // Hive insert converts child data into string format and inserts
+    // it into target table.
+    // If child type can into an error during conversion, then
+    // add a Cast to convert from child type to target type before
+    // converting to string format to be inserted.
+    if (hiveNAColArray)
+      {
+        const NAColumn *hiveNACol = (*hiveNAColArray)[i];
+        const NAType *hiveNAType = hiveNACol->getType();
+        // if tgt type was a hive 'string', do not return a conversion err
+        if ((lmExpr->getValueId().getType().errorsCanOccur(*hiveNAType)) &&
+            (NOT ((DFS2REC::isSQLVarChar(hiveNAType->getFSDatatype())) &&
+                  (((SQLVarChar*)hiveNAType)->wasHiveString()))))
+          {
+            ItemExpr *newExpr = 
+              new(generator->wHeap()) Cast(lmExpr, hiveNAType);
+            newExpr = newExpr->bindNode(generator->getBindWA());
+            if (!newExpr || generator->getBindWA()->errStatus())
+              {
+                GenAssert(0, "newExpr->bindNode failed");
+              }
+            
+            if (hiveInsertErrMode == 3)
+              ((Cast*)newExpr)->setConvertNullWhenError(TRUE);
+            
+            lmExpr = newExpr;
+          }
+      }
 
     res = CreateAllCharsExpr(formalType, // [IN] Child output type
         *lmExpr, // [IN] Actual input value
@@ -321,7 +374,6 @@ static short ft_codegen(Generator *generator,
     GenAssert(res == 0 && lmExpr != NULL,
         "Error building expression tree for LM child Input value");
 
-    lmExpr->bindNode(generator->getBindWA());
     childDataVids.insert(lmExpr->getValueId());
     if (lmExpr2)
     {
@@ -335,6 +387,16 @@ static short ft_codegen(Generator *generator,
   if (childDataVids.entries() > 0 &&
     cnvChildDataVids.entries()>0)  //-- convertedChildDataVids
   {
+    UInt16 pcm = exp_gen->getPCodeMode();
+    if ((hiveNAColArray) &&
+        (hiveInsertErrMode == 3))
+      {
+        // if error mode is 3 (mode null when error), disable pcode.
+        // this feature is currently not being handled by pcode.
+        // (added as part of JIRA 1920 in FileScan::codeGenForHive).
+        exp_gen->setPCodeMode(ex_expr::PCODE_NONE);
+      }
+
     exp_gen->generateContiguousMoveExpr (
       childDataVids,                         //childDataVids// [IN] source ValueIds
       TRUE,                                 // [IN] add convert nodes?
@@ -346,6 +408,8 @@ static short ft_codegen(Generator *generator,
       &childDataTupleDesc,                  // [optional OUT] target tuple desc
       ExpTupleDesc::LONG_FORMAT             // [optional IN] target desc format
       );
+
+    exp_gen->setPCodeMode(pcm);
 
     exp_gen->processValIdList (
        cnvChildDataVids,                              // [IN] ValueIdList
@@ -418,6 +482,13 @@ static short ft_codegen(Generator *generator,
 
   tdb->setSkipWritingToFiles(CmpCommon::getDefault(TRAF_UNLOAD_SKIP_WRITING_TO_FILES) == DF_ON);
   tdb->setBypassLibhdfs(CmpCommon::getDefault(TRAF_UNLOAD_BYPASS_LIBHDFS) == DF_ON);
+
+  if ((hiveNAColArray) &&
+      (hiveInsertErrMode == 2))
+    {
+      tdb->setContinueOnError(TRUE);
+    }
+
   generator->initTdbFields(tdb);
 
   // Generate EXPLAIN info.
@@ -561,35 +632,47 @@ PhysicalFastExtract::codeGen(Generator *generator)
     newRecordSep[1] = '\0';
   }
 
+  Int64 modTS = -1;
+  if ((CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
+      (isHiveInsert()) &&
+      (getHiveTableDesc() && getHiveTableDesc()->getNATable() && 
+       getHiveTableDesc()->getNATable()->getClusteringIndex()))
+    {
+      const HHDFSTableStats* hTabStats = 
+        getHiveTableDesc()->getNATable()->getClusteringIndex()->getHHDFSTableStats();
+
+      modTS = hTabStats->getModificationTS();
+    }
+
   targetName = AllocStringInSpace(*space, (char *)getTargetName().data());
   hdfsHostName = AllocStringInSpace(*space, (char *)getHdfsHostName().data());
   hiveTableName = AllocStringInSpace(*space, (char *)getHiveTableName().data());
   delimiter = AllocStringInSpace(*space,  newDelimiter);
   header = AllocStringInSpace(*space, (char *)getHeader().data());
-  nullString = AllocStringInSpace(*space, (char *)getNullString().data());
   recordSeparator = AllocStringInSpace(*space, newRecordSep);
+  nullString = AllocStringInSpace(*space, (char *)getNullString().data());
 
-   result = ft_codegen(generator,
-                       *this,              // RelExpr &relExpr
-                       newTdb,             // ComTdbUdr *&newTdb
-                       estimatedRowCount,
-                       targetName,
-                       hdfsHostName,
-                       hdfsPortNum,
-                       hiveTableName,
-                       delimiter,
-                       header,
-                       nullString,
-                       recordSeparator,
-                       downQueueMaxSize,
-                       upQueueMaxSize,
-                       outputBufferSize,
-                       requestBufferSize,
-                       replyBufferSize,
-                       numOutputBuffers,
-                       childTdb,
-                       isSequenceFile());
-
+  result = ft_codegen(generator,
+                      *this,              // RelExpr &relExpr
+                      newTdb,             // ComTdbUdr *&newTdb
+                      estimatedRowCount,
+                      targetName,
+                      hdfsHostName,
+                      hdfsPortNum,
+                      hiveTableName,
+                      delimiter,
+                      header,
+                      nullString,
+                      recordSeparator,
+                      downQueueMaxSize,
+                      upQueueMaxSize,
+                      outputBufferSize,
+                      requestBufferSize,
+                      replyBufferSize,
+                      numOutputBuffers,
+                      childTdb,
+                      isSequenceFile());
+  
   if (!generator->explainDisabled())
   {
     generator->setExplainTuple(addExplainInfo(newTdb, firstExplainTuple, 0, generator));
@@ -611,7 +694,7 @@ PhysicalFastExtract::codeGen(Generator *generator)
   {
     newTdb->setIsHiveInsert(1);
     newTdb->setIncludeHeader(0);
-    setOverwriteHiveTable( getOverwriteHiveTable());
+    newTdb->setOverwriteHiveTable( getOverwriteHiveTable());
   }
   else
   {
@@ -625,8 +708,10 @@ PhysicalFastExtract::codeGen(Generator *generator)
     else
     GenAssert(0, "Unexpected Fast Extract compression type")
   }
-     if((ActiveSchemaDB()->getDefaults()).getToken(FAST_EXTRACT_DIAGS) == DF_ON)
-    	 newTdb->setPrintDiags(1);
+  if((ActiveSchemaDB()->getDefaults()).getToken(FAST_EXTRACT_DIAGS) == DF_ON)
+    newTdb->setPrintDiags(1);
+
+  newTdb->setModTSforDir(modTS);
 
   return result;
 }

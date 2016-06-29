@@ -86,17 +86,14 @@ export EPEL_RPM=""
 # full path of the Trafodion package tar file
 export TRAF_PACKAGE=""
 
-# if TRAF_PACKAGE wasn't specified then these two values must be specified
-# TRAF_BUILD is the trafodion_server tar file
-# DCS_BUILD is the DCS tar file
-# REST_BUILD is the REST tar file
-export TRAF_BUILD=""
-export DCS_BUILD=""
-export REST_BUILD=""
+#Default value set to "Y" if using a build BEFORE 05/11/2016 set this to "N"
+export ONE_TAR_INSTALL="Y"
+
 # Either "cloudera" or "hortonworks" (all lowercase)
 export HADOOP_TYPE=""
 
-# The URL for Cloudera/Hortonworks REST API (i.e. node1.hp.com:8080)
+# The URL for Cloudera/Hortonworks REST API (i.e. http://node1.hp.com:8080)
+# Include http or https
 export URL=""
 
 # Cloudera/Hortonworks UI admin's userid and password
@@ -117,13 +114,11 @@ export HBASE_GROUP="hbase"
 export HBASE="hbase"
 
 # full path of where to install Trafodion to
-# Example is used below. If $HOME_DIR or $TRAF_USER have been changed
-# then this will need to be changed. 
 # On an upgrade, it is recommend to choose a different directory. 
 # First time install : /home/trafodion/traf
 # On Upgrade: /home/trafodion/traf_<date>
 # By doing this the previous version will remain and allow for an easier rollback.
-export SQ_ROOT="home/trafodion/traf"
+export SQ_ROOT=""
 
 # Start Trafodion after install completes
 export START="N"
@@ -135,13 +130,45 @@ export INIT_TRAFODION="N"
 # Default is to leave as is and this file will be created.
 export SQCONFIG=""
 
-export CONFIG_COMPLETE="true"
+#-----------------  security configuration information -----------------
+#Enter in Kerberos details if Kerberos is enabled on your cluster
 
-#Turn on simple security. MUST have existing LDAP configured.
+#Indicate Kerberos is enabled
+export SECURE_HADOOP="N"
+
+#Location of Kerberos server for admin access
+export KDC_SERVER=""
+
+#Kerberos Admin principal used to create Trafodion principals and keytabs
+#Please include realm, for example: trafadmin/admin@MYREALM.COM
+export ADMIN_PRINCIPAL=""
+
+#Keytab for HBase admin user, used to grant Trafodion user CRWE privilege
+export HBASE_KEYTAB=""
+
+#Keytab for HDFS admin user, used to create data directories for Trafodion 
+export HDFS_KEYTAB=""
+
+#Kerberos ticket defaults for the Trafodion user
+export MAX_LIFETIME="24hours"
+export RENEW_LIFETIME="7days"
+
+#Trafodion keytab information
+export TRAF_KEYTAB=""
+export TRAF_KEYTAB_DIR=""
+
+#Enter in LDAP configuration information
+#Turn on authentication - MUST have existing LDAP configured.
 export LDAP_SECURITY="N"
 
 #Name of LDAP Config file
 export LDAP_AUTH_FILE="traf_authentication_config_${HOSTNAME}"
+
+#LDAP name to map to database user DB__ROOT
+DB_ROOT_NAME="trafodion"
+#-----------------      end security configuration     -----------------
+
+export CONFIG_COMPLETE="true"
 
 #HA configuraton enabled, if want to enable set to true and add valid floating IP address.
 export ENABLE_HA="false"
@@ -152,10 +179,11 @@ export FLOATING_IP=""
 #If HA enabled the set the DCS Backup nodes
 export BACKUP_DCS_NODES=""
 
+
 #If HA enabled then set INTERFACE to match the interface of the floating ip
 export INTERFACE=""
 
-#Define if cloud environment is being used, if specified "Y" for CLOUD_CONFIG 
+#Define if cloud environment is being used, if specified "Y" for CLOUD_CONFIG
 #the please define the type of cloud (CLOUD_TYPE) being used
 export CLOUD_CONFIG="N"
 
@@ -169,3 +197,4 @@ export CLOUD_OTHER=""
 #Specify the node name of primary DcsMaster node, Default is the host where
 #dcs start script is run
 export DCS_PRIMARY_MASTER_NODE=`hostname -f`
+

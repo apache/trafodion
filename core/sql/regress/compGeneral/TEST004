@@ -31,7 +31,6 @@
 #ifndef SEABASE_REGRESS
 set schema $$TEST_CATALOG$$.sch;
 #else
-cqd call_embedded_arkcmp 'OFF';
 cqd seabase_volatile_tables 'ON';
 set schema $$TEST_CATALOG$$.sch;
 #endif
@@ -57,7 +56,8 @@ drop table "t4tab";
 drop table "SCH.T4TAB";
 drop table t4tab;
 drop table t4ttt cascade;
-drop schema "t4sch";
+
+drop schema "t4sch" cascade;
 
 drop table compgeneral.v_t1;
 drop table compgeneral.v_t2;
@@ -857,3 +857,5 @@ explain options 'f' st1;
 log;
 
 obey test004(clean_up);
+
+

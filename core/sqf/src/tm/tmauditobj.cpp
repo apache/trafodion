@@ -207,14 +207,12 @@ void CTmAuditObj::write_buffer()
 {
     TMTrace(2, ("CTmAuditObj::write_buffer : ENTRY.\n"));
 
-    int32 lv_notify = -1;
-
     if (iv_prepared_to_write) // no lock means it was not called appropriately, error TODO
     {
         if (iv_write_buf_size > 0)
         {
             TMTrace(2, ("CTmAuditObj::write_buffer with size of %d: ENTRY.\n", iv_write_buf_size));
-            lv_notify = iv_mat.write_buffer(iv_write_buf_size, ia_write_buffer, iv_highest_fill_vsn);
+            iv_mat.write_buffer(iv_write_buf_size, ia_write_buffer, iv_highest_fill_vsn);
             iv_write_buf_size = 0;
         }
         else
@@ -226,7 +224,7 @@ void CTmAuditObj::write_buffer()
         prepare_to_write(true);
         if (iv_write_buf_size > 0)
         {  
-            lv_notify = iv_mat.write_buffer(iv_write_buf_size, ia_write_buffer, iv_highest_fill_vsn);
+            iv_mat.write_buffer(iv_write_buf_size, ia_write_buffer, iv_highest_fill_vsn);
             iv_write_buf_size = 0;
         }
         iv_double_write = false;

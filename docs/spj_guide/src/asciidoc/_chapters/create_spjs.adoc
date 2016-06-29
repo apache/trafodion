@@ -1,0 +1,461 @@
+////
+/**
+*@@@ START COPYRIGHT @@@
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements. See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+[[create-spjs]]
+= Create SPJs
+
+You can create the procedures in {project-name} after you've deployed the libraries for the SPJ JAR files.
+See <<deploy-spj-jar-files, Deploy SPJ JAR Files>>.
+
+The examples in this chapter are based on the sample database documented
+in <<b-sample-database, Appendix B: Sample Database>>. Also, the `Sales.java` class are assumed to have been
+added as a library object using the `CREATE LIBRARY` statement. See <<deploy-spj-jar-files, Deploy SPJ JAR Files>>.
+
+[[create-a-procedure]]
+== Create a Procedure
+
+The Create Procedure tool registers an existing Java method as a stored
+procedure in Java (SPJ) within SQL.
+
+Refer to the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
+for full documentation of the
+{docs-url}/sql_reference/index.html#create_procedure_statement[CREATE PROCEDURE]
+statement including considerations and required privileges.
+
+[[create-procedure-settings]]
+=== Create Procedure Settings
+
+Reference: 
+{docs-url}/sql_reference/index.html#create_procedure_syntax[Syntax Description of CREATE PROCEDURE].
+
+You need to determine the following settings for the CREATE PROCEDURE statement:
+
+[cols="15%,40%,45%",options="header",]
+|===
+| Attribute              | Syntax                                             | Guidance
+| *procedure-ref*        | `[[catalog-name.]schema-name.]procedure-name`     |
+- *catalog*: must be `trafodion`. +
+- *schema-name*: the schema the procedure is associated with. +
+- *procedure-name*: a name that is unique and does not exist for any procedure or function in the same schema. It's a good habit to use the lowercase version of the procedure name.
+| *sql-parameter*        | `[parameter-mode] [sql-identifier] sql-datatype`   |
+- *parameter-mode*: IN (pass data to SPJ), OUT (accept data from SPJ), or INOUT (passed data to and accepts data from SPJ). +
+- *sql-identifier*: The name of the parameter passed to the SPJ. +
+- *sql-datatype*: SQL data type mapped to Java data type. See <<java-parameters, Java Parameters>> for mapping,  
+{docs-url}/sql_reference/index.html#data_types[Data Types] for SQL data types. +
+ +
+Repeat for each parameter in the SPJ.
+| *external name*        | `external name 'java-method-name [( java-signature )]'`                 |
+- *java-method-name*: case-sensitive name of the SPJ method of the form `[package-name.]class-name.method-name`. The Java method must exist in a
+Java class file, `_class-name_.class`, within a library registered in the database. If the class file that contains the SPJ method is part of a
+package, then you must also specify the package name. +
+- *java-signature*: specifies the signature of the SPJ method and consists of `([java-datatype[, java-datatype]&#8230;])`
+Necessary only if you want to specify a Java wrapper class (for example, `java.lang.integer`) instead of a java
+primitive data type (for example, `int`). Use the `javap` utility to determine the correct values for
+java-signature.
+| *library*              | `library [[catalog-name.]schema-name.]library-name`   |
+- *catalog*: must be `trafodion`. +
+- *schema-name*: the schema the library is associated with. +
+- *library-name*: name of library containing the SPJ method.
++
+See <<create-a-library, Create a Library>> for more information about creating libraries.
+| *external security*    | `external security [ invoker` (default) \| `definer ]` |
+- *invoker*: determines that users can execute, or invoke, the stored procedure using the privileges of the user who invokes
+the stored procedure. +
+- *definer*: determines that users can execute, or invoke, the stored procedure using the privileges of the user who created
+the stored procedure. +
+ +
+See <<understand-external-security, Understand External Security>> for more information.
+| *language java*        | `language java`                  | Must be set specified the procedure is an SPJ rather than a UDF.
+Compare: {docs-url}/sql_reference/index.html#create_function_statement[CREATE FUNCTION]. 
+| *parameter style java* | `parameter style java`           | Must be set specified the procedure is an SPJ rather than a UDF.
+Compare: {docs-url}/sql_reference/index.html#create_function_statement[CREATE FUNCTION]. 
+| *_sql access_*         |
+`no sql` \| +
+`contains sql` (default) \| +
+`modifies sql data` \| +
+`reads sql data` |
+- *no sql*: the SPJ cannot perform SQL operations. +
+- *contains sql*: the SPJ can read and modify SQL data. +
+- *modifies sql data*: the SPJ can read and modify SQL data. +
+- *reads sql data*: the SPJ can read and modify SQL data. +
+ +
+It's a good practice to specify `modifies sql data` and `reads sql data` over `contains sql` as it helps
+users of the procedure to better understand its impact.
+| *dynamic result sets*  | `dynamic result sets 0` (default) to `_n_`  |
+The maximum number of result sets that the SPJ can return. This option is applicable only if the method signature contains a `java.sql.resultset[]` object.
+| *_transaction_*        |
+`transaction required` (default) \| +
+`no transaction required` |
+Determines whether the SPJ must run in a transaction inherited from the calling application (`transaction required` or
+whether the SPJ runs without inheriting the calling application's transaction (`no transaction required`). Typically,
+you want the stored procedure to inherit the transaction from the calling application.
+| *_determinism_*        |
+`deterministic` \| +
+`not deterministic` (default) |
+Whether the SPJ always returns the same values for out and inout parameters for a given set of argument values
+(`deterministic`) or does not return the same values (`not deterministic`). `deterministic` means that {project-name}
+can cache the result to improve performance.
+| *_isolation_*          |
+`isolate` (default) \| +
+`no isolate` |
+The SPJ executes either in the environment of the database server (`no isolate`) or in an isolated environment
+(`isolate`, the default option). {project-name} allows both options but always executes the SPJ in the UDR server process (`isolate`).
+|===
+
+<<<
+Consider the following method in the `Sales.java` class:
+
+[source, java]
+----
+include::{sourcedir}/totalPrice.java[totalPrice procedure source code]
+----
+
+<<<
+The CREATE PROCEDURE attributes for `totalPrice` are defined as follows:
+
+[cols="15%,40%,45%",options="header",]
+|===
+| Attribute              | Definition                         | Discussion
+| *procedure-ref*        | `trafodion.sales.totalprice`       | Used lowercase version of totalPrice for _procedure-name_.
+| *sql-parameter-1*      | `IN _qty_ NUMERIC(18)`             | The first argument to the SPJ is defined as: `BigDecimal qtyOrdered`, which maps to `NUMERIC`.
+The size is chosen to allow for large numbers.
+| *sql-parameter-2*      | `IN _speed_ VARCHAR(10)`           | The second argument to the SPJ is defined as: `String shippingSpeed`.
+Possible values are: `economy`, `standard`, or `nextday`. `VARCHAR(10)` is a good choice.
+| *sql-parameter-3*      | `INOUT _price_ NUMERIC(18,2)`      | The third argument to the SPJ is defines as: `BigDecimal[] price`.
+The SPJ uses an input price to calculate to total price including taxes and shipping cost. 
+Therefore, `INOUT` is the appropriate choice. Given that the `_qty_` argument is NUMERIC(18), then this argument should be too. The precision choice fits the the
+type of calculation being peformed.
+| *external name*        | `EXTERNAL NAME 'Sales.totalPrice'` | The class name is `Sales`. The procedure name is `totalPrice`. 
+| *library*              | `library trafodion.sales.sales`    | The library name was defined using the CREATE LIBRARY statement.
+See the example in <<create-a-library, Create a Library>>.
+| *external security*    | `invoker`^1^                       | Use the privileges of the SPJ invoker.
+| *language java*        | `LANGUAGE JAVA`                    | Required for SPJs.
+| *parameter style java* | `PARAMETER STYLE JAVA`             | Required for SPJs.
+| *_sql access_*         | `NO SQL`                           | This SPJ performs no SQL operations, just calculations.
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 0`            | The method does not contain a `java.sql.resultset[]` object.
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^          | The method should inherit the calling application's transaction, if any.
+| *_determinism_*        | `NOT DETERMINISTIC`^1^             | The results must be recalculated each time; that is, cannot be cached. 
+| *_isolation_*          | `ISOLATE`^1^                       | Execute the SPJ in an isolated environment; that is, the UDR server process.
+|===
+
+^1^ Definition represents default value.
+
+<<<
+Using the information above, you create the new procedure as follows:
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.sales.totalprice( IN qty NUMERIC (18),
+                                             IN speed VARCHAR (10),
+                                             INOUT price NUMERIC (18,2)
+					   )
+   EXTERNAL NAME 'Sales.totalPrice'
+   LIBRARY trafodion.sales.sales
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   NO SQL
+   DYNAMIC RESULT SETS 0
+   TRANSACTION REQUIRED
+   ISOLATE
+   ;
+----
+
+Removing the default values to simplify the statement, you get:
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.sales.totalprice( IN qty NUMERIC (18),
+                                             IN speed VARCHAR (10),
+                                             INOUT price NUMERIC (18,2)
+					   )
+   EXTERNAL NAME 'Sales.totalPrice'
+   LIBRARY trafodion.sales.sales
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   NO SQL
+   ;
+----
+
+<<<
+To understand how to define `java-signature`, consider the following method in the
+`Inventory.java` class.
+
+[source,java]
+----
+public static void supplierInfo( BigDecimal suppNum
+                               , String[] suppName
+                               , String[] streetAddr
+                               , String[] cityName
+                               , String[] stateName
+                               , String[] postCode
+                               ) throws SQLException
+{
+   Connection conn =
+      DriverManager.getConnection( "jdbc:default:connection" ) ;
+
+   PreparedStatement getSupplier =
+      conn.prepareStatement( "SELECT suppname, street, city, "
+                           + "       state, postcode "
+                           + "FROM trafodion.invent.supplier "
+                           + "WHERE suppnum = ?"  
+                           ) ;
+
+   getSupplier.setBigDecimal( 1, suppNum ) ;
+   ResultSet rs = getSupplier.executeQuery() ;
+   rs.next() ;
+
+   suppName[0]   = rs.getString( 1 ) ;
+   streetAddr[0] = rs.getString( 2 ) ;
+   cityName[0]   = rs.getString( 3 ) ;
+   stateName[0]  = rs.getString( 4 ) ;
+   postCode[0]   = rs.getString( 5 ) ;
+
+   rs.close() ;
+   conn.close() ;
+} 
+----
+
+<<<
+The CREATE PROCEDURE attributes for `supplierInfo` are defined as follows:
+
+[cols="20%,85%",options="header"]
+|===
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.invent.supplierinfo`
+| *sql-parameter-1*      | `IN suppnum NUMERIC(4)`
+| *sql-parameter-2*      | `OUT suppname CHARACTER(18)`
+| *sql-parameter-3*      | `OUT address CHARACTER(22)`
+| *sql-parameter-4*      | `OUT city CHARACTER(14)`
+| *sql-parameter-5*      | `OUT state CHARACTER(12)`
+| *sql-parameter-6*      | `OUT zipcode CHARACTER(10)`
+| *external name*        |
+`EXTERNAL NAME 'Inventory.supplierInfo ( java.math.BigDecimal, java.lang.String[], java.lang.String[], java.lang.String[], java.lang.String[], java.lang.String[] )'`
+| *library*              | `LIBRARY trafodion.invent.inventory`
+| *external security*    | `invoker`^1^ +
+ +
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `READS SQL DATA`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 0`^1^
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
+|===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+<<<
+You can use the `javap` utility to inspect the attributes of the method.
+
+*Example*
+
+```
+$ javap Inventory.class
+Compiled from "Inventory.java"
+public class Inventory {
+  public Inventory();
+  public static void supplierInfo(java.math.BigDecimal, java.lang.String[], java.lang.String[], java.lang.String[], java.lang.String[], java.lang.String[]) throws java.sql.SQLException;
+  public static void supplyQuantities(int[], int[], int[]) throws java.sql.SQLException;
+  public static void partLocations(int, int, java.sql.ResultSet[], java.sql.ResultSet[]) throws java.sql.SQLException;
+}
+```
+
+The entry for `supplierInfo` method shows the attributes that should be used for `java-signature`.
+
+You don't specify for `java.sql.ResultSet[]` attributes; these are handled via the `DYNAMIC RESULTS SET` attribute
+in the `CREATE PROCEDURE` statement.
+
+<<<
+[[understand-external-security]]
+== Understand External Security
+
+The external security of an SPJ determines the privileges, or rights,
+that users have when executing (or calling) the SPJ. An SPJ can be
+created with one of these types of external security: invoker or
+definer.
+
+If an SPJ is created with the invoker type of external security, then the SPJ
+is executed with _invoker rights_.
+
+Invoker rights allow a user who has the execute privilege on the SPJ to call
+the SPJ using his or her existing privileges.
+
+In this case, the user must be granted privileges to access the underlying
+database objects on which the SPJ operates. If a user tries to call an SPJ
+that has invoker external security and that operates on database objects to
+which the user does not have privileges, then the CALL statement fails with
+an error message indicating that the user does not have the appropriate permissions.
+
+NOTE: Granting a user privileges to the underlying database objects gives the
+user direct access to those database objects, which could pose a risk to more
+sensitive or critical data to which users should not have access. For
+example, an SPJ might operate on a subset of the data in an underlying
+database object, but that database object might contain other more
+sensitive or critical data to which users should not have access.
+
+If an SPJ is created with the definer type of external security, then the
+SPJ is executed with _definer rights_.
+
+Definer rights allow a user who has the execute privilege on an SPJ to
+call the SPJ using the privileges of the user who created the SPJ.
+
+In this case, the user does not require privileges to access the underlying
+database objects on which the SPJ operates. Instead, the user is allowed to
+access or manipulate data in the underlying database objects by invoking the
+SPJ. That way, users are restricted from directly accessing or manipulating
+more sensitive or critical data in the database.
+
+However, be careful about the users to whom you grant execute privilege on
+an SPJ with definer external security because those users will be able to
+execute the SPJ without requiring privileges to the underlying database objects.
+
+To set the external security of an SPJ, see <<create-a-procedure, Create a Procedure>>.
+
+<<<
+[[drop-a-procedure]]
+== Drop a Procedure
+
+To drop a procedure, you must own the procedure or have the
+DROP_PROCEDURE privilege for the schema. The schema owner can grant such
+a schema-level privilege to other users or roles.
+
+For example, if the schema owner granted you privileges to drop all objects in the schema,
+you could drop procedures. For more information, see the GRANT SCHEMA statement in the
+{docs-url}/sql_reference/index.html#grant_statement[{project-name} SQL Reference Manual]
+
+Refer to the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
+for full documentation of the
+{docs-url}/sql_reference/index.html#drop_procedure_statement[DROP PROCEDURE]
+statement including considerations and required privileges.
+
+*Example*
+
+Your task is to remove Sales class jar file from the `SALES` schema.
+
+Do the following using trafci:
+
+```
+$ trafci
+Welcome to Apache Trafodion Command Interface
+Copyright (c) 2015 Apache Software Foundation
+
+Host Name/IP Address: localhost:23400
+User Name: zz
+
+Connected to Trafodion
+
+SQL> get procedures for library trafodion.sales.saleslib ;
+
+TOTALPRICE
+
+--- SQL operation complete.
+
+SQL> DROP PROCEDURE trafodion.sales.totalprice ;
+
+--- SQL operation complete.
+
+SQL>
+```
+
+<<<
+[[display-procedures-and-their-properties]]
+== Display Procedures and Their Properties
+
+In the trafci command-line interface, use the SHOW PROCEDURES command to
+display the procedures in a schema. For example, this SHOW PROCEDURES
+command displays a list of the procedures in the SALES schema:
+
+[source, sql]
+----
+SQL> SET SCHEMA trafodion.sales ;
+
+--- SQL operation complete.
+
+SQL> SHOW PROCEDURES
+
+PROCEDURE NAMES
+--------------------------------------------------------------------------------
+DAILYORDERS LOWERPRICE MONTHLYORDERS ORDERSUMMARY PARTDATA TOTAL PRICE
+
+SQL>
+----
+
+You can also use a wild-card pattern to search for a particular
+procedure. For example, this SHOW PROCEDURES command displays all the
+procedures in the SALES schema that have price in their names:
+
+[source, sql]
+----
+SQL> SHOW PROCEDURES %price
+
+PROCEDURE NAMES
+--------------------------------------------------------------------------------
+LOWERPRICE TOTALPRICE
+
+SQL>
+----
+
+For more information about trafci, see the
+{docs-url}/command_interface/index.html[{project-name} Command Interface Guide].
+
+////
+20160323: {project-name} does not yet support the ALTER LIBRARY command.
+[[altering-an-spj-and-its-java-bytecode]]
+=== Altering an SPJ and Its Java Bytecode
+
+Occasionally, you might need to update an SPJ or its Java bytecode. The
+Java bytecode includes the SPJ's class file and any associated class
+files that are packaged in the SPJ JAR file.
+
+Suppose that you want to update the Java bytecode of an SPJ without
+changing the class name, method name, or Java signature of the SPJ method.
+In this case, you would alter the library by selecting the updated JAR file
+to upload to {project-name}, replacing the previous JAR file for the
+library. For more information, see <<alter-a-library, Alter a Library>>.
+
+NOTE: You are prevented from uploading a JAR file that is already in use
+by another library in the catalog. This restriction prevents you from
+accidentally overwriting a JAR file that has the same name.
+
+If you plan to use a JAR file that contains an SPJ method that has a
+different class name, method name, or signature than the original SPJ
+method, you must drop the SPJ from the database before altering the
+library. After altering the library, re-create the SPJ in the database.
+
+You must also drop and re-create an SPJ to rename the procedure or
+change the SQL parameter definitions even if the Java bytecode remains
+the same. For more information, see <<create-a-procedure, Create a Procedure>> and
+<<drop-a-procedure, Drop a Procedure>>.
+
+When you update an SPJ or its Java bytecode, try to avoid making those
+changes when client applications are actively calling the SPJ. If you
+update an SPJ or its Java bytecode when a client application is calling
+the SPJ, the CALL statement might return wrong or inconsistent data to
+the calling application. Therefore, schedule a time to update the SPJ or
+its Java bytecode when client applications are not actively calling the
+SPJ.
+
+////

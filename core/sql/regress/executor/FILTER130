@@ -27,4 +27,11 @@ fi
 
 sed    "
 s/LOBH[0-9]*/@LOBHANDLE@/
+s/LOBP_[0-9]*/@LOBP@/
+s/LOBDescChunks__[0-9]*/@LOBDescChunks@/
+s/LOBDescChunks__[0-9]_[0-9]_[0-9]*/@LOBDescChunks_PK@/
+s/LOBDescHandle__[0-9]*/@LOBDescHandle@/
+s/LOBMD__[0-9]*/@LOBMD@/
+s/LOBMD__[0-9]_[0-9]_[0-9]*/@LOBMD_PK@/
+s/TLOBI30TS2_[0-9]_[0-9]*/@TLOB130TS2_PK@/
 " $fil

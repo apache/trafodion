@@ -155,7 +155,7 @@ if [ -z "$MY_TPCDS_UNPACK_DIR" ]; then
   MY_TPCDS_UNPACK_DIR=.
   cd -P .
 else
-  mkdir $MY_TPCDS_UNPACK_DIR
+  mkdir -p $MY_TPCDS_UNPACK_DIR
   cd $MY_TPCDS_UNPACK_DIR
 fi
 
@@ -183,7 +183,7 @@ fi
   make >>${MY_LOG_FILE} 2>&1 
 
   echo "Generating the data..." | tee -a ${MY_LOG_FILE}
-  mkdir $MY_TPCDS_DATA_DIR
+  mkdir -p $MY_TPCDS_DATA_DIR
   SCALE=1
   FORCE=Y
 

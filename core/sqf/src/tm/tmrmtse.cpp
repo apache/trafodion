@@ -191,7 +191,6 @@ void RM_Info_TSE::remove_rm_by_index (int32 pv_index)
 int RM_Info_TSE::set_partic_and_transid(TM_Txid_Internal pv_transid, int32 pv_rmid )
 {
     bool lv_found = false;
-    bool lv_partic_added = false;
 
     int lv_idx = 0;
     while (lv_idx <= iv_high_index_used && !lv_found)
@@ -200,7 +199,7 @@ int RM_Info_TSE::set_partic_and_transid(TM_Txid_Internal pv_transid, int32 pv_rm
          // partic to true and set the transid
         if (ia_TSEBranches[lv_idx].rmid() == pv_rmid)
         {
-            lv_partic_added = ia_TSEBranches[lv_idx].add_partic(pv_transid);
+            ia_TSEBranches[lv_idx].add_partic(pv_transid);
             lv_found = true;
             iv_num_rm_partic++;
 

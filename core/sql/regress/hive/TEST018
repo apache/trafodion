@@ -27,12 +27,10 @@ set schema trafodion.hbase;
 cqd comp_bool_226 'on';
 cqd TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD  '0';
 cqd hive_max_string_length '60';
-cqd query_cache '0';
 cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
 
 obey TEST018(clean_up);
-
-
 
 log LOG018 clear;
 
@@ -83,6 +81,8 @@ drop table customer_address_NOPK cascade;
 drop table customer_salt;
 drop table store_sales_salt;
 drop table nulls;
+drop table null_format_src;
+
 sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_address.gz ;
 sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_demogs.gz ;
 sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_demogs_3;
@@ -92,6 +92,7 @@ sh  regrhbase.ksh $REGRTSTDIR/TEST018_drop_hbase_objects.hbase &> $REGRRUNDIR/TE
 ?section setup
 --------------------------------------------------------------------------
 create table nulls (a char(5), b char(10));
+create table null_format_src (a varchar(5), b varchar(5));
 
 create table customer_demographics
 (
@@ -206,6 +207,11 @@ salt using 4 partitions
 insert into nulls values ('aaa1','bbbbb1'),(null,'bbbbb2'),
                          ('aaa3',null),(null,null),
                           ('aaa5',null),(null,'bbbbb6');
+
+insert into null_format_src values 
+   ('a', 'b'), ('a', null), (null, 'b'), ('a', ''), ('', 'b'),
+   (null, ''), (':', null), ('', ''), (':', ':'), (null, null);
+
 --load1
 load with no recovery into customer_address 
 select * from hive.hive.customer_address;    
@@ -237,22 +243,42 @@ select * from hive.hive.store_sales where ss_item_sk <= 1000;
 --
 --select count(*) from hive.hive.store_sales  where ss_item_sk <= 1000;
 select count(*) from store_sales_salt;
--------------------------------
---hive insert 0
-insert overwrite table hive.hive.nulls select * from nulls;
-select * from hive.hive.nulls order by a,b;
+
+------------------------------------------
+-- handling of various null formats
+
+-- using insert
+insert overwrite table hive.hive.null_format_default select * from null_format_src;
+select * from hive.hive.null_format_default;
+
+insert overwrite table hive.hive.null_format_empty select * from null_format_src;
+select * from hive.hive.null_format_empty;
+
+insert overwrite table hive.hive.null_format_colon select * from null_format_src;
+select * from hive.hive.null_format_colon;
+
+
+-- using unload
+unload with purgedata from target
+   into '/user/hive/exttables/null_format_default'
+   select * from null_format_src;
+select * from hive.hive.null_format_default;
+
+unload with purgedata from target
+   into '/user/hive/exttables/null_format_empty'
+   select * from null_format_src;
+select * from hive.hive.null_format_empty;
+
+unload with purgedata from target
+   into '/user/hive/exttables/null_format_colon'
+   select * from null_format_src;
+select * from hive.hive.null_format_colon;
 
 ---index 0
 create index customer_idx1 on customer_salt(c_first_name, c_last_name);
 
-
 sh  regrhbase.ksh $REGRTSTDIR/TEST018_create_hbase_objects.hbase &> $REGRRUNDIR/LOG018_create_hbase_tables.log ;
 
----unload 0 -- nulls 
-unload with purgedata from target
-   into '/user/hive/exttables/nulls'
-   select * from nulls;
-select * from hive.hive.nulls order by a,b;
 
 --exp1
 explain options 'f' 
@@ -597,9 +623,11 @@ cqd TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD '0';
 --*********************BULK UNLOAD with SNAPSHOT SCAN
 --unload 20
 
+cqd comp_bool_226 'on';  -- allow the extract syntax
 explain options 'f' 
 UNLOAD EXTRACT TO '/bulkload/customer_address'
 select * from trafodion.hbase.customer_address <<+ cardinality 10e10 >>;
+cqd comp_bool_226 reset;
 
 UNLOAD
 WITH PURGEDATA FROM TARGET
@@ -613,9 +641,11 @@ select [first 20] * from hive.hive.unload_customer_address  where ca_address_sk 
 
 --unload 21
 
+cqd comp_bool_226 'on';  -- allow the extract syntax
 explain options 'f' 
 UNLOAD EXTRACT TO '/user/hive/exttables/unload_customer_demographics'
 select * from trafodion.hbase.customer_demographics_salt <<+ cardinality 10e10 >>;
+cqd comp_bool_226 reset;
 
 UNLOAD  
 WITH PURGEDATA FROM TARGET
@@ -669,9 +699,11 @@ select count(*) from hive.hive.unload_customer_and_address;
 select [first 20] * from hive.hive.unload_customer_and_address order by ca_address_sk,c_customer_sk;
 
 --unload 26 --test with index scan
+cqd comp_bool_226 'on';  -- allow the extract syntax
 explain options 'f' 
 UNLOAD EXTRACT TO '/bulkload/customer_name'
 select c_first_name,c_last_name from trafodion.hbase.customer_salt;
+cqd comp_bool_226 reset;
 
 UNLOAD
 WITH PURGEDATA FROM TARGET

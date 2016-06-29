@@ -334,6 +334,9 @@ public class TypeInfo extends TMUDRSerializableObject {
             // length is the length in characters, but length_ is
             // the byte length, multiply by min bytes per char
             length_ = length * minBytesPerChar();
+            if (length_ < 0)
+                throw new UDRException(38900,"Length of a character type must not be negative, got %d",
+                                       length_);
             if (collation_ == SQLCollationCode.UNDEFINED_COLLATION.ordinal())
                 throw new UDRException(38900,"Collation must be specified for CHAR type in TypeInfo::TypeInfo");
             break;
@@ -349,6 +352,9 @@ public class TypeInfo extends TMUDRSerializableObject {
             if (length_ > 32767)
                 // see also CharType::CharType in ../common/CharType.cpp
                 flags_ |= TYPE_FLAG_4_BYTE_VC_LEN;
+            if (length_ < 0)
+                throw new UDRException(38900,"Length of a varchar type must not be negative, got %d",
+                                       length_);
             break;
 
         case CLOB:

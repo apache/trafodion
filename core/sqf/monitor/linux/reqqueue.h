@@ -220,6 +220,20 @@ private:
     void populateRequestString( void );
 };
 
+class CExtNodeNameReq: public CExternalReq
+{
+public:
+    CExtNodeNameReq (reqQueueMsg_t msgType, int pid,
+                 struct message_def *msg );
+    virtual ~CExtNodeNameReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+
+
 class CExtEventReq: public CExternalReq
 {
 public:
@@ -849,6 +863,21 @@ private:
     int level_;
 };
 
+class CIntNodeNameReq: public CInternalReq
+{
+public:
+    CIntNodeNameReq( const char *current_name, const char *new_name );
+    virtual ~CIntNodeNameReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    string current_name_;
+    string new_name_;
+};
+
 class CIntDownReq: public CInternalReq
 {
 public:
@@ -1027,6 +1056,7 @@ class CReqQueue
     void enqueueChildDeathReq ( pid_t pid );
     void enqueueAttachedDeathReq ( pid_t pid );
     void enqueueDownReq( int pnid );
+    void enqueueNodeNameReq( char *current_name, char *new_name);
     void enqueueSoftNodeDownReq( int pnid );
     void enqueueSoftNodeUpReq( int pnid );
     void enqueueShutdownReq( int level );
@@ -1157,7 +1187,7 @@ private:
       RQEW   CExtZoneInfoReq
       RQEX   (unused)
       RQEY   (unused)
-      RQEZ   (unused)
+      RQEZ   CExtNodeNameReq
       RQE_   CExtNullReq
 
  */

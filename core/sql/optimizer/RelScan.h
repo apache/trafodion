@@ -50,6 +50,7 @@
 #include "SchemaDB.h"
 #include "HbaseSearchSpec.h"
 #include "OptHints.h"
+#include "ExpHbaseDefs.h"
 #include <vector>
 
 // -----------------------------------------------------------------------
@@ -86,7 +87,6 @@ class QRDescGenerator;
 class RangeSpecRef;
 
 class MVMatch;
-class ByteArrayList;
 
 
 /*************************
@@ -1278,7 +1278,7 @@ public:
   static desc_struct *createVirtualTableDesc(const char * name,
 					     NABoolean isRW = FALSE,
 					     NABoolean isCW = FALSE, 
-                                             ByteArrayList* hbaseKeys = NULL);
+                                             NAArray<HbaseStr> * hbaseKeys = NULL);
 
   static desc_struct *createVirtualTableDesc(const char * name,
 					     NAList<char*> &colNameList,
@@ -1350,9 +1350,10 @@ public:
   static int createAsciiColAndCastExpr(Generator * generator,
 				       const NAType &givenType,
 				       ItemExpr *&asciiValue,
-				       ItemExpr *&castValue);
+				       ItemExpr *&castValue,
+                                       NABoolean srcIsInt32Varchar = FALSE);
 
- static int createAsciiColAndCastExpr2(Generator * generator,
+  static int createAsciiColAndCastExpr2(Generator * generator,
 				       ItemExpr * colNode,
 				       const NAType &givenType,
 				       ItemExpr *&asciiValue,
@@ -1453,6 +1454,16 @@ public:
 
   short extractHbaseFilterPreds(Generator * generator, ValueIdSet &preds,
                                 ValueIdSet &newExePreds);
+
+  NABoolean isHbaseFilterPredV2(Generator * generator, ItemExpr * ie,
+                                ValueId &colVID, ValueId &valueVID,
+                                NAString &op);
+
+  short extractHbaseFilterPredsVX(Generator * generator,ValueIdSet &preds, ValueIdSet &newExePreds);
+
+  NABoolean extractHbaseFilterPredsV2(Generator * generator, ValueIdSet &preds, ValueIdSet &newExePreds,
+                                      NABoolean checkOnly);
+
   NABoolean isSnapshotScanFeasible(LatestSnpSupportEnum snpNotSupported,
                                    char * tableName);
 

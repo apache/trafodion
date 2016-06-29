@@ -25,17 +25,28 @@ include ../macros.gmk #top level
 
 RM      = /bin/rm
 ifeq ($(SQ_BUILD_TYPE),release)
-  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/trafodion_clients-$(TRAFODION_VER).tgz
+  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/apache-trafodion_clients-$(TRAFODION_VER)-incubating.tar.gz
 else
-  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/trafodion_clients-$(TRAFODION_VER)-debug.tgz
+  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/apache-trafodion_clients-$(TRAFODION_VER)-debug.tar.gz
 endif
 
 
 .PHONY: all
 all: pkg-clients
 
-pkg-clients: 
+pkg-clients: clients/LICENSE clients/NOTICE
+	mkdir -p $$(dirname $(CLIENT_TAR))
 	tar -zcvf $(CLIENT_TAR) clients
+
+clients/LICENSE: ../../licenses/LICENSE-clients
+	cp -f $? $@
+
+../../licenses/LICENSE-clients:
+	cd $(@D) && $(MAKE) $(@F)
+
+clients/NOTICE: ../../NOTICE
+	cp -f $? $@
+
 clean:	
 	$(RM) -rf $(MY_SQROOT)/../conn/clients 
 	$(RM) -f $(MY_SQROOT)/../conn/*.mf

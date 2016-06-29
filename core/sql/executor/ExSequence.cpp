@@ -827,6 +827,8 @@ short ExSequenceTcb::work()
               }
             }
 
+//pentry_up->getAtp()->display("return eval result", myTdb().getCriDescUp());
+
             //
             // Case-10-030724-7963: we are done pointing the tupp at the
             // history buffer, so point it back to the SQL buffer.

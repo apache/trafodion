@@ -113,8 +113,10 @@ void deleteVirtExplainTableDesc(desc_struct *);
 
 
 short GenericUtilExpr::processOutputRow(Generator * generator,
-                                        const Int32 work_atp, const Int32 output_row_atp_index,
-                                        ex_cri_desc * returnedDesc)
+                                        const Int32 work_atp, 
+                                        const Int32 output_row_atp_index,
+                                        ex_cri_desc * returnedDesc,
+                                        NABoolean noAtpOrIndexChange)
 {
   ExpGenerator * expGen = generator->getExpGenerator();
   Space * space = generator->getSpace();
@@ -155,11 +157,14 @@ short GenericUtilExpr::processOutputRow(Generator * generator,
   // it.
   NADELETEBASIC(attrs, generator->wHeap());
 
-  // The output row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
-  
+  if (NOT noAtpOrIndexChange)
+    {
+      // The output row will be returned as the last entry of the returned atp.
+      // Change the atp and atpindex of the returned values to indicate that.
+      expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
+                                   0, returnedDesc->noTuples()-1);
+    }
+
   return 0;
 }
                                     
@@ -243,7 +248,10 @@ short ExeUtilProcessVolatileTable::codeGen(Generator * generator)
   if (isHbase_)
     {
       pvt_tdb->setHbaseDDL(TRUE);
-      pvt_tdb->setHbaseDDLNoUserXn(TRUE);
+
+      if ((NOT getExprNode()->castToStmtDDLNode()->ddlXns()) &&
+          (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+        pvt_tdb->setHbaseDDLNoUserXn(TRUE);
     }
 
   // no tupps are returned
@@ -1513,7 +1521,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     }
 
   short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
-                              returnedDesc);
+                              returnedDesc, TRUE);
   if (rc)
     {
       return -1;
@@ -1545,6 +1553,11 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
       expGen->generateExpr(pred->getValueId(),ex_expr::exp_SCAN_PRED,&scanExpr);
     }
   
+  // The output row will be returned as the last entry of the returned atp.
+  // Change the atp and atpindex of the returned values to indicate that.
+  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
+			       0, returnedDesc->noTuples()-1);
+
   struct QueryInfoStruct
   {
     const char * ausStr;
@@ -3196,17 +3209,7 @@ short ExeUtilFastDelete::codeGen(Generator * generator)
 	}
     }
 
-
-   char * hiveTableLocation = NULL;
-   char * hiveHdfsHost = NULL;
-   Int32 hiveHdfsPort = getHiveHdfsPort();
-
-   hiveTableLocation =
-       space->AllocateAndCopyToAlignedSpace (getHiveTableLocation(), 0);
-   hiveHdfsHost =
-       space->AllocateAndCopyToAlignedSpace (getHiveHostName(), 0);
-
-   Lng32 numEsps = -1;
+  Lng32 numEsps = -1;
 
   ComTdbExeUtilFastDelete * exe_util_tdb = new(space) 
     ComTdbExeUtilFastDelete(tablename, strlen(tablename),
@@ -3224,12 +3227,8 @@ short ExeUtilFastDelete::codeGen(Generator * generator)
 			    (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
 			    (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
 			    (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
 			    getDefault(GEN_DDL_NUM_BUFFERS),
-			    getDefault(GEN_DDL_BUFFER_SIZE),
-			    isHiveTable(),
-			    hiveTableLocation, hiveHdfsHost, hiveHdfsPort);
-#pragma warn(1506)  // warning elimination 
+			    getDefault(GEN_DDL_BUFFER_SIZE));
 
   if (doPurgedataCat_)
     exe_util_tdb->setDoPurgedataCat(TRUE);
@@ -3245,9 +3244,6 @@ short ExeUtilFastDelete::codeGen(Generator * generator)
 
   if (doLabelPurgedata_)
     exe_util_tdb->setDoLabelPurgedata(TRUE);
-
-  if (CmpCommon::getDefault(EXE_PARALLEL_PURGEDATA_WARNINGS) == DF_ON)
-    exe_util_tdb->setReturnPurgedataWarn(TRUE);
 
   if ((getUtilTableDesc()) && 
       (getUtilTableDesc()->getNATable()) &&
@@ -3275,6 +3271,98 @@ short ExeUtilFastDelete::codeGen(Generator * generator)
   return 0;
 }
 
+/////////////////////////////////////////////////////////
+//
+// ExeUtilHiveTruncate::codeGen()
+//
+/////////////////////////////////////////////////////////
+short ExeUtilHiveTruncate::codeGen(Generator * generator)
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+
+  // allocate a map table for the retrieved columns
+  generator->appendAtEnd();
+
+  ex_cri_desc * givenDesc
+    = generator->getCriDesc(Generator::DOWN);
+
+  ex_cri_desc * returnedDesc
+    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+
+  ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
+  const Int32 work_atp = 1;
+  const Int32 exe_util_row_atp_index = 2;
+
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
+    {
+      return -1;
+    }
+
+  char * partn_loc = NULL;
+  if (pl_)
+    {
+      NAString partnLoc = getHiveTableLocation();
+      partnLoc += "/";
+
+      for (Lng32 i = 0; i < pl_->entries(); i++)
+	{
+	  const NAString *cs = (*pl_)[i];
+
+          partnLoc += *cs;
+          partnLoc += "/";
+          
+	}
+  
+      partn_loc = 
+        space->allocateAndCopyToAlignedSpace
+        (partnLoc.data(), partnLoc.length(), 0);
+    }
+
+  char * tablename = NULL;
+  tablename = space->AllocateAndCopyToAlignedSpace
+    (generator->genGetNameAsAnsiNAString(getTableName()), 0);
+
+  char * hiveTableLocation = NULL;
+  char * hiveHdfsHost = NULL;
+  Int32 hiveHdfsPort = getHiveHdfsPort();
+  
+  hiveTableLocation =
+    space->AllocateAndCopyToAlignedSpace (getHiveTableLocation(), 0);
+  hiveHdfsHost =
+    space->AllocateAndCopyToAlignedSpace (getHiveHostName(), 0);
+
+  ComTdbExeUtilHiveTruncate * exe_util_tdb = new(space) 
+    ComTdbExeUtilHiveTruncate(tablename, strlen(tablename),
+                              hiveTableLocation, partn_loc,
+                              hiveHdfsHost, hiveHdfsPort,
+                              hiveModTS_,
+                              (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+                              (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+                              (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
+                              (queue_index)getDefault(GEN_DDL_SIZE_UP),
+                              getDefault(GEN_DDL_NUM_BUFFERS),
+                              getDefault(GEN_DDL_BUFFER_SIZE));
+
+  generator->initTdbFields(exe_util_tdb);
+  
+  if(!generator->explainDisabled()) {
+    generator->setExplainTuple(
+       addExplainInfo(exe_util_tdb, 0, 0, generator));
+  }
+
+  // no tupps are returned 
+  generator->setCriDesc((ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+			Generator::UP);
+  generator->setGenObj(this, exe_util_tdb);
+
+  generator->setTransactionFlag(0); // transaction is not needed.
+  
+  return 0;
+}
+
 ////////////////////////////////////////////////////////////////////
 // class ExeUtilRegionStats
 ////////////////////////////////////////////////////////////////////
@@ -3295,7 +3383,6 @@ desc_struct *ExeUtilRegionStats::createVirtualTableDesc()
 	 ComTdbExeUtilRegionStats::getVirtTableKeyInfo());
   return table_desc;
 }
-
 short ExeUtilRegionStats::codeGen(Generator * generator)
 {
   ExpGenerator * expGen = generator->getExpGenerator();
@@ -3377,6 +3464,161 @@ short ExeUtilRegionStats::codeGen(Generator * generator)
   exe_util_tdb->setDisplayFormat(displayFormat_);
 
   exe_util_tdb->setSummaryOnly(summaryOnly_);
+
+  if(!generator->explainDisabled()) {
+    generator->setExplainTuple(
+       addExplainInfo(exe_util_tdb, 0, 0, generator));
+  }
+
+  generator->setCriDesc(givenDesc, Generator::DOWN);
+  generator->setCriDesc(returnedDesc, Generator::UP);
+  generator->setGenObj(this, exe_util_tdb);
+  
+  // users should not start a transaction.
+  generator->setTransactionFlag(0);
+  
+  return 0;
+}
+
+////////////////////////////////////////////////////////////////////
+// class ExeUtilLobInfo
+////////////////////////////////////////////////////////////////////
+const char * ExeUtilLobInfo::getVirtualTableName()
+{ return ("EXE_UTIL_LOB_INFO__"); }
+
+desc_struct *ExeUtilLobInfo::createVirtualTableDesc()
+{
+  desc_struct * table_desc = NULL;
+   if (tableFormat_)
+    table_desc = Generator::createVirtualTableDesc(
+	 getVirtualTableName(),
+	 ComTdbExeUtilLobInfo::getVirtTableNumCols(),
+	 ComTdbExeUtilLobInfo::getVirtTableColumnInfo(),
+	 ComTdbExeUtilLobInfo::getVirtTableNumKeys(),
+	 ComTdbExeUtilLobInfo::getVirtTableKeyInfo());
+   else
+     table_desc = ExeUtilExpr::createVirtualTableDesc();
+  
+  return table_desc;
+}
+
+short ExeUtilLobInfo::codeGen(Generator * generator)
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+
+  // allocate a map table for the retrieved columns
+  generator->appendAtEnd();
+
+  ex_cri_desc * givenDesc
+    = generator->getCriDesc(Generator::DOWN);
+
+  ex_cri_desc * returnedDesc
+    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+
+  ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
+  const int work_atp = 1;
+  const int exe_util_row_atp_index = 2;
+
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
+    {
+      return -1;
+    }
+
+ NAString tn = "\"";
+  tn += getTableName().getQualifiedNameObj().getCatalogName();
+  tn += "\".";
+  tn += getTableName().getQualifiedNameObj().getSchemaName();
+  tn += ".";
+  tn += getTableName().getQualifiedNameObj().getObjectName();
+  char * tablename = space->AllocateAndCopyToAlignedSpace(tn, 0);
+  
+
+  char * schemaName = 
+    space->AllocateAndCopyToAlignedSpace
+    (getTableName().getQualifiedNameObj().getSchemaName(), 0);
+  char * catalogName =
+     space->AllocateAndCopyToAlignedSpace
+    (getTableName().getQualifiedNameObj().getCatalogName(), 0);
+  char * objectName =
+    space->AllocateAndCopyToAlignedSpace
+    (getTableName().getQualifiedNameObj().getObjectName(), 0);
+
+  char *lobColArray = NULL;
+  char * lobNumArray = NULL;
+  char * lobLocArray = NULL;
+  char * lobTypeArray = NULL;
+  const NATable * naTable = getUtilTableDesc()->getNATable();
+  Lng32 numLOBs = 0;
+
+  if (naTable->hasLobColumn())
+    {
+      for (CollIndex i = 0; i < naTable->getNAColumnArray().entries(); i++)
+	{
+	  
+	  NAColumn *col = naTable->getNAColumnArray()[i];
+	  if (col->getType()->isLob())
+	    {
+	      numLOBs++;	     
+	    } // if
+	} // for
+    }
+
+  if (numLOBs > 0)
+    {
+      lobColArray = space->allocateAlignedSpace(numLOBs*LOBINFO_MAX_FILE_LEN);
+      lobNumArray = space->allocateAlignedSpace(numLOBs*2);
+      lobLocArray = space->allocateAlignedSpace(numLOBs * LOBINFO_MAX_FILE_LEN);
+      lobTypeArray = space->allocateAlignedSpace(numLOBs * 4);
+
+      const NATable * naTable = getUtilTableDesc()->getNATable();
+      CollIndex j = 0;
+
+      for (CollIndex i = 0; i < naTable->getNAColumnArray().entries(); i++)
+	{
+
+	  NAColumn *col = naTable->getNAColumnArray()[i];
+	  if (col->getType()->isLob())
+	    {
+              strcpy(&lobColArray[j*LOBINFO_MAX_FILE_LEN], col->getColName());
+	      *(short*)(&lobNumArray[2*j]) = col->lobNum();
+
+	      strcpy(&lobLocArray[j*LOBINFO_MAX_FILE_LEN], col->lobStorageLocation());
+              *(Int32 *)(&lobTypeArray[4*j]) = col->lobStorageType();
+
+	      j++;
+	    }
+	}
+    }
+  Lng32 hdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
+  const char* f = ActiveSchemaDB()->getDefaults().
+    getValue(LOB_HDFS_SERVER);
+  char * hdfsServer = space->allocateAlignedSpace(strlen(f) + 1);
+  strcpy(hdfsServer, f);
+  
+  ComTdbExeUtilLobInfo *exe_util_tdb = new(space) 
+    ComTdbExeUtilLobInfo(
+         tablename,
+         objectUID_,
+         numLOBs,
+         lobColArray,
+         lobNumArray,
+         lobLocArray,
+         lobTypeArray,
+         hdfsPort,
+         hdfsServer,
+         tableFormat_,
+	 workCriDesc,
+	 exe_util_row_atp_index,
+	 givenDesc,
+	 returnedDesc,
+	 (queue_index)64,
+	 (queue_index)64,
+	 4, 
+	 64000); 
+  generator->initTdbFields(exe_util_tdb);
 
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
@@ -3927,8 +4169,17 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
     space->AllocateAndCopyToAlignedSpace
     (getTableName().getQualifiedNameObj().getSchemaName(), 0);
 
+  char * catname = 
+    space->AllocateAndCopyToAlignedSpace
+    (getTableName().getQualifiedNameObj().getCatalogName(), 0);
+
+  char * objectName = 
+    space->AllocateAndCopyToAlignedSpace
+    (getTableName().getQualifiedNameObj().getObjectName(), 0);
+
   char * lobNumArray = NULL;
   char * lobLocArray = NULL;
+  char * lobTypeArray = NULL;
 
   const NATable * naTable = getUtilTableDesc()->getNATable();
   Lng32 numLOBs = 0;
@@ -3945,6 +4196,7 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
 
 	      maxLocLen = MAXOF(maxLocLen, 
 				(short)strlen(col->lobStorageLocation()) + 1);
+              
 	    } // if
 	} // for
     }
@@ -3953,7 +4205,7 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
     {
       lobNumArray = space->allocateAlignedSpace(numLOBs*2);
       lobLocArray = space->allocateAlignedSpace(numLOBs * maxLocLen);
-
+      lobTypeArray = space->allocateAlignedSpace(numLOBs * 4);
       const NATable * naTable = getUtilTableDesc()->getNATable();
       CollIndex j = 0;
 
@@ -3964,9 +4216,8 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
 	  if (col->getType()->isLob())
 	    {
 	      *(short*)(&lobNumArray[2*j]) = col->lobNum();
-
 	      strcpy(&lobLocArray[j*maxLocLen], col->lobStorageLocation());
-
+              *(Int32 *)(&lobTypeArray[4*j]) =  col->lobStorageType();
 	      j++;
 	    }
 	}
@@ -3982,6 +4233,7 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
      numLOBs,
      lobNumArray,
      lobLocArray,
+     lobTypeArray,
      maxLocLen,
      (short)sdOptions_,
      givenDesc,
@@ -3992,7 +4244,7 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
      2,
      32000);
 #pragma warn(1506)  // warning elimination 
-  
+
   generator->initTdbFields(exe_util_tdb);
   
   if(!generator->explainDisabled()) {
@@ -4896,7 +5148,7 @@ short ExeUtilHBaseBulkLoadTask::codeGen(Generator * generator)
         IndexDesc *index = indList[i];
         indexName = 
           space->AllocateAndCopyToAlignedSpace
-          (index->getIndexName().getQualifiedNameAsAnsiString(), 0);
+          (index->getIndexName().getQualifiedNameAsString(), 0);
 
         indexList->insert(indexName);
       }

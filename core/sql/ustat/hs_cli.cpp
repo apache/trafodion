@@ -69,6 +69,7 @@
 #include "NLSConversion.h"
 #include "SqlciError.h"
 #include "ExpErrorEnums.h"
+#include "CmpSeabaseDDL.h" // call to createHistogramTables
 
 // -----------------------------------------------------------------------
 // Class to deallocate statement and descriptor.
@@ -412,125 +413,40 @@ Lng32 HSClearCLIDiagnostics()
 }
 
 // -----------------------------------------------------------------------
-// Create SB_Histograms and SB_Histogram_Intervals tables if they
-// don't already exist.
-// -----------------------------------------------------------------------
-Lng32 CreateSeabaseHist(const HSGlobalsClass* hsGlobal)
-  {
-    HSLogMan *LM = HSLogMan::Instance();
-    if (LM->LogNeeded())
-      {
-        snprintf(LM->msg, sizeof(LM->msg), "Creating %s table for schema %s on demand.",
-                         HBASE_HIST_NAME, hsGlobal->catSch->data());
-        LM->Log(LM->msg);
-      }
-
-    NAString ddl = "CREATE TABLE IF NOT EXISTS ";
-    ddl.append(hsGlobal->hstogram_table->data())
-       .append(" (  TABLE_UID      LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , HISTOGRAM_ID   INT UNSIGNED NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , COL_POSITION   INT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , COLUMN_NUMBER  INT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , COLCOUNT       INT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_COUNT SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , ROWCOUNT       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , TOTAL_UEC      LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , STATS_TIME     TIMESTAMP(0) NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , LOW_VALUE      VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , HIGH_VALUE     VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , READ_TIME      TIMESTAMP(0) NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , READ_COUNT     SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , SAMPLE_SECS    LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , COL_SECS       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , SAMPLE_PERCENT SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , CV             FLOAT(54) NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , REASON         CHAR(1) CHARACTER SET ISO88591 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V1             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V2             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V3             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V4             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V5             VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V6             VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-              "  , constraint "HBASE_HIST_PK" primary key"
-                "  (TABLE_UID ASC, HISTOGRAM_ID ASC, COL_POSITION ASC)"
-               " ); ");
-
-    LM->StartTimer("Create Trafodion HISTOGRAMS table");
-
-    Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
-                            "Create SeaBase histograms table", NULL);
-    LM->StopTimer();
-    if (retcode < 0 && LM->LogNeeded())
-      {
-        snprintf(LM->msg, sizeof(LM->msg), "Creation of %s failed.", HBASE_HIST_NAME);
-        LM->Log(LM->msg);
-      }
-
-    return retcode;
-  }
-
-Lng32 CreateSeabaseHistint(const HSGlobalsClass* hsGlobal)
-  {
-    HSLogMan *LM = HSLogMan::Instance();
-    if (LM->LogNeeded())
-      {
-        snprintf(LM->msg, sizeof(LM->msg), "Creating %s table for schema %s on demand.",
-                         HBASE_HISTINT_NAME, hsGlobal->catSch->data());
-        LM->Log(LM->msg);
-      }
-
-    NAString ddl = "CREATE TABLE IF NOT EXISTS ";
-    ddl.append(hsGlobal->hsintval_table->data())
-       .append(" (  TABLE_UID         LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , HISTOGRAM_ID      INT UNSIGNED NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_NUMBER   SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_ROWCOUNT LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_UEC      LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_BOUNDARY VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , STD_DEV_OF_FREQ   NUMERIC(12, 3) NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V1                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V2                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V3                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V4                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V5                VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V6                VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , constraint "HBASE_HISTINT_PK" primary key"
-              "     (TABLE_UID ASC, HISTOGRAM_ID ASC, INTERVAL_NUMBER ASC)"
-               " ) ;");
-
-    LM->StartTimer("Create Trafodion HISTOGRAM_INTERVALS table");
-    Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
-                                    "Create SeaBase histogram intervals table", NULL);
-    LM->StopTimer();
-    if (retcode < 0 && LM->LogNeeded())
-      {
-        snprintf(LM->msg, sizeof(LM->msg), "Creation of %s failed.", HBASE_HISTINT_NAME);
-        LM->Log(LM->msg);
-      }
-
-    return retcode;
-  }
-
-// -----------------------------------------------------------------------
 // Create histogram tables if they don't exist.
 // -----------------------------------------------------------------------
 Lng32 CreateHistTables (const HSGlobalsClass* hsGlobal)
   {
     Lng32 retcode = 0;
 
-    // do NOT check security for volatile tables
+    HSLogMan *LM = HSLogMan::Instance();
+    if (LM->LogNeeded())
+      {
+        snprintf(LM->msg, sizeof(LM->msg), "Creating histogram tables for schema %s on demand.",
+                         hsGlobal->catSch->data());
+        LM->Log(LM->msg);
+      }
+
+    // do NOT check volatile tables
     if (hsGlobal->objDef->isVolatile()) return retcode;
 
-    // Create HISTOGRAMS if is doesn't already exist
-    retcode = CreateSeabaseHist(hsGlobal);
-    HSFilterWarning(retcode);
-    HSHandleError(retcode);
+    LM->StartTimer("Table creation");
+    NAString tableNotCreated;
 
-    // create the  HISTOGRAM_INTERVALS, if it doesn't already exist.
-    hsGlobal->diagsArea.clear();
-    retcode = CreateSeabaseHistint(hsGlobal);
+    // Call createHistogramTables to create any table that does not yet exist.
+    NAString histogramsLocation = getHistogramsTableLocation(hsGlobal->catSch->data(), FALSE);
+    retcode = (CmpSeabaseDDL::createHistogramTables(NULL, histogramsLocation, TRUE, tableNotCreated)); 
+    if (retcode < 0 && LM->LogNeeded())
+      {
+        snprintf(LM->msg, sizeof(LM->msg), "Create failed for table %s.",
+                         tableNotCreated.data());
+        LM->Log(LM->msg);
+      }
+    LM->StopTimer();
+
     HSFilterWarning(retcode);
     HSHandleError(retcode);
+    hsGlobal->diagsArea.clear();
 
     return retcode;
  }
@@ -3330,7 +3246,20 @@ Lng32 HSCursor::buildNAType()
 
       switch(datatype)
         {
-        case REC_BIN16_SIGNED:
+        case REC_BIN8_SIGNED:
+          if (precision <= 0)
+            length = 1;
+          type = ConstructNumericType(addr, i, length, precision, scale,
+                                      TRUE, nullflag, heap_);
+          break;
+        case REC_BIN8_UNSIGNED:
+          if (precision <= 0)
+            length = 1;
+          type = ConstructNumericType(addr, i, length, precision, scale,
+                                      FALSE, nullflag, heap_);
+          break;
+
+       case REC_BIN16_SIGNED:
           if (precision <= 0)
             length = 2;
 #pragma nowarn(1506)   // warning elimination
@@ -3347,6 +3276,7 @@ Lng32 HSCursor::buildNAType()
                                       FALSE, nullflag, heap_);
 #pragma warn(1506)  // warning elimination
           break;
+
         //
         //
         case REC_BIN32_SIGNED:
@@ -3379,12 +3309,6 @@ Lng32 HSCursor::buildNAType()
         //----------------------------------------------------------------
 	case REC_FLOAT32:
 	case REC_FLOAT64:
-	case REC_TDM_FLOAT32:
-	case REC_TDM_FLOAT64:
-	  if (datatype == REC_TDM_FLOAT32)
-	    datatype = REC_FLOAT32;
-	  else if (datatype == REC_TDM_FLOAT64)
-	    datatype = REC_FLOAT64;
 	  //datatype = ((precision <= SQL_REAL_PRECISION) ?
 	  //           REC_FLOAT32 : REC_FLOAT64);
 	  if (datatype == REC_FLOAT32)
@@ -3751,7 +3675,7 @@ Lng32 HSCursor::fetchCharNumColumn(const char *clistr, NAString &value1, Int64 &
   if (retcode_ && retcode_ != HS_EOF) HSHandleError(retcode_);
   if ((colDesc_[0].datatype != REC_BYTE_V_ASCII && colDesc_[0].datatype != REC_BYTE_V_DOUBLE) ||
        colDesc_[1].datatype != REC_BIN64_SIGNED ||
-      (colDesc_[2].datatype != REC_IEEE_FLOAT64 && colDesc_[2].datatype != REC_TDM_FLOAT64))
+      (colDesc_[2].datatype != REC_IEEE_FLOAT64))
     return -1; // Result should be VARCHAR, LARGEINT, and FLOAT64 datatypes.
 
   if (retcode_ != HS_EOF)
@@ -3779,18 +3703,6 @@ Lng32 HSCursor::fetchCharNumColumn(const char *clistr, NAString &value1, Int64 &
     double tmp3;
     if (colDesc_[2].datatype == REC_IEEE_FLOAT64)
       memcpy((char *) &tmp3, colDesc_[2].data, colDesc_[2].length);
-    else // REC_TDM_FLOAT64 - convert to IEEE float.
-    {
-      ComDiagsArea diagsArea;
-      ComDiagsArea *diagsAreaPtr = &diagsArea;
-      Lng32 dataConversionErrorFlag;
-      ex_expr::exp_return_type rc =
-        convDoIt(colDesc_[2].data, colDesc_[2].length, REC_TDM_FLOAT64, 0, 0,
-                 (char *)&tmp3,    sizeof(double),     REC_IEEE_FLOAT64, 0, 0,
-                 NULL, 0, heap_, &diagsAreaPtr, CONV_FLOAT64TDM_FLOAT64IEEE,
-                 &dataConversionErrorFlag, 0);
-      if (rc != ex_expr::EXPR_OK) return -1;
-    }
     value3 = tmp3;
   }
   else value1="";
@@ -4846,7 +4758,7 @@ Lng32 HSinsertEmptyHist::insert()
 #else // NA_USTAT_USE_STATIC not defined, use dynamic query
     char sbuf[25];
     NAString qry = "SELECT HISTOGRAM_ID, COL_POSITION, COLUMN_NUMBER, COLCOUNT, "
-                          "cast(READ_TIME as char(19)), REASON "
+                          "cast(READ_TIME as char(19) character set iso88591), REASON "
                    "FROM ";
     qry.append(histTable_);
     qry.append(    " WHERE TABLE_UID = ");
@@ -5563,7 +5475,7 @@ static char ppStmtText[] =
 "          when LEFT_CHILD_SEQ_NUM is null then"
 "            '.  '"
 "          else"
-"            cast(cast(LEFT_CHILD_SEQ_NUM as numeric(3)) as char(3))"
+"            cast(cast(LEFT_CHILD_SEQ_NUM as numeric(3)) as char(3) character set iso88591)"
 "        end"
 ""
 // RIGHT CHILD
@@ -5571,11 +5483,11 @@ static char ppStmtText[] =
 "          when RIGHT_CHILD_SEQ_NUM is null then"
 "            '.  '"
 "          else"
-"            cast(cast(RIGHT_CHILD_SEQ_NUM as numeric(3)) as char(3))"
+"            cast(cast(RIGHT_CHILD_SEQ_NUM as numeric(3)) as char(3) character set iso88591)"
 "        end"
 ""
 // SEQUENCE NUMBER
-"      , cast(cast(SEQ_NUM as numeric(3)) as char(3))"
+"      , cast(cast(SEQ_NUM as numeric(3)) as char(3) character set iso88591)"
 ""
 // OPERATOR
 "      , cast(substring(lower(OPERATOR) from 1 for 20) as char(20))"
@@ -5806,13 +5718,13 @@ static char ppStmtText[] =
 "            from 1 for 20) as char(20))"
 ""
 // CARDINALITY
-"      , CAST(CARDINALITY AS CHAR(11))"
+"      , CAST(CARDINALITY AS CHAR(11) character set iso88591)"
 ""
 // OPERATOR COST
-"      , CAST(OPERATOR_COST AS CHAR(11))"
+"      , CAST(OPERATOR_COST AS CHAR(11) character set iso88591)"
 ""
 // TOTAL COST
-"      , CAST(TOTAL_COST AS CHAR(11))"
+"      , CAST(TOTAL_COST AS CHAR(11) character set iso88591)"
 ""
 "        FROM TABLE(EXPLAIN(NULL, '";
 
@@ -5834,6 +5746,8 @@ Lng32 printPlan(SQLSTMT_ID *stmt)
       } row;
 
     HSLogMan *LM = HSLogMan::Instance();
+
+    HSFuncExecQuery("CQD DEFAULT_CHARSET 'ISO88591'"); // to avoid buffer overruns in row
 
     NAString ppStmtStr = ppStmtText;
     ppStmtStr.append((char *)stmt->identifier).append("')) ORDER BY SEQ_NUM DESC;");
@@ -5878,11 +5792,15 @@ Lng32 printPlan(SQLSTMT_ID *stmt)
             LM->Log(LM->msg);
           }
         else if (retcode != 100)
-          HSLogError(retcode);
+          {
+            HSFuncExecQuery("CQD DEFAULT_CHARSET RESET");
+            HSLogError(retcode);
+          }
       }
 
     // ppStmtId will be closed by ~HSCursor if closeStmtNeeded_ is set.
 
+    HSFuncExecQuery("CQD DEFAULT_CHARSET RESET");
     return retcode;
   }
 
@@ -6075,6 +5993,12 @@ void profileGaps(HSColGroupStruct *, boundarySet<Int32>*, double&, Int64&,
                  NABoolean);
 template
 void profileGaps(HSColGroupStruct *, boundarySet<UInt32>*, double&, Int64&,
+                 NABoolean);
+template
+void profileGaps(HSColGroupStruct *, boundarySet<Int8>*, double&, Int64&,
+                 NABoolean);
+template
+void profileGaps(HSColGroupStruct *, boundarySet<UInt8>*, double&, Int64&,
                  NABoolean);
 template
 void profileGaps(HSColGroupStruct *, boundarySet<short>*, double&, Int64&,

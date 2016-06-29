@@ -1606,12 +1606,10 @@ ex_expr::exp_return_type ExHDPHash::pCodeGenerate(Space *space, UInt32 f)
     break; 
   case REC_BIN32_SIGNED:
   case REC_BIN32_UNSIGNED:
-  case REC_TDM_FLOAT32:
   case REC_IEEE_FLOAT32:
     flags = SWAP_FOUR;
     break;
   case REC_BIN64_SIGNED:
-  case REC_TDM_FLOAT64:
   case REC_IEEE_FLOAT64:
     flags = SWAP_EIGHT;
     break;
@@ -2636,6 +2634,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
   // For debugging...
   if(getenv("PCODE_NO_CONV")) return ex_clause::pCodeGenerate(space, f);
 #endif
+  if( ( flags_ & CONV_TO_NULL_WHEN_ERROR ) != 0 ) return ex_clause::pCodeGenerate(space, f);
 
   // If there is a third argument to the convert, it indicates that
   // a data conversion flag is present. This is used for converting keys

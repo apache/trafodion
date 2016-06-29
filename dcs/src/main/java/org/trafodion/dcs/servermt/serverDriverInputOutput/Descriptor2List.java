@@ -80,7 +80,7 @@ public class Descriptor2List {
         if (descCount == descNumber){
             Descriptor2 desc = null;
             if (oldFormat == false)
-                descLength = 3 * ServerConstants.INT_FIELD_SIZE;
+                descLength = 2 * ServerConstants.INT_FIELD_SIZE;
             else
                 descLength = ServerConstants.INT_FIELD_SIZE;
             varLength = 0;

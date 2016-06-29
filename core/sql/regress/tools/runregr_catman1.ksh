@@ -450,7 +450,8 @@ for ix in $testfiles; do
   #  Print date, time, test name and test result in log file. --
   #-------------------------------------------------------------
   echo $logtxt
-  echo "`date +'%D %T'`	$ix  $logtxt" >> $rgrlog
+  modtime=`stat --printf=%y $log | cut -d'.' -f1`
+  echo "$modtime  $test  $logtxt" >> $rgrlog
 
 done
 

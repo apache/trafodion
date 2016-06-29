@@ -3162,6 +3162,7 @@ public:
 #endif
 
   // methods used for Ipc Connection tracing
+  void print(); // can be called from the debugger
   void registTraceInfo(IpcEnvironment *env, ExeTraceInfo *ti);
   Int32 printConnTrace(Int32 lineno, char *buf);
   static Int32 getAnEntry(void * mine, Int32 lineno, char * buf)

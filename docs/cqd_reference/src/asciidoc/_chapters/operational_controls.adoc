@@ -1,0 +1,236 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+[[operational-controls]]
+= Operational Controls
+
+This section describes CQDs that are used for operational controls.
+
+[[auto-query-retry-warnings]]
+== AUTO_QUERY_RETRY_WARNINGS
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Indicates whether a warning should be issued when a query is retried, in case a failed query is automatically retried.
+| *Values*                    |
+*'ON'* or *'OFF'* +
+ +
+The default value is *'OFF'*.
+| *Usage*                     | There are certain cases, such as when a node failure occurs, where a query may fail midstream. The query is usually
+retried automatically if it has not returned any data. +
+ +
+When such retries happen, then you may want to see a warning that an automatic retry took place. That would be a reason to turn this on.
+| *Production Usage*          | Not applicable.
+| *Impact*                    | You get a warning message every time a query is automatically retried due to a failure. When there is a node failure,
+then a large number of queries may be impacted. Therefore, you need to assess if you want to see a flood of warnings. The warning is returned after the query completes.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | {project-name} 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[explain-description-column-size]]
+== EXPLAIN_DESCRIPTION_COLUMN_SIZE
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Specifies maximum length of DESCRIPTION column for EXPLAIN virtual tables.
+| *Values*                    |
+Positive integer > 10,000 +
+ +
+Default: -1, indicating a maximum size of 10,000.
+| *Usage*                     | Query-plan information for a SQL DML statement is stored temporarily in the Explain virtual table. 
+For large queries or queries with complex predicates, the default size of 10 KB may be insufficient to describe certain nodes in the query plan. 
+Specifying a larger value for this CQD allows more bytes to be stored in the description column. +
+ +
+Change this setting if you see explain plan being undesirably truncated only.
+| *Production Usage*          | Yes.
+| *Impact*                    | The explain plan truncation is reduced or removed.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | {project-name} 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[hbase-region-server-max-heap-size]]
+== HBASE_REGION_SERVER_MAX_HEAP_SIZE
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Enables {project-name} to use HBase block cache in an optimal manner.  Defines the maximum Java
+heap size (-Xmx option) the HBase Region Server are assigned, in MB units.
+| *Values*                    |
+Positive integer. +
+ +
+Default: *'1024'*.
+| *Usage*                     | If the HBase Region servers are configured with a maximum Java heap size different than 1 GB, then
+set this attribute so that {project-name} is aware of the actual maximum heap size of the Region Servers.
+| *Production Usage*          | Yes.
+| *Impact*                    | When set correctly, this CQD ensures that HBase block cache are be used optimally. Small scans
+are cached and larger scans are not cached to avoid cache trashing.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | {project-name} 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[hive-metadata-refresh-interval]]
+== HIVE_METADATA_REFRESH_INTERVAL
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Controls the metadata cache for Hive tables.
+| *Values*                    | 
+*-1*: Never invalidate any cache entries. +
+*0*: Always check the latest meta-data from Hive. +
+*> 0*: The cached Hive meta-data is valid only for <value> seconds. +
+ +
+Default: *'0'*.
+| *Usage*                     | Use a value of -1 when the Hive tables are read-only. This allows {project-name} to avoid repeatedly reading the
+metadata when the table is referenced in multiple queries. +
+ +
+Use a value of 0 when updates to the Hive tables are likely to be frequent. +
+ +
+Use a positive value _n_ to cause {project-name} to re-read metadata after n seconds has elapsed.
+Use this option when updates to the Hive table happen at least _n_ seconds apart. 
+| *Production Usage*          | Please contact {project-support}.
+| *Impact*                    | Compilation time.
+| *Level*                     | Session.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | {project-name} 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[query-cache]]
+== QUERY_CACHE
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Attempts to reduce compilation times by storing and reusing previously compiled query plans.
+It maximizes the chances of plan reuse by parameterizing literals in equality predicates. Two equality predicates, "col = val1" and "col = val2",
+are considered to match if their selectivities match. +
+ +
+A query cache setting of *'16384'* means a maximum of 16,384 KB of compiler memory can be used for keeping previously compiled plans
+before evicting the oldest unused plan(s) to make room for the latest cacheable plan.
+| *Values*                    |
+*Up through 4294967295*: Kilobytes of memory allocated to query cache. +
+*'0'*: Turns off query plan caching. +
+ +
+The default value is *'16384'* (16 MB).
+| *Usage*                     | To choose the appropriate size for the query cache, examine your applications. Applications that use a PREPARE
+statement to pre-compile queries once and then EXECUTE the prepared plan, should turn off plan caching. +
+ +
+Ad-hoc query applications can specify a size that can hold most of the frequently processed queries. For example, if an application processes
+40 classes of queries frequently with an average plan size of 100 KB per query, a cache size of 4000 KB might be optimal.
+(Plan size is not the same as the size of the SQL statement and is not easy to assess.) +
+ +
+There may be applications that are operational in nature, with many small queries, and others that are analytical in nature with large complex queries.
+Cache size can be set differently for different service levels handling such workloads based on the classes and types of queries, size of the queries,
+and propensity to get cache hits. +
+ +
+Another consideration is how frequently the cache is getting flushed due to the compiler being shutdown and a new one started by an MXOSRVR
+(ODBC/Connect server), in order to run queries on behalf of a different role than the role that was using the compiler before.
+If this happens often and not enough static servers can be started to reduce this from happening, then creating a large cache may not be useful,
+because it has to be flushed and filled too often. +
+ +
+After taking the above into account the best way to really assess whether caching is effective, and tune it for your specific applications,
+is to understand the cache hit statistics, how many queries are forced to be removed from cache (on a least recently used basis), and a number
+of other statistics about the efficiency of query plan caching for your applications. 
+| *Production Usage*          | Not applicable.
+| *Impact*                    | A larger cache size allows more query plans to be cached. This increases the probability of finding a plan in
+cache that can be reused for a query, thereby reducing compile time. It does mean that the compiler uses more memory, but because there are
+usually not that many compilers running in a node, the negative effects may be minimal. +
+ +
+However, you do need to know the amount of physical memory available on each node and the number of compilers that run on a node
+(influenced by the number of concurrent connections configured to run on the cluster). If the cache size is disproportionately large,
+it is likely to result in reduced performance as the operating system may repeatedly swap the compiler (bloated by a huge cache) in and out of physical memory.
+| *Level*                     | Service.
+| *Conflicts/Synergies*       | You should be aware that the cache allocated is divided into text caching and template caching.
+Text caching gets approximately 25% of the cache memory. Query plan caching occurs prior to parsing (text-based caching) and after parsing (template-based caching).
+The compiler caches same-text queries as text cache hits. Same-text queries are queries whose SQL texts are identical in everything,
+including case and white space. By caching text-based queries, the compiler avoids redundant re-computation of previously compiled
+queries and improves performance by reducing compile times and increasing compiler throughput. The text cache is always searched first for a query.
+If the plan object is not produced due to a text cache miss, then the plan is stored in the template cache if it meets the criteria for template caching.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | {project-name} 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[traf-load-allow-risky-index-maintenance]]
+== TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Allows incremental index maintenance during bulk load.
+| *Values*                    |
+*'ON'*: Incremental index maintenance enabled. +
+*'OFF'*: Incremental index maintenance disabled. +
+ +
+Default: *'OFF'*.
+| *Usage*                     | When this CQD is ON during a bulk load, then any indexes on a table are maintained incrementally.
+New rows are added to the base table and all the indexes in HFiles and then during LOAD COMPLETE phase all new files are moved to HBase.
+Indexes are not offline. However, it causes the index to be inconsistent with the base table if any of the new rows have the same key value as an existing row.
+Change the default to ON only when certain that new rows do not have a conflict with existing rows in table.
+| *Production Usage*          | Yes.
+| *Impact*                    | Bulk load into tables with index is faster, when the attribute is set to ON.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | {project-name} 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[traf-load-flush-size-in-kb]]
+== TRAF_LOAD_FLUSH_SIZE_IN_KB
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Specifies the flush size used by bulk load when writing to HFiles.
+| *Values*                    |
+Positive integer. +
+ +
+Default: *'2014'*.
+| *Usage*                     | If the system is not memory constrained, then specifying a larger value may make the write phase of the LOAD statement to proceed faster. +
+ +
+Consider using lower values if the table has several indexes and is memory constrained.
+| *Production Usage*          | Yes.
+| *Impact*                    | Affects memory usage patterns and write performance of LOAD.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | {project-name} 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+

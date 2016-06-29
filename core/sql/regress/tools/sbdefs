@@ -27,10 +27,12 @@ cqd seabase_volatile_tables 'ON';
 cqd hbase_async_drop_table 'OFF';
 cqd hbase_serialization 'ON';
 --cqd hbase_coprocessors 'OFF';
-cqd hbase_filter_preds 'ON';
+cqd hbase_small_scanner 'SYSTEM';
+cqd hbase_filter_preds '2';
 cqd traf_aligned_row_format 'OFF';
 --cqd traf_default_col_charset 'UTF8';
 cqd traf_index_create_opt 'ON';
+--cqd ddl_transactions 'ON';
 cqd schema '$$TEST_SCHEMA$$';
 set SCHEMA $$TEST_SCHEMA$$;
 #endif

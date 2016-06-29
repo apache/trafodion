@@ -551,10 +551,16 @@ public:
   DatetimeValue (const char* strValue,
                  rec_datetime_field startField,
                  rec_datetime_field endField,
-                 UInt32& fractionPrecision /* OUT */ );
+                 UInt32& fractionPrecision /* OUT */,
+                 NABoolean useOldConstructor);
 
   DatetimeValue (const char* value,
                  Lng32 storageSize);
+
+  void oldConstructor(const char* strValue,
+                      rec_datetime_field startField,
+                      rec_datetime_field endField,
+                      UInt32& fractionPrecision /* OUT */);
 
   // ---------------------------------------------------------------------
   // Destructor functions 

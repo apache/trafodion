@@ -81,6 +81,7 @@ drop table $$TEST_SCHEMA$$.t022a7;
 drop table t022fltcmp;
 drop table t022bug cascade;
 ?ifMX
+drop table t022dtime;
 
 -------------------------------------------------------------------------------
 ?section test
@@ -164,6 +165,14 @@ select cast (9 as decimal(1) unsigned) from t022t1;
 select cast (0 as decimal(9) unsigned) from t022t1;
 select cast (999999999 as decimal(9) unsigned) from t022t1;
 
+select cast (10 as tinyint) from t022t1;
+select cast (-10 as tinyint) from t022t1;
+select cast (127 as tinyint) from t022t1;
+select cast (-128 as tinyint) from t022t1;
+select cast (10 as tinyint unsigned) from t022t1;
+select cast (0 as tinyint unsigned) from t022t1;
+select cast (255 as tinyint unsigned) from t022t1;
+
 select cast (date'12/31/9999' as timestamp(3)) from t022t1;
 select cast (timestamp'12/31/9999 11:59:59.999999 pm' as date) from t022t1;
 select cast (timestamp'12/31/9999 11:59:59.999999 pm' as time(3)) from t022t1;
@@ -191,6 +200,55 @@ select time'12:00:00 am' - interval'1'second from t022t1;
 
 select timestamp '2015-05-31T10:11:12' from t022t1;
 select timestamp '2015-05-31T10:11:12Z' from t022t1;
+select timestamp '2015-05-31T10:11:12-05:00' from t022t1;
+select timestamp '2015-05-31T10:11:12+05:00' from t022t1;
+select timestamp '2015-05-31T10:11:12.123-05:00' from t022t1;
+select timestamp '2015-05-31T10:11:12.123+05:00' from t022t1;
+
+select cast('2015-05-31T10:11:12' as timestamp) from t022t1;
+select cast('2015-05-31T10:11:12Z' as timestamp) from t022t1;
+select cast('2015-05-31T10:11:12-05:00' as timestamp) from t022t1;
+select cast('2015-05-31T10:11:12+05:00' as timestamp) from t022t1;
+select cast('2015-05-31T10:11:12.123-05:00' as timestamp) from t022t1;
+select cast('2015-05-31T10:11:12.123+05:00' as timestamp) from t022t1;
+
+select time '10:11:12' from t022t1;
+select time '10:11:12Z' from t022t1;
+select time '10:11:12-05:00' from t022t1;
+select time '10:11:12+05:00' from t022t1;
+select time '10:11:12.123-05:00' from t022t1;
+select time '10:11:12.123+05:00' from t022t1;
+
+select cast('10:11:12' as time) from t022t1;
+select cast('10:11:12Z' as time) from t022t1;
+select cast('10:11:12-05:00' as time) from t022t1;
+select cast('10:11:12+05:00' as time) from t022t1;
+select cast('10:11:12.123-05:00' as time) from t022t1;
+select cast('10:11:12.123+05:00' as time) from t022t1;
+
+select time '23:11:06.123' from t022t1;
+select cast ('23:11:06.123' as time(2)) from t022t1;
+
+select cast('2010-01-01' as timestamp(3)) from t022t1;
+select cast('2010-01-01 10' as timestamp) from t022t1;
+
+create table if not exists t022dtime(a date not null, b time, c timestamp);
+prepare s from upsert into t022dtime values (?, ?, ?);
+execute s using '2010-01-01', '10:10:10', '2010-01-01 10:10:10.123';
+select * from t022dtime;
+
+-- negative cases
+select cast('2016-01-29Z' as date) from t022t1;
+select cast('2016-01-29+05:00' as date) from t022t1;
+select cast('10:11:12-05:000' as time) from t022t1;
+select date '2016-01-29Z' from t022t1;
+select date '2016-01-29+05:00' from t022t1;
+select time '25:11:11' from t022t1;
+select time '23:11:11.1234567' from t022t1;
+select cast ('23:11:61' as time) from t022t1;
+select cast ('23:11:06' as timestamp) from t022t1;
+select cast('2010-01-01' as time) from t022t1;
+select timestamp'2010-01-01 10' from t022t1;
 
 -- Prove these cases work since they're used in the succeeding negative tests.
 
@@ -251,9 +309,6 @@ select cast (10 as decimal(2) unsigned) from t022t1;
 select cast (65536 as decimal(5) unsigned) from t022t1;
 select cast (100000 as decimal(6) unsigned) from t022t1;
 
--- Floating point results are different depending on whether you are
--- running on NSK (Tandem floating point) or NT (IEEE floating point)
-?ifNSK
 select cast (-32769 as real) from t022t1;
 select cast (32768 as real) from t022t1;
 select cast (-10 as real) from t022t1;
@@ -277,32 +332,6 @@ select cast (2147483648 as double precision) from t022t1;
 select cast (-100000 as double precision) from t022t1;
 select cast (100000 as double precision) from t022t1;
 select cast (4294967296 as double precision) from t022t1;
-?ifNSK
-?ifNT
-select cast (-32769 as real) from t022t1;
-select cast (32768 as real) from t022t1;
-select cast (-10 as real) from t022t1;
-select cast (10 as real) from t022t1;
-select cast (-1 as real) from t022t1;
-select cast (65536 as real) from t022t1;
-select cast (-2147483649 as real) from t022t1;
-select cast (9999999999 as real) from t022t1;
-select cast (-100000 as real) from t022t1;
-select cast (100000 as real) from t022t1;
-select cast (9999999999 as real) from t022t1;
-
-select cast (-32769 as double precision) from t022t1;
-select cast (32768 as double precision) from t022t1;
-select cast (-10 as double precision) from t022t1;
-select cast (10 as double precision) from t022t1;
-select cast (-1 as double precision) from t022t1;
-select cast (65536 as double precision) from t022t1;
-select cast (-2147483649 as double precision) from t022t1;
-select cast (2147483648 as double precision) from t022t1;
-select cast (-100000 as double precision) from t022t1;
-select cast (100000 as double precision) from t022t1;
-select cast (4294967296 as double precision) from t022t1;
-?ifNT
 
 select cast ('Hello, world!' as char(13)) from t022t2;
 select cast ('Hello, world!' as varchar(13)) from t022t2;
@@ -469,6 +498,12 @@ select cast (cast (10 as double precision) as decimal(1)) from t022t1;
 select cast (cast (-1 as double precision) as decimal(1) unsigned) from t022t1;
 select cast (cast (10 as double precision) as decimal(1) unsigned) from t022t1;
 
+-- negative tests for tinyint
+select cast(-129 as tinyint) from t022t1;
+select cast(128 as tinyint) from t022t1;
+select cast(256 as tinyint unsigned) from t022t1;
+select cast(-1 as tinyint unsigned) from t022t1;
+
 -- tests for DATE, TIME, TIMESTAMP
 select cast ('12.07.1961 03.04.55.123456' as timestamp) from t022t2;
 select cast ('12.07.1961 03.04.55.123456' as timestamp(3)) from t022t2;
@@ -525,16 +560,8 @@ select cast (1 as numeric(9) unsigned) /
 
 select cast (1 as double precision) / cast (0 as double precision) from t022t1;
 
--- Floating point results are different depending on whether you are
--- running on NSK (Tandem floating point) or NT (IEEE floating point)
-?ifNSK
--- results:  0 rows selected
-select cast('66.2' as float) from t022t1 where cast('66.2' as float) = 66.2;
-?ifNSK
-?ifNT
 -- results:  1 row selected
 select cast('66.2' as float) from t022t1 where cast('66.2' as float) = 66.2;
-?ifNT
 
 -- to test comparisons between signed and unsigned numbers.
 
@@ -1104,9 +1131,6 @@ insert into t022fltcmp values('float access', 1.17549436e-38,
                                2.2250738585072014e-308);
 
 select * from t022fltcmp;
-
--- This CQD is required, otherwise TANDEM float will show up in showplan
-control query default FLOATTYPE 'IEEE';
 
 -- Start the basic tests
 -- New PCode instructions for FLOAT64 and FLOAT32: GT and LE

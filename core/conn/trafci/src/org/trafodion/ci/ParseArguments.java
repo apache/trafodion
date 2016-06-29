@@ -119,9 +119,9 @@ public class ParseArguments
       //Pre-parse args for special cases
       if (argsList.contains("-version"))
       {
-         cwObj.print("Trafodion JDBC Type 4 Driver : ");
+         cwObj.print("JDBC Type 4 Driver Build ID : ");
          cwObj.println(JDBCVproc.getVproc());
-         cwObj.print(SessionDefaults.PROD_NAME + " : ");
+         cwObj.print("Command Interface Build ID  : ");
          org.trafodion.ci.Vproc.main(args) ;
          cwObj.println("");
          System.exit(0);   //any other args included w/version are ignored

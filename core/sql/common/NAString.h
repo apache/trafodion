@@ -160,6 +160,9 @@ void	  RemoveTrailingZeros(NAString &ns);
 
 NAString Latin1StrToUTF8(const NAString & latin1Str, NAMemory * heap = NULL);
 
+NAString &replaceAll(NAString &source, const NAString &searchFor,
+                     const NAString &replaceWith);
+
 
 // See notes at NAString.cpp specialSQL_TEXT[].
 //

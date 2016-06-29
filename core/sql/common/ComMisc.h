@@ -65,4 +65,12 @@ NAString ComConvertTrafNameToNativeName(
                                          const NAString &schemaName,
                                          const NAString &objectName);
 
+// returns TRUE if specified name is a reserved name.
+// Currently, reserved names for traf internal usage are:
+//   SYSKEY
+//   _SALT_
+//   _DIVISION_*_   :_DIVISION_ prefix followed by division number and ending
+//                   with underscore(_)
+NABoolean ComTrafReservedColName(const NAString &colName);
+
 #endif // COMMISC_H
