@@ -2102,6 +2102,30 @@ Statement * Statement::getCurrentOfCursorStatement(char * cursorName)
 
 }
 
+//////////////////////////////////////////////////////////////////
+////
+//// A helper function to show buffer in HEX
+////
+//// ///////////////////////////////////////////////////////////////
+
+static char *stringToHex(char * out, Int32 outLen, char * in, Int32 inLen)
+{
+  //clear out buffer first
+  memset(out,0,outLen);
+
+  outLen = (outLen / 2) ;
+
+  if(inLen < outLen) outLen = inLen;
+
+  char hex[3];
+  for(int i = 0; i < outLen; i++)
+  {
+    sprintf(hex, "%02x", in[i]);
+    strcat(out,hex);
+  }
+  return out;
+}
+
 ///////////////////////////////////////////////////////////////////////
 // RETURN: doSimCheck: if true, do similarity check.
 //         doFixup:    if true and doSimCheck is false, do fixup again.
@@ -2298,6 +2322,10 @@ RETCODE Statement::resolveNames(LateNameInfoList * lnil,
 	      if (retcode != ex_expr::EXPR_OK)
 		{
 		  diagsArea << DgSqlCode(-EXE_CONVERT_STRING_ERROR);
+                  char hexstr[256];
+                  memset(hexstr, 0 , sizeof(hexstr) );
+                  diagsArea << DgString0(stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
 		  return ERROR;  
 		}
 

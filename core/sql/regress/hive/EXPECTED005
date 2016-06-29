@@ -509,7 +509,7 @@ C1           C2           C3           C4
 --- SQL operation complete.
 >>load with NO OUTPUT into trafodion.seabase.tbl_dos_num select * from tbl_dos_num;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted.
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 33393437380d
 
 --- 0 row(s) loaded.
 >>cqd HIVE_SCAN_SPECIAL_MODE '1';
@@ -540,7 +540,7 @@ C1           C2
 --- SQL operation complete.
 >>select * from tbl_bad;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted.
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 61
 
 --- 0 row(s) selected.
 >>cqd HIVE_SCAN_SPECIAL_MODE '2';
@@ -581,17 +581,17 @@ C1           C2                    C3                         C4               C
 --- SQL operation complete.
 >>load with no output into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted.
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 61
 
 --- 0 row(s) loaded.
 >>insert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted.
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 61
 
 --- 0 row(s) inserted.
 >>upsert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted.
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 61
 
 --- 0 row(s) inserted.
 >>cqd HIVE_SCAN_SPECIAL_MODE '2';

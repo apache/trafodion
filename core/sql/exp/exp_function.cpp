@@ -44,6 +44,7 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "NLSConversion.h"
 #include "nawstring.h"
@@ -2498,9 +2499,19 @@ ex_expr::exp_return_type ex_function_converttimestamp::eval(char *op_data[],
                                                         (Int64)  99999999;
   if ((juliantimestamp < minJuliantimestamp) ||
       (juliantimestamp > maxJuliantimestamp)) {
-    ExRaiseFunctionSqlError(heap, diagsArea, EXE_CONVERTTIMESTAMP_ERROR,
-			    derivedFunction(),
-			    origFunctionOperType());
+    char tmpbuf[24];
+    memset(tmpbuf, 0, sizeof(tmpbuf) );
+    sprintf(tmpbuf, "%ld", juliantimestamp);
+
+    ExRaiseSqlError(heap, diagsArea, EXE_CONVERTTIMESTAMP_ERROR);
+    if(*diagsArea)
+      **diagsArea << DgString0(tmpbuf);
+
+    if(derivedFunction())
+    {
+      **diagsArea << DgSqlCode(-EXE_MAPPED_FUNCTION_ERROR);
+       **diagsArea << DgString0(exClauseGetText(origFunctionOperType()));
+    }
     
     return ex_expr::EXPR_ERROR;
   }
@@ -2840,9 +2851,19 @@ ex_expr::exp_return_type ex_function_juliantimestamp::eval(char *op_data[],
   short error;
   juliantimestamp = COMPUTETIMESTAMP(timestamp, &error);
   if (error) {
-    ExRaiseFunctionSqlError(heap, diagsArea, EXE_JULIANTIMESTAMP_ERROR,
-			    derivedFunction(),
-			    origFunctionOperType());
+    char tmpbuf[24];
+    memset(tmpbuf, 0, sizeof(tmpbuf) );
+    sprintf(tmpbuf, "%ld", juliantimestamp);
+
+    ExRaiseSqlError(heap, diagsArea, EXE_JULIANTIMESTAMP_ERROR);
+    if(*diagsArea)
+      **diagsArea << DgString0(tmpbuf);
+
+    if(derivedFunction())
+    {
+      **diagsArea << DgSqlCode(-EXE_MAPPED_FUNCTION_ERROR);
+       **diagsArea << DgString0(exClauseGetText(origFunctionOperType()));
+    }
     
     return ex_expr::EXPR_ERROR;
   }
