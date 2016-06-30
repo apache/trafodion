@@ -71,7 +71,7 @@ import org.apache.hadoop.hbase.regionserver.RegionCoprocessorHost;
 import org.apache.hadoop.hbase.regionserver.ScanQueryMatcher;
 import org.apache.hadoop.hbase.regionserver.ScanType;
 import org.apache.hadoop.hbase.regionserver.ScanInfo;
-#ifdef HDP2.3
+#ifdef HDP2.3 HBASE1.1 CDH5.5
 import org.apache.hadoop.hbase.regionserver.ScannerContext;
 #endif
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
@@ -677,7 +677,7 @@ public class TrxTransactionState extends TransactionState {
             //Store.ScanInfo scaninfo = new Store.ScanInfo(null, 0, 1, HConstants.FOREVER, false, 0, Cell.COMPARATOR);
             ScanInfo scaninfo = new ScanInfo(null, 0, 1, HConstants.FOREVER,KeepDeletedCells.FALSE, 0, KeyValue.COMPARATOR);
            
-#ifdef HDP2.3
+#ifdef HDP2.3 HBASE1.1
             //Hbase 1.1.2 and beyond has optimization in TimeRange.compare(cell) to return true for all time ranges if TimeRange.isAllTime() is true.
             //scan.setTimeRange(min, max) instantiates TimeRange with a different constructor (isAllTime is false in this case). This is set 
             //in scan object by the client if specific time range is needed. In all other cases, a default TimeRange() (isAllTime is true)
@@ -730,7 +730,7 @@ public class TrxTransactionState extends TransactionState {
          * @param limit
          * @return true if there are more rows, false if scanner is done
          */
-#ifndef HDP2.3
+#ifdef HBASE1.0 CDH5.4
         @Override
 #endif
         public synchronized boolean next(final List<Cell> outResult, final int limit) throws IOException {          	
@@ -796,13 +796,13 @@ public class TrxTransactionState extends TransactionState {
             return false;
         }
 
-#ifndef HDP2.3
+#ifndef HDP2.3 HBASE1.1
         @Override
 #endif
         public synchronized boolean next(final List<Cell> results) throws IOException {
           return next(results, -1);
         }
-#ifdef HDP2.3
+#ifdef HDP2.3 HBASE1.1 CDH5.5
         @Override
         public boolean next(List<Cell> results, ScannerContext scannerContext) throws IOException {
             return next(results, -1);

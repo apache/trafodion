@@ -48,7 +48,11 @@ sudo chmod 777 $TRAF_CONFIG
 source $TRAF_CONFIG
 
 
-hbase_trx_jar="hbase-trx-apache*.jar"
+hbase_trx_jar="hbase-trx-apache1_1_2*.jar"
+
+if [[ $hbaseVersion =~1.0]]; then
+   hbase_trx_jar="hbase-trx-apache1_0_2*.jar"
+fi
 
 traf_util_jar="trafodion-utility-*.jar"
 
