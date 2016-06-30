@@ -14,7 +14,7 @@
 -->
 This page provides links to the per-release Trafodion documentation.
 
-# Latest
+## Latest (In development)
 
 Document                                              | Formats
 ------------------------------------------------------|-----------------------------------
@@ -24,7 +24,7 @@ Trafodion Code Examples                               | [wiki](https://cwiki.apa
 Trafodion Command Interface Guide                     | [Web Book](docs/command_interface/index.html),  [PDF](docs/command_interface/Trafodion_Command_Interface_Guide.pdf)
 Trafodion Control Query Default (CQD) Reference Guide | [Web Book](docs/cqd_reference/index.html),      [PDF](docs/cqd_interface/Trafodion_CQD_Reference_Guide.pdf)
 Trafodion Database Connectivity Services Guide        | [Web Book](docs/dcs_reference/index.html),      [API](docs/dcs_reference/apidocs/index.html)
-Trafodion JDBC Type 4 Programmer's Reference Guide    | [Web Book](docs/jdbct4ref_guide/index.html),     [PDF](docs/jdbct4ref_guide/Trafodion_JDBCT4_Reference_Guide.pdf)
+Trafodion JDBC Type 4 Programmer Reference Guide      | [Web Book](docs/jdbct4ref_guide/index.html),     [PDF](docs/jdbct4ref_guide/Trafodion_JDBCT4_Reference_Guide.pdf)
 Trafodion Load and Transform Guide                    | [Web Book](docs/load_transform/index.html),     [PDF](docs/load_transform/Trafodion_Load_Transform_Guide.pdf)
 Trafodion Messages Guide                              | [Web Book](docs/messages_guide/index.html),     [PDF](docs/messages_guide/Trafodion_Messages_Guide.pdf)
 Trafodion Manageability                               | [wiki](https://cwiki.apache.org/confluence/display/TRAFODION/Trafodion+Manageability)
@@ -35,7 +35,7 @@ Trafodion SQL Reference Manual                        | [Web Book](docs/sql_refe
 Trafodion Stored Procedures in Java (SPJ) Guide       | [Web Book](docs/spj_guide/index.html),          [PDF](docs/spj_guide/Trafodion_SPJ_Guide.pdf)
 UDF Tutorial                                          | [wiki](https://cwiki.apache.org/confluence/display/TRAFODION/Tutorial%3A+The+object-oriented+UDF+interface)
 
-# 2.0.0 (In Development)
+## 2.0.x Releases
 
 Document                                              | Formats
 ------------------------------------------------------|-----------------------------------
@@ -43,7 +43,7 @@ Trafodion Client Installation Guide                   | [Web Book](docs/2.0.0/cl
 Trafodion Command Interface Guide                     | [Web Book](docs/2.0.0/command_interface/index.html),  [PDF](docs/2.0.0/command_interface/Trafodion_Command_Interface_Guide.pdf)
 Trafodion Control Query Default (CQD) Reference Guide | [Web Book](docs/2.0.0/cqd_reference/index.html),      [PDF](docs/2.0.0/cqd_interface/Trafodion_CQD_Reference_Guide.pdf)
 Trafodion Database Connectivity Services Guide        | [Web Book](docs/2.0.0/dcs_reference/index.html),      [API](docs/2.0.0/dcs_reference/apidocs/index.html)
-Trafodion JDBC Type 4 Programmer's Reference Guide    | [Web Book](docs/2.0.0/jdbct4ref_guide/index.html),    [PDF](docs/2.0.0/jdbct4ref_guide/Trafodion_JDBCT4_Reference_Guide.pdf)
+Trafodion JDBC Type 4 Programmer Reference Guide      | [Web Book](docs/2.0.0/jdbct4ref_guide/index.html),    [PDF](docs/2.0.0/jdbct4ref_guide/Trafodion_JDBCT4_Reference_Guide.pdf)
 Trafodion Load and Transform Guide                    | [Web Book](docs/2.0.0/load_transform/index.html),     [PDF](docs/2.0.0/load_transform/Trafodion_Load_Transform_Guide.pdf)
 Trafodion Messages Guide                              | [Web Book](docs/2.0.0/messages_guide/index.html),     [PDF](docs/2.0.0/messages_guide/Trafodion_Messages_Guide.pdf)
 Trafodion odb User Guide                              | [Web Book](docs/2.0.0/odb/index.html),                [PDF](docs/2.0.0/odb/Trafodion_odb_User_Guide.pdf)
@@ -52,7 +52,7 @@ Trafodion REST Server Reference Guide                 | [Web Book](docs/2.0.0/re
 Trafodion SQL Reference Manual                        | [Web Book](docs/2.0.0/sql_reference/index.html),      [PDF](docs/2.0.0/sql_reference/Trafodion_SQL_Reference_Manual.pdf)
 Trafodion Stored Procedures in Java (SPJ) Guide       | [Web Book](docs/2.0.0/spj_guide/index.html),          [PDF](docs/2.0.0/spj_guide/Trafodion_SPJ_Guide.pdf)
 
-# 1.3.0
+## 1.3.0 Release
 
 Document                                              | Formats
 ------------------------------------------------------|-----------------------------------

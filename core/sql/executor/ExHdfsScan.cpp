@@ -425,12 +425,12 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
         case CHECK_FOR_DATA_MOD_AND_DONE:
           {
             char * dirPath = hdfsScanTdb().hdfsRootDir_;
-            if (! dirPath)
+            Int64 modTS = hdfsScanTdb().modTSforDir_;
+            if ((dirPath == NULL) || (modTS == -1))
               dataModCheckDone_ = TRUE;
 
             if (NOT dataModCheckDone_)
               {
-                Int64 modTS = hdfsScanTdb().modTSforDir_;
                 Lng32 numOfPartLevels = hdfsScanTdb().numOfPartCols_;
 
                 if (hdfsScanTdb().hdfsDirsToCheck())

@@ -677,14 +677,19 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
 
   if (ret != ERROR)
   {
-    // Send database credentials in a string as follows:
-    //    Database userID
-    //    Delimiter
-    //    Database username
+    // The message contains the following:
+    //   (auth state and user ID are delimited by commas)
+    //     authorization state (0 - off, 1 - on)
+    //     integer user ID
+    //     database user name
+    // See CmpStatement::process (CmpMessageDatabaseUser) for more details
     Int32 *userID = ctxt->getDatabaseUserID();
     Int32 userAsInt = *userID;
-    char userMessage [MAX_AUTHID_AS_STRING_LEN + 1 + MAX_USERNAME_LEN + 1];
-    str_sprintf(userMessage, "%d,%s", userAsInt, ctxt->getDatabaseUserName());
+    CmpContext *cmpCntxt = CmpCommon::context();
+    NABoolean authOn = cmpCntxt ? cmpCntxt->isAuthorizationEnabled() : FALSE;
+
+    char userMessage [MAX_AUTHID_AS_STRING_LEN + 1 + MAX_USERNAME_LEN + 1 + 2];
+    str_sprintf(userMessage, "%d,%d,%s", authOn, userAsInt, ctxt->getDatabaseUserName());
 
 #if defined(NA_DEBUG_C_RUNTIME)
     NABoolean doDebug = (getenv("DBUSER_DEBUG") ? TRUE : FALSE);

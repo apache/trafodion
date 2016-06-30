@@ -575,7 +575,7 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
 
 // This forces an rcb to be created with a different version number
 // A "0" means to take the current mxv version
-  DDui1__(CAT_RCB_VERSION,     "0"),
+  DDui___(CAT_RCB_VERSION,     "0"),
 
 // Controls creation of column privileges for object-level privileges
   DDkwd__(CAT_REDUNDANT_COLUMN_PRIVS, "ON"),
@@ -1307,8 +1307,6 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDSint__(ESP_PRIORITY,                        "0"),
   DDSint__(ESP_PRIORITY_DELTA,                  "0"),
 
-  DDkwd__(ESTIMATE_HBASE_ROW_COUNT,             "ON"),
-
  // Disable hints - if SYSTEM, enable on SSD, and disable only on HDD
   DDkwd__(EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_HASH,	"SYSTEM"),
   DDkwd__(EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_SORT,	"SYSTEM"),
@@ -1356,10 +1354,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXE_PARALLEL_DDL,                     "ON"),
 
-  DDkwd__(EXE_PARALLEL_PURGEDATA,               "MINIMUM"),
-
-  DDkwd__(EXE_PARALLEL_PURGEDATA_WARNINGS,      "OFF"),
-
   DDui___(EXE_PA_DP2_STATIC_AFFINITY,           "1"),
 
   DDkwd__(EXE_SINGLE_BMO_QUOTA,                 "ON"),
@@ -1373,7 +1367,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXPAND_DP2_SHORT_ROWS,		"ON"),
 
- XDDui___(EXPLAIN_DESCRIPTION_COLUMN_SIZE,    "-1"),
+ XDDint__(EXPLAIN_DESCRIPTION_COLUMN_SIZE,    "-1"),
 
   DDkwd__(EXPLAIN_DETAIL_COST_FOR_CALIBRATION,  "FALSE"),
 
@@ -1422,8 +1416,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(FAST_REPLYDATA_MOVE,			"ON"),
  SDDkwd__(FFDC_DIALOUTS_FOR_MXCMP,		"OFF"),
   DDkwd__(FIND_COMMON_SUBEXPRS_IN_OR,		"ON"),
-
-  DDkwd__(FLOATTYPE,				"IEEE"),
 
   DDui___(FLOAT_ESP_RANDOM_NUM_SEED,    "0"),
 
@@ -1953,6 +1945,9 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  // Main ones to use:
  // HIVE_MAX_STRING_LENGTH: Hive "string" data type gets converted
  //                         into a VARCHAR with this length
+ //                         This should be deprecated from Trafodion R2.1
+ // HIVE_MAX_STRING_LENGTH_IN_BYTES: Hive "string" data type gets converted
+ //                                  into a VARCHAR with this length
  // HIVE_MIN_BYTES_PER_ESP_PARTITION: Make one ESP for this many bytes
  // HIVE_NUM_ESPS_PER_DATANODE: Equivalent of MAX_ESPS_PER_CPU_PER_OP
  //                             Note that this is really per SeaQuest node
@@ -1966,10 +1961,12 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DD_____(HIVE_FILE_CHARSET,                    ""),
   DD_____(HIVE_FILE_NAME,     "/hive/tpcds/customer/customer.dat" ),
   DD_____(HIVE_HDFS_STATS_LOG_FILE,             ""),
+  DDui___(HIVE_INSERT_ERROR_MODE,               "1"),
   DDint__(HIVE_LIB_HDFS_PORT_OVERRIDE,          "-1"),
   DDint__(HIVE_LOCALITY_BALANCE_LEVEL,          "0"),
   DDui___(HIVE_MAX_ESPS,                        "9999"),
   DDui___(HIVE_MAX_STRING_LENGTH,               "32000"),
+  DDui___(HIVE_MAX_STRING_LENGTH_IN_BYTES,      "32000"),
   DDkwd__(HIVE_METADATA_JAVA_ACCESS,            "ON"),
   DDint__(HIVE_METADATA_REFRESH_INTERVAL,       "0"),
   DDflt0_(HIVE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
@@ -1977,6 +1974,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDpct__(HIVE_NUM_ESPS_ROUND_DEVIATION,        "34"),
   DDint__(HIVE_SCAN_SPECIAL_MODE,                "0"),
   DDkwd__(HIVE_SORT_HDFS_HOSTS,                 "ON"),
+  DDkwd__(HIVE_USE_EXT_TABLE_ATTRS,             "ON"),
   DD_____(HIVE_USE_FAKE_SQ_NODE_NAMES,          "" ),
   DDkwd__(HIVE_USE_FAKE_TABLE_DESC,             "OFF"),
   DDkwd__(HIVE_USE_HASH2_AS_PARTFUNCION,        "ON"),
@@ -2434,7 +2432,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(MVQR_USE_RI_FOR_EXTRA_HUB_TABLES, "OFF"),
   DD_____(MVQR_WORKLOAD_ANALYSIS_MV_NAME, ""),
 
- XDDMVA__(MV_AGE,				""),
+ XDDMVA__(MV_AGE,				"0 MINUTES"),
  XDDkwd__(MV_ALLOW_SELECT_SYSTEM_ADDED_COLUMNS, "OFF"),
   DDkwd__(MV_AS_ROW_TRIGGER,			"OFF"),
   DDkwd__(MV_AUTOMATIC_LOGGABLE_COLUMN_MAINTENANCE, "ON"),
@@ -3401,6 +3399,11 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   //location for temporary links and files produced by snapshot scan
   DD_____(TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION,       "/bulkload/"),
 
+  DDkwd__(TRAF_TINYINT_INPUT_PARAMS,                   "OFF"),
+  DDkwd__(TRAF_TINYINT_RETURN_VALUES,                  "OFF"),
+  DDkwd__(TRAF_TINYINT_SPJ_SUPPORT,                    "OFF"),
+  DDkwd__(TRAF_TINYINT_SUPPORT,                        "ON"),
+
   // DTM Transaction Type: MVCC, SSCC
   XDDkwd__(TRAF_TRANS_TYPE,                            "MVCC"),
 
@@ -3517,7 +3520,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_DEBUG_FORCE_FETCHCOUNT,         "OFF"),
   DD_____(USTAT_DEBUG_TEST,                     ""),
   DDflte_(USTAT_DSHMAX,		                "50.0"),
-  DDkwd__(USTAT_ESTIMATE_HBASE_ROW_COUNT,       "OFF"),
+  DDkwd__(USTAT_ESTIMATE_HBASE_ROW_COUNT,       "ON"),
   DDkwd__(USTAT_FETCHCOUNT_ACTIVE,              "OFF"),
   DDkwd__(USTAT_FORCE_MOM_ESTIMATOR,            "OFF"),
   DDkwd__(USTAT_FORCE_TEMP,                     "OFF"),
@@ -3546,7 +3549,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDui___(USTAT_IUS_MAX_PERSISTENT_DATA_IN_MB,        "50000"), // 50GB
   DDflt0_(USTAT_IUS_MAX_PERSISTENT_DATA_IN_PERCENTAGE,  "0.20"), // 20% of the total
 
-  DDui1_6(USTAT_IUS_MAX_TRANSACTION_DURATION,  "20"),   // in minutes
+  DDui1_6(USTAT_IUS_MAX_TRANSACTION_DURATION,  "5"),   // in minutes
   DDkwd__(USTAT_IUS_NO_BLOCK,                   "OFF"),
   DDansi_(USTAT_IUS_PERSISTENT_CBF_PATH,        "SYSTEM"),
 
@@ -3603,7 +3606,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_SIDETREE_INSERT,            "ON"),
   DDkwd__(USTAT_USE_SLIDING_SAMPLE_RATIO,       "ON"), // Trend sampling rate down w/increasing table size, going
                                                        //   flat at 1%.
- XDDui1__(USTAT_YOULL_LIKELY_BE_SORRY,          "100000000"),  // guard against unintentional long-running UPDATE STATS
+ XDDflt1_(USTAT_YOULL_LIKELY_BE_SORRY,          "100000000"),  // guard against unintentional long-running UPDATE STATS
   DDkwd__(VALIDATE_RFORK_REDEF_TS,	        "OFF"),
 
   DDkwd__(VALIDATE_VIEWS_AT_OPEN_TIME,		"OFF"),
@@ -3714,6 +3717,71 @@ static NABoolean isSynonymOfSYSTEM(Int32 attrEnum, NAString &value)
   return FALSE;
 }
 
+// Helper class used for holding and restoring CQDs
+class NADefaults::HeldDefaults
+{
+  public:
+   
+    HeldDefaults(void);
+
+    ~HeldDefaults(void);
+
+    // CMPASSERT's on stack overflow
+    void pushDefault(const char * value);
+
+    // returns null if nothing to pop
+    char * popDefault(void);
+
+  private:
+
+    enum { STACK_SIZE = 3 };
+
+    int stackPointer_;
+    char * stackValue_[STACK_SIZE];
+    
+};
+
+// Methods for helper class HeldDefaults
+NADefaults::HeldDefaults::HeldDefaults(void) : stackPointer_(0)
+{            
+  for (int i = 0; i < STACK_SIZE; i++)
+    stackValue_[i] = NULL;
+}
+
+NADefaults::HeldDefaults::~HeldDefaults(void)
+{
+  for (int i = 0; i < STACK_SIZE; i++)
+  {
+    if (stackValue_[i])
+    {
+      NADELETEBASIC(stackValue_[i], NADHEAP);
+    }
+  }
+}
+
+// CMPASSERT's on stack overflow
+void NADefaults::HeldDefaults::pushDefault(const char * value)
+{
+  CMPASSERT(stackPointer_ < STACK_SIZE);
+  stackValue_[stackPointer_] = new NADHEAP char[strlen(value) + 1];
+  strcpy(stackValue_[stackPointer_],value);
+  stackPointer_++;
+}
+
+// returns null if nothing to pop
+char * NADefaults::HeldDefaults::popDefault(void)
+{
+  char * result = 0;
+  if (stackPointer_ > 0)
+  {
+    stackPointer_--;
+    result = stackValue_[stackPointer_];
+    stackValue_[stackPointer_] = NULL;
+  }
+  return result;
+}
+
+
 size_t NADefaults::numDefaultAttributes()
 {
   return (size_t)__NUM_DEFAULT_ATTRIBUTES;
@@ -3777,8 +3845,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   currentFloats_	= new NADHEAP float * [numAttrs];
   currentTokens_	= new NADHEAP DefaultToken * [numAttrs];
   currentState_		= INIT_DEFAULT_DEFAULTS;
-  heldDefaults_	        = new NADHEAP char * [numAttrs];
-  heldHeldDefaults_	= new NADHEAP char * [numAttrs];
+  heldDefaults_	        = new NADHEAP HeldDefaults * [numAttrs];
 
   // reset all entries
   size_t i = 0;
@@ -3793,8 +3860,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   memset( currentDefaults_, 0, sizeof(char *) * numAttrs );
   memset( currentFloats_, 0, sizeof(float *) * numAttrs );
   memset( currentTokens_, 0, sizeof(DefaultToken *) * numAttrs );
-  memset( heldDefaults_, 0, sizeof(char *) * numAttrs );
-  memset( heldHeldDefaults_, 0, sizeof(char *) * numAttrs );
+  memset( heldDefaults_, 0, sizeof(HeldDefaults *) * numAttrs );
 
   #ifndef NDEBUG
     // This env-var turns on consistency checking of default-defaults and
@@ -3850,10 +3916,26 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
         }
       prevAttrName = defaultDefaults[i].attrName;
 
+      // validate initial default default values
+      CMPASSERT(defaultDefaults[i].validator);
+      if (! defaultDefaults[i].validator->validate(
+               defaultDefaults[i].value,
+               this,
+               defaultDefaults[i].attrEnum,
+               +1/*warning*/))
+        {
+          SqlParser_NADefaults_ = NULL;
+
+          cerr << "\nERROR: " << defaultDefaults[i].attrName
+               << " has invalid value" << defaultDefaults[i].value << endl;
+
+          return;
+         }
+
       // LCOV_EXCL_START
       // for debugging only
       #ifndef NDEBUG
-	if (nadval) {	// additional sanity checking we want to do occasionally
+       if (nadval) {	// additional sanity checking we want to do occasionally
 
 	  NAString v;
 
@@ -3912,8 +3994,8 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 	      CMPASSERT(v == keywords_[j]);
 
 	      CMPASSERT(v.first(' ') == NA_NPOS);
-	    }
 
+	    }
 	}	// if env-var
       #endif	// NDEBUG
       // LCOV_EXCL_STOP
@@ -4046,7 +4128,6 @@ NADefaults::NADefaults(NAMemory * h)
   , currentFloats_(NULL)
   , currentTokens_(NULL)
   , heldDefaults_(NULL)
-  , heldHeldDefaults_(NULL)
   , currentState_(UNINITIALIZED)
   , readFromSQDefaultsTable_(FALSE)
   , SqlParser_NADefaults_(NULL)
@@ -4117,14 +4198,8 @@ void NADefaults::deleteMe()
 
   if (heldDefaults_) {
     for (size_t i = numDefaultAttributes(); i--; )
-      NADELETEBASIC(heldDefaults_[i], NADHEAP);
+      NADELETE(heldDefaults_[i], HeldDefaults, NADHEAP);
     NADELETEBASIC(heldDefaults_, NADHEAP);
-  }
-
-  if (heldHeldDefaults_) {
-    for (size_t i = numDefaultAttributes(); i--; )
-      NADELETEBASIC(heldHeldDefaults_[i], NADHEAP);
-    NADELETEBASIC(heldHeldDefaults_, NADHEAP);
   }
 
   for (CollIndex i = tablesRead_.entries(); i--; )
@@ -4767,7 +4842,21 @@ Int32 NADefaults::validateFloat(const char *value, float &result,
 {
   Int32 n = -1;	// NT's scanf("%n") is not quite correct; hence this code-around
   sscanf(value, "%g%n", &result, &n);
-  if (n > 0 && value[n] == '\0') return TRUE;	// a valid float
+  if (n > 0 && value[n] == '\0') 
+    {
+      switch (attrEnum)
+        {
+        case HIVE_INSERT_ERROR_MODE:
+          {
+            Lng32 v = str_atoi(value, str_len(value));
+            if (v >= 0 && v <= 3)
+              return TRUE;
+          }
+          break;
+        default:
+          return TRUE;	// a valid float
+        }
+    }
 
   NAString v(value);
   NABoolean silentIf = (errOrWarn == SilentIfSYSTEM);
@@ -6016,14 +6105,6 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
   char * value = NULL;
   if (holdOrRestoreCQD == 1) // hold cqd
     {
-      if (heldHeldDefaults_[attrEnum])
-        {
-          // Gasp! We've done three successive HOLDs... it's off to
-          // the bit bucket for the deepest value
-          NADELETEBASIC(heldHeldDefaults_[attrEnum], NADHEAP);
-        }
-      heldHeldDefaults_[attrEnum] = heldDefaults_[attrEnum];
-
       if (currentDefaults_[attrEnum])
 	{
 	  value = new NADHEAP char[strlen(currentDefaults_[attrEnum]) + 1];
@@ -6034,32 +6115,39 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
 	  value = new NADHEAP char[strlen(defaultDefaults[defDefIx_[attrEnum]].value) + 1];
 	  strcpy(value, defaultDefaults[defDefIx_[attrEnum]].value);
 	}
-      heldDefaults_[attrEnum] = value;
+
+      if (! heldDefaults_[attrEnum])
+        heldDefaults_[attrEnum] = new NADHEAP HeldDefaults();
+
+      heldDefaults_[attrEnum]->pushDefault(value);
     }
   else
     {
       // restore cqd from heldDefaults_ array, if it was held.
       if (! heldDefaults_[attrEnum])
+        return attrEnum;
+
+      value = heldDefaults_[attrEnum]->popDefault();
+      if (! value)
 	return attrEnum;
 
       // there is an odd semantic that if currentDefaults_[attrEnum]
       // is null, we leave it as null, but pop a held value anyway;
-      // this semantic was preserved when the second level 
-      // (heldHeldDefaults_) was added.
+      // this semantic was preserved when heldDefaults_ was converted
+      // to a stack.
 
       if (currentDefaults_[attrEnum])
         {
           // do a validateAndInsert so the caches (such as currentToken_)
-          // get updated and so appropriate semantic actions are taken
-          NAString value(heldDefaults_[attrEnum]);
+          // get updated and so appropriate semantic actions are taken.
+          // Note that validateAndInsert will take care of deleting the
+          // storage currently held by currentDefaults_[attrEnum].
+          NAString valueS(value);
           validateAndInsert(lookupAttrName(attrEnum), // sad that we have to do a lookup again
-                            value,
+                            valueS,
                             FALSE);
-        }
-      
-      NADELETEBASIC(heldDefaults_[attrEnum], NADHEAP);
-      heldDefaults_[attrEnum] = heldHeldDefaults_[attrEnum];
-      heldHeldDefaults_[attrEnum] = NULL;
+        }     
+      NADELETEBASIC(value, NADHEAP);
     }
 
   return attrEnum;
@@ -6521,12 +6609,13 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	  case '3':	return DF_MAXIMUM;
 	}
       // HBASE_FILTER_PREDS
-        if ((attrEnum == HBASE_FILTER_PREDS) && value.length()==1)
+      if ((attrEnum == HBASE_FILTER_PREDS) && value.length()==1)
       switch (*value.data()){
         case '0': return DF_OFF;
         case '1': return DF_MINIMUM;
         case '2': return DF_MEDIUM;
-        // in the future add DF_HIGH and DF_MAXIMUM when we implement more pushdown capabilities
+        // in the future add DF_HIGH and DF_MAXIMUM when we implement more 
+        // pushdown capabilities
       }
     if ( attrEnum == TEMPORARY_TABLE_HASH_PARTITIONS ||
          attrEnum == MVQR_REWRITE_CANDIDATES ||
@@ -6605,20 +6694,9 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	isValid = TRUE;
       break;
 
-    case FLOATTYPE:
-      if (tok == DF_TANDEM || tok == DF_IEEE)
-	isValid = TRUE;
-      break;
-
     case GROUP_BY_USING_ORDINAL:
       if (tok == DF_ALL || tok == DF_MINIMUM ||
 	  tok == DF_OFF)
-	isValid = TRUE;
-      break;
-
-    case EXE_PARALLEL_PURGEDATA:
-      if (tok == DF_ALL || tok == DF_MINIMUM ||
-	  tok == DF_OFF || tok == DF_ON || tok == DF_MEDIUM)
 	isValid = TRUE;
       break;
 
@@ -6627,6 +6705,11 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	  tok  == DF_VERTICAL    || tok == DF_INDEXES    || tok == DF_KEYINDEXES)
 	isValid = TRUE;
     break;
+
+    case HIVE_USE_EXT_TABLE_ATTRS:
+      if (tok == DF_ALL || tok == DF_OFF || tok == DF_ON )
+	isValid = TRUE;
+      break;
 
     case INDEX_ELIMINATION_LEVEL:
       if  (tok == DF_MINIMUM	 || tok == DF_MEDIUM ||
@@ -6716,16 +6799,8 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       // sent using sendAllControls method, all values are valid. This will
       // ensure that if this default is not set and is sent over to secondary
       // mxcmp using an internal CQD statement, it doesn't return an error.
-      if (cmpCurrentContext->isSecondaryMxcmp())
-	{
-	  if (tok == DF_ON		 || tok == DF_OFF)
-	    isValid = TRUE;
-	}
-      else
-	{
-	  if (tok == DF_ON)
-	    isValid = TRUE;
-	}
+      if (tok == DF_ON		 || tok == DF_OFF)
+        isValid = TRUE;
       break;
 
     case NVCI_PROCESS:
@@ -6737,16 +6812,8 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       // sent using sendAllControls method, all values are valid. This will
       // ensure that if this default is not set and is sent over to secondary
       // mxcmp using an internal CQD statement, it doesn't return an error.
-      if (cmpCurrentContext->isSecondaryMxcmp())
-	{
-	  if (tok == DF_ON		 || tok == DF_OFF)
-	    isValid = TRUE;
-	}
-      else
-	{
-	  if (tok == DF_ON)
-	    isValid = TRUE;
-	}
+      if (tok == DF_ON		 || tok == DF_OFF)
+        isValid = TRUE;
       break;
 
     case NAMETYPE:
@@ -7345,3 +7412,5 @@ void NADefaults::setSchemaAsLdapUser(const NAString val)
 			<< DgString1("SCHEMA");
   }
 }
+
+

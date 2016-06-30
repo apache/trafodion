@@ -11149,12 +11149,10 @@ UInt32 ConstValue::computeHashValue(const NAType& columnType)
            break; 
          case REC_BIN32_SIGNED:
          case REC_BIN32_UNSIGNED:
-         case REC_TDM_FLOAT32:
          case REC_IEEE_FLOAT32:
            flags = ExHDPHash::SWAP_FOUR;
            break;
          case REC_BIN64_SIGNED:
-         case REC_TDM_FLOAT64:
          case REC_IEEE_FLOAT64:
            flags = ExHDPHash::SWAP_EIGHT;
            break;
@@ -12033,8 +12031,7 @@ Cast::Cast(ItemExpr *val1Ptr, const NAType *type, OperatorTypeEnum otype,
        }
     }
              
-  noStringTruncationWarnings_ = noStringTrunWarnings;
-  convertNullWhenError_ = FALSE;
+  setNoStringTruncationWarnings(noStringTrunWarnings);
 }
 
 Cast::Cast(ItemExpr *val1Ptr, ItemExpr *errorOutPtr, const NAType *type,
@@ -12047,8 +12044,7 @@ Cast::Cast(ItemExpr *val1Ptr, ItemExpr *errorOutPtr, const NAType *type,
   flags_(0)
 {
   checkForTruncation_ = checkForTrunc;
-  noStringTruncationWarnings_ = noStringTrunWarnings;
-  convertNullWhenError_ = FALSE;
+  setNoStringTruncationWarnings(noStringTrunWarnings);
 }
 
 Cast::~Cast() {}
@@ -12204,7 +12200,7 @@ NABoolean Cast::hasEquivalentProperties(ItemExpr * other)
       (this->type_->operator == (*(tmp->type_) )) &&
       (this->checkForTruncation_ == tmp->checkForTruncation_ ) &&
       (this->reverseDataErrorConversionFlag_ == tmp->reverseDataErrorConversionFlag_ ) &&
-      (this->noStringTruncationWarnings_ == tmp->noStringTruncationWarnings_  ) &&
+    //      (this->noStringTruncationWarnings_ == tmp->noStringTruncationWarnings_  ) &&
       (this->flags_ == tmp->flags_);
 }
 // --------------------------------------------------------------
@@ -12932,6 +12928,7 @@ ItemExpr * Repeat::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
     result = derivedNode;
   
   ((Repeat *) result)->setMaxLength(getMaxLength());
+  ((Repeat *) result)->maxLengthWasExplicitlySet_ = maxLengthWasExplicitlySet_;
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 }

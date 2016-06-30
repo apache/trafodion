@@ -67,7 +67,7 @@
 1065 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating constraint $0~ConstraintName in metadata schema is not allowed.
 1066 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating index $0~TableName in metadata schema is not allowed.
 1067 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating module $0~String0 in metadata schema is not allowed.
-1068 ZZZZZ 99999 ADVANCED MAJOR DIALOUT An internal error was encountered: cannot create lock $0~TableName in metadata schema.
+1068 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Initialize authorization completed with warnings.
 1069 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Schema $0~SchemaName could not be dropped. $0~String0
 1070 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object $0~TableName could not be created. File error: $1~Int0.
 1071 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object $0~TableName could not be accessed. 
@@ -593,7 +593,7 @@
 2076 21000 99999 BEGINNER MAJOR DBADMIN HIST_NO_STATS_UEC should always be less than or equal to CQD HIST_NO_STATS_ROWCOUNT. Present Value of HIST_NO_STATS_ROWCOUNT is $0~string0.
 2077 ZZZZZ 99999 BEGINNER MINOR DBADMIN The max size $0~int0 must be greater than the initial size $1~int1.
 2078 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Assertion failure during semantic query optimization ($0~string0) in file $1~string1 at line $2~int0. Attempting to recover and produce a plan.
-2079 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error occurred during initialization of NADefaults structure. Make sure that default constants specified in enum DefaultConstants are set up correctly in defaultDefaults[] array.
+2079 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error occurred during initialization of NADefaults structure. Make sure that default constants specified in enum DefaultConstants are specified in defaultDefaults[] array, are in alphabetical order and the default values are valid.
 2080 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error $3~int2 while reading file: $2~int1 bytes were read from $0~string0 when $1~int0 were expected in module $4~string1.
 2081 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error $1~int0 while opening file $0~string0 for read.
 2082 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error $1~int0 while opening file $0~string0 for write.
@@ -905,7 +905,7 @@ $1~String1 --------------------------------
 3151 42000 99999 BEGINNER MAJOR DBADMIN Duplicate WITH HORIZONTAL PARTITIONS phrases were specified in LIKE clause in CREATE TABLE statement.
 3152 42000 99999 BEGINNER MAJOR DBADMIN Duplicate WITHOUT $0~string0 phrases were specified in LIKE clause in CREATE TABLE statement.
 3153 42000 99999 BEGINNER MAJOR DBADMIN The FIRST KEY clause is not allowed with hash or hash2 partitioning.
-3154 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused as of 03/25/04 ---
+3154 42000 99999 BEGINNER MAJOR DBADMIN The $0~String0 clause is not allowed with the $1~String1 clause.
 3155 42000 99999 BEGINNER MAJOR DBADMIN The POPULATE and NO POPULATE clauses cannot coexist in the same CREATE INDEX statement.
 3156 42000 99999 BEGINNER MAJOR DBADMIN The STORE BY clause is not allowed on a vertically partitioned table.
 3157 42000 99999 BEGINNER MAJOR DBADMIN A catalog name is required.
@@ -1492,6 +1492,8 @@ $1~String1 --------------------------------
 8031 HY018 99999 BEGINNER INFRM LOGONLY Server declined cancel request for query ID $0~String0. $1~String1.
 8032 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Explain information for the provided query id is not available in repository.
 8033 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Explain information is too large to be stored in repository.
+8034 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Column $0~String0 of object $1~string0 does not have a default clause but it is missing in database. This indicates inconsistent data.
+8035 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Truncation of hive table failed. $0~String0
 8100 ZZZZZ 99999 BEGINNER MINOR LOGONLY Define $1~string0 does not exist
 8101 23000 99999 BEGINNER MAJOR DBADMIN The operation is prevented by check constraint $0~ConstraintName on table $1~TableName.
 8102 23000 99999 BEGINNER MAJOR DBADMIN The operation is prevented by a unique constraint.
@@ -1553,6 +1555,7 @@ $1~String1 --------------------------------
 8434 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Invalid target column for LOB function. The column needs to be blob/clob type. 
 8435 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
 8436 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mismatch detected between compiletime and runtime hive table definitions.
+8437 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mismatch detected between external table and underlying hive table definitions.
 8440 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The size of the history buffer is too small to execute one or more of the OLAP Windowed Functions in the query. 
 8441 ZZZZZ 99999 BEGINNER MAJOR DBADMIN one or more of the OLAP Windowed Functions in the query may require overflow which is not supported yet.
 8442 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to access $0~string0 interface. Call to $1~string1 returned error $2~string2($0~int0). Error detail $1~int1.
@@ -1652,7 +1655,7 @@ $1~String1 --------------------------------
 8675 ZZZZZ 99999 ADVANCED INFRM DBADMIN SQL error $0~int0 from internal statement to query statistics stored procedure.
 8676 ZZZZZ 99999 ADVANCED INFRM DBADMIN Cannot suspend the query because it is already suspended.
 8677 ZZZZZ 99999 ADVANCED INFRM DBADMIN Cannot activate the query because it is not suspended.
-8690 ZZZZZ 99999 BEGINNER MINOR LOGONLY An invalid character value encountered in TRANSLATE function.
+8690 ZZZZZ 99999 BEGINNER MINOR LOGONLY An invalid character value encountered in TRANSLATE function. Source charset $0~string0 , Target charset $1~string1. Error data in HEX: $2~string2 .
 8691 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
 8692 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
 8693 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
