@@ -144,6 +144,8 @@ SMD_QUERY_TABLE tranQueryTable[] = {
 #define SQL_API_SQLTABLES_JDBC			SQL_API_SQLTABLES + SQL_API_JDBC
 #define SQL_API_SQLCOLUMNS_JDBC			SQL_API_SQLCOLUMNS + SQL_API_JDBC
 #define SQL_API_SQLSPECIALCOLUMNS_JDBC	SQL_API_SQLSPECIALCOLUMNS + SQL_API_JDBC
+#define SQL_API_SQLPROCEDURES_JDBC     SQL_API_SQLPROCEDURES + SQL_API_JDBC
+#define SQL_API_SQLPROCEDURECOLUMNS_JDBC       SQL_API_SQLSPECIALCOLUMNS + SQL_API_JDBC
 // The value represents SQL version, MXCS module major version and MXCS module minor version.
 #define MODULE_RELEASE_VERSION			200
 #define	MODULE_MAJOR_VERSION			400
@@ -4574,6 +4576,7 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                         break;
 
 		case SQL_API_SQLPROCEDURES :
+		case SQL_API_SQLPROCEDURES_JDBC:
 		//	strcpy((char *)catStmtLabel, "SQL_PROCEDURES_ANSI_Q4");
 
 			if (!checkIfWildCard(catalogNm, expCatalogNm) && !metadataId)
@@ -4598,7 +4601,9 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
 			inputParam[3] = expTableNm;
 			inputParam[4] = NULL;
 
-                        snprintf(CatalogQuery,sizeof(CatalogQuery),
+			if( APIType == SQL_API_SQLPROCEDURES )
+			{
+                        	snprintf(CatalogQuery,sizeof(CatalogQuery),
  "select "
   "cast('%s' as varchar(128) ) PROCEDURE_CAT, "
   "cast(trim(SCHEMA_NAME) as varchar(128) ) PROCEDURE_SCHEM, "
@@ -4615,11 +4620,35 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
  "where (SCHEMA_NAME = '%s' "
         "or trim(SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
   "and (OBJECT_NAME = '%s' "
-        "or trim(OBJECT_NAME) LIKE '%s' ESCAPE '\') "
+        "or trim(OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
   "and OBJECT_TYPE = 'UR' "
  "FOR READ UNCOMMITTED ACCESS ORDER BY 4, 1, 2, 3 ;",
                                tableParam[0], inputParam[0], inputParam[1],
                                inputParam[2], inputParam[3]);
+			}
+			else
+			{
+				snprintf(CatalogQuery,sizeof(CatalogQuery),
+"select "
+"obj.CATALOG_NAME PROCEDURE_CAT, obj.SCHEMA_NAME PROCEDURE_SCHEMA,"
+"obj.OBJECT_NAME PROCEDURE_NAME, cast(NULL as varchar(10)) R1,cast(NULL as varchar(10)) R2,"
+"cast(NULL as varchar(10)) R3, cast(NULL as varchar(10)) REMARKS,"
+"cast(case when routines.UDR_TYPE = 'P' then 1"
+"    when routines.UDR_TYPE = 'F' or routines.UDR_TYPE = 'T'"
+"    then 2 else 0 end as smallint) PROCEDURE_TYPE,"
+"obj.OBJECT_NAME SPECIFIC_NAME "
+"from "
+"TRAFODION.\"_MD_\".OBJECTS obj "
+"left join TRAFODION.\"_MD_\".ROUTINES routines on obj.OBJECT_UID = routines.UDR_UID "
+"where (obj.SCHEMA_NAME = '%s' "
+"or trim(obj.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
+"and (obj.OBJECT_NAME = '%s' "
+"or trim(obj.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
+"and obj.OBJECT_TYPE = 'UR' "
+"FOR READ UNCOMMITTED ACCESS ORDER BY 4, 1, 2, 3 ;",
+                              inputParam[0], inputParam[1],
+                              inputParam[2], inputParam[3]);
+			}
 			break;
 		case SQL_API_SQLCOLUMNS :
 		case SQL_API_SQLCOLUMNS_JDBC :
