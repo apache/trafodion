@@ -151,7 +151,7 @@ extern const char *defaultEncodingOption;
 
 extern JNICache_def gJNICache;
 #ifdef TRACING_MEM_LEAK
-extern MemInfoMap_t gMemInfoMap;
+extern CMemInfoMap gMemInfoMap;
 #endif
 extern JNIEnv *gJEnv;
 

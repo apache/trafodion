@@ -160,11 +160,47 @@ class CMemInfo {
         }
 };
 
-typedef std::map<long, CMemInfo*> MemInfoMap_t;
-extern MemInfoMap_t gMemInfoMap;
+class ScopeMutex
+{
+    private:
+        pthread_mutex_t& mutex_;
 
-void AddMemTrace(long ptr, const char* file, int line);
-void RemoveMemTrace(long ptr, const char* file, int line);
+    public:
+        ScopeMutex(pthread_mutex_t& mutex)
+            : mutex_(mutex)
+        {
+            pthread_mutex_lock(&mutex_);
+        }
+
+        ~ScopeMutex()
+        {
+            pthread_mutex_unlock(&mutex_);
+        }
+};
+
+typedef std::map<long, CMemInfo*> MemInfoMap_t;
+
+class CMemInfoMap
+{
+    protected:
+        MemInfoMap_t m_mimap;
+        pthread_mutex_t _mutex;
+
+    public:
+        inline CMemInfoMap()
+        {
+            _mutex = PTHREAD_MUTEX_INITIALIZER;
+        }
+
+        void insert(const long, const char*, int);
+        void remove(const long);
+        void write_trace();
+};
+
+extern CMemInfoMap gMemInfoMap;
+
+void AddMemTrace(const long ptr, const char* file, int line);
+void RemoveMemTrace(const long ptr, const char* file, int line);
 void LogMemLeak();
 #endif
 

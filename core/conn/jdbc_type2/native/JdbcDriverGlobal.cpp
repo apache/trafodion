@@ -58,7 +58,7 @@ const char *defaultEncodingOption = "DEFAULT";
  * memory tracing is on.
  * */
 #ifdef TRACING_MEM_LEAK
-MemInfoMap_t gMemInfoMap;
+CMemInfoMap gMemInfoMap;
 #endif
 JNICache_def gJNICache;
 JNIEnv *gJEnv = NULL;
