@@ -590,7 +590,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit
         strcpy(srvrGlobal->CurrentSchema, "SEABASE");
 
     }
- 
+
     if(blnDoomUsrTxn)
     {
 
