@@ -210,6 +210,8 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProt
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutTransactionalResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutMultipleTransactionalRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutMultipleTransactionalResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PushEpochRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PushEpochResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.RecoveryRequestRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.RecoveryRequestResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TlogDeleteRequest;
@@ -304,7 +306,7 @@ CoprocessorService, Coprocessor {
   private int regionState = 0; 
   private Path recoveryTrxPath = null;
   private int cleanAT = 0;
-  private long onlineEpoc = EnvironmentEdgeManager.currentTime();  
+  private long onlineEpoch = EnvironmentEdgeManager.currentTime();  
   
   private long[] commitCheckTimes   = new long[50];
   private long[] hasConflictTimes   = new long[50];
@@ -789,7 +791,7 @@ CoprocessorService, Coprocessor {
     boolean reply = false;
     long transactionId = request.getTransactionId();
     long commitId = request.getCommitId();
-    long startEpoc = request.getStartEpoc();
+    long startEpoch = request.getStartEpoch();
     final int participantNum = request.getParticipantNum();
     Throwable t = null;
     WrongRegionException wre = null;
@@ -811,7 +813,7 @@ CoprocessorService, Coprocessor {
        // Process local memory
        try {
     	 if (LOG.isDebugEnabled()) LOG.debug("commitIfPossible - txId "  + transactionId + ", regionName, " + regionInfo.getRegionNameAsString() + "calling internal commitIfPossible");
-         reply = commitIfPossible(transactionId, startEpoc, commitId, participantNum);
+         reply = commitIfPossible(transactionId, startEpoch, commitId, participantNum);
        } catch (Throwable e) {
           if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible - txId " + transactionId + ", Caught exception after internal commitIfPossible call "
                    + e.getMessage() + " " + stackTraceToString(e));
@@ -852,12 +854,12 @@ CoprocessorService, Coprocessor {
     Throwable t = null;
     WrongRegionException wre = null;
     long transactionId = request.getTransactionId();
-    long startEpoc = request.getStartEpoc();
+    long startEpoch = request.getStartEpoch();
     int participantNum = request.getParticipantNum();
     boolean dropTableRecorded = request.getDropTableRecorded();
 
     if (LOG.isTraceEnabled()) LOG.trace("commitRequest - txId "
-         + transactionId + ", startEpoc " + startEpoc + ", participantNum " + participantNum + ", dropTableRecorded " + dropTableRecorded + 
+         + transactionId + ", startEpoch " + startEpoch + ", participantNum " + participantNum + ", dropTableRecorded " + dropTableRecorded + 
          ", regionName " + regionInfo.getRegionNameAsString());
 
     /*  commenting out for the time being
@@ -876,7 +878,7 @@ CoprocessorService, Coprocessor {
     {
       // Process local memory
       try {
-        status = commitRequest(transactionId, startEpoc, participantNum, dropTableRecorded);
+        status = commitRequest(transactionId, startEpoch, participantNum, dropTableRecorded);
       } catch (UnknownTransactionException u) {
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId " + transactionId + ", Caught UnknownTransactionException after internal commitRequest call - " + u.toString());
         ute = u;
@@ -935,7 +937,7 @@ CoprocessorService, Coprocessor {
     Throwable t = null;
     WrongRegionException wre = null;
     long transactionId = request.getTransactionId();
-    long startEpoc = request.getStartEpoc();
+    long startEpoch = request.getStartEpoch();
     int i = 0;
     int numOfRegion = request.getRegionNameCount();
     String requestRegionName;
@@ -978,8 +980,8 @@ CoprocessorService, Coprocessor {
                  commitRequestMultipleResponseBuilder.setException(i, BatchException.EXCEPTION_REGIONNOTFOUND_ERR.toString());
               }
               else {
-                 if (i == (numOfRegion - 1)) {status = regionEPCP.commitRequest(transactionId, startEpoc, i, true);} // only the last region flush
-                 else {status = regionEPCP.commitRequest(transactionId, startEpoc, i, false);}
+                 if (i == (numOfRegion - 1)) {status = regionEPCP.commitRequest(transactionId, startEpoch, i, true);} // only the last region flush
+                 else {status = regionEPCP.commitRequest(transactionId, startEpoch, i, false);}
               }
               if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint commitRequestMultiple ends");
              //status = commitRequest(transactionId);
@@ -5099,16 +5101,16 @@ CoprocessorService, Coprocessor {
    * @return TransactionRegionInterface commit code
    * @throws IOException
    */
-  public int commitRequest(final long transactionId, final long startEpoc, final int participantNum) throws IOException, UnknownTransactionException {
-     return commitRequest(transactionId, startEpoc, participantNum, true, false);
+  public int commitRequest(final long transactionId, final long startEpoch, final int participantNum) throws IOException, UnknownTransactionException {
+     return commitRequest(transactionId, startEpoch, participantNum, true, false);
   }
 
-  public int commitRequest(final long transactionId, final long startEpoc, final int participantNum, final boolean dropTableRecorded)
+  public int commitRequest(final long transactionId, final long startEpoch, final int participantNum, final boolean dropTableRecorded)
                                                     throws IOException, UnknownTransactionException {
-      return commitRequest(transactionId, startEpoc, participantNum, true, dropTableRecorded);
+      return commitRequest(transactionId, startEpoch, participantNum, true, dropTableRecorded);
   }
   
-  public int commitRequest(final long transactionId, final long startEpoc, final int participantNum, boolean flushHLOG,
+  public int commitRequest(final long transactionId, final long startEpoch, final int participantNum, boolean flushHLOG,
                                                                boolean dropTableRecorded) throws IOException,
                                                                                 UnknownTransactionException {
     long txid = 0;
@@ -5119,9 +5121,9 @@ CoprocessorService, Coprocessor {
     checkBlockNonPhase2(transactionId);
 
     TrxTransactionState state;
-    if (startEpoc < onlineEpoc) {
+    if (startEpoch < onlineEpoch) {
         LOG.info("commitRequest txId: "
-               + transactionId + " startEpoc " + startEpoc + " is less than region's onlineEpoc " + onlineEpoc
+               + transactionId + " startEpoch " + startEpoch + " is less than region's onlineEpoch " + onlineEpoch
                + " for regionName " + lv_regionName
                + " must return COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR ");
         return COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR;
@@ -5527,7 +5529,7 @@ CoprocessorService, Coprocessor {
    * @return boolean
    * @throws IOException
    */
-  public boolean commitIfPossible(final long transactionId, final long startEpoc, final long commitId, final int participantNum)
+  public boolean commitIfPossible(final long transactionId, final long startEpoch, final long commitId, final int participantNum)
     throws IOException {
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- ENTRY txId: "
@@ -5535,7 +5537,7 @@ CoprocessorService, Coprocessor {
 
     checkBlockNonPhase2(transactionId);
 
-    int status = commitRequest(transactionId, startEpoc, participantNum);
+    int status = commitRequest(transactionId, startEpoch, participantNum);
   
     if (status == COMMIT_OK) {
 
@@ -6050,6 +6052,27 @@ CoprocessorService, Coprocessor {
       }
     }
   }
+  
+  public void pushOnlineEpoch(RpcController controller,
+          PushEpochRequest request, RpcCallback<PushEpochResponse> done) {
+
+    org.apache.hadoop.hbase.client.Result result = null;
+    long transId  = request.getTransactionId();
+    long tmpEpoch = request.getEpoch();
+
+    if (LOG.isTraceEnabled()) LOG.trace("pushOnlineEpoch ENTRY.  Epoch " + tmpEpoch
+        + " in region: " + regionInfo.getRegionNameAsString());
+
+    this.onlineEpoch = tmpEpoch;
+    
+    org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PushEpochResponse.Builder pushEpochResponseBuilder = PushEpochResponse.newBuilder();
+    pushEpochResponseBuilder.setHasException(false);
+
+    PushEpochResponse epochResponse = pushEpochResponseBuilder.build();
+    done.run(epochResponse);
+ }
+  
+  
   public void flushToFS(Path flushPath) throws IOException {
 
    if(LOG.isTraceEnabled()) LOG.trace("flushToFS -- ENTRY, Path: " + flushPath.toString());
@@ -6089,7 +6112,7 @@ CoprocessorService, Coprocessor {
       }
     }
     txnPersistBuilder.setNextSeqId(nextSequenceId.get());
-    txnPersistBuilder.setOnlineEpoc(this.onlineEpoc);
+    txnPersistBuilder.setOnlineEpoch(this.onlineEpoch);
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
@@ -6251,8 +6274,8 @@ CoprocessorService, Coprocessor {
               }
               
               this.nextSequenceId = new AtomicLong(txnPersistMsg.getNextSeqId());
-              this.onlineEpoc = txnPersistMsg.getOnlineEpoc();
-              LOG.info("Setting onlineEpoc after split to " + this.onlineEpoc);
+              this.onlineEpoch = txnPersistMsg.getOnlineEpoch();
+              LOG.info("Setting onlineEpoch after split to " + this.onlineEpoch);
             } catch(IOException e) {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);

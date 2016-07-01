@@ -46,7 +46,7 @@ public class TransactionState {
 
     private final long transactionId;
     private TransState status;
-    private long startEpoc;
+    private long startEpoch;
     private long startId;
     private long commitId;
 
@@ -367,17 +367,17 @@ public class TransactionState {
      * Set the startEpoc.
      *
      */
-    public void setStartEpoc(final long epoc) {
-        this.startEpoc = epoc;
+    public void setStartEpoch(final long epoch) {
+        this.startEpoch = epoch;
     }
 
     /**
-     * Get the startEpoc.
+     * Get the startEpoch.
      *
-     * @return Return the startEpoc.
+     * @return Return the startEpoch.
      */
-    public long getStartEpoc() {
-        return startEpoc;
+    public long getStartEpoch() {
+        return startEpoch;
     }
 
     /**
@@ -420,7 +420,7 @@ public class TransactionState {
     @Override
     public String toString() {
         return "transactionId: " + transactionId + ", startId: " + startId + ", commitId: " + commitId +
-               ", startEpoc: " + startEpoc + ", participants: " + participatingRegions.size()
+               ", startEpoch: " + startEpoch + ", participants: " + participatingRegions.size()
                + ", ignoring: " + regionsToIgnore.size() + ", hasDDL: " + hasDDLTx()
                + ", state: " + status.toString();
     }
