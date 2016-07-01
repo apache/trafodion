@@ -3237,7 +3237,7 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 
 		}
 		getSQLCatalogsInfo(connection_.getServerHandle(), // Server Handle
-				SQL_API_SQLPROCEDURECOLUMNS, // catalogAPI
+				SQL_API_SQLPROCEDURECOLUMNS_JDBC, // catalogAPI
 				catalogNm, // catalog
 				schemaNm, // schema
 				procedureNamePattern, // table name
