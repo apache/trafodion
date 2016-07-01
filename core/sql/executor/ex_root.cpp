@@ -375,9 +375,8 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
 
   if (processLOB())
     {
-      glob->initLOBglobal();
+      glob->initLOBglobal(cliGlobals->currContext());
     }
-
 
   return (root_tcb);
 
@@ -2504,7 +2503,11 @@ Int32 ex_root_tcb::deallocAndDelete(ExExeStmtGlobals *glob,
   // Reset cancelState to ensure no more references of 
   // ex_root_tcb by the cancel thread.
   glob->castToExMasterStmtGlobals()->resetCancelState();
-
+   //test only ssss dirInfo is null here !!!
+  ContextCli *currContext = glob->getCliGlobals()->currContext();
+  hdfsFS hdfs = currContext->getHdfsServerConnection((char *)"localhost",41600);
+   hdfsFileInfo *dirInfo = hdfsGetPathInfo(hdfs, "/");
+   //test only sss
   // Warning:  deleteMe() will delete this tcb!!!!
   glob->deleteMe(fatalError_); 
   return 0;
@@ -2712,7 +2715,7 @@ Int32 ex_root_tcb::checkTransBeforeExecute(ExTransaction *myTrans,
 					   ExMasterStats *masterStats,
 					   ComDiagsArea *& diagsArea)
 {
-  masterGlob->lobGlobals()->xnId() = -1;
+ 
 
   if (myTrans && myTrans->xnInProgress())
   {

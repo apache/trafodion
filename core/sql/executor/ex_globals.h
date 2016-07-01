@@ -189,10 +189,10 @@ NA_EIDPROC
   inline sql_buffer_pool *getSharedPool() { return sharedPool_; }
   inline void setSharedPool(sql_buffer_pool *p) { sharedPool_ = p; }
 
-  void *& lobGlobal();
+  void *& getExLobGlobal();
   LOBglobals * lobGlobals() { return lobGlobals_; }
   
-  void initLOBglobal();
+  void initLOBglobal(void *context);
   
   SequenceValueGenerator * seqGen();
   

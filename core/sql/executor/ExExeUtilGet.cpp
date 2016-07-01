@@ -6272,7 +6272,8 @@ else
     return rc;  
                 
   //EOD of LOB data file
-  hdfsFS fs = hdfsConnect((char*)getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
+  
+  hdfsFS fs = currContext->getHdfsServerConnection((char*)getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
   if (fs == NULL)
     return LOB_DATA_FILE_OPEN_ERROR;
 
@@ -6561,7 +6562,7 @@ short ExExeUtilLobInfoTableTcb::collectLobInfo(char * tableName,Int32 currLobNum
                                         lobDescChunkFileBuf, LOBINFO_MAX_FILE_LEN*2);
     char *lobDataFile = 
 	      ExpLOBoper::ExpGetLOBname
-	      (getLItdb().objectUID_, currLobNum, 
+      (getLItdb().objectUID_, currLobNum, 
 	       tgtLobNameBuf, LOBINFO_MAX_FILE_LEN);
    
   if (getLItdb().getLobTypeList()[(currLobNum-1)*sizeof(Int32)] == Lob_External_HDFS_File)
@@ -6573,7 +6574,8 @@ short ExExeUtilLobInfoTableTcb::collectLobInfo(char * tableName,Int32 currLobNum
       str_cpy_all(lobInfo_->lobDataFile,  lobDataFile,strlen(lobDataFile));
     }             
   //EOD of LOB data file
-  hdfsFS fs = hdfsConnect(getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
+  // hdfsFS fs = hdfsConnect(getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
+  hdfsFS fs = currContext->getHdfsServerConnection((char*)getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
   if (fs == NULL)
     return LOB_DATA_FILE_OPEN_ERROR;
 

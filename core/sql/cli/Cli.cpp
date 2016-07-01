@@ -10544,7 +10544,7 @@ Lng32 SQLCLI_LOB_GC_Interface
   // Compact into new temp file
        
         
-  rc = ExpLOBoper::compactLobDataFile(lobGlobals,dcInMemoryArray,numEntries,tgtLobName,lobMaxMemChunkLen, (void *)currContext.exHeap(), hdfsServer, hdfsPort,lobLocation);
+  rc = ExpLOBoper::compactLobDataFile(lobGlobals,dcInMemoryArray,numEntries,tgtLobName,lobMaxMemChunkLen, (void *)currContext.exHeap(), (void *)&currContext,hdfsServer, hdfsPort,lobLocation);
                
   if (rc )
     {
@@ -10562,7 +10562,7 @@ Lng32 SQLCLI_LOB_GC_Interface
       // For now, return error for the IUD operation
 
       // Restore original data file.
-      Int32 rc2=ExpLOBoper::restoreLobDataFile(lobGlobals,tgtLobName, (void *)currContext.exHeap(),hdfsServer,hdfsPort,lobLocation);
+      Int32 rc2=ExpLOBoper::restoreLobDataFile(lobGlobals,tgtLobName, (void *)currContext.exHeap(),(void *)&currContext,hdfsServer,hdfsPort,lobLocation);
       if (rc2)
         {
           lobDebugInfo("restoreLobDataFile Failed",0,__LINE__,lobTrace);
@@ -10573,7 +10573,7 @@ Lng32 SQLCLI_LOB_GC_Interface
   else
     {
       //TBD :commit all updates and remove the saved copy of datafile
-      ExpLOBoper::purgeBackupLobDataFile(lobGlobals, tgtLobName,(void *)currContext.exHeap(),hdfsServer,hdfsPort,lobLocation);
+      ExpLOBoper::purgeBackupLobDataFile(lobGlobals, tgtLobName,(void *)currContext.exHeap(),(void *)&currContext,hdfsServer,hdfsPort,lobLocation);
       lobDebugInfo("purgedLobDataFile ",0,__LINE__,lobTrace);
     }
   }
@@ -10688,7 +10688,7 @@ Lng32 SQLCLI_LOBddlInterface
 	  {
 	    // create lob data tables
 	    Lng32 rc = ExpLOBoper::createLOB
-	      (NULL, currContext.exHeap(),
+	      (NULL, (void *)&currContext,currContext.exHeap(),
 	       lobLocList[i],  hdfsPort,hdfsServer,
 	       objectUID, lobNumList[i],lobMaxSize);
 	    
@@ -10763,7 +10763,7 @@ Lng32 SQLCLI_LOBddlInterface
 	for (Lng32 i = 0; i < numLOBs; i++)
 	  {
 	    Lng32 rc = ExpLOBoper::dropLOB
-	      (NULL, currContext.exHeap(),
+	      (NULL, currContext.exHeap(),(void *)&currContext,
 	       lobLocList[i],hdfsPort,hdfsServer,
 	       objectUID, lobNumList[i]);
 	    
@@ -10836,7 +10836,7 @@ Lng32 SQLCLI_LOBddlInterface
 	for (Lng32 i = 0; i < numLOBs; i++)
 	  {
 	    Lng32 rc = ExpLOBoper::dropLOB
-	      (NULL, currContext.exHeap(),
+	      (NULL, currContext.exHeap(),(void *)&currContext,
 	       lobLocList[i],hdfsPort, hdfsServer,
 	       objectUID, lobNumList[i]);
 	    
@@ -11001,6 +11001,7 @@ Lng32 SQLCLI_LOBddlInterface
     return 0;
 }
 
+#ifdef __ignore
 Lng32 SQLCLI_LOBloader2sqlInterface
 (
  /*IN*/     CliGlobals *cliGlobals,
@@ -11024,7 +11025,7 @@ Lng32 SQLCLI_LOBloader2sqlInterface
       currContext.currLobGlobals() = 
 	new(currContext.exHeap()) LOBglobals(currContext.exHeap());
       ExpLOBoper::initLOBglobal
-	(currContext.currLobGlobals()->lobAccessGlobals(), currContext.exHeap());
+	(currContext.currLobGlobals()->lobAccessGlobals(), currContext.exHeap(),currContext);
     }
   void * lobGlobs = currContext.currLobGlobals()->lobAccessGlobals();
   Int16 flags;
@@ -11098,7 +11099,7 @@ Lng32 SQLCLI_LOBloader2sqlInterface
  error_return:
   return (cliRC < 0 ? cliRC : 0);
 }
-
+#endif
 /*
   Int32 SQLCLI_SWITCH_TO_COMPILER_TYPE(CliGlobals * cliGlobals,
                                        Int32 compiler_class_type)

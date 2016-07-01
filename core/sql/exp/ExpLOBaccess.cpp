@@ -77,14 +77,14 @@ SB_Phandle_Type serverPhandle;
 
 ExLob::ExLob() :
     storage_(Lob_Invalid_Storage),
-    dir_(string()),
+    lobStorageLocation_(string()),
     lobGlobalHeap_(NULL),
     fs_(NULL),
     fdData_(NULL),
     openFlags_(0),
     lobTrace_(FALSE)
 {
-    lobDataFile_[0] = '\0';
+  memset(lobDataFile_,'\0',sizeof(lobDataFile_));
     
 }
 
@@ -99,7 +99,7 @@ ExLob::~ExLob()
 }
 
 Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode, 
-                               char *dir, 
+                               char *lobStorageLocation, 
 			       LobsStorage storage,
                                char *hdfsServer, Int64 hdfsPort,
                                char *lobLocation,
@@ -107,20 +107,20 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
                                int blockSize, Int64 lobMaxSize, ExLobGlobals *lobGlobals)
 {
   int openFlags;
-  mode_t filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
   struct timespec startTime;
   struct timespec endTime;
   Int64 secs, nsecs, totalnsecs;
  
-  if (dir) 
+  if (lobStorageLocation) 
     {
-      if (dir_.empty()) 
+      if (lobStorageLocation_.empty()) 
 	{
-	  dir_ = string(dir);
+	  lobStorageLocation_ = string(lobStorageLocation);
 	}
 
       if (lobFile)
-        snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s/%s", dir_.c_str(), 
+        snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s/%s", 
+                 lobStorageLocation_.c_str(), 
                  lobFile);
       
     } 
@@ -143,20 +143,14 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
 
   hdfsServer_ = hdfsServer;
   hdfsPort_ = hdfsPort;
-  lobLocation_ = lobLocation;
+  // lobLocation_ = lobLocation;
   clock_gettime(CLOCK_MONOTONIC, &startTime);
-
-  if (lobGlobals->getHdfsFs() == NULL)
-    {
-      fs_ = hdfsConnect(hdfsServer_, hdfsPort_);
-      if (fs_ == NULL) 
-	return LOB_HDFS_CONNECT_ERROR;
-      lobGlobals->setHdfsFs(fs_);
-    }        
+  
+  if (lobGlobals->getHdfsFs() == NULL)     
+    return LOB_HDFS_CONNECT_ERROR;
   else 
-    {
-      fs_ = lobGlobals->getHdfsFs();
-    }
+    fs_ = lobGlobals->getHdfsFs();
+    
 
   clock_gettime(CLOCK_MONOTONIC, &endTime);
 
@@ -437,19 +431,9 @@ Ex_Lob_Error ExLob::dataModCheck(
   hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, dirPath);
   if (fileInfos == NULL)
     {
-      hdfsDisconnect(fs_);
-      fs_ = hdfsConnect(hdfsServer_, hdfsPort_);
-      if (fs_ == NULL)
-        return LOB_HDFS_CONNECT_ERROR;
-
-      fileInfos = hdfsGetPathInfo(fs_, dirPath);
-      if (fileInfos == NULL)
-        return LOB_DIR_NAME_ERROR;
-
-      if (lobGlobals)
-        lobGlobals->setHdfsFs(fs_);
+      return LOB_DATA_FILE_NOT_FOUND_ERROR;
     }
-
+    
   Int64 currModTS = fileInfos[0].mLastMod;
   hdfsFreeFileInfo(fileInfos, 1);
   if ((inputModTS > 0) &&
@@ -1433,7 +1417,7 @@ Ex_Lob_Error ExLob::closeCursor(char *handleIn, Int32 handleInLen)
     return LOB_OPER_OK;
 }
 
-
+#ifdef __ignore
 Ex_Lob_Error ExLob::doSanityChecks(char *dir, LobsStorage storage,
                                    Int32 handleInLen, Int32 handleOutLen, 
                                    Int32 blackBoxLen)
@@ -1467,7 +1451,7 @@ Ex_Lob_Error ExLob::doSanityChecks(char *dir, LobsStorage storage,
 
     return LOB_OPER_OK;
 }
-
+#endif
 Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset, Int64 lobMaxSize, Int64 lobMaxChunkMemLen, char *handleIn, Int32 handleInLen, Int64 lobGCLimit, void *lobGlobals)
 {
   NABoolean GCDone = FALSE;
@@ -1495,7 +1479,7 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
          
         Int32 rc = SQL_EXEC_LOB_GC_Interface(lobGlobals,handleIn,handleInLen,
                                              hdfsServer_,hdfsPort_,
-                                             lobLocation_,
+                                             (char *)lobStorageLocation_.c_str(),
                                              lobMaxChunkMemLen,lobTrace_);
        
         if (rc<0)
@@ -2174,7 +2158,7 @@ Ex_Lob_Error ExLobsOper (
 			 Int64       &requestTagOut,    // returned with every request other than check status
 			 Ex_Lob_Error  &requestStatus,  // returned req status
 			 Int64       &cliError,         // err returned by cli call
-			 char        *dir,              // directory in the storage
+			 char        *lobStorageLocation,              // directory in the storage
 			 LobsStorage storage,           // storage type
 			 char        *source,           // source (memory addr, filename, foreign lob etc)
 			 Int64       sourceLen,         // source len (memory len, foreign desc offset etc)
@@ -2216,9 +2200,7 @@ Ex_Lob_Error ExLobsOper (
 
   if (globPtr == NULL)
     {
-      if ((operation == Lob_Init) ||
-          (operation == Lob_Empty_Directory) ||
-          (operation == Lob_Data_Mod_Check))
+      if ((operation == Lob_Init))
 	{
           
           globPtr = new ExLobGlobals();
@@ -2252,11 +2234,11 @@ Ex_Lob_Error ExLobsOper (
 	  if (lobPtr == NULL) 
 	    return LOB_ALLOC_ERROR;
 
-	  err = lobPtr->initialize(fileName, (operation == Lob_Create) ? EX_LOB_CREATE : EX_LOB_RW, dir, storage, hdfsServer, hdfsPort, dir,bufferSize, replication, blockSize,lobMaxSize,lobGlobals);
+	  err = lobPtr->initialize(fileName, (operation == Lob_Create) ? EX_LOB_CREATE : EX_LOB_RW, lobStorageLocation, storage, hdfsServer, hdfsPort, lobStorageLocation,bufferSize, replication, blockSize,lobMaxSize,lobGlobals);
 	  if (err != LOB_OPER_OK)
             {
               char buf[5000];
-              str_sprintf(buf,"Lob initialization failed;filename:%s;location:%s;hdfsserver:%s;hdfsPort:%d;lobMaxSize:%Ld",fileName,dir,hdfsServer,lobMaxSize);
+              str_sprintf(buf,"Lob initialization failed;filename:%s;location:%s;hdfsserver:%s;hdfsPort:%d;lobMaxSize:%Ld",fileName,lobStorageLocation,hdfsServer,lobMaxSize);
               lobDebugInfo(buf,err,__LINE__,lobGlobals->lobTrace_);
               return err;
             }
@@ -2472,22 +2454,16 @@ Ex_Lob_Error ExLobsOper (
       break;
 
     case Lob_Empty_Directory:
-      lobPtr->initialize(fileName, EX_LOB_RW,
-			 dir, storage, hdfsServer, hdfsPort, dir, bufferSize, replication, blockSize);
+     
       err = lobPtr->emptyDirectory();
       break;
 
     case Lob_Data_Mod_Check:
-      {
-        lobPtr->initialize(NULL, EX_LOB_RW,
-                           NULL, storage, hdfsServer, hdfsPort, NULL, 
-                           bufferSize, replication, blockSize, lobMaxSize, 
-                           lobGlobals);
-
+      {       
         Int64 inputModTS = *(Int64*)blackBox;
         Int32 inputNumOfPartLevels = 
           *(Lng32*)&((char*)blackBox)[sizeof(inputModTS)];
-        err = lobPtr->dataModCheck(dir, inputModTS, inputNumOfPartLevels,
+        err = lobPtr->dataModCheck(lobStorageLocation, inputModTS, inputNumOfPartLevels,
                                    lobGlobals);
       }
       break;
@@ -2948,11 +2924,13 @@ Ex_Lob_Error ExLob::deleteCursor(char *cursorName, ExLobGlobals *lobGlobals)
 
     return LOB_OPER_OK;
 }
+
 //*** Note - sample code to send and receive  
 Ex_Lob_Error ExLob::sendReqToLobServer() 
 {
-    Ex_Lob_Error err; 
 
+    Ex_Lob_Error err; 
+#ifdef __ignore
     request_.setType(Lob_Req_Get_Desc);
 
     err = request_.send();
@@ -2962,7 +2940,7 @@ Ex_Lob_Error ExLob::sendReqToLobServer()
     }
 
     err = request_.getError();
-
+#endif
     return err;
 }
 
@@ -3043,10 +3021,11 @@ Ex_Lob_Error ExLobGlobals::initialize()
     lobMap_ = (lobMap_t *) new (getHeap())lobMap_t;  
     if (lobMap_ == NULL)
       return LOB_INIT_ERROR;
-
-
+    // No need to start them here for LOB usage.These worker threads are needed 
+    // only for hive access so moving them to the ExpLOBInterfaceInit function 
+    // where they will get started only in case of hive access.
     // start the worker threads
-    startWorkerThreads();
+    //startWorkerThreads();
 
     return err;
 }
@@ -3123,6 +3102,7 @@ void ExLobLock::wait()
     waiters_--;
 }
 
+#ifdef __ignore
 ExLobHdfsRequest::ExLobHdfsRequest(LobsHdfsRequestType reqType, hdfsFS fs, 
                                    hdfsFile file, char *buffer, int size) :
    reqType_(reqType),
@@ -3134,15 +3114,13 @@ ExLobHdfsRequest::ExLobHdfsRequest(LobsHdfsRequestType reqType, hdfsFS fs,
   lobPtr_ = 0;
   error_ = LOB_OPER_OK;
 }
-
+#endif
 ExLobHdfsRequest::ExLobHdfsRequest(LobsHdfsRequestType reqType, ExLobCursor *cursor) :
    reqType_(reqType),
    cursor_(cursor)
 {
   buffer_=0;
   lobPtr_=0;
-  fs_=0;
-  file_=0;
   size_=0;
   error_=LOB_OPER_OK;
 }
@@ -3153,8 +3131,6 @@ ExLobHdfsRequest::ExLobHdfsRequest(LobsHdfsRequestType reqType, ExLob *lobPtr, E
    cursor_(cursor)
 {
   buffer_=0;
-  fs_=0;
-  file_=0;
   size_=0;
   error_=LOB_OPER_OK;
 }
@@ -3166,8 +3142,6 @@ ExLobHdfsRequest::ExLobHdfsRequest(LobsHdfsRequestType reqType) :
   buffer_=0;
   cursor_=0;
   lobPtr_=0;
-  fs_=0;
-  file_=0;
   size_=0;
   error_=LOB_OPER_OK;
 }
