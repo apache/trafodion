@@ -81,7 +81,7 @@
     <asciidoctorj.version>1.5.4</asciidoctorj.version>
     <rubygems.prawn.version>2.0.2</rubygems.prawn.version>
     <jruby.version>9.0.4.0</jruby.version>
-    <dependency.locations.enabled>false</dependency.locations.enabled>
+    <!--dependency.locations.enabled>false</dependency.locations.enabled-->
   </properties>
 
   <repositories>
