@@ -195,13 +195,15 @@ static short ConvPowersOfTenToBigNumHelper(Lng32 exponent,
 NA_EIDPROC
 static short ConvInt64ToBigNumWithSignHelper(Lng32 targetLength,
                                              Int64 sourceData,
-                                             char * targetData);
+                                             char * targetData,
+                                             NABoolean isUnsigned);
 
 // The following converts a Big Num (with sign) into an Int64.
 NA_EIDPROC
 static short ConvBigNumWithSignToInt64Helper(Lng32 sourceLength,
                                              char * sourceData,
-                                             Int64 * targetData);
+                                             void * targetData,
+                                             NABoolean isUnsigned);
 
 // The following converts a BIGNUM (with sign) into Int64 and scale it, 
 // returning information about the conversion to the caller (e.g. 

@@ -145,6 +145,10 @@ Lng32 Formatter::display_length(Lng32 datatype,
       d_len = d_buflen = SQL_LARGE_DISPLAY_SIZE + scale_len;
       break;
        
+    case REC_BIN64_UNSIGNED:
+      d_len = d_buflen = SQL_ULARGE_DISPLAY_SIZE + scale_len;
+      break;
+       
     case REC_BYTE_F_ASCII:
 // 12/9/97: added for Unicode case
     case REC_NCHAR_F_UNICODE:
@@ -324,6 +328,7 @@ Int32 Formatter::buffer_it(SqlciEnv * sqlci_env, char *data,
 
   case REC_BPINT_UNSIGNED:
   case REC_BIN64_SIGNED:
+  case REC_BIN64_UNSIGNED:
   case REC_BIN32_SIGNED:
   case REC_BIN32_UNSIGNED:
   case REC_BIN16_SIGNED:

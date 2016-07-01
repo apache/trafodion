@@ -120,9 +120,7 @@ public:
   NABoolean isBigNum() const { return qualifier_ == SQLBigNum_TYPE;}
   NABoolean isInternalType() const { return (isBigNum()); }
  
-  NABoolean supportsSign () const  {return (isExact () &&
-					    SQLLarge_TYPE != qualifier_ );
-  }
+  NABoolean supportsSign () const  {return isExact(); }
 
   // ---------------------------------------------------------------------
   // Accessor functions for the precision, magnitude, scale and unsigned
@@ -248,6 +246,9 @@ public:
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const 
     { return new(h) NumericType(*this,h); }
+
+  virtual NABoolean expConvSupported
+  (const NAType &otherNAType) const;
 
 protected:
 
@@ -745,16 +746,25 @@ public:
 
   short getFSDatatype() const
     {
-      return REC_BIN64_SIGNED;
+      if (isUnsigned())
+        return REC_BIN64_UNSIGNED;
+      else
+        return REC_BIN64_SIGNED;
     }
 
-  virtual Lng32 getMagnitude() const { return 189; }
+  virtual Lng32 getMagnitude() const 
+  { return (isUnsigned() ? 195 : 189); }
 
-  virtual double getMaxValue() const { return 9.2233720368547e+18; } 
-  // 2**63-1=9223372036854775807, use the above number to avoid a
-  // larger number passes the comparison checking after rounding
+  virtual double getMaxValue() const 
+  { 
+    return
+      (isUnsigned() ? 18446744073709551615ULL : 9223372036854775807ULL); 
+  } 
 
-  virtual double getMinValue() const { return -9.2233720368547e+18; } 
+  virtual double getMinValue() const 
+  { 
+    return (isUnsigned() ? 0 : -9.2233720368547e+18);
+  }
 
   virtual NABoolean shouldCheckValueFitInType() const { return TRUE; }
 
@@ -907,7 +917,8 @@ public:
 	  else
 	    if (getNominalSize() == sizeof(Lng32))
 	      return REC_BIN32_UNSIGNED;
-	    else return REC_BIN64_SIGNED;
+	    else 
+              return REC_BIN64_UNSIGNED;
 	}
       else
 	{

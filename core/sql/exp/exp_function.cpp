@@ -3223,6 +3223,10 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
     target[0] ^= 0200;
     break;
 
+  case REC_BIN64_UNSIGNED:
+    *((UInt64 *) target) = reversebytes( *((UInt64 *) source) );
+    break;
+
   case REC_INT_YEAR:
   case REC_INT_MONTH:
   case REC_INT_YEAR_MONTH:
@@ -4685,6 +4689,7 @@ ex_expr::exp_return_type ExHDPHash::eval(char *op_data[],
       flags = SWAP_FOUR;
       break;
     case REC_BIN64_SIGNED:
+    case REC_BIN64_UNSIGNED:
     case REC_IEEE_FLOAT64:
       flags = SWAP_EIGHT;
       break;
@@ -7162,6 +7167,10 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     target[sizeof(_int64)-1] ^= 0200;
     break;
 
+  case REC_BIN64_UNSIGNED:
+    *((UInt64 *) target) = reversebytes( *((UInt64 *) source) );
+    break;
+
   case REC_INT_YEAR:
   case REC_INT_MONTH:
   case REC_INT_YEAR_MONTH:
@@ -7524,6 +7533,10 @@ static Lng32 convAsciiLength(Attributes * attr)
 
     case REC_BIN64_SIGNED:
       d_len = SQL_LARGE_DISPLAY_SIZE + scale_len;
+      break;
+
+    case REC_BIN64_UNSIGNED:
+      d_len = SQL_ULARGE_DISPLAY_SIZE + scale_len;
       break;
 
    case REC_NUM_BIG_UNSIGNED:

@@ -529,8 +529,14 @@ EncodedValue::outputToBufferToComputeRTHash(
            { Int32 y = (Int32)x; memcpy(data, &y, len); }
            break;
         case REC_BIN64_SIGNED:
+           len = 8;
            flags =ExHDPHash::SWAP_EIGHT;
            { Int64 y = (Int64)x; len = 8; memcpy(data, &y, len); }
+           break;
+        case REC_BIN64_UNSIGNED:
+           len = 8;
+           flags =ExHDPHash::SWAP_EIGHT;
+           { UInt64 y = (UInt64)x; len = 8; memcpy(data, &y, len); }
            break;
         default:
           len = 0; // For column types not supported by SB, we just

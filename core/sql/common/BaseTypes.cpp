@@ -378,6 +378,19 @@ short convertTypeToText_basic(char * text,	   // OUTPUT
 	}
       break;
 
+    case REC_BIN64_UNSIGNED:
+      if ((!precision) && (scale == 0))
+	str_sprintf(text, "LARGEINT UNSIGNED");
+      else
+	{
+	  if (! precision)
+	    str_sprintf(text, "NUMERIC(%d, %d) UNSIGNED",
+			18/*MAX_NUMERIC_PRECISION*/, scale);
+	  else
+	    str_sprintf(text, "NUMERIC(%d, %d) UNSIGNED", precision, scale);
+	}
+      break;
+
     case REC_BIN32_SIGNED:
       if (!precision)
 	str_sprintf(text, "INT");
@@ -702,6 +715,10 @@ Lng32 getAnsiTypeFromFSType(Lng32 datatype)
       numeric_value = SQLTYPECODE_LARGEINT;
       break;
 
+   case REC_BIN64_UNSIGNED:
+      numeric_value = SQLTYPECODE_LARGEINT_UNSIGNED;
+      break;
+
    case REC_FLOAT32:
       numeric_value = SQLTYPECODE_IEEE_REAL;
       break;
@@ -809,6 +826,10 @@ const char * getAnsiTypeStrFromFSType(Lng32 datatype)
 
    case REC_BIN64_SIGNED:
      return COM_LARGEINT_SIGNED_SDT_LIT;
+     break;
+
+   case REC_BIN64_UNSIGNED:
+     return COM_LARGEINT_UNSIGNED_SDT_LIT;
      break;
 
    case REC_FLOAT32:
@@ -1056,6 +1077,10 @@ Lng32 getFSTypeFromANSIType(Lng32 ansitype)
 
    case SQLTYPECODE_LARGEINT:
       datatype = REC_BIN64_SIGNED;
+      break;
+
+   case SQLTYPECODE_LARGEINT_UNSIGNED:
+      datatype = REC_BIN64_UNSIGNED;
       break;
 
    case SQLTYPECODE_NUMERIC :

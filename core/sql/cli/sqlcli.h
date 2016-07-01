@@ -348,6 +348,7 @@ enum SQLTYPE_CODE {
     /* INTEGER/INT Tandem extensions */
     SQLTYPECODE_INTEGER_UNSIGNED       = -401,
     SQLTYPECODE_LARGEINT               = -402,
+    SQLTYPECODE_LARGEINT_UNSIGNED      = -405,
 
     /* TINYINT */
     SQLTYPECODE_TINYINT                = -403,

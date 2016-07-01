@@ -315,6 +315,10 @@ Lng32 MCWrapper::setupMCColumnIterator (HSColGroupStruct *group, MCIterator** it
         iter[currentLoc] = new (STMTHEAP) MCNonCharIterator<Int64>((Int64 *)group->mcis_data);
         break;
 
+      case REC_BIN64_UNSIGNED:
+        iter[currentLoc] = new (STMTHEAP) MCNonCharIterator<UInt64>((UInt64 *)group->mcis_data);
+        break;
+
       case REC_IEEE_FLOAT32:
         iter[currentLoc] = new (STMTHEAP) MCNonCharIterator<float>((float *)group->mcis_data);
         break;
@@ -4880,6 +4884,7 @@ void HSGlobalsClass::getMemoryRequirementsForOneGroup(HSColGroupStruct* group, I
             break;
 
           case REC_BIN64_SIGNED:
+          case REC_BIN64_UNSIGNED:
           case REC_IEEE_FLOAT64:
             elementSize = 8;
             break;
@@ -7080,6 +7085,9 @@ Int32 HSGlobalsClass::processIUSColumn(HSColGroupStruct* smplGroup,
         break;
       case REC_BIN64_SIGNED:
         return processIUSColumn((Int64*)smplGroup->data, L"%lld", smplGroup, delGroup, insGroup);
+        break;
+      case REC_BIN64_UNSIGNED:
+        return processIUSColumn((UInt64*)smplGroup->data, L"%llu", smplGroup, delGroup, insGroup);
         break;
       case REC_FLOAT32:
         return processIUSColumn((Float32*)smplGroup->data, L"%f", smplGroup, delGroup, insGroup);
@@ -10064,6 +10072,10 @@ Lng32 HSGlobalsClass::processInternalSortNulls(Lng32 rowsRead, HSColGroupStruct 
             processNullsForColumn(group, rowsRead, (Int64*)NULL);
             break;
 
+          case REC_BIN64_UNSIGNED:
+            processNullsForColumn(group, rowsRead, (UInt64*)NULL);
+            break;
+
           case REC_IEEE_FLOAT32:
             processNullsForColumn(group, rowsRead, (float*)NULL);
             break;
@@ -10214,6 +10226,7 @@ bool isInternalSortType(HSColumnStruct &col)
       case REC_BIN32_SIGNED:
       case REC_BIN32_UNSIGNED:
       case REC_BIN64_SIGNED:
+      case REC_BIN64_UNSIGNED:
       case REC_DECIMAL_LSE:
       case REC_DECIMAL_UNSIGNED:
       case REC_DECIMAL_LS:
@@ -10954,6 +10967,11 @@ Lng32 doSort(HSColGroupStruct *group)
                        (Int64*)group->nextData - (Int64*)group->data - 1);
         break;
 
+      case REC_BIN64_UNSIGNED:
+        quicksort((UInt64*)group->data, 0,
+                       (UInt64*)group->nextData - (UInt64*)group->data - 1);
+        break;
+
       case REC_IEEE_FLOAT32:
         quicksort((float*)group->data, 0,
                        (float*)group->nextData - (float*)group->data - 1);
@@ -11437,6 +11455,10 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
         createHistogram(group, intCount, sampleRowCount, samplingUsed, (Int64*)NULL);
         break;
 
+      case REC_BIN64_UNSIGNED:
+        createHistogram(group, intCount, sampleRowCount, samplingUsed, (UInt64*)NULL);
+        break;
+
       case REC_BYTE_F_ASCII:
       case REC_BYTE_F_DOUBLE:
         //
@@ -11785,6 +11807,7 @@ Int32 computeKeyLengthInfo(Lng32 datatype)
         return ExHDPHash::SWAP_FOUR;
 
       case REC_BIN64_SIGNED:
+      case REC_BIN64_UNSIGNED:
       case REC_FLOAT64:
         return ExHDPHash::SWAP_EIGHT;
 
@@ -12692,6 +12715,10 @@ Lng32 HSGlobalsClass::mergeDatasetsForIUS(
         break;
       case REC_BIN64_SIGNED:
         return mergeDatasetsForIUS((Int64*)smplGroup->data, (Int64*)NULL,
+                                   smplGroup, smplrows, delGroup, delrows, insGroup, insrows);
+        break;
+      case REC_BIN64_UNSIGNED:
+        return mergeDatasetsForIUS((UInt64*)smplGroup->data, (UInt64*)NULL,
                                    smplGroup, smplrows, delGroup, delrows, insGroup, insrows);
         break;
       case REC_FLOAT32:
@@ -13647,6 +13674,9 @@ Lng32 setBufferValue(MCWrapper& value,
                 break;
              case REC_BIN64_SIGNED:
                 retcode = copyValue(*((MCNonCharIterator<Int64>*)(value.allCols_[i]))->getContent(value.index_), valueBuff, mgroup->colSet[i], len);
+                break;
+             case REC_BIN64_UNSIGNED:
+                retcode = copyValue(*((MCNonCharIterator<UInt64>*)(value.allCols_[i]))->getContent(value.index_), valueBuff, mgroup->colSet[i], len);
                 break;
              case REC_IEEE_FLOAT32:
                 retcode = copyValue(*((MCNonCharIterator<float>*)(value.allCols_[i]))->getContent(value.index_), valueBuff, mgroup->colSet[i], len);
@@ -15506,6 +15536,10 @@ Lng32 HSGlobalsClass::processFastStatsBatch(CollIndex numCols, HSColGroupStruct*
 
         case REC_BIN64_SIGNED:
           group->fastStatsHist = new(STMTHEAP) FastStatsHist<Int64>(group, cbf);
+          break;
+
+        case REC_BIN64_UNSIGNED:
+          group->fastStatsHist = new(STMTHEAP) FastStatsHist<UInt64>(group, cbf);
           break;
 
         case REC_IEEE_FLOAT32:

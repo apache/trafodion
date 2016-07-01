@@ -335,6 +335,7 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
   case REC_BIN32_SIGNED:
   case REC_BIN32_UNSIGNED:
   case REC_BIN64_SIGNED:
+  case REC_BIN64_UNSIGNED:
   case REC_DECIMAL_UNSIGNED:
   case REC_DECIMAL_LSE:
   case REC_FLOAT32:

@@ -78,7 +78,7 @@ typedef          Int32          ComSInt32;
 #define MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION 18
 
 //Unsigned NUMERICs upto this range are supported by hardware.
-#define MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION 9
+#define MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION 20
 
 typedef NAString                ComString;
 
@@ -1000,6 +1000,7 @@ enum ComODBCDataType { COM_UNKNOWN_ODT
                      , COM_INTEGER_SIGNED_ODT
                      , COM_INTEGER_UNSIGNED_ODT
                      , COM_LARGEINT_SIGNED_ODT
+                     , COM_LARGEINT_UNSIGNED_ODT
                      , COM_BIGINT_SIGNED_ODT
                      , COM_FLOAT_ODT
                      , COM_REAL_ODT
@@ -1030,6 +1031,7 @@ enum ComODBCDataType { COM_UNKNOWN_ODT
 #define COM_INTEGER_SIGNED_ODT_LIT             "SIGNED INTEGER    "
 #define COM_INTEGER_UNSIGNED_ODT_LIT           "UNSIGNED INTEGER  "
 #define COM_LARGEINT_SIGNED_ODT_LIT            "SIGNED LARGEINT   "
+#define COM_LARGEINT_UNSIGNED_ODT_LIT          "UNSIGNED LARGEINT "
 #define COM_BIGINT_SIGNED_ODT_LIT              "SIGNED BIGINT     "
 #define COM_FLOAT_ODT_LIT                      "FLOAT             "
 #define COM_REAL_ODT_LIT                       "REAL              "
@@ -1559,6 +1561,7 @@ enum ComSQLDataType { COM_UNKNOWN_SDT
                     , COM_INTEGER_SIGNED_SDT
                     , COM_INTEGER_UNSIGNED_SDT
                     , COM_LARGEINT_SIGNED_SDT
+                    , COM_LARGEINT_UNSIGNED_SDT
                     , COM_FLOAT_SDT
                     , COM_REAL_SDT
                     , COM_DOUBLE_SDT
@@ -1589,6 +1592,7 @@ enum ComSQLDataType { COM_UNKNOWN_SDT
 #define COM_INTEGER_UNSIGNED_SDT_LIT           "UNSIGNED INTEGER  "
 #define COM_BPINT_UNSIGNED_SDT_LIT             "UNSIGNED BP INT   "
 #define COM_LARGEINT_SIGNED_SDT_LIT            "SIGNED LARGEINT   "
+#define COM_LARGEINT_UNSIGNED_SDT_LIT          "UNSIGNED LARGEINT "
 #define COM_FLOAT_SDT_LIT                      "FLOAT             "
 #define COM_REAL_SDT_LIT                       "REAL              "
 #define COM_DOUBLE_SDT_LIT                     "DOUBLE            "
