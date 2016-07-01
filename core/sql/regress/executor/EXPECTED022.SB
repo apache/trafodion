@@ -371,6 +371,63 @@
 
 --- 1 row(s) selected.
 >>
+>>select cast (10 as tinyint) from t022t1;
+
+(EXPR)
+------
+
+    10
+
+--- 1 row(s) selected.
+>>select cast (-10 as tinyint) from t022t1;
+
+(EXPR)
+------
+
+   -10
+
+--- 1 row(s) selected.
+>>select cast (127 as tinyint) from t022t1;
+
+(EXPR)
+------
+
+   127
+
+--- 1 row(s) selected.
+>>select cast (-128 as tinyint) from t022t1;
+
+(EXPR)
+------
+
+  -128
+
+--- 1 row(s) selected.
+>>select cast (10 as tinyint unsigned) from t022t1;
+
+(EXPR)
+------
+
+    10
+
+--- 1 row(s) selected.
+>>select cast (0 as tinyint unsigned) from t022t1;
+
+(EXPR)
+------
+
+     0
+
+--- 1 row(s) selected.
+>>select cast (255 as tinyint unsigned) from t022t1;
+
+(EXPR)
+------
+
+   255
+
+--- 1 row(s) selected.
+>>
 >>select cast (date'12/31/9999' as timestamp(3)) from t022t1;
 
 (EXPR)                 
@@ -1254,34 +1311,6 @@ A           B         C
 
 --- 1 row(s) selected.
 >>
->>-- Floating point results are different depending on whether you are
->>-- running on NSK (Tandem floating point) or NT (IEEE floating point)
->>?ifNSK
->>select cast (-32769 as real) from t022t1;
->>select cast (32768 as real) from t022t1;
->>select cast (-10 as real) from t022t1;
->>select cast (10 as real) from t022t1;
->>select cast (-1 as real) from t022t1;
->>select cast (65536 as real) from t022t1;
->>select cast (-2147483649 as real) from t022t1;
->>select cast (9999999999 as real) from t022t1;
->>select cast (-100000 as real) from t022t1;
->>select cast (100000 as real) from t022t1;
->>select cast (9999999999 as real) from t022t1;
->>
->>select cast (-32769 as double precision) from t022t1;
->>select cast (32768 as double precision) from t022t1;
->>select cast (-10 as double precision) from t022t1;
->>select cast (10 as double precision) from t022t1;
->>select cast (-1 as double precision) from t022t1;
->>select cast (65536 as double precision) from t022t1;
->>select cast (-2147483649 as double precision) from t022t1;
->>select cast (2147483648 as double precision) from t022t1;
->>select cast (-100000 as double precision) from t022t1;
->>select cast (100000 as double precision) from t022t1;
->>select cast (4294967296 as double precision) from t022t1;
->>?ifNSK
->>?ifNT
 >>select cast (-32769 as real) from t022t1;
 
 (EXPR)         
@@ -1459,7 +1488,6 @@ A           B         C
  4.29496729600000000E+009
 
 --- 1 row(s) selected.
->>?ifNT
 >>
 >>select cast ('Hello, world!' as char(13)) from t022t2;
 
@@ -2297,6 +2325,28 @@ Hello
 
 --- 0 row(s) selected.
 >>
+>>-- negative tests for tinyint
+>>select cast(-129 as tinyint) from t022t1;
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:-129 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+
+--- 0 row(s) selected.
+>>select cast(128 as tinyint) from t022t1;
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:128 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+
+--- 0 row(s) selected.
+>>select cast(256 as tinyint unsigned) from t022t1;
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:256 to Target Type:TINYINT UNSIGNED(REC_BIN8_UNSIGNED).
+
+--- 0 row(s) selected.
+>>select cast(-1 as tinyint unsigned) from t022t1;
+
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype.
+
+--- 0 row(s) selected.
+>>
 >>-- tests for DATE, TIME, TIMESTAMP
 >>select cast ('12.07.1961 03.04.55.123456' as timestamp) from t022t2;
 
@@ -2501,13 +2551,6 @@ Hello
 
 --- 0 row(s) selected.
 >>
->>-- Floating point results are different depending on whether you are
->>-- running on NSK (Tandem floating point) or NT (IEEE floating point)
->>?ifNSK
->>-- results:  0 rows selected
->>select cast('66.2' as float) from t022t1 where cast('66.2' as float) = 66.2;
->>?ifNSK
->>?ifNT
 >>-- results:  1 row selected
 >>select cast('66.2' as float) from t022t1 where cast('66.2' as float) = 66.2;
 
@@ -2517,7 +2560,6 @@ Hello
  6.62000000000000128E+001
 
 --- 1 row(s) selected.
->>?ifNT
 >>
 >>-- to test comparisons between signed and unsigned numbers.
 >>
@@ -4219,7 +4261,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2016-02-19 15:24:29.239482
+10:13:14.0000  10:13:14.0000  2016-06-11 16:50:13.692785
 
 --- 1 row(s) selected.
 >>--test on precision of time
@@ -4423,11 +4465,6 @@ unaligned access          3.4028234E+038   1.01234500000000000E+001
 float access              1.1754943E-038   2.22507385850720128E-308
 
 --- 5 row(s) selected.
->>
->>-- This CQD is required, otherwise TANDEM float will show up in showplan
->>control query default FLOATTYPE 'IEEE';
-
---- SQL operation complete.
 >>
 >>-- Start the basic tests
 >>-- New PCode instructions for FLOAT64 and FLOAT32: GT and LE
@@ -5101,6 +5138,63 @@ lkjihgfedc  ?                               ?
 ---------
 
 999999999
+
+--- 1 row(s) selected.
+>>
+>>select cast (10 as tinyint) from t022t1;
+
+(EXPR)
+------
+
+    10
+
+--- 1 row(s) selected.
+>>select cast (-10 as tinyint) from t022t1;
+
+(EXPR)
+------
+
+   -10
+
+--- 1 row(s) selected.
+>>select cast (127 as tinyint) from t022t1;
+
+(EXPR)
+------
+
+   127
+
+--- 1 row(s) selected.
+>>select cast (-128 as tinyint) from t022t1;
+
+(EXPR)
+------
+
+  -128
+
+--- 1 row(s) selected.
+>>select cast (10 as tinyint unsigned) from t022t1;
+
+(EXPR)
+------
+
+    10
+
+--- 1 row(s) selected.
+>>select cast (0 as tinyint unsigned) from t022t1;
+
+(EXPR)
+------
+
+     0
+
+--- 1 row(s) selected.
+>>select cast (255 as tinyint unsigned) from t022t1;
+
+(EXPR)
+------
+
+   255
 
 --- 1 row(s) selected.
 >>
@@ -5987,34 +6081,6 @@ A           B         C
 
 --- 1 row(s) selected.
 >>
->>-- Floating point results are different depending on whether you are
->>-- running on NSK (Tandem floating point) or NT (IEEE floating point)
->>?ifNSK
->>select cast (-32769 as real) from t022t1;
->>select cast (32768 as real) from t022t1;
->>select cast (-10 as real) from t022t1;
->>select cast (10 as real) from t022t1;
->>select cast (-1 as real) from t022t1;
->>select cast (65536 as real) from t022t1;
->>select cast (-2147483649 as real) from t022t1;
->>select cast (9999999999 as real) from t022t1;
->>select cast (-100000 as real) from t022t1;
->>select cast (100000 as real) from t022t1;
->>select cast (9999999999 as real) from t022t1;
->>
->>select cast (-32769 as double precision) from t022t1;
->>select cast (32768 as double precision) from t022t1;
->>select cast (-10 as double precision) from t022t1;
->>select cast (10 as double precision) from t022t1;
->>select cast (-1 as double precision) from t022t1;
->>select cast (65536 as double precision) from t022t1;
->>select cast (-2147483649 as double precision) from t022t1;
->>select cast (2147483648 as double precision) from t022t1;
->>select cast (-100000 as double precision) from t022t1;
->>select cast (100000 as double precision) from t022t1;
->>select cast (4294967296 as double precision) from t022t1;
->>?ifNSK
->>?ifNT
 >>select cast (-32769 as real) from t022t1;
 
 (EXPR)         
@@ -6192,7 +6258,6 @@ A           B         C
  4.29496729600000000E+009
 
 --- 1 row(s) selected.
->>?ifNT
 >>
 >>select cast ('Hello, world!' as char(13)) from t022t2;
 
@@ -7030,6 +7095,28 @@ Hello
 
 --- 0 row(s) selected.
 >>
+>>-- negative tests for tinyint
+>>select cast(-129 as tinyint) from t022t1;
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:-129 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+
+--- 0 row(s) selected.
+>>select cast(128 as tinyint) from t022t1;
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:128 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+
+--- 0 row(s) selected.
+>>select cast(256 as tinyint unsigned) from t022t1;
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:256 to Target Type:TINYINT UNSIGNED(REC_BIN8_UNSIGNED).
+
+--- 0 row(s) selected.
+>>select cast(-1 as tinyint unsigned) from t022t1;
+
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype.
+
+--- 0 row(s) selected.
+>>
 >>-- tests for DATE, TIME, TIMESTAMP
 >>select cast ('12.07.1961 03.04.55.123456' as timestamp) from t022t2;
 
@@ -7234,13 +7321,6 @@ Hello
 
 --- 0 row(s) selected.
 >>
->>-- Floating point results are different depending on whether you are
->>-- running on NSK (Tandem floating point) or NT (IEEE floating point)
->>?ifNSK
->>-- results:  0 rows selected
->>select cast('66.2' as float) from t022t1 where cast('66.2' as float) = 66.2;
->>?ifNSK
->>?ifNT
 >>-- results:  1 row selected
 >>select cast('66.2' as float) from t022t1 where cast('66.2' as float) = 66.2;
 
@@ -7250,7 +7330,6 @@ Hello
  6.62000000000000128E+001
 
 --- 1 row(s) selected.
->>?ifNT
 >>
 >>-- to test comparisons between signed and unsigned numbers.
 >>
@@ -8952,7 +9031,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2016-02-19 15:26:59.794585
+10:13:14.0000  10:13:14.0000  2016-06-11 16:52:59.057377
 
 --- 1 row(s) selected.
 >>--test on precision of time
@@ -9156,11 +9235,6 @@ unaligned access          3.4028234E+038   1.01234500000000000E+001
 float access              1.1754943E-038   2.22507385850720128E-308
 
 --- 5 row(s) selected.
->>
->>-- This CQD is required, otherwise TANDEM float will show up in showplan
->>control query default FLOATTYPE 'IEEE';
-
---- SQL operation complete.
 >>
 >>-- Start the basic tests
 >>-- New PCode instructions for FLOAT64 and FLOAT32: GT and LE

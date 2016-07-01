@@ -46,6 +46,7 @@
 #include "StmtDDLDropRoutine.h"
 #include "StmtDDLCreateLibrary.h"
 #include "StmtDDLDropLibrary.h"
+#include "StmtDDLAlterLibrary.h"
 
 #include "ElemDDLColDefArray.h"
 #include "ElemDDLColRefArray.h"
@@ -342,7 +343,6 @@ void CmpSeabaseDDL::createSeabaseLibrary(
   NAString libFileName = createLibraryNode->getFilename() ;
   // strip blank spaces
   libFileName = libFileName.strip(NAString::both, ' ');
-
   if (validateLibraryFileExists(libFileName, FALSE))
     {
       deallocEHI(ehi); 
@@ -562,6 +562,139 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
 
   deallocEHI(ehi);      
   processReturn();
+  return;
+}
+
+void  CmpSeabaseDDL::alterSeabaseLibrary(StmtDDLAlterLibrary  *alterLibraryNode,
+					 NAString &currCatName, 
+					 NAString &currSchName)
+{
+  Lng32 cliRC;
+  Lng32 retcode;
+  
+  NAString libraryName = alterLibraryNode->getLibraryName();
+  NAString libFileName = alterLibraryNode->getFilename();
+  
+  ComObjectName libName(libraryName, COM_TABLE_NAME);
+  ComAnsiNamePart currCatAnsiName(currCatName);
+  ComAnsiNamePart currSchAnsiName(currSchName);
+  libName.applyDefaults(currCatAnsiName, currSchAnsiName);
+  
+  NAString catalogNamePart = libName.getCatalogNamePartAsAnsiString();
+  NAString schemaNamePart = libName.getSchemaNamePartAsAnsiString(TRUE);
+  NAString libNamePart = libName.getObjectNamePartAsAnsiString(TRUE);
+  const NAString extLibName = libName.getExternalName(TRUE);
+  
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+			       CmpCommon::context()->sqlSession()->getParentQid());
+  
+  retcode = existsInSeabaseMDTable(&cliInterface, 
+				   catalogNamePart, schemaNamePart, libNamePart,
+				   COM_LIBRARY_OBJECT, TRUE, FALSE);
+  if (retcode < 0)
+    {
+      processReturn();
+      return;
+    }
+  
+  if (retcode == 0) // does not exist
+    {
+      CmpCommon::diags()->clear();
+      *CmpCommon::diags() << DgSqlCode(-1389)
+			  << DgString0(extLibName);
+      processReturn();
+      return;
+    }
+  
+  // strip blank spaces
+  libFileName = libFileName.strip(NAString::both, ' ');
+  if (validateLibraryFileExists(libFileName, FALSE))
+    {
+      processReturn();
+      return;
+    }
+  
+  Int32 objectOwnerID = 0;
+  Int32 schemaOwnerID = 0;
+  Int64 objectFlags = 0;
+  Int64 libUID = getObjectInfo(&cliInterface,
+			       catalogNamePart.data(), schemaNamePart.data(),
+			       libNamePart.data(), COM_LIBRARY_OBJECT,
+			       objectOwnerID,schemaOwnerID,objectFlags);
+  
+  // Check for error getting metadata information
+  if (libUID == -1 || objectOwnerID == 0)
+    {
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+	SEABASEDDL_INTERNAL_ERROR("getting object UID and owner for alter library");
+      processReturn();
+      return;
+    }
+  
+  // Verify that the current user has authority to perform operation
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_LIBRARY,
+				objectOwnerID,schemaOwnerID))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      processReturn();
+      return;
+    }
+  
+  Int64 redefTime = NA_JulianTimestamp();
+  
+  char buf[2048]; // filename max length is 512. Additional bytes for long
+  // library names.
+  str_sprintf(buf, "update %s.\"%s\".%s set library_filename = '%s' where library_uid = %Ld",
+	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
+	      libFileName.data(),
+	      libUID);
+  
+  cliRC = cliInterface.executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+    }
+  
+  if (updateObjectRedefTime(&cliInterface,
+			    catalogNamePart, schemaNamePart, libNamePart,
+			    COM_LIBRARY_OBJECT_LIT,
+			    redefTime))
+    {
+      processReturn();
+      return;
+   }
+  
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  NARoutineDB *pRoutineDBCache  = ActiveSchemaDB()->getNARoutineDB();
+  Queue * usingRoutinesQueue = NULL;
+  cliRC = getUsingRoutines(&cliInterface, libUID, usingRoutinesQueue);
+  if (cliRC < 0)
+    {
+      processReturn();
+      return;
+    }
+  usingRoutinesQueue->position();
+  for (size_t i = 0; i < usingRoutinesQueue->numEntries(); i++)
+    { 
+      OutputInfo * rou = (OutputInfo*)usingRoutinesQueue->getNext();    
+      char * routineName = rou->get(0);
+      ComObjectType objectType = PrivMgr::ObjectLitToEnum(rou->get(1));
+      // Remove routine from DBRoutinCache
+      ComObjectName objectName(routineName);
+      QualifiedName qualRoutineName(objectName, STMTHEAP);
+      NARoutineDBKey key(qualRoutineName, STMTHEAP);
+      NARoutine *cachedNARoutine = pRoutineDBCache->get(&bindWA, &key);
+      if (cachedNARoutine)
+	{
+	  Int64 routineUID = *(Int64*)rou->get(2);
+	  pRoutineDBCache->removeNARoutine(qualRoutineName,
+					   ComQiScope::REMOVE_FROM_ALL_USERS,
+					   routineUID,
+					   alterLibraryNode->ddlXns(), FALSE);
+	}
+    }
+  
   return;
 }
 
@@ -881,6 +1014,8 @@ void CmpSeabaseDDL::createSeabaseRoutine(
        // Set subType for special cases detected by LM
        switch ( paramType[i] )
        {
+         case COM_SIGNED_BIN8_FSDT :
+         case COM_UNSIGNED_BIN8_FSDT :
          case COM_SIGNED_BIN16_FSDT :
          case COM_SIGNED_BIN32_FSDT :
          case COM_SIGNED_BIN64_FSDT :

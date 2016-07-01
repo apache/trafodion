@@ -12372,37 +12372,8 @@ Context* RelRoot::createContextForAChild(Context* myContext,
 
     // final adjustment to countOfCPUs and pipelinesPerCPU - special cases
     // 
-    // Check CQD EXE_PARALLEL_PURGEDATA and do the #esp = #partition parallel
-    // plan when the CQD is not set to OFF. See ExeUtilFastDelete::bindNode()
-    // on legal values for the CQD.
+    RelExpr* x = child(0).getGroupAttr()->getLogExprForSynthesis();
 
-       RelExpr* x = child(0).getGroupAttr()->getLogExprForSynthesis();
-
-    if (CmpCommon::getDefault(EXE_PARALLEL_PURGEDATA) != DF_OFF)
-    {
-
-       if ( x && x->getOperatorType() == REL_UNARY_DELETE && 
-            ((Delete*)x)->isFastDelete() // fast delete is turned on 
-                                         // for DELETE USING PURGEDATA FROM <t>
-          ) 
-       {
-          PartitioningFunction *pf = ((Delete*)x)->getScanIndexDesc()
-                                                 ->getPartitioningFunction();
-
-          const NodeMap* np;
-          if ( pf && (np = pf->getNodeMap()) && np->getNumEntries() > 1 ) {
-             // set countOfCPUs to the number of partitions 
-             UInt32 partns = np->getNumEntries();
-             countOfCPUs = partns;
-             pipelinesPerCPU = 1;
-             CURRSTMT_OPTDEFAULTS->setRequiredESPs(partns);
-             CURRSTMT_OPTDEFAULTS->setRequiredScanDescForFastDelete(
-                                ((Delete*)x)->getScanIndexDesc());
-             canAdjustDoP = FALSE;
-          }
-       } 
-    }
-          
     // for multi-commit DELETE (expressed as DELETE WITH MULTI COMMIT FROM <t>)
     if ( containsLRU() ) 
     {

@@ -89,7 +89,8 @@ public:
     HBASE_LOAD_              = 32,
     HBASE_UNLOAD_            = 33,
     HBASE_UNLOAD_TASK_       = 34,
-    GET_QID_                            = 35
+    GET_QID_                 = 35,
+    HIVE_TRUNCATE_           = 36
   };
 
   ComTdbExeUtil()
@@ -1514,12 +1515,7 @@ public:
 			  queue_index down,
 			  queue_index up,
 			  Lng32 num_buffers,
-			  ULng32 buffer_size,
-			  NABoolean ishiveTruncate = FALSE,
-			  char * hiveTableLocation = NULL,
-                          char * hiveHostName = NULL,
-                          Lng32 hivePortNum = 0,
-                          Int64 hiveModTS = -1
+			  ULng32 buffer_size
 			  );
 
   Long pack(void *);
@@ -1533,10 +1529,7 @@ public:
 
   virtual const char *getNodeName() const
   {
-    if (isHiveTruncate())
-      return "HIVE_TRUNCATE";
-    else
-      return "FAST_DELETE";
+    return "FAST_DELETE";
   };
 
   Queue* getIndexList()       { return indexList_; }
@@ -1554,26 +1547,6 @@ public:
   UInt16 numLOBs() { return numLOBs_; }
 
   Int64 getObjectUID() { return objectUID_; }
-
-  char * getHiveTableLocation() const
-  {
-    return hiveTableLocation_;
-  }
-
-  char * getHiveHdfsHost() const
-  {
-    return hiveHdfsHost_;
-  }
-
-  Lng32 getHiveHdfsPort() const
-  {
-    return hiveHdfsPort_;
-  }
-
-  Lng32 getHiveModTS() const
-  {
-    return hiveModTS_;
-  }
 
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
@@ -1604,10 +1577,6 @@ public:
   {(v ? flags_ |= OFFLINE_TABLE : flags_ &= ~OFFLINE_TABLE); };
   NABoolean offlineTable() { return (flags_ & OFFLINE_TABLE) != 0; };
 
-  void setIsHiveTruncate(NABoolean v)
-  {(v ? flags_ |= IS_HIVE_TRUNCATE : flags_ &= ~IS_HIVE_TRUNCATE); };
-  NABoolean isHiveTruncate() const { return (flags_ & IS_HIVE_TRUNCATE) != 0; };
-
   void setDoLabelPurgedata(NABoolean v)
   {(v ? flags_ |= DO_LABEL_PURGEDATA: flags_ &= ~DO_LABEL_PURGEDATA); };
   NABoolean doLabelPurgedata() { return (flags_ & DO_LABEL_PURGEDATA) != 0; };
@@ -1621,8 +1590,7 @@ private:
     DO_PARALLEL_DELETE       = 0x0008,
     DO_PARALLEL_DELETE_IF_XN = 0x0010,
     OFFLINE_TABLE            = 0x0020,
-    DO_LABEL_PURGEDATA       = 0x0040,
-    IS_HIVE_TRUNCATE         = 0x0080
+    DO_LABEL_PURGEDATA       = 0x0040
    };
 
   // list of indexes on the table.
@@ -1647,13 +1615,80 @@ private:
   NABasicPtr lobNumArray_;                           // 40-47
 
   Int64 objectUID_;                                  // 48-55
-  // hiveTable loaction will be extended for partitions later
-  NABasicPtr  hiveTableLocation_;                    // 56-63
-  NABasicPtr hiveHdfsHost_;                          // 64-71
-  Int32 hiveHdfsPort_;                               // 72-75
-  char fillers1_[4];                                 // 76-79
-  Int64 hiveModTS_;                                  // 80-87
-  char fillersComTdbExeUtilFastDelete_[40];          // 88-127
+};
+
+class ComTdbExeUtilHiveTruncate : public ComTdbExeUtil
+{
+public:
+  ComTdbExeUtilHiveTruncate()
+  : ComTdbExeUtil()
+  {}
+
+  ComTdbExeUtilHiveTruncate(char * tableName,
+                            ULng32 tableNameLen,
+                            char * tableLocation,
+                            char * partnLocation,
+                            char * hostName,
+                            Lng32 portNum,
+                            Int64 modTS,
+                            ex_cri_desc * given_cri_desc,
+                            ex_cri_desc * returned_cri_desc,
+                            queue_index down,
+                            queue_index up,
+                            Lng32 num_buffers,
+                            ULng32 buffer_size
+                            );
+  
+  Long pack(void *);
+  Lng32 unpack(void *, void * reallocator);
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilHiveTruncate);}
+
+  virtual const char *getNodeName() const
+  {
+    return "HIVE_TRUNCATE";
+  };
+
+  char * getTableLocation() const
+  {
+    return tableLocation_;
+  }
+
+  char * getHdfsHost() const
+  {
+    return hdfsHost_;
+  }
+
+  Lng32 getHdfsPort() const
+  {
+    return hdfsPort_;
+  }
+
+  Lng32 getModTS() const
+  {
+    return modTS_;
+  }
+
+  char * getPartnLocation() const 
+  {
+    return partnLocation_;
+  }
+
+  // ---------------------------------------------------------------------
+  // Used by the internal SHOWPLAN command to get attributes of a TDB.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+
+private:
+  NABasicPtr tableLocation_;                     // 00-07
+  NABasicPtr partnLocation_;                     // 08-15
+  NABasicPtr hdfsHost_;                          // 16-23
+  Int64 modTS_;                                  // 24-31
+  Int32 hdfsPort_;                               // 32-35
+  UInt32 flags_;                                 // 36-39
 };
 
 class ComTdbExeUtilGetStatistics : public ComTdbExeUtil

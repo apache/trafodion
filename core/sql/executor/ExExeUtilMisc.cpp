@@ -69,15 +69,7 @@ ex_tcb * ExExeUtilFastDeleteTdb::build(ex_globals * glob)
 {
   ExExeUtilTcb * exe_util_tcb;
 
-
-  if (!isHiveTruncate())
-  {
-     exe_util_tcb = new(glob->getSpace()) ExExeUtilFastDeleteTcb(*this, glob);
-  }
-  else
-  {
-    exe_util_tcb = new(glob->getSpace()) ExExeUtilHiveTruncateTcb(*this, glob);
-  }
+  exe_util_tcb = new(glob->getSpace()) ExExeUtilFastDeleteTcb(*this, glob);
   exe_util_tcb->registerSubtasks();
 
   return (exe_util_tcb);
@@ -2229,10 +2221,24 @@ ExExeUtilPopulateInMemStatsPrivateState::~ExExeUtilPopulateInMemStatsPrivateStat
 
 
 ////////////////////////////////////////////////////////////////
+// Constructor for class ExExeUtilHiveTruncateTdb
+///////////////////////////////////////////////////////////////
+ex_tcb * ExExeUtilHiveTruncateTdb::build(ex_globals * glob)
+{
+  ExExeUtilTcb * exe_util_tcb;
+
+  exe_util_tcb = new(glob->getSpace()) ExExeUtilHiveTruncateTcb(*this, glob);
+  exe_util_tcb->registerSubtasks();
+
+  return (exe_util_tcb);
+}
+
+
+////////////////////////////////////////////////////////////////
 // Constructor for class ExExeUtilHiveTruncateTcb
 ///////////////////////////////////////////////////////////////
 ExExeUtilHiveTruncateTcb::ExExeUtilHiveTruncateTcb(
-     const ComTdbExeUtilFastDelete & exe_util_tdb,
+     const ComTdbExeUtilHiveTruncate & exe_util_tdb,
      ex_globals * glob)
      : ExExeUtilTcb( exe_util_tdb, NULL, glob)
 {
@@ -2284,7 +2290,7 @@ short ExExeUtilHiveTruncateTcb::work()
       case INITIAL_:
       {
 
-        if (fdTdb().getHiveModTS() > 0)
+        if (htTdb().getModTS() > 0)
           step_ = DATA_MOD_CHECK_;
         else
           step_ = EMPTY_DIRECTORY_;
@@ -2295,10 +2301,12 @@ short ExExeUtilHiveTruncateTcb::work()
       {
         cliRC = ExpLOBinterfaceDataModCheck
           (lobGlob_,
-           fdTdb().getHiveTableLocation(),
-           fdTdb().getHiveHdfsHost(),
-           fdTdb().getHiveHdfsPort(),
-           fdTdb().getHiveModTS(),
+           (htTdb().getPartnLocation() ? 
+            htTdb().getPartnLocation() : 
+            htTdb().getTableLocation()),
+           htTdb().getHdfsHost(),
+           htTdb().getHdfsPort(),
+           htTdb().getModTS(),
            0);
 
         if (cliRC < 0)
@@ -2340,10 +2348,12 @@ short ExExeUtilHiveTruncateTcb::work()
         cliRC = ExpLOBinterfaceEmptyDirectory(
              lobGlob_,
              (char*)"",                  //name is empty
-             fdTdb().getHiveTableLocation(),
+             (htTdb().getPartnLocation() ? 
+              htTdb().getPartnLocation() : 
+              htTdb().getTableLocation()),
              Lob_HDFS_File,
-             fdTdb().getHiveHdfsHost(),
-             fdTdb().getHiveHdfsPort(),
+             htTdb().getHdfsHost(),
+             htTdb().getHdfsPort(),
              0 ,
              1 ,
              0);
@@ -2361,6 +2371,28 @@ short ExExeUtilHiveTruncateTcb::work()
                           "HDFS",
                           (char*)"ExpLOBInterfaceEmptyDirectory",
                           getLobErrStr(intParam1));
+
+          char reason[200];
+          
+          strcpy(reason, " ");
+          if (intParam1 == LOB_DIR_NAME_ERROR)
+            {
+              if (htTdb().getPartnLocation())
+                strcpy(reason, "Reason: specified partition does not exist");
+              else
+                strcpy(reason, "Reason: specified table location does not exist");
+            }
+          else if (intParam1 == LOB_DATA_FILE_DELETE_ERROR)
+            {
+              strcpy(reason, "Reason: error occurred during deletion of one or more files at the specified location");
+            }
+          
+          ExRaiseSqlError(getHeap(), &diagsArea, 
+                          (ExeErrorCode)(EXE_HIVE_TRUNCATE_ERROR), NULL,
+                          NULL, NULL, NULL,
+                          reason,
+                          NULL, NULL);
+          
           pentry_down->setDiagsArea(diagsArea);
           step_ = ERROR_;
         }

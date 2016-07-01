@@ -6,7 +6,7 @@
 >>invoke test020t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T1
--- Definition current  Sun Mar 13 06:02:17 2016
+-- Definition current  Wed Jun 22 05:43:20 2016
 
   (
     C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -49,7 +49,7 @@ C1           C2
 >>invoke test020t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T2
--- Definition current  Thu Mar 24 20:57:21 2016
+-- Definition current  Wed Jun 22 05:43:23 2016
 
   (
     C                                CHAR(15) CHARACTER SET ISO88591 COLLATE
@@ -161,7 +161,7 @@ G0
 >>invoke test020t5;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T5
--- Definition current  Thu Mar 24 20:57:29 2016
+-- Definition current  Wed Jun 22 05:43:36 2016
 
   (
     C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -260,7 +260,7 @@ ALTER TABLE TRAFODION.SCH.TEST020T5 ADD CONSTRAINT TRAFODION.SCH.TEST020T5C1
 >>invoke test020t6;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T6
--- Definition current  Thu Mar 24 20:58:14 2016
+-- Definition current  Wed Jun 22 05:44:27 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE

@@ -31,10 +31,11 @@ You need to prepare your Hadoop environment before installing {project-name}.
 2. <<configure-installation-user-id,Configure Installation User ID>>
 3. <<prepare-disable-requiretty,Disable requiretty>>
 4. <<prepare-verify-os-requirements-and-recommendations,Verify OS Requirements and Recommendations>>
-5. <<prepare-configure-ldap-identity-store,Configure LDAP Identity Store>>
-6. <<prepare-gather-configuration-information,Gather Configuration Information>>
-7. <<prepare-install-required-software-packages,Install Required Software Packages>>
-8. <<prepare-perform-recipe-based-provisioning-tasks,Perform Recipe-Based Provisioning Tasks>>
+5. <<prepare-configure-kerberos,Configure Kerberos>>
+6. <<prepare-configure-ldap-identity-store,Configure LDAP Identity Store>>
+7. <<prepare-gather-configuration-information,Gather Configuration Information>>
+8. <<prepare-install-required-software-packages,Install Required Software Packages>>
+9. <<prepare-perform-recipe-based-provisioning-tasks,Perform Recipe-Based Provisioning Tasks>>
 
 [[prepare-install-optional-workstation-software]]
 == Install Optional Workstation Software
@@ -96,15 +97,25 @@ Please ensure that the <<requirements-os-requirements-and-recommendations,OS Req
 are met for each node in the cluster where you intend to install {project-name}.
 
 <<<
+[[prepare-configure-kerberos]]
+== Configure Kerberos
+
+If your Hadoop installation has enabled Kerberos, then {project-name} needs to have Kerberos enabled.  If not, 
+then {project-name} will not run. If you plan to enable Kerberos in {project-name}, then you need to have access to a KDC (Kerberos Key Distribution
+Center) and administration credentials so you can create the necessary {project-name} principals and keytabs.
+
+If you wish to manually set up and activate Kerberos principals and keytabs, then refer to the section on
+<<enable-security-kerberos,Kerberos>>.
+
 [[prepare-configure-ldap-identity-store]]
 == Configure LDAP Identity Store
 
-If you plan to enable security in {project-name}, then you need to have an LDAP identity store available to perform authentication.
+If you plan to enable security features in {project-name}, then you need to have an LDAP identity store available to perform authentication.
 The {project-name} Installer prompts you to set up an authentication configuration file that points to an LDAP server (or servers),
 which enables security (that is, authentication and authorization) in the {project-name} database.
 
 If you wish to manually set up the authentication configuration file and enable security, then refer to the section on
-<<enable-security,Enable Security>>.
+<<enable-security-ldap,LDAP>>.
 
 [[prepare-gather-configuration-information]]
 == Gather Configuration Information
@@ -117,10 +128,12 @@ and for recipe-based provisioning. (Listed in alphabetical order to make it easi
 | ID^1^              | Information                                                    | Default                       | Notes
 | ADMIN              | Administrator user name for Apache Ambari or Cloudera Manager. | admin                         | A user that can change configuration and restart services via the
 distribution manager's REST API.
+| ADMIN_PRINCIPAL^2^ | Kerberos admin principal to manage principals and keytabs      | None                          | Required if Kerberos is enabled.
 | BACKUP_DCS_NODES   | List of nodes where to start the backup DCS Master components. | None                          | Blank separated FQDN list. Not needed if $ENABLE_HA = N.
 | CLOUD_CONFIG       | Whether you're installing {project-name} on a cloud environment.    | N                             | N = bare-metal or VM installation.
 | CLOUD_TYPE         | What type of cloud environment you're installing {project-name} on. | None | { AWS \| OpenStack \| Other }. Not applicable for bare-metal or VM installation.
 | CLUSTER_NAME       | The name of the Hadoop Cluster.                                | None | From Apache Ambari or Cloudera Manager.
+| DB_ROOT_NAME^2^    | LDAP name used to connect as database root user                | trafodion                     | Required when LDAP is enabled.
 | DCS_BUILD          | Tar file containing the DCS component.                         | None | Not needed if using a {project-name} package installation tar file.
 | DCS_PRIMARY_MASTER_NODE | The node where the primary DCS should run.                | None | The DCS Master handles JDBC and ODBC connection requests.
 | DCS_SERVER_PARM    | Number of concurrent client sessions per node.                 | 16 | This number specifies the concurrent sessions per node to be supported. Each session could require up to 1GB of physical memory. The number can be changed post-installation. For more information,
@@ -131,7 +144,9 @@ Downloaded automatically by the {project-name} Installer.
 | FLOATING_IP        | IP address if running DCS in HA mode.                          | None                          | Not needed if $ENABLE_HA = N. An FQDN name or IP address.
 | HADOOP_TYPE        | The type of Hadoop distribution you're installing {project-name} on. | None                         | Lowercase. cloudera or hadoop.
 | HBASE_GROUP        | Linux group name for the HBASE administrative user.             | hbase                         | Required in order to provide access to select HDFS directories to this user ID. 
+| HBASE_KEYTAB^2^    | HBase credentials used to grant {project-name} CRWE privileges | based on distribution         | Required if Kerberos is enabled.
 | HBASE_USER         | Linux user name for the HBASE administrative user.              | hbase                         | Required in order to provide access to select HDFS directories to this user ID. 
+| HDFS_KEYTAB^2^     | HDFS credentials used to set privileges on HDFS directories. . | based on distribution         | Required if Kerberos is enabled.
 | HDFS_USER          | Linux user name for the HDFS administrative user.               | hdfs                          | The {project-name} Installer uses `sudo su` to make HDFS
 configuration changes under this user.
 | HOME_DIR           | Root directory under which the `trafodion` home directory should be created. | /home           | *Example* +
@@ -142,25 +157,31 @@ If the home directory of the `trafodion` user is
 | INTERFACE          | Interface type used for $FLOATING_IP.                          | None                          | Not needed if $ENABLE_HA = N. 
 | JAVA_HOME          | Location of Java 1.7.0_65 or higher (JDK).                     | $JAVA_HOME setting            | Fully qualified path of the JDK. For example:
 `/usr/java/jdk1.7.0_67-cloudera`
-| LDAP_CERT^2^       | Full path to TLS certificate.                                  | None                          | Required of $LDAP_LEVEL = 1 or 2.
+| KDC_SERVER^2^      | Location of host where Kerberos server exists                  | None                          | Required if Kerberos enabled.
+| LDAP_CERT^2^       | Full path to TLS certificate.                                  | None                          | Required if $LDAP_LEVEL = 1 or 2.
 | LDAP_HOSTS^2^      | List of nodes where LDAP Identity Store servers are running.   | None                          | Blank separated. FQDN format.
 | LDAP_ID^2^         | List of LDAP unique identifiers.                               | None                          | Blank separated.    
 | LDAP_LEVEL^2^      | LDAP Encryption Level.                                         | 0                             | 0: Encryption not used, 1: SSL, 2: TLS
 | LDAP_PASSWORD^2^   | Password for LDAP_USER.                                        | None                          | If LDAP_USER is required only.
 | LDAP_PORT^2^       | Port used to communicate with LDAP Identity Store.             | None                          | Examples: 389 for no encryption or TLS, 636 for SSL.
 | LDAP_SECURITY^2^   | Whether to enable simple LDAP authentication.                | N                             | If Y, then you need to provide LDAP_HOSTS.
-| LDAP_USER^2^       | LDAP Search user name.                                         | None                          | If required. If so, must provide LDAP_PASSWORD, too.   
+| LDAP_USER^2^       | LDAP Search user name.                                         | None                          | Required if you need additional LDAP functionally such as LDAPSearch. If so, must provide LDAP_PASSWORD, too.   
 | LOCAL_WORKDIR      | The directory where the {project-name} Installer is located.        | None                          | Full path, no environmental variables.
 | MANAGEMENT_ENABLED | Whether your installation uses separate management nodes.      | N                             | Y if using separate management nodes for Apache Ambari or Cloudera Manager.
 | MANAGEMENT_NODES   | The FQDN names of management nodes, if any.                    | None                          | Provide a blank-separated list of node names.
+| MAX_LIFETIME^2^    | Kerberos ticket lifetime for Trafodion principal               | 24hours                       | Can be specified when Kerberos is enabled.   
 | NODE_LIST          | The FQDN names of the nodes where {project-name} will be installed. | None                          | Provide a blank-separated list of node names. The {project-name}
 Provisioning ID must have passwordless and `sudo` access to these nodes.
 | PASSWORD           | Administrator password for Apache Ambari or Cloudera Manager.  | admin                         | A user that can change configuration and restart services via the
 distribution manager's REST API.
+| RENEW_LIFETIME^2^  | Number times Kerberos ticket is for the Trafodion principal    | 7days                         | Can be specified when Kerberos is enabled.   
 | REST_BUILD         | Tar file containing the REST component.                        | None | Not needed if using a {project-name} package installation tar file.
+| SECURE_HADOOP^2^   | Indicates whether Hadoop has enabled Kerberos                   | Y only if Kerberos enabled | Based on whether Kerberos is enabled for your Hadoop installation
 | SQ_ROOT            | Target directory for the {project-name} software.                   | $HOME_DIR/trafodion           | {project-name} is installed in this directory on all nodes in `$NODE_LIST`.
 | START              | Whether to start {project-name} after install/upgrade.              | N                             | Does not apply to Recipe-Based Provisioning.
 | SUSE_LINUX         | Whether your installing {project-name} on SUSE Linux.               | false                         | Auto-detected by the {project-name} Installer.
+| TRAF_KEYTAB^2^     | Name to use when specifying {project-name} keytab              | based on distribution         |  Required if Kerberos is enabled.
+| TRAF_KEYTAB_DIR^2^ | Location  of {project_name} keytab                             | based on distribution         |  Required if Kerberos is enabled.
 | TRAF_PACKAGE       | The location of the {project-name} installation package tar file or core installation tar file. | None | The package file contains the {project-name} server,
 DCS, and REST software while the core installation file contains the {project-name} server software only. If you're using a core installation file, then you need to
 record the location of the DCS and REST installation tar files, too. Normally, you perform {project-name} provisioning using a {project-name} package installation tar file.
@@ -338,7 +359,7 @@ Do the following:
 |===
 | Attribute                                    | Setting
 | hbase.master.distributed.log.splitting       | false 
-| hbase.coprocessor.region.classes             | org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,
+| hbase.coprocessor.region.classes^b^          | org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,
 org.apache.hadoop.hbase.coprocessor.AggregateImplementation 
 | hbase.hregion.impl                           | org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion
 | hbase.regionserver.region.split.policy       | org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy 
@@ -354,5 +375,7 @@ org.apache.hadoop.hbase.coprocessor.AggregateImplementation
 |===
 +
 a) Applies to Cloudera distributions only.
++
+b) Do not overwrite any coprocessors that may already exist.
 
 2. Restart HBase to activate the new configuration setting.

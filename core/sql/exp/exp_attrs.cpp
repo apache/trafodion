@@ -220,15 +220,16 @@ switch (datatype)
   // When you add new datatype in /common/dfs2rec.h, don't
   // forget add new case here. Otherwise, showplan won't display it.
 
+  case REC_BIN8_SIGNED: return extFormat? (char *)"TINYINT SIGNED":(char *)"REC_BIN8_SIGNED";
+  case REC_BIN8_UNSIGNED: return extFormat? (char *)"TINYINT UNSIGNED":(char *)"REC_BIN8_UNSIGNED";
   case REC_BIN16_SIGNED: return extFormat? (char *)"SMALLINT SIGNED":(char *)"REC_BIN16_SIGNED";
   case REC_BIN16_UNSIGNED: return extFormat? (char *)"SMALLINT UNSIGNED":(char *)"REC_BIN16_UNSIGNED";
   case REC_BIN32_SIGNED: return extFormat? (char *)"INTEGER SIGNED":(char *)"REC_BIN32_SIGNED";
   case REC_BIN32_UNSIGNED: return extFormat? (char *)"INTEGER UNSIGNED":(char *)"REC_BIN32_UNSIGNED";
   case REC_BIN64_SIGNED: return extFormat? (char *)"LARGEINT":(char *)"REC_BIN64_SIGNED";
+  case REC_BIN64_UNSIGNED: return extFormat? (char *)"LARGEINT UNSIGNED":(char *)"REC_BIN64_UNSIGNED";
   case REC_BPINT_UNSIGNED: return extFormat? (char *)"BIT PRECISION INTEGER":(char *)"REC_BPINT_UNSIGNED";
 
-  case REC_TDM_FLOAT32: return extFormat? (char *)"FLOAT":(char *)"REC_TDM_FLOAT32";
-  case REC_TDM_FLOAT64: return extFormat? (char *)"DOUBLE PRECISION":(char *)"REC_TDM_FLOAT64";
   case REC_IEEE_FLOAT32: return extFormat? (char *)"IEEE FLOAT":(char *)"REC_IEEE_FLOAT32";
   case REC_IEEE_FLOAT64: return extFormat? (char *)"IEEE DOUBLE PRECISION":(char *)"REC_IEEE_FLOAT64";
 
