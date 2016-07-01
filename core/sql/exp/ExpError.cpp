@@ -628,7 +628,7 @@ char *stringToHex(char * out, Int32 outLen, char * in, Int32 inLen)
   //clear out buffer first
   memset(out,0,outLen);
 
-  outLen = (outLen / 2) ;
+  outLen = (outLen / 2) -1 ;
 
   if(inLen < outLen) outLen = inLen;
 
