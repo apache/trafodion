@@ -39,7 +39,7 @@
 
 --- SQL operation complete.
 >>
->>-- should create an schema called "_HV_HIVE_"
+>>-- should see a schema called "_HV_HIVE_"
 >>execute get_hv_schemas;
 
 SCHEMA_NAME
@@ -52,121 +52,22 @@ _HV_HIVE_
 >>-- Verify tables were created
 >>showddl trafodion."_HV_HIVE_".customer;
 
-CREATE EXTERNAL TABLE TRAFODION."_HV_HIVE_".CUSTOMER
-  (
-    C_CUSTOMER_SK                    INT DEFAULT NULL
-  , C_CUSTOMER_ID                    VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , C_CURRENT_CDEMO_SK               INT DEFAULT NULL
-  , C_CURRENT_HDEMO_SK               INT DEFAULT NULL
-  , C_CURRENT_ADDR_SK                INT DEFAULT NULL
-  , C_FIRST_SHIPTO_DATE_SK           INT DEFAULT NULL
-  , C_FIRST_SALES_DATE_SK            INT DEFAULT NULL
-  , C_SALUTATION                     VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , C_FIRST_NAME                     VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , C_LAST_NAME                      VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , C_PREFERRED_CUST_FLAG            VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , C_BIRTH_DAY                      INT DEFAULT NULL
-  , C_BIRTH_MONTH                    INT DEFAULT NULL
-  , C_BIRTH_YEAR                     INT DEFAULT NULL
-  , C_BIRTH_COUNTRY                  VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , C_LOGIN                          VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , C_EMAIL_ADDRESS                  VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , C_LAST_REVIEW_DATE               VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  )
- ATTRIBUTES NO AUDIT
+CREATE EXTERNAL TABLE CUSTOMER
+  FOR HIVE.HIVE.CUSTOMER
 ;
 
 --- SQL operation complete.
 >>showddl trafodion."_HV_HIVE_".item;
 
-CREATE EXTERNAL TABLE TRAFODION."_HV_HIVE_".ITEM
-  (
-    I_ITEM_SK                        INT DEFAULT NULL
-  , I_ITEM_ID                        VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , I_REC_START_DATE                 TIMESTAMP(6) DEFAULT NULL
-  , I_REC_END_DATE                   TIMESTAMP(6) DEFAULT NULL
-  , I_ITEM_DESC                      VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , I_CURRENT_PRICE                  REAL DEFAULT NULL
-  , I_WHOLESALE_COST                 REAL DEFAULT NULL
-  , I_BRAND_ID                       INT DEFAULT NULL
-  , I_BRAND                          VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , I_CLASS_ID                       INT DEFAULT NULL
-  , I_CLASS                          VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , I_CATEGORY_ID                    INT DEFAULT NULL
-  , I_CATEGORY                       VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , I_MANUFACT_ID                    INT DEFAULT NULL
-  , I_MANUFACT                       VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , I_SIZE                           VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , I_FORMULATION                    VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , I_COLOR                          VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , I_UNITS                          VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , I_CONTAINER                      VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , I_MANAGER_ID                     INT DEFAULT NULL
-  , I_PRODUCT_NAME                   VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  )
- ATTRIBUTES NO AUDIT
+CREATE EXTERNAL TABLE ITEM
+  FOR HIVE.HIVE.ITEM
 ;
 
 --- SQL operation complete.
 >>showddl trafodion."_HV_HIVE_".promotion;
 
-CREATE EXTERNAL TABLE TRAFODION."_HV_HIVE_".PROMOTION
-  (
-    P_PROMO_SK                       INT DEFAULT NULL
-  , P_PROMO_ID                       VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , P_START_DATE_SK                  INT DEFAULT NULL
-  , P_END_DATE_SK                    INT DEFAULT NULL
-  , P_ITEM_SK                        INT DEFAULT NULL
-  , P_COST                           REAL DEFAULT NULL
-  , P_RESPONSE_TARGET                INT DEFAULT NULL
-  , P_PROMO_NAME                     VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , P_CHANNEL_DMAIL                  VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , P_CHANNEL_EMAIL                  VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , P_CHANNEL_CATALOG                VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , P_CHANNEL_TV                     VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , P_CHANNEL_RADIO                  VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , P_CHANNEL_PRESS                  VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , P_CHANNEL_EVENT                  VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , P_CHANNEL_DEMO                   VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , P_CHANNEL_DETAILS                VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , P_PURPOSE                        VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  , P_DISCOUNT_ACTIVE                VARCHAR(32000 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT DEFAULT NULL
-  )
- ATTRIBUTES NO AUDIT
+CREATE EXTERNAL TABLE PROMOTION
+  FOR HIVE.HIVE.PROMOTION
 ;
 
 --- SQL operation complete.
@@ -190,25 +91,15 @@ _HV_SCH_T009_
 --- 2 row(s) selected.
 >>showddl trafodion."_HV_SCH_T009_".t009t1;
 
-CREATE EXTERNAL TABLE TRAFODION."_HV_SCH_T009_".T009T1
-  (
-    A                                INT DEFAULT NULL
-  , B                                INT DEFAULT NULL
-  , C                                INT DEFAULT NULL
-  )
- ATTRIBUTES NO AUDIT
+CREATE EXTERNAL TABLE T009T1
+  FOR HIVE.SCH_T009.T009T1
 ;
 
 --- SQL operation complete.
 >>showddl trafodion."_HV_SCH_T009_".t009t2;
 
-CREATE EXTERNAL TABLE TRAFODION."_HV_SCH_T009_".T009T2
-  (
-    A                                INT DEFAULT NULL
-  , B                                INT DEFAULT NULL
-  , C                                INT DEFAULT NULL
-  )
- ATTRIBUTES NO AUDIT
+CREATE EXTERNAL TABLE T009T2
+  FOR HIVE.SCH_T009.T009T2
 ;
 
 --- SQL operation complete.
@@ -338,17 +229,16 @@ PROMOTION
 --- SQL operation failed with errors.
 >>create external table seabase.customer like hive.hive.customer;
 
-*** ERROR[1180] Trying to create an external HIVE table with a different schema or table name (SEABASE) than the source table (HIVE).  The external schema and table name must be the same as the source.
+*** ERROR[3242] This statement is not supported. Reason: 'like' clause cannot be specified when creating an external table.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>create external table customer1 like hive.hive.customer;
 
-*** ERROR[1180] Trying to create an external HIVE table with a different schema or table name (CUSTOMER1) than the source table (CUSTOMER).  The external schema and table name must be the same as the source.
+*** ERROR[3242] This statement is not supported. Reason: 'like' clause cannot be specified when creating an external table.
 
---- SQL operation failed with errors.
->>create table t009t1 like "_HV_SCH_T009_".t009t1;
+*** ERROR[8822] The statement was not prepared.
 
---- SQL operation complete.
 >>create table t009t2 as select * from "_HV_SCH_T009_".t009t2;
 
 *** ERROR[4258] Trying to access external table TRAFODION."_HV_SCH_T009_".T009T2 through its external name format. Please use the native table name.
@@ -357,11 +247,15 @@ PROMOTION
 
 >>
 >>-- this create succeeds
+>>create table t009t1 like "_HV_SCH_T009_".t009t1;
+
+--- SQL operation complete.
+>>drop table t009t1;
+
+--- SQL operation complete.
 >>create table t009t1 as select * from hive.sch_t009.t009t1;
 
-*** ERROR[1390] Object TRAFODION.HIVE_T009.T009T1 already exists in Trafodion.
-
---- 0 row(s) inserted.
+--- 10 row(s) inserted.
 >>
 >>get tables;
 
@@ -395,31 +289,17 @@ T009T1
 >>-- should fail - column mismatch
 >>select count(*) from hive.sch_t009.t009t1;
 
-(EXPR)              
---------------------
+*** ERROR[8437] Mismatch detected between external table and underlying hive table definitions.
 
-                  10
+*** ERROR[8822] The statement was not prepared.
 
---- 1 row(s) selected.
->>
 >>sh sqlci -i "TEST009(select_stmts)";
 >>select * from hive.sch_t009.t009t1;
 
-A            B            C            D          
------------  -----------  -----------  -----------
+*** ERROR[8437] Mismatch detected between external table and underlying hive table definitions.
 
-         10           15           10         1973
-          9           26           10         1966
-          8           26           12         1938
-          7           24            4         1985
-          6            4           12         1925
-          5            8            5         1956
-          4            7            6         1983
-          3           18            9         1979
-          2            9            4         1966
-          1            9           12         1936
+*** ERROR[8822] The statement was not prepared.
 
---- 10 row(s) selected.
 >>select * from hive.sch_t009.t009t2;
 
 A            B            C          
@@ -450,40 +330,59 @@ CATALOG_NAME                                                                    
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              PROMOTION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              SCH_T009                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          T009T1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              SCH_T009                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          T009T2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_HIVE_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         PROMOTION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_SCH_T009_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     T009T2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _MD_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              OBJECTS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
 
---- 6 row(s) selected.
+--- 5 row(s) selected.
 >>drop external table t009t1 for hive.sch_t009.t009t1;
 
-*** ERROR[1389] Object TRAFODION."_HV_SCH_T009_".T009T1 does not exist in Trafodion.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>get tables in schema "_HV_SCH_T009_";
 
 Tables in Schema TRAFODION._HV_SCH_T009_
 ========================================
 
-T009T1
 T009T2
 
 --- SQL operation complete.
->>select row_id, catalog_name, schema_name, object_name from table(natablecacheentries('user','local')) order by 2,3,4;
+>>select catalog_name, schema_name, object_name from table(natablecacheentries('user','local')) order by 1,2,3;
 
-ROW_ID      CATALOG_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      SCHEMA_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       OBJECT_NAME
-----------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CATALOG_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      SCHEMA_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       OBJECT_NAME
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-         1  TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _MD_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              OBJECTS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              PROMOTION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              SCH_T009                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          T009T2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_HIVE_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         PROMOTION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_SCH_T009_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     T009T2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _MD_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              OBJECTS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
 
---- 1 row(s) selected.
+--- 5 row(s) selected.
 >>create external table t009t1 for hive.sch_t009.t009t1;
 
-*** ERROR[1390] Object TRAFODION."_HV_SCH_T009_".T009T1 already exists in Trafodion.
+--- SQL operation complete.
+>>invoke hive.sch_t009.t009t1;
 
---- SQL operation failed with errors.
+-- Definition of hive table T009T1
+-- Definition current  Thu Jun 16 19:45:00 2016
+
+  (
+    A                                INT
+  , B                                INT
+  , C                                INT
+  , D                                INT
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>showddl trafodion."_HV_SCH_T009_".t009t1;
+
+CREATE EXTERNAL TABLE T009T1
+  FOR HIVE.SCH_T009.T009T1
+;
+
+--- SQL operation complete.
 >>
 >>-- select should now succeed
 >>select count(*) from hive.sch_t009.t009t1;
@@ -494,6 +393,23 @@ ROW_ID      CATALOG_NAME                                                        
                   10
 
 --- 1 row(s) selected.
+>>select * from hive.sch_t009.t009t1;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+         10           15           10         1973
+          9           26           10         1966
+          8           26           12         1938
+          7           24            4         1985
+          6            4           12         1925
+          5            8            5         1956
+          4            7            6         1983
+          3           18            9         1979
+          2            9            4         1966
+          1            9           12         1936
+
+--- 10 row(s) selected.
 >>
 >>obey TEST009(test_hbase);
 >>-- create external tables for precreated tables
@@ -516,22 +432,24 @@ _HB__CELL__
 --- 2 row(s) selected.
 >>
 >>-- Verify tables were created
->>showddl trafodion."_HB__ROW__"."baseball";
+>>invoke trafodion."_HB__ROW__"."baseball";
 
-CREATE EXTERNAL TABLE TRAFODION."_HB__ROW__"."baseball"
+-- Definition of Trafodion external table TRAFODION."_HB__ROW__"."baseball"
+-- Definition current  Thu Jun 16 19:45:06 2016
+
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
       COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
   , COLUMN_DETAILS                   VARCHAR(10000) CHARACTER SET ISO88591
       COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
   )
- ATTRIBUTES NO AUDIT
-;
 
 --- SQL operation complete.
->>showddl trafodion."_HB__CELL__"."baseball";
+>>invoke trafodion."_HB__CELL__"."baseball";
 
-CREATE EXTERNAL TABLE TRAFODION."_HB__CELL__"."baseball"
+-- Definition of Trafodion external table TRAFODION."_HB__CELL__"."baseball"
+-- Definition current  Thu Jun 16 19:45:07 2016
+
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
       COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
@@ -544,7 +462,19 @@ CREATE EXTERNAL TABLE TRAFODION."_HB__CELL__"."baseball"
   , COL_VALUE                        VARCHAR(1000) CHARACTER SET ISO88591
       COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
   )
- ATTRIBUTES NO AUDIT
+
+--- SQL operation complete.
+>>showddl trafodion."_HB__ROW__"."baseball";
+
+CREATE EXTERNAL TABLE baseball
+  FOR HBASE."_ROW_"."baseball"
+;
+
+--- SQL operation complete.
+>>showddl trafodion."_HB__CELL__"."baseball";
+
+CREATE EXTERNAL TABLE baseball
+  FOR HBASE."_CELL_"."baseball"
 ;
 
 --- SQL operation complete.
@@ -592,4 +522,879 @@ ROW_ID      COLS
 
 --- SQL operation complete.
 >>
+>>obey TEST009(test_ext);
+>>-- test external table attributes
+>>set schema trafodion.sch;
+
+--- SQL operation complete.
+>>drop external table if exists store_sales for hive.hive.store_sales;
+
+--- SQL operation complete.
+>>create external table store_sales 
++>  for hive.hive.store_sales;
+
+--- SQL operation complete.
+>>invoke hive.hive.store_sales;
+
+-- Definition of hive table STORE_SALES
+-- Definition current  Thu Jun 16 19:45:13 2016
+
+  (
+    SS_SOLD_DATE_SK                  INT
+  , SS_SOLD_TIME_SK                  INT
+  , SS_ITEM_SK                       INT
+  , SS_CUSTOMER_SK                   INT
+  , SS_CDEMO_SK                      INT
+  , SS_HDEMO_SK                      INT
+  , SS_ADDR_SK                       INT
+  , SS_STORE_SK                      INT
+  , SS_PROMO_SK                      INT
+  , SS_TICKET_NUMBER                 INT
+  , SS_QUANTITY                      INT
+  , SS_WHOLESALE_COST                REAL
+  , SS_LIST_PRICE                    REAL
+  , SS_SALES_PRICE                   REAL
+  , SS_EXT_DISCOUNT_AMT              REAL
+  , SS_EXT_SALES_PRICE               REAL
+  , SS_EXT_WHOLESALE_COST            REAL
+  , SS_EXT_LIST_PRICE                REAL
+  , SS_EXT_TAX                       REAL
+  , SS_COUPON_AMT                    REAL
+  , SS_NET_PAID                      REAL
+  , SS_NET_PAID_INC_TAX              REAL
+  , SS_NET_PROFIT                    REAL
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>
+>>set schema hive.hive;
+
+--- SQL operation complete.
+>>prepare s from select * from store_sales where ss_item_sk = 1;
+
+*** WARNING[6008] Statistics for column (SS_ITEM_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>explain s;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... S
+PLAN_ID .................. 212332866313934337
+ROWS_OUT ............. 1,709
+EST_TOTAL_COST ........... 0.27
+STATEMENT ................ select * from store_sales where ss_item_sk = 1;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ............. 1,709
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.27
+DESCRIPTION
+  max_card_est ........... 2.77461e+06
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality  1,709
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  HIVE_MAX_STRING_LENGTH  20
+  SHOWCONTROL_SHOW_ALL ... OFF
+  SCHEMA ................. HIVE.HIVE
+  select_list ............ HIVE.STORE_SALES.SS_SOLD_DATE_SK,
+                             HIVE.STORE_SALES.SS_SOLD_TIME_SK, %(1),
+                             HIVE.STORE_SALES.SS_CUSTOMER_SK,
+                             HIVE.STORE_SALES.SS_CDEMO_SK,
+                             HIVE.STORE_SALES.SS_HDEMO_SK,
+                             HIVE.STORE_SALES.SS_ADDR_SK,
+                             HIVE.STORE_SALES.SS_STORE_SK,
+                             HIVE.STORE_SALES.SS_PROMO_SK,
+                             HIVE.STORE_SALES.SS_TICKET_NUMBER,
+                             HIVE.STORE_SALES.SS_QUANTITY,
+                             HIVE.STORE_SALES.SS_WHOLESALE_COST,
+                             HIVE.STORE_SALES.SS_LIST_PRICE,
+                             HIVE.STORE_SALES.SS_SALES_PRICE,
+                             HIVE.STORE_SALES.SS_EXT_DISCOUNT_AMT,
+                             HIVE.STORE_SALES.SS_EXT_SALES_PRICE,
+                             HIVE.STORE_SALES.SS_EXT_WHOLESALE_COST,
+                             HIVE.STORE_SALES.SS_EXT_LIST_PRICE,
+                             HIVE.STORE_SALES.SS_EXT_TAX,
+                             HIVE.STORE_SALES.SS_COUPON_AMT,
+                             HIVE.STORE_SALES.SS_NET_PAID,
+                             HIVE.STORE_SALES.SS_NET_PAID_INC_TAX,
+                             HIVE.STORE_SALES.SS_NET_PROFIT
+  input_variables ........ %(1)
+
+
+HIVE_SCAN =================================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... HIVE.HIVE.STORE_SALES
+REQUESTS_IN .............. 1
+ROWS_OUT ............. 1,709
+EST_OPER_COST ............ 0.27
+EST_TOTAL_COST ........... 0.27
+DESCRIPTION
+  max_card_est ........... 2.77461e+06
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table HIVE.HIVE.STORE_SALES
+  object_type ............ Hive_Text
+  scan_direction ......... forward
+  lock_mode .............. not specified, defaulted to lock cursor
+  access_mode ............ not specified, defaulted to read committed
+  columns_retrieved ..... 23
+  key_columns ............ HIVE.STORE_SALES.SS_SOLD_DATE_SK,
+                             HIVE.STORE_SALES.SS_SOLD_TIME_SK,
+                             HIVE.STORE_SALES.SS_ITEM_SK,
+                             HIVE.STORE_SALES.SS_CUSTOMER_SK,
+                             HIVE.STORE_SALES.SS_CDEMO_SK,
+                             HIVE.STORE_SALES.SS_HDEMO_SK,
+                             HIVE.STORE_SALES.SS_ADDR_SK,
+                             HIVE.STORE_SALES.SS_STORE_SK,
+                             HIVE.STORE_SALES.SS_PROMO_SK,
+                             HIVE.STORE_SALES.SS_TICKET_NUMBER,
+                             HIVE.STORE_SALES.SS_QUANTITY,
+                             HIVE.STORE_SALES.SS_WHOLESALE_COST,
+                             HIVE.STORE_SALES.SS_LIST_PRICE,
+                             HIVE.STORE_SALES.SS_SALES_PRICE,
+                             HIVE.STORE_SALES.SS_EXT_DISCOUNT_AMT,
+                             HIVE.STORE_SALES.SS_EXT_SALES_PRICE,
+                             HIVE.STORE_SALES.SS_EXT_WHOLESALE_COST,
+                             HIVE.STORE_SALES.SS_EXT_LIST_PRICE,
+                             HIVE.STORE_SALES.SS_EXT_TAX,
+                             HIVE.STORE_SALES.SS_COUPON_AMT,
+                             HIVE.STORE_SALES.SS_NET_PAID,
+                             HIVE.STORE_SALES.SS_NET_PAID_INC_TAX,
+                             HIVE.STORE_SALES.SS_NET_PROFIT
+  executor_predicates .... (HIVE.STORE_SALES.SS_ITEM_SK = %(1))
+
+--- SQL operation complete.
+>>
+>>-- join with nested join
+>>control query shape nested_join(scan(path 'CUSTOMER'), 
++>      scan(path 'STORE_SALES'));
+
+--- SQL operation complete.
+>>prepare s from select * from customer, store_sales 
++>    where store_sales.ss_item_sk = customer.c_customer_sk;
+
+*** WARNING[6008] Statistics for column (C_CUSTOMER_SK) from table HIVE.HIVE.CUSTOMER were not available. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6008] Statistics for column (SS_ITEM_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  2.92E+006
+1    2    3    nested_join                                           2.92E+006
+.    .    2    hive_scan                       STORE_SALES           2.78E+001
+.    .    1    hive_scan                       CUSTOMER              1.04E+005
+
+--- SQL operation complete.
+>>explain s;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... S
+PLAN_ID .................. 212332866314848871
+ROWS_OUT ......... 2,920,643
+EST_TOTAL_COST ........... 1.07
+STATEMENT ................ select *
+                           from customer, store_sales
+                           where store_sales.ss_item_sk =
+                             customer.c_customer_sk;
+MUST_MATCH ............... forced nested join(forced scan, forced scan)
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
+REQUESTS_IN .............. 1
+ROWS_OUT ......... 2,920,643
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 1.07
+DESCRIPTION
+  max_card_est ........... 2.92064e+06
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinal  2,920,643
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  HIVE_MAX_STRING_LENGTH  20
+  SHOWCONTROL_SHOW_ALL ... OFF
+  SCHEMA ................. HIVE.HIVE
+  select_list ............ HIVE.CUSTOMER.C_CUSTOMER_SK,
+                             HIVE.CUSTOMER.C_CUSTOMER_ID,
+                             HIVE.CUSTOMER.C_CURRENT_CDEMO_SK,
+                             HIVE.CUSTOMER.C_CURRENT_HDEMO_SK,
+                             HIVE.CUSTOMER.C_CURRENT_ADDR_SK,
+                             HIVE.CUSTOMER.C_FIRST_SHIPTO_DATE_SK,
+                             HIVE.CUSTOMER.C_FIRST_SALES_DATE_SK,
+                             HIVE.CUSTOMER.C_SALUTATION,
+                             HIVE.CUSTOMER.C_FIRST_NAME,
+                             HIVE.CUSTOMER.C_LAST_NAME,
+                             HIVE.CUSTOMER.C_PREFERRED_CUST_FLAG,
+                             HIVE.CUSTOMER.C_BIRTH_DAY,
+                             HIVE.CUSTOMER.C_BIRTH_MONTH,
+                             HIVE.CUSTOMER.C_BIRTH_YEAR,
+                             HIVE.CUSTOMER.C_BIRTH_COUNTRY,
+                             HIVE.CUSTOMER.C_LOGIN, HIVE.CUSTOMER.C_EMAIL_ADDRE
+                             SS, HIVE.CUSTOMER.C_LAST_REVIEW_DATE,
+                             HIVE.STORE_SALES.SS_SOLD_DATE_SK,
+                             HIVE.STORE_SALES.SS_SOLD_TIME_SK,
+                             HIVE.CUSTOMER.C_CUSTOMER_SK,
+                             HIVE.STORE_SALES.SS_CUSTOMER_SK,
+                             HIVE.STORE_SALES.SS_CDEMO_SK,
+                             HIVE.STORE_SALES.SS_HDEMO_SK,
+                             HIVE.STORE_SALES.SS_ADDR_SK,
+                             HIVE.STORE_SALES.SS_STORE_SK,
+                             HIVE.STORE_SALES.SS_PROMO_SK,
+                             HIVE.STORE_SALES.SS_TICKET_NUMBER,
+                             HIVE.STORE_SALES.SS_QUANTITY,
+                             HIVE.STORE_SALES.SS_WHOLESALE_COST,
+                             HIVE.STORE_SALES.SS_LIST_PRICE,
+                             HIVE.STORE_SALES.SS_SALES_PRICE,
+                             HIVE.STORE_SALES.SS_EXT_DISCOUNT_AMT,
+                             HIVE.STORE_SALES.SS_EXT_SALES_PRICE,
+                             HIVE.STORE_SALES.SS_EXT_WHOLESALE_COST,
+                             HIVE.STORE_SALES.SS_EXT_LIST_PRICE,
+                             HIVE.STORE_SALES.SS_EXT_TAX,
+                             HIVE.STORE_SALES.SS_COUPON_AMT,
+                             HIVE.STORE_SALES.SS_NET_PAID,
+                             HIVE.STORE_SALES.SS_NET_PAID_INC_TAX,
+                             HIVE.STORE_SALES.SS_NET_PROFIT
+
+
+NESTED_JOIN ===============================  SEQ_NO 3        CHILDREN 1, 2
+REQUESTS_IN .............. 1
+ROWS_OUT ......... 2,920,642
+EST_OPER_COST ............ 0.5
+EST_TOTAL_COST ........... 1.07
+DESCRIPTION
+  max_card_est ........... 2.92064e+06
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  join_type .............. inner
+  join_method ............ nested
+
+
+HIVE_SCAN =================================  SEQ_NO 2        NO CHILDREN
+TABLE_NAME ............... HIVE.HIVE.STORE_SALES
+REQUESTS_IN ........ 104,843
+ROWS/REQUEST ............ 27.86
+EST_OPER_COST ............ 0.55
+EST_TOTAL_COST ........... 0.55
+DESCRIPTION
+  max_card_est ........... 2.92064e+06
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table HIVE.HIVE.STORE_SALES
+  object_type ............ Hive_Text
+  scan_direction ......... forward
+  lock_mode .............. not specified, defaulted to lock cursor
+  access_mode ............ not specified, defaulted to read committed
+  columns_retrieved ..... 23
+  key_columns ............ HIVE.STORE_SALES.SS_SOLD_DATE_SK,
+                             HIVE.STORE_SALES.SS_SOLD_TIME_SK,
+                             HIVE.STORE_SALES.SS_ITEM_SK,
+                             HIVE.STORE_SALES.SS_CUSTOMER_SK,
+                             HIVE.STORE_SALES.SS_CDEMO_SK,
+                             HIVE.STORE_SALES.SS_HDEMO_SK,
+                             HIVE.STORE_SALES.SS_ADDR_SK,
+                             HIVE.STORE_SALES.SS_STORE_SK,
+                             HIVE.STORE_SALES.SS_PROMO_SK,
+                             HIVE.STORE_SALES.SS_TICKET_NUMBER,
+                             HIVE.STORE_SALES.SS_QUANTITY,
+                             HIVE.STORE_SALES.SS_WHOLESALE_COST,
+                             HIVE.STORE_SALES.SS_LIST_PRICE,
+                             HIVE.STORE_SALES.SS_SALES_PRICE,
+                             HIVE.STORE_SALES.SS_EXT_DISCOUNT_AMT,
+                             HIVE.STORE_SALES.SS_EXT_SALES_PRICE,
+                             HIVE.STORE_SALES.SS_EXT_WHOLESALE_COST,
+                             HIVE.STORE_SALES.SS_EXT_LIST_PRICE,
+                             HIVE.STORE_SALES.SS_EXT_TAX,
+                             HIVE.STORE_SALES.SS_COUPON_AMT,
+                             HIVE.STORE_SALES.SS_NET_PAID,
+                             HIVE.STORE_SALES.SS_NET_PAID_INC_TAX,
+                             HIVE.STORE_SALES.SS_NET_PROFIT
+  executor_predicates .... (HIVE.STORE_SALES.SS_ITEM_SK =
+                             HIVE.CUSTOMER.C_CUSTOMER_SK)
+
+
+HIVE_SCAN =================================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... HIVE.HIVE.CUSTOMER
+REQUESTS_IN .............. 1
+ROWS_OUT ........... 104,843
+EST_OPER_COST ............ 0.02
+EST_TOTAL_COST ........... 0.02
+DESCRIPTION
+  max_card_est ..... 104,843
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table HIVE.HIVE.CUSTOMER
+  object_type ............ Hive_Text
+  scan_direction ......... forward
+  lock_mode .............. not specified, defaulted to lock cursor
+  access_mode ............ not specified, defaulted to read committed
+  columns_retrieved ..... 18
+  key_columns ............ HIVE.CUSTOMER.C_CUSTOMER_SK,
+                             HIVE.CUSTOMER.C_CUSTOMER_ID,
+                             HIVE.CUSTOMER.C_CURRENT_CDEMO_SK,
+                             HIVE.CUSTOMER.C_CURRENT_HDEMO_SK,
+                             HIVE.CUSTOMER.C_CURRENT_ADDR_SK,
+                             HIVE.CUSTOMER.C_FIRST_SHIPTO_DATE_SK,
+                             HIVE.CUSTOMER.C_FIRST_SALES_DATE_SK,
+                             HIVE.CUSTOMER.C_SALUTATION,
+                             HIVE.CUSTOMER.C_FIRST_NAME,
+                             HIVE.CUSTOMER.C_LAST_NAME,
+                             HIVE.CUSTOMER.C_PREFERRED_CUST_FLAG,
+                             HIVE.CUSTOMER.C_BIRTH_DAY,
+                             HIVE.CUSTOMER.C_BIRTH_MONTH,
+                             HIVE.CUSTOMER.C_BIRTH_YEAR,
+                             HIVE.CUSTOMER.C_BIRTH_COUNTRY,
+                             HIVE.CUSTOMER.C_LOGIN, HIVE.CUSTOMER.C_EMAIL_ADDRE
+                             SS, HIVE.CUSTOMER.C_LAST_REVIEW_DATE
+  executor_predicates .... HIVE.CUSTOMER.C_CUSTOMER_SK is not null
+
+--- SQL operation complete.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>set schema trafodion.sch;
+
+--- SQL operation complete.
+>>drop external table if exists date_dim for hive.hive.date_dim;
+
+--- SQL operation complete.
+>>cqd volatile_table_find_suitable_key 'SYSTEM';
+
+--- SQL operation complete.
+>>create external table date_dim 
++>  (d_date_sk int, d_date_id varchar(100 bytes) character set utf8, d_date date, 
++>   d_month_seq int, d_week_seq int, d_quarter_seq int, d_year int, d_dow int,
++>   d_moy int, d_dom int, d_qoy int, d_fy_year int, d_fy_quarter_seq int,
++>   d_fy_week_seq int,
++>   d_day_name varchar(120 bytes) character set utf8, d_quarter_name varchar(200 bytes) character set utf8, d_holiday varchar(100 bytes) character set utf8,
++>   d_weekend varchar(100 bytes) character set utf8, d_following_holiday varchar(100 bytes) character set utf8, 
++>   d_first_dom int, d_last_dom int, d_same_day_ly int, d_same_day_lq int,
++>   d_current_day varchar(100 bytes) character set utf8, d_current_week varchar(111 bytes) character set utf8,
++>   d_current_month varchar(200 bytes) character set utf8, d_current_quarter varchar(100 bytes) character set utf8, 
++>   d_current_year varchar(100 bytes) character set utf8)
++>  for hive.hive.date_dim;
+
+--- SQL operation complete.
+>>invoke hive.hive.date_dim;
+
+-- Definition of hive table DATE_DIM
+-- Definition current  Thu Jun 16 19:45:17 2016
+
+  (
+    D_DATE_SK                        INT
+  , D_DATE_ID                        VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_DATE                           DATE
+  , D_MONTH_SEQ                      INT
+  , D_WEEK_SEQ                       INT
+  , D_QUARTER_SEQ                    INT
+  , D_YEAR                           INT
+  , D_DOW                            INT
+  , D_MOY                            INT
+  , D_DOM                            INT
+  , D_QOY                            INT
+  , D_FY_YEAR                        INT
+  , D_FY_QUARTER_SEQ                 INT
+  , D_FY_WEEK_SEQ                    INT
+  , D_DAY_NAME                       VARCHAR(120 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_QUARTER_NAME                   VARCHAR(200 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_HOLIDAY                        VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_WEEKEND                        VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_FOLLOWING_HOLIDAY              VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_FIRST_DOM                      INT
+  , D_LAST_DOM                       INT
+  , D_SAME_DAY_LY                    INT
+  , D_SAME_DAY_LQ                    INT
+  , D_CURRENT_DAY                    VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_CURRENT_WEEK                   VARCHAR(111 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_CURRENT_MONTH                  VARCHAR(200 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_CURRENT_QUARTER                VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_CURRENT_YEAR                   VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>showddl hive.hive.date_dim;
+
+/* Hive DDL */
+CREATE TABLE DATE_DIM
+  (
+    D_DATE_SK                        int
+  , D_DATE_ID                        string
+  , D_DATE                           timestamp
+  , D_MONTH_SEQ                      int
+  , D_WEEK_SEQ                       int
+  , D_QUARTER_SEQ                    int
+  , D_YEAR                           int
+  , D_DOW                            int
+  , D_MOY                            int
+  , D_DOM                            int
+  , D_QOY                            int
+  , D_FY_YEAR                        int
+  , D_FY_QUARTER_SEQ                 int
+  , D_FY_WEEK_SEQ                    int
+  , D_DAY_NAME                       string
+  , D_QUARTER_NAME                   string
+  , D_HOLIDAY                        string
+  , D_WEEKEND                        string
+  , D_FOLLOWING_HOLIDAY              string
+  , D_FIRST_DOM                      int
+  , D_LAST_DOM                       int
+  , D_SAME_DAY_LY                    int
+  , D_SAME_DAY_LQ                    int
+  , D_CURRENT_DAY                    string
+  , D_CURRENT_WEEK                   string
+  , D_CURRENT_MONTH                  string
+  , D_CURRENT_QUARTER                string
+  , D_CURRENT_YEAR                   string
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+CREATE EXTERNAL TABLE DATE_DIM
+  (
+    D_DATE_SK                        INT DEFAULT NULL
+  , D_DATE_ID                        VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_DATE                           DATE DEFAULT NULL
+  , D_MONTH_SEQ                      INT DEFAULT NULL
+  , D_WEEK_SEQ                       INT DEFAULT NULL
+  , D_QUARTER_SEQ                    INT DEFAULT NULL
+  , D_YEAR                           INT DEFAULT NULL
+  , D_DOW                            INT DEFAULT NULL
+  , D_MOY                            INT DEFAULT NULL
+  , D_DOM                            INT DEFAULT NULL
+  , D_QOY                            INT DEFAULT NULL
+  , D_FY_YEAR                        INT DEFAULT NULL
+  , D_FY_QUARTER_SEQ                 INT DEFAULT NULL
+  , D_FY_WEEK_SEQ                    INT DEFAULT NULL
+  , D_DAY_NAME                       VARCHAR(120 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_QUARTER_NAME                   VARCHAR(200 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_HOLIDAY                        VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_WEEKEND                        VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_FOLLOWING_HOLIDAY              VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_FIRST_DOM                      INT DEFAULT NULL
+  , D_LAST_DOM                       INT DEFAULT NULL
+  , D_SAME_DAY_LY                    INT DEFAULT NULL
+  , D_SAME_DAY_LQ                    INT DEFAULT NULL
+  , D_CURRENT_DAY                    VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_CURRENT_WEEK                   VARCHAR(111 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_CURRENT_MONTH                  VARCHAR(200 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_CURRENT_QUARTER                VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_CURRENT_YEAR                   VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  )
+  FOR HIVE.HIVE.DATE_DIM
+;
+
+--- SQL operation complete.
+>>prepare s from select * from hive.hive.date_dim where d_date = date '2016-01-27';
+
+*** WARNING[6008] Statistics for column (D_DATE) from table HIVE.HIVE.DATE_DIM were not available. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>explain s;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... S
+PLAN_ID .................. 212332866319821558
+ROWS_OUT ................. 1
+EST_TOTAL_COST ........... 0.01
+STATEMENT ................ select *
+                           from hive.hive.date_dim
+                           where d_date = date '2016-01-27';
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est ........... 1
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality .... 1
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  HIVE_MAX_STRING_LENGTH  20
+  SHOWCONTROL_SHOW_ALL ... OFF
+  SCHEMA ................. TRAFODION.SCH
+  VOLATILE_TABLE_FIND_SUI  SYSTEM
+  select_list ............ HIVE.DATE_DIM.D_DATE_SK, HIVE.DATE_DIM.D_DATE_ID,
+                             %(2016-01-27), HIVE.DATE_DIM.D_MONTH_SEQ,
+                             HIVE.DATE_DIM.D_WEEK_SEQ,
+                             HIVE.DATE_DIM.D_QUARTER_SEQ, HIVE.DATE_DIM.D_YEAR,
+                             HIVE.DATE_DIM.D_DOW, HIVE.DATE_DIM.D_MOY,
+                             HIVE.DATE_DIM.D_DOM, HIVE.DATE_DIM.D_QOY,
+                             HIVE.DATE_DIM.D_FY_YEAR,
+                             HIVE.DATE_DIM.D_FY_QUARTER_SEQ,
+                             HIVE.DATE_DIM.D_FY_WEEK_SEQ,
+                             HIVE.DATE_DIM.D_DAY_NAME,
+                             HIVE.DATE_DIM.D_QUARTER_NAME,
+                             HIVE.DATE_DIM.D_HOLIDAY, HIVE.DATE_DIM.D_WEEKEND,
+                             HIVE.DATE_DIM.D_FOLLOWING_HOLIDAY,
+                             HIVE.DATE_DIM.D_FIRST_DOM,
+                             HIVE.DATE_DIM.D_LAST_DOM,
+                             HIVE.DATE_DIM.D_SAME_DAY_LY,
+                             HIVE.DATE_DIM.D_SAME_DAY_LQ,
+                             HIVE.DATE_DIM.D_CURRENT_DAY,
+                             HIVE.DATE_DIM.D_CURRENT_WEEK,
+                             HIVE.DATE_DIM.D_CURRENT_MONTH,
+                             HIVE.DATE_DIM.D_CURRENT_QUARTER,
+                             HIVE.DATE_DIM.D_CURRENT_YEAR
+  input_variables ........ %(2016-01-27)
+
+
+HIVE_SCAN =================================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... HIVE.HIVE.DATE_DIM
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est ........... 1
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table HIVE.HIVE.DATE_DIM
+  object_type ............ Hive_Text
+  scan_direction ......... forward
+  lock_mode .............. not specified, defaulted to lock cursor
+  access_mode ............ not specified, defaulted to read committed
+  columns_retrieved ..... 28
+  executor_predicates .... (HIVE.DATE_DIM.D_DATE = %(2016-01-27))
+
+--- SQL operation complete.
+>>
+>>drop external table if exists date_dim for hive.hive.date_dim;
+
+--- SQL operation complete.
+>>create external table date_dim 
++>  (d_date_sk int, d_date_id varchar(100 bytes) character set utf8, d_date date)
++>  for hive.hive.date_dim;
+
+--- SQL operation complete.
+>>invoke hive.hive.date_dim;
+
+-- Definition of hive table DATE_DIM
+-- Definition current  Thu Jun 16 19:45:27 2016
+
+  (
+    D_DATE_SK                        INT
+  , D_DATE_ID                        VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_DATE                           DATE
+  , D_MONTH_SEQ                      INT
+  , D_WEEK_SEQ                       INT
+  , D_QUARTER_SEQ                    INT
+  , D_YEAR                           INT
+  , D_DOW                            INT
+  , D_MOY                            INT
+  , D_DOM                            INT
+  , D_QOY                            INT
+  , D_FY_YEAR                        INT
+  , D_FY_QUARTER_SEQ                 INT
+  , D_FY_WEEK_SEQ                    INT
+  , D_DAY_NAME                       VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_QUARTER_NAME                   VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_HOLIDAY                        VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_WEEKEND                        VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_FOLLOWING_HOLIDAY              VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_FIRST_DOM                      INT
+  , D_LAST_DOM                       INT
+  , D_SAME_DAY_LY                    INT
+  , D_SAME_DAY_LQ                    INT
+  , D_CURRENT_DAY                    VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_CURRENT_WEEK                   VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_CURRENT_MONTH                  VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_CURRENT_QUARTER                VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , D_CURRENT_YEAR                   VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>showddl hive.hive.date_dim;
+
+/* Hive DDL */
+CREATE TABLE DATE_DIM
+  (
+    D_DATE_SK                        int
+  , D_DATE_ID                        string
+  , D_DATE                           timestamp
+  , D_MONTH_SEQ                      int
+  , D_WEEK_SEQ                       int
+  , D_QUARTER_SEQ                    int
+  , D_YEAR                           int
+  , D_DOW                            int
+  , D_MOY                            int
+  , D_DOM                            int
+  , D_QOY                            int
+  , D_FY_YEAR                        int
+  , D_FY_QUARTER_SEQ                 int
+  , D_FY_WEEK_SEQ                    int
+  , D_DAY_NAME                       string
+  , D_QUARTER_NAME                   string
+  , D_HOLIDAY                        string
+  , D_WEEKEND                        string
+  , D_FOLLOWING_HOLIDAY              string
+  , D_FIRST_DOM                      int
+  , D_LAST_DOM                       int
+  , D_SAME_DAY_LY                    int
+  , D_SAME_DAY_LQ                    int
+  , D_CURRENT_DAY                    string
+  , D_CURRENT_WEEK                   string
+  , D_CURRENT_MONTH                  string
+  , D_CURRENT_QUARTER                string
+  , D_CURRENT_YEAR                   string
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+CREATE EXTERNAL TABLE DATE_DIM
+  (
+    D_DATE_SK                        INT DEFAULT NULL
+  , D_DATE_ID                        VARCHAR(100 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_DATE                           DATE DEFAULT NULL
+  , D_MONTH_SEQ                      INT DEFAULT NULL
+  , D_WEEK_SEQ                       INT DEFAULT NULL
+  , D_QUARTER_SEQ                    INT DEFAULT NULL
+  , D_YEAR                           INT DEFAULT NULL
+  , D_DOW                            INT DEFAULT NULL
+  , D_MOY                            INT DEFAULT NULL
+  , D_DOM                            INT DEFAULT NULL
+  , D_QOY                            INT DEFAULT NULL
+  , D_FY_YEAR                        INT DEFAULT NULL
+  , D_FY_QUARTER_SEQ                 INT DEFAULT NULL
+  , D_FY_WEEK_SEQ                    INT DEFAULT NULL
+  , D_DAY_NAME                       VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_QUARTER_NAME                   VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_HOLIDAY                        VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_WEEKEND                        VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_FOLLOWING_HOLIDAY              VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_FIRST_DOM                      INT DEFAULT NULL
+  , D_LAST_DOM                       INT DEFAULT NULL
+  , D_SAME_DAY_LY                    INT DEFAULT NULL
+  , D_SAME_DAY_LQ                    INT DEFAULT NULL
+  , D_CURRENT_DAY                    VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_CURRENT_WEEK                   VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_CURRENT_MONTH                  VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_CURRENT_QUARTER                VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , D_CURRENT_YEAR                   VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  )
+  FOR HIVE.HIVE.DATE_DIM
+;
+
+--- SQL operation complete.
+>>prepare s from select * from hive.hive.date_dim where d_date = date '2016-01-27';
+
+*** WARNING[6008] Statistics for column (D_DATE) from table HIVE.HIVE.DATE_DIM were not available. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>explain s;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... S
+PLAN_ID .................. 212332866330134922
+ROWS_OUT ................. 1
+EST_TOTAL_COST ........... 0.01
+STATEMENT ................ select *
+                           from hive.hive.date_dim
+                           where d_date = date '2016-01-27';
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est ........... 1
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality .... 1
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  HIVE_MAX_STRING_LENGTH  20
+  SHOWCONTROL_SHOW_ALL ... OFF
+  SCHEMA ................. TRAFODION.SCH
+  VOLATILE_TABLE_FIND_SUI  SYSTEM
+  select_list ............ HIVE.DATE_DIM.D_DATE_SK, HIVE.DATE_DIM.D_DATE_ID,
+                             %(2016-01-27), HIVE.DATE_DIM.D_MONTH_SEQ,
+                             HIVE.DATE_DIM.D_WEEK_SEQ,
+                             HIVE.DATE_DIM.D_QUARTER_SEQ, HIVE.DATE_DIM.D_YEAR,
+                             HIVE.DATE_DIM.D_DOW, HIVE.DATE_DIM.D_MOY,
+                             HIVE.DATE_DIM.D_DOM, HIVE.DATE_DIM.D_QOY,
+                             HIVE.DATE_DIM.D_FY_YEAR,
+                             HIVE.DATE_DIM.D_FY_QUARTER_SEQ,
+                             HIVE.DATE_DIM.D_FY_WEEK_SEQ,
+                             HIVE.DATE_DIM.D_DAY_NAME,
+                             HIVE.DATE_DIM.D_QUARTER_NAME,
+                             HIVE.DATE_DIM.D_HOLIDAY, HIVE.DATE_DIM.D_WEEKEND,
+                             HIVE.DATE_DIM.D_FOLLOWING_HOLIDAY,
+                             HIVE.DATE_DIM.D_FIRST_DOM,
+                             HIVE.DATE_DIM.D_LAST_DOM,
+                             HIVE.DATE_DIM.D_SAME_DAY_LY,
+                             HIVE.DATE_DIM.D_SAME_DAY_LQ,
+                             HIVE.DATE_DIM.D_CURRENT_DAY,
+                             HIVE.DATE_DIM.D_CURRENT_WEEK,
+                             HIVE.DATE_DIM.D_CURRENT_MONTH,
+                             HIVE.DATE_DIM.D_CURRENT_QUARTER,
+                             HIVE.DATE_DIM.D_CURRENT_YEAR
+  input_variables ........ %(2016-01-27)
+
+
+HIVE_SCAN =================================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... HIVE.HIVE.DATE_DIM
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est ........... 1
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table HIVE.HIVE.DATE_DIM
+  object_type ............ Hive_Text
+  scan_direction ......... forward
+  lock_mode .............. not specified, defaulted to lock cursor
+  access_mode ............ not specified, defaulted to read committed
+  columns_retrieved ..... 28
+  executor_predicates .... (HIVE.DATE_DIM.D_DATE = %(2016-01-27))
+
+--- SQL operation complete.
+>>
+>>
+>>-- error cases
+>>drop external table if exists date_dim for hive.hive.date_dim;
+
+--- SQL operation complete.
+>>
+>>-- column d_date_skk doesn't exist in native hive table
+>>create external table date_dim 
++>  (d_date_skk int)
++>  for hive.hive.date_dim;
+
+*** ERROR[1009] Column D_DATE_SKK does not exist in the specified table.
+
+--- SQL operation failed with errors.
+>>
+>>-- cannot have primary key on hive/text tables
+>>drop external table if exists store_sales for hive.hive.store_sales;
+
+--- SQL operation complete.
+>>create external table store_sales 
++>  for hive.hive.store_sales primary key (ss_item_sk);
+
+*** ERROR[3242] This statement is not supported. Reason: Cannot specify key attribute for external tables.
+
+--- SQL operation failed with errors.
+>>
+>>-- column d_date_sk has incompatible type
+>>create external table date_dim 
++>  (d_date_sk date)
++>  for hive.hive.date_dim;
+
+--- SQL operation complete.
 >>log;

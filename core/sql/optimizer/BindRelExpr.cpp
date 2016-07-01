@@ -1004,40 +1004,27 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
   CollIndex i = cols.entries();
   CMPASSERT(i == compExpr.entries());
 
-  NAString tmp;
-  // For a SELECT query that is part of a CREATE VIEW statement, force use of IEEE floating-point
-  // because SQL/MX Catalog Manager does not support Tandem floating-point, and would return an
-  // internal error if it is encountered.
-  if (bindWA->inViewDefinition() || bindWA->inMVDefinition())
-    tmp = "IEEE";
-  else
-    CmpCommon::getDefault(FLOATTYPE, tmp, -1);
-  NABoolean outputFloattypeIEEE =
-    ((tmp == "IEEE") ||
-     (CmpCommon::getDefault(ODBC_PROCESS) == DF_ON) ||
-     (CmpCommon::getDefault(JDBC_PROCESS) == DF_ON));
-
   while (i--) {
     ColumnDesc *col = cols[i];
 
     if (col->getValueId().getType().getTypeQualifier() == NA_ROWSET_TYPE) {
       return;
     }
-    const NAType &naType = col->getValueId().getType();
+    NAType *naType = &(NAType&)col->getValueId().getType();
     //
     // Note: the unsupported and DATETIME cases are mutually exclusive with the LARGEDEC case below.
     //
-    if (!naType.isSupportedType()) {
+    if (!naType->isSupportedType()) {
       // Unsupported types are displayed as strings of '#' to their display length
       ItemExpr *theRepeat =
         new (bindWA->wHeap()) Repeat(new (bindWA->wHeap()) SystemLiteral("#"),
                                        new (bindWA->wHeap()) SystemLiteral(
-                                         naType.getDisplayLength(
-                                           naType.getFSDatatype(),
-                                           0,
-                                           naType.getPrecision(),
-                                           naType.getScale(),
-                                           0)));
+                                            naType->getDisplayLength(
+                                                 naType->getFSDatatype(),
+                                                 0,
+                                                 naType->getPrecision(),
+                                                 naType->getScale(),
+                                                 0)));
       theRepeat = theRepeat->bindNode(bindWA);
       col->setValueId(theRepeat->getValueId());
       compExpr[i] = theRepeat->getValueId();
@@ -1046,8 +1033,8 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
              (NOT bindWA->inViewDefinition()) &&
              (NOT bindWA->inMVDefinition()) &&
              (NOT bindWA->inCTAS()) &&
-             (naType.getTypeQualifier()== NA_DATETIME_TYPE &&
-              ((const DatetimeType &)naType).getSubtype() == 
+             (naType->getTypeQualifier()== NA_DATETIME_TYPE &&
+              ((const DatetimeType *)naType)->getSubtype() == 
               DatetimeType::SUBTYPE_SQLDate) &&
              (! CmpCommon::context()->getSqlmxRegress()) &&
              (strcmp(ActiveSchemaDB()->getDefaults().getValue(OUTPUT_DATE_FORMAT),
@@ -1061,66 +1048,50 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         compExpr[i] = newChild->getValueId();
       }
 
-    // For dynamic queries that are not part of a CREATE VIEW, change the returned type based on the
-    // 'floattype' CQD. The default is Tandem type.
-    // This is done to be upward compatible with
-    // pre-R2 dynamic programs which are coded to expect tandem float
-    // types in dynamic statements (describe, get descriptor, etc...).
-    // The static statements are ok as we would convert from/to
-    // tandem float hostvariables at runtime.
-    // For the SELECT query that is part of a CREATE VIEW statement, do not convert to any
-    // Tandem floating-point type because SQL/MX catalog manager does not support Tandem floating-point
-    // and would give internal error.
-    if ((naType.getTypeQualifier() == NA_NUMERIC_TYPE) &&
-        (CmpCommon::context()->GetMode() == STMT_DYNAMIC))
-       {
-         NumericType &nTyp = (NumericType &)col->getValueId().getType();
+    if ((naType->getFSDatatype() == REC_BIN64_UNSIGNED) &&
+        (CmpCommon::getDefault(TRAF_LARGEINT_UNSIGNED_IO) == DF_OFF) &&
+        (NOT bindWA->inCTAS()))
+      {
+        NumericType *nTyp = (NumericType *)naType;
+        
+        ItemExpr * cast = new (bindWA->wHeap())
+          Cast(col->getValueId().getItemExpr(),
+               new (bindWA->wHeap())
+               SQLBigNum(MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION,
+                         nTyp->getScale(),
+                         FALSE,
+                         FALSE,
+                         naType->supportsSQLnull(),
+                         NULL));
+        
+        cast = cast->bindNode(bindWA);
+        if (bindWA->errStatus()) 
+          return;
+        col->setValueId(cast->getValueId());
+        compExpr[i] = cast->getValueId();
 
-        if ((outputFloattypeIEEE &&
-             (nTyp.getFSDatatype() == REC_TDM_FLOAT32 ||
-              nTyp.getFSDatatype() == REC_TDM_FLOAT64)) ||
-            (! outputFloattypeIEEE &&
-             (nTyp.getFSDatatype() == REC_IEEE_FLOAT32 ||
-              nTyp.getFSDatatype() == REC_IEEE_FLOAT64)))
-          {
-            NAType *newTyp;
-
-            if (outputFloattypeIEEE)
-              {
-                // convert to IEEE floating point.
-                newTyp = new (bindWA->wHeap())
-                  SQLDoublePrecision(nTyp.supportsSQLnull(),
-                                     bindWA->wHeap(),
-                                     nTyp.getBinaryPrecision());
-              }
-            else
-              {
-                // convert to Tandem floating point.
-                if (nTyp.getFSDatatype() == REC_IEEE_FLOAT32)
-                  newTyp = new (bindWA->wHeap())
-                    SQLRealTdm(nTyp.supportsSQLnull(),
-                               bindWA->wHeap(),
-                               nTyp.getBinaryPrecision());
-                else
-                  newTyp = new (bindWA->wHeap())
-                    SQLDoublePrecisionTdm(nTyp.supportsSQLnull(),
-                                          bindWA->wHeap(),
-                                          nTyp.getBinaryPrecision());
-              }
-
-            ItemExpr *ie = col->getValueId().getItemExpr();
-            ItemExpr *cast = new (bindWA->wHeap())
-              Cast(ie, newTyp, ITM_CAST);
-            cast = cast->bindNode(bindWA);
-            if (bindWA->errStatus()) return;
-
-            col->setValueId(cast->getValueId());
-            compExpr[i] = cast->getValueId();
-          }
+        naType = (NAType*)&cast->getValueId().getType();
       }
-
-    if (naType.getTypeQualifier() == NA_NUMERIC_TYPE && !((NumericType &)col->getValueId().getType()).binaryPrecision()) {
-      NumericType &nTyp = (NumericType &)col->getValueId().getType();
+    
+    // if OFF, return tinyint as smallint.
+    // This is needed until all callers/drivers have full support to
+    // handle IO of tinyint datatypes.
+    if ((naType->getTypeName() == LiteralTinyInt) &&
+        ((CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF) ||
+         (CmpCommon::getDefault(TRAF_TINYINT_RETURN_VALUES) == DF_OFF)))
+      {
+        ItemExpr * cast = new (bindWA->wHeap())
+          Cast(col->getValueId().getItemExpr(),
+               new (bindWA->wHeap()) SQLSmall(TRUE, naType->supportsSQLnull()));
+        cast = cast->bindNode(bindWA);
+        if (bindWA->errStatus()) 
+          return;
+        col->setValueId(cast->getValueId());
+        compExpr[i] = cast->getValueId();
+      }
+    else if (naType->getTypeQualifier() == NA_NUMERIC_TYPE && 
+             !((NumericType &)col->getValueId().getType()).binaryPrecision()) {
+      NumericType *nTyp = (NumericType *)naType;
       
       ItemExpr * ie = col->getValueId().getItemExpr();
       NAType *newTyp = NULL;
@@ -1135,8 +1106,8 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         bignumIO = FALSE; // explicitely set to OFF
       else if (CmpCommon::getDefault(BIGNUM_IO) == DF_SYSTEM)
         {
-          if ((((NumericType &)col->getValueId().getType()).isBigNum()) &&
-              (((SQLBigNum &)col->getValueId().getType()).isARealBigNum()))
+          if ((nTyp->isBigNum()) &&
+              (((SQLBigNum*)nTyp)->isARealBigNum()))
             bignumIO = TRUE;
         }
 
@@ -1145,14 +1116,14 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         bignumIO = FALSE;
 
       if (bignumIO)
-        bignumOflow = nTyp.getPrecision() - 
+        bignumOflow = nTyp->getPrecision() - 
           (Lng32)CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED);
       else
         {
-          if (nTyp.isSigned())
-            oflow = nTyp.getPrecision() - MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION;
+          if (nTyp->isSigned())
+            oflow = nTyp->getPrecision() - MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION;
           else
-            oflow = nTyp.getPrecision() - MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION;
+            oflow = nTyp->getPrecision() - MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION;
         }
 
       if ((bignumOflow > 0) || (oflow > 0))
@@ -1160,7 +1131,7 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
           if (bignumOflow > 0) {
             newPrec = 
               (Lng32)CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED);
-            Lng32 orgMagnitude = nTyp.getPrecision() - nTyp.getScale();
+            Lng32 orgMagnitude = nTyp->getPrecision() - nTyp->getScale();
         
             // set the newScale
             // IF there is overflow in magnitude set the scale to 0.
@@ -1180,17 +1151,16 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
               SQLBigNum(newPrec,
                         newScale,
                         ((SQLBigNum &)col->getValueId().getType()).isARealBigNum(),
-                        nTyp.isSigned(),
-                        nTyp.supportsSQLnull(),
+                        nTyp->isSigned(),
+                        nTyp->supportsSQLnull(),
                         NULL);
           }
           else if (oflow > 0) {
             // If it's not a computed expr, but a column w/ a legal type, re-loop
             if (col->getValueId().getNAColumn(TRUE/*don't assert*/)) {
-              //CMPASSERT(!nTyp.isInternalType());
+              //CMPASSERT(!nTyp->isInternalType());
               //continue;
             }
-            CMPASSERT(nTyp.isInternalType());
             
             OperatorTypeEnum op = ie->origOpType();
             CMPASSERT(op != NO_OPERATOR_TYPE &&      // Init'd correctly?
@@ -1207,7 +1177,7 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
 
             // ANSI 6.5 SR 7 - 9:  aggregates must be exact if column is exact.
             newPrec  = MAX_NUMERIC_PRECISION;
-            Lng32 orgMagnitude = (nTyp.getMagnitude() + 9) / 10;
+            Lng32 orgMagnitude = (nTyp->getMagnitude() + 9) / 10;
             // set the newScale
             // IF there is overflow in magnitude set the scale to 0.
             // ELSE set the accomodate the magnitude part and truncate the scale
@@ -1251,14 +1221,14 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
             if (newScale == 0)
               newTyp = new (bindWA->wHeap())
                          SQLLargeInt(TRUE, // hardware only supports signed
-                                     nTyp.supportsSQLnull());
+                                     nTyp->supportsSQLnull());
             else
               newTyp = new (bindWA->wHeap())
                          SQLNumeric(sizeof(Int64),
                                     newPrec,
                                     newScale,
-                                    nTyp.isSigned(),
-                                    nTyp.supportsSQLnull());
+                                    nTyp->isSigned(),
+                                    nTyp->supportsSQLnull());
             
           } // overflow
           
@@ -1604,19 +1574,20 @@ NATable *BindWA::getNATable(CorrName& corrName,
       NATable *nativeNATable = bindWA->getSchemaDB()->getNATableDB()->
                                   get(externalCorrName, bindWA, inTableDescStruct);
   
-       // Compare column lists
-       // TBD - return what mismatches
-       if ( nativeNATable && !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()))
-         {
-           *CmpCommon::diags() << DgSqlCode(-3078)
-                               << DgString0(adjustedName)
-                               << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
-           bindWA->setErrStatus();
-           nativeNATable->setRemoveFromCacheBNC(TRUE);
-           return NULL;
-         }
+      // Compare column lists
+      // TBD - return what mismatches
+      if ( nativeNATable && !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()) &&
+           (NOT bindWA->externalTableDrop()))
+        {
+          *CmpCommon::diags() << DgSqlCode(-3078)
+                              << DgString0(adjustedName)
+                              << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
+          bindWA->setErrStatus();
+          nativeNATable->setRemoveFromCacheBNC(TRUE);
+          return NULL;
+        }
     }
-    
+  
   HostVar *proto = corrName.getPrototype();
   if (proto && proto->isPrototypeValid())
     corrName.getPrototype()->bindNode(bindWA);
@@ -9183,20 +9154,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     if (getOverwriteHiveTable())
     {
       RelExpr * newRelExpr =  new (bindWA->wHeap())
-        ExeUtilFastDelete(getTableName(),
-                          NULL,
-                          (char*)"hive_truncate",
-                          CharInfo::ISO88591,
-                          FALSE,
-                          TRUE,
-                          TRUE,
-                          TRUE,
-                          bindWA->wHeap(),
-                          TRUE,
-                          new (bindWA->wHeap()) NAString(tableDir),
-                          new (bindWA->wHeap()) NAString(hostName),
-                          hdfsPort,
-                          hTabStats->getModificationTS());
+        ExeUtilHiveTruncate(getTableName(), NULL, bindWA->wHeap());
 
       //new root to prevent  error 4056 when binding
       newRelExpr = new (bindWA->wHeap()) RelRoot(newRelExpr);
@@ -10219,6 +10177,9 @@ NABoolean Insert::isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean
      return FALSE;
 }
 
+// take an insert(src) node and transform it into
+// tsj_flow(src, merge_update(input_scan))
+// with a newly created input_scan
 RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA) 
 {
   NATable *naTable = bindWA->getNATable(getTableName());
@@ -10232,11 +10193,24 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
     return NULL;		
   }
 
+  // columns of the target table
   const ValueIdList &tableCols = updateToSelectMap().getTopValues();
   const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
 
   NABoolean isAlignedRowFormat = getTableDesc()->getNATable()->isSQLMXAlignedTable();
 		    
+  // Create a new BindScope, to encompass the new nodes merge_update(input_scan)
+  // and any inlining nodes that will be created. Any values the merge_update
+  // and children will need from src will be marked as outer references in that
+  // new BindScope. We assume that "src" is already bound.
+  ValueIdSet currOuterRefs = bindWA->getCurrentScope()->getOuterRefs();
+
+  CMPASSERT(child(0)->nodeIsBound());
+  bindWA->initNewScope();
+
+  BindScope *mergeScope = bindWA->getCurrentScope();
+
+  // create a new scan of the target table, to be used in the merge
   Scan * inputScan =
     new (bindWA->wHeap())
     Scan(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()));
@@ -10253,8 +10227,9 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
   ColReference * targetColRef;
   int predCount = 0;
   int setCount = 0;
-  ValueIdSet myOuterRefs;
+  ValueIdSet newOuterRefs;
 
+  // loop over the columns of the target table
   for (CollIndex i = 0; i<tableCols.entries(); i++)
   {
     baseCol = (BaseColumn *)(tableCols[i].getItemExpr()) ;
@@ -10266,10 +10241,15 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
               baseCol->getNAColumn()->getFullColRefName(), bindWA->wHeap()));
     if (baseCol->getNAColumn()->isClusteringKey())
     {
+      // create a join/key predicate between source and target table,
+      // on the clustering key columns of the target table, making
+      // ColReference nodes for the target table, so that we can bind
+      // those to the new scan
       keyPredPrev = keyPred;
       keyPred = new (bindWA->wHeap())
         BiRelat(ITM_EQUAL, targetColRef, 
-                sourceVals[i].getItemExpr());
+                sourceVals[i].getItemExpr(),
+                baseCol->getType().supportsSQLnull());
       predCount++;
       if (predCount > 1) 
       {
@@ -10279,8 +10259,13 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
       }
     }
     if (sourceVals[i].getItemExpr()->getOperatorType() != ITM_CONSTANT)
-      myOuterRefs += sourceVals[i];
+      {
+        newOuterRefs += sourceVals[i];
+        mergeScope->addOuterRef(sourceVals[i]);
+      }
 
+    // create the INSERT (WHEN NOT MATCHED) part of the merge for this column, again
+    // with a ColReference that we will then bind to the MergeUpdate target table
     insertValPrev = insertVal;
     insertColPrev = insertCol ;
     insertVal = sourceVals[i].getItemExpr();
@@ -10305,9 +10290,11 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
       else
       if (! col->isClusteringKey()) 
       {
-         // We need to bind in the new = old values
+         // Create the UPDATE (WHEN MATCHED) part of the new MergeUpdate for
+         // a non-key column. We need to bind in the new = old values
          // in GenericUpdate::bindNode. So skip the columns that are not user
-         // specified and 
+         // specified. Note that we had a discussion on whether such a transformed
+         // UPSERT shouldn't update all columns.
          //
          if (assignExpr->isUserSpecified())
              copySetAssign = TRUE;
@@ -10326,40 +10313,45 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
          }
      }
   }
-  RelExpr * re = NULL;
-
-  re = new (bindWA->wHeap())
+  MergeUpdate *mu = new (bindWA->wHeap())
     MergeUpdate(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()),
                 NULL,
                 REL_UNARY_UPDATE,
-                inputScan,
-                setAssign,
-                insertCol, 
-                insertVal,
+                inputScan, // USING
+                setAssign, // WHEN MATCHED THEN UPDATE
+                insertCol, // WHEN NOT MATCHED THEN INSERT (cols) ...
+                insertVal, // ... VALUES()
                 bindWA->wHeap(),
                 NULL);
 
-  ((MergeUpdate *)re)->setXformedUpsert();
-  RelExpr * mu = re;
-    
-  re = new(bindWA->wHeap()) Join
-    (child(0), mu, REL_TSJ_FLOW, NULL);
-  ((Join*)re)->doNotTransformToTSJ();
-  ((Join*)re)->setTSJForMerge(TRUE);	
-  ((Join*)re)->setTSJForMergeWithInsert(TRUE);
-  ((Join*)re)->setTSJForMergeUpsert(TRUE);
-  ((Join*)re)->setTSJForWrite(TRUE);
+  mu->setXformedUpsert();
+  // Use mergeScope, the scope we created here, for the MergeUpdate. We are
+  // creating some expressions with outer references here in this method, so
+  // we need to control the scope from here.
+  mu->setNeedsBindScope(FALSE);
 
-  // if Inputs of current insert are empty (i.e. we have no params/rowsets)
-  // then there will be no pull up of inputs during transform and the join will
-  // not see the inputs of the mergeUpdate due to intermediate nodes. So
-  // add inputs directly to join and use elimination to remove extra inputs
-  if (NOT getGroupAttr()->getCharacteristicInputs().isEmpty())
-    mu->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
-  else
-    re->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
-  
-  re = re->bindNode(bindWA);
+  RelExpr *boundMU = mu->bindNode(bindWA);
+
+  // remove the BindScope created earlier in this method
+  bindWA->removeCurrentScope();
+
+  // Remove the outer refs from the parent scope, they are provided
+  // by the left child of the TSJ_FLOW, unless they were already outer refs
+  // when we started this method. The binder logic doesn't handle
+  // that well, since they come from a child scope, not the current one,
+  // so we help a little.
+  newOuterRefs -= currOuterRefs;
+  bindWA->getCurrentScope()->removeOuterRefs(newOuterRefs);
+
+  Join * jn = new(bindWA->wHeap()) Join(child(0), boundMU, REL_TSJ_FLOW, NULL);
+
+  jn->doNotTransformToTSJ();
+  jn->setTSJForMerge(TRUE);	
+  jn->setTSJForMergeWithInsert(TRUE);
+  jn->setTSJForMergeUpsert(TRUE);
+  jn->setTSJForWrite(TRUE);
+
+  RelExpr *result = jn->bindNode(bindWA);
   if (bindWA->errStatus())
     return NULL;
   // Copy the userSecified and canBeSkipped attribute to mergeUpdateInsertExprArray
@@ -10371,7 +10363,7 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
       ((Assign *)mergeInsertExprArray[i].getItemExpr())->setUserSpecified(assignExpr->isUserSpecified());
   }
  
-  return re;
+  return result;
 }
 
 RelExpr *HBaseBulkLoadPrep::bindNode(BindWA *bindWA)
@@ -10669,8 +10661,9 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
       bindWA->getCurrentScope()->setRETDesc(getRETDesc());
       return this;
     }
-  
-  bindWA->initNewScope();
+
+  if (needsBindScope_)
+    bindWA->initNewScope();
 
   // For an xformaed upsert any UDF or subquery is guaranteed to be 
   // in the using clause. Upsert will not generate a merge without using 
@@ -10827,7 +10820,9 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
     getGroupAttr()->addCharacteristicInputs
       (bindWA->getCurrentScope()->getOuterRefs());
   }
-  bindWA->removeCurrentScope(xformedUpsert()); // keepLocalRefs for Upsert
+
+  if (needsBindScope_)
+    bindWA->removeCurrentScope();
 
   bindWA->setMergeStatement(TRUE);
 

@@ -69,6 +69,8 @@
 #include "CmpSeabaseDDLmd.h"
 #include "CmpSeabaseDDLroutine.h"
 #include "hdfs.h"
+#include "StmtDDLAlterLibrary.h"
+
 void cleanupLOBDataDescFiles(const char*, int, const char *);
 
 class QualifiedSchema
@@ -557,7 +559,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
           return resetCQDs(hbaseSerialization, hbVal, -1);
         }
 
-      if (buildKeyInfoArray(&colArray, &keyArray, colInfoArray, keyInfoArray, FALSE,
+      if (buildKeyInfoArray(&colArray, NULL, &keyArray, colInfoArray, keyInfoArray, FALSE,
 			    &keyLength, CTXTHEAP))
 	{
 	  return resetCQDs(hbaseSerialization, hbVal, -1);
@@ -4515,6 +4517,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
   Int32 objOwnerID = (tableInfo) ? tableInfo->objOwnerID : SUPER_USER;
   Int32 schemaOwnerID = (tableInfo) ? tableInfo->schemaOwnerID : SUPER_USER;
   Int64 objectFlags = (tableInfo) ? tableInfo->objectFlags : 0;
+  Int64 tablesFlags = (tableInfo) ? tableInfo->tablesFlags : 0;
   
   if (updateSeabaseMDObjectsTable(cliInterface,catName,schName,objName,objectType,
                                   validDef,objOwnerID, schemaOwnerID, objectFlags, inUID))
@@ -4805,7 +4808,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
           hbaseCreateOptions = tableInfo->hbaseCreateOptions;
         }
 
-      str_sprintf(buf, "upsert into %s.\"%s\".%s values (%Ld, '%s', '%s', %d, %d, %d, %d, 0) ",
+      str_sprintf(buf, "upsert into %s.\"%s\".%s values (%Ld, '%s', '%s', %d, %d, %d, %d, %Ld) ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
                   objUID, 
                   rowFormat,
@@ -4813,7 +4816,8 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
                   rowDataLength,
                   rowTotalLength,
                   keyLength,
-                  numSaltPartns);
+                  numSaltPartns,
+                  tablesFlags);
       cliRC = cliInterface->executeImmediate(buf);
       if (cliRC < 0)
         {
@@ -5419,12 +5423,12 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
                                             const NAString &schName,
                                             const NAString &objName,
                                             const ComObjectType objectType,
-                                            NABoolean ddlXns)
+                                            NABoolean dontForceCleanup)
 {
 
   //if ddlXns are being used, no need of additional cleanup.
   //transactional rollback will take care of cleanup.
-  if (ddlXns)
+  if (dontForceCleanup)
     return;
     
   Lng32 cliRC = 0;
@@ -5459,6 +5463,55 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
 
   return;
 }
+
+void CmpSeabaseDDL::purgedataObjectAfterError(
+                                            ExeCliInterface &cliInterface,
+                                            const NAString &catName, 
+                                            const NAString &schName,
+                                            const NAString &objName,
+                                            const ComObjectType objectType,
+                                            NABoolean dontForceCleanup)
+{
+
+  //if ddlXns are being used, no need of additional cleanup.
+  //transactional rollback will take care of cleanup.
+  if (dontForceCleanup)
+    return;
+
+  PushAndSetSqlParserFlags savedParserFlags(INTERNAL_QUERY_FROM_EXEUTIL);
+    
+  Lng32 cliRC = 0;
+  char buf[1000];
+
+  // save current diags area
+  ComDiagsArea * tempDiags = ComDiagsArea::allocate(heap_);
+  tempDiags->mergeAfter(*CmpCommon::diags());
+  
+  CmpCommon::diags()->clear();
+  if (objectType == COM_BASE_TABLE_OBJECT)
+    str_sprintf(buf, "purgedata \"%s\".\"%s\".\"%s\" ",
+                catName.data(), schName.data(), objName.data());
+  else if (objectType == COM_INDEX_OBJECT)
+    str_sprintf(buf, "purgedata table(index_table \"%s\".\"%s\".\"%s\" ) ",
+                catName.data(), schName.data(), objName.data());
+  else 
+    ex_assert(0, "purgedata object is not supported");
+    
+  cliRC = cliInterface.executeImmediate(buf);
+  CmpCommon::diags()->clear();
+  CmpCommon::diags()->mergeAfter(*tempDiags);
+
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    }
+
+  tempDiags->clear();
+  tempDiags->deAllocate();
+
+  return;
+}
+
 
 // user created traf stored col fam is of the form:  #<1-byte-num>
 //  1-byte-num is character '2' through '9', or 'a' through 'x'.
@@ -5807,6 +5860,7 @@ short CmpSeabaseDDL::buildColInfoArray(
 
 short CmpSeabaseDDL::buildKeyInfoArray(
                                        ElemDDLColDefArray *colArray,
+                                       NAColumnArray * nacolArray,
                                        ElemDDLColRefArray *keyArray,
                                        ComTdbVirtTableColumnInfo * colInfoArray,
                                        ComTdbVirtTableKeyInfo * keyInfoArray,
@@ -5827,8 +5881,21 @@ short CmpSeabaseDDL::buildKeyInfoArray(
       keyInfoArray[index].colName = col_name; //(*keyArray)[index]->getColumnName();
 
       keyInfoArray[index].keySeqNum = index+1;
+
+      if ((! colArray) && (! nacolArray))
+        {
+          // this col doesn't exist. Return error.
+          *CmpCommon::diags() << DgSqlCode(-1009)
+                              << DgColumnName(keyInfoArray[index].colName);
+          
+          return -1;
+        }
+ 
+      NAString nas((*keyArray)[index]->getColumnName());
       keyInfoArray[index].tableColNum = (Lng32)
-        colArray->getColumnIndex((*keyArray)[index]->getColumnName());
+        (colArray ?
+         colArray->getColumnIndex((*keyArray)[index]->getColumnName()) :
+         nacolArray->getColumnPosition(nas));
 
       if (keyInfoArray[index].tableColNum == -1)
         {
@@ -5843,7 +5910,8 @@ short CmpSeabaseDDL::buildKeyInfoArray(
         ((*keyArray)[index]->getColumnOrdering() == COM_ASCENDING_ORDER ? 0 : 1);
       keyInfoArray[index].nonKeyCol = 0;
 
-      if ((colInfoArray[keyInfoArray[index].tableColNum].nullable != 0) &&
+      if ((colInfoArray) &&
+          (colInfoArray[keyInfoArray[index].tableColNum].nullable != 0) &&
           (NOT allowNullableUniqueConstr))
         {
           *CmpCommon::diags() << DgSqlCode(-CAT_CLUSTERING_KEY_COL_MUST_BE_NOT_NULL_NOT_DROP)
@@ -7667,6 +7735,7 @@ void CmpSeabaseDDL::dropLOBHdfsFiles()
 //
 // Params:
 //   cliInterface - a pointer to a CLI helper class 
+//   ddlXns - TRUE if DDL transactions is enabled
 //   tablesCreated - the list of tables that were created
 //   tablesUpgraded - the list of tables that were upgraded
 //
@@ -7691,10 +7760,13 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
     return -1;
   }
 
-  if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+  if (NOT ddlXns)
   {
-    SEABASEDDL_INTERNAL_ERROR("initialize authorization");
-    return -1;
+    if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+    {
+      SEABASEDDL_INTERNAL_ERROR("initialize authorization");
+      return -1;
+    }
   }
 
   NAString mdLocation;
@@ -7714,46 +7786,12 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
      std::string(colsLocation.data()),
      tablesCreated, tablesUpgraded); 
 
-  if (retcode != STATUS_ERROR)
-  {
-     // Commit the transaction so privmgr schema exists in other processes
-     endXnIfStartedHere(cliInterface, xnWasStartedHere, 0);
-     if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
-     {
-       SEABASEDDL_INTERNAL_ERROR("initialize authorization");
-       return -1;
-     }
-
-     // change authorization status in compiler context and kill arkcmps
-     GetCliGlobals()->currContext()->setAuthStateInCmpContexts(TRUE, TRUE);
-     for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
-       GetCliGlobals()->currContext()->getArkcmp(i)->endConnection();
-
-     // Adjust hive external table ownership - if someone creates external 
-     // tables before initializing authorization, the external schemas are 
-     // owned by DB__ROOT -> change to DB__HIVEROLE.  
-     // Also if you have initialized authorization and created external tables 
-     // before the fix for JIRA 1895, rerunning initialize authorization will 
-     // fix the metadata inconsistencies
-     if (adjustHiveExternalSchemas(cliInterface) != 0)
-       return -1;
-
-     // If someone initializes trafodion with library management but does not 
-     // initialize authorization, then the role DB__LIBMGRROLE has not been 
-     // granted to LIBMGR procedures.  Do this now
-     cliRC = existsInSeabaseMDTable(cliInterface,
-                                    getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, 
-                                    SEABASE_LIBMGR_LIBRARY,
-                                    COM_LIBRARY_OBJECT, TRUE, FALSE);
-     if (cliRC == 1) // library exists
-       cliRC = grantLibmgrPrivs(cliInterface);
-  }
-  else
+  if (retcode == STATUS_ERROR)
   {
     // make sure authorization status is FALSE in compiler context 
     GetCliGlobals()->currContext()->setAuthStateInCmpContexts(FALSE, FALSE);
     
-    // If any tables were created, go drop them now.
+    // If not running in DDL transactions, drop any tables were created
     // Ignore any returned errors
     if (NOT ddlXns)
     {
@@ -7764,30 +7802,79 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
     // Add an error if none yet defined in the diags area
     if ( CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
       SEABASEDDL_INTERNAL_ERROR("initialize authorization");
-    cliRC = -1;
+
+    return -1;
   }
 
-  endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC);
+  // If DDL transactions are not enabled, commit the transaction so privmgr 
+  // schema exists in other processes
+  if (NOT ddlXns)
+  {
+    endXnIfStartedHere(cliInterface, xnWasStartedHere, 0);
+    if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+    {
+      SEABASEDDL_INTERNAL_ERROR("initialize authorization");
+      return -1;
+    }
+  }
 
-  return cliRC;
+  // change authorization status in compiler contexts
+  //CmpCommon::context()->setAuthorizationState (1);
+  GetCliGlobals()->currContext()->setAuthStateInCmpContexts(TRUE, TRUE);
+
+  // change authorization status in compiler processes
+  cliRC = GetCliGlobals()->currContext()->updateMxcmpSession();
+  if (cliRC == -1)
+  {
+    if ( CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      SEABASEDDL_INTERNAL_ERROR("initialize authorization - updating authorization state failed");
+  }
+
+  NABoolean warnings = FALSE;
+
+  // Adjust hive external table ownership - if someone creates external 
+  // tables before initializing authorization, the external schemas are 
+  // owned by DB__ROOT -> change to DB__HIVEROLE.  
+  // Also if you have initialized authorization and created external tables 
+  // before the fix for JIRA 1895, rerunning initialize authorization will 
+  // fix the metadata inconsistencies
+  if (adjustHiveExternalSchemas(cliInterface) != 0)
+    warnings = TRUE;
+
+  // If someone initializes trafodion with library management but does not 
+  // initialize authorization, then the role DB__LIBMGRROLE has not been 
+  // granted to LIBMGR procedures.  Do this now
+  cliRC = existsInSeabaseMDTable(cliInterface,
+                                 getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, 
+                                 SEABASE_LIBMGR_LIBRARY,
+                                 COM_LIBRARY_OBJECT, TRUE, FALSE);
+  if (cliRC == 1) // library exists
+  {
+    cliRC = grantLibmgrPrivs(cliInterface);
+    if (cliRC == -1)
+      warnings = TRUE;
+  }
+  if (NOT ddlXns)
+    endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC);
+  
+  // If not able to adjust hive ownership or grant library management privs
+  // allow operation to continue but return issues as warnings.
+  if (warnings)
+  {
+    CmpCommon::diags()->negateAllErrors();
+    *CmpCommon::diags() << DgSqlCode(CAT_AUTH_COMPLETED_WITH_WARNINGS); 
+  }
+
+  return 0;
 }
 
 void CmpSeabaseDDL::dropSeabaseAuthorization(
   ExeCliInterface *cliInterface,
   NABoolean doCleanup)
 {
-  Lng32 cliRC = 0;
-  NABoolean xnWasStartedHere = FALSE;
-
   if (!ComUser::isRootUserID())
   {
     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-    return;
-  }
-
-  if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
-  {
-    SEABASEDDL_INTERNAL_ERROR("drop authorization");
     return;
   }
 
@@ -7797,19 +7884,21 @@ void CmpSeabaseDDL::dropSeabaseAuthorization(
   PrivStatus retcode = privInterface.dropAuthorizationMetadata(doCleanup); 
   if (retcode == STATUS_ERROR)
   {
-    cliRC = -1; 
     if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-     SEABASEDDL_INTERNAL_ERROR("drop authorization");
+      SEABASEDDL_INTERNAL_ERROR("drop authorization");
+    return;
   }
-  else
+
+  // Turn off authorization in compiler contexts
+  GetCliGlobals()->currContext()->setAuthStateInCmpContexts(FALSE, FALSE);
+
+  // Turn off authorization in arkcmp processes
+  Int32 cliRC = GetCliGlobals()->currContext()->updateMxcmpSession();
+  if (cliRC == -1)
   {
-    GetCliGlobals()->currContext()->setAuthStateInCmpContexts(FALSE, FALSE);
-    // define context changed, kill arkcmps, if they are running.
-    for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
-      GetCliGlobals()->currContext()->getArkcmp(i)->endConnection();
+    if ( CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      SEABASEDDL_INTERNAL_ERROR("drop authorization - updating authorization state failed");
   }
-  
-  endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC);
 
   return;
 }
@@ -8146,7 +8235,6 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
   if (ehi == NULL)
     {
       processReturn();
-      
       return;
     }
 
@@ -8882,6 +8970,15 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           
           dropSeabaseLibrary(dropLibraryParseNode, currCatName, currSchName);
         }
+       else if (ddlNode->getOperatorType() == DDL_ALTER_LIBRARY)
+         {
+           // create seabase library
+           StmtDDLAlterLibrary * alterLibraryParseNode =
+             ddlNode->castToStmtDDLNode()->castToStmtDDLAlterLibrary();
+           
+           alterSeabaseLibrary(alterLibraryParseNode, currCatName, 
+                               currSchName);
+         }
       else if (ddlNode->getOperatorType() == DDL_CREATE_ROUTINE)
         {
           // create seabase routine

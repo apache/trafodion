@@ -40,6 +40,7 @@
 #include "NumericType.h"
 #include "CharType.h"
 #include "CmpCommon.h"     /* want to put NAType obj's on statement heap ... */
+#include "str.h"
 
 // extern declaration
 extern short
@@ -492,6 +493,14 @@ Lng32 NAType::getDisplayLength(Lng32 datatype,
       d_len = SQL_USMALL_DISPLAY_SIZE;
       break;
 
+    case REC_BIN8_SIGNED:
+      d_len = SQL_TINY_DISPLAY_SIZE + scale_len;
+      break;
+
+    case REC_BIN8_UNSIGNED:
+      d_len = SQL_UTINY_DISPLAY_SIZE + scale_len;
+      break;
+
     case REC_BIN16_SIGNED:
       d_len = SQL_SMALL_DISPLAY_SIZE + scale_len;
       break;
@@ -510,6 +519,10 @@ Lng32 NAType::getDisplayLength(Lng32 datatype,
 
     case REC_BIN64_SIGNED:
       d_len = SQL_LARGE_DISPLAY_SIZE + scale_len;
+      break;
+
+    case REC_BIN64_UNSIGNED:
+      d_len = SQL_ULARGE_DISPLAY_SIZE + scale_len;
       break;
 
     case REC_BYTE_F_ASCII:
@@ -544,12 +557,10 @@ Lng32 NAType::getDisplayLength(Lng32 datatype,
       break;
 
     case REC_FLOAT32:
-    case REC_TDM_FLOAT32:
       d_len = SQL_REAL_DISPLAY_SIZE;
       break;
 
     case REC_FLOAT64:
-    case REC_TDM_FLOAT64:
       d_len = SQL_DOUBLE_PRECISION_DISPLAY_SIZE;
       break;
 
@@ -662,6 +673,84 @@ short NAType::convertTypeToText(char * text,	   // OUTPUT
                                  CharInfo::getCollationName(collation),
                                  displaydatatype,
 				 displayCaseSpecific);
+}
+
+short NAType::getMyTypeAsHiveText(NAString * outputStr)  // output
+{
+  Lng32		      fs_datatype		= getFSDatatype();
+
+  switch (fs_datatype)
+    {
+    case REC_MIN_F_CHAR_H ... REC_MAX_F_CHAR_H:
+      *outputStr = "string";
+      break;
+
+    case REC_MIN_V_CHAR_H ... REC_MAX_V_CHAR_H:
+      {
+        SQLVarChar * ct = (SQLVarChar*)this;
+        if (ct->wasHiveString())
+          *outputStr = "string";
+        else
+          {
+            char buf[20];
+            Int32 size = getNominalSize() / ct->getBytesPerChar();
+            str_itoa(size, buf);
+            *outputStr = "varchar(";
+            *outputStr += buf;
+            *outputStr += ")";
+          }
+      }
+      break;
+
+    case REC_BIN8_SIGNED:
+    case REC_BIN8_UNSIGNED:
+      *outputStr = "tinyint";
+      break;
+
+    case REC_BIN16_SIGNED:
+    case REC_BIN16_UNSIGNED:
+      *outputStr = "smallint";
+      break;
+
+    case REC_BIN32_SIGNED:
+    case REC_BIN32_UNSIGNED:
+      *outputStr = "int";
+      break;
+
+    case REC_BIN64_SIGNED:
+      *outputStr = "bigint";
+      break;
+
+    case REC_FLOAT32:
+      *outputStr = "float";
+      break;
+
+    case REC_FLOAT64:
+      *outputStr = "double";
+      break;
+
+    case REC_DATETIME:
+      {
+        DatetimeIntervalCommonType & dtiCommonType =
+          (DatetimeIntervalCommonType &) *this;
+         
+        ComDateTimeStartEnd dtEndField = 
+          (ComDateTimeStartEnd)dtiCommonType.getEndField();
+
+        if ((rec_datetime_field)dtEndField == REC_DATE_SECOND)
+          *outputStr = "timestamp";
+        else 
+          *outputStr = "date";
+      }
+      break;
+
+    default:
+      *outputStr = "unknown";
+      break;
+
+    } // switch
+
+  return 0;
 }
 
 short NAType::getMyTypeAsText(NAString * outputStr,  // output

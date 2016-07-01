@@ -34,6 +34,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.client.HConnectionManager;
@@ -404,7 +406,7 @@ public class HBaseAuditControlPoint {
          table.delete(deleteList);
       }
       catch (Exception e) {
-         LOG.error("deleteAgedRecords IOException");
+         LOG.error("deleteAgedRecords IOException ", e);
       }finally {
          ss.close();
       }

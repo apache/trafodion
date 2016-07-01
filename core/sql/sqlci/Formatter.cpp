@@ -117,6 +117,14 @@ Lng32 Formatter::display_length(Lng32 datatype,
       d_len = d_buflen = SQL_USMALL_DISPLAY_SIZE;
       break;
 
+    case REC_BIN8_SIGNED:
+      d_len = d_buflen = SQL_TINY_DISPLAY_SIZE + scale_len;
+      break;
+
+    case REC_BIN8_UNSIGNED:
+      d_len = d_buflen = SQL_UTINY_DISPLAY_SIZE + scale_len;
+      break;
+
     case REC_BIN16_SIGNED:
       d_len = d_buflen = SQL_SMALL_DISPLAY_SIZE + scale_len;
       break;
@@ -135,6 +143,10 @@ Lng32 Formatter::display_length(Lng32 datatype,
 
     case REC_BIN64_SIGNED:
       d_len = d_buflen = SQL_LARGE_DISPLAY_SIZE + scale_len;
+      break;
+       
+    case REC_BIN64_UNSIGNED:
+      d_len = d_buflen = SQL_ULARGE_DISPLAY_SIZE + scale_len;
       break;
        
     case REC_BYTE_F_ASCII:
@@ -183,12 +195,10 @@ Lng32 Formatter::display_length(Lng32 datatype,
       break;
       
     case REC_FLOAT32:
-    case REC_TDM_FLOAT32:
       d_len = d_buflen = SQL_REAL_DISPLAY_SIZE;
       break;
       
     case REC_FLOAT64:
-    case REC_TDM_FLOAT64:
       d_len = d_buflen = SQL_DOUBLE_PRECISION_DISPLAY_SIZE;
       break;
 
@@ -318,17 +328,18 @@ Int32 Formatter::buffer_it(SqlciEnv * sqlci_env, char *data,
 
   case REC_BPINT_UNSIGNED:
   case REC_BIN64_SIGNED:
+  case REC_BIN64_UNSIGNED:
   case REC_BIN32_SIGNED:
   case REC_BIN32_UNSIGNED:
   case REC_BIN16_SIGNED:
   case REC_BIN16_UNSIGNED:
+  case REC_BIN8_SIGNED:
+  case REC_BIN8_UNSIGNED:
   case REC_DECIMAL_UNSIGNED:
   case REC_DECIMAL_LS:
   case REC_DECIMAL_LSE:
   case REC_FLOAT32:
   case REC_FLOAT64: 
-  case REC_TDM_FLOAT32:
-  case REC_TDM_FLOAT64:
   case REC_DATETIME: 
   {
     short retcode = convDoIt(data,

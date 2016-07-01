@@ -852,7 +852,6 @@ short my_mpi_setup (Int32* argc, char** argv[] );
 };
 
 
-static 
 short sqInit()
 {
   static bool sbInitialized = false;

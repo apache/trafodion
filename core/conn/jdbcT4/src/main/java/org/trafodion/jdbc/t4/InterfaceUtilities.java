@@ -160,7 +160,7 @@ public class InterfaceUtilities {
 		return targetData;
 	}
 
-	public static BigDecimal convertSQLBigNumToBigDecimal(byte[] sourceData, int scale, boolean swap) {
+    public static BigDecimal convertSQLBigNumToBigDecimal(byte[] sourceData, int scale, boolean swap, boolean isUnsigned) {
 		String strVal = ""; // our final String
 
 		// we need the data in an array which can hold UNSIGNED 16 bit values
@@ -172,9 +172,12 @@ public class InterfaceUtilities {
 		// the
 		// data
 		
-		boolean negative = ((dataInShorts[dataInShorts.length - 1] & 0x8000) > 0);
-		dataInShorts[dataInShorts.length - 1] &= 0x7FFF; // force sign to 0, continue
-		// normally
+                boolean negative = false;
+                if (!isUnsigned) {
+                    negative = ((dataInShorts[dataInShorts.length - 1] & 0x8000) > 0);
+                    dataInShorts[dataInShorts.length - 1] &= 0x7FFF; // force sign to 0, continue
+                                                                     // normally
+                }
 
 		int curPos = dataInShorts.length - 1; // start at the end
 		while (curPos >= 0 && dataInShorts[curPos] == 0)

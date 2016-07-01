@@ -1115,6 +1115,10 @@ static const char* TrafToHiveType(Attributes* attrs)
 
   switch (datatype)
   {
+    case REC_BIN8_SIGNED:
+    case REC_BIN8_UNSIGNED:
+      return "tinyint";
+
     case REC_BIN16_SIGNED:
     case REC_BIN16_UNSIGNED:
     case REC_BPINT_UNSIGNED:
@@ -1127,11 +1131,9 @@ static const char* TrafToHiveType(Attributes* attrs)
     case REC_BIN64_SIGNED:
       return "bigint";
 
-    case REC_TDM_FLOAT32:
     case REC_IEEE_FLOAT32:
       return "float";
 
-    case REC_TDM_FLOAT64:
     case REC_IEEE_FLOAT64:
       return "double";
 

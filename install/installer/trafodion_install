@@ -353,6 +353,14 @@ if [ -z "$USER_CONFIG" ]; then
       echo "***ERROR: No configuration file created." | tee -a $INSTALL_LOG
       exit -1
    fi
+
+   # prompt user for security configuration info
+   $LOCAL_WORKDIR/traf_secure_setup | tee -a $INSTALL_LOG
+   if [ ${PIPESTATUS[0]} != "0" ]; then
+      echo "***ERROR: Error while running traf_secure_setup." | tee -a $INSTALL_LOG
+      echo "***ERROR: No security configuration file created." | tee -a $INSTALL_LOG
+      exit -1
+   fi
 else
    # copy the user's config file to the default location
    sudo cp $USER_CONFIG $TRAF_CONFIG
@@ -543,6 +551,11 @@ else
    fi
 fi
 
+#Add trafodion to the hbase group
+#*********************************************
+$TRAF_PDSH sudo usermod -a -G $HBASE_GROUP $TRAF_USER
+#*********************************************
+
 # create working directories on all nodes
 $TRAF_PDSH sudo mkdir -p $TRAF_WORKDIR
 $TRAF_PDSH sudo chmod 777 $TRAF_WORKDIR
@@ -627,35 +640,6 @@ if [[ "$all_node_count" -ne "1" ]]; then
    $TRAF_PDSH sudo mkdir -p /$HOME_DIR/$TRAF_USER/installer &> /dev/null
 fi
 
-#Copy over traf_authentication_config file to all nodes
-if [[ "$LDAP_SECURITY" == "Y" ]]; then
-   echo "***INFO: Copying $LDAP_AUTH_FILE to Trafodion home dir"
-
-   if [[ "$all_node_count" -eq "1" ]]; then
-      sudo cp -r $LOCAL_WORKDIR/$LDAP_AUTH_FILE $HOME_DIR/$TRAF_USER
-      sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
-      sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
-      if [[ $LDAP_LEVEL == "2" ]] || [[ $LDAP_LEVEL == "1" ]]; then
-         echo "***INFO: Copying $LDAP_CERT to Trafodion home dir"
-         sudo cp -r $LDAP_CERT $HOME_DIR/$TRAF_USER
-         sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
-         sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
-      fi
-   else
-      $TRAF_PDCP $LOCAL_WORKDIR/$LDAP_AUTH_FILE $HOME
-      $TRAF_PDSH sudo cp -r $HOME/$LDAP_AUTH_FILE $HOME_DIR/$TRAF_USER
-      $TRAF_PDSH sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
-      $TRAF_PDSH sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
-      if [[ $LDAP_LEVEL == "2" ]] || [[ $LDAP_LEVEL == "1" ]]; then
-         echo "***INFO: Copying $LDAP_CERT to Trafodion home dir"
-         $TRAF_PDCP $LDAP_CERT $HOME
-         $TRAF_PDSH sudo cp -r $HOME/$LDAP_CERT_BASE $HOME_DIR/$TRAF_USER
-         $TRAF_PDSH sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
-         $TRAF_PDSH sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
-      fi
-   fi
-fi
-
 #=============================================
 #Run trafodion_mods
 
@@ -726,14 +710,53 @@ if [ ${PIPESTATUS[0]} != "0" ]; then
    exit -1
 fi
 
+#==============================================
+#Secure Hadoop setup for Trafodion
+if [[ "$SECURE_HADOOP" == "Y" ]]; then
+   echo
+   echo "******************************"
+   echo " TRAFODION SECURE HADOOP SETUP"
+   echo "******************************"
+   echo
+   echo "***INFO: Running Kerberos installation"
+   $LOCAL_WORKDIR/traf_add_kerberos | tee -a $INSTALL_LOG
+   if [ ${PIPESTATUS[0]} != "0" ]; then
+      echo "***ERROR: Error while running traf_add_kerberos." | tee -a $INSTALL_LOG
+      echo "***ERROR: Kerberos not enabled" | tee -a $INSTALL_LOG
+      exit -1
+   fi
+else
+  echo "***INFO: Skipping Kerberos setup for Trafodion"
+fi
+
+echo "***INFO: Secure Hadoop setup for Trafodion ran successfully."
+
 # Install and configure CLI for Cloud environments
 if  [ "$ENABLE_HA" == "true" ] && [[ $CLOUD_CONFIG == "Y" ]] && [[ $all_node_count -gt 1 ]]; then
   echo "***INFO: Install and configure CLI for Cloud"
   $TRAF_WORKDIR/installer/cloud_cli_setup
 fi
 
+sudo su $TRAF_USER --login --command "$TRAF_WORKDIR/installer/traf_sqgen" 2>&1 | tee -a $INSTALL_LOG
+if [ ${PIPESTATUS[0]} != "0" ]; then
+   echo "***ERROR: Error while running traf_sqgen" | tee -a $INSTALL_LOG
+   echo "***ERROR: Setup not complete, review logs." | tee -a $INSTALL_LOG
+   echo "***ERROR: Exiting...." | tee -a $INSTALL_LOG
+  exit -1
+fi
+
+# setup identity store (LDAP) stuff - has to be done after traf_sqgen completes
+if [[ "$LDAP_SECURITY" == "Y" ]]; then
+   $LOCAL_WORKDIR/traf_add_ldap | tee -a $INSTALL_LOG
+   if [ ${PIPESTATUS[0]} != "0" ]; then
+      echo "***ERROR: Error while running traf_add_ldap." | tee -a $INSTALL_LOG
+      echo "***ERROR: ldap not enabled" | tee -a $INSTALL_LOG
+      exit -1
+   fi
+fi
+
+
 if [[ $START_ALL == "Y" ]]; then
-   sudo su $TRAF_USER --login --command "$TRAF_WORKDIR/installer/traf_sqgen" 2>&1 | tee -a $INSTALL_LOG
    sudo su $TRAF_USER --login --command "$TRAF_WORKDIR/installer/traf_start" 2>&1 | tee -a $INSTALL_LOG
 
    if [ ${PIPESTATUS[0]} != "0" ]; then
@@ -741,8 +764,19 @@ if [[ $START_ALL == "Y" ]]; then
       echo "***ERROR: Setup not complete, review logs." | tee -a $INSTALL_LOG
       echo "***ERROR: Exiting...." | tee -a $INSTALL_LOG
      exit -1
-  fi
+   fi
+
+   if [[ "$LDAP_SECURITY" == "Y"  || "$SECURE_HADOOP" == "Y" ]]; then
+      echo "***INFO: Configure authorization"
+      sudo su $TRAF_USER --login --command "$TRAF_WORKDIR/installer/traf_secure" 2>&1 | tee -a $INSTALL_LOG
+
+      if [ ${PIPESTATUS[0]} != "0" ]; then
+         echo "***ERROR: Error while running traf_secure." | tee -a $INSTALL_LOG
+         echo "***ERROR: Security setup not complete, continuing - review logs." | tee -a $INSTALL_LOG
+      fi
+   fi
 fi
+
 #==============================================
 MODS_COMPLETE="N"
 sudo chmod 777 $TRAF_CONFIG

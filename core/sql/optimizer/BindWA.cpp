@@ -134,7 +134,6 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL, NABo
   //     , inRIMaint_(FALSE)
      , inViewWithCheckOption_(NULL)
      , viewCount_(0)
-     , allowExternalTables_(allowExtTables)
      , errFlag_(FALSE)
      , uniqueNum_(0)
      , uniqueIudNum_(0) //++Triggers,
@@ -187,6 +186,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL, NABo
      , outerAggScope_(NULL)
      , hasCallStmts_(FALSE)
      , isTrafLoadPrep_(FALSE)
+     , flags_(0)
 {
   // get current default schema, using NAMETYPE NSK or ANSI rules
   defaultSchema_ = schemaDB_->getDefaultSchema(SchemaDB::APPLY_NAMETYPE_RULES);
@@ -196,6 +196,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL, NABo
 
   hcui_ = new(cmpContext->statementHeap()) HbaseColUsageInfo(cmpContext->statementHeap());
 
+  setAllowExternalTables(allowExtTables);
 } // BindWA::BindWA()
 
 // ***********************************************************************

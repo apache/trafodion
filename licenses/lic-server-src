@@ -7,6 +7,9 @@ BSD-4 clause for files:
    incubator-trafodion/core/sql/common/swsprintf.cpp
    incubator-trafodion/core/sql/common/swscanf.cpp
 
+The third clause of this license has since been rescinded. See the
+Historical Background section at https://opensource.org/licenses/BSD-3-Clause.
+
  Copyright (c) 1990 The Regents of the University of California.
  Copyright (c) 1990, 1993 The Regents of the University of California.
  This code is derived from software contributed to Berkeley by Chris Torek.

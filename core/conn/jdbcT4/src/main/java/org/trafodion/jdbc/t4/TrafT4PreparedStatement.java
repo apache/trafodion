@@ -1279,7 +1279,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			case Types.TINYINT:
 				tmpbd = Utility.getBigDecimalValue(locale, x);
 				tmpbd = Utility.setScale(tmpbd, scale, roundingMode_);
-				Utility.checkTinyintBoundary(locale, tmpbd);
+                                Utility.checkSignedTinyintBoundary(locale, tmpbd);
 				setShort(parameterIndex, tmpbd.shortValue());
 				break;
 			case Types.FLOAT:

@@ -64,6 +64,7 @@ public:
   ElemDDLLikeCreateTable(const CorrName & sourceTableName
                          = CorrName("", PARSERHEAP()),
                          ElemDDLNode * pLikeOptions = NULL,
+                         NABoolean forExtTable = FALSE,
                          CollHeap * h=0);
 
   // copy ctor
@@ -96,11 +97,14 @@ public:
   inline const QualifiedName & getDDLLikeCreateTableNameAsQualifiedName() const;
   inline       QualifiedName & getDDLLikeCreateTableNameAsQualifiedName();
   
-
+  const NABoolean forExtTable() const { return forExtTable_; }
 
 private:
 
   ParDDLLikeOptsCreateTable likeOptions_;
+
+  // if true, this was created to handle the 'for' clause of an external table
+  NABoolean forExtTable_;
 
 }; // class ElemDDLLikeCreateTable
 

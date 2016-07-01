@@ -323,8 +323,7 @@ ALTER TABLE name alter-action
 
 alter-action is:
 
-     ADD [COLUMN] column-definition
-   | ADD IF NOT EXISTS column-definition
+     ADD [IF NOT EXISTS][COLUMN] column-definition
    | ADD [CONSTRAINT constraint-name] table-constraint
    | DROP CONSTRAINT constraint-name [RESTRICT]
    | RENAME TO new-name [CASCADE]
@@ -2234,13 +2233,19 @@ this statement, AUTOCOMMIT must be turned ON (the default) for the
 session.
 
 ```
-CREATE [VOLATILE] TABLE IF NOT EXISTS table
-    { table-spec | like-spec }
+CREATE [VOLATILE] TABLE [IF NOT EXISTS] table
+    table-spec
     [SALT USING num PARTITIONS [ON (column[, column]...)]]
     [STORE BY {PRIMARY KEY | (key-column-list)}]
-    [HBASEOPTIONS (hbase-options-list)]
+    [HBASE_OPTIONS (hbase-options-list)]
     [LOAD IF EXISTS | NO LOAD]
     [AS select-query]
+
+CREATE [VOLATILE] TABLE [IF NOT EXISTS] table
+    like-spec
+    [SALT USING num PARTITIONS [ON (column[, column]...)]]
+
+Note: Support for SALT on CREATE TABLE LIKE is added in Trafodion release 2.1.
 
 table-spec is:
     (table-element [,table-element]...)
@@ -2313,7 +2318,7 @@ key-column-list is:
     [,column-name [ASC[ENDING] | DESC[ENDING]]]...
 
 like-spec is:
-    LIKE source-table [include-option]
+    LIKE source-table [include-option]...
 
 hbase-options-list is:
     hbase-option = 'value'[, hbase-option = 'value']...
@@ -2341,6 +2346,10 @@ pre-splits the table into multiple regions when the table is created. Salting ad
 prefix, thus avoiding hot spots for sequential keys. The number of partitions that you specify can be a function of the
 number of region servers present in the HBase cluster. You can specify a number from 2 to 1024. If you do not specify
 columns, the default is to use all primary key columns.
++
+If SALT is specified with LIKE, then this specification overrides that of the _source-table_. Note:
+this is a new feature in Trafodion 2.1. In earlier releases, the SALT clause is ignored if specified
+with LIKE.
 
 <<<
 * `STORE BY { PRIMARY KEY | (_key-column-list_)}`
@@ -2455,8 +2464,7 @@ See <<null,Null>>.
 * `UNIQUE, or, UNIQUE (_column-list_)`
 +
 is a column or table constraint, respectively, that specifies that the column or set of columns cannot contain more than
-one occurrence of the same value or set of values. If you omit UNIQUE, duplicate values are allowed unless the column is
-part of the PRIMARY KEY.
+one occurrence of the same value or set of values. If you omit UNIQUE, duplicate values are allowed unless the column or set of columns is the PRIMARY KEY.
 
 ** _column-list_ cannot include more than one occurrence of the same column. In addition, the set of columns that you
 specify on a UNIQUE constraint cannot match the set of columns on any other UNIQUE constraint for the table or on the
@@ -2544,6 +2552,19 @@ as its original _source-table_ counterpart. The new table partitions do not inhe
 Instead, {project-name} SQL generates new names based on the physical file location.
 +
 If you specify the LIKE clause and the SALT USING _num_ PARTITIONS clause, you cannot specify WITH PARTITIONS.
+
+*** `WITHOUT DIVISION`
++
+directs {project-name} SQL to not use divisioning from _source-table_. If this clause is omitted, then 
+the _table_ will have the same divisioning as the _source-table_.
+
+*** `WITHOUT SALT`
++
+directs {project-name} SQL to not use salting for _table_. If this clause is omitted,
+and no SALT clause is specified,
+the _table_ will have the same divisioning as the _source-table_.
++
+This option cannot be specified if a SALT clause is also specified.
 
 <<<
 [[create_table_considerations]]
@@ -4330,7 +4351,7 @@ only trafodion.
 
 IMPORTANT: The GET COMPONENT PRIVILEGES, GET COMPONENTS, GET ROLES FOR USER, and GET USERS FOR ROLE statements work only when
 authentication and authorization are enabled in {project-name}. For more information, see
-http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
+{docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 The GET statement displays delimited object names in their internal format. For example, the GET statement returns the delimited
 name "my ""table""" as my "table".
@@ -4743,7 +4764,7 @@ The GRANT statement grants access privileges on an SQL object to specified users
 
 IMPORTANT: This statement works only when authentication and
 authorization are enabled in {project-name}. For more information, see
-http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
+{docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
 GRANT {privilege [,privilege]... |ALL [PRIVILEGES]} 
@@ -4878,7 +4899,7 @@ The GRANT COMPONENT PRIVILEGE statement grants one or more component privileges 
 GRANT COMPONENT PRIVILEGE is a {project-name} SQL extension.
 
 IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information, see
-http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
+{docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
 GRANT COMPONENT PRIVILEGE {privilege-name [, privilege-name]...} 
@@ -5000,7 +5021,7 @@ GRANT COMPONENT PRIVILEGE CREATE_TABLE ON SQL_OPERATIONS TO sqluser1;
 The GRANT ROLE statement grants one or more roles to a user. See <<roles,Roles>>.
 
 IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information, 
-see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
+{docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
 GRANT ROLE {role-name [,role-name ]...}
@@ -5760,7 +5781,7 @@ REGISTER USER "jsmith@company.com";
 The REVOKE statement revokes access privileges on an SQL object from specified users or roles.
 
 IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information,
-see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
+{docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
 REVOKE [GRANT OPTION FOR]
@@ -5946,7 +5967,7 @@ privileges from a user or role. See <<privileges,Privileges>> and <<roles,Roles>
 REVOKE COMPONENT PRIVILEGE is a {project-name} SQL extension.
 
 IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information,
-see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
+{docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
 REVOKE [GRANT OPTION FOR]
@@ -6038,7 +6059,7 @@ The REVOKE ROLE statement removes one or more roles from a user. See
 <<roles,Roles>>.
 
 IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information,
-see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
+{docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
 REVOKE ROLE {role-name [,role-name]...}

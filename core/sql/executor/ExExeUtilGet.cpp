@@ -4920,6 +4920,12 @@ Lng32 ExExeUtilHiveMDaccessTcb::getFSTypeFromHiveColType(const char* hiveType)
   if ( !strcmp(hiveType, "timestamp"))
     return REC_DATETIME;
 
+  if ( !strcmp(hiveType, "date"))
+    return REC_DATETIME;
+
+  if ( !strncmp(hiveType, "varchar",7) )
+    return REC_BYTE_V_ASCII;
+
   return -1;
 }
 
@@ -4939,8 +4945,22 @@ Lng32 ExExeUtilHiveMDaccessTcb::getLengthFromHiveColType(const char* hiveType)
 
   if ( !strcmp(hiveType, "string")) {
     char maxStrLen[100];
+    char maxStrLenInBytes[100];
     cliInterface()->getCQDval("HIVE_MAX_STRING_LENGTH", maxStrLen);
-    return atoi(maxStrLen); // TBD: add cqd.
+    cliInterface()->getCQDval("HIVE_MAX_STRING_LENGTH_IN_BYTES", maxStrLenInBytes);
+    //Hive varchar(n) contains n character instead of n bytes
+    //so trafodion map hive varchar(n) into Trafodion varchar(n)
+    //but hive string will map to Trafodion varchar(n BYTES)
+    //So this CQD will be confusing
+    //We change the CQD name to explicitly indicate it is lenght in bytes
+    //For backward compatibility, HIVE_MAX_STRING_LENGTH still remains now, but is deprecated, user can still use it
+    //But HIVE_MAX_STRING_LENGTH_IN_BYTES will overwrite HIVE_MAX_STRING_LENGTH if changed
+    Int32 hiveMaxLenInBytes = atoi(maxStrLenInBytes);
+    Int32 hiveMaxLen = atoi(maxStrLen);
+    if( hiveMaxLenInBytes != 32000 ) //HIVE_MAX_STRING_LENGTH_IN_BYTES changed
+      return hiveMaxLenInBytes;
+    else
+      return hiveMaxLen;  
   }
 
   if ( !strcmp(hiveType, "float"))
@@ -4952,6 +4972,42 @@ Lng32 ExExeUtilHiveMDaccessTcb::getLengthFromHiveColType(const char* hiveType)
   if ( !strcmp(hiveType, "timestamp"))
     return 26; //Is this internal or display length? REC_DATETIME;
 
+  if ( !strcmp(hiveType, "date"))
+    return 10; //Is this internal or display length? REC_DATETIME;
+  
+  if ( !strncmp(hiveType, "varchar",7) )
+  {
+    //try to get the length
+    char maxLen[32];
+    memset(maxLen, 0, 32);
+    Int32 i=0,j=0;
+    Int16 copyit = 0;
+    Int32 hiveTypeLen = strlen(hiveType);
+
+    if( hiveTypeLen  > 39)  return -1;  
+ 
+    for(i = 0; i < hiveTypeLen ; i++)
+    {
+      if(hiveType[i] == '(')  
+      {
+        copyit=1;
+        continue;
+      }
+      else if(hiveType[i] == ')')  
+        break;
+      if(copyit == 1 )
+      {
+        maxLen[j] = hiveType[i];
+        j++;
+      }
+    }
+
+    Int32 len = atoi(maxLen);
+
+    if (len == 0) return -1;
+    else
+      return len;
+  }
   return -1;
 }
 
@@ -5183,14 +5239,23 @@ short ExExeUtilHiveMDaccessTcb::work()
 	    str_pad(infoCol->dtQualifier, 28, ' ');
 
 	    if (infoCol->fsDatatype == REC_DATETIME)
-	      {
-		// hive currently only supports timestamp
+	    {
+              if(infoCol->colSize > 10) {
 		infoCol->dtCode = SQLDTCODE_TIMESTAMP;
 		infoCol->colScale = 6;
 		str_cpy(infoCol->dtQualifier, "(6)", 28, ' ');
 		infoCol->dtStartField = 1;
 		infoCol->dtEndField = 6;
-	      }
+              }
+              else
+              {
+		infoCol->dtCode = SQLDTCODE_DATE;
+		infoCol->colScale = 0;
+	        str_pad(infoCol->dtQualifier, 28, ' ');
+		infoCol->dtStartField = 1;
+		infoCol->dtEndField = 6;
+              }
+	    }
 
 	    // no default value
 	    str_cpy(infoCol->defVal, " ", 240, ' ');

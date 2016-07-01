@@ -700,8 +700,12 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
 
     case EXTRACT_CHECK_MOD_TS:
     {
+      // if no tgt file or input timestamp is -1, skip data mod check.
+      // Also, if this insert is being done with overwrite, then data mod
+      // check has already been done during directory cleanup. Skip it here.
       if ((! myTdb().getTargetFile()) ||
-          (myTdb().getModTSforDir() == -1))
+          (myTdb().getModTSforDir() == -1) ||
+          (myTdb().getOverwriteHiveTable()))
         {
           pstate.step_ = EXTRACT_INITIALIZE;
           break;
@@ -984,9 +988,19 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
 
           if (expStatus == ex_expr::EXPR_ERROR)
           {
-            updateWorkATPDiagsArea(centry);
-            pstate.step_ = EXTRACT_ERROR;
-            break;
+            if (myTdb().getContinueOnError())
+              {
+                // ignore this row and continue to the next row
+                if (workAtp_->getDiagsArea())
+                  workAtp_->getDiagsArea()->clear();
+                break;
+              }
+            else
+              {
+                updateWorkATPDiagsArea(centry);
+                pstate.step_ = EXTRACT_ERROR;
+                break;
+              }
           }
         } // if (myTdb().getChildDataExpr())
         ///////////////////////

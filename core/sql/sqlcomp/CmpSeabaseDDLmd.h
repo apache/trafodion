@@ -336,6 +336,14 @@ static const QString seabaseTablesDDL[] =
   {" ; "}
 };
 
+enum SeabaseTablesFlags
+  {
+    MD_TABLES_RESERVED1            = 0x0001,
+    MD_TABLES_RESERVED2            = 0x0002,
+    MD_TABLES_HIVE_EXT_COL_ATTRS   = 0x0004,
+    MD_TABLES_HIVE_EXT_KEY_ATTRS   = 0x0008
+  };
+
 static const QString seabaseTableConstraintsDDL[] =
 {
   {" create table "SEABASE_TABLE_CONSTRAINTS" "},

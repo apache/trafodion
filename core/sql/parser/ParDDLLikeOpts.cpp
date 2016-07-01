@@ -111,6 +111,7 @@ ParDDLLikeOptsCreateTable::operator=(
   isLikeOptWithHelpTextSpec_    = likeOptions.isLikeOptWithHelpTextSpec_;
   isLikeOptWithHorizontalPartitionsSpec_ = likeOptions.isLikeOptWithHorizontalPartitionsSpec_;
   isLikeOptWithoutSaltSpec_     = likeOptions.isLikeOptWithoutSaltSpec_;
+  isLikeOptSaltClauseSpec_      = likeOptions.isLikeOptSaltClauseSpec_;
   isLikeOptWithoutDivisionSpec_ = likeOptions.isLikeOptWithoutDivisionSpec_;
 
   isLikeOptWithComments_        = likeOptions.isLikeOptWithComments_;
@@ -120,6 +121,21 @@ ParDDLLikeOptsCreateTable::operator=(
   isLikeOptWithHorizontalPartitions_  = likeOptions.isLikeOptWithHorizontalPartitions_;
   isLikeOptWithoutSalt_         = likeOptions.isLikeOptWithoutSalt_;
   isLikeOptWithoutDivision_     = likeOptions.isLikeOptWithoutDivision_;
+
+  if (this != &likeOptions)  // make sure not assigning to self
+    {
+      if (likeOptions.isLikeOptSaltClause_)
+        {
+          delete isLikeOptSaltClause_;
+          isLikeOptSaltClause_ = new (PARSERHEAP()) NAString(*likeOptions.isLikeOptSaltClause_);
+        }
+      else if (isLikeOptSaltClause_)
+        {
+          delete isLikeOptSaltClause_;
+          isLikeOptSaltClause_ = NULL;
+        }
+      // else both are NULL; nothing to do
+    }
 
   return *this;
 }
@@ -137,6 +153,7 @@ ParDDLLikeOptsCreateTable::initializeDataMembers()
   isLikeOptWithHelpTextSpec_    = FALSE;
   isLikeOptWithHorizontalPartitionsSpec_  = FALSE;
   isLikeOptWithoutSaltSpec_     = FALSE;
+  isLikeOptSaltClauseSpec_      = FALSE;
   isLikeOptWithoutDivisionSpec_ = FALSE;
 
   isLikeOptWithComments_        = FALSE;
@@ -145,6 +162,7 @@ ParDDLLikeOptsCreateTable::initializeDataMembers()
   isLikeOptWithHelpText_        = FALSE;
   isLikeOptWithHorizontalPartitions_        = FALSE;
   isLikeOptWithoutSalt_         = FALSE;
+  isLikeOptSaltClause_          = NULL;
   isLikeOptWithoutDivision_     = FALSE;
 }
 
@@ -199,9 +217,36 @@ ParDDLLikeOptsCreateTable::setLikeOption(ElemDDLLikeOpt * pLikeOption)
       //             in LIKE clause in CREATE TABLE statement.
       *SqlParser_Diags << DgSqlCode(-3152) << DgString0("SALT");
     }
+    if (isLikeOptSaltClauseSpec_)
+    {
+      // ERROR[3154] The WITHOUT SALT clause is not allowed with the SALT clause.
+      *SqlParser_Diags << DgSqlCode(-3154) << DgString0("WITHOUT SALT") << DgString1("SALT");
+    }
     ComASSERT(pLikeOption->castToElemDDLLikeOptWithoutSalt() != NULL);
     isLikeOptWithoutSalt_ = TRUE;
     isLikeOptWithoutSaltSpec_ = TRUE;
+    break;
+
+  case ELM_LIKE_OPT_SALT_CLAUSE_ELEM:
+    {  // braces needed since we declare some variables in this case
+      if (isLikeOptSaltClauseSpec_)
+      {
+        // ERROR[3183] Duplicate SALT clauses were specified.
+        *SqlParser_Diags << DgSqlCode(-3183) << DgString0("SALT");
+      }
+      if (isLikeOptWithoutSaltSpec_)
+      {
+        // ERROR[3154] The WITHOUT SALT clause is not allowed with the SALT clause.
+        *SqlParser_Diags << DgSqlCode(-3154) << DgString0("WITHOUT SALT") << DgString1("SALT");
+      }
+      ComASSERT(pLikeOption->castToElemDDLLikeSaltClause() != NULL);
+      isLikeOptSaltClauseSpec_ = TRUE;
+      isLikeOptSaltClause_ = new (PARSERHEAP()) NAString();
+      ElemDDLLikeSaltClause * saltClauseWrapper = pLikeOption->castToElemDDLLikeSaltClause();
+      const ElemDDLSaltOptionsClause * saltOptions = saltClauseWrapper->getSaltClause();
+      saltOptions->unparseIt(*isLikeOptSaltClause_ /* side-effected */);
+      isLikeOptWithoutSalt_ = TRUE;  // suppresses any SALT clause from the source table
+    }
     break;
 
   case ELM_LIKE_OPT_WITHOUT_DIVISION_ELEM :

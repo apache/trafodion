@@ -275,7 +275,8 @@ void SessionDefaults::setIsoMappingName(const char * attrValue, Lng32 attrValueL
     }
   
   isoMappingName_ = new(heap_) char[attrValueLen + 1];
-  strcpy(isoMappingName_, attrValue);
+  strncpy(isoMappingName_, attrValue, attrValueLen);
+  isoMappingName_[attrValueLen] = '\0';
   
   // upcase isoMappingName_
   str_cpy_convert(isoMappingName_, isoMappingName_, attrValueLen, 1);

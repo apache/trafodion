@@ -493,7 +493,8 @@ class ExLob
        Int64  modTS,
        Lng32  numOfPartLevels);
 
-  Ex_Lob_Error emptyDirectory();
+  Ex_Lob_Error emptyDirectory(char* dirPath, ExLobGlobals* lobGlobals);
+
   ExLobStats *getStats() { return &stats_; }
   NAHeap *getLobGlobalHeap() { return lobGlobalHeap_;}
 
