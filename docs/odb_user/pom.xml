@@ -36,7 +36,7 @@
     <groupId>org.apache.trafodion</groupId>
     <artifactId>trafodion</artifactId>
     <relativePath>../../pom.xml</relativePath>
-    <version>2.0.0</version>
+    <version>1.3.0</version>
   </parent>
 
 
@@ -78,21 +78,18 @@
     <asciidoctorj.version>1.5.4</asciidoctorj.version>
     <rubygems.prawn.version>2.0.2</rubygems.prawn.version>
     <jruby.version>9.0.4.0</jruby.version>
-    <!--dependency.locations.enabled>false</dependency.locations.enabled-->
   </properties>
 
   <repositories>
     <repository>
-      <id>rubygems-proxy</id>
-      <name>Rubygems Proxy</name>
+      <id>rubygems-proxy-releases</id>
+      <name>RubyGems.org Proxy (Releases)</name>
       <url>http://rubygems-proxy.torquebox.org/releases</url>
-      <layout>default</layout>
-        <releases>
+      <releases>
         <enabled>true</enabled>
       </releases>
       <snapshots>
         <enabled>false</enabled>
-        <updatePolicy>never</updatePolicy>
       </snapshots>
     </repository>
   </repositories>
