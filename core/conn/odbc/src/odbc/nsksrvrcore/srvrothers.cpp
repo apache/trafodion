@@ -4678,7 +4678,8 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
 			inputParam[5] = expColumnNm;
 			inputParam[6] = NULL;
 			if( APIType == SQL_API_SQLPROCEDURECOLUMNS )
-					{
+			{
+				snprintf(CatalogQuery,sizeof(CatalogQuery),
 "select obj.CATALOG_NAME PROCEDURE_CAT, obj.SCHEMA_NAME PROCEDURE_SCHEM,"
 "obj.OBJECT_NAME PROCEDURE_NAME, cols.COLUMN_NAME COLUMN_NAME,"
 "cast((case when cols.DIRECTION='I' then 1 when cols.DIRECTION='N' "
