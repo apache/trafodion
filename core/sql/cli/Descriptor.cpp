@@ -2058,7 +2058,7 @@ RETCODE Descriptor::processNumericDatatypeWithPrecision(desc_struct &descItem,
 	      ((descItem.datatype == REC_BIN32_UNSIGNED) &&
 	       (descItem.precision > 9)) ||
 	      ((descItem.datatype == REC_BIN64_UNSIGNED) &&
-	       (descItem.precision > 19)) ||
+	       (descItem.precision > 20)) ||
 	      ((descItem.datatype == REC_NUM_BIG_UNSIGNED) &&
 	       (descItem.precision > 128)))
 	    {
