@@ -1095,8 +1095,27 @@ public:
     LE_BLOB        =156, 
     GT_BLOB        =157,
     GE_BLOB        =158,
+
+    EQ_BIN64U_BIN64U    =159,
+    EQ_BIN64U_BIN64S    =160,
+    EQ_BIN64S_BIN64U    =161,
+    NE_BIN64U_BIN64U    =162,
+    NE_BIN64U_BIN64S    =163,
+    NE_BIN64S_BIN64U    =164,
+    LT_BIN64U_BIN64U    =165,
+    LT_BIN64U_BIN64S    =166,
+    LT_BIN64S_BIN64U    =167,
+    LE_BIN64U_BIN64U    =168,
+    LE_BIN64U_BIN64S    =169,
+    LE_BIN64S_BIN64U    =170,
+    GT_BIN64U_BIN64U    =171,
+    GT_BIN64U_BIN64S    =172,
+    GT_BIN64S_BIN64U    =173,
+    GE_BIN64U_BIN64U    =174,
+    GE_BIN64U_BIN64S    =175,
+    GE_BIN64S_BIN64U    =176,
     
-    COMP_NOT_SUPPORTED  =153
+    COMP_NOT_SUPPORTED  =177
       
     };
 
@@ -1559,7 +1578,21 @@ enum conv_case_index {
   CONV_BIN16S_BIN8U                    =261,
   CONV_BIN8U_BIN16S                    =262,
   CONV_ASCII_BIN8S                     =263,
-  CONV_ASCII_BIN8U                     =264
+  CONV_ASCII_BIN8U                     =264,
+
+  // unsigned largeint related conversions
+  CONV_BIN64S_BIN64U                   =269,
+  CONV_BIN64U_BIN64U                   =270,
+  CONV_FLOAT32_BIN64U                  =271, 
+  CONV_FLOAT64_BIN64U                  =272,
+  CONV_BIN64U_BIN64S                   =273,
+  CONV_BIN64U_BIGNUM                   =274,
+  CONV_BIGNUM_BIN64U                   =275,
+  CONV_BIN64U_FLOAT32                  =276,
+  CONV_BIN64U_FLOAT64                  =277,
+  CONV_BIN64U_ASCII                    =278,
+  CONV_ASCII_BIN64U                    =279
+
 };
 
 class SQLEXP_LIB_FUNC  ex_conv_clause : public ex_clause {

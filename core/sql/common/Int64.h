@@ -109,9 +109,21 @@ NA_EIDPROC
 void convertInt64ToAscii(const Int64 &src, char* tgt);
 
 // -----------------------------------------------------------------------
+// Convert the unsigned integer to ascii.
+// -----------------------------------------------------------------------
+NA_EIDPROC
+void convertUInt64ToAscii(const UInt64 &src, char* tgt);
+
+// -----------------------------------------------------------------------
 // Convert the integer to double.
 // -----------------------------------------------------------------------
 NA_EIDPROC
 double convertInt64ToDouble(const Int64 &src);
+
+// -----------------------------------------------------------------------
+// Convert the integer to double.
+// -----------------------------------------------------------------------
+NA_EIDPROC
+double convertUInt64ToDouble(const UInt64 &src);
 
 #endif /* INT64_H */

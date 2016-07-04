@@ -3329,6 +3329,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TRAF_COL_LENGTH_IS_CHAR,                 "ON"),   
 
+  DDkwd__(TRAF_CREATE_SIGNED_NUMERIC_LITERAL,      "ON"),   
+
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
 
  DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
@@ -3337,6 +3339,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TRAF_INDEX_ALIGNED_ROW_FORMAT,        "ON"),   
   DDkwd__(TRAF_INDEX_CREATE_OPT,          "OFF"),
+
+  DDkwd__(TRAF_LARGEINT_UNSIGNED_IO,                        "OFF"),
+
   DDkwd__(TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE,        "OFF"),
   DDkwd__(TRAF_LOAD_CONTINUE_ON_ERROR,          "OFF"),
   DD_____(TRAF_LOAD_ERROR_COUNT_ID,             "" ),

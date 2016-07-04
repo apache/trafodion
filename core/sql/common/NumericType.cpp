@@ -110,7 +110,7 @@ static void insertScaleIndicator(NAString * str, Int32 scale)
 
 unsigned short getBinaryStorageSize(Lng32 precision)
 {
-  if (precision < 1 || precision > 18) {
+  if (precision < 1 || precision > 19) {
     return 0;
   }
   if (precision < 5)
@@ -584,11 +584,7 @@ const NAType* NumericType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
       case SQL_INT_SIZE:
         return new(h) SQLInt(isSigned, isNullable);
       case SQL_LARGE_SIZE:
-        //
-        // The result must be a signed LARGEINT.  LARGEINT UNSIGNED is not
-        // supported.
-        //
-        return new(h) SQLLargeInt(TRUE, isNullable);
+        return new(h) SQLLargeInt(isSigned, isNullable);
       default:
         return NULL;
       }
@@ -836,6 +832,24 @@ NABoolean NumericType::isEncodingNeeded() const
    else
      return FALSE;
 #endif
+}
+
+NABoolean NumericType::expConvSupported
+(const NAType &otherNAType) const
+{
+  if (getFSDatatype() != REC_BIN64_UNSIGNED)
+    return TRUE;
+
+  if ((otherNAType.getFSDatatype() == REC_BIN64_SIGNED) ||
+      (otherNAType.getFSDatatype() == REC_BIN64_UNSIGNED) ||
+      (otherNAType.getFSDatatype() == REC_FLOAT32) ||
+      (otherNAType.getFSDatatype() == REC_FLOAT64) ||
+      (otherNAType.getFSDatatype() == REC_NUM_BIG_SIGNED) ||
+      (otherNAType.getFSDatatype() == REC_NUM_BIG_UNSIGNED) ||
+      (DFS2REC::isAnyCharacter(otherNAType.getFSDatatype())))
+    return TRUE;
+
+  return FALSE;
 }
 
 // -----------------------------------------------------------------------
@@ -1341,7 +1355,6 @@ SQLLargeInt::SQLLargeInt(NABoolean allowNegValues, NABoolean allowSQLnull,
 		  ,heap
           )
 {
-  assert(allowNegValues);
 }   // SQLLargeInt()
 
 SQLLargeInt::SQLLargeInt(Lng32 scale,
@@ -1360,86 +1373,113 @@ SQLLargeInt::SQLLargeInt(Lng32 scale,
 		  ,heap
           )
 {
-  assert(allowNegValues);
 }   // SQLLargeInt()
 
 
 double SQLLargeInt::encode (void* bufPtr) const
 {
   Int64 tempValue;
+  UInt64 usTempValue;
+
   char * valPtr = (char *)bufPtr;
   if (supportsSQLnull())
     valPtr += getSQLnullHdrSize();
 
-  str_cpy_all ((char *)&tempValue, valPtr, getNominalSize());
-  return (convertInt64ToDouble(tempValue) * pow(10.0, -1 * getScale()));
+  if (isUnsigned())
+  {
+    str_cpy_all ((char *)&usTempValue, valPtr, getNominalSize());
+    return (convertUInt64ToDouble(tempValue) * pow(10.0, -1 * getScale()));
+  }
+  else
+  {
+    str_cpy_all ((char *)&tempValue, valPtr, getNominalSize());
+    return (convertInt64ToDouble(tempValue) * pow(10.0, -1 * getScale()));
+  }
 }
 
-void SQLLargeInt::minRepresentableValue
-( void* bufPtr
-, Lng32* bufLen
-, NAString ** stringLiteral
-, CollHeap* h
-) const
+void SQLLargeInt::minRepresentableValue(void* bufPtr, Lng32* bufLen,
+                                        NAString ** stringLiteral,
+                                        CollHeap* h) const
 {
-  assert(*bufLen >= getNominalSize());
-  *bufLen = getNominalSize();
-  Int64 temp;
-  Lng32 *dblword = (Lng32 *) &temp;
-#ifdef NA_LITTLE_ENDIAN
-  dblword[0] = 0;
-  dblword[1] = INT_MIN;
-#else
-  dblword[0] = INT_MIN;
-  dblword[1] = 0;
-#endif
-  str_cpy_all((char *) bufPtr, (char *) &temp, getNominalSize());
-  if (stringLiteral != NULL) {
-    //
-    // Generate a printable string for the minimum value.
-    //
-    char nameBuf[NAME_BUF_LEN];   // a reasonably large buffer
-    convertInt64ToAscii(temp, nameBuf);
-    *stringLiteral = new (h) NAString(nameBuf, h);
+  assert(*bufLen >= sizeof(Int64));
+  *bufLen = sizeof(Int64);
+  char nameBuf[NAME_BUF_LEN];
+  if (NumericType::isUnsigned())
+    {
+      UInt64 temp = 0;
+      for (Lng32 i = 0; i < sizeof(UInt64); i++)
+	{
+	  ((char *)bufPtr)[i] = 0;
+	}
+      if (stringLiteral != NULL) //only when need to return a string
+	{
+	  convertUInt64ToAscii(temp, nameBuf);
+	}
+     }
+  else
+    {
+      Int64 temp = LLONG_MIN;
+      for (Lng32 i = 0; i < sizeof(Int64); i++)
+	{
+	  ((char *)bufPtr)[i] = ((char *)&temp)[i];
+	}
+      if (stringLiteral != NULL) //only when need to return a string
+	{
+           convertInt64ToAscii(temp, nameBuf);
+	}
   }
+
+  if (stringLiteral != NULL)
+    *stringLiteral = new (h) NAString(nameBuf, h);
+
 } // SQLLargeInt::minRepresentableValue()
 
-void SQLLargeInt::maxRepresentableValue
-( void* bufPtr
-, Lng32* bufLen
-, NAString ** stringLiteral
-, CollHeap* h
-) const
+void SQLLargeInt::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
+                                        NAString ** stringLiteral,
+                                        CollHeap* h) const
 {
-  assert(*bufLen >= getNominalSize());
-  *bufLen = getNominalSize();
-  Int64 temp;
-  Lng32 *dblword = (Lng32 *) &temp;
-#ifdef NA_LITTLE_ENDIAN
-  dblword[0] = -1;
-  dblword[1] = INT_MAX;
-#else
-  dblword[0] = INT_MAX;
-  dblword[1] = -1;
-#endif
-
-  str_cpy_all((char *) bufPtr, (char *) &temp, getNominalSize());
-  if (stringLiteral != NULL) {
-    //
-    // Generate a printable string for the maximum value.
-    //
-    char nameBuf[NAME_BUF_LEN];   // a reasonably large buffer
-    convertInt64ToAscii(temp, nameBuf);
+  assert(*bufLen >= sizeof(Int64));
+  char nameBuf[NAME_BUF_LEN];
+  *bufLen = sizeof(Int64);
+  if (NumericType::isUnsigned())
+    {
+      UInt64 temp = ULLONG_MAX;
+      for (Lng32 i = 0; i < getNominalSize(); i++)
+	{
+	  ((char *)bufPtr)[i] = ((char *)&temp)[i];
+	}
+      if (stringLiteral != NULL) //only when need to return a string
+	{
+	  convertUInt64ToAscii(temp, nameBuf);
+	}
+    }
+  else
+    {
+      Int64 temp = LLONG_MAX;
+      for (short i = 0; i < getNominalSize(); i++)
+	{
+	  ((char *)bufPtr)[i] = ((char *)&temp)[i];
+	}
+      if (stringLiteral != NULL) //only when need to return a string
+	{
+          convertInt64ToAscii(temp, nameBuf);
+	}
+    }
+  if (stringLiteral != NULL)
     *stringLiteral = new (h) NAString(nameBuf, h);
-  }
 } // SQLLargeInt::maxRepresentableValue()
 
 NAString* SQLLargeInt::convertToString(double v, CollHeap* h) const
 {
    char nameBuf[NAME_BUF_LEN];   // a reasonably large buffer
 
-   Int64 temp = Int64(v);
-   convertInt64ToAscii(temp, nameBuf);
+   if (NumericType::isUnsigned()) {
+     UInt64 temp = (UInt64)v;
+     convertUInt64ToAscii(temp, nameBuf);
+   } else {
+     Int64 temp = Int64(v);
+     convertInt64ToAscii(temp, nameBuf);
+   }
 
    return new (h) NAString(nameBuf, h);
 }

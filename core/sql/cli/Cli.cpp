@@ -660,6 +660,7 @@ static Lng32 getNumericHostVarInfo(Descriptor *desc,
           ind_length = 4;
           break;
         case REC_BIN64_SIGNED:
+        case REC_BIN64_UNSIGNED:
           ind_length = 8;
           break;
         default:

@@ -2136,7 +2136,7 @@ PCodeInst* PCodeCfg::constantFold(PCodeInst* inst, NABoolean rDefsAvailable)
         Int64 value = getIntConstValue(op2);
         Int32 tgtLen = inst->getWOps()[0]->getLen();
         char* result = (char*) new(heap_) char[tgtLen];
-        BigNumHelper::ConvInt64ToBigNumWithSignHelper(tgtLen, value, result);
+        BigNumHelper::ConvInt64ToBigNumWithSignHelper(tgtLen, value, result, FALSE);
 
         off = addConstant((void*)result, tgtLen,inst->getWOps()[0]->getAlign());
 

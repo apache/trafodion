@@ -380,6 +380,31 @@ void ValueId::coerceType(const NAType& desiredType,
              newType = new (STMTHEAP)
                SQLSmall(isSigned, desiredType.supportsSQLnull());
 	   } // TinyInt
+	 else if ((desiredType.getFSDatatype() == REC_BIN64_UNSIGNED) &&
+                  (CmpCommon::getDefault(TRAF_LARGEINT_UNSIGNED_IO) == DF_OFF))
+           {
+             NumericType &nTyp = (NumericType &)desiredType;
+             if (CmpCommon::getDefault(BIGNUM_IO) == DF_OFF)
+               {
+		 Int16 DisAmbiguate = 0;
+                 newType = new (STMTHEAP)
+                   SQLLargeInt(nTyp.getScale(),
+                               DisAmbiguate,
+                               TRUE,
+                               nTyp.supportsSQLnull(),
+                               NULL);
+               }
+             else
+               {
+                 newType = new (STMTHEAP)
+                   SQLBigNum(MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION,
+                             nTyp.getScale(),
+                             FALSE,
+                             FALSE,
+                             nTyp.supportsSQLnull(),
+                             NULL);
+               }
+           }
 	 else if (DFS2REC::isBigNum(desiredType.getFSDatatype()))
 	   {
 	     // If bignum IO is not enabled or

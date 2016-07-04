@@ -3842,6 +3842,15 @@ enum DefaultConstants
   // if 3, null inserted if conversion error, and processing continues.
   HIVE_INSERT_ERROR_MODE,
   
+  // If ON, largeint unsigned is supported as returned datatype for a select
+  // stmt, and for input params.
+  // Otherwise typed as bignum
+  TRAF_LARGEINT_UNSIGNED_IO,
+
+  // if TRUE, create signed numeric literal for both +ve and -ve numbers.
+  // if FALSE, create unsigned literal for +ve and signed literal for -ve nums.
+  TRAF_CREATE_SIGNED_NUMERIC_LITERAL,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
