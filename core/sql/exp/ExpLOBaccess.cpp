@@ -456,17 +456,7 @@ Ex_Lob_Error ExLob::emptyDirectory(char *dirPath,
   hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, dirPath);
   if (fileInfos == NULL)
     {
-      hdfsDisconnect(fs_);
-      fs_ = hdfsConnect(hdfsServer_, hdfsPort_);
-      if (fs_ == NULL)
-        return LOB_HDFS_CONNECT_ERROR;
-      
-      fileInfos = hdfsGetPathInfo(fs_, lobDataFile_);
-      if (fileInfos == NULL)
-        return LOB_DIR_NAME_ERROR;
-      
-      if (lobGlobals)
-        lobGlobals->setHdfsFs(fs_);
+      return LOB_DIR_NAME_ERROR;
     }
   
   Lng32 currNumFilesInDir = 0;
@@ -2484,7 +2474,7 @@ Ex_Lob_Error ExLobsOper (
       break;
 
     case Lob_Empty_Directory:    
-      err = lobPtr->emptyDirectory();
+      err = lobPtr->emptyDirectory(lobStorageLocation, lobGlobals);
 
       break;
 

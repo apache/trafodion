@@ -2261,8 +2261,8 @@ Int32 ExExeUtilHiveTruncateTcb::fixup()
   ExpLOBinterfaceInit
     (lobGlob_, getGlobals()->getDefaultHeap(),
      getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE, 
-     fdTdb().getHiveHdfsHost(),
-     fdTdb().getHiveHdfsPort());
+     htTdb().getHdfsHost(),
+     htTdb().getHdfsPort());
 
   return 0;
 }
