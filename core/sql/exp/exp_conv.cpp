@@ -138,30 +138,6 @@ void double_varchar_length(
 
 //////////////////////////////////////////////////////////////////
 //
-// A helper function to show buffer in HEX 
-//
-// ///////////////////////////////////////////////////////////////
-
-static char *stringToHex(char * out, Int32 outLen, char * in, Int32 inLen)
-{
-  //clear out buffer first
-  memset(out,0,outLen);
-
-  outLen = (outLen / 2) ;
-
-  if(inLen < outLen) outLen = inLen;
-
-  char hex[3];
-  for(int i = 0; i < outLen; i++)
-  {
-    sprintf(hex, "%02x", in[i]);
-    strcat(out,hex);
-  }
-  return out;
-}
-
-//////////////////////////////////////////////////////////////////
-//
 //A helper function to return charset name
 //
 /////////////////////////////////////////////////////////////////
@@ -1471,7 +1447,9 @@ ex_expr::exp_return_type convUnicodeToDatetime(char *target,
       }
    }
 
-   ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+   char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+   ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR, NULL, NULL, NULL, NULL, stringToHex(hexstr, sizeof(hexstr) , source, sourceLen ));
+
    return ex_expr::EXPR_ERROR;
 
 }
@@ -1559,7 +1537,8 @@ ex_expr::exp_return_type convDatetimeDatetime(char * target,
                                              validateFlag,
                                              &roundedDown) != 0) {
 
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+    char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
     return ex_expr::EXPR_ERROR;
   }
 
@@ -1605,7 +1584,8 @@ ex_expr::exp_return_type convAsciiToFloat64(char * target,
       }
 
     // string contains only blanks.
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+    char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
     return ex_expr::EXPR_ERROR;
   };
 
@@ -1756,7 +1736,8 @@ ex_expr::exp_return_type convAsciiToFloat64(char * target,
 	case ERROR:
 	  {
 	    // string contains only blanks.
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+            char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
 	    return ex_expr::EXPR_ERROR;
 	  };
 	  break;
@@ -1774,7 +1755,8 @@ ex_expr::exp_return_type convAsciiToFloat64(char * target,
   if (NOT validNum)
     {
 	  // LCOV_EXCL_START
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
       return ex_expr::EXPR_ERROR;
       // LCOV_EXCL_STOP
     };
@@ -1887,7 +1869,9 @@ ex_expr::exp_return_type convAsciiToUInt64base(UInt64 &target,
       if (!DigitsAllowed)
         {
 	// syntax error in the input
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+        char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
 	return ex_expr::EXPR_ERROR;
         }
       digitCnt++;
@@ -1949,7 +1933,9 @@ ex_expr::exp_return_type convAsciiToUInt64base(UInt64 &target,
 	// we found already a sign or we found already digits
         // or we found a point already.
         // A sign is an error now!
-	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+        char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
 	return ex_expr::EXPR_ERROR;
       }
     else if (source[currPos] == '.')
@@ -1959,7 +1945,9 @@ ex_expr::exp_return_type convAsciiToUInt64base(UInt64 &target,
 	// we found a second decimal point. This is an error
         // we are already not allowing anymore digits because of illegal
         // blank space(s)
-	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+        char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
 	return ex_expr::EXPR_ERROR;
         }
       pointFound = TRUE;
@@ -1974,7 +1962,9 @@ ex_expr::exp_return_type convAsciiToUInt64base(UInt64 &target,
 	  if (currPos == 0)
 	    {
 	      // 'E' alone is not a valid numeric.
-	      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+              char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+	      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
 	      return ex_expr::EXPR_ERROR;
 	    }
 
@@ -1998,7 +1988,9 @@ ex_expr::exp_return_type convAsciiToUInt64base(UInt64 &target,
       else
         {
 	  // illegal character in this input string
-	  ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+          char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+	  ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
 	  return ex_expr::EXPR_ERROR;
         }
       }
@@ -2015,7 +2007,9 @@ ex_expr::exp_return_type convAsciiToUInt64base(UInt64 &target,
 	  return ex_expr::EXPR_OK;
 	}
       
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
       return ex_expr::EXPR_ERROR;
     }
 
@@ -2222,7 +2216,9 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
 	return ex_expr::EXPR_OK;
       }
  
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+    char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
     return ex_expr::EXPR_ERROR;
   };
   // LCOV_EXCL_STOP
@@ -2341,7 +2337,9 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
     else {
       // if source is not a digit, we have an error
       if (source[sourcePos] < '0' || source[sourcePos] > '9') {
-	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+        char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
         return ex_expr::EXPR_ERROR;
       };
       // copy source to target
@@ -2597,7 +2595,9 @@ ex_expr::exp_return_type convAsciiFieldToInt64(Int64 &target,
   if (!currPos)
   {
     // No digits were found
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+    char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
     return ex_expr::EXPR_ERROR;
   }
   // return the number of digits read
@@ -3469,7 +3469,9 @@ ex_expr::exp_return_type convDecToInt64(Int64 &target,
   // Convert the value to a negative binary number.  Check for overflow.
   while (currPos < sourceLen) {
     if (source[currPos] < '0' || source[currPos] > '9') {
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
       return ex_expr::EXPR_ERROR;
     };
     target *= 10;
@@ -3518,14 +3520,18 @@ ex_expr::exp_return_type convDecToDec(char *target,
     if ((source[0] & 0177) != '0') {
 
       // target string is not long enough - overflow
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
       return ex_expr::EXPR_ERROR;
     };
     
     Lng32 sourceIndex = sourceLen - targetLen;
     for (Lng32 i = 1; i < sourceIndex; i++)
       if (source[i] != '0') {
-	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+        char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
         return ex_expr::EXPR_ERROR;
       };
     str_cpy_all(target, &source[sourceIndex], targetLen);
@@ -4428,10 +4434,8 @@ unicodeToSByteTarget(
 
        if ( allowInvalidCodePoint == FALSE )
        {
-          ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHAR_IN_TRANSLATE_FUNC);
-          char hexstr[256];
-          memset(hexstr,0,256);
-          *(*diagsArea) << DgString0("UNICODE") << DgString1("ISO88591") << DgString2(stringToHex(hexstr,256,source,sourceLen));
+          char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+          ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHAR_IN_TRANSLATE_FUNC,NULL,NULL,NULL,NULL,"UNICODE","ISO88591",stringToHex(hexstr,sizeof(hexstr),source,sourceLen));
           retcode = ex_expr::EXPR_ERROR;
        }
     }
@@ -4526,13 +4530,14 @@ unicodeToMByteTarget(
 
        if ( allowInvalidCodePoint == FALSE )
        {
+          char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
           ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHAR_IN_TRANSLATE_FUNC);
-          char hexstr[256];
-          memset(hexstr,0,256);
-	  if ( targetScale == SQLCHARSETCODE_UTF8 )
-            *(*diagsArea) << DgString0("UNICODE") << DgString1("UTF8") << DgString2(stringToHex(hexstr,256,source,sourceLen));
-          else
-            *(*diagsArea) << DgString0("UNICODE") << DgString1("SJIS") << DgString2(stringToHex(hexstr,256,source,sourceLen));
+          if( *diagsArea ) {
+	    if ( targetScale == SQLCHARSETCODE_UTF8 )
+              *(*diagsArea) << DgString0("UNICODE") << DgString1("UTF8") << DgString2(stringToHex(hexstr,sizeof(hexstr),source,sourceLen));
+            else
+              *(*diagsArea) << DgString0("UNICODE") << DgString1("SJIS") << DgString2(stringToHex(hexstr,sizeof(hexstr),source,sourceLen));
+          }
           retcode = ex_expr::EXPR_ERROR;
           // LCOV_EXCL_STOP
        }
@@ -4665,9 +4670,8 @@ ex_expr::exp_return_type convCharToChar(
           ExRaiseSqlError(heap, diagsArea, errCode);
           if(errCode == EXE_INVALID_CHAR_IN_TRANSLATE_FUNC)
           {
-            char hexstr[256];
-            memset(hexstr,0,256);
-            *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,256,source,sourceLen));
+            char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+            *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,sizeof(hexstr),source,sourceLen));
           }
           if (intermediateStr && intermediateStr != stackBuffer)
             NADELETEBASIC(intermediateStr, heap);
@@ -4808,9 +4812,8 @@ ex_expr::exp_return_type convCharToChar(
                       ExRaiseSqlError(heap, diagsArea, errCode);
                       if(errCode == EXE_INVALID_CHAR_IN_TRANSLATE_FUNC)
                       {
-                        char hexstr[256];
-                        memset(hexstr,0,256);
-                        *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,256,source,sourceLen));
+                        char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN ];
+                        *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,sizeof(hexstr),source,sourceLen));
                       }
                       if (intermediateStr && intermediateStr != stackBuffer)
                         NADELETEBASIC(intermediateStr, heap);
@@ -4854,9 +4857,8 @@ ex_expr::exp_return_type convCharToChar(
          {
              // source string is not valid UTF-8
              ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHAR_IN_TRANSLATE_FUNC);
-             char hexstr[256];
-             memset(hexstr,0,256);
-             *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,256,source,sourceLen));
+             char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+             *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,sizeof(hexstr),source,sourceLen));
              return ex_expr::EXPR_ERROR;
          }
       }
@@ -4882,9 +4884,8 @@ ex_expr::exp_return_type convCharToChar(
                 {
                   // source string is not valid UTF-8
                   ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHAR_IN_TRANSLATE_FUNC);
-                  char hexstr[256];
-                  memset(hexstr,0,256);
-                  *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,256,source,sourceLen));
+                  char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+                  *(*diagsArea) << DgString0(scaleToString(sourceScale)) << DgString1(scaleToString(targetScale)) << DgString2(stringToHex(hexstr,sizeof(hexstr),source,sourceLen));
                   return ex_expr::EXPR_ERROR;
                 }
 
@@ -9317,7 +9318,9 @@ convDoIt(char * source,
          double_varchar_length(varCharLen, varCharLenSize);
 
    } else {
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
       ok = ex_expr::EXPR_ERROR;
    }
 
@@ -9402,7 +9405,8 @@ convDoIt(char * source,
 
       ok = ex_expr::EXPR_OK;
    } else {
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL, NULL, NULL, NULL, stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
       ok = ex_expr::EXPR_ERROR;
    }
 
@@ -9882,7 +9886,9 @@ convDoIt(char * source,
 
       ok = ex_expr::EXPR_OK;
    } else {
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR, NULL, NULL, NULL, NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
       ok = ex_expr::EXPR_ERROR;
    }
 
@@ -9956,7 +9962,9 @@ convDoIt(char * source,
       }
    }
 
-   ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+   char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+   ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL, NULL, NULL, NULL, stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
    return ex_expr::EXPR_ERROR;
   };
   break;
@@ -10144,7 +10152,9 @@ convDoIt(char * source,
       }
    }
 
-   ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+   char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+   ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL, NULL, NULL, NULL, stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
    return ex_expr::EXPR_ERROR;
 
   };
@@ -10184,7 +10194,8 @@ convDoIt(char * source,
       }
    }
 
-   ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+   char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+   ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR, NULL, NULL, NULL, NULL, stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
    return ex_expr::EXPR_ERROR;
   };
   break;
@@ -10287,7 +10298,9 @@ convDoIt(char * source,
       copyLen = 0;
       if ( varCharLen )
         setVCLength(varCharLen, varCharLenSize, copyLen);
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL, NULL, NULL, NULL, stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
       return ex_expr::EXPR_ERROR;
       // LCOV_EXCL_STOP
     }
