@@ -76,7 +76,7 @@ After running these commands, do the following:
 
 * If necessary, create the `$HOME/.ssh` directory on the other nodes in your cluster and secure it private to yourself (`chmod 700`).
 * If necessary, create the `$HOME/.ssh/authorized_keys` file on the other nodes in your cluster. Secure it with `chmod 600 $HOME/.ssh/authorized_keys`.
-* Copy the content of the `$HOME/.ssh/authorized_keys` file on the Provisioning Master Node and append the to the
+* Copy the content of the `$HOME/.ssh/id_rsa.pub` file on the Provisioning Master Node and append the to the
 `$HOME/.ssh/authorized_keys` file on the other nodes in your cluster.
 * `ssh` to the other nodes in the cluster. Answer `y` to the prompt asking you whether to continue the connection.
 This adds the node to the `$HOME/.ssh/known_hosts` file completing the passwordless ssh setup.
@@ -213,46 +213,9 @@ If none of these situations exist, then we highly recommend that you use the {pr
 
 You perform this step as a user with `root` or `sudo` access.
 
-Install the packages listed in <<requirements-software-packages,Software Packages>> above on all nodes in the cluster. Note the special
-handling for `log4c&#43;&#43;`. See <<prepare-install-log4cplusplus, Install log4c++>> below for more information.
+Install the packages listed in <<requirements-software-packages,Software Packages>> above on all nodes in the cluster. 
 
 <<<
-[[prepare-install-log4cplusplus]]
-=== Install log4c++
-
-You perform this step as a user with `root` or `sudo` access.
-
-This step is required regardless of the <<introduction-provisioning-options,Provisioning Options>> used.
-
-1. Download the log4c&#43;&#43; RPM from the {project-name} {download-url}[Download] page.
-
-2. Copy and Install the log4c&#43;&#43; RPM on All Nodes
-+
-Use either `rpm -U` or `yum install`.
-+
-*Example*
-+
-```
-# Repeat for all nodes in the cluster from the Provisioning Master Node
-scp log4cxx-0.10.0-13.el6.x86_64.rpm <other-node>:$PWD
-
-ssh <other-node>
-sudo yum -y install log4cxx-0.10.0-13.el6.x86_64.rpm
-exit
-
-```
-+
-<<<
-3. Verify RPM Installation on Every Node
-+
-Use the following command to verify that `log4c&#43;&#43;` has been installed on every node in the cluster.
-+
-```
-# Repeat for all nodes in the cluster
-sudo rpm -qa | grep log4cxx
-log4cxx-0.10.0-13.el6.x86_64
-```
-
 [[prepare-download-trafodion-binaries]]
 == Download {project-name} Binaries
 
@@ -266,8 +229,6 @@ NOTE: You can download and install the {project-name} Clients once you've instal
 {docs-url}/client_install/index.html[{project-name} Client Install Guide] for instructions.
 
 *Example*
-
-http://apache.cs.utah.edu/incubator/celix/celix-1.0.0.incubating/celix-1.0.0.incubating.tar.gz
 
 ```
 $ mkdir $HOME/trafodion-download
