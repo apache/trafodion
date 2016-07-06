@@ -814,14 +814,13 @@ public class TmAuditTlog {
       if (LOG.isTraceEnabled()) LOG.trace("deleteRecord start " + lvTransid);
       String transidString = new String(String.valueOf(lvTransid));
       int lv_lockIndex = (int)(lvTransid & tLogHashKey);
-      //try {
-         Delete d;
-         //create our own hashed key
-         long key = (((lvTransid & tLogHashKey) << tLogHashShiftFactor) + (lvTransid & 0xFFFFFFFF));
-         if (LOG.isTraceEnabled()) LOG.trace("key: " + key + " hex: " + Long.toHexString(key));
-         d = new Delete(Bytes.toBytes(key));
-         if (LOG.isTraceEnabled()) LOG.trace("deleteRecord  (" + lvTransid + ") ");
-         table[lv_lockIndex].delete(d);
+      Delete d;
+      //create our own hashed key
+      long key = (((lvTransid & tLogHashKey) << tLogHashShiftFactor) + (lvTransid & 0xFFFFFFFF));
+      if (LOG.isTraceEnabled()) LOG.trace("key: " + key + " hex: " + Long.toHexString(key));
+      d = new Delete(Bytes.toBytes(key));
+      if (LOG.isTraceEnabled()) LOG.trace("deleteRecord  (" + lvTransid + ") ");
+      table[lv_lockIndex].delete(d);
       if (LOG.isTraceEnabled()) LOG.trace("deleteRecord - exit");
       return true;
    }
@@ -1231,6 +1230,7 @@ public class TmAuditTlog {
                do 
                {
                try {
+                   loopBack = false;
                    int partialResult = compPool.take().get();
                    if (LOG.isTraceEnabled()) LOG.trace("deleteEntriesOlderThanASN partial result: " + partialResult
                 		      + " loopIndex " + loopIndex + " regionIndex " + regionIndex);
