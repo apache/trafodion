@@ -16,7 +16,7 @@
 
 Patch release. Also see the [2.0.0 Release Notes](release-notes-2-0-0.html).
 
-Clients package is now included with convenience bainaries.
+Clients package is now included with convenience binaries.
 
 ## Fixes
 
@@ -33,6 +33,14 @@ Clients package is now included with convenience bainaries.
     <tr>
       <td>OpenSSL libraries are linked dynamically</td>
       <td>TRAFODION-2024</td>
+    </tr>
+    <tr>
+      <td>Missing DISCLAIMER files for release package</td>
+      <td>TRAFODION-2068</td>
+    </tr>
+    <tr>
+      <td>BSD-4 license for swsprintf and swscanf unclear</td>
+      <td>TRAFODION-2082</td>
     </tr>
   </table>
 </span>
