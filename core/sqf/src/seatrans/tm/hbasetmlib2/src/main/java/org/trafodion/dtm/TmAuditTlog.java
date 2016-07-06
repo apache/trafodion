@@ -1226,7 +1226,7 @@ public class TmAuditTlog {
                      return deleteEntriesOlderThanASNX(regionName, pv_ASN, pv_ageCommitted);
                   }
                });
-               boolean loopBreak = false;
+               boolean loopBack = false;
                do 
                {
                try {
@@ -1238,13 +1238,13 @@ public class TmAuditTlog {
                 catch (InterruptedException e2) {
                    LOG.error("exception retieving reply in deleteEntriesOlderThanASN for interval ASN: " + pv_ASN
                            + " ", e2);
-                   loopBreak = true;
+                   loopBack = true;
                 }
                 catch (ExecutionException ee) {
                    LOG.error("Execution exception", ee);
                    throw new IOException(ee);
                 }
-                } while (loopBreak); 
+                } while (loopBack); 
             }
          }
 
