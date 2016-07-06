@@ -26,10 +26,30 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
 
 ## 2.0.1
 
-* Coming Soon
-
 * [Release Notes](release-notes-2-0-1.html)
+* [Source Code Release][src201]  -  [PGP][pgp201] [MD5][md5201] [SHA1][sha201]
+* Convenience Binaries
+    * [Installer][ins201]  -  [PGP][inpgp201] [MD5][inmd5201] [SHA1][insha201]
+    * [Server][ser201]  -  [PGP][sepgp201] [MD5][semd5201] [SHA1][sesha201]
+    * [Clients][cl201]  -  [PGP][clpgp201] [MD5][clmd5201] [SHA1][clsha201]
 * [Documentation](documentation.html#20x_Releases)
+
+[src201]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz
+[pgp201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz.asc
+[md5201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz.md5
+[sha201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz.sha
+[ins201]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz
+[inpgp201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz.asc
+[inmd5201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz.md5
+[insha201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz.sha
+[ser201]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz
+[sepgp201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz.asc
+[semd5201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz.md5
+[sesha201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz.sha
+[cl201]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_clients-2.0.1-incubating.tar.gz
+[clpgp201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_clients-2.0.1-incubating.tar.gz.asc
+[clmd5201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_clients-2.0.1-incubating.tar.gz.md5
+[clsha201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_clients-2.0.1-incubating.tar.gz.sha
 
 ## 2.0.0
 

@@ -2748,7 +2748,7 @@ B1
 --- 0 row(s) selected.
 >>select * from T038b where b1 < cast('1997-28-02' as DATE) + interval '2' day;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 1997-28-02
 
 --- 0 row(s) selected.
 >>

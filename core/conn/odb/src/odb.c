@@ -11467,7 +11467,9 @@ static void prec(char type, unsigned char *podbc, int eid)
 
     if ( type == 'L' ) {
         gpar = etab[eid].parent;
-        nfields = (unsigned int)etab[gpar].sp ;
+        /* nfields = (unsigned int)etab[gpar].sp ; */
+        /* fix jira 2034, write to bad_record if load with parameter 'bad', etab[gpar].sp equals 0 always */
+        nfields = (unsigned int)etab[eid].sp ;
     }
     MutexLock(&etab[gpar].pmutex);      /* lock mutex */
     if ( !(etab[gpar].flg2 & 0200) ) {
