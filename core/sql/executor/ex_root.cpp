@@ -2777,7 +2777,7 @@ Int32 ex_root_tcb::checkTransBeforeExecute(ExTransaction *myTrans,
     mayPinAudit_ = myTrans->mayAlterDb() ? true : false;
     mayLock_ = myTrans->mayHoldLock() ? true : false;
 
-    masterGlob->lobGlobals()->xnId() = myTrans->getTransid();
+    
 
   }
   return 0;
