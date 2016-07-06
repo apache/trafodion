@@ -475,7 +475,7 @@ public class HBulkLoadClient
        writer.close();
        writer = null;
     }
-    // sss This is one place that is unconditionally closing the 
+    //  This is one place that is unconditionally closing the 
     // hdfsFs that's part of this thread's JNIenv.
     // if (fileSys !=null)
     {
