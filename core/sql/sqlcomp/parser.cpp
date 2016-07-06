@@ -101,6 +101,11 @@ void Parser::reset(NABoolean on_entry_reset_was_needed)
     Set_SqlParser_Flags(0);
 }
 
+ULng32 cmmHashFunc_NAString(const NAString& str)
+{
+  return (ULng32) NAString::hash(str);
+}
+
 
 Parser::Parser(const CmpContext* cmpContext) 
 {
@@ -151,6 +156,10 @@ Parser::Parser(const CmpContext* cmpContext)
   clearHasOlapFunctions();
 
   HQCKey_ = NULL;
+
+  Lng32 initsize = 10;
+  with_clauses_ =  new (wHeap_) NAHashDictionary<NAString,RelExpr>(&cmmHashFunc_NAString, initsize , TRUE, wHeap_) ;
+
 }
 
 Parser::~Parser()

@@ -1927,6 +1927,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>  		        table_name_as_clause_hint_and_col_list
 %type <relx>  		        rel_subquery_and_as_clause
 %type <relx>  		        rel_subquery_as_clause_and_col_list
+%type <relx>                    with_clause
+%type <relx>                    with_clause_list
 %type <hint>      		optimizer_hint
 %type <hint>      		hints
 %type <hint>      		index_hints
@@ -6579,6 +6581,9 @@ table_reference : table_name_and_hint
               | rel_subquery_and_as_clause
                 { $$ = $1; }
 
+              | with_clause_list
+                {  $$ = $1;}
+
               | rel_subquery_as_clause_and_col_list
                 { $$ = $1; }
 
@@ -6647,6 +6652,26 @@ table_as_tmudf_function : TOK_UDF '(' table_mapping_function_invocation ')'
 
 table_name_and_hint : table_name optimizer_hint hbase_access_options
                       {
+                        NAString tmp = ((*$1).getQualifiedNameAsString());
+                        if(SqlParser_CurrentParser->with_clauses_->contains(&tmp) )
+                        {
+                          RelExpr *re = SqlParser_CurrentParser->with_clauses_->getFirstValue(&tmp);
+                          $$=re->copyTree(PARSERHEAP());
+                        }
+                        else
+                        {
+                          $$ = new (PARSERHEAP()) Scan(*$1);
+                          if ($2)
+                            $$->setHint($2);
+
+                          if ($3)
+                            ((Scan*)$$)->setHbaseAccessOptions($3);
+
+                          delete $1;
+                        }
+                      }
+/*
+                      {
                         $$ = new (PARSERHEAP()) Scan(*$1);
                         if ($2) 
                           $$->setHint($2);
@@ -6656,6 +6681,7 @@ table_name_and_hint : table_name optimizer_hint hbase_access_options
                         
                         delete $1;
                       }
+*/
                     | '(' table_name_and_hint ')'
                       {
                         CheckModeSpecial1();
@@ -6953,13 +6979,22 @@ del_stmt_w_acc_type_rtn_list_and_as_clause_col_list : '('  delete_statement acce
 
 table_name_as_clause_and_hint : table_name as_clause optimizer_hint hbase_access_options
                                 {
-                                  $1->setCorrName(*$2);
-                                  $$ = new (PARSERHEAP()) Scan(*$1);
-                                  if ($3) 
-                                    $$->setHint($3);
-                                  if ($4)
-                                    ((Scan*)$$)->setHbaseAccessOptions($4);
-                                   
+                                   NAString tmp = ((*$1).getQualifiedNameAsString());
+                                   if(SqlParser_CurrentParser->with_clauses_->contains(&tmp) )
+                                   {     
+                                     RelExpr *re = SqlParser_CurrentParser->with_clauses_->getFirstValue(&tmp);
+                                     RenameTable *rt = new (PARSERHEAP()) RenameTable(re, *$2);
+                                     $$=rt->copyTree(PARSERHEAP());
+                                  }
+                                  else
+                                  {
+                                    $1->setCorrName(*$2);
+                                    $$ = new (PARSERHEAP()) Scan(*$1);
+                                    if ($3) 
+                                      $$->setHint($3);
+                                    if ($4)
+                                      ((Scan*)$$)->setHbaseAccessOptions($4);
+                                  }  
                                   delete $1;
                                   delete $2;
                                 }
@@ -7000,6 +7035,46 @@ rel_subquery_and_as_clause : rel_subquery as_clause
                                CheckModeSpecial1();
                                $$ = $2;
                              }
+
+with_clause_list : with_clause
+                     {  $$ = $1 ; }
+
+                   | with_clause_list ',' correlation_name TOK_AS rel_subquery 
+                      {
+                         RelRoot *root = new (PARSERHEAP())
+                                            RelRoot($5, REL_ROOT);
+                         $$= new (PARSERHEAP()) RenameTable(root, *$3); 
+
+                         //Duplicated definition of WITH
+                         if(SqlParser_CurrentParser->with_clauses_->contains($3) )
+                          {
+                            *SqlParser_Diags << DgSqlCode(-1433)
+                                             << DgString0((*$3).toCharStar());
+                             YYERROR;
+                          }
+
+                          SqlParser_CurrentParser->with_clauses_->insert($3 , $$);
+
+                      }
+
+with_clause : TOK_WITH correlation_name TOK_AS rel_subquery
+                        {
+                          //protected by CQD before this feature is fully QA
+                          if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_OFF)
+                          {
+                            *SqlParser_Diags << DgSqlCode(-3022)
+                              << DgString0("WITH statement");
+                            YYERROR;
+                          }
+                          $$= new (PARSERHEAP()) RenameTable($4, *$2);
+                          if(SqlParser_CurrentParser->with_clauses_->contains($2) )
+                          {
+                            *SqlParser_Diags << DgSqlCode(-1433)
+                               << DgString0((*$2).toCharStar());
+                             YYERROR;
+                          }
+                          SqlParser_CurrentParser->with_clauses_->insert($2 , $$);
+                        }
 
 rel_subquery_as_clause_and_col_list : rel_subquery as_clause '(' derived_column_list ')'
                                       {
@@ -14683,6 +14758,11 @@ optional_limit_spec : TOK_LIMIT NUMERIC_LITERAL_EXACT_NO_SCALE
 		   }
 
 dml_statement : dml_query { $$ = $1; }
+
+               | with_clause_list dml_query
+                    {
+                        $$ = $2;
+                    }
 
 	       | front_of_insert_with_rwrs   rowwise_rowset_info Rest_Of_insert_statement 
 		    {

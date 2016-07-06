@@ -261,6 +261,8 @@ ItemExpr *get_w_ItemExprTree(const NAWchar * str,
   NABoolean isHQCCacheable()
     { return HQCKey_?HQCKey_->isCacheable():FALSE;  }
 
+  NAHashDictionary<NAString,RelExpr> *with_clauses_;
+
 private:
 
   HQCParseKey* HQCKey_;
