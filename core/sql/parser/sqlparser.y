@@ -831,6 +831,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_MERGE
 %token <tokval> TOK_METADATA
 %token <tokval> TOK_MIN
+%token <tokval> TOK_MINIMAL
 %token <tokval> TOK_MINUTE
 %token <tokval> TOK_MINUTES
 %token <tokval> TOK_MINVALUE
@@ -16022,13 +16023,30 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(TRUE, FALSE, TRUE, FALSE,
                                                           FALSE, FALSE,
-							  FALSE, FALSE, FALSE,
+							  FALSE, FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
 
 		 $$ = de;
-	       } 
+	       }
+
+           | TOK_INITIALIZE TOK_TRAFODION ',' TOK_MINIMAL
+               {
+ 		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+						   , PARSERHEAP() 
+	                                       );
+
+		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(TRUE, FALSE, TRUE, FALSE,
+                                                          FALSE, FALSE,
+							  FALSE, FALSE, FALSE, TRUE /* minimal */,
+							  (char*)stmt->data(),
+							  stmtCharSet,
+							  PARSERHEAP());
+
+		 $$ = de;                
+               }
 
            | TOK_INITIALIZE TOK_TRAFODION ',' TOK_NO TOK_METADATA TOK_VIEWS
                {
@@ -16039,7 +16057,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(TRUE, FALSE, FALSE, FALSE,
                                                           FALSE, FALSE,
-							  FALSE, FALSE, FALSE,
+							  FALSE, FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16056,7 +16074,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, TRUE, FALSE, TRUE,
                                                           FALSE, FALSE,
-							  FALSE, FALSE, FALSE,
+							  FALSE, FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16073,7 +16091,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, TRUE, FALSE,
                                                           FALSE, FALSE,
-							  FALSE, FALSE, FALSE,
+							  FALSE, FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16090,7 +16108,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, TRUE,
                                                           FALSE, FALSE,
-							  FALSE, FALSE, FALSE,
+							  FALSE, FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16114,7 +16132,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
                                                           FALSE, FALSE,
-							  TRUE, FALSE, FALSE,
+							  TRUE, FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16131,7 +16149,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
                                                           FALSE, FALSE,
-							  FALSE, FALSE,	TRUE,
+							  FALSE, FALSE,	TRUE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16247,7 +16265,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 	                                       );
 		 DDLExpr * ia = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
                                                           TRUE, FALSE,
-							  FALSE, FALSE, FALSE,
+							  FALSE, FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16280,7 +16298,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * ia = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
                                                           FALSE, TRUE,
-							  FALSE, FALSE, FALSE,
+							  FALSE, FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16298,7 +16316,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
                                                           FALSE, FALSE,
-							  FALSE, TRUE, FALSE,
+							  FALSE, TRUE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -33054,6 +33072,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_MESSAGE_OCTET_LEN
                       | TOK_MESSAGE_TEXT
                       | TOK_METADATA
+                      | TOK_MINIMAL
 		      | TOK_MINUTES
 		      | TOK_MINVALUE
                       | TOK_MODE

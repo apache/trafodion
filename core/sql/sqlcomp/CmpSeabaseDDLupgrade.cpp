@@ -170,13 +170,7 @@ short CmpSeabaseMDupgrade::dropMDtables(ExpHbaseInterface *ehi,
       
     } // for
   
-  Lng32 reposErrcode = dropReposTables(ehi, oldTbls);
-  if (errcode)
-    return errcode;
-  else if (reposErrcode)
-    return reposErrcode;
-  else
-    return 0;
+  return errcode;
 }
 
 short CmpSeabaseMDupgrade::restoreOldMDtables(ExpHbaseInterface *ehi)
@@ -322,6 +316,9 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 
   while (1)
     {
+      // TODO: remove this debugging code
+      cout << "mdui->step() is " << mdui->step() << ", mdui->subStep() is " << mdui->subStep() << endl;
+      // TODO: remove the above debugging code
       switch (mdui->step())
 	{
 	case UPGRADE_START: 
@@ -979,7 +976,10 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		  CmpCommon::context()->setIsUninitializedSeabase(TRUE);
 		  CmpCommon::context()->uninitializedSeabaseErrNum() = -1393; // MD doesn't exist
 
-		  str_sprintf(buf, "initialize trafodion;");
+                  // Use "initialize trafodion, minimal" so we only create the metadata
+                  // tables. The other tables (repository and privilege manager) already
+                  // exist; we will upgrade them later in this method.
+		  str_sprintf(buf, "initialize trafodion, minimal;");
 		  
 		  cliRC = cliInterface.executeImmediate(buf);
 		  if (cliRC < 0)

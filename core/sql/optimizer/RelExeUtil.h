@@ -242,6 +242,7 @@ public:
     dropAuthorization_(FALSE),
     addSeqTable_(FALSE),
     addSchemaObjects_(FALSE),
+    minimal_(FALSE),
     returnStatus_(FALSE),
     flags_(0)
   {
@@ -255,6 +256,7 @@ public:
 	 NABoolean createMDviews, NABoolean dropMDviews,
          NABoolean initAuthorization, NABoolean dropAuthorization,
 	 NABoolean addSeqTable, NABoolean updateVersion, NABoolean addSchemaObjects,
+         NABoolean minimal,
 	 char * ddlStmtText,
 	 CharInfo::CharSet ddlStmtTextCharSet,
 	  CollHeap *oHeap = CmpCommon::statementHeap())
@@ -280,6 +282,7 @@ public:
     dropAuthorization_(dropAuthorization),
     addSeqTable_(addSeqTable),
     addSchemaObjects_(addSchemaObjects),
+    minimal_(minimal),
     returnStatus_(FALSE),
     flags_(0)
   {
@@ -318,6 +321,7 @@ public:
     dropAuthorization_(FALSE),
     addSeqTable_(FALSE),
     addSchemaObjects_(FALSE),
+    minimal_(FALSE),
     returnStatus_(FALSE),
     flags_(0)
   {
@@ -390,6 +394,7 @@ public:
   NABoolean dropAuthorization() { return dropAuthorization_; }
   NABoolean addSeqTable() { return addSeqTable_; }
   NABoolean addSchemaObjects() { return addSchemaObjects_; }
+  NABoolean minimal() { return minimal_; }
 
   short ddlXnsInfo(NABoolean &ddlXns, NABoolean &xnCanBeStarted);
 
@@ -489,6 +494,8 @@ public:
   NABoolean dropAuthorization_;
   NABoolean addSeqTable_;
   NABoolean addSchemaObjects_;
+  NABoolean minimal_;  // meaningful only when initHbase_ is true; if this is true,
+                       // means create the metadata tables only (and not repository etc.)
 
   // if set, this ddl cannot run under a user transaction. It must run in autocommit
   // mode.

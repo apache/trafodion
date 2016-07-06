@@ -6730,7 +6730,7 @@ short CmpSeabaseDDL::updateSeabaseAuths(
   return 0;
 }
 
-void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns)
+void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
 {
   int breadCrumb = -1;  // useful for debugging
   Lng32 retcode = 0;
@@ -6975,16 +6975,23 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns)
       goto label_error;
     }
 
- if (createRepos(&cliInterface))
+ // If this is a MINIMAL initialization, don't create the repository
+ // or privilege manager tables. (This happens underneath an upgrade,
+ // for example, because the repository and privilege manager tables
+ // already exist and we will later upgrade them.)
+ if (!minimal)  
    {
-     breadCrumb = 10;
-     goto label_error;
-   }
+     if (createRepos(&cliInterface))
+       {
+         breadCrumb = 10;
+         goto label_error;
+       }
 
- if (createPrivMgrRepos(&cliInterface, ddlXns))
-   {
-     breadCrumb = 11;
-     goto label_error;
+     if (createPrivMgrRepos(&cliInterface, ddlXns))
+       {
+         breadCrumb = 11;
+         goto label_error;
+       }
    }
 
  if (createSeabaseLibmgr (&cliInterface))
@@ -8557,7 +8564,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
 
   if (ddlExpr->initHbase()) 
     {
-      initSeabaseMD(ddlExpr->ddlXns());
+      initSeabaseMD(ddlExpr->ddlXns(), ddlExpr->minimal());
     }
   else if (ddlExpr->dropHbase())
     {

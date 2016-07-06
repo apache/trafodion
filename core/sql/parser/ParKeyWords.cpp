@@ -637,6 +637,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("MESSAGE_TEXT",       TOK_MESSAGE_TEXT, NONRESTOKEN_),
   ParKeyWord("METADATA",       TOK_METADATA, SECOND_ | NONRESTOKEN_),
   ParKeyWord("MIN",                TOK_MIN,         ANS_|RESWORD_|NONRESTOKEN_),
+  ParKeyWord("MINIMAL",            TOK_MINIMAL,     NONRESTOKEN_),
   ParKeyWord("MINUTE",             TOK_MINUTE,      ANS_|RESWORD_|MPWORD_),
   ParKeyWord("MINUTES",            TOK_MINUTES,     NONRESTOKEN_),
   ParKeyWord("MINVALUE",           TOK_MINVALUE,   NONRESTOKEN_),

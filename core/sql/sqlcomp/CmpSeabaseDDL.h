@@ -1243,7 +1243,7 @@ protected:
 			     StmtDDLDropHbaseTable                  * createTableNode,
 			     NAString &currCatName, NAString &currSchName);
   
-  void initSeabaseMD(NABoolean ddlXns);
+  void initSeabaseMD(NABoolean ddlXns, NABoolean minimal);
   void dropSeabaseMD(NABoolean ddlXns);
   void createSeabaseMDviews();
   void dropSeabaseMDviews();

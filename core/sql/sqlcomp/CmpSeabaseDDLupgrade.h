@@ -89,7 +89,12 @@ struct MDUpgradeInfo
 
   // if new and old col info is different, then data need to be copied using
   // explicit column names in insert and select part of the query.
-  // insert into tgt (insertedCols) select selectedCols from src;
+  // upsert into tgt (insertedCols) select selectedCols from src;
+  // Note that the OBJECTS table must always do this, since we need to modify
+  // the table name for rows concerning the metadata tables themselves. That is,
+  // we are copying in rows concerning the *old* metadata tables; rows concerning
+  // the *new* metadata tables are already there from "initialize trafodion" and
+  // we don't want to overwrite them as part of the UPSERT.
   const char * insertedCols;
   const char * selectedCols;
 
@@ -191,7 +196,21 @@ static const MDUpgradeInfo allMDupgradeInfo[] = {
    seabaseObjectsDDL, sizeof(seabaseObjectsDDL),
    NULL, 0,
    NULL, 0,
-   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+   FALSE,
+   // Note: For OBJECTS, we always have to provide insertedCols and
+   // selectedCols since we have to modify the table name for rows
+   // concerning the old metadata (see the "case" expression below).
+   "catalog_name,schema_name,"
+   "object_name,"
+   "object_type,object_uid,"
+   "create_time,redef_time,valid_def,droppable,object_owner,schema_owner,"
+   "flags",
+   "catalog_name,schema_name,"
+   "case when schema_name = '_MD_' then object_name || '_OLD_MD' else object_name end,"
+   "object_type,object_uid,"
+   "create_time,redef_time,valid_def,droppable,object_owner,schema_owner,"
+   "flags",
+   NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_OBJECTS_UNIQ_IDX, SEABASE_OBJECTS_UNIQ_IDX_OLD_MD,
    seabaseObjectsUniqIdxDDL, sizeof(seabaseObjectsUniqIdxDDL),
