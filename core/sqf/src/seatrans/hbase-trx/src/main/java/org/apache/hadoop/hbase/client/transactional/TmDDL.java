@@ -106,8 +106,8 @@ public class TmDDL {
    public void putRow(final long transid, final String Operation, final String tableName) throws IOException {
 
         long threadId = Thread.currentThread().getId();
-        if (LOG.isTraceEnabled()) LOG.trace("TmDDL putRow Operation, TxID: " + transid + "Thread ID:" + threadId 
-                + "TableName:" + tableName + "Operation :" + Operation);
+        if (LOG.isTraceEnabled()) LOG.trace("TmDDL putRow Operation, TxID: " + transid + " Thread ID:" + threadId 
+                + " TableName:" + tableName + " Operation :" + Operation);
         byte [] value = null;
         StringBuilder tableString = null;
         Result r = null;

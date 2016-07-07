@@ -706,6 +706,9 @@ public class HBaseTxClient {
 
          throw new Exception("createTable call error");
       }
+
+      
+      if (LOG.isTraceEnabled()) LOG.trace("Exit callCreateTable, txid: [" + transactionId + "] returning RET_OK");
       return TransReturnCode.RET_OK.getShort();
    }
 

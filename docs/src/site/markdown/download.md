@@ -38,10 +38,10 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
 [pgp201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz.asc
 [md5201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz.md5
 [sha201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz.sha
-[ins201]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_installer-2.0.1-incubating.tar.gz
-[inpgp201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_installer-2.0.1-incubating.tar.gz.asc
-[inmd5201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_installer-2.0.1-incubating.tar.gz.md5
-[insha201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_installer-2.0.1-incubating.tar.gz.sha
+[ins201]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz
+[inpgp201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz.asc
+[inmd5201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz.md5
+[insha201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz.sha
 [ser201]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz
 [sepgp201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz.asc
 [semd5201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz.md5

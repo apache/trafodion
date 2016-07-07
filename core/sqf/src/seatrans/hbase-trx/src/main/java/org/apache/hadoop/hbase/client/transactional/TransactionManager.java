@@ -70,22 +70,25 @@ import org.apache.hadoop.hbase.client.HConnectionManager;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.client.Durability;
+import org.apache.hadoop.hbase.client.RegionLocator;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionMultipleRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionMultipleResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitMultipleRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitMultipleResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestMultipleRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestMultipleResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PushEpochRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PushEpochResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.RecoveryRequestRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.RecoveryRequestResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrxRegionService;
-import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitMultipleRequest;
-import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitMultipleResponse;
-import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionMultipleRequest;
-import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionMultipleResponse;
-import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestMultipleRequest;
-import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestMultipleResponse;
 
 import org.apache.hadoop.hbase.exceptions.DeserializationException;
 import org.apache.hadoop.hbase.io.compress.Compression.Algorithm;
@@ -1453,6 +1456,72 @@ public class TransactionManager {
       if(LOG.isTraceEnabled()) LOG.trace("doAbortX - Batch -- EXIT txID: " + transactionId);
       return 0;
     }
+  
+    public Integer pushRegionEpochX(final TransactionState txState,
+          final HRegionLocation location, HConnection connection) throws IOException {
+       if (LOG.isTraceEnabled()) LOG.trace("pushRegionEpochX -- Entry txState: " + txState
+                     + " location: " + location);
+
+       Batch.Call<TrxRegionService, PushEpochResponse> callable =
+           new Batch.Call<TrxRegionService, PushEpochResponse>() {
+              ServerRpcController controller = new ServerRpcController();
+              BlockingRpcCallback<PushEpochResponse> rpcCallback =
+                 new BlockingRpcCallback<PushEpochResponse>();
+
+           public PushEpochResponse call(TrxRegionService instance) throws IOException {
+              org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PushEpochRequest.Builder
+              builder = PushEpochRequest.newBuilder();
+              builder.setTransactionId(txState.getTransactionId());
+              builder.setEpoch(txState.getStartEpoch());
+              builder.setRegionName(ByteString.copyFromUtf8(Bytes.toString(location.getRegionInfo().getRegionName())));
+              instance.pushOnlineEpoch(controller, builder.build(), rpcCallback);
+              return rpcCallback.get();
+           }
+       };
+
+       Map<byte[], PushEpochResponse> result = null;
+       if (LOG.isTraceEnabled()) LOG.trace("pushRegionEpochX -- before coprocessorService: startKey: "
+              + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
+
+       boolean loopExit = false;
+       do
+       {
+         try {
+           result = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
+           loopExit = true; 
+         } 
+         catch (ServiceException se) {
+            if (LOG.isTraceEnabled()) LOG.trace("pushRegionEpochX -- ServiceException ", se);
+            throw new IOException(se);
+         }
+         catch (Throwable t) {
+            if (LOG.isTraceEnabled()) LOG.trace("pushRegionEpochX -- Throwable ", t);
+            throw new IOException(t);
+         }
+
+       } while (loopExit == false);
+
+
+       if(result.size() == 1){
+          // size is 1
+          for (PushEpochResponse eresponse : result.values()){
+             if(eresponse.getHasException()) {
+                String exceptionString = new String (eresponse.getException().toString());
+                LOG.error("pushRegionEpochX - coprocessor exceptionString: " + exceptionString);
+                throw new IOException(eresponse.getException());
+             }
+          }
+       }
+       else {
+          LOG.error("pushRegionEpochX, received incorrect result size: " + result.size() + " txid: "
+                + txState.getTransactionId() + " location: " + location.getRegionInfo().getRegionNameAsString());
+          return 1;
+       }
+       if (LOG.isTraceEnabled()) LOG.trace("pushRegionEpochX -- Exit txState: " + txState
+                + " location: " + location);
+       return 0;       
+    }
+
   } // TransactionManagerCallable
 
   private void checkException(TransactionState ts, List<TransactionRegionLocation> locations, List<String> exceptions) throws IOException {
@@ -1602,7 +1671,7 @@ public class TransactionManager {
          if (LOG.isTraceEnabled()) LOG.trace("beginTransaction NOT retrieving new startId");
       }
       if (LOG.isTraceEnabled()) LOG.trace("beginTransaction setting transaction: [" + ts.getTransactionId() +
-                      "] with startId: " + startIdVal);
+                      "], startEpoch: " + ts.getStartEpoch() + " and startId: " + startIdVal);
       ts.setStartId(startIdVal);
       return ts;
     }
@@ -1969,6 +2038,56 @@ public class TransactionManager {
             transactionState.getRetryRegions().removeAll(completedList);
         }
       if(LOG.isTraceEnabled()) LOG.trace("retryCommit -- EXIT -- txid: " + transactionState.getTransactionId());
+    }
+
+    public void pushRegionEpoch (HTableDescriptor desc, final TransactionState ts) throws IOException {
+       LOG.info("pushRegionEpoch start; transId: " + ts.getTransactionId());
+
+       TransactionalTable ttable1 = new TransactionalTable(Bytes.toBytes(desc.getNameAsString()));
+       HConnection connection = ttable1.getConnection();
+       long lvTransid = ts.getTransactionId();
+       RegionLocator rl = connection.getRegionLocator(desc.getTableName());
+       List<HRegionLocation> regionList = rl.getAllRegionLocations();
+       // (need one CompletionService per request for thread safety, can share pool of threads
+       CompletionService<Integer> compPool = new ExecutorCompletionService<Integer>(threadPool);
+
+       boolean complete = false;
+       int loopCount = 0;
+       int result = 0;
+       for (HRegionLocation location : regionList) {
+          final byte[] regionName = location.getRegionInfo().getRegionName();
+          final HConnection lv_connection = connection;
+          final TransactionRegionLocation lv_location = 
+                                 new TransactionRegionLocation(location.getRegionInfo(), location.getServerName());
+          compPool.submit(new TransactionManagerCallable(ts, lv_location, lv_connection) {
+             public Integer call() throws IOException {
+                return pushRegionEpochX(ts, lv_location, lv_connection);
+             }
+          });
+          boolean loopExit = false;
+          do
+          {
+            try {
+              result = compPool.take().get();
+              loopExit = true; 
+            } 
+            catch (InterruptedException ie) {}
+            catch (ExecutionException e) {
+               if (LOG.isTraceEnabled()) LOG.trace("pushRegionEpoch -- ExecutionException ", e);
+               throw new IOException(e);
+            }
+
+          } while (loopExit == false);
+
+          if ( result != 0 ){
+             LOG.error("pushRegionEpoch result " + result + " returned from region "
+                          + location.getRegionInfo().getRegionName());
+             throw new IOException("pushRegionEpoch result " + result + " returned from region "
+                      + location.getRegionInfo().getRegionName());
+          }
+       }
+       if (LOG.isTraceEnabled()) LOG.trace("pushRegionEpoch end transid: " + ts.getTransactionId());
+       return;
     }
 
     public void retryAbort(final TransactionState transactionState) throws IOException {
@@ -2639,6 +2758,12 @@ public class TransactionManager {
 
             //record this create in TmDDL.
             tmDDL.putRow( transactionState.getTransactionId(), "CREATE", desc.getNameAsString());
+
+            if (LOG.isTraceEnabled()) LOG.trace("createTable: epoch pushed into regions for : " + desc.getNameAsString());
+            pushRegionEpoch(desc, transactionState);
+
+          if (LOG.isTraceEnabled()) LOG.trace("createTable EXIT, transactionState: " + transactionState.getTransactionId());
+
     }
 
     private class ChangeFlags {
@@ -2883,7 +3008,7 @@ public class TransactionManager {
  
     public void alterTable(final TransactionState transactionState, String tblName, Object[]  tableOptions)
            throws IOException {
-        if (LOG.isTraceEnabled()) LOG.trace("createTable ENTRY, transactionState: " + transactionState.getTransactionId());
+        if (LOG.isTraceEnabled()) LOG.trace("alterTable ENTRY, transactionState: " + transactionState.getTransactionId());
         
            HTableDescriptor htblDesc = hbadmin.getTableDescriptor(tblName.getBytes());
            HColumnDescriptor[] families = htblDesc.getColumnFamilies();
@@ -2908,6 +3033,7 @@ public class TransactionManager {
 
            //record this create in TmDDL.
            tmDDL.putRow( transactionState.getTransactionId(), "ALTER", tblName);
+           if (LOG.isTraceEnabled()) LOG.trace("alterTable EXIT, transactionState: " + transactionState.getTransactionId());
     }
 
     public void registerTruncateOnAbort(final TransactionState transactionState, String tblName)
