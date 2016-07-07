@@ -3066,12 +3066,12 @@ C1                         C2
 --- 0 row(s) selected.
 >>select cast('-. 3' as int) from t022t8;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2d2e2033
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2033
 
 --- 0 row(s) selected.
 >>select cast('-3 . ' as int) from t022t8;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2d33202e20
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 33202e20
 
 --- 0 row(s) selected.
 >>
@@ -3092,12 +3092,12 @@ C1                         C2
 --- 0 row(s) selected.
 >>select c1 from t022t8 where cast('-. 3' as int) < 1;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2d2e2033
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2033
 
 --- 0 row(s) selected.
 >>select c1 from t022t8 where cast('-3 .' as int) < 1;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2d33202e
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 33202e
 
 --- 0 row(s) selected.
 >>
@@ -7836,12 +7836,12 @@ C1                         C2
 --- 0 row(s) selected.
 >>select cast('-. 3' as int) from t022t8;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2d2e2033
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2033
 
 --- 0 row(s) selected.
 >>select cast('-3 . ' as int) from t022t8;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2d33202e20
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 33202e20
 
 --- 0 row(s) selected.
 >>
@@ -7862,12 +7862,12 @@ C1                         C2
 --- 0 row(s) selected.
 >>select c1 from t022t8 where cast('-. 3' as int) < 1;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2d2e2033
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2033
 
 --- 0 row(s) selected.
 >>select c1 from t022t8 where cast('-3 .' as int) < 1;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2d33202e
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 33202e
 
 --- 0 row(s) selected.
 >>
