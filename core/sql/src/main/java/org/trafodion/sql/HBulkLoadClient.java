@@ -475,10 +475,12 @@ public class HBulkLoadClient
        writer.close();
        writer = null;
     }
-    if (fileSys !=null)
+    //  This is one place that is unconditionally closing the 
+    // hdfsFs that's part of this thread's JNIenv.
+    // if (fileSys !=null)
     {
-      fileSys.close();
-      fileSys = null;
+        //  fileSys.close();
+        //  fileSys = null;
     }
     if (config != null) 
     {

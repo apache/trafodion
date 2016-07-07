@@ -25,7 +25,7 @@
 
 #include "NAVersionedObject.h"
 #include "ComQueue.h"
-
+#include "ex_globals.h"
 class HdfsFileInfo
 {
  public:
@@ -77,7 +77,7 @@ enum ExpLOBinterfaceInputFlags
     ERROR_IF_TGT_FILE_EXISTS_ =  0x0004
   };
 
-Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, NABoolean isHive=FALSE, Int64   lobMaxSize =0);
+Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, void *currContext,NABoolean isHive=FALSE, char *hdfsServer="default", Int32 port=0);
 
 Lng32 ExpLOBinterfaceCleanup(void *& lobGlob, void * lobHeap);
 

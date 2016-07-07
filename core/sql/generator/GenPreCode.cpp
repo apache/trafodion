@@ -4189,8 +4189,10 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
       if (isHiveTable())
 	// assign individual files and blocks to each ESPs
 	((NodeMap *) getPartFunc()->getNodeMap())->assignScanInfos(hiveSearchKey_);
+       generator->setProcessLOB(TRUE);
     }
 
+  
   // Selection predicates are not needed anymore:
   selectionPred().clear();
 
@@ -5429,6 +5431,7 @@ RelExpr * HiveInsert::preCodeGen(Generator * generator,
     return this;
 
   generator->setHiveAccess(TRUE);
+  generator->setProcessLOB(TRUE);
   return GenericUpdate::preCodeGen(generator, externalInputs, pulledNewInputs);
 }
 

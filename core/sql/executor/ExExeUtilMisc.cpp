@@ -2259,7 +2259,10 @@ Int32 ExExeUtilHiveTruncateTcb::fixup()
   lobGlob_ = NULL;
 
   ExpLOBinterfaceInit
-    (lobGlob_, getGlobals()->getDefaultHeap(),TRUE);
+    (lobGlob_, getGlobals()->getDefaultHeap(),
+     getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE, 
+     htTdb().getHdfsHost(),
+     htTdb().getHdfsPort());
 
   return 0;
 }

@@ -255,7 +255,6 @@ protected:
   sql_buffer_pool * pool_;            // row images after selection pred,
                                       // with only the required columns. 
   hdfsFile hdfsFp_;
-  hdfsFS hdfsFs_;     // shallow copy from cliGlobals.
 
   void * lobGlob_;
 
