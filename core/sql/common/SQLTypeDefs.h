@@ -46,6 +46,8 @@
 #define BINARY64_PRECISION  64
 #define SIGN_BIT            1
 
+#define SQL_TINY_PRECISION     7
+#define SQL_UTINY_PRECISION    8
 #define SQL_SMALL_PRECISION   15
 #define SQL_USMALL_PRECISION  16
 #define SQL_INT_PRECISION     31
@@ -59,6 +61,7 @@
 // -----------------------------------------------------------------------
 // Sizes of standard SQL data types in bytes
 // -----------------------------------------------------------------------
+#define SQL_TINY_SIZE 1
 #define SQL_SMALL_SIZE 2
 #define SQL_INT_SIZE 4
 #define SQL_LARGE_SIZE 8
@@ -75,11 +78,14 @@
 // -----------------------------------------------------------------------
 // display Sizes of standard SQL data types in bytes
 // -----------------------------------------------------------------------
+#define SQL_TINY_DISPLAY_SIZE 4
+#define SQL_UTINY_DISPLAY_SIZE 3
 #define SQL_SMALL_DISPLAY_SIZE 6
 #define SQL_USMALL_DISPLAY_SIZE 5
 #define SQL_INT_DISPLAY_SIZE 11
 #define SQL_UINT_DISPLAY_SIZE 10
 #define SQL_LARGE_DISPLAY_SIZE 20
+#define SQL_ULARGE_DISPLAY_SIZE 20
 #define SQL_REAL_DISPLAY_SIZE 15
 #define SQL_REAL_MIN_DISPLAY_SIZE 9
 #define SQL_REAL_FRAG_DIGITS 7

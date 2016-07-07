@@ -58,11 +58,12 @@
 #define REC_BIN32_UNSIGNED 133
 #define REC_BIN64_SIGNED 134
 #define REC_BPINT_UNSIGNED 135	// Bit Precision Integer
-#define REC_MAX_BINARY 135
+#define REC_BIN8_SIGNED 136     // tinyint signed
+#define REC_BIN8_UNSIGNED 137   // tinyint unsigned
+#define REC_BIN64_UNSIGNED 138
+#define REC_MAX_BINARY 138
 
-#define REC_MIN_FLOAT   140
-#define REC_TDM_FLOAT32 140
-#define REC_TDM_FLOAT64 141
+#define REC_MIN_FLOAT   142
 #define REC_IEEE_FLOAT32 142
 #define REC_IEEE_FLOAT64 143
 #define REC_MAX_FLOAT 143

@@ -30,6 +30,7 @@ class TrafT4Desc {
 
 	String getColumnClassName() throws SQLException {
 		switch (dataType_) {
+		case Types.TINYINT:
 		case Types.SMALLINT:
 			return "java.lang.Integer";
 		case Types.INTEGER:
@@ -61,7 +62,6 @@ class TrafT4Desc {
 		case Types.BLOB:
 			return "java.sql.Blob";
 		case Types.BIT:
-		case Types.TINYINT:
 		default:
 			return null;
 		}
@@ -135,7 +135,7 @@ class TrafT4Desc {
 		case Types.BLOB:
 			break;
 		default:
-			System.out.println("Data type is " + dataType_);
+                        System.out.println("Data type is " + dataType_);
 			throw TrafT4Messages.createSQLException(null, locale, "restricted_data_type", null);
 		}
 		return;

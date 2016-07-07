@@ -706,6 +706,21 @@ Int32 ValidateNumericRange::validate( const char *value,
 	sprintf(minbuf, "%g", min_);
 	sprintf(maxbuf, "%g", max_);
       }
+
+      switch (attrEnum)
+        {
+        case HIVE_INSERT_ERROR_MODE:
+          {
+            sprintf(minbuf, "%u", 0);
+            sprintf(maxbuf, "%u", 3);
+          }
+          break;
+        default:
+          {
+            // do nothing
+          }
+        }
+      
       NAString range = NAString("[") + minbuf + "," + maxbuf + "]";
       *CmpCommon::diags() << DgSqlCode(ERRWARN(2056)) << DgString0(range);
     }

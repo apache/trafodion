@@ -272,6 +272,18 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] == *(Int64 *)op_data[2]);
       break;
   
+    case EQ_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] == *(UInt64 *)op_data[2]);
+      break;
+  
+    case EQ_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] == *(Int64 *)op_data[2]);
+      break;
+  
+    case EQ_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] == *(UInt64 *)op_data[2]);
+      break;
+  
   
     case EQ_DECU_DECU:
     case EQ_DECS_DECS:
@@ -384,14 +396,21 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       *(Lng32 *)op_data[0] = (*(ULng32 *)op_data[1] != *(ULng32 *)op_data[2]);
       break;
   
-  
-  
     case NE_BIN64S_BIN64S:
-     // LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] != *(Int64 *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
+
+    case NE_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] != *(UInt64 *)op_data[2]);
+      break;
   
+    case NE_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] != *(Int64 *)op_data[2]);
+      break;
+  
+    case NE_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] != *(UInt64 *)op_data[2]);
+      break;
   
     case NE_DECU_DECU:
     case NE_DECS_DECS:
@@ -510,6 +529,22 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       
     case LT_BIN64S_BIN64S:
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] < *(Int64 *)op_data[2]);
+      break;
+  
+    case LT_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] < *(UInt64 *)op_data[2]);
+      break;
+  
+    case LT_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[2] < 0) ? 0 :
+         (*(UInt64 *)op_data[1] < *(Int64 *)op_data[2]));
+      break;
+  
+    case LT_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[1] < 0) ? 1 :
+         (*(Int64 *)op_data[1] < *(UInt64 *)op_data[2]));
       break;
   
     case LT_DECS_DECS:
@@ -674,7 +709,22 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] <= *(Int64 *)op_data[2]);
       break;
   
+    case LE_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] <= *(UInt64 *)op_data[2]);
+      break;
   
+    case LE_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[2] < 0) ? 0 :
+         (*(UInt64 *)op_data[1] <= *(Int64 *)op_data[2]));
+      break;
+  
+    case LE_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[1] < 0) ? 1 :
+         (*(Int64 *)op_data[1] <= *(UInt64 *)op_data[2]));
+      break;
+   
    case LE_DECS_DECS:
       {
   	if ((op_data[1][0] & 0200) == 0)
@@ -837,6 +887,22 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] > *(Int64 *)op_data[2]);
       break;
   
+    case GT_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] > *(UInt64 *)op_data[2]);
+      break;
+  
+    case GT_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[2] < 0) ? 1 :
+         (*(UInt64 *)op_data[1] > *(Int64 *)op_data[2]));
+      break;
+  
+    case GT_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[1] < 0) ? 0 :
+         (*(Int64 *)op_data[1] > *(UInt64 *)op_data[2]));
+      break;
+  
     case GT_DECS_DECS:
       {
   	if ((op_data[1][0] & 0200) == 0)
@@ -996,6 +1062,22 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       
     case GE_BIN64S_BIN64S:
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] >= *(Int64 *)op_data[2]);
+      break;
+  
+    case GE_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] >= *(UInt64 *)op_data[2]);
+      break;
+  
+    case GE_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[2] < 0) ? 1 :
+         (*(UInt64 *)op_data[1] >= *(Int64 *)op_data[2]));
+      break;
+  
+    case GE_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[1] < 0) ? 0 :
+         (*(Int64 *)op_data[1] >= *(UInt64 *)op_data[2]));
       break;
   
     case GE_DECS_DECS:
@@ -1160,84 +1242,8 @@ ex_expr::exp_return_type ex_comp_clause::evalUnsupportedOperations(
   short op1Type = getOperand(1)->getDatatype();
   short op2Type = getOperand(2)->getDatatype();
   
-  // if either of the two operands is a Tandem float, convert
-  // them to IEEE float and then do the arith operation. This case
-  // will be reached for pre-R2 programs where only tandem floats
-  // were supported. We support this so as to not require applications
-  // to recompile. This case is also needed for versioning support
-  // in mixed node environments.
-  if ((op1Type == REC_TDM_FLOAT32) ||
-      (op1Type == REC_TDM_FLOAT64) ||
-      (op2Type == REC_TDM_FLOAT32) ||
-      (op2Type == REC_TDM_FLOAT64))
-    {
-      // convert both operands to double and
-      // do the comparison operation.
-
-      double op1Double;
-      double op2Double;
-      
-      if (convDoIt(op_data[1],
-		   getOperand(1)->getLength(),
-		   op1Type,
-		   getOperand(1)->getPrecision(),
-		   getOperand(1)->getScale(),
-		   (char*)&op1Double,
-		   (Lng32)sizeof(double),
-		   REC_FLOAT64,
-		   0,
-		   0, NULL, 0, heap, diagsArea,
-		   CONV_UNKNOWN) != ex_expr::EXPR_OK)
-	return ex_expr::EXPR_ERROR;
-      
-      if (convDoIt(op_data[2],
-		   getOperand(2)->getLength(),
-		   op2Type,
-		   getOperand(2)->getPrecision(),
-		   getOperand(2)->getScale(),
-		   (char*)&op2Double,
-		   (Lng32)sizeof(double),
-		   REC_FLOAT64,
-		   0,
-		   0, NULL, 0, heap, diagsArea,
-		   CONV_UNKNOWN) != ex_expr::EXPR_OK)
-	return ex_expr::EXPR_ERROR;
-      
-      // do the comparison operation.
-      ex_comp_clause tempComp;
-      SimpleType op1DoubleAttr(REC_FLOAT64, sizeof(double), 0, 0,
-			       ExpTupleDesc::SQLMX_FORMAT,
-			       8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-      SimpleType op2DoubleAttr(REC_FLOAT64, sizeof(double), 0, 0,
-			       ExpTupleDesc::SQLMX_FORMAT,
-			       8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-      
-      tempComp.set_case_index(getOperType(),
-			      &op1DoubleAttr,
-			      &op2DoubleAttr);
-      
-      if (tempComp.get_case_index() == COMP_NOT_SUPPORTED)
-	{
-	  ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
-	  return ex_expr::EXPR_ERROR;
- 	}
-
-      char * opDoubleData[3];
-      opDoubleData[1] = (char *)&op1Double;
-      opDoubleData[2] = (char *)&op2Double;
-      opDoubleData[0] = op_data[0]; 
-      
-      if (tempComp.eval(opDoubleData,
-			heap, diagsArea) != ex_expr::EXPR_OK)
-	return ex_expr::EXPR_ERROR;
-    }
-  else
-    {
-      ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
-      return ex_expr::EXPR_ERROR;
-    }
- 
-  return ex_expr::EXPR_OK;
+  ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
+  return ex_expr::EXPR_ERROR;
 }
 // LCOV_EXCL_STOP
 

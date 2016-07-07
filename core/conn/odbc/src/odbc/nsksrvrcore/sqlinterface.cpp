@@ -191,6 +191,20 @@ SQLRETURN SRVR::GetODBCValues(Int32 DataType, Int32 DateTimeCode, Int32 &Length,
 			ODBCCharset = SQLCharset;
 			break;
 
+                case SQLTYPECODE_TINYINT:
+			ODBCPrecision = 3;
+			ODBCDataType = SQL_TINYINT;
+			SignType = TRUE;
+			totalMemLen += Length;
+			break;
+
+                case SQLTYPECODE_TINYINT_UNSIGNED:
+			ODBCPrecision = 3;
+			ODBCDataType = SQL_TINYINT;
+			SignType = FALSE;
+			totalMemLen += Length;
+			break;
+
 		case SQLTYPECODE_SMALLINT:
 			if (Precision == 0)
 			{
@@ -310,6 +324,24 @@ SQLRETURN SRVR::GetODBCValues(Int32 DataType, Int32 DateTimeCode, Int32 &Length,
 				ODBCDataType = SQL_NUMERIC;
 			}
 			SignType = TRUE;
+			totalMemLen = ((totalMemLen + 8 - 1) >> 3) << 3; 
+			totalMemLen += Length ;
+			break;		
+		case SQLTYPECODE_LARGEINT_UNSIGNED:
+			if (Precision == 0)
+			{
+				ODBCPrecision = 19;
+				if (srvrGlobal->EnvironmentType & MXO_BIGINT_NUMERIC)
+					ODBCDataType = SQL_NUMERIC;
+				else
+					ODBCDataType = SQL_BIGINT;
+			}
+			else
+			{
+				ODBCPrecision = Precision;
+				ODBCDataType = SQL_NUMERIC;
+			}
+			SignType = FALSE;
 			totalMemLen = ((totalMemLen + 8 - 1) >> 3) << 3; 
 			totalMemLen += Length ;
 			break;		
@@ -676,6 +708,11 @@ SQLRETURN SRVR::SetDataPtr(SQLDESC_ID *pDesc, SQLItemDescList_def *SQLDesc, Int3
 			VarPtr = memPtr + memOffSet;
 			memOffSet += SQLItemDesc->maxLen + 3;
 			break;
+                case SQLTYPECODE_TINYINT:
+                case SQLTYPECODE_TINYINT_UNSIGNED:
+			VarPtr = memPtr + memOffSet;
+			memOffSet += SQLItemDesc->maxLen ;
+			break;
 		case SQLTYPECODE_SMALLINT:
 			memOffSet = ((memOffSet + 2 - 1) >> 1) << 1;
 			VarPtr = memPtr + memOffSet;
@@ -697,6 +734,7 @@ SQLRETURN SRVR::SetDataPtr(SQLDESC_ID *pDesc, SQLItemDescList_def *SQLDesc, Int3
 			memOffSet += SQLItemDesc->maxLen ;
 			break;
 		case SQLTYPECODE_LARGEINT:
+		case SQLTYPECODE_LARGEINT_UNSIGNED:
 			memOffSet = ((memOffSet + 8 - 1) >> 3) << 3;
 			VarPtr = memPtr + memOffSet;
 			memOffSet += SQLItemDesc->maxLen ;
@@ -971,7 +1009,7 @@ SQLRETURN SRVR::AllocAssignValueBuffer(
 			{
 			case SQLTYPECODE_CHAR:
 			case SQLTYPECODE_VARCHAR:
-				VarPtr = memPtr + memOffSet;					
+				VarPtr = memPtr + memOffSet;  
 				memOffSet += SQLItemDesc->maxLen + 1;
 				AllocLength = SQLItemDesc->maxLen + 1;
 				break;
@@ -1004,6 +1042,12 @@ SQLRETURN SRVR::AllocAssignValueBuffer(
 				memOffSet += SQLItemDesc->maxLen + 3;
 				AllocLength = SQLItemDesc->maxLen + 3;
 				break;
+                        case SQLTYPECODE_TINYINT:
+                        case SQLTYPECODE_TINYINT_UNSIGNED:
+				VarPtr = memPtr + memOffSet; 
+				memOffSet += SQLItemDesc->maxLen;
+				AllocLength = SQLItemDesc->maxLen;
+				break;
 			case SQLTYPECODE_SMALLINT:
 				memOffSet = ((memOffSet + 2 - 1) >> 1) << 1; 
 				VarPtr = memPtr + memOffSet;
@@ -1029,6 +1073,7 @@ SQLRETURN SRVR::AllocAssignValueBuffer(
 				AllocLength = SQLItemDesc->maxLen;
 				break;
 			case SQLTYPECODE_LARGEINT:
+                        case SQLTYPECODE_LARGEINT_UNSIGNED:
 				memOffSet = ((memOffSet + 8 - 1) >> 3) << 3; 
 				VarPtr = memPtr + memOffSet;
 				memOffSet += SQLItemDesc->maxLen ;
@@ -1261,7 +1306,17 @@ SQLRETURN SRVR::BuildSQLDesc(SQLDESC_ID *pDesc,
 					break;
 				case 134:
 					DataType = SQLTYPECODE_LARGEINT;
-					break;								
+					break;	
+				case 136:
+					DataType = SQLTYPECODE_TINYINT;
+					break;
+				case 137:
+					DataType = SQLTYPECODE_TINYINT_UNSIGNED;
+					break;
+				case 138:
+					DataType = SQLTYPECODE_LARGEINT_UNSIGNED;
+					break;	
+							
 				default:
 					break;
 			}
@@ -1345,7 +1400,7 @@ SQLRETURN SRVR::BuildSQLDesc2(SQLDESC_ID *pDesc,
 	bool bRWRS = false;
 	if (srvrGlobal->drvrVersion.buildId & ROWWISE_ROWSET)
 		bRWRS = true;
-	
+        
 	struct ODBCDescriptors
 	{
 	  Int32 varAlign;
@@ -1499,7 +1554,17 @@ SQLRETURN SRVR::BuildSQLDesc2(SQLDESC_ID *pDesc,
 					break;
 				case 134:
 					DataType = SQLTYPECODE_LARGEINT;
-					break;				
+					break;
+				case 136:
+					DataType = SQLTYPECODE_TINYINT;
+					break;
+				case 137:
+					DataType = SQLTYPECODE_TINYINT_UNSIGNED;
+					break;
+				case 138:
+					DataType = SQLTYPECODE_LARGEINT_UNSIGNED;
+					break;
+				
 				default:
 					break;
 			}
@@ -2234,6 +2299,16 @@ SQLRETURN SRVR::BuildSQLDesc2withRowsets( SQLDESC_ID          *pDesc
 				case 134:
 					DataType = SQLTYPECODE_LARGEINT;
 					break;					
+				case 136:
+					DataType = SQLTYPECODE_TINYINT;
+					break;
+				case 137:
+					DataType = SQLTYPECODE_TINYINT_UNSIGNED;
+					break;
+				case 138:
+					DataType = SQLTYPECODE_LARGEINT_UNSIGNED;
+					break;					
+
 				default:
 					break;
 			}
@@ -2444,6 +2519,11 @@ SQLRETURN SRVR::BuildSQLDesc2withRowsets( SQLDESC_ID          *pDesc
 			else
 				inputQuadList[i+1].var_layout = SqlDescInfo[i].Length + 1;
 			break;
+                case SQLTYPECODE_TINYINT:
+                case SQLTYPECODE_TINYINT_UNSIGNED:
+			VarPtr = memPtr + memOffSet;
+			memOffSet += SqlDescInfo[i].Length;
+			break;
 		case SQLTYPECODE_SMALLINT:
 		case SQLTYPECODE_SMALLINT_UNSIGNED:
 			memOffSet = ((memOffSet + 2 - 1) >> 1) << 1;
@@ -2457,6 +2537,7 @@ SQLRETURN SRVR::BuildSQLDesc2withRowsets( SQLDESC_ID          *pDesc
 			memOffSet += SqlDescInfo[i].Length;
 			break;
 		case SQLTYPECODE_LARGEINT:
+		case SQLTYPECODE_LARGEINT_UNSIGNED:
 		case SQLTYPECODE_IEEE_REAL:
 		case SQLTYPECODE_IEEE_FLOAT:
 		case SQLTYPECODE_IEEE_DOUBLE:
@@ -6201,7 +6282,6 @@ SQLRETURN SRVR::FETCH2bulk(SRVR_STMT_HDL *pSrvrStmt)
 	if (srvrGlobal->drvrVersion.buildId & ROWWISE_ROWSET)
 		bRWRS = true;
 
-
 	//Changes due to cursor issue
 	if (pSrvrStmt->maxRowCnt > 0)
 	{
@@ -6998,6 +7078,11 @@ SQLRETURN SRVR::SetIndandVarPtr(SQLDESC_ID *pDesc,
 			if (!bRWRS)
 				memOffSet += 1;
 			break;
+                case SQLTYPECODE_TINYINT:
+                case SQLTYPECODE_TINYINT_UNSIGNED:
+			VarPtr = memPtr + memOffSet;
+			memOffSet += SqlDescInfo[i].Length;
+			break;
 		case SQLTYPECODE_SMALLINT:
 		case SQLTYPECODE_SMALLINT_UNSIGNED:
 			memOffSet = ((memOffSet + 2 - 1) >> 1) << 1; 
@@ -7012,6 +7097,7 @@ SQLRETURN SRVR::SetIndandVarPtr(SQLDESC_ID *pDesc,
 			memOffSet += SqlDescInfo[i].Length;
 			break;
 		case SQLTYPECODE_LARGEINT:
+		case SQLTYPECODE_LARGEINT_UNSIGNED:
 		case SQLTYPECODE_IEEE_REAL:
 		case SQLTYPECODE_IEEE_FLOAT:
 		case SQLTYPECODE_IEEE_DOUBLE:

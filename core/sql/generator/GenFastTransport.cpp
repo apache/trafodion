@@ -303,6 +303,24 @@ static short ft_codegen(Generator *generator,
   ValueIdList cnvChildDataVids;
   const ValueIdList& childVals = fastExtract->getSelectList();
 
+  const NATable *hiveNATable = NULL;
+  const NAColumnArray *hiveNAColArray = NULL;
+
+  // hiveInsertErrMode: 
+  //    if 0, do not do error checks.
+  //    if 1, do error check and return error.
+  //    if 2, do error check and ignore row, if error
+  //    if 3, insert null if an error occurs
+  Lng32 hiveInsertErrMode = 0;
+  if ((fastExtract) && (fastExtract->isHiveInsert()) &&
+      (fastExtract->getHiveTableDesc()) &&
+      (fastExtract->getHiveTableDesc()->getNATable()) &&
+      ((hiveInsertErrMode = CmpCommon::getDefaultNumeric(HIVE_INSERT_ERROR_MODE)) > 0))
+    {
+      hiveNATable = fastExtract->getHiveTableDesc()->getNATable();
+      hiveNAColArray = &hiveNATable->getNAColumnArray();
+    }
+
   for (i = 0; i < childVals.entries(); i++)
   {
     ItemExpr &inputExpr = *(childVals[i].getItemExpr());
@@ -311,7 +329,41 @@ static short ft_codegen(Generator *generator,
     ItemExpr *lmExpr2 = NULL;
     int res;
 
-    lmExpr = &inputExpr; //CreateCastExpr(inputExpr, *inputExpr.getValueId().getType().newCopy(), cmpContext);
+    lmExpr = &inputExpr; 
+    lmExpr = lmExpr->bindNode(generator->getBindWA());
+    if (!lmExpr || generator->getBindWA()->errStatus())
+      {
+        GenAssert(0, "lmExpr->bindNode failed");
+      }
+
+    // Hive insert converts child data into string format and inserts
+    // it into target table.
+    // If child type can into an error during conversion, then
+    // add a Cast to convert from child type to target type before
+    // converting to string format to be inserted.
+    if (hiveNAColArray)
+      {
+        const NAColumn *hiveNACol = (*hiveNAColArray)[i];
+        const NAType *hiveNAType = hiveNACol->getType();
+        // if tgt type was a hive 'string', do not return a conversion err
+        if ((lmExpr->getValueId().getType().errorsCanOccur(*hiveNAType)) &&
+            (NOT ((DFS2REC::isSQLVarChar(hiveNAType->getFSDatatype())) &&
+                  (((SQLVarChar*)hiveNAType)->wasHiveString()))))
+          {
+            ItemExpr *newExpr = 
+              new(generator->wHeap()) Cast(lmExpr, hiveNAType);
+            newExpr = newExpr->bindNode(generator->getBindWA());
+            if (!newExpr || generator->getBindWA()->errStatus())
+              {
+                GenAssert(0, "newExpr->bindNode failed");
+              }
+            
+            if (hiveInsertErrMode == 3)
+              ((Cast*)newExpr)->setConvertNullWhenError(TRUE);
+            
+            lmExpr = newExpr;
+          }
+      }
 
     res = CreateAllCharsExpr(formalType, // [IN] Child output type
         *lmExpr, // [IN] Actual input value
@@ -322,7 +374,6 @@ static short ft_codegen(Generator *generator,
     GenAssert(res == 0 && lmExpr != NULL,
         "Error building expression tree for LM child Input value");
 
-    lmExpr->bindNode(generator->getBindWA());
     childDataVids.insert(lmExpr->getValueId());
     if (lmExpr2)
     {
@@ -336,6 +387,16 @@ static short ft_codegen(Generator *generator,
   if (childDataVids.entries() > 0 &&
     cnvChildDataVids.entries()>0)  //-- convertedChildDataVids
   {
+    UInt16 pcm = exp_gen->getPCodeMode();
+    if ((hiveNAColArray) &&
+        (hiveInsertErrMode == 3))
+      {
+        // if error mode is 3 (mode null when error), disable pcode.
+        // this feature is currently not being handled by pcode.
+        // (added as part of JIRA 1920 in FileScan::codeGenForHive).
+        exp_gen->setPCodeMode(ex_expr::PCODE_NONE);
+      }
+
     exp_gen->generateContiguousMoveExpr (
       childDataVids,                         //childDataVids// [IN] source ValueIds
       TRUE,                                 // [IN] add convert nodes?
@@ -347,6 +408,8 @@ static short ft_codegen(Generator *generator,
       &childDataTupleDesc,                  // [optional OUT] target tuple desc
       ExpTupleDesc::LONG_FORMAT             // [optional IN] target desc format
       );
+
+    exp_gen->setPCodeMode(pcm);
 
     exp_gen->processValIdList (
        cnvChildDataVids,                              // [IN] ValueIdList
@@ -419,6 +482,13 @@ static short ft_codegen(Generator *generator,
 
   tdb->setSkipWritingToFiles(CmpCommon::getDefault(TRAF_UNLOAD_SKIP_WRITING_TO_FILES) == DF_ON);
   tdb->setBypassLibhdfs(CmpCommon::getDefault(TRAF_UNLOAD_BYPASS_LIBHDFS) == DF_ON);
+
+  if ((hiveNAColArray) &&
+      (hiveInsertErrMode == 2))
+    {
+      tdb->setContinueOnError(TRUE);
+    }
+
   generator->initTdbFields(tdb);
 
   // Generate EXPLAIN info.

@@ -500,6 +500,14 @@ EncodedValue::outputToBufferToComputeRTHash(
       double x = getDblValue();
       flags = ExHDPHash::NO_FLAGS;
       switch (naType->getFSDatatype()) {
+        case REC_BIN8_UNSIGNED:
+           len = 1;
+           { UInt8 y = (UInt8)x; memcpy(data, &y, len); }
+           break;
+        case REC_BIN8_SIGNED:
+           len = 1;
+           { Int8 y = (Int8)x; memcpy(data, &y, len); }
+           break;
         case REC_BIN16_UNSIGNED:
            len = 2;
            flags =ExHDPHash::SWAP_TWO;
@@ -510,7 +518,7 @@ EncodedValue::outputToBufferToComputeRTHash(
            flags =ExHDPHash::SWAP_TWO;
            { short y = (short)x; memcpy(data, &y, len); }
            break;
-        case REC_BIN32_UNSIGNED:
+         case REC_BIN32_UNSIGNED:
            len = 4;
            flags =ExHDPHash::SWAP_FOUR;
            { UInt32 y = (UInt32)x; memcpy(data, &y, len); }
@@ -521,8 +529,14 @@ EncodedValue::outputToBufferToComputeRTHash(
            { Int32 y = (Int32)x; memcpy(data, &y, len); }
            break;
         case REC_BIN64_SIGNED:
+           len = 8;
            flags =ExHDPHash::SWAP_EIGHT;
            { Int64 y = (Int64)x; len = 8; memcpy(data, &y, len); }
+           break;
+        case REC_BIN64_UNSIGNED:
+           len = 8;
+           flags =ExHDPHash::SWAP_EIGHT;
+           { UInt64 y = (UInt64)x; len = 8; memcpy(data, &y, len); }
            break;
         default:
           len = 0; // For column types not supported by SB, we just

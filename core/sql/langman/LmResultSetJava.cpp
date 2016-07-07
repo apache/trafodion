@@ -599,6 +599,35 @@ LmResultSetJava::fetchSpecialRows(void *dataPtr,
 
       switch(LmJavaType(col).getType())
       {
+        case LmJavaType::JT_TINY:
+        {
+          jlong jlval;
+          lmResult = getValueAsJlong(javaRS, index + 1, da, wasNull, jlval);
+
+          if (lmResult == LM_ERR)
+          {
+            retcode = -1;  // Diags are already populated
+            break;
+          }
+
+          if (!wasNull)
+	  {
+            // Now cast jlong to appropriate value
+            if (col->fsType() == COM_SIGNED_BIN8_FSDT)
+            {
+	      char sval = (char) jlval;
+              memcpy(thisColDataPtr, (char *)&sval, col->outSize());
+            }
+            else
+            {
+              unsigned char sval = (unsigned char) jlval;
+              memcpy(thisColDataPtr, (char *)&sval, col->outSize());
+            }
+	  }
+          
+        } // JT_TINY
+        break;
+        
         case LmJavaType::JT_SHORT:
         {
           jlong jlval;
@@ -875,6 +904,13 @@ LmResultSetJava::fetchSpecialRows(void *dataPtr,
                   }
                   else
                   {
+                    if ((col->fsType() == COM_SIGNED_BIN8_FSDT) ||
+                        (col->fsType() == COM_UNSIGNED_BIN8_FSDT))
+                    {
+                      char sval = (char)jlval;
+                      memcpy(thisColDataPtr, (char *)&sval, col->outSize());
+                    }
+                    else
                     if ((col->fsType() == COM_SIGNED_BIN16_FSDT) ||
                         (col->fsType() == COM_UNSIGNED_BIN16_FSDT))
                     {
@@ -882,18 +918,16 @@ LmResultSetJava::fetchSpecialRows(void *dataPtr,
                       memcpy(thisColDataPtr, (char *)&sval, col->outSize());
                     }
                     else
-                    {
-                      if ((col->fsType() == COM_SIGNED_BIN32_FSDT) ||
+                    if ((col->fsType() == COM_SIGNED_BIN32_FSDT) ||
                           (col->fsType() == COM_UNSIGNED_BIN32_FSDT))
-                      {
-                        Int32 ival = (Int32)jlval;
-                        memcpy(thisColDataPtr, (char *)&ival, col->outSize());
-                      }
-                      else
-                      {
-                        // 64 bit value
-                        memcpy(thisColDataPtr, (char *)&jlval, col->outSize());
-                      }
+                    {
+                      Int32 ival = (Int32)jlval;
+                      memcpy(thisColDataPtr, (char *)&ival, col->outSize());
+                    }
+                    else
+                    {
+                      // 64 bit value
+                      memcpy(thisColDataPtr, (char *)&jlval, col->outSize());
                     }
                   }
 

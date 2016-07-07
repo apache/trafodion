@@ -55,6 +55,7 @@ class InterfaceResultSet {
 
 	static final int SQLTYPECODE_INTEGER_UNSIGNED = -401;
 	static final int SQLTYPECODE_LARGEINT = -402;
+	static final int SQLTYPECODE_LARGEINT_UNSIGNED = -405;
 
 	/* SMALLINT */
 	static final int SQLTYPECODE_SMALLINT = 5;
@@ -62,6 +63,10 @@ class InterfaceResultSet {
 	static final int SQLTYPECODE_SMALLINT_UNSIGNED = -502;
 
 	static final int SQLTYPECODE_BPINT_UNSIGNED = -503;
+
+        /* TINYINT */
+        static final int SQLTYPECODE_TINYINT                = -403;
+        static final int SQLTYPECODE_TINYINT_UNSIGNED       = -404;
 
 	/*
 	 * DOUBLE depending on precision
@@ -263,6 +268,13 @@ class InterfaceResultSet {
 				break;
 			}
 			break;
+		case SQLTYPECODE_TINYINT:
+			retObj = new Byte(ibuffer[byteIndex]);
+			break;
+		case SQLTYPECODE_TINYINT_UNSIGNED:
+                        short sValue1 = Bytes.extractUTiny(ibuffer, byteIndex, this.ic_.getByteSwap());
+			retObj = new Short(sValue1);
+			break;
 		case SQLTYPECODE_SMALLINT:
 			short sValue = Bytes.extractShort(ibuffer, byteIndex, this.ic_.getByteSwap());
 			retObj = new Short(sValue);
@@ -289,6 +301,7 @@ class InterfaceResultSet {
 			}
 			break;
 		case SQLTYPECODE_LARGEINT:
+                case SQLTYPECODE_LARGEINT_UNSIGNED:
 			tbuffer = new byte[byteLen];
 			System.arraycopy(ibuffer, byteIndex, tbuffer, 0, byteLen);
 			retObj = new BigInteger(tbuffer);
@@ -308,6 +321,7 @@ class InterfaceResultSet {
 				tmpStr = String.valueOf(Bytes.extractInt(ibuffer, byteIndex, this.ic_.getByteSwap()));
 				break;
 			case 134:
+                        case 138:
 				tmpStr = String.valueOf(Bytes.extractLong(ibuffer, byteIndex, this.ic_.getByteSwap()));
 				break;
 			default:
@@ -503,6 +517,13 @@ class InterfaceResultSet {
 				break;
 			}
 			break;
+		case SQLTYPECODE_TINYINT_UNSIGNED:
+                        short sValue1 = Bytes.extractUTiny(values, noNullValue, swap);
+                        retObj = new Short(sValue1);
+			break;
+		case SQLTYPECODE_TINYINT:
+			retObj = new Byte(values[noNullValue]);
+			break;
 		case SQLTYPECODE_SMALLINT:
 			short sValue = Bytes.extractShort(values, noNullValue, swap);
 			retObj = new Short(sValue);
@@ -537,11 +558,17 @@ class InterfaceResultSet {
 				retObj = new BigDecimal(new BigInteger(retObj.toString()), desc.scale_);
 			}
 			break;
+		case SQLTYPECODE_LARGEINT_UNSIGNED:
+			tbuffer = new byte[desc.sqlOctetLength_];
+			System.arraycopy(values, noNullValue, tbuffer, 0, desc.sqlOctetLength_);
+			retObj = InterfaceUtilities.convertSQLBigNumToBigDecimal(tbuffer, desc.scale_, swap, true);
+			break;
+
 		case SQLTYPECODE_NUMERIC:
 		case SQLTYPECODE_NUMERIC_UNSIGNED:
 			tbuffer = new byte[desc.sqlOctetLength_];
 			System.arraycopy(values, noNullValue, tbuffer, 0, desc.sqlOctetLength_);
-			retObj = InterfaceUtilities.convertSQLBigNumToBigDecimal(tbuffer, desc.scale_, swap);
+			retObj = InterfaceUtilities.convertSQLBigNumToBigDecimal(tbuffer, desc.scale_, swap, false);
 			break;
 		case SQLTYPECODE_DECIMAL:
 		case SQLTYPECODE_DECIMAL_UNSIGNED:
