@@ -129,6 +129,13 @@ sudo chown trafodion.trafodion $TRAF_WORKDIR/hbase-site.xml
 # create new directories for bulkload and lobs if not already there
 rm $LOCAL_WORKDIR/traf_temp_output 2>/dev/null
 
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_PREFIX"'/bin/hdfs dfs -mkdir -p /user/'"$TRAF_USER"'"'
+if [ $? != 0 ]; then
+   echo "***ERROR: hds dfs -mkdir -p /hbase-staging' command failed"
+   exit -1
+fi
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_PREFIX"'/bin/hdfs dfs -chown -R '"$TRAF_USER"' /user/'"$TRAF_USER"'"'
+
 ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_PREFIX"'/bin/hdfs dfs -mkdir -p /hbase-staging"'
 if [ $? != 0 ]; then
    echo "***ERROR: hds dfs -mkdir -p /hbase-staging' command failed"
