@@ -631,7 +631,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 ExRaiseSqlError(getHeap(), &diagsArea, 
                                 (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
                                 &intParam1, 
-                                &cliError, 
+                                &errno, 
                                 NULL, 
                                 "HDFS",
                                 (char*)"ExpLOBInterfaceSelectCursor/open",

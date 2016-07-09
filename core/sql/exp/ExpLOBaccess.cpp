@@ -1401,9 +1401,9 @@ Ex_Lob_Error ExLob::openDataCursor(char *file, LobsCursorType type, Int64 range,
             if (errno == EAGAIN) //retry 3 times
               {
                 short cnt = 0;
-                while(cnt < 3 && (errno == EAGAIN))
+                while(cnt < 3 )
                   {
-                    sleep(5);
+                    sleep(15);
                     fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
                     if (fdData_)
                       break;
