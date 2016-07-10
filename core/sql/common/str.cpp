@@ -997,19 +997,40 @@ Lng32 str_decode(void *tgt, Lng32 tgtMaxLen, const char *src, Lng32 srcLen)
   return length;
 }
 
-// Strips leading and trailing blanks. src will contain a NULL after the
+// Strips leading and/or trailing blanks. src will contain a NULL after the
 // end of the first non-blank character.The length of the "stripped" string
-// is returned in len
-
-void str_strip_blanks(char *src , Lng32 &len)
+// is returned in len.
+// Returns pointer to the start of string after leading blanks.
+char * str_strip_blanks(char *src , Lng32 &len, 
+                        NABoolean stripLeading,
+                        NABoolean stripTrailing
+                        )
 {
+  if (! src)
+    return NULL;
+
   len = str_len(src)-1;
-  while ((len >= 0) && (src[len] == ' '))
-    len--;
+  if (len <= 0)
+    return src;
 
-  len++;
+  if (stripTrailing)
+    {
+      while ((len >= 0) && (src[len] == ' '))
+        len--;
 
-  src[len] = 0;
+      len++;
+      src[len] = 0;
+    }
+
+  Lng32 i = 0;
+  if (stripLeading)
+    {
+      while ((i < len) && (src[i] == ' '))
+        i++;
+      len = len - i;
+    }
+
+  return &src[i];
 }
 
 #if !defined(__EID) && !defined(ARKFS_OPEN)

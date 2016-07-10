@@ -1072,6 +1072,26 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
 
         naType = (NAType*)&cast->getValueId().getType();
       }
+
+    if ((naType->getFSDatatype() == REC_BOOLEAN) &&
+        (CmpCommon::getDefault(TRAF_BOOLEAN_IO) == DF_OFF) &&
+        (NOT bindWA->inCTAS()))
+      {
+        NumericType *nTyp = (NumericType *)naType;
+        
+        ItemExpr * cast = new (bindWA->wHeap())
+          Cast(col->getValueId().getItemExpr(),
+               new (bindWA->wHeap())
+               SQLChar(SQL_BOOLEAN_DISPLAY_SIZE, naType->supportsSQLnull()));
+        
+        cast = cast->bindNode(bindWA);
+        if (bindWA->errStatus()) 
+          return;
+        col->setValueId(cast->getValueId());
+        compExpr[i] = cast->getValueId();
+        
+        naType = (NAType*)&cast->getValueId().getType();
+      }
     
     // if OFF, return tinyint as smallint.
     // This is needed until all callers/drivers have full support to

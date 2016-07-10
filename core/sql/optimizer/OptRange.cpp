@@ -533,11 +533,13 @@ void OptRangeSpec::addSubrange(ConstValue* start, ConstValue* end,
       case NA_NUMERIC_TYPE:
       case NA_DATETIME_TYPE:
       case NA_INTERVAL_TYPE:
+      case NA_BOOLEAN_TYPE:
         //if (((const NumericType*)type)->isExact())
         if (typeQual == NA_DATETIME_TYPE ||
             typeQual == NA_INTERVAL_TYPE ||
             (typeQual == NA_NUMERIC_TYPE && 
-               static_cast<const NumericType*>(type)->isExact()))
+             static_cast<const NumericType*>(type)->isExact()) ||
+            (typeQual == NA_BOOLEAN_TYPE))
           {
             // Fixed-point numeric subranges are normalized to be inclusive, to
             // simplify equivalence and subsumption checks.
@@ -2277,8 +2279,26 @@ Int64 getInt64Value(ConstValue* val, const NAType* rangeColType,
   else
     switch (storageSize)
       {
-        case 2:
+        case 1:
           {
+            assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
+                            isExactNumeric, QRDescriptorException,
+                            "Constant value of size 1 not exact numeric, type is: %d",
+                            constValNumType->getTypeQualifier());
+            Int8 i8val;
+            memcpy(&i8val, valuePtr, storageSize);
+            if (constValNumType->isSigned())
+              {
+                valWasNegative = (i8val < 0);
+                i64val = (Int64)(i8val * scaleFactor);
+              }
+            else
+              i64val = (Int64)((UInt8)i8val * scaleFactor);
+          }
+          break;
+
+       case 2:
+         {
             assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                             isExactNumeric, QRDescriptorException,
                             "Constant value of size 2 not exact numeric, type is: %d",

@@ -491,6 +491,10 @@ void SqlciEnv::datatypeSupport()
 
   // can handle largeint unsigned datatype
   SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_LARGEINT_UNSIGNED_IO 'ON';", this);
+
+  // can handle boolean datatype
+  SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_BOOLEAN_IO 'ON';", this);
+
   if (!specialError_)
     {
       exit(EXIT_FAILURE);

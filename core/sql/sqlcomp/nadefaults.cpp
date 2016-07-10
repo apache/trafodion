@@ -3323,6 +3323,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
+  DDkwd__(TRAF_BOOLEAN_IO,                        "OFF"),
+
   DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),   
 
   DDkwd__(TRAF_CLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
@@ -3332,6 +3334,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_CREATE_SIGNED_NUMERIC_LITERAL,      "ON"),   
 
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
+
+  DDkwd__(TRAF_CREATE_TINYINT_LITERAL,        "ON"),   
 
  DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
  

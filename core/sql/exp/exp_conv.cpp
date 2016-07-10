@@ -5118,7 +5118,31 @@ convDoIt(char * source,
       *(Int16 *)target = *(UInt8 *)source;
     }
   break;
- 
+
+  case CONV_BIN8S_BIN32S:
+    {
+      *(Int32 *)target = *(Int8 *)source;
+    }
+  break;
+
+  case CONV_BIN8S_BIN64S:
+    {
+      *(Int64 *)target = *(Int8 *)source;
+    }
+  break;
+
+  case CONV_BIN8U_BIN32U:
+    {
+      *(UInt32 *)target = *(UInt8 *)source;
+    }
+  break;
+  
+  case CONV_BIN8U_BIN64U:
+    {
+      *(UInt64 *)target = *(UInt8 *)source;
+    }
+  break;
+  
   case CONV_BIN16U_BIN8S:
     {
       if (*(UInt16 *)source > CHAR_MAX)
@@ -11228,6 +11252,89 @@ convDoIt(char * source,
       // It can be just copied to the target.
       str_pad(target, targetLen, ' ');
       str_cpy_all(target, source, sourceLen);
+    }
+    break;
+
+  case CONV_BOOL_BOOL:
+    {
+      if ((*(Int8*)source == 1) ||
+          (*(Int8*)source == 0))
+        *(Int8*)target = *(Int8*)source;
+      else
+        {
+          char tempBuf[10];
+          str_itoa(*(Int8*)source, tempBuf);
+          ExRaiseSqlError(heap, diagsArea, EXE_INVALID_BOOLEAN_VALUE,
+                          NULL, NULL, NULL, NULL,
+                          tempBuf);
+          return ex_expr::EXPR_ERROR;
+        }
+    }
+    break;
+
+  case CONV_BOOL_ASCII:
+    {
+      char boolbuf[10];
+      if (*(Int8*)source == 1)
+        strcpy(boolbuf, "TRUE");
+      else if (*(Int8*)source == 0)
+        strcpy(boolbuf, "FALSE");
+      else
+        {
+          char tempBuf[10];
+          str_itoa(*(Int8*)source, tempBuf);
+          ExRaiseSqlError(heap, diagsArea, EXE_INVALID_BOOLEAN_VALUE,
+                          NULL, NULL, NULL, NULL,
+                          tempBuf);
+          return ex_expr::EXPR_ERROR;
+        }
+
+      // this case isn't translated into PCODE at this time
+      Lng32 convertedDataLen;
+      
+      if (convCharToChar(boolbuf, strlen(boolbuf), REC_BYTE_F_ASCII, 
+                         0, SQLCHARSETCODE_ISO88591,
+                         target,
+                         targetLen,
+                         targetType,
+                         targetPrecision,
+                         targetScale,
+                         heap,
+                         diagsArea,
+                         NULL,
+                         &convertedDataLen,
+                         ((varCharLenSize > 0) ? FALSE : TRUE),
+                         TRUE,
+                         FALSE)
+          != ex_expr::EXPR_OK)
+        return ex_expr::EXPR_ERROR;
+      if (varCharLenSize > 0)
+        setVCLength(varCharLen, varCharLenSize, convertedDataLen);
+    }
+    break;
+
+  case CONV_ASCII_BOOL:
+    {
+      char srcTempBuf[sourceLen+1];
+      str_cpy_convert(srcTempBuf, source, sourceLen, 1);
+      srcTempBuf[sourceLen] = 0;
+      Lng32 tempLen;
+      char * srcTempPtr = srcTempBuf;
+      srcTempPtr = str_strip_blanks(srcTempBuf, tempLen, TRUE, TRUE);
+
+      if ((strcmp(srcTempPtr, "TRUE") == 0) ||
+          (strcmp(srcTempPtr, "1") == 0))
+        *(Int8*)target = 1;
+      else if ((strcmp(srcTempPtr, "FALSE") == 0) ||
+               (strcmp(srcTempPtr, "0") == 0))
+        *(Int8*)target = 0;
+      else
+        {
+          ExRaiseSqlError(heap, diagsArea, EXE_INVALID_BOOLEAN_VALUE,
+                          NULL, NULL, NULL, NULL,
+                          srcTempPtr);
+          return ex_expr::EXPR_ERROR;
+        }
     }
     break;
 

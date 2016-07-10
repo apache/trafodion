@@ -834,24 +834,6 @@ NABoolean NumericType::isEncodingNeeded() const
 #endif
 }
 
-NABoolean NumericType::expConvSupported
-(const NAType &otherNAType) const
-{
-  if (getFSDatatype() != REC_BIN64_UNSIGNED)
-    return TRUE;
-
-  if ((otherNAType.getFSDatatype() == REC_BIN64_SIGNED) ||
-      (otherNAType.getFSDatatype() == REC_BIN64_UNSIGNED) ||
-      (otherNAType.getFSDatatype() == REC_FLOAT32) ||
-      (otherNAType.getFSDatatype() == REC_FLOAT64) ||
-      (otherNAType.getFSDatatype() == REC_NUM_BIG_SIGNED) ||
-      (otherNAType.getFSDatatype() == REC_NUM_BIG_UNSIGNED) ||
-      (DFS2REC::isAnyCharacter(otherNAType.getFSDatatype())))
-    return TRUE;
-
-  return FALSE;
-}
-
 // -----------------------------------------------------------------------
 //  Methods for SQLTiny
 // -----------------------------------------------------------------------

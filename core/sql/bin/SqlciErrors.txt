@@ -1544,7 +1544,7 @@ $1~String1 --------------------------------
 8423 ZZZZZ 99999 BEGINNER MINOR LOGONLY The provided field number is not valid.
 8424 0A000 99999 BEGINNER MINOR LOGONLY Function $0~string0 is not yet supported.
 8425 ZZZZZ 99999 BEGINNER MINOR LOGONLY NULL cannot be assigned to a DEFAULT NULL NOT NULL column.
-8426 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 03/30/04 ---
+8426 22007 99999 BEGINNER MINOR LOGONLY The provided value, $0~string0, is an invalid BOOLEAN value.
 8427 ZZZZZ 99999 BEGINNER INFRM LOGONLY $0~string0
 8428 ZZZZZ 99999 BEGINNER MINOR LOGONLY The argument to function $0~string0 is not valid.
 8429 ZZZZZ 99999 BEGINNER INFRM LOGONLY The preceding error actually occurred in function $0~string0.

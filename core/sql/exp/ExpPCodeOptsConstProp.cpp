@@ -1825,6 +1825,12 @@ Int64 PCodeCfg::getIntConstValue(PCodeOperand* op)
     case PCIT::MBIN8:
       value = (Int64)*((UInt8*)(constPtr->getData()));
       break;
+    case PCIT::MBIN8S:
+      value = (Int64)*((Int8*)(constPtr->getData()));
+      break;
+    case PCIT::MBIN8U:
+      value = (Int64)*((UInt8*)(constPtr->getData()));
+      break;
     case PCIT::MBIN16S:
       value = (Int64)*((Int16*)(constPtr->getData()));
       break;

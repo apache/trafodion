@@ -246,7 +246,7 @@ void ValueId::coerceType(enum NABuiltInTypeEnum desiredQualifier,
   NAType *desiredType = NULL;
   switch (desiredQualifier) {
   case NA_BOOLEAN_TYPE:
-    desiredType = new STMTHEAP SQLBoolean();
+    desiredType = new STMTHEAP SQLBooleanNative(originalType.supportsSQLnull());
     break;
   case NA_CHARACTER_TYPE:
     {
@@ -404,6 +404,13 @@ void ValueId::coerceType(const NAType& desiredType,
                              nTyp.supportsSQLnull(),
                              NULL);
                }
+           }
+	 else if ((desiredType.getFSDatatype() == REC_BOOLEAN) &&
+                  (CmpCommon::getDefault(TRAF_BOOLEAN_IO) == DF_OFF))
+           {
+             newType = new (STMTHEAP)
+               SQLVarChar(SQL_BOOLEAN_DISPLAY_SIZE, 
+                          desiredType.supportsSQLnull());
            }
 	 else if (DFS2REC::isBigNum(desiredType.getFSDatatype()))
 	   {

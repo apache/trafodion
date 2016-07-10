@@ -1337,7 +1337,11 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
 	  }
       }
       break;
-       
+
+    case NEGATE_BOOLEAN:
+      *(Int8 *)op_data[0] = (*(Int8*)op_data[1] == 1 ? 0 : 1);
+      break;
+
       // COMPLEX datatype operations
     case ADD_COMPLEX:
       ((ComplexType *)getOperand(0))->add(getOperand(1), getOperand(2), op_data);
