@@ -552,25 +552,9 @@ Ex_Lob_Error ExLob::statSourceFile(char *srcfile, Int64 &sourceEOF)
    if (srcType == HDFS_FILE)
      {
        hdfsFile sourceFile = hdfsOpenFile(fs_,srcfile,O_RDONLY,0,0,0);   
-       if (!sourceFile)	
-         {
-           if (errno == EAGAIN) //retry 3 times
-             {
-               short cnt = 0;
-               while(cnt < 3 && (errno == EAGAIN))
-                 {
-                   sleep(5);
-                   sourceFile = hdfsOpenFile(fs_,srcfile,O_RDONLY,0,0,0);
-                   if (sourceFile)
-                     break;
-                   cnt++;
-                 }
-               if (!sourceFile)
-                 return LOB_SOURCE_FILE_OPEN_ERROR;                
-             }
-           else
-             return LOB_SOURCE_FILE_OPEN_ERROR;
-         }										 
+       if (!sourceFile)	           
+         return LOB_SOURCE_FILE_OPEN_ERROR;
+         										 
        hdfsFileInfo *sourceFileInfo = hdfsGetPathInfo(fs_,srcfile);
        // get EOD from source hdfs file.
        if (sourceFileInfo)
@@ -686,26 +670,9 @@ Ex_Lob_Error ExLob::readHdfsSourceFile(char *srcfile, char *&fileData, Int32 &si
    
      int openFlags = O_RDONLY;
      hdfsFile fdSrcFile = hdfsOpenFile(fs_,srcfile, openFlags,0,0,0);
-     if (fdSrcFile == NULL) {
-       if (errno == EAGAIN) //retry 3 times
-             {
-               short cnt = 0;
-               while(cnt < 3 && (errno == EAGAIN))
-                 {
-                   sleep(5);
-                   fdSrcFile = hdfsOpenFile(fs_,srcfile,openFlags,0,0,0);
-                   if (fdSrcFile)
-                     break;
-                   cnt++;
-                 }
-               if (!fdSrcFile)
-                 return LOB_SOURCE_FILE_OPEN_ERROR;                
-             }
-           else
-             return LOB_SOURCE_FILE_OPEN_ERROR;
-     }
-
-     
+     if (fdSrcFile == NULL) 
+       return LOB_SOURCE_FILE_OPEN_ERROR;
+         
      fileData = (char *) (getLobGlobalHeap())->allocateMemory(size);
      if (fileData == (char *)-1) {
        return LOB_SOURCE_DATA_ALLOC_ERROR;
@@ -1398,12 +1365,12 @@ Ex_Lob_Error ExLob::openDataCursor(char *file, LobsCursorType type, Int64 range,
         fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
         if (!fdData_) 
           {
-            if (errno == EAGAIN) //retry 3 times
+            if ((errno == EAGAIN) || (errno == ENOENT)) //retry 3 times
               {
                 short cnt = 0;
                 while(cnt < 3 )
                   {
-                    sleep(15);
+                    sleep(5);
                     fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
                     if (fdData_)
                       break;
@@ -1608,10 +1575,10 @@ Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int
   hdfsFile  fdData = hdfsOpenFile(fs, lobDataFile_, O_RDONLY, 0, 0,0);
   if (!fdData) 
     {   
-      if (errno == EAGAIN) //retry 3 times
+      if ((errno == EAGAIN) || (errno == ENOENT)) //retry 3 times
         {
           short cnt = 0;
-          while(cnt < 3 && (errno == EAGAIN))
+          while(cnt < 3 )
             {
               sleep(5);
               fdData = hdfsOpenFile(fs, lobDataFile_, O_RDONLY, 0, 0,0);
@@ -1853,10 +1820,10 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
          fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
          if (!fdData_) 
            {
-             if (errno == EAGAIN) //retry 3 times
+             if ((errno == EAGAIN) ||(errno ==ENOENT))//retry 3 times
                {
                  short cnt = 0;
-                 while(cnt < 3 && (errno == EAGAIN))
+                 while(cnt < 3 )
                    {
                      sleep(5);
                      fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
@@ -1945,12 +1912,12 @@ Ex_Lob_Error ExLob::readDataToMem(char *memAddr,
       fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
       if (!fdData_) 
         {
-          if (errno == EAGAIN) //retry 3 times
+          if ((errno == EAGAIN) || (errno == ENOENT)) //retry 3 times
             {
               short cnt = 0;
               while(cnt < 3 )
                  {
-                   sleep(10);
+                   sleep(5);
                    fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
                    if (fdData_)
                      break;
@@ -1975,13 +1942,13 @@ Ex_Lob_Error ExLob::readDataToMem(char *memAddr,
       fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
       if (!fdData_) 
         {
-          if (errno == EAGAIN) //retry 3 times
+          if ((errno == EAGAIN) ||(errno ==ENOENT))//retry 3 times
             {
               
               short cnt = 0;
               while(cnt < 3 )
                  {
-                   sleep(10);
+                   sleep(5);
                    fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
                    if (fdData_)
                      break;
