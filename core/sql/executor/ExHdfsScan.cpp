@@ -585,6 +585,17 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                    openType //
                    );
                 
+                if ((retcode < 0) &&
+                    ((errno == ENOENT) || (errno == EAGAIN)))
+                  {
+                    ComDiagsArea * diagsArea = NULL;
+                    ExRaiseSqlError(getHeap(), &diagsArea, 
+                                    (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+                    pentry_down->setDiagsArea(diagsArea);
+                    step_ = HANDLE_ERROR_AND_DONE;
+                    break;
+                  }
+
                 // preopen next range. 
                 if ( (currRangeNum_ + 1) < (beginRangeNum_ + numRanges_) ) 
                   {
@@ -737,7 +748,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		    ExRaiseSqlError(getHeap(), &diagsArea, 
                                     (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
                                     &intParam1, 
-                                    &cliError, 
+                                    &errno, 
                                     NULL, 
                                     "HDFS",
                                     (char*)"ExpLOBInterfaceSelectCursor/read",
@@ -1247,7 +1258,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		    ExRaiseSqlError(getHeap(), &diagsArea, 
                                     (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
                                     &intParam1, 
-                                    &cliError, 
+                                    &errno, 
                                     NULL, 
                                     "HDFS",
                                     (char*)"ExpLOBInterfaceSelectCursor/close",

@@ -1363,33 +1363,20 @@ Ex_Lob_Error ExLob::openDataCursor(char *file, LobsCursorType type, Int64 range,
         fdData_ = NULL;
         openFlags_ = O_RDONLY;
         fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
-        if (!fdData_) 
+       
+        if (!fdData_)
           {
-            //retry 3 times
-              
-            short cnt = 0;
-            while(cnt < 3 )
-              {
-                sleep(20);
-                fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
-                if (fdData_)
-                  break;
-                cnt++;
-              }
-            if (!fdData_)
-              {
-                openFlags_ = -1;
-                lobCursorLock_.unlock();
-                return LOB_DATA_FILE_OPEN_ERROR;
-              }                
-             
+            openFlags_ = -1;
+            lobCursorLock_.unlock();
+            return LOB_DATA_FILE_OPEN_ERROR;
+          }                
+                 
+        if (hdfsSeek(fs_, fdData_, (it->second).descOffset_) == -1) 
+          {
+            lobCursorLock_.unlock();
+            return LOB_DATA_FILE_POSITION_ERROR;
           }
       }
-
-    if (hdfsSeek(fs_, fdData_, (it->second).descOffset_) == -1) {
-      lobCursorLock_.unlock();
-      return LOB_DATA_FILE_POSITION_ERROR;
-    }
 
     // start reading in a worker thread
     lobGlobals->enqueuePrefetchRequest(this, &(it->second));
@@ -1567,30 +1554,17 @@ Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int
   
  
   hdfsFile  fdData = hdfsOpenFile(fs, lobDataFile_, O_RDONLY, 0, 0,0);
-  if (!fdData) 
-    {   
-      
-      short cnt = 0;
-      while(cnt < 3 )
-        {
-          sleep(10);
-          fdData = hdfsOpenFile(fs, lobDataFile_, O_RDONLY, 0, 0,0);
-          if (fdData)
-            break;
-          cnt++;
-        }
-      if (!fdData)
-        {
-          str_sprintf(logBuf,"Could not open file:%s",lobDataFile_);
-          lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
-          hdfsCloseFile(fs,fdData);
-          fdData = NULL;
-          return LOB_DATA_FILE_OPEN_ERROR;
-        }
+  
+  if (!fdData)
+    {
+      str_sprintf(logBuf,"Could not open file:%s",lobDataFile_);
+      lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
+      hdfsCloseFile(fs,fdData);
+      fdData = NULL;
+      return LOB_DATA_FILE_OPEN_ERROR;
+    }
                           
         
-    }
-  
   hdfsFile fdTemp = hdfsOpenFile(fs, tmpLobDataFile,O_WRONLY|O_CREAT,0,0,0);
    if (!fdTemp) 
     {
@@ -1798,31 +1772,20 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
       // #endif
 
       if (!fdData_ || (openFlags_ != O_RDONLY)) 
-      {
-         hdfsCloseFile(fs_, fdData_);
-	 fdData_=NULL;
-         openFlags_ = O_RDONLY;
-         fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
-         if (!fdData_) 
-           {
-                           
-             short cnt = 0;
-             while(cnt < 3 )
-               {
-                 sleep(10);
-                 fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
-                 if (fdData_)
-                   break;
-                 cnt++;
-               }
-             if (!fdData_)
-               {
-                 openFlags_ = -1;
-                 return LOB_DATA_FILE_OPEN_ERROR;                 
-               }               
+        {
+          hdfsCloseFile(fs_, fdData_);
+          fdData_=NULL;
+          openFlags_ = O_RDONLY;
+          fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
+        
+          if (!fdData_)
+            {
+              openFlags_ = -1;
+              return LOB_DATA_FILE_OPEN_ERROR;                 
+            }               
              
-           }
-      }
+           
+        }
 
       clock_gettime(CLOCK_MONOTONIC, &startTime);
 
@@ -1889,51 +1852,30 @@ Ex_Lob_Error ExLob::readDataToMem(char *memAddr,
       fdData_=NULL;
       openFlags_ = O_RDONLY;
       fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
-      if (!fdData_) 
-        {          
-          short cnt = 0;
-          while(cnt < 3 )
-            {
-              sleep(10);
-              fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
-              if (fdData_)
-                break;
-              cnt++;
-            }
-          if (!fdData_)
-            {
-              openFlags_ = -1;
-              return LOB_DATA_FILE_OPEN_ERROR;
-            }
-                                           
+    
+      if (!fdData_)
+        {
+          openFlags_ = -1;
+          return LOB_DATA_FILE_OPEN_ERROR;
         }
+                                           
+        
     }
   else
     {
       fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
-      if (!fdData_) 
-        {         
-          short cnt = 0;
-          while(cnt < 3 )
-            {
-              sleep(10);
-              fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
-              if (fdData_)
-                break;
-              cnt++;                   
-            }
-          if (!fdData_)
-            {
-              openFlags_ = -1;
-              return LOB_DATA_FILE_OPEN_ERROR;
-            }                                
-        }
+     
+      if (!fdData_)
+        {
+          openFlags_ = -1;
+          return LOB_DATA_FILE_OPEN_ERROR;
+        }                                
+        
           
     }
 	
 
-    
-  
+     
   if (!multipleChunks)
     {
       lobDebugInfo("Reading in single chunk",0,__LINE__,lobTrace_);
