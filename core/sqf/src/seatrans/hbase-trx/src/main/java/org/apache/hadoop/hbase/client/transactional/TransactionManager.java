@@ -608,11 +608,11 @@ public class TransactionManager {
       * Return  : Commit vote (yes, no, read only)
       * Purpose : Call prepare for a given regionserver
      */
-    public Integer doPrepareX(final byte[] regionName, final long transactionId, final int participantNum, final TransactionRegionLocation location)
+    public Integer doPrepareX(final byte[] regionName, final long transactionId, final long startEpoch, final int participantNum, final TransactionRegionLocation location)
           throws IOException, CommitUnsuccessfulException {
-       if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- ENTRY txid: " + transactionId
-                                                                        + " RegionName " + Bytes.toString(regionName)
-                                                                        + " TableName " + table.toString() );
+       if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- ENTRY txid: " + transactionId + " startEpoch " + startEpoch
+    		                                           + " participantNum " + participantNum + " RegionName " + Bytes.toString(regionName)
+                                                       + " TableName " + table.toString() + " location " + location );
        int commitStatus = 0;
        boolean refresh = false;
        boolean retry = false;
@@ -632,6 +632,7 @@ public class TransactionManager {
                 public CommitRequestResponse call(TrxRegionService instance) throws IOException {
                    org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestRequest.Builder builder = CommitRequestRequest.newBuilder();
                    builder.setTransactionId(transactionId);
+                   builder.setStartEpoch(startEpoch);
                    builder.setRegionName(ByteString.copyFromUtf8(Bytes.toString(regionName)));
                    builder.setParticipantNum(participantNum);
 
@@ -1580,6 +1581,7 @@ public class TransactionManager {
         //long transactionId =
       if (LOG.isTraceEnabled()) LOG.trace("Enter beginTransaction, txid: " + transactionId);
       TransactionState ts = new TransactionState(transactionId);
+      ts.setStartEpoch(EnvironmentEdgeManager.currentTime());
       long startIdVal = -1;
 
       // Set the startid
@@ -1696,7 +1698,7 @@ public class TransactionManager {
                         public Integer call() throws CommitUnsuccessfulException, IOException {
 
                             return doPrepareX(location.getRegionInfo().getRegionName(),
-                                    transactionState.getTransactionId(), lvParticipantNum,
+                                    transactionState.getTransactionId(), transactionState.getStartEpoch(), lvParticipantNum,
                                     location);
                         }
                     });
@@ -1781,7 +1783,7 @@ public class TransactionManager {
 
              compPool.submit(new TransactionManagerCallable(transactionState, location, connection) {
                public Integer call() throws IOException, CommitUnsuccessfulException {
-                 return doPrepareX(regionName, transactionState.getTransactionId(), lvParticipantNum, myLocation);
+                 return doPrepareX(regionName, transactionState.getTransactionId(), transactionState.getStartEpoch(), lvParticipantNum, myLocation);
                }
              });
            }
