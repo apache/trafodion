@@ -1370,7 +1370,7 @@ Ex_Lob_Error ExLob::openDataCursor(char *file, LobsCursorType type, Int64 range,
             short cnt = 0;
             while(cnt < 3 )
               {
-                sleep(5);
+                sleep(10);
                 fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
                 if (fdData_)
                   break;
@@ -1573,7 +1573,7 @@ Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int
       short cnt = 0;
       while(cnt < 3 )
         {
-          sleep(5);
+          sleep(10);
           fdData = hdfsOpenFile(fs, lobDataFile_, O_RDONLY, 0, 0,0);
           if (fdData)
             break;
@@ -1809,7 +1809,7 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
              short cnt = 0;
              while(cnt < 3 )
                {
-                 sleep(5);
+                 sleep(10);
                  fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
                  if (fdData_)
                    break;
@@ -1894,7 +1894,7 @@ Ex_Lob_Error ExLob::readDataToMem(char *memAddr,
           short cnt = 0;
           while(cnt < 3 )
             {
-              sleep(5);
+              sleep(10);
               fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
               if (fdData_)
                 break;
@@ -1916,7 +1916,7 @@ Ex_Lob_Error ExLob::readDataToMem(char *memAddr,
           short cnt = 0;
           while(cnt < 3 )
             {
-              sleep(5);
+              sleep(10);
               fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
               if (fdData_)
                 break;
