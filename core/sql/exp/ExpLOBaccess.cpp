@@ -1370,7 +1370,7 @@ Ex_Lob_Error ExLob::openDataCursor(char *file, LobsCursorType type, Int64 range,
             short cnt = 0;
             while(cnt < 3 )
               {
-                sleep(10);
+                sleep(20);
                 fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
                 if (fdData_)
                   break;
