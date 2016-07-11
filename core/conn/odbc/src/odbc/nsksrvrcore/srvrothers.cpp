@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Used to disable and enable dumps via setrlimit in a release env.
+//  Used to disable and enable dumps via setrlimit in a release env.
 #ifndef _DEBUG
 #include <sys/resource.h>
 #endif
