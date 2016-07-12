@@ -417,6 +417,10 @@ enum SQLTYPE_CODE {
     /* BLOB TYPE */
     SQLTYPECODE_BLOB  = -602,
     SQLTYPECODE_CLOB  = -603,
+
+    /* BOOLEAN TYPE */
+    SQLTYPECODE_BOOLEAN = -701,
+
     /* no ANSI value 13 */
 
     /* BIT */

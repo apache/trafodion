@@ -3208,6 +3208,7 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
     break;
 
   case REC_BIN8_UNSIGNED:
+  case REC_BOOLEAN:
     *(UInt8*)target = *(UInt8*)source;
     break;
 
@@ -4833,6 +4834,9 @@ ex_expr::exp_return_type ex_function_mod::eval(char *op_data[],
 
   switch (len1)
     {
+    case 1:
+      op1 = *((Int8 *) op_data[1]);
+      break;
     case 2:
       op1 = *((short *) op_data[1]);
       break;
@@ -4852,6 +4856,9 @@ ex_expr::exp_return_type ex_function_mod::eval(char *op_data[],
 
   switch (len2)
     {
+    case 1:
+      op2 = *((Int8 *) op_data[2]);
+      break;
     case 2:
       op2 = *((short *) op_data[2]);
       break;
@@ -4878,6 +4885,9 @@ ex_expr::exp_return_type ex_function_mod::eval(char *op_data[],
 
   switch (lenr)
     {
+    case 1:
+      *((Int8 *) op_data[0]) = (short) result;
+      break;
     case 2:
       *((short *) op_data[0]) = (short) result;
       break;
@@ -4911,6 +4921,16 @@ ex_expr::exp_return_type ex_function_mask::eval(char *op_data[],
 
   switch (getOperand(0)->getStorageLength())
     {
+    case 1:
+      op1 = *((UInt8 *) op_data[1]);
+      op2 = *((UInt8 *) op_data[2]);
+      if(getOperType() == ITM_MASK_SET) {
+        result = op1 | op2;
+      } else {
+        result = op1 & ~op2;
+      }
+      *((unsigned short *) op_data[0]) = (unsigned short) result;
+      break;
     case 2:
       op1 = *((unsigned short *) op_data[1]);
       op2 = *((unsigned short *) op_data[2]);
@@ -4969,6 +4989,15 @@ ex_expr::exp_return_type ExFunctionShift::eval(char *op_data[],
   ULng32 value, result;
 
   switch (getOperand(0)->getStorageLength()) {
+  case 1:
+    value = *((UInt8 *) op_data[1]);
+    if(getOperType() == ITM_SHIFT_RIGHT) {
+      result = value >> shift;
+    } else {
+      result = value << shift;
+    }
+    *((UInt8 *) op_data[0]) = (UInt8) result;
+    break;
   case 2:
     value = *((unsigned short *) op_data[1]);
     if(getOperType() == ITM_SHIFT_RIGHT) {
@@ -7152,6 +7181,7 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     break;
 
   case REC_BIN8_UNSIGNED:
+  case REC_BOOLEAN:
     *(UInt8*)target = *(UInt8*)source;
     break;
 

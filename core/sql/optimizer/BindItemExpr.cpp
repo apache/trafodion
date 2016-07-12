@@ -5943,6 +5943,31 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 } // BiArith::bindNode()
 
 // -----------------------------------------------------------------------
+// member functions for class UnArith
+// -----------------------------------------------------------------------
+
+ItemExpr *UnArith::bindNode(BindWA *bindWA)
+{
+  ItemExpr * result = NULL;
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  CMPASSERT(getOperatorType() == ITM_NEGATE);
+
+  child(0) = child(0)->bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return this;
+
+  result = ItemExpr::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return this;
+
+  return result;
+
+} // UnArith::bindNode()
+
+// -----------------------------------------------------------------------
 // member functions for class Assign
 // -----------------------------------------------------------------------
 // Helper function

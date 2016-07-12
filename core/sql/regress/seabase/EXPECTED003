@@ -10,6 +10,10 @@
 --- SQL operation complete.
 >>
 >>obey TEST003(setup_tiny);
+>>-----------------------------------------------------------
+>>-------------- TINYINT datatype ---------------------------
+>>-----------------------------------------------------------
+>>
 >>create table t003t1(a tinyint not null primary key, b tinyint, 
 +>                    c tinyint unsigned default 10 not null, d tinyint unsigned);
 
@@ -17,7 +21,7 @@
 >>invoke t003t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1
--- Definition current  Sat Jun 25 16:24:14 2016
+-- Definition current  Tue Jul 12 19:09:22 2016
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -36,7 +40,7 @@
 >>invoke t003t1_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1_LIKE
--- Definition current  Sat Jun 25 16:24:23 2016
+-- Definition current  Tue Jul 12 19:09:35 2016
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -55,7 +59,7 @@
 >>invoke t003t1_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1_AS
--- Definition current  Sat Jun 25 16:24:27 2016
+-- Definition current  Tue Jul 12 19:09:40 2016
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -301,7 +305,7 @@ A     B     C    D
 >>invoke hive.hive.ttiny;
 
 -- Definition of hive table TTINY
--- Definition current  Sat Jun 25 16:25:08 2016
+-- Definition current  Tue Jul 12 19:10:44 2016
 
   (
     A                                TINYINT
@@ -446,7 +450,7 @@ A     B
 >>invoke t003t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2
--- Definition current  Sat Jun 25 16:25:17 2016
+-- Definition current  Tue Jul 12 19:10:56 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -463,7 +467,7 @@ A     B
 >>invoke t003t2_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_LIKE
--- Definition current  Sat Jun 25 16:25:22 2016
+-- Definition current  Tue Jul 12 19:11:02 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -480,7 +484,7 @@ A     B
 >>invoke t003t2_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_AS
--- Definition current  Sat Jun 25 16:25:25 2016
+-- Definition current  Tue Jul 12 19:11:06 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -726,13 +730,13 @@ A                     B
 --- 0 row(s) inserted.
 >>insert into t003t2 values (-1, 1);
 
-*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype.
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:LARGEINT(MBIN64S) Source Value:-1 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S64S64 Operation:RANGE_LOW.
 
 --- 0 row(s) inserted.
 >>
 >>select cast(-1 as largeint unsigned) from (values(1)) x(a);
 
-*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype.
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:LARGEINT(MBIN64S) Source Value:-1 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S64S64 Operation:RANGE_LOW.
 
 --- 0 row(s) selected.
 >>select cast(18446744073709551616 as largeint unsigned) from (values(1)) x(a);
@@ -774,7 +778,7 @@ A                     B
 >>invoke t003t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2
--- Definition current  Sat Jun 25 16:25:51 2016
+-- Definition current  Tue Jul 12 19:11:39 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -791,7 +795,7 @@ A                     B
 >>invoke t003t2_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_LIKE
--- Definition current  Sat Jun 25 16:25:55 2016
+-- Definition current  Tue Jul 12 19:11:44 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -808,7 +812,7 @@ A                     B
 >>invoke t003t2_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_AS
--- Definition current  Sat Jun 25 16:25:58 2016
+-- Definition current  Tue Jul 12 19:11:49 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1054,13 +1058,13 @@ A                     B
 --- 0 row(s) inserted.
 >>insert into t003t2 values (-1, 1);
 
-*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype.
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:LARGEINT(MBIN64S) Source Value:-1 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S64S64 Operation:RANGE_LOW.
 
 --- 0 row(s) inserted.
 >>
 >>select cast(-1 as largeint unsigned) from (values(1)) x(a);
 
-*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype.
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:LARGEINT(MBIN64S) Source Value:-1 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S64S64 Operation:RANGE_LOW.
 
 --- 0 row(s) selected.
 >>select cast(18446744073709551616 as largeint unsigned) from (values(1)) x(a);
@@ -1105,7 +1109,7 @@ A                     B
 >>invoke t003t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2
--- Definition current  Sat Jun 25 16:26:23 2016
+-- Definition current  Tue Jul 12 19:12:19 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1122,7 +1126,7 @@ A                     B
 >>invoke t003t2_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_LIKE
--- Definition current  Sat Jun 25 16:26:28 2016
+-- Definition current  Tue Jul 12 19:12:24 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1139,7 +1143,7 @@ A                     B
 >>invoke t003t2_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_AS
--- Definition current  Sat Jun 25 16:26:31 2016
+-- Definition current  Tue Jul 12 19:12:27 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1385,13 +1389,13 @@ A                      B
 --- 0 row(s) inserted.
 >>insert into t003t2 values (-1, 1);
 
-*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype.
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:LARGEINT(MBIN64S) Source Value:-1 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S64S64 Operation:RANGE_LOW.
 
 --- 0 row(s) inserted.
 >>
 >>select cast(-1 as largeint unsigned) from (values(1)) x(a);
 
-*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype.
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:LARGEINT(MBIN64S) Source Value:-1 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S64S64 Operation:RANGE_LOW.
 
 --- 0 row(s) selected.
 >>select cast(18446744073709551616 as largeint unsigned) from (values(1)) x(a);
@@ -1409,6 +1413,572 @@ A                      B
 
 --- 0 row(s) inserted.
 >>
+>>
+>>
+>>cqd traf_boolean_io 'ON';
+
+--- SQL operation complete.
+>>obey TEST003(setup_bool);
+>>-----------------------------------------------------------
+>>-------------- BOOLEAN datatype ---------------------------
+>>-----------------------------------------------------------
+>>
+>>create table if not exists t003t3(a boolean not null primary key, b boolean)
++>  attribute aligned format;
+
+--- SQL operation complete.
+>>invoke t003t3;
+
+-- Definition of Trafodion table TRAFODION.SCH.T003T3
+-- Definition current  Tue Jul 12 19:12:35 2016
+
+  (
+    A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                BOOLEAN DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create table if not exists t003t3_like like t003t3;
+
+--- SQL operation complete.
+>>invoke t003t3_like;
+
+-- Definition of Trafodion table TRAFODION.SCH.T003T3_LIKE
+-- Definition current  Tue Jul 12 19:12:40 2016
+
+  (
+    A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                BOOLEAN DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create table if not exists t003t3_as primary key (a) as select * from t003t3;
+
+--- 0 row(s) inserted.
+>>invoke t003t3_as;
+
+-- Definition of Trafodion table TRAFODION.SCH.T003T3_AS
+-- Definition current  Tue Jul 12 19:12:44 2016
+
+  (
+    A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                BOOLEAN DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create table if not exists t003t3_salt(a boolean not null primary key)
++>  salt using 2 partitions;
+
+--- SQL operation complete.
+>>invoke t003t3_salt;
+
+-- Definition of Trafodion table TRAFODION.SCH.T003T3_SALT
+-- Definition current  Tue Jul 12 19:12:47 2016
+
+  (
+    A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  )
+  PRIMARY KEY ("_SALT_" ASC, A ASC)
+
+--- SQL operation complete.
+>>
+>>obey TEST003(dml_bool);
+>>insert into t003t3 values (true, true);
+
+--- 1 row(s) inserted.
+>>insert into t003t3 values (false, false);
+
+--- 1 row(s) inserted.
+>>
+>>select * from t003t3;
+
+A      B    
+-----  -----
+
+FALSE  FALSE
+TRUE   TRUE 
+
+--- 2 row(s) selected.
+>>
+>>insert into t003t3_as select * from t003t3;
+
+--- 2 row(s) inserted.
+>>select * from t003t3_as;
+
+A      B    
+-----  -----
+
+FALSE  FALSE
+TRUE   TRUE 
+
+--- 2 row(s) selected.
+>>
+>>select * from t003t3 where a = true;
+
+A      B    
+-----  -----
+
+TRUE   TRUE 
+
+--- 1 row(s) selected.
+>>select * from t003t3 where a = false;
+
+A      B    
+-----  -----
+
+FALSE  FALSE
+
+--- 1 row(s) selected.
+>>select * from t003t3 where b = true;
+
+A      B    
+-----  -----
+
+TRUE   TRUE 
+
+--- 1 row(s) selected.
+>>select * from t003t3 where b = false;
+
+A      B    
+-----  -----
+
+FALSE  FALSE
+
+--- 1 row(s) selected.
+>>select * from t003t3 where a != true;
+
+A      B    
+-----  -----
+
+FALSE  FALSE
+
+--- 1 row(s) selected.
+>>select * from t003t3 where a != false;
+
+A      B    
+-----  -----
+
+TRUE   TRUE 
+
+--- 1 row(s) selected.
+>>select * from t003t3 where b != true;
+
+A      B    
+-----  -----
+
+FALSE  FALSE
+
+--- 1 row(s) selected.
+>>select * from t003t3 where b != false;
+
+A      B    
+-----  -----
+
+TRUE   TRUE 
+
+--- 1 row(s) selected.
+>>select * from t003t3 where a is null;
+
+--- 0 row(s) selected.
+>>select * from t003t3 where b is not null;
+
+A      B    
+-----  -----
+
+FALSE  FALSE
+TRUE   TRUE 
+
+--- 2 row(s) selected.
+>>
+>>select * from t003t3 where a = true or a = false;
+
+A      B    
+-----  -----
+
+FALSE  FALSE
+TRUE   TRUE 
+
+--- 2 row(s) selected.
+>>select * from t003t3 where b = true or b = false;
+
+A      B    
+-----  -----
+
+FALSE  FALSE
+TRUE   TRUE 
+
+--- 2 row(s) selected.
+>>
+>>select cast('true' as boolean) from (values(1)) x(a);
+
+(EXPR)
+------
+
+TRUE  
+
+--- 1 row(s) selected.
+>>select cast(' faLse  ' as boolean) from (values(1)) x(a);
+
+(EXPR)
+------
+
+FALSE 
+
+--- 1 row(s) selected.
+>>
+>>select cast(true as boolean not null) from (values(1)) x(a);
+
+(EXPR)
+------
+
+TRUE  
+
+--- 1 row(s) selected.
+>>select cast(false as boolean) from (values(1)) x(a);
+
+(EXPR)
+------
+
+FALSE 
+
+--- 1 row(s) selected.
+>>
+>>select cast(a as char(10)), cast (b as varchar(11)) from t003t3;
+
+(EXPR)      (EXPR)     
+----------  -----------
+
+FALSE       FALSE      
+TRUE        TRUE       
+
+--- 2 row(s) selected.
+>>
+>>delete from t003t3;
+
+--- 2 row(s) deleted.
+>>prepare s from insert into t003t3 values (?, ?);
+
+--- SQL command prepared.
+>>execute s using true, true;
+
+--- 1 row(s) inserted.
+>>execute s using 'false', ' falSE  ';
+
+--- 1 row(s) inserted.
+>>select * from t003t3;
+
+A      B    
+-----  -----
+
+FALSE  FALSE
+TRUE   TRUE 
+
+--- 2 row(s) selected.
+>>
+>>select !a, !b from t003t3;
+
+(EXPR)  (EXPR)
+------  ------
+
+TRUE    TRUE  
+FALSE   FALSE 
+
+--- 2 row(s) selected.
+>>select * from t003t3 where !a = false;
+
+A      B    
+-----  -----
+
+TRUE   TRUE 
+
+--- 1 row(s) selected.
+>>update t003t3 set b = !b;
+
+--- 2 row(s) updated.
+>>select * from t003t3;
+
+A      B    
+-----  -----
+
+FALSE  TRUE 
+TRUE   FALSE
+
+--- 2 row(s) selected.
+>>
+>>begin work;
+
+--- SQL operation complete.
+>>delete from t003t3 where b = false;
+
+--- 1 row(s) deleted.
+>>select * from t003t3;
+
+A      B    
+-----  -----
+
+FALSE  TRUE 
+
+--- 1 row(s) selected.
+>>rollback work;
+
+--- SQL operation complete.
+>>select * from t003t3;
+
+A      B    
+-----  -----
+
+FALSE  TRUE 
+TRUE   FALSE
+
+--- 2 row(s) selected.
+>>
+>>begin work;
+
+--- SQL operation complete.
+>>update t003t3 set b = false where b != false;
+
+--- 1 row(s) updated.
+>>select * from t003t3;
+
+A      B    
+-----  -----
+
+FALSE  FALSE
+TRUE   FALSE
+
+--- 2 row(s) selected.
+>>rollback work;
+
+--- SQL operation complete.
+>>select * from t003t3;
+
+A      B    
+-----  -----
+
+FALSE  TRUE 
+TRUE   FALSE
+
+--- 2 row(s) selected.
+>>
+>>obey TEST003(errors_bool);
+>>update t003t3 set b = b + 1;
+
+*** ERROR[4034] The operation (BOOLEAN + NUMERIC(1))  is not allowed.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>delete from t003t3;
+
+--- 2 row(s) deleted.
+>>
+>>insert into t003t3 values ('true', false);
+
+*** ERROR[4039] Column A is of type BOOLEAN, incompatible with the value's type, CHAR(4).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>insert into t003t3 values (1, true);
+
+*** ERROR[4039] Column A is of type BOOLEAN, incompatible with the value's type, NUMERIC(1).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select cast(' truee' as boolean) from (values(1)) x(a);
+
+*** ERROR[8426] The provided value, ' truee', is an invalid BOOLEAN value.
+
+--- 0 row(s) selected.
+>>
+>>prepare s from insert into t003t3 values (?, ?);
+
+--- SQL command prepared.
+>>execute s using 1, 2;
+
+*** ERROR[8426] The provided value, '2', is an invalid BOOLEAN value.
+
+*** ERROR[15015] PARAM ?(UNNAMED_2) (value 2) cannot be converted to type BOOLEAN.
+
+--- 0 row(s) inserted.
+>>
+>>obey TEST003(hive_bool);
+>>sh echo "drop table tbool;" > TEST003_junk;
+>>sh regrhive.ksh -f TEST003_junk;
+>>
+>>sh echo "create table tbool(a boolean);" > TEST003_junk;
+>>sh regrhive.ksh -f TEST003_junk;
+>>
+>>sh echo "insert into tbool values (true), (false), (NULL);" > TEST003_junk;
+>>sh regrhive.ksh -f TEST003_junk;
+>>
+>>invoke hive.hive.tbool;
+
+-- Definition of hive table TBOOL
+-- Definition current  Tue Jul 12 19:13:43 2016
+
+  (
+    A                                BOOLEAN
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>select * from hive.hive.tbool;
+
+A    
+-----
+
+TRUE 
+FALSE
+?    
+
+--- 3 row(s) selected.
+>>insert into hive.hive.tbool values (false), (true), (null);
+
+--- 3 row(s) inserted.
+>>select * from hive.hive.tbool;
+
+A    
+-----
+
+TRUE 
+FALSE
+?    
+FALSE
+TRUE 
+?    
+
+--- 6 row(s) selected.
+>>insert overwrite table hive.hive.tbool select a from t003t3;
+
+--- 0 row(s) inserted.
+>>select * from hive.hive.tbool;
+
+--- 0 row(s) selected.
+>>
+>>
+>>cqd traf_boolean_io 'OFF';
+
+--- SQL operation complete.
+>>obey TEST003(setup_bool);
+>>-----------------------------------------------------------
+>>-------------- BOOLEAN datatype ---------------------------
+>>-----------------------------------------------------------
+>>
+>>create table if not exists t003t3(a boolean not null primary key, b boolean)
++>  attribute aligned format;
+
+--- SQL operation complete.
+>>invoke t003t3;
+
+-- Definition of Trafodion table TRAFODION.SCH.T003T3
+-- Definition current  Tue Jul 12 19:13:50 2016
+
+  (
+    A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                BOOLEAN DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create table if not exists t003t3_like like t003t3;
+
+--- SQL operation complete.
+>>invoke t003t3_like;
+
+-- Definition of Trafodion table TRAFODION.SCH.T003T3_LIKE
+-- Definition current  Tue Jul 12 19:13:52 2016
+
+  (
+    A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                BOOLEAN DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create table if not exists t003t3_as primary key (a) as select * from t003t3;
+
+--- 0 row(s) inserted.
+>>invoke t003t3_as;
+
+-- Definition of Trafodion table TRAFODION.SCH.T003T3_AS
+-- Definition current  Tue Jul 12 19:13:53 2016
+
+  (
+    A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                BOOLEAN DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create table if not exists t003t3_salt(a boolean not null primary key)
++>  salt using 2 partitions;
+
+--- SQL operation complete.
+>>invoke t003t3_salt;
+
+-- Definition of Trafodion table TRAFODION.SCH.T003T3_SALT
+-- Definition current  Tue Jul 12 19:13:55 2016
+
+  (
+    A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  )
+  PRIMARY KEY ("_SALT_" ASC, A ASC)
+
+--- SQL operation complete.
+>>
+>>obey TEST003(dml_bool_short);
+>>insert into t003t3 values (true, true);
+
+--- 1 row(s) inserted.
+>>insert into t003t3 values (false, false);
+
+--- 1 row(s) inserted.
+>>
+>>select * from t003t3;
+
+A      B    
+-----  -----
+
+FALSE  FALSE
+TRUE   TRUE 
+
+--- 2 row(s) selected.
+>>
+>>delete from t003t3;
+
+--- 2 row(s) deleted.
+>>prepare s from insert into t003t3 values (cast(? as boolean), cast(? as boolean));
+
+--- SQL command prepared.
+>>execute s using true, true;
+
+--- 1 row(s) inserted.
+>>execute s using 'false', 'falSE';
+
+--- 1 row(s) inserted.
+>>select * from t003t3;
+
+A      B    
+-----  -----
+
+FALSE  FALSE
+TRUE   TRUE 
+
+--- 2 row(s) selected.
 >>
 >>
 >>log;

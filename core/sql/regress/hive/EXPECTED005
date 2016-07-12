@@ -834,7 +834,7 @@ t005part.a	t005part.b	t005part.c
 >>invoke hive.hive.thive_insert_smallint;
 
 -- Definition of hive table THIVE_INSERT_SMALLINT
--- Definition current  Sat Jul  2 07:06:59 2016
+-- Definition current  Fri Jul  8 09:45:59 2016
 
   (
     A                                SMALLINT
@@ -939,7 +939,7 @@ A
 >>invoke hive.hive.thive_insert_varchar;
 
 -- Definition of hive table THIVE_INSERT_VARCHAR
--- Definition current  Sat Jul  2 07:07:07 2016
+-- Definition current  Fri Jul  8 09:46:08 2016
 
   (
     A                                VARCHAR(1 CHAR) CHARACTER SET UTF8 COLLATE

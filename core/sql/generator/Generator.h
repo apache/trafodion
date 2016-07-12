@@ -129,8 +129,6 @@ class Generator : public NABasicObject
 
 	DO_EID_SPACE_USAGE_OPT = 0x0800,
 
-	//DOWNREV_COMPILE_NEEDED = 0x1000,
-
 	//this flag is used to indicate to the Root TDB that this is a Non-atomic statement
 	// where nonfatal errors are to be tolerated.
 	TOLERATE_NONFATAL_ERROR = 0x2000,
@@ -210,9 +208,6 @@ class Generator : public NABasicObject
 
         // If the statement can be reclaimed
         CANT_RECLAIM_QUERY = 0x1000
-        // almost all 32 bits are used in this enum, except
-	// DOWNREV_COMPILE_NEEDED = 0x1000, 
-        // is unused, so we recycle it.
   };
 
   /* All enum values for the flags_ have been used. Use this enum with 
@@ -412,13 +407,6 @@ class Generator : public NABasicObject
   NABoolean savedGenLeanExpr_;
 
   ComSpace * tempSpace_;
-
-  // downrevCompileMXV_ contains the version of code which needs to be
-  // generated. It is the min MXV of all partitions.
-  // For coyote, we need to generate either roadrunner or R2 fcs code,
-  // depending on the min MXV. Valid only if downrevCompileNeeded_ is TRUE.
-  // This will be removed when real versioning support is in.
-  COM_VERSION downrevCompileMXV_;
 
   // indicates to the split-top that this is a LRU query. This flag 
   // is set during RelRoot::codeGen(); that is where we know if this 
@@ -1105,11 +1093,6 @@ public:
   Int32 getSMTag() const { return genSMTag_; }
   Int32 getNextSMTag() { return ++genSMTag_; }
 
-  NABoolean downrevCompileNeeded() 
-  { 
-    return ((downrevCompileMXV_ == COM_VERS_CURR_PLAN) ? FALSE : TRUE);
-  }
-
   NABoolean doEidSpaceUsageOpt() { return (flags_ & DO_EID_SPACE_USAGE_OPT) != 0; };
   void setDoEidSpaceUsageOpt(NABoolean v)
   {
@@ -1383,10 +1366,6 @@ public:
   void setUpdateWithinCS(NABoolean u) { updateWithinCS_ = u;}
   ComTdbRoot *getTopRoot();
   const Space *getTopSpace() const;
-
-  void setDownrevCompileMXV(COM_VERSION mxv) 
-  { downrevCompileMXV_ = mxv;}
-  COM_VERSION getDownrevCompileMXV() { return downrevCompileMXV_;}
 
   static Lng32 getRecordLength(ComTdbVirtTableIndexInfo * indexInfo,
                                ComTdbVirtTableColumnInfo * columnInfoArray);

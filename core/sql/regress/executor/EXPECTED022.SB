@@ -2686,10 +2686,10 @@ A      B
 >>
 >>select cast(1 as numeric(10) unsigned) from (values(0))x;
 
-(EXPR)     
------------
+(EXPR)              
+--------------------
 
-          1
+                   1
 
 --- 1 row(s) selected.
 >>select cast(1 as decimal(10) unsigned) from (values(0))x;
@@ -4025,7 +4025,7 @@ Hello
 --- 0 row(s) selected.
 >>select cast(N'''\2' as double precision) from t022u;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted.  Source data 275c32
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 275c32
 
 --- 0 row(s) selected.
 >>?ifNT
@@ -4261,7 +4261,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2016-06-11 16:50:13.692785
+10:13:14.0000  10:13:14.0000  2016-07-10 05:20:08.800751
 
 --- 1 row(s) selected.
 >>--test on precision of time
@@ -7456,10 +7456,10 @@ A      B
 >>
 >>select cast(1 as numeric(10) unsigned) from (values(0))x;
 
-(EXPR)     
------------
+(EXPR)              
+--------------------
 
-          1
+                   1
 
 --- 1 row(s) selected.
 >>select cast(1 as decimal(10) unsigned) from (values(0))x;
@@ -9031,7 +9031,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2016-06-11 16:52:59.057377
+10:13:14.0000  10:13:14.0000  2016-07-10 05:23:22.454801
 
 --- 1 row(s) selected.
 >>--test on precision of time

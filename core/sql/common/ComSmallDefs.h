@@ -812,6 +812,8 @@ enum ComFSDataType { COM_UNKNOWN_FSDT              = -1
 		   , COM_BLOB                      = REC_BLOB
 		   , COM_CLOB                      = REC_CLOB
 
+                   , COM_BOOLEAN                   = REC_BOOLEAN
+
                    , COM_DATETIME_FSDT             = REC_DATETIME
                    , COM_INTERVAL_MIN_FSDT         = REC_MIN_INTERVAL
                    , COM_INTERVAL_YEAR_YEAR_FSDT   = REC_INT_YEAR
@@ -1011,6 +1013,7 @@ enum ComODBCDataType { COM_UNKNOWN_ODT
                      , COM_LARGE_DECIMAL_UNSIGNED_ODT
 		     , COM_BLOB_ODT
 		     , COM_CLOB_ODT
+		     , COM_BOOLEAN_ODT
                      , COM_DATETIME_ODT
                      , COM_TIMESTAMP_ODT
                      , COM_DATE_ODT
@@ -1045,6 +1048,7 @@ enum ComODBCDataType { COM_UNKNOWN_ODT
 #define COM_INTERVAL_ODT_LIT                   "INTERVAL          "
 #define COM_BLOB_ODT_LIT                       "BLOB              "
 #define COM_CLOB_ODT_LIT                       "CLOB              "
+#define COM_BOOLEAN_ODT_LIT                    "BOOLEAN           "
 
 enum ComAccessPathType  { COM_UNKNOWN_ACCESS_PATH_TYPE
                         , COM_BASE_TABLE_TYPE
@@ -1571,6 +1575,7 @@ enum ComSQLDataType { COM_UNKNOWN_SDT
                     , COM_LARGE_DECIMAL_UNSIGNED_SDT
 		    , COM_BLOB_SDT
 		    , COM_CLOB_SDT
+		    , COM_BOOLEAN_SDT
                     , COM_DATETIME_SDT
                     , COM_TIMESTAMP_SDT
                     , COM_DATE_SDT
@@ -1605,6 +1610,7 @@ enum ComSQLDataType { COM_UNKNOWN_SDT
 #define COM_INTERVAL_SDT_LIT                   "INTERVAL          "
 #define COM_BLOB_SDT_LIT                       "BLOB              "
 #define COM_CLOB_SDT_LIT                       "CLOB              "
+#define COM_BOOLEAN_SDT_LIT                    "BOOLEAN           "
 
 enum ComViewCheckOption { COM_UNKNOWN_CHECK_OPTION
                         , COM_CASCADE_CHECK_OPTION

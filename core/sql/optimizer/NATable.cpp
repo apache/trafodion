@@ -3304,6 +3304,12 @@ NABoolean createNAType(columns_desc_struct *column_desc	/*IN*/,
 		column_desc->null_flag);
       break;
 
+    case REC_BOOLEAN :
+      {
+        type = new (heap) SQLBooleanNative(column_desc->null_flag);
+      }
+      break;
+
     default:
       {
 	// 4031 Column %s is an unknown data type, %d.
@@ -3580,6 +3586,9 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
   if ( !strcmp(hiveType, "bigint"))
     return new (heap) SQLLargeInt(TRUE /* neg */, TRUE /* allow NULL*/, heap);
 
+  if ( !strcmp(hiveType, "boolean"))
+    return new (heap) SQLBooleanNative(TRUE, heap);
+ 
   if ( !strcmp(hiveType, "string"))
     {
       Int32 len = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);

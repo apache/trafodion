@@ -865,11 +865,17 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
 		       << DgInt1((Lng32)CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED)); 
       return NULL;
     }
+
+  NABoolean createTinyLiteral = 
+    ((CmpCommon::getDefault(TRAF_CREATE_TINYINT_LITERAL)) == DF_ON);
   
   char numericVal[8];
   short datatype = -1;
   Lng32 length = -1;
-  if (strSize < 5) {
+  if ((createTinyLiteral) && (strSize < 3)) {
+    datatype = (createSignedDatatype ? REC_BIN8_SIGNED : REC_BIN8_UNSIGNED);
+    length = sizeof(Int8);
+  } else if (strSize < 5) {
     datatype = (createSignedDatatype ? REC_BIN16_SIGNED : REC_BIN16_UNSIGNED);
     length = sizeof(short);
   } else if (strSize < 10) {

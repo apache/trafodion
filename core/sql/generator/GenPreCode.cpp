@@ -1752,8 +1752,7 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
             }
 
 
-	  if ((CmpCommon::getDefault(EID_SPACE_USAGE_OPT) == DF_ON) &&
-	      (NOT generator->downrevCompileNeeded()))
+	  if (CmpCommon::getDefault(EID_SPACE_USAGE_OPT) == DF_ON)
 	    {
 	      generator->setDoEidSpaceUsageOpt(TRUE);
 	    }
@@ -1793,9 +1792,6 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 		  generator->oltOptInfo()->setOltEidLeanOpt(TRUE);
 		}
 	    }
-
-	  if (generator->downrevCompileNeeded())
-	    generator->oltOptInfo()->setOltEidLeanOpt(FALSE);
 
 	  if (CmpCommon::getDefault(OLT_QUERY_OPT_LEAN) == DF_OFF)
 	    generator->oltOptInfo()->setOltEidLeanOpt(FALSE);
@@ -3577,18 +3573,6 @@ RelExpr * HashJoin::preCodeGen(Generator * generator,
 
   if (hjp.isEmpty())
   {
-    if (generator->downrevCompileNeeded())
-      {
-	// This is a cartesian product.
-	// create a join predicate " 1 = 1 " which will always be true.
-	//
-	ItemExpr *left = new(generator->wHeap()) ConstValue(1);
-	ItemExpr *right = new(generator->wHeap()) ConstValue(1);
-
-	BiRelat *pred = new(generator->wHeap()) BiRelat(ITM_EQUAL,left,right);
-	pred->bindNode(generator->getBindWA());
-	newJoinPreds.insert(pred->getValueId());
-      }
   }
   else
   {
@@ -7929,6 +7913,17 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
   return this;
 } // BiArith::preCodeGen()
 
+ItemExpr * UnArith::preCodeGen(Generator * generator)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
+
+  if (! ItemExpr::preCodeGen(generator))
+    return NULL;
+
+  return this;
+}
+
 ItemExpr * BiLogic::preCodeGen(Generator * generator)
 {
   if (nodeIsPreCodeGenned())
@@ -8659,60 +8654,13 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
         }
     }
 
+  if (generator->getExpGenerator()->handleUnsupportedCast(this))
+    return NULL;
+
   const NAType &srcNAType = child(0)->getValueId().getType();
   const NAType &tgtNAType = getValueId().getType();
   short srcFsType = srcNAType.getFSDatatype();
   short tgtFsType = tgtNAType.getFSDatatype();
-
-  // Currently, Tinyint conversions are only supported to/from smallint.
-  // if source is TINYINT, then convert it to SMALLINT first.
-  if (((srcNAType.getTypeName() == LiteralTinyInt) &&
-       (tgtNAType.getTypeName() != LiteralSmallInt)) ||
-      ((srcNAType.getTypeName() != LiteralSmallInt) &&
-       (tgtNAType.getTypeName() == LiteralTinyInt)))
-    {
-      // add a Cast node to convert from/to tinyint to/from small int.
-      ItemExpr * newChild =
-        new (generator->wHeap())
-        Cast(child(0),
-             new (generator->wHeap())
-             SQLSmall(TRUE,
-                      srcNAType.supportsSQLnull()));
-      ((Cast*)newChild)->setFlags(getFlags());
-      setSrcIsVarcharPtr(FALSE);
-      newChild = newChild->bindNode(generator->getBindWA());
-      newChild = newChild->preCodeGen(generator);
-      if (! newChild)
-        return NULL;
-      
-      setChild(0, newChild);
-      srcFsType = child(0)->getValueId().getType().getFSDatatype();
-    }
-
-  if (((srcNAType.getTypeQualifier() == NA_NUMERIC_TYPE) &&
-       (tgtNAType.getTypeQualifier() == NA_NUMERIC_TYPE)) &&
-      ((NOT srcNAType.expConvSupported(tgtNAType)) ||
-       (NOT tgtNAType.expConvSupported(srcNAType))))
-    {
-      const NumericType &numSrc = (NumericType&)srcNAType;
-      // add a Cast node to convert to sqllargeint signed.
-      ItemExpr * newChild =
-        new (generator->wHeap())
-        Cast(child(0),
-             new (generator->wHeap())
-             SQLLargeInt(numSrc.getScale(), 1,
-                         TRUE,
-                         srcNAType.supportsSQLnull()));
-      ((Cast*)newChild)->setFlags(getFlags());
-      setSrcIsVarcharPtr(FALSE);
-      newChild = newChild->bindNode(generator->getBindWA());
-      newChild = newChild->preCodeGen(generator);
-      if (! newChild)
-        return NULL;
-      
-      setChild(0, newChild);
-      srcFsType = child(0)->getValueId().getType().getFSDatatype();
-    }
 
   if ((sourceTypeQual == NA_NUMERIC_TYPE) &&
       (targetTypeQual == NA_DATETIME_TYPE))
@@ -9011,6 +8959,9 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 	    child(0) = new(generator->wHeap()) Cast(child(0),intermediateType);
 
 	    child(0)->bindNode(generator->getBindWA());
+
+            if (generator->getExpGenerator()->handleUnsupportedCast((Cast*)child(0)->castToItemExpr()))
+              return NULL;
 
 	    // To suppress insertion of multiplying/dividing, mark Cast as
 	    // already pre-code-genned.
