@@ -1370,7 +1370,8 @@ Ex_Lob_Error ExLob::openDataCursor(char *file, LobsCursorType type,
         if (!fdData_)
           {
             openFlags_ = -1;
-            *hdfsDetailError = errno;
+            if (hdfsDetailError)
+              *hdfsDetailError = errno;
             lobCursorLock_.unlock();
             return LOB_DATA_FILE_OPEN_ERROR;
           }                
