@@ -21,7 +21,7 @@
 >>invoke t003t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1
--- Definition current  Sun Jul 10 06:36:25 2016
+-- Definition current  Tue Jul 12 19:09:22 2016
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -40,7 +40,7 @@
 >>invoke t003t1_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1_LIKE
--- Definition current  Sun Jul 10 06:36:36 2016
+-- Definition current  Tue Jul 12 19:09:35 2016
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -59,7 +59,7 @@
 >>invoke t003t1_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1_AS
--- Definition current  Sun Jul 10 06:36:41 2016
+-- Definition current  Tue Jul 12 19:09:40 2016
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -305,7 +305,7 @@ A     B     C    D
 >>invoke hive.hive.ttiny;
 
 -- Definition of hive table TTINY
--- Definition current  Sun Jul 10 06:37:34 2016
+-- Definition current  Tue Jul 12 19:10:44 2016
 
   (
     A                                TINYINT
@@ -450,7 +450,7 @@ A     B
 >>invoke t003t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2
--- Definition current  Sun Jul 10 06:37:44 2016
+-- Definition current  Tue Jul 12 19:10:56 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -467,7 +467,7 @@ A     B
 >>invoke t003t2_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_LIKE
--- Definition current  Sun Jul 10 06:37:48 2016
+-- Definition current  Tue Jul 12 19:11:02 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -484,7 +484,7 @@ A     B
 >>invoke t003t2_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_AS
--- Definition current  Sun Jul 10 06:37:53 2016
+-- Definition current  Tue Jul 12 19:11:06 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -778,7 +778,7 @@ A                     B
 >>invoke t003t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2
--- Definition current  Sun Jul 10 06:38:21 2016
+-- Definition current  Tue Jul 12 19:11:39 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -795,7 +795,7 @@ A                     B
 >>invoke t003t2_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_LIKE
--- Definition current  Sun Jul 10 06:38:25 2016
+-- Definition current  Tue Jul 12 19:11:44 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -812,7 +812,7 @@ A                     B
 >>invoke t003t2_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_AS
--- Definition current  Sun Jul 10 06:38:28 2016
+-- Definition current  Tue Jul 12 19:11:49 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1109,7 +1109,7 @@ A                     B
 >>invoke t003t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2
--- Definition current  Sun Jul 10 06:38:55 2016
+-- Definition current  Tue Jul 12 19:12:19 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1126,7 +1126,7 @@ A                     B
 >>invoke t003t2_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_LIKE
--- Definition current  Sun Jul 10 06:38:59 2016
+-- Definition current  Tue Jul 12 19:12:24 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1143,7 +1143,7 @@ A                     B
 >>invoke t003t2_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_AS
--- Definition current  Sun Jul 10 06:39:03 2016
+-- Definition current  Tue Jul 12 19:12:27 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1430,7 +1430,7 @@ A                      B
 >>invoke t003t3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3
--- Definition current  Sun Jul 10 06:39:10 2016
+-- Definition current  Tue Jul 12 19:12:35 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1446,7 +1446,7 @@ A                      B
 >>invoke t003t3_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_LIKE
--- Definition current  Sun Jul 10 06:39:14 2016
+-- Definition current  Tue Jul 12 19:12:40 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1462,7 +1462,7 @@ A                      B
 >>invoke t003t3_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_AS
--- Definition current  Sun Jul 10 06:39:18 2016
+-- Definition current  Tue Jul 12 19:12:44 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1479,7 +1479,7 @@ A                      B
 >>invoke t003t3_salt;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_SALT
--- Definition current  Sun Jul 10 06:39:20 2016
+-- Definition current  Tue Jul 12 19:12:47 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1795,7 +1795,7 @@ TRUE   FALSE
 >>
 >>select cast(' truee' as boolean) from (values(1)) x(a);
 
-*** ERROR[8426] The provided value, TRUEE, is an invalid BOOLEAN value.
+*** ERROR[8426] The provided value, ' truee', is an invalid BOOLEAN value.
 
 --- 0 row(s) selected.
 >>
@@ -1804,7 +1804,7 @@ TRUE   FALSE
 --- SQL command prepared.
 >>execute s using 1, 2;
 
-*** ERROR[8426] The provided value, 2, is an invalid BOOLEAN value.
+*** ERROR[8426] The provided value, '2', is an invalid BOOLEAN value.
 
 *** ERROR[15015] PARAM ?(UNNAMED_2) (value 2) cannot be converted to type BOOLEAN.
 
@@ -1823,7 +1823,7 @@ TRUE   FALSE
 >>invoke hive.hive.tbool;
 
 -- Definition of hive table TBOOL
--- Definition current  Sun Jul 10 06:40:13 2016
+-- Definition current  Tue Jul 12 19:13:43 2016
 
   (
     A                                BOOLEAN
@@ -1880,7 +1880,7 @@ TRUE
 >>invoke t003t3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3
--- Definition current  Sun Jul 10 06:40:19 2016
+-- Definition current  Tue Jul 12 19:13:50 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1896,7 +1896,7 @@ TRUE
 >>invoke t003t3_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_LIKE
--- Definition current  Sun Jul 10 06:40:20 2016
+-- Definition current  Tue Jul 12 19:13:52 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1912,7 +1912,7 @@ TRUE
 >>invoke t003t3_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_AS
--- Definition current  Sun Jul 10 06:40:22 2016
+-- Definition current  Tue Jul 12 19:13:53 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1929,7 +1929,7 @@ TRUE
 >>invoke t003t3_salt;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_SALT
--- Definition current  Sun Jul 10 06:40:23 2016
+-- Definition current  Tue Jul 12 19:13:55 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE

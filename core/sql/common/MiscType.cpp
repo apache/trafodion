@@ -183,10 +183,8 @@ void SQLBooleanNative::minRepresentableValue(void* bufPtr, Lng32* bufLen,
 				     CollHeap* h) const
 {
   assert(*bufLen >= sizeof(Int8));
-  Lng32 valueBuf;
   *bufLen = sizeof(Int8);
   *((Int8*)bufPtr) = 0;
-  valueBuf = 0;
 
   if (stringLiteral != NULL)
     {
@@ -203,10 +201,8 @@ void SQLBooleanNative::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
 				     CollHeap* h) const
 {
   assert(*bufLen >= sizeof(Int8));
-  Lng32 valueBuf;
   *bufLen = sizeof(Int8);
   *((Int8*)bufPtr) = 1;
-  valueBuf = 0;
   
   if (stringLiteral != NULL)
     {

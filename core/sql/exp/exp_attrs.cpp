@@ -278,7 +278,7 @@ switch (datatype)
   case REC_INT_FRACTION: return extFormat? (char *)"INTERVAL FRACTION":(char *)"REC_INT_FRACTION";
   case REC_BLOB: return extFormat? (char *)"BLOB":(char *)"REC_BLOB";
   case REC_CLOB: return extFormat? (char *)"CLOB":(char *)"REC_CLOB";
-  case REC_BOOLEAN: return extFormat ? (char *)"BOOLEAN" : (char *)"BOOLEAN";
+  case REC_BOOLEAN: return extFormat ? (char *)"BOOLEAN" : (char *)"REC_BOOLEAN";
 
   // When you add new datatype in /common/dfs2rec.h, don't
   // forget add new case here. Otherwise, showplan won't display it.

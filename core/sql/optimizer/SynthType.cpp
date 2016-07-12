@@ -1965,8 +1965,8 @@ const NAType *UnArith::synthesizeType()
     {
       *CmpCommon::diags() << DgSqlCode(-4034)
                           << DgString0("!")
-                          << DgString1("")
-                          << DgString2(child(0)->getTextUpper());
+                          << DgString1(child(0)->getText())
+                          << DgString2("");
       
       return NULL;
     }

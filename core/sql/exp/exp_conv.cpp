@@ -11330,9 +11330,14 @@ convDoIt(char * source,
         *(Int8*)target = 0;
       else
         {
+          char srcErrBuf[sourceLen + 1 + 2/*for quotes*/];
+          strcpy(srcErrBuf, "'");
+          str_cpy_all(&srcErrBuf[1], source, sourceLen);
+          srcErrBuf[1+sourceLen]=0;
+          strcat(srcErrBuf, "'");
           ExRaiseSqlError(heap, diagsArea, EXE_INVALID_BOOLEAN_VALUE,
                           NULL, NULL, NULL, NULL,
-                          srcTempPtr);
+                          srcErrBuf);
           return ex_expr::EXPR_ERROR;
         }
     }

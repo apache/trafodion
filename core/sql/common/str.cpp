@@ -1009,12 +1009,13 @@ char * str_strip_blanks(char *src , Lng32 &len,
   if (! src)
     return NULL;
 
-  len = str_len(src)-1;
-  if (len <= 0)
+  len = str_len(src);
+  if (len == 0) // empty
     return src;
 
   if (stripTrailing)
     {
+      len--;
       while ((len >= 0) && (src[len] == ' '))
         len--;
 
