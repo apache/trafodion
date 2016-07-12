@@ -14,20 +14,16 @@
 #  limitations under the License.
 #
 # @@@ END COPYRIGHT @@@
-
-# Default version number
-# daily, pre-release, & release builds are named based on build ID (tag or date)
-# Version identifier is two parts:
-#  * Trafodion version supported
-#  * Installer version number (starting from 1 for each Trafodion version)
-#
-# "v000" indicates an internal/development version of installer
-RELEASE_VER ?= 1.0.0_v002
+RELEASE_VER ?= ${TRAFODION_VER}-incubating
+RELEASE_TYPE ?= $(shell echo $(TRAFODION_VER_PROD)| sed -e 's/ /-/g')
+INSTALLER_TARNAME = $(shell echo ${RELEASE_TYPE}_installer-${RELEASE_VER}.tar.gz |tr '[A-Z]' '[a-z]')
 
 all: pkg-installer 
 
 pkg-installer: installer/LICENSE installer/NOTICE installer/DISCLAIMER
-	tar czf installer-$(RELEASE_VER).tar.gz installer --exclude=tools
+	tar czf ${INSTALLER_TARNAME} installer --exclude=tools
+	mkdir -p ../distribution
+	mv ${INSTALLER_TARNAME} ../distribution
 
 installer/LICENSE: ../licenses/LICENSE-install
 	cp -f $? $@
@@ -45,4 +41,4 @@ version:
 	@echo "$(RELEASE_VER)"
 
 clean:
-	rm installer-$(RELEASE_VER).tar.gz
+	rm -f ${INSTALLER_TARNAME} 
