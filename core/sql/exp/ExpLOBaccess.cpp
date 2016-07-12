@@ -1300,8 +1300,11 @@ Ex_Lob_Error ExLob::openCursor(char *handleIn, Int32 handleInLen,Int64 transId)
     return LOB_OPER_OK;
 }
 
-Ex_Lob_Error ExLob::openDataCursor(char *file, LobsCursorType type, Int64 range, Int64 bufMaxSize, 
-                                   Int64 maxBytes, Int64 waited, ExLobGlobals *lobGlobals)
+Ex_Lob_Error ExLob::openDataCursor(char *file, LobsCursorType type, 
+                                   Int64 range, Int64 bufMaxSize, 
+                                   Int64 maxBytes, Int64 waited, 
+                                   ExLobGlobals *lobGlobals,
+                                   Int32 *hdfsDetailError)
 {
     Ex_Lob_Error err;
     cursor_t cursor;
@@ -1367,6 +1370,7 @@ Ex_Lob_Error ExLob::openDataCursor(char *file, LobsCursorType type, Int64 range,
         if (!fdData_)
           {
             openFlags_ = -1;
+            *hdfsDetailError = errno;
             lobCursorLock_.unlock();
             return LOB_DATA_FILE_OPEN_ERROR;
           }                
@@ -2379,7 +2383,7 @@ Ex_Lob_Error ExLobsOper (
       } else if (openType == 2) { // must open
 	sprintf(fn,"%s:%Lx:%s",lobPtr->getDataFileName(), (long long unsigned int)lobName, cursorId);
 	fileName = fn;
-	err = lobPtr->openDataCursor(fileName, Lob_Cursor_Simple, descNumIn, sourceLen, cursorBytes, waited, lobGlobals);
+	err = lobPtr->openDataCursor(fileName, Lob_Cursor_Simple, descNumIn, sourceLen, cursorBytes, waited, lobGlobals, (Int32 *)blackBox);
       } else
 	err = LOB_SUBOPER_ERROR;
       break;
@@ -3324,7 +3328,7 @@ Ex_Lob_Error ExLobGlobals::processPreOpens()
 
         lobPtr->openDataCursor(preOpenObj->cursorName_, Lob_Cursor_Simple, preOpenObj->range_, 
                                preOpenObj->bufMaxSize_, preOpenObj->maxBytes_, 
-                               preOpenObj->waited_, this);
+                               preOpenObj->waited_, this,0);
     }
 
     return LOB_OPER_OK;
