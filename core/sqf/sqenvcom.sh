@@ -475,8 +475,8 @@ else
 
   cat <<EOF
     If you haven't set HBASE_DISTRO, please set it before source current file
-      export HBASE_DISTRO=APACHE1.0 (APACHE HBASE1.0)
-      export HBASE_DISTRO=APACHE1.1 (APACHE HBASE1.1)
+      export HBASE_DISTRO=HBASE1.0 (APACHE HBASE1.0)
+      export HBASE_DISTRO=HBASE1.1 (APACHE HBASE1.1)
       export HBASE_DISTRO=CDH5.4    (cloudera 1.0.0-cdh5.4.4) 
       export HBASE_DISTRO=CDH5.5    (cloudera 1.0.0-cdh5.5.1) 
       export HBASE_DISTRO=HDP       (hortonworks 2.3)
