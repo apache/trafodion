@@ -122,10 +122,10 @@ done
 # (or most recently added item)
 if [[ "$FORCE" != "true" ]]
 then
-  $MY_HIVE_CMD -e 'describe store_orc;' >/dev/null 2>&1
+  $MY_HIVE_CMD -e 'describe ship_mode;' >/dev/null 2>&1
   if (( $? == 0 ))
   then
-    echo "Hive table store_orc found. Skipping TPC-DS set-up."
+    echo "Hive table ship_mode found. Skipping TPC-DS set-up."
     exit 0
   fi
 fi
@@ -200,6 +200,21 @@ fi
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table store       >>${MY_LOG_FILE} 2>&1
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table promotion   >>${MY_LOG_FILE} 2>&1
 
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table store_returns >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table catalog_sales >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table catalog_returns >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table web_sales   >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table web_returns >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table inventory   >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table call_center >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table catalog_page >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table web_site    >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table web_page    >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table warehouse   >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table income_band >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table reason      >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table ship_mode   >>${MY_LOG_FILE} 2>&1
+
   $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds                        >>${MY_LOG_FILE} 2>&1
   $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/date_dim               >>${MY_LOG_FILE} 2>&1
   $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/time_dim               >>${MY_LOG_FILE} 2>&1
@@ -211,6 +226,20 @@ fi
   $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/store                  >>${MY_LOG_FILE} 2>&1
   $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/promotion              >>${MY_LOG_FILE} 2>&1
   $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/store_sales            >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/ship_mode              >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/reason                 >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/income_band            >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/warehouse              >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/web_page               >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/web_site               >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/catalog_page           >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/call_center            >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/inventory              >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/web_returns            >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/web_sales              >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/catalog_returns        >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/catalog_sales          >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/store_returns          >>${MY_LOG_FILE} 2>&1
 
   cd $MY_TPCDS_DATA_DIR
 
@@ -220,7 +249,7 @@ fi
     echo "iconv utility not available. The data will be in ISO-8859-1 format."
   else
     echo "Converting the data into UTF-8 format ..."
-    for t in date_dim time_dim item customer customer_demographics household_demographics customer_address store promotion store_sales
+    for t in date_dim time_dim item customer customer_demographics household_demographics customer_address store promotion store_sales store_returns catalog_sales catalog_returns web_sales web_returns inventory call_center catalog_page web_site web_page warehouse income_band reason reason
       do
         iconv -f ISO-8859-1 -t UTF-8 -o ${t}.utf8.dat ${t}.dat >>${MY_LOG_FILE} 2>&1
         mv ${t}.utf8.dat ${t}.dat
@@ -228,7 +257,7 @@ fi
   fi
 
   echo "Copying generated data to HDFS..."
-  for t in date_dim time_dim item customer customer_demographics household_demographics customer_address store promotion store_sales
+  for t in date_dim time_dim item customer customer_demographics household_demographics customer_address store promotion store_sales store_returns catalog_sales catalog_returns web_sales web_returns inventory call_center catalog_page web_site web_page warehouse income_band reason reason
     do
       $MY_HDFS_CMD dfs -put ${t}.dat /hive/tpcds/${t}        >>${MY_LOG_FILE} 2>&1
     done
@@ -476,6 +505,341 @@ row format delimited fields terminated by '|'
 location '/hive/tpcds/customer_address';
 
 create table store_orc stored as orc as select * from store;
+
+create external table store_returns
+(
+    sr_returned_date_sk         int,
+    sr_return_time_sk           int,
+    sr_item_sk                  int,
+    sr_customer_sk              int,
+    sr_cdemo_sk                 int,
+    sr_hdemo_sk                 int,
+    sr_addr_sk                  int,
+    sr_store_sk                 int,
+    sr_reason_sk                int,
+    sr_ticket_number            int,
+    sr_return_quantity          int,
+    sr_return_amt               float,
+    sr_return_tax               float,
+    sr_return_amt_inc_tax       float,
+    sr_fee                      float,
+    sr_return_ship_cost         float,
+    sr_refunded_cash            float,
+    sr_reversed_charge          float,
+    sr_store_credit             float,
+    sr_net_loss                 float
+)
+row format delimited fields terminated by '|'
+location '/hive/tpcds/store_returns';
+
+
+create external table catalog_sales
+(
+    cs_sold_date_sk         int,
+    cs_sold_time_sk         int,
+    cs_ship_date_sk         int,
+    cs_bill_customer_sk     int,
+    cs_bill_cdemo_sk        int,
+    cs_bill_hdemo_sk        int,
+    cs_bill_addr_sk         int,
+    cs_ship_customer_sk     int,
+    cs_ship_cdemo_sk        int,
+    cs_ship_hdemo_sk        int,
+    cs_ship_addr_sk         int,
+    cs_call_center_sk       int,
+    cs_catalog_page_sk      int,
+    cs_ship_mode_sk         int,
+    cs_warehouse_sk         int,
+    cs_item_sk              int,
+    cs_promo_sk             int,
+    cs_order_number         int,
+    cs_quantity             int,
+    cs_wholesale_cost       float,
+    cs_list_price           float,
+    cs_sales_price          float,
+    cs_ext_discount_amt     float,
+    cs_ext_sales_price      float,
+    cs_ext_wholesale_cost   float,
+    cs_ext_list_price       float,
+    cs_ext_tax              float,
+    cs_coupon_amt           float,
+    cs_ext_ship_cost        float,
+    cs_net_paid             float,
+    cs_net_paid_inc_tax     float,
+    cs_net_paid_inc_ship    float,
+    cs_net_paid_inc_ship_tax    float,
+    cs_net_profit           float
+)
+row format delimited fields terminated by '|'
+location '/hive/tpcds/catalog_sales';
+
+
+create external table  catalog_returns
+(
+    cr_returned_date_sk         int,
+    cr_returned_time_sk         int,
+    cr_item_sk                  int,
+    cr_refunded_customer_sk     int,
+    cr_refunded_cdemo_sk        int,
+    cr_refunded_hdemo_sk        int,
+    cr_refunded_addr_sk         int,
+    cr_returning_customer_sk    int,
+    cr_returning_cdemo_sk       int,
+    cr_returning_hdemo_sk       int,
+    cr_returning_addr_sk        int,
+    cr_call_center_sk           int,
+    cr_catalog_page_sk          int,
+    cr_ship_mode_sk             int,
+    cr_warehouse_sk             int,
+    cr_reason_sk                int,
+    cr_order_number             int,
+    cr_return_quantity          int,
+    cr_return_amount            float,
+    cr_return_tax               float,
+    cr_return_amt_inc_tax       float,
+    cr_fee                      float,
+    cr_return_ship_cost         float,
+    cr_refunded_cash            float,
+    cr_reversed_charge          float,
+    cr_store_credit             float,
+    cr_net_loss                 float
+)
+row format delimited fields terminated by '|'
+location '/hive/tpcds/catalog_returns';
+
+create external table  web_sales
+(
+    ws_sold_date_sk             int,
+    ws_sold_time_sk             int,
+    ws_ship_date_sk             int,
+    ws_item_sk                  int,
+    ws_bill_customer_sk         int,
+    ws_bill_cdemo_sk            int,
+    ws_bill_hdemo_sk            int,
+    ws_bill_addr_sk             int,
+    ws_ship_customer_sk         int,
+    ws_ship_cdemo_sk            int,
+    ws_ship_hdemo_sk            int,
+    ws_ship_addr_sk             int,
+    ws_web_page_sk              int,
+    ws_web_site_sk              int,
+    ws_ship_mode_sk             int,
+    ws_warehouse_sk             int,
+    ws_promo_sk                 int,
+    ws_order_number             int,
+    ws_quantity                 int,
+    ws_wholesale_cost           float,
+    ws_list_price               float,
+    ws_sales_price              float,
+    ws_ext_discount_amt         float,
+    ws_ext_sales_price          float,
+    ws_ext_wholesale_cost       float,
+    ws_ext_list_price           float,
+    ws_ext_tax                  float,
+    ws_coupon_amt               float,
+    ws_ext_ship_cost            float,
+    ws_net_paid                 float,
+    ws_net_paid_inc_tax         float,
+    ws_net_paid_inc_ship        float,
+    ws_net_paid_inc_ship_tax    float,
+    ws_net_profit               float
+)
+row format delimited fields terminated by '|'
+location '/hive/tpcds/web_sales';
+
+create external table web_returns
+(
+    wr_returned_date_sk         int,
+    wr_returned_time_sk         int,
+    wr_item_sk                  int,
+    wr_refunded_customer_sk     int,
+    wr_refunded_cdemo_sk        int,
+    wr_refunded_hdemo_sk        int,
+    wr_refunded_addr_sk         int,
+    wr_returning_customer_sk    int,
+    wr_returning_cdemo_sk       int,
+    wr_returning_hdemo_sk       int,
+    wr_returning_addr_sk        int,
+    wr_web_page_sk              int,
+    wr_reason_sk                int,
+    wr_order_number             int,
+    wr_return_quantity          int,
+    wr_return_amt               float,
+    wr_return_tax               float,
+    wr_return_amt_inc_tax       float,
+    wr_fee                      float,
+    wr_return_ship_cost         float,
+    wr_refunded_cash            float,
+    wr_reversed_charge          float,
+    wr_account_credit           float,
+    wr_net_loss                 float
+)
+row format delimited fields terminated by '|'
+location '/hive/tpcds/web_returns';
+
+create external table inventory
+(
+    inv_date_sk             int,
+    inv_item_sk             int,
+    inv_warehouse_sk        int,
+    inv_quantity_on_hand    int
+)
+row format delimited fields terminated by '|'
+location '/hive/tpcds/inventory';
+
+create external table call_center
+(
+    cc_call_center_sk       int,
+    cc_call_center_id       string,
+    cc_rec_start_date       timestamp,
+    cc_rec_end_date         timestamp,
+    cc_closed_date_sk       int,
+    cc_open_date_sk         int,
+    cc_name                 string,
+    cc_class                string,
+    cc_employees            int,
+    cc_sq_ft                int,
+    cc_hours                string,
+    cc_manager              string,
+    cc_mkt_id               int,
+    cc_mkt_class            string,
+    cc_mkt_desc             string,
+    cc_market_manager       string,
+    cc_division             int,
+    cc_division_name        string,
+    cc_company              int,
+    cc_company_name         string,
+    cc_street_number        string,
+    cc_street_name          string,
+    cc_street_type          string,
+    cc_suite_number         string,
+    cc_city                 string,
+    cc_county               string,
+    cc_state                string,
+    cc_zip                  string,
+    cc_country              string,
+    cc_gmt_offset           float,
+    cc_tax_percentage       float
+)
+row format delimited fields terminated by '|'
+location '/hive/tpcds/call_center';
+
+create external table catalog_page
+(
+    cp_catalog_page_sk      int,
+    cp_catalog_page_id      string,
+    cp_start_date_sk        int ,
+    cp_end_date_sk          int,
+    cp_department           string,
+    cp_catalog_number       int,
+    cp_catalog_page_number  int,
+    cp_description          string,
+    cp_type                 string
+)
+row format delimited fields terminated by '|'
+location '/hive/tpcds/catalog_page';
+
+create external table web_site
+(
+    web_site_sk             int ,
+    web_site_id             string ,
+    web_rec_start_date      timestamp,
+    web_rec_end_date        timestamp,
+    web_name                string,
+    web_open_date_sk        int,
+    web_close_date_sk       int,
+    web_class               string,
+    web_manager             string,
+    web_mkt_id              int,
+    web_mkt_class           string,
+    web_mkt_desc            string,
+    web_market_manager      string,
+    web_company_id          int,
+    web_company_name        string,
+    web_street_number       string,
+    web_street_name         string,
+    web_street_type         string,
+    web_suite_number        string,
+    web_city                string,
+    web_county              string,
+    web_state               string,
+    web_zip                 string,
+    web_country             string,
+    web_gmt_offset          float,
+    web_tax_percentage      float
+)
+row format delimited fields terminated by '|'
+location '/hive/tpcds/web_site';
+
+create external table Web_page
+(
+    wp_web_page_sk          int,
+    wp_web_page_id          string,
+    wp_rec_start_date       timestamp,
+    wp_rec_end_date         timestamp,
+    wp_creation_date_sk     int,
+    wp_access_date_sk       int,
+    wp_autogen_flag         string,
+    wp_customer_sk          int,
+    wp_url                  string,
+    wp_type                 string,
+    wp_char_count           int,
+    wp_link_count           int,
+    wp_image_count          int,
+    wp_max_ad_count         int
+)
+row format delimited fields terminated by '|'
+location '/hive/tpcds/web_page';
+
+create external table warehouse
+(
+    w_warehouse_sk          int ,
+    w_warehouse_id          string,
+    w_warehouse_name        string,
+    w_warehouse_sq_ft       int,
+    w_street_number         string,
+    w_street_name           string,
+    w_street_type           string,
+    w_suite_number          string,
+    w_city                  string,
+    w_county                string,
+    w_state                 string,
+    w_zip                   string,
+    w_country               string,
+    w_gmt_offset            float
+)
+row format delimited fields terminated by '|'
+location '/hive/tpcds/warehouse';
+
+create external table income_band
+(
+    ib_income_band_sk       int,
+    ib_lower_bound          int,
+    ib_upper_bound          int
+)
+row format delimited fields terminated by '|'
+location '/hive/tpcds/income_band';
+
+create external table reason
+(
+    r_reason_sk             int,
+    r_reason_id             string,
+    r_reason_desc           string
+)
+row format delimited fields terminated by '|'
+location '/hive/tpcds/reason';
+
+create external table ship_mode
+(
+    sm_ship_mode_sk         int,
+    sm_ship_mode_id         string,
+    sm_type                 string,
+    sm_code                 string,
+    sm_carrier              string,
+    sm_contract             string
+)
+row format delimited fields terminated by '|'
+location '/hive/tpcds/ship_mode';
 
 quit;
 
