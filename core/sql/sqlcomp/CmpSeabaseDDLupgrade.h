@@ -60,6 +60,81 @@ CmpSeabaseDDLupgrade.cpp
   -- modify CUSTOMIZE_NEW_MD case if something specified need to be done.
     Ex: update new sql_data_type field in COLUMNS table
 
+Similar changes may be needed for subsystems that are upgraded as part
+of "initialize trafodion, upgrade", for example the Repository and the
+Privilege Manager. The Repository upgrade code is in CmpSeabaseDDLrepos.h/.cpp,
+while the Privilege Manager code is in the Priv* modules.
+
+The architecture of upgrade is as follows:
+
+Guiding principle:
+
+In the event of a failure, we do our best to put things back to their
+initial state. That allows the user to try again (for example, for a
+transient HBase difficulty), or to reinstall the old software if desired.
+
+Control flow:
+
+First we upgrade the metadata tables ("_MD_" schema). This has to be done
+using bootstrapping techniques. We rename the existing metadata tables
+to an old name, using HBase primitives. We then create the new metadata
+tables, and copy the data from the old tables to the new, transforming it
+as needed. The copy is done using a vanilla UPSERT/SELECT. We can do this
+because at process startup time, the NATable cache is bootstrapped with
+both the old and new metadata table definitions. We don't drop the old
+metadata tables yet, because we want to be able to revert to our initial
+state should an error occur.
+
+Subsystems are upgraded after the metadata table upgrade succeeds. The 
+subsystems are not self-referencing from a metadata point of view. So, 
+for example, it is possible to rename a subsystem table using a SQL 
+ALTER TABLE RENAME statement, which is not true for a metadata table.
+
+Subsystems go through basically the same steps: Rename the existing table
+to old, create the new, copy the data in. Again, the old tables are not
+dropped yet, so we can revert in the event of an error (in the next 
+subsystem for example).
+
+Once all the subsystems have been upgraded, we update the version in
+the VERSIONS table.
+
+Finally, we drop all the old tables. We can ignore errors at this point
+because we have good new tables.
+
+If there is an error, we undo the upgrade for each subsystem, then undo
+the upgrade for the metadata tables. Again, we can use vanilla SQL for
+the subsystems, but must use low level HBase primitives for the metadata
+tables.
+
+The CmpSeabaseUpgradeSubsystem class defines the contract that a subsystem
+must implement in order to be called from "initialize trafodion, upgrade".
+Briefly, each subsystem must implement the following:
+
+-- a method that says whether an upgrade is needed for that subsystem
+-- a method that does the upgrade, but leaves the old tables around
+   so that they can be recovered in case we have to undo the upgrade
+-- a method that drops the old tables, called when we have decided that
+   the upgrade has succeeded
+-- a method that undoes the upgrade, called when an error is detected
+   in "initialize trafodion, upgrade".
+
+These are packaged in separate methods because, as mentioned above,
+processing is interleaved. We do all the subsystem upgrades. If they are
+all successful, we do the drops. But if there was an error, we do the undo's.
+
+Data flow:
+
+The "initialize trafodion, upgrade" statement is a DDL statement that returns
+rows. The rows are status messages, which if displayed immediately (as they
+would be, say, in sqlci or trafci), give a real time status of the operation.
+
+As such, the upgrade methods are redriven after each row is returned. The
+upgrade processing occurs in a tdm_arkcmp process. All state is kept in the
+message objects communicated between it and its invoker. For this reason,
+the classes used for the upgrade methods are stateless. Instead, state 
+consists of state-machine step information which is stored in a
+CmpDDLwithStatusInfo object.
+
 ***************************************************************************************/
 
 // structure containing information on old and new MD tables
@@ -501,13 +576,14 @@ class CmpSeabaseMDupgrade : public CmpSeabaseDDL
     OLD_TABLES_MD_DELETE,
     OLD_MD_TABLES_HBASE_DELETE,
     UPDATE_MD_VIEWS,
-    UPGRADE_PRIV_MGR,
     UPGRADE_REPOS,
+    UPGRADE_PRIV_MGR,
     UPDATE_VERSION,
-    OLD_MD_DROP_POST,
+    OLD_REPOS_DROP,
     METADATA_UPGRADED,
     UPGRADE_DONE,
     UPGRADE_FAILED,
+    UPGRADE_FAILED_RESTORE_OLD_REPOS,
     UPGRADE_FAILED_RESTORE_OLD_MD,
     UPGRADE_FAILED_DROP_OLD_MD,
     GET_MD_VERSION,
@@ -550,6 +626,119 @@ class CmpSeabaseMDupgrade : public CmpSeabaseDDL
   short executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
                                 NABoolean ddlXns,
 				NAString &currCatName, NAString &currSchName);
+
+};
+
+
+// abstract class defining the contract that a subsystem must implement
+// in order to be called from "initialize trafodion, upgrade"
+class CmpSeabaseUpgradeSubsystem
+{
+  public:
+
+    CmpSeabaseUpgradeSubsystem(void) { } ;
+    ~CmpSeabaseUpgradeSubsystem(void) { } ;
+  
+    // Returns TRUE if an upgrade is needed, FALSE if not
+    virtual NABoolean needsUpgrade(CmpSeabaseMDupgrade * ddlState) = 0;
+
+    // The next three methods have the same return interface:
+    //
+    // returns 0 if successful or not done yet, a negative value
+    // if not. ("Not done yet" means call again. This allows
+    // the method to return status text messages to the user as
+    // it progresses in its processing.) To signal successful
+    // completion, the method should return 0, and call
+    // mdui->setEndStep(TRUE). Any state needed across calls
+    // should be kept in the CmpDDLwithStatusInfo object,
+    // e.g., via its setStep and setSubstep methods.
+    //
+    // The negative value can be used to signal what sort of
+    // recovery is needed.
+
+    // Does the upgrade, but leaves old tables there in case we
+    // need to undo.
+    virtual short doUpgrade(ExeCliInterface * cliInterface,
+                            CmpDDLwithStatusInfo * mdui,
+                            CmpSeabaseMDupgrade * ddlState,
+                            NABoolean ddlXns) = 0;
+
+    // Drops the old tables left behind by doUpgrade; errors
+    // are typically ignored as at this point upgrade is
+    // done except for dropping old tables. 
+    virtual short doDrops(ExeCliInterface * cliInterface,
+                         CmpDDLwithStatusInfo * mdui,
+                         CmpSeabaseMDupgrade * ddlState) = 0;
+
+    // Undoes the upgrade by putting the old tables back to
+    // their original names.
+    virtual short doUndo(ExeCliInterface * cliInterface,
+                         CmpDDLwithStatusInfo * mdui,
+                         CmpSeabaseMDupgrade * ddlState) = 0;
+
+  private:
+
+    // for now, avoid having any state; the upgrade mainline
+    // keeps most of its state in the CmpDDLwithStatusInfo message
+};
+
+// Repository specialization
+
+class CmpSeabaseUpgradeRepository : public CmpSeabaseUpgradeSubsystem
+{
+  public:
+
+    CmpSeabaseUpgradeRepository(void) { } ;
+    ~CmpSeabaseUpgradeRepository(void) { } ;
+  
+    NABoolean needsUpgrade(CmpSeabaseMDupgrade * ddlState);
+
+    short doUpgrade(ExeCliInterface * cliInterface,
+                    CmpDDLwithStatusInfo * mdui,
+                    CmpSeabaseMDupgrade * ddlState,
+                    NABoolean ddlXns);
+
+    short doDrops(ExeCliInterface * cliInterface,
+                  CmpDDLwithStatusInfo * mdui,
+                  CmpSeabaseMDupgrade * ddlState);
+
+    short doUndo(ExeCliInterface * cliInterface,
+                 CmpDDLwithStatusInfo * mdui,
+                 CmpSeabaseMDupgrade * ddlState);
+  
+  private:
+
+    // avoid having state for now
+
+};
+
+// Privilege Manager specialization
+
+class CmpSeabaseUpgradePrivMgr : public CmpSeabaseUpgradeSubsystem
+{
+  public:
+
+    CmpSeabaseUpgradePrivMgr(void) { } ;
+    ~CmpSeabaseUpgradePrivMgr(void) { } ;
+  
+    NABoolean needsUpgrade(CmpSeabaseMDupgrade * ddlState);
+
+    short doUpgrade(ExeCliInterface * cliInterface,
+                    CmpDDLwithStatusInfo * mdui,
+                    CmpSeabaseMDupgrade * ddlState,
+                    NABoolean ddlXns);
+ 
+    short doDrops(ExeCliInterface * cliInterface,
+                  CmpDDLwithStatusInfo * mdui,
+                  CmpSeabaseMDupgrade * ddlState);
+
+    short doUndo(ExeCliInterface * cliInterface,
+                 CmpDDLwithStatusInfo * mdui,
+                 CmpSeabaseMDupgrade * ddlState);
+
+  private:
+
+    // avoid having state for now
 
 };
 

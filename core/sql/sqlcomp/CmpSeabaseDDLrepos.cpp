@@ -137,7 +137,8 @@ short CmpSeabaseDDL::createRepos(ExeCliInterface * cliInterface)
 
 short CmpSeabaseDDL::dropRepos(ExeCliInterface * cliInterface,
                                NABoolean oldRepos,
-                               NABoolean dropSchema)
+                               NABoolean dropSchema,
+                               NABoolean inRecovery)
 {
   Lng32 cliRC = 0;
   NABoolean xnWasStartedHere = FALSE;
@@ -146,6 +147,13 @@ short CmpSeabaseDDL::dropRepos(ExeCliInterface * cliInterface,
   for (Int32 i = 0; i < sizeof(allReposUpgradeInfo)/sizeof(MDUpgradeInfo); i++)
     {
       const MDUpgradeInfo &rti = allReposUpgradeInfo[i];
+
+      // If we are dropping the new repository as part of a recovery action,
+      // and there is no "old" table (because the table didn't change in this
+      // upgrade), then don't drop the new table. (If we did, we would be 
+      // dropping the existing data.)
+      if (!oldRepos && inRecovery && !rti.oldName)
+        continue;
 
       if ((oldRepos && !rti.oldName) || (NOT oldRepos && ! rti.newName))
         continue;
@@ -361,7 +369,7 @@ short CmpSeabaseDDL::upgradeRepos(ExeCliInterface * cliInterface,
         {
         case 0:
           {
-            mdui->setMsg("Upgrade Repository: started");
+            mdui->setMsg("Upgrade Repository: Started");
             mdui->subStep()++;
             mdui->setEndStep(FALSE);
         
@@ -383,7 +391,10 @@ short CmpSeabaseDDL::upgradeRepos(ExeCliInterface * cliInterface,
           {
             // drop old repository
             if (dropRepos(cliInterface, TRUE/*old repos*/, FALSE/*no schema drop*/))
-              return -1;
+              return -3;  // error, but no recovery needed (and in fact
+                          // doing such things as dropping the *new* repository
+                          // would just destroy the existing repository data
+                          // that we wish to save)
         
             mdui->setMsg("  End:   Drop Old Repository");
             mdui->subStep()++;
@@ -407,10 +418,7 @@ short CmpSeabaseDDL::upgradeRepos(ExeCliInterface * cliInterface,
           {
             // rename current repository tables to *_OLD_REPOS
             if (alterRenameRepos(cliInterface, TRUE))
-              {
-                mdui->setSubstep(12); // label_error1
-                break;
-              }
+              return -2;  // error, need to undo the rename only
 
             mdui->setMsg("  End:   Rename Current Repository");
             mdui->subStep()++;
@@ -434,10 +442,7 @@ short CmpSeabaseDDL::upgradeRepos(ExeCliInterface * cliInterface,
           {
             // create new repository
             if (createRepos(cliInterface))
-              {
-                mdui->setSubstep(13); // label_error2
-                break;
-              }
+              return -1;  // error, need to drop new repository then undo rename
         
             mdui->setMsg("  End:   Create New Repository");
             mdui->subStep()++;
@@ -461,10 +466,7 @@ short CmpSeabaseDDL::upgradeRepos(ExeCliInterface * cliInterface,
           {
             // copy old contents into new repository
             if (copyOldReposToNew(cliInterface))
-              {
-                mdui->setSubstep(13); // label_error2
-                break;
-              }
+              return -1;  // error, need to drop new repository then undo rename
         
             mdui->setMsg("  End:   Copy Old Repository Contents ");
             mdui->subStep()++;
@@ -473,10 +475,38 @@ short CmpSeabaseDDL::upgradeRepos(ExeCliInterface * cliInterface,
             return 0;
           }
           break;
-      
+
         case 9:
           {
-            mdui->setMsg("  Start: Drop Old Repository ");
+            mdui->setMsg("Upgrade Repository: Done except for cleaning up");
+            mdui->setSubstep(0);
+            mdui->setEndStep(TRUE);
+        
+            return 0;
+          }
+          break;
+
+        default:
+          return -1;
+        }
+    } // while
+
+  return 0;
+}
+      
+
+short CmpSeabaseDDL::upgradeReposComplete(ExeCliInterface * cliInterface,
+                                          CmpDDLwithStatusInfo *mdui)
+{
+  Lng32 cliRC = 0;
+
+  while (1) // exit via return stmt in switch
+    {
+      switch (mdui->subStep())
+        {
+        case 0:
+          {
+            mdui->setMsg("Upgrade Repository: Drop Old Repository");
             mdui->subStep()++;
             mdui->setEndStep(FALSE);
         
@@ -484,47 +514,105 @@ short CmpSeabaseDDL::upgradeRepos(ExeCliInterface * cliInterface,
           }
           break;
 
-        case 10:
+        case 1:
           {
-            // drop old repository
+            // drop old repository; ignore errors
             dropRepos(cliInterface, TRUE/*old repos*/, FALSE/*no schema drop*/);
         
-            mdui->setMsg("  End:   Drop Old Repository");
-            mdui->subStep()++;
-            mdui->setEndStep(FALSE);
+            mdui->setMsg("Upgrade Repository: Drop Old Repository done");
+            mdui->setEndStep(TRUE);
+            mdui->setSubstep(0);
          
             return 0;
           }
           break;
 
-        case 11:
+        default:
+          return -1;
+        }
+    } // while
+
+  return 0;
+}
+
+short CmpSeabaseDDL::upgradeReposUndo(ExeCliInterface * cliInterface,
+                                      CmpDDLwithStatusInfo *mdui)
+{
+  Lng32 cliRC = 0;
+
+  while (1) // exit via return stmt in switch
+    {
+      switch (mdui->subStep())
+        {
+        // error return codes from upgradeRepos can be mapped to
+        // the right recovery substep by this formula: substep = -(retcode + 1)
+        case 0: // corresponds to -1 return code from upgradeRepos (or
+                // to full recovery after some error after upgradeRepos)
+        case 1: // corresponds to -2 return code from upgradeRepos
+        case 2: // corresponds to -3 return code from upgradeRepos
           {
-            mdui->setMsg("Upgrade Repository: done");
+            mdui->setMsg("Upgrade Repository: Restoring Old Repository");
+            mdui->setSubstep(2*mdui->subStep()+3); // go to appropriate case
+            mdui->setEndStep(FALSE);
+        
+            return 0;
+          }
+          break;
+
+        case 3:
+          {
+            mdui->setMsg(" Start: Drop New Repository");
             mdui->subStep()++;
-            mdui->setEndStep(TRUE);
-            mdui->setSubstep(0);
-  
+            mdui->setEndStep(FALSE);
+        
+            return 0;
+          }
+          break;
+
+        case 4:
+          {
+            // drop new repository; ignore errors
+            dropRepos(cliInterface, FALSE/*new repos*/, FALSE/*no schema drop*/,
+                      TRUE /* don't drop new tables that haven't been upgraded */);
+            cliInterface->clearGlobalDiags();
+            mdui->setMsg(" End: Drop New Repository");
+            mdui->subStep()++;
+            mdui->setEndStep(FALSE);
+        
+            return 0;
+          }
+          break;
+
+        case 5:
+          {
+            mdui->setMsg(" Start: Rename Old Repository back to New");
+            mdui->subStep()++;
+            mdui->setEndStep(FALSE);
+        
             return 0;
           }
           break;
  
-        case 12: // label_error1
+        case 6:
           {
-            // rename old repos to current
+            // rename old repos to current; ignore errors
             alterRenameRepos(cliInterface, FALSE);
-            return -1;
+            cliInterface->clearGlobalDiags();
+            mdui->setMsg(" End: Rename Old Repository back to New");
+            mdui->subStep()++;
+            mdui->setEndStep(FALSE);
+        
+            return 0;
           }
           break;
 
-        case 13: // label_error2
+        case 7:
           {
-            // drop new repository
-            dropRepos(cliInterface, FALSE/*new repos*/, FALSE/*no schema drop*/);
+            mdui->setMsg("Upgrade Repository: Restore done");
+            mdui->setSubstep(0);
+            mdui->setEndStep(TRUE);
         
-            // rename old to new
-            alterRenameRepos(cliInterface, FALSE);
-        
-            return -1;
+            return 0;
           }
           break;
 
