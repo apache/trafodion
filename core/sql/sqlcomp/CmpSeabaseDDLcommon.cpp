@@ -2828,8 +2828,7 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
       }
       break;
       
-      
-    case NA_LOB_TYPE:
+     case NA_LOB_TYPE:
       {
 	if (datatype == REC_BLOB)
 	  {
@@ -2844,6 +2843,12 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
 	    precision = (ComSInt32)clobType->getLobLength();
 	  }
 	
+      }
+      break;
+  
+    case NA_BOOLEAN_TYPE:
+      {
+        precision = 0;
       }
       break;
       

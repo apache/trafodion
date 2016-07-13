@@ -438,12 +438,15 @@ select converttobits(a), converttobits(b), converttobits(c), converttobits(d),
        converttobits(m), converttobits(n), converttobits(o)
 from t012t3;
 
-select bitextract(3, 15, 1) from (values(1)) x(a);
-select bitextract(3, 14, 1) from (values(1)) x(a);
-select bitextract(3, 14, 2) from (values(1)) x(a);
-select bitextract(3, 0, 1) from (values(1)) x(a);
-select bitextract(3, 0, 15) from (values(1)) x(a);
-select bitextract(3, 0, 16) from (values(1)) x(a);
+select bitextract(cast(3 as smallint), 15, 1) from (values(1)) x(a);
+select bitextract(cast(3 as smallint), 14, 1) from (values(1)) x(a);
+select bitextract(cast(3 as smallint), 14, 2) from (values(1)) x(a);
+select bitextract(cast(3 as smallint), 0, 1) from (values(1)) x(a);
+select bitextract(cast(3 as smallint), 0, 15) from (values(1)) x(a);
+select bitextract(cast(3 as smallint), 0, 16) from (values(1)) x(a);
+select bitextract(3, 0, 8) from (values(1)) x(a);
+select bitextract(3, 7, 1) from (values(1)) x(a);
+select bitextract(3, 8, 1) from (values(1)) x(a);
 
 select a from t012t3 where a = bitand(a,a);
 select b from t012t3 where b = bitor(b,b);

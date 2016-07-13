@@ -583,6 +583,11 @@ public:
 
   virtual NABoolean roundTripConversionToDouble() const { return FALSE; };
 
+  // used during expr generation to indicate if conversion to/from otherFsType
+  // is supported by expr evaluator.
+  virtual NABoolean expConvSupported
+  (const NAType &otherNAType) const { return TRUE; }
+
 protected:
 
   // ---------------------------------------------------------------------

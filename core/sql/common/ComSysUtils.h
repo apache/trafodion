@@ -129,6 +129,27 @@ inline Int64 reversebytes( Int64 xx )
 
     return sink.xx;
 }
+
+inline UInt64 reversebytes( UInt64 xx )
+{
+    union {
+        UInt64 xx;
+        char c[8];
+    } source;
+
+    union {
+        UInt64 xx;
+        char c[8];
+    } sink;
+
+    source.xx = xx;
+
+    for (Int32 i=0; i<8; i++)
+        sink.c[i] = source.c[7-i];
+
+    return sink.xx;
+}
+
 #ifdef NA_64BIT /* Needed when _int64 and Int64 don't resolve to same basic type */
 /*inline _int64 reversebytes( _int64 sometexianendian )
 {

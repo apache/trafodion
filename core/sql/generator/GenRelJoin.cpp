@@ -2548,11 +2548,8 @@ short MergeJoin::codeGen(Generator * generator)
   generator->setGenNoFloatValidatePCode(TRUE);
 
   NABoolean doEncodedKeyCompOpt = FALSE;
-  if (NOT generator->downrevCompileNeeded())
-    {
-      doEncodedKeyCompOpt = TRUE;
-      encoded_key_atp_index = 2;
-    }
+  doEncodedKeyCompOpt = TRUE;
+  encoded_key_atp_index = 2;
 
   // generate expressions to find out if left or right rows are duplicate
   // of the previous rows.

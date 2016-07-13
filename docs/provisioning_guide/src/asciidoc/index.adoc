@@ -47,6 +47,7 @@ include::../../shared/license.txt[]
 include::../../shared/revisions.txt[]
 
 include::asciidoc/_chapters/about.adoc[]
+include::asciidoc/_chapters/quickstart.adoc[]
 include::asciidoc/_chapters/introduction.adoc[]
 include::asciidoc/_chapters/requirements.adoc[]
 include::asciidoc/_chapters/prepare.adoc[]
