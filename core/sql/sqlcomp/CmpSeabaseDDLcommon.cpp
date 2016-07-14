@@ -3060,12 +3060,6 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
                (ie->getOperatorType() == ITM_CURRENT_USER) ||
                (ie->getOperatorType() == ITM_SESSION_USER))
         {
-          // default USER not currently supported.
-          *CmpCommon::diags() << DgSqlCode(-1084)
-                              << DgColumnName(colName);
-          
-          return -1;
-          
           defaultClass = COM_USER_FUNCTION_DEFAULT;
         }
       else if (ie->castToConstValue(negateIt) != NULL)
