@@ -116,6 +116,7 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   , exception_(FALSE)
   , checkRangeDelimiter_(FALSE)
   , dataModCheckDone_(FALSE)
+  , loggingErrorDiags_(NULL)
 {
   Space * space = (glob ? glob->getSpace() : 0);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
@@ -1311,7 +1312,9 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                        loggingRowLen, lastErrorCnd_, 
                        ehi_,
                        LoggingFileCreated_,
-                       loggingFileName_);
+                       loggingFileName_,
+                       &loggingErrorDiags_);
+
             
           }
 
@@ -1462,6 +1465,18 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	    up_entry->upState.downIndex = qparent_.down->getHeadIndex();
 	    up_entry->upState.status = ex_queue::Q_NO_DATA;
 	    up_entry->upState.setMatchNo(matches_);
+            if (loggingErrorDiags_ != NULL) 
+            {
+               ComDiagsArea * diagsArea = up_entry->getDiagsArea();
+               if (!diagsArea)
+               {
+                  diagsArea =
+                   ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
+                  up_entry->setDiagsArea(diagsArea);
+               }
+               diagsArea->mergeAfter(*loggingErrorDiags_);
+               loggingErrorDiags_->clear();
+            }
 	    qparent_.up->insert();
 	    
 	    qparent_.down->removeHead();

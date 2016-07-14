@@ -23,6 +23,7 @@
 
 #include "SequenceFileReader.h"
 #include "QRLogger.h"
+#include "Globals.h"
 
 // ===========================================================================
 // ===== Class SequenceFileReader
@@ -659,32 +660,41 @@ SFW_RetCode SequenceFileWriter::close()
 SFW_RetCode SequenceFileWriter::hdfsCreate(const char* path, NABoolean compress)
 {
   QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::hdfsCreate(%s) called.", path);
-  jstring js_path = jenv_->NewStringUTF(path);
-  if (js_path == NULL)
-    return SFW_ERROR_HDFS_CREATE_PARAM;
 
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return SFW_ERROR_HDFS_WRITE_EXCEPTION;
+  }
+
+  jstring js_path = jenv_->NewStringUTF(path);
+  if (js_path == NULL) {
+    GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_HDFS_CREATE_PARAM));
+    jenv_->PopLocalFrame(NULL);
+    return SFW_ERROR_HDFS_CREATE_PARAM;
+  }
 
   jboolean j_compress = compress;
 
   tsRecentJMFromJNI = JavaMethods_[JM_HDFS_CREATE].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CREATE].methodID, js_path, j_compress);
 
-  jenv_->DeleteLocalRef(js_path);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
     logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsCreate()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return SFW_ERROR_HDFS_CREATE_EXCEPTION;
   }
 
   if (jresult == false)
   {
     logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsCreaten()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return SFW_ERROR_HDFS_CREATE_EXCEPTION;
   }
 
+  jenv_->PopLocalFrame(NULL);
   return SFW_OK;
 }
 
@@ -695,35 +705,42 @@ SFW_RetCode SequenceFileWriter::hdfsWrite(const char* data, Int64 len)
 {
   QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::hdfsWrite(%ld) called.", len);
 
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return SFW_ERROR_HDFS_WRITE_EXCEPTION;
+  }
+
   //Write the requisite bytes into the file
   jbyteArray jbArray = jenv_->NewByteArray( len);
   if (!jbArray) {
-
+    GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_HDFS_WRITE_PARAM));
+    jenv_->PopLocalFrame(NULL);
     return SFW_ERROR_HDFS_WRITE_PARAM;
   }
   jenv_->SetByteArrayRegion(jbArray, 0, len, (const jbyte*)data);
 
   jlong j_len = len;
-  // String write(java.lang.String);
   tsRecentJMFromJNI = JavaMethods_[JM_HDFS_WRITE].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE].methodID,jbArray , j_len);
-
-  jenv_->DeleteLocalRef(jbArray);
 
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
     logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsWrite()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return SFW_ERROR_HDFS_WRITE_EXCEPTION;
   }
 
   if (jresult == false)
   {
     logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsWrite()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return SFW_ERROR_HDFS_WRITE_EXCEPTION;
   }
 
+
+  jenv_->PopLocalFrame(NULL);
   return SFW_OK;
 }
 
@@ -765,186 +782,150 @@ SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const NAString& uldPath)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsCleanUnloadPath(%s) called.",
                                                       uldPath.data());
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return SFW_ERROR_HDFS_CLEANUP_EXCEPTION;
+  }
 
   jstring js_UldPath = jenv_->NewStringUTF(uldPath.data());
-   if (js_UldPath == NULL)
-   {
-     //GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_HDFS_MERGE_FILES_PARAM));
-     return SFW_ERROR_HDFS_CLEANUP_PARAM;
-   }
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsCleanUnloadPath(..) => before calling Java.", getLastError());
-    jenv_->DeleteLocalRef(js_UldPath);
-    return SFW_ERROR_HDFS_CLEANUP_EXCEPTION;
+  if (js_UldPath == NULL) {
+    GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_HDFS_CLEANUP_PARAM));
+    jenv_->PopLocalFrame(NULL);
+    return SFW_ERROR_HDFS_CLEANUP_PARAM;
   }
 
   tsRecentJMFromJNI = JavaMethods_[JM_HDFS_CLEAN_UNLOAD_PATH].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CLEAN_UNLOAD_PATH].methodID, js_UldPath);
 
-  jenv_->DeleteLocalRef(js_UldPath);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
     logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsCleanUnloadPath()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return SFW_ERROR_HDFS_CLEANUP_EXCEPTION;
   }
 
-  if (jresult == false)
-  {
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsCleanUnloadPath()", getLastError());
-    return SFW_ERROR_HDFS_CLEANUP_EXCEPTION;
-  }
-
+  jenv_->PopLocalFrame(NULL);
   return SFW_OK;
 }
-SFW_RetCode    SequenceFileWriter::createSnapshot( const NAString&  tableName, const NAString&  snapshotName)
+
+SFW_RetCode SequenceFileWriter::createSnapshot( const NAString&  tableName, const NAString&  snapshotName)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::createSnapshot(%s, %s) called.",
       tableName.data(), snapshotName.data());
 
-  jstring js_tableName = jenv_->NewStringUTF(tableName.data());
-   if (js_tableName == NULL)
-   {
-     return SFW_ERROR_CREATE_SNAPSHOT_PARAM;
-   }
-  jstring js_snapshotName= jenv_->NewStringUTF(snapshotName.data());
-   if (js_snapshotName == NULL)
-   {
-     jenv_->DeleteLocalRef(js_tableName);
-     return SFW_ERROR_CREATE_SNAPSHOT_PARAM;
-   }
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::createSnapshot(..) => before calling Java.", getLastError());
-    jenv_->DeleteLocalRef(js_tableName);
-    jenv_->DeleteLocalRef(js_snapshotName);
-    return SFW_ERROR_CREATE_SNAPSHOT_PARAM;
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return SFW_ERROR_CREATE_SNAPSHOT_EXCEPTION;
   }
 
+  jstring js_tableName = jenv_->NewStringUTF(tableName.data());
+  if (js_tableName == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_CREATE_SNAPSHOT_PARAM));
+     jenv_->PopLocalFrame(NULL);
+     return SFW_ERROR_CREATE_SNAPSHOT_PARAM;
+  }
+  jstring js_snapshotName= jenv_->NewStringUTF(snapshotName.data());
+  if (js_snapshotName == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_CREATE_SNAPSHOT_PARAM));
+     jenv_->PopLocalFrame(NULL);
+     return SFW_ERROR_CREATE_SNAPSHOT_PARAM;
+  }
 
   tsRecentJMFromJNI = JavaMethods_[JM_CREATE_SNAPSHOT].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CREATE_SNAPSHOT].methodID, js_tableName, js_snapshotName);
 
-  jenv_->DeleteLocalRef(js_tableName);
-  jenv_->DeleteLocalRef(js_snapshotName);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
     logError(CAT_SQL_HBASE, "SequenceFileWriter::createSnapshot()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return SFW_ERROR_CREATE_SNAPSHOT_EXCEPTION;
   }
 
-  if (jresult == false)
-  {
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::createSnapshot()", getLastError());
-    return SFW_ERROR_CREATE_SNAPSHOT_EXCEPTION;
-  }
-
+  jenv_->PopLocalFrame(NULL);
   return SFW_OK;
 }
+
 SFW_RetCode SequenceFileWriter::verifySnapshot( const NAString&  tableName, const NAString&  snapshotName,
                                                 NABoolean & exist)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::verifySnapshot(%s, %s) called.",
       tableName.data(), snapshotName.data());
 
-  jstring js_tableName = jenv_->NewStringUTF(tableName.data());
-   if (js_tableName == NULL)
-   {
-     return SFW_ERROR_VERIFY_SNAPSHOT_PARAM;
-   }
-  jstring js_snapshotName= jenv_->NewStringUTF(snapshotName.data());
-   if (js_snapshotName == NULL)
-   {
-     jenv_->DeleteLocalRef(js_tableName);
-     return SFW_ERROR_VERIFY_SNAPSHOT_PARAM;
-   }
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::verifySnapshot(..) => before calling Java.", getLastError());
-    jenv_->DeleteLocalRef(js_tableName);
-    jenv_->DeleteLocalRef(js_snapshotName);
-    return SFW_ERROR_VERIFY_SNAPSHOT_PARAM;
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return SFW_ERROR_VERIFY_SNAPSHOT_EXCEPTION;
   }
 
+  jstring js_tableName = jenv_->NewStringUTF(tableName.data());
+  if (js_tableName == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_VERIFY_SNAPSHOT_PARAM));
+     jenv_->PopLocalFrame(NULL);
+     return SFW_ERROR_VERIFY_SNAPSHOT_PARAM;
+  }
+  jstring js_snapshotName= jenv_->NewStringUTF(snapshotName.data());
+  if (js_snapshotName == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_VERIFY_SNAPSHOT_PARAM));
+     jenv_->PopLocalFrame(NULL);
+     return SFW_ERROR_VERIFY_SNAPSHOT_PARAM;
+  }
 
   tsRecentJMFromJNI = JavaMethods_[JM_VERIFY_SNAPSHOT].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_VERIFY_SNAPSHOT].methodID, js_tableName, js_snapshotName);
-
-  jenv_->DeleteLocalRef(js_tableName);
-  jenv_->DeleteLocalRef(js_snapshotName);
 
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
     logError(CAT_SQL_HBASE, "SequenceFileWriter::verifySnapshot()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return SFW_ERROR_VERIFY_SNAPSHOT_EXCEPTION;
   }
 
   exist = jresult;
 
+  jenv_->PopLocalFrame(NULL);
   return SFW_OK;
 }
-SFW_RetCode    SequenceFileWriter::deleteSnapshot( const NAString&  snapshotName)
+
+SFW_RetCode SequenceFileWriter::deleteSnapshot( const NAString&  snapshotName)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::deleteSnapshot(%s) called.",
       snapshotName.data());
 
-  jstring js_snapshotName= jenv_->NewStringUTF(snapshotName.data());
-   if (js_snapshotName == NULL)
-   {
-     return SFW_ERROR_DELETE_SNAPSHOT_PARAM;
-   }
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::deleteSnapshot(..) => before calling Java.", getLastError());
-    jenv_->DeleteLocalRef(js_snapshotName);
-    return SFW_ERROR_DELETE_SNAPSHOT_PARAM;
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return SFW_ERROR_DELETE_SNAPSHOT_EXCEPTION;
   }
 
+  jstring js_snapshotName= jenv_->NewStringUTF(snapshotName.data());
+  if (js_snapshotName == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_DELETE_SNAPSHOT_PARAM));
+     jenv_->PopLocalFrame(NULL);
+     return SFW_ERROR_DELETE_SNAPSHOT_PARAM;
+  }
 
   tsRecentJMFromJNI = JavaMethods_[JM_DELETE_SNAPSHOT].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DELETE_SNAPSHOT].methodID, js_snapshotName);
 
-
-  jenv_->DeleteLocalRef(js_snapshotName);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
     logError(CAT_SQL_HBASE, "SequenceFileWriter::deleteSnapshot()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return SFW_ERROR_DELETE_SNAPSHOT_EXCEPTION;
   }
 
-  if (jresult == false)
-  {
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::deleteSnapshot()", getLastError());
-    return SFW_ERROR_DELETE_SNAPSHOT_EXCEPTION;
-  }
-
+  jenv_->PopLocalFrame(NULL);
   return SFW_OK;
 }
 
 
-SFW_RetCode    SequenceFileWriter::release( )
+SFW_RetCode SequenceFileWriter::release( )
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::release() called.");
 
@@ -974,93 +955,85 @@ SFW_RetCode SequenceFileWriter::hdfsMergeFiles( const NAString& srcPath,
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsMergeFiles(%s, %s) called.",
                   srcPath.data(), dstPath.data());
 
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return SFW_ERROR_HDFS_MERGE_FILES_EXCEPTION;
+  }
   jstring js_SrcPath = jenv_->NewStringUTF(srcPath.data());
-   if (js_SrcPath == NULL)
-   {
-     //GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_HDFS_MERGE_FILES_PARAM));
-     return SFW_ERROR_HDFS_MERGE_FILES_PARAM;
-   }
-  jstring js_DstPath= jenv_->NewStringUTF(dstPath.data());
-   if (js_DstPath == NULL)
-   {
-     //GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_HDFS_MERGE_FILES_PARAM));
-     jenv_->DeleteLocalRef(js_SrcPath);
-     return SFW_ERROR_HDFS_MERGE_FILES_PARAM;
-   }
 
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsMergeFiles(..) => before calling Java.", getLastError());
-    jenv_->DeleteLocalRef(js_SrcPath);
-    jenv_->DeleteLocalRef(js_DstPath);
-    return SFW_ERROR_HDFS_MERGE_FILES_EXCEPTION;
+  if (js_SrcPath == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_HDFS_MERGE_FILES_PARAM));
+     jenv_->PopLocalFrame(NULL);
+     return SFW_ERROR_HDFS_MERGE_FILES_PARAM;
+  }
+  jstring js_DstPath= jenv_->NewStringUTF(dstPath.data());
+  if (js_DstPath == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_HDFS_MERGE_FILES_PARAM));
+     jenv_->PopLocalFrame(NULL);
+     return SFW_ERROR_HDFS_MERGE_FILES_PARAM;
   }
 
 
   tsRecentJMFromJNI = JavaMethods_[JM_HDFS_MERGE_FILES].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_MERGE_FILES].methodID, js_SrcPath, js_DstPath);
 
-  jenv_->DeleteLocalRef(js_SrcPath);
-  jenv_->DeleteLocalRef(js_DstPath);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
     logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsMergeFiles()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return SFW_ERROR_HDFS_MERGE_FILES_EXCEPTION;
   }
 
   if (jresult == false)
   {
     logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsMergeFiles()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return SFW_ERROR_HDFS_MERGE_FILES_EXCEPTION;
-  }
+  } 
 
+  jenv_->PopLocalFrame(NULL);
   return SFW_OK;
 }
+
 SFW_RetCode SequenceFileWriter::hdfsDeletePath( const NAString& delPath)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsDeletePath(%s called.",
                   delPath.data());
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return SFW_ERROR_HDFS_DELETE_PATH_EXCEPTION;
+  }
 
   jstring js_delPath = jenv_->NewStringUTF(delPath.data());
-   if (js_delPath == NULL)
-   {
+  if (js_delPath == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_HDFS_DELETE_PATH_PARAM));
+     jenv_->PopLocalFrame(NULL);
      return SFW_ERROR_HDFS_DELETE_PATH_PARAM;
-   }
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsDeletePath(..) => before calling Java.", getLastError());
-    jenv_->DeleteLocalRef(js_delPath);
-    return SFW_ERROR_HDFS_DELETE_PATH_EXCEPTION;
   }
 
 
   tsRecentJMFromJNI = JavaMethods_[JM_HDFS_DELETE_PATH].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_DELETE_PATH].methodID, js_delPath);
 
-  jenv_->DeleteLocalRef(js_delPath);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
     logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsDeletePath()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return SFW_ERROR_HDFS_DELETE_PATH_EXCEPTION;
   }
 
   if (jresult == false)
   {
     logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsDeletePath()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return SFW_ERROR_HDFS_DELETE_PATH_EXCEPTION;
   }
 
+  jenv_->PopLocalFrame(NULL);
   return SFW_OK;
 }
 
@@ -1070,24 +1043,19 @@ SFW_RetCode SequenceFileWriter::hdfsExists( const NAString& uldPath, NABoolean &
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsExists(%s) called.",
                                                       uldPath.data());
 
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return SFW_ERROR_HDFS_EXISTS_EXCEPTION;
+  }
+
   jstring js_UldPath = jenv_->NewStringUTF(uldPath.data());
-   if (js_UldPath == NULL)
-   {
+  if (js_UldPath == NULL) {
+     jenv_->PopLocalFrame(NULL);
      return SFW_ERROR_HDFS_EXISTS_PARAM;
-   }
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsExists(..) => before calling Java.", getLastError());
-    jenv_->DeleteLocalRef(js_UldPath);
-    return SFW_ERROR_HDFS_EXISTS_EXCEPTION;
   }
 
   tsRecentJMFromJNI = JavaMethods_[JM_HDFS_EXISTS].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_EXISTS].methodID, js_UldPath);
-
-  jenv_->DeleteLocalRef(js_UldPath);
 
   exist = jresult;
 
@@ -1096,9 +1064,10 @@ SFW_RetCode SequenceFileWriter::hdfsExists( const NAString& uldPath, NABoolean &
     getExceptionDetails();
     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
     logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsExists()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return SFW_ERROR_HDFS_EXISTS_EXCEPTION;
-  }
+  } 
 
-
+  jenv_->PopLocalFrame(NULL);
   return SFW_OK;
 }
