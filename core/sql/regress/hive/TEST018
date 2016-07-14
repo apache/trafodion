@@ -446,7 +446,7 @@ MERGE FILE  'merged_customer_demographics' OVERWRITE
 INTO '/user/hive/exttables/unload_customer_demographics'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
-sh sleep 10;
+--sh sleep 10;
 select count(*) from hive.hive.unload_customer_demographics;
 select [first 20] * from hive.hive.unload_customer_demographics where cd_demo_sk < 100 order by cd_demo_sk;
 
@@ -458,7 +458,7 @@ WITH PURGEDATA FROM TARGET
 INTO '/user/hive/exttables/unload_customer_demographics'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
-sh sleep 10;
+--sh sleep 10;
 select count(*) from hive.hive.unload_customer_demographics;
 select [first 20] * from hive.hive.unload_customer_demographics where cd_demo_sk <100  order by cd_demo_sk;
 
@@ -467,7 +467,7 @@ UNLOAD
 WITH PURGEDATA FROM TARGET
 INTO '/user/hive/exttables/unload_customer_address'
 select * from trafodion.hbase.customer_address ;
-sh sleep 10;
+--sh sleep 10;
 select count(*) from hive.hive.unload_customer_address;
 select [first 20] * from hive.hive.unload_customer_address where ca_address_sk <100 order by ca_address_sk;
 
@@ -477,7 +477,7 @@ UNLOAD
 WITH PURGEDATA FROM TARGET DELIMITER 124  RECORD_SEPARATOR 10
 INTO '/user/hive/exttables/unload_customer_address'
 select * from trafodion.hbase.customer_address ;
-sh sleep 10;
+--sh sleep 10;
 select count(*) from hive.hive.unload_customer_address;
 select [first 20] * from hive.hive.unload_customer_address where ca_address_sk < 100 order by ca_address_sk;
 
@@ -492,7 +492,7 @@ WITH PURGEDATA FROM TARGET
 --COMPRESSION GZIP
 INTO '/user/hive/exttables/unload_customer'
 select * from trafodion.hbase.customer_salt;
-sh sleep 10;
+--sh sleep 10;
 select count(*) from hive.hive.unload_customer;
 select [first 20] * from hive.hive.unload_customer where c_customer_sk < 100 order by c_customer_sk;
 
@@ -503,7 +503,7 @@ WITH PURGEDATA FROM TARGET
 --COMPRESSION GZIP
 INTO '/user/hive/exttables/unload_customer_demographics'
 select * from trafodion.hbase.customer_demographics_salt;
-sh sleep 10;
+--sh sleep 10;
 select count(*) from hive.hive.unload_customer_demographics;
 select [first 20] * from hive.hive.unload_customer_demographics where cd_demo_sk < 100 order by cd_demo_sk;
 
@@ -540,7 +540,7 @@ WITH
  PURGEDATA FROM TARGET DELIMITER '|' RECORD_SEPARATOR '\n' 
 INTO '/user/hive/exttables/unload_store_sales_summary'
 select ss_sold_date_sk,ss_store_sk, sum (ss_quantity) from store_sales_salt group by  ss_sold_date_sk ,ss_store_sk; 
-sh sleep 10;
+--sh sleep 10;
 select  [first 100] * from hive.hive.unload_store_sales_summary order by  ss_sold_date_sk,ss_store_sk; 
 
 --unload 18
@@ -548,7 +548,7 @@ UNLOAD
 WITH PURGEDATA FROM TARGET
 INTO '/user/hive/exttables/unload_customer_and_address'
 select * from trafodion.hbase.customer_salt c join trafodion.hbase.customer_address ca on c.c_current_addr_sk = ca.ca_address_sk ;
-sh sleep 10;
+--sh sleep 10;
 select count(*) from hive.hive.unload_customer_and_address;
 select [first 20] * from hive.hive.unload_customer_and_address order by ca_address_sk,c_customer_sk;
 
@@ -558,7 +558,7 @@ WITH
  PURGEDATA FROM TARGET 
 INTO '/user/hive/exttables/unload_customer_address'
 select * from customer_address where ca_address_sk < 1000 union select * from customer_address where ca_address_sk > 40000  and ca_address_sk < 41000;
-sh sleep 10;
+--sh sleep 10;
 select count(*) from hive.hive.unload_customer_address;
 select [first 20] * from hive.hive.unload_customer_address order by ca_address_sk;
 select [first 20] * from hive.hive.unload_customer_address order by ca_address_sk desc;
@@ -695,7 +695,7 @@ WITH PURGEDATA FROM TARGET
  NEW SNAPSHOT HAVING  SUFFIX 'SNAP'
 INTO '/user/hive/exttables/unload_customer_and_address'
 select * from trafodion.hbase.customer_salt c join trafodion.hbase.customer_address ca on c.c_current_addr_sk = ca.ca_address_sk ;
-sh sleep 10;
+--sh sleep 10;
 select count(*) from hive.hive.unload_customer_and_address;
 select [first 20] * from hive.hive.unload_customer_and_address order by ca_address_sk,c_customer_sk;
 
@@ -711,7 +711,7 @@ WITH PURGEDATA FROM TARGET
  NEW SNAPSHOT HAVING SUFFIX 'SNAP111' 
 INTO '/user/hive/exttables/unload_customer_name'
 select c_first_name,c_last_name from trafodion.hbase.customer_salt;
-sh sleep 10;
+--sh sleep 10;
 select count(*) from hive.hive.unload_customer_name;
 select [first 20] * from hive.hive.unload_customer_name order by c_first_name,c_last_name;
 
@@ -753,7 +753,7 @@ UNLOAD
 WITH PURGEDATA FROM TARGET
 INTO '/user/hive/exttables/unload_customer_demographics'
 (select * from trafodion.hbase.customer_demographics_salt) ;
-sh sleep 10;
+--sh sleep 10;
 select count(*) from hive.hive.unload_customer_demographics;
 
 CQD TRAF_UNLOAD_SKIP_WRITING_TO_FILES reset;
