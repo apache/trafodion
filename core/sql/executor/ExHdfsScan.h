@@ -291,6 +291,7 @@ protected:
   NABoolean checkRangeDelimiter_;
 
   NABoolean dataModCheckDone_;
+  ComDiagsArea * loggingErrorDiags_;
 };
 
 class ExOrcScanTcb  : public ExHdfsScanTcb

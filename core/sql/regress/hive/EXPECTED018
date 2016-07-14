@@ -2246,6 +2246,14 @@ Task: UNLOAD           Status: Started
 Task:  EXTRACT         Status: Started
 
 *** ERROR[8447] An error occurred during hdfs access. Error Detail: Java exception in hdfsCreate().
+java.io.IOException: No FileSystem for scheme: null
+org.apache.hadoop.fs.FileSystem.getFileSystemClass(FileSystem.java:2584)
+org.apache.hadoop.fs.FileSystem.createFileSystem(FileSystem.java:2591)
+org.apache.hadoop.fs.FileSystem.access$200(FileSystem.java:91)
+org.apache.hadoop.fs.FileSystem$Cache.getInternal(FileSystem.java:2630)
+org.apache.hadoop.fs.FileSystem$Cache.get(FileSystem.java:2612)
+org.apache.hadoop.fs.FileSystem.get(FileSystem.java:370)
+org.trafodion.sql.SequenceFileWriter.hdfsCreate(SequenceFileWriter.java:162)
 
 --- 0 row(s) unloaded.
 >>

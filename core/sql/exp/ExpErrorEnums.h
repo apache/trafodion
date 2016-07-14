@@ -79,6 +79,7 @@ enum ExeErrorCode
   EXE_EXPLAIN_PLAN_TOO_LARGE            = 8033,
   EXE_DEFAULT_VALUE_INCONSISTENT_ERROR  = 8034,
   EXE_HIVE_TRUNCATE_ERROR               = 8035,
+  EXE_ERROR_WHILE_LOGGING               = 8036,
 
   // ---------------------------------------------------------------------
   // Data integrity errors
