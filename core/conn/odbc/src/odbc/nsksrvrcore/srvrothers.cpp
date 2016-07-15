@@ -4934,7 +4934,7 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
             convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
             convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
             convertWildcard(metadataId, TRUE, tableNm, expTableNm);
-            convertWildcardNoEsc(metadataId, TRUE, tableNmNoEsc, tableNmNoEsc);
+            convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
             inputParam[0] = schemaNmNoEsc;
             inputParam[1] = expSchemaNm;
             inputParam[2] = tableNmNoEsc;
@@ -4967,9 +4967,39 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                     "and (ob.SCHEMA_NAME = '%s' or trim(ob.SCHEMA_NAME) LIKE '%s' ESCAPE '\\')  "
                     "and (ob.OBJECT_NAME = '%s' or trim(ob.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
                     "and (ob.OBJECT_TYPE in ('BT', 'VI')) "
-                    "and (trim(co.COLUMN_CLASS) not in('S', 'M'));",
+                    "and (trim(co.COLUMN_CLASS) not in('S', 'M')) "
+                    "union "
+                    "select "
+                    "cast('%s' as varchar(128)) TABLE_CAT, "
+                    "cast(trim(ob.SCHEMA_NAME) as varchar(128)) TABLE_SCHEM, "
+                    "cast(trim(ob.OBJECT_NAME) as varchar(128)) TABLE_NAME, "
+                    "cast(idx.is_unique as smallint) NON_UNIQUE, "
+                    "cast('' as varchar(128)) INDEX_QUALIFIER, "
+                    "cast(trim(ob_table.OBJECT_NAME) as varchar(128)) INDEX_NAME, "
+                    "cast(3 as smallint) TYPE, "
+                    "cast(0 as smallint) ORDINAL_POSITION, "
+                    "cast('' as varchar(128)) COLUMN_NAME, "
+                    "cast('' as char(1)) ASC_OR_DES, "
+                    "cast(0 as integer) CARDINALITY, "
+                    "cast(0 as integer) PAGES, "
+                    "cast('' as varchar(128)) FILTER_CONDITION "
+                    "from "
+                    "TRAFODION.\"_MD_\".OBJECTS ob, "
+                    "TRAFODION.\"_MD_\".INDEXES idx, "
+                    "TRAFODION.\"_MD_\".OBJECTS ob_table, "
+                    "TRAFODION.\"_MD_\".TABLES tb "
+                    "where "
+                    "idx.BASE_TABLE_UID=tb.TABLE_UID "
+                    "and idx.INDEX_UID=ob.OBJECT_UID "
+                    "and idx.BASE_TABLE_UID=ob_table.OBJECT_UID "
+                    "and (ob_table.SCHEMA_NAME = '%s' or trim(ob_table.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
+                    "and (ob_table.OBJECT_NAME = '%s' or trim(ob_table.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
+                    "and (ob_table.OBJECT_TYPE in ('BT', 'VI'));",
                     tableParam[0],
                     inputParam[0],
+                    inputParam[0], inputParam[1],
+                    inputParam[2], inputParam[3],
+                    tableParam[0],
                     inputParam[0], inputParam[1],
                     inputParam[2], inputParam[3]
                     );
