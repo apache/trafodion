@@ -1105,6 +1105,18 @@ C1 C2
 
 --- SQL operation complete.
 >>
+>>with recursive w1 as (select c1, c2 from witht1 union all select origin.c1 , origin.c2 from w1 join t1 origin on origin.c1 = w1.c1 );
+
+*** ERROR[3022] The WITH RECURSIVE operator is not yet supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>with w1 as (select * from witht1), w1 as (select * from witht2) select * from w1;
+
+*** ERROR[3288] A syntax error occurred. WITH clause redefined. WITH name W1 .
+
+*** ERROR[8822] The statement was not prepared.
+
 >>cqd mode_special_4 reset;
 
 --- SQL operation complete.

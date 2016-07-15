@@ -261,8 +261,20 @@ ItemExpr *get_w_ItemExprTree(const NAWchar * str,
   NABoolean isHQCCacheable()
     { return HQCKey_?HQCKey_->isCacheable():FALSE;  }
 
-  NAHashDictionary<NAString,RelExpr> *with_clauses_;
+  NABoolean hasWithDefinition(NAString* key)
+    { if(with_clauses_->contains(key) ) return TRUE;
+      else return FALSE;
+    }
 
+  void insertWithDefinition(NAString* key,  RelExpr* val)
+    {
+       with_clauses_->insert(key,val);
+    }
+
+  RelExpr * getWithDefinition(NAString *key)
+    {
+       return with_clauses_->getFirstValue(key);
+    }
 private:
 
   HQCParseKey* HQCKey_;
@@ -313,6 +325,13 @@ private:
 
   LIST(NABoolean )  hasOlapFunctions_;
   LIST(NABoolean )  hasTDFunctions_;
+  /* 
+   * hashmap to save WITH clause definition 
+   * key is the name of the with clause
+   * value is the RelExpr structure
+   */
+  NAHashDictionary<NAString,RelExpr> *with_clauses_;
+
 };
 
 #define PARSERASSERT(b) \

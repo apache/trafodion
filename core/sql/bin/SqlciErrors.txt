@@ -410,7 +410,6 @@
 1430 3F000 99999 BEGINNER MAJOR DBADMIN A schema name that starts and ends with an "_"(underscore) is reserved for internal usage. It cannot be used to create a user schema.
 1431 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 exists in HBase. This could be due to a concurrent transactional ddl operation in progress on this table.
 1432 ZZZZZ 99999 BEGINNER MINOR DBADMIN Input LOB type $0~Int0 does not match column's storage type: $1~Int1 Column name: $0~String0 .
-1433 ZZZZZ 99999 BEGINNER MINOR DBADMIN WITH clause redefined. WITH name $0~String0 .
 1500 ZZZZZ 99999 ADVANCED CRTCL DIALOUT The CATSYS - CAT_REFERENCES system schema relationship for catalog $0~CatalogName might be corrupt.
 1501 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 5/7/12 ---
 1502 ZZZZZ 99999 ADVANCED CRTCL DIALOUT The OBJECTS - REPLICAS definition schema relationship for $0~String0 $1~TableName might be corrupt.
@@ -1027,6 +1026,7 @@ $1~String1 --------------------------------
 3285 ZZZZZ 99999 BEGINNER MINOR DBADMIN The C interface for this type of routine is deprecated, please consider migrating to a TMUDF with a C++ or Java interface.
 3286 ZZZZZ 99999 BEGINNER MINOR DBADMIN The routine language that was either specified or implied from the library file name is not supported for this type of routine.
 3287 42000 99999 BEGINNER MINOR DBADMIN The $0~string0 option is not supported for this type of routine.
+3288 42000 99999 BEGINNER MINOR DBADMIN A syntax error occurred. WITH clause redefined. WITH name $0~String0 .
 3300 42000 99999 BEGINNER MAJOR DBADMIN --- available ---
 3301 42000 99999 BEGINNER MAJOR DBADMIN $0~string0 is too long (longer than $1~int0 $2~string1).
 

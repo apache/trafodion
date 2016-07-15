@@ -848,7 +848,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("RECORD_SEPARATOR",   TOK_RECORD_SEPARATOR, NONRESTOKEN_),
   ParKeyWord("RECOVER",            TOK_RECOVER,     NONRESTOKEN_),
   ParKeyWord("RECOVERY",           TOK_RECOVERY,    NONRESTOKEN_),
-  ParKeyWord("RECURSIVE",          IDENTIFIER,      POTANS_|RESWORD_),
+  ParKeyWord("RECURSIVE",          TOK_RECURSIVE,      POTANS_|RESWORD_),
   ParKeyWord("REDEFTIME",          TOK_REDEFTIME,   FLAGSNONE_),
   ParKeyWord("REF",                IDENTIFIER,      POTANS_|RESWORD_),
   ParKeyWord("REFERENCES",         TOK_REFERENCES,  ANS_|RESWORD_),
