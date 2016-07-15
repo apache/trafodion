@@ -472,4 +472,80 @@ aaaaaaaaaa                                ?
 
 --- 1 row(s) selected.
 >>
+>>-- default USER
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (a int, b varchar(20) default user);
+
+--- SQL operation complete.
+>>invoke t031t1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T031T1
+-- Definition current  Wed Jul 13 23:30:01 2016
+
+  (
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  , B                                VARCHAR(20) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT USER
+  )
+
+--- SQL operation complete.
+>>insert into t031t1 (a) values (10);
+
+--- 1 row(s) inserted.
+>>insert into t031t1 default values;
+
+--- 1 row(s) inserted.
+>>select * from t031t1;
+
+A            B                   
+-----------  --------------------
+
+         10  DB__ROOT            
+          ?  DB__ROOT            
+
+--- 2 row(s) selected.
+>>alter table t031t1 add column c char(20) default user;
+
+--- SQL operation complete.
+>>invoke t031t1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T031T1
+-- Definition current  Wed Jul 13 23:30:02 2016
+
+  (
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  , B                                VARCHAR(20) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT USER
+  , C                                CHAR(20) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT USER /*added_col*/
+  )
+
+--- SQL operation complete.
+>>select * from t031t1;
+
+A            B                     C                   
+-----------  --------------------  --------------------
+
+         10  DB__ROOT                                  
+          ?  DB__ROOT                                  
+
+--- 2 row(s) selected.
+>>insert into t031t1 default values;
+
+--- 1 row(s) inserted.
+>>select * from t031t1;
+
+A            B                     C                   
+-----------  --------------------  --------------------
+
+         10  DB__ROOT                                  
+          ?  DB__ROOT                                  
+          ?  DB__ROOT              DB__ROOT            
+
+--- 3 row(s) selected.
+>>
 >>log;

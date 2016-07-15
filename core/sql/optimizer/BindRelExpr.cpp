@@ -9951,7 +9951,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           assign = new (bindWA->wHeap())
             Assign(target.getItemExpr(), defaultValueExpr,
                     FALSE /*Not user Specified */);
-          if (nacol->getDefaultClass() != COM_CURRENT_DEFAULT)
+          if ((nacol->getDefaultClass() != COM_CURRENT_DEFAULT) &&
+              (nacol->getDefaultClass() != COM_USER_FUNCTION_DEFAULT))
              assign->setToBeSkipped(TRUE);
           assign->bindNode(bindWA);
         }

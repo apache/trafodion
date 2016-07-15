@@ -8262,7 +8262,8 @@ ItemExpr * DateFormat::copyTopNode(ItemExpr *derivedNode,
   else
     result = (DateFormat*)derivedNode;
 
-  frmt_ = result->frmt_;
+  result->frmt_ = frmt_;
+  result->dateFormat_ = dateFormat_;
 
   return BuiltinFunction::copyTopNode(result,outHeap);
 
