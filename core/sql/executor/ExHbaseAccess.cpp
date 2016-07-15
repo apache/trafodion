@@ -3000,7 +3000,8 @@ void ExHbaseAccessTcb::handleException(NAHeap *heap,
      errorMsgLen++;
   }
   else {
-     errorMsgLen = strlen("[UNKNOWN EXCEPTION]\n");
+     errorMsg = (char *)"[UNKNOWN EXCEPTION]\n";
+     errorMsgLen = strlen(errorMsg);
   }
   retcode = ehi->hdfsWrite(errorMsg, errorMsgLen);
 logErrorReturn:
