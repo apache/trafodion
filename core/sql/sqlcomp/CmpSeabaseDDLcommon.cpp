@@ -70,6 +70,7 @@
 #include "CmpSeabaseDDLroutine.h"
 #include "hdfs.h"
 #include "StmtDDLAlterLibrary.h"
+#include "logmxevent_traf.h"
 
 void cleanupLOBDataDescFiles(const char*, int, const char *);
 
@@ -437,7 +438,7 @@ short CmpSeabaseDDL::convertColAndKeyInfoArrays(
           ComTdbVirtTableKeyInfo &ki = btKeyInfoArray[ii];
           if (strcmp(ci.colName, ki.colName) == 0)
             {
-              if (ki.ordering == 0)
+              if (ki.ordering == ComTdbVirtTableKeyInfo::ASCENDING_ORDERING)
                 nac->setClusteringKey(ASCENDING);
               else // ki.ordering should be 1
                 nac->setClusteringKey(DESCENDING);
@@ -667,7 +668,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
 
           ki.tableColNum = colNumber;
           ki.keySeqNum = i+1;
-          ki.ordering = 0;
+          ki.ordering = ComTdbVirtTableKeyInfo::ASCENDING_ORDERING;
           ki.nonKeyCol = 1;
           
           ki.hbaseColFam = new(CTXTHEAP) char[strlen(SEABASE_DEFAULT_COL_FAMILY) + 1];
@@ -908,6 +909,11 @@ short CmpSeabaseDDL::createMDdescs(MDDescsInfo *&trafMDDescsInfo)
   if (trafMDDescsInfo)
     NADELETEBASIC(trafMDDescsInfo, CTXTHEAP);
   trafMDDescsInfo = NULL;
+
+  char msg[80];
+  str_sprintf(msg,"CmpSeabaseDDL::createMDdescs failed, breadCrumb = %d",breadCrumb);
+  SQLMXLoggingArea::logSQLMXDebugEvent(msg, -1, __LINE__);
+
   return -1;
 }
                                               
@@ -5926,7 +5932,9 @@ short CmpSeabaseDDL::buildKeyInfoArray(
         }
         
       keyInfoArray[index].ordering = 
-        ((*keyArray)[index]->getColumnOrdering() == COM_ASCENDING_ORDER ? 0 : 1);
+        ((*keyArray)[index]->getColumnOrdering() == COM_ASCENDING_ORDER ? 
+          ComTdbVirtTableKeyInfo::ASCENDING_ORDERING : 
+          ComTdbVirtTableKeyInfo::DESCENDING_ORDERING);
       keyInfoArray[index].nonKeyCol = 0;
 
       if ((colInfoArray) &&
@@ -7015,6 +7023,10 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
   // how you got here.
 
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+
+  char msg[80];
+  str_sprintf(msg,"CmpSeabaseDDL::initSeabaseMD failed, breadCrumb = %d",breadCrumb);
+  SQLMXLoggingArea::logSQLMXDebugEvent(msg, -1, __LINE__);
 
   return;
 }
