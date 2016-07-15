@@ -1531,9 +1531,9 @@ $1~String1 --------------------------------
 8410 22025 99999 BEGINNER MINOR LOGONLY An escape character in a LIKE pattern must be followed by another escape character, an underscore, or a percent character.
 8411 22003 99999 BEGINNER MINOR LOGONLY A numeric overflow occurred during an arithmetic computation or data conversion.$0~string0
 8412 22024 99999 BEGINNER MINOR LOGONLY An input character host variable is missing its null terminator.
-8413 22007 99999 BEGINNER MINOR LOGONLY The string argument contains characters that cannot be converted.
-8414 0A000 99999 BEGINNER MINOR LOGONLY The attempted conversion is not supported on this platform.
-8415 22007 99999 BEGINNER MINOR LOGONLY The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+8413 22007 99999 BEGINNER MINOR LOGONLY The string argument contains characters that cannot be converted. Source data $0~string0
+8414 0A000 99999 BEGINNER MINOR LOGONLY The attempted conversion is not supported on this platform.$0~string0
+8415 22007 99999 BEGINNER MINOR LOGONLY The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data $0~string0
 8416 22008 99999 BEGINNER MINOR LOGONLY A datetime expression evaluated to an invalid datetime value.
 8417 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during the evaluation of USER function. The provided userid $0~string0 is invalid, incorrect, obsolete or inexistent and could not be converted to username.
 8418 0A000 99999 BEGINNER MINOR LOGONLY The USER function is not supported on this platform.
@@ -1544,7 +1544,7 @@ $1~String1 --------------------------------
 8423 ZZZZZ 99999 BEGINNER MINOR LOGONLY The provided field number is not valid.
 8424 0A000 99999 BEGINNER MINOR LOGONLY Function $0~string0 is not yet supported.
 8425 ZZZZZ 99999 BEGINNER MINOR LOGONLY NULL cannot be assigned to a DEFAULT NULL NOT NULL column.
-8426 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 03/30/04 ---
+8426 22007 99999 BEGINNER MINOR LOGONLY The provided value, $0~string0, is an invalid BOOLEAN value.
 8427 ZZZZZ 99999 BEGINNER INFRM LOGONLY $0~string0
 8428 ZZZZZ 99999 BEGINNER MINOR LOGONLY The argument to function $0~string0 is not valid.
 8429 ZZZZZ 99999 BEGINNER INFRM LOGONLY The preceding error actually occurred in function $0~string0.

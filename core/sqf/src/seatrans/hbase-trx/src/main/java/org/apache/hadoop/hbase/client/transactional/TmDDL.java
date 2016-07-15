@@ -68,7 +68,7 @@ public class TmDDL {
    private static Object tablePutLock;            // Lock for synchronizing table.put operations
    private static HTable table;
 
-   public TmDDL (Configuration config) throws Exception {
+   public TmDDL (Configuration config) throws IOException {
 
       this.config = config;
       this.dtmid = Integer.parseInt(config.get("dtmid"));
@@ -76,26 +76,14 @@ public class TmDDL {
 
       if (LOG.isTraceEnabled()) LOG.trace("Enter TmDDL constructor for dtmid: " + dtmid);
 
-      try {
-         hbadmin = new HBaseAdmin(config);
-      } catch(Exception e) {
-         LOG.error("Unable to obtain HBaseAdmin accessor, exiting with exception: " + e);
-         e.printStackTrace();
-         System.exit(1);
-      }
+      hbadmin = new HBaseAdmin(config);
 
       boolean tDDLTableExists = hbadmin.tableExists(tablename);
 
       if(tDDLTableExists==false && dtmid ==0) {
-         try {
             HTableDescriptor desc = new HTableDescriptor(tablename);
             desc.addFamily(new HColumnDescriptor(TDDL_FAMILY));
             hbadmin.createTable(desc);
-         } catch(Exception e) {
-            LOG.error("Unable to create TDDL table, exception: " + e);
-            e.printStackTrace();
-            throw e;
-         }
       }
 
       tablePutLock = new Object();
@@ -217,40 +205,25 @@ public class TmDDL {
       if (LOG.isTraceEnabled()) LOG.trace("TmDDL putRow exit, TxId:" + transid);
    }
 
-   public void setState(final long transid, final String state) throws Exception {
+   public void setState(final long transid, final String state) throws IOException {
       long threadId = Thread.currentThread().getId();
       if (LOG.isTraceEnabled()) LOG.trace("TmDDL setState start in thread: " + threadId + "TxId:" + transid + "State :" + state);
 
       Put p = new Put(Bytes.toBytes(transid));
       p.add(TDDL_FAMILY, TDDL_STATE, Bytes.toBytes(state));
-      try {
-            synchronized (tablePutLock) {
-          try {
-                if (LOG.isTraceEnabled()) LOG.trace("TmDDL setState method. table.put. TxId: " + transid + "Put:" + p );
-
-                table.put(p);
-             }
-             catch (Exception e2){
-                //Avoiding logging within a lock. Throwing Exception.
-                throw e2;
-             }
-          } // End global synchronization
-       }
-       catch (Exception e) {
-           //create record of the exception
-          LOG.error("TmDDL setState method. tablePutLock or Table.put Exception. TxID: " + transid + "Exception :" + e);
-          throw e;
-       }
+      synchronized (tablePutLock) {
+         if (LOG.isTraceEnabled()) LOG.trace("TmDDL setState method. table.put. TxId: " + transid + "Put:" + p );
+         table.put(p);
+      } // End global synchronization
       if (LOG.isTraceEnabled()) LOG.trace("TmDDL setState exit, TxID:" + transid);
    }
 
    public void getRow(final long lvTransid, StringBuilder state, ArrayList<String> createList, ArrayList<String> dropList, ArrayList<String> truncateList)
-              throws IOException, Exception {
+              throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("TmDDL getRow start, TxID: " + lvTransid);
       String recordString = null;
       StringTokenizer st = null;
       byte [] value = null;
-      try {
             Get g = new Get(Bytes.toBytes(lvTransid));
             Result r = table.get(g);
 
@@ -296,18 +269,11 @@ public class TmDDL {
                     state.append(Bytes.toString(value));
                 }
             }
-
-        }
-        catch(Exception e){
-          LOG.error("TmDDL getRow Exception, TxId: " + lvTransid + "Exception:" + e);
-          throw e;
-        }
     }
 
-    public void getState(final long lvTransid, StringBuilder state) throws IOException, Exception {
+    public void getState(final long lvTransid, StringBuilder state) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("TmDDL getState start, TxID:" + lvTransid);
       byte [] value = null;
-      try {
             Get g = new Get(Bytes.toBytes(lvTransid));
             Result r = table.get(g);
 
@@ -327,22 +293,11 @@ public class TmDDL {
             {
                 state.append("INVALID");
             }
-       }
-        catch(Exception e){
-          LOG.error("TmDDL getState Exception, TxID: " + lvTransid + "Exception: " + e);
-          throw e;
-        }
     }
 
-    public void deleteRow(final long lvTransid) throws IOException, Exception {
+    public void deleteRow(final long lvTransid) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("TmDDL deleteRow start, TxID: " + lvTransid);
-      try {
             Delete d = new Delete(Bytes.toBytes(lvTransid));
             table.delete(d);
-        }
-        catch(Exception e){
-          LOG.error("TmDDL deleteRow Exception, TxID: " + lvTransid + "Exception:" + e);
-          throw e;
-        }
     }
  }

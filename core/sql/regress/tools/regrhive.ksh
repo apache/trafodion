@@ -28,5 +28,5 @@
 if [ -x $MY_SQROOT/sql/scripts/swhive ]; then
   swhive $*
 else
-  hive $*
+  hive -hiveconf hive.cli.print.header=true $*
 fi

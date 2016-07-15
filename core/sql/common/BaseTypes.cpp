@@ -378,6 +378,19 @@ short convertTypeToText_basic(char * text,	   // OUTPUT
 	}
       break;
 
+    case REC_BIN64_UNSIGNED:
+      if ((!precision) && (scale == 0))
+	str_sprintf(text, "LARGEINT UNSIGNED");
+      else
+	{
+	  if (! precision)
+	    str_sprintf(text, "NUMERIC(%d, %d) UNSIGNED",
+			18/*MAX_NUMERIC_PRECISION*/, scale);
+	  else
+	    str_sprintf(text, "NUMERIC(%d, %d) UNSIGNED", precision, scale);
+	}
+      break;
+
     case REC_BIN32_SIGNED:
       if (!precision)
 	str_sprintf(text, "INT");
@@ -627,6 +640,10 @@ short convertTypeToText_basic(char * text,	   // OUTPUT
        str_sprintf(text, "CLOB");
      break;
 
+   case REC_BOOLEAN:
+     str_sprintf(text, "BOOLEAN");
+     break;
+
     default:
       str_sprintf(text, "**ERROR (unknown type %d)", fs_datatype);
       return -1; // error case
@@ -702,6 +719,10 @@ Lng32 getAnsiTypeFromFSType(Lng32 datatype)
       numeric_value = SQLTYPECODE_LARGEINT;
       break;
 
+   case REC_BIN64_UNSIGNED:
+      numeric_value = SQLTYPECODE_LARGEINT_UNSIGNED;
+      break;
+
    case REC_FLOAT32:
       numeric_value = SQLTYPECODE_IEEE_REAL;
       break;
@@ -750,6 +771,10 @@ Lng32 getAnsiTypeFromFSType(Lng32 datatype)
      break;
    case REC_CLOB:
      numeric_value = SQLTYPECODE_CLOB;
+     break;
+
+   case REC_BOOLEAN:
+     numeric_value = SQLTYPECODE_BOOLEAN;
      break;
 
    case REC_INT_YEAR:
@@ -811,6 +836,10 @@ const char * getAnsiTypeStrFromFSType(Lng32 datatype)
      return COM_LARGEINT_SIGNED_SDT_LIT;
      break;
 
+   case REC_BIN64_UNSIGNED:
+     return COM_LARGEINT_UNSIGNED_SDT_LIT;
+     break;
+
    case REC_FLOAT32:
      return COM_REAL_SDT_LIT;
       break;
@@ -863,6 +892,10 @@ const char * getAnsiTypeStrFromFSType(Lng32 datatype)
      break;
    case REC_CLOB:
      return COM_CLOB_SDT_LIT;
+     break;
+
+   case REC_BOOLEAN:
+     return COM_BOOLEAN_SDT_LIT;
      break;
 
    case REC_INT_YEAR:
@@ -1056,6 +1089,10 @@ Lng32 getFSTypeFromANSIType(Lng32 ansitype)
 
    case SQLTYPECODE_LARGEINT:
       datatype = REC_BIN64_SIGNED;
+      break;
+
+   case SQLTYPECODE_LARGEINT_UNSIGNED:
+      datatype = REC_BIN64_UNSIGNED;
       break;
 
    case SQLTYPECODE_NUMERIC :

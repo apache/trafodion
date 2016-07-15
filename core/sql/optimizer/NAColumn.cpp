@@ -341,6 +341,23 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
                     heap
 		    );
       break;
+    case REC_BIN64_UNSIGNED:
+      if (column_desc->precision > 0)
+	type = new (heap)
+	SQLNumeric(column_desc->length,
+		   column_desc->precision,
+		   column_desc->scale,
+		   FALSE,
+		   column_desc->null_flag,
+                   heap
+		   );
+      else
+	type = new (heap)
+        SQLLargeInt(FALSE,
+		    column_desc->null_flag,
+                    heap
+		    );
+      break;
     case REC_DECIMAL_UNSIGNED:
       type = new (heap)
 	SQLDecimal(column_desc->length,
@@ -543,6 +560,10 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
       type = new (heap)
 	SQLClob(column_desc->precision, Lob_Invalid_Storage,
 		column_desc->null_flag);
+      break;
+
+    case REC_BOOLEAN :
+      type = new (heap) SQLBooleanNative(column_desc->null_flag);
       break;
 
     default:

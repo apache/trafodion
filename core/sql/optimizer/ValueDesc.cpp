@@ -246,7 +246,7 @@ void ValueId::coerceType(enum NABuiltInTypeEnum desiredQualifier,
   NAType *desiredType = NULL;
   switch (desiredQualifier) {
   case NA_BOOLEAN_TYPE:
-    desiredType = new STMTHEAP SQLBoolean();
+    desiredType = new STMTHEAP SQLBooleanNative(originalType.supportsSQLnull());
     break;
   case NA_CHARACTER_TYPE:
     {
@@ -380,6 +380,38 @@ void ValueId::coerceType(const NAType& desiredType,
              newType = new (STMTHEAP)
                SQLSmall(isSigned, desiredType.supportsSQLnull());
 	   } // TinyInt
+	 else if ((desiredType.getFSDatatype() == REC_BIN64_UNSIGNED) &&
+                  (CmpCommon::getDefault(TRAF_LARGEINT_UNSIGNED_IO) == DF_OFF))
+           {
+             NumericType &nTyp = (NumericType &)desiredType;
+             if (CmpCommon::getDefault(BIGNUM_IO) == DF_OFF)
+               {
+		 Int16 DisAmbiguate = 0;
+                 newType = new (STMTHEAP)
+                   SQLLargeInt(nTyp.getScale(),
+                               DisAmbiguate,
+                               TRUE,
+                               nTyp.supportsSQLnull(),
+                               NULL);
+               }
+             else
+               {
+                 newType = new (STMTHEAP)
+                   SQLBigNum(MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION,
+                             nTyp.getScale(),
+                             FALSE,
+                             FALSE,
+                             nTyp.supportsSQLnull(),
+                             NULL);
+               }
+           }
+	 else if ((desiredType.getFSDatatype() == REC_BOOLEAN) &&
+                  (CmpCommon::getDefault(TRAF_BOOLEAN_IO) == DF_OFF))
+           {
+             newType = new (STMTHEAP)
+               SQLVarChar(SQL_BOOLEAN_DISPLAY_SIZE, 
+                          desiredType.supportsSQLnull());
+           }
 	 else if (DFS2REC::isBigNum(desiredType.getFSDatatype()))
 	   {
 	     // If bignum IO is not enabled or

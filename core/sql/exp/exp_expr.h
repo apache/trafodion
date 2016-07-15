@@ -698,17 +698,6 @@ public:
   static void setForShowplan(UInt32 &f, NABoolean v)
   { ( v ? f |= FOR_SHOWPLAN : f &= ~FOR_SHOWPLAN );}
 
-  static NABoolean downrevCompile(UInt32 f) {return ((f & DOWNREV_COMPILE) != 0);}
-  static NABoolean downrevCompileR2FCS(UInt32 f) {return ((f & DOWNREV_COMPILE) != 0);}
-  static void setDownrevCompile(UInt32 &f, NABoolean v)
-  { ( v ? f |= DOWNREV_COMPILE : f &= ~DOWNREV_COMPILE );}
-
-  static void setDownrevCompileR2FCS(UInt32 &f, NABoolean v)
-  { ( v ? f |= DOWNREV_COMPILE : f &= ~DOWNREV_COMPILE );}
-
-  static NABoolean downrevCompileRR(UInt32 f) {return ((f & DOWNREV_COMPILE_RR) != 0);}
-  static void setDownrevCompileRR(UInt32 &f, NABoolean v)
-  { ( v ? f |= DOWNREV_COMPILE_RR : f &= ~DOWNREV_COMPILE_RR );}
   static NABoolean notValidateFloat64(UInt32 f)
   { return ((f & NOT_VALIDATE_FLOAT64) != 0); }
   static void setNotValidateFloat64(UInt32 &f, NABoolean v)
@@ -800,16 +789,9 @@ protected:
     // expression being generated for SHOWPLAN request
     FOR_SHOWPLAN = 0x0001,
 
-    // expressions compatible with pre-R2.1(052005) and post R1.8
-    // release(R2 FCS) need to be generated
-    DOWNREV_COMPILE = 0x0002,
-
-    // expressions compatible with R2.1(roadrunner) need to be generated
-    DOWNREV_COMPILE_RR = 0x0004,
-
     // tell clause pcodegenerate() to generate PCode instruction
     // to validate value range for float64 to float64 assigments
-    NOT_VALIDATE_FLOAT64 = 0x0008
+    NOT_VALIDATE_FLOAT64 = 0x0002
   };
 
   exp_eye_catcher         eyeCatcher_;                           // 00-03
@@ -1200,7 +1182,8 @@ public:
 	(((source >= REC_MIN_INTERVAL) && (source <= REC_MAX_INTERVAL)) &&
 	 ((target >= REC_MIN_INTERVAL) && (target <= REC_MAX_INTERVAL))) ||
 	((source == REC_BLOB) && (target == REC_BLOB)) ||
-	((source == REC_CLOB) && (target == REC_CLOB)))
+	((source == REC_CLOB) && (target == REC_CLOB)) ||
+        ((source == REC_BOOLEAN) && (target == REC_BOOLEAN)))
       return TRUE;
     else
       return FALSE;

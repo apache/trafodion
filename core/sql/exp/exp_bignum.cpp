@@ -611,7 +611,17 @@ short BigNum::castFrom (Attributes * source,
       // Since this case is a little more complex, we call a helper method. 
       BigNumHelper::ConvInt64ToBigNumWithSignHelper(getLength(),
                                                     *((Int64 *) op_data[1]),
-                                                    op_data[0] );
+                                                    op_data[0],
+                                                    FALSE);
+      }
+      break;
+      
+    case REC_BIN64_UNSIGNED: {
+      // Since this case is a little more complex, we call a helper method. 
+      BigNumHelper::ConvInt64ToBigNumWithSignHelper(getLength(),
+                                                    *((Int64 *) op_data[1]),
+                                                    op_data[0],
+                                                    TRUE);
       }
       break;
       

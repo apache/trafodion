@@ -58,44 +58,56 @@ static NAString LiteralRowset("ROWSET");
 
 // ***********************************************************************
 //
-//  SQLBoolean : The boolean data type
+//  SQLBooleanBase : The boolean data type
 //
 // ***********************************************************************
-class SQLBoolean : public NAType
+class SQLBooleanBase : public NAType
 {
 public:
 
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  SQLBoolean(NABoolean SQLUnknownFlag = TRUE,NAMemory * heap=0) :
-                 NAType(LiteralBoolean,
-                        NA_BOOLEAN_TYPE,
-                        4,                  // dataStorageSize
-                        FALSE,              // supportsSQLnull
-                        0,                  // SQLnullHdrSize
-                        FALSE,              // variableLength
-                        0,                  // lengthHeaderSize
-                        4,                  // dataAlignment
-						heap                
-                        ) { unknownFlag_ = SQLUnknownFlag; }
+  SQLBooleanBase(NABoolean allowSQLnull,
+             NABoolean isRelat,
+             NAMemory * heap=0);
+
+  // ---------------------------------------------------------------------
+  // A method which tells if a conversion error can occur when converting
+  // a value of this type to the target type.
+  // ---------------------------------------------------------------------
+  NABoolean errorsCanOccur (const NAType& target, NABoolean lax=TRUE) const;
+ 
+private:
+}; // class SQLBooleanBase
+
+// ***********************************************************************
+//
+//  SQLBooleanRelat : The boolean data type used in relational operators
+//
+// ***********************************************************************
+class SQLBooleanRelat : public SQLBooleanBase
+{
+public:
+
+  // ---------------------------------------------------------------------
+  // Constructor functions
+  // ---------------------------------------------------------------------
+  SQLBooleanRelat(NABoolean sqlUnknownFlag = TRUE,
+                  NAMemory * heap=0);
   
   // ---------------------------------------------------------------------
   // A virtual function to return a copy of the type.
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(NAMemory* h=0) const;
 
-  short getFSDatatype() const;
-
-  // ---------------------------------------------------------------------
-  // Get a simpler textual description of the type.  
-  // ---------------------------------------------------------------------
-  virtual NAString getSimpleTypeName() const;
+  virtual short getFSDatatype() const { return REC_BIN32_SIGNED; }
 
   // ---------------------------------------------------------------------
   // Get the external/SQL name of the Type.
   // ---------------------------------------------------------------------
-  virtual NAString getTypeSQLname(NABoolean terse = FALSE) const;
+  virtual NAString getTypeSQLname(NABoolean terse = FALSE) const
+  {return "BOOLEAN_RELAT";}
 
   // ---------------------------------------------------------------------
   // A virtual function for synthesizing the type of a binary operator.
@@ -106,25 +118,63 @@ public:
 				       CollHeap* h,
 				       UInt32 *flags = NULL) const;
   
+  // ---------------- Methods not inherited from NAType ----------------
+
+  NABoolean canBeSQLUnknown() const { return sqlUnknownFlag_;}
+
+  private:
+  NABoolean sqlUnknownFlag_;
+}; // class SQLBooleanRelat
+
+// ***********************************************************************
+//
+//  SQLBooleanNative : The boolean data type used as a column datatype
+//
+// ***********************************************************************
+class SQLBooleanNative : public SQLBooleanBase
+{
+public:
+
   // ---------------------------------------------------------------------
-  // A method which tells if a conversion error can occur when converting
-  // a value of this type to the target type.
+  // Constructor functions
   // ---------------------------------------------------------------------
-  NABoolean errorsCanOccur (const NAType& target, NABoolean lax=TRUE) const;
+  SQLBooleanNative(NABoolean allowSQLnull,
+                  NAMemory * heap=0);
+  
+  // ---------------------------------------------------------------------
+  // A virtual function to return a copy of the type.
+  // ---------------------------------------------------------------------
+  virtual NAType *newCopy(NAMemory* h=0) const;
+
+  virtual short getFSDatatype() const { return REC_BOOLEAN; }
+
+  // ---------------------------------------------------------------------
+  // Get the external/SQL name of the Type.
+  // ---------------------------------------------------------------------
+  virtual NAString getTypeSQLname(NABoolean terse = FALSE) const
+  {return "BOOLEAN";}
+
+  // ---------------------------------------------------------------------
+  // A virtual function for synthesizing the type of a binary operator.
+  // ---------------------------------------------------------------------
+  virtual const NAType* synthesizeType(enum NATypeSynthRuleEnum synthRule,
+                                       const NAType& operand1,
+                                       const NAType& operand2,
+				       CollHeap* h,
+				       UInt32 *flags = NULL) const;
+  
+  virtual void minRepresentableValue(void* bufPtr, Lng32* bufLen,
+                                     NAString ** stringLiteral,
+				     CollHeap* h) const;
+
+  virtual void maxRepresentableValue(void* bufPtr, Lng32* bufLen,
+                                     NAString ** stringLiteral,
+				     CollHeap* h) const;
 
   // ---------------- Methods not inherited from NAType ----------------
 
-  // ---------------------------------------------------------------------
-  // A method which tells if this SQLBoolean can evualuate to
-  // unknown or only to (true,flase)
-  // ---------------------------------------------------------------------
-  NABoolean canBeSQLUnknown() const;
-  void setSQLUnknownFlag(NABoolean flag);
-
   private:
-  NABoolean unknownFlag_;
-
-}; // class SQLBoolean
+}; // class SQLBooleanNative
 
 // ***********************************************************************
 //

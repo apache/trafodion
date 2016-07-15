@@ -31,11 +31,8 @@
 The current release of {project-name} has been tested with:
 
 * 64-bit Red Hat Enterprise Linux (RHEL) or CentOS 6.5, 6.6, and 6.7
-* SUSE SLES 11.3 SP2
 * Cloudera CDH 5.4
-* Hortonworks HDP 2.2
 * Hortonworks HDP 2.3
-
 
 Other OS releases may work, too. The {project-name} project is currently working on better support for more distribution and non-distribution versions of Hadoop.
 
@@ -180,9 +177,8 @@ The following distributions have been tested with {project-name}.^1^
 [cols="25%,15%,10%,50%",options="header"]
 |===
 | Distribution                                        | Version        | HBase Version | Installation Documentation
-| Cloudera Distribution Including Apache Hadoop (CDH) | 5.2 or 5.3     | 0.98          | http://www.cloudera.com/downloads/manager/5-2-0.html[CHD 5.2 Installation] +
-http://www.cloudera.com/downloads/manager/5-3-0.html[CDH 5.3 Installation]^2^ 
-| Hortonworks Data Platform (HDP)                     | 2.2            | 0.98          | http://hortonworks.com/products/releases/hdp-2-2/#install[HDP 2.2 Installation]
+| Cloudera Distribution Including Apache Hadoop (CDH) | 5.4            | 1.0           | http://www.cloudera.com/downloads/manager/5-4-0.html[CHD 5.4 Installation] 
+| Hortonworks Data Platform (HDP)                     | 2.3            | 1.1           | http://hortonworks.com/products/data-center/hdp/[HDP 2.3 Installation]
 |===
 
 1. Future releases of {project-name} will move away from distribution-specific integration. Instead, {project-name} will be tested with

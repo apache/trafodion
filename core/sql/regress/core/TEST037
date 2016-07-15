@@ -226,7 +226,7 @@ prepare s1 from SELECT BEFORE BEFORE from (values(0)) BEFORE(BEFORE);
 -- Expect error [3128]
 prepare s1 from SELECT BIT_LENGTH BIT_LENGTH from (values(0)) BIT_LENGTH(BIT_LENGTH);
 
--- Expect error [3128]
+-- Expect error [15001]
 prepare s1 from SELECT BOOLEAN BOOLEAN from (values(0)) BOOLEAN(BOOLEAN);
 
 -- Expect error [3128]

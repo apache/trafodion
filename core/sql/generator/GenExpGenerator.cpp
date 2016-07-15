@@ -823,6 +823,84 @@ short ExpGenerator::genColNameList(const NAColumnArray &naColArr,
   return 0;
 }
 
+short ExpGenerator::handleUnsupportedCast(Cast * castNode)
+{
+  const NAType &srcNAType = castNode->child(0)->getValueId().getType();
+  const NAType &tgtNAType = castNode->getValueId().getType();
+  short srcFsType = srcNAType.getFSDatatype();
+  short tgtFsType = tgtNAType.getFSDatatype();
+
+  // check if conversion involves tinyint or largeint unsigned
+  if ((srcFsType != REC_BIN8_SIGNED) &&
+      (srcFsType != REC_BIN8_UNSIGNED) &&
+      (srcFsType != REC_BIN64_UNSIGNED) &&
+      (tgtFsType != REC_BIN8_SIGNED) &&
+      (tgtFsType != REC_BIN8_UNSIGNED) &&
+      (tgtFsType != REC_BIN64_UNSIGNED))
+    return 0;
+
+  ex_conv_clause tempClause;
+  if (tempClause.isConversionSupported(srcFsType, tgtFsType))
+    return 0;
+
+  // if this cast involved a tinyint and is unsupported, convert to
+  // smallint.
+  if ((srcFsType == REC_BIN8_SIGNED) ||
+      (srcFsType == REC_BIN8_UNSIGNED) ||
+      (tgtFsType == REC_BIN8_SIGNED) ||
+      (tgtFsType == REC_BIN8_UNSIGNED))
+    {
+      // add a Cast node to convert from/to tinyint to/from small int.
+      const NumericType &srcNum = (NumericType&)srcNAType; 
+      NumericType * newType;
+      if (srcNum.getScale() == 0)
+        newType = new (generator->wHeap())
+          SQLSmall(NOT srcNum.isUnsigned(),
+                   srcNAType.supportsSQLnull());
+      else
+        newType = new (generator->wHeap())
+          SQLNumeric(sizeof(short), srcNum.getPrecision(), srcNum.getScale(),
+                     NOT srcNum.isUnsigned(), srcNAType.supportsSQLnull());
+      ItemExpr * newChild =
+        new (generator->wHeap())
+        Cast(castNode->child(0), newType);
+      ((Cast*)newChild)->setFlags(castNode->getFlags());
+      castNode->setSrcIsVarcharPtr(FALSE);
+      newChild = newChild->bindNode(generator->getBindWA());
+      newChild = newChild->preCodeGen(generator);
+      if (! newChild)
+        return -1;
+      
+      castNode->setChild(0, newChild);
+      srcFsType = castNode->child(0)->getValueId().getType().getFSDatatype();
+    }
+
+  if ((srcFsType == REC_BIN64_UNSIGNED) ||
+      (tgtFsType == REC_BIN64_UNSIGNED))
+    {
+      const NumericType &numSrc = (NumericType&)srcNAType;
+      // add a Cast node to convert to sqllargeint signed.
+      ItemExpr * newChild =
+        new (generator->wHeap())
+        Cast(castNode->child(0),
+             new (generator->wHeap())
+             SQLLargeInt(numSrc.getScale(), 1,
+                         TRUE,
+                         srcNAType.supportsSQLnull()));
+      ((Cast*)newChild)->setFlags(castNode->getFlags());
+      castNode->setSrcIsVarcharPtr(FALSE);
+      newChild = newChild->bindNode(generator->getBindWA());
+      newChild = newChild->preCodeGen(generator);
+      if (! newChild)
+        return -1;
+      
+      castNode->setChild(0, newChild);
+      srcFsType = castNode->child(0)->getValueId().getType().getFSDatatype();
+    }
+
+  return 0;
+}
+
 /////////////////////////////////////////////////////////////////
 // this function returns an expr tree that multiplies the source
 // by 10 ** exponent.  If exponent is negative, the returned expr
@@ -911,6 +989,9 @@ ItemExpr * ExpGenerator::matchScales(const ValueId & source,
       retTree = new(wHeap()) Cast(retTree, &targetType);
       retTree->bindNode(generator->getBindWA());
 
+      if (handleUnsupportedCast((Cast*)retTree))
+        return NULL;
+
       // Mark this as preCodeGenned so we don't generate more
       // scaling code to handle possible scale differences in the
       // new Cast (note that matchScalesNoCast() in this case has
@@ -986,6 +1067,10 @@ ItemExpr * ExpGenerator::matchScalesNoCast(const ValueId & source,
 	(targetScale != sourceScale)) {
     retTree = new(wHeap()) Cast(retTree,&targetType);
     retTree->bindNode(generator->getBindWA());
+
+    if (handleUnsupportedCast((Cast*)retTree))
+      return NULL;
+
     retTree->markAsPreCodeGenned();
     retTree = scaleBy10x(retTree->getValueId(), targetScale - sourceScale);
     }
@@ -4666,18 +4751,6 @@ short ExpGenerator::endExprGen(ex_expr ** expr, short gen_last_clause)
   // generate pcode at compile time
   UInt32 f = 0;
   ex_expr_base::setForShowplan(f, FALSE);
-  if (generator->downrevCompileNeeded())
-    {
-      if (generator->getDownrevCompileMXV() == COM_VERS_R2_FCS)
-	{
-	  ex_expr_base::setDownrevCompileR2FCS(f, TRUE);
-	  ex_expr_base::setDownrevCompileRR(f, TRUE);
-	}
-      else if (generator->getDownrevCompileMXV() == COM_VERS_R2_1)
-	ex_expr_base::setDownrevCompileRR(f, TRUE);
-    }
-  else if ((CmpCommon::getDefaultLong(QUERY_OPTIMIZATION_OPTIONS) & QO_EXPR_OPT) == 0)
-    ex_expr_base::setDownrevCompileR2FCS(f, TRUE);
   if (generator->genNoFloatValidatePCode())
     ex_expr_base::setNotValidateFloat64(f, TRUE);
 
