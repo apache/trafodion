@@ -245,6 +245,73 @@ function checkKerberos {
    return 0
 }
 
+function printExpectedUlimt {
+
+    echoLog "desired \"ulimit -a\" output: "
+    echoLog "========================================="
+    echoLog "core file size (blocks, -c) 1000000"
+    echoLog "data seg size (kbytes, -d) unlimited"
+    echoLog "scheduling priority (-e) 0"
+    echoLog "file size (blocks, -f) unlimited"
+    echoLog "pending signals (-i) 515196"
+    echoLog "max locked memory (kbytes, -l) 49595556"
+    echoLog "max memory size (kbytes, -m) unlimited"
+    echoLog "open files (-n) 32000"
+    echoLog "pipe size (512 bytes, -p) 8"
+    echoLog "POSIX message queues (bytes, -q) 819200"
+    echoLog "real-time priority (-r) 0"
+    echoLog "stack size (kbytes, -s) 10240"
+    echoLog "cpu time (seconds, -t) unlimited"
+    echoLog "max user processes (-u) 267263"
+    echoLog "virtual memory (kbytes, -v) unlimited"
+    echoLog "file locks (-x) unlimited"
+    echoLog "========================================="
+ 
+}
+
+function checkUlimit {
+  
+  #check ulimit -n 
+  nrOfFile=`ulimit -n`
+  if [[ $nrOfFile -lt 32000 ]] ; then
+    echoLog "WARNING: detect issue during startup, please make sure your ulimit setup correctly"
+    echoLog "WARNING: open files is smaller than 32000"
+    echoLog ""
+    printExpectedUlimt
+    return
+  fi 
+
+ #check ulimit -u
+ userProc=`ulimit -u`
+ if [[ $userProc -lt 267263 ]] ; then
+    echoLog "WARNING: detect issue during startup, please make sure your ulimit setup correctly"
+    echoLog "WARNING: max user processes is smaller than 267263"
+    echoLog ""
+    printExpectedUlimt
+    return
+ fi
+
+ #check ulimit -l
+ maxLockMem=`ulimit -l`
+ if [[ $maxLockMem -lt 49595556 ]] ; then
+    echoLog "WARNING: detect issue during startup, please make sure your ulimit setup correctly"
+    echoLog "WARNING: max locked memory is smaller than 49595556"
+    echoLog ""
+    printExpectedUlimt
+    return
+ fi
+  
+ #check ulimit -i
+ pendingSignal=`ulimit -i`
+ if [[ $pendingSignal -lt 515196 ]] ; then
+    echoLog "WARNING: detect issue during startup, please make sure your ulimit setup correctly"
+    echoLog "WARNING: pending signals is smaller than 515196 "
+    echoLog ""
+    printExpectedUlimt
+    return
+ fi
+}
+
 #########################################################
 # MAIN portion of sqstart begins here
 #########################################################
@@ -267,6 +334,8 @@ else
     echoLog
     exit 1;
 fi
+
+checkUlimit
 
 # Check SeaMonster kernel module if SeaMonster is enabled
 if [[ $SQ_SEAMONSTER == "1" ]]; then
@@ -371,6 +440,7 @@ if [ ! -w $MPI_TMPDIR ]; then
     LogIt "End $script_name $sqstart, exit code: 1, $lv_msg"
     exit 1
 fi
+
 
 COLD_STARTFILE=$SQSCRIPTS_DIR/gomon.cold
 WARM_STARTFILE=$SQSCRIPTS_DIR/gomon.warm
@@ -589,6 +659,9 @@ dcscheck | tee -a $SQMON_LOG
 echo
 echo "You can monitor the SQ shell log file : $SQMON_LOG"
 echo
+
+#check ulimit again to add it into log
+checkUlimit
 
 echo
 STOPtime=$(date +%s)
