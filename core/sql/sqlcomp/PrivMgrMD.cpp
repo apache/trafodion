@@ -630,6 +630,138 @@ bool PrivMgrMDAdmin::isAuthorized (void)
 }
 
 // ****************************************************************************
+// method:  getColumnReferences
+//
+//  This method stores the list of columns for the object in the 
+//  ObjectReference. 
+// **************************************************************************** 
+PrivStatus PrivMgrMDAdmin::getColumnReferences (ObjectReference *objectRef)
+{
+  std::string objectMDTable = trafMetadataLocation_ + ".OBJECTS o";
+  std::string colMDTable = trafMetadataLocation_ + ".COLUMNS c";
+
+  // Select column details for object 
+  std::string selectStmt = "select c.column_number from ";
+  selectStmt += objectMDTable;
+  selectStmt += ", ";
+  selectStmt += colMDTable;
+  selectStmt += " where o.object_uid = ";
+  selectStmt += UIDToString(objectRef->objectUID);
+  selectStmt += " and o.object_uid = c.object_uid";
+  selectStmt += " order by column_number";
+
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  CmpCommon::context()->sqlSession()->getParentQid());
+  Queue * objectsQueue = NULL;
+
+  int32_t cliRC =  cliInterface.fetchAllRows(objectsQueue, (char *)selectStmt.c_str(), 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(pDiags_);
+    return STATUS_ERROR;
+  }
+
+  if (cliRC == 100) // did not find the row
+  {
+    std::string message ("No columns found for referenced object");
+    PRIVMGR_INTERNAL_ERROR(message.c_str());
+    return STATUS_ERROR;
+  }
+
+  char * ptr = NULL;
+  Int32 len = 0;
+
+  objectRef->columnReferences = new std::vector<ColumnReference *>;
+
+  // For each row, create a ColumnReference and add it to the objectRef
+  objectsQueue->position();
+  for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
+  {
+    OutputInfo * pCliRow = (OutputInfo*)objectsQueue->getNext();
+    ColumnReference *columnReference = new ColumnReference;
+
+    // column 0:  columnNumber
+    pCliRow->get(0,ptr,len);
+    columnReference->columnOrdinal = *(reinterpret_cast<int32_t*>(ptr));
+
+    objectRef->columnReferences->push_back(columnReference);
+  }
+  return STATUS_GOOD;
+}
+
+// ****************************************************************************
+// method:  getViewColUsages
+//
+//  This method reads the TEXT table to obtain the view-col <=> referenced-col
+//  relationship.
+//
+//  This relationship is stored in one or more text records with the text_type
+//  COM_VIEW_REF_COLS_TEXT (7) see ComSmallDefs.h 
+//
+//  The text rows are concatenated together and saved in the ViewUsage.
+// **************************************************************************** 
+PrivStatus PrivMgrMDAdmin::getViewColUsages (ViewUsage &viewUsage)
+{
+  std::string objectMDTable = trafMetadataLocation_ + ".OBJECTS o";
+  std::string textMDTable = trafMetadataLocation_ + ".TEXT t";
+
+  // Select text rows describing view <=> object column relationships
+  std::string selectStmt = "select text from ";
+  selectStmt += objectMDTable;
+  selectStmt += ", ";
+  selectStmt += textMDTable;
+  selectStmt += " where o.object_uid = ";
+  selectStmt += UIDToString(viewUsage.viewUID);
+  selectStmt += "and o.object_uid = t.text_uid and t.text_type = 7";
+  selectStmt += " order by seq_num";
+  
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  CmpCommon::context()->sqlSession()->getParentQid());
+  Queue * objectsQueue = NULL;
+  
+  int32_t cliRC =  cliInterface.fetchAllRows(objectsQueue, (char *)selectStmt.c_str(), 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+  { 
+    cliInterface.retrieveSQLDiagnostics(pDiags_);
+    return STATUS_ERROR;
+  }
+  
+  // View prior to column privilege support do not store view <=> object column
+  // relationships.  These views were not created based on column privileges
+  // so just return.
+  if (cliRC == 100) // did not find the row
+  { 
+    return STATUS_GOOD;
+  }
+  
+  char * ptr = NULL;
+  Int32 len = 0;
+
+  // the text column length in the TEXT table is 10000
+  char value[10000 + 1];
+  
+  // For each row, add it to the existing viewColUsages string
+  objectsQueue->position();
+  for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
+  { 
+    OutputInfo * pCliRow = (OutputInfo*)objectsQueue->getNext();
+    ColumnReference *columnReference = new ColumnReference;
+
+    // column 0: text 
+    pCliRow->get(0,ptr,len);
+    strncpy(value, ptr, len);
+    value[len] = 0;
+    viewUsage.viewColUsagesStr += value;
+  }
+
+  return STATUS_GOOD;
+} 
+
+
+
+
+
+// ****************************************************************************
 // method:  getViewsThatReferenceObject
 //
 //  this method gets the list of views associated with the passed in 

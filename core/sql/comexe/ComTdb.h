@@ -1053,6 +1053,7 @@ class ComTdbVirtTableViewInfo : ComTdbVirtTableBase
   char * viewName;
   char * viewText;
   char * viewCheckText;
+  char * viewColUsages;
   Lng32 isUpdatable;
   Lng32 isInsertable;
 };

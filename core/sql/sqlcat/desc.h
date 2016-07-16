@@ -158,6 +158,7 @@ struct view_desc_struct {
   char * viewfilename;    // the physical file, to be Opened for auth-cking.
   char * viewtext;
   char * viewchecktext;
+  char * viewcolusages;
   Int32 updatable;
   Int32 insertable;
   CharInfo::CharSet viewtextcharset;

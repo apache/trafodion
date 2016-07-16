@@ -381,6 +381,7 @@ void ReadTableDef::displayTreeMX(const desc_struct * top,
         COUT(view, viewname);
         COUT_STRING(view, viewtext);
         COUT_STRING(view, viewchecktext);
+        COUT_STRING(view, viewcolusages);
         COUT(view, updatable);
         COUT(view, insertable);
       }

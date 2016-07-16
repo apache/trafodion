@@ -31,6 +31,7 @@
 #include "PrivMgrDesc.h"
 #include "PrivMgrMDTable.h"
 #include "ComSmallDefs.h"
+#include "ComViewColUsage.h"
 #include "CmpSeabaseDDLauth.h"
 
 // following includes needed for cli interface
@@ -87,6 +88,7 @@ typedef struct {
   std::string viewName;
   bool isUpdatable;
   bool isInsertable;
+  std::string viewColUsagesStr;
   PrivMgrDesc originalPrivs;
   PrivMgrDesc updatedPrivs;
 
@@ -99,6 +101,8 @@ typedef struct {
     details += viewName;
     details += ", viewOwner is ";
     details += to_string((long long int) viewOwner);
+    details += ", viewColUsagesStr is ";
+    details += viewColUsagesStr;
     details += (isUpdatable) ? ", isUpdatable is Y " : "isUpdateable is N"; 
     details += (isInsertable) ? ", isInsertable is Y " : "isInsertable is N"; 
   }
@@ -137,6 +141,17 @@ class ObjectReference
   //TBD - make columnReferences a map instead of a vector
   std::vector<ColumnReference *> *columnReferences;
   PrivMgrDesc updatedPrivs;
+
+  ColumnReference * find (int32_t columnOrdinal)
+  {
+    for (size_t i = 0; i < columnReferences->size(); i++)
+    {
+      ColumnReference *pColRef = (*columnReferences)[i];
+      if (pColRef->columnOrdinal == columnOrdinal)
+        return pColRef;
+    }
+    return NULL;
+  }
 
   void describe (std::string &details) const
   {
@@ -186,6 +201,25 @@ class ObjectUsage
   std::vector<ColumnReference *> *columnReferences;
   PrivMgrDesc originalPrivs;
   PrivMgrDesc updatedPrivs;
+
+  void copyColumnReferences(const std::vector<ColumnReference *> *refsToCopy)
+  {
+    if (refsToCopy == NULL)
+      columnReferences = NULL;
+    else
+    {
+      columnReferences = new std::vector<ColumnReference *>;
+      for (int i = 0; i < refsToCopy->size(); i++)
+      {
+        ColumnReference *newRef = new ColumnReference;
+        const ColumnReference *oldRef = (*refsToCopy)[i];
+        newRef->columnOrdinal = oldRef->columnOrdinal;
+        newRef->originalPrivs = oldRef->originalPrivs;
+        newRef->updatedPrivs = oldRef->updatedPrivs;
+        columnReferences->push_back(newRef);
+      }
+    }
+  }
 
   ColumnReference * findColumn (int32_t columnOrdinal)
   {
@@ -260,6 +294,8 @@ class PrivMgrMDAdmin : public PrivMgr
     inline void setMetadataLocation (const std::string metadataLocation)
       {metadataLocation_ = metadataLocation;};
 
+    PrivStatus getColumnReferences (ObjectReference *objectRef);
+
     bool getConstraintName(
       const int64_t referencedTableUID,
       const int64_t referencingTableUID, 
@@ -277,6 +313,8 @@ class PrivMgrMDAdmin : public PrivMgr
     PrivStatus getUdrsThatReferenceLibrary(
       const ObjectUsage &objectUsage,
       std::vector<ObjectReference *> &objectReferences );
+
+    PrivStatus getViewColUsages (ViewUsage &viewUsage);
 
     PrivStatus getViewsThatReferenceObject(
       const ObjectUsage &objectUsage, 

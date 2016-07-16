@@ -29,6 +29,7 @@
 #include "PrivMgrMDTable.h"
 #include "PrivMgrDesc.h"
 #include "ComSmallDefs.h"
+#include "ComViewColUsage.h"
 
 #include <string>
 #include <bitset>
@@ -340,8 +341,14 @@ private:
     ObjectUsage &constraintUsage,
     const std::vector<ObjectUsage *> listOfAffectedObjects);
 
+  PrivStatus gatherViewColUsages(
+    ObjectReference *objectRef,
+    ViewUsage &viewUsage,
+    std::vector<ComViewColUsage> &viewColUsages);
+
   PrivStatus gatherViewPrivileges(
     ViewUsage &viewUsage,
+    const PrivCommand command,
     const std::vector<ObjectUsage *> listOfAffectedObjects);
 
   PrivStatus generateColumnRowList();
@@ -351,6 +358,10 @@ private:
     const ObjectUsage &objectUsage,
     const PrivCommand command,
     std::vector<ObjectUsage *> &listOfAffectedObjects);
+
+  PrivStatus getObjectRowList(
+    const int64_t objectUID, 
+    std::vector<PrivMgrMDRow *> &objectRows);
 
   void getColRowsForGranteeOrdinal(
     const int32_t granteeID,
@@ -410,6 +421,7 @@ private:
 
   void summarizeColPrivs(
     const ObjectReference &objRef,
+    const int32_t granteeID,
     const std::vector<int32_t> &roleIDs,
     const std::vector<ObjectUsage *> &listOfAffectedObjects,
     std::vector<ColumnReference *> &columnReferences);
@@ -421,6 +433,10 @@ private:
     const std::vector<ObjectUsage *> listOfChangedPrivs,
     PrivMgrDesc &summarizedOriginalPrivs,
     PrivMgrDesc &summarizedCurrentPrivs);
+
+  PrivStatus updateDependentObjects(
+    const ObjectUsage &objectUsage,
+    const PrivCommand command);
 
 // -------------------------------------------------------------------
 // Data Members:

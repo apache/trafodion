@@ -2079,6 +2079,14 @@ desc_struct * Generator::createVirtualTableDesc(
       else
 	view_desc->body.view_desc.viewchecktext = NULL;
 
+      if (viewInfo[0].viewColUsages)
+	{
+	  view_desc->body.view_desc.viewcolusages = new HEAP char[strlen(viewInfo[0].viewColUsages)+1];
+	  strcpy(view_desc->body.view_desc.viewcolusages, viewInfo[0].viewColUsages);
+	}
+      else
+	view_desc->body.view_desc.viewcolusages = NULL;
+
       view_desc->body.view_desc.updatable = viewInfo[0].isUpdatable;
       view_desc->body.view_desc.insertable = viewInfo[0].isInsertable;
     }

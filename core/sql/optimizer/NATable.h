@@ -45,6 +45,7 @@
 #include "ExpLOBexternal.h"
 #include "ComSecurityKey.h"
 #include "ExpHbaseDefs.h"
+#include "ComViewColUsage.h"
 
 //forward declaration(s)
 // -----------------------------------------------------------------------
@@ -565,6 +566,7 @@ public:
   Int32   getViewTextLenInNAWchars() const   { return viewTextInNAWchars_.length(); }
 
   const char *getViewCheck() const              { return viewCheck_; }
+  const NAList<ComViewColUsage*> *getViewColUsages() const  { return viewColUsages_; }
 
   NABoolean hasSaltedColumn(Lng32 * saltColPos = NULL);
   NABoolean hasDivisioningColumn(Lng32 * divColPos = NULL);
@@ -1085,6 +1087,7 @@ private:
   NAWString viewTextInNAWchars_;
   CharInfo::CharSet viewTextCharSet_;
   char *viewCheck_;
+  NAList<ComViewColUsage *> *viewColUsages_;
 
   // ---------------------------------------------------------------------
   // Flags
