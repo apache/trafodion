@@ -7055,14 +7055,10 @@ with_clause_element : correlation_name TOK_AS '(' query_expression ')'
                           {
                             *SqlParser_Diags << DgSqlCode(-3288)
                                              << DgString0((*$1).toCharStar());
-                             delete $1;
-                             delete $4;
                              YYERROR;
                           }
 
                           SqlParser_CurrentParser->insertWithDefinition($1 , $$);
-                          delete $1;
-                          delete $4;
                       }
 
 rel_subquery_as_clause_and_col_list : rel_subquery as_clause '(' derived_column_list ')'

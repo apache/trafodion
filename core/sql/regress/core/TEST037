@@ -344,9 +344,6 @@ prepare s1 from SELECT PRIVATE PRIVATE from (values(0)) PRIVATE(PRIVATE);
 prepare s1 from SELECT PROTECTED PROTECTED from (values(0)) PROTECTED(PROTECTED);
 
 -- Expect error [3128]
-prepare s1 from SELECT RECURSIVE RECURSIVE from (values(0)) RECURSIVE(RECURSIVE);
-
--- Expect error [3128]
 prepare s1 from SELECT REF REF from (values(0)) REF(REF);
 
 -- Expect error [3128]
