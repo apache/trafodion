@@ -2226,8 +2226,7 @@ SQLRETURN CStmt::SendGetSQLCatalogs(short odbcAPI,
 		m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.fkschemaNm = m_FKSchemaName;
 		m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.fktableNm = m_FKTableName;
 
-		if (getODBCAppVersion() == SQL_OV_ODBC2)
-		{
+#if (ODBCVER < 0x0300)
 			switch (SqlType)
 			{
 				case SQL_TYPE_DATE:
@@ -2282,11 +2281,9 @@ SQLRETURN CStmt::SendGetSQLCatalogs(short odbcAPI,
 					m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = SqlType;
 					break;
 			}
-		}
-		else
-		{
+#else
 			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = SqlType;
-		}
+#endif
 		m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.metadataId = m_MetadataId;
 		m_SrvrCallContext.u.getSQLCatalogsParams.stmtLabel = m_StmtLabel;
 		m_SrvrCallContext.odbcAPI = odbcAPI;

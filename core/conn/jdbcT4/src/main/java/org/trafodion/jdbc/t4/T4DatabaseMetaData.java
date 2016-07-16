@@ -4613,7 +4613,7 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 		connection_.isConnectionOpen();
 
 		getSQLCatalogsInfo(connection_.getServerHandle(), // Server Handle
-				SQL_API_SQLGETTYPEINFO_JDBC, // catalogAPI
+				SQL_API_SQLGETTYPEINFO, // catalogAPI
 				"", // catalog
 				"", // schema
 				"", // table name
