@@ -3132,42 +3132,38 @@ SQLRETURN  SQL_API SQLGetTypeInfo_common(SQLHSTMT StatementHandle,
 		RETURNCODE (pstmt, SQL_ERROR);
 		LEAVE_STMT (pstmt, SQL_ERROR);
 	}
-	SQLINTEGER ODBCAppVersion = pstmt->getODBCAppVersion();
 	SQLSMALLINT convDataType = DataType;
-	if (ODBCAppVersion >= SQL_OV_ODBC3)
-	{
-		switch(DataType)
-		{
-		case SQL_DATE:
-			convDataType = SQL_TYPE_DATE;
-			break;
-		case SQL_TIME:
-			convDataType = SQL_TYPE_TIME;
-			break;
-		case SQL_TIMESTAMP:
-			convDataType = SQL_TYPE_TIMESTAMP;
-			break;
-		}
-	}
-	else
-	{
-		switch(DataType)
-		{
-		case SQL_TYPE_DATE:
-			convDataType = SQL_DATE;
-			break;
-		case SQL_TYPE_TIME:
-			convDataType = SQL_TIME;
-			break;
-		case SQL_TYPE_TIMESTAMP:
-			convDataType = SQL_TIMESTAMP;
-			break;
-		}
-	}
-	rc = NeoGetTypeInfo(StatementHandle,convDataType,isWideCall);
-	rc = fun_cata_state_tr (pstmt, en_GetTypeInfo, rc);
-	RETURNCODE (pstmt, rc);
-	LEAVE_STMT (pstmt, rc);
+#if (ODBCVER >= 0x0300)
+    switch(DataType)
+    {
+        case SQL_DATE:
+            convDataType = SQL_TYPE_DATE;
+            break;
+        case SQL_TIME:
+            convDataType = SQL_TYPE_TIME;
+            break;
+        case SQL_TIMESTAMP:
+            convDataType = SQL_TYPE_TIMESTAMP;
+            break;
+    }
+#else
+    switch(DataType)
+    {
+        case SQL_TYPE_DATE:
+            convDataType = SQL_DATE;
+            break;
+        case SQL_TYPE_TIME:
+            convDataType = SQL_TIME;
+            break;
+        case SQL_TYPE_TIMESTAMP:
+            convDataType = SQL_TIMESTAMP;
+            break;
+    }
+#endif
+    rc = NeoGetTypeInfo(StatementHandle,convDataType,isWideCall);
+    rc = fun_cata_state_tr (pstmt, en_GetTypeInfo, rc);
+    RETURNCODE (pstmt, rc);
+    LEAVE_STMT (pstmt, rc);
 }
 
 SQLRETURN  SQL_API SQLGetTypeInfo(SQLHSTMT StatementHandle,
@@ -3836,37 +3832,33 @@ SQLRETURN SQL_API SQLColAttribute_common(SQLHSTMT StatementHandle,
 	rc = NeoColAttribute(StatementHandle,ColumnNumber,FieldIdentifier,CharacterAttributePtr,BufferLength,StringLengthPtr,NumericAttributePtr,isWideCall);
 	if (rc == SQL_SUCCESS && FieldIdentifier == SQL_DESC_CONCISE_TYPE)
 	{
-		SQLINTEGER ODBCAppVersion = pstmt->getODBCAppVersion();
-		if (ODBCAppVersion >= SQL_OV_ODBC3)
-		{
-			switch((SQLINTEGER)*(SQLINTEGER*)NumericAttributePtr)
-			{
-			case SQL_DATE:
-				*(SQLINTEGER*)NumericAttributePtr = SQL_TYPE_DATE;
-				break;
-			case SQL_TIME:
-				*(SQLINTEGER*)NumericAttributePtr = SQL_TYPE_TIME;
-				break;
-			case SQL_TIMESTAMP:
-				*(SQLINTEGER*)NumericAttributePtr = SQL_TYPE_TIMESTAMP;
-				break;
-			}
-		}
-		else
-		{
-			switch((SQLINTEGER)*(SQLINTEGER*)NumericAttributePtr)
-			{
-			case SQL_TYPE_DATE:
-				*(SQLINTEGER*)NumericAttributePtr = SQL_DATE;
-				break;
-			case SQL_TYPE_TIME:
-				*(SQLINTEGER*)NumericAttributePtr = SQL_TIME;
-				break;
-			case SQL_TYPE_TIMESTAMP:
-				*(SQLINTEGER*)NumericAttributePtr = SQL_TIMESTAMP;
-				break;
-			}
-		}
+#if (ODBCVER >= 0x0300)
+        switch((SQLINTEGER)*(SQLINTEGER*)NumericAttributePtr)
+        {
+            case SQL_DATE:
+                *(SQLINTEGER*)NumericAttributePtr = SQL_TYPE_DATE;
+                break;
+            case SQL_TIME:
+                *(SQLINTEGER*)NumericAttributePtr = SQL_TYPE_TIME;
+                break;
+            case SQL_TIMESTAMP:
+                *(SQLINTEGER*)NumericAttributePtr = SQL_TYPE_TIMESTAMP;
+                break;
+        }
+#else
+        switch((SQLINTEGER)*(SQLINTEGER*)NumericAttributePtr)
+        {
+            case SQL_TYPE_DATE:
+                *(SQLINTEGER*)NumericAttributePtr = SQL_DATE;
+                break;
+            case SQL_TYPE_TIME:
+                *(SQLINTEGER*)NumericAttributePtr = SQL_TIME;
+                break;
+            case SQL_TYPE_TIMESTAMP:
+                *(SQLINTEGER*)NumericAttributePtr = SQL_TIMESTAMP;
+                break;
+        }
+#endif
 	}
 	/* state transition */
 	if (pstmt->asyn_on == en_ColAttribute)
