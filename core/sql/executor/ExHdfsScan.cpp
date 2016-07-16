@@ -377,6 +377,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
  ContextCli *currContext = getGlobals()->castToExExeStmtGlobals()->getCliGlobals()->currContext();
    hdfsFS hdfs = currContext->getHdfsServerConnection(hdfsScanTdb().hostName_,hdfsScanTdb().port_);
    hdfsFileInfo *dirInfo = NULL;
+   Int32 hdfsErrorDetail = 0;//this is errno returned form underlying hdfsOpenFile call.
   while (!qparent_.down->isEmpty())
     {
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
@@ -561,6 +562,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      }
 	    else
 	      {
+               
                 openType = 2; // must open
                 retcode = ExpLOBInterfaceSelectCursor
                   (lobGlob_,
@@ -582,9 +584,21 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                    bytesRead_,
                    NULL,
                    1, // open
-                   openType //
+                   openType, //
+                   &hdfsErrorDetail
                    );
                 
+                if ((retcode < 0) &&
+                    ((hdfsErrorDetail == ENOENT) || (hdfsErrorDetail == EAGAIN)))
+                  {
+                    ComDiagsArea * diagsArea = NULL;
+                    ExRaiseSqlError(getHeap(), &diagsArea, 
+                                    (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+                    pentry_down->setDiagsArea(diagsArea);
+                    step_ = HANDLE_ERROR_AND_DONE;
+                    break;
+                  }
+
                 // preopen next range. 
                 if ( (currRangeNum_ + 1) < (beginRangeNum_ + numRanges_) ) 
                   {
@@ -615,7 +629,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                        bytesRead_,
                        NULL,
                        1,// open
-                       openType
+                       openType,
+                       &hdfsErrorDetail
                        );
                 
                     hdfsFileName_ = hdfo_->fileName();
@@ -631,7 +646,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 ExRaiseSqlError(getHeap(), &diagsArea, 
                                 (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
                                 &intParam1, 
-                                &cliError, 
+                                &hdfsErrorDetail, 
                                 NULL, 
                                 "HDFS",
                                 (char*)"ExpLOBInterfaceSelectCursor/open",
@@ -702,7 +717,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      }
 	    else
 	      {
-
+                Int32 hdfsErrorDetail = 0;///this is the errno returned from the underlying hdfs call.
                 retcode = ExpLOBInterfaceSelectCursor
                   (lobGlob_,
                    hdfsFileName_,
@@ -723,6 +738,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                    hdfsScanBuffer_  + trailingPrevRead_,
                    2, // read
                    0 // openType, not applicable for read
+                   &hdfsErrorDetail
                    );
                   
                 if (hdfsStats_)
@@ -737,7 +753,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		    ExRaiseSqlError(getHeap(), &diagsArea, 
                                     (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
                                     &intParam1, 
-                                    &cliError, 
+                                    &hdfsErrorDetail, 
                                     NULL, 
                                     "HDFS",
                                     (char*)"ExpLOBInterfaceSelectCursor/read",
@@ -1247,7 +1263,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		    ExRaiseSqlError(getHeap(), &diagsArea, 
                                     (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
                                     &intParam1, 
-                                    &cliError, 
+                                    &errno, 
                                     NULL, 
                                     "HDFS",
                                     (char*)"ExpLOBInterfaceSelectCursor/close",

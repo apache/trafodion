@@ -274,7 +274,8 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
 			          Int64 &outLen, char * lobData,
 				  
 				  Lng32 oper, // 1: open. 2: fetch. 3: close
-                                  Lng32 openType // 0: not applicable. 1: preOpen. 2: mustOpen. 
+                                  Lng32 openType, // 0: not applicable. 1: preOpen. 2: mustOpen. 
+                                  Int32 *hdfsDetailError = NULL
 				  );
 
 Lng32 ExpLOBinterfaceStats(void * lobGlob, 

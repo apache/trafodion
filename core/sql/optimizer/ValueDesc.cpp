@@ -372,13 +372,25 @@ void ValueId::coerceType(const NAType& desiredType,
          // if param default is OFF, type tinyint as smallint.
          // This is needed until all callers/drivers have full support to
          // handle IO of tinyint datatypes.
-	 if ((desiredType.getTypeName() == LiteralTinyInt) &&
+	 if (((desiredType.getFSDatatype() == REC_BIN8_SIGNED) ||
+              (desiredType.getFSDatatype() == REC_BIN8_UNSIGNED)) &&
              ((CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF) ||
               (CmpCommon::getDefault(TRAF_TINYINT_INPUT_PARAMS) == DF_OFF)))
 	   {
-             NABoolean isSigned = ((NumericType&)desiredType).isSigned();
-             newType = new (STMTHEAP)
-               SQLSmall(isSigned, desiredType.supportsSQLnull());
+             const NumericType &numType = (NumericType&)desiredType; 
+ 
+             NABoolean isSigned = numType.isSigned();
+             if (numType.getScale() == 0)
+               newType = new (STMTHEAP)
+                 SQLSmall(isSigned, desiredType.supportsSQLnull());
+             else
+               newType = new (STMTHEAP)
+                 SQLNumeric(sizeof(short), 
+                            numType.getPrecision(), 
+                            numType.getScale(),
+                            isSigned, 
+                            desiredType.supportsSQLnull());
+               
 	   } // TinyInt
 	 else if ((desiredType.getFSDatatype() == REC_BIN64_UNSIGNED) &&
                   (CmpCommon::getDefault(TRAF_LARGEINT_UNSIGNED_IO) == DF_OFF))

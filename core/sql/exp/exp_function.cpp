@@ -2964,13 +2964,6 @@ ex_expr::exp_return_type ex_function_ansi_user::eval(char *op_data[],
 						     CollHeap *heap,
 						     ComDiagsArea** diagsArea)
 {
-#if (defined (__EID))
-  // user function not supported in DP2 process on NSK. It is evaluated
-  // at master exe root tcb and sent down as an input value.
-  ExRaiseSqlError(heap, diagsArea, EXE_USER_FUNCTION_NOT_SUPP);
-  return ex_expr::EXPR_ERROR;
-#endif
-
   const Lng32 MAX_USER_NAME_LEN = ComSqlId::MAX_LDAP_USER_NAME_LEN;
 
   char username[MAX_USER_NAME_LEN + 1];
@@ -3004,14 +2997,6 @@ ex_expr::exp_return_type ex_function_user::eval(char *op_data[],
 						CollHeap *heap,
 						ComDiagsArea** diagsArea)
 {
-#if (defined __EID)
-  // user function not supported in DP2 process on NSK. It is evaluated
-  // at master exe root tcb and sent down as an input value.
-  ExRaiseSqlError(heap, diagsArea, EXE_USER_FUNCTION_NOT_SUPP);
-  return ex_expr::EXPR_ERROR;
-#else
-
-
   Int32 userIDLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
 
   Int64 id64;
@@ -3165,10 +3150,6 @@ ex_expr::exp_return_type ex_function_user::eval(char *op_data[],
   str_cpy_all(op_data[0], userName, userNameLen);
 
   return ex_expr::EXPR_OK;
-
-
-#endif
-
 };
 
 ////////////////////////////////////////////////////////////////////

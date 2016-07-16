@@ -429,7 +429,7 @@ class ExLob
     bool hasNoOpenCursors() { return lobCursors_.empty(); }
   Ex_Lob_Error openCursor(char *handleIn, Int32 handleInLen,Int64 transId);
     Ex_Lob_Error openDataCursor(char *fileName, LobsCursorType type, Int64 range, 
-                                Int64 bytesLeft, Int64 bufMaxSize, Int64 prefetch, ExLobGlobals *lobGlobals);
+                                Int64 bytesLeft, Int64 bufMaxSize, Int64 prefetch, ExLobGlobals *lobGlobals, Int32 *hdfsDetailError = NULL);
     Ex_Lob_Error deleteCursor(char *cursorName, ExLobGlobals *lobGlobals);
   Ex_Lob_Error fetchCursor(char *handleIn, Int32 handleLenIn, Int64 &outOffset, Int64 &outSize,NABoolean &isEOD,Int64 transId);
   Ex_Lob_Error insertData(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize,char *handleIn,Int32 handleInLen, char *blackBox, Int32 blackBoxLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);

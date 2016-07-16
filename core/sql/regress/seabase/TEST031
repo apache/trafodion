@@ -166,4 +166,17 @@ delete from t031t1;
 insert into t031t1 select * from hive.hive.t031hive;
 select count(*) from t031t1;
 
+-- default USER
+drop table if exists t031t1;
+create table t031t1 (a int, b varchar(20) default user);
+invoke t031t1;
+insert into t031t1 (a) values (10);
+insert into t031t1 default values;
+select * from t031t1;
+alter table t031t1 add column c char(20) default user;
+invoke t031t1;
+select * from t031t1;
+insert into t031t1 default values;
+select * from t031t1;
+
 log;
