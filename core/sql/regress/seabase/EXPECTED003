@@ -14,6 +14,16 @@
 >>-------------- TINYINT datatype ---------------------------
 >>-----------------------------------------------------------
 >>
+>>drop table if exists t003t1 cascade;
+
+--- SQL operation complete.
+>>drop table if exists t003t1_like;
+
+--- SQL operation complete.
+>>drop table if exists t003t1_as;
+
+--- SQL operation complete.
+>>
 >>create table t003t1(a tinyint not null primary key, b tinyint, 
 +>                    c tinyint unsigned default 10 not null, d tinyint unsigned);
 
@@ -21,7 +31,7 @@
 >>invoke t003t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1
--- Definition current  Tue Jul 12 19:09:22 2016
+-- Definition current  Fri Jul 15 23:18:23 2016
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -40,7 +50,7 @@
 >>invoke t003t1_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1_LIKE
--- Definition current  Tue Jul 12 19:09:35 2016
+-- Definition current  Fri Jul 15 23:18:30 2016
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -59,7 +69,7 @@
 >>invoke t003t1_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1_AS
--- Definition current  Tue Jul 12 19:09:40 2016
+-- Definition current  Fri Jul 15 23:18:34 2016
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -69,6 +79,24 @@
   , D                                TINYINT UNSIGNED DEFAULT NULL
   )
   PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create view t003t1_view as select * from t003t1;
+
+--- SQL operation complete.
+>>invoke t003t1_view;
+
+-- Definition of Trafodion view TRAFODION.SCH.T003T1_VIEW
+-- Definition current  Fri Jul 15 23:18:36 2016
+
+  (
+    A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                TINYINT DEFAULT NULL
+  , C                                TINYINT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , D                                TINYINT UNSIGNED DEFAULT NULL
+  )
 
 --- SQL operation complete.
 >>
@@ -305,7 +333,7 @@ A     B     C    D
 >>invoke hive.hive.ttiny;
 
 -- Definition of hive table TTINY
--- Definition current  Tue Jul 12 19:10:44 2016
+-- Definition current  Fri Jul 15 23:19:15 2016
 
   (
     A                                TINYINT
@@ -427,6 +455,456 @@ A     B
 >>
 >>
 >>
+>>cqd traf_tinyint_support 'ON';
+
+--- SQL operation complete.
+>>cqd traf_tinyint_return_values 'OFF';
+
+--- SQL operation complete.
+>>cqd traf_tinyint_input_params 'OFF';
+
+--- SQL operation complete.
+>>
+>>obey TEST003(setup_tiny);
+>>-----------------------------------------------------------
+>>-------------- TINYINT datatype ---------------------------
+>>-----------------------------------------------------------
+>>
+>>drop table if exists t003t1 cascade;
+
+--- SQL operation complete.
+>>drop table if exists t003t1_like;
+
+--- SQL operation complete.
+>>drop table if exists t003t1_as;
+
+--- SQL operation complete.
+>>
+>>create table t003t1(a tinyint not null primary key, b tinyint, 
++>                    c tinyint unsigned default 10 not null, d tinyint unsigned);
+
+--- SQL operation complete.
+>>invoke t003t1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T003T1
+-- Definition current  Fri Jul 15 23:19:44 2016
+
+  (
+    A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                TINYINT DEFAULT NULL
+  , C                                TINYINT UNSIGNED DEFAULT 10 NOT NULL NOT
+      DROPPABLE
+  , D                                TINYINT UNSIGNED DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create table t003t1_like like t003t1;
+
+--- SQL operation complete.
+>>invoke t003t1_like;
+
+-- Definition of Trafodion table TRAFODION.SCH.T003T1_LIKE
+-- Definition current  Fri Jul 15 23:19:47 2016
+
+  (
+    A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                TINYINT DEFAULT NULL
+  , C                                TINYINT UNSIGNED DEFAULT 10 NOT NULL NOT
+      DROPPABLE
+  , D                                TINYINT UNSIGNED DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create table t003t1_as primary key (a) as select * from t003t1;
+
+--- 0 row(s) inserted.
+>>invoke t003t1_as;
+
+-- Definition of Trafodion table TRAFODION.SCH.T003T1_AS
+-- Definition current  Fri Jul 15 23:19:50 2016
+
+  (
+    A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                TINYINT DEFAULT NULL
+  , C                                TINYINT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , D                                TINYINT UNSIGNED DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create view t003t1_view as select * from t003t1;
+
+--- SQL operation complete.
+>>invoke t003t1_view;
+
+-- Definition of Trafodion view TRAFODION.SCH.T003T1_VIEW
+-- Definition current  Fri Jul 15 23:19:52 2016
+
+  (
+    A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                TINYINT DEFAULT NULL
+  , C                                TINYINT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , D                                TINYINT UNSIGNED DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>obey TEST003(dml_tiny);
+>>insert into t003t1 values (1, 2, 3, 4);
+
+--- 1 row(s) inserted.
+>>insert into t003t1 values (-1, -2, 255, 255);
+
+--- 1 row(s) inserted.
+>>insert into t003t1 values (-128, 127, 0, 0);
+
+--- 1 row(s) inserted.
+>>
+>>select * from t003t1;
+
+A       B       C      D    
+------  ------  -----  -----
+
+  -128     127      0      0
+    -1      -2    255    255
+     1       2      3      4
+
+--- 3 row(s) selected.
+>>
+>>insert into t003t1_as select * from t003t1;
+
+--- 3 row(s) inserted.
+>>select * from t003t1_as;
+
+A       B       C      D    
+------  ------  -----  -----
+
+  -128     127      0      0
+    -1      -2    255    255
+     1       2      3      4
+
+--- 3 row(s) selected.
+>>
+>>select * from t003t1 where a = 1;
+
+A       B       C      D    
+------  ------  -----  -----
+
+     1       2      3      4
+
+--- 1 row(s) selected.
+>>select * from t003t1 where a = -1;
+
+A       B       C      D    
+------  ------  -----  -----
+
+    -1      -2    255    255
+
+--- 1 row(s) selected.
+>>select * from t003t1 where a < 1;
+
+A       B       C      D    
+------  ------  -----  -----
+
+  -128     127      0      0
+    -1      -2    255    255
+
+--- 2 row(s) selected.
+>>select * from t003t1 where a <= -1;
+
+A       B       C      D    
+------  ------  -----  -----
+
+  -128     127      0      0
+    -1      -2    255    255
+
+--- 2 row(s) selected.
+>>select * from t003t1 where a < 1000;
+
+A       B       C      D    
+------  ------  -----  -----
+
+  -128     127      0      0
+    -1      -2    255    255
+     1       2      3      4
+
+--- 3 row(s) selected.
+>>select * from t003t1 where a > -1000;
+
+A       B       C      D    
+------  ------  -----  -----
+
+  -128     127      0      0
+    -1      -2    255    255
+     1       2      3      4
+
+--- 3 row(s) selected.
+>>
+>>select * from t003t1 where d = 4;
+
+A       B       C      D    
+------  ------  -----  -----
+
+     1       2      3      4
+
+--- 1 row(s) selected.
+>>select * from t003t1 where d < -1;
+
+--- 0 row(s) selected.
+>>select * from t003t1 where d < 1000;
+
+A       B       C      D    
+------  ------  -----  -----
+
+  -128     127      0      0
+    -1      -2    255    255
+     1       2      3      4
+
+--- 3 row(s) selected.
+>>select * from t003t1 where d > -1000;
+
+A       B       C      D    
+------  ------  -----  -----
+
+  -128     127      0      0
+    -1      -2    255    255
+     1       2      3      4
+
+--- 3 row(s) selected.
+>>
+>>select a+10 from t003t1 where a = 1 or a = -1;
+
+(EXPR)
+------
+
+     9
+    11
+
+--- 2 row(s) selected.
+>>
+>>select cast(100 as tinyint unsigned) from (values(1)) x(a);
+
+(EXPR)
+------
+
+   100
+
+--- 1 row(s) selected.
+>>select cast(-100 as tinyint) from (values(1)) x(a);
+
+(EXPR)
+------
+
+  -100
+
+--- 1 row(s) selected.
+>>
+>>select cast(a as char(10)), cast (b as varchar(11)) from t003t1;
+
+(EXPR)      (EXPR)     
+----------  -----------
+
+-128        127        
+-1          -2         
+1           2          
+
+--- 3 row(s) selected.
+>>
+>>prepare s from insert into t003t1 values (?, ?, ?, ?);
+
+--- SQL command prepared.
+>>execute s using -3, 10, 251, 0;
+
+--- 1 row(s) inserted.
+>>select * from t003t1;
+
+A       B       C      D    
+------  ------  -----  -----
+
+  -128     127      0      0
+    -3      10    251      0
+    -1      -2    255    255
+     1       2      3      4
+
+--- 4 row(s) selected.
+>>
+>>begin work;
+
+--- SQL operation complete.
+>>delete from t003t1 where b = -2;
+
+--- 1 row(s) deleted.
+>>select * from t003t1;
+
+A       B       C      D    
+------  ------  -----  -----
+
+  -128     127      0      0
+    -3      10    251      0
+     1       2      3      4
+
+--- 3 row(s) selected.
+>>rollback work;
+
+--- SQL operation complete.
+>>
+>>begin work;
+
+--- SQL operation complete.
+>>update t003t1 set b = b + 1 where b <> 127;
+
+--- 3 row(s) updated.
+>>select * from t003t1;
+
+A       B       C      D    
+------  ------  -----  -----
+
+  -128     127      0      0
+    -3      11    251      0
+    -1      -1    255    255
+     1       3      3      4
+
+--- 4 row(s) selected.
+>>rollback work;
+
+--- SQL operation complete.
+>>
+>>obey TEST003(hive_tiny);
+>>sh echo "drop table ttiny;" > TEST003_junk;
+>>sh regrhive.ksh -f TEST003_junk;
+>>
+>>sh echo "create table ttiny(a tinyint, b tinyint);" > TEST003_junk;
+>>sh regrhive.ksh -f TEST003_junk;
+>>
+>>sh echo "insert into ttiny values (1, -1);" > TEST003_junk;
+>>sh regrhive.ksh -f TEST003_junk;
+>>
+>>invoke hive.hive.ttiny;
+
+-- Definition of hive table TTINY
+-- Definition current  Fri Jul 15 23:20:28 2016
+
+  (
+    A                                TINYINT
+  , B                                TINYINT
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>select * from hive.hive.ttiny;
+
+A       B     
+------  ------
+
+     1      -1
+
+--- 1 row(s) selected.
+>>insert into hive.hive.ttiny values (127, 10), (-128, -50);
+
+--- 2 row(s) inserted.
+>>select * from hive.hive.ttiny;
+
+A       B     
+------  ------
+
+     1      -1
+   127      10
+  -128     -50
+
+--- 3 row(s) selected.
+>>insert overwrite table hive.hive.ttiny select a, b from t003t1;
+
+--- 4 row(s) inserted.
+>>select * from hive.hive.ttiny;
+
+A       B     
+------  ------
+
+  -128     127
+    -3      10
+    -1      -2
+     1       2
+
+--- 4 row(s) selected.
+>>
+>>obey TEST003(errors_tiny);
+>>update t003t1 set b = b + 1;
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:128 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+
+--- 0 row(s) updated.
+>>
+>>delete from t003t1;
+
+--- 4 row(s) deleted.
+>>
+>>insert into t003t1 values (128, 2, 3, 4);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:128 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+
+--- 0 row(s) inserted.
+>>insert into t003t1 values (2, -129, 3, 4);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:-129 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+
+--- 0 row(s) inserted.
+>>insert into t003t1 values (3, 4, 256, 4);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:256 to Target Type:TINYINT UNSIGNED(REC_BIN8_UNSIGNED).
+
+--- 0 row(s) inserted.
+>>insert into t003t1 values (4, 4, 256, -4);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:256 to Target Type:TINYINT UNSIGNED(REC_BIN8_UNSIGNED).
+
+--- 0 row(s) inserted.
+>>
+>>select cast(-1 as tinyint unsigned) from (values(1)) x(a);
+
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype.
+
+--- 0 row(s) selected.
+>>select cast(256 as tinyint unsigned) from (values(1)) x(a);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:256 to Target Type:TINYINT UNSIGNED(REC_BIN8_UNSIGNED).
+
+--- 0 row(s) selected.
+>>select cast(-129 as tinyint) from (values(1)) x(a);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:-129 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+
+--- 0 row(s) selected.
+>>select cast(128 as tinyint) from (values(1)) x(a);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:128 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+
+--- 0 row(s) selected.
+>>
+>>prepare s from insert into t003t1 values (?, ?, ?, ?);
+
+--- SQL command prepared.
+>>execute s using 128, 2, 3, 4;
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:128 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+
+--- 0 row(s) inserted.
+>>execute s using 4, 4, 256, -4;
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:0x2D34 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
+
+*** ERROR[15015] PARAM ?(UNNAMED_4) (value -4) cannot be converted to type SMALLINT UNSIGNED.
+
+--- 0 row(s) inserted.
+>>
+>>
+>>
 >>cqd traf_largeint_unsigned_io 'ON';
 
 --- SQL operation complete.
@@ -434,7 +912,7 @@ A     B
 
 --- SQL operation complete.
 >>obey TEST003(setup_lu);
->>drop table if exists t003t2;
+>>drop table if exists t003t2 cascade;
 
 --- SQL operation complete.
 >>drop table if exists t003t2_like;
@@ -450,7 +928,7 @@ A     B
 >>invoke t003t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2
--- Definition current  Tue Jul 12 19:10:56 2016
+-- Definition current  Fri Jul 15 23:20:35 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -467,7 +945,7 @@ A     B
 >>invoke t003t2_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_LIKE
--- Definition current  Tue Jul 12 19:11:02 2016
+-- Definition current  Fri Jul 15 23:20:38 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -484,7 +962,7 @@ A     B
 >>invoke t003t2_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_AS
--- Definition current  Tue Jul 12 19:11:06 2016
+-- Definition current  Fri Jul 15 23:20:41 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -492,6 +970,22 @@ A     B
   , B                                LARGEINT UNSIGNED DEFAULT NULL
   )
   PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create view t003t2_view as select * from t003t2;
+
+--- SQL operation complete.
+>>invoke t003t2_view;
+
+-- Definition of Trafodion view TRAFODION.SCH.T003T2_VIEW
+-- Definition current  Fri Jul 15 23:20:43 2016
+
+  (
+    A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , B                                LARGEINT UNSIGNED DEFAULT NULL
+  )
 
 --- SQL operation complete.
 >>
@@ -762,7 +1256,7 @@ A                     B
 
 --- SQL operation complete.
 >>obey TEST003(setup_lu);
->>drop table if exists t003t2;
+>>drop table if exists t003t2 cascade;
 
 --- SQL operation complete.
 >>drop table if exists t003t2_like;
@@ -778,7 +1272,7 @@ A                     B
 >>invoke t003t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2
--- Definition current  Tue Jul 12 19:11:39 2016
+-- Definition current  Fri Jul 15 23:21:15 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -795,7 +1289,7 @@ A                     B
 >>invoke t003t2_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_LIKE
--- Definition current  Tue Jul 12 19:11:44 2016
+-- Definition current  Fri Jul 15 23:21:18 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -812,7 +1306,7 @@ A                     B
 >>invoke t003t2_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_AS
--- Definition current  Tue Jul 12 19:11:49 2016
+-- Definition current  Fri Jul 15 23:21:21 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -820,6 +1314,22 @@ A                     B
   , B                                LARGEINT UNSIGNED DEFAULT NULL
   )
   PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create view t003t2_view as select * from t003t2;
+
+--- SQL operation complete.
+>>invoke t003t2_view;
+
+-- Definition of Trafodion view TRAFODION.SCH.T003T2_VIEW
+-- Definition current  Fri Jul 15 23:21:23 2016
+
+  (
+    A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , B                                LARGEINT UNSIGNED DEFAULT NULL
+  )
 
 --- SQL operation complete.
 >>
@@ -1093,7 +1603,7 @@ A                     B
 
 --- SQL operation complete.
 >>obey TEST003(setup_lu);
->>drop table if exists t003t2;
+>>drop table if exists t003t2 cascade;
 
 --- SQL operation complete.
 >>drop table if exists t003t2_like;
@@ -1109,7 +1619,7 @@ A                     B
 >>invoke t003t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2
--- Definition current  Tue Jul 12 19:12:19 2016
+-- Definition current  Fri Jul 15 23:21:53 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1126,7 +1636,7 @@ A                     B
 >>invoke t003t2_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_LIKE
--- Definition current  Tue Jul 12 19:12:24 2016
+-- Definition current  Fri Jul 15 23:21:56 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1143,7 +1653,7 @@ A                     B
 >>invoke t003t2_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_AS
--- Definition current  Tue Jul 12 19:12:27 2016
+-- Definition current  Fri Jul 15 23:21:58 2016
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1151,6 +1661,22 @@ A                     B
   , B                                LARGEINT UNSIGNED DEFAULT NULL
   )
   PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create view t003t2_view as select * from t003t2;
+
+--- SQL operation complete.
+>>invoke t003t2_view;
+
+-- Definition of Trafodion view TRAFODION.SCH.T003T2_VIEW
+-- Definition current  Fri Jul 15 23:22:01 2016
+
+  (
+    A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , B                                LARGEINT UNSIGNED DEFAULT NULL
+  )
 
 --- SQL operation complete.
 >>
@@ -1423,6 +1949,16 @@ A                      B
 >>-------------- BOOLEAN datatype ---------------------------
 >>-----------------------------------------------------------
 >>
+>>drop table if exists t003t3 cascade;
+
+--- SQL operation complete.
+>>drop table if exists t003t3_like;
+
+--- SQL operation complete.
+>>drop table if exists t003t3_as;
+
+--- SQL operation complete.
+>>
 >>create table if not exists t003t3(a boolean not null primary key, b boolean)
 +>  attribute aligned format;
 
@@ -1430,7 +1966,7 @@ A                      B
 >>invoke t003t3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3
--- Definition current  Tue Jul 12 19:12:35 2016
+-- Definition current  Fri Jul 15 23:22:08 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1446,7 +1982,7 @@ A                      B
 >>invoke t003t3_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_LIKE
--- Definition current  Tue Jul 12 19:12:40 2016
+-- Definition current  Fri Jul 15 23:22:11 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1462,7 +1998,7 @@ A                      B
 >>invoke t003t3_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_AS
--- Definition current  Tue Jul 12 19:12:44 2016
+-- Definition current  Fri Jul 15 23:22:14 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1479,7 +2015,7 @@ A                      B
 >>invoke t003t3_salt;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_SALT
--- Definition current  Tue Jul 12 19:12:47 2016
+-- Definition current  Fri Jul 15 23:22:16 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1487,6 +2023,21 @@ A                      B
       DROPPABLE
   )
   PRIMARY KEY ("_SALT_" ASC, A ASC)
+
+--- SQL operation complete.
+>>
+>>create view t003t3_view as select * from t003t3;
+
+--- SQL operation complete.
+>>invoke t003t3_view;
+
+-- Definition of Trafodion view TRAFODION.SCH.T003T3_VIEW
+-- Definition current  Fri Jul 15 23:22:18 2016
+
+  (
+    A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                BOOLEAN DEFAULT NULL
+  )
 
 --- SQL operation complete.
 >>
@@ -1823,7 +2374,7 @@ TRUE   FALSE
 >>invoke hive.hive.tbool;
 
 -- Definition of hive table TBOOL
--- Definition current  Tue Jul 12 19:13:43 2016
+-- Definition current  Fri Jul 15 23:22:59 2016
 
   (
     A                                BOOLEAN
@@ -1873,6 +2424,16 @@ TRUE
 >>-------------- BOOLEAN datatype ---------------------------
 >>-----------------------------------------------------------
 >>
+>>drop table if exists t003t3 cascade;
+
+--- SQL operation complete.
+>>drop table if exists t003t3_like;
+
+--- SQL operation complete.
+>>drop table if exists t003t3_as;
+
+--- SQL operation complete.
+>>
 >>create table if not exists t003t3(a boolean not null primary key, b boolean)
 +>  attribute aligned format;
 
@@ -1880,7 +2441,7 @@ TRUE
 >>invoke t003t3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3
--- Definition current  Tue Jul 12 19:13:50 2016
+-- Definition current  Fri Jul 15 23:23:32 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1896,7 +2457,7 @@ TRUE
 >>invoke t003t3_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_LIKE
--- Definition current  Tue Jul 12 19:13:52 2016
+-- Definition current  Fri Jul 15 23:23:35 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1912,7 +2473,7 @@ TRUE
 >>invoke t003t3_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_AS
--- Definition current  Tue Jul 12 19:13:53 2016
+-- Definition current  Fri Jul 15 23:23:37 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1929,7 +2490,7 @@ TRUE
 >>invoke t003t3_salt;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_SALT
--- Definition current  Tue Jul 12 19:13:55 2016
+-- Definition current  Fri Jul 15 23:23:39 2016
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1937,6 +2498,21 @@ TRUE
       DROPPABLE
   )
   PRIMARY KEY ("_SALT_" ASC, A ASC)
+
+--- SQL operation complete.
+>>
+>>create view t003t3_view as select * from t003t3;
+
+--- SQL operation complete.
+>>invoke t003t3_view;
+
+-- Definition of Trafodion view TRAFODION.SCH.T003T3_VIEW
+-- Definition current  Fri Jul 15 23:23:41 2016
+
+  (
+    A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                BOOLEAN DEFAULT NULL
+  )
 
 --- SQL operation complete.
 >>
