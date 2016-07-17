@@ -694,7 +694,35 @@ public class HBaseTxClient {
          LOG.error("Error while getting HTableDescriptor caused by : ", de);
          throw new IOException("Error while getting HTableDescriptor caused by : ", de);
       }
-      trxManager.createTable(ts, htdesc, beginEndKeys);
+      catch(Exception e) {
+         if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callCreateTable exception in htdesc parseFrom, retval: " +
+            TransReturnCode.RET_EXCEPTION.toString() +
+            " txid: " + transactionId +
+            " DeserializationException: " + e);
+         StringWriter sw = new StringWriter();
+         PrintWriter pw = new PrintWriter(sw);
+         e.printStackTrace(pw);
+         LOG.error(sw.toString());
+
+         throw new Exception("DeserializationException in callCreateTable parseFrom, unable to send callCreateTable");
+      }
+
+      try {
+         trxManager.createTable(ts, htdesc, beginEndKeys);
+      }
+      catch (Exception cte) {
+         if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callCreateTable exception trxManager.createTable, retval: " +
+            TransReturnCode.RET_EXCEPTION.toString() +" txid: " + transactionId +" Exception: " + cte);
+         StringWriter sw = new StringWriter();
+         PrintWriter pw = new PrintWriter(sw);
+         cte.printStackTrace(pw);
+         LOG.error("HBaseTxClient createTable call error: " + sw.toString());
+
+         throw new Exception("createTable call error");
+      }
+
+      
+      if (LOG.isTraceEnabled()) LOG.trace("Exit callCreateTable, txid: [" + transactionId + "] returning RET_OK");
       return TransReturnCode.RET_OK.getShort();
    }
 
