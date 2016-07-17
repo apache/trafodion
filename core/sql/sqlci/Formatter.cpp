@@ -227,6 +227,10 @@ Lng32 Formatter::display_length(Lng32 datatype,
       }
     break;
 
+    case REC_BOOLEAN:
+      d_len = d_buflen = SQL_BOOLEAN_DISPLAY_SIZE;
+      break;
+
     default:
       d_len = d_buflen = length;
       break;
@@ -341,6 +345,7 @@ Int32 Formatter::buffer_it(SqlciEnv * sqlci_env, char *data,
   case REC_FLOAT32:
   case REC_FLOAT64: 
   case REC_DATETIME: 
+  case REC_BOOLEAN:
   {
     short retcode = convDoIt(data,
 			     length,

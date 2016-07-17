@@ -640,6 +640,10 @@ short convertTypeToText_basic(char * text,	   // OUTPUT
        str_sprintf(text, "CLOB");
      break;
 
+   case REC_BOOLEAN:
+     str_sprintf(text, "BOOLEAN");
+     break;
+
     default:
       str_sprintf(text, "**ERROR (unknown type %d)", fs_datatype);
       return -1; // error case
@@ -769,6 +773,10 @@ Lng32 getAnsiTypeFromFSType(Lng32 datatype)
      numeric_value = SQLTYPECODE_CLOB;
      break;
 
+   case REC_BOOLEAN:
+     numeric_value = SQLTYPECODE_BOOLEAN;
+     break;
+
    case REC_INT_YEAR:
    case REC_INT_MONTH:
    case REC_INT_YEAR_MONTH:
@@ -884,6 +892,10 @@ const char * getAnsiTypeStrFromFSType(Lng32 datatype)
      break;
    case REC_CLOB:
      return COM_CLOB_SDT_LIT;
+     break;
+
+   case REC_BOOLEAN:
+     return COM_BOOLEAN_SDT_LIT;
      break;
 
    case REC_INT_YEAR:

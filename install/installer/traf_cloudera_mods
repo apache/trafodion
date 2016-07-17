@@ -158,6 +158,15 @@ fi
 sudo cp $HOME/hbase-site.xml $TRAF_WORKDIR
 sudo chown trafodion.trafodion $TRAF_WORKDIR/hbase-site.xml
 
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hdfs dfs -mkdir -p /user/'"$TRAF_USER"'"'
+if [ $? != 0 ]; then
+   echo "***ERROR: '$HADOOP_BIN_PATH/hdfs dfs -mkdir -p /user/$TRAF_USER' command failed"
+   exit -1
+fi
+
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hdfs dfs -chown -R '"$TRAF_USER"' /user/'"$TRAF_USER"'"'
+
+
 ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -mkdir -p /hbase-staging"'
 if [ $? != 0 ]; then
    echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir -p /hbase-staging' command failed"

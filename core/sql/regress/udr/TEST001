@@ -331,6 +331,13 @@ where operator = 'TMUDF'
   and description like '% preds_evaluated_by_udf: (SESSION_ID < 2) %';
 execute s;
 
+-- will fail until tinyint support is added for spj/procedures
+cqd traf_tinyint_spj_support 'ON';
+select *
+from UDF(fibonacci(1,10)) XO
+order by 1;
+cqd traf_tinyint_spj_support reset;
+
 select *
 from UDF(fibonacci(1,10)) XO
 order by 1;

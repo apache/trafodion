@@ -3551,6 +3551,18 @@ NABoolean BiArith::hasEquivalentProperties(ItemExpr * other)
     (this->divToDownscale_ == otherBiArith->divToDownscale_);
 }
 
+ItemExpr * UnArith::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  UnArith *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) UnArith();
+  else
+    result = (UnArith*)derivedNode;
+
+  return result;
+}
+
 // -----------------------------------------------------------------------
 // member functions for class ColReference
 // -----------------------------------------------------------------------
@@ -8250,7 +8262,8 @@ ItemExpr * DateFormat::copyTopNode(ItemExpr *derivedNode,
   else
     result = (DateFormat*)derivedNode;
 
-  frmt_ = result->frmt_;
+  result->frmt_ = frmt_;
+  result->dateFormat_ = dateFormat_;
 
   return BuiltinFunction::copyTopNode(result,outHeap);
 
@@ -10453,6 +10466,13 @@ Int64 ConstValue::getExactNumericValue(Lng32 &scale) const
   CMPASSERT(t.getNominalSize() == storageSize_);
   switch (storageSize_)
     {
+    case 1:
+      if (t.isUnsigned())
+	result = *((UInt8 *) value_);
+      else
+	result = *((Int8 *) value_);
+      break;
+
     case 2:
       if (t.isUnsigned())
 	result = *((unsigned short *) value_);
@@ -12031,6 +12051,14 @@ Cast::Cast(ItemExpr *val1Ptr, const NAType *type, OperatorTypeEnum otype,
   flags_(0)
 {
   ValueId vid = val1Ptr ? val1Ptr->getValueId() : NULL_VALUE_ID;
+
+  if ((type->getFSDatatype() == 132) &&
+      (vid != NULL_VALUE_ID) &&
+      (vid.getType().getFSDatatype() == 136))
+    {
+      Lng32 ij = 1;
+    }
+
   checkForTruncation_ = FALSE;
   if (checkForTrunc)
     if (vid == NULL_VALUE_ID)

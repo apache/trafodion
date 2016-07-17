@@ -247,9 +247,6 @@ public:
   virtual NAType *newCopy(CollHeap* h=0) const 
     { return new(h) NumericType(*this,h); }
 
-  virtual NABoolean expConvSupported
-  (const NAType &otherNAType) const;
-
 protected:
 
   // ---------------------------------------------------------------------
@@ -912,23 +909,29 @@ public:
     {
       if (isUnsigned())
 	{
-	  if (getNominalSize() == sizeof(short))
-	    return REC_BIN16_UNSIGNED;
+	  if (getNominalSize() == sizeof(UInt8))
+	    return REC_BIN8_UNSIGNED;
 	  else
-	    if (getNominalSize() == sizeof(Lng32))
-	      return REC_BIN32_UNSIGNED;
-	    else 
-              return REC_BIN64_UNSIGNED;
+            if (getNominalSize() == sizeof(short))
+              return REC_BIN16_UNSIGNED;
+            else
+              if (getNominalSize() == sizeof(Lng32))
+                return REC_BIN32_UNSIGNED;
+              else 
+                return REC_BIN64_UNSIGNED;
 	}
       else
 	{
-	  if (getNominalSize() == sizeof(short))
-	    return REC_BIN16_SIGNED;
+	  if (getNominalSize() == sizeof(Int8))
+	    return REC_BIN8_SIGNED;
 	  else
-	    if (getNominalSize() == sizeof(Lng32))
-	      return REC_BIN32_SIGNED;
-	    else
-	      return REC_BIN64_SIGNED;
+            if (getNominalSize() == sizeof(short))
+              return REC_BIN16_SIGNED;
+            else
+              if (getNominalSize() == sizeof(Lng32))
+                return REC_BIN32_SIGNED;
+              else
+                return REC_BIN64_SIGNED;
 	}
       
     }

@@ -626,6 +626,10 @@ Lng32 NAType::getDisplayLength(Lng32 datatype,
       d_len = length;
       break;
 
+    case REC_BOOLEAN:
+      d_len = SQL_BOOLEAN_DISPLAY_SIZE;
+      break;
+
     default:
       d_len = length;
       break;
@@ -727,6 +731,10 @@ short NAType::getMyTypeAsHiveText(NAString * outputStr)  // output
 
     case REC_FLOAT64:
       *outputStr = "double";
+      break;
+
+    case REC_BOOLEAN:
+      *outputStr = "boolean";
       break;
 
     case REC_DATETIME:

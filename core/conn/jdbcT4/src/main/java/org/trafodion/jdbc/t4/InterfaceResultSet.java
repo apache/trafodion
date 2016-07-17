@@ -115,6 +115,9 @@ class InterfaceResultSet {
 	/* NCHAR VARYING -- VARCHAR(n) CHARACTER SET s -- s uses 2 bytes per char */
 	static final int SQLTYPECODE_VARCHAR_DBLBYTE = 17;
 
+        /* BOOLEAN TYPE */
+        static final int SQLTYPECODE_BOOLEAN = -701;
+
 	/* Date/Time/TimeStamp related constants */
 	static final int SQLDTCODE_DATE = 1;
 	static final int SQLDTCODE_TIME = 2;
@@ -269,6 +272,9 @@ class InterfaceResultSet {
 			}
 			break;
 		case SQLTYPECODE_TINYINT:
+			retObj = new Byte(ibuffer[byteIndex]);
+			break;
+		case SQLTYPECODE_BOOLEAN:
 			retObj = new Byte(ibuffer[byteIndex]);
 			break;
 		case SQLTYPECODE_TINYINT_UNSIGNED:
@@ -516,6 +522,9 @@ class InterfaceResultSet {
 				retObj = new String(Bytes.read_chars(values, noNullValue, length));
 				break;
 			}
+			break;
+		case SQLTYPECODE_BOOLEAN:
+			retObj = new Byte(values[noNullValue]);
 			break;
 		case SQLTYPECODE_TINYINT_UNSIGNED:
                         short sValue1 = Bytes.extractUTiny(values, noNullValue, swap);

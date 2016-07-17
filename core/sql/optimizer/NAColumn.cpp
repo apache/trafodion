@@ -562,6 +562,10 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 		column_desc->null_flag);
       break;
 
+    case REC_BOOLEAN :
+      type = new (heap) SQLBooleanNative(column_desc->null_flag);
+      break;
+
     default:
       {
 	// 4031 Column %s is an unknown data type, %d.

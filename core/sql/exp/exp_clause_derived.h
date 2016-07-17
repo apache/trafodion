@@ -434,7 +434,9 @@ public:
     MUL_BIN32S_BIN16S_BIN64S      =67,
     MUL_BIN32S_BIN32S_BIN64S      =68,
 
-    DIV_BIN64S_BIN64S_BIN64S_ROUND=69
+    DIV_BIN64S_BIN64S_BIN64S_ROUND=69,
+
+    NEGATE_BOOLEAN                =70
     };
 
   // Construction
@@ -490,6 +492,11 @@ public:
   NA_EIDPROC Long pack(void *);
   NA_EIDPROC ex_expr::exp_return_type pCodeGenerate(Space *space,
 						    UInt32 flags);
+
+  // pcode for unary arith operators, like NEGATE.
+  ex_expr::exp_return_type unaryArithPCodeGenerate
+    (Space *space, UInt32 flags);
+
   NA_EIDPROC ex_expr::exp_return_type fixup(Space * space = 0,
 					    CollHeap * exHeap = 0,
 					    char * constants_area = 0,
@@ -1115,8 +1122,24 @@ public:
     GE_BIN64U_BIN64S    =175,
     GE_BIN64S_BIN64U    =176,
     
-    COMP_NOT_SUPPORTED  =177
-      
+    EQ_BOOL_BOOL        =177,
+    NE_BOOL_BOOL        =178,
+
+    // tinyint operations
+    EQ_BIN8S_BIN8S      =179,
+    EQ_BIN8U_BIN8U      =180,
+    NE_BIN8S_BIN8S      =181,
+    NE_BIN8U_BIN8U      =182,
+    LT_BIN8S_BIN8S      =183,
+    LT_BIN8U_BIN8U      =184,
+    LE_BIN8S_BIN8S      =185,
+    LE_BIN8U_BIN8U      =186,
+    GT_BIN8S_BIN8S      =187,
+    GT_BIN8U_BIN8U      =188,
+    GE_BIN8S_BIN8S      =189,
+    GE_BIN8U_BIN8U      =190,
+
+    COMP_NOT_SUPPORTED  =191
     };
 
   // Construction
@@ -1572,27 +1595,35 @@ enum conv_case_index {
   CONV_BIN8U_BIN16U                    =255,
   CONV_BIN16S_BIN8S                    =256,
   CONV_BIN16U_BIN8U                    =257,
-  CONV_BIN8S_ASCII                     =258,
-  CONV_BIN8U_ASCII                     =259,
-  CONV_BIN16U_BIN8S                    =260,
-  CONV_BIN16S_BIN8U                    =261,
-  CONV_BIN8U_BIN16S                    =262,
-  CONV_ASCII_BIN8S                     =263,
-  CONV_ASCII_BIN8U                     =264,
+  CONV_BIN16U_BIN8S                    =258,
+  CONV_BIN16S_BIN8U                    =259,
+  CONV_BIN8U_BIN16S                    =260,
+  CONV_BIN8S_BIN32S                    =261,
+  CONV_BIN8U_BIN32U                    =262,
+  CONV_BIN8S_BIN64S                    =263,
+  CONV_BIN8U_BIN64U                    =264,
+  CONV_BIN8S_ASCII                     =265,
+  CONV_BIN8U_ASCII                     =266,
+  CONV_ASCII_BIN8S                     =267,
+  CONV_ASCII_BIN8U                     =268,
+  
+  // boolean conversions
+  CONV_BOOL_BOOL                       =269,
+  CONV_BOOL_ASCII                      =270,
+  CONV_ASCII_BOOL                      =271,
 
   // unsigned largeint related conversions
-  CONV_BIN64S_BIN64U                   =269,
-  CONV_BIN64U_BIN64U                   =270,
-  CONV_FLOAT32_BIN64U                  =271, 
-  CONV_FLOAT64_BIN64U                  =272,
-  CONV_BIN64U_BIN64S                   =273,
-  CONV_BIN64U_BIGNUM                   =274,
-  CONV_BIGNUM_BIN64U                   =275,
-  CONV_BIN64U_FLOAT32                  =276,
-  CONV_BIN64U_FLOAT64                  =277,
-  CONV_BIN64U_ASCII                    =278,
-  CONV_ASCII_BIN64U                    =279
-
+  CONV_BIN64S_BIN64U                   =272,
+  CONV_BIN64U_BIN64U                   =273,
+  CONV_FLOAT32_BIN64U                  =274, 
+  CONV_FLOAT64_BIN64U                  =275,
+  CONV_BIN64U_BIN64S                   =276,
+  CONV_BIN64U_BIGNUM                   =277,
+  CONV_BIGNUM_BIN64U                   =278,
+  CONV_BIN64U_FLOAT32                  =279,
+  CONV_BIN64U_FLOAT64                  =280,
+  CONV_BIN64U_ASCII                    =281,
+  CONV_ASCII_BIN64U                    =282
 };
 
 class SQLEXP_LIB_FUNC  ex_conv_clause : public ex_clause {
@@ -1654,6 +1685,8 @@ public:
   NA_EIDPROC conv_case_index find_case_index(short sourceType, Lng32 sourceLen,
                                              short targetType, Lng32 targetLen,
                                              Lng32 scaleDifference);
+
+  NABoolean isConversionSupported(short sourceType, short targetType);
 
   NA_EIDPROC NABoolean treatAllSpacesAsZero()
     { return ((flags_ & TREAT_ALL_SPACES_AS_ZERO) != 0); };

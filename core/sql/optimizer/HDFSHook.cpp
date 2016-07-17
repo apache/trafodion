@@ -29,7 +29,8 @@
 
 // for DNS name resolution
 #include <netdb.h>
-
+#include "Globals.h"
+#include "Context.h"
 // Initialize static variables
 THREAD_P CollIndex HHDFSMasterHostList::numSQNodes_(0);
 THREAD_P NABoolean HHDFSMasterHostList::hasVirtualSQNodes_(FALSE);
@@ -551,7 +552,7 @@ void HHDFSListPartitionStats::populate(hdfsFS fs,
   // to avoid a crash, due to lacking permissions, check the directory
   // itself first
   hdfsFileInfo *dirInfo = hdfsGetPathInfo(fs, dir.data());
-
+  
   if (!dirInfo)
     {
       diags.recordError(NAString("Could not access HDFS directory ") + dir,
@@ -589,6 +590,7 @@ void HHDFSListPartitionStats::populate(hdfsFS fs,
           }
 
       hdfsFreeFileInfo(fileInfos, numFiles);
+      hdfsFreeFileInfo(dirInfo,1);
 
       // aggregate statistics over all buckets
       for (Int32 b=0; b<=defaultBucketIdx_; b++)
@@ -735,7 +737,7 @@ NABoolean HHDFSListPartitionStats::validateAndRefresh(hdfsFS fs, HHDFSDiags &dia
       } // loop over actual files in the directory
 
   hdfsFreeFileInfo(fileInfos, numFiles);
-
+  hdfsFreeFileInfo(dirInfo,1);
   // check for file stats that we did not visit at the end of each bucket
   for (CollIndex i=0; i<=getLastValidBucketIndx() && result; i++)
     if (bucketStatsList_.used(i) &&
@@ -1074,17 +1076,11 @@ NABoolean HHDFSTableStats::connectHDFS(const NAString &host, Int32 port)
 {
   NABoolean result = TRUE;
 
-  // establish connection to HDFS if needed
-  if (fs_ == NULL ||
-      currHdfsHost_ != host ||
-      currHdfsPort_ != port)
-    {
-      if (fs_)
-        {
-          hdfsDisconnect(fs_);
-          fs_ = NULL;
-        }
-      fs_ = hdfsConnect(host, port);
+  // establish connection to HDFS . Conect to the connection cached in the context.
+ 
+  
+  fs_ = ((GetCliGlobals()->currContext())->getHdfsServerConnection((char *)host.data(),port));
+     
       
       if (fs_ == NULL)
         {
@@ -1098,13 +1094,12 @@ NABoolean HHDFSTableStats::connectHDFS(const NAString &host, Int32 port)
         }
       currHdfsHost_ = host;
       currHdfsPort_ = port;
-    }
+      //  }
   return result;
 }
 
 void HHDFSTableStats::disconnectHDFS()
 {
-  if (fs_)
-    hdfsDisconnect(fs_);
-  fs_ = NULL;
+  // No op. The disconnect happens at the context level wehn the session 
+  // is dropped or the thread exits.
 }

@@ -302,8 +302,8 @@ if [ $diffOnly -eq 0 ]; then
       echo
       # start local hadoop instance if we don't see 2 mysql processes,
       # NameNode and SecondaryNameNode
-      numMatches=`swstatus | grep -e '2 mysql' -e 'NameNode' -e 'HMaster' | wc -l`
-      if [ $numMatches -lt 3 ]; then
+      numMatches=`swstatus | grep -e '2 mysql' | wc -l`
+      if [ $numMatches -lt 1 ]; then
         echo "Hadoop NameNode or MySQL instance not running, starting it..."
         swstartall
         stopHadoopWhenDone=1

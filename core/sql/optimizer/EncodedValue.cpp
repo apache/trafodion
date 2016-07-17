@@ -501,6 +501,7 @@ EncodedValue::outputToBufferToComputeRTHash(
       flags = ExHDPHash::NO_FLAGS;
       switch (naType->getFSDatatype()) {
         case REC_BIN8_UNSIGNED:
+        case REC_BOOLEAN:
            len = 1;
            { UInt8 y = (UInt8)x; memcpy(data, &y, len); }
            break;

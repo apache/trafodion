@@ -167,7 +167,7 @@ ex_split_bottom_tcb * ex_split_bottom_tdb::buildESPTcbTree(
 
   if (processLOB())
     {
-      glob->initLOBglobal();
+      glob->initLOBglobal(glob->getCliGlobals()->currContext());
     }
 
   return result;

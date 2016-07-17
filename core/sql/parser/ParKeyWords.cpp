@@ -138,7 +138,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("BLOB",               TOK_BLOB,        COMPAQ_|RESWORD_),
   ParKeyWord("BLOCKS",             TOK_BLOCKS,      NONRESTOKEN_),
   ParKeyWord("BLOCKSIZE",          TOK_BLOCKSIZE,   NONRESTOKEN_),
-  ParKeyWord("BOOLEAN",            IDENTIFIER,      POTANS_|RESWORD_),
+  ParKeyWord("BOOLEAN",            TOK_BOOLEAN,     RESWORD_),
   ParKeyWord("BOTH",               TOK_BOTH,        ANS_|RESWORD_|MPWORD_),
   ParKeyWord("BREADTH",            IDENTIFIER,      POTANS_|RESWORD_),
   ParKeyWord("BRIEF",              TOK_BRIEF,       NONRESTOKEN_),

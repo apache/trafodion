@@ -40,41 +40,33 @@
 
 // ***********************************************************************
 //
-//  SQLBoolean : The boolean data type
+//  SQLBooleanBase : The boolean data type
 //
 // ***********************************************************************
-NAType * SQLBoolean::newCopy(CollHeap* h) const
-{
-  return new(h) SQLBoolean(unknownFlag_,h);
+SQLBooleanBase::SQLBooleanBase(NABoolean allowSQLnull,
+                       NABoolean isRelat,
+                       NAMemory * heap) :
+     NAType(LiteralBoolean,
+            NA_BOOLEAN_TYPE,
+            (isRelat ? 4 : 1),  // dataStorageSize
+            allowSQLnull,
+            (allowSQLnull ? SQL_NULL_HDR_SIZE : 0),
+            FALSE,              // variableLength
+            0,                  // lengthHeaderSize
+            (isRelat ? 4 : 1),  // dataAlignment
+            heap                
+            )
+{ 
 }
 
-short SQLBoolean::getFSDatatype() const 
+// ---------------------------------------------------------------------
+// A method which tells if a conversion error can occur when converting
+// a value of this type to the target type.
+// This method is a stub and so just returns true for now.
+// ---------------------------------------------------------------------
+NABoolean SQLBooleanBase::errorsCanOccur(const NAType& target, NABoolean lax) const
 {
-  return REC_BIN32_SIGNED;
-}
-
-NABoolean SQLBoolean::canBeSQLUnknown() const
-{
-  return unknownFlag_;
-}
-
-void SQLBoolean::setSQLUnknownFlag(NABoolean flag)
-{
-  unknownFlag_ = flag;
-}
-
-NAString SQLBoolean::getSimpleTypeName() const
-{
-  return "SQLBoolean";
-}
-
-// -- The external name for the type (text representation)
-
-NAString SQLBoolean::getTypeSQLname(NABoolean) const
-{
-  if (unknownFlag_)
-    return "BOOLEAN ALLOWS UNKNOWN";
-  return "BOOLEAN NO UNKNOWNS";
+  return NAType::errorsCanOccur(target);
 }
 
 // ***********************************************************************
@@ -83,7 +75,30 @@ NAString SQLBoolean::getTypeSQLname(NABoolean) const
 //
 // ***********************************************************************
 
-const NAType* SQLBoolean::synthesizeType(enum NATypeSynthRuleEnum synthRule,
+// ***********************************************************************
+//
+//  SQLBooleanRelat : The boolean data type
+//
+// ***********************************************************************
+SQLBooleanRelat::SQLBooleanRelat(NABoolean sqlUnknownFlag,
+                                 NAMemory * heap) :
+     SQLBooleanBase(FALSE, TRUE, heap),
+     sqlUnknownFlag_(sqlUnknownFlag)
+{ 
+}
+
+NAType * SQLBooleanRelat::newCopy(CollHeap* h) const
+{
+  return new(h) SQLBooleanRelat(sqlUnknownFlag_, h);
+}
+
+// ***********************************************************************
+//
+// Type synthesis for binary operators
+//
+// ***********************************************************************
+
+const NAType* SQLBooleanRelat::synthesizeType(enum NATypeSynthRuleEnum synthRule,
                                          const NAType& operand1,
 					 const NAType& operand2,
 					 CollHeap* h,
@@ -106,21 +121,98 @@ const NAType* SQLBoolean::synthesizeType(enum NATypeSynthRuleEnum synthRule,
   // expressions.
   //
   if (synthRule == SYNTH_RULE_UNION)
-    return new(h) SQLBoolean();
+    return new(h) SQLBooleanRelat();
+
   return NULL;
 } // synthesizeType()
 
 
-// ---------------------------------------------------------------------
-// A method which tells if a conversion error can occur when converting
-// a value of this type to the target type.
-// This method is a stub and so just returns true for now.
-// ---------------------------------------------------------------------
-NABoolean SQLBoolean::errorsCanOccur(const NAType& target, NABoolean lax) const
-{
-  return TRUE;
+// ***********************************************************************
+//
+//  SQLBooleanNative : The boolean data type
+//
+// ***********************************************************************
+SQLBooleanNative::SQLBooleanNative(NABoolean allowSQLnull,
+                                 NAMemory * heap) :
+     SQLBooleanBase(allowSQLnull, FALSE, heap)
+{ 
 }
 
+NAType * SQLBooleanNative::newCopy(CollHeap* h) const
+{
+  return new(h) SQLBooleanNative(supportsSQLnull(), h);
+}
+
+// ***********************************************************************
+//
+// Type synthesis for binary operators
+//
+// ***********************************************************************
+
+const NAType* SQLBooleanNative::synthesizeType(enum NATypeSynthRuleEnum synthRule,
+                                         const NAType& operand1,
+					 const NAType& operand2,
+					 CollHeap* h,
+					 UInt32 *flags) const
+{
+  //
+  // If the second operand's type synthesis rules have higher precedence than
+  // this operand's rules, use the second operand's rules.
+  //
+  if (operand2.getSynthesisPrecedence() > getSynthesisPrecedence())
+    return operand2.synthesizeType(synthRule, operand1, operand2, h, flags);
+  //
+  // If either operand is not boolean, the expression is invalid.
+  //
+  if ((operand1.getTypeQualifier() != NA_BOOLEAN_TYPE) ||
+      (operand2.getTypeQualifier() != NA_BOOLEAN_TYPE))
+    return NULL;
+  //
+  // The generator can create CASE expressions that have boolean result
+  // expressions.
+  //
+  if (synthRule == SYNTH_RULE_UNION)
+    return new(h) SQLBooleanNative
+      (operand1.supportsSQLnull() || operand2.supportsSQLnull());
+
+  return NULL;
+} // synthesizeType()
+
+void SQLBooleanNative::minRepresentableValue(void* bufPtr, Lng32* bufLen,
+                                     NAString ** stringLiteral,
+				     CollHeap* h) const
+{
+  assert(*bufLen >= sizeof(Int8));
+  *bufLen = sizeof(Int8);
+  *((Int8*)bufPtr) = 0;
+
+  if (stringLiteral != NULL)
+    {
+      // Generate a printable string for the minimum value
+      char nameBuf[10];
+      strcpy(nameBuf, "false");
+      *stringLiteral = new (h) NAString(nameBuf, h);
+    }
+
+} // SQLBooleanNative::minRepresentableValue()
+
+void SQLBooleanNative::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
+                                     NAString ** stringLiteral,
+				     CollHeap* h) const
+{
+  assert(*bufLen >= sizeof(Int8));
+  *bufLen = sizeof(Int8);
+  *((Int8*)bufPtr) = 1;
+  
+  if (stringLiteral != NULL)
+    {
+      // Generate a printable string for the minimum value
+      char nameBuf[10];
+      strcpy(nameBuf, "true");
+      *stringLiteral = new (h) NAString(nameBuf, h);
+    }
+
+} // SQLBooleanNative::maxRepresentableValue()
 
 // ***********************************************************************
 //

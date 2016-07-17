@@ -35,6 +35,15 @@ obey TEST003(dml_tiny);
 obey TEST003(hive_tiny);
 obey TEST003(errors_tiny);
 
+cqd traf_tinyint_support 'ON';
+cqd traf_tinyint_return_values 'OFF';
+cqd traf_tinyint_input_params 'OFF';
+
+obey TEST003(setup_tiny);
+obey TEST003(dml_tiny);
+obey TEST003(hive_tiny);
+obey TEST003(errors_tiny);
+
 cqd traf_largeint_unsigned_io 'ON';
 cqd traf_create_signed_numeric_literal 'ON';
 obey TEST003(setup_lu);
@@ -52,10 +61,28 @@ obey TEST003(setup_lu);
 obey TEST003(dml_lu);
 obey TEST003(errors_lu);
 
+cqd traf_boolean_io 'ON';
+obey TEST003(setup_bool);
+obey TEST003(dml_bool);
+obey TEST003(errors_bool);
+obey TEST003(hive_bool);
+
+cqd traf_boolean_io 'OFF';
+obey TEST003(setup_bool);
+obey TEST003(dml_bool_short);
+
 log;
 exit;
 
 ?section setup_tiny
+-----------------------------------------------------------
+-------------- TINYINT datatype ---------------------------
+-----------------------------------------------------------
+
+drop table if exists t003t1 cascade;
+drop table if exists t003t1_like;
+drop table if exists t003t1_as;
+
 create table t003t1(a tinyint not null primary key, b tinyint, 
                     c tinyint unsigned default 10 not null, d tinyint unsigned);
 invoke t003t1;
@@ -65,6 +92,9 @@ invoke t003t1_like;
 
 create table t003t1_as primary key (a) as select * from t003t1;
 invoke t003t1_as;
+
+create view t003t1_view as select * from t003t1;
+invoke t003t1_view;
 
 ?section dml_tiny
 insert into t003t1 values (1, 2, 3, 4);
@@ -147,7 +177,7 @@ execute s using 4, 4, 256, -4;
 
 
 ?section setup_lu
-drop table if exists t003t2;
+drop table if exists t003t2 cascade;
 drop table if exists t003t2_like;
 drop table if exists t003t2_as;
 
@@ -159,6 +189,9 @@ invoke t003t2_like;
 
 create table t003t2_as primary key(a) as select * from t003t2;
 invoke t003t2_as;
+
+create view t003t2_view as select * from t003t2;
+invoke t003t2_view;
 
 ?section dml_lu
 insert into t003t2 values (1, 2);
@@ -222,16 +255,144 @@ prepare s from insert into t003t2 values (?, ?);
 execute s using 18446744073709551616, 2;
 
 
+?section setup_bool
+-----------------------------------------------------------
+-------------- BOOLEAN datatype ---------------------------
+-----------------------------------------------------------
+
+drop table if exists t003t3 cascade;
+drop table if exists t003t3_like;
+drop table if exists t003t3_as;
+
+create table if not exists t003t3(a boolean not null primary key, b boolean)
+  attribute aligned format;
+invoke t003t3;
+
+create table if not exists t003t3_like like t003t3;
+invoke t003t3_like;
+
+create table if not exists t003t3_as primary key (a) as select * from t003t3;
+invoke t003t3_as;
+
+create table if not exists t003t3_salt(a boolean not null primary key)
+  salt using 2 partitions;
+invoke t003t3_salt;
+
+create view t003t3_view as select * from t003t3;
+invoke t003t3_view;
+
+?section dml_bool
+insert into t003t3 values (true, true);
+insert into t003t3 values (false, false);
+
+select * from t003t3;
+
+insert into t003t3_as select * from t003t3;
+select * from t003t3_as;
+
+select * from t003t3 where a = true;
+select * from t003t3 where a = false;
+select * from t003t3 where b = true;
+select * from t003t3 where b = false;
+select * from t003t3 where a != true;
+select * from t003t3 where a != false;
+select * from t003t3 where b != true;
+select * from t003t3 where b != false;
+select * from t003t3 where a is null;
+select * from t003t3 where b is not null;
+
+select * from t003t3 where a = true or a = false;
+select * from t003t3 where b = true or b = false;
+
+select cast('true' as boolean) from (values(1)) x(a);
+select cast(' faLse  ' as boolean) from (values(1)) x(a);
+
+select cast(true as boolean not null) from (values(1)) x(a);
+select cast(false as boolean) from (values(1)) x(a);
+
+select cast(a as char(10)), cast (b as varchar(11)) from t003t3;
+
+delete from t003t3;
+prepare s from insert into t003t3 values (?, ?);
+execute s using true, true;
+execute s using 'false', ' falSE  ';
+select * from t003t3;
+
+select !a, !b from t003t3;
+select * from t003t3 where !a = false;
+update t003t3 set b = !b;
+select * from t003t3;
+
+begin work;
+delete from t003t3 where b = false;
+select * from t003t3;
+rollback work;
+select * from t003t3;
+
+begin work;
+update t003t3 set b = false where b != false;
+select * from t003t3;
+rollback work;
+select * from t003t3;
+
+?section hive_bool
+sh echo "drop table tbool;" > TEST003_junk;
+sh regrhive.ksh -f TEST003_junk;
+
+sh echo "create table tbool(a boolean);" > TEST003_junk;
+sh regrhive.ksh -f TEST003_junk;
+
+sh echo "insert into tbool values (true), (false), (NULL);" > TEST003_junk;
+sh regrhive.ksh -f TEST003_junk;
+
+invoke hive.hive.tbool;
+select * from hive.hive.tbool;
+insert into hive.hive.tbool values (false), (true), (null);
+select * from hive.hive.tbool;
+insert overwrite table hive.hive.tbool select a from t003t3;
+select * from hive.hive.tbool;
+
+?section errors_bool
+update t003t3 set b = b + 1;
+
+delete from t003t3;
+
+insert into t003t3 values ('true', false);
+insert into t003t3 values (1, true);
+
+select cast(' truee' as boolean) from (values(1)) x(a);
+
+prepare s from insert into t003t3 values (?, ?);
+execute s using 1, 2;
+
+?section dml_bool_short
+insert into t003t3 values (true, true);
+insert into t003t3 values (false, false);
+
+select * from t003t3;
+
+delete from t003t3;
+prepare s from insert into t003t3 values (cast(? as boolean), cast(? as boolean));
+execute s using true, true;
+execute s using 'false', 'falSE';
+select * from t003t3;
+
 ?section clean_up
-drop table t003t1;
+drop view t003t1_view;
+drop table t003t1 cascade;
 drop table t003t1_like;
 drop table t003t1_as;
 
-
-drop table t003t2;
+drop view t003t2_view;
+drop table t003t2 cascade;
 drop table t003t2_like;
 drop table t003t2_as;
 
+drop view t003t3_view;
+drop table t003t3 cascade;
+drop table t003t3_like;
+drop table t003t3_as;
+drop table t003t3_salt;
 
 
 

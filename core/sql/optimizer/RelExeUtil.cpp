@@ -4704,6 +4704,12 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 	    ctQuery_ = "CREATE VOLATILE TABLE ";
 	  else
 	    ctQuery_ = "CREATE TABLE ";
+
+          if (createTableNode->createIfNotExists())
+            {
+              ctQuery_ += "IF NOT EXISTS ";
+            }
+
 	  ctQuery_ += 
 	    getTableName().getQualifiedNameObj().getQualifiedNameAsAnsiString();
 	  ctQuery_ += " ";

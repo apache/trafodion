@@ -692,8 +692,7 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
                 if (!getenv("PCODE_NO_STD_MOVE"))
 #endif
                   {
-                  if ((NOT doPCodeMoveFastpathOpt) &&
-		      (!ex_expr_base::downrevCompile(f)))
+                  if (NOT doPCodeMoveFastpathOpt)
                     {
                     Lng32 length = storePci->getOperand(6);
 
@@ -742,7 +741,7 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
                         // move.
                         storePci->replaceAddressingModesAndOperands(aml, ol);
                       }
-	            }   // if !downrevCompile
+	            }   // if
 	          }
 	    }    // if PCIT::MOVE_MBIN8_MBIN8_IBIN32S
         else

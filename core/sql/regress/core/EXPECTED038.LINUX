@@ -243,10 +243,10 @@ ORDER_NUM    ORDER_DATE  ORDER_TIME  ORDER_QTY
 -----------  ----------  ----------  -----------
 
         100  1997-01-30    13:40:05         1000
-        200  2014-07-02    21:22:19           99
+        200  2016-07-09    05:13:55           99
         300  1996-08-10    10:20:10         6000
-        400  1997-05-12    21:22:19           99
-        500  2014-07-02    21:22:19           99
+        400  1997-05-12    05:13:55           99
+        500  2016-07-09    05:13:55           99
 
 --- 5 row(s) selected.
 >>
@@ -264,7 +264,7 @@ ORDER_NUM    ORDER_DATE  ORDER_TIME  ORDER_QTY
 T038PART_NUM  ORDER_TIME                
 ------------  --------------------------
 
-         600  2014-07-02 21:22:21.465352
+         600  2016-07-09 05:13:57.638206
 
 --- 1 row(s) selected.
 >>
@@ -743,9 +743,9 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME              MANAGER               UNITNUM      DEPTNUM      REVENVUE
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
+        100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
         100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
         100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
-        100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
 
 --- 3 row(s) selected.
 >>
@@ -1920,7 +1920,7 @@ A1
 >>select a1 from T038a
 +>where 94/0 between -47 and a1 + 0;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER SIGNED(MBIN32S) Source Value:9400 Target Type:LARGEINT(IBIN64S) Max Target Value:999. Instruction:RANGE_HIGH_S32S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:9400 Target Type:LARGEINT(IBIN64S) Max Target Value:999. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
 
 --- 0 row(s) selected.
 >>
@@ -1972,7 +1972,7 @@ A1
 >>
 >>execute s;
 
-*** ERROR[8419] An arithmetic expression attempted a division by zero.
+*** ERROR[8419] An arithmetic expression attempted a division by zero. Operand1 Type:LARGEINT(MBIN64S) Operand1 Value:-145000000000 Operand2 Type:LARGEINT(MBIN64S) Operand2 Value:0. Instruction:DIV_MBIN64S_MBIN64S_MBIN64S Operation:DIV.
 
 --- 0 row(s) selected.
 >>
@@ -1985,7 +1985,7 @@ A1
 >>
 >>execute s;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER SIGNED(MBIN32S) Source Value:18800 Target Type:LARGEINT(IBIN64S) Max Target Value:9999. Instruction:RANGE_HIGH_S32S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:18800 Target Type:LARGEINT(IBIN64S) Max Target Value:9999. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
 
 --- 0 row(s) selected.
 >>
@@ -3164,17 +3164,17 @@ E1
 --- 0 row(s) selected.
 >>select * from T038g where g1 = 2 / (1 - 1);
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER SIGNED(MBIN32S) Source Value:20000 Target Type:LARGEINT(IBIN64S) Max Target Value:999. Instruction:RANGE_HIGH_S32S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:20000 Target Type:LARGEINT(IBIN64S) Max Target Value:999. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
 
 --- 0 row(s) selected.
 >>select * from T038g where g1 = 0 / ((1 - 1) * (2 + 3)) + g1;
 
-*** ERROR[8419] An arithmetic expression attempted a division by zero.
+*** ERROR[8419] An arithmetic expression attempted a division by zero. Operand1 Type:LARGEINT(MBIN64S) Operand1 Value:0 Operand2 Type:LARGEINT(MBIN64S) Operand2 Value:0. Instruction:DIV_MBIN64S_MBIN64S_MBIN64S Operation:DIV.
 
 --- 0 row(s) selected.
 >>select * from T038g where g1 = g1 + 0 / ((1 - 1) * (2 + 3));
 
-*** ERROR[8419] An arithmetic expression attempted a division by zero.
+*** ERROR[8419] An arithmetic expression attempted a division by zero. Operand1 Type:LARGEINT(MBIN64S) Operand1 Value:0 Operand2 Type:LARGEINT(MBIN64S) Operand2 Value:0. Instruction:DIV_MBIN64S_MBIN64S_MBIN64S Operation:DIV.
 
 --- 0 row(s) selected.
 >>delete from T038g;

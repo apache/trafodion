@@ -3847,9 +3847,17 @@ enum DefaultConstants
   // Otherwise typed as bignum
   TRAF_LARGEINT_UNSIGNED_IO,
 
+  // If ON, boolean is supported as returned datatype for a select
+  // stmt, and for input params.
+  // Otherwise typed as char
+  TRAF_BOOLEAN_IO,
+
   // if TRUE, create signed numeric literal for both +ve and -ve numbers.
   // if FALSE, create unsigned literal for +ve and signed literal for -ve nums.
   TRAF_CREATE_SIGNED_NUMERIC_LITERAL,
+
+  // if TRUE, create tinyint literal insteadl of smallint.
+  TRAF_CREATE_TINYINT_LITERAL,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

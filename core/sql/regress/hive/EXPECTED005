@@ -712,13 +712,15 @@ A            B
 --- 1 row(s) selected.
 >>
 >>-- truncate of hive data
->>cqd query_cache '0';
-
---- SQL operation complete.
+>>--cqd query_cache '0';
 >>truncate hive.hive.thive;
 
 --- SQL operation complete.
 >>select * from hive.hive.thive;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
 
 --- 0 row(s) selected.
 >>insert into hive.hive.thive values (10, 20);
@@ -739,6 +741,10 @@ A            B
 
 --- SQL operation complete.
 >>select * from hive.hive.thive;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
 
 --- 0 row(s) selected.
 >>
@@ -828,7 +834,7 @@ t005part.a	t005part.b	t005part.c
 >>invoke hive.hive.thive_insert_smallint;
 
 -- Definition of hive table THIVE_INSERT_SMALLINT
--- Definition current  Wed Jun 22 18:14:29 2016
+-- Definition current  Fri Jul  8 09:45:59 2016
 
   (
     A                                SMALLINT
@@ -933,7 +939,7 @@ A
 >>invoke hive.hive.thive_insert_varchar;
 
 -- Definition of hive table THIVE_INSERT_VARCHAR
--- Definition current  Wed Jun 22 18:14:36 2016
+-- Definition current  Fri Jul  8 09:46:08 2016
 
   (
     A                                VARCHAR(1 CHAR) CHARACTER SET UTF8 COLLATE
