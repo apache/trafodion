@@ -2298,6 +2298,10 @@ RETCODE Statement::resolveNames(LateNameInfoList * lnil,
 	      if (retcode != ex_expr::EXPR_OK)
 		{
 		  diagsArea << DgSqlCode(-EXE_CONVERT_STRING_ERROR);
+                  char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+                  memset(hexstr, 0 , sizeof(hexstr) );
+                  diagsArea << DgString0(stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+
 		  return ERROR;  
 		}
 

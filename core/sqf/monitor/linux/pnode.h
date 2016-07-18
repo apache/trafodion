@@ -32,6 +32,8 @@
 
 #include "internal.h"
 #include "clusterconf.h"
+#include "pnodeconfig.h"
+#include "lnodeconfig.h"
 #include "lnode.h"
 #include "monlogging.h"
 
@@ -51,7 +53,7 @@ typedef vector<int>     PNidVector;
 typedef list<CNode *>   NodesList;
 typedef vector<CNode *> NodeVector;
 
-class CNodeContainer
+class CNodeContainer : public CLNodeContainer
 {
 private:
     int            eyecatcher_;      // Debuggging aid -- leave as first
@@ -60,11 +62,14 @@ private:
 public:
     CNode   **Node;          // array of physical node objects
     CLNode  **LNode;         // array of logical node objects
+    int      *indexToPnid_;  // map of configuration entries to Node[pnid]
 
 
     CNodeContainer( void );
     ~CNodeContainer( void );
 
+    void    AddedNode( CNode *node );
+    CNode  *AddNode( int pnid );
     void    AddNodes( void );
     void    AddToSpareNodesList( int pnid );
     CLNode *AssignLNode( CProcess *requester, PROCESSTYPE type, int nid, int not_nid );
@@ -72,18 +77,27 @@ public:
                                    , int pid
                                    , int verifier
                                    , _TM_Txid_External trans_id );
+    void    DeletedNode( CNode *node );
+    bool    DeleteNode( int pnid );
+    void    DeleteNode( CNode *node );
     inline CClusterConfig *GetClusterConfig( void ) { return ( clusterConfig_ ); }
+    int     GetFirstNid( void );
+    int     GetNextNid( int nid );
+    inline CNode *GetFirstNode( void ) { return ( head_ ); }
     CLNode *GetLNode( int nid );
     CLNode *GetLNode( char *process_name, CProcess **process,
                       bool checkstate=true, bool backupOk=false );
     CNode  *GetNode( char *name );
     CNode  *GetNode( int pnid );
+    CNode  *GetNodeByMap( int index );
     CNode  *GetNode( char *process_name, CProcess **process,
                      bool checkstate=true );
     inline NodesList *GetSpareNodesList( void ) { return ( &spareNodesList_ ); }
     inline NodesList *GetSpareNodesConfigList( void ) { return ( &spareNodesConfigList_ ); }
+    inline int GetLNodesConfigMax( void ) { return ( clusterConfig_->GetLNodesConfigMax() ); }
+    inline int GetLNodesCount( void ) { return ( CLNodeContainer::GetLNodesCount() ); }
+    inline int GetPNodesConfigMax( void ) { return ( clusterConfig_->GetPNodesConfigMax() ); }
     inline int GetPNodesCount( void ) { return ( pnodeCount_ ); }
-    inline int GetLNodesCount( void ) { return ( lnodeCount_ ); }
     inline int GetSNodesCount( void ) { return ( clusterConfig_->GetSNodesCount() ); }
     inline int GetAvailableSNodesCount( void ) { return ( spareNodesList_.size() ); }
 
@@ -122,8 +136,7 @@ public:
     bool    SpaceAvail ( int msgSize );
     void    AddMsg (struct internal_msg_def *&msg, int msgSize );
     void    SetClusterConfig( CClusterConfig *clusterConfig ) { clusterConfig_ = clusterConfig; }
-    void    SetupCluster( CNode ***pnode_list, CLNode ***lnode_list );
-    void    ReloadConfig( void );
+    void    SetupCluster( CNode ***pnode_list, CLNode ***lnode_list, int **indexToPnid );
     void    RemoveFromSpareNodesList( CNode *node );
 
     int     PackNodeMappings( intBuffPtr_t &buffer );
@@ -133,11 +146,12 @@ public:
     void    UnpackSpareNodesList( intBuffPtr_t &buffer, int spareNodesCount );
     void    UnpackZids( intBuffPtr_t &buffer );
 
+    void    UpdateCluster( int **indexToPnid );
+
 protected:
 
 private:
     int         pnodeCount_;  // # of physical node objects in array
-    int         lnodeCount_;  // # of logical nodes objects in array
     CClusterConfig *clusterConfig_;  // 'sqconfig.db' objects
     NodesList  spareNodesList_; // current spare physical nodes list
     NodesList  spareNodesConfigList_; // configured spare physical nodes list
@@ -149,7 +163,9 @@ private:
 
     void    AddLNodes( CNode  *node );
     void    AddLNodes( CNode  *node1, CNode  *node2 );
+    void    AddNode( CNode *node );
     void    AvgNodeData( ZoneType type, int *avg_pcount, unsigned int *avg_memory );    
+    void    DeleteNodeLNodes( CNode *node );
     CLNode *SelectLNode( CProcess *requester, ZoneType type, int nid, int not_zone, bool considerLoad );
     CLNode *NextPossibleLNode( CProcess *requester, ZoneType type, int nid, int not_zone, bool considerLoad );
 };
@@ -180,7 +196,7 @@ public:
     inline int   GetChangeState( void ) { return ( changeState_ ); }
     inline int   GetNumCores( void ) { return ( numCores_ ); }
 
-    CNode  *GetNext( void );
+    inline CNode *GetNext( void ) { return( next_); }
     void    GetCpuStat ( void );
     bool    GetSchedulingData( void );
 

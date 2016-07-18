@@ -45,6 +45,7 @@ drop library TEST001;
 drop table_mapping function sessionize_java;
 drop table_mapping function fibonacci_java;
 drop library TEST001_Java;
+drop library ALTERTEST;
 
 ?section compile_libs
 --------------------------------------------------------------------------
@@ -330,6 +331,13 @@ where operator = 'TMUDF'
   and description like '% preds_evaluated_by_udf: (SESSION_ID < 2) %';
 execute s;
 
+-- will fail until tinyint support is added for spj/procedures
+cqd traf_tinyint_spj_support 'ON';
+select *
+from UDF(fibonacci(1,10)) XO
+order by 1;
+cqd traf_tinyint_spj_support reset;
+
 select *
 from UDF(fibonacci(1,10)) XO
 order by 1;
@@ -409,3 +417,7 @@ FROM UDF(sessionize_dynamic(TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
                             'TS',
                             60000000)) XOX;
 -- PARTITION BY 3 has an invalid column number
+
+ CREATE LIBRARY TRAFODION.SCH.ALTERTEST FILE $$QUOTE$$ $$REGRRUNDIR$$/TEST001.dll $$QUOTE$$;
+ ALTER LIBRARY TRAFODION.SCH.ALTERTEST FILE $$QUOTE$$ $$REGRRUNDIR$$/TEST001.jar $$QUOTE$$;
+

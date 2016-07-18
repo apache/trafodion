@@ -71,7 +71,9 @@ void CExtNodeDeleteReq::performRequest()
 
     int pnid = msg_->u.request.u.node_delete.target_pnid;
     int rc = MPI_SUCCESS;
-    CProcess *requester = NULL;
+    CClusterConfig *clusterConfig = NULL;
+    CPNodeConfig   *pnodeConfig = NULL; 
+    CProcess       *requester = NULL;
 
     // Trace info about request
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
@@ -85,60 +87,72 @@ void CExtNodeDeleteReq::performRequest()
     requester = MyNode->GetProcess( pid_ );
     if ( requester )
     {
-        CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
-        if (clusterConfig->IsConfigReady())
+        clusterConfig = Nodes->GetClusterConfig();
+        if (clusterConfig)
         {
-            if ( pnid == -1 )
+            if (clusterConfig->IsConfigReady())
             {
-                pnid = clusterConfig->GetPNid( msg_->u.request.u.node_delete.target_node_name );
-            }
-            CPNodeConfig *pnodeConfig = clusterConfig->GetPNodeConfig( pnid );
-            if (pnodeConfig)
-            {
-                // Tell all monitors to delete this node from the configuration database
-                // Replicate request to be processed by CIntNodeDelete in all nodes
-                CReplNodeDelete *repl = new CReplNodeDelete( pnodeConfig, requester );
-                if (repl)
+                if ( pnid == -1 )
                 {
-                    // we will not reply at this time ... but wait for 
-                    // node delete to be processed in CIntNodeDeleteReq
-
-                    // Retain reference to requester's request buffer so can
-                    // send completion message.
-                    requester->parentContext( msg_ );
-                    msg_->noreply = true;
-
-                    Replicator.addItem(repl);
+                    pnid = clusterConfig->GetPNid( msg_->u.request.u.node_delete.target_node_name );
+                }
+                pnodeConfig = clusterConfig->GetPNodeConfig( pnid );
+                if (pnodeConfig)
+                {
+                    // Tell all monitors to delete this node from the configuration database
+                    // Replicate request to be processed by CIntNodeDelete in all nodes
+                    CReplNodeDelete *repl = new CReplNodeDelete( pnodeConfig, requester );
+                    if (repl)
+                    {
+                        // we will not reply at this time ... but wait for 
+                        // node delete to be processed in CIntNodeDeleteReq
+    
+                        // Retain reference to requester's request buffer so can
+                        // send completion message.
+                        requester->parentContext( msg_ );
+                        msg_->noreply = true;
+    
+                        Replicator.addItem(repl);
+                    }
+                    else
+                    {
+                        rc = MPI_ERR_NO_MEM;
+                        delete pnodeConfig;
+                        char la_buf[MON_STRING_BUF_SIZE];
+                        sprintf(la_buf, "[%s], Failed to allocate CReplNodeDelete, no memory!\n",
+                                method_name);
+                        mon_log_write(MON_REQ_NODE_DELETE_1, SQ_LOG_ERR, la_buf);
+                    }
                 }
                 else
                 {
-                    rc = MPI_ERR_NO_MEM;
-                    delete pnodeConfig;
+                    rc = MPI_ERR_NAME;
                     char la_buf[MON_STRING_BUF_SIZE];
-                    sprintf(la_buf, "[%s], Failed to allocate CReplNodeDelete, no memory!\n",
-                            method_name);
-                    mon_log_write(MON_REQQUEUE_NODE_DELETE_1, SQ_LOG_ERR, la_buf);
+                    sprintf( la_buf
+                           , "[%s], Physical node %d (%s) does not exist in configuration!\n"
+                           , method_name
+                           , msg_->u.request.u.node_delete.target_pnid
+                           , msg_->u.request.u.node_delete.target_node_name );
+                    mon_log_write(MON_REQ_NODE_DELETE_2, SQ_LOG_ERR, la_buf);
                 }
             }
             else
             {
-                rc = MPI_ERR_NAME;
+                rc = MPI_ERR_NO_MEM;
                 char la_buf[MON_STRING_BUF_SIZE];
-                sprintf( la_buf
-                       , "[%s], Physical node %d (%s) does not exist in configuration!\n"
-                       , method_name
-                       , msg_->u.request.u.node_delete.target_pnid
-                       , msg_->u.request.u.node_delete.target_node_name );
-                mon_log_write(MON_REQQUEUE_NODE_DELETE_2, SQ_LOG_ERR, la_buf);
+                sprintf(la_buf, "[%s], Configuration is not available!\n",
+                        method_name);
+                mon_log_write(MON_REQ_NODE_DELETE_3, SQ_LOG_ERR, la_buf);
             }
         }
         else
         {
-            rc = MPI_ERR_NO_MEM;
             char la_buf[MON_STRING_BUF_SIZE];
-            sprintf(la_buf, "[%s], Configuration is not available!\n",
+            sprintf(la_buf, "[%s], Failed to retrive ClusterConfig object!\n",
                     method_name);
-            mon_log_write(MON_REQQUEUE_NODE_DELETE_3, SQ_LOG_ERR, la_buf);
+            mon_log_write(MON_REQ_NODE_DELETE_4, SQ_LOG_CRIT, la_buf);
+
+            rc = MPI_ERR_INTERN;
         }
 
         if (!msg_->noreply)  // client needs a reply 

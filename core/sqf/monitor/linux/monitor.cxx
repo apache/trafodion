@@ -592,7 +592,6 @@ int CMonitor::PackProcObjs( char *&buffer )
     const char method_name[] = "CMonitor::PackProcObjs";
     TRACE_ENTRY;
 
-    int nid = 0;
     CLNode *lnode = NULL;
     CProcess *process = NULL;
     int procCount = 0;
@@ -600,9 +599,9 @@ int CMonitor::PackProcObjs( char *&buffer )
     char *bufPtr = buffer;
 
     // first copy all primary and generic processes
-    for (nid = 0; nid < Nodes->GetLNodesCount(); nid++)
+    lnode = Nodes->GetFirstLNode();
+    for ( ; lnode ; lnode = lnode->GetNext() )
     {
-        lnode = Nodes->GetLNode(nid);
         process = lnode->GetFirstProcess();
         while (process)
         {
@@ -617,9 +616,9 @@ int CMonitor::PackProcObjs( char *&buffer )
     }
 
     // copy all the backup processes
-    for (nid = 0; nid < Nodes->GetLNodesCount(); nid++)
+    lnode = Nodes->GetFirstLNode();
+    for ( ; lnode ; lnode = lnode->GetNext() )
     {
-        lnode = Nodes->GetLNode(nid);
         process = lnode->GetFirstProcess();
         while (process)
         {
@@ -1175,7 +1174,7 @@ int main (int argc, char *argv[])
                 MPI_Abort(MPI_COMM_SELF,99); // too early to call failsafe node down.
             }
         }
-        nodename = new char [Monitor->NumNodes * MPI_MAX_PROCESSOR_NAME];
+        nodename = new char [Monitor->GetConfigPNodesCount() * MPI_MAX_PROCESSOR_NAME];
 
         // Create health check thread
         HealthCheck.start();

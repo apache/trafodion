@@ -3094,7 +3094,7 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 
 		}
 		getSQLCatalogsInfo(connection_.getServerHandle(), // Server Handle
-				SQL_API_SQLPROCEDURES, // catalogAPI
+				SQL_API_SQLPROCEDURES_JDBC, // catalogAPI
 				catalogNm, // catalog
 				schemaNm, // schema
 				procedureNamePattern, // table name
@@ -3237,7 +3237,7 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 
 		}
 		getSQLCatalogsInfo(connection_.getServerHandle(), // Server Handle
-				SQL_API_SQLPROCEDURECOLUMNS, // catalogAPI
+				SQL_API_SQLPROCEDURECOLUMNS_JDBC, // catalogAPI
 				catalogNm, // catalog
 				schemaNm, // schema
 				procedureNamePattern, // table name
@@ -4613,7 +4613,7 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 		connection_.isConnectionOpen();
 
 		getSQLCatalogsInfo(connection_.getServerHandle(), // Server Handle
-				SQL_API_SQLGETTYPEINFO, // catalogAPI
+				SQL_API_SQLGETTYPEINFO_JDBC, // catalogAPI
 				"", // catalog
 				"", // schema
 				"", // table name
@@ -5826,6 +5826,8 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	private static final short SQL_API_SQLCOLUMNS_JDBC = (short) (SQL_API_SQLCOLUMNS + SQL_API_JDBC);
 	private static final short SQL_API_SQLSPECIALCOLUMNS_JDBC = (short) (SQL_API_SQLSPECIALCOLUMNS + SQL_API_JDBC);
 	private static final short SQL_API_SQLGETTYPEINFO_JDBC = (short) (SQL_API_SQLGETTYPEINFO + SQL_API_JDBC);
+	private static final short SQL_API_SQLPROCEDURES_JDBC = (short) (SQL_API_SQLPROCEDURES + SQL_API_JDBC);
+	private static final short SQL_API_SQLPROCEDURECOLUMNS_JDBC = (short) (SQL_API_SQLPROCEDURECOLUMNS + SQL_API_JDBC);
 
 	// values of NULLABLE field in descriptor
 	private static final long SQL_NO_NULLS = 0;

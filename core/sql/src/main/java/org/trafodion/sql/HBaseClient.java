@@ -170,11 +170,7 @@ public class HBaseClient {
                          + ") called.");
         HBaseAdmin.checkHBaseAvailable(config);
 
-        try {
-            table = new RMInterface();
-        } catch (Exception e) {
-            if (logger.isDebugEnabled()) logger.debug("HBaseClient.init: Error in RMInterface instace creation.");
-        }
+        table = new RMInterface();
         
         return true;
     }
@@ -1105,6 +1101,15 @@ public class HBaseClient {
       long estimatedTotalPuts = 0;
       boolean more = true;
 
+      // Make sure the config doesn't specify HBase bucket cache. If it does,
+      // then the CacheConfig constructor may fail with a Java OutOfMemory 
+      // exception because our JVM isn't configured with large enough memory.
+
+      String ioEngine = config.get(HConstants.BUCKET_CACHE_IOENGINE_KEY,null);
+      if (ioEngine != null) {
+          config.unset(HConstants.BUCKET_CACHE_IOENGINE_KEY); // delete the property
+      }
+
       // Access the file system to go directly to the table's HFiles.
       // Create a reader for the file to access the entry count stored
       // in the trailer block, and a scanner to iterate over a few
@@ -1283,7 +1288,6 @@ public class HBaseClient {
       if (logger.isDebugEnabled())
          logger.debug("after HTable call in getRegionsNodeName");
 
-      try {
         NavigableMap<HRegionInfo, ServerName> locations = htbl.getRegionLocations();
         if (logger.isDebugEnabled())
            logger.debug("after htable.getRegionLocations call in getRegionsNodeName");
@@ -1300,11 +1304,6 @@ public class HBaseClient {
           if (logger.isDebugEnabled()) logger.debug("Hostname for region " + regCount + " is " + hostName);
           regCount++;
         }
-      } catch (Exception ie) {
-        if (logger.isDebugEnabled())
-          logger.debug("getRegionLocations throws exception " + ie.getMessage());
-        return false;
-      }
 
       return true;
     }
@@ -1347,6 +1346,14 @@ public class HBaseClient {
       if (logger.isDebugEnabled()) {
         nano2 = System.nanoTime();
         logger.debug("FileSystem.get() took " + ((nano2 - nano1) + 500000) / 1000000 + " milliseconds.");
+      }
+
+      // Make sure the config doesn't specify HBase bucket cache. If it does,
+      // then the CacheConfig constructor may fail with a Java OutOfMemory 
+      // exception because our JVM isn't configured with large enough memory.
+      String ioEngine = config.get(HConstants.BUCKET_CACHE_IOENGINE_KEY,null);
+      if (ioEngine != null) {
+          config.unset(HConstants.BUCKET_CACHE_IOENGINE_KEY); // delete the property
       }
       CacheConfig cacheConf = new CacheConfig(config);
       String hbaseRootPath = config.get(HConstants.HBASE_DIR).trim();
@@ -1700,7 +1707,7 @@ public class HBaseClient {
     return true;
   }
 
-  public long incrCounter(String tabName, String rowId, String famName, String qualName, long incrVal) throws Exception
+  public long incrCounter(String tabName, String rowId, String famName, String qualName, long incrVal) throws IOException
   {
     if (logger.isDebugEnabled()) logger.debug("HBaseClient.incrCounter() - start");
 

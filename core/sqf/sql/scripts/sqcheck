@@ -33,7 +33,7 @@ function Usage {
     echo 
     echo "Usage: $0 [ -c <cc> | -i <nn> | -d <nn> | -h | -f | -q | -v | -r | -j ]"
     echo 
-    echo "-i <nn>  Number of times the check for SQ processes be done (Default $max_checks)"
+    echo "-i <nn>  Number of times the check for Trafodion processes will be done (Default $max_checks)"
     echo "-d <nn>  Duration of sleep (in seconds) between each check  (Default $sleep_duration)"
     echo "-c <cc>  Which component to check: [all | dtm | dcs | rms | rest ] (Default $sqck_component)"
     echo "-f       fast - (it's like running $0 -i 1 -d 0)"
@@ -185,7 +185,7 @@ ft_pair=""
 GetOpts $1 $2 $3 $4 $5 $6 $7 $8 $9
 
 if [ $sqc_verbose '==' 1 ]; then
-    echo "Max number of times to check the SQ environment: $max_checks, Sleep Duration: $sleep_duration seconds"
+    echo "Max number of times to check the Trafodion environment: $max_checks, Sleep Duration: $sleep_duration seconds"
 fi
 
 declare -i num_checks
@@ -199,6 +199,8 @@ declare -i cfg_rms_cnt
 declare -i cfg_mxo_cnt
 declare -i cfg_lnode_cnt
 declare -i cfg_pnode_cnt
+declare -i exc_lnode_cnt
+declare -i exc_pnode_cnt
 
 let act_dtm_cnt=0
 let act_rms_cnt=0
@@ -208,6 +210,10 @@ let act_lnode_down_cnt=0
 let act_pnode_down_cnt=0
 let act_lnode_up_cnt=0
 let act_pnode_up_cnt=0
+let cfg_lnode_cnt=0
+let cfg_pnode_cnt=0
+let exc_lnode_cnt=0
+let exc_pnode_cnt=0
 
 let cfg_mxo_cnt=0
 let act_mxo_down_cnt=0
@@ -253,14 +259,25 @@ for pnodedn in `cat $sq_tmp_pnode_dn`; do
     let ++act_pnode_down_cnt
 done
 
-cfg_lnode_cnt=(act_lnode_up_cnt+act_lnode_down_cnt)
-cfg_pnode_cnt=(act_pnode_up_cnt+act_pnode_down_cnt)
+### EXCLUDED NODEs (assumes 1:1 logical node to physical node mapping)
+sq_exc_node=`mktemp -t`
+echo $TRAF_EXCLUDE_LIST > $sq_exc_node
+for enode in `cat $sq_exc_node`; do
+    let ++exc_lnode_cnt
+    let ++exc_pnode_cnt
+done
+
+if [ $act_lnode_up_cnt '>' 0 ]; then
+    cfg_lnode_cnt=(act_lnode_up_cnt+act_lnode_down_cnt)
+    cfg_pnode_cnt=(act_pnode_up_cnt+act_pnode_down_cnt)
+fi
 
 rm -f $sq_tmp_lnode_up
 rm -f $sq_tmp_pnode_up
 rm -f $sq_tmp_lnode_dn
 rm -f $sq_tmp_pnode_dn
 rm -f $sq_tmp_node_info
+rm -f $sq_exc_node
 
 ### CONFIGURED DTMs (based on logical nodes configured)
 let cfg_dtm_cnt=cfg_lnode_cnt
@@ -320,6 +337,9 @@ if [[ $? != 0 ]]; then
 fi
 
 if [ $json_output '==' 0 ]; then
+    echo
+    echo  "*** Checking Trafodion Environment ***"
+    echo
     echo  "Checking if processes are up."
 fi
 
@@ -488,11 +508,11 @@ fi
               if ([ $act_lnode_up_cnt == $cfg_lnode_cnt ] ); then
                   echo
                   echo
-                  echo "The SQ environment is up!"
+                  echo "The Trafodion environment is up!"
               else
                   echo
                   echo
-                  echo "The SQ environment is up! Node(s) are down and environment is in a degraded state."
+                  echo "The Trafodion environment is up! Node(s) are down and environment is in a degraded state."
                   echo
                   echo
                   sqshell -c node info
@@ -524,11 +544,11 @@ if [ $json_output '==' 0 ]; then
         if [ $sq_up '==' 1 ]; then
             if [ $pcmp_result '==' 1 ]; then
                 echo
-                echo "The SQ environment is partially up and operational."
+                echo "The Trafodion environment is partially up and operational."
             fi
         else
             echo
-            echo "The SQ environment is not up all, or partially up and not operational. Check the logs."
+            echo "The Trafodion environment is not up at all, or partially up and not operational. Check the logs."
         fi
     fi
 fi
@@ -564,7 +584,7 @@ else
         echo -e "RMS\t\t$cfg_rms_cnt\t\t$act_rms_cnt\t    ${down_rms[*]}"
         echo -e "DcsMaster\t$cfg_dcsmaster_cnt\t\t$actual_dcsmaster_cnt\t    $down_dcsmaster_cnt"
         echo -e "DcsServer\t$cfg_dcsserver_cnt\t\t$actual_dcsserver_cnt\t    $down_dcsserver_cnt"
-        echo -e "mxosrvr\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t    ${act_mxo_down_cnt}"
+        echo -e "mxosrvr\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t    ${act_mxo_down_cnt}\n"
         echo -e "RestServer\t$cfg_restserver_cnt\t\t$actual_restserver_cnt\t    $down_restserver_cnt\n"
     elif [[ $sqck_component == "dtm" ]]; then
         echo -e "DTM\t\t$cfg_dtm_cnt\t\t$act_dtm_cnt\t    ${down_dtms[*]}\n"
@@ -588,7 +608,7 @@ if [ $sq_up '==' 1 ]; then
 elif ( [ $total_procs_result '==' 0 ] ); then
     if [ $json_output '==' 0 ]; then
         echo
-        echo "The SQ environment is down."
+        echo "The Trafodion environment is down."
     fi
     exit -1;
 else

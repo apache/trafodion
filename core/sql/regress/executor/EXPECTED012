@@ -2465,7 +2465,7 @@ A            B                     C
 
 --- 9 row(s) selected.
 >>
->>select bitextract(3, 15, 1) from (values(1)) x(a);
+>>select bitextract(cast(3 as smallint), 15, 1) from (values(1)) x(a);
 
 (EXPR)     
 -----------
@@ -2473,7 +2473,7 @@ A            B                     C
           1
 
 --- 1 row(s) selected.
->>select bitextract(3, 14, 1) from (values(1)) x(a);
+>>select bitextract(cast(3 as smallint), 14, 1) from (values(1)) x(a);
 
 (EXPR)     
 -----------
@@ -2481,7 +2481,7 @@ A            B                     C
           1
 
 --- 1 row(s) selected.
->>select bitextract(3, 14, 2) from (values(1)) x(a);
+>>select bitextract(cast(3 as smallint), 14, 2) from (values(1)) x(a);
 
 (EXPR)     
 -----------
@@ -2489,7 +2489,7 @@ A            B                     C
           3
 
 --- 1 row(s) selected.
->>select bitextract(3, 0, 1) from (values(1)) x(a);
+>>select bitextract(cast(3 as smallint), 0, 1) from (values(1)) x(a);
 
 (EXPR)     
 -----------
@@ -2497,7 +2497,7 @@ A            B                     C
           0
 
 --- 1 row(s) selected.
->>select bitextract(3, 0, 15) from (values(1)) x(a);
+>>select bitextract(cast(3 as smallint), 0, 15) from (values(1)) x(a);
 
 (EXPR)     
 -----------
@@ -2505,12 +2505,36 @@ A            B                     C
           1
 
 --- 1 row(s) selected.
->>select bitextract(3, 0, 16) from (values(1)) x(a);
+>>select bitextract(cast(3 as smallint), 0, 16) from (values(1)) x(a);
 
 (EXPR)     
 -----------
 
           3
+
+--- 1 row(s) selected.
+>>select bitextract(3, 0, 8) from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+          3
+
+--- 1 row(s) selected.
+>>select bitextract(3, 7, 1) from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>select bitextract(3, 8, 1) from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+          0
 
 --- 1 row(s) selected.
 >>

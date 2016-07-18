@@ -34,6 +34,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.client.HConnectionManager;
@@ -94,15 +96,10 @@ public class HBaseAuditControlPoint {
       HColumnDescriptor hcol = new HColumnDescriptor(CONTROL_POINT_FAMILY);
 
       disableBlockCache = false;
-      try {
-         String blockCacheString = System.getenv("TM_TLOG_DISABLE_BLOCK_CACHE");
-         if (blockCacheString != null){
-            disableBlockCache = (Integer.parseInt(blockCacheString) != 0);
-            if (LOG.isDebugEnabled()) LOG.debug("disableBlockCache != null");
-         }
-      }
-      catch (Exception e) {
-         if (LOG.isDebugEnabled()) LOG.debug("TM_TLOG_DISABLE_BLOCK_CACHE is not in ms.env");
+      String blockCacheString = System.getenv("TM_TLOG_DISABLE_BLOCK_CACHE");
+      if (blockCacheString != null){
+         disableBlockCache = (Integer.parseInt(blockCacheString) != 0);
+         if (LOG.isDebugEnabled()) LOG.debug("disableBlockCache != null");
       }
       LOG.info("disableBlockCache is " + disableBlockCache);
       if (disableBlockCache) {
@@ -113,15 +110,10 @@ public class HBaseAuditControlPoint {
       admin = new HBaseAdmin(config);
 
       useAutoFlush = true;
-      try {
-         String autoFlush = System.getenv("TM_TLOG_AUTO_FLUSH");
-         if (autoFlush != null){
-            useAutoFlush = (Integer.parseInt(autoFlush) != 0);
-            if (LOG.isDebugEnabled()) LOG.debug("autoFlush != null");
-         }
-      }
-      catch (Exception e) {
-         if (LOG.isDebugEnabled()) LOG.debug("TM_TLOG_AUTO_FLUSH is not in ms.env");
+      String autoFlush = System.getenv("TM_TLOG_AUTO_FLUSH");
+      if (autoFlush != null){
+         useAutoFlush = (Integer.parseInt(autoFlush) != 0);
+         if (LOG.isDebugEnabled()) LOG.debug("autoFlush != null");
       }
       LOG.info("useAutoFlush is " + useAutoFlush);
 
@@ -138,22 +130,12 @@ public class HBaseAuditControlPoint {
             LOG.error("Table " + CONTROL_POINT_TABLE_NAME + " already exists");
          }
       }
-      try {
-         if (LOG.isDebugEnabled()) LOG.debug("try new HTable");
-         table = new HTable(config, desc.getName());
-         table.setAutoFlushTo(this.useAutoFlush);
-      }
-      catch (IOException e) {
-         LOG.error("new HTable IOException");
-      }
+      if (LOG.isDebugEnabled()) LOG.debug("try new HTable");
+      table = new HTable(config, desc.getName());
+      table.setAutoFlushTo(this.useAutoFlush);
 
       if (currControlPt == -1){
-         try {
-            currControlPt = getCurrControlPt();
-         }
-         catch (Exception e2) {
-            if (LOG.isDebugEnabled()) LOG.debug("Exit getCurrControlPoint() exception " + e2);
-         }
+         currControlPt = getCurrControlPt();
       }
       if (LOG.isDebugEnabled()) LOG.debug("currControlPt is " + currControlPt);
 
@@ -161,7 +143,7 @@ public class HBaseAuditControlPoint {
       return;
     }
 
-   public long getCurrControlPt() throws Exception {
+   public long getCurrControlPt() throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("getCurrControlPt:  start");
       long highKey = -1;
       if (LOG.isDebugEnabled()) LOG.debug("new Scan");
@@ -184,10 +166,6 @@ public class HBaseAuditControlPoint {
                highKey = currKey;
             }
          }
-      }
-      catch (Exception e) {
-        LOG.error("getCurrControlPt IOException" + e);
-        e.printStackTrace();
       } finally {
          ss.close();
       }
@@ -195,22 +173,16 @@ public class HBaseAuditControlPoint {
       return highKey;
    }
 
-   public long putRecord(final long ControlPt, final long startingSequenceNumber) throws Exception {
+   public long putRecord(final long ControlPt, final long startingSequenceNumber) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("putRecord starting sequence number ("  + String.valueOf(startingSequenceNumber) + ")");
       String controlPtString = new String(String.valueOf(ControlPt));
       Put p = new Put(Bytes.toBytes(controlPtString));
       p.add(CONTROL_POINT_FAMILY, ASN_HIGH_WATER_MARK, Bytes.toBytes(String.valueOf(startingSequenceNumber)));
-      try {
-         if (LOG.isTraceEnabled()) LOG.trace("try table.put with starting sequence number " + startingSequenceNumber);
-         table.put(p);
-         if (useAutoFlush == false) {
-            if (LOG.isTraceEnabled()) LOG.trace("flushing controlpoint record");
-            table.flushCommits();
-         }
-      }
-      catch (Exception e) {
-         LOG.error("HBaseAuditControlPoint:putRecord Exception" + e);
-         throw e;
+      if (LOG.isTraceEnabled()) LOG.trace("try table.put with starting sequence number " + startingSequenceNumber);
+      table.put(p);
+      if (useAutoFlush == false) {
+         if (LOG.isTraceEnabled()) LOG.trace("flushing controlpoint record");
+         table.flushCommits();
       }
       if (LOG.isTraceEnabled()) LOG.trace("HBaseAuditControlPoint:putRecord returning " + ControlPt);
       return ControlPt;
@@ -241,21 +213,13 @@ public class HBaseAuditControlPoint {
       long lvValue = -1;
       Get g = new Get(Bytes.toBytes(controlPt));
       String recordString;
-      try {
-         Result r = table.get(g);
-         byte [] currValue = r.getValue(CONTROL_POINT_FAMILY, ASN_HIGH_WATER_MARK);
-         try {
-            recordString = new String (Bytes.toString(currValue));
-            if (LOG.isDebugEnabled()) LOG.debug("recordString is " + recordString);
-            lvValue = Long.parseLong(recordString, 10);
-         }
-         catch (NullPointerException e){
-            if (LOG.isDebugEnabled()) LOG.debug("control point " + controlPt + " is not in the table");
-         }
-      }
-      catch (IOException e){
-          LOG.error("getRecord IOException");
-          throw e;
+      Result r = table.get(g);
+      byte [] currValue = r.getValue(CONTROL_POINT_FAMILY, ASN_HIGH_WATER_MARK);
+      if (currValue != null)
+      {
+          recordString = new String (Bytes.toString(currValue));
+          if (LOG.isDebugEnabled()) LOG.debug("recordString is " + recordString);
+          lvValue = Long.parseLong(recordString, 10);
       }
       if (LOG.isTraceEnabled()) LOG.trace("getRecord - exit " + lvValue);
       return lvValue;
@@ -274,19 +238,13 @@ public class HBaseAuditControlPoint {
                  + CONTROL_POINT_FAMILY + " ASN_HIGH_WATER_MARK " + ASN_HIGH_WATER_MARK);
       byte [] currValue = r.getValue(CONTROL_POINT_FAMILY, ASN_HIGH_WATER_MARK);
       if (LOG.isDebugEnabled()) LOG.debug("Starting asn setting recordString ");
-      String recordString = "";
-      try {
-         recordString = new String(currValue);
-      }
-      catch (NullPointerException e) {
-         if (LOG.isDebugEnabled()) LOG.debug("getStartingAuditSeqNum recordString is null");
+      if (currValue == null)
          lvAsn = 1;
-         if (LOG.isDebugEnabled()) LOG.debug("Starting asn is 1");
-         return lvAsn;
+      else
+      {
+         String recordString = new String(currValue);
+         lvAsn = Long.valueOf(recordString);
       }
-      if (LOG.isDebugEnabled()) LOG.debug("getStartingAuditSeqNum recordString is good");
-      if (LOG.isDebugEnabled()) LOG.debug("Starting asn for control point " + currControlPt + " is " + recordString);
-      lvAsn = Long.valueOf(recordString);
       if (LOG.isTraceEnabled()) LOG.trace("getStartingAuditSeqNum - exit returning " + lvAsn);
       return lvAsn;
     }
@@ -321,19 +279,10 @@ public class HBaseAuditControlPoint {
                   highValue = currValue;
                }
             }
-         }
-         catch (Exception e) {
-           LOG.error("getNextAuditSeqNum IOException" + e);
-           e.printStackTrace();
          } finally {
             ss.close();
          }
-      }
-      catch (IOException e) {
-         LOG.error("getNextAuditSeqNum IOException setting up scan for " + lv_tName);
-         e.printStackTrace();
-      }
-      finally {
+      } finally {
          try {
             remoteTable.close();
             remoteConnection.close();
@@ -349,17 +298,9 @@ public class HBaseAuditControlPoint {
 
 
    public long doControlPoint(final long sequenceNumber) throws IOException {
-      if (LOG.isTraceEnabled()) LOG.trace("doControlPoint start");
-      try {
-         currControlPt++;
-         if (LOG.isTraceEnabled()) LOG.trace("doControlPoint interval (" + currControlPt + "), sequenceNumber (" + sequenceNumber+ ") try putRecord");
-         putRecord(currControlPt, sequenceNumber);
-      }
-      catch (Exception e) {
-         LOG.error("doControlPoint Exception" + e);
-      }
-
-      if (LOG.isTraceEnabled()) LOG.trace("doControlPoint - exit");
+      currControlPt++;
+      if (LOG.isTraceEnabled()) LOG.trace("doControlPoint interval (" + currControlPt + "), sequenceNumber (" + sequenceNumber+ ") try putRecord");
+      putRecord(currControlPt, sequenceNumber);
       return currControlPt;
    }
 
@@ -367,16 +308,10 @@ public class HBaseAuditControlPoint {
       if (LOG.isTraceEnabled()) LOG.trace("deleteRecord start for control point " + controlPoint);
       String controlPtString = new String(String.valueOf(controlPoint));
 
-      try {
-         List<Delete> list = new ArrayList<Delete>();
-         Delete del = new Delete(Bytes.toBytes(controlPtString));
-         if (LOG.isDebugEnabled()) LOG.debug("deleteRecord  (" + controlPtString + ") ");
-         table.delete(del);
-      }
-      catch (Exception e) {
-         LOG.error("deleteRecord IOException");
-      }
-
+      List<Delete> list = new ArrayList<Delete>();
+      Delete del = new Delete(Bytes.toBytes(controlPtString));
+      if (LOG.isDebugEnabled()) LOG.debug("deleteRecord  (" + controlPtString + ") ");
+      table.delete(del);
       if (LOG.isTraceEnabled()) LOG.trace("deleteRecord - exit");
       return true;
    }
@@ -402,10 +337,7 @@ public class HBaseAuditControlPoint {
          }
          if (LOG.isDebugEnabled()) LOG.debug("attempting to delete list with " + deleteList.size() + " elements");
          table.delete(deleteList);
-      }
-      catch (Exception e) {
-         LOG.error("deleteAgedRecords IOException");
-      }finally {
+      } finally {
          ss.close();
       }
 

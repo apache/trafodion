@@ -893,7 +893,11 @@ private:
 class CIntNodeNameReq: public CInternalReq
 {
 public:
-    CIntNodeNameReq( const char *current_name, const char *new_name );
+    CIntNodeNameReq( int req_nid
+                   , int req_pid
+                   , Verifier_t req_verifier
+                   , const char *current_name
+                   , const char *new_name );
     virtual ~CIntNodeNameReq();
 
     void performRequest();
@@ -901,6 +905,9 @@ public:
 private:
     void populateRequestString( void );
 
+    int req_nid_;
+    int req_pid_;
+    Verifier_t req_verifier_;
     string current_name_;
     string new_name_;
 };
@@ -1144,7 +1151,11 @@ class CReqQueue
                              , Verifier_t req_verifier
                              , int pnid );
     void enqueueDownReq( int pnid );
-    void enqueueNodeNameReq( char *current_name, char *new_name);
+    void enqueueNodeNameReq( int req_nid
+                           , int req_pid
+                           , Verifier_t req_verifier
+                           , char *current_name
+                           , char *new_name);
     void enqueueSoftNodeDownReq( int pnid );
     void enqueueSoftNodeUpReq( int pnid );
     void enqueueShutdownReq( int level );

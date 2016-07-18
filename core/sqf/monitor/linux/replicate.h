@@ -313,7 +313,9 @@ private:
 class CReplNodeName: public CReplObj
 {
 public:
-    CReplNodeName(const char *current_name, const char *new_name);
+    CReplNodeName( const char *current_name
+                 , const char *new_name
+                 , CProcess *process);
     virtual ~CReplNodeName();
 
     bool replicate(struct internal_msg_def *& msg);
@@ -321,6 +323,7 @@ public:
 private:
     string current_name_;
     string new_name_;
+    CProcess *process_;
 };
 
 

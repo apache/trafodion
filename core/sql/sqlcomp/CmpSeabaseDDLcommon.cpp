@@ -69,6 +69,8 @@
 #include "CmpSeabaseDDLmd.h"
 #include "CmpSeabaseDDLroutine.h"
 #include "hdfs.h"
+#include "StmtDDLAlterLibrary.h"
+
 void cleanupLOBDataDescFiles(const char*, int, const char *);
 
 class QualifiedSchema
@@ -557,7 +559,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
           return resetCQDs(hbaseSerialization, hbVal, -1);
         }
 
-      if (buildKeyInfoArray(&colArray, &keyArray, colInfoArray, keyInfoArray, FALSE,
+      if (buildKeyInfoArray(&colArray, NULL, &keyArray, colInfoArray, keyInfoArray, FALSE,
 			    &keyLength, CTXTHEAP))
 	{
 	  return resetCQDs(hbaseSerialization, hbVal, -1);
@@ -2812,8 +2814,7 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
       }
       break;
       
-      
-    case NA_LOB_TYPE:
+     case NA_LOB_TYPE:
       {
 	if (datatype == REC_BLOB)
 	  {
@@ -2828,6 +2829,12 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
 	    precision = (ComSInt32)clobType->getLobLength();
 	  }
 	
+      }
+      break;
+  
+    case NA_BOOLEAN_TYPE:
+      {
+        precision = 0;
       }
       break;
       
@@ -3053,12 +3060,6 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
                (ie->getOperatorType() == ITM_CURRENT_USER) ||
                (ie->getOperatorType() == ITM_SESSION_USER))
         {
-          // default USER not currently supported.
-          *CmpCommon::diags() << DgSqlCode(-1084)
-                              << DgColumnName(colName);
-          
-          return -1;
-          
           defaultClass = COM_USER_FUNCTION_DEFAULT;
         }
       else if (ie->castToConstValue(negateIt) != NULL)
@@ -4515,6 +4516,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
   Int32 objOwnerID = (tableInfo) ? tableInfo->objOwnerID : SUPER_USER;
   Int32 schemaOwnerID = (tableInfo) ? tableInfo->schemaOwnerID : SUPER_USER;
   Int64 objectFlags = (tableInfo) ? tableInfo->objectFlags : 0;
+  Int64 tablesFlags = (tableInfo) ? tableInfo->tablesFlags : 0;
   
   if (updateSeabaseMDObjectsTable(cliInterface,catName,schName,objName,objectType,
                                   validDef,objOwnerID, schemaOwnerID, objectFlags, inUID))
@@ -4805,7 +4807,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
           hbaseCreateOptions = tableInfo->hbaseCreateOptions;
         }
 
-      str_sprintf(buf, "upsert into %s.\"%s\".%s values (%Ld, '%s', '%s', %d, %d, %d, %d, 0) ",
+      str_sprintf(buf, "upsert into %s.\"%s\".%s values (%Ld, '%s', '%s', %d, %d, %d, %d, %Ld) ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
                   objUID, 
                   rowFormat,
@@ -4813,7 +4815,8 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
                   rowDataLength,
                   rowTotalLength,
                   keyLength,
-                  numSaltPartns);
+                  numSaltPartns,
+                  tablesFlags);
       cliRC = cliInterface->executeImmediate(buf);
       if (cliRC < 0)
         {
@@ -5419,12 +5422,12 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
                                             const NAString &schName,
                                             const NAString &objName,
                                             const ComObjectType objectType,
-                                            NABoolean ddlXns)
+                                            NABoolean dontForceCleanup)
 {
 
   //if ddlXns are being used, no need of additional cleanup.
   //transactional rollback will take care of cleanup.
-  if (ddlXns)
+  if (dontForceCleanup)
     return;
     
   Lng32 cliRC = 0;
@@ -5459,6 +5462,55 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
 
   return;
 }
+
+void CmpSeabaseDDL::purgedataObjectAfterError(
+                                            ExeCliInterface &cliInterface,
+                                            const NAString &catName, 
+                                            const NAString &schName,
+                                            const NAString &objName,
+                                            const ComObjectType objectType,
+                                            NABoolean dontForceCleanup)
+{
+
+  //if ddlXns are being used, no need of additional cleanup.
+  //transactional rollback will take care of cleanup.
+  if (dontForceCleanup)
+    return;
+
+  PushAndSetSqlParserFlags savedParserFlags(INTERNAL_QUERY_FROM_EXEUTIL);
+    
+  Lng32 cliRC = 0;
+  char buf[1000];
+
+  // save current diags area
+  ComDiagsArea * tempDiags = ComDiagsArea::allocate(heap_);
+  tempDiags->mergeAfter(*CmpCommon::diags());
+  
+  CmpCommon::diags()->clear();
+  if (objectType == COM_BASE_TABLE_OBJECT)
+    str_sprintf(buf, "purgedata \"%s\".\"%s\".\"%s\" ",
+                catName.data(), schName.data(), objName.data());
+  else if (objectType == COM_INDEX_OBJECT)
+    str_sprintf(buf, "purgedata table(index_table \"%s\".\"%s\".\"%s\" ) ",
+                catName.data(), schName.data(), objName.data());
+  else 
+    ex_assert(0, "purgedata object is not supported");
+    
+  cliRC = cliInterface.executeImmediate(buf);
+  CmpCommon::diags()->clear();
+  CmpCommon::diags()->mergeAfter(*tempDiags);
+
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    }
+
+  tempDiags->clear();
+  tempDiags->deAllocate();
+
+  return;
+}
+
 
 // user created traf stored col fam is of the form:  #<1-byte-num>
 //  1-byte-num is character '2' through '9', or 'a' through 'x'.
@@ -5807,6 +5859,7 @@ short CmpSeabaseDDL::buildColInfoArray(
 
 short CmpSeabaseDDL::buildKeyInfoArray(
                                        ElemDDLColDefArray *colArray,
+                                       NAColumnArray * nacolArray,
                                        ElemDDLColRefArray *keyArray,
                                        ComTdbVirtTableColumnInfo * colInfoArray,
                                        ComTdbVirtTableKeyInfo * keyInfoArray,
@@ -5827,8 +5880,21 @@ short CmpSeabaseDDL::buildKeyInfoArray(
       keyInfoArray[index].colName = col_name; //(*keyArray)[index]->getColumnName();
 
       keyInfoArray[index].keySeqNum = index+1;
+
+      if ((! colArray) && (! nacolArray))
+        {
+          // this col doesn't exist. Return error.
+          *CmpCommon::diags() << DgSqlCode(-1009)
+                              << DgColumnName(keyInfoArray[index].colName);
+          
+          return -1;
+        }
+ 
+      NAString nas((*keyArray)[index]->getColumnName());
       keyInfoArray[index].tableColNum = (Lng32)
-        colArray->getColumnIndex((*keyArray)[index]->getColumnName());
+        (colArray ?
+         colArray->getColumnIndex((*keyArray)[index]->getColumnName()) :
+         nacolArray->getColumnPosition(nas));
 
       if (keyInfoArray[index].tableColNum == -1)
         {
@@ -5843,7 +5909,8 @@ short CmpSeabaseDDL::buildKeyInfoArray(
         ((*keyArray)[index]->getColumnOrdering() == COM_ASCENDING_ORDER ? 0 : 1);
       keyInfoArray[index].nonKeyCol = 0;
 
-      if ((colInfoArray[keyInfoArray[index].tableColNum].nullable != 0) &&
+      if ((colInfoArray) &&
+          (colInfoArray[keyInfoArray[index].tableColNum].nullable != 0) &&
           (NOT allowNullableUniqueConstr))
         {
           *CmpCommon::diags() << DgSqlCode(-CAT_CLUSTERING_KEY_COL_MUST_BE_NOT_NULL_NOT_DROP)
@@ -8167,7 +8234,6 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
   if (ehi == NULL)
     {
       processReturn();
-      
       return;
     }
 
@@ -8903,6 +8969,15 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           
           dropSeabaseLibrary(dropLibraryParseNode, currCatName, currSchName);
         }
+       else if (ddlNode->getOperatorType() == DDL_ALTER_LIBRARY)
+         {
+           // create seabase library
+           StmtDDLAlterLibrary * alterLibraryParseNode =
+             ddlNode->castToStmtDDLNode()->castToStmtDDLAlterLibrary();
+           
+           alterSeabaseLibrary(alterLibraryParseNode, currCatName, 
+                               currSchName);
+         }
       else if (ddlNode->getOperatorType() == DDL_CREATE_ROUTINE)
         {
           // create seabase routine

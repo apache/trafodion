@@ -2881,9 +2881,6 @@ short RelRoot::codeGen(Generator * generator)
   // move ESP nodemask into frag dir
   exFragDir->setNodeMask((ULng32) getDefault(PARALLEL_ESP_NODEMASK));
 
-  if (generator->downrevCompileNeeded())
-    exFragDir->setPlanVersion(generator->getDownrevCompileMXV());
-
   // generate the partition input data descriptor from the compile-time
   // partitioning attributes
   ExPartInputDataDesc **partInputDataDescs =

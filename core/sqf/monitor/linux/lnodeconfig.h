@@ -33,7 +33,7 @@ class CLNodeConfigContainer
 {
 public:
     CLNodeConfigContainer( void );
-    CLNodeConfigContainer( int lnodesSize );
+    CLNodeConfigContainer( int lnodesConfigMax );
     ~CLNodeConfigContainer( void );
 
     CLNodeConfig *AddLNodeConfig( CPNodeConfig *pnodeConfig
@@ -51,6 +51,7 @@ public:
     inline CLNodeConfig *GetFirstLNodeConfig( void ) { return ( head_ ); }
     inline int    GetNextNid( void ) { return ( nextNid_ ); }
     CLNodeConfig *GetLNodeConfig( int nid );
+    inline int    GetLNodesConfigMax( void ) { return ( lnodesConfigMax_ ); }
     inline int    GetLNodesCount( void ) { return ( lnodesCount_ ); }
 
 protected:
@@ -58,7 +59,7 @@ protected:
     int             nextNid_;     // next logical node id available
 
 private:
-    int             lnodeConfigSize_; // size of array 
+    int             lnodesConfigMax_; // maximum number of logical nodes
     CLNodeConfig  **lnodeConfig_;     // array of all logical nodes
 
     CLNodeConfig   *head_;  // head of logical nodes linked list
@@ -101,8 +102,6 @@ public:
 
     inline int           GetProcessors( void ) { return( processors_ ); }
     inline ZoneType      GetZoneType( void ) { return( zoneType_ ); }
-
-//    inline void          SetPNid( CPNodeConfig *pnodeConfig ) { pnodeConfig_ = pnodeConfig; }
 
 protected:
 private:

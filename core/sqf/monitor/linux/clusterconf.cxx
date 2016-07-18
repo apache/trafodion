@@ -53,7 +53,8 @@ extern CConfigContainer *Config;
 ///////////////////////////////////////////////////////////////////////////////
 
 CClusterConfig::CClusterConfig( void )
-              : CLNodeConfigContainer(MAX_LNODES)
+              : CPNodeConfigContainer(MAX_NODES)
+              , CLNodeConfigContainer(MAX_LNODES)
               , configReady_(false)
               , excludedCores_(false)
               , newPNodeConfig_(true)
@@ -283,34 +284,56 @@ bool CClusterConfig::DeleteNodeConfig( int  pnid )
 
     if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
     {
-        trace_printf( "%s@%d deleting (pnid=%d)\n"
+        trace_printf( "%s@%d deleting (pnid=%d), pnodesCount=%d, lnodesCount=%d\n"
                      , method_name, __LINE__
-                     , pnid );
+                     , pnid
+                     , GetPNodesCount()
+                     , GetLNodesCount() );
     }
 
+    // Delete logical and physical nodes from the configuration database
     if (DeleteDbNodeData( pnid ))
     {
-        // Queue internal request to:
-        // 1. Reload the static configuration
-        // 2. Broadcast node deleted notice to local processes
+        // Delete logical and physical nodes from configuration objects
         CPNodeConfig *pnodeConfig = GetPNodeConfig( pnid );
         if (pnodeConfig)
         {
-            
+
+            CLNodeConfig *lnodeConfig = pnodeConfig->GetFirstLNodeConfig();
+            while ( lnodeConfig )
+            {
+                // Delete logical nodes unique strings from the configuration database
+                if (!DeleteDbUniqueString( lnodeConfig->GetNid() ))
+                {
+                    rs = false;
+                    break;
+                }
+                DeleteLNodeConfig( lnodeConfig );
+                lnodeConfig = pnodeConfig->GetFirstLNodeConfig();
+            }
+
+            if (rs)
+            {
+                DeletePNodeConfig( pnodeConfig );
+
+                if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+                {
+                    trace_printf( "%s@%d deleted (pnid=%d), pnodesCount=%d, lnodesCount=%d\n"
+                                 , method_name, __LINE__
+                                 , pnid
+                                 , GetPNodesCount()
+                                 , GetLNodesCount() );
+                }
+            }
         }
     }
     else
     {
-        // TODO: Need to reply to shell in case of failure since no notice
-        //       will be sent
-        // or
-        //       change the protocol to send reply in the originator followed
-        //       by the node added notice
-        rs = false;
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf), "[%s] Node delete failed, pnid=%d\n",
                   method_name,  pnid );
         mon_log_write( MON_CLUSTERCONF_DELETENODE_1, SQ_LOG_ERR, buf );
+        rs = false;
     }
 
     TRACE_EXIT;
@@ -344,12 +367,12 @@ bool CClusterConfig::DeleteDbNodeData( int pnid )
     }
 
     int rc;
-    const char *sqlStmt;
-    sqlStmt = "delete from lnode l, pnode p"
-              "   where l.pNid = p.pNid and p.pNid = ?";
 
-    sqlite3_stmt *prepStmt = NULL;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt, NULL);
+    const char *sqlStmt1;
+    sqlStmt1 = "delete from lnode where lnode.pNid = ?";
+
+    sqlite3_stmt *prepStmt1 = NULL;
+    rc = sqlite3_prepare_v2( db_, sqlStmt1, strlen(sqlStmt1)+1, &prepStmt1, NULL);
     if ( rc != SQLITE_OK )
     {
         if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
@@ -366,16 +389,16 @@ bool CClusterConfig::DeleteDbNodeData( int pnid )
     }
     else
     {
-        sqlite3_bind_int( prepStmt, 1, pnid );
+        sqlite3_bind_int( prepStmt1, 1, pnid );
 
-        rc = sqlite3_step( prepStmt );
+        rc = sqlite3_step( prepStmt1 );
         if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
          && ( rc != SQLITE_CONSTRAINT ) )
         {
             rs = false;
             char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] delete from lnode, pnode "
-                      "values (pNid=%d) failed, error=%s (%d)\n"
+            snprintf( buf, sizeof(buf), "[%s] delete from lnode "
+                      "value (pNid=%d) failed, error=%s (%d)\n"
                     , method_name
                     , pnid
                     , sqlite3_errmsg(db_), rc );
@@ -383,8 +406,121 @@ bool CClusterConfig::DeleteDbNodeData( int pnid )
         }
     }
 
-    if ( prepStmt != NULL )
-        sqlite3_finalize( prepStmt );
+    const char *sqlStmt2;
+    sqlStmt2 = "delete from pnode where pnode.pNid = ?";
+
+    sqlite3_stmt *prepStmt2 = NULL;
+    rc = sqlite3_prepare_v2( db_, sqlStmt2, strlen(sqlStmt2)+1, &prepStmt2, NULL);
+    if ( rc != SQLITE_OK )
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        {
+            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
+                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
+        }
+
+        rs = false;
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
+                  method_name,  sqlite3_errmsg(db_), rc );
+        mon_log_write( MON_CLUSTERCONF_DELETEDBNODE_3, SQ_LOG_ERR, buf );
+    }
+    else
+    {
+        sqlite3_bind_int( prepStmt2, 1, pnid );
+
+        rc = sqlite3_step( prepStmt2 );
+        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
+         && ( rc != SQLITE_CONSTRAINT ) )
+        {
+            rs = false;
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf), "[%s] delete from pnode "
+                      "value (pNid=%d) failed, error=%s (%d)\n"
+                    , method_name
+                    , pnid
+                    , sqlite3_errmsg(db_), rc );
+            mon_log_write( MON_CLUSTERCONF_DELETEDBNODE_4, SQ_LOG_ERR, buf );
+        }
+    }
+
+    if ( prepStmt1 != NULL )
+        sqlite3_finalize( prepStmt1 );
+    if ( prepStmt2 != NULL )
+        sqlite3_finalize( prepStmt2 );
+
+    TRACE_EXIT;
+    return( rs );
+}
+
+bool CClusterConfig::DeleteDbUniqueString( int nid )
+{
+    const char method_name[] = "CClusterConfig::DeleteDbUniqueString";
+    TRACE_ENTRY;
+
+    bool rs = true;
+
+    if ( db_ == NULL)
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        {
+            trace_printf("%s@%d cannot use database since database open"
+                         " failed.\n", method_name, __LINE__);
+        }
+
+        TRACE_EXIT;
+        return( false );
+    }
+
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d delete from monRegUniqueStrings values (nid=%d)\n"
+                     , method_name, __LINE__
+                     , nid );
+    }
+
+    int rc;
+
+    const char *sqlStmtA;
+    sqlStmtA = "delete from monRegUniqueStrings where monRegUniqueStrings.nid = ?";
+
+    sqlite3_stmt *prepStmtA = NULL;
+    rc = sqlite3_prepare_v2( db_, sqlStmtA, strlen(sqlStmtA)+1, &prepStmtA, NULL);
+    if ( rc != SQLITE_OK )
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        {
+            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
+                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
+        }
+
+        rs = false;
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
+                  method_name,  sqlite3_errmsg(db_), rc );
+        mon_log_write( MON_CLUSTERCONF_DELETEDBUSTRING_1, SQ_LOG_ERR, buf );
+    }
+    else
+    {
+        sqlite3_bind_int( prepStmtA, 1, nid );
+
+        rc = sqlite3_step( prepStmtA );
+        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
+         && ( rc != SQLITE_CONSTRAINT ) )
+        {
+            rs = false;
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf), "[%s] delete from monRegUniqueStrings "
+                      "value (nid=%d) failed, error=%s (%d)\n"
+                    , method_name
+                    , nid
+                    , sqlite3_errmsg(db_), rc );
+            mon_log_write( MON_CLUSTERCONF_DELETEDBUSTRING_2, SQ_LOG_ERR, buf );
+        }
+    }
+
+    if ( prepStmtA != NULL )
+        sqlite3_finalize( prepStmtA );
 
     TRACE_EXIT;
     return( rs );
@@ -1289,7 +1425,7 @@ bool CClusterConfig::SaveNodeConfig( const char *name
                         , processors
                         , roles );
 
-            // Add new Node to static Configuration objects
+            // Add new logical and physical nodes to configuration objects
             AddNodeConfiguration( false );
         }
         else
@@ -1501,3 +1637,180 @@ void CClusterConfig::SetCoreMask( int        firstCore
         CPU_SET( i, &coreMask );
     }
 }
+
+bool CClusterConfig::UpdatePNodeConfig( int         pnid
+                                      , const char *name
+                                      , int         excludedFirstCore
+                                      , int         excludedLastCore )
+{
+    const char method_name[] = "CClusterConfig::UpdatePNodeConfig";
+    TRACE_ENTRY;
+
+    bool rs = true;
+
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d Updating pnode config "
+                      "(pnid=%d, node_name=%s, "
+                      "excludedFirstCore=%d, excludedLastCore=%d)\n"
+                     , method_name, __LINE__
+                     , pnid
+                     , name
+                     , excludedFirstCore
+                     , excludedLastCore );
+    }
+
+    // Update pnode table
+    if (UpdateDbPNodeData( pnid
+                         , name
+                         , excludedFirstCore
+                         , excludedLastCore ))
+    {
+        // Update physical node to configuration object
+        UpdatePNodeConfiguration( pnid
+                                , name
+                                , excludedFirstCore
+                                , excludedLastCore );
+    }
+    else
+    {
+        rs = false;
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s] PNode update failed, pnid=%d, node_name=%s\n"
+                , method_name,  pnid, name );
+        mon_log_write( MON_CLUSTERCONF_UPDATEPNODECFG_1, SQ_LOG_ERR, buf );
+    }
+
+    TRACE_EXIT;
+    return( rs );
+}
+
+bool CClusterConfig::UpdateDbPNodeData( int         pnid
+                                      , const char *name
+                                      , int         excludedFirstCore
+                                      , int         excludedLastCore )
+{
+    const char method_name[] = "CClusterConfig::UpdateDbPNodeData";
+    TRACE_ENTRY;
+
+    bool rs = true;
+
+    if ( db_ == NULL)
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        {
+            trace_printf("%s@%d cannot use database since database open"
+                         " failed.\n", method_name, __LINE__);
+        }
+
+        TRACE_EXIT;
+        return( false );
+    }
+
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d update pnode "
+                      "nodeName=%s, excFirstCore=%d, excLastCore=%d\n"
+                      "where pnid=%d)\n"
+                     , method_name, __LINE__
+                     , name
+                     , excludedFirstCore
+                     , excludedLastCore
+                     , pnid );
+    }
+
+    int rc;
+    const char *sqlStmt;
+    sqlStmt = "update or replace pnode "
+              " set nodeName = ?, excFirstCore = ?, excLastCore = ?"
+              "   where pnode.pNid = :pNid";
+
+    sqlite3_stmt *prepStmt = NULL;
+    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt, NULL);
+    if ( rc != SQLITE_OK )
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        {
+            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
+                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
+        }
+
+        rs = false;
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
+                  method_name,  sqlite3_errmsg(db_), rc );
+        mon_log_write( MON_CLUSTERCONF_UPDATEDBPNODE_1, SQ_LOG_ERR, buf );
+    }
+    else
+    {
+        sqlite3_bind_text( prepStmt, 
+                           1, 
+                           name, -1, SQLITE_STATIC );
+        sqlite3_bind_int( prepStmt, 
+                          2,
+                          excludedFirstCore );
+        sqlite3_bind_int( prepStmt,
+                          3, 
+                          excludedLastCore );
+        sqlite3_bind_int( prepStmt,
+                          sqlite3_bind_parameter_index( prepStmt, ":pNid" ),
+                          pnid );
+
+        rc = sqlite3_step( prepStmt );
+        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
+         && ( rc != SQLITE_CONSTRAINT ) )
+        {
+            rs = false;
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf), "[%s] update pnode"
+                      " (nodeName=%s, excFirstCore=%d, excLastCore=%d) "
+                      " where pNid=%d " 
+                      "failed, error=%s (%d)\n"
+                    , method_name
+                    , name
+                    , excludedFirstCore
+                    , excludedLastCore
+                    , pnid
+                    , sqlite3_errmsg(db_), rc );
+            mon_log_write( MON_CLUSTERCONF_UPDATEDBPNODE_2, SQ_LOG_ERR, buf );
+        }
+    }
+
+    if ( prepStmt != NULL )
+        sqlite3_finalize( prepStmt );
+
+    TRACE_EXIT;
+    return( rs );
+}
+
+void CClusterConfig::UpdatePNodeConfiguration( int         pnid
+                                             , const char *name
+                                             , int         excludedFirstCore
+                                             , int         excludedLastCore )
+{
+    const char method_name[] = "CClusterConfig::UpdatePNodeConfiguration";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d pnid=%d, name=%s, "
+                       "excludedFirstCore=%d, excludedLastCore=%d\n"
+                    , method_name, __LINE__
+                    , pnid
+                    , name
+                    , excludedFirstCore
+                    , excludedLastCore );
+    }
+
+    CPNodeConfig *pnodeConfig = GetPNodeConfig( pnid );
+    if ( pnodeConfig )
+    {
+        pnodeConfig->SetName( name );
+        pnodeConfig->SetExcludedFirstCore( excludedFirstCore );
+        pnodeConfig->SetExcludedLastCore( excludedLastCore );
+    }
+
+    TRACE_EXIT;
+}
+

@@ -35,6 +35,22 @@ export PDSH_HADOOP_NODES="$PDSH $MY_HBASE_NODES $PDSH_SSH_CMD"
 export PDCP_HADOOP_NODES="$PDCP $MY_HBASE_NODES"
 export HDFS_NODE=$(echo $HDFS_NODES | head -n1 | awk '{print $1;}')
 export HBASE_NODE=$(echo $HBASE_NODES | head -n1 | awk '{print $1;}')
+
+#=====================================
+# create principals for hdfs user if secure hadoop is enabled
+if [[ $SECURE_HADOOP == "Y" ]]; then
+   REALM=${ADMIN_PRINCIPAL#*"@"}
+   HDFS_PRINCIPAL=$(sudo klist -kte $HDFS_KEYTAB |grep $REALM | grep 'hdfs/' | awk '{print $4}' | uniq)
+   MESSAGE="***INFO: obtain and cache the Kerberos ticket-granting ticket for hdfs user"
+   MESSAGE=$MESSAGE"  using keytab $HDFS_KEYTAB and principal $HDFS_PRINCIPAL"
+   echo $MESSAGE
+   sudo -u $HDFS_USER kinit -kt $HDFS_KEYTAB $HDFS_PRINCIPAL
+   if [ $? != 0 ]; then
+      echo "***ERROR: failed to obtain and cache the Kerberos ticket-granting ticket for hdfs user"
+      exit -1
+   fi
+fi
+
 #=====================================
 # copy Trafodion trx jar to Cloudera's plugins directory on all nodes
 
@@ -142,6 +158,15 @@ fi
 sudo cp $HOME/hbase-site.xml $TRAF_WORKDIR
 sudo chown trafodion.trafodion $TRAF_WORKDIR/hbase-site.xml
 
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hdfs dfs -mkdir -p /user/'"$TRAF_USER"'"'
+if [ $? != 0 ]; then
+   echo "***ERROR: '$HADOOP_BIN_PATH/hdfs dfs -mkdir -p /user/$TRAF_USER' command failed"
+   exit -1
+fi
+
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hdfs dfs -chown -R '"$TRAF_USER"' /user/'"$TRAF_USER"'"'
+
+
 ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -mkdir -p /hbase-staging"'
 if [ $? != 0 ]; then
    echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir -p /hbase-staging' command failed"
@@ -198,6 +223,9 @@ curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
     "items": [ {
              "name":"dfs_namenode_acls_enabled",
              "value":"true"
+             }, {
+             "name":"dfs_umaskmode",
+             "value":"0002"          
              } ]
 }' \
 $URL/api/v1/clusters/$CLUSTER_NAME/services/$HDFS/config > $LOCAL_WORKDIR/traf_hdfs_config_temp
@@ -351,27 +379,37 @@ ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfsadmi
 #       enabled and HDFS has been restarted
 echo "***INFO: Setting HDFS ACLs for snapshot scan support"
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -mkdir -p /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+if [ $errorFound != 0 ]; then
+   echo "ERROR Code: $errorFound"
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -mkdir -p /hbase/archive) command failed"
    exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -chown hbase:hbase /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+if [ $errorFound != 0 ]; then
+   echo "ERROR Code: $errorFound"
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -chown hbase:hbase /hbase/archive) command failed"
    exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -setfacl -R -m user:'"$TRAF_USER"':rwx /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+if [ $errorFound != 0 ]; then
+   echo "ERROR Code: $errorFound"
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive) command failed"
    exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -setfacl -R -m default:user:'"$TRAF_USER"':rwx /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+if [ $errorFound != 0 ]; then
+   echo "ERROR Code: $errorFound"
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /hbase/archive) command failed"
    exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -setfacl -R -m mask::rwx /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+if [ $errorFound != 0 ]; then
+   echo "ERROR Code: $errorFound"
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m mask::rwx /hbase/archive) command failed"
    exit -1
 fi

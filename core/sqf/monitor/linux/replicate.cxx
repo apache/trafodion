@@ -1434,14 +1434,17 @@ bool CReplNodeDown::replicate(struct internal_msg_def *&msg)
     return true;
 }
 
-CReplNodeName::CReplNodeName(const char *current_name, const char* new_name)
+CReplNodeName::CReplNodeName( const char *current_name
+                            , const char *new_name
+                            , CProcess *process)
+               : process_(process)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RPLZ", 4);
 
     // Compute message size (adjust if needed to conform to
     // internal_msg_def structure alignment).
-    replSize_ = (MSG_HDR_SIZE + sizeof ( nodename_def ) + msgAlignment_)
+    replSize_ = (MSG_HDR_SIZE + sizeof ( node_name_def ) + msgAlignment_)
                 & ~msgAlignment_;
 
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
@@ -1453,6 +1456,8 @@ CReplNodeName::CReplNodeName(const char *current_name, const char* new_name)
     
     current_name_ = current_name;
     new_name_ = new_name;
+    // Increment reference count for process object
+    process_->incrReplRef();
 }
 
 CReplNodeName::~CReplNodeName()
@@ -1461,6 +1466,16 @@ CReplNodeName::~CReplNodeName()
 
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
         trace_printf("%s@%d - Node name change replication\n", method_name, __LINE__ );
+
+    // Decrement reference count for process object.  Then, if reference
+    // count is zero and process object has been removed from list of
+    // processes, delete it.
+    if (process_->decrReplRef() == 0 && process_->GetState() == State_Unlinked)
+    {
+        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+            trace_printf("%s@%d - Deleting process %s (%d, %d)\n", method_name, __LINE__, process_->GetName(), process_->GetNid(), process_->GetPid() );
+        delete process_;
+    }
 
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
     memcpy(&eyecatcher_, "rplz", 4);
@@ -1476,8 +1491,11 @@ bool CReplNodeName::replicate(struct internal_msg_def *&msg)
 
     // build message to replicate this process kill to other nodes
     msg->type = InternalType_NodeName;
-    strcpy (msg->u.nodename.new_name, new_name_.c_str());
-    strcpy (msg->u.nodename.current_name, current_name_.c_str());
+    msg->u.node_name.req_nid = process_->GetNid();
+    msg->u.node_name.req_pid = process_->GetPid();
+    msg->u.node_name.req_verifier = process_->GetVerifier();
+    strcpy (msg->u.node_name.new_name, new_name_.c_str());
+    strcpy (msg->u.node_name.current_name, current_name_.c_str());
 
     // Advance sync buffer pointer
     Nodes->AddMsg( msg, replSize() );

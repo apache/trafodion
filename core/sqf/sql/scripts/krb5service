@@ -1,0 +1,255 @@
+#!/bin/bash
+ 
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+
+# -----------------------------------------------------------------------------
+# script: krb5service
+#
+# This script manages the Kerberos ticket service for Trafodion 
+#
+# The Kerberos ticket service consists of three scripts:
+#    - krb5service (this script) which manages the service
+#    - krb5check - wakes up periodically to log ticket status and renew tickets
+#    - krb5functions - contains common functions used by krb5service & krb5check
+#
+# (krb5check runs in an infinite loop which wakes up periodically to check to
+#  see if the Trafodion ticket is ready to expire. If ticket is ready to expire, 
+#  it renews the existing ticket if retries are available. If no more retries 
+#  are available, it reports the problem and continues. Ticket life times and 
+#  renewal life times are based on the ticket defaults. The script periodically 
+#  reports the ticket status to a log file.)
+#
+# Options:
+#   init    - inits a new Trafodion ticket based on existing ticket attributes 
+#   restart - stops then restarts the ticket renewal service
+#   start   - starts the ticket renewal service
+#   status  - displays the status of the Trafodion service ticket
+#   stop    - stops the ticket renewal service
+#
+# Location attributes (see krb5functions to change these values):
+#  [LOG_FILE]  : $MY_SQROOT/logs/krb5check - log where all events are stored
+#    (the log file is recreated each time the krb5service is started)
+#  [LOCK_FILE] : $MY_SQROOT/tmp/krb5check - file to keep track of krb5check process
+#    (acts as a semiphore to prevent multiple occurrances from running)
+#  [CACHE_FILE]: /tmp/krb5cc_(trafodion linux UID) - default location for Kerberos
+#    cache ticket store (CACHE_FILE)
+#  [KEYTAB]: /etc/security/keytabs/trafodion.service.keytab - location where trafodion keytab reside
+#
+# This script makes a call to krb5check and accepts the following parameters: 
+#   (changes are required if different defaults are needed) 
+#  -c <cache location> location of Kerberos cache, 
+#     (defaults to /tmp/krb5cc_uid)
+#  -w <wnum> time (in seconds) to wait before checking ticket expiration, 
+#     (defaults to 5 minutes)
+#  -r <rnum> when to display ticket status to the log file, 
+#     (defaults to 12 times which is 60  minutes ( <wnum> * <rnum>)
+# ------------------------------------------------------------------------------
+
+source krb5functions
+
+# =================================================
+# msg:
+#    write a message the log
+# =================================================
+function msg
+{
+  echo "krb5service[$$] `date`: $1"
+  echo "krb5service[$$] `date`: $1" >> $LOG_FILE
+}
+
+# =================================================
+# Main
+# =================================================
+LOCK_FILE=""
+getLockFile
+LOG_FILE=""
+getLogFile
+CACHE_FILE=""
+KEYTAB=""
+getKeytab
+
+currentPID="NC"
+if [ -f $LOCK_FILE ]; then
+  PID=$( cat $LOCK_FILE )
+fi
+
+# if LOCK_FILE contains digits, then good PID exists
+if [[ $PID = *[[:digit:]]* ]]; then
+  currentPID=`ps -p $PID | grep krb5check | awk '{print $1}'`
+fi
+
+# if the current kbr5check PID matches what is stored in LOCK_FILE
+# then we have an active process
+serviceRunning=0
+if [[ $currentPID = *[[:digit:]]* ]]; then
+  if [ "$currentPID" == "$PID" ]; then
+    serviceRunning=1
+  fi
+fi
+
+# =========================================================================
+# parse the request
+doInit=0
+doStart=0
+doStatus=0
+doStop=0
+
+TICKET_STATUS=""
+
+case "$1" in
+    init)
+        doInit=1
+        ;;
+    restart)
+        doStop=1
+        doStart=1
+        ;;
+    start)
+        doStart=1
+        ;;
+    status)
+        doStatus=1
+        ;;
+    stop)
+        doStop=1
+        ;;
+    *)
+        echo $"Usage: $0 {init | restart | start | status | stop}"
+        exit 1
+        ;;
+esac
+
+# =========================================================================
+# Perform the <init> request
+if [ $doInit -eq 1 ]; then
+  msg "service init requested"
+
+  # get keytab
+  msg "using keytab: $KEYTAB"
+
+  # get principal
+  #   if cached ticket exists, extract principal from cached location
+  #   else ask kerberos for a list of principals based on the keytab, assume
+  #     only one entry is returned (??)
+  HOST_NAME=`hostname -f`
+  getCachedTicket
+  if [[ $? -eq 0 ]]; then
+    PRINCIPAL="$( klist -c $CACHE_FILE | grep 'Default principal' | awk '{print $3}' )"
+  else
+    PRINCIPAL=`klist -kt $KEYTAB | grep $HOST_NAME | awk '{print $4}' | uniq`
+  fi
+    
+  valid=`echo $PRINCIPAL | grep "$HOST_NAME" | wc -l`
+  if [[ $valid -eq 0 ]]; then
+    msg "Could not find valid principal ($PRINCIPAL)"
+    exit 1
+  fi 
+  msg "using principal: $PRINCIPAL"
+
+  kinit -k -t $KEYTAB $PRINCIPAL
+  if [ $? -ne 0 ]; then
+    msg "An error occurred while initializing $PRINCIPAL"
+    exit 1
+  else
+    msg "Initialized ticket for principal $PRINCIPAL"
+    msg "`klist`"
+  fi
+  exit 0
+fi
+
+# =========================================================================
+# Perform the <status> request
+#
+#  returns:
+#    0 - valid ticket
+#    1 - no ticket
+#    2 - expired or ready to expire ticket
+
+if [ $doStatus -eq 1 ]; then
+  if [ $serviceRunning -eq 0 ]; then
+    echo "service not running"
+  fi
+  getCachedTicket
+  if [[ $? -eq 0 ]]; then
+    getStatus
+    retcode=$?
+    echo $TICKET_STATUS
+  else
+    echo "Ticket information not found"
+    retcode=1
+  fi
+  exit $retcode
+fi
+
+
+# =========================================================================
+# Perform the <stop> request
+if [ $doStop -eq 1 ]; then
+  msg "service stop requested"
+  if [ $serviceRunning -eq 1 ]; then
+    msg "service is running"
+    kill -9 $currentPID
+    rm $LOCK_FILE
+    msg "service stopped for $currentPID"
+  fi
+fi
+
+# =========================================================================
+# Perform the <start> request
+if [ $doStart -eq 1 ]; then
+  msg "service start requested"
+
+  # If the lockfile already exists then another process must be running
+  if [ -f $LOCK_FILE ]; then
+    if [ $serviceRunning -eq 1 ]; then
+      msg "service already running with pid $( cat $LOCK_FILE )"
+      exit 1
+    fi
+  fi
+
+  # remove log, may want to handle log garbage collection differently 
+  rm $MY_SQROOT/logs/krb5check 
+
+  # kick off a process that wakes up once in a while and check for 
+  # ticket expirations
+
+  getCachedTicket
+  if [[ $? -eq 1 ]]; then
+    msg "ERROR: Ticket is not available"
+  fi
+  getStatus
+  msg "starting service (krb5check)"
+  msg "$TICKET_STATUS"
+  $MY_SQROOT/sql/scripts/krb5check -r 2 -w 300 &
+  krb5checkPID=`echo $!`
+
+  # see if process started successfully
+  sleep 5
+  existingPID=`ps -p $krb5checkPID | grep krb5check | awk '{print $1}'`
+  if [ ! "$existingPID" == "$krb5checkPID" ]; then
+    msg "service (krb5check) did not start, check $LOG_FILE for details" 
+  fi
+fi
+
+# =========================================================================
+exit 0

@@ -40,6 +40,7 @@
 #include "healthcheck.h"
 
 extern int MyPNID;
+extern bool Emulate_Down;
 extern CMonitor *Monitor;
 extern CNodeContainer *Nodes;
 extern CNode *MyNode;
@@ -1624,8 +1625,15 @@ void CIntShutdownReq::performRequest()
     TRACE_EXIT;
 }
 
-CIntNodeNameReq::CIntNodeNameReq( const char *current_name, const char *new_name  ) 
-    : CInternalReq()
+CIntNodeNameReq::CIntNodeNameReq( int req_nid
+                                , int req_pid
+                                , Verifier_t req_verifier
+                                , const char *current_name
+                                , const char *new_name  ) 
+                : CInternalReq()
+                , req_nid_(req_nid)
+                , req_pid_(req_pid)
+                , req_verifier_(req_verifier)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQIZ", 4);
@@ -1652,15 +1660,94 @@ void CIntNodeNameReq::performRequest()
 {
     const char method_name[] = "CIntNodeNameReq::performRequest";
     TRACE_ENTRY;
+
+    int rc = MPI_SUCCESS;
     char current_n[MPI_MAX_PROCESSOR_NAME];
     char new_n[MPI_MAX_PROCESSOR_NAME];
+    CPNodeConfig   *pnodeConfig = NULL; 
+    CProcess *requester = NULL;
     
     strcpy (current_n, current_name_.c_str());
     strcpy (new_n, new_name_.c_str());
 
-    CNode    *node = Nodes->GetNode(current_n); 
-    if (node)
-        node->SetName(new_n);
+    CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
+    if (clusterConfig)
+    {
+        // Check for existence of node name in the configuration
+        pnodeConfig = clusterConfig->GetPNodeConfig( current_n );
+        if (pnodeConfig)
+        {
+            // Update the node name in the configuration database
+            if (clusterConfig->UpdatePNodeConfig( pnodeConfig->GetPNid()
+                    , new_n
+                    , pnodeConfig->GetExcludedFirstCore()
+                    , pnodeConfig->GetExcludedLastCore() ))
+            {
+                // lock sync thread since we are making a change the monitor's
+                // operational view of the cluster
+                if ( !Emulate_Down )
+                {
+                    Monitor->EnterSyncCycle();
+                }
+        
+                // Change node name in monitor's view of cluster
+                CNode    *node = Nodes->GetNode(current_n); 
+                if (node)
+                {
+                    node->SetName(new_n);
+                }
+                else
+                {
+                    char buf[MON_STRING_BUF_SIZE];
+                    sprintf( buf
+                           , "[%s], Failed to retrive node object for node %s!\n"
+                           ,  method_name, current_n);
+                    mon_log_write(MON_INTREQ_NODE_NAME_1, SQ_LOG_ERR, buf);
+
+                    rc = MPI_ERR_INTERN;
+                }
+            
+                // unlock sync thread
+                if ( !Emulate_Down )
+                {
+                    Monitor->ExitSyncCycle();
+                }
+            }
+            else
+            {
+                rc = MPI_ERR_IO;
+            }
+        }
+        else
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            sprintf( buf
+                   , "[%s], Failed to retrive pnodeConfig object for node %s!\n"
+                   ,  method_name, current_n);
+            mon_log_write(MON_INTREQ_NODE_NAME_2, SQ_LOG_ERR, buf);
+    
+            rc = MPI_ERR_INTERN;
+        }
+    }
+    else
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        sprintf(buf, "[%s], Failed to retrive ClusterConfig object!\n",
+                method_name);
+        mon_log_write(MON_INTREQ_NODE_NAME_3, SQ_LOG_ERR, buf);
+
+        rc = MPI_ERR_INTERN;
+    }
+
+    requester = Nodes->GetProcess( req_nid_
+                                 , req_pid_
+                                 , req_verifier_ );
+    if (requester)
+    {
+        // Reply to requester
+        requester->CompleteRequest( rc );
+    }
+
 
     TRACE_EXIT;
 }
@@ -1741,6 +1828,8 @@ void CIntNodeAddReq::performRequest()
     nid  = clusterConfig->GetNextNid();
     pnid = clusterConfig->GetNextPNid();
 
+    // Insert node in configuration database and 
+    // add to configuration object in monitor
     if (clusterConfig->SaveNodeConfig( nodeName_
                                      , nid
                                      , pnid
@@ -1751,10 +1840,23 @@ void CIntNodeAddReq::performRequest()
                                      , -1 // excludedLastCore
                                      , roles_ ))
     {
-        // Reload the static configuration and broadcast node added notice
+        // lock sync thread since we are making a change the monitor's
+        // operational view of the cluster
+        if ( !Emulate_Down )
+        {
+            Monitor->EnterSyncCycle();
+        }
+
+        // Add node to monitor's view of cluster and broadcast node added notice
         if (!Monitor->ReinitializeConfigCluster( true, pnid ))
         {
             rc = MPI_ERR_INTERN;
+        }
+    
+        // unlock sync thread
+        if ( !Emulate_Down )
+        {
+            Monitor->ExitSyncCycle();
         }
     }
     else
@@ -1827,10 +1929,22 @@ void CIntNodeDeleteReq::performRequest()
     CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
     if (clusterConfig->DeleteNodeConfig( pnid_ ))
     {
+        // lock sync thread
+        if ( !Emulate_Down )
+        {
+            Monitor->EnterSyncCycle();
+        }
+
         // Reload the static configuration and broadcast node deleted notice
         if (!Monitor->ReinitializeConfigCluster( false, pnid_ ))
         {
             rc = MPI_ERR_INTERN;
+        }
+
+        // unlock sync thread
+        if ( !Emulate_Down )
+        {
+            Monitor->ExitSyncCycle();
         }
     }
     else
@@ -2348,18 +2462,6 @@ void CIntSnapshotReq::performRequest()
             // Programmer bonehead!
             abort();
     }
-
-    // copy sqconfig.db
-    char cmd[256];
-    sprintf(cmd, "pdcp -p -w %s %s/sql/scripts/sqconfig.db %s/sql/scripts/.", Monitor->GetIntegratingNode()->GetName(), 
-              getenv("MY_SQROOT"), getenv("MY_SQROOT") );
-
-    error = system(cmd);
-
-    if (trace_settings & TRACE_REQUEST)
-        trace_printf("%s@%d - Copied config.db (%s) Error = %d\n", method_name, __LINE__, cmd, error);
-
-    mem_log_write(MON_REQQUEUE_SNAPSHOT_3, error);
 
     // estimate size of snapshot buffer
     // about 100 bytes per process, 1.5 times total
@@ -3213,11 +3315,19 @@ void CReqQueue::enqueueDownReq( int pnid )
     enqueueReq ( request );
 }
 
-void CReqQueue::enqueueNodeNameReq( char *current_name, char *new_name)
+void CReqQueue::enqueueNodeNameReq( int req_nid
+                                  , int req_pid
+                                  , Verifier_t req_verifier
+                                  , char *current_name
+                                  , char *new_name)
 {
     CInternalReq * request;
 
-    request = new CIntNodeNameReq ( current_name, new_name );
+    request = new CIntNodeNameReq( req_nid
+                                 , req_pid
+                                 , req_verifier
+                                 , current_name
+                                 , new_name );
 
     enqueueReq ( request );
 }

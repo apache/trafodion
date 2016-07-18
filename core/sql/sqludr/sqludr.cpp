@@ -2684,6 +2684,12 @@ ColumnInfo::ColumnInfo() :
 
 /**
  *  Constructor, specifying a name and a type
+ *
+ *  @param name       Name of the column to add. Use UPPER CASE letters,
+ *                    digits and underscore, otherwise you will need to
+ *                    use delimited column names with matching case in
+ *                    Trafodion.
+ *  @param type       Type of the column to add.
  */
 ColumnInfo::ColumnInfo(const char *name,
                        const TypeInfo &type) :

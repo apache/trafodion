@@ -197,6 +197,40 @@ private:
 
 
 // -----------------------------------------------------------------------
+// definition of class ElemDDLLikeSaltClause
+// -----------------------------------------------------------------------
+class ElemDDLLikeSaltClause : public ElemDDLLikeOpt
+{
+
+public:
+
+  // constructor
+  ElemDDLLikeSaltClause(ElemDDLSaltOptionsClause * saltClause)
+    : ElemDDLLikeOpt(ELM_LIKE_OPT_SALT_CLAUSE_ELEM),
+      saltClause_(saltClause)
+  { }
+
+  // virtual destructor
+  virtual ~ElemDDLLikeSaltClause();
+
+  // cast
+  virtual ElemDDLLikeSaltClause *
+    castToElemDDLLikeSaltClause();
+
+  // method for tracing
+  virtual const NAString getText() const;
+
+  ElemDDLSaltOptionsClause * getSaltClause()
+  { return saltClause_; };
+
+
+private:
+
+  ElemDDLSaltOptionsClause * saltClause_;
+
+}; // class ElemDDLLikeOptWithoutSalt
+
+// -----------------------------------------------------------------------
 // definition of class ElemDDLLikeOptWithoutDivision
 // -----------------------------------------------------------------------
 class ElemDDLLikeOptWithoutDivision : public ElemDDLLikeOpt

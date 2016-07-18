@@ -119,10 +119,10 @@ void CExtPNodeInfoReq::performRequest()
     if ( target_pnid == -1 )
     {
         pnid = 0;
-        end_pnid = Nodes->GetPNodesCount()-1;
+        end_pnid = Nodes->GetPNodesConfigMax()-1;
     }
     else if ((target_pnid >= 0                     ) ||
-             (target_pnid < Nodes->GetPNodesCount())   )
+             (target_pnid < Nodes->GetPNodesConfigMax())   )
     {
         pnid = end_pnid = target_pnid;
     }
@@ -147,7 +147,7 @@ void CExtPNodeInfoReq::performRequest()
         msg_->u.reply.u.pnode_info.num_spares = Nodes->GetSNodesCount();
         msg_->u.reply.u.pnode_info.num_available_spares = Nodes->GetAvailableSNodesCount();
     
-        for ( ; pnid < Nodes->GetPNodesCount() && pnid < MAX_NODES && pnid <= end_pnid; pnid++)
+        for ( ; pnid < Nodes->GetPNodesConfigMax() && pnid <= end_pnid; pnid++)
         {
             pnode = Nodes->GetNode( pnid );
             if ( pnode )
@@ -155,7 +155,7 @@ void CExtPNodeInfoReq::performRequest()
                 msg_->u.reply.u.pnode_info.node[num_returned].pnid = pnode->GetPNid();
                 strcpy(msg_->u.reply.u.pnode_info.node[num_returned].node_name, pnode->GetName());
                 msg_->u.reply.u.pnode_info.node[num_returned].pstate = pnode->GetState();
-                msg_->u.reply.u.pnode_info.node[num_returned].lnode_count = pnode->GetNumLNodes();
+                msg_->u.reply.u.pnode_info.node[num_returned].lnode_count = pnode->GetLNodesCount();
                 msg_->u.reply.u.pnode_info.node[num_returned].process_count = pnode->GetNumProcs();
 
                 msg_->u.reply.u.pnode_info.node[num_returned].spare_node = pnode->IsSpareNode();

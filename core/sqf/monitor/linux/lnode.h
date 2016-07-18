@@ -51,11 +51,13 @@ public:
           );
     ~CLNode( void );
 
-    void    DeLink( CLNode **head, CLNode **tail );
     void    Added( void );
     void    Deleted( void );
+    void    DeLink( CLNode **head, CLNode **tail );
+    void    DeLinkP( CLNode **head, CLNode **tail );
     void    Down( void );
     inline CLNode *GetNext( void ) { return( next_); }
+    inline CLNode *GetNextP( void ) { return( nextP_); }
 
     cpu_set_t       &GetCoreMask( void ) { return( CoreMask ); }
     inline CLNodeContainer *GetLNodeContainer( void ) { return( lnodes_ ); }
@@ -102,6 +104,7 @@ public:
     bool    IsKillingNode( void );
 
     CLNode *Link( CLNode *entry );
+    CLNode *LinkP( CLNode *entry );
     void    SetAffinity( pid_t pid, PROCESSTYPE type );
     void    SetAffinity( CProcess *process );
 
@@ -138,12 +141,14 @@ private:
 
     CLNode *next_;   // next CLNode in CLNodeContainer linked list (all CLNodes)
     CLNode *prev_;   // prev CLNode in CLNodeContainer linked list (all CLNodes)
+    CLNode *nextP_;  // next CLNode in node_ linked list
+    CLNode *prevP_;  // prev CLNode in node_ linked list
     CProcess * SSMProc; // The SQL Statistics Merge Process for the node
 };
 
 class CLNodeContainer
 {
- private:
+private:
     int            eyecatcher_;      // Debuggging aid -- leave as first
                                      // member variable of the class
 public:
@@ -152,7 +157,8 @@ public:
     CLNodeContainer( CNode *node );
     ~CLNodeContainer( void );
 
-    CLNode *AddLNode( CLNodeConfig   *lnodeConfig );
+    CLNode *AddLNode( CLNodeConfig *lnodeConfig, CNode *node );
+    void    AddLNodeP( CLNode *lnode );
     void    CancelDeathNotification( int nid
                                    , int pid
                                    , int verifier
@@ -161,23 +167,23 @@ public:
     inline  CLNode *GetFirstLNode( void ) { return ( head_ ); }
     inline  CLNode *GetLastLNode( void ) { return ( tail_ ); }
     CLNode *GetLNode( int nid );
-    CLNode *GetLNode( char *process_name, CProcess **process, bool checkstate=true );
     inline  CNode *GetNode( void ) { return ( node_ ); }
-    inline  int    GetNumLNodes( void ) { return ( numLNodes_ ); }
+    inline  int    GetLNodesCount( void ) { return ( lnodesCount_ ); }
     bool    IsMyNode( int nid );
-    bool    IsShutdownActive( void );
     void    MarkStaleOpens( int nid, int pid );
-    int     ProcessCount( void );
+    void    RemoveLNodeP( CLNode *lnode );
 
 protected:
+    void    DeleteLNode( CLNode *lnode );
     inline  void SetFirstLNode( CLNode *lnode ) { head_ = lnode; }
     inline  void SetLastLNode( CLNode *lnode ) { tail_ = lnode; }
-    inline  void SetNumLNodes( int numLNodes ) { numLNodes_ = numLNodes; }
+    inline  void SetLNodesCount( int lnodesCount ) { lnodesCount_ = lnodesCount; }
+
+    int      lnodesCount_; // # of logical nodes in this container
 
 private:
-    CNode   *node_;        // physical node of this container
-    int      numLNodes_;    // # of logical nodes in this container
-
+    CNode   *node_;        // physical node of this container or 
+                           // NULL when main logical node container
     CLNode  *head_;
     CLNode  *tail_;
 

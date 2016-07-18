@@ -25,10 +25,10 @@
 
 = About This Document
 This guide describes how to provision the end-user {project-name} binaries on top of an existing Hadoop environment. This install allows you to store and query data using {project-name}, either via {project-name} clients
-(see {docs-url}/client_install/index.html[{project-name} Client Installation Guide] or via application code you write.
+(see {docs-url}/client_install/index.html[{project-name} Client Installation Guide]) or via application code you write.
 
 If you want to install a Trafodion developer-build environment, then please refer to the 
-http://trafodion.incubator.apache.org/contributing_redirect.html[Trafodion Contributor Guide] for instructions.
+http://trafodion.incubator.apache.org/contributing-redirect.html[Trafodion Contributor Guide] for instructions.
 
 == Intended Audience
 This guide assumes that you are well-versed in Linux and Hadoop administration. If you don't have such experience, then
@@ -53,7 +53,7 @@ Unless specifically qualified (bare-metal node, virtual-machine node, or cloud-n
 regardless of platform type.
 
 == New and Changed Information
-This is a new guide.
+This guide has been updated to include provisioning for LDAP and Kerberos.
 
 <<<
 == Notation Conventions

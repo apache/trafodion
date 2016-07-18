@@ -58,11 +58,12 @@
 #define REC_BIN32_UNSIGNED 133
 #define REC_BIN64_SIGNED 134
 #define REC_BPINT_UNSIGNED 135	// Bit Precision Integer
-#define REC_MAX_BINARY 135
+#define REC_BIN8_SIGNED 136     // tinyint signed
+#define REC_BIN8_UNSIGNED 137   // tinyint unsigned
+#define REC_BIN64_UNSIGNED 138
+#define REC_MAX_BINARY 138
 
-#define REC_MIN_FLOAT   140
-#define REC_TDM_FLOAT32 140
-#define REC_TDM_FLOAT64 141
+#define REC_MIN_FLOAT   142
 #define REC_IEEE_FLOAT32 142
 #define REC_IEEE_FLOAT64 143
 #define REC_MAX_FLOAT 143
@@ -131,12 +132,7 @@
   #define REC_BYTE_F_DOUBLE              2      // MP same name
   #define REC_NCHAR_F_UNICODE            2	// [MXsynonym]
 
-//#define REC_BYTE_F_DOUBLE_UP           3      // MP same name
-//#define REC_BYTE_F_MIXED               4      // MP same name
-//#define REC_BYTE_F_MIXED_UP            5      // MP same name
-
   #define REC_MAX_F_CHAR_H              47      // MP same name
-  // MP dfs2rec defines REC_BYTE_F_COLL_MIN..MAX, values 48..63, here
 
   #define REC_MIN_V_CHAR_H              64      // MP same name
 
@@ -146,10 +142,6 @@
   #endif
   #define REC_BYTE_V_DOUBLE             66      // MP same name
   #define REC_NCHAR_V_UNICODE           66	// [MXsynonym]
-
-//#define REC_BYTE_V_DOUBLE_UP          67      // MP same name
-//#define REC_BYTE_V_MIXED              68      // MP same name
-//#define REC_BYTE_V_MIXED_UP           69      // MP same name
 
   #define REC_BYTE_V_ASCII_LONG         70      // MX only: ODBC LONG VARCHAR
 
@@ -185,9 +177,9 @@
   #define REC_BLOB                     160      // SQ only: blob datatype
   #define REC_CLOB                     161      // SQ only: clob datatype
 
+  #define REC_BOOLEAN                  170
 
-
-#define REC_DATETIME      192
+  #define REC_DATETIME                  192
 
 // The ANSI defines are also in cli/SqlCLI.h (since they are externalized)
 // and must be the same as those defined there.  We don't source that file

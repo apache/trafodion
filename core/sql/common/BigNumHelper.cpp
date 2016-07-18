@@ -994,7 +994,8 @@ short BigNumHelper::ConvPowersOfTenToBigNumHelper(Lng32 exponent,
 
 short BigNumHelper::ConvInt64ToBigNumWithSignHelper(Int32 targetLength,
                                                     Int64 sourceData,
-                                                    char * targetData)
+                                                    char * targetData,
+                                                    NABoolean isUnsigned)
 
 {
   Int32 tgtLength16 = targetLength >> 1; 
@@ -1007,7 +1008,7 @@ short BigNumHelper::ConvInt64ToBigNumWithSignHelper(Int32 targetLength,
   for (Int32 k = 0; k < tgtLength16; k++)
     tgt[k] = 0;
 
-  if (sourceData < 0) {
+  if ((NOT isUnsigned) && (sourceData < 0)) {
     sourceData = -sourceData;
     isNeg = TRUE;
   }
@@ -1035,14 +1036,16 @@ short BigNumHelper::ConvInt64ToBigNumWithSignHelper(Int32 targetLength,
 
 short BigNumHelper::ConvBigNumWithSignToInt64Helper(Lng32 sourceLength,
                                                     char * sourceData,
-                                                    Int64 * targetData)
+                                                    void * targetDataPtr,
+                                                    NABoolean isUnsigned)
 
 {
+  UInt64 *uTargetData = (UInt64*)targetDataPtr;
+  Int64  *targetData  = (Int64*)targetDataPtr;
+
   // Recast from bytes to unsigned shorts.
   unsigned short * sourceDataInShorts = (unsigned short *) sourceData;
   Lng32 sourceLengthInShorts = sourceLength/2;
-  unsigned short * targetDataInShorts = (unsigned short *) targetData;
-
   char srcSign = BIGN_GET_SIGN(sourceData, sourceLength);
 
   // Clear source sign temporarily
@@ -1072,6 +1075,8 @@ short BigNumHelper::ConvBigNumWithSignToInt64Helper(Lng32 sourceLength,
     // Do nothing, target already in correct format.
 #else
     // Reverse the shorts in the target.
+    unsigned short * targetDataInShorts = (unsigned short *) targetData;
+
     unsigned short temp = targetDataInShorts[0];
     targetDataInShorts[0] = targetDataInShorts[3];
     targetDataInShorts[3] = temp;
@@ -1085,19 +1090,21 @@ short BigNumHelper::ConvBigNumWithSignToInt64Helper(Lng32 sourceLength,
   // We have to make sure that the source did not contain a Big Num outside this range.
 
   if (srcSign == 0) { // source is positive.
+    if (isUnsigned)
+      return 0; // all values are ok
 
-    if (*targetData >= 0) // target magnitude is between 0 and 2^63-1.
+    else if (*targetData >= 0) // target magnitude is between 0 and 2^63-1.
       return 0;            
     else  // target magnitude is beyond 2^63-1.
       return -1;
-
     }
   else {                    // source is negative.
-
-    if (*targetData >= 0) { // target magnitude is between 0 and 2^63-1.
+    if (isUnsigned)
+      return -1; // error
+    else if (*targetData >= 0) { // target magnitude is between 0 and 2^63-1.
       *targetData = -*targetData;
       return 0;
-      }
+    }
     else if (*targetData == LLONG_MIN) // target magnitude is 2^63. We do not even 
                                        // have to negate the target, because the bit
                                        // representations of 2^63 and -2^63 (the latter

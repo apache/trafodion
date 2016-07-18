@@ -316,6 +316,7 @@ LDSearchStatus searchStatus = lookupLDAPUser(username,configType,searchHostName)
          break;
       case LDSearchNotFound:
          cout << "User " << username << " not found" << endl;
+         exitCode = 3;
          break;
       case LDSearchResourceFailure:
          cout << "Unable to lookup user due to LDAP errors" << endl;
@@ -840,6 +841,7 @@ LDAPConfigNode::LDAPConfigType configType = LDAPConfigNode::PrimaryConfiguration
       // 0) LDAP configuration and server(s) good, no retries 
       // 1) LDAP configuration and server(s) good, retries occurred 
       // 2) Could not communicate with LDAP server(s).  Check LDAP configuration or server(s).
+      // 3) User was not defined in LDAP
       //
       exit(exitCode);
    }

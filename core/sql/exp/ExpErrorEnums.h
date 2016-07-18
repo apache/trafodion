@@ -75,8 +75,10 @@ enum ExeErrorCode
   EXE_CANCEL_NOT_AUTHORIZED             = 8029,
   EXE_CANCEL_NOT_POSSIBLE               = 8031,
 
-  EXE_NO_QID_EXPLAIN_INFO                   = 8032,
+  EXE_NO_QID_EXPLAIN_INFO               = 8032,
   EXE_EXPLAIN_PLAN_TOO_LARGE            = 8033,
+  EXE_DEFAULT_VALUE_INCONSISTENT_ERROR  = 8034,
+  EXE_HIVE_TRUNCATE_ERROR               = 8035,
 
   // ---------------------------------------------------------------------
   // Data integrity errors
@@ -146,6 +148,7 @@ enum ExeErrorCode
   EXE_FIELD_NUM_OVERFLOW                = 8423,
   EXE_MATH_FUNC_NOT_SUPPORTED           = 8424,
   EXE_DEFAULT_VALUE_ERROR               = 8425,
+  EXE_INVALID_BOOLEAN_VALUE             = 8426,
   EXE_SORT_ERROR                        = 8427,
   EXE_BAD_ARG_TO_MATH_FUNC              = 8428,
   EXE_MAPPED_FUNCTION_ERROR             = 8429,

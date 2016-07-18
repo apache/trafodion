@@ -130,13 +130,45 @@ export INIT_TRAFODION="N"
 # Default is to leave as is and this file will be created.
 export SQCONFIG=""
 
-export CONFIG_COMPLETE="true"
+#-----------------  security configuration information -----------------
+#Enter in Kerberos details if Kerberos is enabled on your cluster
 
-#Turn on simple security. MUST have existing LDAP configured.
+#Indicate Kerberos is enabled
+export SECURE_HADOOP="N"
+
+#Location of Kerberos server for admin access
+export KDC_SERVER=""
+
+#Kerberos Admin principal used to create Trafodion principals and keytabs
+#Please include realm, for example: trafadmin/admin@MYREALM.COM
+export ADMIN_PRINCIPAL=""
+
+#Keytab for HBase admin user, used to grant Trafodion user CRWE privilege
+export HBASE_KEYTAB=""
+
+#Keytab for HDFS admin user, used to create data directories for Trafodion 
+export HDFS_KEYTAB=""
+
+#Kerberos ticket defaults for the Trafodion user
+export MAX_LIFETIME="24hours"
+export RENEW_LIFETIME="7days"
+
+#Trafodion keytab information
+export TRAF_KEYTAB=""
+export TRAF_KEYTAB_DIR=""
+
+#Enter in LDAP configuration information
+#Turn on authentication - MUST have existing LDAP configured.
 export LDAP_SECURITY="N"
 
 #Name of LDAP Config file
 export LDAP_AUTH_FILE="traf_authentication_config_${HOSTNAME}"
+
+#LDAP name to map to database user DB__ROOT
+DB_ROOT_NAME="trafodion"
+#-----------------      end security configuration     -----------------
+
+export CONFIG_COMPLETE="true"
 
 #HA configuraton enabled, if want to enable set to true and add valid floating IP address.
 export ENABLE_HA="false"

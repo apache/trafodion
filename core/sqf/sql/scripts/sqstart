@@ -207,6 +207,31 @@ function SQCheckOrphanProcesses {
 
 }
 
+function checkKerberos {
+
+   # Check to see if kerberos is enabled in Hadoop
+   cat /etc/hadoop/conf/core-site.xml | while read a; do
+     found=`echo $a | grep "hadoop.security.authentication" | wc -l`
+     if [[ $found -eq 1 ]]; then
+       read b
+       enabled=`echo $b | grep kerberos | wc -l`
+       if [[ $enabled -eq 1 ]]; then
+         exit 1
+       else
+         exit 0
+       fi
+     fi
+   done
+   retcode=$?
+
+   if [[ $retcode -eq 1 ]]; then
+      # Check to see if TGT exists (ticket granting ticket)
+      tktExists=`krb5service status | grep "Ticket information not found" | wc -l`
+      return $tktExists
+   fi
+   return 0
+}
+
 #########################################################
 # MAIN portion of sqstart begins here
 #########################################################
@@ -246,6 +271,18 @@ if [[ $SQ_SEAMONSTER == "1" ]]; then
     echoLog "$sminfo_out"
     LogIt "$sminfo_out"
     echoLog
+fi
+
+if [[ ! -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
+   checkKerberos
+   if [[ $? -ne 0 ]]; then
+      echo
+      echo "Kerberos is enabled on the system but cannot find a valid TGT (ticket granting ticket) for the Trafodion ID"
+      echo "Please run trafodion_secure_install to enable Kerberos for Trafodion"
+
+      echo
+      exit -1
+   fi
 fi
 
 declare -i lv_len_mysqroot

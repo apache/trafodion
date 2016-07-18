@@ -563,6 +563,8 @@ public:
   short getMyTypeAsText(NAString * outputStr, 
 			NABoolean addNullability = TRUE); // output
 
+  short getMyTypeAsHiveText(NAString * outputStr);  // output
+
   // used for query caching
   Lng32 getSize() const;
   Lng32 hashKey() const;
@@ -580,6 +582,11 @@ public:
   NABoolean useHashRepresentation() const;
 
   virtual NABoolean roundTripConversionToDouble() const { return FALSE; };
+
+  // used during expr generation to indicate if conversion to/from otherFsType
+  // is supported by expr evaluator.
+  virtual NABoolean expConvSupported
+  (const NAType &otherNAType) const { return TRUE; }
 
 protected:
 

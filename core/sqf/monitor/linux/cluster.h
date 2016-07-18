@@ -62,15 +62,9 @@ class CLNode;
 
 class CCluster 
 {
- protected:
+protected:
     int            eyecatcher_;      // Debuggging aid -- leave as first
                                      // member variable of the class
-    int           *socks_;
-    int           *sockPorts_;
-    int            commSock_;
-    int            syncSock_;
-    int            epollFD_;
-
 public:
 
     enum ReintegrateError
@@ -93,7 +87,6 @@ public:
     };
 
     int        NumRanks;       // Current # of processes in the cluster
-    int        NumNodes;       // Initial # of nodes in the cluster ( may include down nodes )
 
     CCluster( void );
     virtual ~CCluster( void );
@@ -126,7 +119,8 @@ public:
 
     bool exchangeNodeData ( );
     void exchangeTmSyncData ( struct sync_def *sync );
-    int GetNumNodes() { return cfgPNodes_; }
+    int GetConfigPNodesCount() { return configPNodesCount_; }
+    int GetConfigPNodesMax() { return configPNodesMax_; }
     bool ImAlive( bool needed=false, struct sync_def *sync = NULL );
     int  MapRank( int current_rank );
     void HardNodeDown( int nid, bool communicate_state=false );
@@ -155,8 +149,6 @@ public:
     MPI_Comm getJoinComm() { return joinComm_; }
     int getJoinSock() { return joinSock_; }
     void ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealth=false );
-    void NodeAdded( CNode *node );
-    void NodeDeleted( CNode *node );
     void NodeReady( CNode *spareNode );
     void NodeTmReady( int nid );
     bool isMonSyncResponsive() { return monSyncResponsive_; }
@@ -189,8 +181,16 @@ public:
     enum { ACCEPT_NEW_MONITOR_RETRIES = 120 };  // Maximum retries by creator monitor
 
 protected:
+    int           *socks_;
+    int           *sockPorts_;
+    int            commSock_;
+    int            syncSock_;
+    int            epollFD_;
+    int           *indexToPnid_;
+
     CNode  **Node;           // array of nodes
     CLNode **LNode;          // array of logical nodes
+
     int      TmSyncPNid;     // Physical Node ID of current TmSync operations master
 
 
@@ -211,7 +211,8 @@ protected:
 private:
     int     CurNodes;       // Current # of nodes in the cluster
     int     CurProcs;       // Current # if processes alive in MPI_COMM_WORLD
-    int     cfgPNodes_;     // # of physical nodes configured
+    int     configPNodesCount_; // # of physical nodes configured
+    int     configPNodesMax_;   // max # of physical nodes that can be configured
     int    *NodeMap;        // Mapping of Node ranks to COMM_WORLD ranks
     int     LastTmSeqNum;   // Last used TM cluster seq. number
     int     TmLeaderNid;    // Nid of currently assigned TM Leader node
@@ -347,7 +348,6 @@ private:
     void setNewComm(int nid);
     void setNewSock(int nid);
  
-
     void CoordinateTmSeqNumber( int nid );
     unsigned long long EnsureAndGetSeqNum(cluster_state_def_t nodestate[]);
 

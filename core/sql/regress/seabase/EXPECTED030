@@ -533,6 +533,14 @@ March 01, 2016, 10:11:12
 2016-03-01
 
 --- 1 row(s) selected.
+>>select * from t030t1 where to_date(c, 'YYYY-MM-DD') = DATE '2016-03-01';
+
+A           B                               C
+----------  ------------------------------  ------------------------------
+
+2016-03-01  2016-03-01                      2016-03-01                    
+
+--- 1 row(s) selected.
 >>
 >>-- negative tests
 >>select to_date('2016-03-01', 'YYYYMM-DD') from (values(1)) x(a);
@@ -549,7 +557,7 @@ March 01, 2016, 10:11:12
 
 >>select to_date('0103.2016', 'DD.MM.YYYY') from (values(1)) x(a);
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 0103.2016
 
 --- 0 row(s) selected.
 >>select to_char('2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
@@ -567,6 +575,12 @@ March 01, 2016, 10:11:12
 >>select to_char(date '2016-03-01', 'HH:MI:SS') from (values(1)) x(a);
 
 *** ERROR[4072] The operand of function TO_CHAR must be a datetime containing a time.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t030t1 where to_date(c, 'YYYY-MM-DD') = '2016-03-01';
+
+*** ERROR[4041] Type DATE cannot be compared with type CHAR(10).
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -603,14 +617,14 @@ March 01, 2016, 10:11:12
 >>-- ms4 error cases
 >>select to_date(123456789, '99:99:99:99') from (values(1)) x(a);
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data ?
 
 *** ERROR[8001] An internal executor error occurred.
 
 --- 0 row(s) selected.
 >>select to_date(-12345678, '99:99:99:99') from (values(1)) x(a);
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data ?
 
 *** ERROR[8001] An internal executor error occurred.
 

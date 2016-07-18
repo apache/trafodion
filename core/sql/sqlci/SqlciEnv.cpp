@@ -482,32 +482,23 @@ void SqlciEnv::generateExplain()
     }
 }
 
-void SqlciEnv::floattypeIEEE()
+void SqlciEnv::datatypeSupport()
 {
-  // Returned float variables will be in IEEE format.
+  // Can handle tinyint datatype
+  SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_TINYINT_SUPPORT 'ON';", this);
+  SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_TINYINT_RETURN_VALUES 'ON';", this);
+  SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_TINYINT_INPUT_PARAMS 'ON';", this);
 
-  //
-  // This function is called during the initialization phase of MXCI
-  // (SqlciEnv_prologue_to_run). Use specialERROR_ as a flag indicating that
-  // the querry being executed is invoke during MXCI's initialization phase and
-  // that any errors will be fatal.
-  if (getenv("SQLMX_REGRESS") == "2")
-    SqlCmd::executeQuery("CONTROL QUERY DEFAULT FLOATTYPE 'TANDEM';", this);
-  else
-    SqlCmd::executeQuery("CONTROL QUERY DEFAULT FLOATTYPE 'IEEE';", this);
-  if (!specialError_)
-    {
-      char *noexit = getenv("SQL_MXCI_NO_EXIT_ON_COMPILER_STARTUP_ERROR");
-	  if (!noexit)
-        exit(EXIT_FAILURE);
-    }
+  // can handle largeint unsigned datatype
+  SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_LARGEINT_UNSIGNED_IO 'ON';", this);
 
-  SqlCmd::executeQuery("CONTROL QUERY DEFAULT IS_SQLCI 'ON';", this);
+  // can handle boolean datatype
+  SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_BOOLEAN_IO 'ON';", this);
+
   if (!specialError_)
     {
       exit(EXIT_FAILURE);
     }
-
 }
 
 void SqlciEnv::sqlmxRegress()
@@ -564,7 +555,7 @@ static void SqlciEnv_prologue_to_run(SqlciEnv *sqlciEnv)
   sqlciEnv->readonlyCursors();
   sqlciEnv->pertableStatistics();
   sqlciEnv->generateExplain();
-  sqlciEnv->floattypeIEEE();
+  sqlciEnv->datatypeSupport();
   sqlciEnv->sqlmxRegress();
 
   // see catman/CatWellKnownTables.cpp for this envvar need.

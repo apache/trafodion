@@ -113,4 +113,70 @@ insert into t031t1 default values;
 upsert into t031t1 default values;
 select * from t031t1;
 
+-- long varchars
+cqd traf_max_character_col_length '1000000';
+drop table if exists t031t1;
+create table t031t1 (z int not null primary key, a varchar(1000000), b char(1000000));
+insert into t031t1 values (1, repeat('a', 1000000, 1000000) , 'def');
+insert into t031t1 values (2, repeat('a', 1000, 1000) , 'zzz');
+insert into t031t1 values (3, repeat('a', 10000, 10000) , 'zzz');
+insert into t031t1 values (4, repeat('a', 100000, 100000) , 'zzz');
+insert into t031t1 values (5, repeat('a', 100, 100) , 'zzz');
+insert into t031t1 values (6, repeat('a', 10, 10) , 'zzz');
+insert into t031t1 values (7, repeat('a', 1, 1) , 'zzz');
+insert into t031t1 values (8, repeat('a', 1000000, 1000000) , null);
+insert into t031t1 values (9, repeat('a', 500000, 500000) , null);
+insert into t031t1 values (10, repeat('a', 100, 100) , null);
+
+select char_length(a), char_length(b) from t031t1;
+select substring(a, 1, 10), cast(b as char(10)) from t031t1;
+select [last 0] * from t031t1;
+
+drop table if exists t031t2;
+create table t031t2 (z int, a varchar(1000000), b char(1000000)) attribute aligned format;
+insert into t031t2 select * from t031t1;
+select char_length(a), char_length(b) from t031t2;
+select substring(a, 1, 10), cast(b as char(10)) from t031t2;
+select [last 0] * from t031t2;
+
+select count(*) from t031t1 x, t031t2 y where x.a = y.a;
+select x.z, y.z, substring(x.a, 1, 5), substring(y.a,1,5) 
+  from t031t1 x, t031t2 y where x.a = y.a
+  order by x.z, y.z;
+select x.z, y.z, substring(x.a, 1, 5), substring(y.a,1,5) 
+  from t031t1 x, t031t2 y where x.a = y.a and x.b = y.b
+  order by x.z, y.z;
+
+sh echo "drop table t031hive;" > TEST031_junk;
+sh regrhive.ksh -f TEST031_junk;
+
+sh echo "create table t031hive(z int, a string, b string);" > TEST031_junk;
+sh regrhive.ksh -f TEST031_junk;
+
+cqd hive_max_string_length '1000000';
+insert into hive.hive.t031hive select * from t031t1;
+select count(*) from hive.hive.t031hive;
+select substring(a, 1, 10), cast(b as char(10)) from hive.hive.t031hive;
+select [last 0] * from hive.hive.t031hive;
+
+drop external table if exists t031hive for hive.hive.t031hive;
+create external table t031hive (z int, a varchar(1000000), b varchar(1000000))
+for hive.hive.t031hive;
+delete from t031t1;
+insert into t031t1 select * from hive.hive.t031hive;
+select count(*) from t031t1;
+
+-- default USER
+drop table if exists t031t1;
+create table t031t1 (a int, b varchar(20) default user);
+invoke t031t1;
+insert into t031t1 (a) values (10);
+insert into t031t1 default values;
+select * from t031t1;
+alter table t031t1 add column c char(20) default user;
+invoke t031t1;
+select * from t031t1;
+insert into t031t1 default values;
+select * from t031t1;
+
 log;
