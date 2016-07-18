@@ -47,6 +47,13 @@ static const char* const joiErrorEnumStr[] =
 
 __thread JNIEnv* _tlp_jenv = 0;
 __thread bool  _tlv_jenv_set = false;
+__thread std::string *_tlp_error_msg = NULL;
+
+jclass JavaObjectInterfaceTM::gThrowableClass = NULL;
+jclass JavaObjectInterfaceTM::gStackTraceClass = NULL;
+jmethodID JavaObjectInterfaceTM::gGetStackTraceMethodID = NULL;
+jmethodID JavaObjectInterfaceTM::gThrowableToStringMethodID = NULL;
+jmethodID JavaObjectInterfaceTM::gStackFrameToStringMethodID = NULL;
 
 //////////////////////////////////////////////////////////////////////////////
 // 
@@ -213,13 +220,11 @@ JOI_RetCode JavaObjectInterfaceTM::initJVM()
       result = createJVM();
       if (result != JNI_OK)
         return JOI_ERROR_CREATE_JVM;
-        
       needToDetach_ = false;
         
-      return JOI_OK;
     }
   }
-  
+  if (_tlp_jenv == NULL) {
   // We found a JVM, can we use it?
   result = jvm_->GetEnv((void**) &_tlp_jenv, JNI_VERSION_1_6);
   switch (result)
@@ -247,8 +252,36 @@ JOI_RetCode JavaObjectInterfaceTM::initJVM()
       return JOI_ERROR_ATTACH_JVM;
       break;
   }
-
   _tlv_jenv_set = true;
+  }
+  jclass lJavaClass;
+  if (gThrowableClass == NULL)
+  {
+     lJavaClass = _tlp_jenv->FindClass("java/lang/Throwable");
+     if (lJavaClass != NULL)
+     {
+        gThrowableClass  = (jclass)_tlp_jenv->NewGlobalRef(lJavaClass);
+        _tlp_jenv->DeleteLocalRef(lJavaClass);
+        gGetStackTraceMethodID  = _tlp_jenv->GetMethodID(gThrowableClass,
+                      "getStackTrace",
+                      "()[Ljava/lang/StackTraceElement;");
+        gThrowableToStringMethodID = _tlp_jenv->GetMethodID(gThrowableClass,
+                      "toString",
+                      "()Ljava/lang/String;");
+     }
+  }
+  if (gStackTraceClass == NULL)
+  {
+     lJavaClass =  (jclass)_tlp_jenv->FindClass("java/lang/StackTraceElement");
+     if (lJavaClass != NULL)
+     {
+        gStackTraceClass = (jclass)_tlp_jenv->NewGlobalRef(lJavaClass);
+        _tlp_jenv->DeleteLocalRef(lJavaClass);
+        gStackFrameToStringMethodID  = _tlp_jenv->GetMethodID(gStackTraceClass,
+                      "toString",
+                      "()Ljava/lang/String;");
+     }
+  }  
   return JOI_OK;
 }
  
@@ -351,5 +384,89 @@ void JavaObjectInterfaceTM::logError(const char* cat, const char* methodName, js
 //////////////////////////////////////////////////////////////////////////////
 void JavaObjectInterfaceTM::logError(const char* cat, const char* file, int line)
 {
+}
+
+
+bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
+{
+   std::string *error_msg;
+
+   if (_tlp_error_msg != NULL)
+   {
+      delete _tlp_error_msg;
+      _tlp_error_msg = NULL;
+   }
+
+   if (jenv == NULL)
+       jenv = _tlp_jenv;
+   if (jenv == NULL)
+   {
+      error_msg = new std::string("Internal Error - Unable to obtain jenv");
+      _tlp_error_msg = error_msg;
+      return false;
+   }
+   if (gThrowableClass == NULL)
+   {
+      jenv->ExceptionDescribe();
+      error_msg = new std::string("Internal Error - Unable to find Throwable class");
+      _tlp_error_msg = error_msg;
+      return false;
+   }
+   jthrowable a_exception = jenv->ExceptionOccurred();
+   if (a_exception != NULL)
+       jenv->ExceptionClear();
+   else
+   {
+       error_msg = new std::string("No java exception was thrown");
+       _tlp_error_msg = error_msg;
+       return false;
+   }
+    jstring msg_obj =
+       (jstring) jenv->CallObjectMethod(a_exception,
+                                         gThrowableToStringMethodID);
+    const char *msg_str;
+    if (msg_obj != NULL)
+    {
+       msg_str = jenv->GetStringUTFChars(msg_obj, 0);
+       jenv->ReleaseStringUTFChars(msg_obj, msg_str);
+       jenv->DeleteLocalRef(msg_obj);
+    }
+    else
+       msg_str = "Exception is thrown, but tostring is null";
+
+    error_msg = new std::string("");
+    *error_msg += msg_str;
+
+    // Get the stack trace
+    jobjectArray frames =
+        (jobjectArray) jenv->CallObjectMethod(
+                                        a_exception,
+                                        gGetStackTraceMethodID);
+    if (frames == NULL)
+    {
+       _tlp_error_msg = error_msg;
+       return true;
+    }
+    jsize frames_length = jenv->GetArrayLength(frames);
+
+    jsize i = 0;
+    for (i = 0; i < frames_length; i++)
+    {
+       jobject frame = jenv->GetObjectArrayElement(frames, i);
+       msg_obj = (jstring) jenv->CallObjectMethod(frame,
+                                            gStackFrameToStringMethodID);
+       if (msg_obj != NULL)
+       {
+          msg_str = jenv->GetStringUTFChars(msg_obj, 0);
+          *error_msg += "\n";
+          *error_msg += msg_str;
+          jenv->ReleaseStringUTFChars(msg_obj, msg_str);
+          jenv->DeleteLocalRef(msg_obj);
+          jenv->DeleteLocalRef(frame);
+       }
+    }
+    *error_msg += "\n";
+    _tlp_error_msg = error_msg;
+    return true;
 }
 

@@ -48,6 +48,7 @@ int tm_init_logging()
 int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string)
 {
     int    lv_err = 0;
+    lv_err = tm_log_stdout(pv_event_type, pv_severity, pp_string);
     return lv_err;
 }
 
@@ -284,8 +285,8 @@ int tm_log_stdout(int event_id,
        printf(", data4=%u",data4);
     printf("\n");
 
-	// Log4cxx logging
-	CommonLogger::log(TM_COMPONENT, ll_severity, "Node Number: %u, CPU: %u, PIN: %u , Process Name: %s,,, Message: %s", my_nid, my_nid, my_pid, my_name, temp_string);
+    // Log4cxx logging
+    CommonLogger::log(TM_COMPONENT, ll_severity, "Node Number: %u, PIN: %u , Process Name: %s, Message: %s ", my_nid, my_pid, my_name, temp_string);
 
     return error;
 } 
