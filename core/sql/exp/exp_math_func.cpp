@@ -82,6 +82,11 @@ ex_expr::exp_return_type ex_function_abs::eval(char *op_data[],
 
   switch (getOperand(1)->getDatatype())
     {
+    case REC_BIN8_SIGNED:
+      *(Int8 *)op_data[0] = (*(Int8 *)op_data[1] < 0 ? -*(Int8 *)op_data[1]
+			      : *(Int8 *)op_data[1]);
+      break;
+      
     case REC_BIN16_SIGNED:
 #pragma nowarn(1506)   // warning elimination 
       *(short *)op_data[0] = (*(short *)op_data[1] < 0 ? -*(short *)op_data[1]
@@ -500,7 +505,7 @@ ex_expr::exp_return_type ExFunctionBitOper::eval(char *op_data[],
 	UInt32 endByte   = (startBit + numBits - 1) / 8 ;
 
 	if ((numBits == 0) ||
-	    (endByte >= opLen))
+	    (endByte > opLen))
 	  {
 	    ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
 	    **diagsArea << DgString0("BITEXTRACT");
@@ -509,9 +514,18 @@ ex_expr::exp_return_type ExFunctionBitOper::eval(char *op_data[],
 	
 	UInt64 result = 0;
 
-	//Int64 temp = 0;
 	switch (getOperand(1)->getDatatype())
 	  {
+	  case REC_BIN8_SIGNED:
+	  case REC_BIN8_UNSIGNED:
+	    {
+	      UInt8 temp;
+	      temp = *(UInt8*)op_data[1] << startBit;
+	      temp = temp >> (8 - numBits);
+	      result = temp;
+	    }
+	  break;
+
 	  case REC_BIN16_SIGNED:
 	  case REC_BIN16_UNSIGNED:
 	    {

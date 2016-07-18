@@ -106,7 +106,7 @@ public:
     // Logical operators
     Op_AND, Op_OR, 
     // Arithematic operators
-    Op_ADD, Op_SUB, Op_MUL, Op_DIV, Op_DIV_ROUND, Op_SUM, Op_MOD,
+    Op_ADD, Op_SUB, Op_MUL, Op_DIV, Op_DIV_ROUND, Op_SUM, Op_MOD, Op_NEG,
     Op_MINMAX,
     // Bitwise operator
     Op_BITOR,
@@ -166,7 +166,8 @@ public:
 
     // Memory accesses
     //
-    MBIN8, MBIN16U, MBIN16S, MBIN32U, MBIN32S, MBIN64S, MPTR32,
+    MBIN8, MBIN8U, MBIN8S, MBIN16U, MBIN16S, MBIN32U, MBIN32S, 
+    MBIN64S, MBIN64U, MPTR32,
     MASCII, MDECS, MDECU, MFLT32, MFLT64, MATTR3, MATTR4, MATTR5, MATTR6,
     MBIGU, MBIGS, MUNI, MUNIV,
 
@@ -689,7 +690,41 @@ public:
     DECODE_MASCII_MBIN64S_IBIN32S = 335,
     DECODE_DATETIME               = 336,
     DECODE_NXX                    = 337,
-    DECODE_DECS                 = 338,
+    DECODE_DECS                   = 338,
+
+    // unary operations
+    NEGATE_MASCII_MASCII          = 339,
+
+    // tinyint operations
+    ENCODE_MASCII_MBIN8S_IBIN32S  = 340,
+    ENCODE_MASCII_MBIN8U_IBIN32S  = 341,
+    DECODE_MASCII_MBIN8S_IBIN32S  = 342,
+    DECODE_MASCII_MBIN8U_IBIN32S  = 343,
+    MOVE_MBIN16S_MBIN8S           = 344,
+    MOVE_MBIN16U_MBIN8U           = 345,
+    MOVE_MBIN32S_MBIN8S           = 346,
+    MOVE_MBIN32U_MBIN8U           = 347,
+    MOVE_MBIN64S_MBIN8S           = 348,
+    MOVE_MBIN64U_MBIN8U           = 349,
+
+    EQ_MBIN32S_MBIN8S_MBIN8S      = 350,
+    NE_MBIN32S_MBIN8S_MBIN8S      = 351,
+    LT_MBIN32S_MBIN8S_MBIN8S      = 352,
+    GT_MBIN32S_MBIN8S_MBIN8S      = 353,
+    LE_MBIN32S_MBIN8S_MBIN8S      = 354,
+    GE_MBIN32S_MBIN8S_MBIN8S      = 355,
+
+    EQ_MBIN32S_MBIN8U_MBIN8U      = 356,
+    NE_MBIN32S_MBIN8U_MBIN8U      = 357,
+    LT_MBIN32S_MBIN8U_MBIN8U      = 358,
+    GT_MBIN32S_MBIN8U_MBIN8U      = 359,
+    LE_MBIN32S_MBIN8U_MBIN8U      = 360,
+    GE_MBIN32S_MBIN8U_MBIN8U      = 361,
+
+    // largeint unsigned operations
+    MOVE_MBIN64S_MBIN64U          = 362,
+    MOVE_MBIN64U_MBIN64S          = 363,
+    MOVE_MBIN64U_MBIN64U          = 364,
 
     //***************************************************************
     // Add new PCODE instructions immediately above this comment!!!!!

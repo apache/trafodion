@@ -940,6 +940,7 @@ Lng32 SQLCLI_LOBddlInterface
  /*IN*/    NABoolean lobTrace
  );
 
+#ifdef __ignore
 Lng32 SQLCLI_LOBloader2sqlInterface
 (
  /*IN*/     CliGlobals *cliGlobals,
@@ -954,7 +955,7 @@ Lng32 SQLCLI_LOBloader2sqlInterface
            				   pass it back in on the next call */
 
  );
-
+#endif
 Int32 SQLCLI_SWITCH_TO_COMPILER_TYPE
  (
  /*IN*/     CliGlobals* cliGlobals,

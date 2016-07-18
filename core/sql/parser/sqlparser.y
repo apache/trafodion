@@ -501,6 +501,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_BOTH
 %token <tokval> TOK_BROWSE       	/* Tandem extension */
 %token <tokval> TOK_BROWSE_ACCESS      	/* Tandem extension */
+%token <tokval> TOK_BOOLEAN
 %token <tokval> TOK_BY
 %token <tokval> TOK_BYTEINT             /* TD extension that HP wants to ignore */
 %token <tokval> TOK_C                   /* HP Neo extension non-reserved word */
@@ -1890,6 +1891,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>                   numeric_literal
 %type <item>                   numeric_literal_exact
 %type <item>                   character_literal_sbyte
+%type <item>                   boolean_literal
 %type <stringval> 		literal_as_string
 %type <stringval> 		character_string_literal
 %type <stringval>		sbyte_string_literal
@@ -2023,6 +2025,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <na_type>   		pic_type
 %type <na_type>   		string_type
 %type <na_type>                 blob_type
+%type <na_type>                 boolean_type
 %type <na_type>   		float_type
 %type <na_type>   		proc_arg_float_type
 %type <longint>                 pic_tail
@@ -3278,6 +3281,19 @@ literal :       numeric_literal
                   SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
                 }
+             | boolean_literal
+
+boolean_literal : truth_value
+                  {
+                    if ($1 == TOK_UNKNOWN)
+                      YYERROR;
+
+                    char v = ($1 == TOK_TRUE ? 1 : 0);
+                    NAString literalBuf($1 == TOK_TRUE ? "TRUE" : "FALSE");
+                    $$ = new (PARSERHEAP()) ConstValue 
+                      (new (PARSERHEAP()) SQLBooleanNative(FALSE),
+                       (void *) &v, 1, &literalBuf);
+                  }
 
 character_literal_notcasespecific_option : '(' TOK_NOT_CASESPECIFIC ')'
                                             {$$=TRUE;}
@@ -7839,6 +7855,11 @@ factor : sign primary
 				    //SqlParser_CurrentParser->FixupForUnaryNegate((BiArith*) $$);
 				    }
 				}
+              | '!' primary
+              {
+                $$ = new (PARSERHEAP())
+                  UnArith($2);
+              }
               | primary
 	      | primary TOK_LPAREN_BEFORE_FORMAT TOK_FORMAT character_string_literal ')'
                                {
@@ -10537,6 +10558,7 @@ predefined_type : date_time_type
 		| pic_type
 		| string_type
                 | blob_type
+                | boolean_type
 
 
 /* type na_type */
@@ -10576,14 +10598,7 @@ int_type : TOK_INTEGER signed_option
              }
 	 | TOK_LARGEINT signed_option
              {
-                if (!$2) {
-                  // UNSIGNED specified. Error. Largeint must be signed. 
-                  *SqlParser_Diags << DgSqlCode(-3130);
-                  // YYABORT;
-                  yyerror(""); 
-                  YYERROR;
-                }
-		$$ = new (PARSERHEAP()) SQLLargeInt( $2, TRUE);
+               $$ = new (PARSERHEAP()) SQLLargeInt( $2, TRUE);
              }
          | TOK_BIGINT signed_option
              {
@@ -10698,22 +10713,6 @@ non_int_type : numeric_type_token left_uint_uint_right signed_option
 		 YYABORT;
 	       }
 
-	       // old behavior, if max allowed is 18.
-	       if ($2->left() > MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION
-		   AND $2->left() <=  MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION
-		   AND NOT $3 /*is unsigned int*/ AND
-		   (CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED)
-		    == MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION)) {
-		 // Precision of $0~string0 UNSIGNED data type,
-		 // $1~int0, cannot exceed 9. 
-		 *SqlParser_Diags << DgSqlCode(-3008)
-				  << DgString0("NUMERIC")
-				  << DgInt0($2->left())
-				  << DgInt1(9);
-		 delete $2;
-		 YYABORT;
-	       }
-	       
 	       if (($2->left() > MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION) ||
 		   (($2->left() > MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION) AND NOT $3))
 		 $$ = new (PARSERHEAP())
@@ -10724,7 +10723,6 @@ non_int_type : numeric_type_token left_uint_uint_right signed_option
 		   SQLNumeric( $3,$2->left(), $2->right(), DisAmbiguate );
 	       }
 	       delete $2;
-#pragma warn(1506)  // warning elimination
              }
          | TOK_NUMERIC signed_option
 	     {
@@ -11471,6 +11469,12 @@ optional_blob_unit :   TOK_K {$$ = 1024;}
                      | TOK_M {$$ = 1024*1024;}
                      | TOK_G {$$ = 1024*1024*1024;}
                      | empty {$$ = 1;}
+
+/* type na_type */
+boolean_type : TOK_BOOLEAN
+            {
+              $$ = new (PARSERHEAP()) SQLBooleanNative (TRUE);
+            }
 
 /* type pCharLenSpec */
 toggled_optional_left_charlen_right: new_left_charlen_right
@@ -21491,13 +21495,16 @@ query_shape_control : shape_identifier
 					}
 				      if (nat->getTypeQualifier() == NA_NUMERIC_TYPE)
 					{
-					  if (cv->getStorageSize() != 2)
+					  if (cv->getStorageSize() > 2)
 					    {
 					      *SqlParser_Diags << DgSqlCode(-3113) <<
 						DgString0("Number of columns (short int) expected.");
 					      return NULL;
 					    }
-					  numColumns = *((short *) cv->getConstValue());
+					  numColumns = 
+                                            (cv->getStorageSize() == 1 
+                                             ? *((Int8*) cv->getConstValue()) 
+                                             : *((short *) cv->getConstValue()));
 					}
 				      else
 					{
@@ -21521,7 +21528,9 @@ query_shape_control : shape_identifier
 					}
 				      if (nat->getTypeQualifier() == NA_NUMERIC_TYPE)
 					{
-                                          if (cv->getStorageSize() <= 2)
+                                          if (cv->getStorageSize() <= 1)
+                                            blocksPerAccess = *((Int8 *) cv->getConstValue());
+                                          else if (cv->getStorageSize() <= 2)
                                             blocksPerAccess = *((short *) cv->getConstValue());
                                           else if (cv->getStorageSize() <= 4)
                                             blocksPerAccess = *((Lng32 *) cv->getConstValue());
@@ -26832,8 +26841,6 @@ range_n_arg : value_expression TOK_BETWEEN value_expression { $$ = NULL; }
 
             | TOK_NO TOK_RANGE TOK_OR  TOK_UNKNOWN          { $$ = NULL; }
             | TOK_NO TOK_RANGE                              { $$ = NULL; }
-            | TOK_UNKNOWN                                   { $$ = NULL; }
-
 
 /* type pElemDDL */
 partition_by_column_list : '(' column_reference_list ')'

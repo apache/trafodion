@@ -42,7 +42,7 @@
 #include  "sql_id.h"
 #include  "ComSqlId.h"
 #include  "ExExeUtilCli.h"
-
+#include  "hdfs.h"
 OutputInfo::OutputInfo(Lng32 numEntries)
   : numEntries_(numEntries)
 {
@@ -1039,7 +1039,7 @@ Lng32 ExeCliInterface::executeImmediateExec(const char * stmtStr,
         *rowsAffected = tmpRowsAffected;
     }
   }
-
+ 
   clearGlobalDiags();
 
   retcode = close();

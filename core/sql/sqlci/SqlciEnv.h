@@ -328,7 +328,7 @@ public:
   void readonlyCursors();
   void pertableStatistics();
   void generateExplain();
-  void tinyintSupport();
+  void datatypeSupport();
   void sqlmxRegress();
 
   void welcomeMessage();

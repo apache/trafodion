@@ -546,10 +546,13 @@ Int32 PCode::size() {
                       || a == PCIT::MATTR3) ? 3 :    \
                       (  a == PCIT::IATTR2           \
                       || a == PCIT::MBIN8            \
+                      || a == PCIT::MBIN8S           \
+                      || a == PCIT::MBIN8U           \
                       || a == PCIT::MBIN16U          \
                       || a == PCIT::MBIN16S          \
                       || a == PCIT::MBIN32U          \
                       || a == PCIT::MBIN32S          \
+                      || a == PCIT::MBIN64U          \
                       || a == PCIT::MBIN64S          \
                       || a == PCIT::MPTR32           \
                       || a == PCIT::MASCII           \
@@ -1089,8 +1092,42 @@ Int32 PCode::size() {
   I3(Op_DECODE,MASCII,MBIN32S,IBIN32S,DECODE_MASCII_MBIN32S_IBIN32S),  // Instruction 333
   I3(Op_DECODE,MASCII,MBIN32U,IBIN32S,DECODE_MASCII_MBIN32U_IBIN32S),  // Instruction 334
   I3(Op_DECODE,MASCII,MBIN64S,IBIN32S,DECODE_MASCII_MBIN64S_IBIN32S),  // Instruction 335
-  I4(Op_DECODE,MASCII,MASCII,IBIN32S,IBIN32S,DECODE_NXX),              // Instruction 336
-  I4(Op_DECODE,MASCII,MDECS,IBIN32S,IBIN32S,DECODE_DECS),             // Instruction 337
+  I4(Op_DECODE,MASCII,MASCII,IBIN32S,IBIN32S,DECODE_DATETIME),         // Instruction 336
+  I4(Op_DECODE,MASCII,MASCII,IBIN32S,IBIN32S,DECODE_NXX),              // Instruction 337
+  I4(Op_DECODE,MASCII,MDECS,IBIN32S,IBIN32S,DECODE_DECS),              // Instruction 338
+
+  I2(Op_NEG,MASCII,MASCII,NEGATE_MASCII_MASCII),                       // Instruction 339
+
+  I3(Op_ENCODE,MASCII,MBIN8S,IBIN32S,ENCODE_MASCII_MBIN8S_IBIN32S),  // Instruction 340
+  I3(Op_ENCODE,MASCII,MBIN8U,IBIN32S,ENCODE_MASCII_MBIN8U_IBIN32S),  // Instruction 341
+
+  I3(Op_DECODE,MASCII,MBIN8S,IBIN32S,DECODE_MASCII_MBIN8S_IBIN32S),  // Instruction 342
+  I3(Op_DECODE,MASCII,MBIN8U,IBIN32S,DECODE_MASCII_MBIN8U_IBIN32S),  // Instruction 343
+ 
+  I2(Op_MOVE,MBIN16S,MBIN8S,MOVE_MBIN16S_MBIN8S),                    // Instruction 344
+  I2(Op_MOVE,MBIN16U,MBIN8U,MOVE_MBIN16U_MBIN8U),                    // Instruction 345
+  I2(Op_MOVE,MBIN32S,MBIN8S,MOVE_MBIN32S_MBIN8S),                    // Instruction 346
+  I2(Op_MOVE,MBIN32U,MBIN8U,MOVE_MBIN32U_MBIN8U),                    // Instruction 347
+  I2(Op_MOVE,MBIN64S,MBIN8S,MOVE_MBIN64S_MBIN8S),                    // Instruction 348
+  I2(Op_MOVE,MBIN64U,MBIN8U,MOVE_MBIN64U_MBIN8U),                    // Instruction 349
+
+  I3(Op_EQ,MBIN32S,MBIN8S,MBIN8S,EQ_MBIN32S_MBIN8S_MBIN8S),          // Instruction 350
+  I3(Op_NE,MBIN32S,MBIN8S,MBIN8S,NE_MBIN32S_MBIN8S_MBIN8S),          // Instruction 351
+  I3(Op_LT,MBIN32S,MBIN8S,MBIN8S,LT_MBIN32S_MBIN8S_MBIN8S),          // Instruction 352
+  I3(Op_GT,MBIN32S,MBIN8S,MBIN8S,GT_MBIN32S_MBIN8S_MBIN8S),          // Instruction 353
+  I3(Op_LE,MBIN32S,MBIN8S,MBIN8S,LE_MBIN32S_MBIN8S_MBIN8S),          // Instruction 354
+  I3(Op_GE,MBIN32S,MBIN8S,MBIN8S,GE_MBIN32S_MBIN8S_MBIN8S),          // Instruction 355
+
+  I3(Op_EQ,MBIN32S,MBIN8U,MBIN8U,EQ_MBIN32S_MBIN8U_MBIN8U),          // Instruction 356
+  I3(Op_NE,MBIN32S,MBIN8U,MBIN8U,NE_MBIN32S_MBIN8U_MBIN8U),          // Instruction 357
+  I3(Op_LT,MBIN32S,MBIN8U,MBIN8U,LT_MBIN32S_MBIN8U_MBIN8U),          // Instruction 358
+  I3(Op_GT,MBIN32S,MBIN8U,MBIN8U,GT_MBIN32S_MBIN8U_MBIN8U),          // Instruction 359
+  I3(Op_LE,MBIN32S,MBIN8U,MBIN8U,LE_MBIN32S_MBIN8U_MBIN8U),          // Instruction 360
+  I3(Op_GE,MBIN32S,MBIN8U,MBIN8U,GE_MBIN32S_MBIN8U_MBIN8U),          // Instruction 361
+
+  I2(Op_MOVE,MBIN64S,MBIN64U,MOVE_MBIN64S_MBIN64U),                  // Instruction 362
+  I2(Op_MOVE,MBIN64U,MBIN64S,MOVE_MBIN64U_MBIN64S),                  // Instruction 363
+  I2(Op_MOVE,MBIN64U,MBIN64U,MOVE_MBIN64U_MBIN64U),                  // Instruction 364
 
   };
 
@@ -1568,18 +1605,25 @@ PCIT::AddressingMode PCIT::getMemoryAddressingMode(Int32 datatype)
 {
   switch(datatype)
     {
+    case REC_BIN8_UNSIGNED: return PCIT::MBIN8U; break;
+    case REC_BIN8_SIGNED:   return PCIT::MBIN8S; break;
+
     case REC_BIN16_UNSIGNED: 
     case REC_BPINT_UNSIGNED: return PCIT::MBIN16U; break;
 
     case REC_BIN16_SIGNED:   return PCIT::MBIN16S; break;
     case REC_BIN32_UNSIGNED: return PCIT::MBIN32U; break;
     case REC_BIN32_SIGNED:   return PCIT::MBIN32S; break;
+    case REC_BIN64_UNSIGNED: return PCIT::MBIN64U; break;
     case REC_BIN64_SIGNED:   return PCIT::MBIN64S; break;
     case REC_IEEE_FLOAT32:   return PCIT::MFLT32; break;
     case REC_IEEE_FLOAT64:   return PCIT::MFLT64; break;
     case REC_DECIMAL_LSE:    return PCIT::MDECS; break;
     case REC_DECIMAL_UNSIGNED: return PCIT::MDECU; break;
+
+    case REC_BOOLEAN:        return PCIT::MASCII; break;
     case REC_BYTE_F_ASCII: return PCIT::MASCII; break;
+
     case REC_BYTE_V_ASCII: return PCIT::MATTR5; break;
     case REC_NCHAR_F_UNICODE: return PCIT::MUNI; break;
     case REC_NCHAR_V_UNICODE: return PCIT::MUNIV; break;
@@ -1593,6 +1637,8 @@ Int16 PCIT::getDataTypeForMemoryAddressingMode(PCIT::AddressingMode am)
 {
   switch(am)
   {
+    case PCIT::MBIN8S: return REC_BIN8_SIGNED; break;
+    case PCIT::MBIN8U: return REC_BIN8_UNSIGNED; break;
     case PCIT::IBIN16U:
     case PCIT::MBIN16U: return REC_BIN16_UNSIGNED; break;
     case PCIT::MBIN16S: return REC_BIN16_SIGNED; break;
@@ -1601,6 +1647,7 @@ Int16 PCIT::getDataTypeForMemoryAddressingMode(PCIT::AddressingMode am)
     case PCIT::MBIN32S: return REC_BIN32_SIGNED; break;
     case PCIT::IBIN64S:
     case PCIT::MBIN64S: return REC_BIN64_SIGNED; break;
+    case PCIT::MBIN64U: return REC_BIN64_UNSIGNED; break;
     case PCIT::MFLT32: return REC_IEEE_FLOAT32; break;
     case PCIT::MFLT64: return REC_IEEE_FLOAT64; break;
     case PCIT::MDECS: return REC_DECIMAL_LSE; break;
@@ -1635,10 +1682,13 @@ Int32 PCIT::getNumberOperandsForAddressingMode(PCIT::AddressingMode am)
       return 2;
 
     case PCIT::MBIN8:
+    case PCIT::MBIN8S:
+    case PCIT::MBIN8U:
     case PCIT::MBIN16U:
     case PCIT::MBIN16S:
     case PCIT::MBIN32U:
     case PCIT::MBIN32S:
+    case PCIT::MBIN64U:
     case PCIT::MBIN64S:
     case PCIT::MFLT32:
     case PCIT::MFLT64:
@@ -1681,6 +1731,8 @@ Int32 PCIT::getOperandLengthForAddressingMode(PCIT::AddressingMode am)
     case PCIT::MASCII:
     case PCIT::MDECS:
     case PCIT::MDECU:
+    case PCIT::MBIN8S:
+    case PCIT::MBIN8U:
     case PCIT::IBIN8U:
     case PCIT::IATTR4:
     case PCIT::IATTR3:
@@ -1695,6 +1747,7 @@ Int32 PCIT::getOperandLengthForAddressingMode(PCIT::AddressingMode am)
     case PCIT::MFLT32:
     case PCIT::IBIN32S:
       return 4;
+    case PCIT::MBIN64U:
     case PCIT::MBIN64S:
     case PCIT::MFLT64:
     case PCIT::IBIN64S:
@@ -1713,10 +1766,13 @@ Int32 PCIT::isMemoryAddressingMode(PCIT::AddressingMode am)
   switch(am)
     {
     case PCIT::MBIN8:
+    case PCIT::MBIN8U:
+    case PCIT::MBIN8S:
     case PCIT::MBIN16U:
     case PCIT::MBIN16S:
     case PCIT::MBIN32U:
     case PCIT::MBIN32S:
+    case PCIT::MBIN64U:
     case PCIT::MBIN64S:
     case PCIT::MFLT32:
     case PCIT::MFLT64:
@@ -1832,10 +1888,13 @@ const char *PCIT::operationString(PCIT::Operation op) {
 const char *PCIT::addressingModeString(PCIT::AddressingMode am) {
   switch(am) {
   case PCIT::MBIN8: return("MBIN8");
+  case PCIT::MBIN8S: return("MBIN8S");
+  case PCIT::MBIN8U: return("MBIN8U");
   case PCIT::MBIN16U: return("MBIN16U");
   case PCIT::MBIN16S: return("MBIN16S");
   case PCIT::MBIN32U: return("MBIN32U");
   case PCIT::MBIN32S: return("MBIN32S");
+  case PCIT::MBIN64U: return("MBIN64U");
   case PCIT::MBIN64S: return("MBIN64S");
   case PCIT::MFLT32: return("MFLT32");
   case PCIT::MFLT64: return("MFLT64");
@@ -1897,6 +1956,11 @@ Int32 PCI::getMemoryOperandLength(PCIT::AddressingMode am, Int32 op)
       if (am == PCIT::MPTR32)
         return getOperand(7);
       return 0;
+    case PCIT::ENCODE_MASCII_MBIN8S_IBIN32S:
+    case PCIT::ENCODE_MASCII_MBIN8U_IBIN32S:
+    case PCIT::DECODE_MASCII_MBIN8S_IBIN32S:
+    case PCIT::DECODE_MASCII_MBIN8U_IBIN32S:
+     return 1; 
     case PCIT::ENCODE_MASCII_MBIN16S_IBIN32S:
     case PCIT::ENCODE_MASCII_MBIN16U_IBIN32S:
     case PCIT::DECODE_MASCII_MBIN16S_IBIN32S:

@@ -75,7 +75,7 @@ class LobLoadInfo
   LobLoadInfo(CollHeap * heap)
     : heap_(heap)
   {};
-
+  ~LobLoadInfo(){}
   void setLobLoadEntries(Lng32 num)
   {
   }
@@ -127,7 +127,7 @@ class LOBglobals : public NABasicObject {
       {
 	lobLoadInfo_ = new(heap) LobLoadInfo(heap);
       };
-  
+  ~LOBglobals() { NADELETE(lobLoadInfo_,LobLoadInfo,heap_); lobLoadInfo_=NULL;}
   void* &lobAccessGlobals() { return lobAccessGlobals_; };
   LobLoadInfo * lobLoadInfo() { return lobLoadInfo_; }
 
@@ -233,15 +233,15 @@ public:
 				Int64 uid,  
 				char * outBuf, Lng32 outBufLen);
   static void calculateNewOffsets(ExLobInMemoryDescChunksEntry *dcArray, Lng32 numEntries);
-  static Lng32 compactLobDataFile(void *lobGlob, ExLobInMemoryDescChunksEntry *dcArray, Int32 numEntries, char *tgtLobName, Int64 lobMaxChunkSize, void *lobHeap,char *hdfsServer, Int32 hdfsPort,char *lobLocation);
-  static Int32 restoreLobDataFile(void *lobGlob, char *lobName, void *lobHeap, char *hdfsServer, Int32 hdfsPort,char *lobLocation );
-  static Int32 purgeBackupLobDataFile(void *lobGlob,char *lobName, void *lobHeap, char *hdfsServer, Int32 hdfsPort, char *lobLocation);
+  static Lng32 compactLobDataFile(void *lobGlob, ExLobInMemoryDescChunksEntry *dcArray, Int32 numEntries, char *tgtLobName, Int64 lobMaxChunkSize, void *lobHeap,void *currContext,char *hdfsServer, Int32 hdfsPort,char *lobLocation);
+  static Int32 restoreLobDataFile(void *lobGlob, char *lobName, void *lobHeap, void *currContext,char *hdfsServer, Int32 hdfsPort,char *lobLocation );
+  static Int32 purgeBackupLobDataFile(void *lobGlob,char *lobName, void *lobHeap, void *currContext, char *hdfsServer, Int32 hdfsPort, char *lobLocation);
 
-  static Lng32 createLOB(void * lobGlob, void * lobHeap,
+  static Lng32 createLOB(void * lobGlob, void *currContext,void * lobHeap,
 			 char * lobLoc, Int32 hdfsPort, char *hdfsServer,
 			 Int64 uid, Lng32 lobNum, Int64 lobMAxSize);
 
-  static Lng32 dropLOB(void * lobGlob, void * lobHeap, 
+  static Lng32 dropLOB(void * lobGlob, void *currContext,void * lobHeap, 
 		       char * lobLoc,Int32 hdfsPort, char *hdfsServer,
 		       Int64 uid, Lng32 lobNum);
 
@@ -249,7 +249,7 @@ public:
 			    char * lobLob,
 			    Int64 uid, Lng32 lobNum);
 
-  static Lng32 initLOBglobal(void *& lobGlob, void * heap);
+  static Lng32 initLOBglobal(void *& lobGlob, void * heap, void *currContext,char *server, Int32 port );
 
   // Extracts values from the LOB handle stored at ptr
   static Lng32 extractFromLOBhandle(Int16 *flags,
@@ -388,7 +388,7 @@ protected:
 
   char lobStorageLocation_[1024];
 
-  char lobHdfsServer_[1020];
+  char lobHdfsServer_[512];
   Lng32 lobHdfsPort_;
 
   short descSchNameLen_;

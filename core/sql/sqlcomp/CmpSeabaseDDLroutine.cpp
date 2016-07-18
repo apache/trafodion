@@ -675,7 +675,7 @@ void  CmpSeabaseDDL::alterSeabaseLibrary(StmtDDLAlterLibrary  *alterLibraryNode,
       return;
     }
   usingRoutinesQueue->position();
-  for (size_t i = 0; i < usingRoutinesQueue->numEntries(); i)
+  for (size_t i = 0; i < usingRoutinesQueue->numEntries(); i++)
     { 
       OutputInfo * rou = (OutputInfo*)usingRoutinesQueue->getNext();    
       char * routineName = rou->get(0);

@@ -71,14 +71,14 @@ char* JavaObjectInterface::getErrorText(JOI_RetCode errEnum)
 JavaObjectInterface::~JavaObjectInterface()
 {
   if ((long)javaObj_ != -1)
-      jenv_->DeleteGlobalRef(javaObj_);
+     jenv_->DeleteGlobalRef(javaObj_); 
   javaObj_ = NULL;
   isInitialized_ = FALSE;
 }
  
 void JavaObjectInterface::setJavaObject(jobject jobj) {
   if ((long)javaObj_ != -1)
-      jenv_->DeleteGlobalRef(javaObj_);
+    jenv_->DeleteGlobalRef(javaObj_); 
   javaObj_ = jenv_->NewGlobalRef(jobj);
 }
 

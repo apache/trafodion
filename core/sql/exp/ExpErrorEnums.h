@@ -148,6 +148,7 @@ enum ExeErrorCode
   EXE_FIELD_NUM_OVERFLOW                = 8423,
   EXE_MATH_FUNC_NOT_SUPPORTED           = 8424,
   EXE_DEFAULT_VALUE_ERROR               = 8425,
+  EXE_INVALID_BOOLEAN_VALUE             = 8426,
   EXE_SORT_ERROR                        = 8427,
   EXE_BAD_ARG_TO_MATH_FUNC              = 8428,
   EXE_MAPPED_FUNCTION_ERROR             = 8429,

@@ -190,6 +190,14 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
   switch (get_case_index())
     {
     // EQUAL opcode
+    case EQ_BIN8S_BIN8S:
+      *(Lng32 *)op_data[0] = (*(Int8 *)op_data[1] == *(Int8 *)op_data[2]);
+      break;
+  
+    case EQ_BIN8U_BIN8U:
+      *(Lng32 *)op_data[0] = (*(UInt8 *)op_data[1] == *(UInt8 *)op_data[2]);
+      break;
+  
     case EQ_BIN16S_BIN16S:
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] == *(short *)op_data[2]);
       break;
@@ -272,6 +280,18 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] == *(Int64 *)op_data[2]);
       break;
   
+    case EQ_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] == *(UInt64 *)op_data[2]);
+      break;
+  
+    case EQ_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] == *(Int64 *)op_data[2]);
+      break;
+  
+    case EQ_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] == *(UInt64 *)op_data[2]);
+      break;
+  
   
     case EQ_DECU_DECU:
     case EQ_DECS_DECS:
@@ -305,6 +325,14 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
   
   
     // NOT EQUAL operator
+    case NE_BIN8S_BIN8S:
+      *(Lng32 *)op_data[0] = (*(Int8 *)op_data[1] != *(Int8 *)op_data[2]);
+      break;
+
+    case NE_BIN8U_BIN8U:
+      *(Lng32 *)op_data[0] = (*(UInt8 *)op_data[1] != *(UInt8 *)op_data[2]);
+      break;
+
     case NE_BIN16S_BIN16S:
     	// LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] != *(short *)op_data[2]);
@@ -384,14 +412,21 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       *(Lng32 *)op_data[0] = (*(ULng32 *)op_data[1] != *(ULng32 *)op_data[2]);
       break;
   
-  
-  
     case NE_BIN64S_BIN64S:
-     // LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] != *(Int64 *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
+
+    case NE_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] != *(UInt64 *)op_data[2]);
+      break;
   
+    case NE_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] != *(Int64 *)op_data[2]);
+      break;
+  
+    case NE_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] != *(UInt64 *)op_data[2]);
+      break;
   
     case NE_DECU_DECU:
     case NE_DECS_DECS:
@@ -432,6 +467,14 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
   
   
     // LESS THAN opcode
+    case LT_BIN8S_BIN8S:
+      *(Lng32 *)op_data[0] = (*(Int8 *)op_data[1] < *(Int8 *)op_data[2]);
+      break;
+
+    case LT_BIN8U_BIN8U:
+      *(Lng32 *)op_data[0] = (*(UInt8 *)op_data[1] < *(UInt8 *)op_data[2]);
+      break;
+
     case LT_BIN16S_BIN16S:
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] < *(short *)op_data[2]);
       break;
@@ -510,6 +553,22 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       
     case LT_BIN64S_BIN64S:
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] < *(Int64 *)op_data[2]);
+      break;
+  
+    case LT_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] < *(UInt64 *)op_data[2]);
+      break;
+  
+    case LT_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[2] < 0) ? 0 :
+         (*(UInt64 *)op_data[1] < *(Int64 *)op_data[2]));
+      break;
+  
+    case LT_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[1] < 0) ? 1 :
+         (*(Int64 *)op_data[1] < *(UInt64 *)op_data[2]));
       break;
   
     case LT_DECS_DECS:
@@ -591,6 +650,14 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
   
   
     // LESS THAN OR EQUAL TO opcode
+    case LE_BIN8S_BIN8S:
+      *(Lng32 *)op_data[0] = (*(Int8 *)op_data[1] <= *(Int8 *)op_data[2]);
+      break;
+
+    case LE_BIN8U_BIN8U:
+      *(Lng32 *)op_data[0] = (*(UInt8 *)op_data[1] <= *(UInt8 *)op_data[2]);
+      break;
+
     case LE_BIN16S_BIN16S:
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] <= *(short *)op_data[2]);
       break;
@@ -674,7 +741,22 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] <= *(Int64 *)op_data[2]);
       break;
   
+    case LE_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] <= *(UInt64 *)op_data[2]);
+      break;
   
+    case LE_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[2] < 0) ? 0 :
+         (*(UInt64 *)op_data[1] <= *(Int64 *)op_data[2]));
+      break;
+  
+    case LE_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[1] < 0) ? 1 :
+         (*(Int64 *)op_data[1] <= *(UInt64 *)op_data[2]));
+      break;
+   
    case LE_DECS_DECS:
       {
   	if ((op_data[1][0] & 0200) == 0)
@@ -757,6 +839,14 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
   
   
     // GREATER THAN opcode
+    case GT_BIN8S_BIN8S:
+      *(Lng32 *)op_data[0] = (*(Int8 *)op_data[1] > *(Int8 *)op_data[2]);
+      break;
+
+    case GT_BIN8U_BIN8U:
+      *(Lng32 *)op_data[0] = (*(UInt8 *)op_data[1] > *(UInt8 *)op_data[2]);
+      break;
+
     case GT_BIN16S_BIN16S:
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] > *(short *)op_data[2]);
       break;
@@ -835,6 +925,22 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       
     case GT_BIN64S_BIN64S:
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] > *(Int64 *)op_data[2]);
+      break;
+  
+    case GT_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] > *(UInt64 *)op_data[2]);
+      break;
+  
+    case GT_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[2] < 0) ? 1 :
+         (*(UInt64 *)op_data[1] > *(Int64 *)op_data[2]));
+      break;
+  
+    case GT_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[1] < 0) ? 0 :
+         (*(Int64 *)op_data[1] > *(UInt64 *)op_data[2]));
       break;
   
     case GT_DECS_DECS:
@@ -918,6 +1024,14 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
   
   
     // GREATER THAN OR EQUAL TO
+    case GE_BIN8S_BIN8S:
+      *(Lng32 *)op_data[0] = (*(Int8 *)op_data[1] >= *(Int8 *)op_data[2]);
+      break;
+
+    case GE_BIN8U_BIN8U:
+      *(Lng32 *)op_data[0] = (*(UInt8 *)op_data[1] >= *(UInt8 *)op_data[2]);
+      break;
+
     case GE_BIN16S_BIN16S:
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] >= *(short *)op_data[2]);
       break;
@@ -996,6 +1110,22 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       
     case GE_BIN64S_BIN64S:
       *(Lng32 *)op_data[0] = (*(Int64 *)op_data[1] >= *(Int64 *)op_data[2]);
+      break;
+  
+    case GE_BIN64U_BIN64U:
+      *(Lng32 *)op_data[0] = (*(UInt64 *)op_data[1] >= *(UInt64 *)op_data[2]);
+      break;
+  
+    case GE_BIN64U_BIN64S:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[2] < 0) ? 1 :
+         (*(UInt64 *)op_data[1] >= *(Int64 *)op_data[2]));
+      break;
+  
+    case GE_BIN64S_BIN64U:
+      *(Lng32 *)op_data[0] = 
+        ((*(Int64*)op_data[1] < 0) ? 0 :
+         (*(Int64 *)op_data[1] >= *(UInt64 *)op_data[2]));
       break;
   
     case GE_DECS_DECS:
@@ -1122,6 +1252,19 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
 
        break;
         }
+
+     // boolean comparison
+    case EQ_BOOL_BOOL:
+      {
+        *(Lng32*)op_data[0] = (*(Int8 *)op_data[1] == *(Int8 *)op_data[2]);
+      }
+      break;
+
+    case NE_BOOL_BOOL:
+      {
+        *(Lng32*)op_data[0] = (*(Int8 *)op_data[1] != *(Int8 *)op_data[2]);
+      }
+      break;
 
     case COMP_COMPLEX:
       *(Lng32 *)op_data[0] =

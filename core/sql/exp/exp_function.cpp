@@ -44,6 +44,7 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "NLSConversion.h"
 #include "nawstring.h"
@@ -2498,9 +2499,19 @@ ex_expr::exp_return_type ex_function_converttimestamp::eval(char *op_data[],
                                                         (Int64)  99999999;
   if ((juliantimestamp < minJuliantimestamp) ||
       (juliantimestamp > maxJuliantimestamp)) {
-    ExRaiseFunctionSqlError(heap, diagsArea, EXE_CONVERTTIMESTAMP_ERROR,
-			    derivedFunction(),
-			    origFunctionOperType());
+    char tmpbuf[24];
+    memset(tmpbuf, 0, sizeof(tmpbuf) );
+    sprintf(tmpbuf, "%ld", juliantimestamp);
+
+    ExRaiseSqlError(heap, diagsArea, EXE_CONVERTTIMESTAMP_ERROR);
+    if(*diagsArea)
+      **diagsArea << DgString0(tmpbuf);
+
+    if(derivedFunction())
+    {
+      **diagsArea << DgSqlCode(-EXE_MAPPED_FUNCTION_ERROR);
+       **diagsArea << DgString0(exClauseGetText(origFunctionOperType()));
+    }
     
     return ex_expr::EXPR_ERROR;
   }
@@ -2840,9 +2851,19 @@ ex_expr::exp_return_type ex_function_juliantimestamp::eval(char *op_data[],
   short error;
   juliantimestamp = COMPUTETIMESTAMP(timestamp, &error);
   if (error) {
-    ExRaiseFunctionSqlError(heap, diagsArea, EXE_JULIANTIMESTAMP_ERROR,
-			    derivedFunction(),
-			    origFunctionOperType());
+    char tmpbuf[24];
+    memset(tmpbuf, 0, sizeof(tmpbuf) );
+    sprintf(tmpbuf, "%ld", juliantimestamp);
+
+    ExRaiseSqlError(heap, diagsArea, EXE_JULIANTIMESTAMP_ERROR);
+    if(*diagsArea)
+      **diagsArea << DgString0(tmpbuf);
+
+    if(derivedFunction())
+    {
+      **diagsArea << DgSqlCode(-EXE_MAPPED_FUNCTION_ERROR);
+       **diagsArea << DgString0(exClauseGetText(origFunctionOperType()));
+    }
     
     return ex_expr::EXPR_ERROR;
   }
@@ -2943,13 +2964,6 @@ ex_expr::exp_return_type ex_function_ansi_user::eval(char *op_data[],
 						     CollHeap *heap,
 						     ComDiagsArea** diagsArea)
 {
-#if (defined (__EID))
-  // user function not supported in DP2 process on NSK. It is evaluated
-  // at master exe root tcb and sent down as an input value.
-  ExRaiseSqlError(heap, diagsArea, EXE_USER_FUNCTION_NOT_SUPP);
-  return ex_expr::EXPR_ERROR;
-#endif
-
   const Lng32 MAX_USER_NAME_LEN = ComSqlId::MAX_LDAP_USER_NAME_LEN;
 
   char username[MAX_USER_NAME_LEN + 1];
@@ -2983,14 +2997,6 @@ ex_expr::exp_return_type ex_function_user::eval(char *op_data[],
 						CollHeap *heap,
 						ComDiagsArea** diagsArea)
 {
-#if (defined __EID)
-  // user function not supported in DP2 process on NSK. It is evaluated
-  // at master exe root tcb and sent down as an input value.
-  ExRaiseSqlError(heap, diagsArea, EXE_USER_FUNCTION_NOT_SUPP);
-  return ex_expr::EXPR_ERROR;
-#else
-
-
   Int32 userIDLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
 
   Int64 id64;
@@ -3144,10 +3150,6 @@ ex_expr::exp_return_type ex_function_user::eval(char *op_data[],
   str_cpy_all(op_data[0], userName, userNameLen);
 
   return ex_expr::EXPR_OK;
-
-
-#endif
-
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -3187,6 +3189,7 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
     break;
 
   case REC_BIN8_UNSIGNED:
+  case REC_BOOLEAN:
     *(UInt8*)target = *(UInt8*)source;
     break;
 
@@ -3221,6 +3224,10 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
     //
     *((_int64 *) target) = reversebytes( *((_int64 *) source) );
     target[0] ^= 0200;
+    break;
+
+  case REC_BIN64_UNSIGNED:
+    *((UInt64 *) target) = reversebytes( *((UInt64 *) source) );
     break;
 
   case REC_INT_YEAR:
@@ -4685,6 +4692,7 @@ ex_expr::exp_return_type ExHDPHash::eval(char *op_data[],
       flags = SWAP_FOUR;
       break;
     case REC_BIN64_SIGNED:
+    case REC_BIN64_UNSIGNED:
     case REC_IEEE_FLOAT64:
       flags = SWAP_EIGHT;
       break;
@@ -4807,6 +4815,9 @@ ex_expr::exp_return_type ex_function_mod::eval(char *op_data[],
 
   switch (len1)
     {
+    case 1:
+      op1 = *((Int8 *) op_data[1]);
+      break;
     case 2:
       op1 = *((short *) op_data[1]);
       break;
@@ -4826,6 +4837,9 @@ ex_expr::exp_return_type ex_function_mod::eval(char *op_data[],
 
   switch (len2)
     {
+    case 1:
+      op2 = *((Int8 *) op_data[2]);
+      break;
     case 2:
       op2 = *((short *) op_data[2]);
       break;
@@ -4852,6 +4866,9 @@ ex_expr::exp_return_type ex_function_mod::eval(char *op_data[],
 
   switch (lenr)
     {
+    case 1:
+      *((Int8 *) op_data[0]) = (short) result;
+      break;
     case 2:
       *((short *) op_data[0]) = (short) result;
       break;
@@ -4885,6 +4902,16 @@ ex_expr::exp_return_type ex_function_mask::eval(char *op_data[],
 
   switch (getOperand(0)->getStorageLength())
     {
+    case 1:
+      op1 = *((UInt8 *) op_data[1]);
+      op2 = *((UInt8 *) op_data[2]);
+      if(getOperType() == ITM_MASK_SET) {
+        result = op1 | op2;
+      } else {
+        result = op1 & ~op2;
+      }
+      *((unsigned short *) op_data[0]) = (unsigned short) result;
+      break;
     case 2:
       op1 = *((unsigned short *) op_data[1]);
       op2 = *((unsigned short *) op_data[2]);
@@ -4943,6 +4970,15 @@ ex_expr::exp_return_type ExFunctionShift::eval(char *op_data[],
   ULng32 value, result;
 
   switch (getOperand(0)->getStorageLength()) {
+  case 1:
+    value = *((UInt8 *) op_data[1]);
+    if(getOperType() == ITM_SHIFT_RIGHT) {
+      result = value >> shift;
+    } else {
+      result = value << shift;
+    }
+    *((UInt8 *) op_data[0]) = (UInt8) result;
+    break;
   case 2:
     value = *((unsigned short *) op_data[1]);
     if(getOperType() == ITM_SHIFT_RIGHT) {
@@ -7126,6 +7162,7 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     break;
 
   case REC_BIN8_UNSIGNED:
+  case REC_BOOLEAN:
     *(UInt8*)target = *(UInt8*)source;
     break;
 
@@ -7160,6 +7197,10 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     //
     *((_int64 *) target) = reversebytes( *((_int64 *) source) );
     target[sizeof(_int64)-1] ^= 0200;
+    break;
+
+  case REC_BIN64_UNSIGNED:
+    *((UInt64 *) target) = reversebytes( *((UInt64 *) source) );
     break;
 
   case REC_INT_YEAR:
@@ -7524,6 +7565,10 @@ static Lng32 convAsciiLength(Attributes * attr)
 
     case REC_BIN64_SIGNED:
       d_len = SQL_LARGE_DISPLAY_SIZE + scale_len;
+      break;
+
+    case REC_BIN64_UNSIGNED:
+      d_len = SQL_ULARGE_DISPLAY_SIZE + scale_len;
       break;
 
    case REC_NUM_BIG_UNSIGNED:

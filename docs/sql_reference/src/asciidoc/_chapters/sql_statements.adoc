@@ -4351,7 +4351,7 @@ only trafodion.
 
 IMPORTANT: The GET COMPONENT PRIVILEGES, GET COMPONENTS, GET ROLES FOR USER, and GET USERS FOR ROLE statements work only when
 authentication and authorization are enabled in {project-name}. For more information, see
-http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
+{docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 The GET statement displays delimited object names in their internal format. For example, the GET statement returns the delimited
 name "my ""table""" as my "table".
@@ -4764,7 +4764,7 @@ The GRANT statement grants access privileges on an SQL object to specified users
 
 IMPORTANT: This statement works only when authentication and
 authorization are enabled in {project-name}. For more information, see
-http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
+{docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
 GRANT {privilege [,privilege]... |ALL [PRIVILEGES]} 
@@ -4899,7 +4899,7 @@ The GRANT COMPONENT PRIVILEGE statement grants one or more component privileges 
 GRANT COMPONENT PRIVILEGE is a {project-name} SQL extension.
 
 IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information, see
-http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
+{docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
 GRANT COMPONENT PRIVILEGE {privilege-name [, privilege-name]...} 
@@ -5021,7 +5021,7 @@ GRANT COMPONENT PRIVILEGE CREATE_TABLE ON SQL_OPERATIONS TO sqluser1;
 The GRANT ROLE statement grants one or more roles to a user. See <<roles,Roles>>.
 
 IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information, 
-see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
+{docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
 GRANT ROLE {role-name [,role-name ]...}
@@ -5781,7 +5781,7 @@ REGISTER USER "jsmith@company.com";
 The REVOKE statement revokes access privileges on an SQL object from specified users or roles.
 
 IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information,
-see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
+{docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
 REVOKE [GRANT OPTION FOR]
@@ -5967,7 +5967,7 @@ privileges from a user or role. See <<privileges,Privileges>> and <<roles,Roles>
 REVOKE COMPONENT PRIVILEGE is a {project-name} SQL extension.
 
 IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information,
-see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
+{docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
 REVOKE [GRANT OPTION FOR]
@@ -6059,7 +6059,7 @@ The REVOKE ROLE statement removes one or more roles from a user. See
 <<roles,Roles>>.
 
 IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information,
-see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
+{docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
 REVOKE ROLE {role-name [,role-name]...}

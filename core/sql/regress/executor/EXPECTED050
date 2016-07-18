@@ -135,7 +135,7 @@
 >>set param ?ee e;
 >>select * from T050a where d=?ee;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted.
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 65
 
 *** ERROR[15015] PARAM ?ee (value e) cannot be converted to type NUMERIC(18, 6).
 
@@ -235,7 +235,7 @@ PARAM ?c aa
 PARAM ?d foo
 >>execute x using 77;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted.
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 666f6f
 
 *** ERROR[15015] PARAM ?d (value foo) cannot be converted to type NUMERIC(18, 6).
 

@@ -398,6 +398,25 @@ short BiArithCount::codeGen(Generator * generator)
   return 0;
 }
 
+short UnArith::codeGen(Generator * generator)
+{
+  Attributes ** attr;
+  ExpGenerator * eg = generator->getExpGenerator();
+  
+  if (eg->genItemExpr(this, &attr, (1+getArity()), -1) == 1)
+    return 0;
+
+
+  ex_arith_clause * arith_clause = 
+    new(generator->getSpace()) 
+    ex_arith_clause(getOperatorType(), attr, generator->getSpace(),
+                    0, FALSE);
+  
+  generator->getExpGenerator()->linkClause(this, arith_clause);
+
+  return 0;
+}
+
 void
 markGeneratedEntries(Generator *generator, ItemExpr *item, ValueIdSet &marks)
 {

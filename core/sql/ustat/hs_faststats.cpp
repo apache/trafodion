@@ -211,7 +211,8 @@ template void FastStatsHist<int>::addRowset(Lng32 numRows);
 template void FastStatsHist<unsigned int>::addRowset(Lng32 numRows);
 template void FastStatsHist<short>::addRowset(Lng32 numRows);
 template void FastStatsHist<unsigned short>::addRowset(Lng32 numRows);
-template void FastStatsHist<long>::addRowset(Lng32 numRows);
+template void FastStatsHist<Int64>::addRowset(Lng32 numRows);
+template void FastStatsHist<UInt64>::addRowset(Lng32 numRows);
 template void FastStatsHist<float>::addRowset(Lng32 numRows);
 template void FastStatsHist<double>::addRowset(Lng32 numRows);
 
@@ -221,7 +222,8 @@ template void FastStatsHist<int>::actuate(Lng32);
 template void FastStatsHist<unsigned int>::actuate(Lng32);
 template void FastStatsHist<short>::actuate(Lng32);
 template void FastStatsHist<unsigned short>::actuate(Lng32);
-template void FastStatsHist<long>::actuate(Lng32);
+template void FastStatsHist<Int64>::actuate(Lng32);
+template void FastStatsHist<UInt64>::actuate(Lng32);
 template void FastStatsHist<float>::actuate(Lng32);
 template void FastStatsHist<double>::actuate(Lng32);
 
@@ -231,6 +233,7 @@ template void FSInterval<int>::estimateRowsAndUecs(double, float);
 template void FSInterval<unsigned int>::estimateRowsAndUecs(double, float);
 template void FSInterval<short>::estimateRowsAndUecs(double, float);
 template void FSInterval<unsigned short>::estimateRowsAndUecs(double, float);
-template void FSInterval<long>::estimateRowsAndUecs(double, float);
+template void FSInterval<Int64>::estimateRowsAndUecs(double, float);
+template void FSInterval<UInt64>::estimateRowsAndUecs(double, float);
 template void FSInterval<float>::estimateRowsAndUecs(double, float);
 template void FSInterval<double>::estimateRowsAndUecs(double, float);

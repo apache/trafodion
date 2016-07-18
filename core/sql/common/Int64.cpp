@@ -61,6 +61,10 @@ double convertInt64ToDouble(const Int64 &src)
   return (double) src;
 }
 
+double convertUInt64ToDouble(const UInt64 &src)
+{
+  return (double) src;
+}
 
 Int64 uint32ArrayToInt64(const UInt32 array[2])
 {
@@ -133,6 +137,22 @@ void convertInt64ToAscii(const Int64 &src, char* tgt)
   } while (temp != 0);
   if (src < 0)
     *--s = '-';
+  strcpy(tgt, s);
+}
+
+void convertUInt64ToAscii(const UInt64 &src, char* tgt)
+{
+  UInt64 temp = src;
+  char buffer[21];
+  char *s = &buffer[21];
+  *--s = '\0';
+  do {
+    char c = (char) (temp % 10);
+    if (c < 0)
+      c = -c;
+    *--s = (char)(c + '0');
+    temp /= 10;
+  } while (temp != 0);
   strcpy(tgt, s);
 }
 

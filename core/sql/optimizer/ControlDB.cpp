@@ -1734,7 +1734,7 @@ ExprNode *DecodeShapeSyntax(const NAString &fname,
 	      return NULL;
 	    }
 	  short arg =
-	    *((short *) itm->castToConstValue(dummyNegate)->getConstValue());
+	    itm->castToConstValue(dummyNegate)->getExactNumericValue();
 
 	  if (arg == _SYSTEM_)
 	    {
@@ -2051,13 +2051,13 @@ ExprNode *DecodeShapeSyntax(const NAString &fname,
 		}
 	      else if (nat->getTypeQualifier() == NA_NUMERIC_TYPE)
 		{
-		  if (cv->getStorageSize() != 2)
+		  if (cv->getStorageSize() > 2)
 		    {
 		      *diags << DgSqlCode(-3113) <<
 			DgString0("Number of ESPs (short int) expected.");
 		      return NULL;
 		    }
-		  numOfEsps = *((short *) cv->getConstValue());
+		  numOfEsps = cv->getExactNumericValue();
 		}
 	      else
 		{
@@ -2143,13 +2143,13 @@ ExprNode *DecodeShapeSyntax(const NAString &fname,
 		}
 	      else if (nat->getTypeQualifier() == NA_NUMERIC_TYPE)
 		{
-		  if (cv->getStorageSize() != 2)
+		  if (cv->getStorageSize() > 2)
 		    {
 		      *diags << DgSqlCode(-3113) <<
 			DgString0("Number of ESPs (short int) expected.");
 		      return NULL;
 		    }
-		  numOfEsps = *((short *) cv->getConstValue());
+		  numOfEsps = cv->getExactNumericValue();
 		}
 	      else
 		{

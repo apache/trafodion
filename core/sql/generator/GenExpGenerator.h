@@ -892,6 +892,9 @@ public:
   ItemExpr * matchScalesNoCast(const ValueId & source, 
 			       const NAType & targetType);
 
+  // if Cast from/to is not supported, convert to supported datatype.
+  short handleUnsupportedCast(Cast * castNode);
+
   // if the source is an interval, this function returns an expr
   // tree to convert the source type to numeric.
   ItemExpr * convertIntervalToNumeric(const ValueId & source);

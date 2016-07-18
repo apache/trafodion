@@ -250,4 +250,36 @@ public:
 private:
 };
 
+class UnArith : public ItemExpr
+{
+  // ITM_NEGATE. Used with negation of boolean native datatype
+public:
+  UnArith(ItemExpr *child0 = NULL)
+       : ItemExpr(ITM_NEGATE,child0,NULL)
+  {
+  }
+
+  // get the degree of this node (it is a binary op).
+  virtual Int32 getArity() const { return 1;}
+
+  // get a printable string that identifies the operator
+  const NAString getText() const { return '!'; }
+
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = NULL);
+
+  // a virtual function for performing name binding within the query tree
+  virtual ItemExpr *bindNode(BindWA *bindWA);
+
+  // a virtual function for type propagating the node
+  virtual const NAType * synthesizeType();
+
+  // method to do code generation
+  ItemExpr * preCodeGen(Generator*);
+  short codeGen(Generator*);
+
+private:
+};
+
+
 #endif /* ITEMARITH_H */

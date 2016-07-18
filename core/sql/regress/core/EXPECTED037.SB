@@ -465,10 +465,8 @@ SELECT BIT_LENGTH BIT_LENGTH from (values(0)) BIT_LENGTH(BIT_LENGTH);
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>-- Expect error [3128]
+>>-- Expect error [15001]
 >>prepare s1 from SELECT BOOLEAN BOOLEAN from (values(0)) BOOLEAN(BOOLEAN);
-
-*** ERROR[3128] BOOLEAN is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
 
 *** ERROR[15001] A syntax error occurred at or before: 
 SELECT BOOLEAN BOOLEAN from (values(0)) BOOLEAN(BOOLEAN);
