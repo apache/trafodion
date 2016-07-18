@@ -13381,6 +13381,7 @@ ignore_ms4_hints : identifier '(' NUMERIC_LITERAL_EXACT_NO_SCALE  ')'
                           | identifier 
                                { $$ = NULL; }
 
+/* type relx */
 query_specification :select_token set_quantifier query_spec_body 
     { 
        if ($2) {
@@ -13407,32 +13408,6 @@ query_specification :select_token set_quantifier query_spec_body
 
     }
 
-/* type relx */
-query_specification :with_clause select_token set_quantifier query_spec_body 
-     {
-       if ($3) {
-         $$ = new (PARSERHEAP())
-           RelRoot(new (PARSERHEAP())
-                   GroupByAgg($4
-                              ,REL_GROUPBY
-                              ,new (PARSERHEAP())
-                              ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP()))
-                                        )
-                         );
-	   assert($4->getOperatorType() == REL_ROOT);
-	   RelRoot *root1 = (RelRoot *) $$;
-	   RelRoot *root2 = (RelRoot *) $4;
-	   root1->assignmentStTree() = root2->assignmentStTree();
-	   root2->assignmentStTree() = NULL;
-	   }
-       else
-         $$ = $4;
-         
-       if (CmpCommon::getDefault(MVQR_LOG_QUERY_DESCRIPTORS) == DF_DUMP ||
-           CmpCommon::getDefault(MVQR_LOG_QUERY_DESCRIPTORS) == DF_DUMP_MV)
-         ((RelRoot*)$$)->setAnalyzeOnly();
-     }
-
 query_specification : exe_util_maintain_object 
                                 {
 				  RelRoot *root = new (PARSERHEAP())
@@ -13456,6 +13431,7 @@ query_specification : exe_util_get_lob_info
 				  RelRoot *root = new (PARSERHEAP())
 				    RelRoot($1, REL_ROOT);
                                 }
+/* type relx */
 query_specification : select_token '[' firstn_sorted NUMERIC_LITERAL_EXACT_NO_SCALE ']' set_quantifier query_spec_body
 	{
 	  if ($6) {
@@ -13504,55 +13480,6 @@ query_specification : select_token '[' firstn_sorted NUMERIC_LITERAL_EXACT_NO_SC
               CmpCommon::getDefault(MVQR_LOG_QUERY_DESCRIPTORS) == DF_DUMP_MV)
             ((RelRoot*)$$)->setAnalyzeOnly();
            } 
-/* type relx */
-query_specification : with_clause select_token '[' firstn_sorted NUMERIC_LITERAL_EXACT_NO_SCALE ']' set_quantifier query_spec_body
-	{
-	  if ($7) {
-	    $$ = new (PARSERHEAP())
-	      RelRoot(new (PARSERHEAP())
-		      GroupByAgg($8
-				 ,REL_GROUPBY
-				 ,new (PARSERHEAP())
-				 ColReference(new (PARSERHEAP()) 
-					      ColRefName(TRUE, PARSERHEAP())))
-		      );
-	   assert($8->getOperatorType() == REL_ROOT);
-	   RelRoot *root1 = (RelRoot *) $$;
-	   RelRoot *root2 = (RelRoot *) $8;
-	   root1->assignmentStTree() = root2->assignmentStTree();
-	   root2->assignmentStTree() = NULL;
-	   }
-	  else
-	    $$ = $8;
-
-	  assert($$->getOperatorType() == REL_ROOT);
-	  
-	  RelRoot * rootNode = (RelRoot *)$$;
-	  Int64 numRows = atoInt64($5->data());
-	  if (($4 == TOK_LAST) && 
-	      ((numRows < 0) || (numRows > 1)))
-	    {
-	      yyerror("Number of rows must be 0 or 1 with LAST option. \n");
-	      YYERROR;
-	    }
-
-	  if ($4 == TOK_LAST)
-	    {
-	      // last 0 is -2.  last 1 is -3.
-	      rootNode->setFirstNRows((numRows == 0) ? -2 : -3);
-	    }
-	  else
-	    {
-	      rootNode->setFirstNRows(numRows);
-	    }
-
-	  rootNode->needFirstSortedRows() = (($4 == TOK_FIRST) ? TRUE : FALSE);
-	  delete $5;
-         
-          if (CmpCommon::getDefault(MVQR_LOG_QUERY_DESCRIPTORS) == DF_DUMP ||
-              CmpCommon::getDefault(MVQR_LOG_QUERY_DESCRIPTORS) == DF_DUMP_MV)
-            ((RelRoot*)$$)->setAnalyzeOnly();
-	}
 
 /* type tokval */
 firstn_sorted : TOK_ANY    {$$ = TOK_ANY;}
@@ -14817,6 +14744,11 @@ optional_limit_spec : TOK_LIMIT NUMERIC_LITERAL_EXACT_NO_SCALE
 		   }
 
 dml_statement : dml_query { $$ = $1; }
+
+               | with_clause dml_query
+                 {
+                   $$ = $2;  
+                 }
 
 	       | front_of_insert_with_rwrs   rowwise_rowset_info Rest_Of_insert_statement 
 		    {
