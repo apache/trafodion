@@ -62,8 +62,26 @@ const char *MessageTypeString( MSGTYPE type )
         case MsgType_Event:
             str = "MsgType_Event";
             break;
+        case MsgType_NodeAdded:
+            str = "MsgType_NodeAdded";
+            break;
+        case MsgType_NodeDeleted:
+            str = "MsgType_NodeDeleted";
+            break;
         case MsgType_NodeDown:
             str = "MsgType_NodeDown";
+            break;
+        case MsgType_NodeJoining:
+            str = "MsgType_NodeJoining";
+            break;
+        case MsgType_NodePrepare:
+            str = "MsgType_NodePrepare";
+            break;
+        case MsgType_NodeQuiesce:
+            str = "MsgType_NodeQuiesce";
+            break;
+        case MsgType_NodeUp:
+            str = "MsgType_NodeUp";
             break;
         case MsgType_Open:
             str = "MsgType_Open";
@@ -74,11 +92,17 @@ const char *MessageTypeString( MSGTYPE type )
         case MsgType_ProcessDeath:
             str = "MsgType_ProcessDeath";
             break;
-        case MsgType_Service:
-            str = "MsgType_Service";
+        case MsgType_ReintegrationError:
+            str = "MsgType_ReintegrationError";
             break;
         case MsgType_Shutdown:
             str = "MsgType_Shutdown";
+            break;
+        case MsgType_SpareUp:
+            str = "MsgType_SpareUp";
+            break;
+        case MsgType_TmRestarted:
+            str = "MsgType_TmRestarted";
             break;
         case MsgType_TmSyncAbort:
             str = "MsgType_TmSyncAbort";

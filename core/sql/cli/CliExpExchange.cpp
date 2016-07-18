@@ -1111,7 +1111,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
 	  if (getenv("DISABLE_ROWWISE_ROWSET"))
 	    output_desc->setRowwiseRowsetDisabled(TRUE);
 #endif
-	    
+
 	  setupBulkMoveInfo(output_desc, heap, FALSE /* output desc*/, flags);
 	  if (
 	      // rowwise rowsets V1 are only supported if bulk move
@@ -1147,6 +1147,8 @@ InputOutputExpr::outputValues(atp_struct *atp,
 	    } // rowwise rowset
 	}
       
+
+
       if (NOT output_desc->bulkMoveDisabled())
 	{
 	  // bulk move is enabled and setup has been done.
@@ -4240,6 +4242,31 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	        operand->getHVRowsetLocalSize()) {
               short targetType = operand->getDatatype();
               switch (targetType) {
+              case REC_BIN8_SIGNED :
+                if (*((Int8 *) target) <= 0) {
+                  //raise error
+                  ExRaiseSqlError(heap, &diagsArea, EXE_ROWSET_NEGATIVE_SIZE);
+		  if (diagsArea != atp->getDiagsArea()) 
+		    atp->setDiagsArea(diagsArea);	    
+                  return ex_expr::EXPR_ERROR;
+                }
+                else {
+		  dynamicRowsetSize = *((Int8 *) target);
+		  break;
+                }
+              case REC_BIN8_UNSIGNED :
+                if (*((UInt8 *) target) == 0) {
+                  //raise error
+                  ExRaiseSqlError(heap, &diagsArea, EXE_ROWSET_NEGATIVE_SIZE);
+		  if (diagsArea != atp->getDiagsArea()) 
+		    atp->setDiagsArea(diagsArea);	    
+                  return ex_expr::EXPR_ERROR;
+                }
+                else {
+		  dynamicRowsetSize = *((UInt8 *) target);
+		  break;
+                }
+		
               case REC_BIN16_SIGNED :
                 if (*((short *) target) <= 0) {
                   //raise error

@@ -148,8 +148,6 @@ Generator::Generator(CmpContext* currentCmpContext) :
 
   tempSpace_ = NULL;
 
-  downrevCompileMXV_ = COM_VERS_CURR_PLAN;
-
   numBMOs_ = 0;
   totalNumBMOsPerCPU_ = 0;
 
@@ -346,15 +344,7 @@ void Generator::initTdbFields(ComTdb *tdb)
 
   tdb->setTdbId(getAndIncTdbId());
 
-  // set plan version to R2, if downrev compile needed.
-  // After R2.1 or whenever full versioning support is added,
-  // the next 3 lines should be removed.
-  if (downrevCompileNeeded())
-    {
-      tdb->setPlanVersion(getDownrevCompileMXV());
-    }
-  else   
-    tdb->setPlanVersion(ComVersion_GetCurrentPlanVersion());
+  tdb->setPlanVersion(ComVersion_GetCurrentPlanVersion());
     
   if (computeStats())
     {
@@ -491,11 +481,6 @@ RelExpr * Generator::preGenCode(RelExpr * expr_node)
 #endif
 
   setUpdatableSelect(((RelRoot *)expr_node)->updatableSelect());
-
-  if (((RelRoot *)expr_node)->downrevCompileNeeded())
-    {
-      setDownrevCompileMXV(((RelRoot *)expr_node)->getDownrevCompileMXV());
-    }
 
   // see if aqr could be done
   NABoolean aqr = FALSE;
@@ -1874,7 +1859,8 @@ desc_struct * Generator::createVirtualTableDesc(
       strcpy(table_desc->body.table_desc.all_col_fams, tableInfo->allColFams);
     }
 
-  table_desc->body.table_desc.tableFlags = (tableInfo ? tableInfo->objectFlags : 0);
+  table_desc->body.table_desc.objectFlags = (tableInfo ? tableInfo->objectFlags : 0);
+  table_desc->body.table_desc.tablesFlags = (tableInfo ? tableInfo->tablesFlags : 0);
 
   desc_struct * files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
   //  files_desc->body.files_desc.audit = -1; // audited table

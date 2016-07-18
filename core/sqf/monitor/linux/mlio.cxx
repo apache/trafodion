@@ -646,7 +646,7 @@ void SQ_LocalIOToClient::handleSSMPNotices()
     CLNode *lnode = MyNode->GetFirstLNode();
     struct message_def *notice;
     SharedMsgDef *msg;
-    for ( ; lnode ; lnode = lnode->GetNext() )
+    for ( ; lnode ; lnode = lnode->GetNextP() )
     {
         ssmProc = lnode->GetSSMProc();
         if ( ssmProc )
@@ -1161,7 +1161,7 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
   {
     // It's a real cluster
     nidBase = 0;
-    nodes = Monitor->NumNodes;
+    nodes = Monitor->GetConfigPNodesCount();
   }
 
   ptr = getenv( "SQ_LIO_MAX_BUFFERS" );

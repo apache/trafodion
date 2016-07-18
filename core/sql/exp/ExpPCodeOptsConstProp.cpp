@@ -1825,6 +1825,12 @@ Int64 PCodeCfg::getIntConstValue(PCodeOperand* op)
     case PCIT::MBIN8:
       value = (Int64)*((UInt8*)(constPtr->getData()));
       break;
+    case PCIT::MBIN8S:
+      value = (Int64)*((Int8*)(constPtr->getData()));
+      break;
+    case PCIT::MBIN8U:
+      value = (Int64)*((UInt8*)(constPtr->getData()));
+      break;
     case PCIT::MBIN16S:
       value = (Int64)*((Int16*)(constPtr->getData()));
       break;
@@ -2136,7 +2142,7 @@ PCodeInst* PCodeCfg::constantFold(PCodeInst* inst, NABoolean rDefsAvailable)
         Int64 value = getIntConstValue(op2);
         Int32 tgtLen = inst->getWOps()[0]->getLen();
         char* result = (char*) new(heap_) char[tgtLen];
-        BigNumHelper::ConvInt64ToBigNumWithSignHelper(tgtLen, value, result);
+        BigNumHelper::ConvInt64ToBigNumWithSignHelper(tgtLen, value, result, FALSE);
 
         off = addConstant((void*)result, tgtLen,inst->getWOps()[0]->getAlign());
 

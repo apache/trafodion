@@ -56,14 +56,16 @@
 #define MAX_ARGS         60
 #define MAX_ARG_SIZE     256
 
-#define MAX_CORES        64    // Current logic supports Linux limit of 1024
+#define MAX_CORES        256   // Current logic supports Linux limit of 1024
                                // NOTE: Increase with caution as this number
-                               // is also used to gather CPU statistics and
-                               // a large number may degrade performance
+                               //  is also used to gather local CPU statistics
+                               //  and a large number may degrade performance
 #define MAX_NODES        256   // This can be higher when needed and will
                                // have performance implications
                                // Increment by 64 to match node state bitmask
-#define MAX_LNODES       (MAX_NODES*4)  // The 4 is a per physical node limit
+#define MAX_LNODES_PER_NODE 1  // The 1 is a per physical node limit 
+                               // (it can be more, but it is not currently used)
+#define MAX_LNODES       (MAX_NODES*MAX_LNODES_PER_NODE)  
 #define MAX_NODE_BITMASK  64   // A 64 bit mask, each bit represent pnid state
                                // 0 = down, 1 = up
 #define MAX_NODE_MASKS   (MAX_NODES/MAX_NODE_BITMASK) // Node bit mask array size

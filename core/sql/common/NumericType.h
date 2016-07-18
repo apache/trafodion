@@ -49,6 +49,7 @@
 // -----------------------------------------------------------------------
 class NumericType;
 class SQLBPInt;
+class SQLTiny;
 class SQLSmall;
 class SQLInt;
 class SQLLargeInt;
@@ -59,11 +60,9 @@ class SQLBigNum;
 class SQLFloat;
 class SQLReal;
 class SQLDoublePrecision;
-class SQLRealTdm;
-class SQLDoublePrecisionTdm;
-
 
 extern  NAString LiteralInteger;
+extern  NAString LiteralTinyInt;
 extern  NAString LiteralSmallInt;
 extern  NAString LiteralBPInt;
 extern  NAString LiteralLargeInt;
@@ -121,9 +120,7 @@ public:
   NABoolean isBigNum() const { return qualifier_ == SQLBigNum_TYPE;}
   NABoolean isInternalType() const { return (isBigNum()); }
  
-  NABoolean supportsSign () const  {return (isExact () &&
-					    SQLLarge_TYPE != qualifier_ );
-  }
+  NABoolean supportsSign () const  {return isExact(); }
 
   // ---------------------------------------------------------------------
   // Accessor functions for the precision, magnitude, scale and unsigned
@@ -277,6 +274,7 @@ private:
     MIN_NUMERIC_TYPE,
     MIN_EXACT_NUMERIC_TYPE,
     SQLBPInt_TYPE,
+    SQLTiny_TYPE,
     SQLSmall_TYPE,
     SQLInt_TYPE,
     SQLNumeric_TYPE,
@@ -289,8 +287,6 @@ private:
     SQLReal_TYPE,
     SQLFloat_TYPE,
     SQLDoublePrecision_TYPE,
-    SQLRealTdm_TYPE,
-    SQLDoublePrecisionTdm_TYPE,
     MAX_APPROX_NUMERIC_TYPE,
     MAX_NUMERIC_TYPE
   };
@@ -442,6 +438,99 @@ private:
   UInt32 declaredSize_;   // declared size in bits 
   
 }; // class SQLBPInt
+
+// ***********************************************************************
+//
+//  SQLTiny : SQL TINY
+//
+// ***********************************************************************
+class SQLTiny : public NumericType
+{
+public:
+  // ---------------------------------------------------------------------
+  // Constructor functions
+  // ---------------------------------------------------------------------
+  SQLTiny (NABoolean allowNegValues = TRUE, 
+           NABoolean allowSQLnull = TRUE,
+           CollHeap * heap =0);
+  
+   short getFSDatatype() const
+    {
+      if (isUnsigned())
+	return REC_BIN8_UNSIGNED;
+      else
+	return REC_BIN8_SIGNED;
+    }
+
+  NABoolean roundTripConversionToDouble() const { return TRUE; };
+
+  virtual Lng32 getMagnitude() const { return isUnsigned() ? 28 : 25; }
+
+  virtual double getMaxValue() const { return isUnsigned() ?  255 : 127; }
+
+  virtual double getMinValue() const { return isUnsigned() ?  0 : -127; }
+
+  virtual NABoolean shouldCheckValueFitInType() const { return TRUE; }
+
+  // ---------------------------------------------------------------------
+  // Does this data type use decimal or binary precision?
+  // ---------------------------------------------------------------------
+   NABoolean decimalPrecision() const { return FALSE; }
+
+   NABoolean binaryPrecision() const { return TRUE; }
+  
+  virtual void makeUnsigned() 
+  { 
+    setPrecision(SQL_UTINY_PRECISION);
+    NumericType::makeUnsigned();
+  }
+
+  virtual void makeSigned() 
+  { 
+    setPrecision(SQL_TINY_PRECISION);
+    NumericType::makeSigned();
+  }
+
+  // ---------------------------------------------------------------------
+  // Methods that return the binary form of the minimum and the maximum
+  // representable values.
+  // ---------------------------------------------------------------------
+  void minRepresentableValue(void* bufPtr, Lng32* bufLen, 
+			     NAString ** stringLiteral = NULL,
+			     CollHeap* h=0) const;
+  void maxRepresentableValue(void* bufPtr, Lng32* bufLen,
+			     NAString ** stringLiteral = NULL,
+			     CollHeap* h=0) const;
+
+  NAString* convertToString(double v, CollHeap* h=0) const;
+
+  // ---------------------------------------------------------------------
+  // Method that returns the encoded form for a given value to be
+  // used by the optimizer for estimations.
+  // ---------------------------------------------------------------------
+  virtual double encode (void* bufPtr) const;
+
+  // ---------------------------------------------------------------------
+  // A virtual function to return a copy of the type.
+  // ---------------------------------------------------------------------
+  virtual NAType *newCopy(CollHeap* h=0) const
+  {
+    return new(h) SQLTiny(!isUnsigned()
+                          ,supportsSQLnull(),h
+                          );
+  }
+
+  virtual double getNormalizedValue(void* buf) const 
+  {
+    if (isUnsigned())
+      return  (double)(*(unsigned char *)buf);
+    else
+      return  (double)(*(char *)buf);
+  };
+
+private:
+  
+}; // class SQLTiny
 
 // ***********************************************************************
 //
@@ -654,16 +743,25 @@ public:
 
   short getFSDatatype() const
     {
-      return REC_BIN64_SIGNED;
+      if (isUnsigned())
+        return REC_BIN64_UNSIGNED;
+      else
+        return REC_BIN64_SIGNED;
     }
 
-  virtual Lng32 getMagnitude() const { return 189; }
+  virtual Lng32 getMagnitude() const 
+  { return (isUnsigned() ? 195 : 189); }
 
-  virtual double getMaxValue() const { return 9.2233720368547e+18; } 
-  // 2**63-1=9223372036854775807, use the above number to avoid a
-  // larger number passes the comparison checking after rounding
+  virtual double getMaxValue() const 
+  { 
+    return
+      (isUnsigned() ? 18446744073709551615ULL : 9223372036854775807ULL); 
+  } 
 
-  virtual double getMinValue() const { return -9.2233720368547e+18; } 
+  virtual double getMinValue() const 
+  { 
+    return (isUnsigned() ? 0 : -9.2233720368547e+18);
+  }
 
   virtual NABoolean shouldCheckValueFitInType() const { return TRUE; }
 
@@ -811,22 +909,29 @@ public:
     {
       if (isUnsigned())
 	{
-	  if (getNominalSize() == sizeof(short))
-	    return REC_BIN16_UNSIGNED;
+	  if (getNominalSize() == sizeof(UInt8))
+	    return REC_BIN8_UNSIGNED;
 	  else
-	    if (getNominalSize() == sizeof(Lng32))
-	      return REC_BIN32_UNSIGNED;
-	    else return REC_BIN64_SIGNED;
+            if (getNominalSize() == sizeof(short))
+              return REC_BIN16_UNSIGNED;
+            else
+              if (getNominalSize() == sizeof(Lng32))
+                return REC_BIN32_UNSIGNED;
+              else 
+                return REC_BIN64_UNSIGNED;
 	}
       else
 	{
-	  if (getNominalSize() == sizeof(short))
-	    return REC_BIN16_SIGNED;
+	  if (getNominalSize() == sizeof(Int8))
+	    return REC_BIN8_SIGNED;
 	  else
-	    if (getNominalSize() == sizeof(Lng32))
-	      return REC_BIN32_SIGNED;
-	    else
-	      return REC_BIN64_SIGNED;
+            if (getNominalSize() == sizeof(short))
+              return REC_BIN16_SIGNED;
+            else
+              if (getNominalSize() == sizeof(Lng32))
+                return REC_BIN32_SIGNED;
+              else
+                return REC_BIN64_SIGNED;
 	}
       
     }
@@ -1360,100 +1465,6 @@ private:
   NABoolean fromFloat_;
   Lng32 origPrecision_;
 }; // class SQLDoublePrecision
-
-
-// ***********************************************************************
-//
-//  SQLRealTdm : SQL REAL in TANDEM format
-//
-// ***********************************************************************
-class SQLRealTdm : public SQLFloat
-{
-public:
-  // ---------------------------------------------------------------------
-  // Constructor functions
-  // ---------------------------------------------------------------------
-   SQLRealTdm (NABoolean allowSQLnull = TRUE,CollHeap * heap = 0,
-		     Lng32 precision = SQL_REAL_PRECISION)
-  : SQLFloat(allowSQLnull, SQL_REAL_SIZE, precision, "REAL TDM",heap)
-  {}
-
-  // sqlparser.y calls the above constructor with zero precision. This can
-  // mislead callers of getPrecision() into thinking type REAL
-  // has zero precision. The true precision of type REAL is
-  // SQL_REAL_PRECISION.
-  virtual Lng32 getTruePrecision() const { return SQL_REAL_PRECISION; }  
-
-   short getFSDatatype() const { return REC_TDM_FLOAT32; }
-
-   NABoolean isExternalType() const 
-    {
-      return TRUE;
-    }
-
-   NAType * equivalentType(CollHeap* h=0) const
-    {
-      return new(h) SQLDoublePrecision(supportsSQLnull(), h,
-				       getPrecision());
-    }
-
-  // ---------------------------------------------------------------------
-  // A virtual function to return a copy of the type.
-  // ---------------------------------------------------------------------
-  virtual NAType *newCopy(CollHeap* h=0) const 
-    { return new(h) SQLRealTdm(supportsSQLnull(),h,getPrecision()); }
-
-private:
-  
-}; // class SQLRealTdm
-
-// ***********************************************************************
-//
-//  SQLDoublePrecisionTdm : SQL DOUBLE PRECISION in Tandem format
-//
-// ***********************************************************************
-class SQLDoublePrecisionTdm : public SQLFloat
-{
-public:
-  // ---------------------------------------------------------------------
-  // Constructor functions
-  // --------------------------------------------------------------------- 
-   SQLDoublePrecisionTdm (NABoolean allowSQLnull = TRUE,CollHeap * heap =0,
-				Lng32 precision = SQL_DOUBLE_PRECISION)
-  : SQLFloat(allowSQLnull, SQL_DOUBLE_PRECISION_SIZE, 
-	     precision, "DOUBLE PRECISION TDM",heap)
-  {}
-
-  // sqlparser.y calls the above constructor with zero precision. This can
-  // mislead callers of getPrecision() into thinking type DOUBLE PRECISION
-  // has zero precision. The true precision of type DOUBLE PRECISION is
-  // SQL_DOUBLE_PRECISION.
-  virtual Lng32 getTruePrecision() const { return SQL_DOUBLE_PRECISION; }  
-
-  short getFSDatatype() const { return REC_TDM_FLOAT64; }
-
-  NABoolean isExternalType() const
-    {
-      return TRUE;
-    }
-
-  NAType * equivalentType(CollHeap* h=0) const
-    {
-      return new(h) SQLDoublePrecision(supportsSQLnull(), h,
-				       getPrecision());
-    }
-
-  // ---------------------------------------------------------------------
-  // A virtual function to return a copy of the type.
-  // ---------------------------------------------------------------------
-  virtual NAType *newCopy(CollHeap* h=0) const
-  {
-    return new(h) SQLDoublePrecisionTdm(supportsSQLnull(),h,getPrecision());
-  }
-
-private:
-  
-}; // class SQLDoublePrecisionTdm
 
 
 #endif /* NUMERICTYPE_H */

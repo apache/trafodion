@@ -49,7 +49,6 @@
 #include "Globals.h"
 #include <seabed/ms.h>
 #include <seabed/fs.h>
-
 #ifdef LOB_DEBUG_STANDALONE
 #define Int64 long long
 #define Lng32 long
@@ -430,7 +429,7 @@ class ExLob
     bool hasNoOpenCursors() { return lobCursors_.empty(); }
   Ex_Lob_Error openCursor(char *handleIn, Int32 handleInLen,Int64 transId);
     Ex_Lob_Error openDataCursor(char *fileName, LobsCursorType type, Int64 range, 
-                                Int64 bytesLeft, Int64 bufMaxSize, Int64 prefetch, ExLobGlobals *lobGlobals);
+                                Int64 bytesLeft, Int64 bufMaxSize, Int64 prefetch, ExLobGlobals *lobGlobals, Int32 *hdfsDetailError = NULL);
     Ex_Lob_Error deleteCursor(char *cursorName, ExLobGlobals *lobGlobals);
   Ex_Lob_Error fetchCursor(char *handleIn, Int32 handleLenIn, Int64 &outOffset, Int64 &outSize,NABoolean &isEOD,Int64 transId);
   Ex_Lob_Error insertData(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize,char *handleIn,Int32 handleInLen, char *blackBox, Int32 blackBoxLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
@@ -494,33 +493,37 @@ class ExLob
        Int64  modTS,
        Lng32  numOfPartLevels);
 
-  Ex_Lob_Error emptyDirectory();
+  Ex_Lob_Error emptyDirectory(char* dirPath, ExLobGlobals* lobGlobals);
+
   ExLobStats *getStats() { return &stats_; }
   NAHeap *getLobGlobalHeap() { return lobGlobalHeap_;}
-  ExLobRequest *getRequest() { return &request_; }
+
+  //    ExLobRequest *getRequest() { return &request_; }
   
   //The next 2 functions are not active at this point. They serve as an example
   //on how to send requests across to the mxlobsrvr process from the master 
   //process
   Ex_Lob_Error getDesc(ExLobRequest *request);
   Ex_Lob_Error sendReqToLobServer() ;
+
   public:
 
     char lobDataFile_[MAX_LOB_FILE_NAME_LEN];
     lobCursors_t lobCursors_;
     ExLobLock lobCursorLock_;
     LobsStorage storage_;
-    string dir_; // lob data directory
+    string lobStorageLocation_; // lob data directory
     char *hdfsServer_;
     Int64 hdfsPort_;
-    char *lobLocation_;
     hdfsFS fs_;
     hdfsFile fdData_;
     int openFlags_;
     ExLobStats stats_;
     bool prefetchQueued_;
     NAHeap *lobGlobalHeap_;
+#ifdef __ignore
     ExLobRequest request_;
+#endif
     NABoolean lobTrace_;
 };
 
@@ -534,8 +537,9 @@ typedef map<string, ExLob *>::iterator lobMap_it;
 class ExLobHdfsRequest
 {
   public:
-
+#ifdef __ignore
     ExLobHdfsRequest(LobsHdfsRequestType reqType, hdfsFS fs, hdfsFile file, char *buffer, int size);
+#endif
     ExLobHdfsRequest(LobsHdfsRequestType reqType, ExLobCursor *cursor);
     ExLobHdfsRequest(LobsHdfsRequestType reqType, ExLob *lobPtr, ExLobCursor *cursor);
     ExLobHdfsRequest(LobsHdfsRequestType reqType);
@@ -547,8 +551,6 @@ class ExLobHdfsRequest
     LobsHdfsRequestType reqType_;
     ExLob *lobPtr_;
     ExLobCursor *cursor_;
-    hdfsFS fs_;
-    hdfsFile file_; 
     char *buffer_;
     int size_;
     Ex_Lob_Error error_;

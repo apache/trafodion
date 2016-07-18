@@ -83,6 +83,8 @@ int NumNodes = 0;
 int NumLNodes = 0;
 int CurNodes = 0;
 int NumDown = 0;
+int PNodesConfigMax = 0;
+int LNodesConfigMax = 0;
 bool Debug = false;
 int  Measure = 0;
 bool Attached = false;
@@ -94,7 +96,7 @@ bool Slave = false;
 bool NodeState[MAX_NODES];
 bool MpiInitialized = false;
 bool SpareNodeColdStandby = true;
-bool ElasticityEnabled = false;
+bool ElasticityEnabled = true;
 
 bool  waitDeathPending = false;
 int   waitDeathNid;
@@ -141,6 +143,7 @@ bool  get_more_proc_info(PROCESSTYPE process_type, bool allNodes);
 bool  get_zone_state( int &nid, int &zid , char *node_name, int &pnid, STATE &state );
 void  interrupt_handler(int signal, siginfo_t *info, void *);
 bool  isNumeric( char * str );
+bool  load_configuration( void );
 void  node_add_cmd( char *cmd, char delimiter );
 void  node_config_cmd( char *cmd );
 void  node_delete_cmd( char *cmd );
@@ -462,6 +465,12 @@ bool init_pnode_map( void )
     CPhysicalNode  *physicalNode;
     pair<PhysicalNodeNameMap_t::iterator, bool> pnmit;
 
+    // Make sure it's empty
+    if ( !PhysicalNodeMap.empty() )
+    {
+        PhysicalNodeMap.clear();
+    }
+    
     pnodeConfig = ClusterConfig.GetFirstPNodeConfig();
     for ( ; pnodeConfig; pnodeConfig = pnodeConfig->GetNext() )
     {
@@ -494,6 +503,12 @@ bool get_pnode_state( const char *name, NodeState_t &state )
     CPhysicalNode  *physicalNode;
     PhysicalNodeNameMap_t::iterator it;
 
+    if ( strlen(name) == 0 )
+    {
+        state = StateDown;
+        return( false );
+    }
+    
     char pnodename[MPI_MAX_PROCESSOR_NAME];
     strncpy(pnodename, name, MPI_MAX_PROCESSOR_NAME);
     pnodename[MPI_MAX_PROCESSOR_NAME-1] = '\0';
@@ -567,43 +582,45 @@ bool update_cluster_state( bool displayState, bool checkSpareColdStandby = true 
     NumDown = 0;
 
     NodeState_t nodeState;
-    CPNodeConfig *pnodeConfig;
-    for( int i=0; i<NumNodes; i++)
+    CPNodeConfig *pnodeConfig = ClusterConfig.GetFirstPNodeConfig();
+    if ( pnodeConfig )
     {
-        if ( get_pnode_state( PNode[i], nodeState ) )
+        while ( pnodeConfig )
         {
-            if ( nodeState == StateUp )
+            if ( get_pnode_state( PNode[pnodeConfig->GetPNid()], nodeState ) )
             {
-                if ( checkSpareColdStandby && SpareNodeColdStandby )
+                if ( nodeState == StateUp )
                 {
-                    pnodeConfig = ClusterConfig.GetPNodeConfig( i );
-                    assert( pnodeConfig );
-                    if ( pnodeConfig  && pnodeConfig->IsSpareNode() )
+                    if ( checkSpareColdStandby && SpareNodeColdStandby )
                     {
-                        ++NumDown;
-                        NodeState[i] = false;
-                        nodeState = StateDown;
-                        set_pnode_state( PNode[i], nodeState );
+                        if ( pnodeConfig  && pnodeConfig->IsSpareNode() )
+                        {
+                            ++NumDown;
+                            NodeState[pnodeConfig->GetPNid()] = false;
+                            nodeState = StateDown;
+                            set_pnode_state( PNode[pnodeConfig->GetPNid()], nodeState );
+                        }
+                        else
+                        {
+                            NodeState[pnodeConfig->GetPNid()] = true;
+                        }
                     }
                     else
                     {
-                        NodeState[i] = true;
+                        NodeState[pnodeConfig->GetPNid()] = true;
                     }
                 }
                 else
                 {
-                    NodeState[i] = true;
+                    NodeState[pnodeConfig->GetPNid()] = false;
+                    ++NumDown;
+                    if ( displayState )
+                    {
+                        fprintf(stderr, "[%s] Warning: Node %s is in a down state and is not currently available\n", MyName, PNode[pnodeConfig->GetPNid()] );
+                    }
                 }
             }
-            else
-            {
-                NodeState[i] = false;
-                ++NumDown;
-                if ( displayState )
-                {
-                    fprintf(stderr, "[%s] Warning: Node %s is in a down state and is not currently available\n", MyName, PNode[i] );
-                }
-            }
+            pnodeConfig = pnodeConfig->GetNext();
         }
     }
     
@@ -1095,6 +1112,14 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         printf ("[%s] %s - Node %d (%s) ADDED to configuration\n", 
                 MyName, time_string(), recv_msg->u.request.u.node_added.nid,
                 recv_msg->u.request.u.node_added.node_name);
+        if ( !load_configuration() )
+        {
+            exit (1);
+        }
+        if ( !init_pnode_map() )
+        {
+            exit(1);
+        }
         if ( nodePending )
         {
             if ( strcmp( nodePendingName, recv_msg->u.request.u.node_added.node_name) == 0 )
@@ -1108,6 +1133,14 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         printf ("[%s] %s - Node %d (%s) DELETED from configuration\n", 
                 MyName, time_string(), recv_msg->u.request.u.node_deleted.nid,
                 recv_msg->u.request.u.node_deleted.node_name);
+        if ( !load_configuration() )
+        {
+            exit (1);
+        }
+        if ( !init_pnode_map() )
+        {
+            exit(1);
+        }
         if ( nodePending )
         {
             if ( strcmp( nodePendingName, recv_msg->u.request.u.node_deleted.node_name) == 0 )
@@ -1868,7 +1901,7 @@ void get_persist_process_attributes( CPersistConfig *persistConfig
     switch (persistConfig->GetZoneZidFormat())
     {
     case Zid_ALL:
-        for (int i = 0; i < NumLNodes; i++)
+        for (int i = 0; i < LNodesConfigMax; i++)
         {
             if ( i == 0 )
             {
@@ -2448,6 +2481,29 @@ void cancel_notice( _TM_Txid_External trans_id )
     gp_local_mon_io->release_msg(msg);
 }
 
+int copy_config_db( char *node_name )
+{
+    // copy sqconfig.db
+    char msgString[MAX_BUFFER] = { 0 };
+    char cmd[256];
+    int  error = 0;
+
+    sprintf(cmd, "pdcp -p -w %s %s/sql/scripts/sqconfig.db %s/sql/scripts/.", node_name, 
+              getenv("MY_SQROOT"), getenv("MY_SQROOT") );
+
+    error = system(cmd);
+
+    if (error != 0)
+    {
+        sprintf( msgString, "[%s] Unable to copy sqconfig.db to node %s.\n"
+                          , MyName, node_name);
+        write_startup_log( msgString );
+        printf( "Unable to copy sqconfig.db to node %s.\n", node_name);
+        return( -1 );
+    }
+
+    return( 0 );
+}
 
 void request_notice( int nid,int pid,  _TM_Txid_External trans_id )
 {
@@ -2547,7 +2603,7 @@ int get_lnodes_count( int nid )
     }
     else
     {
-        printf( "[%s] Error: Internal error in logical node configuration\n",MyName);
+        printf( "[%s] Node id %d does not exist in configuration\n",MyName, nid);
     }
 
     return( -1 );
@@ -2953,12 +3009,13 @@ bool load_configuration( void )
     
     // Read initialization file
     gethostname(mynode, MPI_MAX_PROCESSOR_NAME);
-    printf("Loading configuration from sqconfig.db on %s\n",mynode);
     NumDown=0;
     NumNodes=0;
     NumLNodes=0;
-    for (i=0; i< MAX_NODES; i++)
+    for (i=0; i < MAX_NODES; i++)
     {
+        Node[i][0] = '\0';
+        PNode[i][0] = '\0';
         NodeState[i] = false;
     }
 
@@ -2975,52 +3032,56 @@ bool load_configuration( void )
             return false;
         }
         NumLNodes = ClusterConfig.GetLNodesCount();
-        for ( i = 0; i < NumLNodes; i++ )
+        NumNodes  = ClusterConfig.GetPNodesCount();
+        PNodesConfigMax = ClusterConfig.GetPNodesConfigMax();
+        LNodesConfigMax = ClusterConfig.GetLNodesConfigMax();
+        lnodeConfig = ClusterConfig.GetFirstLNodeConfig();
+        if ( lnodeConfig )
         {
-            lnodeConfig = ClusterConfig.GetLNodeConfig( i );
-            if ( lnodeConfig )
+            while ( lnodeConfig )
             {
                 pnodeConfig = lnodeConfig->GetPNodeConfig();
                 if ( pnodeConfig )
                 {
                     if (!VirtualNodes)
                     {
-                        strcpy( Node[i], pnodeConfig->GetName() );
+                        strcpy( Node[pnodeConfig->GetPNid()], pnodeConfig->GetName() );
                     }
-                    if ( !NodeState[i] )
+                    if ( !NodeState[pnodeConfig->GetPNid()] )
                     {
-                        NodeState[i] = true;
+                        NodeState[pnodeConfig->GetPNid()] = true;
                     }
                 }
                 else
                 {
                     printf( "[%s] Error: Internal error while loading physical node configuration\n",MyName);
                 }
-            }
-            else
-            {
-                printf( "[%s] Error: Internal error while loading logical node configuration\n",MyName);
+                lnodeConfig = lnodeConfig->GetNext();
             }
         }
-        NumNodes = ClusterConfig.GetPNodesCount();
-        for ( i = 0; i < NumNodes; i++ )
+        else
         {
-            pnodeConfig = ClusterConfig.GetPNodeConfig( i );
-            if ( pnodeConfig )
+            printf( "[%s] Error: No logical nodes in configuration\n",MyName);
+        }
+        pnodeConfig = ClusterConfig.GetFirstPNodeConfig();
+        if ( pnodeConfig )
+        {
+            while ( pnodeConfig )
             {
                 if (!VirtualNodes)
                 {
-                    strcpy( PNode[i], pnodeConfig->GetName() );
+                    strcpy( PNode[pnodeConfig->GetPNid()], pnodeConfig->GetName() );
                 }
                 else
                 {
-                    gethostname(PNode[i], MPI_MAX_PROCESSOR_NAME);
+                    gethostname(PNode[pnodeConfig->GetPNid()], MPI_MAX_PROCESSOR_NAME);
                 }
+                pnodeConfig = pnodeConfig->GetNext();
             }
-            else
-            {
-                printf( "[%s] Error: Internal error while loading sqconfig.db, in physical node configuration\n",MyName);
-            }
+        }
+        else
+        {
+            printf( "[%s] Error: No physical nodes in configuration\n",MyName);
         }
     }
     else
@@ -3133,19 +3194,11 @@ void node_add( char *node_name, int first_core, int last_core, int processors, i
         if ((msg->type == MsgType_Service) &&
             (msg->u.reply.type == ReplyType_Generic))
         {
-            if (msg->u.reply.u.generic.return_code == MPI_SUCCESS)
-            {
-                if ( trace_settings & TRACE_SHELL_CMD )
-                    trace_printf( "%s@%d [%s] Added node successfully. "
-                                  "error=%s\n"
-                                , method_name, __LINE__, MyName
-                                , ErrorMsg(msg->u.reply.u.generic.return_code));
-            }
-            else
+            if (msg->u.reply.u.generic.return_code != MPI_SUCCESS)
             {
                 if (msg->u.reply.u.generic.return_code == MPI_ERR_IO)
                 {
-                    printf( "[%s] Node add failed, could not access configuration database\n"
+                    printf( "[%s] Node add failed, could not accessing configuration database\n"
                           , MyName );
                 }
                 else if (msg->u.reply.u.generic.return_code == MPI_ERR_NAME)
@@ -3153,9 +3206,19 @@ void node_add( char *node_name, int first_core, int last_core, int processors, i
                     printf( "[%s] Node add failed, node %s already exists in cluster configuration\n"
                           , MyName, node_name );
                 }
+                else if (msg->u.reply.u.generic.return_code == MPI_ERR_OP)
+                {
+                    printf( "[%s] Node add failed, number of nodes limit exceeded\n"
+                          , MyName );
+                }
+                else if (msg->u.reply.u.generic.return_code == MPI_ERR_NO_MEM)
+                {
+                    printf( "[%s] Node add failed with memory allocation error, check monitor log for details\n"
+                          , MyName );
+                }
                 else if (msg->u.reply.u.generic.return_code == MPI_ERR_INTERN)
                 {
-                    printf( "[%s] Node add failed, could not re-establish cluster configuration in monitor\n"
+                    printf( "[%s] Node add failed, check monitor log for error details\n"
                           , MyName );
                 }
                 else
@@ -3233,54 +3296,65 @@ void node_change_name(char *current_name, char *new_name)
     }
     
     // change in another local location
-    int pnid = ClusterConfig.GetPNid (current_name); 
-    CPNodeConfig *pConfig = ClusterConfig.GetPNodeConfig (pnid); 
-    if (pConfig != NULL) 
-        pConfig->SetName(new_name);
+    int pnid = ClusterConfig.GetPNid( current_name ); 
+    CPNodeConfig *pnodeConfig = ClusterConfig.GetPNodeConfig( pnid ); 
+    if (pnodeConfig != NULL)
+    {
+        pnodeConfig->SetName(new_name);
+    }
       
-     //and..... in another local location
-     for( int i=0; i<NumNodes; i++)
-     {
-        if ( strcmp (PNode[i], current_name) == 0)
+    //and..... in another local location
+    for( int i=0; i < ClusterConfig.GetPNodesConfigMax(); i++ )
+    {
+       if ( strlen(PNode[i]) == 0 ) continue;
+       if ( strcmp (PNode[i], current_name) == 0)
+       {
            strcpy(PNode[i],new_name);
-     }       
+       }
+    }       
     
-     // now change it in the monitors
-     if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
-     {   // Could not acquire a message buffer
-         printf ("[%s] Unable to acquire message buffer.\n", MyName);
-         return;
-     }
+    // now change it in the monitors
+    if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
+    {   // Could not acquire a message buffer
+        printf ("[%s] Unable to acquire message buffer.\n", MyName);
+        return;
+    }
 
-     if ( trace_settings & TRACE_SHELL_CMD )
-         trace_printf ("%s@%d [%s] sending node change name message.\n",
-                       method_name, __LINE__, MyName);
+    if ( trace_settings & TRACE_SHELL_CMD )
+    {
+        trace_printf ("%s@%d [%s] sending node change name message.\n",
+                      method_name, __LINE__, MyName);
+    }
 
-     msg->type = MsgType_Service;
-     msg->noreply = false;
-     msg->reply_tag = REPLY_TAG;
-     msg->u.request.type = ReqType_NodeName;
-     msg->u.request.u.nodename.nid = MyNid;
-     msg->u.request.u.nodename.pid = MyPid;
-     strcpy (msg->u.request.u.nodename.new_name, new_name);
-     strcpy (msg->u.request.u.nodename.current_name, current_name);
+    msg->type = MsgType_Service;
+    msg->noreply = false;
+    msg->reply_tag = REPLY_TAG;
+    msg->u.request.type = ReqType_NodeName;
+    msg->u.request.u.nodename.nid = MyNid;
+    msg->u.request.u.nodename.pid = MyPid;
+    strcpy (msg->u.request.u.nodename.new_name, new_name);
+    strcpy (msg->u.request.u.nodename.current_name, current_name);
   
-     gp_local_mon_io->send_recv( msg );
-     count = sizeof( *msg );
-     status.MPI_TAG = msg->reply_tag;
+    gp_local_mon_io->send_recv( msg );
+    count = sizeof( *msg );
+    status.MPI_TAG = msg->reply_tag;
  
-     if ((status.MPI_TAG == REPLY_TAG) &&
-            (count == sizeof (struct message_def)))
-     {
+    if ((status.MPI_TAG == REPLY_TAG) &&
+        (count == sizeof (struct message_def)))
+    {
         if ((msg->type == MsgType_Service) &&
             (msg->u.reply.type == ReplyType_NodeName))
+        {
+            if (msg->u.reply.u.node_info.return_code != MPI_SUCCESS)
             {
-                if (msg->u.reply.u.node_info.return_code != MPI_SUCCESS)
-                   printf ("[%s] Unable to change node name in monitors.\n", MyName);
+                printf ("[%s] Unable to change node name in monitors.\n", MyName);
             }
-     }
-     else
-       printf ("[%s] Invalid Message/Reply type for Node Name Change request.\n", MyName);
+        }
+    }
+    else
+    {
+        printf ("[%s] Invalid Message/Reply type for Node Name Change request.\n", MyName);
+    }
 }
 
 void node_config( int nid, char *node_name )
@@ -3449,15 +3523,15 @@ void node_delete( int nid, char *node_name )
         if ((msg->type == MsgType_Service) &&
             (msg->u.reply.type == ReplyType_Generic))
         {
-            if (msg->u.reply.u.generic.return_code == MPI_SUCCESS)
+            if (msg->u.reply.u.generic.return_code != MPI_SUCCESS)
             {
-                if ( trace_settings & TRACE_SHELL_CMD )
-                    trace_printf( "%s@%d [%s] Deleted node successfully. "
-                                  "error=%s\n", method_name, __LINE__, MyName
-                                 , ErrorMsg(msg->u.reply.u.generic.return_code));
-            }
-            else
-            {
+//                if ( !load_configuration() )
+//                {
+//                    exit (1);
+//                }
+//            }
+//            else
+//            {
                 if (msg->u.reply.u.generic.return_code == MPI_ERR_IO)
                 {
                     printf( "[%s] Node deleted failed, could not access configuration database\n"
@@ -4070,6 +4144,7 @@ bool persist_process_kill( CPersistConfig *persistConfig )
     char persistZones[MAX_VALUE_SIZE_INT];
     int nid;
     int pnid;
+    int lnodesCount = 0;
     PROCESSTYPE process_type;
     STATE nodeState;
 
@@ -4087,7 +4162,7 @@ bool persist_process_kill( CPersistConfig *persistConfig )
     switch (persistConfig->GetProcessNameNidFormat())
     {
     case Nid_ALL:
-        for (int i = 0; i < NumLNodes; i++)
+        for (int i = 0; i < LNodesConfigMax && lnodesCount < NumLNodes; i++)
         {
             // Check monitors state of the target node
             rs = get_node_state( i, NULL, pnid, nodeState, integrating );
@@ -4107,6 +4182,7 @@ bool persist_process_kill( CPersistConfig *persistConfig )
                 printf( "Persistent process %s does not exist\n", processName);
                 continue;
             }
+            lnodesCount++;
             kill_process( -1, -1, processName, true );
         }
         break;
@@ -4164,6 +4240,7 @@ bool persist_process_start( CPersistConfig *persistConfig )
     int nid;
     int pid;
     int pnid;
+    int lnodesCount = 0;
     PROCESSTYPE process_type;
     int priority;
     STATE nodeState;
@@ -4184,7 +4261,7 @@ bool persist_process_start( CPersistConfig *persistConfig )
     switch (persistConfig->GetProcessNameNidFormat())
     {
     case Nid_ALL:
-        for (int i = 0; i < NumLNodes; i++)
+        for (int i = 0; i < LNodesConfigMax && lnodesCount < NumLNodes; i++)
         {
             // Check monitors state of the target node
             rs = get_node_state( i, NULL, pnid, nodeState, integrating );
@@ -4192,6 +4269,7 @@ bool persist_process_start( CPersistConfig *persistConfig )
             {
                 continue;
             }
+            lnodesCount++;
             get_persist_process_attributes( persistConfig
                                           , i
                                           , process_type
@@ -4790,27 +4868,21 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
 
     // Ensure that we are on a node that is part of the configuration
     char mynode[MPI_MAX_PROCESSOR_NAME];
+
     gethostname(mynode, MPI_MAX_PROCESSOR_NAME);
-    bool nodeInConfig = false;
-    for ( i = 0; i < NumNodes; i++ )
-    {
-        if ( strcmp( mynode, PNode[i]) == 0 )
-        {
-            nodeInConfig = true;
-            break;
-        }
-    }
-    if ( !nodeInConfig )
+    CPNodeConfig *pnodeConfig = ClusterConfig.GetPNodeConfig( mynode );
+    if ( !pnodeConfig )
     {
         printf ("[%s] Cannot start monitor from node '%s' since it is not member of the cluster configuration or 'hostname' string does not match configuration string.\n", MyName, mynode);
         printf ("[%s] Configuration node names:\n", MyName);
-        for ( i = 0; i < NumNodes; i++ )
+        CPNodeConfig *pnodeConfig = ClusterConfig.GetFirstPNodeConfig();
+        while (pnodeConfig)
         {
-            printf ("[%s]    '%s'\n", MyName, PNode[i]);
+            printf ("[%s]    '%s'\n", MyName, pnodeConfig->GetName());
+            pnodeConfig = pnodeConfig->GetNext();
         }
         return true;
     }
-
 
     if (gp_local_mon_io)
     {   // Ensure the monitor port name file does not exist.  We use the
@@ -4937,13 +5009,14 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
                 return true;
             }
             bool copiedToList =false;
-            for(i=0,nodelist[0]='\0'; i<NumNodes; i++)
+            for(i=0,nodelist[0]='\0'; i < ClusterConfig.GetPNodesConfigMax(); i++)
             {
                 if (copiedToList)
                 {
                     copiedToList =false;
                     strcat(nodelist, ",");
                 }
+                if ( strlen(PNode[i]) == 0 ) continue;
                 if ( get_pnode_state( PNode[i], nodeState ) )
                 {
                     if ( nodeState == StateUp )
@@ -6153,7 +6226,6 @@ void node_cmd (char *cmd_tail)
     int nid;
     char token[MAX_TOKEN];
     char delimiter;
-    char *ptr = NULL;
     char *cmd = cmd_tail;
     char msgString[MAX_BUFFER] = { 0 };
 
@@ -6163,30 +6235,31 @@ void node_cmd (char *cmd_tail)
         // printf ("[%s] Invalid nodes syntax!\n", MyName);
         if ( ClusterConfig.IsConfigReady() )
         {
-            int lnodesCount;
             CLNodeConfig   *lnodeConfig;
             CPNodeConfig   *pnodeConfig;
 
             // Print logical nodes array
-            lnodesCount = ClusterConfig.GetLNodesCount();
-            for (int i = 0; i < lnodesCount; i++ )
+            lnodeConfig = ClusterConfig.GetFirstLNodeConfig();
+            if ( lnodeConfig )
             {
-                lnodeConfig = ClusterConfig.GetLNodeConfig( i );
-                if ( lnodeConfig == NULL || i != lnodeConfig->GetNid())
+                while ( lnodeConfig )
                 {
-                    printf("[%s] Fatal Error: Corrupt 'sqconfig.db' file.\n",MyName);
-                    exit(1);
-                }
-
-                pnodeConfig = lnodeConfig->GetPNodeConfig();
-                if ( pnodeConfig )
-                {
-                    printf( "[%s] Node[%d]=%s, %s\n"
-                          , MyName
-                          , i 
-                          , pnodeConfig->GetName()
-                          , ZoneTypeString( lnodeConfig->GetZoneType() )
-                          );
+                    pnodeConfig = lnodeConfig->GetPNodeConfig();
+                    if ( pnodeConfig )
+                    {
+                        printf( "[%s] Node[%d]=%s, %s\n"
+                              , MyName
+                              , lnodeConfig->GetNid()
+                              , pnodeConfig->GetName()
+                              , ZoneTypeString( lnodeConfig->GetZoneType() )
+                              );
+                    }
+                    else
+                    {
+                        printf("[%s] Fatal Error: Logical node has no physical node in configuration\n",MyName);
+                        exit(1);
+                    }
+                    lnodeConfig = lnodeConfig->GetNext();
                 }
             }
         }
@@ -6198,7 +6271,6 @@ void node_cmd (char *cmd_tail)
         {
             if (Started)
             {
-#if 0
                 if ( VirtualNodes )
                 {
                     sprintf( msgString, "[%s] Node add is not available with Virtual Nodes!",MyName);
@@ -6206,21 +6278,33 @@ void node_cmd (char *cmd_tail)
                     printf ("[%s] Node add is not available with Virtual Nodes!\n", MyName);    
                 }
                 else
-#endif
                 {
                     if (ElasticityEnabled)
                     {
-                        // node-name=<node-name>,
-                        // cores=<first-core>[-<last-core>],
-                        // processors=<processor-count>,
-                        // roles=connection|aggregation|storage
-                        node_add_cmd( cmd, delimiter );
+                        if (ClusterConfig.GetPNodesCount() <
+                            ClusterConfig.GetPNodesConfigMax())
+                        {
+                            // node-name=<node-name>,
+                            // cores=<first-core>[-<last-core>],
+                            // processors=<processor-count>,
+                            // roles=connection|aggregation|storage
+                            node_add_cmd( cmd, delimiter );
+                        }
+                        else
+                        {
+                            sprintf( msgString, "[%s] Node add is not allowed, node count (%d) would exceed configuration limit (%d)"
+                                              , MyName
+                                              , ClusterConfig.GetPNodesCount()
+                                              , ClusterConfig.GetPNodesConfigMax());
+                            write_startup_log( msgString );
+                            printf ("%s\n", msgString);    
+                        }
                     }
                     else
                     {
                         sprintf( msgString, "[%s] Node add is not enabled, to enable export SQ_ELASTICY_ENABLED=1",MyName);
                         write_startup_log( msgString );
-                        printf ("[%s] Node add is not enabled, to enable export SQ_ELASTICY_ENABLED=1\n", MyName);    
+                        printf ("%s\n", msgString);    
                     }
                 }
             }
@@ -6231,10 +6315,18 @@ void node_cmd (char *cmd_tail)
         }
         else if (strcmp (token, "name") == 0)
         {
-            char *ptr2 = get_token (ptr, token, &delimiter);
+            char *ptr2 = get_token (cmd, token, &delimiter);
             if (ptr2 && *ptr2)
             {
                 node_change_name(token, ptr2);
+                if ( !load_configuration() )
+                {
+                    exit (1);
+                }
+                if ( !init_pnode_map() )
+                {
+                    exit(1);
+                }
             }
             else
             {
@@ -6250,7 +6342,6 @@ void node_cmd (char *cmd_tail)
         {
             if (Started) // Should delete be ok with the instance down?
             {
-#if 0
                 if ( VirtualNodes )
                 {
                     sprintf( msgString, "[%s] Node delete is not available with Virtual Nodes!",MyName);
@@ -6258,7 +6349,6 @@ void node_cmd (char *cmd_tail)
                     printf ("[%s] Node delete is not available with Virtual Nodes!\n", MyName);    
                 }
                 else
-#endif
                 {
                     if (ElasticityEnabled)
                     {
@@ -6298,7 +6388,7 @@ void node_cmd (char *cmd_tail)
                 if ( *cmd )
                 {
                     nid = atoi (cmd);
-                    if ((!isNumeric(cmd)) || (nid >= NumLNodes) || (nid < 0))
+                    if ((!isNumeric(cmd)) || (nid >= LNodesConfigMax) || (nid < 0))
                     {
                         printf ("[%s] Invalid nid\n", MyName);
                     }
@@ -6451,10 +6541,6 @@ void node_add_cmd( char *cmd, char delimiter )
     if ( process_cmd )
     {
         node_add( name, first_core, last_core, processor_count, roles );
-        if ( !load_configuration() )
-        {
-            exit (1);
-        }
     }
     else
     {
@@ -6486,7 +6572,7 @@ void node_config_cmd( char *cmd )
         if ( isNumeric( token ) )
         {
             nid = atoi (token);
-            if (nid < 0 || nid > NumLNodes - 1)
+            if (nid < 0 || nid > LNodesConfigMax - 1)
             {
                 sprintf( msgString, "[%s] Node id is not configured!",MyName);
                 write_startup_log( msgString );
@@ -6542,7 +6628,7 @@ void node_delete_cmd( char *cmd )
         if ( isNumeric( token ) )
         {
             nid = atoi (token);
-            if (nid < 0 || nid > NumLNodes - 1)
+            if (nid < 0 || nid > LNodesConfigMax - 1)
             {
                 sprintf( msgString, "[%s] Invalid node id!",MyName);
                 write_startup_log( msgString );
@@ -6581,10 +6667,6 @@ void node_delete_cmd( char *cmd )
     }
 
     node_delete( nid, node_name );
-    if ( !load_configuration() )
-    {
-        exit (1);
-    }
 }
 
 void node_down_cmd( char *cmd )
@@ -6620,7 +6702,7 @@ void node_down_cmd( char *cmd )
         }
         write_startup_log( msgString );
         nid = atoi (token);
-        if (nid < 0 || nid > NumLNodes - 1)
+        if (nid < 0 || nid > LNodesConfigMax - 1)
         {
             sprintf( msgString, "[%s] Invalid node id!",MyName);
             write_startup_log( msgString );
@@ -6765,7 +6847,10 @@ void node_up_cmd( char *cmd, char delimiter )
         {
             if ( get_node_name( cmd_tail ) == 0 ) 
             {
-                node_up( -1, cmd_tail, nowait );
+                if ( copy_config_db( cmd_tail ) == 0 ) 
+                {
+                    node_up( -1, cmd_tail, nowait );
+                }
             }
             else
             {
@@ -7539,7 +7624,7 @@ void zone_cmd (char *cmd_tail)
                     get_token (cmd_tail, token, &delimiter);
                     normalize_case (token);
                     nid = atoi(token);
-                    if ((!isNumeric(token)) || (nid >= NumLNodes) || (nid < 0))
+                    if ((!isNumeric(token)) || (nid >= LNodesConfigMax) || (nid < 0))
                     {
                         printf ("[%s] Invalid nid\n", MyName);
                     }
@@ -7561,7 +7646,7 @@ void zone_cmd (char *cmd_tail)
                     cmd_tail = get_token (cmd_tail, token, &delimiter);
                     normalize_case (token);
                     zid = atoi(token);
-                    if ((!isNumeric(token)) || (zid >= NumLNodes) || (zid < 0))
+                    if ((!isNumeric(token)) || (zid >= LNodesConfigMax) || (zid < 0))
                     {
                         printf ("[%s] Invalid zid\n", MyName);
                     }
@@ -7997,8 +8082,21 @@ void InitLocalIO( void )
         CPNodeConfig   *pnodeConfig;
         CLNodeConfig   *lnodeConfig;
 
-        lnodeConfig = ClusterConfig.GetLNodeConfig( MyNid );
-        pnodeConfig = lnodeConfig->GetPNodeConfig();
+        if ( VirtualNodes )
+        {
+            lnodeConfig = ClusterConfig.GetLNodeConfig( MyNid );
+            pnodeConfig = lnodeConfig->GetPNodeConfig();
+        }
+        else
+        {
+            pnodeConfig = ClusterConfig.GetPNodeConfig( MyNode );
+            if ( !pnodeConfig )
+            {
+                printf( "[%s] Node %s is not in the configuration!\n"
+                      , MyName, MyNode);
+                exit(1);
+            }
+        }
         gv_ms_su_nid = MyPNid = pnodeConfig->GetPNid();
         if ( trace_settings & TRACE_SHELL_CMD )
             trace_printf ("%s@%d [%s] Local IO pnid = %d\n", method_name,
@@ -8154,9 +8252,9 @@ int main (int argc, char *argv[])
     char *env = getenv("SQ_ELASTICY_ENABLED");
     if ( env && isdigit(*env) )
     {
-        if ( strcmp(env,"0")!=0 )
+        if ( strcmp(env,"0") == 0 )
         {
-            ElasticityEnabled = true;
+            ElasticityEnabled = false;
         }
     }
 

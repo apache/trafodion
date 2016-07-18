@@ -2739,7 +2739,7 @@ void CProcess::Exit( CProcess *parent )
         {
             // Send local SPX this SPX's death message
             CLNode *lnode = MyNode->GetFirstLNode();
-            for ( ; lnode; lnode = lnode->GetNext() )
+            for ( ; lnode; lnode = lnode->GetNextP() )
             {
                 CProcess *spxProcess = lnode->GetProcessLByType( ProcessType_SPX );
                 if ( spxProcess && MyNode->GetState() == State_Up )
@@ -2778,7 +2778,7 @@ void CProcess::Exit( CProcess *parent )
         {
             // Send local DTMs this DTM's death message
             CLNode *lnode = MyNode->GetFirstLNode();
-            for ( ; lnode; lnode = lnode->GetNext() )
+            for ( ; lnode; lnode = lnode->GetNextP() )
             {
                 CProcess *tmProcess = lnode->GetProcessLByType( ProcessType_DTM );
                 if ( tmProcess && MyNode->GetState() == State_Up )

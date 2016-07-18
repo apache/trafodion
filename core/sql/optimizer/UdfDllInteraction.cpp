@@ -1214,6 +1214,29 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
           switch (length)
             {
               // SMALLINT, INT, LARGEINT, NUMERIC, signed and unsigned
+            case 1:
+              if (CmpCommon::getDefault(TRAF_TINYINT_SPJ_SUPPORT) == DF_ON)
+                {
+                  *diags << DgSqlCode(-11151)
+                         << DgString0("type")
+                         << DgString1(src->getTypeSQLname())
+                         << DgString2("Tinyint datatype not yet supported");
+                  result = FALSE;
+                  break;
+                }
+
+              if (isUnsigned)
+                {
+                  if (!isDecimalPrecision)
+                    sqlType = tmudr::TypeInfo::SMALLINT_UNSIGNED;
+                }
+              else
+                {
+                  if (!isDecimalPrecision)
+                    sqlType = tmudr::TypeInfo::SMALLINT;
+                }
+              break;
+
             case 2:
               if (isUnsigned)
                 {

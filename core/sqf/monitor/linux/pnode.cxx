@@ -54,6 +54,7 @@ extern char MyPath[MAX_PROCESS_PATH];
 extern int MyPNID;
 extern bool IsRealCluster;
 extern bool SpareNodeColdStandby;
+extern bool Emulate_Down;
 
 extern CConfigContainer *Config;
 extern CMonitor *Monitor;
@@ -359,6 +360,11 @@ CNode::~CNode( void )
     const char method_name[] = "CNode::~CNode";
     TRACE_ENTRY;
 
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d pnid=%d\n", method_name, __LINE__, pnid_ );
+    }
+
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
     memcpy(&eyecatcher_, "pnod", 4);
 
@@ -433,9 +439,9 @@ CLNode *CNode::AssignLNode (void)
         {
             lastLNode_ = lnode;
         }
-        else if (lastLNode_->GetNext())
+        else if (lastLNode_->GetNextP())
         {
-            lnode = lastLNode_->GetNext();
+            lnode = lastLNode_->GetNextP();
         }
         else
         {
@@ -460,7 +466,7 @@ void CNode::CheckActivationPhase( void )
     // check for a TM process in each lnode
     lnode = GetFirstLNode();
     tmReady = lnode ? true : false;
-    for ( ; lnode ; lnode = lnode->GetNext() )
+    for ( ; lnode ; lnode = lnode->GetNextP() )
     {
         if ( lnode->GetState() == State_Up )
         {
@@ -472,7 +478,7 @@ void CNode::CheckActivationPhase( void )
                     trace_printf("%s@%d - TM %s (pid=%d)\n", method_name, __LINE__, process->GetName(), process->GetPid());
             }
         }
-        tmReady = (tmCount == GetNumLNodes()) ? true : false;
+        tmReady = (tmCount == GetLNodesCount()) ? true : false;
     }
     
     if ( tmReady )
@@ -588,14 +594,6 @@ void CNode::DeLink( CNode ** head, CNode ** tail )
 }
 
 
-CNode *CNode::GetNext( void )
-{
-    const char method_name[] = "CNode::GetNext";
-    TRACE_ENTRY;
-    TRACE_EXIT;
-    return next_;
-}
-
 void CNode::GetCpuStat ( void )
 {
     char buffer[132];
@@ -696,7 +694,7 @@ void CNode::GetCpuStat ( void )
     int firstCoreInLnode;
 
     CLNode *lnode = GetFirstLNode();
-    for ( ; lnode; lnode = lnode->GetNext() )
+    for ( ; lnode; lnode = lnode->GetNextP() )
     {
         numCoresInLnode = lnode->GetNumCores();
         firstCoreInLnode = lnode->GetFirstCore();
@@ -967,7 +965,7 @@ bool CNode::GetSchedulingData( void )
 
 strId_t CNode::GetStringId(char * candidate)
 {
-    const char method_name[] = "CProcessContainer::GetStringId";
+    const char method_name[] = "CNode::GetStringId";
     strId_t id;
 
     TRACE_ENTRY;
@@ -987,8 +985,8 @@ strId_t CNode::GetStringId(char * candidate)
     {
         if (trace_settings & TRACE_PROCESS)
         {
-            trace_printf("%s@%d - unique string %s: id=(%d,%d)\n",
-                         method_name, __LINE__, candidate, id.nid, id.id );
+            trace_printf("%s@%d - unique string id=[%d,%d] (%s)\n",
+                         method_name, __LINE__, id.nid, id.id, candidate );
         }
     }
 
@@ -1016,7 +1014,7 @@ void CNode::MoveLNodes( CNode *spareNode )
 
     // Move the logical nodes
     lnode = GetFirstLNode();
-    for ( ; lnode; lnode = lnode->GetNext() )
+    for ( ; lnode; lnode = lnode->GetNextP() )
     {
         // adjust each logical node to reference the 
         // new physical node's logical nodes container
@@ -1024,10 +1022,10 @@ void CNode::MoveLNodes( CNode *spareNode )
     }
     spareNode->SetFirstLNode( GetFirstLNode() );
     spareNode->SetLastLNode( GetLastLNode() );
-    spareNode->SetNumLNodes( GetNumLNodes() );
+    spareNode->SetLNodesCount( GetLNodesCount() );
     SetFirstLNode( NULL );
     SetLastLNode( NULL );
-    SetNumLNodes( 0 );
+    SetLNodesCount( 0 );
     lastLNode_ = NULL;
 
     // Move the physical node's process list
@@ -1276,9 +1274,9 @@ void CNode::StartPStartDPersistent( void )
     // Any DTMs running in cluster?
     for ( int i=0; !tmCount && i < Nodes->GetPNodesCount(); i++ )
     {
-        node = Nodes->GetNode( i );
+        node = Nodes->GetNodeByMap( i );
         lnode = node->GetFirstLNode();
-        for ( ; lnode; lnode = lnode->GetNext() )
+        for ( ; lnode; lnode = lnode->GetNextP() )
         {
             CProcess *process = lnode->GetProcessLByType( ProcessType_DTM );
             if ( process  ) tmCount++;
@@ -1288,7 +1286,7 @@ void CNode::StartPStartDPersistent( void )
     if ( tmCount )
     {
         lnode = GetFirstLNode();
-        for ( ; lnode ; lnode = lnode->GetNext() )
+        for ( ; lnode ; lnode = lnode->GetNextP() )
         {
             if ( lnode->GetState() == State_Up )
             {
@@ -1332,9 +1330,9 @@ void CNode::StartPStartDPersistentDTM( int nid )
     // Any DTMs running in cluster?
     for ( int i=0; !tmCount && i < Nodes->GetPNodesCount(); i++ )
     {
-        node = Nodes->GetNode( i );
+        node = Nodes->GetNodeByMap( i );
         lnode = node->GetFirstLNode();
-        for ( ; lnode; lnode = lnode->GetNext() )
+        for ( ; lnode; lnode = lnode->GetNextP() )
         {
             process = lnode->GetProcessLByType( ProcessType_DTM );
             if ( process  ) tmCount++;
@@ -1344,7 +1342,7 @@ void CNode::StartPStartDPersistentDTM( int nid )
     if ( tmCount )
     {
         lnode = GetFirstLNode();
-        for ( ; lnode ; lnode = lnode->GetNext() )
+        for ( ; lnode ; lnode = lnode->GetNextP() )
         {
             if ( lnode->GetNid() == nid )
             {
@@ -1447,10 +1445,11 @@ void CNode::StartSMServiceProcess( void )
 }
 
 CNodeContainer::CNodeContainer( void )
-               :pnodeCount_(0)
-               ,lnodeCount_(0)
+               :CLNodeContainer(NULL)
                ,Node(NULL)
                ,LNode(NULL)
+               ,indexToPnid_(NULL)
+               ,pnodeCount_(0)
                ,clusterConfig_(NULL)
                ,head_(NULL)
                ,tail_(NULL)
@@ -1467,6 +1466,20 @@ CNodeContainer::CNodeContainer( void )
 
     // Load cluster configuration from 'sqconfig.db'
     LoadConfig();
+
+    // Allocate logical and physical node arrays
+    Node = new CNode *[clusterConfig_->GetPNodesConfigMax()];
+    LNode = new CLNode *[clusterConfig_->GetLNodesConfigMax()];
+    indexToPnid_ = new int[clusterConfig_->GetPNodesConfigMax()];
+    for (int i = 0; i < clusterConfig_->GetPNodesConfigMax(); i++ )
+    {
+        Node[i] = NULL;
+        indexToPnid_[i] = -1;
+    }
+    for (int i = 0; i < clusterConfig_->GetLNodesConfigMax(); i++ )
+    {
+        LNode[i] = NULL;
+    }
 
     TRACE_EXIT;
 }
@@ -1517,6 +1530,148 @@ int CNodeContainer::GetPNid( char *nodeName )
 
     TRACE_EXIT;
     return( pnid );
+}
+
+void CNodeContainer::AddedNode( CNode *node )
+{
+    const char method_name[] = "CNodeContainer::AddedNode";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_SYNC))
+    {
+        trace_printf( "%s@%d - node %s, pnid=%d, zone=%d\n"
+                    , method_name, __LINE__
+                    , node->GetName(), node->GetPNid(), node->GetZone() );
+    }
+
+    assert( node->GetState() == State_Down );
+
+    // Broadcast node added notice to local processes
+    CLNode *lnode = node->GetFirstLNode();
+    for ( ; lnode; lnode = lnode->GetNextP() )
+    {
+        lnode->Added();
+    }
+
+    TRACE_EXIT;
+}
+
+CNode *CNodeContainer::AddNode( int pnid )
+{
+    const char method_name[] = "CNodeContainer::AddNode";
+    TRACE_ENTRY;
+
+    CNode        *node = NULL;
+    CPNodeConfig *pnodeConfig = clusterConfig_->GetPNodeConfig( pnid );
+    if (pnodeConfig)
+    {
+        node = GetNode(pnid);
+        if (!node)
+        {
+            node = new CNode( (char *)pnodeConfig->GetName()
+                            , pnodeConfig->GetPNid(), -1 );
+            assert( node != NULL );
+    
+            if ( node )
+            {
+                // Add node to monitor's view of the cluster
+                AddNode( node );
+
+                // Broadcast node added notice to local processes
+                AddedNode( node );
+            }
+            else
+            {
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf( buf, sizeof(buf)
+                        , "[%s@%d] Could not allocate physical node object "
+                          ", pnid=%d\n"
+                        , method_name, __LINE__, pnid);
+                mon_log_write(MON_NODE_ADDNODE_1, SQ_LOG_ERR, buf);
+            }
+        }
+        else
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s@%d] Found existing physical node "
+                      "in monitor's view of cluster, pnid=%d\n"
+                    , method_name, __LINE__, pnid);
+            mon_log_write(MON_NODE_ADDNODE_2, SQ_LOG_ERR, buf);
+        }       
+    }
+    else
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s@%d] Could not find physical node in configuration, "
+                  "pnid=%d\n"
+                , method_name, __LINE__, pnid);
+        mon_log_write(MON_NODE_ADDNODE_3, SQ_LOG_ERR, buf);
+    }
+
+    TRACE_EXIT;
+    return(node);
+}
+
+void CNodeContainer::AddNode( CNode *node )
+{
+    const char method_name[] = "CNodeContainer::AddNode";
+    TRACE_ENTRY;
+
+    assert( node != NULL );
+
+    if ( node )
+    {
+        if (trace_settings & TRACE_INIT)
+        {
+            trace_printf( "%s@%d - Adding physical node object "
+                          "(pnid=%d, nodename=%s) to container, "
+                          "pnodesCount=%d, lnodesCount=%d\n"
+                        , method_name, __LINE__
+                        , node->GetPNid()
+                        , node->GetName()
+                        , GetPNodesCount()
+                        , GetLNodesCount() );
+        }
+
+        // add physical node to physical nodes array
+        Node[node->GetPNid()] = node;
+        pnodeCount_++;
+
+        if (head_ == NULL)
+        {
+            head_ = tail_ = node;
+        }
+        else
+        {
+            tail_ = tail_->Link(node);
+        }
+        // now add logical nodes to physical node
+        if (IAmIntegrating)
+        {
+            // do nothing.
+            // lnodes will be created in the revive phase
+        }
+        else
+        {
+            AddLNodes( node );
+        }
+
+        if (trace_settings & TRACE_INIT)
+        {
+            trace_printf( "%s@%d - Added physical node object "
+                          "(pnid=%d, nodename=%s) to container, "
+                          "pnodesCount=%d, lnodesCount=%d\n"
+                        , method_name, __LINE__
+                        , node->GetPNid()
+                        , node->GetName()
+                        , GetPNodesCount()
+                        , GetLNodesCount() );
+        }
+    }
+
+    TRACE_EXIT;
 }
 
 void CNodeContainer::AddNodes( )
@@ -1577,28 +1732,7 @@ void CNodeContainer::AddNodes( )
         
         if ( node )
         {
-            // add physical node to physical nodes array
-            Node[pnid] = node;
-            pnodeCount_++;
-    
-            if (head_ == NULL)
-            {
-                head_ = tail_ = node;
-            }
-            else
-            {
-                tail_ = tail_->Link(node);
-            }
-            // now add logical nodes to physical node
-            if (IAmIntegrating)
-            {
-                // do nothing.
-                // lnodes will be created in the revive phase
-            }
-            else
-            {
-                AddLNodes( node );
-            }
+            AddNode( node );
         }
 
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
@@ -1638,26 +1772,51 @@ void CNodeContainer::AddNodes( )
 
 void CNodeContainer::AddLNodes( CNode  *node )
 {
-    CPNodeConfig   *pnodeConfig;
-    CLNodeConfig   *lnodeConfig;
     const char method_name[] = "CNodeContainer::AddLNodes";
     TRACE_ENTRY;
 
+    CLNode         *lnode;
+    CPNodeConfig   *pnodeConfig;
+    CLNodeConfig   *lnodeConfig;
+
     pnodeConfig = clusterConfig_->GetPNodeConfig( node->GetPNid() );
     
-    if ( ! pnodeConfig )
+    if (pnodeConfig )
     {
-        abort();
+        // Create logical nodes configured for the physical node passed in
+        lnodeConfig = pnodeConfig->GetFirstLNodeConfig();
+        if (lnodeConfig)
+        {
+            for ( ; lnodeConfig; lnodeConfig = lnodeConfig->GetNextP() )
+            {
+                // add logical node to 
+                //   logical nodes array and logical nodes container
+                lnode = AddLNode( lnodeConfig, node );
+                LNode[lnodeConfig->GetNid()] = lnode;
+                // add logical node to physical node's logical node container 
+                node->AddLNodeP( lnode );
+            }
+        }
+        else
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s@%d] Could not find logical node in "
+                      "configuration of physical node, pnid=%d\n"
+                    , method_name, __LINE__, node->GetPNid() );
+            mon_log_write(MON_NODE_ADDLNODES_1, SQ_LOG_ERR, buf);
+        }
+    }
+    else
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s@%d] Could not find physical node in configuration, "
+                  "pnid=%d\n"
+                , method_name, __LINE__, node->GetPNid());
+        mon_log_write(MON_NODE_ADDLNODES_2, SQ_LOG_ERR, buf);
     }
 
-    // Create logical nodes configured for the physical node passed in
-    lnodeConfig = pnodeConfig->GetFirstLNodeConfig();
-    for ( ; lnodeConfig; lnodeConfig = lnodeConfig->GetNextP() )
-    {
-        // add logical node to logical nodes array
-        LNode[lnodeConfig->GetNid()] = node->AddLNode( lnodeConfig );
-        lnodeCount_++;
-    }
 
     TRACE_EXIT;
 }
@@ -1665,25 +1824,50 @@ void CNodeContainer::AddLNodes( CNode  *node )
 // add configured lnodes of physical node node2 to node1. 
 void CNodeContainer::AddLNodes( CNode  *node1, CNode *node2 )
 {
-    CPNodeConfig   *pnodeConfig;
-    CLNodeConfig   *lnodeConfig;
     const char method_name[] = "CNodeContainer::AddLNodes(node1, node2)";
     TRACE_ENTRY;
 
-    pnodeConfig = clusterConfig_->GetPNodeConfig( node2->GetPNid() );
-    
-    if ( ! pnodeConfig )
-    {
-        abort();
-    }
+    CLNode         *lnode;
+    CPNodeConfig   *pnodeConfig;
+    CLNodeConfig   *lnodeConfig;
 
-    // Create logical nodes configured for the physical node passed in
-    lnodeConfig = pnodeConfig->GetFirstLNodeConfig();
-    for ( ; lnodeConfig; lnodeConfig = lnodeConfig->GetNextP() )
+    pnodeConfig = clusterConfig_->GetPNodeConfig( node2->GetPNid() );
+    if (pnodeConfig )
     {
-        // add logical node to logical nodes array
-        LNode[lnodeConfig->GetNid()] = node1->AddLNode( lnodeConfig );
-        lnodeCount_++;
+        // Create logical nodes configured for the physical node passed in
+        lnodeConfig = pnodeConfig->GetFirstLNodeConfig();
+        if (lnodeConfig)
+        {
+            for ( ; lnodeConfig; lnodeConfig = lnodeConfig->GetNextP() )
+            {
+                // add logical node to 
+                //   logical nodes array and logical nodes container
+                lnode = AddLNode( lnodeConfig, node1 );
+                LNode[lnodeConfig->GetNid()] = lnode;
+                // add logical node to physical node's logical node container 
+                node1->AddLNodeP( lnode );
+            }
+        }
+        else
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s@%d] Could not find logical node in "
+                      "configuration of physical node, pnid=%d\n"
+                    , method_name, __LINE__, node2->GetPNid() );
+            mon_log_write(MON_NODE_ADDLNODES_3, SQ_LOG_ERR, buf);
+            abort();
+        }
+    }
+    else
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s@%d] Could not find physical node in configuration, "
+                  "pnid=%d\n"
+                , method_name, __LINE__, node2->GetPNid());
+        mon_log_write(MON_NODE_ADDLNODES_4, SQ_LOG_ERR, buf);
+        abort();
     }
 
     TRACE_EXIT;
@@ -1754,7 +1938,7 @@ void CNodeContainer::UnpackSpareNodesList( intBuffPtr_t &buffer, int spareNodesC
     // reset spareNode_ flag in all nodes.
     for ( int pnid = 0; pnid < GetPNodesCount(); pnid++ )
     {
-        Node[pnid]->ResetSpareNode();
+        Node[indexToPnid_[pnid]]->ResetSpareNode();
     }
 
     for ( int i=0; i < spareNodesCount; i++ )
@@ -1762,8 +1946,8 @@ void CNodeContainer::UnpackSpareNodesList( intBuffPtr_t &buffer, int spareNodesC
         if (trace_settings & TRACE_INIT)
             trace_printf("%s@%d - unpacking spare node pnid=%d \n", method_name, __LINE__, *buffer);
 
-        spareNodesList_.push_back( Node[*buffer] );
-        Node[*buffer]->SetSpareNode();
+        spareNodesList_.push_back( Node[indexToPnid_[*buffer]] );
+        Node[indexToPnid_[*buffer]]->SetSpareNode();
         ++buffer;
     }
 
@@ -1837,13 +2021,18 @@ void CNodeContainer::PackZids( intBuffPtr_t &buffer )
     const char method_name[] = "CNodeContainer::PackZids";
     TRACE_ENTRY;
 
-    for ( int pnid = 0; pnid < GetPNodesCount(); pnid++ )
+    // Pack in pairs of pnid:zid to account for missing pnid(s)
+    for ( int index = 0; index < GetPNodesCount(); index++ )
     {
-        *buffer = Node[pnid]->GetZone();
+        *buffer = Node[indexToPnid_[index]]->GetPNid();
+        ++buffer;
+        *buffer = Node[indexToPnid_[index]]->GetZone();
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            trace_printf( "%s@%d - Packing zid=%d for pnid=%d\n"
+            trace_printf( "%s@%d - Packing zid=%d for indexToPnid_[%d]=%d\n"
                          , method_name, __LINE__
-                         , Node[pnid]->GetZone(), pnid);
+                         , *buffer
+                         , index
+                         , indexToPnid_[index]);
         ++buffer;
     }
 
@@ -1856,13 +2045,17 @@ void CNodeContainer::UnpackZids( intBuffPtr_t &buffer )
     const char method_name[] = "CNodeContainer::UnpackZids";
     TRACE_ENTRY;
 
-    for ( int pnid = 0; pnid < GetPNodesCount(); pnid++ )
+    // Unpack in pairs of pnid:zid to account for missing pnid(s)
+    for ( int index = 0; index < GetPNodesCount(); index++ )
     {
-        Node[pnid]->SetZone(*buffer);
+        int pnid = *buffer;
+        ++buffer;
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            trace_printf( "%s@%d - Unpacking zid=%d for pnid=%d\n"
+            trace_printf( "%s@%d - Unpacking zid=%d pnid=%d\n"
                          , method_name, __LINE__
-                         , Node[pnid]->GetZone(), pnid);
+                         , *buffer
+                         , pnid);
+        Node[pnid]->SetZone(*buffer);
         ++buffer;
     }
 
@@ -1988,22 +2181,22 @@ CLNode *CNodeContainer::AssignLNode( CProcess *requester, PROCESSTYPE type, int 
 
 void CNodeContainer::AvgNodeData(ZoneType type, int *avg_pcount, unsigned int *avg_memory)
 {
-    int     nid;
     int     lnodes = 0;
     CNode  *node;
     
     const char method_name[] = "CNodeContainer::AvgNodeData";
     TRACE_ENTRY;
 
-    for ( nid = 0; nid < GetLNodesCount(); nid++ )
+    CLNode *lnode = Nodes->GetFirstLNode();
+    for ( ; lnode ; lnode = lnode->GetNext() )
     {
-        node = LNode[nid]->GetNode();
+        node = lnode->GetNode();
         // average only over node of requested type and available logical nodes
-        if ( (LNode[nid]->GetZoneType() & type) &&
-             (LNode[nid]->GetState() == State_Up &&
-             !LNode[nid]->IsKillingNode()) )
+        if ( (lnode->GetZoneType() & type) &&
+             (lnode->GetState() == State_Up &&
+             !lnode->IsKillingNode()) )
         {
-            *avg_pcount += LNode[nid]->GetNumProcs();
+            *avg_pcount += lnode->GetNumProcs();
             *avg_memory += (node->GetFreeCache() + node->GetFreeSwap());
             lnodes++;
         }
@@ -2044,20 +2237,148 @@ void CNodeContainer::CancelDeathNotification( int nid
     TRACE_EXIT;
 }
    
-
-CLNode *CNodeContainer::GetLNode (int nid)
+void CNodeContainer::DeletedNode( CNode *node )
 {
-    CLNode *lnode;
-    const char method_name[] = "CNodeContainer::GetLNode";
+    const char method_name[] = "CNodeContainer::DeletedNode";
     TRACE_ENTRY;
 
-    if( nid >= 0 && nid < GetLNodesCount() )
+    if (trace_settings & (TRACE_REQUEST | TRACE_SYNC))
     {
-        lnode = LNode[nid];
+        trace_printf( "%s@%d - node %s, pnid=%d, zone=%d\n"
+                    , method_name, __LINE__
+                    , node->GetName(), node->GetPNid(), node->GetZone() );
+    }
+
+    assert( node->GetState() == State_Down );
+
+    // Broadcast node deleted notice to local processes
+    CLNode *lnode = node->GetFirstLNode();
+    for ( ; lnode; lnode = lnode->GetNextP() )
+    {
+        lnode->Deleted();
+    }
+
+    TRACE_EXIT;
+}
+
+bool CNodeContainer::DeleteNode( int pnid )
+{
+    const char method_name[] = "CNodeContainer::DeleteNode";
+    TRACE_ENTRY;
+
+    int rs = true;
+
+    CNode *pnode = GetNode( pnid );
+    if ( pnode )
+    {
+        // Broadcast node deleted notice to local processes
+        Nodes->DeletedNode( pnode );
+
+        // Now delete it from the monitor's view
+        Nodes->DeleteNode( pnode );
+        // Verify it was deleted, sanity check!
+        assert( (pnode = Nodes->GetNode( pnid )) == NULL );
     }
     else
     {
-        lnode = NULL;
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s@%d] Could not find physical node "
+                  "in monitor's view of cluster, pnid=%d\n"
+                , method_name, __LINE__, pnid);
+        mon_log_write(MON_NODE_DELETENODE_1, SQ_LOG_ERR, buf);
+        rs = false;
+    }
+
+    TRACE_EXIT;
+    return( rs );
+}
+
+void CNodeContainer::DeleteNode( CNode  *node )
+{
+    const char method_name[] = "CNodeContainer::DeleteNode";
+    TRACE_ENTRY;
+
+    int pnid = node->GetPNid();
+
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d deleting (pnid=%d), pnodesCount=%d, lnodesCount=%d\n"
+                     , method_name, __LINE__
+                     , pnid
+                     , GetPNodesCount()
+                     , GetLNodesCount() );
+    }
+
+    // lock sync thread
+    if ( !Emulate_Down )
+    {
+        Monitor->EnterSyncCycle();
+    }
+
+    // delete logical nodes owned by physical node
+    DeleteNodeLNodes( node );
+
+    // delete physical node and remove from physical nodes array
+    node->DeLink (&head_, &tail_);
+    delete node;
+    Node[pnid] = NULL;
+
+    // Decrement the physical node count
+    pnodeCount_--;
+    
+    // unlock sync thread
+    if ( !Emulate_Down )
+    {
+        Monitor->ExitSyncCycle();
+    }
+
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d deleted (pnid=%d), pnodesCount=%d, lnodesCount=%d\n"
+                     , method_name, __LINE__
+                     , pnid
+                     , GetPNodesCount()
+                     , GetLNodesCount() );
+    }
+
+    TRACE_EXIT;
+}
+
+void CNodeContainer::DeleteNodeLNodes( CNode *node )
+{
+    const char method_name[] = "CNodeContainer::DeleteNodeLNode";
+    TRACE_ENTRY;
+
+
+    CLNode *lnode = node->GetFirstLNode();
+    while ( lnode )
+    {
+        int nid = lnode->GetNid();
+        LNode[nid] = NULL;
+        // Remove logical node from physical node
+        node->RemoveLNodeP( lnode );
+        // Delete logical node
+        Nodes->DeleteLNode( lnode );
+        lnode = node->GetFirstLNode();
+    }
+    
+    TRACE_EXIT;
+}
+
+CLNode *CNodeContainer::GetLNode(int nid)
+{
+    const char method_name[] = "CNodeContainer::GetLNode";
+    TRACE_ENTRY;
+
+    CLNode *lnode = GetFirstLNode();
+    while (lnode)
+    {
+        if ( lnode->GetNid() == nid )
+        { 
+            break;
+        }
+        lnode = lnode->GetNext();
     }
 
     TRACE_EXIT;
@@ -2121,19 +2442,75 @@ CLNode *CNodeContainer::GetLNode( char *process_name, CProcess **process,
     return lnode;
 }
 
+int CNodeContainer::GetFirstNid( void )
+{
+    const char method_name[] = "CNodeContainer::GetFirstNid";
+    TRACE_ENTRY;
+
+    int target = -1;
+    for (int i = 0; i <  clusterConfig_->GetLNodesConfigMax(); i++ )
+    {
+        CLNode *lnode = LNode[i];
+        if ( lnode )
+        {
+            target = lnode->GetNid();
+            break;
+        }
+    }
+
+    TRACE_EXIT;
+    return( target );
+}
+
+int CNodeContainer::GetNextNid( int nid )
+{
+    const char method_name[] = "CNodeContainer::GetNextNid";
+    TRACE_ENTRY;
+
+    int target = -1;
+    for (int i = (nid+1); i <  clusterConfig_->GetLNodesConfigMax(); i++ )
+    {
+        CLNode *lnode = LNode[i];
+        if ( lnode )
+        {
+            target = lnode->GetNid();
+            break;
+        }
+    }
+
+    TRACE_EXIT;
+    return( target );
+}
+
 CNode *CNodeContainer::GetNode(int pnid)
 {
-    CNode *node;
     const char method_name[] = "CNodeContainer::GetNode";
     TRACE_ENTRY;
 
-    if( pnid >= 0 && pnid < GetPNodesCount() )
+    CNode *node = head_;
+    while (node)
     {
-        node = Node[pnid];
+        if ( node->GetPNid() == pnid )
+        { 
+            break;
+        }
+        node = node->GetNext();
     }
-    else
+
+    TRACE_EXIT;
+    return node;
+}
+
+CNode *CNodeContainer::GetNodeByMap(int index )
+{
+    const char method_name[] = "CNodeContainer::GetNodeByMap";
+    TRACE_ENTRY;
+
+    CNode *node = NULL;
+    
+    if( index >= 0 && index < GetPNodesCount() )
     {
-        node = NULL;
+        node = Node[indexToPnid_[index]];
     }
 
     TRACE_EXIT;
@@ -2279,7 +2656,7 @@ CProcess *CNodeContainer::GetProcess( int nid
                                        , nid
                                        , pid
                                        , verifier );
-                        }            
+                        }
                     }
                 }
                 else
@@ -2544,9 +2921,10 @@ CNode *CNodeContainer::GetZoneNode(int zid)
 
     for ( int pnid = 0; pnid < GetPNodesCount(); pnid++ )
     {
-        if ( ! Node[pnid]->IsSpareNode() && Node[pnid]->GetZone() == zid )
+        if ( ! Node[indexToPnid_[pnid]]->IsSpareNode() 
+            && Node[indexToPnid_[pnid]]->GetZone() == zid )
         {
-            node = Node[pnid];
+            node = Node[indexToPnid_[pnid]];
             break;
         }
     }
@@ -2575,10 +2953,10 @@ CNodeContainer::InitSyncBuffer( struct sync_buffer_def *syncBuf
 
     for (int i = 0; i < GetPNodesCount(); i++)
     {
-        if (Node[i]->GetChangeState())
+        if ( Node[indexToPnid_[i]] && Node[indexToPnid_[i]]->GetChangeState())
         {
-            syncBuf->nodeInfo.change_nid = i;
-            Node[i]->SetChangeState( false );
+            syncBuf->nodeInfo.change_nid = indexToPnid_[i];
+            Node[indexToPnid_[i]]->SetChangeState( false );
             break;
         }
     }
@@ -2781,35 +3159,41 @@ void CNodeContainer::RemoveFromSpareNodesList( CNode *node )
     TRACE_EXIT;
 }
 
-void CNodeContainer::SetupCluster( CNode ***pnode_list, CLNode ***lnode_list )
+void CNodeContainer::SetupCluster( CNode ***pnode_list, CLNode ***lnode_list, int **indexToPnid )
 {
     const char method_name[] = "CNodeContainer::SetupCluster";
     TRACE_ENTRY;
 
     *pnode_list = Node;
     *lnode_list = LNode;
+    *indexToPnid = indexToPnid_;
 
     // Build list of spare nodes
-    for ( int i = 0; i < GetPNodesCount(); i++ )
+    CNode *node = GetFirstNode();
+    for ( int i = 0; node && i < GetPNodesCount(); i++, node = node->GetNext() )
     {
-        if (trace_settings & TRACE_INIT)
-            trace_printf( "%s@%d - Node %s (pnid=%d, zid=%d, state=%s) is Spare=%d\n"
-                        , method_name, __LINE__
-                        , Node[i]->GetName()
-                        , Node[i]->GetPNid()
-                        , Node[i]->GetZone()
-                        , StateString(Node[i]->GetState())
-                        , Node[i]->IsSpareNode());
-        if ( Node[i]->GetState() == State_Up && Node[i]->IsSpareNode() )
+        if (node)
         {
-            spareNodesConfigList_.push_back( Node[i] );
-            if ( IAmIntegrating )
+            indexToPnid_[i] = node->GetPNid();
+            if (trace_settings & TRACE_INIT)
+                trace_printf( "%s@%d - Node %s (pnid=%d, zid=%d, state=%s) is Spare=%d\n"
+                            , method_name, __LINE__
+                            , node->GetName()
+                            , node->GetPNid()
+                            , node->GetZone()
+                            , StateString(node->GetState())
+                            , node->IsSpareNode());
+            if ( node->GetState() == State_Up && node->IsSpareNode() )
             {
-                // do nothing. spareNodesList will get populated in the join phase.
-            }
-            else
-            {
-                spareNodesList_.push_back( Node[i] );
+                spareNodesConfigList_.push_back( node );
+                if ( IAmIntegrating )
+                {
+                    // do nothing. spareNodesList will get populated in the join phase.
+                }
+                else
+                {
+                    spareNodesList_.push_back( node );
+                }
             }
         }
     }
@@ -2832,9 +3216,6 @@ void CNodeContainer::LoadConfig( void )
     const char method_name[] = "CNodeContainer::LoadConfig";
     TRACE_ENTRY;
 
-//    CNode   **oldNode;          // array of physical node objects
-//    CLNode  **oldLNode;         // array of logical node objects
-
     if ( !clusterConfig_ )
     {
         clusterConfig_ = new CClusterConfig();
@@ -2850,12 +3231,6 @@ void CNodeContainer::LoadConfig( void )
                 mon_log_write(MON_NODECONT_LOAD_CONFIG_1, SQ_LOG_CRIT, la_buf);
                 
                 abort();
-            }
-            else
-            {
-                // Allocate logical and physical node arrays
-                Node = new CNode *[clusterConfig_->GetPNodesCount()];
-                LNode = new CLNode *[clusterConfig_->GetLNodesCount()];
             }
         }
         else
@@ -2875,35 +3250,6 @@ void CNodeContainer::LoadConfig( void )
         
         abort();
     }
-
-    TRACE_EXIT;
-}
-
-void CNodeContainer::ReloadConfig( void )
-{
-    const char method_name[] = "CNodeContainer::ReloadConfig";
-    TRACE_ENTRY;
-
-    // Delete old static configuration
-    if ( clusterConfig_ )
-    {
-        delete clusterConfig_;
-        clusterConfig_ = NULL;
-    }
-
-    // Load the current static configuration
-    if ( !clusterConfig_ )
-    {
-        //
-    }
-//    else
-//    {
-//        char la_buf[MON_STRING_BUF_SIZE];
-//        sprintf(la_buf, "[%s], Failed to allocate cluster configuration.\n", method_name);
-//        mon_log_write(MON_NODECONT_RELOAD_CONFIG_1, SQ_LOG_CRIT, la_buf);
-//        
-//        abort();
-//    }
 
     TRACE_EXIT;
 }
@@ -2972,17 +3318,23 @@ CLNode *CNodeContainer::NextPossibleLNode( CProcess *requester, ZoneType type, i
     //   3) node must not be a "not_zone" node
     //   4) if load is considered, node must meet load criteria
     int nodesConsidered = 0;
-    while ( selected_nid == -1  && ++nodesConsidered <= GetLNodesCount() )
+    while ( selected_nid == -1  && ++nodesConsidered <= GetLNodesConfigMax() )
     {
         // Advance to next logical node number
         ++cNid;
-        if ( cNid >= GetLNodesCount() )
+        if ( cNid >= GetLNodesConfigMax() )
         {   // Wrap around to node 0
             cNid = 0;
         }
 
-        if ( LNode[cNid]->GetState() != State_Up ||
-             LNode[cNid]->IsKillingNode() )
+        lnode = GetLNode( cNid );
+        if ( ! lnode )
+        {
+            continue;
+        }
+
+        if ( lnode->GetState() != State_Up ||
+             lnode->IsKillingNode() )
         {
             continue;
         }
@@ -2990,32 +3342,31 @@ CLNode *CNodeContainer::NextPossibleLNode( CProcess *requester, ZoneType type, i
         if ( considerLoad )
         {
 #ifdef USE_MEMORY_LOADBALANCING
-            memory = (LNode[cNid]->GetNode()->GetFreeCache() + LNode[cNid]->GetNode()->GetFreeSwap())*0.95; 
+            memory = (lnode->GetNode()->GetFreeCache() + lnode->GetNode()->GetFreeSwap())*0.95; 
             if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                 trace_printf("%s@%d - Nid=%d, Memory=%d, AvgMemory=%d\n", method_name, __LINE__, cNid, memory, avg_memory );
 #endif
             if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-                trace_printf("%s@%d - Nid=%d, NumProcs=%d, AvgProcs=%d\n", method_name, __LINE__, cNid, LNode[cNid]->GetNumProcs(), avg_pcount );
+                trace_printf("%s@%d - Nid=%d, NumProcs=%d, AvgProcs=%d\n", method_name, __LINE__, cNid, lnode->GetNumProcs(), avg_pcount );
         }
 
         // *** round robin based on requester's last used nid skipping overloaded nodes
-        if (( LNode[cNid]->GetZone() != not_zone  ) &&
-            ( LNode[cNid]->NodeZoneType & type    ) )
+        if (( lnode->GetZone() != not_zone  ) &&
+            ( lnode->NodeZoneType & type    ) )
         {
             if ( !considerLoad
                  || (
 #ifdef USE_MEMORY_LOADBALANCING
                   ( memory <= avg_memory             ) && 
 #endif
-                  ( LNode[cNid]->GetNumProcs() <= avg_pcount ))   )
+                  ( lnode->GetNumProcs() <= avg_pcount ))   )
             {
-                lnode = LNode[cNid];
-                selected_nid = cNid;
+                selected_nid = lnode->GetNid();
                 if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
                     trace_printf("%s@%d - Selecting Nid=%d, ZoneType=%d, "
                                  "requested: ZoneType=%d, not_zone=%d\n",
                                  method_name, __LINE__, selected_nid,
-                                 LNode[cNid]->NodeZoneType, type, not_zone);
+                                 lnode->NodeZoneType, type, not_zone);
             }
             else
             {   // Node has load greater than desired.
@@ -3030,13 +3381,14 @@ CLNode *CNodeContainer::NextPossibleLNode( CProcess *requester, ZoneType type, i
     {
         if ( firstViableNid != -1 )
         {
-            lnode = LNode[firstViableNid];
-            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            lnode = GetLNode( firstViableNid );
+            assert( lnode );
+            if (lnode && trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
             {
                 trace_printf("%s@%d - Selecting Nid=%d, ZoneType=%d, "
                              "requested: ZoneType=%d, not_zone=%d\n",
                              method_name, __LINE__, firstViableNid,
-                             LNode[firstViableNid]->NodeZoneType,
+                             lnode->NodeZoneType,
                              type, not_zone);
             }
         }
@@ -3051,4 +3403,57 @@ CLNode *CNodeContainer::NextPossibleLNode( CProcess *requester, ZoneType type, i
 
     TRACE_EXIT;
     return lnode;
+}
+
+void CNodeContainer::UpdateCluster( int **indexToPnid )
+{
+    const char method_name[] = "CNodeContainer::UpdateCluster";
+    TRACE_ENTRY;
+
+    *indexToPnid = indexToPnid_;
+
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+        for ( int i = 0; i < GetPNodesCount(); i++ )
+        {
+            trace_printf( "%s@%d - indexToPnid_[%d]=%d\n"
+                        , method_name, __LINE__, i, indexToPnid_[i]);
+        }
+    }
+
+    for (int i = 0; i < clusterConfig_->GetPNodesConfigMax(); i++ )
+    {
+        indexToPnid_[i] = -1;
+    }
+
+    // Refresh the index to pnid map
+    CNode *node = GetFirstNode();
+    for ( int i = 0; node && i < GetPNodesCount(); i++, node = node->GetNext() )
+    {
+        if (node)
+        {
+            indexToPnid_[i] = node->GetPNid();
+            if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+            {
+                trace_printf( "%s@%d - Node %s (pnid=%d, zid=%d, state=%s) is Spare=%d\n"
+                            , method_name, __LINE__
+                            , node->GetName()
+                            , node->GetPNid()
+                            , node->GetZone()
+                            , StateString(node->GetState())
+                            , node->IsSpareNode());
+            }
+        }
+    }
+
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+        for ( int i = 0; i < GetPNodesCount(); i++ )
+        {
+            trace_printf( "%s@%d - indexToPnid_[%d]=%d\n"
+                        , method_name, __LINE__, i, indexToPnid_[i]);
+        }
+    }
+
+    TRACE_EXIT;
 }

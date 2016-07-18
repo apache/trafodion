@@ -353,6 +353,14 @@
 #define MON_NODE_SHUTDOWN_1                 101040801
 #define MON_NODE_STARTPSTARTD_1             101040901
 #define MON_NODE_STARTSMSERVICE_1           101041001
+#define MON_NODE_ADDNODE_1                  101041101
+#define MON_NODE_ADDNODE_2                  101041102
+#define MON_NODE_ADDNODE_3                  101041103
+#define MON_NODE_ADDLNODES_1                101041201
+#define MON_NODE_ADDLNODES_2                101041202
+#define MON_NODE_ADDLNODES_3                101041203
+#define MON_NODE_ADDLNODES_4                101041204
+#define MON_NODE_DELETENODE_1               101041301
 
 /* Module: config.cxx = 05 */
 
@@ -423,12 +431,19 @@
 #define MON_CLUSTERCONF_DELETENODE_1        101090501
 #define MON_CLUSTERCONF_DELETEDBNODE_1      101090601
 #define MON_CLUSTERCONF_DELETEDBNODE_2      101090602
+#define MON_CLUSTERCONF_DELETEDBNODE_3      101090603
+#define MON_CLUSTERCONF_DELETEDBNODE_4      101090604
 #define MON_CLUSTERCONF_SAVENODE_1          101090701
 #define MON_CLUSTERCONF_SAVELNODE_1         101090801
 #define MON_CLUSTERCONF_SAVELNODE_2         101090802
 #define MON_CLUSTERCONF_SAVEPNODE_1         101090901
 #define MON_CLUSTERCONF_SAVEPNODE_2         101090902
 #define MON_CLUSTERCONF_CLEAR_1             101091001
+#define MON_CLUSTERCONF_UPDATEPNODECFG_1    101091101
+#define MON_CLUSTERCONF_UPDATEDBPNODE_1     101091201
+#define MON_CLUSTERCONF_UPDATEDBPNODE_2     101091202
+#define MON_CLUSTERCONF_DELETEDBUSTRING_1   101091301
+#define MON_CLUSTERCONF_DELETEDBUSTRING_2   101091302
 
 /* Module: lock.cxx = 10 */
 
@@ -570,7 +585,7 @@
 #define MON_INTPROCESS_4                    101170104
 #define MON_INTPROCESS_5                    101170105
 
-/* Module: reqqueue.cxx = 18 */
+/* Modules: reqqueue.cxx req<xxxxx>.cxx = 18 */
 
 #define MON_REQQUEUE_PREP_REQ_1             101180101
 #define MON_REQQUEUE_PREP_EXT_REQ_1         101180201
@@ -595,12 +610,19 @@
 #define MON_REQQUEUE_REVIVE_5               101180505
 #define MON_REQQUEUE_REVIVE_6               101180506
 #define MON_REQQUEUE_REQUEST_1              101180601
-#define MON_REQQUEUE_NODE_ADD_1             101180701
-#define MON_REQQUEUE_NODE_ADD_2             101180702
-#define MON_REQQUEUE_NODE_ADD_3             101180703
-#define MON_REQQUEUE_NODE_DELETE_1          101180801
-#define MON_REQQUEUE_NODE_DELETE_2          101180802
-#define MON_REQQUEUE_NODE_DELETE_3          101180803
+#define MON_REQ_NODE_ADD_1                  101180701
+#define MON_REQ_NODE_ADD_2                  101180702
+#define MON_REQ_NODE_ADD_3                  101180703
+#define MON_REQ_NODE_ADD_4                  101180704
+#define MON_REQ_NODE_DELETE_1               101180801
+#define MON_REQ_NODE_DELETE_2               101180802
+#define MON_REQ_NODE_DELETE_3               101180803
+#define MON_REQ_NODE_DELETE_4               101180804
+#define MON_REQ_NODE_NAME_1                 101180901
+#define MON_REQ_NODE_NAME_2                 101180902
+#define MON_INTREQ_NODE_NAME_1              101181001
+#define MON_INTREQ_NODE_NAME_2              101181002
+#define MON_INTREQ_NODE_NAME_3              101181003
 
 /* Module: clio.cxx = 19 */
 #define MON_CLIO_ACQUIRE_MSG_1              101190101

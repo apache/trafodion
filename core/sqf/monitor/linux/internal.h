@@ -98,7 +98,7 @@ typedef struct
 {
     upNode_t upNodes[MAX_NODE_MASKS];
 } upNodes_t;
-    
+
 typedef int Verifier_t;             // Process verifier typedef
 
 struct clone_def
@@ -146,13 +146,6 @@ struct down_def
 {
     int pnid;                       // Physical node id
 };
-
-struct nodename_def
-{
-    char current_name[MPI_MAX_PROCESSOR_NAME];
-    char new_name[MPI_MAX_PROCESSOR_NAME];
-};
-
 
 struct shutdown_def
 {
@@ -260,6 +253,16 @@ struct node_deleted_def
     int  pnid;                              // Target pnid
 };
 
+struct node_name_def
+{
+    int req_nid;                            // Node id of requesting process
+    int req_pid;                            // Process id of requesting process
+    Verifier_t req_verifier;                // Verifier of the requesting process
+    char current_name[MPI_MAX_PROCESSOR_NAME];
+    char new_name[MPI_MAX_PROCESSOR_NAME];
+};
+
+
 struct notify_def
 {
     int nid;            // Node id of process being notified
@@ -348,7 +351,7 @@ struct scheddata_def
     unsigned int memory_dirty;          // Node's memory waiting to be written to disk
     unsigned int memory_writeback;      // Node's memory being written to disk
     unsigned int memory_VMallocUsed;    // Node's amount of used virtual memory
-    ProcStat_t   proc_stats[32];        // Per-core processor statistics
+    ProcStat_t   proc_stats[MAX_LNODES_PER_NODE]; // Per logical node processor statistics
     unsigned int btime;                 // Node boot time
 };
 
@@ -410,7 +413,7 @@ struct internal_msg_def
         struct node_added_def   node_added;
         struct node_delete_def  node_delete;
         struct node_deleted_def node_deleted;
-        struct nodename_def     nodename;
+        struct node_name_def    node_name;
         struct notify_def  notify;
         struct process_def process;
         struct process_init_def processInit;

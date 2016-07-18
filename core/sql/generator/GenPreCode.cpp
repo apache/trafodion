@@ -1752,8 +1752,7 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
             }
 
 
-	  if ((CmpCommon::getDefault(EID_SPACE_USAGE_OPT) == DF_ON) &&
-	      (NOT generator->downrevCompileNeeded()))
+	  if (CmpCommon::getDefault(EID_SPACE_USAGE_OPT) == DF_ON)
 	    {
 	      generator->setDoEidSpaceUsageOpt(TRUE);
 	    }
@@ -1793,9 +1792,6 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 		  generator->oltOptInfo()->setOltEidLeanOpt(TRUE);
 		}
 	    }
-
-	  if (generator->downrevCompileNeeded())
-	    generator->oltOptInfo()->setOltEidLeanOpt(FALSE);
 
 	  if (CmpCommon::getDefault(OLT_QUERY_OPT_LEAN) == DF_OFF)
 	    generator->oltOptInfo()->setOltEidLeanOpt(FALSE);
@@ -2783,17 +2779,17 @@ RelExpr * ExeUtilExpr::preCodeGen(Generator * generator,
   return this;
 }
 
-// returns true if the whole ddl operation can run in one transaction
-// and transaction can be started by caller(master executor or arkcmp)
-// before executing this ddl.
+// xnCanBeStarted is set to true if the whole ddl operation can run in one transaction
+// It is set to false, then the DDL implementation methods manages the transaction
 short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
 {
   ExprNode * ddlNode = getDDLNode();
 
   xnCanBeStarted = TRUE;
-  // no DDL transactions.
-  if ((NOT ddlXns()) &&
-      ((dropHbase()) ||
+  // When the DDL transaction is not turned on via CQD
+  if (NOT ddlXns()) 
+  { 
+     if ((dropHbase()) ||
        (purgedataHbase()) ||
        (initHbase()) ||
        (createMDViews()) ||
@@ -2805,14 +2801,13 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
        (dropRepos()) ||
        (upgradeRepos()) ||
        (addSchemaObjects()) ||
-       (updateVersion())))
-    {
-      // transaction will be started and commited in called methods.
-      xnCanBeStarted = FALSE;
-    }
+       (updateVersion()))
+     {
+        // transaction will be started and commited in called methods.
+         xnCanBeStarted = FALSE;
+     }
   
-  // no DDL transactions
-  if (((ddlNode) && (ddlNode->castToStmtDDLNode()) &&
+     if (((ddlNode) && (ddlNode->castToStmtDDLNode()) &&
        (NOT ddlNode->castToStmtDDLNode()->ddlXns())) &&
       ((ddlNode->getOperatorType() == DDL_DROP_SCHEMA) ||
        (ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
@@ -2824,44 +2819,34 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE) ||
        (ddlNode->getOperatorType() == DDL_DROP_TABLE)))
-    {
-      // transaction will be started and commited in called methods.
-      xnCanBeStarted = FALSE;
-    }
+     {
+        // transaction will be started and commited in called methods.
+        xnCanBeStarted = FALSE;
+     }
+     isDDLxn = FALSE;
+  }
+  else  // When the DDL transaction is turned on
+  {
+     isDDLxn = FALSE;
+     if (ddlNode && ddlNode->castToStmtDDLNode() &&
+        ddlNode->castToStmtDDLNode()->ddlXns())
+     isDDLxn = TRUE;
 
-  isDDLxn = FALSE;
-  if ((ddlXns()) || 
-      ((ddlNode && ddlNode->castToStmtDDLNode() &&
-        ddlNode->castToStmtDDLNode()->ddlXns())))
-    isDDLxn = TRUE;
-
-  // ddl transactions are on.
-  // Following commands currently require transactions be started and
-  // committed in the called methods.
-  if ((ddlXns()) &&
-      (
-           (purgedataHbase()) ||
-           (upgradeRepos())
-       )
-      )
-    {
-      // transaction will be started and commited in called methods.
-      xnCanBeStarted = FALSE;
-    }
-
-  // ddl transactions are on.
-  // Cleanup and alter commands requires transactions to be started and commited
-  // in the called method.
-  if ((ddlNode && ddlNode->castToStmtDDLNode() &&
-       ddlNode->castToStmtDDLNode()->ddlXns()) &&
-      ((ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
-       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
-       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)))
-    {
-      // transaction will be started and commited in called methods.
-      xnCanBeStarted = FALSE;
-    }
-
+     if (purgedataHbase() || upgradeRepos())
+        // transaction will be started and commited in called methods.
+        xnCanBeStarted = FALSE;
+     if ((ddlNode && ddlNode->castToStmtDDLNode() &&
+          ddlNode->castToStmtDDLNode()->ddlXns()) &&
+            ((ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
+             (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
+             (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)))
+     {
+        // transaction will be started and commited in called methods.
+        xnCanBeStarted = FALSE;
+     }
+  } 
   return 0;
 }
 
@@ -3588,18 +3573,6 @@ RelExpr * HashJoin::preCodeGen(Generator * generator,
 
   if (hjp.isEmpty())
   {
-    if (generator->downrevCompileNeeded())
-      {
-	// This is a cartesian product.
-	// create a join predicate " 1 = 1 " which will always be true.
-	//
-	ItemExpr *left = new(generator->wHeap()) ConstValue(1);
-	ItemExpr *right = new(generator->wHeap()) ConstValue(1);
-
-	BiRelat *pred = new(generator->wHeap()) BiRelat(ITM_EQUAL,left,right);
-	pred->bindNode(generator->getBindWA());
-	newJoinPreds.insert(pred->getValueId());
-      }
   }
   else
   {
@@ -4200,8 +4173,10 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
       if (isHiveTable())
 	// assign individual files and blocks to each ESPs
 	((NodeMap *) getPartFunc()->getNodeMap())->assignScanInfos(hiveSearchKey_);
+       generator->setProcessLOB(TRUE);
     }
 
+  
   // Selection predicates are not needed anymore:
   selectionPred().clear();
 
@@ -5440,6 +5415,7 @@ RelExpr * HiveInsert::preCodeGen(Generator * generator,
     return this;
 
   generator->setHiveAccess(TRUE);
+  generator->setProcessLOB(TRUE);
   return GenericUpdate::preCodeGen(generator, externalInputs, pulledNewInputs);
 }
 
@@ -5621,18 +5597,6 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 		} // lobinsert
 
 	      GenAssert(li, "must have a LobInsert node");
-#ifdef __ignore 
-	      LOBload * ll = new(generator->wHeap()) 
-		LOBload(li->child(0), li->getObj());
-	      ll->insertedTableObjectUID() = li->insertedTableObjectUID();
-	      ll->insertedTableSchemaName() = li->insertedTableSchemaName();
-
-	      ll->lobNum() = col->lobNum();
-	      ll->lobStorageType() = col->lobStorageType();
-	      ll->lobStorageLocation() = col->lobStorageLocation();
-	      ll->bindNode(generator->getBindWA());
-	      lobLoadExpr_.insert(ll->getValueId());
-#endif
 	    } // lob
 	}
     }
@@ -5680,6 +5644,16 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 RelExpr * ExeUtilFastDelete::preCodeGen(Generator * generator,
 					const ValueIdSet & externalInputs,
 					ValueIdSet &pulledNewInputs)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
+
+  return ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs);
+}
+
+RelExpr * ExeUtilHiveTruncate::preCodeGen(Generator * generator,
+                                          const ValueIdSet & externalInputs,
+                                          ValueIdSet &pulledNewInputs)
 {
   if (nodeIsPreCodeGenned())
     return this;
@@ -7939,6 +7913,17 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
   return this;
 } // BiArith::preCodeGen()
 
+ItemExpr * UnArith::preCodeGen(Generator * generator)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
+
+  if (! ItemExpr::preCodeGen(generator))
+    return NULL;
+
+  return this;
+}
+
 ItemExpr * BiLogic::preCodeGen(Generator * generator)
 {
   if (nodeIsPreCodeGenned())
@@ -8306,13 +8291,15 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 
 
   // following is for simple types.
+  const NAType &type1B =
+    child(0)->castToItemExpr()->getValueId().getType();
+  const NAType &type2B =
+    child(1)->castToItemExpr()->getValueId().getType();
 
   SimpleType * attr_op1 = (SimpleType *)
-    (ExpGenerator::convertNATypeToAttributes(
-	 child(0)->getValueId().getType(), generator->wHeap()));
+    (ExpGenerator::convertNATypeToAttributes(type1B, generator->wHeap()));
   SimpleType * attr_op2 = (SimpleType *)
-    (ExpGenerator::convertNATypeToAttributes(
-	 child(1)->getValueId().getType(), generator->wHeap()));
+    (ExpGenerator::convertNATypeToAttributes(type2B, generator->wHeap()));
 
   ex_comp_clause temp_clause;
 
@@ -8320,6 +8307,68 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 			     attr_op1,
 			     attr_op2
 			     );
+
+  if ((temp_clause.get_case_index() == ex_comp_clause::COMP_NOT_SUPPORTED) &&
+      (type1B.getTypeQualifier() == NA_NUMERIC_TYPE) &&
+      (type2B.getTypeQualifier() == NA_NUMERIC_TYPE))
+    {
+      const NumericType &numOp1 = (NumericType&)type1B;
+      const NumericType &numOp2 = (NumericType&)type2B;
+
+      if ((numOp1.isExact() && numOp2.isExact()) &&
+          ((numOp1.getFSDatatype() == REC_BIN64_UNSIGNED) ||
+           (numOp2.getFSDatatype() == REC_BIN64_UNSIGNED)))
+        {
+          if (numOp1.getFSDatatype() == REC_BIN64_UNSIGNED)
+            {
+              // add a Cast node to convert op2 to sqllargeint.
+              ItemExpr * newOp2 =
+                new (generator->wHeap())
+                Cast(child(1),
+                     new (generator->wHeap())
+                     SQLLargeInt(numOp2.isSigned(),
+                                 numOp2.supportsSQLnull()));
+              
+              newOp2 = newOp2->bindNode(generator->getBindWA());
+              newOp2 = newOp2->preCodeGen(generator);
+              if (! newOp2)
+                return NULL;
+              
+              setChild(1, newOp2);
+
+              attr_op2 = (SimpleType *)
+                (ExpGenerator::convertNATypeToAttributes(
+                     newOp2->getValueId().getType(), generator->wHeap()));
+            }
+          else 
+           {
+              // add a Cast node to convert op1 to sqllargeint.
+              ItemExpr * newOp1 =
+                new (generator->wHeap())
+                Cast(child(0),
+                     new (generator->wHeap())
+                     SQLLargeInt(numOp1.isSigned(),
+                                 numOp1.supportsSQLnull()));
+              
+              newOp1 = newOp1->bindNode(generator->getBindWA());
+              newOp1 = newOp1->preCodeGen(generator);
+              if (! newOp1)
+                return NULL;
+              
+              setChild(0, newOp1);
+
+              attr_op1 = (SimpleType *)
+                (ExpGenerator::convertNATypeToAttributes(
+                     newOp1->getValueId().getType(), generator->wHeap()));
+           }
+
+          temp_clause.set_case_index(getOperatorType(),
+                                     attr_op1,
+                                     attr_op2
+                                     );
+        } // convert
+    }
+  
   if (temp_clause.get_case_index() != ex_comp_clause::COMP_NOT_SUPPORTED)
     {
       NABoolean doConstFolding = FALSE;
@@ -8362,7 +8411,7 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
                                                        *type_op1,
                                                        *type_op2,
 						       generator->wHeap(),
-                                          &flags);
+                                                       &flags);
   CMPASSERT(result_type);
   if (result_type->getTypeQualifier() == NA_NUMERIC_TYPE)
     {
@@ -8605,43 +8654,13 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
         }
     }
 
-  // Conversion to/from a tandem float type is only supported if
-  // the from/to type is a float type.
-  // If target is a tandem float type and source is not float or
-  // target is not float and source is tandem, then convert source
-  // to ieee float type (ieee double).
-  short srcFsType = child(0)->getValueId().getType().getFSDatatype();
-  short tgtFsType = getValueId().getType().getFSDatatype();
+  if (generator->getExpGenerator()->handleUnsupportedCast(this))
+    return NULL;
 
-  if ((((tgtFsType == REC_TDM_FLOAT32) ||
-	(tgtFsType == REC_TDM_FLOAT64)) &&
-       ! ((srcFsType >= REC_MIN_FLOAT) &&
-	  (srcFsType <= REC_MAX_FLOAT))) ||
-
-      (((srcFsType == REC_TDM_FLOAT32) ||
-	(srcFsType == REC_TDM_FLOAT64)) &&
-       ! ((tgtFsType >= REC_MIN_FLOAT) &&
-	  (tgtFsType <= REC_MAX_FLOAT))))
-    {
-      NAType * intermediateType =
-	new(generator->wHeap()) SQLDoublePrecision(
-	     child(0)->getValueId().getType().supportsSQLnull(),
-	     generator->wHeap());
-
-      // Genesis case 10-040126-9823.
-      // Match the scales of the source with that of the intermediate type. If
-      // this is not done, the cast to the intermediate type does not get scaled
-      // properly, leading to incorrect results.
-      child(0) = generator->getExpGenerator()->matchScales(
-        child(0)->getValueId(), *intermediateType);
-
-      child(0) = new(generator->wHeap()) Cast(child(0),intermediateType);
-
-      child(0)->bindNode(generator->getBindWA());
-
-      sourceTypeQual =
-	child(0)->getValueId().getType().getTypeQualifier();
-    }
+  const NAType &srcNAType = child(0)->getValueId().getType();
+  const NAType &tgtNAType = getValueId().getType();
+  short srcFsType = srcNAType.getFSDatatype();
+  short tgtFsType = tgtNAType.getFSDatatype();
 
   if ((sourceTypeQual == NA_NUMERIC_TYPE) &&
       (targetTypeQual == NA_DATETIME_TYPE))
@@ -8914,8 +8933,6 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 	    // -----------  ------------   --------------------------
 	    // IEEE 32 bit            38        7
 	    // IEEE 64 bit           308       17
-	    // Tandem 32 bit          78        7
-	    // Tandem 64 bit          78       18
 
 	    if (sourceNumType->getFSDatatype() == REC_IEEE_FLOAT32)
 	      {
@@ -8927,18 +8944,6 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 	      {
 		intermediatePrecision = 634; // (2 x 308) + 17 + 1 = 634
 		intermediateScale = 324;  // 308 + 17 - 1 = 324
-	      }
-
-	    else if (sourceNumType->getFSDatatype() == REC_TDM_FLOAT32)
-	      {
-		intermediatePrecision = 164; // (2 x 78) + 7 + 1 = 164
-		intermediateScale = 84;  // 78 + 7 - 1 = 84
-	      }
-
-	    else if (sourceNumType->getFSDatatype() == REC_TDM_FLOAT64)
-	      {
-		intermediatePrecision = 175; // (2 x 78) + 18 + 1 = 175
-		intermediateScale = 95;  // 78 + 18 - 1 = 95
 	      }
 
 	    NAType * intermediateType =
@@ -8954,6 +8959,9 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 	    child(0) = new(generator->wHeap()) Cast(child(0),intermediateType);
 
 	    child(0)->bindNode(generator->getBindWA());
+
+            if (generator->getExpGenerator()->handleUnsupportedCast((Cast*)child(0)->castToItemExpr()))
+              return NULL;
 
 	    // To suppress insertion of multiplying/dividing, mark Cast as
 	    // already pre-code-genned.

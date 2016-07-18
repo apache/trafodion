@@ -46,6 +46,7 @@ sh regrhadoop.ksh fs -rm   /user/hive/exttables/tbl_bad/*;
 
 --- setup Hive tables
 sh regrhive.ksh -v -f $REGRTSTDIR/TEST005_a.hive.sql;
+
 sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_utf8.data /user/hive/exttables/tbl_utf8;
 sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_type.data /user/hive/exttables/tbl_type;
 sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_gbk.data /user/hive/exttables/tbl_gbk;
@@ -56,12 +57,14 @@ sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_bad.data /user/hive/exttables/tbl_bad;
 log LOG005 clear;
 
 set schema hive.hive;
+
 set terminal_charset utf8;
 
 cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
 cqd HIVE_MAX_STRING_LENGTH '25' ;
 cqd mode_seahive 'ON';
 cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
+
 ------------------------------------------------------------
 -- Testing query plan invalidation in the compiler, but
 -- not the executor. Perform DML/DDL operations on a
@@ -69,7 +72,6 @@ cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
 -- getting a query cache hit and updating the changed
 -- Hive and HDFS metadata
 ------------------------------------------------------------
-
 prepare s1 from 
   select c_preferred_cust_flag,
          count(*) 
@@ -311,14 +313,103 @@ select a from hive.hive.thive;
 
 select * from hive.hive.thive;
 
--- purgedata of hive data
-cqd query_cache '0';
-purgedata hive.hive.thive;
+-- truncate of hive data
+--cqd query_cache '0';
+truncate hive.hive.thive;
 select * from hive.hive.thive;
 insert into hive.hive.thive values (10, 20);
 select * from hive.hive.thive;
-purgedata hive.hive.thive;
-purgedata hive.hive.thive;
+truncate hive.hive.thive;
+truncate hive.hive.thive;
 select * from hive.hive.thive;
+
+-- truncate of partitioned hive table
+sh echo "drop table t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+sh echo "create table t005part(a int) partitioned by (b int, c int);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+
+sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+sh echo "select * from t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+
+truncate hive.hive.t005part;
+sh echo "select * from t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+
+sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+truncate hive.hive.t005part partition ('b=10');
+sh echo "select * from t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+
+
+sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+truncate hive.hive.t005part partition ('b=10','c=11');
+sh echo "select * from t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+
+sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+sh echo "insert into t005part partition (b=10,c=12) values (6);" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk;
+sh echo "select * from t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+
+truncate hive.hive.t005part partition ('b=10','c=11');
+sh echo "select * from t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+
+truncate hive.hive.t005part partition ('b=10');
+sh echo "select * from t005part;" > TEST005_junk;
+sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
+
+-- should return error
+truncate hive.hive.t005part partition ('b=12');
+
+
+-- should return error
+purgedata hive.hive.thive;
+
+-- tests for hive insert error modes
+invoke hive.hive.thive_insert_smallint;
+showddl hive.hive.thive_insert_smallint;
+
+truncate hive.hive.thive_insert_smallint;
+cqd hive_insert_error_mode '0';
+insert into hive.hive.thive_insert_smallint values (10), (11111111), (21), 
+  (22222222);
+select * from hive.hive.thive_insert_smallint;
+
+truncate hive.hive.thive_insert_smallint;
+cqd hive_insert_error_mode '1';
+insert into hive.hive.thive_insert_smallint values (10), (11111111), (21), 
+  (22222222);
+select * from hive.hive.thive_insert_smallint;
+
+truncate hive.hive.thive_insert_smallint;
+cqd hive_insert_error_mode '2';
+insert into hive.hive.thive_insert_smallint values (10), (11111111), (21), 
+  (22222222);
+select * from hive.hive.thive_insert_smallint;
+
+truncate hive.hive.thive_insert_smallint;
+cqd hive_insert_error_mode '3';
+insert into hive.hive.thive_insert_smallint values (10), (11111111), (21), 
+  (22222222);
+select * from hive.hive.thive_insert_smallint;
+
+cqd hive_max_string_length_in_bytes '2';
+invoke hive.hive.thive_insert_varchar;
+showddl hive.hive.thive_insert_varchar;
+cqd hive_insert_error_mode '1';
+truncate hive.hive.thive_insert_varchar;
+insert into hive.hive.thive_insert_varchar values ('abcddcba','efghijkl');
+
+cqd hive_max_string_length_in_bytes '20';
+select * from hive.hive.thive_insert_varchar;
+
 
 log;

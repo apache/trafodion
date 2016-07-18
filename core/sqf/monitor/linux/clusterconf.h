@@ -70,6 +70,10 @@ public:
     void            SetCoreMask( int        firstCore
                                , int        lastCore
                                , cpu_set_t &coreMask );
+    bool            UpdatePNodeConfig( int         pnid
+                                     , const char *name
+                                     , int         excludedFirstCore
+                                     , int         excludedLastCore );
 
 protected:
 private:
@@ -125,6 +129,7 @@ private:
     void  AddNodeConfiguration( bool spareNode );
     void  AddPersistConfiguration( void );
     bool  DeleteDbNodeData( int  pnid );
+    bool  DeleteDbUniqueString( int nid );
     PROCESSTYPE GetProcessType( const char *processtype );
     void  ProcessLNode( int nid
                       , int pnid
@@ -153,6 +158,14 @@ private:
                         , int         pnid
                         , int         excludedFirstCore
                         , int         excludedLastCore );
+    bool UpdateDbPNodeData( int         pnid
+                          , const char *name
+                          , int         excludedFirstCore
+                          , int         excludedLastCore );
+    void UpdatePNodeConfiguration( int         pnid
+                                 , const char *name
+                                 , int         excludedFirstCore
+                                 , int         excludedLastCore );
 };
 
 #endif /* CLUSTERCONF_H_ */

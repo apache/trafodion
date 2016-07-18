@@ -1398,7 +1398,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           step_ = LOAD_END_ERROR_;
           break;
         }
-
+        
         step_ = COMPLETE_BULK_LOAD_;
         if (rowsAffected_ == 0)
           step_ = LOAD_END_;
@@ -2607,6 +2607,9 @@ ExExeUtilLobExtractTcb::ExExeUtilLobExtractTcb
   : ExExeUtilTcb(exe_util_tdb, child_tcb, glob),
     step_(EMPTY_)    
 {
+  ContextCli *currContext =
+    getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
+    getStatement()->getContext();
   lobHandleLen_ = 2050;
   lobHandle_ = {0};
 
@@ -2630,8 +2633,15 @@ ExExeUtilLobExtractTcb::ExExeUtilLobExtractTcb
   numChildRows_ = 0;
 
   requestTag_ = -1;
-
-  lobLoc_= {0};
+  lobLoc_ = {0};
+ 
+  lobGlobals_ = 
+    new(currContext->exHeap()) LOBglobals(currContext->exHeap());
+  ExpLOBoper::initLOBglobal
+    (lobGlobals_->lobAccessGlobals(), 
+     currContext->exHeap(),currContext,lobTdb().getLobHdfsServer(),
+               lobTdb().getLobHdfsPort());
+    
 
 }
 
@@ -2656,16 +2666,9 @@ short ExExeUtilLobExtractTcb::work()
 
   ComDiagsArea & diags       = currContext->diags();
 
-  if (! currContext->currLobGlobals())
-    {
-      currContext->currLobGlobals() = 
-	new(currContext->exHeap()) LOBglobals(currContext->exHeap());
-      ExpLOBoper::initLOBglobal
-	(currContext->currLobGlobals()->lobAccessGlobals(), 
-	 currContext->exHeap());
-    }
+  
 
-  void * lobGlobs = currContext->currLobGlobals()->lobAccessGlobals();
+  void * lobGlobs = getLobGlobals()->lobAccessGlobals();
 
   ex_queue_entry * centry = NULL;
   
@@ -3334,16 +3337,9 @@ short ExExeUtilFileExtractTcb::work()
 
   ComDiagsArea & diags       = currContext->diags();
 
-  if (! currContext->currLobGlobals())
-    {
-      currContext->currLobGlobals() = 
-	new(currContext->exHeap()) LOBglobals(currContext->exHeap());
-      ExpLOBoper::initLOBglobal
-	(currContext->currLobGlobals()->lobAccessGlobals(), 
-	 currContext->exHeap());
-    }
+  
 
-  void * lobGlobs = currContext->currLobGlobals()->lobAccessGlobals();
+  void * lobGlobs = getLobGlobals()->lobAccessGlobals();
 
   while (1)
     {
@@ -3594,16 +3590,9 @@ short ExExeUtilFileLoadTcb::work()
 
   ComDiagsArea & diags       = currContext->diags();
 
-  if (! currContext->currLobGlobals())
-    {
-      currContext->currLobGlobals() = 
-	new(currContext->exHeap()) LOBglobals(currContext->exHeap());
-      ExpLOBoper::initLOBglobal
-	(currContext->currLobGlobals()->lobAccessGlobals(), 
-	 currContext->exHeap());
-    }
+  
 
-  void * lobGlobs = currContext->currLobGlobals()->lobAccessGlobals();
+  void * lobGlobs = getLobGlobals()->lobAccessGlobals();
 
   while (1)
     {

@@ -1570,7 +1570,8 @@ ex_arith_clause::ex_arith_clause(OperatorTypeEnum oper_type,
 				 Space * space,
 				 short arithRoundingMode,
 				 NABoolean divToDownscale) 
-     : ex_clause (ex_clause::ARITH_TYPE, oper_type, 3, attr, space),
+     : ex_clause (ex_clause::ARITH_TYPE, oper_type, 
+                  (oper_type == ITM_NEGATE ? 2 : 3), attr, space),
        flags_(0)
 {
   arithRoundingMode_ = (char)arithRoundingMode;

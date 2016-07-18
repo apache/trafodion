@@ -507,6 +507,30 @@ class InterfaceStatement {
 
 			Bytes.insertInt(values, noNullValue, tmpbd.intValue(), this.ic_.getByteSwap());
 			break;
+
+		case InterfaceResultSet.SQLTYPECODE_TINYINT:
+			tmpbd = Utility.getBigDecimalValue(locale, paramValue);
+			if (scale > 0) {
+				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
+						"Cannot have scale for param: " + paramNumber);
+                        }
+                        
+			Utility.checkSignedTinyintBoundary(locale, tmpbd);
+
+			Bytes.insertShort(values, noNullValue, tmpbd.byteValueExact(), this.ic_.getByteSwap());
+
+                        break;
+		case InterfaceResultSet.SQLTYPECODE_TINYINT_UNSIGNED:
+			tmpbd = Utility.getBigDecimalValue(locale, paramValue);
+			if (scale > 0) {
+				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
+						"Cannot have scale for param: " + paramNumber);
+                        }
+                        
+			Utility.checkUnsignedTinyintBoundary(locale, tmpbd);
+
+			Bytes.insertShort(values, noNullValue, tmpbd.byteValueExact(), this.ic_.getByteSwap());
+                        break;
 		case InterfaceResultSet.SQLTYPECODE_SMALLINT:
 			tmpbd = Utility.getBigDecimalValue(locale, paramValue);
 			if (scale > 0) {
@@ -538,6 +562,7 @@ class InterfaceStatement {
 
 				// range checking
 			}
+
 			Utility.checkSignedShortBoundary(locale, tmpbd);
 
 			// check boundary condition for Numeric.

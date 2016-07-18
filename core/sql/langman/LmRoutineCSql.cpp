@@ -909,6 +909,15 @@ LmResult LmRoutineCSql::invokeRoutine(void *inputRow,
             }
             break;
 
+            case COM_SIGNED_BIN8_FSDT:
+            case COM_UNSIGNED_BIN8_FSDT:
+            {
+              // TINYINT [UNSIGNED]
+              // NUMERIC 0 <= precision <= 3
+              memcpy(inCopy, inData, 1);
+            }
+            break;
+
             case COM_SIGNED_BIN16_FSDT:
             case COM_UNSIGNED_BIN16_FSDT:
             {
@@ -1006,6 +1015,15 @@ LmResult LmRoutineCSql::invokeRoutine(void *inputRow,
             SQLUDR_VC_STRUCT *vc = (SQLUDR_VC_STRUCT *) outCopy;
             vc->length = outBytes;
             memset(vc->data, 0, outBytes);
+          }
+          break;
+
+          case COM_SIGNED_BIN8_FSDT:
+          case COM_UNSIGNED_BIN8_FSDT:
+          {
+            // TINYINT [UNSIGNED]
+            // NUMERIC 0 <= precision <= 3
+            memset(outCopy, 0, 1);
           }
           break;
 
@@ -1182,6 +1200,15 @@ LmResult LmRoutineCSql::invokeRoutine(void *inputRow,
               {
                 p.setOutChar(outputRow, vc->data, vc->length);
               }
+            }
+            break;
+
+            case COM_SIGNED_BIN8_FSDT:
+            case COM_UNSIGNED_BIN8_FSDT:
+            {
+              // TINYINT [UNSIGNED]
+              // NUMERIC 0 <= precision <= 3
+              memcpy(outData, outCopy, 1);
             }
             break;
 

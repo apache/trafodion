@@ -1438,13 +1438,13 @@ const NAType *Aggregate::synthesizeType()
   case ITM_ANY_TRUE_MAX:
   case ITM_ANY_TRUE:
   {
-    const SQLBoolean& operand = (const SQLBoolean &)
+    const SQLBooleanRelat& operand = (const SQLBooleanRelat &)
                    child(0)->castToItemExpr()->getValueId().getType();
 
     // The argument of a ONE/ANY TRUE must be of type SQLBoolean
     CMPASSERT(operand.getTypeQualifier() == NA_BOOLEAN_TYPE);
 
-    result = new HEAP SQLBoolean(operand.canBeSQLUnknown());
+    result = new HEAP SQLBooleanRelat(operand.canBeSQLUnknown());
     break;
   }
   default:
@@ -1796,7 +1796,7 @@ const NAType *Between::synthesizeType()
   //
   // Return the result.
   //
-  return new HEAP SQLBoolean(allowsUnknown);
+  return new HEAP SQLBooleanRelat(allowsUnknown);
 }
 
 // -----------------------------------------------------------------------
@@ -1945,18 +1945,50 @@ const NAType *BiArith::synthesizeType()
 }
 
 // -----------------------------------------------------------------------
+// member functions for class UnArith
+// -----------------------------------------------------------------------
+
+const NAType *UnArith::synthesizeType()
+{
+  //
+  // Type cast any params.
+  //
+  ValueId vid1 = child(0)->getValueId();
+
+  if (vid1.getType().getTypeQualifier() == NA_UNKNOWN_TYPE)
+    {
+      vid1.coerceType(NA_BOOLEAN_TYPE);
+    }
+  
+  const NAType& operand1 = vid1.getType();
+  if (operand1.getFSDatatype() != REC_BOOLEAN)
+    {
+      *CmpCommon::diags() << DgSqlCode(-4034)
+                          << DgString0("!")
+                          << DgString1(child(0)->getText())
+                          << DgString2("");
+      
+      return NULL;
+    }
+
+  NAType * retType = new HEAP SQLBooleanNative(operand1.supportsSQLnull());
+
+  return retType;
+}
+
+// -----------------------------------------------------------------------
 // member functions for class BiLogic
 // -----------------------------------------------------------------------
 
 const NAType *BiLogic::synthesizeType()
 {
-  const SQLBoolean& operand0 = (SQLBoolean&) child(0).getValueId().getType();
-  const SQLBoolean& operand1 = (SQLBoolean&) child(1).getValueId().getType();
+  const SQLBooleanRelat& operand0 = (SQLBooleanRelat&) child(0).getValueId().getType();
+  const SQLBooleanRelat& operand1 = (SQLBooleanRelat&) child(1).getValueId().getType();
 
   NABoolean allowsUnknown = operand0.canBeSQLUnknown() OR
                             operand1.canBeSQLUnknown();
 
-  return new HEAP SQLBoolean(allowsUnknown);
+  return new HEAP SQLBooleanRelat(allowsUnknown);
 }
 
 // -----------------------------------------------------------------------
@@ -1995,7 +2027,7 @@ const NAType *BiRelat::synthesizeType()
   if (!synthItemExprLists(exprList1, exprList2, allowIncompatibleComparison,
 			  allowsUnknown, this))
     return NULL;
-  return new HEAP SQLBoolean(allowsUnknown);
+  return new HEAP SQLBooleanRelat(allowsUnknown);
 }
 
 // -----------------------------------------------------------------------
@@ -2004,7 +2036,7 @@ const NAType *BiRelat::synthesizeType()
 
 const NAType *BoolResult::synthesizeType()
 {
-  return new HEAP SQLBoolean(getOperatorType() == ITM_RETURN_NULL);
+  return new HEAP SQLBooleanRelat(getOperatorType() == ITM_RETURN_NULL);
 }
 
 // -----------------------------------------------------------------------
@@ -2013,7 +2045,7 @@ const NAType *BoolResult::synthesizeType()
 
 const NAType *BoolVal::synthesizeType()
 {
-  return new HEAP SQLBoolean(getOperatorType() == ITM_RETURN_NULL);
+  return new HEAP SQLBooleanRelat(getOperatorType() == ITM_RETURN_NULL);
 }
 
 //------------------------------------------------------------------
@@ -2031,7 +2063,7 @@ const NAType *RaiseError::synthesizeType()
 		return NULL;
 	}
   }
-  return new HEAP SQLBoolean(FALSE);	// can be overridden in IfThenElse
+  return new HEAP SQLBooleanRelat(FALSE);	// can be overridden in IfThenElse
 }
 
 // -----------------------------------------------------------------------
@@ -3571,7 +3603,16 @@ const NAType *Repeat::synthesizeType()
 
   // figure out the max length of result.
   NABoolean negate;
-  if ((child(1)->getOperatorType() == ITM_CONSTANT) &&
+  if (maxLengthWasExplicitlySet_)
+    {
+      // cap max len at traf_max_character_col_length
+      size_in_bytes = 
+        MINOF(CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH), 
+              getMaxLength());
+      size_in_chars = 
+        size_in_bytes / CharInfo::minBytesPerChar(ctyp1.getCharSet());
+    }
+  else if ((child(1)->getOperatorType() == ITM_CONSTANT) &&
       (child(1)->castToConstValue(negate)))
     {
       ConstValue * cv = child(1)->castToConstValue(negate);
@@ -4150,7 +4191,7 @@ const NAType *TriRelational::synthesizeType()
   //
   // Return the result.
   //
-  return new HEAP SQLBoolean(allowsUnknown);
+  return new HEAP SQLBooleanRelat(allowsUnknown);
 }
 
 // -----------------------------------------------------------------------
@@ -4285,7 +4326,7 @@ const NAType *Like::synthesizeType()
 			   (typ3 AND
 			    typ3->supportsSQLnull());
 
-  return new HEAP SQLBoolean(allowsUnknown);
+  return new HEAP SQLBooleanRelat(allowsUnknown);
 }
 
 // -----------------------------------------------------------------------
@@ -4915,7 +4956,7 @@ const NAType *UnLogic::synthesizeType()
     case ITM_NOT:
     {
       CMPASSERT(child(0).getValueId().getType().getTypeQualifier() == NA_BOOLEAN_TYPE);
-      const SQLBoolean& operand0 = (SQLBoolean &) child(0).getValueId().getType();
+      const SQLBooleanRelat& operand0 = (SQLBooleanRelat &) child(0).getValueId().getType();
       allowsUnknown = operand0.canBeSQLUnknown();
       break;
     }
@@ -4936,7 +4977,7 @@ const NAType *UnLogic::synthesizeType()
       break;
   }
 
-  return new HEAP SQLBoolean(allowsUnknown);
+  return new HEAP SQLBooleanRelat(allowsUnknown);
 }
 
 // -----------------------------------------------------------------------
@@ -5303,7 +5344,7 @@ ValueIdProxy::pushDownType(NAType& desiredType,
 
 const NAType *VEGPredicate::synthesizeType()
 {
-  return new HEAP SQLBoolean();
+  return new HEAP SQLBooleanRelat();
 }
 
 // -----------------------------------------------------------------------
@@ -5577,7 +5618,7 @@ const NAType * ZZZBinderFunction::synthesizeType()
 
 const NAType *Subquery::synthesizeType()
 {
-  return new HEAP SQLBoolean();
+  return new HEAP SQLBooleanRelat();
 }
 
 const NAType *RowSubquery::synthesizeType()
@@ -5616,7 +5657,7 @@ RowSubquery::pushDownType(NAType& desiredType,
 const NAType *Exists::synthesizeType()
 {
   // EXISTS predicate can never evaluate to Unknown
-  return new HEAP SQLBoolean(FALSE);
+  return new HEAP SQLBooleanRelat(FALSE);
 }
 
 const NAType *QuantifiedComp::synthesizeType()
@@ -5631,7 +5672,7 @@ const NAType *QuantifiedComp::synthesizeType()
   if (!synthItemExprLists(exprList1, exprList2, allowIncompatibleComparison,
 			  allowsUnknown, this))
     return NULL;
-  return new HEAP SQLBoolean(allowsUnknown);
+  return new HEAP SQLBooleanRelat(allowsUnknown);
 }
 
 // MV,
@@ -5717,7 +5758,7 @@ const NAType *IsBitwiseAndTrue::synthesizeType()
     return NULL;
   }
 
-  return new HEAP SQLBoolean(FALSE);
+  return new HEAP SQLBooleanRelat(FALSE);
 }
 
 //--MV

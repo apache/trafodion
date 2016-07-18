@@ -57,40 +57,11 @@ if [ "$all_node_count" -ne "1" ]; then
 fi
 
 #=========================================
-#Copying traf_authentication_conf to scripts directory
+#Copying certificate to scripts directory
 if [[ "$LDAP_SECURITY" == "Y" ]]; then
-   if [ "$all_node_count" -ne "1" ]; then
-      echo "***INFO: Copying $LDAP_AUTH_FILE to all nodes" | tee -a $INSTALL_LOG
-      $PDCP $ALL_NODES -r $HOME/$LDAP_AUTH_FILE $SQ_ROOT/sql/scripts/traf_authentication_config
-      if [ "$?" != "0" ]; then
-        echo "***ERROR: Unable to copy $LDAP_AUTH_FILE to all machines in this cluster.  Check install log files for details." | tee -a $INSTALL_LOG
-         exit -1;
-      fi
-   else
-      echo "***INFO: Copying $LDAP_AUTH_FILE to scripts directory." | tee -a $INSTALL_LOG
-      cp -rf $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE $SQ_ROOT/sql/scripts/traf_authentication_config
-   fi
-
-   #Check traf_authentication_config for errors
-   echo "***INFO: Checking LDAP Configuration file for errors."
-   $SQ_ROOT/export/bin${SQ_MBTYPE}/ldapconfigcheck -file $SQ_ROOT/sql/scripts/traf_authentication_config
-   if [ "$?" != "0" ]; then
-      echo "***ERROR: traf_authentication_config not configured correctly."
-      echo "***ERROR: Install will continue WITHOUT simple security turned on."
-      echo "***ERROR: Please review wiki for manual steps to setup simple security."
-   else
-      if [[ $LDAP_LEVEL == "1" ]]; then
-         echo "TLS_CACERT $HOME/$LDAP_CERT_BASE" > $HOME_DIR/$TRAF_USER/.ldaprc
-         echo "TLS_REQCERT demand" >> $HOME_DIR/$TRAF_USER/.ldaprc
-      fi
-      echo "***INFO: Enabling security. Running traf_authentication_setup"
-      ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts; traf_authentication_setup --setup --file traf_authentication_config"
-
-      if [[ $? != "0" ]]; then
-         echo "***WARNING: Error during script traf_authentication_setup"
-         echo "***WARNING: Install will continue WITHOUT simple security turned on."
-         echo "***WARNING: Please review wiki for manual steps to setup simple security."
-      fi
+   if [[ $LDAP_LEVEL == "1" ]]; then
+      echo "TLS_CACERT $HOME/$LDAP_CERT_BASE" > $HOME_DIR/$TRAF_USER/.ldaprc
+      echo "TLS_REQCERT demand" >> $HOME_DIR/$TRAF_USER/.ldaprc
    fi
 fi
 

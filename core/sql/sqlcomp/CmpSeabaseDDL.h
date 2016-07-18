@@ -350,72 +350,91 @@ class CmpSeabaseDDL
        const ComTdbVirtTableKeyInfo *keyInfoArray,
        const ComTdbVirtTableColumnInfo *colInfoArray,
        Lng32 numKeys);
-
-   Int64 getObjectUID(
-                     ExeCliInterface *cliInterface,
-                     const char * catName,
-                     const char * schName,
-                     const char * objName,
-                     const char * inObjType,
-                     const char * inObjTypeStr = NULL,
-                     char * outObjType = NULL,
-                     NABoolean lookInObjectsIdx = FALSE,
-                     NABoolean reportErrorNow = TRUE);
-
-   Int64 getObjectInfo(
-                     ExeCliInterface * cliInterface,
-                     const char * catName,
-                     const char * schName,
-                     const char * objName,
-                     const ComObjectType objectType,
-                     Int32 & objectOwner,
-                     Int32 & schemaOwner,
-                     Int64 & objectFlags,
-                     bool reportErrorNow = true,
-                     NABoolean checkForValidDef = FALSE);
   
-   short getObjectName(
-                       ExeCliInterface *cliInterface,
-                       Int64 objUID,
-                       NAString &catName,
-                       NAString &schName,
-                       NAString &objName,
-                       char * outObjType = NULL,
-                       NABoolean lookInObjects = FALSE,
-                       NABoolean lookInObjectsIdx = FALSE);
+  Int64 getObjectUID(
+       ExeCliInterface *cliInterface,
+       const char * catName,
+       const char * schName,
+       const char * objName,
+       const char * inObjType,
+       const char * inObjTypeStr = NULL,
+       char * outObjType = NULL,
+       NABoolean lookInObjectsIdx = FALSE,
+       NABoolean reportErrorNow = TRUE);
   
-   short getObjectValidDef(ExeCliInterface *cliInterface,
+  Int64 getObjectInfo(
+       ExeCliInterface * cliInterface,
+       const char * catName,
+       const char * schName,
+       const char * objName,
+       const ComObjectType objectType,
+       Int32 & objectOwner,
+       Int32 & schemaOwner,
+       Int64 & objectFlags,
+       bool reportErrorNow = true,
+       NABoolean checkForValidDef = FALSE);
+  
+  short getObjectName(
+       ExeCliInterface *cliInterface,
+       Int64 objUID,
+       NAString &catName,
+       NAString &schName,
+       NAString &objName,
+       char * outObjType = NULL,
+       NABoolean lookInObjects = FALSE,
+       NABoolean lookInObjectsIdx = FALSE);
+  
+  short getObjectValidDef(ExeCliInterface *cliInterface,
                           const char * catName,
-                           const char * schName,
-                           const char * objName,
-                           const ComObjectType objectType,
-                           NABoolean &validDef);
+                          const char * schName,
+                          const char * objName,
+                          const ComObjectType objectType,
+                          NABoolean &validDef);
   
-   short genTrafColFam(int index, NAString &trafColFam);
+  short genTrafColFam(int index, NAString &trafColFam);
   
-   static short extractTrafColFam(const NAString &trafColFam, int &index);
+  static short extractTrafColFam(const NAString &trafColFam, int &index);
   
-   short processColFamily(NAString &inColFamily,
-                          NAString &outColFamily,
-                          std::vector<NAString> *userColFamVec,
-                          std::vector<NAString> *trafColFamVec);
-     
-   short switchCompiler(Int32 cntxtType = CmpContextInfo::CMPCONTEXT_TYPE_META);
-
-   short switchBackCompiler();
-
+  short processColFamily(NAString &inColFamily,
+                         NAString &outColFamily,
+                         std::vector<NAString> *userColFamVec,
+                         std::vector<NAString> *trafColFamVec);
+  
+  short switchCompiler(Int32 cntxtType = CmpContextInfo::CMPCONTEXT_TYPE_META);
+  
+  short switchBackCompiler();
+  
   ExpHbaseInterface* allocEHI(NADefaults * defs = NULL);
   
   short ddlInvalidateNATables();
-
+  
   void deallocEHI(ExpHbaseInterface* &ehi);
   void dropLOBHdfsFiles();
+  
+  static void setMDflags(Int64 &flags, //INOUT
+                         Int64 bitFlags)
+  {
+    flags |= bitFlags;
+  }
+  
+  static void resetMDflags(Int64 &flags, //INOUT
+                           Int64 bitFlags)
+  {
+    flags &= ~bitFlags;
+  }
+  
+  static NABoolean isMDflagsSet(Int64 flags, Int64 bitFlags)
+  {
+    return (flags &= bitFlags) != 0; 
+  }
+  
   enum {
     // set if we need to get the hbase snapshot info of the table
     GET_SNAPSHOTS = 0x0002
   };
- protected:
 
+protected:
+  
   void setFlags(ULng32 &flags, ULng32 flagbits)
   {
     flags |= flagbits;
@@ -786,6 +805,7 @@ class CmpSeabaseDDL
   
   short buildKeyInfoArray(
 			  ElemDDLColDefArray *colArray,
+                          NAColumnArray *nacolArray,
 			  ElemDDLColRefArray *keyArray,
 			  ComTdbVirtTableColumnInfo * colInfoArray,
 			  ComTdbVirtTableKeyInfo * keyInfoArray,
@@ -912,8 +932,16 @@ class CmpSeabaseDDL
                                const NAString &schName,
                                const NAString &objName,
                                const ComObjectType objectType,
-                               NABoolean ddlXns);
-  
+                               NABoolean dontForceCleanup);
+
+  void purgedataObjectAfterError(
+                               ExeCliInterface &cliInterface,
+                               const NAString &catName, 
+                               const NAString &schName,
+                               const NAString &objName,
+                               const ComObjectType objectType,
+                               NABoolean dontForceCleanup);
+
   short createSeabaseTable2(
                             ExeCliInterface &cliInterface,
                             StmtDDLCreateTable * createTableNode,
@@ -1161,6 +1189,9 @@ class CmpSeabaseDDL
 
   void dropSeabaseLibrary(StmtDDLDropLibrary  * dropLibraryNode,
                           NAString &currCatName, NAString &currSchName);
+
+  void  alterSeabaseLibrary(StmtDDLAlterLibrary  *alterLibraryNode,
+			    NAString &currCatName, NAString &currSchName);
 
   void createSeabaseRoutine(StmtDDLCreateRoutine  * createRoutineNode,
                             NAString &currCatName, NAString &currSchName);

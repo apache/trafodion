@@ -35,7 +35,7 @@ typedef list<CPNodeConfig *>   PNodesConfigList_t;
 class CPNodeConfigContainer
 {
 public:
-    CPNodeConfigContainer( void );
+    CPNodeConfigContainer( int pnodesConfigMax );
     ~CPNodeConfigContainer( void );
 
     CPNodeConfig *AddPNodeConfig( int   pnid
@@ -50,6 +50,7 @@ public:
     int           GetPNid( char  *nodename );
     CPNodeConfig *GetPNodeConfig( char *nodename );
     CPNodeConfig *GetPNodeConfig( int pnid );
+    inline int    GetPNodesConfigMax( void ) { return ( pnodesConfigMax_ ); }
     inline int    GetPNodesCount( void ) { return ( pnodesCount_ ); }
     inline int    GetSNodesCount( void ) { return ( snodesCount_ ); }
     inline PNodesConfigList_t *GetSpareNodesConfigList( void ) { return ( &spareNodesConfigList_ ); }
@@ -62,6 +63,7 @@ protected:
     int             nextPNid_;    // next physical node id available
 
 private:
+    int             pnodesConfigMax_; // maximum number of physical nodes
     PNodesConfigList_t  spareNodesConfigList_; // configured spare nodes list
     CPNodeConfig  *head_; // head of physical nodes linked list
     CPNodeConfig  *tail_; // tail of physical nodes linked list
@@ -92,7 +94,9 @@ public:
     inline const char   *GetName( void ) { return ( name_ ); }
     inline CPNodeConfig *GetNext( void ) { return ( next_ ); }
     inline int           GetPNid( void ) { return ( pnid_ ); }
-    void                 SetName( char *newName ); 
+    void                 SetName( const char *newName ); 
+    void                 SetExcludedFirstCore( int excludedFirstCore ); 
+    void                 SetExcludedLastCore( int excludedLastCore ); 
     int                  GetSpareList( int sparePNid[] );
     inline int           GetSparesCount( void ) { return ( sparePNidsCount_ ); }
 

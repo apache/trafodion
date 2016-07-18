@@ -357,13 +357,17 @@ NA_EIDPROC
 Lng32 str_decoded_len(Lng32 srcLen);
 NA_EIDPROC
 Lng32 str_decode(void *tgt, Lng32 tgtMaxLen, const char *src, Lng32 srcLen);
+
 //------------------------------------------------------------------------
-// Strips trailing blanks. src will contain a NULL after the
+// Strips leading and/or trailing blanks. src will contain a NULL after the
 // end of the first non-blank character.The length of the "stripped" string
-// is returned in len
+// is returned in len.
+// Returns pointer to the start of string after leading blanks.
 //------------------------------------------------------------------------
-NA_EIDPROC
-void str_strip_blanks(char *src , Lng32 &len);
+char * str_strip_blanks(char *src , Lng32 &len, 
+                      NABoolean stripLeading = FALSE,
+                      NABoolean stripTrailing = TRUE
+                        );
 //------------------------------------------------------------------------
 // This funtion transforms src into the form of an SQL identifier
 // Input : src,allowedChar

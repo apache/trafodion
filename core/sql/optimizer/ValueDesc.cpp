@@ -246,7 +246,7 @@ void ValueId::coerceType(enum NABuiltInTypeEnum desiredQualifier,
   NAType *desiredType = NULL;
   switch (desiredQualifier) {
   case NA_BOOLEAN_TYPE:
-    desiredType = new STMTHEAP SQLBoolean();
+    desiredType = new STMTHEAP SQLBooleanNative(originalType.supportsSQLnull());
     break;
   case NA_CHARACTER_TYPE:
     {
@@ -350,53 +350,81 @@ void ValueId::coerceType(const NAType& desiredType,
   //
   if (NotaCharType &&          // We do not want to force a characters storage values to be float
      (desiredType.getFSDatatype() == REC_FLOAT32 ||
-      desiredType.getFSDatatype() == REC_FLOAT64 ||
-      desiredType.getFSDatatype() == REC_TDM_FLOAT32 ||
-      desiredType.getFSDatatype() == REC_TDM_FLOAT64))
+      desiredType.getFSDatatype() == REC_FLOAT64 ))
     {
-      // type untyped params according to floattype CQD.
-      NAString tmp;
-      CmpCommon::getDefault(FLOATTYPE, tmp, -1);
-      NABoolean inputFloattypeIEEE =
-	((tmp == "IEEE") ||
-	 (CmpCommon::getDefault(ODBC_PROCESS) == DF_ON) ||
-	 (CmpCommon::getDefault(JDBC_PROCESS) == DF_ON));
-
-      if (NOT inputFloattypeIEEE)
-	{
-	  if (desiredType.getFSDatatype() == REC_TDM_FLOAT32)
-	    newType = new STMTHEAP
-	      SQLRealTdm(desiredType.supportsSQLnull(),
-			 STMTHEAP,
-			 desiredType.getPrecision());
-	  else
-	    newType = new STMTHEAP
-	      SQLDoublePrecisionTdm(desiredType.supportsSQLnull(),
-				    STMTHEAP,
-				    desiredType.getPrecision());
-	}
+      if (desiredType.getFSDatatype() == REC_FLOAT32)
+        newType = new STMTHEAP
+          SQLReal(desiredType.supportsSQLnull(),
+                  STMTHEAP,
+                  desiredType.getPrecision());
       else
-	{
-	  if (desiredType.getFSDatatype() == REC_FLOAT32)
-	    newType = new STMTHEAP
-	      SQLReal(desiredType.supportsSQLnull(),
-		      STMTHEAP,
-		      desiredType.getPrecision());
-	  else
-	    // ieee double, tandem real and tandem double are all
-	    // cast as IEEE double. Tandem real is cast as ieee double as
-	    // it won't 'fit' into ieee real.
-	    newType = new STMTHEAP
-	      SQLDoublePrecision(desiredType.supportsSQLnull(),
-				 STMTHEAP,
-				 desiredType.getPrecision());
-	}
-
+        // ieee double, tandem real and tandem double are all
+        // cast as IEEE double. Tandem real is cast as ieee double as
+        // it won't 'fit' into ieee real.
+        newType = new STMTHEAP
+          SQLDoublePrecision(desiredType.supportsSQLnull(),
+                             STMTHEAP,
+                             desiredType.getPrecision());
     }
   else {
      if ( newType == NULL )
        {
-	 if (DFS2REC::isBigNum(desiredType.getFSDatatype()))
+         // if param default is OFF, type tinyint as smallint.
+         // This is needed until all callers/drivers have full support to
+         // handle IO of tinyint datatypes.
+	 if (((desiredType.getFSDatatype() == REC_BIN8_SIGNED) ||
+              (desiredType.getFSDatatype() == REC_BIN8_UNSIGNED)) &&
+             ((CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF) ||
+              (CmpCommon::getDefault(TRAF_TINYINT_INPUT_PARAMS) == DF_OFF)))
+	   {
+             const NumericType &numType = (NumericType&)desiredType; 
+ 
+             NABoolean isSigned = numType.isSigned();
+             if (numType.getScale() == 0)
+               newType = new (STMTHEAP)
+                 SQLSmall(isSigned, desiredType.supportsSQLnull());
+             else
+               newType = new (STMTHEAP)
+                 SQLNumeric(sizeof(short), 
+                            numType.getPrecision(), 
+                            numType.getScale(),
+                            isSigned, 
+                            desiredType.supportsSQLnull());
+               
+	   } // TinyInt
+	 else if ((desiredType.getFSDatatype() == REC_BIN64_UNSIGNED) &&
+                  (CmpCommon::getDefault(TRAF_LARGEINT_UNSIGNED_IO) == DF_OFF))
+           {
+             NumericType &nTyp = (NumericType &)desiredType;
+             if (CmpCommon::getDefault(BIGNUM_IO) == DF_OFF)
+               {
+		 Int16 DisAmbiguate = 0;
+                 newType = new (STMTHEAP)
+                   SQLLargeInt(nTyp.getScale(),
+                               DisAmbiguate,
+                               TRUE,
+                               nTyp.supportsSQLnull(),
+                               NULL);
+               }
+             else
+               {
+                 newType = new (STMTHEAP)
+                   SQLBigNum(MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION,
+                             nTyp.getScale(),
+                             FALSE,
+                             FALSE,
+                             nTyp.supportsSQLnull(),
+                             NULL);
+               }
+           }
+	 else if ((desiredType.getFSDatatype() == REC_BOOLEAN) &&
+                  (CmpCommon::getDefault(TRAF_BOOLEAN_IO) == DF_OFF))
+           {
+             newType = new (STMTHEAP)
+               SQLVarChar(SQL_BOOLEAN_DISPLAY_SIZE, 
+                          desiredType.supportsSQLnull());
+           }
+	 else if (DFS2REC::isBigNum(desiredType.getFSDatatype()))
 	   {
 	     // If bignum IO is not enabled or
 	     // if max numeric precision allowed is what is supported in

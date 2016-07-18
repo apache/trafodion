@@ -1316,7 +1316,7 @@ int CConfigContainer::getMaxUniqueId( int nid )
 
 void CConfigContainer::strIdToString( strId_t stringId,  string & value )
 {
-    const char method_name[] = "CConfigContainer::getUniqueString";
+    const char method_name[] = "CConfigContainer::strIdToString";
     TRACE_ENTRY;
 
     int rc;

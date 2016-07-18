@@ -60,7 +60,7 @@ void CoreMaskString( char *str, cpu_set_t coreMask, int totalCores )
     }
 }
 
-CLNode::CLNode(CLNodeContainer  *lnodes
+CLNode::CLNode( CLNodeContainer *lnodes
               , int              nid
               , cpu_set_t       &coreMask 
               , int              processors
@@ -88,6 +88,8 @@ CLNode::CLNode(CLNodeContainer  *lnodes
        ,lastBackupTseCoreAssigned_(-1)
        ,next_(NULL)
        ,prev_(NULL)
+       ,nextP_(NULL)
+       ,prevP_(NULL)
        ,SSMProc(NULL)
 {
     const char method_name[] = "CLNode::CLNode";
@@ -131,6 +133,11 @@ CLNode::~CLNode (void)
     const char method_name[] = "CLNode::~CLNode";
     TRACE_ENTRY;
 
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d nid=%d\n", method_name, __LINE__, Nid );
+    }
+
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
     memcpy(&eyecatcher_, "lnod", 4);
 
@@ -150,6 +157,23 @@ void CLNode::DeLink (CLNode **head, CLNode **tail)
         prev_->next_ = next_;
     if (next_)
         next_->prev_ = prev_;
+
+    TRACE_EXIT;
+}
+
+void CLNode::DeLinkP(CLNode **head, CLNode **tail)
+{
+    const char method_name[] = "CLNode::DeLinkP";
+    TRACE_ENTRY;
+
+    if (*head == this)
+        *head = nextP_;
+    if (*tail == this)
+        *tail = prevP_;
+    if (prevP_)
+        prevP_->nextP_ = nextP_;
+    if (nextP_)
+        nextP_->prevP_ = prevP_;
 
     TRACE_EXIT;
 }
@@ -186,7 +210,7 @@ void CLNode::Added( void )
         
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
         {
-            trace_printf( "%s@%d - Broadcasting node deleted nid=%d, zid=%d, name=(%s)\n"
+            trace_printf( "%s@%d - Broadcasting node added nid=%d, zid=%d, name=(%s)\n"
                         , method_name, __LINE__
                         , msg->u.request.u.node_added.nid
                         , msg->u.request.u.node_added.zid
@@ -449,6 +473,18 @@ CLNode *CLNode::Link (CLNode * entry)
     return entry;
 }
 
+CLNode *CLNode::LinkP(CLNode * entry)
+{
+    const char method_name[] = "CLNode::LinkP";
+    TRACE_ENTRY;
+
+    nextP_ = entry;
+    entry->prevP_ = this;
+
+    TRACE_EXIT;
+    return entry;
+}
+
 void CLNode::PrepareForTransactions( bool activatingSpare )
 {
     const char method_name[] = "CLNode::PrepareForTransactions";
@@ -467,7 +503,7 @@ void CLNode::PrepareForTransactions( bool activatingSpare )
     if ( MyNode->GetState() == State_Up )
     {
         CLNode *lnode = MyNode->GetFirstLNode();
-        for ( ; lnode; lnode = lnode->GetNext() )
+        for ( ; lnode; lnode = lnode->GetNextP() )
         {
             // Send local DTM processes a node prepare message for each
             // logical node activated by spare node
@@ -558,7 +594,7 @@ void CLNode::SendDTMRestarted( void )
     if ( MyNode->GetState() == State_Up )
     {
         CLNode *lnode = MyNode->GetFirstLNode();
-        for ( ; lnode; lnode = lnode->GetNext() )
+        for ( ; lnode; lnode = lnode->GetNextP() )
         {
             // Send local DTM processes a DTM restarted message
             CProcess   *process = lnode->GetProcessLByType( ProcessType_DTM );
@@ -853,8 +889,8 @@ void CLNode::Up( void )
 
 CLNodeContainer::CLNodeContainer(CNode *node)
                 :LastNid(0)
+                ,lnodesCount_(0)
                 ,node_(node)
-                ,numLNodes_(0)
                 ,head_(NULL)
                 ,tail_(NULL)
 {
@@ -869,17 +905,19 @@ CLNodeContainer::CLNodeContainer(CNode *node)
 
 CLNodeContainer::~CLNodeContainer (void)
 {
-    CLNode *lnode = head_;
-
     const char method_name[] = "CLNodeContainer::~CLNodeContainer";
     TRACE_ENTRY;
 
-    while (head_)
-    {
-        lnode->DeLink (&head_, &tail_);
-        delete lnode;
-
-        lnode = head_;
+    if (node_ == NULL)
+    {   // In the main logical nodes container
+        CLNode *lnode = head_;
+        while (head_)
+        {
+            lnode->DeLink(&head_, &tail_);
+            delete lnode;
+    
+            lnode = head_;
+        }
     }
 
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
@@ -888,14 +926,14 @@ CLNodeContainer::~CLNodeContainer (void)
     TRACE_EXIT;
 }
 
-CLNode *CLNodeContainer::AddLNode( CLNodeConfig   *lnodeConfig )
+CLNode *CLNodeContainer::AddLNode( CLNodeConfig *lnodeConfig, CNode *node )
 {
     const char method_name[] = "CLNodeContainer::AddLNode";
     TRACE_ENTRY;
 
     assert( lnodeConfig != NULL );
 
-    CLNode *lnode = new CLNode( this
+    CLNode *lnode = new CLNode( node->GetLNodeContainer()
                               , lnodeConfig->GetNid()
                               , lnodeConfig->GetCoreMask()
                               , lnodeConfig->GetProcessors()
@@ -903,18 +941,86 @@ CLNode *CLNodeContainer::AddLNode( CLNodeConfig   *lnodeConfig )
                               );
     assert( lnode != NULL );
     
-    numLNodes_++;
+    if (trace_settings & TRACE_INIT)
+    {
+        trace_printf( "%s@%d - Adding logical node object "
+                      "(nid=%d) to lnodes container, "
+                      "lnodesCount=%d\n"
+                    , method_name, __LINE__
+                    , lnode->GetNid()
+                    , lnodesCount_ );
+    }
+
+    lnodesCount_++;
     if (head_ == NULL)
     {
         head_ = tail_ = lnode;
     }
     else
     {
-        tail_ = tail_->Link (lnode);
+        tail_ = tail_->Link(lnode);
+    }
+
+    if (trace_settings & TRACE_INIT)
+    {
+        trace_printf( "%s@%d - Added logical node object "
+                      "(nid=%d) to lnodes container, "
+                      "lnodesCount=%d\n"
+                    , method_name, __LINE__
+                    , lnode->GetNid()
+                    , lnodesCount_ );
     }
 
     TRACE_EXIT;
     return lnode;
+}
+
+void CLNodeContainer::AddLNodeP( CLNode *lnode )
+{
+    const char method_name[] = "CLNodeContainer::AddLNodeP";
+    TRACE_ENTRY;
+
+    if (!node_)
+    {
+        // Must only be called from physical node's logical node container
+        abort(); 
+    }
+
+    assert( lnode != NULL );
+    
+    if (trace_settings & TRACE_INIT)
+    {
+        trace_printf( "%s@%d - Adding logical node object "
+                      "(nid=%d) to (pnid=%d) lnodes container, "
+                      "lnodesCount=%d\n"
+                    , method_name, __LINE__
+                    , lnode->GetNid()
+                    , lnode->GetLNodeContainer()->GetNode()->GetPNid()
+                    , lnodesCount_ );
+    }
+
+    lnodesCount_++;
+    if (head_ == NULL)
+    {
+        head_ = tail_ = lnode;
+    }
+    else
+    {
+        tail_ = tail_->LinkP(lnode);
+    }
+
+    if (trace_settings & TRACE_INIT)
+    {
+        trace_printf( "%s@%d - Added logical node object "
+                      "(nid=%d) to (pnid=%d) lnodes container, "
+                      "lnodesCount=%d\n"
+                    , method_name, __LINE__
+                    , lnode->GetNid()
+                    , lnode->GetLNodeContainer()->GetNode()->GetPNid()
+                    , lnodesCount_ );
+    }
+
+    TRACE_EXIT;
 }
 
 void CLNodeContainer::CancelDeathNotification( int nid
@@ -927,7 +1033,7 @@ void CLNodeContainer::CancelDeathNotification( int nid
     const char method_name[] = "CLNodeContainer::CancelDeathNotification";
     TRACE_ENTRY;
 
-    for ( lnode=head_; lnode; lnode=lnode->GetNext() )
+    for ( lnode=head_; lnode; lnode=lnode->GetNextP() )
     {
         lnode->CancelDeathNotification( nid, pid, verifier, trans_id);
     }
@@ -942,46 +1048,48 @@ void CLNodeContainer::CheckForPendingCreates ( CProcess *process )
     abort();
 }
 
+void CLNodeContainer::DeleteLNode( CLNode *lnode )
+{
+    const char method_name[] = "CLNodeContainer::DeleteLNode";
+    TRACE_ENTRY;
+
+    int nid = lnode->GetNid();
+
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d Deleting nid=%d)\n", method_name, __LINE__, nid );
+    }
+
+    if (node_)
+    {
+        // Must only be called from main (cluster's) logical node container
+        abort(); 
+    }
+
+    // delete logical node and remove from logical nodes array
+    lnode->DeLink(&head_, &tail_);
+    delete lnode;
+    lnodesCount_--;
+
+    TRACE_EXIT;
+}
 
 CLNode *CLNodeContainer::GetLNode(int nid)
 {
-    CLNode *lnode;
-
     const char method_name[] = "CLNodeContainer::GetLNode";
     TRACE_ENTRY;
 
-    
-    if( nid >= 0 && nid < Nodes->GetLNodesCount() )
-    {
-        lnode = Nodes->LNode[nid];
-    }
-    else
-    {
-        lnode = NULL;
-    }
-
-    TRACE_EXIT;
-    return lnode;
-}
-
-CLNode *CLNodeContainer::GetLNode (char *process_name, CProcess ** process, bool  checkstate)
-{
     CLNode *lnode = head_;
-    CProcess *p_process;
 
-    const char method_name[] = "CLNodeContainer::GetLNode";
-    TRACE_ENTRY;
     while (lnode)
     {
-        *process = lnode->GetProcessL(process_name, checkstate);
-        if (*process)
+        if ( lnode->GetNid() == nid )
         { 
-            p_process = *process;
-            if (!p_process->IsBackup())
-                break;
+            break;
         }
-        lnode = lnode->GetNext ();
+        lnode = lnode->GetNext();
     }
+
     TRACE_EXIT;
     return lnode;
 }
@@ -993,7 +1101,7 @@ bool CLNodeContainer::IsMyNode( int nid )
     const char method_name[] = "CLNodeContainer::IsMyNode";
     TRACE_ENTRY;
     
-    for ( lnode = head_; lnode; lnode = lnode->GetNext() )
+    for ( lnode = head_; lnode; lnode = lnode->GetNextP() )
     {
         if ( lnode->Nid == nid )
         {
@@ -1006,49 +1114,8 @@ bool CLNodeContainer::IsMyNode( int nid )
     return found;
 }
 
-bool CLNodeContainer::IsShutdownActive (void)
+void CLNodeContainer::RemoveLNodeP( CLNode *lnode )
 {
-    bool status = false;
-    CLNode *lnode = head_;
-
-    const char method_name[] = "CLNodeContainer::IsShutdownActive";
-    TRACE_ENTRY;
-    
-    while (lnode)
-    {
-        if (( node_->GetState() == State_Shutdown ) ||
-            ( node_->GetState() == State_Stopped  )   )
-        {
-            status = true;
-        }
-        lnode = lnode->GetNext ();
-    }
-
-    TRACE_EXIT;
-
-    return status;
+    lnode->DeLinkP(&head_, &tail_);
 }
 
-int CLNodeContainer::ProcessCount( void )
-{
-    int count = 0;
-    CLNode *lnode = head_;
-
-    const char method_name[] = "CLNodeContainer::ProcessCount";
-    TRACE_ENTRY;
-
-    while (lnode)
-    {
-        if ( node_->GetState() == State_Up || node_->GetState() == State_Shutdown )
-        {
-            count += lnode->GetNumProcs();
-        }
-        lnode = lnode->GetNext ();
-    }
-
-    if (trace_settings & TRACE_ENTRY_EXIT)
-       trace_printf("%s@%d" " - Count=" "%d" ", Exit" "\n", method_name, __LINE__, count);
-    TRACE_EXIT;
-
-    return (count<=0?0:count);
-}

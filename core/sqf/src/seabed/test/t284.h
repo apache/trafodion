@@ -24,18 +24,24 @@
 #ifndef __T284_H_
 #define __T284_H_
 
+#define MAX_DATE_TIME_BUFF_LEN 40
+
 // request types
 typedef enum {
-    GID_REQ_PING = 1,
-    GID_REQ_ID   = 2,
-    GID_REQ_LAST = 3
+    GID_REQ_PING           = 1,
+    GID_REQ_ID             = 2,
+    GID_REQ_ID_TO_STRING   = 3,
+    GID_REQ_STRING_TO_ID   = 4,
+    GID_REQ_LAST           = 5
 } GID_REQ_TYPE;
 
 // reply types
 typedef enum {
-    GID_REP_PING = 100,
-    GID_REP_ID   = 101,
-    GID_REP_LAST = 102
+    GID_REP_PING           = 100,
+    GID_REP_ID             = 101,
+    GID_REP_ID_TO_STRING   = 102,
+    GID_REP_STRING_TO_ID   = 103,
+    GID_REP_LAST           = 104
 } GID_REP_TYPE;
 
 // error types
@@ -56,6 +62,18 @@ typedef struct GID_Rep_Id_Type {
     long             id;
 } GID_Rep_Id_Type;
 
+// id to string reply
+typedef struct GID_Rep_Id_To_String_Type {
+  GID_Rep_Com_Type com;
+  char             id_to_string[MAX_DATE_TIME_BUFF_LEN];
+} GID_Rep_Id_To_String_Type;
+
+// string to id reply
+typedef struct GID_Rep_String_To_Id_Type {
+    GID_Rep_Com_Type com;
+    long             id;
+} GID_Rep_String_To_Id_Type;
+
 // ping reply
 typedef struct GID_Rep_Ping_Type {
     GID_Rep_Com_Type com;
@@ -67,6 +85,16 @@ typedef struct GID_Rep_Ping_Type {
 typedef struct GID_Req_Id_Type {
 } GID_Req_Id_Type;
 
+// id to string request
+typedef struct GID_Req_Id_To_String_Type {
+    long   id_to_string;
+} GID_Req_Id_To_String_Type;
+
+// string to id request
+typedef struct GID_Req_String_To_Id_Type {
+  char     string_to_id[MAX_DATE_TIME_BUFF_LEN];
+} GID_Req_String_To_Id_Type;
+
 // ping request
 typedef struct GID_Req_Ping_Type {
 } GID_Req_Ping_Type;
@@ -77,8 +105,10 @@ typedef struct GID_Req {
     long         req_tag;   // request tag
     int          req_len;   // size of union type
     union {
-        GID_Req_Id_Type   id;
-        GID_Req_Ping_Type ping;
+        GID_Req_Id_Type            id;
+        GID_Req_Id_To_String_Type  id_to_string;
+        GID_Req_String_To_Id_Type  string_to_id;
+        GID_Req_Ping_Type          ping;
     } u;
 } GID_Req_Type;
 
@@ -88,8 +118,10 @@ typedef struct GID_Rep {
     long         rep_tag;   // reply tag
     int          rep_len;   // size of union type
     union {
-        GID_Rep_Id_Type   id;
-        GID_Rep_Ping_Type ping;
+        GID_Rep_Id_Type            id;
+        GID_Rep_Id_To_String_Type  id_to_string;
+        GID_Rep_String_To_Id_Type  string_to_id;
+        GID_Rep_Ping_Type          ping;
     } u;
 } GID_Rep_Type;
 

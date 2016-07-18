@@ -28,17 +28,16 @@ function Usage
 {
     echo "Usage: ${0##/*/} -c | -h | -l[<nid>] | -n[<name>] | -p[<proc>] | -q | -r | -s[<name>] | -u | -x[<name>] | -z"
     echo
+    echo "-a                Displays all sqconfig.db values"
     echo "-c                Displays cluster wide registry values"
     echo "-h                Displays this help message"
     echo "-l[<nid>]         Displays all [or specific] logical node configuration values"
     echo "-n[<name>]        Displays all [or specific] node configuration values"
     echo "-p[<proc>]        Displays specific process registry values"
-    echo "-q                Displays persistent processes"
-    echo "-r                Displays process definitions"
     echo "-s[<name>]        Displays all [or specific] spare node specific configuration values"
     echo "-u                Displays unique strings"
     echo "-x[<name>]        Displays all [or specific] physical node configuration values"
-    echo "-z                Displays persistent process data"
+    echo "-z                Displays persist templates"
 }
 
 function monRegClusterData
@@ -47,7 +46,7 @@ function monRegClusterData
 # Monitor registry: cluster keys and values
 sqlite3 sqconfig.db <<EOF
 .separator ""
-.headers off
+.headers on
 .mode list
 select k.keyName, "=", d.dataValue from monRegKeyName k, monRegClusterData d where k.keyId = d.keyId;
 .quit
@@ -62,7 +61,7 @@ function monNodeSpecificConfig
 
 sqlite3 sqconfig.db <<EOF
 .separator ""
-.headers off
+.headers on
 .mode list
 select "nid=", l.lNid \
    , ", pnid=", p.pNid \
@@ -95,10 +94,9 @@ function monNodeConfig
 
 # Node configuration: for all nodes
 
-echo "Logical nodes:"
 sqlite3 sqconfig.db <<EOF
 .separator ""
-.headers off
+.headers on
 .mode list
 select "nid=", l.lNid \
    , ", pnid=", p.pNid \
@@ -114,7 +112,7 @@ EOF
 echo "Spare nodes:"
 sqlite3 sqconfig.db <<EOF
 .separator ""
-.headers off
+.headers on
 .mode list
 select "pnid=", s.pNid \
    , ", node-name=", s.nodeName \
@@ -128,7 +126,7 @@ EOF
 echo "Excluded cores nodes:"
 sqlite3 sqconfig.db <<EOF
 .separator ""
-.headers off
+.headers on
 .mode list
 select "pnid=", p.pNid \
    , ", node-name=", p.nodeName \
@@ -147,7 +145,7 @@ function monLNodeSpecificConfig
 
 sqlite3 sqconfig.db <<EOF
 .separator ""
-.headers off
+.headers on
 .mode list
 select "nid=", l.lNid \
    , ", pnid=", l.pNid \
@@ -166,10 +164,9 @@ function monLNodeConfig
 
 # Node configuration: for all nodes
 
-echo "Logical nodes:"
 sqlite3 sqconfig.db <<EOF
 .separator ""
-.headers off
+.headers on
 .mode list
 select "nid=", l.lNid \
    , ", pnid=", l.pNid \
@@ -189,7 +186,7 @@ function monSNodeSpecificConfig
 
 sqlite3 sqconfig.db <<EOF
 .separator ""
-.headers off
+.headers on
 .mode list
 select "pnid=", s.pNid \
    , ", node-name=", s.nodeName \
@@ -207,10 +204,9 @@ function monSNodeConfig
 
 # Spare Node configuration: for all nodes
 
-echo "Spare nodes:"
 sqlite3 sqconfig.db <<EOF
 .separator ""
-.headers off
+.headers on
 .mode list
 select "pnid=", s.pNid \
    , ", node-name=", s.nodeName \
@@ -229,7 +225,7 @@ function monPNodeSpecificConfig
 
 sqlite3 sqconfig.db <<EOF
 .separator ""
-.headers off
+.headers on
 .mode list
 select "pnid=", p.pNid \
    , ", node-name=", p.nodeName \
@@ -246,10 +242,9 @@ function monPNodeConfig
 
 # Physical Node configuration: for all nodes
 
-echo "Physical nodes:"
 sqlite3 sqconfig.db <<EOF
 .separator ""
-.headers off
+.headers on
 .mode list
 select "pnid=", p.pNid \
    , ", node-name=", p.nodeName \
@@ -267,7 +262,7 @@ function monRegSpecificProcData
 
 sqlite3 sqconfig.db <<EOF
 .separator ""
-.headers off
+.headers on
 .mode list
 select p.procName, ": ", k.keyName, "=", d.dataValue from monRegProcName p, monRegKeyName k, monRegProcData d where p.procId = d.procId and k.keyId = d.keyId and p.procName = "$1";
 .quit
@@ -281,31 +276,10 @@ function monRegProcData
 # Monitor registry: process keys and values
 sqlite3 sqconfig.db <<EOF
 .separator ""
-.headers off
+.headers on
 .mode list
 select p.procName, ": ", k.keyName, "=", d.dataValue from monRegProcName p, monRegKeyName k, monRegProcData d where p.procId = d.procId and k.keyId = d.keyId;
 .quit
-EOF
-
-}
-
-function persistentProcs
-{
-sqlite3 sqconfig.db <<EOF
-.headers on
-.mode column
-select * from persist;
-EOF
-}
-
-
-function procs
-{
-
-sqlite3 sqconfig.db <<EOF
-.headers on
-.mode column
-select * from procs;
 EOF
 
 }
@@ -331,7 +305,7 @@ EOF
 }
 
 # options may be followed by one colon to indicate they have a required argument
-if ! options=$(getopt -o chl::n::p::qrs::ux::z -- "$@")
+if ! options=$(getopt -o achl::n::p::s::ux::z -- "$@")
 then
     # something went wrong, getopt will put out an error message for us
     Usage
@@ -347,6 +321,47 @@ fi
 while [ $# -gt 0 ]
 do
     case $1 in
+        -a)
+            echo "********************"
+            echo "Physical Nodes Table"
+            echo "********************"
+            monPNodeConfig
+            echo
+            echo "*******************"
+            echo "Logical Nodes Table"
+            echo "*******************"
+            monLNodeConfig
+            echo
+            echo "***************"
+            echo "SpareNode Nodes"
+            echo "***************"
+            monSNodeConfig
+            echo
+            echo "*****"
+            echo "Nodes"
+            echo "*****"
+            monNodeConfig
+            echo
+            echo "******************"
+            echo "Registry - cluster"
+            echo "******************"
+            monRegClusterData
+            echo
+            echo "***********************"
+            echo "Registry - process data"
+            echo "***********************"
+            monRegProcData
+            echo
+            echo "*************************"
+            echo "Registry - unique strings"
+            echo "*************************"
+            uniqueStrings
+            echo
+            echo "***************************"
+            echo "Registry - persist template"
+            echo "***************************"
+            persistentData
+            ;;
         -c)
             monRegClusterData
             ;;
@@ -380,14 +395,6 @@ do
             else
                 monRegProcData
             fi
-            ;;
-
-        -q)
-            persistentProcs
-            ;;
-
-        -r)
-            procs
             ;;
 
         -s)

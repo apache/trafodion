@@ -60,29 +60,6 @@ create table snode
 );
 
 --
--- Process tables
---
-
--- Process (gensq.pl pstartd)
-create table procs
-(
-   procType    integer,
-   name        varchar(64),
-   nid         integer,
-   program     varchar(32),
-   stdoutFile  varchar(256),
-   args        varchar(4096)
-);
-
--- Persistent Process (gensq.pl pstartd)
-create table persist
-(
-   procName    varchar(64),
-   zone        integer,
-   reqTm       integer
-);
-
---
 -- Registry tables
 --
 

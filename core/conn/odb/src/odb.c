@@ -139,6 +139,7 @@ char *odbauth = "Trafodion Dev <trafodion-development@lists.launchpad.net>";
     #include <unistd.h>
     #define SIZET_SPEC "%zu"
     #include <pthread.h>
+    #include <strings.h>
     #ifdef __hpux
         #define Sleep(x) \
             if ( x > 1000 ) { \
@@ -11467,7 +11468,9 @@ static void prec(char type, unsigned char *podbc, int eid)
 
     if ( type == 'L' ) {
         gpar = etab[eid].parent;
-        nfields = (unsigned int)etab[gpar].sp ;
+        /* nfields = (unsigned int)etab[gpar].sp ; */
+        /* fix jira 2034, write to bad_record if load with parameter 'bad', etab[gpar].sp equals 0 always */
+        nfields = (unsigned int)etab[eid].sp ;
     }
     MutexLock(&etab[gpar].pmutex);      /* lock mutex */
     if ( !(etab[gpar].flg2 & 0200) ) {
@@ -12394,6 +12397,7 @@ static unsigned int checkdb(int eid, SQLHDBC *Ocn, char *c, char *s)
                 Oerr(eid, tid, __LINE__, Ostmt, SQL_HANDLE_STMT);
             if (!SQL_SUCCEEDED(Oret=SQLFetch(Ostmt)))
                 Oerr(eid, tid, __LINE__, Ostmt, SQL_HANDLE_STMT);
+	} 
     } else if ( !strcmp((char *)Obuff, dbscmds[8].dbname) ) 
     {   /* Trafodion */
         dbt = 8;
@@ -12412,7 +12416,6 @@ static unsigned int checkdb(int eid, SQLHDBC *Ocn, char *c, char *s)
                 s[i] = '\0';
             }
         }
-    }
     }
 
     /* If this is the Interpreter get the object types list */
