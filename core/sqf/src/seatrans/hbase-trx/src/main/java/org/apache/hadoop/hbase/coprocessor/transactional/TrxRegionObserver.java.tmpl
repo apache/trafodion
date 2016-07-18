@@ -85,8 +85,10 @@ import org.apache.hadoop.hbase.client.Mutation;
 import java.util.ListIterator;
 import org.apache.hadoop.hbase.Cell;
 
-#ifdef HDP2.3
+#ifdef HDP2.3 HBASE1.1 CDH5.5
 import org.apache.hadoop.hbase.regionserver.ScannerContext;
+#endif
+#ifdef HDP2.3 HBASE1.1
 import org.apache.hadoop.hbase.regionserver.Region;
 #endif
 
@@ -184,7 +186,7 @@ public void start(CoprocessorEnvironment e) throws IOException {
 
     RegionCoprocessorEnvironment regionCoprEnv = (RegionCoprocessorEnvironment)e;
     RegionCoprocessorEnvironment re = (RegionCoprocessorEnvironment) e;
-#ifdef HDP2.3
+#ifdef HDP2.3 HBASE1.1
     my_Region = (HRegion) re.getRegion();
 #else
     my_Region = re.getRegion();
@@ -696,7 +698,7 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
     }
 
     @Override
-#ifdef HDP2.3
+#ifdef HDP2.3 HBASE1.1
     public void postSplit(ObserverContext<RegionCoprocessorEnvironment> e, Region l, Region r) {
 #else
     public void	postSplit(ObserverContext<RegionCoprocessorEnvironment> e, HRegion l, HRegion r) {
@@ -757,7 +759,7 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
                 blockNonPhase2.set(true);
 
 	        if(LOG.isInfoEnabled()) {
-#ifdef HDP2.3
+#ifdef HDP2.3 HBASE1.1
                     HRegion region = (HRegion) c.getEnvironment().getRegion();
 #else
 	            HRegion region = c.getEnvironment().getRegion();
@@ -765,7 +767,7 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
 	            LOG.debug("preClose -- setting close var to true on: " + region.getRegionInfo().getRegionNameAsString());
 	        }
 	        try {
-	          sbHelper.pendingAndScannersWait(commitPendingTransactions, scanners, transactionsById, pendingDelayLen);
+                 sbHelper.pendingAndScannersWait(commitPendingTransactions, scanners, transactionsById, pendingDelayLen);
 	        } catch(IOException ioe) {
 	          LOG.error("Encountered exception when calling pendingAndScannersWait(): " + ioe);
 	        }
@@ -867,7 +869,7 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
             }
 
             @Override
-#ifdef HDP2.3
+#ifdef HDP2.3 HBASE1.1 CDH5.5
             public boolean next(List<Cell> result, ScannerContext scannerContext) throws IOException {
               if (LOG.isTraceEnabled()) LOG.trace("preCompact: call next with scannerContext limit " + scannerContext);
 #else
@@ -878,7 +880,7 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
                 boolean skip=false;
                 ConcurrentHashMap<String, Integer>  verCountByCol = new ConcurrentHashMap<String,Integer>();
                 try {
-#ifdef HDP2.3
+#ifdef HDP2.3 HBASE1.1 CDH5.5
   		    ret = s.next(result,scannerContext);
 #else
                     ret = s.next(result,limit);
