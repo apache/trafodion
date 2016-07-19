@@ -28,18 +28,18 @@
 
   <properties>
     <hadoop.version>2.6.0</hadoop.version>
-    <hbase.version>${env.HBASE_DEP_VER_CDH}</hbase.version>
+    <hbase.version>1.0.0-cdh5.5.1</hbase.version>
     <protobuf.version>2.5.0</protobuf.version>
     <protocVersion>2.5.0</protocVersion>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.7</java.version>
-    <trx-suffix>cdh5_4</trx-suffix>
+    <trx-suffix>cdh5_5</trx-suffix>
   </properties>
 
 
   <groupId>org.apache</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>hbase-trx-cdh5_4</artifactId>
+  <artifactId>hbase-trx-cdh5_5</artifactId>
   <version>${env.TRAFODION_VER}</version>
   <name>HBase - Trx</name>
   <description>Trx of HBase usage</description>

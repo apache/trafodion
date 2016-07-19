@@ -623,7 +623,15 @@ source $TRAF_CONFIG
 
 function setHBaseDistro {
 
-export HBASE_DISTRO="APACHE" 
+if [[ $HADOOP_TYPE == "apache" ]]; then
+   HBASE_DISTRO="APACHE"$APACHE_VERSION
+elif [[ $HADOOP_TYPE == "hortonworks" ]]; then
+   HBASE_DISTRO="HDP"$HDP_VERSION
+elif [[ $HADOOP_TYPE == "cloudera" ]]; then
+   HBASE_DISTRO="CDH"$CDH_VERSION
+fi
+
+export HBASE_DISTRO 
 
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/HBASE_DISTRO\=/d' $TRAF_CONFIG
@@ -678,6 +686,11 @@ do
          checkClouderaVersion
          checkRoleGroups
       fi
+
+      if [[ $HADOOP_TYPE == "apache" ]]; then
+         checkApacheVersion
+      fi
+   
       break;
    fi
 done
@@ -698,11 +711,13 @@ function checkRoleGroups {
 
 
 function checkClouderaVersion {
-
+cdhVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | grep -o "cdh[0-9]\.[0-9]")
+#get cdh version,eg:5.5 or 5.7
+CDH_VERSION=${cdhVersion:3:5}
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
    #Check that Cloudera 5.2 or 5.3 are not installed.
-   if [[ "$CDH_5_4_SUPPORT" == "Y" ]]; then
-      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.4.*)
+   if [[ "$CDH_5_4_SUPPORT" == "Y" ]] || [[ "$CDH_5_5_SUPPORT" == "Y" ]]; then
+      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[4-6].*)
       #Check that Cloudera 5.[n>4].* is not installed.
       if [[ -z $nameOfVersion ]]; then
          versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[5-9].[7-9].* | wc -l)
@@ -740,14 +755,22 @@ else
    fi
 fi
 
+hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
+
 echo "***INFO: nameOfVersion=$nameOfVersion"
 sudo chmod 777 $TRAF_CONFIG
+sed -i '/hbaseVersion\=/d' $TRAF_CONFIG
+echo "export hbaseVersion=\"$hbaseVersion\"" >> $TRAF_CONFIG
+sed -i '/CDH_VERSION\=/d' $TRAF_CONFIG
+echo "export CDH_VERSION=\"$CDH_VERSION\"" >> $TRAF_CONFIG
 source $TRAF_CONFIG
 
 }
 
 function checkHDPVersion {
- 
+version=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
+#get hdp version,eg:2.1 or 2.3
+HDP_VERSION=${version:6:3}
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
    if [[ $HDP_2_3_SUPPORT == "N" ]]; then
       #Check that Hortonworks 2.2 is not installed
@@ -800,13 +823,49 @@ if [[ -z $nameOfVersion ]]; then
    fi
 fi
 
+hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
+
 echo "***INFO: nameOfVersion=$nameOfVersion"
 echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/hbaseVersion\=/d' $TRAF_CONFIG
+echo "export hbaseVersion=\"$hbaseVersion\"" >> $TRAF_CONFIG
+sed -i '/HDP_VERSION\=/d' $TRAF_CONFIG
+echo "export HDP_VERSION=\"$HDP_VERSION\"" >> $TRAF_CONFIG
 source $TRAF_CONFIG
 
 }
 
+function checkApacheVersion {
+version=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | awk {'print $2'})
+APACHE_VERSION=${version:0:3}
+if [[ $APACHE_1_0_X_SUPPORT=="Y" || $APACHE_1_1_X_SUPPORT=="Y" ]]; then
+   nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | awk {'print $2'})
+   #Check that hbase 1.x.x is not installed.
+   if [[ -z $nameOfVersion ]]; then
+      versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | awk {'print $2'} | grep [1].[0-1].* | wc -l)
+      if [[ $versionInstalled -gt "0" ]]; then
+         errorFound=1
+         echo "HADOOP VERSION" >> $ERROR_LOG
+         echo "***ERROR: Trafodion and apache hbase versions may not be compatible" >> $ERROR_LOG
+         echo "***ERROR: Detected apache hbase version:" >> $ERROR_LOG
+         ssh -q -n $node cat $HOME/hbaseVersion.txt >> $ERROR_LOG
+      fi
+   fi
+fi
 
+hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'}|sed s/,//g)
+
+echo "***INFO: nameOfVersion=$nameOfVersion"
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/hbaseVersion\=/d' $TRAF_CONFIG
+echo "export hbaseVersion=\"$hbaseVersion\"" >> $TRAF_CONFIG
+sed -i '/APACHE_VERSION\=/d' $TRAF_CONFIG
+echo "export APACHE_VERSION=\"$APACHE_VERSION\"" >> $TRAF_CONFIG
+source $TRAF_CONFIG
+
+}
 function checkHadoopNames {
 if [[ -z "$HDFS_USER" ]]; then
    errorFound=1
@@ -928,6 +987,7 @@ else
 
 fi
 
+install_features_path=$(tar -tf $TRAF_BUILD_PATH | grep "install_features")
 
 if [[ ! -z $install_features_path ]]; then
    if [[ "$ONE_TAR_INSTALL" == "N" ]]; then
@@ -1047,8 +1107,8 @@ fi
 
 if [[ "$HADOOP_TYPE" == "apache" ]]; then
    setPath
-   setHBaseDistro
 fi
+setHBaseDistro
 
 getHadoopNodes
 
