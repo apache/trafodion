@@ -968,6 +968,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_RECORD_SEPARATOR
 %token <tokval> TOK_RECOVER
 %token <tokval> TOK_RECOVERY
+%token <tokval> TOK_RECURSIVE 
 %token <tokval> TOK_REFERENCING        
 %token <tokval> TOK_REFRESH               
 %token <tokval> TOK_RELATED
@@ -1930,6 +1931,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>  		        table_name_as_clause_hint_and_col_list
 %type <relx>  		        rel_subquery_and_as_clause
 %type <relx>  		        rel_subquery_as_clause_and_col_list
+%type <relx>                    with_clause
+%type <relx>                    with_clause_elements
+%type <relx>                    with_clause_element
 %type <hint>      		optimizer_hint
 %type <hint>      		hints
 %type <hint>      		index_hints
@@ -6664,15 +6668,26 @@ table_as_tmudf_function : TOK_UDF '(' table_mapping_function_invocation ')'
 
 table_name_and_hint : table_name optimizer_hint hbase_access_options
                       {
-                        $$ = new (PARSERHEAP()) Scan(*$1);
-                        if ($2) 
-                          $$->setHint($2);
+                        NAString tmp = ((*$1).getQualifiedNameAsString());
+                        if(SqlParser_CurrentParser->hasWithDefinition(&tmp) )
+                        {
+                          RelExpr *re = SqlParser_CurrentParser->getWithDefinition(&tmp);
+                          $$=re->copyTree(PARSERHEAP());
+                          delete $1;
+                        }
+                        else
+                        {
+                          $$ = new (PARSERHEAP()) Scan(*$1);
+                          if ($2)
+                            $$->setHint($2);
 
-                        if ($3)
-                          ((Scan*)$$)->setHbaseAccessOptions($3);
-                        
-                        delete $1;
+                          if ($3)
+                            ((Scan*)$$)->setHbaseAccessOptions($3);
+
+                          delete $1;
+                        }
                       }
+
                     | '(' table_name_and_hint ')'
                       {
                         CheckModeSpecial1();
@@ -6970,13 +6985,22 @@ del_stmt_w_acc_type_rtn_list_and_as_clause_col_list : '('  delete_statement acce
 
 table_name_as_clause_and_hint : table_name as_clause optimizer_hint hbase_access_options
                                 {
-                                  $1->setCorrName(*$2);
-                                  $$ = new (PARSERHEAP()) Scan(*$1);
-                                  if ($3) 
-                                    $$->setHint($3);
-                                  if ($4)
-                                    ((Scan*)$$)->setHbaseAccessOptions($4);
-                                   
+                                   NAString tmp = ((*$1).getQualifiedNameAsString());
+                                   if(SqlParser_CurrentParser->hasWithDefinition(&tmp) )
+                                   {     
+                                     RelExpr *re = SqlParser_CurrentParser->getWithDefinition(&tmp);
+                                     RenameTable *rt = new (PARSERHEAP()) RenameTable(re, *$2);
+                                     $$=rt->copyTree(PARSERHEAP());
+                                  }
+                                  else
+                                  {
+                                    $1->setCorrName(*$2);
+                                    $$ = new (PARSERHEAP()) Scan(*$1);
+                                    if ($3) 
+                                      $$->setHint($3);
+                                    if ($4)
+                                      ((Scan*)$$)->setHbaseAccessOptions($4);
+                                  }  
                                   delete $1;
                                   delete $2;
                                 }
@@ -7017,6 +7041,42 @@ rel_subquery_and_as_clause : rel_subquery as_clause
                                CheckModeSpecial1();
                                $$ = $2;
                              }
+with_clause : 
+              TOK_WITH with_clause_elements
+              {
+                 $$ = NULL;
+              }
+              | TOK_WITH TOK_RECURSIVE with_clause_elements
+              {
+                        *SqlParser_Diags << DgSqlCode(-3022) << DgString0("WITH RECURSIVE");
+                        YYERROR;
+              }
+
+with_clause_elements : with_clause_element
+              {
+                 $$ = NULL;
+              }
+              | with_clause_elements ',' with_clause_element
+              {
+                 $$ = NULL;
+              }
+
+with_clause_element : correlation_name TOK_AS '(' query_expression ')'
+                      {
+                         RelRoot *root = new (PARSERHEAP())
+                                            RelRoot($4, REL_ROOT);
+                         $$= new (PARSERHEAP()) RenameTable(root, *$1); 
+
+                         //Duplicated definition of WITH
+                         if(SqlParser_CurrentParser->hasWithDefinition($1) )
+                          {
+                            *SqlParser_Diags << DgSqlCode(-3288)
+                                             << DgString0((*$1).toCharStar());
+                             YYERROR;
+                          }
+
+                          SqlParser_CurrentParser->insertWithDefinition($1 , $$);
+                      }
 
 rel_subquery_as_clause_and_col_list : rel_subquery as_clause '(' derived_column_list ')'
                                       {
@@ -13351,8 +13411,8 @@ ignore_ms4_hints : identifier '(' NUMERIC_LITERAL_EXACT_NO_SCALE  ')'
                                { $$ = NULL; }
 
 /* type relx */
-query_specification : select_token set_quantifier query_spec_body 
-     {
+query_specification :select_token set_quantifier query_spec_body 
+    { 
        if ($2) {
          $$ = new (PARSERHEAP())
            RelRoot(new (PARSERHEAP())
@@ -13362,19 +13422,20 @@ query_specification : select_token set_quantifier query_spec_body
                               ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP()))
                                         )
                          );
-	   assert($3->getOperatorType() == REL_ROOT);
-	   RelRoot *root1 = (RelRoot *) $$;
-	   RelRoot *root2 = (RelRoot *) $3;
-	   root1->assignmentStTree() = root2->assignmentStTree();
-	   root2->assignmentStTree() = NULL;
-	   }
+           assert($3->getOperatorType() == REL_ROOT);
+           RelRoot *root1 = (RelRoot *) $$;
+           RelRoot *root2 = (RelRoot *) $3;
+           root1->assignmentStTree() = root2->assignmentStTree();
+           root2->assignmentStTree() = NULL;
+           }
        else
          $$ = $3;
-         
+
        if (CmpCommon::getDefault(MVQR_LOG_QUERY_DESCRIPTORS) == DF_DUMP ||
            CmpCommon::getDefault(MVQR_LOG_QUERY_DESCRIPTORS) == DF_DUMP_MV)
          ((RelRoot*)$$)->setAnalyzeOnly();
-     }
+
+    }
 
 query_specification : exe_util_maintain_object 
                                 {
@@ -13447,7 +13508,7 @@ query_specification : select_token '[' firstn_sorted NUMERIC_LITERAL_EXACT_NO_SC
           if (CmpCommon::getDefault(MVQR_LOG_QUERY_DESCRIPTORS) == DF_DUMP ||
               CmpCommon::getDefault(MVQR_LOG_QUERY_DESCRIPTORS) == DF_DUMP_MV)
             ((RelRoot*)$$)->setAnalyzeOnly();
-	}
+           } 
 
 /* type tokval */
 firstn_sorted : TOK_ANY    {$$ = TOK_ANY;}
@@ -14712,6 +14773,11 @@ optional_limit_spec : TOK_LIMIT NUMERIC_LITERAL_EXACT_NO_SCALE
 		   }
 
 dml_statement : dml_query { $$ = $1; }
+
+               | with_clause dml_query
+                 {
+                   $$ = $2;  
+                 }
 
 	       | front_of_insert_with_rwrs   rowwise_rowset_info Rest_Of_insert_statement 
 		    {
@@ -18236,7 +18302,7 @@ non_join_query_expression : non_join_query_term
             }
           }
         }
-		| query_expression TOK_UNION TOK_ALL query_term
+	| query_expression TOK_UNION TOK_ALL query_term
         {
 	  Union *unionNode = new (PARSERHEAP()) Union($1, $4);
           $$ = new (PARSERHEAP()) RelRoot(unionNode);
@@ -18275,7 +18341,6 @@ non_join_query_expression : non_join_query_term
 
 /* type relx */
 non_join_query_term : non_join_query_primary
-
   		    | query_term TOK_INTERSECT query_primary
   		      {
   			$$ = new (PARSERHEAP())
@@ -18351,7 +18416,6 @@ rel_subquery : '(' query_expression order_by_clause ')'
 
                                   $$ = temp;
 				}
-
 /* type item */
 predicate : directed_comparison_predicate
         | key_comparison_predicate
