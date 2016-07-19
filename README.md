@@ -1,4 +1,5 @@
-******************************* Apache Trafodion (incubating) **************************
+# Apache Trafodion (incubating)
+![trafodion logo](http://trafodion.apache.org/images/logos/trafodion-logo.jpg)
 
 Apache Trafodion is a webscale SQL-on-Hadoop solution enabling transactional or 
 operational workloads on Hadoop.  The name "Trafodion" (the Welsh word for 
@@ -9,31 +10,32 @@ flexibility of Hadoop. Trafodion extends Hadoop to provide guaranteed
 transactional integrity, enabling new kinds of big data applications to run on 
 Hadoop.
 
-To get started using Apache Trafodion: 
+## To get started using Apache Trafodion: 
 
-  - documentation for this release can be viewed on the Apache Trafodion 
-    wiki page: 
-      http://trafodion.incubator.apache.org/documentation.html
+  - documentation for this release can be viewed on the Apache Trafodion wiki page: 
+  
+  http://trafodion.apache.org/documentation.html
 
   - release notes describing changes for particular releases can be viewed:
-      http://trafodion.apache.org/release-notes.html
+  
+  http://trafodion.apache.org/release-notes.html
 
   - the latest Apache Trafodion can be downloaded from Apache incubator
-    distribution site or accessed from git
+    distribution site or accessed from git:
 
     - download site:
       https://dist.apache.org/repos/dist/release/incubator/trafodion
 
     - git site:
-      git@github.com:apache/incubator-trafodion  
+      `git@github.com:apache/incubator-trafodion`
 
   - To build and try out Apache Trafodion, please following our build 
     instructions as described:
       https://cwiki.apache.org/confluence/display/TRAFODION/Trafodion+Contributor+Guide
 
-=============================
-Cryptographic software notice
-=============================
+
+## Cryptographic software notice
+
 
 This distribution includes cryptographic software. The country in which you 
 currently reside may have restrictions on the import, possession, use, and/or 
