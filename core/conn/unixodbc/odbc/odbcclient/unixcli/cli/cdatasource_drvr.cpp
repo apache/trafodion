@@ -89,7 +89,7 @@ CDataSource::CDataSource()
 
 		len = (gDrvrGlobal.fpSQLGetPrivateProfileString)(
 							searchKey,
-							"HPDatabaseCertificateDir",
+							"CertificateDir",
 							"SYSTEM_DEFAULT",
 							m_DSCertificateDir,
 							sizeof(m_DSCertificateDir),
@@ -100,7 +100,7 @@ CDataSource::CDataSource()
 			strncpy(searchKey, (const char *)szODBC, sizeof(searchKey));
 			len = (gDrvrGlobal.fpSQLGetPrivateProfileString)(
 								searchKey,
-								"HPDatabaseCertificateDir",
+								"CertificateDir",
 								"SYSTEM_DEFAULT",
 								m_DSCertificateDir,
 								sizeof(m_DSCertificateDir),
