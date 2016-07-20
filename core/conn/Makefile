@@ -34,7 +34,7 @@ endif
 .PHONY: all
 all: pkg-clients
 
-pkg-clients: clients/LICENSE clients/NOTICE
+pkg-clients: clients/LICENSE clients/NOTICE clients/DISCLAIMER
 	mkdir -p $$(dirname $(CLIENT_TAR))
 	tar -zcvf $(CLIENT_TAR) clients
 
@@ -45,6 +45,9 @@ clients/LICENSE: ../../licenses/LICENSE-clients
 	cd $(@D) && $(MAKE) $(@F)
 
 clients/NOTICE: ../../NOTICE
+	cp -f $? $@
+
+clients/DISCLAIMER: ../../DISCLAIMER
 	cp -f $? $@
 
 clean:	
