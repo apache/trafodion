@@ -43,10 +43,10 @@
 #   this is CDH5.4 specific code
 #   #endif
 #
-#   #ifdef CDH5.5 HDP2.3 HBASE1.1
-#   this is common CDH5.5 or HDP2.3 or HBASE1.1
+#   #ifdef CDH5.5 HDP2.3 HBASE1.1 CDH5.7
+#   this is common CDH5.5 or HDP2.3 or HBASE1.1 or CDH5.7
 #   #else
-#   this is anything other than CDH5.5 or HDP2.3 or HBASE1.1 code
+#   this is anything other than CDH5.5 or HDP2.3 or HBASE1.1 or CDH5.7 code
 #   #endif
 
 BEGIN{
@@ -105,7 +105,7 @@ ifndefpattern = "#ifndef"
 
   if($0 ~ ifdefpattern)
    {
-     if( $2 ~ distro || $3 ~ distro || $4 ~ distro)
+     if( $2 ~ distro || $3 ~ distro || $4 ~ distro || $5 ~ distro || $6 ~ distro)
      {
        printline = 0
        matchBegun = 1
@@ -118,7 +118,7 @@ ifndefpattern = "#ifndef"
    }
  if($0 ~ ifndefpattern)
   {
-    if($2 ~ distro || $3 ~ distro || $4 ~ distro)
+    if($2 ~ distro || $3 ~ distro || $4 ~ distro || $5 ~ distro || $6 ~ distro)
     {
       printline = 0
       unmatchBegun = 1

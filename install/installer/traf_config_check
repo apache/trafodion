@@ -696,6 +696,7 @@ do
 done
 }
 
+
 function checkRoleGroups {
 
    regionGroup1=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v10/clusters/$CLUSTER_NAME/services/hbase/roleConfigGroups | grep displayName | grep "RegionServer Group 1" | wc -l)
@@ -771,10 +772,11 @@ function checkHDPVersion {
 version=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
 #get hdp version,eg:2.1 or 2.3
 HDP_VERSION=${version:6:3}
+
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
    if [[ $HDP_2_3_SUPPORT == "N" ]]; then
       #Check that Hortonworks 2.2 is not installed
-      versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.1.* | wc -l)
+      versionInstalled=$(echo ${HDP_VERSION} | grep 2.1 | wc -l)
       if [[ $versionInstalled -eq "0" ]]; then
          errorFound=1
          echo "HADOOP VERSION" >> $ERROR_LOG
@@ -782,9 +784,9 @@ if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
          echo "***ERROR: Detected Hortonworks version:" >> $ERROR_LOG
          ssh -q -n $node cat $HOME/hbaseVersion.txt >> $ERROR_LOG
       fi
-      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.1.*)
+      nameOfVersion=$(echo ${HDP_VERSION} | grep 2.1)
       if [[ -z $nameOfVersion ]]; then
-         versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | sed 's/Version [0-9]*.[0-9]*.[0-9].//g' | grep [1-3].[3-9].* | wc -l)
+         versionInstalled=$(echo ${HDP_VERSION} | grep [1-3].[3-9].* | wc -l)
          if [[ $versionInstalled -gt "0" ]]; then
             errorFound=1
             echo "HADOOP VERSION" >> $ERROR_LOG
@@ -792,34 +794,34 @@ if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
             echo "***ERROR: Detected Hortonworks version:" >> $ERROR_LOG
             ssh -q -n $node cat hbaseVersion.txt >> $ERROR_LOG
          fi
-       fi
+      fi
    else
-       nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.[3-4].*)
-       #Check that HDP 2.[n>3].* is not installed.
-       if [[ -z $nameOfVersion ]]; then
-          versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | sed 's/Version [0-9]*.[0-9]*.[0-9].//g' | grep [1-3].[0-9].* | wc -l)
-          if [[ $versionInstalled -gt "0" ]]; then
-             errorFound=1
-             echo "HADOOP VERSION" >> $ERROR_LOG
-             echo "***ERROR: Trafodion and Hortonworks versions may not be compatible" >> $ERROR_LOG
-             echo "***ERROR: Detected Hortonworks version:" >> $ERROR_LOG
-             ssh -q -n $node cat hbaseVersion.txt >> $ERROR_LOG
-          fi
-       fi
+      nameOfVersion=$(echo ${HDP_VERSION} | grep 2.[3-4])
+      #Check that HDP 2.[n>3].* is not installed.
+      if [[ -z $nameOfVersion ]]; then
+         versionInstalled=$(echo ${HDP_VERSION} | grep [1-3].[0-9].* | wc -l)
+         if [[ $versionInstalled -gt "0" ]]; then
+            errorFound=1
+            echo "HADOOP VERSION" >> $ERROR_LOG
+            echo "***ERROR: Trafodion and Hortonworks versions may not be compatible" >> $ERROR_LOG
+            echo "***ERROR: Detected Hortonworks version:" >> $ERROR_LOG
+            ssh -q -n $node cat $HOME/hbaseVersion.txt >> $ERROR_LOG
+         fi
+      fi
    fi
 else
-   nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.2.*)
+   nameOfVersion=$(echo ${HDP_VERSION} | grep 2.2)
 fi
 
 #Check that HDP 2.[n>2].* is not installed.
 if [[ -z $nameOfVersion ]]; then
-   versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | sed 's/Version 0.[0-9]*.[0-9].//g' | grep [1-3].[0-9].* | wc -l)
+   versionInstalled=$(echo ${HDP_VERSION} | grep [1-3].[0-9].* | wc -l)
    if [[ $versionInstalled -gt "0" ]]; then
       errorFound=1
       echo "HADOOP VERSION" >> $ERROR_LOG
       echo "***ERROR: Trafodion and Hortonworks versions may not be compatible" >> $ERROR_LOG
       echo "***ERROR: Detected Hortonworks version:" >> $ERROR_LOG
-      ssh -q -n $node cat hbaseVersion.txt >> $ERROR_LOG
+      ssh -q -n $node cat $HOME/hbaseVersion.txt >> $ERROR_LOG
    fi
 fi
 
@@ -830,7 +832,7 @@ echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
 
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/hbaseVersion\=/d' $TRAF_CONFIG
-echo "export hbaseVersion=\"$hbaseVersion\"" >> $TRAF_CONFIG
+echo "export hbaseVersion=\"$version\"" >> $TRAF_CONFIG
 sed -i '/HDP_VERSION\=/d' $TRAF_CONFIG
 echo "export HDP_VERSION=\"$HDP_VERSION\"" >> $TRAF_CONFIG
 source $TRAF_CONFIG
@@ -1108,6 +1110,7 @@ fi
 if [[ "$HADOOP_TYPE" == "apache" ]]; then
    setPath
 fi
+
 setHBaseDistro
 
 getHadoopNodes

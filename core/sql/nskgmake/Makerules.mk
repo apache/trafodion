@@ -278,7 +278,7 @@ mavenbuild:
 	$(MY_SQROOT)/export/include/SCMBuildJava.sh 1.0.1 >../src/main/resources/trafodion-sql.jar.mf
 	# run maven
 	set -o pipefail && cd ..; $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
-	cp -pf ../target/trafodion-sql-[0-9]*.jar $(MY_SQROOT)/export/lib
+	cp -pf ../target/trafodion-sql-cdh*.jar $(MY_SQROOT)/export/lib
 
 # Java files get built through Maven
 mavenbuild_apache:

@@ -88,7 +88,7 @@
 
   <groupId>org.trafodion.sql</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>trafodion-sql</artifactId>
+  <artifactId>trafodion-sql-cdh</artifactId>
   <version>${env.TRAFODION_VER}</version>
   <name>trafodion-sql</name>
   <description>Java code for SQL engine in Trafodion</description>

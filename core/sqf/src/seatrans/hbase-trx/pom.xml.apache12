@@ -29,7 +29,7 @@
 
   <properties>
     <hadoop.version>2.6.0</hadoop.version>
-    <hbase.version>1.1.2</hbase.version>
+    <hbase.version>1.2.0</hbase.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <protobuf.version>2.5.0</protobuf.version>                                                                                              
     <protocVersion>2.5.0</protocVersion>                                                                                                    
@@ -39,7 +39,7 @@
 
   <groupId>org.apache</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>hbase-trx-apache1_1_2</artifactId>
+  <artifactId>hbase-trx-apache1_2_0</artifactId>
   <version>${env.TRAFODION_VER}</version>
   <name>HBase - Trx</name>
   <description>Trx of HBase usage</description>

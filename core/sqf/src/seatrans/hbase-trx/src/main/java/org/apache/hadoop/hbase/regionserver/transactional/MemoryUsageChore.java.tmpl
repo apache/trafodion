@@ -28,7 +28,7 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-#ifdef HDP2.3 HBASE1.1 CDH5.5
+#ifdef HDP2.3 HBASE1.1 CDH5.5 CDH5.7 HBASE1.2
 import org.apache.hadoop.hbase.ScheduledChore;
 #else
 import org.apache.hadoop.hbase.Chore;
@@ -40,7 +40,7 @@ import org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint;
 /**
  * Manages the MemoryMXBean to determine a regionserver's memory usage.
  */
-#ifdef HDP2.3 HBASE1.1 CDH5.5
+#ifdef HDP2.3 HBASE1.1 CDH5.5 CDH5.7 HBASE1.2
 public class MemoryUsageChore extends ScheduledChore {
 #else
 public class MemoryUsageChore extends Chore {
@@ -57,7 +57,7 @@ public class MemoryUsageChore extends Chore {
   public MemoryUsageChore(final TrxRegionEndpoint trx_Region,
                           final int timer,  
                           final Stoppable stoppable) {
-#ifdef HDP2.3 HBASE1.1 CDH5.5
+#ifdef HDP2.3 HBASE1.1 CDH5.5 CDH5.7 HBASE1.2
     super("MemoryUsageChore", stoppable, timer);
 #else
     super("MemoryUsageChore", timer, stoppable);

@@ -582,7 +582,11 @@ fi
 # See JIRA TRAFODION-1512 that will eliminate this check
   
 HADOOP_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
-HADOOP_TAR=hadoop-2.6.0-cdh5.5.1.tar.gz
+
+HADOOP_TAR=hadoop-2.6.0-cdh5.7.1.tar.gz
+if [[ "$HBASE_DISTRO" = "CDH5.5" ]]; then
+    HADOOP_TAR=hadoop-2.6.0-cdh5.5.1.tar.gz
+fi
 if [[ "$HBASE_DISTRO" = "CDH5.4" ]]; then
     HADOOP_TAR=hadoop-2.6.0-cdh5.4.4.tar.gz
 fi
