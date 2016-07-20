@@ -2392,7 +2392,7 @@ void ResStatisticsStatement::SendQueryStats(bool bStart, SRVR_STMT_HDL *pSrvrStm
 	pQuery_info->m_session_id = srvrGlobal->sessionId;
 	pQuery_info->m_client_name = srvrGlobal->ClientComputerName;
 	pQuery_info->m_application_name = srvrGlobal->ApplicationName;
-    UpdateStringText(pQuery_info->m_application_name);
+        UpdateStringText(pQuery_info->m_application_name);
 	pQuery_info->m_statement_id = statementId;
 	pQuery_info->m_statement_type = getStatementType(pSrvrStmt->sqlQueryType);
 	//SUBMIT_UTC_TS=EXEC_START_UTC_TS for now
@@ -2523,6 +2523,7 @@ void ResStatisticsStatement::SendQueryStats(bool bStart, SRVR_STMT_HDL *pSrvrStm
 	//pQuery_info->m_num_nodes = ;
 	pQuery_info->m_udr_process_busy_time = ProcessBusyTime;
 	pQuery_info->m_pertable_stats = perTableRowSize;
+        pQuery_info->m_last_updated_time = pQuery_info->m_last_updated_time;
 
 	if (!pubStarted)
 		sendQueryStats(PUB_TYPE_STATEMENT_NEW_QUERYEXECUTION, pQuery_info);

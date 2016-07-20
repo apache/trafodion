@@ -200,11 +200,8 @@ fi
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table store       >>${MY_LOG_FILE} 2>&1
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table promotion   >>${MY_LOG_FILE} 2>&1
 
-  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table store_returns >>${MY_LOG_FILE} 2>&1
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table catalog_sales >>${MY_LOG_FILE} 2>&1
-  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table catalog_returns >>${MY_LOG_FILE} 2>&1
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table web_sales   >>${MY_LOG_FILE} 2>&1
-  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table web_returns >>${MY_LOG_FILE} 2>&1
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table inventory   >>${MY_LOG_FILE} 2>&1
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table call_center >>${MY_LOG_FILE} 2>&1
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table catalog_page >>${MY_LOG_FILE} 2>&1

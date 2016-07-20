@@ -1125,15 +1125,6 @@ odbc_SQLSvc_SetConnectionOption_sme_(
         }
         strcat(sqlString, schemaValueStr);
         break;
-    case BEGIN_SESSION:
-        if(optionValueStr != NULL && strlen(optionValueStr) > 0)
-            sprintf(sqlString,"SET SESSION DEFAULT SQL_SESSION 'BEGIN:%0.200s';",optionValueStr);
-        else
-            strcpy(sqlString, "SET SESSION DEFAULT SQL_SESSION 'BEGIN';");
-        break;
-    case END_SESSION:
-        strcpy(sqlString, "SET SESSION DEFAULT SQL_SESSION 'END'");
-        break;
     case RESET_DEFAULTS:
         strcpy(sqlString, "CONTROL QUERY DEFAULT * RESET");
         break;

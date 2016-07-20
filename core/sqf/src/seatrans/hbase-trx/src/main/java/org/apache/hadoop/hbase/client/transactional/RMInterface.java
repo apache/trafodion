@@ -68,6 +68,13 @@ import org.apache.hadoop.hbase.regionserver.transactional.IdTm;
 import org.apache.hadoop.hbase.regionserver.transactional.IdTmException;
 import org.apache.hadoop.hbase.regionserver.transactional.IdTmId;
 
+import org.apache.hadoop.hbase.ipc.BlockingRpcCallback;
+import org.apache.hadoop.hbase.ipc.ServerRpcController;
+
+import org.apache.zookeeper.KeeperException;
+
+import com.google.protobuf.ByteString;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -222,12 +229,12 @@ public class RMInterface {
     }
 
     public void createTable(HTableDescriptor desc, byte[][] keys, int numSplits, int keyLength, long transID) throws IOException {
-
-        if (LOG.isTraceEnabled()) LOG.trace("createTable ENTER: ");
-            byte[] lv_byte_desc = desc.toByteArray();
-            byte[] lv_byte_tblname = desc.getNameAsString().getBytes();
-            if (LOG.isTraceEnabled()) LOG.trace("createTable: htabledesc bytearray: " + lv_byte_desc + "desc in hex: " + Hex.encodeHexString(lv_byte_desc));
-            createTableReq(lv_byte_desc, keys, numSplits, keyLength, transID, lv_byte_tblname);
+    	if (LOG.isTraceEnabled()) LOG.trace("Enter createTable, txid: " + transID + " Table: " + desc.getNameAsString());
+        byte[] lv_byte_desc = desc.toByteArray();
+        byte[] lv_byte_tblname = desc.getNameAsString().getBytes();
+        if (LOG.isTraceEnabled()) LOG.trace("createTable: htabledesc bytearray: " + lv_byte_desc + "desc in hex: " + Hex.encodeHexString(lv_byte_desc));
+        createTableReq(lv_byte_desc, keys, numSplits, keyLength, transID, lv_byte_tblname);
+        if (LOG.isTraceEnabled()) LOG.trace("Exit createTable, txid: " + transID + " Table: " + desc.getNameAsString());
     }
 
     public void truncateTableOnAbort(String tblName, long transID) throws IOException {
@@ -261,15 +268,18 @@ public class RMInterface {
     static public synchronized void unregisterTransaction(final long transactionID) {
       TransactionState ts = null;
       if (LOG.isTraceEnabled()) LOG.trace("Enter unregisterTransaction txid: " + transactionID);
-        ts = mapTransactionStates.remove(transactionID);
+      ts = mapTransactionStates.remove(transactionID);
       if (ts == null) {
         LOG.warn("mapTransactionStates.remove did not find transid " + transactionID);
       }
+      if (LOG.isTraceEnabled()) LOG.trace("Exit unregisterTransaction txid: " + transactionID);
     }
 
     // Not used?
     static public synchronized void unregisterTransaction(TransactionState ts) {
+        if (LOG.isTraceEnabled()) LOG.trace("Enter unregisterTransaction ts: " + ts.getTransactionId());
         mapTransactionStates.remove(ts.getTransactionId());
+        if (LOG.isTraceEnabled()) LOG.trace("Exit unregisterTransaction ts: " + ts.getTransactionId());
     }
 
     public synchronized Result get(final long transactionID, final Get get) throws IOException {

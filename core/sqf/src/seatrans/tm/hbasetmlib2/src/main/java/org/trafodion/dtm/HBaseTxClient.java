@@ -694,7 +694,22 @@ public class HBaseTxClient {
          LOG.error("Error while getting HTableDescriptor caused by : ", de);
          throw new IOException("Error while getting HTableDescriptor caused by : ", de);
       }
-      trxManager.createTable(ts, htdesc, beginEndKeys);
+      try {
+         trxManager.createTable(ts, htdesc, beginEndKeys);
+      }
+      catch (IOException cte) {
+         if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callCreateTable exception trxManager.createTable, retval: " +
+            TransReturnCode.RET_EXCEPTION.toString() +" txid: " + transactionId +" Exception: " + cte);
+         StringWriter sw = new StringWriter();
+         PrintWriter pw = new PrintWriter(sw);
+         cte.printStackTrace(pw);
+         LOG.error("HBaseTxClient createTable call error: " + sw.toString());
+
+         throw new IOException("createTable call error", cte);
+      }
+
+      
+      if (LOG.isTraceEnabled()) LOG.trace("Exit callCreateTable, txid: [" + transactionId + "] returning RET_OK");
       return TransReturnCode.RET_OK.getShort();
    }
 

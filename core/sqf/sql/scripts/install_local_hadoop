@@ -582,12 +582,15 @@ fi
 # See JIRA TRAFODION-1512 that will eliminate this check
   
 HADOOP_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
-HADOOP_TAR=hadoop-2.6.0-cdh5.4.4.tar.gz
+HADOOP_TAR=hadoop-2.6.0-cdh5.5.1.tar.gz
+if [[ "$HBASE_DISTRO" = "CDH5.4" ]]; then
+    HADOOP_TAR=hadoop-2.6.0-cdh5.4.4.tar.gz
+fi
 
 if [[ "$HBASE_DISTRO" = "HDP" ]]; then
     HADOOP_TAR=hadoop-2.7.1.2.3.2.0-2950.tar.gz
 fi
-if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
     HADOOP_TAR=hadoop-2.5.2.tar.gz
 fi
 
@@ -603,7 +606,7 @@ MYSQL_JDBC_TAR=mysql-connector-java-5.1.23.tar.gz
 
 HIVE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
 HIVE_PREFIX=hive-${HIVE_DEP_VER_CDH}
-if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
     HIVE_MIRROR_URL=https://archive.apache.org/dist/hive/hive-${HIVE_DEP_VER_APACHE}
     HIVE_PREFIX=apache-hive-${HIVE_DEP_VER_APACHE}-bin
 fi
@@ -617,7 +620,7 @@ HBASE_TAR=hbase-${HBASE_DEP_VER_CDH}.tar.gz
 if [[ "$HBASE_DISTRO" = "HDP" ]]; then
     HBASE_TAR=hbase-${HBASE_DEP_VER_HDP}.tar.gz
 fi
-if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
     HBASE_MIRROR_URL=https://archive.apache.org/dist/hbase/hbase-${HBASE_DEP_VER_APACHE}
     HBASE_TAR=hbase-${HBASE_DEP_VER_APACHE}-bin.tar.gz
 fi
@@ -1303,7 +1306,7 @@ lc-messages-dir=${MY_SW_ROOT}/mysql/share
 
 # Enable logging by default to help find problems
 general-log=1
-general-log-file=${MY_SW_ROOT}/log/mysql-general.${HOSTNAME}.log
+general-log-file=${MY_SW_ROOT}/log/mysql-general.\${HOSTNAME}.log
 
 EOF
 
@@ -1551,7 +1554,7 @@ echo "$MY_LOCAL_SW_DIST/${HBASE_TAR}"
   </property>
   <property>
    <name>hbase.zookeeper.quorum</name>
-   <value>${HOSTNAME}</value>
+   <value>${MY_HOST_1}</value>
  </property>
  <property>
     <name>hbase.zookeeper.property.dataDir</name>

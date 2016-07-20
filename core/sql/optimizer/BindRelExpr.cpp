@@ -1050,7 +1050,8 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
 
     if ((naType->getFSDatatype() == REC_BIN64_UNSIGNED) &&
         (CmpCommon::getDefault(TRAF_LARGEINT_UNSIGNED_IO) == DF_OFF) &&
-        (NOT bindWA->inCTAS()))
+        (NOT bindWA->inCTAS()) &&
+        (NOT bindWA->inViewDefinition()))
       {
         NumericType *nTyp = (NumericType *)naType;
         
@@ -1075,7 +1076,8 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
 
     if ((naType->getFSDatatype() == REC_BOOLEAN) &&
         (CmpCommon::getDefault(TRAF_BOOLEAN_IO) == DF_OFF) &&
-        (NOT bindWA->inCTAS()))
+        (NOT bindWA->inCTAS()) &&
+        (NOT bindWA->inViewDefinition()))
       {
         NumericType *nTyp = (NumericType *)naType;
         
@@ -1096,13 +1098,29 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
     // if OFF, return tinyint as smallint.
     // This is needed until all callers/drivers have full support to
     // handle IO of tinyint datatypes.
-    if ((naType->getTypeName() == LiteralTinyInt) &&
+    if (((naType->getFSDatatype() == REC_BIN8_SIGNED) ||
+         (naType->getFSDatatype() == REC_BIN8_UNSIGNED)) &&
+        (NOT bindWA->inCTAS()) &&
+        (NOT bindWA->inViewDefinition()) &&
         ((CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF) ||
          (CmpCommon::getDefault(TRAF_TINYINT_RETURN_VALUES) == DF_OFF)))
       {
+        NumericType *srcNum = (NumericType*)naType; 
+        NumericType * newType;
+        if (srcNum->getScale() == 0)
+          newType = new (bindWA->wHeap())
+            SQLSmall(NOT srcNum->isUnsigned(),
+                     naType->supportsSQLnull());
+        else
+          newType = new (bindWA->wHeap())
+            SQLNumeric(sizeof(short), srcNum->getPrecision(), 
+                       srcNum->getScale(),
+                       NOT srcNum->isUnsigned(), 
+                       naType->supportsSQLnull());
+
         ItemExpr * cast = new (bindWA->wHeap())
-          Cast(col->getValueId().getItemExpr(),
-               new (bindWA->wHeap()) SQLSmall(TRUE, naType->supportsSQLnull()));
+          Cast(col->getValueId().getItemExpr(), newType);
+
         cast = cast->bindNode(bindWA);
         if (bindWA->errStatus()) 
           return;

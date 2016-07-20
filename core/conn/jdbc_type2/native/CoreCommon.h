@@ -440,8 +440,6 @@ typedef struct _SRVR_GLOBAL_Def
 #define CLEAR_SCHEMA                1013
 #define CQD_DOOM_USER_TXN           1014
 #define CQD_PCODE_OFF               1015
-#define BEGIN_SESSION               1016
-#define END_SESSION                 1017
 
 typedef struct tagDATE_TYPE
 {

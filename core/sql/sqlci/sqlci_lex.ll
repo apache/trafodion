@@ -425,6 +425,7 @@ B			[ \t\n]+
 [Ww][Hh][Ii][Ll][Ee]                   return_IDENT_or_TOKEN(WHILE, 0);
 [Ss][Ii][Gg][Nn][Aa][Ll]	       return_IDENT_or_TOKEN(SIGNAL, 0);
 [Ww][Ii][Tt][Hh][Oo][Uu][Tt]           return_IDENT_or_TOKEN(WITHOUT, 0);
+[Ww][Ii][Tt][Hh]                       return_IDENT_or_TOKEN(WITH, 0);
 [Hh][Oo][Ll][Dd]                       return_IDENT_or_TOKEN(HOLD, 0);
 [Pp][Aa][Rr][Ss][Ee][Rr][Ff][Ll][Aa][Gg][Ss] return_IDENT_or_TOKEN(PARSERFLAGS, 0);
 [Tt][Ee][Rr][Mm][Ii][Nn][Aa][Ll]_[Cc][Hh][Aa][Rr][Ss][Ee][Tt] return_IDENT_or_TOKEN(TERMINAL_CHARSET, 0);
