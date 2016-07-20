@@ -345,7 +345,8 @@ public class HTableClient {
 	    }
 
 	    table = new RMInterface(tblName);
-	    if (logger.isDebugEnabled()) logger.debug("Exit HTableClient::init, table object: " + table);
+	    if (logger.isDebugEnabled()) logger.debug("Exit HTableClient::init, useTRex: " + this.useTRex + ", useTRexScanner: "
+	              + this.useTRexScanner + ", table object: " + table);
 	    return true;
 	}
 
