@@ -698,13 +698,8 @@ public class HBaseTxClient {
          trxManager.createTable(ts, htdesc, beginEndKeys);
       }
       catch (IOException cte) {
-         if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callCreateTable exception trxManager.createTable, retval: " +
-            TransReturnCode.RET_EXCEPTION.toString() +" txid: " + transactionId +" Exception: " + cte);
-         StringWriter sw = new StringWriter();
-         PrintWriter pw = new PrintWriter(sw);
-         cte.printStackTrace(pw);
-         LOG.error("HBaseTxClient createTable call error: " + sw.toString());
-
+         LOG.error("HBaseTxClient:callCreateTable exception trxManager.createTable, retval: " +
+            TransReturnCode.RET_EXCEPTION.toString() +" txid: " + transactionId +" Exception: ", cte);
          throw new IOException("createTable call error", cte);
       }
 

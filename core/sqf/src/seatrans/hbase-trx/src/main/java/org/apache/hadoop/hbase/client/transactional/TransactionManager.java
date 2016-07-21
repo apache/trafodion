@@ -1484,23 +1484,18 @@ public class TransactionManager {
               + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
 
        boolean loopExit = false;
-       do
-       {
-         try {
-           result = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
-           loopExit = true; 
-         } 
-         catch (ServiceException se) {
-            if (LOG.isTraceEnabled()) LOG.trace("pushRegionEpochX -- ServiceException ", se);
-            throw new IOException(se);
-         }
-         catch (Throwable t) {
-            if (LOG.isTraceEnabled()) LOG.trace("pushRegionEpochX -- Throwable ", t);
-            throw new IOException(t);
-         }
-
-       } while (loopExit == false);
-
+       try {
+         result = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
+         loopExit = true; 
+       } 
+       catch (ServiceException se) {
+          if (LOG.isTraceEnabled()) LOG.trace("pushRegionEpochX -- ServiceException ", se);
+          throw new IOException(se);
+       }
+       catch (Throwable t) {
+          if (LOG.isTraceEnabled()) LOG.trace("pushRegionEpochX -- Throwable ", t);
+          throw new IOException(t);
+       }
 
        if(result.size() == 1){
           // size is 1
