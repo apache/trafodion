@@ -143,12 +143,12 @@ export HBASE_DEP_VER_CDH=1.2.0-cdh5.7.1
 export HIVE_DEP_VER_CDH=1.1.0-cdh5.7.1
 export HBASE_TRX_ID_CDH=hbase-trx-cdh5_7
 
-if [[ "$HBASE_DISTRO" = "CDH5.5" ]]; then
+if [[ "$HBASE_DISTRO" == "CDH5.5" ]]; then
    export HBASE_DEP_VER_CDH=1.0.0-cdh5.5.1
    export HIVE_DEP_VER_CDH=1.1.0-cdh5.5.1
    export HBASE_TRX_ID_CDH=hbase-trx-cdh5_5
 fi
-if [[ "$HBASE_DISTRO" = "CDH5.4" ]]; then
+if [[ "$HBASE_DISTRO" == "CDH5.4" ]]; then
    export HBASE_DEP_VER_CDH=1.0.0-cdh5.4.4
    export HIVE_DEP_VER_CDH=1.1.0-cdh5.4.4
    export HBASE_TRX_ID_CDH=hbase-trx-cdh5_4
@@ -158,11 +158,11 @@ export HBASE_DEP_VER_APACHE=1.2.0
 export HIVE_DEP_VER_APACHE=1.1.0
 export HBVER=apache1_2_0
 
-if [[ "$HBASE_DISTRO" = "APACHE1.1" ]]; then
+if [[ "$HBASE_DISTRO" == "APACHE1.1" ]]; then
    export HBASE_DEP_VER_APACHE=1.1.2
    export HBVER=apache1_1_2
 fi
-if [[ "$HBASE_DISTRO" = "APACHE1.0" ]]; then
+if [[ "$HBASE_DISTRO" == "APACHE1.0" ]]; then
    export HBASE_DEP_VER_APACHE=1.0.2
    export HBVER=apache1_0_2
 fi
@@ -187,7 +187,7 @@ export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
 export JDBCT4_JAR=jdbcT4-${TRAFODION_VER}.jar
 
 
-if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+if [[ "$HBASE_DISTRO" == "HDP" ]]; then
     export HBASE_TRX_JAR=${HBASE_TRX_ID_HDP}-${TRAFODION_VER}.jar
     HBVER="hdp2_3"
     export DTM_COMMON_JAR=trafodion-dtm-hdp-${TRAFODION_VER}.jar

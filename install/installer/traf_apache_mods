@@ -49,9 +49,9 @@ source $TRAF_CONFIG
 
 
 hbase_trx_jar="hbase-trx-apache1_2*.jar"
-if [[ $hbaseVersion =~1.1]]; then
+if [[ $hbaseVersion =~ "1.1" ]]; then
    hbase_trx_jar="hbase-trx-apache1_1*.jar"
-else if [[ $hbaseVersion =~1.0]]; then
+elif [[ $hbaseVersion =~ "1.0" ]]; then
    hbase_trx_jar="hbase-trx-apache1_0*.jar"
 fi
 

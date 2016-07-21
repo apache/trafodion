@@ -82,7 +82,7 @@ jdk_1_7_hdp: build_chk_hdp
 
 jdk_1_7_apache10: build_chk_apache10
 	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) HBASE1.0
+	$(UNCOMMENT_STRING) APACHE1.0
 	set -o pipefail && $(MAVEN) -f pom.xml.apache10 package -DskipTests | tee build_trx.log
 	mkdir -p $(MY_SQROOT)/export/lib
 	cp -pf target/$(BLD_HBASE_APACHE10_TRX_JARNAME) $(MY_SQROOT)/export/lib
@@ -90,7 +90,7 @@ jdk_1_7_apache10: build_chk_apache10
 
 jdk_1_7_apache11: build_chk_apache11
 	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) HBASE1.1
+	$(UNCOMMENT_STRING) APACHE1.1
 	set -o pipefail && $(MAVEN) -f pom.xml.apache11 package -DskipTests | tee build_trx.log
 	mkdir -p $(MY_SQROOT)/export/lib
 	cp -pf target/$(BLD_HBASE_APACHE11_TRX_JARNAME) $(MY_SQROOT)/export/lib
@@ -98,7 +98,7 @@ jdk_1_7_apache11: build_chk_apache11
 
 jdk_1_7_apache12: build_chk_apache12
 	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) HBASE1.2
+	$(UNCOMMENT_STRING) APACHE1.2
 	set -o pipefail && $(MAVEN) -f pom.xml.apache12 package -DskipTests | tee build_trx.log
 	mkdir -p $(MY_SQROOT)/export/lib
 	cp -pf target/$(BLD_HBASE_APACHE12_TRX_JARNAME) $(MY_SQROOT)/export/lib

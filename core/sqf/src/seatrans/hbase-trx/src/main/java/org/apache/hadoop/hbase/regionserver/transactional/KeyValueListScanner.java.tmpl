@@ -24,7 +24,7 @@ import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.regionserver.KeyValueScanner;
-#ifdef CDH5.7 HBASE1.2
+#ifdef CDH5.7 APACHE1.2
 import org.apache.hadoop.hbase.regionserver.Store;
 #endif
 /**
@@ -141,7 +141,7 @@ public class KeyValueListScanner implements KeyValueScanner {
     	return true;
     }
 
-#ifdef CDH5.7 HBASE1.2
+#ifdef CDH5.7 APACHE1.2
     public boolean shouldUseScanner(Scan scan, Store store,
                        long oldestUnexpiredTS){
 #else

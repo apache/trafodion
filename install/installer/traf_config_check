@@ -712,16 +712,18 @@ function checkRoleGroups {
 
 
 function checkClouderaVersion {
-cdhVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | grep -o "cdh[0-9]\.[0-9]")
+
+hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | awk {'print$2'} | sed 's/,.*//' )
+cdhVersion=$(echo $hbaseVersion | grep -o "cdh[0-9]\.[0-9]\.[0-9]")
 #get cdh version,eg:5.5 or 5.7
-CDH_VERSION=${cdhVersion:3:5}
+CDH_VERSION=${cdhVersion:3:3}
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
    #Check that Cloudera 5.2 or 5.3 are not installed.
-   if [[ "$CDH_5_4_SUPPORT" == "Y" ]] || [[ "$CDH_5_5_SUPPORT" == "Y" ]]; then
-      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[4-6].*)
+   if [[ "$CDH_5_4_SUPPORT" == "Y" ]] || [[ "$CDH_5_5_SUPPORT" == "Y" ]] || [[ "$CDH_5_7_SUPPORT" == "Y" ]]; then
+      nameOfVersion=$( echo $hbaseVersion | grep cdh5.[4-7].*)
       #Check that Cloudera 5.[n>4].* is not installed.
       if [[ -z $nameOfVersion ]]; then
-         versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[5-9].[7-9].* | wc -l)
+         versionInstalled=$( echo $hbaseVersion | grep cdh[5-9].[7-9].* | wc -l)
          if [[ $versionInstalled -gt "0" ]]; then
             errorFound=1
             echo "HADOOP VERSION" >> $ERROR_LOG
@@ -731,8 +733,8 @@ if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
          fi
       fi
    else
-      versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].* | wc -l)
-      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].*)
+      versionInstalled=$( echo $cdhVersion | grep cdh5.[0-1].* | wc -l)
+      nameOfVersion=$( echo $cdhVersion | grep cdh5.[0-1].*)
       if [[ $versionInstalled -eq "0" ]]; then
          errorFound=1
          echo "HADOOP VERSION" >> $ERROR_LOG
@@ -742,10 +744,10 @@ if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
       fi
    fi
 else
-   nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[2-3].*)
+   nameOfVersion=$( echo $cdhVersion | grep cdh5.[2-3].*)
    #Check that Cloudera 5.[n>3].* is not installed.
    if [[ -z $nameOfVersion ]]; then
-      versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[4-6].[0-9].* | wc -l)
+      versionInstalled=$( echo $cdhVersion | grep cdh[4-6].[0-9].* | wc -l)
        if [[ $versionInstalled -gt "0" ]]; then
           errorFound=1
           echo "HADOOP VERSION" >> $ERROR_LOG
@@ -755,8 +757,6 @@ else
        fi
    fi
 fi
-
-hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
 
 echo "***INFO: nameOfVersion=$nameOfVersion"
 sudo chmod 777 $TRAF_CONFIG
@@ -769,37 +769,30 @@ source $TRAF_CONFIG
 }
 
 function checkHDPVersion {
-version=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
+
+hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | awk {'print$2'})
 #get hdp version,eg:2.1 or 2.3
-HDP_VERSION=${version:6:3}
+HDP_VERSION=${hbaseVersion:6:3}
 
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
    if [[ $HDP_2_3_SUPPORT == "N" ]]; then
-      #Check that Hortonworks 2.2 is not installed
-      versionInstalled=$(echo ${HDP_VERSION} | grep 2.1 | wc -l)
-      if [[ $versionInstalled -eq "0" ]]; then
-         errorFound=1
-         echo "HADOOP VERSION" >> $ERROR_LOG
-         echo "***ERROR: Trafodion and Hortoonworks versions may not be compatible." >> $ERROR_LOG
-         echo "***ERROR: Detected Hortonworks version:" >> $ERROR_LOG
-         ssh -q -n $node cat $HOME/hbaseVersion.txt >> $ERROR_LOG
-      fi
-      nameOfVersion=$(echo ${HDP_VERSION} | grep 2.1)
+      #Check that Hortonworks 2.1 is not installed
+      nameOfVersion=$( echo ${HDP_VERSION} | grep 2.1)
       if [[ -z $nameOfVersion ]]; then
-         versionInstalled=$(echo ${HDP_VERSION} | grep [1-3].[3-9].* | wc -l)
+         versionInstalled=$( echo ${HDP_VERSION} | grep [1-3].[3-9].* | wc -l)
          if [[ $versionInstalled -gt "0" ]]; then
             errorFound=1
             echo "HADOOP VERSION" >> $ERROR_LOG
             echo "***ERROR: Trafodion and Hortonworks versions may not be compatible" >> $ERROR_LOG
             echo "***ERROR: Detected Hortonworks version:" >> $ERROR_LOG
-            ssh -q -n $node cat hbaseVersion.txt >> $ERROR_LOG
+            ssh -q -n $node cat $HOME/hbaseVersion.txt >> $ERROR_LOG
          fi
       fi
    else
-      nameOfVersion=$(echo ${HDP_VERSION} | grep 2.[3-4])
+      nameOfVersion=$( echo ${HDP_VERSION} | grep 2.[3-4])
       #Check that HDP 2.[n>3].* is not installed.
       if [[ -z $nameOfVersion ]]; then
-         versionInstalled=$(echo ${HDP_VERSION} | grep [1-3].[0-9].* | wc -l)
+         versionInstalled=$( echo ${HDP_VERSION} | grep [1-3].[0-9].* | wc -l)
          if [[ $versionInstalled -gt "0" ]]; then
             errorFound=1
             echo "HADOOP VERSION" >> $ERROR_LOG
@@ -810,29 +803,26 @@ if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
       fi
    fi
 else
-   nameOfVersion=$(echo ${HDP_VERSION} | grep 2.2)
-fi
-
-#Check that HDP 2.[n>2].* is not installed.
-if [[ -z $nameOfVersion ]]; then
-   versionInstalled=$(echo ${HDP_VERSION} | grep [1-3].[0-9].* | wc -l)
-   if [[ $versionInstalled -gt "0" ]]; then
-      errorFound=1
-      echo "HADOOP VERSION" >> $ERROR_LOG
-      echo "***ERROR: Trafodion and Hortonworks versions may not be compatible" >> $ERROR_LOG
-      echo "***ERROR: Detected Hortonworks version:" >> $ERROR_LOG
-      ssh -q -n $node cat $HOME/hbaseVersion.txt >> $ERROR_LOG
+   nameOfVersion=$( echo ${HDP_VERSION} | grep 2.2)
+   #Check that HDP 2.[n>2].* is not installed.
+   if [[ -z $nameOfVersion ]]; then
+      versionInstalled=$( echo ${HDP_VERSION} | grep [1-3].[0-9].* | wc -l)
+      if [[ $versionInstalled -gt "0" ]]; then
+         errorFound=1
+         echo "HADOOP VERSION" >> $ERROR_LOG
+         echo "***ERROR: Trafodion and Hortonworks versions may not be compatible" >> $ERROR_LOG
+         echo "***ERROR: Detected Hortonworks version:" >> $ERROR_LOG
+         ssh -q -n $node cat $HOME/hbaseVersion.txt >> $ERROR_LOG
+      fi
    fi
 fi
-
-hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
 
 echo "***INFO: nameOfVersion=$nameOfVersion"
 echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
 
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/hbaseVersion\=/d' $TRAF_CONFIG
-echo "export hbaseVersion=\"$version\"" >> $TRAF_CONFIG
+echo "export hbaseVersion=\"$hbaseVersion\"" >> $TRAF_CONFIG
 sed -i '/HDP_VERSION\=/d' $TRAF_CONFIG
 echo "export HDP_VERSION=\"$HDP_VERSION\"" >> $TRAF_CONFIG
 source $TRAF_CONFIG
@@ -840,13 +830,15 @@ source $TRAF_CONFIG
 }
 
 function checkApacheVersion {
-version=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | awk {'print $2'})
-APACHE_VERSION=${version:0:3}
-if [[ $APACHE_1_0_X_SUPPORT=="Y" || $APACHE_1_1_X_SUPPORT=="Y" ]]; then
-   nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | awk {'print $2'})
+
+hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | awk {'print$2'} | sed s/,//g)
+#get apache hbase version,eg:1.0 or 1.1 or 1.2
+APACHE_VERSION=${hbaseVersion:0:3}
+if [[ $APACHE_1_0_X_SUPPORT=="Y" || $APACHE_1_1_X_SUPPORT=="Y" || $APACHE_1_2_X_SUPPORT=="Y" ]]; then
+   nameOfVersion=$( echo ${hbaseVersion} | grep 1.[0-2].*)
    #Check that hbase 1.x.x is not installed.
    if [[ -z $nameOfVersion ]]; then
-      versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | awk {'print $2'} | grep [1].[0-1].* | wc -l)
+      versionInstalled=$( echo ${hbaseVersion} | grep [0-9].[0-9].* | wc -l)
       if [[ $versionInstalled -gt "0" ]]; then
          errorFound=1
          echo "HADOOP VERSION" >> $ERROR_LOG
@@ -857,7 +849,6 @@ if [[ $APACHE_1_0_X_SUPPORT=="Y" || $APACHE_1_1_X_SUPPORT=="Y" ]]; then
    fi
 fi
 
-hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'}|sed s/,//g)
 
 echo "***INFO: nameOfVersion=$nameOfVersion"
 sudo chmod 777 $TRAF_CONFIG
@@ -868,6 +859,7 @@ echo "export APACHE_VERSION=\"$APACHE_VERSION\"" >> $TRAF_CONFIG
 source $TRAF_CONFIG
 
 }
+
 function checkHadoopNames {
 if [[ -z "$HDFS_USER" ]]; then
    errorFound=1
