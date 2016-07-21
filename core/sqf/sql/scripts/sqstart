@@ -271,19 +271,9 @@ function printExpectedUlimt {
 
 function checkUlimit {
   
-  #check ulimit -n 
-  nrOfFile=`ulimit -n`
-  if [[ $nrOfFile -lt 32000 ]] ; then
-    echoLog "WARNING: detect issue during startup, please make sure your ulimit setup correctly"
-    echoLog "WARNING: open files is smaller than 32000"
-    echoLog ""
-    printExpectedUlimt
-    return
-  fi 
-
  #check ulimit -u
- userProc=`ulimit -u`
- if [[ $userProc -lt 267263 ]] ; then
+ userProc=`cat /proc/sys/kernel/pid_max`
+ if [[ $userProc -gt 65535 ]] ; then
     echoLog "WARNING: detect issue during startup, please make sure your ulimit setup correctly"
     echoLog "WARNING: max user processes is smaller than 267263"
     echoLog ""
@@ -293,23 +283,23 @@ function checkUlimit {
 
  #check ulimit -l
  maxLockMem=`ulimit -l`
- if [[ $maxLockMem -lt 49595556 ]] ; then
-    echoLog "WARNING: detect issue during startup, please make sure your ulimit setup correctly"
-    echoLog "WARNING: max locked memory is smaller than 49595556"
+ if [[ $maxLockMem -lt 65536 ]] ; then
+    echoLog "ERROR: detect issue during startup, please make sure your ulimit setup correctly"
+    echoLog "ERROR: max locked memory is smaller than 64M"
     echoLog ""
     printExpectedUlimt
-    return
+    return 
  fi
   
- #check ulimit -i
- pendingSignal=`ulimit -i`
- if [[ $pendingSignal -lt 515196 ]] ; then
+ #check ulimit -l
+ if [[ $maxLockMem -lt 327680 ]] ; then
     echoLog "WARNING: detect issue during startup, please make sure your ulimit setup correctly"
-    echoLog "WARNING: pending signals is smaller than 515196 "
+    echoLog "WARNING: max locked memory is smaller than 320M "
     echoLog ""
     printExpectedUlimt
-    return
+    return 
  fi
+
 }
 
 #########################################################
