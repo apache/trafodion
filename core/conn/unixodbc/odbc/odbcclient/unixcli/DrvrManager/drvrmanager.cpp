@@ -3836,34 +3836,38 @@ SQLRETURN SQL_API SQLColAttribute_common(SQLHSTMT StatementHandle,
 	rc = NeoColAttribute(StatementHandle,ColumnNumber,FieldIdentifier,CharacterAttributePtr,BufferLength,StringLengthPtr,NumericAttributePtr,isWideCall);
 	if (rc == SQL_SUCCESS && FieldIdentifier == SQL_DESC_CONCISE_TYPE)
 	{
-#if (ODBCVER >= 0x0300)
-        switch((SQLINTEGER)*(SQLINTEGER*)NumericAttributePtr)
+        SQLINTEGER ODBCAppVersion = pstmt->getODBCAppVersion();
+        if (ODBCAppVersion >= SQL_OV_ODBC3)
         {
-            case SQL_DATE:
-                *(SQLINTEGER*)NumericAttributePtr = SQL_TYPE_DATE;
-                break;
-            case SQL_TIME:
-                *(SQLINTEGER*)NumericAttributePtr = SQL_TYPE_TIME;
-                break;
-            case SQL_TIMESTAMP:
-                *(SQLINTEGER*)NumericAttributePtr = SQL_TYPE_TIMESTAMP;
-                break;
+            switch((SQLINTEGER)*(SQLINTEGER*)NumericAttributePtr)
+            {
+                case SQL_DATE:
+                    *(SQLINTEGER*)NumericAttributePtr = SQL_TYPE_DATE;
+                    break;
+                case SQL_TIME:
+                    *(SQLINTEGER*)NumericAttributePtr = SQL_TYPE_TIME;
+                    break;
+                case SQL_TIMESTAMP:
+                    *(SQLINTEGER*)NumericAttributePtr = SQL_TYPE_TIMESTAMP;
+                    break;
+            }
         }
-#else
-        switch((SQLINTEGER)*(SQLINTEGER*)NumericAttributePtr)
+        else
         {
-            case SQL_TYPE_DATE:
-                *(SQLINTEGER*)NumericAttributePtr = SQL_DATE;
-                break;
-            case SQL_TYPE_TIME:
-                *(SQLINTEGER*)NumericAttributePtr = SQL_TIME;
-                break;
-            case SQL_TYPE_TIMESTAMP:
-                *(SQLINTEGER*)NumericAttributePtr = SQL_TIMESTAMP;
-                break;
+            switch((SQLINTEGER)*(SQLINTEGER*)NumericAttributePtr)
+            {
+                case SQL_TYPE_DATE:
+                    *(SQLINTEGER*)NumericAttributePtr = SQL_DATE;
+                    break;
+                case SQL_TYPE_TIME:
+                    *(SQLINTEGER*)NumericAttributePtr = SQL_TIME;
+                    break;
+                case SQL_TYPE_TIMESTAMP:
+                    *(SQLINTEGER*)NumericAttributePtr = SQL_TIMESTAMP;
+                    break;
+            }
         }
-#endif
-	}
+    }
 	/* state transition */
 	if (pstmt->asyn_on == en_ColAttribute)
     {
