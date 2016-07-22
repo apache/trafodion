@@ -33,6 +33,8 @@ int tm_init_logging();
 
 int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string);
 
+int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string, long transid);
+
 int tm_alt_log_write(int eventType, posix_sqlog_severity_t severity, char *msg);
 
 int tm_log_event(int event_type, 
@@ -65,7 +67,8 @@ int tm_log_stdout
                 (int event_type, 
                  posix_sqlog_severity_t severity,
                  const char *temp_string, 
-                 int error_code = -1, // 1
+                 int error_code = -1, // 0
+                 int64 transid = -1,  // 1
                  int rmid = -1,       // 2
                  int dtmid = -1,      // 3
                  int seq_num = -1,    // 4

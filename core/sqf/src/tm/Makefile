@@ -51,13 +51,14 @@ LIBSTMOBJS = $(OUTDIR)/tmtransid.o \
 			 $(OUTDIR)/tmtransaction.o \
 			 $(OUTDIR)/tmlibtxn.o \
 			 $(OUTDIR)/tmlib.o \
-			 $(OUTDIR)/tmlogginglib.o \
+			 $(OUTDIR)/tmlogging.o \
 			 $(OUTDIR)/tmmap.o \
 			 $(OUTDIR)/tmmutex.o \
 			 $(OUTDIR)/tmregisterregion.o \
              $(OUTDIR)/tmddlrequests.o\
-		 	 $(OUTDIR)/javaobjectinterfacetm.o \
-			 $(OUTDIR)/versstmlib.o 
+ 			 $(OUTDIR)/javaobjectinterfacetm.o \
+			 $(OUTDIR)/versstmlib.o \
+		         $(OUTDIR)/CommonLogger.o 
 LIBSXATMOBJS  = $(OUTDIR)/tmmap.o \
 				$(OUTDIR)/tmmmap.o \
                 $(OUTDIR)/tmmutex.o \
@@ -83,7 +84,6 @@ LIBXARMOBJS	= $(OUTDIR)/tmmap.o \
 		      $(OUTDIR)/xatmmsg.o \
 		      $(OUTDIR)/xarmapi.o \
 			  $(OUTDIR)/xatmapi.o \
-		      $(OUTDIR)/xarmlogging.o \
 		      $(OUTDIR)/tmregistry.o \
               $(OUTDIR)/tmtimer.o \
 		      $(OUTDIR)/verssxarmlib.o

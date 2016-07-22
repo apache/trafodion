@@ -45,6 +45,13 @@ int tm_init_logging()
     return gv_dual_logging; 
 }
 
+int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string, long transid)
+{
+    int    lv_err = 0;
+    lv_err = tm_log_stdout(pv_event_type, pv_severity, pp_string, -1, transid);
+    return lv_err;
+}
+
 int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string)
 {
     int    lv_err = 0;
@@ -142,7 +149,7 @@ int tm_log_event(int event_id,
     {   
         char la_buf[DTM_STRING_BUF_SIZE];
         strncpy (la_buf, temp_string, DTM_STRING_BUF_SIZE - 1);
-        tm_log_stdout(event_id, severity, la_buf, error_code, rmid, dtmid, seq_num, msgid, xa_error,
+        tm_log_stdout(event_id, severity, la_buf, error_code, -1, rmid, dtmid, seq_num, msgid, xa_error,
                       pool_size, pool_elems, msg_retries, pool_high, pool_low, pool_max, tx_state,
                       data, data1, data2, string1, node, msgid2, offset, tm_event_msg, data4);
     }
@@ -155,6 +162,7 @@ int tm_log_stdout(int event_id,
                  posix_sqlog_severity_t severity, 
                  const char *temp_string,
                  int error_code,
+                 int64 transid,
                  int rmid,
                  int dtmid,
                  int seq_num,
@@ -286,7 +294,7 @@ int tm_log_stdout(int event_id,
     printf("\n");
 
     // Log4cxx logging
-    CommonLogger::log(TM_COMPONENT, ll_severity, "Node Number: %u, PIN: %u , Process Name: %s, Message: %s ", my_nid, my_pid, my_name, temp_string);
+    CommonLogger::log(TM_COMPONENT, ll_severity, "Node Number: %u, PIN: %u , Process Name: %s, TMID: %Ld Message: %s ", my_nid, my_pid, my_name, transid, temp_string);
 
     return error;
 } 
