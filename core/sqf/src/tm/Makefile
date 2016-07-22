@@ -176,6 +176,9 @@ $(LIBEXPDIR)/libxarm.so: $(LIBXARMOBJS)
 $(OUTDIR)/CommonLogger.o: $(MY_SQROOT)/commonLogger/CommonLogger.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
 
+$(OUTDIR)/javaobjectinterfacetm.o: $(MY_SQROOT)/src/seatrans/tm/hbasetmlib2/javaobjectinterfacetm.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
 hbasetmlib:
 	cd $(HBASETMLIB); $(MAKE)
 

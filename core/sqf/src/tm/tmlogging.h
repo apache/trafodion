@@ -25,15 +25,14 @@
 #include "dtm/tm_util.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "common/evl_sqlog_eventnum.h"
+#include "CommonLogger.h"
 
 #define DTM_STRING_BUF_SIZE 512
 #define DTM_EVENT_BUF_SIZE 4096
 
 int tm_init_logging();
 
-int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string);
-
-int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string, long transid);
+int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *err_string, char *exception_stack=NULL, long transid=-1);
 
 int tm_alt_log_write(int eventType, posix_sqlog_severity_t severity, char *msg);
 
@@ -90,6 +89,8 @@ int tm_log_stdout
                  int offset = -1,     // 20
                  int tm_event_msg = -1, // 21
                  uint data4 = 0);          //22
+
+void getTMLoggingHeaderInfo(posix_sqlog_severity_t severity, logLevel &ll_severity, char *processName, int processNameLen, int &my_nid, int &my_pid);
 
 #endif
 

@@ -45,18 +45,20 @@ int tm_init_logging()
     return gv_dual_logging; 
 }
 
-int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string, long transid)
-{
-    int    lv_err = 0;
-    lv_err = tm_log_stdout(pv_event_type, pv_severity, pp_string, -1, transid);
-    return lv_err;
-}
+int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *err_string, char *exception_stack, long transid)
+{ 
+    char      my_processName[MS_MON_MAX_PROCESS_NAME+1];
+    int       my_nid,my_pid;
+    logLevel ll_severity = LL_INFO;
 
-int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string)
-{
-    int    lv_err = 0;
-    lv_err = tm_log_stdout(pv_event_type, pv_severity, pp_string);
-    return lv_err;
+    getTMLoggingHeaderInfo(pv_severity, ll_severity, my_processName, sizeof(my_processName), my_nid, my_pid);
+    if (exception_stack == NULL) 
+       CommonLogger::log(TM_COMPONENT, ll_severity, "Node: %d Pid: %d Name: %s TransId: %Ld Event: %d Message: %s ", 
+              my_nid, my_pid, my_processName, transid, pv_event_type, err_string);
+    else
+       CommonLogger::log(TM_COMPONENT, ll_severity, "Node: %d Pid: %d Name: %s TransId: %Ld Event: %d Message: Error at %s caused by exception %s ", 
+              my_nid, my_pid, my_processName, transid, pv_event_type, err_string, exception_stack);
+    return 0;
 }
 
 int tm_alt_log_write(int eventType, posix_sqlog_severity_t severity, char *msg) {
@@ -191,9 +193,9 @@ int tm_log_stdout(int event_id,
 
     char      my_name[MS_MON_MAX_PROCESS_NAME];
     int       my_nid,my_pid;
-    int       error;
+    int       error = 0;
 
-	logLevel ll_severity = LL_INFO;
+    logLevel ll_severity = LL_INFO;
 
     current_time = time(NULL);
     ctime_r(&current_time,timestamp);
@@ -201,47 +203,26 @@ int tm_log_stdout(int event_id,
 
     printf("%s  ", timestamp);
 
-    error = msg_mon_get_my_process_name( my_name, sizeof(my_name) );
-    if (!error)
-    {
-      error = msg_mon_get_process_info( my_name, &my_nid, &my_pid );
-      if (!error)
-         printf("(%s,%u,%u) ",my_name,my_nid,my_pid);
-      else
-      {
-         my_nid = -1; 
-         my_pid = -1;
-      }
-    }
-    else
-      strcpy(my_name, "UNKNOWN");
-
+    getTMLoggingHeaderInfo(severity, ll_severity, my_name, sizeof(my_name), my_nid, my_pid);
+    printf("(%s,%u,%u) ",my_name,my_nid,my_pid);
     printf("Event %s(%d), Sev ", temp_string, event_id);
     switch (severity)
     {
     case SQ_LOG_EMERG: printf("EMERGENCY"); 
-		ll_severity = LL_FATAL;
 		break;
     case SQ_LOG_ALERT: printf("ALERT"); 
-		ll_severity = LL_WARN;
 		break;
     case SQ_LOG_CRIT: printf("CRITICAL"); 
-		ll_severity = LL_FATAL;
 		break;
     case SQ_LOG_ERR: printf("ERROR"); 
-		ll_severity = LL_ERROR;
 		break;
     case SQ_LOG_WARNING: printf("WARNING"); 
-		ll_severity = LL_WARN;
 		break;
     case SQ_LOG_NOTICE: printf("NOTICE"); 
-		ll_severity = LL_INFO;
 		break;
     case SQ_LOG_INFO: printf("INFO"); 
-		ll_severity = LL_INFO;
 		break;
     case SQ_LOG_DEBUG: printf("DEBUG"); 
-		ll_severity = LL_DEBUG;
 		break;
     default: printf("%d Unknown", severity);
     }
@@ -293,8 +274,60 @@ int tm_log_stdout(int event_id,
        printf(", data4=%u",data4);
     printf("\n");
 
-    // Log4cxx logging
-    CommonLogger::log(TM_COMPONENT, ll_severity, "Node Number: %u, PIN: %u , Process Name: %s, TMID: %Ld Message: %s ", my_nid, my_pid, my_name, transid, temp_string);
-
     return error;
 } 
+
+
+
+void getTMLoggingHeaderInfo(posix_sqlog_severity_t severity, logLevel &ll_severity, char *processName, int processNameLen, int &my_nid, int &my_pid)
+{
+
+    char      my_name[MS_MON_MAX_PROCESS_NAME+1];
+    int       error;
+
+    error = msg_mon_get_my_process_name( my_name, sizeof(my_name) );
+    if (error == 0) {
+      error = msg_mon_get_process_info( my_name, &my_nid, &my_pid );
+      if (error != 0) {
+         my_nid = -1;
+         my_pid = -1;
+      }
+    }
+    else
+      strcpy(my_name, "UNKNOWN");
+    int len = strlen(my_name);
+    if (len < processNameLen)
+        len = processNameLen-1;
+    strncpy(processName, my_name, len);
+    processName[len] = '\0';
+    switch (severity) {
+    case SQ_LOG_EMERG: 
+       ll_severity = LL_FATAL;
+       break;
+    case SQ_LOG_ALERT:
+       ll_severity = LL_WARN;
+       break;
+    case SQ_LOG_CRIT: printf("CRITICAL"); 
+       ll_severity = LL_FATAL;
+       break;
+    case SQ_LOG_ERR: printf("ERROR"); 
+       ll_severity = LL_ERROR;
+       break;
+    case SQ_LOG_WARNING: printf("WARNING"); 
+       ll_severity = LL_WARN;
+       break;
+    case SQ_LOG_NOTICE: printf("NOTICE"); 
+       ll_severity = LL_INFO;
+       break;
+    case SQ_LOG_INFO: printf("INFO"); 
+       ll_severity = LL_INFO;
+       break;
+    case SQ_LOG_DEBUG: printf("DEBUG"); 
+       ll_severity = LL_DEBUG;
+       break;
+    default:
+       ll_severity = LL_INFO;
+       break;
+   } 
+   return;
+}
