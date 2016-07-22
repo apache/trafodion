@@ -188,7 +188,7 @@ public class TrxTransactionState extends TransactionState {
         // Adding read scan on a write action
         addRead(new WriteAction(write).getRow());
 
-        ListIterator<WriteAction> writeOrderIter = writeOrdering.listIterator();
+        ListIterator<WriteAction> writeOrderIter = writeOrdering.listIterator(writeOrdering.size());
         writeOrderIter.add(waction = new WriteAction(write));
 
         if (this.earlyLogging) { // immeditaely write edit out to HLOG during DML (actve transaction state)
@@ -247,7 +247,7 @@ public class TrxTransactionState extends TransactionState {
         }
         deletes.add(delete);
 
-        ListIterator<WriteAction> writeOrderIter = writeOrdering.listIterator();
+        ListIterator<WriteAction> writeOrderIter = writeOrdering.listIterator(writeOrdering.size());
         writeOrderIter.add(waction = new WriteAction(delete));
 
         if (this.earlyLogging) {
