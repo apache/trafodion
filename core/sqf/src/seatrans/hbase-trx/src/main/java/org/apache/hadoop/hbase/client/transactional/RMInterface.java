@@ -106,7 +106,7 @@ public class RMInterface {
     }
 
     private IdTm idServer;
-    private static final int ID_TM_SERVER_TIMEOUT = 1000;
+    private static final int ID_TM_SERVER_TIMEOUT = 1000; // 1 sec 
 
     public enum AlgorithmType {
        MVCC, SSCC
@@ -166,7 +166,7 @@ public class RMInterface {
               IdTmId startId;
               try {
                  startId = new IdTmId();
-                 if (LOG.isTraceEnabled()) LOG.trace("registerTransaction getting new startId");
+                 if (LOG.isTraceEnabled()) LOG.trace("registerTransaction getting new startId with timeout " + ID_TM_SERVER_TIMEOUT);
                  idServer.id(ID_TM_SERVER_TIMEOUT, startId);
                  if (LOG.isTraceEnabled()) LOG.trace("registerTransaction idServer.id returned: " + startId.val);
               } catch (IdTmException exc) {
