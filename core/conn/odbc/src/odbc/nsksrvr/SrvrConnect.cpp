@@ -822,7 +822,7 @@ static void* SessionWatchDog(void* arg)
 				ss << "OVF_BUFFER_BYTES_READ= " << pQueryUpdate->m_ovf_buffer_bytes_read << ",";
 				ss << "NUM_NODES= " << pQueryUpdate->m_num_nodes << ",";
 				ss << "UDR_PROCESS_BUSY_TIME= " << pQueryUpdate->m_udr_process_busy_time << ",";
-				ss << "PERTABLE_STATS= " << pQueryUpdate->m_pertable_stats;
+				ss << "PERTABLE_STATS= " << pQueryUpdate->m_pertable_stats << ",";
                                 ss << "LAST_UPDATED_TIME= CONVERTTIMESTAMP(" << lastUpdatedTime << ")";
 				ss << " where QUERY_ID = '" << pQueryUpdate->m_query_id.c_str() << "'";
 				ss << " and EXEC_START_UTC_TS = CONVERTTIMESTAMP(" << pQueryUpdate->m_exec_start_utc_ts << ")";
