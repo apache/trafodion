@@ -110,6 +110,8 @@ fi
 REQ_JDK_VER="1.7.0_67"
 if [[ -z "$JAVA_HOME" && -d "${TOOLSDIR}/jdk${REQ_JDK_VER}" ]]; then
   export JAVA_HOME="${TOOLSDIR}/jdk${REQ_JDK_VER}"
+elif [[ -z "$JAVA_HOME" && -d /usr/lib/jvm/java-1.7.0-openjdk/ ]]; then
+  export JAVA_HOME="/usr/lib/jvm/java-1.7.0-openjdk"
 elif [[ -z "$JAVA_HOME" && -d /usr/lib/jvm/java-1.7.0-openjdk.x86_64/ ]]; then
   export JAVA_HOME="/usr/lib/jvm/java-1.7.0-openjdk.x86_64"
 elif [[ -z "$JAVA_HOME" ]]; then

@@ -24,10 +24,15 @@
 include ../macros.gmk #top level
 
 RM      = /bin/rm
+
+OS_TYPE = RH
+OS_MAJOR ?=  $(shell lsb_release -rs | cut -f1 -d.)
+P_TYPE = $(shell uname -p)
+
 ifeq ($(SQ_BUILD_TYPE),release)
-  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/apache-trafodion_clients-$(TRAFODION_VER)-incubating.tar.gz
+  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/apache-trafodion_clients-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}-incubating.tar.gz
 else
-  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/apache-trafodion_clients-$(TRAFODION_VER)-debug.tar.gz
+  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/apache-trafodion_clients-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}-debug.tar.gz
 endif
 
 
