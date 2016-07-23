@@ -251,7 +251,7 @@ function checkUlimit {
  userProc=`cat /proc/sys/kernel/pid_max`
  if [[ $userProc -gt 65535 ]] ; then
     echoLog ""
-    echoLog "ERROR: detect issue during startup, please make sure your kernel parameter (sysctl) setup correctly"
+    echoLog "ERROR: issue detected during startup. Please make sure your kernel parameter (sysctl) is set up correctly."
     echoLog "ERROR: max_pid should not be greater than 65535"
     echoLog ""
     return
@@ -261,7 +261,7 @@ function checkUlimit {
  maxLockMem=`ulimit -l`
  if [[ $maxLockMem -lt 65536 ]] ; then
     echoLog ""
-    echoLog "ERROR: detect issue during startup, please make sure your ulimit setup correctly"
+    echoLog "ERROR: issue detected during startup. Please make sure your ulimit -l is set up correctly."
     echoLog "ERROR: max locked memory is smaller than 64M"
     echoLog ""
     return 
@@ -270,7 +270,7 @@ function checkUlimit {
  #check ulimit -l
  if [[ $maxLockMem -lt 327680 ]] ; then
     echoLog ""
-    echoLog "WARNING: detect issue during startup, please make sure your ulimit setup correctly"
+    echoLog "WARNING: issue detected during startup, please make sure your ulimit -l is set up correctly."
     echoLog "WARNING: max locked memory is smaller than 320M "
     echoLog ""
     return 
