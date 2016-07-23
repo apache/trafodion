@@ -3631,9 +3631,9 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
     memset(maxLen, 0, 32);
     int i=0,j=0;
     int copyit = 0;
-
+    int lenStr = strlen(hiveType);
     //get length
-    for(i = 0; i < strlen(hiveType) ; i++)
+    for(i = 0; i < lenStr ; i++)
     {
       if(hiveType[i] == '(') //start
       {
@@ -3675,6 +3675,54 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
                                    CharInfo::DefaultCollation,
                                    CharInfo::IMPLICIT);
   } 
+
+  if ( !strncmp(hiveType, "decimal", 7) )
+  {
+    Int16 i=0, pstart=0, pend=0, sstart=0, send=0, p=0, s = 0;
+    Int16 hiveTypeLen = strlen(hiveType);
+    char pstr[16], sstr[16];
+    memset(pstr,0,sizeof(pstr));
+    memset(sstr,0,sizeof(sstr));
+
+    for( i = 0; i < hiveTypeLen; i++ )
+    {
+      if(hiveType[i] == '(' )
+      {
+        pstart = i+1;
+      }
+      else if(hiveType[i] == ',')
+      {
+        pend = i;
+        sstart = i+1;
+      }
+      else if(hiveType[i] == ')')
+      {
+        send = i;
+      }
+      else
+       continue;
+    }
+    if(pend - pstart > 0)
+    {
+      strncpy(pstr,hiveType+pstart, pend-pstart);
+      p=atoi(pstr);
+    }
+    if(send - sstart > 0)
+    {
+      strncpy(sstr,hiveType+sstart,send-sstart);
+      s=atoi(sstr);
+    }
+
+    if( (p>0) && (s>0) )
+    {
+      return new (heap) SQLDecimal( p, s, TRUE, TRUE);
+    }
+    else
+    {
+      return new (heap) SQLDecimal( 10, 0, TRUE, TRUE);
+    }
+
+  }
 
   return NULL;
 }
