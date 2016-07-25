@@ -922,7 +922,6 @@ void TM_Info::initialize()
 
     if (lv_error == 0)
        lv_test_pause_state = atoi(la_value);
-     }
 
      switch (lv_test_pause_state)
      {

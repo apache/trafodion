@@ -3141,15 +3141,12 @@ short TMLIB::setupJNI()
 ///////////////////////////////////////////////
 short TMLIB::initConnection(short pv_nid)
 {
-  jthrowable exc;
   jshort   jdtmid = pv_nid;
   //sleep(30);
   _tlp_jenv->CallBooleanMethod(javaObj_, TMLibJavaMethods_[JM_INIT1].methodID, jdtmid);
-  exc = _tlp_jenv->ExceptionOccurred();
-  if(exc) {
-    _tlp_jenv->ExceptionDescribe();
-    _tlp_jenv->ExceptionClear();
-    return RET_EXCEPTION;
+  if (getExceptionDetails(NULL)) {
+     tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"TMLIB::initConnection()", (char *)_tlp_error_msg->c_str(), -1);
+     return RET_EXCEPTION;
   }
   // Ignore result and return JOI_OK
   return JOI_OK;
@@ -3172,12 +3169,11 @@ void TMLIB::cleanupTransactionLocal(long transactionID)
   }
 
   _tlp_jenv->CallStaticVoidMethod(iv_RMInterface_class, TMLibJavaMethods_[JM_CLEARTRANSACTIONSTATES].methodID, jlv_transid);
-  if(_tlp_jenv->ExceptionOccurred()){
-    _tlp_jenv->ExceptionDescribe();
-    _tlp_jenv->ExceptionClear();
-    fprintf(stderr,"clearTransactionStates raised an exception!\n");
-    fflush(stderr);
-    abort();
+  if (getExceptionDetails(NULL)) {
+     tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"TMLIB::cleanupTransactionLocal()", (char *)_tlp_error_msg->c_str(), -1);
+     fprintf(stderr, "clearTransactionStates raised an exception!\n");
+     fflush(stderr);
+     abort();
   }
   return;
 } //cleanupTransactionLocal
@@ -3195,10 +3191,9 @@ short TMLIB::endTransactionLocal(long transactionID)
   }
 
   jshort jresult = _tlp_jenv->CallShortMethod(javaObj_, TMLibJavaMethods_[JM_TRYCOMMIT].methodID, jlv_transid);
-  if(_tlp_jenv->ExceptionOccurred()){
-    _tlp_jenv->ExceptionDescribe();
-    _tlp_jenv->ExceptionClear();
-    return RET_EXCEPTION;
+  if (getExceptionDetails(NULL)) {
+     tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"TMLIB::endTransaction()", (char *)_tlp_error_msg->c_str(), -1);
+     return RET_EXCEPTION;
   }
 
   //  RET_NOTX means the transaction wasn't found by the HBase client code (trx).  This is ok here, it
@@ -3225,10 +3220,9 @@ short TMLIB::abortTransactionLocal(long transactionID)
   }
 
   jshort jresult = _tlp_jenv->CallShortMethod(javaObj_, TMLibJavaMethods_[JM_ABORT].methodID, jlv_transid);
-  if(_tlp_jenv->ExceptionOccurred()){
-    _tlp_jenv->ExceptionDescribe();
-    _tlp_jenv->ExceptionClear();
-    return RET_EXCEPTION;
+  if (getExceptionDetails(NULL)) {
+     tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"TMLIB::abortTransaction()", (char *)_tlp_error_msg->c_str(), -1);
+     return RET_EXCEPTION;
   }
 
   //  RET_NOTX means the transaction wasn't found by the HBase client code (trx).  This is ok here, it
