@@ -98,7 +98,7 @@ CLNodeConfigContainer::CLNodeConfigContainer( void )
                      : lnodesCount_(0)
                      , nextNid_(-1)
                      , lnodesConfigMax_(0)
-                     , lnodeConfig_(NULL)
+                     , lnodesConfig_(NULL)
                      , head_(NULL)
                      , tail_(NULL)
 {
@@ -112,16 +112,16 @@ CLNodeConfigContainer::CLNodeConfigContainer( int lnodesConfigMax )
                      : lnodesCount_(0)
                      , nextNid_(0)
                      , lnodesConfigMax_(lnodesConfigMax)
-                     , lnodeConfig_(NULL)
+                     , lnodesConfig_(NULL)
                      , head_(NULL)
                      , tail_(NULL)
 {
     const char method_name[] = "CLNodeConfigContainer::CLNodeConfigContainer";
     TRACE_ENTRY;
 
-    lnodeConfig_ = new CLNodeConfig *[lnodesConfigMax_];
+    lnodesConfig_ = new CLNodeConfig *[lnodesConfigMax_];
 
-    if ( ! lnodeConfig_ )
+    if ( ! lnodesConfig_ )
     {
         int err = errno;
         char la_buf[MON_STRING_BUF_SIZE];
@@ -131,12 +131,9 @@ CLNodeConfigContainer::CLNodeConfigContainer( int lnodesConfigMax )
     else
     {
         // Initialize array
-        if ( lnodeConfig_ )
+        for ( int i = 0; i < lnodesConfigMax_ ;i++ )
         {
-            for ( int i = 0; i < lnodesConfigMax_ ;i++ )
-            {
-                lnodeConfig_[i] = NULL;
-            }
+            lnodesConfig_[i] = NULL;
         }
     }
 
@@ -154,22 +151,17 @@ CLNodeConfigContainer::~CLNodeConfigContainer(void)
     // logical node configuration objects. 
     // The logical nodes container in a physical node configuration object
     // only stores the configured logical nodes it hosts.
-    if ( lnodeConfig_ )
+    if ( lnodesConfig_ )
     { // This is the main container
+        // Delete entries
         while ( head_ )
         {
             DeleteLNodeConfig( lnodeConfig );
             lnodeConfig = head_;
         }
     
-        // Initialize array
-        if ( lnodeConfig_ )
-        {
-            for ( int i = 0; i < lnodesConfigMax_; i++ )
-            {
-                lnodeConfig_[i] = NULL;
-            }
-        }
+        // Delete array
+        delete [] lnodesConfig_;
     }
 
     TRACE_EXIT;
@@ -186,7 +178,7 @@ void CLNodeConfigContainer::Clear( void )
     // logical node configuration objects. 
     // The logical nodes container in a physical node configuration object
     // only stores the configured logical nodes it hosts.
-    if ( lnodeConfig_ )
+    if ( lnodesConfig_ )
     {
         while ( head_ )
         {
@@ -195,12 +187,9 @@ void CLNodeConfigContainer::Clear( void )
         }
     
         // Initialize array
-        if ( lnodeConfig_ )
+        for ( int i = 0; i < lnodesConfigMax_; i++ )
         {
-            for ( int i = 0; i < lnodesConfigMax_; i++ )
-            {
-                lnodeConfig_[i] = NULL;
-            }
+            lnodesConfig_[i] = NULL;
         }
     }
 
@@ -261,7 +250,7 @@ CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
         return( NULL );
     }
 
-    assert( lnodeConfig_[nid] == NULL );
+    assert( lnodesConfig_[nid] == NULL );
 
     CLNodeConfig *lnodeConfig = new CLNodeConfig( pnodeConfig
                                                 , nid
@@ -275,7 +264,7 @@ CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
         // Bump the logical node count
         lnodesCount_++;
         // Add it to the array
-        lnodeConfig_[nid] = lnodeConfig;
+        lnodesConfig_[nid] = lnodeConfig;
         // Add it to the container list
         if ( head_ == NULL )
         {
@@ -295,20 +284,20 @@ CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
             nextNid_ = -1;
             for (int i = 0; i < lnodesConfigMax_; i++ )
             {
-                if ( lnodeConfig_[i] == NULL )
+                if ( lnodesConfig_[i] == NULL )
                 {
                     nextNid_ = i;
                     break;
                 }
             }
         }
-        else if ( lnodeConfig_[nextNid_] != NULL )
+        else if ( lnodesConfig_[nextNid_] != NULL )
         {   // nid is in use
             int next = ((nextNid_ + 1) < lnodesConfigMax_) ? nextNid_ + 1 : 0 ;
             nextNid_ = -1;
             for (int i = next; i < lnodesConfigMax_; i++ )
             {
-                if ( lnodeConfig_[i] == NULL )
+                if ( lnodesConfig_[i] == NULL )
                 {
                     nextNid_ = i;
                     break;
@@ -352,7 +341,7 @@ void CLNodeConfigContainer::DeleteLNodeConfig( CLNodeConfig *lnodeConfig )
     }
     
     int nid = lnodeConfig->GetNid();
-    lnodeConfig_[nid] = NULL;
+    lnodesConfig_[nid] = NULL;
     
     if ( head_ == lnodeConfig )
         head_ = lnodeConfig->next_;

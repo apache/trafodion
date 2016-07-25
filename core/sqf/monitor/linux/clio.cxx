@@ -1164,6 +1164,7 @@ int Local_IO_To_Monitor::process_notice(struct message_def *pp_msg) {
         break;
 
     case MsgType_NodeAdded:
+    case MsgType_NodeChanged:
     case MsgType_NodeDeleted:
     case MsgType_NodeDown:
     case MsgType_NodeJoining:
@@ -1827,6 +1828,10 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
 
     case MsgType_NodeAdded:
         lv_len = lv_preamble + sizeof(pp_msg->u.request.u.node_added);
+        break;
+
+    case MsgType_NodeChanged:
+        lv_len = lv_preamble + sizeof(pp_msg->u.request.u.node_changed);
         break;
 
     case MsgType_NodeDeleted:

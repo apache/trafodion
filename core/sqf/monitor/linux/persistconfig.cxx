@@ -188,6 +188,8 @@ void CPersistConfigContainer::Clear( void )
         persistConfig = head_;
     }
 
+    pkeysVector_.clear();
+
     persistsCount_ = 0;
     head_ = NULL;
     tail_ = NULL;

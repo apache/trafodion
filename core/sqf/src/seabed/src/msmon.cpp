@@ -3680,6 +3680,8 @@ void msg_mon_init() {
                           static_cast<int>(MsgType_Event)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_MsgType_NodeAdded) ==
                           static_cast<int>(MsgType_NodeAdded)); // sw fault
+    SB_util_static_assert(static_cast<int>(MS_MsgType_NodeChanged) ==
+                          static_cast<int>(MsgType_NodeChanged)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_MsgType_NodeDeleted) ==
                           static_cast<int>(MsgType_NodeDeleted)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_MsgType_NodeDown) ==
@@ -3798,6 +3800,8 @@ void msg_mon_init() {
                           sizeof(NewProcess_Notice_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NodeAdded_def) ==
                           sizeof(NodeAdded_def)); // sw fault
+    SB_util_static_assert(sizeof(MS_Mon_NodeChanged_def) ==
+                          sizeof(NodeChanged_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NodeDeleted_def) ==
                           sizeof(NodeDeleted_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NodeDown_def) ==

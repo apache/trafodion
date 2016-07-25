@@ -1694,7 +1694,8 @@ void CIntNodeNameReq::performRequest()
                 CNode    *node = Nodes->GetNode(current_n); 
                 if (node)
                 {
-                    node->SetName(new_n);
+                    node->SetName( new_n );
+                    Nodes->ChangedNode( node, pnodeConfig ); 
                 }
                 else
                 {

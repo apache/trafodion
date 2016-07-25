@@ -158,12 +158,17 @@ int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
     bool reg = false;
     int count = 0;
     int rerr;
+    char *process_pattern = pattern;
     regex_t regex;
 
     if (strlen( pattern ) > 0)
     {
+        if (*process_pattern == '$')
+        {
+            process_pattern++;
+        }
         // Compile pattern regex
-        rerr = regcomp( &regex, pattern, 0 );
+        rerr = regcomp( &regex, process_pattern, REG_EXTENDED );
         if (rerr == 0)
         {
             copy = false;

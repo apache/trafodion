@@ -176,7 +176,7 @@ void CPNodeConfig::SetExcludedLastCore( int excludedLastCore )
 } 
 
 CPNodeConfigContainer::CPNodeConfigContainer( int pnodesConfigMax )
-                     : pnodeConfig_(NULL)
+                     : pnodesConfig_(NULL)
                      , pnodesCount_(0)
                      , snodesCount_(0)
                      , nextPNid_(0)
@@ -187,9 +187,9 @@ CPNodeConfigContainer::CPNodeConfigContainer( int pnodesConfigMax )
     const char method_name[] = "CPNodeConfigContainer::CPNodeConfigContainer";
     TRACE_ENTRY;
 
-    pnodeConfig_ = new CPNodeConfig *[pnodesConfigMax_];
+    pnodesConfig_ = new CPNodeConfig *[pnodesConfigMax_];
 
-    if ( ! pnodeConfig_ )
+    if ( ! pnodesConfig_ )
     {
         int err = errno;
         char la_buf[MON_STRING_BUF_SIZE];
@@ -199,12 +199,9 @@ CPNodeConfigContainer::CPNodeConfigContainer( int pnodesConfigMax )
     else
     {
         // Initialize array
-        if ( pnodeConfig_ )
+        for ( int i = 0; i < pnodesConfigMax_; i++ )
         {
-            for ( int i = 0; i < pnodesConfigMax_; i++ )
-            {
-                pnodeConfig_[i] = NULL;
-            }
+            pnodesConfig_[i] = NULL;
         }
     }
 
@@ -225,13 +222,10 @@ CPNodeConfigContainer::~CPNodeConfigContainer( void )
         pnodeConfig = head_;
     }
 
-    // Initialize array
-    if ( pnodeConfig_ )
+    // Delete array
+    if ( pnodesConfig_ )
     {
-        for ( int i = 0; i < pnodesConfigMax_ ;i++ )
-        {
-            pnodeConfig_[i] = NULL;
-        }
+        delete [] pnodesConfig_;
     }
 
     TRACE_EXIT;
@@ -251,15 +245,12 @@ void CPNodeConfigContainer::Clear( void )
         pnodeConfig = head_;
     }
 
-    if ( pnodeConfig_ )
+    if ( pnodesConfig_ )
     {
         // Initialize array
-        if ( pnodeConfig_ )
+        for ( int i = 0; i < pnodesConfigMax_ ;i++ )
         {
-            for ( int i = 0; i < pnodesConfigMax_ ;i++ )
-            {
-                pnodeConfig_[i] = NULL;
-            }
+            pnodesConfig_[i] = NULL;
         }
     }
 
@@ -291,7 +282,7 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int   pnid
         return( NULL );
     }
 
-    assert( pnodeConfig_[pnid] == NULL );
+    assert( pnodesConfig_[pnid] == NULL );
 
     CPNodeConfig *pnodeConfig = new CPNodeConfig( this
                                                 , pnid
@@ -309,7 +300,7 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int   pnid
         // Bump the physical node count
         pnodesCount_++;
         // Add it to the array
-        pnodeConfig_[pnid] = pnodeConfig;
+        pnodesConfig_[pnid] = pnodeConfig;
         // Add it to the container list
         if ( head_ == NULL )
         {
@@ -329,20 +320,20 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int   pnid
             nextPNid_ = -1;
             for (int i = 0; i < pnodesConfigMax_; i++ )
             {
-                if ( pnodeConfig_[i] == NULL )
+                if ( pnodesConfig_[i] == NULL )
                 {
                     nextPNid_ = i;
                     break;
                 }
             }
         }
-        else if ( pnodeConfig_[nextPNid_] != NULL )
+        else if ( pnodesConfig_[nextPNid_] != NULL )
         {   // pnid is in use
             int next = ((nextPNid_ + 1) < pnodesConfigMax_) ? nextPNid_ + 1 : 0 ;
             nextPNid_ = -1;
             for (int i = next; i < pnodesConfigMax_; i++ )
             {
-                if ( pnodeConfig_[i] == NULL )
+                if ( pnodesConfig_[i] == NULL )
                 {
                     nextPNid_ = i;
                     break;
@@ -387,7 +378,7 @@ void CPNodeConfigContainer::DeletePNodeConfig( CPNodeConfig *pnodeConfig )
     }
 
     int pnid = pnodeConfig->GetPNid();
-    pnodeConfig_[pnid] = NULL;
+    pnodesConfig_[pnid] = NULL;
 
     if ( head_ == pnodeConfig )
         head_ = pnodeConfig->next_;

@@ -77,6 +77,7 @@ public:
                                    , int pid
                                    , int verifier
                                    , _TM_Txid_External trans_id );
+    void    ChangedNode( CNode *node, CPNodeConfig *pnodeConfig );
     void    DeletedNode( CNode *node );
     bool    DeleteNode( int pnid );
     void    DeleteNode( CNode *node );

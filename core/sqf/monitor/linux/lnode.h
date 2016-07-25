@@ -52,6 +52,7 @@ public:
     ~CLNode( void );
 
     void    Added( void );
+    void    Changed( CLNodeConfig *lnodeConfig );
     void    Deleted( void );
     void    DeLink( CLNode **head, CLNode **tail );
     void    DeLinkP( CLNode **head, CLNode **tail );

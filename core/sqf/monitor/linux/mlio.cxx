@@ -154,6 +154,7 @@ const int SQ_LocalIOToClient::requestSize[] = {
    sizeof(REQTYPE) + sizeof( Close_def ),             // MsgType_Close
    sizeof(REQTYPE) + sizeof( Event_Notice_def ),      // MsgType_Event
    sizeof(REQTYPE) + sizeof( NodeAdded_def ),         // MsgType_NodeAdded
+   sizeof(REQTYPE) + sizeof( NodeChanged_def ),       // MsgType_NodeChanged
    sizeof(REQTYPE) + sizeof( NodeDeleted_def ),       // MsgType_NodeDeleted
    sizeof(REQTYPE) + sizeof( NodeDown_def ),          // MsgType_NodeDown
    sizeof(REQTYPE) + sizeof( NodeJoining_def ),       // MsgType_NodeJoining

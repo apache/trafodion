@@ -60,7 +60,7 @@ protected:
 
 private:
     int             lnodesConfigMax_; // maximum number of logical nodes
-    CLNodeConfig  **lnodeConfig_;     // array of all logical nodes
+    CLNodeConfig  **lnodesConfig_;    // array of all logical nodes
 
     CLNodeConfig   *head_;  // head of logical nodes linked list
     CLNodeConfig   *tail_;  // tail of logical nodes linked list

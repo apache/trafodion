@@ -377,6 +377,7 @@ typedef enum {
     MS_MsgType_Close,
     MS_MsgType_Event,
     MS_MsgType_NodeAdded,
+    MS_MsgType_NodeChanged,
     MS_MsgType_NodeDeleted,
     MS_MsgType_NodeDown,
     MS_MsgType_NodeJoining,
@@ -481,6 +482,18 @@ struct MS_Mon_NodeAdded_def
     int  nid;
     int  zid;
     char node_name[MS_MON_MAX_PROCESSOR_NAME];
+};
+
+struct MS_Mon_NodeChanged_def
+{
+    int  nid;
+    int  zid;
+    int  pnid;
+    char node_name[MS_MON_MAX_PROCESSOR_NAME];
+    int  first_core;
+    int  last_core;
+    int  processors;
+    int  roles;
 };
 
 struct MS_Mon_NodeDeleted_def
@@ -591,6 +604,7 @@ typedef struct MS_Mon_Msg {
         struct MS_Mon_NodeUp_def              up;
         struct MS_Mon_TmRestarted_def         tmrestarted;        
         struct MS_Mon_NodeAdded_def           added;
+        struct MS_Mon_NodeChanged_def         changed;
         struct MS_Mon_NodeDeleted_def         deleted;
     } u;
 } MS_Mon_Msg;

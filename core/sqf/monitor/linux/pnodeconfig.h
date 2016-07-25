@@ -57,7 +57,7 @@ public:
     void          GetSpareNodesConfigSet( const char *name, PNodesConfigList_t &spareSet );
 
 protected:
-    CPNodeConfig  **pnodeConfig_; // array of physical node configuration objects
+    CPNodeConfig  **pnodesConfig_;// array of physical node configuration objects
     int             pnodesCount_; // # of physical nodes 
     int             snodesCount_; // # of spare nodes
     int             nextPNid_;    // next physical node id available

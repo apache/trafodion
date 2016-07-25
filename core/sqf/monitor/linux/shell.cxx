@@ -149,6 +149,7 @@ void  node_config_cmd( char *cmd );
 void  node_delete_cmd( char *cmd );
 void  node_down( int nid, char *reason );
 void  node_down_cmd ( char *cmd );
+void  node_name_cmd( char *cmd );
 int   node_up( int nid, char *node_name, bool nowait=false );
 void  node_up_cmd( char *cmd, char delimiter );
 char *normalize_case (char *token);
@@ -1123,6 +1124,27 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         if ( nodePending )
         {
             if ( strcmp( nodePendingName, recv_msg->u.request.u.node_added.node_name) == 0 )
+            {
+                nodePendingComplete();
+            }
+        }
+        break;
+
+    case MsgType_NodeChanged:
+        printf ("[%s] %s - Node %d (%s) CHANGED in configuration\n", 
+                MyName, time_string(), recv_msg->u.request.u.node_changed.nid,
+                recv_msg->u.request.u.node_changed.node_name);
+        if ( !load_configuration() )
+        {
+            exit (1);
+        }
+        if ( !init_pnode_map() )
+        {
+            exit(1);
+        }
+        if ( nodePending )
+        {
+            if ( strcmp( nodePendingName, recv_msg->u.request.u.node_changed.node_name) == 0 )
             {
                 nodePendingComplete();
             }
@@ -3248,72 +3270,52 @@ void node_change_name(char *current_name, char *new_name)
 {
     const char method_name[] = "node_change_name";
   
-    if ((current_name == NULL) || (new_name == NULL))
-    {
-         printf( "[%s] Error: Invalid node name while attempting to change node name.\n", MyName );           
-         return;
-    }
+    bool integrating = false;
+    int pnid = -1;
     int count;
+    char msgString[MAX_BUFFER] = { 0 };
     MPI_Status status;
-    CPhysicalNode  *physicalNode;
-    PhysicalNodeNameMap_t::iterator it;
-    pair<PhysicalNodeNameMap_t::iterator, bool> pnmit;
 
-    // Look up name
-    it = PhysicalNodeMap.find( current_name );
-
-    if (it != PhysicalNodeMap.end())
+    pnid = get_pnid_by_node_name( current_name );
+    if ( pnid == -1 )
     {
-        physicalNode = it->second;
-        if (physicalNode)
-        {
-           CPhysicalNode  *newPhysicalNode = new CPhysicalNode( new_name, physicalNode->GetState() );
-           if (newPhysicalNode == NULL)
-          {
-               printf( "[%s] Error: Internal error with configuration while changing node name.\n", MyName );           
-              return;
-           }
-           //remove and read
-           PhysicalNodeMap.erase(current_name);
-           pnmit = PhysicalNodeMap.insert( PhysicalNodeNameMap_t::value_type 
-                                            ( newPhysicalNode->GetName(), newPhysicalNode ));
-           if (pnmit.second == false)
-           {   // Already had an entry with the given key value.  
-                printf( "[%s] Error: Internal error while changing node name. Node name exists, node name=%s\n", MyName, new_name );
-                return;
-           }
-        }
-        else
-        {
-           printf( "[%s] Error: Internal error while changing node name.  Node name=%s\n", MyName,new_name );           
-           return;
-        }
-    }
-    else
-    {
-        printf( "[%s] Error: Internal error while changing node name.  Node name=%s\n", MyName, new_name );           
+        sprintf( msgString, "[%s] Node %s is not configured!", MyName, current_name );
+        write_startup_log( msgString );
+        printf ("%s\n", msgString );
         return;
     }
-    
-    // change in another local location
-    int pnid = ClusterConfig.GetPNid( current_name ); 
-    CPNodeConfig *pnodeConfig = ClusterConfig.GetPNodeConfig( pnid ); 
-    if (pnodeConfig != NULL)
+
+    STATE state = State_Unknown;
+    // Check monitors state of the target node
+    if ( !get_node_state( -1, current_name, pnid, state, integrating ) )
     {
-        pnodeConfig->SetName(new_name);
+        sprintf( msgString, "[%s] Monitor does not have state information on pnid=%d (%s)!"
+                          , MyName, pnid, current_name);
+        write_startup_log( msgString );
+        printf ("%s\n", msgString );
     }
-      
-    //and..... in another local location
-    for( int i=0; i < ClusterConfig.GetPNodesConfigMax(); i++ )
+    if ( integrating )
     {
-       if ( strlen(PNode[i]) == 0 ) continue;
-       if ( strcmp (PNode[i], current_name) == 0)
-       {
-           strcpy(PNode[i],new_name);
-       }
-    }       
-    
-    // now change it in the monitors
+        sprintf( msgString, "[%s] Node up in progress! Try again when node re-integration completes.", MyName);
+        write_startup_log( msgString );
+        printf ("%s\n", msgString );
+        return;
+    }
+    if ( state != State_Unknown )
+    {
+        if ( state != State_Down )
+        {
+            sprintf( msgString, "[%s] Node %s is not in down state! (state=%s)", MyName, current_name, StateString(state) );
+            write_startup_log( msgString );
+            printf ("%s\n", msgString );
+            return;
+        }
+    }
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf ("%s@%d [%s] sending node delete message.\n",
+                      method_name, __LINE__, MyName);
+
     if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
     {   // Could not acquire a message buffer
         printf ("[%s] Unable to acquire message buffer.\n", MyName);
@@ -3437,7 +3439,7 @@ void node_delete( int nid, char *node_name )
         pnid = get_pnid_by_node_name( node_name );
         if ( pnid == -1 )
         {
-            sprintf( msgString, "[%s] Node %s is not in configuration", MyName, node_name );
+            sprintf( msgString, "[%s] Node %s is not configured!", MyName, node_name );
             write_startup_log( msgString );
             printf ("%s\n", msgString );
             return;
@@ -3448,7 +3450,7 @@ void node_delete( int nid, char *node_name )
         pnid = get_pnid_by_nid( nid );
         if ( pnid == -1 )
         {
-            sprintf( msgString, "[%s] Node %d is not in configuration", MyName, nid );
+            sprintf( msgString, "[%s] Node %d is not configured!", MyName, nid );
             write_startup_log( msgString );
             printf ("%s\n", msgString );
             return;
@@ -3525,13 +3527,6 @@ void node_delete( int nid, char *node_name )
         {
             if (msg->u.reply.u.generic.return_code != MPI_SUCCESS)
             {
-//                if ( !load_configuration() )
-//                {
-//                    exit (1);
-//                }
-//            }
-//            else
-//            {
                 if (msg->u.reply.u.generic.return_code == MPI_ERR_IO)
                 {
                     printf( "[%s] Node deleted failed, could not access configuration database\n"
@@ -4096,6 +4091,7 @@ void persist_config_keys( void )
 void persist_info( char *prefix )
 {
     bool foundConfig = false;
+    bool usePattern = false;
     char process_name_str[MAX_TOKEN];
     CPersistConfig *persistConfig;
 
@@ -4107,16 +4103,28 @@ void persist_info( char *prefix )
             if (*prefix == '\0' ||
                  strcasecmp( prefix, persistConfig->GetPersistPrefix()) == 0)
             {
-                // Build pattern string
-                snprintf( process_name_str, sizeof(process_name_str)
-                        , "\%s[:digit:]*"
-                        , persistConfig->GetProcessNamePrefix()
-                        );
+                if (strlen(persistConfig->GetProcessNameFormat()) != 0)
+                {
+                    // Build pattern string
+                    usePattern = true;
+                    snprintf( process_name_str, sizeof(process_name_str)
+                            , "\%s[0-9]+"
+                            , persistConfig->GetProcessNamePrefix()
+                            );
+                }
+                else
+                {
+                    usePattern = false;
+                    snprintf( process_name_str, sizeof(process_name_str)
+                            , "\%s"
+                            , persistConfig->GetProcessNamePrefix()
+                            );
+                }
                 get_proc_info( -1
                              , -1
                              , process_name_str
                              , ProcessType_Undefined
-                             , true  // process_name pattern
+                             , usePattern
                              , foundConfig ? false : true
                              );
                 foundConfig = true;
@@ -6019,7 +6027,7 @@ void help_cmd (void)
     printf ("[%s] --          processors {<processor-count>},\n", MyName);
     printf ("[%s] --          roles {connection|aggregation|storage}\n", MyName);
     printf ("[%s] -- node config [<nid>|<node-name>]\n", MyName);
-    printf ("[%s] -- node delete <nid>|<node-name>\n", MyName);
+    printf ("[%s] -- node delete <node-name>\n", MyName);
     printf ("[%s] -- node down <nid> [, <reason-string>]\n", MyName);
     printf ("[%s] -- node info [<nid>]\n", MyName);
     printf ("[%s] -- node name <old-node-name> <new-node-name>\n", MyName);
@@ -6313,26 +6321,6 @@ void node_cmd (char *cmd_tail)
                 printf( EnvNotStarted, MyName );
             }
         }
-        else if (strcmp (token, "name") == 0)
-        {
-            char *ptr2 = get_token (cmd, token, &delimiter);
-            if (ptr2 && *ptr2)
-            {
-                node_change_name(token, ptr2);
-                if ( !load_configuration() )
-                {
-                    exit (1);
-                }
-                if ( !init_pnode_map() )
-                {
-                    exit(1);
-                }
-            }
-            else
-            {
-                printf ("[%s] Invalid node name\n", MyName);
-            }
-        }
         else if (strcmp( token, "config" ) == 0)
         {
             // [ <nid> | <node-name> ]
@@ -6408,6 +6396,36 @@ void node_cmd (char *cmd_tail)
             else
             {
                 printf (EnvNotStarted, MyName);
+            }
+        }
+        else if (strcmp (token, "name") == 0)
+        {
+            if (Started) // Should delete be ok with the instance down?
+            {
+                if ( VirtualNodes )
+                {
+                    sprintf( msgString, "[%s] Node name is not available with Virtual Nodes!",MyName);
+                    write_startup_log( msgString );
+                    printf ("[%s] Node name is not available with Virtual Nodes!\n", MyName);    
+                }
+                else
+                {
+                    if (ElasticityEnabled)
+                    {
+                        // <old-node-name> <new-node-name>
+                        node_name_cmd(cmd);
+                    }
+                    else
+                    {
+                        sprintf( msgString, "[%s] Node name is not enabled, to enable export SQ_ELASTICY_ENABLED=1",MyName);
+                        write_startup_log( msgString );
+                        printf ("[%s] Node name is not enabled, to enable export SQ_ELASTICY_ENABLED=1\n", MyName);    
+                    }
+                }
+            }
+            else
+            {
+                printf( EnvNotStarted, MyName );
             }
         }
         else if (strcmp( token, "up" ) == 0)
@@ -6620,25 +6638,16 @@ void node_delete_cmd( char *cmd )
         trace_printf ("%s@%d [%s] processing node delete command.\n",
                       method_name, __LINE__, MyName);
     
-    // <nid> | <node-name>
     if (*cmd_tail != '\0')
     {
-        // <nid> | <node-name>
+        // <node-name>
         cmd_tail = get_token( cmd_tail, token, &delim );
         if ( isNumeric( token ) )
         {
-            nid = atoi (token);
-            if (nid < 0 || nid > LNodesConfigMax - 1)
-            {
-                sprintf( msgString, "[%s] Invalid node id!",MyName);
-                write_startup_log( msgString );
-                printf ("%s\n", msgString);
-               return;
-            }
-            snprintf( msgString, sizeof(msgString)
-                    , "[%s] Executing node delete. (nid=%s)"
-                    , MyName, token );
+            sprintf( msgString, "[%s] Invalid node delete options syntax! (expecting <node-name>)",MyName);
             write_startup_log( msgString );
+            printf ("%s\n", msgString);
+            return;
         }
         else
         {
@@ -6755,6 +6764,94 @@ void node_down_cmd( char *cmd )
     node_down( nid, cmd_tail );
 
     NodeState[nid] = false;
+}
+
+void node_name_cmd( char *cmd )
+{
+    const char method_name[] = "node_name_cmd";
+
+    char *cmd_tail = cmd;
+    char delim;
+    char msgString[MAX_BUFFER] = { 0 };
+    char node_name[MAX_TOKEN] = { 0 };
+    char new_node_name[MAX_TOKEN] = { 0 };
+    char token[MAX_TOKEN] = { 0 };
+    int nid = -1;
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf ("%s@%d [%s] processing node name command.\n",
+                      method_name, __LINE__, MyName);
+    
+    // <old-node-name> <new-node-name>
+    if (*cmd_tail != '\0')
+    {
+        // <nid> | <node-name>
+        cmd_tail = get_token( cmd_tail, token, &delim );
+        if ( isNumeric( token ) )
+        {
+            nid = atoi (token);
+            if (nid < 0 || nid > LNodesConfigMax - 1)
+            {
+                sprintf( msgString, "[%s] Invalid old node name!",MyName);
+                write_startup_log( msgString );
+                printf ("%s\n", msgString);
+               return;
+            }
+            snprintf( msgString, sizeof(msgString)
+                    , "[%s] Executing node delete. (nid=%s)"
+                    , MyName, token );
+            write_startup_log( msgString );
+        }
+        else
+        {
+            STRCPY(node_name, token);
+            if ( get_node_name( node_name ) != 0 ) 
+            {
+                sprintf( msgString, "[%s] Node %s is not configured!"
+                       , MyName, node_name);
+                write_startup_log( msgString );
+                printf ("%s\n", msgString);
+                return;
+            }
+            if (*cmd_tail == '\0')
+            {
+                sprintf( msgString, "[%s] Invalid new node name!",MyName);
+                write_startup_log( msgString );
+                printf ("%s\n", msgString);
+                return;
+            }
+            STRCPY(new_node_name, cmd_tail);
+            if (strcmp(node_name, new_node_name) == 0)
+            {
+                sprintf( msgString, "[%s] Invalid node name options syntax! <old-node-name> and <new-node-name> are the same.",MyName);
+                write_startup_log( msgString );
+                printf ("%s\n", msgString );
+                return;
+            }
+            if ( get_node_name( new_node_name ) == 0 ) 
+            {
+                sprintf( msgString, "[%s] Node %s is already configured!"
+                       , MyName, new_node_name);
+                write_startup_log( msgString );
+                printf ("%s\n", msgString);
+                return;
+            }
+            snprintf( msgString, sizeof(msgString)
+                    , "[%s] Executing node name change. "
+                      "(node_name=%s, new_node_name=%s)"
+                    , MyName, node_name, new_node_name );
+            write_startup_log( msgString );
+        }
+    }
+    else
+    {
+        sprintf( msgString, "[%s] Invalid node name options syntax!",MyName);
+        write_startup_log( msgString );
+        printf ("%s\n", msgString );
+        return;
+    }
+
+    node_change_name( node_name, new_node_name );
 }
 
 void node_up_cmd( char *cmd, char delimiter )

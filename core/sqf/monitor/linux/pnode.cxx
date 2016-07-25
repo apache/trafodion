@@ -2216,6 +2216,36 @@ void CNodeContainer::AvgNodeData(ZoneType type, int *avg_pcount, unsigned int *a
     TRACE_EXIT;
 }
 
+void CNodeContainer::ChangedNode( CNode *node, CPNodeConfig   *pnodeConfig )
+{
+    const char method_name[] = "CNodeContainer::ChangedNode";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_SYNC))
+    {
+        trace_printf( "%s@%d - node_name=%s, pnid=%d, zone=%d\n"
+                    , method_name, __LINE__
+                    , node->GetName()
+                    , node->GetPNid()
+                    , node->GetZone() );
+    }
+
+    assert( node->GetState() == State_Down );
+
+    CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
+    CLNodeConfig   *lnodeConfig = NULL;
+
+    // Broadcast node changed notice to local processes
+    CLNode *lnode = node->GetFirstLNode();
+    for ( ; lnode; lnode = lnode->GetNextP() )
+    {
+        lnodeConfig = clusterConfig->GetLNodeConfig( lnode->GetNid() );
+        lnode->Changed( lnodeConfig );
+    }
+
+    TRACE_EXIT;
+}
+
 void CNodeContainer::CancelDeathNotification( int nid
                                             , int pid
                                             , int verifier

@@ -60,6 +60,41 @@ void CoreMaskString( char *str, cpu_set_t coreMask, int totalCores )
     }
 }
 
+const char *RoleTypeString( ZoneType type )
+{
+    const char *str;
+
+    switch( type )
+    {
+        case ZoneType_Edge:
+            str = "connection";
+            break;
+        case ZoneType_Excluded:
+            str = "excluded";
+            break;
+        case ZoneType_Aggregation:
+            str = "aggregation";
+            break;
+        case ZoneType_Storage:
+            str = "storage";
+            break;
+        case ZoneType_Frontend:
+            str = "connection,aggregation";
+            break;
+        case ZoneType_Backend:
+            str = "aggregation,storage";
+            break;
+        case ZoneType_Any:
+            str = "connection,aggregation,storage";
+            break;
+        default:
+            str = "Undefined";
+            break;
+    }
+
+    return( str );
+}
+
 CLNode::CLNode( CLNodeContainer *lnodes
               , int              nid
               , cpu_set_t       &coreMask 
@@ -187,10 +222,6 @@ void CLNode::Added( void )
 
     if ( MyNode->GetState() == State_Up )
     {
-        // TODO: Record statistics (sonar counters)
-        // if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
-        //    MonStats->notice_node_down_Incr();
-
         // send node added message to local node's processes
         msg = new struct message_def;
         msg->type = MsgType_NodeAdded;
@@ -208,13 +239,67 @@ void CLNode::Added( void )
             sprintf(msg->u.request.u.node_added.node_name,"%s:%d", nodeName, Nid);
         }
         
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
         {
             trace_printf( "%s@%d - Broadcasting node added nid=%d, zid=%d, name=(%s)\n"
                         , method_name, __LINE__
                         , msg->u.request.u.node_added.nid
                         , msg->u.request.u.node_added.zid
                         , msg->u.request.u.node_added.node_name );
+        }
+
+        MyNode->Bcast( msg );
+        delete msg;
+    }
+
+    TRACE_EXIT;
+}
+
+void CLNode::Changed( CLNodeConfig *lnodeConfig )
+{
+    struct  message_def *msg;
+
+    const char method_name[] = "CLNode::Changed";
+    TRACE_ENTRY;
+
+    if ( MyNode->GetState() == State_Up )
+    {
+        // send node changed message to local node's processes
+        msg = new struct message_def;
+        msg->type = MsgType_NodeChanged;
+        msg->noreply = true;
+        msg->u.request.type = ReqType_Notice;
+        msg->u.request.u.node_changed.nid = Nid;
+        msg->u.request.u.node_changed.pnid = GetNode()->GetPNid();
+        msg->u.request.u.node_changed.zid = GetNode()->GetZone();
+        msg->u.request.u.node_changed.first_core = lnodeConfig->GetFirstCore();
+        msg->u.request.u.node_changed.last_core  = lnodeConfig->GetLastCore();
+        msg->u.request.u.node_changed.processors = lnodeConfig->GetProcessors();
+        msg->u.request.u.node_changed.roles      = static_cast<int>(lnodeConfig->GetZoneType());
+        const char *nodeName = GetNode()->GetName();
+        if (IsRealCluster)
+        {
+            STRCPY(msg->u.request.u.node_changed.node_name, nodeName);
+        }
+        else
+        {
+            sprintf(msg->u.request.u.node_changed.node_name,"%s:%d", nodeName, Nid);
+        }
+        
+        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        {
+            trace_printf( "%s@%d - Broadcasting node changed nid=%d, zid=%d, "
+                          "pnid=%d, name=(%s), cores=%d:%d, "
+                          "processors=%d, roles=(%s)\n"
+                        , method_name, __LINE__
+                        , msg->u.request.u.node_changed.nid
+                        , msg->u.request.u.node_changed.zid
+                        , msg->u.request.u.node_changed.pnid
+                        , msg->u.request.u.node_changed.node_name
+                        , msg->u.request.u.node_changed.first_core
+                        , msg->u.request.u.node_changed.last_core
+                        , msg->u.request.u.node_changed.processors
+                        , RoleTypeString(static_cast<ZoneType>(msg->u.request.u.node_changed.roles)) );
         }
 
         MyNode->Bcast( msg );
@@ -233,10 +318,6 @@ void CLNode::Deleted( void )
 
     if ( MyNode->GetState() == State_Up )
     {
-        // TODO: Record statistics (sonar counters)
-        // if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
-        //    MonStats->notice_node_down_Incr();
-
         // send node added message to local node's processes
         msg = new struct message_def;
         msg->type = MsgType_NodeDeleted;
@@ -254,7 +335,7 @@ void CLNode::Deleted( void )
             sprintf(msg->u.request.u.node_deleted.node_name,"%s:%d", nodeName, Nid);
         }
         
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
         {
             trace_printf( "%s@%d - Broadcasting node deleted nid=%d, zid=%d, name=(%s)\n"
                         , method_name, __LINE__

@@ -302,8 +302,9 @@ typedef enum {
     MsgType_Change=1,                       // registry information has changed notification
     MsgType_Close,                          // process close notification
     MsgType_Event,                          // generic event notification
-    MsgType_NodeAdded,                      // node is added notification
-    MsgType_NodeDeleted,                    // node is deleted notification
+    MsgType_NodeAdded,                      // node added to configuration notification
+    MsgType_NodeChanged,                    // node configuration changed notification
+    MsgType_NodeDeleted,                    // node deleted from configuration notification
     MsgType_NodeDown,                       // node is down notification
     MsgType_NodeJoining,                    // node is joining notification
     MsgType_NodePrepare,                    // node prepare notification
@@ -557,11 +558,23 @@ struct NodeAdd_def
     int      roles;                             // Role assigment
 };
 
-struct NodeAdded_def                            // Node added notice
+struct NodeAdded_def                            // Node added to configuration notice
 {
     int  nid;
     int  zid;
     char node_name[MPI_MAX_PROCESSOR_NAME];
+};
+
+struct NodeChanged_def                          // Node configuration changed notice
+{
+    int      nid;                               // node id 
+    int      zid;                               // zone id
+    int      pnid;                              // physical node id
+    char     node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+    int      first_core;                        // First or only core assigned
+    int      last_core;                         // Last core assigned or -1
+    int      processors;                        // Number of processors in logical node
+    int      roles;                             // Role assigment
 };
 
 struct NodeDelete_def
@@ -572,7 +585,7 @@ struct NodeDelete_def
     char     target_node_name[MPI_MAX_PROCESSOR_NAME]; // Target node name
 };
 
-struct NodeDeleted_def                          // Node deleted notice
+struct NodeDeleted_def                          // Node deleted from configuration notice
 {
     int  nid;
     int  zid;
@@ -1085,6 +1098,7 @@ struct request_def
         struct NewProcess_def        new_process;
         struct NodeAdd_def           node_add;
         struct NodeAdded_def         node_added;
+        struct NodeChanged_def       node_changed;
         struct NodeDelete_def        node_delete;
         struct NodeDeleted_def       node_deleted;
         struct NodeInfo_def          node_info;
