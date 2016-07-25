@@ -48,11 +48,20 @@ else
     fi
 
     # Do init_trafodion if specified
-    if [ "$INIT_TRAFODION" == "Y" ] && [ "$UPGRADE_TRAF" == "false" ]; then
-        ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"initialize Trafodion;\" | sqlci" | tee -a $SQ_ROOT/initializeErrors.txt
-        foundError=$(grep "ERROR" $SQ_ROOT/initializeErrors.txt | wc -l)
+    if [ "$INIT_TRAFODION" == "Y" ]; then
+       echo
+       echo
+       echo "***INFO: Trafodion is initializing...this will take a few minutes."
+       echo
+       echo
+       ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"initialize Trafodion;\" | sqlci" | tee -a $SQ_ROOT/initializeErrors.txt
+        foundError=$(grep "1392" $SQ_ROOT/initializeErrors.txt | wc -l)
         if [ "$foundError" -ge "1" ]; then
-           ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"initialize Trafodion, upgrade;\" | sqlci"
+           ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"get version of metadata;\" | sqlci" | tee -a $SQ_ROOT/initalizeErrors.txt
+           metadataCurrent=$(grep "Metadata is current" $SQ_ROOT/initializeErrors.txt | wc -l)
+           if [[ "$metadataCurrent" -ne "1" ]]; then
+              ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"initialize Trafodion, upgrade;\" | sqlci" | tee -a $SQ_ROOT/initializeErrors.txt
+           fi
         fi
 
         if [ "$?" != "0" ]; then
@@ -60,18 +69,7 @@ else
            exit -1;
         fi
     fi
-     # Do init_trafodion, upgrade if specified
-    if [ "$INIT_TRAFODION" == "Y" ] && [ "$UPGRADE_TRAF" == "true" ]; then
-        ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"initialize Trafodion, upgrade;\" | sqlci" | tee -a $SQ_ROOT/initializeErrors.txt
-        foundError=$(grep "ERROR" $SQ_ROOT/initializeErrors.txt | wc -l)
-        if [ "$foundError" -ge "1" ];then
-           ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"initialize Trafodion;\" | sqlci"
-        fi
-        if [ "$?" != "0" ]; then
-            echo "***ERROR: initialize Trafodion failed.  Check install log files for details." | tee -a $INSTALL_LOG
-            exit -1;
-        fi
-    fi
+
 fi
 #==========================================
 echo "***INFO: Installation setup completed successfully." | tee -a $INSTALL_LOG
