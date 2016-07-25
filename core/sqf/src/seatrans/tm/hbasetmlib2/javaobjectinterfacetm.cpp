@@ -425,18 +425,17 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
        (jstring) jenv->CallObjectMethod(a_exception,
                                          gThrowableToStringMethodID);
     const char *msg_str;
-    if (msg_obj != NULL)
-    {
+    error_msg = new std::string("");
+    if (msg_obj != NULL) {
        msg_str = jenv->GetStringUTFChars(msg_obj, 0);
+       *error_msg += msg_str;
        jenv->ReleaseStringUTFChars(msg_obj, msg_str);
        jenv->DeleteLocalRef(msg_obj);
     }
-    else
+    else {
        msg_str = "Exception is thrown, but tostring is null";
-
-    error_msg = new std::string("");
-    *error_msg += msg_str;
-
+       *error_msg += msg_str;
+    }
     // Get the stack trace
     jobjectArray frames =
         (jobjectArray) jenv->CallObjectMethod(
