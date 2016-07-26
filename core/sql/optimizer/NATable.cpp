@@ -86,6 +86,10 @@
 #include "CmpMain.h"
 
 #define MAX_NODE_NAME 9
+#define MAX_PRECISION_ALLOWED  18
+#define HIVE_MAX_PRECISION_ALLOWED  38
+#define MAX_SCALE_ALLOWED     6
+#define MAX_NUM_LEN     16
 
 #include "SqlParserGlobals.h"
 
@@ -3678,9 +3682,9 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
 
   if ( !strncmp(hiveType, "decimal", 7) )
   {
-    Int16 i=0, pstart=0, pend=0, sstart=0, send=0, p=0, s = 0;
-    Int16 hiveTypeLen = strlen(hiveType);
-    char pstr[16], sstr[16];
+    Lng32 i=0, pstart=0, pend=0, sstart=0, send=0, p=-1, s = -1;
+    Lng32 hiveTypeLen = strlen(hiveType);
+    char pstr[MAX_NUM_LEN], sstr[MAX_NUM_LEN];
     memset(pstr,0,sizeof(pstr));
     memset(sstr,0,sizeof(sstr));
 
@@ -3702,24 +3706,46 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
       else
        continue;
     }
+
     if(pend - pstart > 0)
     {
+      if( (pend - pstart) >= MAX_NUM_LEN ) // too long
+        return NULL;
       strncpy(pstr,hiveType+pstart, pend-pstart);
       p=atoi(pstr);
     }
+
     if(send - sstart > 0)
     {
+      if( (send - sstart) >= MAX_NUM_LEN ) // too long
+        return NULL;
       strncpy(sstr,hiveType+sstart,send-sstart);
       s=atoi(sstr);
     }
 
-    if( (p>0) && (s>0) )
+    if( (p>0) && (p <= MAX_PRECISION_ALLOWED) ) //have precision between 1 - 18
     {
-      return new (heap) SQLDecimal( p, s, TRUE, TRUE);
+      if( ( s >=0 )  &&  ( s<= MAX_SCALE_ALLOWED) ) //have valid scale
+        return new (heap) SQLDecimal( p, s, TRUE, TRUE);
+      else
+        return NULL;
+    }
+    else if( (p > MAX_PRECISION_ALLOWED)  && ( p <= HIVE_MAX_PRECISION_ALLOWED) )  
+    {
+      if ( (s>=0) && ( s< p ) ) //have valid scale
+        return new (heap) SQLBigNum( p, s, TRUE, TRUE, TRUE, NULL);
+      else
+        return NULL;
+    }
+    //no p and s given, p and s are all initial value
+    else if( ( p == -1 ) && ( s == -1 ) )
+    {
+      // hive define decimal as decimal ( 10, 0 )
+      return new (heap) SQLDecimal( 10, 0, TRUE, TRUE);
     }
     else
     {
-      return new (heap) SQLDecimal( 10, 0, TRUE, TRUE);
+      return NULL; 
     }
 
   }
