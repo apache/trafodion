@@ -107,7 +107,7 @@ CDataSource::CDataSource()
     searchKey[sizeof(searchKey)-1]='\0';
 
     retprofile=getAnyProfileString((LPCTSTR)searchKey,
-				   "HPDatabaseCertificateDir",
+				   "CertificateDir",
 				   "SYSTEM_DEFAULT",
 				   m_DSCertificateDir,
 				   sizeof(m_DSCertificateDir),
@@ -748,7 +748,7 @@ short CDataSource::readDSValues(char *DSName,CConnect* pConnection)
 	//
 	len = GetMyPrivateProfileString(
 						searchKey,
-						"HPDatabaseCertificateDir",
+						"CertificateDir",
 						"SYSTEM_DEFAULT",
 						m_DSCertificateDir,
 						sizeof(m_DSCertificateDir),
@@ -855,7 +855,7 @@ short CDataSource::readDSValues(char *DSName,CConnect* pConnection)
 		strncpy(searchKey, (const char *)szODBC, sizeof(searchKey));
 		len = GetMyPrivateProfileString(
 							searchKey,
-							"HPDatabaseCertificateDir",
+							"CertificateDir",
 							"SYSTEM_DEFAULT",
 							m_DSCertificateDir,
 							sizeof(m_DSCertificateDir),
