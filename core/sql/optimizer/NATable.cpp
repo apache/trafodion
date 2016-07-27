@@ -86,6 +86,8 @@
 #include "CmpMain.h"
 
 #define MAX_NODE_NAME 9
+#define MAX_PRECISION_ALLOWED  18
+#define MAX_NUM_LEN     16
 
 #include "SqlParserGlobals.h"
 
@@ -3631,9 +3633,9 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
     memset(maxLen, 0, 32);
     int i=0,j=0;
     int copyit = 0;
-
+    int lenStr = strlen(hiveType);
     //get length
-    for(i = 0; i < strlen(hiveType) ; i++)
+    for(i = 0; i < lenStr ; i++)
     {
       if(hiveType[i] == '(') //start
       {
@@ -3675,6 +3677,81 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
                                    CharInfo::DefaultCollation,
                                    CharInfo::IMPLICIT);
   } 
+
+  if ( !strncmp(hiveType, "decimal", 7) )
+  {
+    Int32 i=0, pstart=-1, pend=-1, sstart=-1, send=-1, p=-1, s = -1;
+    Int32 hiveTypeLen = strlen(hiveType);
+    char pstr[MAX_NUM_LEN], sstr[MAX_NUM_LEN];
+    memset(pstr,0,sizeof(pstr));
+    memset(sstr,0,sizeof(sstr));
+
+    for( i = 0; i < hiveTypeLen; i++ )
+    {
+      if(hiveType[i] == '(' )
+      {
+        pstart = i+1;
+      }
+      else if(hiveType[i] == ',')
+      {
+        pend = i;
+        sstart = i+1;
+      }
+      else if(hiveType[i] == ')')
+      {
+        send = i;
+      }
+      else
+       continue;
+    }
+    if(pend == -1) // no comma found, so no sstart and send
+    {
+       pend = send;
+       send = -1;
+       s = 0;
+    }  
+    if(pend - pstart > 0)
+    {
+      if( (pend - pstart) >= MAX_NUM_LEN ) // too long
+        return NULL;
+      strncpy(pstr,hiveType+pstart, pend-pstart);
+      p=atoi(pstr);
+    }
+
+    if(send - sstart > 0)
+    {
+      if( (send - sstart) >= MAX_NUM_LEN ) // too long
+        return NULL;
+      strncpy(sstr,hiveType+sstart,send-sstart);
+      s=atoi(sstr);
+    }
+
+    if( (p>0) && (p <= MAX_PRECISION_ALLOWED) ) //have precision between 1 - 18
+    {
+      if( ( s >=0 )  &&  ( s<= p) ) //have valid scale
+        return new (heap) SQLDecimal( p, s, TRUE, TRUE);
+      else
+        return NULL;
+    }
+    else if( p > MAX_PRECISION_ALLOWED)  
+    {
+      if ( (s>=0) && ( s<= p ) ) //have valid scale
+        return new (heap) SQLBigNum( p, s, TRUE, TRUE, TRUE, NULL);
+      else
+        return NULL;
+    }
+    //no p and s given, p and s are all initial value
+    else if( ( p == -1 ) && ( s == -1 ) )
+    {
+      // hive define decimal as decimal ( 10, 0 )
+      return new (heap) SQLDecimal( 10, 0, TRUE, TRUE);
+    }
+    else
+    {
+      return NULL; 
+    }
+
+  }
 
   return NULL;
 }
