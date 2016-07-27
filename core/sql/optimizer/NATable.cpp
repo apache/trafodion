@@ -87,8 +87,6 @@
 
 #define MAX_NODE_NAME 9
 #define MAX_PRECISION_ALLOWED  18
-#define HIVE_MAX_PRECISION_ALLOWED  38
-#define MAX_SCALE_ALLOWED     6
 #define MAX_NUM_LEN     16
 
 #include "SqlParserGlobals.h"
@@ -3682,8 +3680,8 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
 
   if ( !strncmp(hiveType, "decimal", 7) )
   {
-    Lng32 i=0, pstart=0, pend=0, sstart=0, send=0, p=-1, s = -1;
-    Lng32 hiveTypeLen = strlen(hiveType);
+    Int32 i=0, pstart=-1, pend=-1, sstart=-1, send=-1, p=-1, s = -1;
+    Int32 hiveTypeLen = strlen(hiveType);
     char pstr[MAX_NUM_LEN], sstr[MAX_NUM_LEN];
     memset(pstr,0,sizeof(pstr));
     memset(sstr,0,sizeof(sstr));
@@ -3706,7 +3704,12 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
       else
        continue;
     }
-
+    if(pend == -1) // no comma found, so no sstart and send
+    {
+       pend = send;
+       send = -1;
+       s = 0;
+    }  
     if(pend - pstart > 0)
     {
       if( (pend - pstart) >= MAX_NUM_LEN ) // too long
@@ -3725,14 +3728,14 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
 
     if( (p>0) && (p <= MAX_PRECISION_ALLOWED) ) //have precision between 1 - 18
     {
-      if( ( s >=0 )  &&  ( s<= MAX_SCALE_ALLOWED) ) //have valid scale
+      if( ( s >=0 )  &&  ( s<= p) ) //have valid scale
         return new (heap) SQLDecimal( p, s, TRUE, TRUE);
       else
         return NULL;
     }
-    else if( (p > MAX_PRECISION_ALLOWED)  && ( p <= HIVE_MAX_PRECISION_ALLOWED) )  
+    else if( p > MAX_PRECISION_ALLOWED)  
     {
-      if ( (s>=0) && ( s< p ) ) //have valid scale
+      if ( (s>=0) && ( s<= p ) ) //have valid scale
         return new (heap) SQLBigNum( p, s, TRUE, TRUE, TRUE, NULL);
       else
         return NULL;
