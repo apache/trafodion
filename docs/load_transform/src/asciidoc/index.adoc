@@ -43,6 +43,7 @@
 // prevents each chapter being built as its own book.
 
 include::../../shared/license.txt[]
+
 <<<
 
 include::../../shared/acknowledgements.txt[]

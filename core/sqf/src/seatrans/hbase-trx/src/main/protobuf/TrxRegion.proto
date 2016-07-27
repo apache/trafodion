@@ -92,8 +92,9 @@ message CommitMultipleResponse {
 message CommitRequestRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
-  required int32 participantNum = 3;
-  required bool dropTableRecorded = 4;
+  required int64 startEpoch = 3;
+  required int32 participantNum = 4;
+  required bool dropTableRecorded = 5;
 }
 
 message CommitRequestResponse {
@@ -105,7 +106,8 @@ message CommitRequestResponse {
 message CommitRequestMultipleRequest{
   repeated bytes regionName = 1;
   required int64 transactionId = 2;
-  required int32 participantNum = 3;
+  required int64 startEpoch = 3;
+  required int32 participantNum = 4;
 }
 
 message CommitRequestMultipleResponse {
@@ -117,7 +119,9 @@ message CommitRequestMultipleResponse {
 message CommitIfPossibleRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
-  required int32 participantNum = 3;
+  required int64 startEpoch = 3;
+  required int64 commitId = 4;
+  required int32 participantNum = 5;
 }
 
 message CommitIfPossibleResponse {
@@ -258,6 +262,17 @@ message PutMultipleTransactionalResponse {
   optional bool hasException = 3;
 }
 
+message PushEpochRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required int64 epoch = 3;
+}
+
+message PushEpochResponse{
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
 message RecoveryRequestRequest {
   required int64 transactionId = 1;
   required bytes regionName = 2;
@@ -355,6 +370,7 @@ message TransactionPersist {
   repeated int64 seqNoListSeq = 2;
   repeated int64 seqNoListTxn = 3;
   required int64 nextSeqId = 4;
+  required int64 onlineEpoch = 5;
 }
 
 message TransactionStateMsg {
@@ -408,6 +424,8 @@ service TrxRegionService {
     returns(PutTransactionalResponse);
   rpc putMultiple(PutMultipleTransactionalRequest)
     returns(PutMultipleTransactionalResponse);
+  rpc pushOnlineEpoch(PushEpochRequest)
+    returns(PushEpochResponse);
   rpc recoveryRequest(RecoveryRequestRequest)
     returns(RecoveryRequestResponse);
   rpc deleteTlogEntries(TlogDeleteRequest)

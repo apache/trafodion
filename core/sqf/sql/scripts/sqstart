@@ -232,6 +232,39 @@ function checkKerberos {
    return 0
 }
 
+function checkUlimit {
+  
+ #check max_pid 
+ userProc=`cat /proc/sys/kernel/pid_max`
+ if [[ $userProc -gt 65535 ]] ; then
+    echoLog ""
+    echoLog "ERROR: issue detected during startup. Please make sure your kernel parameter (sysctl) is set up correctly."
+    echoLog "ERROR: max_pid should not be greater than 65535"
+    echoLog ""
+    return
+ fi
+
+ #check ulimit -l
+ maxLockMem=`ulimit -l`
+ if [[ $maxLockMem -lt 65536 ]] ; then
+    echoLog ""
+    echoLog "ERROR: issue detected during startup. Please make sure your ulimit -l is set up correctly."
+    echoLog "ERROR: max locked memory is smaller than 64M"
+    echoLog ""
+    return 
+ fi
+  
+ #check ulimit -l
+ if [[ $maxLockMem -lt 327680 ]] ; then
+    echoLog ""
+    echoLog "WARNING: issue detected during startup, please make sure your ulimit -l is set up correctly."
+    echoLog "WARNING: max locked memory is smaller than 320M "
+    echoLog ""
+    return 
+ fi
+
+}
+
 #########################################################
 # MAIN portion of sqstart begins here
 #########################################################
@@ -254,6 +287,8 @@ else
     echoLog
     exit 1;
 fi
+
+checkUlimit
 
 # Check SeaMonster kernel module if SeaMonster is enabled
 if [[ $SQ_SEAMONSTER == "1" ]]; then
@@ -358,6 +393,7 @@ if [ ! -w $MPI_TMPDIR ]; then
     LogIt "End $script_name $sqstart, exit code: 1, $lv_msg"
     exit 1
 fi
+
 
 COLD_STARTFILE=$SQSCRIPTS_DIR/gomon.cold
 
@@ -558,6 +594,9 @@ dcscheck | tee -a $SQMON_LOG
 echo
 echo "You can monitor the SQ shell log file : $SQMON_LOG"
 echo
+
+#check ulimit again to add it into log
+checkUlimit
 
 echo
 STOPtime=$(date +%s)

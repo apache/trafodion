@@ -24,7 +24,9 @@
 #include <sys/time.h>
 
 #include "hbasetm.h"
-#include "hbasetmlogging.h"
+
+// To avoid pulling in other .so
+int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string) {return 0;}
 
 // Define here because we don't have the TM.
 timeval gv_startTime;

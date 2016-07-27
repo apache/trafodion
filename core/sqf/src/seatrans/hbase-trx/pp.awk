@@ -19,29 +19,35 @@
 # under the License.
 #
 # @@@ END COPYRIGHT @@@
-##  The following example has been tested to work.
+#  The following example has been tested to work.
 #  If the file f1 contains the following, run this script
 #  as follows:    
 #   awk -f pp.awk -v distro=HDP2.3 f1 > f2
-#  contents of  file f1:
-#  #ifdef HDP2.3
-#  this is HDP2.3 specific code
-#  #else
-#  this is other than HDP2.3 code
-#  #endif
 #
-#  #ifndef HDP2.3
-#  this is other than HDP2.3 code partof ifndef
-#  #else
-#  this is HDP2.3 code part of ifndef else
+#  contents of  file f1:
+#   #ifdef HDP2.3
+#   this is HDP2.3 specific code
+#   #else
+#   this is anything other than  HDP2.3 code
 #   #endif
 #
-#  this is common code
-#  this is common code 2
+#   #ifndef HDP2.3
+#   this is anything other than HDP2.3 code partof ifndef construct
+#   #else
+#   this is HDP2.3 code part of ifndef else construct
+#   #endif
 #
-#  #ifdef CDH1.0
-#  this is CDH specific code
-#  #endif
+#   this is common code for all cases
+#
+#   #ifdef CDH5.4
+#   this is CDH5.4 specific code
+#   #endif
+#
+#   #ifdef CDH5.5 HDP2.3 HBASE1.1
+#   this is common CDH5.5 or HDP2.3 or HBASE1.1
+#   #else
+#   this is anything other than CDH5.5 or HDP2.3 or HBASE1.1 code
+#   #endif
 
 BEGIN{
 printline=1      #print current line or not.
@@ -99,7 +105,7 @@ ifndefpattern = "#ifndef"
 
   if($0 ~ ifdefpattern)
    {
-     if( $2 ~ distro)
+     if( $2 ~ distro || $3 ~ distro || $4 ~ distro)
      {
        printline = 0
        matchBegun = 1
@@ -112,7 +118,7 @@ ifndefpattern = "#ifndef"
    }
  if($0 ~ ifndefpattern)
   {
-    if($2 ~ distro)
+    if($2 ~ distro || $3 ~ distro || $4 ~ distro)
     {
       printline = 0
       unmatchBegun = 1

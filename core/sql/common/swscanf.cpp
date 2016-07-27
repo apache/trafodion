@@ -1,4 +1,6 @@
-/* -*-C++-*- 
+/* -*-C++-*-
+ * $OpenBSD: vfscanf.c,v 1.21 2006/01/13 21:33:28 millert Exp $ 
+ *-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -13,11 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -39,7 +37,7 @@
   * File:         swscanf.h
   * Description:  SQL/MX wide-char swscanf() function, modified based on 
   *               NetBSD __svfscanf.c found at 
-  *               http://www.ajk.tele.fi/libc/stdio/vfscanf.c.html#__svfscanf
+  *               http://ftp.stu.edu.tw/BSD/OpenBSD/src/lib/libc/stdio/vfscanf.c
   * Created:      2/13/2002
   * Language:     C++
   * Limitation:   
@@ -49,8 +47,6 @@
   *
   *****************************************************************************
  */
-
-//LCOV_EXCL_START  // Used only by .../sqlutils/metamigr/MIGRATE.cpp which is not used in SQ
 
 /* commented out the useless static data structure.*/
 //#if defined(LIBC_SCCS) && !defined(lint)
@@ -864,5 +860,4 @@ Int32 na_swscanf(const NAWchar *str, NAWchar const *fmt, ...)
 	va_end(ap);
 	return (ret);
 }
-//LCOV_EXCL_STOP // Used only by .../sqlutils/metamigr/MIGRATE.cpp which is not used in SQ
 

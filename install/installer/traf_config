@@ -70,6 +70,17 @@ fi
 mkdir -p $SQ_ROOT
 echo $SQ_ROOT
 
+if [[ "$UPGRADE_TRAF" == "true" ]]; then
+   echo
+   echo
+   echo "***INFO: On an upgrade, any ms.env settings will not be transferred over."
+   echo "***INFO: If previous installation directory was not deleted, it will be there for comparison"
+   echo
+   echo
+   sleep 5 
+fi
+
+
 if [[ -f $HOME/sqenvcom.sh ]]; then
    echo "****INFO: Copying over sqenvcom.sh"
    cp -rf $HOME/sqenvcom.sh $SQ_ROOT

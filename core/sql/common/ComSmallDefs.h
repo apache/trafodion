@@ -149,6 +149,7 @@ typedef NABoolean               ComBoolean;
 #define SEABASE_SEQ_GEN          "SEQ_GEN"
 #define SEABASE_TABLES            "TABLES"
 #define SEABASE_TABLE_CONSTRAINTS "TABLE_CONSTRAINTS"
+#define SEABASE_TABLE_CONSTRAINTS_IDX "TABLE_CONSTRAINTS_IDX"
 #define SEABASE_TEXT            "TEXT"
 #define SEABASE_UNIQUE_REF_CONSTR_USAGE "UNIQUE_REF_CONSTR_USAGE"
 #define SEABASE_VIEWS              "VIEWS"
@@ -187,8 +188,11 @@ typedef NABoolean               ComBoolean;
 // length of explain_plan column in metric_query_table.
 // explain_plan greater than this length are chunked and store in multiple
 // rows in metric_text_table
-#define REPOS_MAX_EXPLAIN_PLAN_LEN 200000
-#define REPOS_MAX_EXPLAIN_PLAN_LEN_STR "200000"
+// Note: This symbol is used in the DDL for the Repository tables.
+// If you change it, consider whether the Repository tables will need
+// an upgrade. See file sqlcomp/CmpSeabaseDDLrepos.h.
+#define REPOS_MAX_EXPLAIN_PLAN_LEN 1000000
+#define REPOS_MAX_EXPLAIN_PLAN_LEN_STR "1000000"
 
 /******    *****/
 enum ComActivationTime { COM_UNKNOWN_TIME, COM_BEFORE , COM_AFTER };

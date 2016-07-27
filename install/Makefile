@@ -20,7 +20,7 @@ INSTALLER_TARNAME = $(shell echo ${RELEASE_TYPE}_installer-${RELEASE_VER}.tar.gz
 
 all: pkg-installer 
 
-pkg-installer: installer/LICENSE installer/NOTICE
+pkg-installer: installer/LICENSE installer/NOTICE installer/DISCLAIMER
 	tar czf ${INSTALLER_TARNAME} installer --exclude=tools
 	mkdir -p ../distribution
 	mv ${INSTALLER_TARNAME} ../distribution
@@ -32,6 +32,9 @@ installer/LICENSE: ../licenses/LICENSE-install
 	cd $(@D) && $(MAKE) $(@F)
 
 installer/NOTICE: ../NOTICE
+	cp -f $? $@
+
+installer/DISCLAIMER: ../DISCLAIMER
 	cp -f $? $@
 
 version:

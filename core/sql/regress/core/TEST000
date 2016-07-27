@@ -25,7 +25,7 @@ log LOG000 clear;
 
 upsert into TRAFODION."_MD_".DEFAULTS
      values
-     ('SCHEMA ', 'TRAFODION.SCH ', 'inserted during seabase regressions run');
+     ('SCHEMA ', 'TRAFODION.SCH ', 'inserted during seabase regressions run', 0);
 
 log;
 

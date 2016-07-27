@@ -434,7 +434,18 @@ void do_req(BMS_SRE *pp_sre) {
         lv_ferr = BMSG_READDATA_(pp_sre->sre_msgId,      // msgid
                                  (char *) &lv_req,       // reqdata
                                  (int) sizeof(lv_req));  // bytecount
-        assert(lv_ferr == XZFIL_ERR_OK);
+        if (lv_ferr != XZFIL_ERR_OK){
+           printf("srv: received lv_ferr %d in do_req \n", lv_ferr);
+           if((lv_ferr = XMSG_ISCANCELED_(pp_sre->sre_msgId))){
+              printf("srv: XMSG_ISCANCELED_ returned %d in do_req.  Most likely the client timeout was exceeded \n", lv_ferr);
+              return;
+           }
+           else{
+              printf("srv: XMSG_ISCANCELED_ returned %d in do_req after FEEOF on BMSG_READDATA_.  ABORTING \n", lv_ferr);
+              abort();
+           }
+        }
+
         if (gv_verbose) {
             switch (lv_req.iv_req_type) {
             case GID_REQ_PING:

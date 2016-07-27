@@ -1,7 +1,8 @@
 /* -*-C++-*-
+ * $OpenBSD: sprintf.c,v 1.13 2005/10/10 12:00:52 espie Exp $ 
  *-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Chris Torek.
@@ -14,11 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -34,14 +31,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-/*	$NetBSD: vfprintf.c,v 1.18 1997/04/02 12:50:25 kleink Exp $	*/
-
 /*****************************************************************************
  *
  * File:         swsprintf.h
  * Description:  SQL/MX wide-char swsprintf() function, adapted from NetBSD vfprintf.c
- *               found at http://www.ajk.tele.fi/libc/stdio/vfprintf.c.html#vfprintf.
+ *               found at http://ftp.stu.edu.tw/BSD/OpenBSD/src/lib/libc/stdio/sprintf.c 
  * Created:      2/13/2002
  * Language:     C++
  * Limitation:   Floating point numbers are not supported. 

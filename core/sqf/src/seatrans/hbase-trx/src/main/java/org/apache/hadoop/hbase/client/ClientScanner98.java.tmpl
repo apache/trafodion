@@ -468,7 +468,7 @@ public class ClientScanner98 extends AbstractClientScanner {
       }
       closed = true;
     }
-#ifndef CDH1.0
+#ifndef CDH5.4 CDH5.5
     @Override
     public boolean renewLease() {
       if (callable != null) {
