@@ -5253,7 +5253,7 @@ short ExExeUtilHiveMDaccessTcb::work()
 		infoCol->colScale = 0;
 	        str_pad(infoCol->dtQualifier, 28, ' ');
 		infoCol->dtStartField = 1;
-		infoCol->dtEndField = 6;
+		infoCol->dtEndField = 3;
               }
 	    }
 
