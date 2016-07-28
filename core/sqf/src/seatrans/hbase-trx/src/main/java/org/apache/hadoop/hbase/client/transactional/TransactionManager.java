@@ -64,9 +64,9 @@ import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.HColumnDescriptor;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hadoop.hbase.client.HConnection;
-import org.apache.hadoop.hbase.client.HConnectionManager;
+import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.client.Durability;
@@ -146,13 +146,11 @@ public class TransactionManager {
 
   private boolean batchRegionServer = false;
   private int RETRY_ATTEMPTS;
-  private final HConnection connection;
   private final TransactionLogger transactionLogger;
   private JtaXAResource xAResource;
-  private HBaseAdmin hbadmin;
+  private Connection connection;
   private TmDDL tmDDL;
   private boolean batchRSMetricsFlag = false;
-  Configuration     config;
 
   public static final int HBASE_NAME = 0;
   public static final int HBASE_MAX_VERSIONS = 1;
@@ -202,9 +200,10 @@ public class TransactionManager {
   }
 
   // getInstance to return the singleton object for TransactionManager
-  public synchronized static TransactionManager getInstance(final Configuration conf) throws ZooKeeperConnectionException, IOException {
+  public synchronized static TransactionManager getInstance(final Configuration conf, Connection connection) 
+      throws ZooKeeperConnectionException, IOException {
     if (g_TransactionManager == null) {
-      g_TransactionManager = new TransactionManager(conf);
+      g_TransactionManager = new TransactionManager(conf, connection);
     }
     return g_TransactionManager;
   }
@@ -236,9 +235,7 @@ public class TransactionManager {
   }
 
   public void init(final TmDDL tmddl) throws IOException {
-    this.config = HBaseConfiguration.create();
     this.tmDDL = tmddl;
-      hbadmin = new HBaseAdmin(config);
   }
 
   /**
@@ -252,7 +249,7 @@ public class TransactionManager {
         byte[] endKey_orig;
         byte[] endKey;
 
-        TransactionManagerCallable(TransactionState txState, TransactionRegionLocation location, HConnection connection) 
+        TransactionManagerCallable(TransactionState txState, TransactionRegionLocation location, Connection connection) 
                throws IOException {
         transactionState = txState;
         this.location = location;
@@ -940,7 +937,8 @@ public class TransactionManager {
         int retryCount = 0;
             int retrySleep = TM_SLEEP;
 
-        if( TRANSACTION_ALGORITHM == AlgorithmType.MVCC){
+        Admin admin = connection.getAdmin();
+        if( TRANSACTION_ALGORITHM == AlgorithmType.MVCC) {
         do {
             try {
 
@@ -1144,6 +1142,7 @@ public class TransactionManager {
 
       } while (retryCount < RETRY_ATTEMPTS && retry == true);
         }
+      admin.close();
       // We have received our reply so decrement outstanding count
       transactionState.requestPendingCountDec(false);
 
@@ -1458,7 +1457,7 @@ public class TransactionManager {
     }
   
     public Integer pushRegionEpochX(final TransactionState txState,
-          final HRegionLocation location, HConnection connection) throws IOException {
+          final HRegionLocation location, Connection connection) throws IOException {
        if (LOG.isTraceEnabled()) LOG.trace("pushRegionEpochX -- Entry txState: " + txState
                      + " location: " + location);
 
@@ -1559,9 +1558,9 @@ public class TransactionManager {
      * @param conf
      * @throws ZooKeeperConnectionException
      */
-    private TransactionManager(final Configuration conf) throws ZooKeeperConnectionException, IOException {
+    private TransactionManager(final Configuration conf, Connection connection) throws ZooKeeperConnectionException, IOException {
         this(LocalTransactionLogger.getInstance(), conf);
-
+        this.connection = connection;
         int intThreads = 16;
         String retryAttempts = System.getenv("TMCLIENT_RETRY_ATTEMPTS");
         String numThreads = System.getenv("TM_JAVA_THREAD_POOL_SIZE");
@@ -1621,7 +1620,7 @@ public class TransactionManager {
             throws ZooKeeperConnectionException, IOException {
         this.transactionLogger = transactionLogger;
         conf.setInt("hbase.client.retries.number", 3);
-        connection = HConnectionManager.createConnection(conf);
+        connection = ConnectionFactory.createConnection(conf);
     }
 
 
@@ -2038,8 +2037,7 @@ public class TransactionManager {
     public void pushRegionEpoch (HTableDescriptor desc, final TransactionState ts) throws IOException {
        LOG.info("pushRegionEpoch start; transId: " + ts.getTransactionId());
 
-       TransactionalTable ttable1 = new TransactionalTable(Bytes.toBytes(desc.getNameAsString()));
-       HConnection connection = ttable1.getConnection();
+       TransactionalTable ttable1 = new TransactionalTable(Bytes.toBytes(desc.getNameAsString()), connection);
        long lvTransid = ts.getTransactionId();
        RegionLocator rl = connection.getRegionLocator(desc.getTableName());
        List<HRegionLocation> regionList = rl.getAllRegionLocations();
@@ -2051,12 +2049,11 @@ public class TransactionManager {
        int result = 0;
        for (HRegionLocation location : regionList) {
           final byte[] regionName = location.getRegionInfo().getRegionName();
-          final HConnection lv_connection = connection;
           final TransactionRegionLocation lv_location = 
                                  new TransactionRegionLocation(location.getRegionInfo(), location.getServerName());
-          compPool.submit(new TransactionManagerCallable(ts, lv_location, lv_connection) {
+          compPool.submit(new TransactionManagerCallable(ts, lv_location, connection) {
              public Integer call() throws IOException {
-                return pushRegionEpochX(ts, lv_location, lv_connection);
+                return pushRegionEpochX(ts, lv_location, connection);
              }
           });
           boolean loopExit = false;
@@ -2734,20 +2731,22 @@ public class TransactionManager {
     public void createTable(final TransactionState transactionState, HTableDescriptor desc, Object[]  beginEndKeys)
             throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("createTable ENTRY, transactionState: " + transactionState.getTransactionId());
-
+        Admin admin = connection.getAdmin();
+        try {
             if (beginEndKeys != null && beginEndKeys.length > 0) {
                byte[][] keys = new byte[beginEndKeys.length][];
                for (int i = 0; i < beginEndKeys.length; i++){
                   keys[i] = (byte[])beginEndKeys[i];
                   if (LOG.isTraceEnabled()) LOG.trace("createTable with key #" + i + "value" + keys[i] + ") called.");
                }
-               hbadmin.createTable(desc, keys);
+               admin.createTable(desc, keys);
             }
             else {
-            hbadmin.createTable(desc);
+              admin.createTable(desc);
             }
-            // hbadmin.close();
-
+         } finally {
+            admin.close();
+         }
             // Set transaction state object as participating in ddl transaction
             transactionState.setDDLTx(true);
 
@@ -2979,7 +2978,7 @@ public class TransactionManager {
        return returnStatus;
    }
 
-    private void waitForCompletion(String tblName,HBaseAdmin admin)
+    private void waitForCompletion(String tblName,Admin admin)
        throws IOException {
        // poll for completion of an asynchronous operation
        boolean keepPolling = true;
@@ -3004,8 +3003,10 @@ public class TransactionManager {
     public void alterTable(final TransactionState transactionState, String tblName, Object[]  tableOptions)
            throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("alterTable ENTRY, transactionState: " + transactionState.getTransactionId());
-        
-           HTableDescriptor htblDesc = hbadmin.getTableDescriptor(tblName.getBytes());
+        Admin admin = connection.getAdmin();
+        try { 
+           TableName tableName = TableName.valueOf(tblName);
+           HTableDescriptor htblDesc = admin.getTableDescriptor(tableName);
            HColumnDescriptor[] families = htblDesc.getColumnFamilies();
            HColumnDescriptor colDesc = families[0];  // Trafodion keeps SQL columns only in first column family
            int defaultVersionsValue = colDesc.getMaxVersions();
@@ -3014,14 +3015,16 @@ public class TransactionManager {
               setDescriptors(tableOptions,htblDesc /*out*/,colDesc /*out*/, defaultVersionsValue);
            
            if (status.tableDescriptorChanged()) {
-              hbadmin.modifyTable(tblName,htblDesc);
-              waitForCompletion(tblName,hbadmin);
+              admin.modifyTable(tableName,htblDesc);
+              waitForCompletion(tblName,admin);
            }
            else if (status.columnDescriptorChanged()) {
-              hbadmin.modifyColumn(tblName,colDesc);
-              waitForCompletion(tblName,hbadmin);
+              admin.modifyColumn(tableName,colDesc);
+              waitForCompletion(tblName,admin);
            }
-           hbadmin.close();
+        } finally {
+           admin.close();
+        }
 
            // Set transaction state object as participating in ddl transaction
            transactionState.setDDLTx(true);
@@ -3068,7 +3071,7 @@ public class TransactionManager {
 
     //Called only by Abort or Commit processing.
     public void deleteTable(final TransactionState transactionState, final String tblName)
-            throws IOException{
+            throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("deleteTable ENTRY, TxId: " + transactionState.getTransactionId() + " tableName " + tblName);
         try{
             disableTable(transactionState, tblName);
@@ -3078,14 +3081,18 @@ public class TransactionManager {
             //if (LOG.isTraceEnabled()) LOG.trace("deleteTable , TableNotEnabledException. This is a expected exception.  Step: disableTable, TxId: " +
             //    transactionState.getTransactionId() + " TableName " + tblName + "Exception: " + e);
         }
-            hbadmin.deleteTable(tblName);
+        Admin admin = connection.getAdmin();
+        admin.deleteTable(TableName.valueOf(tblName));
+        admin.close();
     }
 
     //Called only by Abort processing.
     public void enableTable(final TransactionState transactionState, String tblName)
             throws IOException{
         if (LOG.isTraceEnabled()) LOG.trace("enableTable ENTRY, TxID: " + transactionState.getTransactionId() + " tableName " + tblName);
-            hbadmin.enableTable(tblName);
+        Admin admin = connection.getAdmin();
+        admin.enableTable(TableName.valueOf(tblName));
+        admin.close();
     }
 
     // Called only by Abort processing to delete data from a table
@@ -3093,23 +3100,24 @@ public class TransactionManager {
             throws IOException{
         if (LOG.isTraceEnabled()) LOG.trace("truncateTable ENTRY, TxID: " + transactionState.getTransactionId() +
             "table: " + tblName);
-
-            TableName tablename = TableName.valueOf(tblName);
-            HTableDescriptor hdesc = hbadmin.getTableDescriptor(tablename);
+        Admin admin = connection.getAdmin();
+            TableName tableName = TableName.valueOf(tblName);
+            HTableDescriptor hdesc = admin.getTableDescriptor(tableName);
 
             // To be changed in 2.0 for truncate table
-            //hbadmin.truncateTable(tablename, true);
-            hbadmin.disableTable(tblName);
-            hbadmin.deleteTable(tblName);
-            hbadmin.createTable(hdesc);
-            hbadmin.close();
+            admin.disableTable(tableName);
+            admin.deleteTable(tableName);
+            admin.createTable(hdesc);
+            admin.close();
     }
 
     //Called only by DoPrepare.
     public void disableTable(final TransactionState transactionState, String tblName)
             throws IOException{
         if (LOG.isTraceEnabled()) LOG.trace("disableTable ENTRY, TxID: " + transactionState.getTransactionId() + " tableName " + tblName);
-            hbadmin.disableTable(tblName);
+            Admin admin = connection.getAdmin();
+            admin.disableTable(TableName.valueOf(tblName));
+            admin.close();
         if (LOG.isTraceEnabled()) LOG.trace("disableTable EXIT, TxID: " + transactionState.getTransactionId() + " tableName " + tblName);
     }
 

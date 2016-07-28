@@ -35,7 +35,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.HRegionLocation;
-import org.apache.hadoop.hbase.client.HConnection;
+import org.apache.hadoop.hbase.client.Connection;
 import java.io.InterruptedIOException;
 import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
 
@@ -123,7 +123,7 @@ public interface  TransactionalTableClient  {
     void setAutoFlush(boolean autoFlush, boolean b);
     org.apache.hadoop.conf.Configuration getConfiguration();
     void flushCommits() throws IOException;
-    HConnection getConnection();
+    Connection getConnection();
 
     byte[][] getEndKeys()
                     throws IOException;

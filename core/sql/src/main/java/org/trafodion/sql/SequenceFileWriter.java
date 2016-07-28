@@ -37,7 +37,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.TableSnapshotScanner;
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription;
 import org.apache.hadoop.hbase.snapshot.SnapshotCreationException;
@@ -77,7 +78,8 @@ public class SequenceFileWriter {
 
     static Logger logger = Logger.getLogger(SequenceFileWriter.class.getName());
     Configuration conf = null;           // File system configuration
-    HBaseAdmin admin = null;
+    Admin admin = null;
+    private Connection connection_;
     
     SequenceFile.Writer writer = null;
 
@@ -311,16 +313,16 @@ public class SequenceFileWriter {
     if (conf != null)		
        return true;		
     conf = HBaseConfiguration.create();		
-    HBaseAdmin.checkHBaseAvailable(conf);
+    connection_ = HBaseClient.getConnection();
     return true;
   }
   
   public boolean createSnapshot( String tableName, String snapshotName)
       throws IOException
   {
-      if (admin == null)
-        admin = new HBaseAdmin(conf);
-      admin.snapshot(snapshotName, tableName);
+      admin = connection_.getAdmin();
+      admin.snapshot(snapshotName, TableName.valueOf(tableName));
+      admin.close();
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.createSnapshot() - Snapshot created: " + snapshotName);
     return true;
   }
@@ -328,10 +330,10 @@ public class SequenceFileWriter {
   public boolean verifySnapshot( String tableName, String snapshotName)
       throws IOException
   {
-      if (admin == null)
-        admin = new HBaseAdmin(conf);
+      admin = connection_.getAdmin();
       List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
-
+      try 
+      {
       for (SnapshotDescription snpd : lstSnaps) 
       {
         if (snpd.getName().compareTo(snapshotName) == 0 && 
@@ -341,6 +343,9 @@ public class SequenceFileWriter {
           return true;
         }
       }
+      } finally {
+        admin.close();
+      }
     return false;
   }
  
@@ -348,9 +353,9 @@ public class SequenceFileWriter {
       throws MasterNotRunningException, IOException, SnapshotCreationException, 
              InterruptedException, ZooKeeperConnectionException, ServiceException
   {
-      if (admin == null)
-        admin = new HBaseAdmin(conf);
+      admin = connection_.getAdmin();
       admin.deleteSnapshot(snapshotName);
+      admin.close();
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.deleteSnapshot() - Snapshot deleted: " + snapshotName);
       return true;
   }

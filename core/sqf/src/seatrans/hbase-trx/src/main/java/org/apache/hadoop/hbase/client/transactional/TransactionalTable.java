@@ -53,8 +53,7 @@ import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HConnectionManager;
-import org.apache.hadoop.hbase.client.HConnection;
+import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
@@ -99,7 +98,7 @@ import com.google.protobuf.ServiceException;
  */
 public class TransactionalTable extends HTable implements TransactionalTableClient {
     static final Log LOG = LogFactory.getLog(RMInterface.class);
-    static private HConnection connection = null;
+    static private Connection connection = null;
     static Configuration       config = HBaseConfiguration.create();
     static ExecutorService     threadPool;
     static int                 retries = 15;
@@ -108,29 +107,22 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 
     static {
 	config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
-	try {
-	    connection = HConnectionManager.createConnection(config);        
-	}
-	catch (IOException ioe) {
-	    LOG.error("Exception on TransactionTable anonymous static method. IOException while creating HConnection");
-	}
- 	threadPool = Executors.newCachedThreadPool();
-   }
-    
+    } 
     /**
      * @param tableName
      * @throws IOException
      */
-    public TransactionalTable(final String tableName) throws IOException {
-        this(Bytes.toBytes(tableName));        
+    public TransactionalTable(final String tableName, Connection conn) throws IOException {
+        this(Bytes.toBytes(tableName), conn);        
     }
 
     /**
      * @param tableName
      * @throws IOException
      */
-    public TransactionalTable(final byte[] tableName) throws IOException {
-       super(tableName, connection, threadPool);      
+    public TransactionalTable(final byte[] tableName, Connection conn) throws IOException {
+       super(tableName, conn, threadPool);     
+       this.connection = conn; 
     }
 
     private void addLocation(final TransactionState transactionState, HRegionLocation location) {
@@ -752,10 +744,12 @@ public HRegionLocation getRegionLocation(byte[] row, boolean f)
                   throws IOException {
          super.flushCommits();
     }
-    public HConnection getConnection()
+/*
+    public Connection getConnection()
     {
         return super.getConnection();
     }
+*/
     public byte[][] getEndKeys()
                     throws IOException
     {

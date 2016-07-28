@@ -32,9 +32,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.ServerName;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hadoop.hbase.client.HConnection;
-import org.apache.hadoop.hbase.client.HConnectionManager;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 //H98import org.apache.hadoop.hbase.ipc.HMasterInterface;
 //H98import org.apache.hadoop.hbase.ipc.TransactionalRegionInterface;
 //H98import org.apache.hadoop.hbase.ipc.HRegionInterface;
@@ -42,8 +41,7 @@ import org.apache.hadoop.hbase.client.HConnectionManager;
 
 public class TrafInfo {
 
-    private HBaseAdmin hbadmin;
-    private HConnection connection;
+    private Connection connection;
     Configuration     config;
     //    HMasterInterface  hmaster;
 
@@ -53,8 +51,7 @@ public class TrafInfo {
 
     public void init() throws IOException {
         this.config = HBaseConfiguration.create();
-        this.connection = HConnectionManager.createConnection(config);
-        hbadmin = new HBaseAdmin(config);
+        this.connection = ConnectionFactory.createConnection(config);
     }
 
     public static void printHelp() {

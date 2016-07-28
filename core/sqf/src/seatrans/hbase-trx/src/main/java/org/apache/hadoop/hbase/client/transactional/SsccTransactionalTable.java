@@ -37,7 +37,7 @@ import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
 
 import org.apache.commons.codec.binary.Hex;
 
-import org.apache.hadoop.hbase.client.HConnection;
+import org.apache.hadoop.hbase.client.Connection;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -61,7 +61,6 @@ import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto;
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.MutationType;
 import org.apache.hadoop.hbase.regionserver.transactional.SingleVersionDeleteNotSupported;
-import org.apache.hadoop.hbase.client.HConnectionManager;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import com.google.protobuf.ByteString;
@@ -119,7 +118,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
     private RpcRetryingCallerFactory rpcCallerFactory;    
     private RpcControllerFactory rpcControllerFactory;
     */
-    static private HConnection connection = null;
+    static private Connection connection = null;
     static Configuration       config = HBaseConfiguration.create();
     static ExecutorService     threadPool;
 
@@ -130,12 +129,6 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
 
     static {
         config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
-        try {
-            connection = HConnectionManager.createConnection(config);
-        }
-        catch (IOException ioe) {
-            LOG.error("Exception on TransactionTable anonymous static method. IOException while creating HConnection");
-        }
         threadPool = Executors.newCachedThreadPool();
    }
 
@@ -144,8 +137,8 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
      * @param tableName
      * @throws IOException
      */
-    public SsccTransactionalTable( final String tableName) throws IOException {
-        this(Bytes.toBytes(tableName));        
+    public SsccTransactionalTable( final String tableName, Connection connection) throws IOException {
+        this(Bytes.toBytes(tableName), connection);        
     }
 
     /**
@@ -153,8 +146,9 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
      * @param tableName
      * @throws IOException
      */
-    public SsccTransactionalTable( final byte[] tableName) throws IOException {
+    public SsccTransactionalTable( final byte[] tableName, Connection connection) throws IOException {
         super( tableName,connection, threadPool);       
+        this.connection = connection;
     }
 
     private void addLocation(final TransactionState transactionState, HRegionLocation location) {
@@ -688,10 +682,7 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
     public void flushCommits() throws IOException {
          super.flushCommits();
     }
-    public HConnection getConnection()
-    {
-        return super.getConnection();
-    }
+
     public byte[][] getEndKeys()
                     throws IOException
     {

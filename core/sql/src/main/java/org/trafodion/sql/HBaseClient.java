@@ -38,6 +38,9 @@ import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.KeyValue;
@@ -45,7 +48,6 @@ import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.Cell;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.transactional.RMInterface;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.FSUtils;
@@ -99,9 +101,8 @@ import com.google.protobuf.ServiceException;
 public class HBaseClient {
 
     static Logger logger = Logger.getLogger(HBaseClient.class.getName());
-    public static Configuration config = HBaseConfiguration.create();
-    String lastError;
-    RMInterface table = null;
+    private static Configuration config = HBaseConfiguration.create();
+    private RMInterface table = null;
 
     private PoolMap<String, HTableClient> hTableClientsFree;
     private PoolMap<String, HTableClient> hTableClientsInUse;
@@ -131,21 +132,13 @@ public class HBaseClient {
     public static final int HBASE_MEMSTORE_FLUSH_SIZE = 21;
     public static final int HBASE_SPLIT_POLICY = 22;
 
-    
+    private static Connection connection; 
     public HBaseClient() {
       if (hTableClientsFree == null)
          hTableClientsFree = new PoolMap<String, HTableClient>
                  (PoolType.Reusable, Integer.MAX_VALUE);
       hTableClientsInUse = new PoolMap<String, HTableClient>
                (PoolType.Reusable, Integer.MAX_VALUE);
-    }
-
-    public String getLastError() {
-        return lastError;
-    }
-
-    void setLastError(String err) {
-        lastError = err;
     }
 
     static {
@@ -163,15 +156,21 @@ public class HBaseClient {
     	PropertyConfigurator.configure(confFile);
     }
 
-    public boolean init(String zkServers, String zkPort) 
+    
+    static public Connection getConnection() throws IOException {
+        if (connection == null) 
+              connection = ConnectionFactory.createConnection(config);
+        return connection;
+    }
+
+    public boolean init(String connectParam1, String connectParam2)
 	throws MasterNotRunningException, ZooKeeperConnectionException, ServiceException, IOException
     {
-        if (logger.isDebugEnabled()) logger.debug("HBaseClient.init(" + zkServers + ", " + zkPort
+        if (logger.isDebugEnabled()) logger.debug("HBaseClient.init(" + connectParam1 + ", " + connectParam2
                          + ") called.");
-        HBaseAdmin.checkHBaseAvailable(config);
-
-        table = new RMInterface();
-        
+        if (connection != null)
+           connection = ConnectionFactory.createConnection(config); 
+        table = new RMInterface(connection);
         return true;
     }
  
@@ -249,7 +248,7 @@ public class HBaseClient {
               metaColDesc.setMaxVersions(DtmConst.SSCC_MAX_DATA_VERSION);
             metaColDesc.setInMemory(true);
             desc.addFamily(metaColDesc);
-            HBaseAdmin admin = new HBaseAdmin(config);
+            Admin admin = getConnection().getAdmin();
             admin.createTable(desc);
             admin.close();
             return true;
@@ -515,7 +514,7 @@ public class HBaseClient {
               metaColDesc.setMaxVersions(DtmConst.SSCC_MAX_DATA_VERSION);
             metaColDesc.setInMemory(true);
             desc.addFamily(metaColDesc);
-            HBaseAdmin admin = new HBaseAdmin(config);
+            Admin admin = getConnection().getAdmin();
                if (beginEndKeys != null && beginEndKeys.length > 0)
                {
                   byte[][] keys = new byte[beginEndKeys.length][];
@@ -550,7 +549,7 @@ public class HBaseClient {
         return true;
     }
 
-    private void waitForCompletion(String tblName,HBaseAdmin admin) 
+    private void waitForCompletion(String tblName,Admin admin) 
         throws IOException {
         // poll for completion of an asynchronous operation
         boolean keepPolling = true;
@@ -576,8 +575,8 @@ public class HBaseClient {
 
         if (logger.isDebugEnabled()) logger.debug("HBaseClient.alter(" + tblName + ") called.");
         cleanupCache(tblName);
-        HBaseAdmin admin = new HBaseAdmin(config);
-        HTableDescriptor htblDesc = admin.getTableDescriptor(tblName.getBytes());       
+        Admin admin = getConnection().getAdmin();
+        HTableDescriptor htblDesc = admin.getTableDescriptor(TableName.valueOf(tblName));       
         HColumnDescriptor[] families = htblDesc.getColumnFamilies();
 
         String colFam = (String)tableOptions[HBASE_NAME];
@@ -630,11 +629,11 @@ public class HBaseClient {
                 // so we have to have additional code to poll for their completion
                 // (I hear that synchronous versions will be available in HBase 1.x)
                 if (status.tableDescriptorChanged()) {
-                    admin.modifyTable(tblName,htblDesc);
+                    admin.modifyTable(TableName.valueOf(tblName),htblDesc);
                     waitForCompletion(tblName,admin);
                 }
                 else if (status.columnDescriptorChanged()) {
-                    admin.modifyColumn(tblName,colDesc);                  
+                    admin.modifyColumn(TableName.valueOf(tblName),colDesc);                  
                     waitForCompletion(tblName,admin);
                 }
                 admin.close();
@@ -646,15 +645,16 @@ public class HBaseClient {
     public boolean drop(String tblName, long transID)
              throws MasterNotRunningException, IOException {
         if (logger.isDebugEnabled()) logger.debug("HBaseClient.drop(" + tblName + ") called.");
-        HBaseAdmin admin = new HBaseAdmin(config);
+        Admin admin = getConnection().getAdmin();
         try {
            if(transID != 0) {
               table.dropTable(tblName, transID);
            }
            else {
-               if (admin.isTableEnabled(tblName))
-                   admin.disableTable(tblName);
-              admin.deleteTable(tblName);
+               TableName tableName = TableName.valueOf(tblName);
+               if (admin.isTableEnabled(tableName))
+                   admin.disableTable(tableName);
+              admin.deleteTable(tableName);
            }
            cleanupCache(tblName);
         } finally {
@@ -666,8 +666,7 @@ public class HBaseClient {
     public boolean dropAll(String pattern, long transID) 
              throws MasterNotRunningException, IOException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.dropAll(" + pattern + ") called.");
-            HBaseAdmin admin = new HBaseAdmin(config);
-
+            Admin admin = getConnection().getAdmin();
 	    HTableDescriptor[] htdl = admin.listTables(pattern);
 	    if (htdl == null) // no tables match the given pattern.
 		return true;
@@ -682,15 +681,15 @@ public class HBaseClient {
                     continue;
                 try {
                     if(transID != 0) {
-                        //                        System.out.println("tblName " + tblName);
                         table.dropTable(tblName, transID);
                     }
                     else {
-                        if (! admin.isTableEnabled(tblName))
-                            admin.enableTable(tblName);
+                        TableName tableName = TableName.valueOf(tblName);
+                        if (! admin.isTableEnabled(tableName))
+                            admin.enableTable(tableName);
                         
-                        admin.disableTable(tblName);
-                        admin.deleteTable(tblName);
+                        admin.disableTable(tableName);
+                        admin.deleteTable(tableName);
                     }
                 }
                 
@@ -715,7 +714,7 @@ public class HBaseClient {
     public byte[][] listAll(String pattern) 
              throws MasterNotRunningException, IOException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.listAll(" + pattern + ") called.");
-            HBaseAdmin admin = new HBaseAdmin(config);
+            Admin admin = getConnection().getAdmin();
 
 	    HTableDescriptor[] htdl = 
                 (pattern.isEmpty() ? admin.listTables() : admin.listTables(pattern));
@@ -739,7 +738,7 @@ public class HBaseClient {
              throws MasterNotRunningException, IOException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.getRegionStats(" + tableName + ") called.");
 
-            HBaseAdmin admin = new HBaseAdmin(config);
+            Admin admin = getConnection().getAdmin();
             HTable htbl = new HTable(config, tableName);
             HRegionInfo hregInfo = null;
             byte[][] regionInfo = null;
@@ -781,7 +780,6 @@ public class HBaseClient {
                     regionInfo[i++] = oneRegion.getBytes();
 
                 }
-
             }
             finally {
                 admin.close();
@@ -793,7 +791,7 @@ public class HBaseClient {
     public boolean copy(String srcTblName, String tgtTblName, boolean force)
 	throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.copy(" + srcTblName + tgtTblName + ") called.");
-            HBaseAdmin admin = new HBaseAdmin(config);
+            Admin admin = getConnection().getAdmin();
 	    
 	    String snapshotName = srcTblName + "_SNAPSHOT";
 	    
@@ -809,19 +807,21 @@ public class HBaseClient {
 			    }
 		    }
 		}
+            TableName tgtTableName = TableName.valueOf(tgtTblName);
+            TableName srcTableName = TableName. valueOf(srcTblName);
 
             if ((force == true) &&
-                (admin.tableExists(tgtTblName))) {
-                admin.disableTable(tgtTblName);
-                admin.deleteTable(tgtTblName);
+                (admin.tableExists(tgtTableName))) {
+                admin.disableTable(tgtTableName);
+                admin.deleteTable(tgtTableName);
             }
                 
-	    if (! admin.isTableDisabled(srcTblName))
-		admin.disableTable(srcTblName);
-	    admin.snapshot(snapshotName, srcTblName);
-	    admin.cloneSnapshot(snapshotName, tgtTblName);
+	    if (! admin.isTableDisabled(srcTableName))
+		admin.disableTable(srcTableName);
+	    admin.snapshot(snapshotName, srcTableName);
+	    admin.cloneSnapshot(snapshotName, tgtTableName);
 	    admin.deleteSnapshot(snapshotName);
-	    admin.enableTable(srcTblName);
+	    admin.enableTable(srcTableName);
             admin.close();
             return true;
     }
@@ -829,8 +829,8 @@ public class HBaseClient {
     public boolean exists(String tblName, long transID)  
            throws MasterNotRunningException, IOException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.exists(" + tblName + ") called.");
-            HBaseAdmin admin = new HBaseAdmin(config);
-            boolean result = admin.tableExists(tblName);
+            Admin admin = getConnection().getAdmin();
+            boolean result = admin.tableExists(TableName.valueOf(tblName));
             admin.close();
             return result;
     }
@@ -842,13 +842,13 @@ public class HBaseClient {
                          + (useTRex ? ", use TRX" : ", no TRX") + ") called.");
        HTableClient htable = hTableClientsFree.get(tblName);
        if (htable == null) {
-          htable = new HTableClient();
+          htable = new HTableClient(getConnection());
           if (htable.init(tblName, useTRex) == false) {
              if (logger.isDebugEnabled()) logger.debug("  ==> Error in init(), returning empty.");
              return null;
           }
 
-          HBaseAdmin admin = new HBaseAdmin(config);
+          Admin admin = getConnection().getAdmin();
           HTableDescriptor tblDesc = admin.getTableDescriptor(TableName.valueOf(tblName));
           if (logger.isDebugEnabled()) logger.debug("check coprocessor num for tbl : "+ tblName+". coprocessor size : "+tblDesc.getCoprocessors().size());
           boolean added = CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), tblDesc);
@@ -856,9 +856,10 @@ public class HBaseClient {
               if (logger.isDebugEnabled())
                   logger.debug("  ==> add coprocessor for table : " + tblName);
               synchronized (admin) {
-                  admin.disableTable(tblName);
-                  admin.modifyTable(tblName, tblDesc);
-                  admin.enableTable(tblName);
+                  TableName table = TableName.valueOf(tblName);
+                  admin.disableTable(table);
+                  admin.modifyTable(table, tblDesc);
+                  admin.enableTable(table);
               }
           }
 
@@ -980,7 +981,7 @@ public class HBaseClient {
       if (rowSize == 0)
         return 0;
 
-      HBaseAdmin admin = new HBaseAdmin(config);
+      Admin admin = getConnection().getAdmin();
       HTable htbl = new HTable(config, tblName);
       long totalMemStoreBytes = 0;
       try {
@@ -1497,7 +1498,7 @@ public class HBaseClient {
   //associated with it
   public String getLatestSnapshot(String tabName) throws IOException
   {
-    HBaseAdmin admin = new HBaseAdmin(config);
+    Admin admin = getConnection().getAdmin();
     List<SnapshotDescription> snapDescs = admin.listSnapshots();
     long maxTimeStamp = 0;
     String latestsnpName = null;
@@ -1512,7 +1513,6 @@ public class HBaseClient {
       
     }
     admin.close();
-    admin = null;
     return latestsnpName;
   }
   public boolean cleanSnpScanTmpLocation(String pathStr) throws IOException
@@ -1688,14 +1688,14 @@ public class HBaseClient {
   public boolean  createCounterTable(String tabName,  String famName) throws IOException, MasterNotRunningException
   {
     if (logger.isDebugEnabled()) logger.debug("HBaseClient.createCounterTable() - start");
-    HBaseAdmin admin = new HBaseAdmin(config);
-    TableName tn =  TableName.valueOf (tabName);
-    if (admin.tableExists(tabName)) {
+    Admin admin = getConnection().getAdmin();
+    TableName tableName =  TableName.valueOf (tabName);
+    if (admin.tableExists(tableName)) {
         admin.close();
         return true;
     }
 
-    HTableDescriptor desc = new HTableDescriptor(tn);
+    HTableDescriptor desc = new HTableDescriptor(tableName);
     HColumnDescriptor colDesc = new HColumnDescriptor(famName);
     // A counter table is non-DTM-transactional.
     // Use the default maximum versions for MVCC.

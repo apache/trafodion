@@ -38,7 +38,7 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
-import org.apache.hadoop.hbase.client.HConnection;
+import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
@@ -91,6 +91,7 @@ public class RMInterface {
     public AlgorithmType TRANSACTION_ALGORITHM;
     static Map<Long, Set<RMInterface>> mapRMsPerTransaction = new HashMap<Long,  Set<RMInterface>>();
     private TransactionalTableClient ttable = null;
+    private Connection connection;
     static {
         System.loadLibrary("stmlib");
     }
@@ -114,8 +115,9 @@ public class RMInterface {
 
     private AlgorithmType transactionAlgorithm;
 
-    public RMInterface(final String tableName) throws IOException {
+    public RMInterface(final String tableName, Connection connection) throws IOException {
         //super(conf, Bytes.toBytes(tableName));
+        this.connection = connection;
         transactionAlgorithm = AlgorithmType.MVCC;
         String envset = System.getenv("TM_USE_SSCC");
         if( envset != null)
@@ -124,11 +126,11 @@ public class RMInterface {
         }
         if( transactionAlgorithm == AlgorithmType.MVCC) //MVCC
         {
-            ttable = new TransactionalTable(Bytes.toBytes(tableName));
+            ttable = new TransactionalTable(Bytes.toBytes(tableName), connection);
         }
         else if(transactionAlgorithm == AlgorithmType.SSCC)
         {
-            ttable = new SsccTransactionalTable( Bytes.toBytes(tableName));
+            ttable = new SsccTransactionalTable( Bytes.toBytes(tableName), connection);
         }
 
         try {
@@ -140,7 +142,8 @@ public class RMInterface {
         if (LOG.isTraceEnabled()) LOG.trace("RMInterface constructor exit");
     }
 
-    public RMInterface() throws IOException {
+    public RMInterface(Connection connection) throws IOException {
+       this.connection = connection;
 
     }
 
@@ -369,10 +372,12 @@ public class RMInterface {
     public void flushCommits() throws IOException {
          ttable.flushCommits();
     }
-    public HConnection getConnection()
+/*
+    public Connection getConnection()
     {
         return ttable.getConnection();
     }
+*/
     public byte[][] getEndKeys()
                     throws IOException
     {
