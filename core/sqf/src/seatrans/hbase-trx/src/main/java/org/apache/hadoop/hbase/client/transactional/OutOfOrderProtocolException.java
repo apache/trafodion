@@ -22,12 +22,13 @@
 **/
 
 package org.apache.hadoop.hbase.client.transactional;
+import java.io.IOException;
 
 /** Thrown when the TrxRegionEndpoint openScanner, performScan,
  *  closeScanner protocol is not being followed in the correct order.
  */
 
-public class OutOfOrderProtocolException extends Exception {
+public class OutOfOrderProtocolException extends IOException {
 
   private static final long serialVersionUID = 1712128652088625482L;
 

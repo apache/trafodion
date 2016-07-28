@@ -208,8 +208,6 @@ HBC_RetCode HBaseClient_JNI::init()
     
     JavaMethods_[JM_CTOR       ].jm_name      = "<init>";
     JavaMethods_[JM_CTOR       ].jm_signature = "()V";
-    JavaMethods_[JM_GET_ERROR  ].jm_name      = "getLastError";
-    JavaMethods_[JM_GET_ERROR  ].jm_signature = "()Ljava/lang/String;";
     JavaMethods_[JM_INIT       ].jm_name      = "init";
     JavaMethods_[JM_INIT       ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
     JavaMethods_[JM_CLEANUP    ].jm_name      = "cleanup";
@@ -296,14 +294,6 @@ HBC_RetCode HBaseClient_JNI::init()
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-NAString HBaseClient_JNI::getLastJavaError()
-{
-  return JavaObjectInterface::getLastJavaError(JavaMethods_[JM_GET_ERROR].methodID);
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
 HBC_RetCode HBaseClient_JNI::initConnection(const char* zkServers, const char* zkPort)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::initConnection(%s, %s) called.", zkServers, zkPort);
@@ -330,9 +320,6 @@ HBC_RetCode HBaseClient_JNI::initConnection(const char* zkServers, const char* z
   tsRecentJMFromJNI = JavaMethods_[JM_INIT].jm_full_name;
   // boolean init(java.lang.String, java.lang.String); 
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_INIT].methodID, js_zkServers, js_zkPort);
-
-  jenv_->DeleteLocalRef(js_zkServers);  
-  jenv_->DeleteLocalRef(js_zkPort);  
 
   if (jenv_->ExceptionCheck())
   {
@@ -1045,13 +1032,6 @@ HBC_RetCode HBaseClient_JNI::registerTruncateOnAbort(const char* fileName, Int64
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_DROP_EXCEPTION;
   }
-
-  if (jresult == false)
-  {
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::drop()", getLastJavaError());
-    jenv_->PopLocalFrame(NULL);
-    return HBC_ERROR_DROP_EXCEPTION;
-  }
   jenv_->PopLocalFrame(NULL);
   return HBC_OK;
 }
@@ -1090,12 +1070,6 @@ HBC_RetCode HBaseClient_JNI::drop(const char* fileName, JNIEnv* jenv, Int64 tran
     return HBC_ERROR_DROP_EXCEPTION;
   }
 
-  if (jresult == false) 
-  {
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::drop()", getLastJavaError());
-    jenv_->PopLocalFrame(NULL);
-    return HBC_ERROR_DROP_EXCEPTION;
-  }
   jenv_->PopLocalFrame(NULL);
   return HBC_OK;
 }
@@ -1144,12 +1118,6 @@ HBC_RetCode HBaseClient_JNI::dropAll(const char* pattern, bool async, Int64 tran
     return HBC_ERROR_DROP_EXCEPTION;
   }
 
-  if (jresult == false) 
-  {
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::dropAll()", getLastJavaError());
-    jenv_->PopLocalFrame(NULL);
-    return HBC_ERROR_DROP_EXCEPTION;
-  }
   jenv_->PopLocalFrame(NULL);
   return HBC_OK;
 }
@@ -1708,8 +1676,6 @@ HBLC_RetCode HBulkLoadClient_JNI::init()
 
     JavaMethods_[JM_CTOR       ].jm_name      = "<init>";
     JavaMethods_[JM_CTOR       ].jm_signature = "()V";
-    JavaMethods_[JM_GET_ERROR  ].jm_name      = "getLastError";
-    JavaMethods_[JM_GET_ERROR  ].jm_signature = "()Ljava/lang/String;";
     JavaMethods_[JM_INIT_HFILE_PARAMS     ].jm_name      = "initHFileParams";
     JavaMethods_[JM_INIT_HFILE_PARAMS     ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z";
     JavaMethods_[JM_CLOSE_HFILE      ].jm_name      = "closeHFile";
@@ -2264,13 +2230,6 @@ HBulkLoadClient_JNI::~HBulkLoadClient_JNI()
 {
   //QRLogger::log(CAT_JNI_TOP, LL_DEBUG, "HBulkLoadClient_JNI destructor called.");
 }
-
-NAString HBulkLoadClient_JNI::getLastJavaError()
-{
-  return JavaObjectInterface::getLastJavaError(JavaMethods_[JM_GET_ERROR].methodID);
-}
-
-
 
 
 ////////////////////////////////////////////////////////////////////
@@ -3406,9 +3365,6 @@ HTC_RetCode HTableClient_JNI::init()
       return (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     }
     JavaMethods_ = new JavaMethodInit[JM_LAST];
-    
-    JavaMethods_[JM_CTOR       ].jm_name      = "<init>";
-    JavaMethods_[JM_CTOR       ].jm_signature = "()V";
     JavaMethods_[JM_GET_ERROR  ].jm_name      = "getLastError";
     JavaMethods_[JM_GET_ERROR  ].jm_signature = "()Ljava/lang/String;";
     JavaMethods_[JM_SCAN_OPEN  ].jm_name      = "startScan";
