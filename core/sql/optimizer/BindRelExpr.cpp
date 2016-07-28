@@ -717,7 +717,7 @@ static ItemExpr *intersectColumns(const RETDesc &leftTable,
     ItemExpr *leftExpr  = leftTable.getValueId(i).getItemExpr();
     ItemExpr *rightExpr = rightTable.getValueId(i).getItemExpr();
     BiRelat *compare = new (bindWA->wHeap())
-      BiRelat(ITM_EQUAL, leftExpr, rightExpr);
+      BiRelat(ITM_EQUAL, leftExpr, rightExpr, TRUE);
     if (predicate)
       predicate = new (bindWA->wHeap()) BiLogic(ITM_AND, predicate, compare);
     else
@@ -2971,12 +2971,15 @@ RelExpr *Intersect::bindNode(BindWA *bindWA)
     return this;
   }
 
-  // Join the columns of both sides.  This is wrong semantics tho! ##
+  // Join the columns of both sides. 
   //
-  *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
-      << DgString0("INTERSECT");             // ##
-  bindWA->setErrStatus();                    // ##
-  if (bindWA->errStatus()) return NULL;      // ##
+  if(CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON)
+  {
+    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
+        << DgString0("INTERSECT");             // ##
+    bindWA->setErrStatus();                    // ##
+    if (bindWA->errStatus()) return NULL;      // ##
+  }
   //
   ItemExpr *predicate = intersectColumns(leftTable, rightTable, bindWA);
   RelExpr *join = new (bindWA->wHeap())
