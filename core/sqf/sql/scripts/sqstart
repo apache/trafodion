@@ -260,20 +260,24 @@ function checkUlimit {
  #check ulimit -l
  maxLockMem=`ulimit -l`
  if [[ $maxLockMem -lt 65536 ]] ; then
+  if [[  "$maxLockMem" -ne "unlimited" ]]; then
     echoLog ""
     echoLog "ERROR: issue detected during startup. Please make sure your ulimit -l is set up correctly."
     echoLog "ERROR: max locked memory is smaller than 64M"
     echoLog ""
     return 
+  fi
  fi
   
  #check ulimit -l
  if [[ $maxLockMem -lt 327680 ]] ; then
+  if [[  "$maxLockMem" -ne "unlimited" ]]; then
     echoLog ""
     echoLog "WARNING: issue detected during startup, please make sure your ulimit -l is set up correctly."
     echoLog "WARNING: max locked memory is smaller than 320M "
     echoLog ""
     return 
+  fi
  fi
 
 }
