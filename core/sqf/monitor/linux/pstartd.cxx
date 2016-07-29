@@ -1300,7 +1300,7 @@ int main (int argc, char *argv[])
     MyNid = monUtil.getNid();
     MyPid = monUtil.getPid();
 
-    MonLog = new CMonLog( "log4cpp.monitor.psd.config", "PSD", "alt.pstartd", MyPNID, MyNid, MyPid, MyName );
+    MonLog = new CMonLog( "log4cxx.monitor.psd.config", "PSD", "alt.pstartd", MyPNID, MyNid, MyPid, MyName );
 
     pStartD = new CPStartD;
 

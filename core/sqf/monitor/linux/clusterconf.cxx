@@ -526,6 +526,9 @@ bool CClusterConfig::DeleteDbUniqueString( int nid )
     return( rs );
 }
 
+// The following method maps the 'sqconfig' text file persist section's
+// <persist-key>_PROCESS_TYPE string value to the internal
+// PROCESSTYPE enum value
 PROCESSTYPE CClusterConfig::GetProcessType( const char *processtype )
 {
     if (strcmp( "DTM", processtype) == 0)
@@ -536,6 +539,10 @@ PROCESSTYPE CClusterConfig::GetProcessType( const char *processtype )
     {
         return(ProcessType_Generic);
     }
+    else if (strcmp( "WDG", processtype) == 0)
+    {
+        return(ProcessType_Watchdog);
+    }
     else if (strcmp( "MXOSRVR", processtype) == 0)
     {
         return(ProcessType_MXOSRVR);
@@ -544,17 +551,25 @@ PROCESSTYPE CClusterConfig::GetProcessType( const char *processtype )
     {
         return(ProcessType_SPX);
     }
-    else if (strcmp( "SMS", processtype) == 0)
-    {
-        return(ProcessType_SMS);
-    }
     else if (strcmp( "SSMP", processtype) == 0)
     {
         return(ProcessType_SSMP);
     }
+    else if (strcmp( "PSD", processtype) == 0)
+    {
+        return(ProcessType_PSD);
+    }
+    else if (strcmp( "SMS", processtype) == 0)
+    {
+        return(ProcessType_SMS);
+    }
     else if (strcmp( "TMID", processtype) == 0)
     {
         return(ProcessType_TMID);
+    }
+    else if (strcmp( "PERSIST", processtype) == 0)
+    {
+        return(ProcessType_PERSIST);
     }
 
     return(ProcessType_Undefined);

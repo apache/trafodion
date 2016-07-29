@@ -196,7 +196,7 @@ sub parseStatement {
             my $eq;
             ($eq, $s) = parseEq($s);
             if ($eq) {
-                if ($s =~ /(\$)([A-Z]+)/) {
+                if ($s =~ /(\$)([A-Z]+[0-9]*)/) {
                     $g_processName = $1 . $2;
                     $s =~ s:\$$2::;
                     my ($res, $r) = parseNid($s);
@@ -225,7 +225,7 @@ sub parseStatement {
             my $eq;
             ($eq, $s) = parseEq($s);
             if ($eq) {
-                if ($s =~ /(DTM|GENERIC|SSMP|TMID)/) {
+                if ($s =~ /(DTM|PERSIST|PSD|SSMP|TMID|WDG)/) {
                     $g_processType = $1;
                     $s =~ s:$1::;
                     $g_opts |= 0x2;
@@ -233,7 +233,7 @@ sub parseStatement {
                     parseEnd($s);
                 } else {
                     displayStmt($g_ok);
-                    print "   Error: Expecting { DTM | GENERIC | SSMP | TMID }, but saw $s\n"; #T
+                    print "   Error: Expecting { DTM | PERSIST |PSD | SSMP | TMID | WDG}, but saw $s\n"; #T
                 }
             }
         }

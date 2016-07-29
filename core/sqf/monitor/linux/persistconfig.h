@@ -73,6 +73,7 @@ public:
     void          DeletePersistConfig( CPersistConfig *persistConfig );
     inline CPersistConfig *GetFirstPersistConfig( void ) { return ( head_ ); }
     CPersistConfig *GetPersistConfig( const char *persistPrefix );
+    CPersistConfig *GetPersistConfig( PROCESSTYPE processType );
     inline int    GetPersistConfigCount( void ) { return ( persistsCount_ ); }
 
 protected:

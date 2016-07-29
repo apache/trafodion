@@ -265,8 +265,14 @@ const char *PersistProcessTypeString( PROCESSTYPE type )
         case ProcessType_Generic:
             str = "GENERIC";
             break;
+        case ProcessType_PSD:
+            str = "PSD";
+            break;
         case ProcessType_SPX:
             str = "SPX";
+            break;
+        case ProcessType_PERSIST:
+            str = "PERSIST";
             break;
         case ProcessType_SSMP:
             str = "SSMP";
@@ -276,6 +282,9 @@ const char *PersistProcessTypeString( PROCESSTYPE type )
             break;
         case ProcessType_TMID:
             str = "TMID";
+            break;
+        case ProcessType_Watchdog:
+            str = "WDG";
             break;
         default:
             str = "Invalid";
@@ -3345,17 +3354,46 @@ void node_change_name(char *current_name, char *new_name)
         (count == sizeof (struct message_def)))
     {
         if ((msg->type == MsgType_Service) &&
-            (msg->u.reply.type == ReplyType_NodeName))
+            (msg->u.reply.type == ReplyType_Generic))
         {
             if (msg->u.reply.u.node_info.return_code != MPI_SUCCESS)
             {
-                printf ("[%s] Unable to change node name in monitors.\n", MyName);
+                if (msg->u.reply.u.generic.return_code == MPI_ERR_IO)
+                {
+                    printf( "[%s] Node name failed accessing configuration database\n"
+                          , MyName );
+                }
+                else if (msg->u.reply.u.generic.return_code == MPI_ERR_NAME)
+                {
+                    printf( "[%s] Node name failed, node %s does not exist in configuration database\n"
+                          , MyName, current_name );
+                }
+                else if (msg->u.reply.u.generic.return_code == MPI_ERR_NO_MEM)
+                {
+                    printf( "[%s] Node name failed with memory allocation error, check monitor log for details\n"
+                          , MyName );
+                }
+                else if (msg->u.reply.u.generic.return_code == MPI_ERR_INTERN)
+                {
+                    printf( "[%s] Node name failed, check monitor log for error details\n"
+                          , MyName );
+                }
+                else
+                {
+                    printf( "[%s] Node name change failed, error=%s\n"
+                          , MyName, ErrorMsg(msg->u.reply.u.generic.return_code));
+                }
             }
+        }
+        else
+        {
+            printf ("[%s] Invalid Message/Reply type for Node Name Change request.\n", MyName);
         }
     }
     else
     {
-        printf ("[%s] Invalid Message/Reply type for Node Name Change request.\n", MyName);
+        printf( "[%s] Node name reply invalid, msg tag is %d, count= %d. \n"
+              , MyName, status.MPI_TAG, count);
     }
 }
 
@@ -4290,14 +4328,6 @@ bool persist_process_start( CPersistConfig *persistConfig )
                 printf( "Persistent process %s already exists\n", processName);
                 continue;
             }
-            send_set_req( ConfigType_Process
-                        , processName
-                        , (char *)"PERSIST_RETRIES"
-                        , persistRetries );
-            send_set_req( ConfigType_Process
-                        , processName
-                        , (char *)"PERSIST_ZONES"
-                        , persistZones );
             pid = start_process( &i
                                , process_type
                                , processName
@@ -4338,14 +4368,6 @@ bool persist_process_start( CPersistConfig *persistConfig )
             printf( "Persistent process %s already exists\n", processName);
             break;
         }
-        send_set_req( ConfigType_Process
-                    , processName
-                    , (char *)"PERSIST_RETRIES"
-                    , persistRetries );
-        send_set_req( ConfigType_Process
-                    , processName
-                    , (char *)"PERSIST_ZONES"
-                    , persistZones );
         pid = start_process( &nid
                            , process_type
                            , processName
@@ -4384,14 +4406,6 @@ bool persist_process_start( CPersistConfig *persistConfig )
             printf( "Persistent process %s already exists\n", processName);
             break;
         }
-        send_set_req( ConfigType_Process
-                    , processName
-                    , (char *)"PERSIST_RETRIES"
-                    , persistRetries );
-        send_set_req( ConfigType_Process
-                    , processName
-                    , (char *)"PERSIST_ZONES"
-                    , persistZones );
         pid = start_process( &nid
                            , process_type
                            , processName
@@ -4472,7 +4486,7 @@ void process_startup (int nid,char *port)
 }
 
 // Keep string location in sync with PROCESSTYPE typedef in msgdef.h
-const char * processTypeStr [] = {"???", "TSE", "DTM", "ASE", "GEN", "WDG", "AMP", "BO", "VR", "CS", "SPX", "SSMP", "PSD", "SMS", "TMID"};
+const char * processTypeStr [] = {"???", "TSE", "DTM", "ASE", "GEN", "WDG", "AMP", "BO", "VR", "CS", "SPX", "SSMP", "PSD", "SMS", "TMID", "PERS"};
 
 void show_proc_info( void )
 {
@@ -7173,7 +7187,19 @@ void persist_exec_cmd( char *cmd )
             persistConfig = ClusterConfig.GetPersistConfig( token );
             if (persistConfig)
             {
-                if (persistConfig->GetRequiresDTM())
+                if (persistConfig->GetProcessType() == ProcessType_Watchdog)
+                {
+                    printf ("[%s] Persist process exec of a WDG process type is not allowed!\n", MyName);
+                }
+                else if (persistConfig->GetProcessType() == ProcessType_PSD)
+                {
+                    printf ("[%s] Persist process exec of a PSD process type is not allowed!\n", MyName);
+                }
+                else if (persistConfig->GetProcessType() == ProcessType_SMS)
+                {
+                    printf ("[%s] Persist process exec of a SMS process type is not allowed!\n", MyName);
+                }
+                else if (persistConfig->GetRequiresDTM())
                 {
                     if (DTMexists)
                     {
@@ -7266,7 +7292,19 @@ void persist_kill_cmd( char *cmd )
             persistConfig = ClusterConfig.GetPersistConfig( token );
             if (persistConfig)
             {
-                if (persistConfig->GetProcessType() == ProcessType_DTM)
+                if (persistConfig->GetProcessType() == ProcessType_Watchdog)
+                {
+                    printf ("[%s] Persist process kill of a WDG process type is not allowed!\n", MyName);
+                }
+                else if (persistConfig->GetProcessType() == ProcessType_PSD)
+                {
+                    printf ("[%s] Persist process kill of a PSD process type is not allowed!\n", MyName);
+                }
+                else if (persistConfig->GetProcessType() == ProcessType_SMS)
+                {
+                    printf ("[%s] Persist process kill of a SMS process type is not allowed!\n", MyName);
+                }
+                else if (persistConfig->GetProcessType() == ProcessType_DTM)
                 {
                     printf ("[%s] Persist process kill of a DTM process type is not allowed!\n", MyName);
                 }

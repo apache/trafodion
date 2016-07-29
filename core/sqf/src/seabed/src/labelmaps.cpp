@@ -316,6 +316,7 @@ static const char *ga_ms_mon_process_type_labels[] = {
     "MS_ProcessType_PSD",
     "MS_ProcessType_SMS",
     "MS_ProcessType_TMID",
+    "MS_ProcessType_PERSIST",
     SB_LABEL_END
 };
 
@@ -335,6 +336,7 @@ static const char *ga_ms_mon_process_type_short_labels[] = {
     "PSD",
     "SMS",
     "TMID",
+    "PERSIST",
     SB_LABEL_END
 };
 
@@ -862,7 +864,7 @@ static SB_Label_Map gv_ms_mon_proc_state_short_label_map = {
 
 enum {
     MS_LABEL_LIMIT_MON_PROCESS_TYPE_LO = MS_ProcessType_Undefined,
-    MS_LABEL_LIMIT_MON_PROCESS_TYPE_HI = MS_ProcessType_TMID
+    MS_LABEL_LIMIT_MON_PROCESS_TYPE_HI = MS_ProcessType_PERSIST
 };
 SB_Label_Map gv_ms_mon_process_type_label_map = {
     MS_LABEL_LIMIT_MON_PROCESS_TYPE_LO,

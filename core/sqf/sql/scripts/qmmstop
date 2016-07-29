@@ -98,8 +98,7 @@ function stop_qmm
   # construct script
   cat > $qmmscr << EOF
   sqshell -a <<eof
-  set  {process \\\$$qmmName} PERSIST_RETRIES=0,60
-  kill \\\$$qmmName
+  persist kill QMN
   exit
 eof
 EOF

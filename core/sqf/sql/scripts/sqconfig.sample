@@ -50,7 +50,6 @@ node-id=2;node-name=n6;cores=0-1;processors=2;roles=connection,aggregation,stora
 node-id=3;node-name=n6;cores=2-3;processors=2;roles=connection,aggregation,storage
 node-id=4;node-name=n5;cores=0-1;processors=2;roles=connection,aggregation,storage
 node-id=5;node-name=n5;cores=2-3;processors=2;roles=connection,aggregation,storage
-node-name=n4;cores=0-3;spares=0,1,2,3,4,5
 
 end node
 
@@ -63,7 +62,7 @@ end node
 # PERSIST_PROCESS_KEYS = { <persist-prefix> } [ , <persist-prefix> ] …
 # 
 # { <persist-prefix>_PROCESS_NAME    = {$<string><nid-format>} }
-# [ <persist-prefix>_PROCESS_TYPE    = {DTM|SSMP|GENERIC} ] # Default: GENERIC
+# [ <persist-prefix>_PROCESS_TYPE    = {DTM|PERSIST|PSD|SSMP|TMID|WDG} ]
 # { <persist-prefix>_PROGRAM_NAME    = {<program-name>} }
 # { <persist-prefix>_REQUIRES_DTM    = {Y|N} } 
 # [ <persist-prefix>_STDOUT          = {<file-name-prefix><nid-format>} ]
@@ -91,8 +90,20 @@ end node
 ###############################################################################
 begin persist
 
-PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP
-#PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,LOB
+#
+# The folling process types are persistent and have special process management:
+#    DTM
+#    TMID
+#    SSMP
+#    PSD
+#    WDG
+#
+# Generic persistent processes are of process type
+#    PERSIST
+#
+
+PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,PSD,WDG,QMN
+#PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,PSD,WDG,QMN,LOB
 
 DTM_PROCESS_NAME     = $TM%nid+
 DTM_PROCESS_TYPE     = DTM
@@ -111,7 +122,7 @@ TMID_PERSIST_RETRIES = 2,30
 TMID_PERSIST_ZONES   = %zid+
 
 SSCP_PROCESS_NAME    = $ZSC%nid+
-SSCP_PROCESS_TYPE    = GENERIC
+SSCP_PROCESS_TYPE    = PERSIST
 SSCP_PROGRAM_NAME    = mxsscp
 SSCP_REQUIRES_DTM    = Y
 SSCP_STDOUT          = stdout_ZSC%nid
@@ -126,8 +137,32 @@ SSMP_STDOUT          = stdout_ZSM%nid
 SSMP_PERSIST_RETRIES = 10,60
 SSMP_PERSIST_ZONES   = %zid
 
+PSD_PROCESS_NAME     = $PSD%nid+
+PSD_PROCESS_TYPE     = PSD
+PSD_PROGRAM_NAME     = pstartd
+PSD_REQUIRES_DTM     = N
+PSD_STDOUT           = stdout_PSD%nid
+PSD_PERSIST_RETRIES  = 10,60
+PSD_PERSIST_ZONES    = %zid
+
+WDG_PROCESS_NAME     = $WDG%nid+
+WDG_PROCESS_TYPE     = WDG
+WDG_PROGRAM_NAME     = sqwatchdog
+WDG_REQUIRES_DTM     = N
+WDG_STDOUT           = stdout_WDG%nid
+WDG_PERSIST_RETRIES  = 10,60
+WDG_PERSIST_ZONES    = %zid
+
+QMN_PROCESS_NAME    = $ZQM0000
+QMN_PROCESS_TYPE    = PERSIST
+QMN_PROGRAM_NAME    = tdm_arkqmm
+QMN_REQUIRES_DTM    = Y
+QMN_STDOUT          = stdout_ZQM0000
+QMN_PERSIST_RETRIES = 10,60
+QMN_PERSIST_ZONES   = %zid+
+
 #LOB_PROCESS_NAME     = $ZLOB%nid+
-#LOB_PROCESS_TYPE     = GENERIC
+#LOB_PROCESS_TYPE     = PERSIST
 #LOB_PROGRAM_NAME     = mxlobsrvr
 #LOB_REQUIRES_DTM     = Y
 #LOB_STDOUT           = stdout_ZLOB%nid

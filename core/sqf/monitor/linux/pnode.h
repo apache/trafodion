@@ -77,7 +77,7 @@ public:
                                    , int pid
                                    , int verifier
                                    , _TM_Txid_External trans_id );
-    void    ChangedNode( CNode *node, CPNodeConfig *pnodeConfig );
+    void    ChangedNode( CNode *node );
     void    DeletedNode( CNode *node );
     bool    DeleteNode( int pnid );
     void    DeleteNode( CNode *node );
@@ -88,6 +88,7 @@ public:
     CLNode *GetLNode( int nid );
     CLNode *GetLNode( char *process_name, CProcess **process,
                       bool checkstate=true, bool backupOk=false );
+    CLNode *GetLNodeNext( int nid, bool checkstate=true );
     CNode  *GetNode( char *name );
     CNode  *GetNode( int pnid );
     CNode  *GetNodeByMap( int index );

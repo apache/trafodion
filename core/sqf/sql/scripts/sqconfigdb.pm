@@ -119,29 +119,29 @@ sub addDbClusterData {
     $insDbClusterDataStmt->execute;
 }
 
-sub addDbProcData {
-
-    if (not defined $DBH) {
-        # Database not available
-        return;
-    }
-
-    my $procName = $_[0];
-    my $key = $_[1];
-    my $dataValue = $_[2];
-
-    addDbKeyName($key);
-    addDbProcName($procName);
-
-    my $insDbProcDataStmt
-        = $DBH->prepare("insert or replace into monRegProcData (dataValue, procId, keyId ) select ?, p.procId, (SELECT k.keyId FROM monRegKeyName k WHERE k.keyName = ?) FROM monRegProcName p WHERE p.procName = ?");
-
-    $insDbProcDataStmt->bind_param(1, $dataValue);
-    $insDbProcDataStmt->bind_param(2, $key);
-    $insDbProcDataStmt->bind_param(3, $procName);
-
-    $insDbProcDataStmt->execute;
-}
+#sub addDbProcData {
+#
+#    if (not defined $DBH) {
+#        # Database not available
+#        return;
+#    }
+#
+#    my $procName = $_[0];
+#    my $key = $_[1];
+#    my $dataValue = $_[2];
+#
+#    addDbKeyName($key);
+#    addDbProcName($procName);
+#
+#    my $insDbProcDataStmt
+#        = $DBH->prepare("insert or replace into monRegProcData (dataValue, procId, keyId ) select ?, p.procId, (SELECT k.keyId FROM monRegKeyName k WHERE k.keyName = ?) FROM monRegProcName p WHERE p.procName = ?");
+#
+#    $insDbProcDataStmt->bind_param(1, $dataValue);
+#    $insDbProcDataStmt->bind_param(2, $key);
+#    $insDbProcDataStmt->bind_param(3, $procName);
+#
+#    $insDbProcDataStmt->execute;
+#}
 
 sub addDbProcDef {
 

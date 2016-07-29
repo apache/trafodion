@@ -378,9 +378,8 @@ void do_init(int pv_argc, char **ppp_argv) {
     if (lv_delay_s != NULL) {
        gv_time_refresh_delay = 100 * (atoi(lv_delay_s));      
     }
-    if (gv_verbose){
-        printf("TM_IDTMSRV_REFRESH_DELAY_SECONDS is %s.  Setting gv_time_refresh_delay to %d \n", lv_delay_s, gv_time_refresh_delay);
-    }   
+
+    printf("TM_IDTMSRV_REFRESH_DELAY_SECONDS is %s.  Setting gv_time_refresh_delay to %d \n", lv_delay_s, gv_time_refresh_delay);
 
     if (gv_shook)
         msg_debug_hook("s", "s");
@@ -399,8 +398,10 @@ void do_mon_msg(BMS_SRE *pp_sre, bool *pp_done) {
                              (char *) &lv_mon_msg,      // reqdata
                              (int) sizeof(lv_mon_msg)); // bytecount
     assert(lv_ferr == XZFIL_ERR_OK);
-    if (lv_mon_msg.type == MS_MsgType_Shutdown)
+    if (lv_mon_msg.type == MS_MsgType_Shutdown) {
+        printf("%s: received shutdown message\n", ga_name);
         *pp_done = true;
+    }
     if (gv_verbose)
         printf("srv: received mon message\n");
     do_reply(pp_sre, NULL, 0, 0);
@@ -690,8 +691,7 @@ int main(int pv_argc, char *pa_argv[]) {
         }
     }
 
-    if (gv_verbose)
-        printf("server %s shutting down\n", ga_name);
+    printf("server %s shutting down\n", ga_name);
     lv_ferr = msg_mon_process_shutdown();
     assert(lv_ferr == XZFIL_ERR_OK);
 

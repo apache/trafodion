@@ -288,6 +288,26 @@ CPersistConfig *CPersistConfigContainer::GetPersistConfig( const char *persistPr
     return config;
 }
 
+CPersistConfig *CPersistConfigContainer::GetPersistConfig( PROCESSTYPE processType )
+{
+    CPersistConfig *config = head_;
+
+    const char method_name[] = "CPersistConfigContainer::GetPersistConfig";
+    TRACE_ENTRY;
+
+    while ( config )
+    {
+        if (config->GetProcessType() == processType)
+        {
+            break;
+        }
+        config = config->GetNext();
+    }
+
+    TRACE_EXIT;
+    return config;
+}
+
 void CPersistConfigContainer::InitializePersistKeys( char *persistkeys )
 {
     const char method_name[] = "CPersistConfigContainer::InitializePersistKeys";

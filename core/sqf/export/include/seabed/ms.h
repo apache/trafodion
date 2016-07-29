@@ -447,7 +447,8 @@ typedef enum {
     MS_ProcessType_SSMP,
     MS_ProcessType_PSD,
     MS_ProcessType_SMS,
-    MS_ProcessType_TMID
+    MS_ProcessType_TMID,
+    MS_ProcessType_PERSIST
 } MS_Mon_PROCESSTYPE;
 struct MS_Mon_Change_def {
     MS_Mon_ConfigType type;

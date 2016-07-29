@@ -1104,21 +1104,10 @@ void CNode::StartWatchdogProcess( void )
     char name[MAX_PROCESS_NAME];
     char stdout[MAX_PROCESS_PATH];
     CProcess * watchdogProcess;
-    CConfigGroup *group;
     
     snprintf( name, sizeof(name), "$WDG%d", MyNode->GetZone() );
     snprintf( stdout, sizeof(stdout), "stdout_WDG%d", MyNode->GetZone() );
 
-    group = Config->GetGroup( name );
-    if (group==NULL)
-    {
-        char persistZones[MAX_VALUE_SIZE];
-        sprintf( persistZones, "%d", MyPNID);
-        // Add the watchdog persistence configuration
-        group = Config->AddGroup( name, ConfigType_Process );
-        group->Set( (char *) "PERSIST_ZONES" , persistZones );
-        group->Set( (char *) "PERSIST_RETRIES", (char *)"10,60" );
-    }
     // The following variables are used to retrieve the proper startup and keepalive environment variable
     // values, and to use as arguments for the lower level ioctl calls that interface with the watchdog 
     // timer package.
@@ -1197,21 +1186,9 @@ void CNode::StartPStartDProcess( void )
     char name[MAX_PROCESS_NAME];
     char stdout[MAX_PROCESS_PATH];
     CProcess * pstartdProcess;
-    CConfigGroup *group;
     
     snprintf( name, sizeof(name), "$PSD%d", MyNode->GetZone() );
     snprintf( stdout, sizeof(stdout), "stdout_PSD%d", MyNode->GetZone() );
-
-    group = Config->GetGroup( name );
-    if (group==NULL)
-    {
-        char persistZones[MAX_VALUE_SIZE];
-        sprintf( persistZones, "%d", MyPNID);
-        // Add the pstartd persistence configuration
-        group = Config->AddGroup( name, ConfigType_Process );
-        group->Set( (char *) "PERSIST_ZONES" , persistZones );
-        group->Set( (char *) "PERSIST_RETRIES", (char *)"10,60" );
-    }
 
     strcpy(path,getenv("PATH"));
     strcat(path,":");
@@ -1381,27 +1358,14 @@ void CNode::StartSMServiceProcess( void )
     char filename[MAX_PROCESS_PATH];
     char name[MAX_PROCESS_NAME];
     char stdout[MAX_PROCESS_PATH];
-    CProcess * smsProcess;
+    CProcess *smsProcess;
     
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
        trace_printf("%s@%d" " - Creating SMService Process\n", method_name, __LINE__);
 
     snprintf( name, sizeof(name), "$SMS%03d", MyNode->GetZone() );
     snprintf( stdout, sizeof(stdout), "stdout_SMS%03d", MyNode->GetZone() );
-#if 0
-    CConfigGroup *group;
-    // TODO: when Synchronized request fully implemented
-    group = Config->GetGroup( name );
-    if (group==NULL)
-    {
-        char persistZones[MAX_VALUE_SIZE];
-        sprintf( persistZones, "%d", MyPNID);
-        // Add the smservice persistence configuration
-        group = Config->AddGroup( name, ConfigType_Process );
-        group->Set( (char *) "PERSIST_ZONES" , persistZones );
-        group->Set( (char *) "PERSIST_RETRIES", (char *)"2,30" );
-    }
-#endif
+
     strcpy(path,getenv("PATH"));
     strcat(path,":");
     strcat(path,MyPath);
@@ -2216,7 +2180,7 @@ void CNodeContainer::AvgNodeData(ZoneType type, int *avg_pcount, unsigned int *a
     TRACE_EXIT;
 }
 
-void CNodeContainer::ChangedNode( CNode *node, CPNodeConfig   *pnodeConfig )
+void CNodeContainer::ChangedNode( CNode *node )
 {
     const char method_name[] = "CNodeContainer::ChangedNode";
     TRACE_ENTRY;
@@ -2409,6 +2373,58 @@ CLNode *CNodeContainer::GetLNode(int nid)
             break;
         }
         lnode = lnode->GetNext();
+    }
+
+    TRACE_EXIT;
+    return lnode;
+}
+
+CLNode *CNodeContainer::GetLNodeNext( int nid, bool checkstate )
+{
+    const char method_name[] = "CLNodeContainer::GetLNodeNext";
+    TRACE_ENTRY;
+
+    CLNode *lnode = NULL;
+
+    for (int i = (nid+1); i <  clusterConfig_->GetLNodesCount(); i++ )
+    {
+        lnode = LNode[i];
+        if ( lnode )
+        {
+            if ( lnode->GetNid() > nid )
+            {
+                if (checkstate && lnode->GetState() == State_Up)
+                {
+                    break; // found it
+                }
+                else
+                {
+                    break; // found it
+                }
+            }
+        }
+    }
+    
+    if ( lnode == NULL )
+    {
+        for (int i = 0; i < clusterConfig_->GetLNodesCount(); i++ )
+        {
+            lnode = LNode[i];
+            if ( lnode )
+            {
+                if ( lnode->GetNid() <= nid )
+                {
+                    if (checkstate && lnode->GetState() == State_Up)
+                    {
+                        break; // found it
+                    }
+                    else
+                    {
+                        break; // found it
+                    }
+                }
+            }
+        }
     }
 
     TRACE_EXIT;
