@@ -725,9 +725,9 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
         }
     }
 
+    private int maxKeyValueSize;
 
-	private int maxKeyValueSize;
-public HRegionLocation getRegionLocation(byte[] row, boolean f)
+    public HRegionLocation getRegionLocation(byte[] row, boolean f)
                                   throws IOException {
         return super.getRegionLocation(row,f);
     }
@@ -744,12 +744,6 @@ public HRegionLocation getRegionLocation(byte[] row, boolean f)
                   throws IOException {
          super.flushCommits();
     }
-/*
-    public Connection getConnection()
-    {
-        return super.getConnection();
-    }
-*/
     public byte[][] getEndKeys()
                     throws IOException
     {

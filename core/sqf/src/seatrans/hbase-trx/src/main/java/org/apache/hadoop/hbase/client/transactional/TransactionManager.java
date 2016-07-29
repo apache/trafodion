@@ -1559,7 +1559,7 @@ public class TransactionManager {
      * @throws ZooKeeperConnectionException
      */
     private TransactionManager(final Configuration conf, Connection connection) throws ZooKeeperConnectionException, IOException {
-        this(LocalTransactionLogger.getInstance(), conf);
+        this(LocalTransactionLogger.getInstance(), conf, connection);
         this.connection = connection;
         int intThreads = 16;
         String retryAttempts = System.getenv("TMCLIENT_RETRY_ATTEMPTS");
@@ -1616,12 +1616,14 @@ public class TransactionManager {
      * @param conf
      * @throws ZooKeeperConnectionException
      */
-    protected TransactionManager(final TransactionLogger transactionLogger, final Configuration conf)
+
+    protected TransactionManager(final TransactionLogger transactionLogger, final Configuration conf, Connection conn)
             throws ZooKeeperConnectionException, IOException {
         this.transactionLogger = transactionLogger;
         conf.setInt("hbase.client.retries.number", 3);
-        connection = ConnectionFactory.createConnection(conf);
+        connection = conn;
     }
+
 
 
     /**

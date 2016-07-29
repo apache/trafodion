@@ -372,12 +372,6 @@ public class RMInterface {
     public void flushCommits() throws IOException {
          ttable.flushCommits();
     }
-/*
-    public Connection getConnection()
-    {
-        return ttable.getConnection();
-    }
-*/
     public byte[][] getEndKeys()
                     throws IOException
     {

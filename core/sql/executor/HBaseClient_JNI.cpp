@@ -317,13 +317,9 @@ HBC_RetCode HBaseClient_JNI::initConnection(const char* zkServers, const char* z
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_INIT_PARAM;
   }
-  jboolean j_googleBigTable = FALSE;
   tsRecentJMFromJNI = JavaMethods_[JM_INIT].jm_full_name;
   // boolean init(java.lang.String, java.lang.String); 
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_INIT].methodID, js_zkServers, js_zkPort, j_googleBigTable);
-
-  jenv_->DeleteLocalRef(js_zkServers);  
-  jenv_->DeleteLocalRef(js_zkPort);  
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_INIT].methodID, js_zkServers, js_zkPort);
 
   if (jenv_->ExceptionCheck())
   {
