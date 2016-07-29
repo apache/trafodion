@@ -2771,7 +2771,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDansi_(OUTPUT_DATE_FORMAT,		        ""),
 
   // Overflow mode for scratch files
-  DDkwd__(OVERFLOW_MODE,                  "MMAP"),
+  DDkwd__(OVERFLOW_MODE,                  "DISK"),
 
   // Sequence generator override identity values
   DDkwd__(OVERRIDE_GENERATED_IDENTITY_VALUES,	  "OFF"),

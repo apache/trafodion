@@ -311,7 +311,7 @@ Request Message Count    26
 Request Message Bytes    40,176
 Reply Message Count      15
 Reply Message Bytes      38,952
-Scr. Overflow Mode       MMAP
+Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
 Scr. Buffer Blks Read    0
@@ -381,7 +381,7 @@ Request Message Count    26
 Request Message Bytes    40,176
 Reply Message Count      15
 Reply Message Bytes      38,952
-Scr. Overflow Mode       MMAP
+Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
 Scr. Buffer Blks Read    0
@@ -452,7 +452,7 @@ Request Message Count    26
 Request Message Bytes    40,176
 Reply Message Count      15
 Reply Message Bytes      38,952
-Scr. Overflow Mode       MMAP
+Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
 Scr. Buffer Blks Read    0
@@ -522,7 +522,7 @@ Request Message Count    26
 Request Message Bytes    40,176
 Reply Message Count      15
 Reply Message Bytes      38,952
-Scr. Overflow Mode       MMAP
+Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
 Scr. Buffer Blks Read    0
@@ -2017,7 +2017,7 @@ Request Message Count    28
 Request Message Bytes    40,496
 Reply Message Count      15
 Reply Message Bytes      42,360
-Scr. Overflow Mode       MMAP
+Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
 Scr. Buffer Blks Read    0
@@ -2087,7 +2087,7 @@ Request Message Count    28
 Request Message Bytes    40,496
 Reply Message Count      15
 Reply Message Bytes      42,360
-Scr. Overflow Mode       MMAP
+Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
 Scr. Buffer Blks Read    0
@@ -2149,7 +2149,7 @@ Request Message Count    28
 Request Message Bytes    40,496
 Reply Message Count      15
 Reply Message Bytes      42,360
-Scr. Overflow Mode       MMAP
+Scr. Overflow Mode       DISK
 Scr File Count           0
 Scr. Buffer Blk Size     0
 Scr. Buffer Blks Read    0
@@ -2214,7 +2214,7 @@ Request Message Count    28
 Request Message Bytes    40,496
 Reply Message Count      15
 Reply Message Bytes      42,360
-Scr. Overflow Mode       MMAP
+Scr. Overflow Mode       DISK
 Scr File Count           0
 Scr. Buffer Blk Size     0
 Scr. Buffer Blks Read    0
@@ -2291,7 +2291,7 @@ TRAFODION.SCH.TSTAT
                   4                  4            4            0              9,490              5,576
 
    Id TDB Name                           Mode            CPU Time  BMO Heap Used BMO Heap Total    BMO Heap WM  BMO Space BufSz BMO Space BufCnt  File Count       Scratch Buffer Block Size/Read/Written                 Scratch IO Count Read/Written
-    6 EX_HASH_GRBY                       MMAP               2,043              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
+    6 EX_HASH_GRBY                       DISK               2,043              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
 
 --- SQL operation complete.
 >>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_479_S1 PROGRESS;
@@ -2351,7 +2351,7 @@ TRAFODION.SCH.TSTAT
                   4                  4            4            0              9,490              5,576
 
    Id TDB Name                           Mode            CPU Time  BMO Heap Used BMO Heap Total    BMO Heap WM  BMO Space BufSz BMO Space BufCnt  File Count       Scratch Buffer Block Size/Read/Written                 Scratch IO Count Read/Written
-    6 EX_HASH_GRBY                       MMAP               2,043              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
+    6 EX_HASH_GRBY                       DISK               2,043              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
 
 --- SQL operation complete.
 >>log;
@@ -2567,7 +2567,7 @@ Request Message Count    28
 Request Message Bytes    40,496
 Reply Message Count      15
 Reply Message Bytes      42,360
-Scr. Overflow Mode       MMAP
+Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
 Scr. Buffer Blks Read    0
@@ -2625,7 +2625,7 @@ Request Message Count    28
 Request Message Bytes    40,496
 Reply Message Count      15
 Reply Message Bytes      42,360
-Scr. Overflow Mode       MMAP
+Scr. Overflow Mode       DISK
 Scr File Count           0
 Scr. Buffer Blk Size     0
 Scr. Buffer Blks Read    0
@@ -2698,7 +2698,7 @@ TRAFODION.SCH.TSTAT
                   4                  4            4            0              9,490              5,576
 
    Id TDB Name                           Mode            CPU Time  BMO Heap Used BMO Heap Total    BMO Heap WM  BMO Space BufSz BMO Space BufCnt  File Count       Scratch Buffer Block Size/Read/Written                 Scratch IO Count Read/Written
-    6 EX_HASH_GRBY                       MMAP               2,043              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
+    6 EX_HASH_GRBY                       DISK               2,043              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
 
 --- SQL operation complete.
 >>get statistics for qid current default ;
@@ -2866,7 +2866,7 @@ Request Message Count    28
 Request Message Bytes    40,496
 Reply Message Count      15
 Reply Message Bytes      42,360
-Scr. Overflow Mode       MMAP
+Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
 Scr. Buffer Blks Read    0
@@ -2927,7 +2927,7 @@ Request Message Count    28
 Request Message Bytes    40,496
 Reply Message Count      15
 Reply Message Bytes      42,360
-Scr. Overflow Mode       MMAP
+Scr. Overflow Mode       DISK
 Scr File Count           0
 Scr. Buffer Blk Size     0
 Scr. Buffer Blks Read    0
@@ -3003,7 +3003,7 @@ TRAFODION.SCH.TSTAT
                   4                  4            4            0              9,490              5,576
 
    Id TDB Name                           Mode            CPU Time  BMO Heap Used BMO Heap Total    BMO Heap WM  BMO Space BufSz BMO Space BufCnt  File Count       Scratch Buffer Block Size/Read/Written                 Scratch IO Count Read/Written
-    6 EX_HASH_GRBY                       MMAP               2,043              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
+    6 EX_HASH_GRBY                       DISK               2,043              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
 
 --- SQL operation complete.
 >>set session default statistics_view_type 'pertable' ;
