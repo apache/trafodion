@@ -42,7 +42,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.Cell;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.KeyValueUtil;
@@ -119,18 +118,12 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
     private RpcControllerFactory rpcControllerFactory;
     */
     static private Connection connection = null;
-    static Configuration       config = HBaseConfiguration.create();
     static ExecutorService     threadPool;
 
     private static final int STATEFUL_UPDATE_OK = 1;
     private static final int STATEFUL_UPDATE_CONFLICT = 2;
     private static final int STATELESS_UPDATE_OK = 3;
     private static final int STATELESS_UPDATE_CONFLICT = 5;
-
-    static {
-        config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
-        threadPool = Executors.newCachedThreadPool();
-   }
 
     /**
      * @param conf

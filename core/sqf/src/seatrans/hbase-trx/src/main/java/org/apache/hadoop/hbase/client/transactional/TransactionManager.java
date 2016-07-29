@@ -57,7 +57,6 @@ import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.TableNotEnabledException;
 import org.apache.hadoop.hbase.TableNotDisabledException;
 import org.apache.hadoop.hbase.DoNotRetryIOException;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
@@ -1000,6 +999,12 @@ public class TransactionManager {
                  retry = false;
               }
            }
+          catch (UnknownTransactionException ute) {
+             LOG.error("Got unknown exception in doAbortX by participant " + participantNum
+                       + " for transaction: " + transactionId, ute);
+             transactionState.requestPendingCountDec(true);
+             throw ute;
+          }
           catch (RetryTransactionException rte) {
              if (rte.toString().contains("Asked to commit a non-pending transaction ")) {
                  LOG.error(" doCommitX will not retry transaction: " + transactionId , rte);
@@ -1101,6 +1106,12 @@ public class TransactionManager {
               }
               retry = false;
               }
+          }
+          catch (UnknownTransactionException ute) {
+             LOG.error("Got unknown exception in doAbortX by participant " + participantNum
+                       + " for transaction: " + transactionId, ute);
+             transactionState.requestPendingCountDec(true);
+             throw ute;
           }
           catch (RetryTransactionException rte) {
                 if (retryCount == RETRY_ATTEMPTS){
@@ -2422,7 +2433,6 @@ public class TransactionManager {
           if (transactionState.getRegionsToIgnore().contains(location)) {
               continue;
           }
-          //try {
             loopCount++;
             final int participantNum = loopCount;
             final byte[] regionName = location.getRegionInfo().getRegionName();
@@ -2435,22 +2445,6 @@ public class TransactionManager {
                 return doAbortX(regionName, transactionState.getTransactionId(), participantNum, location.isTableRecodedDropped());
               }
             });
-/*
-          } catch (Exception e) {
-            LOG.error("exception in abort: " + e);
-          }
-*/
-            /*
-            } catch (UnknownTransactionException e) {
-        LOG.error("exception in abort: " + e);
-                LOG.info("Got unknown transaction exception during abort. Transaction: ["
-                        + transactionState.getTransactionId() + "], region: ["
-                        + location.getRegionInfo().getRegionNameAsString() + "]. Ignoring.");
-            } catch (NotServingRegionException e) {
-                LOG.info("Got NSRE during abort. Transaction: [" + transactionState.getTransactionId() + "], region: ["
-                        + location.getRegionInfo().getRegionNameAsString() + "]. Ignoring.");
-            }
-            */
         }
 
         // all requests sent at this point, can record the count

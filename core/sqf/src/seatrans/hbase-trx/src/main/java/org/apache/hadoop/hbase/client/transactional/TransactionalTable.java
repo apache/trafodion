@@ -47,7 +47,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.Cell;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.KeyValueUtil;
@@ -99,15 +98,11 @@ import com.google.protobuf.ServiceException;
 public class TransactionalTable extends HTable implements TransactionalTableClient {
     static final Log LOG = LogFactory.getLog(RMInterface.class);
     static private Connection connection = null;
-    static Configuration       config = HBaseConfiguration.create();
     static ExecutorService     threadPool;
     static int                 retries = 15;
     static int                 delay = 1000;
     private String retryErrMsg = "Coprocessor result is null, retries exhausted";
 
-    static {
-	config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
-    } 
     /**
      * @param tableName
      * @throws IOException
