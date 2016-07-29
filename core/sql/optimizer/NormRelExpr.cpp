@@ -3044,14 +3044,23 @@ Join::pullUpGroupByTransformation()
 //             a copy of join as the child. The original tree has not changed.
 //             The predicates in the new groupBy and the new Join will have
 //             changed according to the comments above.
+//
 ------------------------------------------------------------------------------*/
 GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
 {
   CollHeap *stmtHeap = CmpCommon::statementHeap() ;
 
-  // Determine a set of unique columns for the left sub-tree
+  // Determine a set of unique columns for the left sub-tree.
+
+  // Note: Scans and joins synthesize uniqueness constraints even for
+  // columns that are not in the characteristic outputs. Other
+  // operators such as groupby or union don't. We make use of these
+  // extra uniqeness constraints here. Any needed columns not yet
+  // added to the characteristic outputs will be added later, in
+  // method getMoreOutputsIfPossible().
+
   ValueIdSet leftUniqueCols ;
-  if (NOT (child(0)-getGroupAttr()->findUniqueCols(leftUniqueCols)))
+  if (NOT (child(0)->getGroupAttr()->findUniqueCols(leftUniqueCols)))
   {
     // Could not find a set of unique cols.
     // If the left sub-tree contains a UNION/TRANSPOSE/SEQUENCE or SAMPLE
@@ -3062,6 +3071,35 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
     if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG)
       *CmpCommon::diags() << DgSqlCode(2997)   
 	<< DgString1("Subquery was not unnested. Reason: Left child does not have a unique constraint"); 
+
+    // Things to consider (referring to the picture above): If the all of the 
+    // following are true:
+    //   * {pred2} has only equals/VEG predicates of the form X.col = Y.col
+    //   * {aggr} does not have any outer references
+    //   * {pred3} does not have any outer references
+    //
+    // then we could do an alternative transformation, not yet implemented:
+    //
+    //      TSJ                                   Join {pred2: X.a=Y.b, ...}
+    //     /   \                                  /   \
+    //    /     \                                /     \
+    //   X      ScalarAgg {pred3}      -->      X      grby {Y.b, ...} {pred3}
+    //             |      {aggr}                         \  {aggr}
+    //             |                                      \
+    //          Filter {pred2: X.a=Y.b, ...}               Y {pred1}
+    //             |
+    //             |
+    //             Y {pred1}
+    //
+    // Pros: - The groupby is already at a place where it will likely
+    //         end up in the optimal plan
+    // Cons: - We don't get a nice join backbone with all base tables
+    //
+    // Cases where we could attempt this transformation:
+    //   - We fail to find a unique key for X (i.e. we reach here)
+    //   - pred2 has a very high selectivity, making newJoin (in the picture
+    //     at the top of this method) similar to a cartesian product
+
     return NULL ;
   }
 
