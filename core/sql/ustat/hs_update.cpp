@@ -294,6 +294,20 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
 	 retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT WMS_QUERY_MONITORING 'ON'");
 	 HSExitIfError(retcode);
        }
+
+    // Set some CQDs to allow us to process TINYINT, BOOLEAN and LARGEINT UNSIGNED
+    // columns correctly. Without these, when we read data into memory for internal
+    // sort, there is a mismatch between how much space we think a column value will
+    // take and how much the Executor expects, and we get buffer overruns. (See
+    // JIRA TRAFODION-2131.) Someday all clients will support these datatypes and
+    // these CQDs can go away.
+    retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_TINYINT_RETURN_VALUES 'ON'");
+    HSExitIfError(retcode);
+    retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_BOOLEAN_IO 'ON'");
+    HSExitIfError(retcode);
+    retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_LARGEINT_UNSIGNED_IO 'ON'");
+    HSExitIfError(retcode);
+
     LM->StopTimer();
 
     LM->StartTimer("Parse statement");
