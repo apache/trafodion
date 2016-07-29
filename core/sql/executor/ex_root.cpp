@@ -2503,11 +2503,7 @@ Int32 ex_root_tcb::deallocAndDelete(ExExeStmtGlobals *glob,
   // Reset cancelState to ensure no more references of 
   // ex_root_tcb by the cancel thread.
   glob->castToExMasterStmtGlobals()->resetCancelState();
-   //test only ssss dirInfo is null here !!!
-  ContextCli *currContext = glob->getCliGlobals()->currContext();
-  hdfsFS hdfs = currContext->getHdfsServerConnection((char *)"localhost",41600);
-   hdfsFileInfo *dirInfo = hdfsGetPathInfo(hdfs, "/");
-   //test only sss
+   
   // Warning:  deleteMe() will delete this tcb!!!!
   glob->deleteMe(fatalError_); 
   return 0;

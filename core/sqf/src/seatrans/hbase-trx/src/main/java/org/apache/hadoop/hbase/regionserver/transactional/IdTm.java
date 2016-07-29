@@ -116,7 +116,7 @@ public class IdTm implements IdTmCb {
      * @exception IdTmException exception
      */
     public void id(int timeout, IdTmId id) throws IdTmException {
-        if (LOG.isDebugEnabled()) LOG.debug("id begin");
+        if (LOG.isDebugEnabled()) LOG.debug("id begin with timeout " + timeout);
         try {
            int err = native_id(timeout, id);
            if (LOG.isDebugEnabled()) LOG.debug("id returned: " + id.val + ", error: " + err);

@@ -41,6 +41,8 @@ drop table t005_ex;
 drop table t005_gx;
 drop table t005_hx;
 drop table t005_fx;
+drop table witht1;
+drop table witht2;
 
 log LOG005 clear;
 
@@ -98,6 +100,8 @@ create table t005_hx (
 	h3 decimal(10,0) not null
 ) no partition;
 
+create table witht1 (c1 int, c2 int);
+create table witht2 (c1 int, c2 int);
 ?section populate_tables 
 -- Populate t005t01
 insert into t005t01 values (30, 33);
@@ -147,7 +151,16 @@ insert into t005_hx values(2,2,1);
 insert into t005_hx values(2,2,2);
 insert into t005_hx values(2,2,3);
         
-
+insert into witht1 values(1,1);
+insert into witht1 values(2,2);
+insert into witht1 values(3,3);
+insert into witht1 values(4,4);
+insert into witht1 values(5,5);
+insert into witht2 values(3,3);
+insert into witht2 values(4,4);
+insert into witht2 values(5,5);
+insert into witht2 values(6,6);
+insert into witht2 values(7,7);
 
 ?section prep
 control query default query_cache '0';
@@ -476,6 +489,23 @@ create materialized view T_MV1
         select A.dno,B.eno
         from t005t02 A full outer join t005t01 B on A.dno = B.dno;
 
+cqd mode_special_4 'on';
+with w1 as (select * from witht1),
+w2 as (select * from w1)
+select * from w2; 
+ 
+with w1 as (select c1, c2 from witht1),
+w2 as (select c1,c2 from witht2)
+select * from w1 , w2 where w1.c1 = w2.c1;
+
+with w1 as (select * from witht1)
+select * from w1
+union all
+select * from w1;
+
+with recursive w1 as (select c1, c2 from witht1 union all select origin.c1 , origin.c2 from w1 join t1 origin on origin.c1 = w1.c1 );
+with w1 as (select * from witht1), w1 as (select * from witht2) select * from w1;
+cqd mode_special_4 reset;
 
 ?section cleanup
 
@@ -491,4 +521,5 @@ drop table t005_ex;
 drop table t005_gx;
 drop table t005_hx;
 drop table t005_fx;
-
+drop table witht1;
+drop table witht2;

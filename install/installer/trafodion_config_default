@@ -198,3 +198,10 @@ export CLOUD_OTHER=""
 #dcs start script is run
 export DCS_PRIMARY_MASTER_NODE=`hostname -f`
 
+
+#Ability to add nodes while trafodion is running
+export ELASTICITY_ENABLED="N"
+
+#Default is number of nodes
+export NUM_ELASTIC_NODES=""
+

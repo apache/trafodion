@@ -61,5 +61,5 @@ enum HBASETM_TraceMask
 //extern timeval gv_startTime;
 
 extern HBASETM_TraceMask gv_HBASETM_traceMask;  // HBase TM tracing Mask.  0 = no tracing (default)
-//extern int tm_log_write(int, int, char*);
+
 #endif //HBASETMGLOB_H_

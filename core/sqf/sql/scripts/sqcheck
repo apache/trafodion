@@ -584,7 +584,7 @@ else
         echo -e "RMS\t\t$cfg_rms_cnt\t\t$act_rms_cnt\t    ${down_rms[*]}"
         echo -e "DcsMaster\t$cfg_dcsmaster_cnt\t\t$actual_dcsmaster_cnt\t    $down_dcsmaster_cnt"
         echo -e "DcsServer\t$cfg_dcsserver_cnt\t\t$actual_dcsserver_cnt\t    $down_dcsserver_cnt"
-        echo -e "mxosrvr\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t    ${act_mxo_down_cnt}\n"
+        echo -e "mxosrvr\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t    ${act_mxo_down_cnt}"
         echo -e "RestServer\t$cfg_restserver_cnt\t\t$actual_restserver_cnt\t    $down_restserver_cnt\n"
     elif [[ $sqck_component == "dtm" ]]; then
         echo -e "DTM\t\t$cfg_dtm_cnt\t\t$act_dtm_cnt\t    ${down_dtms[*]}\n"
