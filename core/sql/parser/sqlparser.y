@@ -18341,20 +18341,7 @@ non_join_query_expression : non_join_query_term
 
 /* type relx */
 non_join_query_term : non_join_query_primary
-  		    | query_term TOK_INTERSECT query_primary
-  		      {
-  			$$ = new (PARSERHEAP())
-  			  RelRoot(new (PARSERHEAP())
-  				  GroupByAgg(
-  					     new (PARSERHEAP())
-  					     Intersect($1,$3),
-  					     REL_GROUPBY,
-  					     new (PARSERHEAP())
-  					     ColReference(new (PARSERHEAP())
-  					       ColRefName(TRUE, PARSERHEAP())
-  					     )));
-  		      }
-  		    | query_term TOK_INTERSECT TOK_DISTINCT query_primary
+  		    | query_term TOK_INTERSECT distinct_sugar query_primary
   		      {
   			$$ = new (PARSERHEAP())
   			  RelRoot(new (PARSERHEAP())
@@ -18373,6 +18360,8 @@ non_join_query_term : non_join_query_primary
 					YYERROR;
   				      }
 
+distinct_sugar: TOK_DISTINCT
+| 
 /* type relx */
 non_join_query_primary : simple_table
 	      | rel_subquery				// ## this line ...
