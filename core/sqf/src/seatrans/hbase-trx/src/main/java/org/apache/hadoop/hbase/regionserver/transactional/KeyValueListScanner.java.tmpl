@@ -18,12 +18,15 @@ import java.util.List;
 import java.util.SortedSet;
 
 import org.apache.commons.lang.NotImplementedException;
-
 import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.regionserver.KeyValueScanner;
-
+#ifdef CDH5.7 APACHE1.2
+import org.apache.hadoop.hbase.regionserver.Store;
+#endif
 /**
  * A fixture that implements and presents a KeyValueScanner. It takes a list of key/values which is then sorted
  * according to the provided comparator, and then the whole thing pretends to be a store file scanner.
@@ -31,7 +34,6 @@ import org.apache.hadoop.hbase.regionserver.KeyValueScanner;
  * Note: This class was copied from {@link org.apache.hadoop.hbase.regionserver.KeyValueScanFixture} and modified.
  */
 public class KeyValueListScanner implements KeyValueScanner {
-
     ArrayList<KeyValue> data;
     Iterator<KeyValue> iter = null;
     KeyValue current = null;
@@ -48,7 +50,7 @@ public class KeyValueListScanner implements KeyValueScanner {
         Collections.sort(data, this.comparator);
         this.iter = data.iterator();
         if (!data.isEmpty()) {
-            this.current = KeyValue.createFirstOnRow(data.get(0).getRow());
+            this.current = KeyValueUtil.createFirstOnRow(CellUtil.cloneRow(data.get(0)));
         }
     }
 
@@ -138,9 +140,14 @@ public class KeyValueListScanner implements KeyValueScanner {
     public boolean  requestSeek(Cell kv, boolean forward, boolean useBloom) {
     	return true;
     }
-    
+
+#ifdef CDH5.7 APACHE1.2
+    public boolean shouldUseScanner(Scan scan, Store store,
+                       long oldestUnexpiredTS){
+#else
     public boolean shouldUseScanner(Scan scan, SortedSet<byte[]> columns,
-    		       long oldestUnexpiredTS){
+                       long oldestUnexpiredTS){
+#endif
     	return true;
     }
 
