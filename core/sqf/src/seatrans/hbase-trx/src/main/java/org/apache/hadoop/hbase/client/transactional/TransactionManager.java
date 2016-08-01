@@ -318,6 +318,7 @@ public class TransactionManager {
                   String msg = new String ("ERROR occurred while calling doCommitX coprocessor service in doCommitX for transaction: "
                               + transactionId + " participantNum " + participantNum );
                   LOG.error(msg, e);
+                  transactionState.requestPendingCountDec(true);
                   throw new DoNotRetryIOException(msg,e);
                }
                if(result.size() == 0) {
@@ -496,6 +497,7 @@ public class TransactionManager {
                } catch (ServiceException se) {
                   String msg = "ERROR occurred while calling doCommitX coprocessor service in doCommitX";
                   LOG.error(msg + ":", se);
+                  transactionState.requestPendingCountDec(true);
                   throw new DoNotRetryIOException(msg, se);
                } catch (Throwable e) {
                   String msg = "ERROR occurred while calling doCommitX coprocessor service in doCommitX";
@@ -962,6 +964,7 @@ public class TransactionManager {
               } catch (Throwable t) {
                   String msg = "ERROR occurred while calling doAbortX coprocessor service";
                   LOG.error(msg,  t);
+                  transactionState.requestPendingCountDec(true);
                   throw new DoNotRetryIOException(msg, t);
               }
               
@@ -1075,6 +1078,7 @@ public class TransactionManager {
               } catch (Throwable e) {
                   String msg = "ERROR occurred while calling doAbortX coprocessor service";
                   LOG.error(msg + ":",  e);
+                  transactionState.requestPendingCountDec(true);
                   throw new DoNotRetryIOException(msg,e);
               }
 
@@ -2410,6 +2414,8 @@ public class TransactionManager {
         // all requests sent at this point, can record the count
         transactionState.completeSendInvoke(loopCount);
     }
+         
+        CommitUnsuccessfulException savedCue = null;
 
         //if DDL is involved with this transaction, need to unwind it.
         if(transactionState.hasDDLTx())
@@ -2428,10 +2434,12 @@ public class TransactionManager {
               catch (CommitUnsuccessfulException cue) {
                  loopExit = true;
                  LOG.error("Exception at the time of aborting DDL transaction", cue); 
-                 throw new UnsuccessfulDDLException(cue); 
+                 savedCue = cue;
               }
             } while (loopExit == false);
             abortDDL(transactionState);
+            if (savedCue != null)
+               throw savedCue; 
         }
 
         if(LOG.isTraceEnabled()) LOG.trace("Abort -- EXIT txID: " + transactionState.getTransactionId());
