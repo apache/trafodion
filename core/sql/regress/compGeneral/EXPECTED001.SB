@@ -144,8 +144,8 @@ ENO          ENAME                 DNO
 +> intersect  all
 +>select eno, ename, dno from t022;
 
- *** ERROR[3022] The INTERSECT ALL operator is not yet supported.
- *** ERROR[8822] The statement was not prepared.
+*** ERROR[3022] The INTERSECT ALL operator is not yet supported.
+*** ERROR[8822] The statement was not prepared.
 >>
 >>select eno, ename, dno from t021 where dno >10
 +> intersect
