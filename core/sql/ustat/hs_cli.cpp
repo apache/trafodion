@@ -50,6 +50,7 @@
 #include "CharType.h"
 #include "DatetimeType.h"
 #include "IntervalType.h"
+#include "MiscType.h"
 #include "Int64.h"
 #include "cli_stdh.h"
 #include "sql_id.h"
@@ -3374,6 +3375,10 @@ Lng32 HSCursor::buildNAType()
                             );
 
 	  break;
+
+        case REC_BOOLEAN:
+          type = new(heap_) SQLBooleanNative(nullflag,heap_);
+          break;
 
         default:
           HSFuncMergeDiags(- UERR_UNSUPPORTED_DATATYPE);
