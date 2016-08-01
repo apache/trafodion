@@ -33,7 +33,11 @@ source $TRAF_CONFIG
 function majorErrorFound {
    if [[ "$errorFound" == "1" ]]; then
       cat $ERROR_LOG
+      echo
+      echo
+      echo "******************************************"
       cat /etc/trafodion/trafodion_config
+      echo "******************************************"
       echo
       exit -1
    fi
@@ -206,6 +210,21 @@ else
    do
       MY_NODES="$MY_NODES -w $node"
    done
+
+   if [[ "$ELASTICITY_ENABLED" == "Y" ]]; then
+      node_id="0"
+      TRAF_EXCLUDE_LIST=""
+      while [[ "$node_id" -lt "$NUM_ELASTIC_NODES" ]]
+      do
+          TRAF_EXCLUDE_LIST="$TRAF_EXCLUDE_LIST extranode$node_id"
+          ((node_id++))
+      done
+
+      sudo chmod 777 $TRAF_CONFIG
+      sed -i '/TRAF_EXCLUDE_LIST\=/d' $TRAF_CONFIG
+      echo "export TRAF_EXCLUDE_LIST=\"$TRAF_EXCLUDE_LIST\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG
+   fi
 
    sudo chmod 777 $TRAF_CONFIG
    sed -i '/MY_NODES\=/d' $TRAF_CONFIG

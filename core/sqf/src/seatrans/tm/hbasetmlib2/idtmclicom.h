@@ -68,6 +68,7 @@ static int do_link(SB_Phandle_Type *pp_phandle,
                    long             pv_rep_tag,
                    size_t           pv_rep_len) {
     bool          lv_break_done;
+    bool          lv_wait_done;
     int           lv_ferr;
     int           lv_lerr;
     int           lv_msgid;
@@ -102,77 +103,95 @@ static int do_link(SB_Phandle_Type *pp_phandle,
                              0,                           // xmitclass
                              BMSG_LINK_LDONEQ);           // linkopts
         if (lv_ferr == XZFIL_ERR_OK) {
-            lv_timeout_tics = pv_timeout / 10; // ms -> tics
+        	if (pv_timeout == -1){
+               lv_timeout_tics = pv_timeout; // no timeout
+        	}
+        	else{
+               lv_timeout_tics = pv_timeout / 10; // ms -> tics
+        	}
             lv_break_done = false;
-            lv_lerr = XWAIT(LDONE, lv_timeout_tics);
-            if (lv_lerr & LDONE) {
-                lv_lerr = BMSG_LISTEN_((short *) &lv_sre,    // sre
-                                       BLISTEN_ALLOW_LDONEM, // listenopts
-                                       0);                   // listenertag
-                if (lv_lerr == XSRETYPE_LDONE) {
-                    if (lv_sre.sre_linkTag != (SB_Tag_Type) pp_req) {
-                        if (gv_verbose)
-                            printf("cli: BMSG_LISTEN_ tag=0x%lx, expected tag=0x%lx\n",
-                                   lv_sre.sre_linkTag, (SB_Tag_Type) pp_req);
-                        assert(lv_sre.sre_linkTag == (SB_Tag_Type) pp_req);
-                    }
-                    lv_break_done = true;
-                    lv_ferr = BMSG_BREAK_(lv_msgid,
-                                          lv_results.u.s,
-                                          pp_phandle);
-                    if (gv_verbose)
-                        printf("cli: BMSG_BREAK_ ferr=%d\n", lv_ferr);
-                    switch (lv_ferr) {
-                    case XZFIL_ERR_PATHDOWN:
+            lv_wait_done = false;
+            do {
+               lv_lerr = XWAIT(LDONE, lv_timeout_tics);
+               if (gv_verbose)
+                   printf("cli: XWAIT ret=%d\n", lv_lerr);
+               if (lv_lerr & LDONE) {
+                  lv_lerr = BMSG_LISTEN_((short *) &lv_sre,    // sre
+                                         BLISTEN_ALLOW_LDONEM, // listenopts
+                                         0);                   // listenertag
+                  if (lv_lerr == XSRETYPE_LDONE) {
+                     if (lv_sre.sre_linkTag != (SB_Tag_Type) pp_req) {
+                         if (gv_verbose)
+                             printf("cli: BMSG_LISTEN_ tag=0x%lx, expected tag=0x%lx\n",
+                                    lv_sre.sre_linkTag, (SB_Tag_Type) pp_req);
+                         assert(lv_sre.sre_linkTag == (SB_Tag_Type) pp_req);
+                     }
+                     lv_break_done = true;
+                     lv_wait_done = true;
+                     lv_ferr = BMSG_BREAK_(lv_msgid,
+                                           lv_results.u.s,
+                                           pp_phandle);
+                     if (gv_verbose)
+                         printf("cli: BMSG_BREAK_ ferr=%d\n", lv_ferr);
+                     switch (lv_ferr) {
+                     case XZFIL_ERR_PATHDOWN:
                         if (gv_verbose)
                             printf("cli: sleeping\n");
                         sleep(1);
                         lv_relink = true;
                         break;
-                    default:
+                     default:
                         break;
-                    }
-                } else {
-                    if (gv_verbose)
+                     }
+                  } else {
+                     if (gv_verbose)
                         printf("cli: BMSG_LISTEN_ did not return LDONE, ret=%d\n", lv_lerr);
-                }
-            } else {
-                if (gv_verbose)
-                    printf("cli: XWAIT timedout\n");
-            }
-            if (!lv_break_done) {
-                lv_ferr = BMSG_ABANDON_(lv_msgid); // cancel
-                if (gv_verbose)
-                    printf("cli: BMSG_ABANDON_ ret=%d\n", lv_ferr);
-                lv_ferr = XZFIL_ERR_TIMEDOUT;
-            }
-            if (lv_ferr == XZFIL_ERR_OK) {
-                if (pp_rep->iv_rep_type != pv_rep_type) {
-                    if (gv_verbose)
-                        printf("cli: rep-type=%d, expecting rep-type=%d, SETTING FSERR\n",
-                               pp_rep->iv_rep_type, pv_rep_type);
-                    lv_ferr = XZFIL_ERR_FSERR;
-                } else if (pp_rep->iv_rep_tag != pv_rep_tag) {
-                    if (gv_verbose)
+                     if (lv_lerr == BSRETYPE_NOWORK){
+                        if (gv_verbose)
+                           printf("cli: BMSG_LISTEN_ returned BSRETYPE_NOWORK, retrying XWAIT\n");
+                        continue;
+                     }
+                  }
+               } else {
+                  if (gv_verbose)
+                     printf("cli: XWAIT timedout, ret=%d\n", lv_lerr);
+                  lv_wait_done = true;
+               }
+               if (!lv_break_done) {
+                  lv_ferr = BMSG_ABANDON_(lv_msgid); // cancel
+                  if (gv_verbose)
+                      printf("cli: BMSG_ABANDON_ ret=%d\n", lv_ferr);
+                  lv_ferr = XZFIL_ERR_TIMEDOUT;
+               }
+               if (lv_ferr == XZFIL_ERR_OK) {
+                  if (pp_rep->iv_rep_type != pv_rep_type) {
+                     if (gv_verbose)
+                         printf("cli: rep-type=%d, expecting rep-type=%d, SETTING FSERR\n",
+                                pp_rep->iv_rep_type, pv_rep_type);
+                     lv_ferr = XZFIL_ERR_FSERR;
+                  } else if (pp_rep->iv_rep_tag != pv_rep_tag) {
+                     if (gv_verbose)
                         printf("cli: rep-tag=0x%lx, expecting rep-tag=0x%lx, SETTING FSERR\n",
-                               pp_rep->iv_rep_tag, pv_rep_tag);
-                    lv_ferr = XZFIL_ERR_FSERR;
-                } else if (pp_rep->iv_rep_len != (int) pv_rep_len) {
-                    if (gv_verbose)
+                                pp_rep->iv_rep_tag, pv_rep_tag);
+                     lv_ferr = XZFIL_ERR_FSERR;
+                  } else if (pp_rep->iv_rep_len != (int) pv_rep_len) {
+                     if (gv_verbose)
                         printf("cli: rep-len=%d, expecting rep-len=%d, SETTING FSERR\n",
-                               pp_rep->iv_rep_len, (int) pv_rep_len);
-                    lv_ferr = XZFIL_ERR_FSERR;
-                }
-            }
-        } else {
-           if (gv_verbose)
+                                pp_rep->iv_rep_len, (int) pv_rep_len);
+                     lv_ferr = XZFIL_ERR_FSERR;
+                  }
+               }
+            } while (! lv_wait_done);
+
+         } else {
+            if (gv_verbose)
                printf("cli: BMSG_LINK_ ret=%d\n", lv_ferr);
-        }
-    } while (lv_relink);
-    if (gv_verbose)
+         }
+     } while (lv_relink);
+     if (gv_verbose)
         printf("cli: do_link EXIT ret=%d\n", lv_ferr);
 
-    return lv_ferr;
+     return lv_ferr;
 }
 
 //
@@ -207,6 +226,9 @@ static int do_cli_id(SB_Phandle_Type *pp_phandle, int pv_timeout, long *pp_id) {
     int     lv_ferr;
     GID_Rep lv_rep;
     GID_Req lv_req;
+
+    if (gv_verbose)
+        printf("cli: get id with timeout %d\n", pv_timeout);
 
     init_req(&lv_req, GID_REQ_ID, sizeof(lv_req.u.iv_id));
     init_rep(&lv_rep);

@@ -32,6 +32,7 @@
 #include "dtm/tm_util.h"
 
 extern __thread JNIEnv* _tlp_jenv;
+extern __thread std::string *_tlp_error_msg;
 
 // This structure defines the information needed for each java method used.
 struct JavaMethodInit {
@@ -140,6 +141,7 @@ public:
   {
     return isInitialized_;
   }
+  bool getExceptionDetails(JNIEnv *jenv);
   
 protected:
   static JavaVM*   jvm_;
@@ -149,6 +151,11 @@ protected:
   bool      isHBaseCompatibilityMode_;
   int       debugPort_;
   int       debugTimeout_;
+  static jclass gThrowableClass;
+  static jclass gStackTraceClass;
+  static jmethodID gGetStackTraceMethodID;
+  static jmethodID gThrowableToStringMethodID;
+  static jmethodID gStackFrameToStringMethodID;
 };
 
 #endif

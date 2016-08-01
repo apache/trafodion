@@ -263,11 +263,14 @@ genverhdr: buildinfo
 PKG_PROD = apache-trafodion
 PKG_PHX = phoenix
 PKG_DCS = dcs
+OS_TYPE = RH
+OS_MAJOR ?=  $(shell lsb_release -rs | cut -f1 -d.)
+P_TYPE = $(shell uname -p)
 
 ifeq ($(SQ_BUILD_TYPE),release)
-  PKG_TYPE="server-$(TRAFODION_VER)-incubating"
+  PKG_TYPE="server-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}-incubating"
 else
-  PKG_TYPE="server-$(TRAFODION_VER)-debug"
+  PKG_TYPE="server-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}-debug"
 endif
 
 PKG_BIN ?= "${PKG_PROD}.bin"

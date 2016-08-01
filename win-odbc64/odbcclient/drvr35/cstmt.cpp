@@ -2157,67 +2157,64 @@ SQLRETURN CStmt::SendGetSQLCatalogs(short odbcAPI,
         m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.fkschemaNm = m_FKSchemaName;
         m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.fktableNm = m_FKTableName;
 
-        if (getODBCAppVersion() == SQL_OV_ODBC2)
-        {
-            switch (SqlType)
-            {
-                case SQL_TYPE_DATE:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = SQL_DATE;
-                    break;
-                case SQL_TYPE_TIME:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = SQL_TIME;
-                    break;
-                case SQL_TYPE_TIMESTAMP:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = SQL_TIMESTAMP;
-                    break;
-                case SQL_INTERVAL_YEAR:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -80;
-                    break;
-                case SQL_INTERVAL_MONTH:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -81;
-                    break;
-                case SQL_INTERVAL_YEAR_TO_MONTH:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -82;
-                    break;
-                case SQL_INTERVAL_DAY:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -83;
-                    break;
-                case SQL_INTERVAL_HOUR:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -84;
-                    break;
-                case SQL_INTERVAL_MINUTE:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -85;
-                    break;
-                case SQL_INTERVAL_SECOND:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -86;
-                    break;
-                case SQL_INTERVAL_DAY_TO_HOUR:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -87;
-                    break;
-                case SQL_INTERVAL_DAY_TO_MINUTE:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -88;
-                    break;
-                case SQL_INTERVAL_DAY_TO_SECOND:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -89;
-                    break;
-                case SQL_INTERVAL_HOUR_TO_MINUTE:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -90;
-                    break;
-                case SQL_INTERVAL_HOUR_TO_SECOND:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -91;
-                    break;
-                case SQL_INTERVAL_MINUTE_TO_SECOND:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -92;
-                    break;
-                default:
-                    m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = SqlType;
-                    break;
-            }
-        }
-        else
-        {
-            m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = SqlType;
-        }
+#if (ODBCVER < 0x0300)
+		switch (SqlType)
+		{
+		case SQL_TYPE_DATE:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = SQL_DATE;
+			break;
+		case SQL_TYPE_TIME:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = SQL_TIME;
+			break;
+		case SQL_TYPE_TIMESTAMP:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = SQL_TIMESTAMP;
+			break;
+		case SQL_INTERVAL_YEAR:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -80;
+			break;
+		case SQL_INTERVAL_MONTH:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -81;
+			break;
+		case SQL_INTERVAL_YEAR_TO_MONTH:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -82;
+			break;
+		case SQL_INTERVAL_DAY:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -83;
+			break;
+		case SQL_INTERVAL_HOUR:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -84;
+			break;
+		case SQL_INTERVAL_MINUTE:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -85;
+			break;
+		case SQL_INTERVAL_SECOND:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -86;
+			break;
+		case SQL_INTERVAL_DAY_TO_HOUR:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -87;
+			break;
+		case SQL_INTERVAL_DAY_TO_MINUTE:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -88;
+			break;
+		case SQL_INTERVAL_DAY_TO_SECOND:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -89;
+			break;
+		case SQL_INTERVAL_HOUR_TO_MINUTE:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -90;
+			break;
+		case SQL_INTERVAL_HOUR_TO_SECOND:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -91;
+			break;
+		case SQL_INTERVAL_MINUTE_TO_SECOND:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = -92;
+			break;
+		default:
+			m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = SqlType;
+			break;
+		}
+#else
+		m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.sqlType = SqlType;
+#endif
         m_SrvrCallContext.u.getSQLCatalogsParams.catalogAPIParams.metadataId = m_MetadataId;
         m_SrvrCallContext.u.getSQLCatalogsParams.stmtLabel = m_StmtLabel;
         m_SrvrCallContext.odbcAPI = odbcAPI;

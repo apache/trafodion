@@ -1292,7 +1292,6 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
       lastHandledStep_ = NOT_STARTED;
 
       nextRequest_ = qparent_.down->getHeadIndex();
-
       rowsInserted_ = 0;
       step_ = INSERT_INIT;
     }
@@ -1591,7 +1590,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
                lastErrorCnd_,
                ehi_,
                LoggingFileCreated_,
-               loggingFileName_);
+               loggingFileName_, &loggingErrorDiags_);
       }
       if (pentry_down->getDiagsArea())
         pentry_down->getDiagsArea()->clear();
@@ -1651,6 +1650,18 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
       case DONE:
       case ALL_DONE:
       {
+        if (step_ == ALL_DONE && eodSeen && (loggingErrorDiags_ != NULL)) {
+	   ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+           ComDiagsArea * diagsArea = up_entry->getDiagsArea();
+           if (!diagsArea)
+            {
+              diagsArea =
+                ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
+              up_entry->setDiagsArea(diagsArea);
+            }
+            diagsArea->mergeAfter(*loggingErrorDiags_);
+            loggingErrorDiags_->clear();
+        }
  
         if (handleDone(rc, (step_ == ALL_DONE ? matches_ : 0)))
           return rc;

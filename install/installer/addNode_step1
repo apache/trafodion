@@ -1,0 +1,294 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+
+export TRAF_CONFIG="/etc/trafodion/trafodion_config"
+export NODES=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --nodes)
+            NODES=$2
+            shift
+            ;;
+        *)
+            echo "***ERROR: unknown parameter '$1'"
+            print_usage
+            exit -1
+    esac
+    shift
+done
+
+source $TRAF_CONFIG
+
+function addNewNodesConfig {
+
+source $TRAF_CONFIG
+
+MY_NEW_NODES=""
+NEW_NODES="$NODES"
+
+for node in $NODES
+do
+   MY_NEW_NODES="$MY_NEW_NODES -w $node"
+done
+
+echo $MY_NEW_NODES
+
+export PDSH_SSH_CMD="ssh -q -n %h"
+
+export TRAF_NEW_PDSH="pdsh -R exec $MY_NEW_NODES $PDSH_SSH_CMD"
+export TRAF_NEW_PDCP="pdcp -R ssh $MY_NEW_NODES"
+
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/NEW_NODES\=/d' $TRAF_CONFIG
+echo "export NEW_NODES=\"$NEW_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/MY_NEW_NODES\=/d' $TRAF_CONFIG
+echo "export MY_NEW_NODES=\"$MY_NEW_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/TRAF_NEW_PDSH\=/d' $TRAF_CONFIG
+echo "export TRAF_NEW_PDSH=\"$TRAF_NEW_PDSH\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/TRAF_NEW_PDCP\=/d' $TRAF_CONFIG
+echo "export TRAF_NEW_PDCP=\"$TRAF_NEW_PDCP\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+}
+
+function copyHBaseTrx {
+
+source $TRAF_CONFIG
+
+cp $HADOOP_PATH/hbase-trx* $PWD
+cp $HADOOP_PATH/trafodion-utility* $PWD
+
+$TRAF_NEW_PDCP $PWD/hbase-trx* $HOME
+$TRAF_NEW_PDCP $PWD/trafodion-utility* $HOME
+
+$TRAF_NEW_PDSH sudo cp $HOME/hbase-trx* $HADOOP_PATH
+$TRAF_NEW_PDSH sudo cp $HOME/trafodion-utility* $HADOOP_PATH
+
+$TRAF_NEW_PDSH sudo chmod 644 $HADOOP_PATH/hbase-trx*
+$TRAF_NEW_PDSH sudo chmod 644 $HADOOP_PATH/trafodion-utility*
+
+}
+
+function createNewNodes {
+
+source $TRAF_CONFIG
+
+for node in $NODES
+do
+  NODE_LIST="$NODE_LIST $node"
+  MY_NODES="$MY_NODES -w $node"
+  ALL_NODE_LIST="$ALL_NODE_LIST $node"
+  ALL_NODES="$ALL_NODES -w $node"
+  HADOOP_NODES="$HADOOP_NODES $node"
+  MY_HADOOP_NODES="$MY_HADOOP_NODES -w $node"
+  HDFS_NODES="$HDFS_NODES $node"
+  MY_HDFS_NODES="$MY_HDFS_NODES -w $node"
+  HBASE_NODES="$HBASE_NODES $node"
+  MY_HBASE_NODES="$MY_HBASE_NODES -w $node"
+done
+
+hadoop_node_count=$(echo $HADOOP_NODES | wc -w)
+export TRAF_PDSH="pdsh -R exec $ALL_NODES $PDSH_SSH_CMD"
+export TRAF_PDCP="pdcp -R ssh $ALL_NODES"
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/TRAF_PDSH\=/d' $TRAF_CONFIG
+echo "export TRAF_PDSH=\"$TRAF_PDSH\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/TRAF_PDCP\=/d' $TRAF_CONFIG
+echo "export TRAF_PDCP=\"$TRAF_PDCP\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/HADOOP_NODES\=/d' $TRAF_CONFIG
+echo "export HADOOP_NODES=\"$HADOOP_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/MY_HADOOP_NODES\=/d' $TRAF_CONFIG
+echo "export MY_HADOOP_NODES=\"$MY_HADOOP_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/HDFS_NODES\=/d' $TRAF_CONFIG
+echo "export HDFS_NODES=\"$HDFS_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/MY_HDFS_NODES\=/d' $TRAF_CONFIG
+echo "export MY_HDFS_NODES=\"$MY_HDFS_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/HBASE_NODES\=/d' $TRAF_CONFIG
+echo "export HBASE_NODES=\"$HBASE_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/MY_HBASE_NODES\=/d' $TRAF_CONFIG
+echo "export MY_HBASE_NODES=\"$MY_HBASE_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/ALL_NODES\=/d' $TRAF_CONFIG
+echo "export ALL_NODES=\"$ALL_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/ALL_NODE_LIST\=/d' $TRAF_CONFIG
+echo "export ALL_NODE_LIST=\"$ALL_NODE_LIST\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/MY_NODES\=/d' $TRAF_CONFIG
+echo "export MY_NODES=\"$MY_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/NODE_LIST\=/d' $TRAF_CONFIG
+echo "export NODE_LIST=\"$NODE_LIST\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/hadoop_node_count\=/d' $TRAF_CONFIG
+echo "export hadoop_node_count=\"$hadoop_node_count\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+
+}
+
+function removeNodeExclude {
+
+source $TRAF_CONFIG
+temp=""
+
+for node in $TRAF_EXCLUDE_LIST
+do
+   if [[ ! $NODES  =~ .*$node.* ]]; then
+      temp="$temp $node"
+   fi
+
+done
+excludeCount=$(echo $TRAF_EXCLUDE_LIST | wc -w)
+tempCount=$(echo $temp | wc -w)
+
+
+if [[ "$excludeCount" -eq "$tempCount" ]]; then
+#New node name
+   changeNodeName
+   NAME_CHANGE="true"
+   sudo chmod 777 $TRAF_CONFIG
+   sed -i '/NAME_CHANGE\=/d' $TRAF_CONFIG
+   echo "export NAME_CHANGE=\"$NAME_CHANGE\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+else
+   TRAF_EXCLUDE_LIST=$temp
+   sudo chmod 777 $TRAF_CONFIG
+   sed -i '/TRAF_EXCLUDE_LIST\=/d' $TRAF_CONFIG
+   echo "export TRAF_EXCLUDE_LIST=\"$TRAF_EXCLUDE_LIST\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+fi
+
+}
+
+function changeNodeName {
+
+source $TRAF_CONFIG
+
+for node in $NODES
+do
+
+   export oldNODENAME=$(echo $TRAF_EXCLUDE_LIST | head -n1 | awk '{print $1;}')
+   temp=""
+
+   for nodes in $TRAF_EXCLUDE_LIST
+   do
+       if [[ "$oldNODENAME" != $nodes ]]; then
+          temp="$temp $nodes"
+       fi
+   done 
+   export TRAF_EXCLUDE_LIST=$temp
+
+   oldToNew="$oldNODENAME $node"
+   echo
+   echo "********************************************************************"
+   echo "***VERY IMPORTANT: User must change old user name to a new user name."
+   echo "***VERY IMPORTANT: open another session and sudo su trafodion"
+   echo "***VERY IMPORTANT: sqshell -a"
+   echo "***VERY IMPORTANT: node name $oldToNew"
+   sleep 5
+   echo -n "***VERY IMPORTANT: Press any key when complete."
+   read answer  
+   echo
+   echo "********************************************************************"
+  
+   sudo sed -i -e "s/\<$oldNODENAME\>/$node/g" $SQ_ROOT/tmp/cluster.conf
+   sudo sed -i -e "s/\<$oldNODENAME\>/$node/g" $SQ_ROOT/sql/scripts/sqconfig
+   sudo rm -rf $SQ_ROOT/tmp/se*
+   sudo rm -rf $SQ_ROOT/sql/scripts/se*
+   sudo chmod 777 $TRAF_CONFIG
+   sed -i '/TRAF_EXCLUDE_LIST\=/d' $TRAF_CONFIG
+   echo "export TRAF_EXCLUDE_LIST=\"$TRAF_EXCLUDE_LIST\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+
+done
+
+}
+
+function createConfigDir {
+
+$TRAF_NEW_PDSH sudo mkdir -p /etc/trafodion
+
+}
+
+function copyConfig {
+
+source $TRAF_CONFIG
+
+cp $TRAF_CONFIG $PWD
+$TRAF_PDCP $PWD/trafodion_config $HOME
+$TRAF_PDSH sudo cp $HOME/trafodion_config /etc/trafodion/
+$TRAF_PDSH sudo chmod 777 $TRAF_CONFIG
+
+}
+
+function checkHBaseTrx {
+
+source $TRAF_CONFIG
+
+for node in $HBASE_NODES
+do
+   copiedOver=$(ssh -q -n $node sudo ls $HADOOP_PATH/hbase-trx* | wc -l)
+   if [[ $copiedOver -ne "1" ]]; then
+      echo "***ERROR: $hbase_trx_jar was not copied on $node"
+      echo "***ERROR: Please investigate why this happened"
+      echo "***ERROR: Trafodion can not start without this. EXITING..."
+      exit -1
+   fi
+done
+
+echo "***INFO: hbase-trx file copied correctly! Huzzah."
+
+}
+
+function printMessage {
+
+source $TRAF_CONFIG
+echo
+echo "***IMPORTANT: Ready to run addNode_step2"
+echo
+
+}
+
+
+#Main
+
+addNewNodesConfig
+copyHBaseTrx
+createNewNodes
+removeNodeExclude
+createConfigDir
+copyConfig
+checkHBaseTrx
+printMessage
+

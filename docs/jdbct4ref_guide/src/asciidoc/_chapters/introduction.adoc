@@ -49,5 +49,5 @@ JDBC API documentation: http://docs.oracle.com/en/java/.
 [[installation]]
 == Installation
 
-Refer to the {docs-url}/client_install/index.html[Trafodion Client Installation Guide].
+Refer to the {docs-url}/client_install/index.html[{project-name} Client Installation Guide].
 
