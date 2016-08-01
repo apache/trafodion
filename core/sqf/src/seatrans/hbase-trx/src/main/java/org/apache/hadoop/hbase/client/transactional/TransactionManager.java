@@ -54,8 +54,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.TableNotFoundException;
-import org.apache.hadoop.hbase.TableNotEnabledException;
-import org.apache.hadoop.hbase.TableNotDisabledException;
 import org.apache.hadoop.hbase.DoNotRetryIOException;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionInfo;
@@ -341,15 +339,7 @@ public class TransactionManager {
            	     ArrayList<String> dropList = new ArrayList<String>();
 		     ArrayList<String> truncateList = new ArrayList<String>();
   		     StringBuilder state = new StringBuilder ();
- 		     try {
-                        tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList, truncateList);
- 		     }
-                     catch(Exception e){
-                       LOG.error("doCommitX, exception in tmDDL getRow: " + e);
-                       if(LOG.isTraceEnabled()) LOG.trace("doCommitX, exception in tmDDL getRow:: txID: " + transactionState.getTransactionId());
-		       state.append("INVALID"); //to avoid processing further down this path.
-                     }
-                    
+                     tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList, truncateList);
                      if(state.toString().equals("VALID") && dropList.size() > 0)
                      {
                        Iterator<String> di = dropList.iterator();
@@ -1014,6 +1004,7 @@ public class TransactionManager {
               if (retryCount == RETRY_ATTEMPTS) {
                   String errMsg = "Exceeded retry attempts in doAbortX: " + retryCount;
                   LOG.error(errMsg, rte); 
+                  transactionState.requestPendingCountDec(true);
                   throw new DoNotRetryIOException(errMsg, rte);
               }
               else {
@@ -1117,6 +1108,7 @@ public class TransactionManager {
                 if (retryCount == RETRY_ATTEMPTS){
                    String errMsg = new String ("Exceeded retry attempts in doAbortX: " + retryCount + " (Not ingoring)");
                    LOG.error(errMsg);
+                   transactionState.requestPendingCountDec(true);
                    throw new RollbackUnsuccessfulException(errMsg, rte);  
                 }
                 LOG.error("doAbortX participant " + participantNum + " retrying transaction "
@@ -1430,6 +1422,7 @@ public class TransactionManager {
             if(retryCount == RETRY_ATTEMPTS){
                String errMsg = "Exceeded retry attempts in doAbortX: " + retryCount + " (not ingoring)";
                LOG.error(errMsg, rte);
+               transactionState.requestPendingCountDec(true);
                throw new RollbackUnsuccessfulException("doAbortX, Batch - coprocessor error", rte);
             }
             LOG.error("doAbortX - Batch - participant " + participantNum + " retrying transaction "
@@ -1445,10 +1438,6 @@ public class TransactionManager {
             		+ "-- location being refreshed : " + location.getRegionInfo().getRegionNameAsString()
                     + " endKey: " + Hex.encodeHexString(location.getRegionInfo().getEndKey())
                     + " for transaction: " + transactionId);
-            if(retryCount == RETRY_ATTEMPTS){
-               LOG.error("Exceeded retry attempts in doAbortX: " + retryCount + " (ingoring)");
-            }
-
            if (LOG.isWarnEnabled()) {
              LOG.warn("doAbortX - Batch - -- " + table.toString() + " location being refreshed");
              LOG.warn("doAbortX - Batch - -- lv_hri: " + lv_hri);
@@ -1456,16 +1445,16 @@ public class TransactionManager {
            }
            table.getRegionLocation(startKey, true);
 
-            if (LOG.isTraceEnabled()) LOG.trace("doAbortX - Batch - -- setting retry, count: " + retryCount);
-            refresh = false;
-            retryCount++;
-       }
+           if (LOG.isTraceEnabled()) LOG.trace("doAbortX - Batch - -- setting retry, count: " + retryCount);
+           refresh = false;
+           retryCount++;
+        }
       } while (retryCount < RETRY_ATTEMPTS && retry == true);
 
       transactionState.requestPendingCountDec(false);
       if(LOG.isTraceEnabled()) LOG.trace("doAbortX - Batch -- EXIT txID: " + transactionId);
       return 0;
-    }
+   }
   
     public Integer pushRegionEpochX(final TransactionState txState,
           final HRegionLocation location, Connection connection) throws IOException {
@@ -1602,12 +1591,7 @@ public class TransactionManager {
         if (useSSCC != null)
            TRANSACTION_ALGORITHM = (Integer.parseInt(useSSCC) == 1) ? AlgorithmType.SSCC :AlgorithmType.MVCC ;
 
-        try {
-           idServer = new IdTm(false);
-        }
-        catch (Exception e){
-           LOG.error("Exception creating new IdTm: " + e);
-        }
+        idServer = new IdTm(false);
 
         threadPool = Executors.newFixedThreadPool(intThreads);
 
@@ -1946,38 +1930,14 @@ public class TransactionManager {
             ArrayList<String> dropList = new ArrayList<String>();
             ArrayList<String> truncateList = new ArrayList<String>();
             StringBuilder state = new StringBuilder ();
-            try {
-                tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList, truncateList);
-            }
-            catch(Exception e){
-                LOG.error("exception in doPrepare getRow: " + e);
-                if(LOG.isTraceEnabled()) LOG.trace("exception in doPrepare getRow: txID: " + transactionState.getTransactionId());
-                state.append("INVALID"); //to avoid processing further down this path.
-                commitError = TransactionalReturn.COMMIT_UNSUCCESSFUL;
-            }
-
-            //Return if error at this point.
-            if(commitError != 0)
-                return commitError;
-
+            tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList, truncateList);
             if(state.toString().equals("VALID") && dropList.size() > 0)
             {
                 Iterator<String> di = dropList.iterator();
                 while (di.hasNext())
                 {
-                try {
-                        //physical drop of table from hbase.
-                        disableTable(transactionState, di.next());
-                    }
-                    catch(Exception e){
-                        if(LOG.isTraceEnabled()) LOG.trace("exception in doPrepare disableTable: txID: " + transactionState.getTransactionId());
-                        LOG.error("exception in doCommit, Step : DeleteTable: " + e);
-
-                        //Any error at this point should be considered prepareCommit as unsuccessful.
-                        //Retry logic can be added only if it is retryable error: TODO.
-                        commitError = TransactionalReturn.COMMIT_UNSUCCESSFUL;
-                        break;
-                    }
+                    //physical drop of table from hbase.
+                    disableTable(transactionState, di.next());
                 }
             }
         }
@@ -2266,7 +2226,7 @@ public class TransactionManager {
                 tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList, truncateList);
                 retry = false;
             }
-            catch(Exception e){
+            catch(IOException e){
                 LOG.error("Exception in doCommitDDL, Step: getRow. txID: " + transactionState.getTransactionId() + "Exception: " + e);
 
                 if(retryCount == RETRY_ATTEMPTS)
@@ -2290,7 +2250,7 @@ public class TransactionManager {
             }
         } while (retryCount < RETRY_ATTEMPTS && retry == true);
 
-        if(state.toString().equals("VALID") && dropList.size() > 0)
+        if (state.toString().equals("VALID") && dropList.size() > 0)
         {
             Iterator<String> di = dropList.iterator();
             while (di.hasNext())
@@ -2313,7 +2273,7 @@ public class TransactionManager {
                         if(LOG.isTraceEnabled()) LOG.trace(" TableNotFoundException exception in doCommitDDL deleteTable, Continuing: txID: " + transactionState.getTransactionId());
                         retry = false;
                     }
-                    catch(Exception e){
+                    catch(IOException e){
                         LOG.error("Fatal exception in doCommitDDL, Step : DeleteTable: TxID:" + transactionState.getTransactionId() + "Exception: " + e);
 
                         if(retryCount == RETRY_ATTEMPTS)
@@ -2350,7 +2310,7 @@ public class TransactionManager {
             tmDDL.deleteRow(transactionState.getTransactionId());
             retry = false;
         }
-        catch(Exception e)
+        catch (IOException e)
         {
             LOG.error("Fatal Exception in doCommitDDL, Step: deleteRow. txID: " + transactionState.getTransactionId() + "Exception: " + e);
 
@@ -2457,28 +2417,27 @@ public class TransactionManager {
 
             //First wait for abort requests sent to all regions is received back.
             //This TM thread gets SUSPENDED until all abort threads complete!!!
-            try{
+            boolean loopExit = false;
+            do
+            {
+              try {
                 transactionState.completeRequest();
-            }
-            catch(Exception e){
-                LOG.error("Exception in abort() completeRequest. txID: " + transactionState.getTransactionId() + "Exception: " + e);
-                //return; //Do not return here. This thread should continue servicing DDL operations.
-            }
-
-            try{
-                abortDDL(transactionState);
-            }
-            catch(Exception e){
-                LOG.error("FATAL Exception calling abortDDL for transaction: " + transactionState.getTransactionId() + "Exception: "  + e);
-                throw new UnsuccessfulDDLException(e);
-            }
+                loopExit = true; 
+              } 
+              catch (InterruptedException ie) {}
+              catch (CommitUnsuccessfulException cue) {
+                 loopExit = true;
+                 LOG.error("Exception at the time of aborting DDL transaction", cue); 
+                 throw new UnsuccessfulDDLException(cue); 
+              }
+            } while (loopExit == false);
         }
 
         if(LOG.isTraceEnabled()) LOG.trace("Abort -- EXIT txID: " + transactionState.getTransactionId());
 
     }
 
-    void abortDDL(final TransactionState transactionState) throws UnsuccessfulDDLException
+    void abortDDL(final TransactionState transactionState) throws IOException, UnsuccessfulDDLException
     {
         //if tables were created, then they need to be dropped.
         ArrayList<String> createList = new ArrayList<String>();
@@ -2495,7 +2454,7 @@ public class TransactionManager {
                 tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList, truncateList);
                 retry = false;
             }
-            catch(Exception e){
+            catch (IOException e){
                 LOG.error("Fatal Exception in abortDDL, Step: getRow. txID: " + transactionState.getTransactionId() + "Exception: " + e);
 
                 if(retryCount == RETRY_ATTEMPTS)
@@ -2538,7 +2497,7 @@ public class TransactionManager {
                         truncateTable(transactionState, tblName);
                         retry = false;
                     }
-                    catch(Exception e){
+                    catch (IOException e){
                         LOG.error("Fatal exception in abortDDL, Step : truncateTable: TxID:" + transactionState.getTransactionId() + "Exception: " + e);
 
                         if(retryCount == RETRY_ATTEMPTS)
@@ -2587,7 +2546,7 @@ public class TransactionManager {
                         if(LOG.isTraceEnabled()) LOG.trace(" TableNotFoundException exception in abortDDL deleteTable, Continuing: txID: " + transactionState.getTransactionId());
                         retry = false;
                     }
-                    catch(Exception e){
+                    catch (IOException e){
                         LOG.error("Fatal exception in abortDDL, Step : DeleteTable: TxID:" + transactionState.getTransactionId() + "Exception: " + e);
 
                         if(retryCount == RETRY_ATTEMPTS)
@@ -2627,42 +2586,7 @@ public class TransactionManager {
                 retrySleep = TM_SLEEP;
                 retry = true;
                 String tblName = di.next();
-                do
-                {
-                    try {
-                           enableTable(transactionState, tblName);
-                           retry = false;
-                    }
-                    catch(TableNotDisabledException t){
-                        //Check for TableNotDisabledException, if that is the case, no further
-                        //processing needed. This is not an error. Possible we are retrying the entire set of DDL changes
-                        //because this transaction is being redriven for some reason.
-                        if(LOG.isTraceEnabled()) LOG.trace(" TableNotDisabledException exception in abortDDL enableTable, Continuing: txID: " + transactionState.getTransactionId());
-                        retry = false;
-                    }
-                    catch(Exception e){
-                        LOG.error("Fatal exception in abortDDL, Step : enableTable: TxID:" + transactionState.getTransactionId() + "Exception: " + e);
-                        if(retryCount == RETRY_ATTEMPTS)
-                        {
-                            LOG.error("Fatal Exception in doCommitDDL, Step: DeleteTable. Raising UnsuccessfulDDLException TxID:" + transactionState.getTransactionId() );
-
-                            //Throw this exception after all retry attempts.
-                            //Throwing a new exception gets out of the loop.
-                            throw new UnsuccessfulDDLException(e);
-                        }
-
-                        retryCount++;
-                        if (retryCount < RETRY_ATTEMPTS)
-                        {
-                            try {
-                                Thread.sleep(retrySleep);
-                            } catch(InterruptedException ex) {
-                                Thread.currentThread().interrupt();
-                            }
-                            retrySleep += TM_SLEEP_INCR;
-                        }
-                    }
-                }while(retryCount < RETRY_ATTEMPTS && retry == true);
+                enableTable(transactionState, tblName);
             }//while
         }
 
@@ -2676,14 +2600,13 @@ public class TransactionManager {
                 tmDDL.deleteRow(transactionState.getTransactionId());
                 retry = false;
             }
-            catch(Exception e)
+            catch (IOException e)
             {
                 LOG.error("Fatal Exception in abortDDL, Step: deleteRow. txID: " + transactionState.getTransactionId() + "Exception: " + e);
 
                 if(retryCount == RETRY_ATTEMPTS)
                 {
                     LOG.error("Fatal Exception in abortDDL, Step: deleteRow. Raising UnsuccessfulDDLException. txID: " + transactionState.getTransactionId());
-
                     //Throw this exception after all retry attempts.
                     //Throwing a new exception gets out of the loop.
                     throw new UnsuccessfulDDLException(e);
@@ -3069,14 +2992,7 @@ public class TransactionManager {
     public void deleteTable(final TransactionState transactionState, final String tblName)
             throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("deleteTable ENTRY, TxId: " + transactionState.getTransactionId() + " tableName " + tblName);
-        try{
-            disableTable(transactionState, tblName);
-        }
-        catch (TableNotEnabledException e) {
-            //If table is not enabled, no need to throw exception. Continue.
-            //if (LOG.isTraceEnabled()) LOG.trace("deleteTable , TableNotEnabledException. This is a expected exception.  Step: disableTable, TxId: " +
-            //    transactionState.getTransactionId() + " TableName " + tblName + "Exception: " + e);
-        }
+        disableTable(transactionState, tblName);
         Admin admin = connection.getAdmin();
         admin.deleteTable(TableName.valueOf(tblName));
         admin.close();
@@ -3087,7 +3003,9 @@ public class TransactionManager {
             throws IOException{
         if (LOG.isTraceEnabled()) LOG.trace("enableTable ENTRY, TxID: " + transactionState.getTransactionId() + " tableName " + tblName);
         Admin admin = connection.getAdmin();
-        admin.enableTable(TableName.valueOf(tblName));
+        TableName tableName = TableName.valueOf(tblName);
+        if (admin.isTableDisabled(tableName))
+           admin.enableTable(TableName.valueOf(tblName));
         admin.close();
     }
 
@@ -3101,7 +3019,8 @@ public class TransactionManager {
             HTableDescriptor hdesc = admin.getTableDescriptor(tableName);
 
             // To be changed in 2.0 for truncate table
-            admin.disableTable(tableName);
+            if (admin.isTableEnabled(tableName))
+               admin.disableTable(tableName);
             admin.deleteTable(tableName);
             admin.createTable(hdesc);
             admin.close();
@@ -3112,7 +3031,9 @@ public class TransactionManager {
             throws IOException{
         if (LOG.isTraceEnabled()) LOG.trace("disableTable ENTRY, TxID: " + transactionState.getTransactionId() + " tableName " + tblName);
             Admin admin = connection.getAdmin();
-            admin.disableTable(TableName.valueOf(tblName));
+            TableName tableName = TableName.valueOf(tblName);
+            if (admin.isTableEnabled(tableName))
+               admin.disableTable(tableName);
             admin.close();
         if (LOG.isTraceEnabled()) LOG.trace("disableTable EXIT, TxID: " + transactionState.getTransactionId() + " tableName " + tblName);
     }
@@ -3129,35 +3050,7 @@ public class TransactionManager {
         HRegionInfo regionInfo = null;
         HTable table = null;
 
-        /*
-         * hostname and port no longer needed for RPC
-        final byte [] delimiter = ",".getBytes();
-        String[] result = hostnamePort.split(new String(delimiter), 3);
-
-        if (result.length < 2)
-                throw new IllegalArgumentException("Region array format is incorrect");
-
-        String hostname = result[0];
-        int port = Integer.parseInt(result[1]);
-        LOG.debug("recoveryRequest regionInfo -- hostname:" + hostname + " port:" + port);
-        */
-
-        /*
-         *  New way of parsing HRegionInfo used instead
-        ByteArrayInputStream lv_bis = new ByteArrayInputStream(regionArray);
-        DataInputStream lv_dis = new DataInputStream(lv_bis);
-        try {
-                regionInfo.readFields(lv_dis);
-        } catch (Exception e) {
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                e.printStackTrace(pw);
-                LOG.error("recoveryRequest exception in regionInfo.readFields() " + sw.toString());
-                throw new Exception();
-        }
-        */
-
-            regionInfo = HRegionInfo.parseFrom(regionArray);
+        regionInfo = HRegionInfo.parseFrom(regionArray);
 
         final String regionName = regionInfo.getRegionNameAsString();
         final int tmID = tmid;

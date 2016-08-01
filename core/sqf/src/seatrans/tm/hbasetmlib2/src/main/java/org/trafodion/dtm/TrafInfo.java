@@ -138,7 +138,7 @@ public class TrafInfo {
                     }
                 }
 
-            } catch(Exception e) {
+            } catch(IOException e) {
                 System.out.println("ERROR: Unable to get region info, Exiting");
                 e.printStackTrace();
                 System.exit(1);

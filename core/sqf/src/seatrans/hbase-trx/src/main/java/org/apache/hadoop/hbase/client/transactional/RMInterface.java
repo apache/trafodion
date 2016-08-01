@@ -131,13 +131,7 @@ public class RMInterface {
         {
             ttable = new SsccTransactionalTable( Bytes.toBytes(tableName), connection);
         }
-
-        try {
-           idServer = new IdTm(false);
-        }
-        catch (Exception e){
-           LOG.error("RMInterface: Exception creating new IdTm: " + e);
-        }
+        idServer = new IdTm(false);
         if (LOG.isTraceEnabled()) LOG.trace("RMInterface constructor exit");
     }
 
