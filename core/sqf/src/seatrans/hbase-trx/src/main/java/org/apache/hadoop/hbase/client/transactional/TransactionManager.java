@@ -2431,6 +2431,7 @@ public class TransactionManager {
                  throw new UnsuccessfulDDLException(cue); 
               }
             } while (loopExit == false);
+            abortDDL(transactionState);
         }
 
         if(LOG.isTraceEnabled()) LOG.trace("Abort -- EXIT txID: " + transactionState.getTransactionId());
@@ -2476,11 +2477,11 @@ public class TransactionManager {
                     retrySleep += TM_SLEEP_INCR;
                 }
             }
-        }while (retryCount < RETRY_ATTEMPTS && retry == true);
+        } while (retryCount < RETRY_ATTEMPTS && retry == true);
 
         // if tables were recorded to be truncated on an upsert using load,
         // then they will be truncated on an abort transaction
-        if(state.toString().equals("VALID") && truncateList.size() > 0)
+        if (state.toString().equals("VALID") && truncateList.size() > 0)
         {
             if(LOG.isTraceEnabled()) LOG.trace("truncateList -- ENTRY txID: " + transactionState.getTransactionId());
 
