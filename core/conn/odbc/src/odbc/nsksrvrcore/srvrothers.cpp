@@ -4945,16 +4945,16 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                     "cast('%s' as varchar(128)) TABLE_CAT, "
                     "cast(trim(ob.SCHEMA_NAME) as varchar(128)) TABLE_SCHEM, "
                     "cast(trim(ob.OBJECT_NAME) as varchar(128)) TABLE_NAME, "
-                    "cast(0 as smallint) NON_UNIQUE, " // not support
-                    "cast('' as varchar(128)) INDEX_QUALIFIER, " // not support
-                    "cast('' as varchar(128)) INDEX_NAME, "
-                    "cast(0 as smallint) TYPE, " // not support
-                    "cast(co.column_number as smallint) ORDINAL_POSITION, "
+                    "cast(NULL as smallint) NON_UNIQUE, " // return NULL if TYPE is SQL_TABLE_STAT
+                    "cast(NULL as varchar(128)) INDEX_QUALIFIER, " // return NULL if TYPE is SQL_TABLE_STAT
+                    "cast(NULL as varchar(128)) INDEX_NAME, " // return NULL if TYPE is SQL_TABLE_STAT
+                    "cast(0 as smallint) TYPE, " // TYPE is SQL_TABLE_STAT
+                    "cast(NULL as smallint) ORDINAL_POSITION, " // return NULL if TYPE is SQL_TABLE_STAT
                     "cast(trim(co.COLUMN_NAME) as varchar(128)) COLUMN_NAME, "
-                    "cast('' as char(1)) ASC_OR_DES, "
-                    "cast(sb.rowcount as integer) CARDINALITY, "
-                    "cast(0 as integer) PAGES, " // not support
-                    "cast('' as varchar(128)) FILTER_CONDITION " // not support
+                    "cast(NULL as char(1)) ASC_OR_DESC, " // return NULL if TYPE is SQL_TABLE_STAT
+                    "cast(sb.rowcount as integer) CARDINALITY, " // number of rows
+                    "cast(NULL as integer) PAGES, " // not support
+                    "cast(NULL as varchar(128)) FILTER_CONDITION " // not support
                     "from "
                     "TRAFODION.\"_MD_\".OBJECTS ob, "
                     "TRAFODION.\"_MD_\".COLUMNS co, "
@@ -4971,18 +4971,18 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                     "union "
                     "select "
                     "cast('%s' as varchar(128)) TABLE_CAT, "
-                    "cast(trim(ob.SCHEMA_NAME) as varchar(128)) TABLE_SCHEM, "
-                    "cast(trim(ob.OBJECT_NAME) as varchar(128)) TABLE_NAME, "
+                    "cast(trim(ob_table.SCHEMA_NAME) as varchar(128)) TABLE_SCHEM, "
+                    "cast(trim(ob_table.OBJECT_NAME) as varchar(128)) TABLE_NAME, "
                     "cast(idx.is_unique as smallint) NON_UNIQUE, "
-                    "cast('' as varchar(128)) INDEX_QUALIFIER, "
-                    "cast(trim(ob_table.OBJECT_NAME) as varchar(128)) INDEX_NAME, "
-                    "cast(3 as smallint) TYPE, "
+                    "cast(NULL as varchar(128)) INDEX_QUALIFIER, " // not support
+                    "cast(trim(ob.OBJECT_NAME) as varchar(128)) INDEX_NAME, "
+                    "cast(3 as smallint) TYPE, " // SQL_INDEX_OTHER
                     "cast(0 as smallint) ORDINAL_POSITION, "
-                    "cast('' as varchar(128)) COLUMN_NAME, "
-                    "cast('' as char(1)) ASC_OR_DES, "
-                    "cast(0 as integer) CARDINALITY, "
-                    "cast(0 as integer) PAGES, "
-                    "cast('' as varchar(128)) FILTER_CONDITION "
+                    "cast('' as varchar(128)) COLUMN_NAME, " // return an empty string if the expression cannot be determined.
+                    "cast(NULL as char(1)) ASC_OR_DESC, " // not subsequent
+                    "cast(NULL as integer) CARDINALITY, "
+                    "cast(NULL as integer) PAGES, "
+                    "cast(NULL as varchar(128)) FILTER_CONDITION "
                     "from "
                     "TRAFODION.\"_MD_\".OBJECTS ob, "
                     "TRAFODION.\"_MD_\".INDEXES idx, "
@@ -4994,14 +4994,17 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                     "and idx.BASE_TABLE_UID=ob_table.OBJECT_UID "
                     "and (ob_table.SCHEMA_NAME = '%s' or trim(ob_table.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
                     "and (ob_table.OBJECT_NAME = '%s' or trim(ob_table.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
-                    "and (ob_table.OBJECT_TYPE in ('BT', 'VI'));",
+                    "and (ob_table.OBJECT_TYPE in ('BT', 'VI')) "
+                    "%s "
+                    "ORDER BY 1, 2, 3, 7, 9, 6 ;",
                     tableParam[0],
                     inputParam[0],
                     inputParam[0], inputParam[1],
                     inputParam[2], inputParam[3],
                     tableParam[0],
                     inputParam[0], inputParam[1],
-                    inputParam[2], inputParam[3]
+                    inputParam[2], inputParam[3],
+                    uniqueness == 1 ? "" : "and idx.is_unique=1"
                     );
 
             break;
@@ -5030,6 +5033,7 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
            {
               // Temporary solution - bypass checks on metadata tables
               unsigned int savedParserFlags = 0;
+
 
               SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedParserFlags);
 
