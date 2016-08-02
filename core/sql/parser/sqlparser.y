@@ -18341,13 +18341,13 @@ non_join_query_expression : non_join_query_term
 
 /* type relx */
 non_join_query_term : non_join_query_primary
-  		    | query_term TOK_INTERSECT query_primary
+  		    | query_term TOK_INTERSECT distinct_sugar query_primary
   		      {
   			$$ = new (PARSERHEAP())
   			  RelRoot(new (PARSERHEAP())
   				  GroupByAgg(
   					     new (PARSERHEAP())
-  					     Intersect($1,$3),
+  					     Intersect($1,$4),
   					     REL_GROUPBY,
   					     new (PARSERHEAP())
   					     ColReference(new (PARSERHEAP())
@@ -18356,11 +18356,12 @@ non_join_query_term : non_join_query_primary
   		      }
   		    | query_term TOK_INTERSECT TOK_ALL query_primary
   				      {
-  					$$ = new (PARSERHEAP())
-  					  RelRoot(new (PARSERHEAP())
-  						  Intersect($1, $4));
+					*SqlParser_Diags << DgSqlCode(-3022) << DgString0("INTERSECT ALL");
+					YYERROR;
   				      }
 
+distinct_sugar: TOK_DISTINCT
+| 
 /* type relx */
 non_join_query_primary : simple_table
 	      | rel_subquery				// ## this line ...
