@@ -61,6 +61,7 @@
 #include "StmtDDLAlterTableMove.h"
 #include "StmtDDLAlterTablePartition.h"
 #include "StmtDDLAlterTableRename.h"
+#include "StmtDDLAlterTableStoredDesc.h"
 #include "StmtDDLAlterTableNamespace.h"
 #include "StmtDDLAlterTableSetConstraint.h"
 #include "StmtDDLAlterTableToggleConstraint.h"

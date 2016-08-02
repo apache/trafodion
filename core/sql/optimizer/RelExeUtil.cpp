@@ -68,6 +68,7 @@
 #include "StmtDDLPopulateIndex.h"
 #include "StmtDDLDropIndex.h"
 #include "StmtDDLAlterIndex.h"   // why don't we need StmtDDLAlterTable as well???
+#include "StmtDDLAlterSchema.h"
 #include "StmtDDLCreateDropSequence.h"
 #include "StmtDDLGrant.h"
 #include "StmtDDLRevoke.h"
@@ -156,7 +157,7 @@ RelExpr * GenericUtilExpr::bindNode(BindWA *bindWA)
 	get(&corrName.getExtendedQualNameObj());
       
       if (NOT naTable) {
-	desc_struct *tableDesc = createVirtualTableDesc();
+	TrafDesc *tableDesc = createVirtualTableDesc();
 	naTable = bindWA->getNATable(corrName, FALSE/*catmanUsages*/, tableDesc);
 	if (bindWA->errStatus())
 	  return this;
@@ -230,6 +231,7 @@ RelExpr * DDLExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->objName_ = objName_;
   result->isVolatile_ = isVolatile_;
   result->isTable_ = isTable_;
+  result->isSchema_ = isSchema_;
   result->isIndex_ = isIndex_;
   result->isMV_ = isMV_;
   result->isView_ = isView_;
@@ -3903,6 +3905,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   isHbase_ = FALSE;
   isNative_ = FALSE;
   hbaseDDLNoUserXn_ = FALSE;
+  isSchema_ = FALSE;
 
   NABoolean isSeq = FALSE;
 
@@ -3915,10 +3918,12 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   NABoolean isPrivilegeMngt = FALSE;
   NABoolean isCreateSchema = FALSE;
   NABoolean isDropSchema = FALSE;
+  NABoolean isAlterSchema = FALSE;
   NABoolean isAuth = FALSE;
   NABoolean alterAddConstr = FALSE;
   NABoolean alterDropConstr = FALSE;
   NABoolean alterRenameTable = FALSE;
+  NABoolean alterStoredDesc = FALSE;
   NABoolean alterIdentityCol = FALSE;
   NABoolean alterColDatatype = FALSE;
   NABoolean alterColRename = FALSE;
@@ -4153,12 +4158,26 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
          alterColRename = TRUE;
        else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterTableHBaseOptions())
          alterHBaseOptions = TRUE;
+       else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterTableStoredDesc())
+         alterStoredDesc = TRUE;
        else
         otherAlters = TRUE;
 
       qualObjName_ =
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLAlterTable()->
         getTableNameAsQualifiedName();
+    }
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterSchema())
+    {
+      isAlter_ = TRUE;
+      isSchema_ = TRUE;
+
+      isAlterSchema = TRUE;
+
+      qualObjName_ =
+        QualifiedName(NAString("dummy"),
+                      getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterSchema()->getSchemaNameAsQualifiedName().getSchemaName(),
+                      getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterSchema()->getSchemaNameAsQualifiedName().getCatalogName());
     }
     else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLAlterIndex())
     {
@@ -4356,11 +4375,12 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
           hbaseDDLNoUserXn_ = TRUE;
       }
 
-    if ((isCreateSchema || isDropSchema) ||
+    if ((isCreateSchema || isDropSchema || isAlterSchema) ||
         ((isTable_ || isIndex_ || isView_ || isRoutine_ || isLibrary_ || isSeq) &&
          (isCreate_ || isDrop_ || purgedataHbase_ ||
           (isAlter_ && (alterAddCol || alterDropCol || alterDisableIndex || alterEnableIndex || 
 			alterAddConstr || alterDropConstr || alterRenameTable ||
+                        alterStoredDesc ||
                         alterIdentityCol || alterColDatatype || alterColRename ||
                         alterHBaseOptions || alterLibrary || otherAlters)))))
       {

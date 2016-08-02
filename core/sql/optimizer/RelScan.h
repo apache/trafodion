@@ -872,7 +872,7 @@ public:
                          char* &hdfsHostName,
                          Int32 &hdfsPort);
   
- static desc_struct *createHbaseTableDesc(const char * table_name);
+ static TrafDesc *createHbaseTableDesc(const char * table_name);
 
   // Return a (short-lived) reference to the respective predicates
   const ValueIdList & getBeginKeyPred() const    { return beginKeyPred_; }
@@ -1273,14 +1273,14 @@ public:
   // mutators
 
   //! createVirtualTableDesc method
-  //  creates a desc_struct for the Virtual Table
-  //  virtual desc_struct *createVirtualTableDesc();
-  static desc_struct *createVirtualTableDesc(const char * name,
+  //  creates a TrafDesc for the Virtual Table
+  //  virtual TrafDesc *createVirtualTableDesc();
+  static TrafDesc *createVirtualTableDesc(const char * name,
 					     NABoolean isRW = FALSE,
 					     NABoolean isCW = FALSE, 
                                              NAArray<HbaseStr> * hbaseKeys = NULL);
 
-  static desc_struct *createVirtualTableDesc(const char * name,
+  static TrafDesc *createVirtualTableDesc(const char * name,
 					     NAList<char*> &colNameList,
 					     NAList<char*> &colValList);
 

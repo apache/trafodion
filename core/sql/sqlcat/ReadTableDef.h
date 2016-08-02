@@ -46,9 +46,6 @@
 #include "ObjectNames.h"
 #include "ComSmallDefs.h"        // added for ComDiskFileFormat enum
 
-// SQL/MX SqlCat definitions
-#include "desc.h"
-
 #include "sqlca.h"
 
 // Forward references
@@ -87,22 +84,8 @@ public:
   // destructor
   ~ReadTableDef();
 
-  void deleteTree(desc_struct * top) const;
-  void displayTree(const desc_struct * top) const;	// debugging only 
-
 private:
   void initSQLCA(NABoolean force = FALSE);
-
-  void deleteTreeMX(desc_struct * top) const;
-  void displayTreeMX(const desc_struct * top,
-                      const char * caller) const;       // debugging only
-
-  // Versioning Light: Methods for Lazy Update
-#if 0
-  void dealWithCLIError (void);
-  short lazyUpdateNeedSeparateTx (void);
-  void lazyUpdate (const ComObjectName & objectName);
-#endif //if 0
 
   // data members
   TransactionState      transactionState_;

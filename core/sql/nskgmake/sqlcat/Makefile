@@ -23,5 +23,6 @@
 
 CPPSRC := readRealArk.cpp \
 	  ReadTableDef.cpp \
+	  TrafDDLdesc.cpp \
 	  vers_libsqlcat.cpp
 

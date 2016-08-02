@@ -131,6 +131,7 @@ public:
   #define CTXTHEAP	(CmpCommon::contextHeap())
   #define STMTHEAP	(CmpCommon::statementHeap())
   #define HEAP		STMTHEAP			// the commonest case
+
   static NAMemory * contextHeap();
   static NAHeap * statementHeap();
 

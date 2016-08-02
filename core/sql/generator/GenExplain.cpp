@@ -63,6 +63,7 @@
 #include "StmtDDLCreateTable.h"
 #include "StmtDDLCreateIndex.h"
 #include "ComDistribution.h"
+#include "TrafDDLdesc.h"
 
 
 void RelExpr::addExplainPredicates(ExplainTupleMaster * explainTuple,
@@ -1350,6 +1351,21 @@ static NABoolean isInternalCQD(DefaultConstants attr)
   else
     return FALSE;
 }
+
+// explain root displays user specified cqds.
+// Some cqds are disabled or enabled in regress/tools/sbdefs during 
+// regressions run. That can cause explain plan diffs.
+// Specify those cqds in these methods so they are not displayed.
+// This method is only called during regressions run.
+static NABoolean displayDuringRegressRun(DefaultConstants attr)
+{
+  if ((attr == TRAF_READ_OBJECT_DESC) ||
+      (attr == TRAF_STORE_OBJECT_DESC))
+    return FALSE;
+  else
+    return TRUE;
+}
+
 ExplainTuple *
 RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 				ComTdb * tdb,
@@ -1357,12 +1373,14 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 {
   NAString statement;
 
+  NABoolean sqlmxRegress = (getenv("SQLMX_REGRESS") != NULL);
+
   // if regressions are running and this explain is for a DDL, then
   // do not return root specific explain info. This is done to avoid
   // differences in root explain information during regression runs 
   // on different systems.
   if ((child(0) && child(0)->castToRelExpr()->getOperatorType() == REL_DDL) &&
-      (getenv("SQLMX_REGRESS") != NULL))
+      (sqlmxRegress))
       //      (val = ActiveControlDB()->getControlSessionValue("EXPLAIN")) &&
       //      (*val == "ON"))
     {  
@@ -1576,7 +1594,8 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   for (CollIndex i = 0; i < cdb->getCQDList().entries(); i++)
   {
     ControlQueryDefault * cqd = cdb->getCQDList()[i];
-    if ((NOT isInternalCQD(cqd->getAttrEnum())) && !cqd->reset())
+    if ((NOT isInternalCQD(cqd->getAttrEnum())) && (!cqd->reset()) &&
+        (sqlmxRegress && displayDuringRegressRun(cqd->getAttrEnum())))
     {
       statement += cqd->getToken().data();
       statement += ": ";
@@ -2077,7 +2096,7 @@ const char * ExplainFunc::getVirtualTableName()
 //{ return "EXPLAIN__"; }
 {return getVirtualTableNameStr();}
 
-desc_struct * ExplainFunc::createVirtualTableDesc()
+TrafDesc * ExplainFunc::createVirtualTableDesc()
 {
   // Create a descriptor for this 'virtual' table called EXPLAIN__.
   // The table has 14 columns:
@@ -2098,20 +2117,17 @@ desc_struct * ExplainFunc::createVirtualTableDesc()
   //
   //
 
-  // readtabledef_allocate_desc() requires that HEAP (STMTHEAP) be used for new
+  // TrafAllocateDDLdesc() requires that HEAP (STMTHEAP) be used for new
 
-  desc_struct *tableDesc = readtabledef_allocate_desc(DESC_TABLE_TYPE);
+  TrafDesc *tableDesc = TrafAllocateDDLdesc(DESC_TABLE_TYPE, NULL);
   const char  *tableName = getVirtualTableName();
-  tableDesc->body.table_desc.tablename = new HEAP char[strlen(tableName)+1];
-  strcpy(tableDesc->body.table_desc.tablename, tableName);
+  tableDesc->tableDesc()->tablename = new HEAP char[strlen(tableName)+1];
+  strcpy(tableDesc->tableDesc()->tablename, tableName);
 
-  desc_struct *filesDesc = readtabledef_allocate_desc(DESC_FILES_TYPE);
-  tableDesc->body.table_desc.files_desc = filesDesc;
-  filesDesc->body.files_desc.fileorganization = KEY_SEQUENCED_FILE;
+  TrafDesc *filesDesc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
+  tableDesc->tableDesc()->files_desc = filesDesc;
 
-  tableDesc->body.table_desc.underlyingFileType = SQLMX;
-
-  desc_struct *columnDesc;
+  TrafDesc *columnDesc;
   UInt32 offset = 0;
   Int32 colnumber = ComTdbExplain::getVirtTableNumCols();
   ComTdbVirtTableColumnInfo * vtci = ComTdbExplain::getVirtTableColumnInfo();
@@ -2132,35 +2148,36 @@ desc_struct * ExplainFunc::createVirtualTableDesc()
   columnDesc = Generator::createColDescs(getVirtualTableName(),
 					 vtci, //ComTdbExplain::getVirtTableColumnInfo(),
    					 colnumber,
-					 offset);
-  columnDesc->body.columns_desc.colclass = 'S';
+					 offset, NULL);
+  columnDesc->columnsDesc()->colclass = 'S';
   //  CMPASSERT(colnumber == 14 && offset == 3492);  // Sanity check
-  tableDesc->body.table_desc.columns_desc = columnDesc;
-  tableDesc->body.table_desc.colcount = colnumber;
-  tableDesc->body.table_desc.record_length = (Lng32) offset;
+  tableDesc->tableDesc()->columns_desc = columnDesc;
+  tableDesc->tableDesc()->colcount = colnumber;
+  tableDesc->tableDesc()->record_length = (Lng32) offset;
 
+  ComUID comUID;
+  comUID.make_UID();
+  Int64 objUID = comUID.get_value();
+  tableDesc->tableDesc()->objectUID = objUID;
 
-  desc_struct *indexDesc = readtabledef_allocate_desc(DESC_INDEXES_TYPE);
-  tableDesc->body.table_desc.indexes_desc = indexDesc;
-  indexDesc->body.indexes_desc.tablename = tableDesc->body.table_desc.tablename;
-  indexDesc->body.indexes_desc.indexname = tableDesc->body.table_desc.tablename;
-  indexDesc->body.indexes_desc.ext_indexname = tableDesc->body.table_desc.tablename;
-  desc_struct *indFilesDesc = readtabledef_allocate_desc(DESC_FILES_TYPE);
-  indexDesc->body.indexes_desc.files_desc = indFilesDesc;
-  indFilesDesc->body.files_desc.fileorganization = KEY_SEQUENCED_FILE;
+  TrafDesc *indexDesc = TrafAllocateDDLdesc(DESC_INDEXES_TYPE, NULL);
+  tableDesc->tableDesc()->indexes_desc = indexDesc;
+  indexDesc->indexesDesc()->tablename = tableDesc->tableDesc()->tablename;
+  indexDesc->indexesDesc()->indexname = tableDesc->tableDesc()->tablename;
+  TrafDesc *indFilesDesc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
+  indexDesc->indexesDesc()->files_desc = indFilesDesc;
 
-  indexDesc->body.indexes_desc.keytag = 0;
-  indexDesc->body.indexes_desc.record_length = 4;
-  indexDesc->body.indexes_desc.colcount = 1;
-  indexDesc->body.indexes_desc.unique = -1;
-  indexDesc->body.indexes_desc.blocksize = 4096; // doesn't matter.
+  indexDesc->indexesDesc()->keytag = 0;
+  indexDesc->indexesDesc()->record_length = 4;
+  indexDesc->indexesDesc()->colcount = 1;
+  indexDesc->indexesDesc()->setUnique(TRUE);
+  indexDesc->indexesDesc()->blocksize = 4096; // doesn't matter.
 
-  desc_struct *keyDesc = readtabledef_allocate_desc(DESC_KEYS_TYPE);
-  indexDesc->body.indexes_desc.keys_desc = keyDesc;
-  keyDesc->body.keys_desc.indexname = indexDesc->body.indexes_desc.indexname;
-  keyDesc->body.keys_desc.keyseqnumber = 0;
-  keyDesc->body.keys_desc.tablecolnumber = 0;
-  keyDesc->body.keys_desc.ordering = 0;
+  TrafDesc *keyDesc = TrafAllocateDDLdesc(DESC_KEYS_TYPE, NULL);
+  indexDesc->indexesDesc()->keys_desc = keyDesc;
+  keyDesc->keysDesc()->keyseqnumber = 0;
+  keyDesc->keysDesc()->tablecolnumber = 0;
+  keyDesc->keysDesc()->setDescending(FALSE);
 
   return tableDesc;
 }

@@ -285,6 +285,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_COLUMN_WRONG_DEFAULT_TYPE                 = 1295
                   , CAT_COLUMN_MISMATCHED_DEFAULT_TYPES           = 1296
                   , CAT_VOLATILE_SCHEMA_PRESENT                   = 1297
+                  , CAT_UNABLE_TO_ALTER_SCHEMA                    = 1298
 
                   // Restrict and No Action referential action Messages.
                   , CAT_REF_CONSTRAINT_NO_ACTION_NOT_SUPPORTED    = 1301
