@@ -66,15 +66,22 @@ NAString * getMinMaxValue(desc_struct * column,
   if (NAColumn::createNAType(&column->body.columns_desc, NULL, type, NULL))
     return NULL;
   
-  Lng32 buflen = type->getTotalSize();
+  Lng32 buflen = type->getTotalSize(); 
   char * buf = new char[buflen]; // deleted at the end of this method
+
+  if (type->supportsSQLnullPhysical())
+  {
+      Lng32 nullHdrSize = type->getSQLnullHdrSize();
+      buf[0] = buf[1] = '\0';
+      buflen-= nullHdrSize;
+  }
 
   NABoolean nullValue = FALSE;
   if (highKey == FALSE)
     {
       // low key needed
       if (key->body.keys_desc.ordering == 0) // ascending
-	type->minRepresentableValue(buf, &buflen, 
+	type->minRepresentableValue(buf + type->getSQLnullHdrSize(), &buflen, 
 				    &minMaxValue,
 				    h) ;
       else
@@ -86,7 +93,7 @@ NAString * getMinMaxValue(desc_struct * column,
 	    }
 	  else
 	    {
-	      type->maxRepresentableValue(buf, &buflen, 
+	      type->maxRepresentableValue(buf + type->getSQLnullHdrSize(), &buflen, 
 					  &minMaxValue,
 					  h) ;
 	    }
@@ -103,12 +110,12 @@ NAString * getMinMaxValue(desc_struct * column,
 	      nullValue = TRUE;
 	    }
 	  else
-	    type->maxRepresentableValue(buf, &buflen, 
+	    type->maxRepresentableValue(buf + type->getSQLnullHdrSize(), &buflen, 
 					&minMaxValue,
 					h) ;
 	}
       else
-	type->minRepresentableValue(buf, &buflen, 
+	type->minRepresentableValue(buf + type->getSQLnullHdrSize(), &buflen, 
 				    &minMaxValue,
 				    h) ;
     }
