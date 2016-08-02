@@ -19,8 +19,6 @@
 //
 // @@@ END COPYRIGHT @@@
 
-package src.test.java.org.trafodion.jdbc_test;
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
