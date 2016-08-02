@@ -41,7 +41,6 @@
 
 #include "ItemExpr.h"
 #include "ObjectNames.h"
-#include "desc.h"
 
 // forward references
 class BindWA;
@@ -451,7 +450,7 @@ public:
 
   const QualifiedName &getDefiningTableName() const { return *defTableName_; }
 
-  void setKeyColumns(const struct constrnts_desc_struct*, CollHeap*);
+  void setKeyColumns(const struct TrafConstrntsDesc*, CollHeap*);
 
   const KeyColumns &keyColumns() const { return keyColumns_; }
 
@@ -555,7 +554,7 @@ public:
   virtual Int32 getRefConstraints(BindWA *bindWA,
 				const ColSignature &updateCols,
 				RefConstraintList &resultList);
-  void setRefConstraintsReferencingMe(const struct constrnts_desc_struct*,
+  void setRefConstraintsReferencingMe(const struct TrafConstrntsDesc*,
                                     CollHeap*, BindWA*);
   NABoolean hasRefConstraintsReferencingMe()
   { return NOT refConstraintsReferencingMe_.isEmpty() ; };

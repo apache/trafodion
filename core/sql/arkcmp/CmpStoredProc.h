@@ -47,8 +47,7 @@
 
 // for the table descriptions
 #include "enum.h"
-#include "desc.h"
-
+#include "CmpCommon.h"
 #include "Collections.h"  // for NAList
 #include "Int64.h"
 
@@ -73,6 +72,8 @@ class CmpISPDataObject; // the data object for internal stored procedure executi
 class ElemDDLColDef;
 class ItemExpr;
 class CmpMessageISPRequest;
+class TrafDesc;
+class TrafColumnsDesc;
 
 // -----------------------------------------------------------------------
 // CmpSPInputFormat class contains the definition of input data for the
@@ -133,34 +134,34 @@ public:
     );
   
   // generate the table_desc for binder, this method will create the
-  // desc_struct for the virtual table. The memory is allocated from 
+  // TrafDesc for the virtual table. The memory is allocated from 
   // sqlcat/read.C allocate routine, i.e. HEAP defined in common/CmpCommon.h
   // The memory allocated belongs to the caller, 
   // the caller should delete it accordingly.
-  desc_struct* tableDesc() { return tableDesc_; }
+  TrafDesc* tableDesc() { return tableDesc_; }
   
   NABoolean ValidTableFormat() { return !tableDesc_ ; }
 
-  // static function to convert an ElemDDLColDef into columns_desc_struct
+  // static function to convert an ElemDDLColDef into TrafColumnsDesc
   // return TRUE if success, FALSE if not.
   static NABoolean ElemDDLColDef2ColumnDescStruct(ElemDDLColDef* elemDDL,
     const char* tableName,
-    columns_desc_struct* colDesc);
+    TrafColumnsDesc* colDesc);
 
 private:
 
-  // output format is described as a table_desc_struct
-  desc_struct* tableDesc_;
+  // output format is described as TrafTableDesc
+  TrafDesc* tableDesc_;
   Lng32 nCols_;
   CmpContext* context_;
 
   // methods to pupulate column_desc from SP_FIELDDESC_STRUCT
   // return TRUE : success, FALSE : fail
   NABoolean getColumnDesc(SP_FIELDDESC_STRUCT* fDesc,
-    columns_desc_struct* colsDesc);
+    TrafColumnsDesc* colsDesc);
   
   NABoolean getKeysDesc(Lng32 nkeys, SP_KEYDESC_STRUCT* keys, 
-    desc_struct* &keysDesc);
+    TrafDesc* &keysDesc);
 
   CmpSPOutputFormat(const CmpSPOutputFormat&);
   const CmpSPOutputFormat& operator=(const CmpSPOutputFormat&);

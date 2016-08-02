@@ -68,6 +68,7 @@
 #include "ElemDDLColDefArray.h"
 #include "CmpSeabaseDDL.h"
 #include "UdfDllInteraction.h"
+#include "TrafDDLdesc.h"
 
 
 // -----------------------------------------------------------------------
@@ -951,7 +952,7 @@ NARoutine * TableMappingUDF::getRoutineMetadata(
   NARoutine *result = NULL;
   CmpSeabaseDDL cmpSBD((NAHeap *)bindWA->wHeap());
 
-  desc_struct *tmudfMetadata =
+  TrafDesc *tmudfMetadata =
     cmpSBD.getSeabaseRoutineDesc(
          routineName.getCatalogName(),
          routineName.getSchemaName(),
@@ -968,7 +969,7 @@ NARoutine * TableMappingUDF::getRoutineMetadata(
 
   ComRoutineType udfType ;
 
-  udfType = tmudfMetadata->body.routine_desc.UDRType ;
+  udfType = tmudfMetadata->routineDesc()->UDRType ;
 
   // IS req 6: Check ROUTINE_TYPE column of ROUTINES table.
   // Emit error if invalid type.
@@ -1609,7 +1610,7 @@ const NAString *ProxyFunc::getColumnHeading(ComUInt32 i) const
 
 //! ProxyFunc::populateColumnDesc method 
 void ProxyFunc::populateColumnDesc(char *tableNam,
-                                   desc_struct *&colDescs,
+                                   TrafDesc *&colDescs,
                                    Lng32 &reclen) const
 {
     ElemDDLColDefArray colArray;
@@ -1651,19 +1652,19 @@ void ProxyFunc::populateColumnDesc(char *tableNam,
                                                                   numCols) ;
 
   // calculate the record length 
-  desc_struct *tempDescs = colDescs;
+  TrafDesc *tempDescs = colDescs;
   for (ComUInt32 colNum = 0; colNum < numCols; colNum++)
   { 
     NAType *naType = getColumn(colNum).getColumnDataType();
     Int32 fsType = naType->getFSDatatype();
 
-    if (tempDescs->body.columns_desc.null_flag)
+    if (tempDescs->columnsDesc()->isNullable())
       reclen += SQL_NULL_HDR_SIZE;
     if (DFS2REC::isSQLVarChar(fsType))
       reclen += SQL_VARCHAR_HDR_SIZE;
 
-    reclen += tempDescs->body.columns_desc.length;
-    tempDescs = tempDescs->header.next;
+    reclen += tempDescs->columnsDesc()->length;
+    tempDescs = tempDescs->next;
   }
 }
 

@@ -58,7 +58,6 @@
 
 #include "ExExeUtilCli.h"
 #include "Generator.h"
-#include "desc.h"
 
 #include "ComCextdecs.h"
 #include "ComUser.h"
@@ -556,6 +555,8 @@ void CmpSeabaseDDL::createSeabaseIndex( StmtDDLCreateIndex * createIndexNode,
       return;
     }
 
+  Int64 btObjUID = naTable->objectUid().castToInt64();
+
   NAString &indexColFam = naTable->defaultColFam();
   NAString trafColFam;
   if (indexColFam != SEABASE_DEFAULT_COL_FAMILY)
@@ -859,11 +860,11 @@ void CmpSeabaseDDL::createSeabaseIndex( StmtDDLCreateIndex * createIndexNode,
   char ** encodedKeysBuffer = NULL;
   if (numSplits > 0) {
 
-    desc_struct * colDescs = 
+    TrafDesc * colDescs = 
       convertVirtTableColumnInfoArrayToDescStructs(&tableName,
                                                    colInfoArray,
                                                    totalColCount) ;
-    desc_struct * keyDescs = 
+    TrafDesc * keyDescs = 
       convertVirtTableKeyInfoArrayToDescStructs(keyInfoArray,
                                                 colInfoArray,
                                                 keyColCount) ;
@@ -1027,7 +1028,7 @@ void CmpSeabaseDDL::createSeabaseIndex( StmtDDLCreateIndex * createIndexNode,
 
   if (updateObjectRedefTime(&cliInterface,
                             btCatalogNamePart, btSchemaNamePart, btObjectNamePart,
-                            COM_BASE_TABLE_OBJECT_LIT))
+                            COM_BASE_TABLE_OBJECT_LIT, -1, btObjUID))
     {
       goto label_error_drop_index;
     }
@@ -1244,7 +1245,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
   // Create a table descriptor that contains information on both valid and
   // invalid indexes. Pass that to getNATable method which will use this
   // table desc to create the NATable struct.
-  desc_struct * tableDesc = 
+  TrafDesc * tableDesc = 
     getSeabaseTableDesc(
 		      tableName.getCatalogNamePart().getInternalName(),
 		      tableName.getSchemaNamePart().getInternalName(),
@@ -1698,7 +1699,7 @@ void CmpSeabaseDDL::dropSeabaseIndex(
 
   if (updateObjectRedefTime(&cliInterface,
                             btCatName, btSchName, btObjName,
-                            COM_BASE_TABLE_OBJECT_LIT))
+                            COM_BASE_TABLE_OBJECT_LIT, -1, btUID))
     {
       processReturn();
 
@@ -1819,10 +1820,10 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
   Int32 btObjOwner = 0;
   Int32 btSchemaOwner = 0;
   Int64 btObjectFlags = 0;
-  if ((getObjectInfo(&cliInterface,
-                     btCatName, btSchName, btObjName, 
-                     COM_BASE_TABLE_OBJECT,
-                     btObjOwner, btSchemaOwner, btObjectFlags)) < 0)
+  if ((btUID = getObjectInfo(&cliInterface,
+                             btCatName, btSchName, btObjName, 
+                             COM_BASE_TABLE_OBJECT,
+                             btObjOwner, btSchemaOwner, btObjectFlags, btUID)) < 0)
     {
       processReturn();
 
@@ -1844,6 +1845,15 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
 			   catalogNamePart, schemaNamePart, objectNamePart,
 			   COM_INDEX_OBJECT_LIT,
 			   (isDisable ? "N" : "Y")))
+    {
+      processReturn();
+
+      return;
+    }
+
+  if (updateObjectRedefTime(&cliInterface,
+                            btCatName, btSchName, btObjName,
+                            COM_BASE_TABLE_OBJECT_LIT, -1, btUID))
     {
       processReturn();
 
@@ -2145,6 +2155,16 @@ void CmpSeabaseDDL::alterSeabaseIndexHBaseOptions(
     {
       deallocEHI(ehi);
       processReturn();
+      return;
+    }
+
+  if (updateObjectRedefTime(&cliInterface,
+                            btCatName, btSchName, btObjName,
+                            COM_BASE_TABLE_OBJECT_LIT, -1, btUID))
+    {
+      deallocEHI(ehi);
+      processReturn();
+
       return;
     }
 

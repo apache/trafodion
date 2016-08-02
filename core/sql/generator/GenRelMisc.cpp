@@ -105,11 +105,13 @@
 
 #include "ComCextdecs.h"
 
+#include "TrafDDLdesc.h"
+
 #include "SqlParserGlobals.h"   // Parser Flags
 
 // this comes from GenExplain.cpp (sorry, should have a header file)
-desc_struct * createVirtExplainTableDesc();
-void deleteVirtExplainTableDesc(desc_struct *);
+TrafDesc * createVirtExplainTableDesc();
+void deleteVirtExplainTableDesc(TrafDesc *);
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -364,9 +366,9 @@ short GenericUtilExpr::codeGen(Generator * generator)
 const char * DDLExpr::getVirtualTableName()
 { return (producesOutput() ? "DDL_EXPR__" : NULL); }
 
-desc_struct *DDLExpr::createVirtualTableDesc()
+TrafDesc *DDLExpr::createVirtualTableDesc()
 {
-  desc_struct * table_desc = NULL;
+  TrafDesc * table_desc = NULL;
   if (producesOutput())
     {
       table_desc = 
@@ -1226,12 +1228,12 @@ short RelRoot::codeGen(Generator * generator)
 	}
 
       ExplainFunc explainFunc;
-      desc_struct *explainDescStruct = explainFunc.createVirtualTableDesc();
+      TrafDesc *explainDescStruct = explainFunc.createVirtualTableDesc();
 
       Space *explainSpace = generator->getFragmentDir()->
 	getSpace(generator->getExplainFragDirIndex());
 
-      table_desc_struct *tableDesc = &(explainDescStruct->body.table_desc);
+      TrafTableDesc *tableDesc = explainDescStruct->tableDesc();
 
       // Determine the length of the Explain Tuple.
       Lng32 recLength = tableDesc->record_length;
@@ -1242,21 +1244,21 @@ short RelRoot::codeGen(Generator * generator)
       explainDesc =
 	new(explainSpace) ExplainDesc(numCols, recLength, explainSpace);
 
-      desc_struct *cols = tableDesc->columns_desc;
+      TrafDesc *cols = tableDesc->columns_desc;
 
       // For each column of the Virtual Explain Table, extract the
       // relevant info. from the table desc and put it into the ExplainDesc
       for(Int32 c = 0; c < numCols; c++ /* no pun intended */)
 	{
-	  columns_desc_struct *colsDesc = &(cols->body.columns_desc);
+	  TrafColumnsDesc *colsDesc = (cols->columnsDesc());
 
 	  explainDesc->setColDescr(c,
 				   colsDesc->datatype,
 				   colsDesc->length,
 				   colsDesc->offset,
-				   colsDesc->null_flag);
+				   colsDesc->isNullable());
 
-	  cols = cols->header.next;
+	  cols = cols->next;
 	}
 
       explainFunc.deleteVirtualTableDesc(explainDescStruct);
@@ -5092,13 +5094,11 @@ short PhyPack::codeGen(Generator* generator)
 const char * TableValuedFunction::getVirtualTableName()
 { return "??TableValuedFunction??"; }
 
-desc_struct *TableValuedFunction::createVirtualTableDesc()
+TrafDesc *TableValuedFunction::createVirtualTableDesc()
 { return NULL; }
 
-void TableValuedFunction::deleteVirtualTableDesc(desc_struct *vtd)
+void TableValuedFunction::deleteVirtualTableDesc(TrafDesc *vtd)
 {
-  ReadTableDef readTableDef;
-  readTableDef.deleteTree(vtd);
 }
 
 // -----------------------------------------------------------------------
@@ -5108,9 +5108,9 @@ const char * StatisticsFunc::getVirtualTableName()
 //{ return "STATISTICS__"; }
 {return getVirtualTableNameStr();}
 
-desc_struct *StatisticsFunc::createVirtualTableDesc()
+TrafDesc *StatisticsFunc::createVirtualTableDesc()
 {
-  desc_struct * table_desc =
+  TrafDesc * table_desc =
     Generator::createVirtualTableDesc(getVirtualTableName(),
 				      ComTdbStats::getVirtTableNumCols(),
 				      ComTdbStats::getVirtTableColumnInfo(),
@@ -5272,29 +5272,22 @@ short StatisticsFunc::codeGen(Generator* generator)
 // ProxyFunc methods
 // -----------------------------------------------------------------------
 
-static const keys_desc_struct proxy_key_descs[] =
+static void initProxyKeyDescStruct(TrafKeysDesc *tgt, ComUInt32& src)
 {
-  // keys_desc_struct is defined in sqlcat/desc.h:
-  // indexname keyname keyseqnumber tablecolnumber ordering
-  {    0,          0,          1,            0,            0  }
-};
-
-static void initProxyKeyDescStruct(keys_desc_struct *tgt, ComUInt32& src)
-{
-  tgt->keyseqnumber = proxy_key_descs[src].keyseqnumber;
-  tgt->tablecolnumber = proxy_key_descs[src].tablecolnumber;
-  tgt->ordering = proxy_key_descs[src].ordering;
+  tgt->keyseqnumber = 1;
+  tgt->tablecolnumber = 0;
+  tgt->setDescending(FALSE);
 }
 
 static Lng32 createDescStructsForProxy(const ProxyFunc &proxy,
                                         char *tableName,
-                                        desc_struct *&colDescs,
-                                        desc_struct *&keyDescs)
+                                        TrafDesc *&colDescs,
+                                        TrafDesc *&keyDescs)
 {
   colDescs = NULL;
   keyDescs = NULL;
   Lng32 reclen = 0;
-  desc_struct *prev_desc = NULL;
+  TrafDesc *prev_desc = NULL;
   ComUInt32 numCols = proxy.getNumColumns();
 
   // Creates and populates column descs
@@ -5302,75 +5295,71 @@ static Lng32 createDescStructsForProxy(const ProxyFunc &proxy,
 
   // Create key descs
   prev_desc = NULL;
-  numCols = sizeof(proxy_key_descs) / sizeof(keys_desc_struct);
+  numCols = 1; 
   for (ComUInt32 keyNum = 0; keyNum < numCols; keyNum++)
   {
-    desc_struct *key_desc = readtabledef_allocate_desc(DESC_KEYS_TYPE);
+    TrafDesc *key_desc = TrafAllocateDDLdesc(DESC_KEYS_TYPE, NULL);
     if (prev_desc)
-      prev_desc->header.next = key_desc;
+      prev_desc->next = key_desc;
     else
       keyDescs = key_desc;      
     
     prev_desc = key_desc;
     
-    initProxyKeyDescStruct(&key_desc->body.keys_desc, keyNum);
+    initProxyKeyDescStruct(key_desc->keysDesc(), keyNum);
   }
   
   return reclen;
 }
 
-desc_struct *ProxyFunc::createVirtualTableDesc()
+TrafDesc *ProxyFunc::createVirtualTableDesc()
 {
-  // readtabledef_allocate_desc() requires that HEAP (STMTHEAP) 
+  // TrafAllocateDDLdesc() requires that HEAP (STMTHEAP) 
   // be used for operator new herein
 
-  desc_struct *table_desc = readtabledef_allocate_desc(DESC_TABLE_TYPE);
+  TrafDesc *table_desc = TrafAllocateDDLdesc(DESC_TABLE_TYPE, NULL);
   const char *tableName = getVirtualTableName();
-  table_desc->body.table_desc.tablename = new HEAP char[strlen(tableName)+1];
-  strcpy(table_desc->body.table_desc.tablename, tableName);
+  table_desc->tableDesc()->tablename = new HEAP char[strlen(tableName)+1];
+  strcpy(table_desc->tableDesc()->tablename, tableName);
 
-  table_desc->body.table_desc.issystemtablecode = 1;
-  table_desc->body.table_desc.underlyingFileType = SQLMX;
+  table_desc->tableDesc()->setSystemTableCode(TRUE);
 
-  desc_struct *files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
-  files_desc->body.files_desc.audit = -1; // audited table
-  files_desc->body.files_desc.fileorganization = KEY_SEQUENCED_FILE;
-  table_desc->body.table_desc.files_desc = files_desc;
+  TrafDesc *files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
+  files_desc->filesDesc()->setAudited(TRUE); // audited table
+  table_desc->tableDesc()->files_desc = files_desc;
   
-  desc_struct *cols_descs = NULL;
-  desc_struct *keys_descs = NULL;
+  TrafDesc *cols_descs = NULL;
+  TrafDesc *keys_descs = NULL;
 
-  table_desc->body.table_desc.colcount = (Int32) getNumColumns();
+  table_desc->tableDesc()->colcount = (Int32) getNumColumns();
 
-  table_desc->body.table_desc.record_length =
+  table_desc->tableDesc()->record_length =
     createDescStructsForProxy(*this,
-                                table_desc->body.table_desc.tablename,
+                                table_desc->tableDesc()->tablename,
                                 cols_descs,
                                 keys_descs);
   
-  desc_struct *index_desc = readtabledef_allocate_desc(DESC_INDEXES_TYPE);
-  index_desc->body.indexes_desc.tablename =
-    table_desc->body.table_desc.tablename;
-  index_desc->body.indexes_desc.indexname =
-    table_desc->body.table_desc.tablename;
-  index_desc->body.indexes_desc.keytag = 0; // primary index
-  index_desc->body.indexes_desc.record_length =
-    table_desc->body.table_desc.record_length;
-  index_desc->body.indexes_desc.colcount =
-    table_desc->body.table_desc.colcount;
-  index_desc->body.indexes_desc.isVerticalPartition = 0;
-  index_desc->body.indexes_desc.blocksize = 4096; // doesn't matter.
+  TrafDesc *index_desc = TrafAllocateDDLdesc(DESC_INDEXES_TYPE, NULL);
+  index_desc->indexesDesc()->tablename =
+    table_desc->tableDesc()->tablename;
+  index_desc->indexesDesc()->indexname =
+    table_desc->tableDesc()->tablename;
+  index_desc->indexesDesc()->keytag = 0; // primary index
+  index_desc->indexesDesc()->record_length =
+    table_desc->tableDesc()->record_length;
+  index_desc->indexesDesc()->colcount =
+    table_desc->tableDesc()->colcount;
+  index_desc->indexesDesc()->blocksize = 4096; // doesn't matter.
 
   // cannot simply point to same files desc as the table one,
   // because then ReadTableDef::deleteTree frees same memory twice (error)
-  desc_struct *i_files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
-  i_files_desc->body.files_desc.audit = -1; // audited table
-  i_files_desc->body.files_desc.fileorganization = KEY_SEQUENCED_FILE;
-  index_desc->body.indexes_desc.files_desc = i_files_desc;
+  TrafDesc *i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
+  i_files_desc->filesDesc()->setAudited(TRUE); // audited table
+  index_desc->indexesDesc()->files_desc = i_files_desc;
 
-  index_desc->body.indexes_desc.keys_desc  = keys_descs;
-  table_desc->body.table_desc.columns_desc = cols_descs;
-  table_desc->body.table_desc.indexes_desc = index_desc;
+  index_desc->indexesDesc()->keys_desc  = keys_descs;
+  table_desc->tableDesc()->columns_desc = cols_descs;
+  table_desc->tableDesc()->indexes_desc = index_desc;
  
   return table_desc;
 }
