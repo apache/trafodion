@@ -428,14 +428,7 @@ public class HBaseTxClient {
 
       try {
          trxManager.abort(ts);
-      } catch(IOException e) {
-          synchronized(mapLock) {
-             mapTransactionStates.remove(transactionID);
-          }
-          LOG.error("Returning from HBaseTxClient:abortTransaction, txid: " + transactionID + " retval: EXCEPTION", e);
-          return TransReturnCode.RET_EXCEPTION.getShort();
-      }
-      catch (UnsuccessfulDDLException ddle) {
+      } catch (UnsuccessfulDDLException ddle) {
           LOG.error("FATAL DDL Exception from HBaseTxClient:abort, WAITING INDEFINETLY !! retval: " + TransReturnCode.RET_EXCEPTION.toString() + " UnsuccessfulDDLException" + " txid: " + transactionID, ddle);
 
           //Reaching here means several attempts to perform the DDL operation has failed in abort phase.
@@ -460,7 +453,15 @@ public class HBaseTxClient {
              } while (loopBack);
           }
           return TransReturnCode.RET_EXCEPTION.getShort();
+      } 
+      catch(IOException e) {
+          synchronized(mapLock) {
+             mapTransactionStates.remove(transactionID);
+          }
+          LOG.error("Returning from HBaseTxClient:abortTransaction, txid: " + transactionID + " retval: EXCEPTION", e);
+          return TransReturnCode.RET_EXCEPTION.getShort();
       }
+
       if (useTlog && useForgotten) {
          if (forceForgotten) {
             tLog.putSingleRecord(transactionID, -1, "FORGOTTEN", null, true);
