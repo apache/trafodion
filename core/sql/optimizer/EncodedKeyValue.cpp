@@ -66,7 +66,7 @@ NAString * getMinMaxValue(desc_struct * column,
   if (NAColumn::createNAType(&column->body.columns_desc, NULL, type, NULL))
     return NULL;
   
-  Lng32 buflen = type->getTotalSize() - type->getSQLnullHdrSize();
+  Lng32 buflen = type->getTotalSize(); 
   char * buf = new char[buflen]; // deleted at the end of this method
 
   if (type->supportsSQLnullPhysical())
