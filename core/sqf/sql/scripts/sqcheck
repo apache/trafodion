@@ -199,8 +199,6 @@ declare -i cfg_rms_cnt
 declare -i cfg_mxo_cnt
 declare -i cfg_lnode_cnt
 declare -i cfg_pnode_cnt
-declare -i exc_lnode_cnt
-declare -i exc_pnode_cnt
 
 let act_dtm_cnt=0
 let act_rms_cnt=0
@@ -212,8 +210,6 @@ let act_lnode_up_cnt=0
 let act_pnode_up_cnt=0
 let cfg_lnode_cnt=0
 let cfg_pnode_cnt=0
-let exc_lnode_cnt=0
-let exc_pnode_cnt=0
 
 let cfg_mxo_cnt=0
 let act_mxo_down_cnt=0
@@ -259,14 +255,6 @@ for pnodedn in `cat $sq_tmp_pnode_dn`; do
     let ++act_pnode_down_cnt
 done
 
-### EXCLUDED NODEs (assumes 1:1 logical node to physical node mapping)
-sq_exc_node=`mktemp -t`
-echo $TRAF_EXCLUDE_LIST > $sq_exc_node
-for enode in `cat $sq_exc_node`; do
-    let ++exc_lnode_cnt
-    let ++exc_pnode_cnt
-done
-
 if [ $act_lnode_up_cnt '>' 0 ]; then
     cfg_lnode_cnt=(act_lnode_up_cnt+act_lnode_down_cnt)
     cfg_pnode_cnt=(act_pnode_up_cnt+act_pnode_down_cnt)
@@ -277,7 +265,6 @@ rm -f $sq_tmp_pnode_up
 rm -f $sq_tmp_lnode_dn
 rm -f $sq_tmp_pnode_dn
 rm -f $sq_tmp_node_info
-rm -f $sq_exc_node
 
 ### CONFIGURED DTMs (based on logical nodes configured)
 let cfg_dtm_cnt=cfg_lnode_cnt

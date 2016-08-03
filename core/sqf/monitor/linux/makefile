@@ -289,7 +289,7 @@ ALLOBJS += $(CONFOBJS)
 ALLOBJS += $(MEMLOGOBJS)
 ALLOBJS += $(RTSIGBLOCK_OBJS)
 
-PGMS = $(BINEXPDIR)/monitor $(BINEXPDIR)/shell $(BINEXPDIR)/sqwatchdog $(BINEXPDIR)/monmemlog
+PGMS = $(BINEXPDIR)/monitor $(BINEXPDIR)/shell $(BINEXPDIR)/sqwatchdog $(BINEXPDIR)/monmemlog $(BINEXPDIR)/trafconf
 PGMS +=  $(BINEXPDIR)/pstartd
 PGMS +=  $(LIBEXPDIR)/libseabasesig.so
 
@@ -410,7 +410,21 @@ CONFOBJS = $(OUTDIR)/testconf.o \
 	$(OUTDIR)/pnodeconfig.o \
 	$(OUTDIR)/persistconfig.o
 
+TCONFOBJS = $(OUTDIR)/trafconf.o \
+	$(OUTDIR)/clusterconf.o \
+	$(OUTDIR)/lnodeconfig.o \
+	$(OUTDIR)/pnodeconfig.o \
+	$(OUTDIR)/persistconfig.o
+
 $(OUTDIR)/testconf : $(CONFOBJS) $(TRACE_LOG_OBJS)
+	@echo 'Building target: $@'
+	@echo 'Invoking: Linker'
+	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $^
+	@echo 'Finished building target: $@'
+	@echo ' '
+
+$(BINEXPDIR)/trafconf : $(TCONFOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^

@@ -437,6 +437,7 @@ sub processNodes {
     my $bNodeSpecified = 0;
 
     while (<SRC>) {
+        next if (/^$/);
         next if (/^#/);
         if (/^_virtualnodes/) {
             @words=split(' ',$_);

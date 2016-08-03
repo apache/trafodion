@@ -70,57 +70,20 @@ sub processFloatingIp {
 sub processNodes {
     printScript($_);
     while (<SRC>) {
-        if (/^#/) {
+        if (/^#/) { # comment
             printScript($_);
         } elsif (/^_virtualnodes/) {
             $bVirtualNodes=1;
             $bGen=0;
             printScript($_);
             print "Warning - virtual nodes cannot be regenerated - sqconfig NOT changed.\n";
-        }
-        elsif (/^end node/) {
+        } elsif (/^end node/) {
             if (!$bVirtualNodes) {
-                my @row = sqconfigdb::listNodes();
-                for (my $i = 0; $i <= $#row; $i+=7) {
-                    $nodesAdded++;
-                    my $pnid = $row[$i+0];
-                    my $lnid = $row[$i+1];
-                    my $nodeName = $row[$i+2];
-                    my $firstCore = $row[$i+3];
-                    my $lastCore = $row[$i+4];
-                    my $processors = $row[$i+5];
-                    my $rolesData = $row[$i+6];
-                    my $roles = '';
-                    if ($rolesData & 0x001) {
-                        if ($roles ne '') {
-                            $roles = $roles . ",";
-                        }
-                        $roles = $roles . "connection";
-                    }
-                    if ($rolesData & 0x002) {
-                        if ($roles ne '') {
-                            $roles = $roles . ",";
-                        }
-                        $roles = $roles . "aggregation";
-                    }
-                    if ($rolesData & 0x004) {
-                        if ($roles ne '') {
-                            $roles = $roles . ",";
-                        }
-                        $roles = $roles . "storage";
-                    }
-                    my $str = "node-id=$pnid;node-name=$nodeName;cores=$firstCore-$lastCore;processors=$processors;roles=$roles\n";
-                    printScript($str);
-                }
+                my $node_section = readpipe("trafconf -node");
+                printScript($node_section);
             }
             printScript($_);
             return;
-        }
-        else {
-            if (/^\s*node-id.*/) {
-                $nodesRemoved++;
-            }
-            # don't print this
         }
     }
 }
@@ -128,8 +91,12 @@ sub processNodes {
 sub processPersist {
     printScript($_);
     while (<SRC>) {
-        printScript($_);
-        if (/^end persist/) {
+        if (/^#/) { # comment
+            printScript($_);
+        } elsif (/^end persist/) {
+            my $persist_section = readpipe("trafconf -persist");
+            printScript($persist_section);
+            printScript($_);
             return;
         }
     }
@@ -150,7 +117,7 @@ sub endGame {
         close(SRC);
         close(TMP);
 
-        print "Re-Generated (removed nodes=$nodesRemoved, added nodes=$nodesAdded) configuration file: $infile\n";
+        print "Re-Generated configuration file: $infile\n";
     }
 }
 

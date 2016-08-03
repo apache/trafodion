@@ -51,10 +51,6 @@ export MY_SQROOT=$SQ_HOME
 # other env vars needed by Trafodion
 #-------------------------------------------
 
-# These env vars define all nodes in the cluster
-export NODE_LIST=XXXXX
-export MY_NODES=XXXXX
-
 # directory where needed libraries can be found
 export TOOLSDIR=XXXXX
 
@@ -65,11 +61,12 @@ export JAVA_HOME=XXXXX
 #-------------------------------------------
 PATH=".:$PATH"
 if [ -f $MY_SQROOT/sqenv.sh ]; then
-	pushd . >/dev/null
-	cd $MY_SQROOT
-	source ./sqenv.sh
-	popd >/dev/null
-	export MANPATH=$MANPATH:$MPI_ROOT/share/man
+    pushd . >/dev/null
+    cd $MY_SQROOT
+    source ./sqenv.sh
+    popd >/dev/null
+    export MANPATH=$MANPATH:$MPI_ROOT/share/man
+    setup_my_nodes
 fi
 
 #-------------------------------------------

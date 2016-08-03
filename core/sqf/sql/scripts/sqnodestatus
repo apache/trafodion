@@ -31,7 +31,7 @@
 #   export SQ_MON_SSH_OPTIONS=' -o "ConnectTimeout 1" -o "ConnectionAttempts 3" '
 #
 
-my $node_context=readpipe("echo \$NODE_LIST");
+my $node_context=readpipe("trafconf -name");
 my %node_hash=();
 my $sq_mon_ssh_options=readpipe("echo -n \$SQ_MON_SSH_OPTIONS");
 my $json=$ARGV[0];

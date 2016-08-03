@@ -441,39 +441,39 @@ sub parseStmt
 
     for (my $i = 0; $i <= $#KeyValues; $i++) {
 
-	my $KeyValue=$KeyValues[$i];
-	if ($::g_sqParseDebugFlag) {
-	    print "KeyValues[$i]=", $KeyValue, "\n";
-	}
-	my @KeyValuePair = split('=', $KeyValue);
-	my $Key = $KeyValuePair[0];
-	my $Value = $KeyValuePair[1];
-	if ($::g_sqParseDebugFlag) {
-	    print "Key: ", $Key, " Value: ", $Value, "\n";
-	}
-
-	if ($Key eq 'node-id') {
-	    $::g_sqNodeId = $Value;
-	}
-	elsif ($Key eq 'node-name') {
-	    $::g_sqNodeName = $Value;
-	}
-	elsif ($Key eq 'cores') {
-	    @::g_sqCores = split('-', $Value);
-	    if ($::g_sqParseDebugFlag) {
-		print "cores=@::g_sqCores\n";
-	    };
-	}
-	elsif ($Key eq 'processors') {
-	    $::g_sqProcessors = $Value;
-	}
-	elsif ($Key eq 'roles') {
-	    @::g_sqRoles = split(',', $Value);
-	    if ($::g_sqParseDebugFlag) {
-		my $numRoles = @::g_sqRoles + 0;
-		print "numRoles=$numRoles roles=@::g_sqRoles\n";
-	    }
-	}
+        my $KeyValue=$KeyValues[$i];
+        if ($::g_sqParseDebugFlag) {
+            print "KeyValues[$i]=", $KeyValue, "\n";
+        }
+        my @KeyValuePair = split('=', $KeyValue);
+        my $Key = $KeyValuePair[0];
+        my $Value = $KeyValuePair[1];
+        if ($::g_sqParseDebugFlag) {
+            print "Key: ", $Key, " Value: ", $Value, "\n";
+        }
+        
+        if ($Key eq 'node-id') {
+            $::g_sqNodeId = $Value;
+        }
+        elsif ($Key eq 'node-name') {
+            $::g_sqNodeName = $Value;
+        }
+        elsif ($Key eq 'cores') {
+            @::g_sqCores = split('-', $Value);
+            if ($::g_sqParseDebugFlag) {
+                print "cores=@::g_sqCores\n";
+            };
+        }
+        elsif ($Key eq 'processors') {
+            $::g_sqProcessors = $Value;
+        }
+        elsif ($Key eq 'roles') {
+            @::g_sqRoles = split(',', $Value);
+            if ($::g_sqParseDebugFlag) {
+                my $numRoles = @::g_sqRoles + 0;
+                print "numRoles=$numRoles roles=@::g_sqRoles\n";
+            }
+        }
     }
 
     sqnodes::verifyParse();

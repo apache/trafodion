@@ -19,22 +19,21 @@
 #
 # @@@ END COPYRIGHT @@@
 
-
 begin persist
 
+PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,PSD,WDG,QMN
+
 #
-# The folling process types are persistent and have special process management:
+# The following PROCESS_TYPEs are persistent and have special process management:
 #    DTM
 #    TMID
 #    SSMP
 #    PSD
 #    WDG
 #
-# Generic persistent processes are of process type:
+# Generic persistent processes are of PROCESS_TYPE:
 #    PERSIST
 #
-
-PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,PSD,WDG,QMN
 
 DTM_PROCESS_NAME     = $TM%nid+
 DTM_PROCESS_TYPE     = DTM
@@ -84,13 +83,13 @@ WDG_STDOUT           = stdout_WDG%nid
 WDG_PERSIST_RETRIES  = 10,60
 WDG_PERSIST_ZONES    = %zid
 
-QMN_PROCESS_NAME    = $ZQM0000
-QMN_PROCESS_TYPE    = PERSIST
-QMN_PROGRAM_NAME    = tdm_arkqmm
-QMN_REQUIRES_DTM    = Y
-QMN_STDOUT          = stdout_ZQM0000
-QMN_PERSIST_RETRIES = 10,60
-QMN_PERSIST_ZONES   = %zid+
+QMN_PROCESS_NAME     = $ZQM0000
+QMN_PROCESS_TYPE     = PERSIST
+QMN_PROGRAM_NAME     = tdm_arkqmm
+QMN_REQUIRES_DTM     = Y
+QMN_STDOUT           = stdout_ZQM0000
+QMN_PERSIST_RETRIES  = 10,60
+QMN_PERSIST_ZONES    = %zid+
 
 end persist
 
