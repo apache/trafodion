@@ -54,20 +54,19 @@ export MY_SQROOT=$SQ_HOME
 # directory where needed libraries can be found
 export TOOLSDIR=XXXXX
 
-export JAVA_HOME=XXXXX
-
 #-------------------------------------------
 # Execute the sqenv.sh script if it exists.
 #-------------------------------------------
 PATH=".:$PATH"
+
 if [ -f $MY_SQROOT/sqenv.sh ]; then
-    pushd . >/dev/null
-    cd $MY_SQROOT
-    source ./sqenv.sh
-    popd >/dev/null
-    export MANPATH=$MANPATH:$MPI_ROOT/share/man
-    setup_my_nodes
-fi
+        pushd . >/dev/null
+        cd $MY_SQROOT
+        source ./sqenv.sh
+        popd >/dev/null
+        export MANPATH=$MANPATH:$MPI_ROOT/share/man
+        setup_my_nodes
+fi 
 
 #-------------------------------------------
 # additional settings for Trafodion environment

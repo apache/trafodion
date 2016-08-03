@@ -139,9 +139,9 @@ if [[ "$SECURE_HADOOP" == "Y" ]]; then
      if [[ "${answer}" =~ ^[Yy]$ ]]; then
        if [[ "$all_node_count" -ne "1" ]]; then
          echo "***INFO: creating $TRAF_KEYTAB_DIR"
-         $TRAF_PDSH $MY_NODES sudo mkdir -p $TRAF_KEYTAB_DIR 2>/dev/null
-         $TRAF_PDSH $MY_NODES sudo chown $TRAF_USER:$TRAF_GROUP $TRAF_KEYTAB_DIR
-         $TRAF_PDSH $MY_NODES sudo chmod 700 $TRAF_KEYTAB_DIR
+         $TRAF_PDSH $NODES_W sudo mkdir -p $TRAF_KEYTAB_DIR 2>/dev/null
+         $TRAF_PDSH $NODES_W sudo chown $TRAF_USER:$TRAF_GROUP $TRAF_KEYTAB_DIR
+         $TRAF_PDSH $NODES_W sudo chmod 700 $TRAF_KEYTAB_DIR
        else
          echo "***INFO: creating $TRAF_KEYTAB_DIR"
          sudo mkdir -p $TRAF_KEYTAB_DIR 2>/dev/null

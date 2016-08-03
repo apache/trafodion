@@ -68,7 +68,7 @@ export node_count=""
 
 # another list of the same nodes in NODE_LIST but specified in a pdsh usable format
 # i.e.  "-w centos-cdh[1-6]"  or "-w node1 -w node2 -w node3"
-export MY_NODES=""
+export NODES_W=""
 
 # the directory prefix for the trafodion userid's $HOME directory
 # i.e. /opt/home, not /opt/home/trafodion
@@ -197,11 +197,4 @@ export CLOUD_OTHER=""
 #Specify the node name of primary DcsMaster node, Default is the host where
 #dcs start script is run
 export DCS_PRIMARY_MASTER_NODE=`hostname -f`
-
-
-#Ability to add nodes while trafodion is running
-export ELASTICITY_ENABLED="N"
-
-#Default is number of nodes
-export NUM_ELASTIC_NODES=""
 
