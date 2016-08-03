@@ -1186,10 +1186,13 @@ if (hTabStats->isOrcFile())
     {
       rangeTailIOSize = getTableDesc()->getNATable()->getRecordLength() +
 	(getTableDesc()->getNATable()->getClusteringIndex()->
-	 getAllColumns().entries())*2;
+	 getAllColumns().entries())*2 + 16*1024;
       // for each range we look ahead in the next range upto the maximum
-      // record length to find the end of record delimiter.
-      rangeTailIOSize = MAXOF(rangeTailIOSize, 16*1024);
+      // record length to find the end of record delimiter. The 16KB is 
+      // old default setting which worked fine till we started testing
+      // wide columns. We need to keep the 16 KB as additional fudge factor
+      // as recordlength in compiler is different from what it would be
+      // in a Hive text file
     }
 
   char * tablename = 
