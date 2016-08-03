@@ -122,7 +122,7 @@ public:
 
   virtual NABoolean producesOutput() { return FALSE; }
   virtual const char 	*getVirtualTableName() { return NULL;};
-  virtual desc_struct 	*createVirtualTableDesc() { return NULL;};
+  virtual TrafDesc 	*createVirtualTableDesc() { return NULL;};
   TableDesc * getVirtualTableDesc() const
   {
     return virtualTabId_;
@@ -230,6 +230,7 @@ public:
     isCreate_(FALSE), isCreateLike_(FALSE), isVolatile_(FALSE), 
     isDrop_(FALSE), isAlter_(FALSE), isCleanup_(FALSE),
     isTable_(FALSE), isIndex_(FALSE), isMV_(FALSE), isView_(FALSE),
+    isSchema_(FALSE),
     isLibrary_(FALSE), isRoutine_(FALSE),
     isUstat_(FALSE),
     isHbase_(FALSE),
@@ -270,6 +271,7 @@ public:
     isCreate_(FALSE), isCreateLike_(FALSE), isVolatile_(FALSE), 
     isDrop_(FALSE), isAlter_(FALSE), isCleanup_(FALSE),
     isTable_(FALSE), isIndex_(FALSE), isMV_(FALSE), isView_(FALSE),
+    isSchema_(FALSE),
     isLibrary_(FALSE), isRoutine_(FALSE),
     isUstat_(FALSE),
     isHbase_(FALSE),
@@ -310,6 +312,7 @@ public:
     isCreate_(FALSE), isCreateLike_(FALSE), isVolatile_(FALSE), 
     isDrop_(FALSE), isAlter_(FALSE), isCleanup_(FALSE),
     isTable_(FALSE), isIndex_(FALSE), isMV_(FALSE), isView_(FALSE),
+    isSchema_(FALSE),
     isUstat_(FALSE),
     isHbase_(FALSE),
     isNative_(FALSE),
@@ -355,7 +358,7 @@ public:
 
   virtual NABoolean producesOutput() { return returnStatus_;}
   virtual const char 	*getVirtualTableName();
-  virtual desc_struct 	*createVirtualTableDesc();
+  virtual TrafDesc 	*createVirtualTableDesc();
 
   ExprNode * getDDLNode(){return getExprNode();};
 
@@ -475,6 +478,7 @@ public:
   NABoolean isCreate_;
   NABoolean isCreateLike_;
   NABoolean isVolatile_;
+  NABoolean isSchema_;
   NABoolean isTable_;
   NABoolean isIndex_;
   NABoolean isMV_;
@@ -606,7 +610,7 @@ public:
 
   virtual NABoolean producesOutput() { return FALSE; }
   virtual const char 	*getVirtualTableName();
-  virtual desc_struct 	*createVirtualTableDesc();
+  virtual TrafDesc 	*createVirtualTableDesc();
 
   // exeutil statements whose query type need to be returned as 
   // SQL_EXE_UTIL. Set during RelRoot::codeGen in ComTdbRoot class.
@@ -680,7 +684,7 @@ public:
   virtual short codeGen(Generator*);
 
   virtual const char 	*getVirtualTableName();
-  virtual desc_struct 	*createVirtualTableDesc();
+  virtual TrafDesc 	*createVirtualTableDesc();
 
   virtual NABoolean producesOutput() { return TRUE; }
 
@@ -1771,7 +1775,7 @@ public:
   virtual const char 	*getVirtualTableName();
   static const char * getVirtualTableNameStr() 
   { return "EXE_UTIL_REGION_STATS__";}
-  virtual desc_struct 	*createVirtualTableDesc();
+  virtual TrafDesc 	*createVirtualTableDesc();
 
   virtual NABoolean producesOutput() { return TRUE; }
 
@@ -1818,7 +1822,7 @@ public:
   virtual const char 	*getVirtualTableName();
   static const char * getVirtualTableNameStr() 
   { return "EXE_UTIL_LOB_INFO__";}
-  virtual desc_struct 	*createVirtualTableDesc();
+  virtual TrafDesc 	*createVirtualTableDesc();
 
   virtual NABoolean producesOutput() { return TRUE; }
 
@@ -1947,7 +1951,7 @@ public:
   virtual short codeGen(Generator*);
 
   virtual const char 	*getVirtualTableName();
-  virtual desc_struct 	*createVirtualTableDesc();
+  virtual TrafDesc 	*createVirtualTableDesc();
 
 private:
   // using this enum from MaintainObject class as it serves the
@@ -1976,7 +1980,7 @@ public:
   virtual short codeGen(Generator*);
 
   virtual const char 	*getVirtualTableName();
-  virtual desc_struct 	*createVirtualTableDesc();
+  virtual TrafDesc 	*createVirtualTableDesc();
 
 private:
   NAString statement_;

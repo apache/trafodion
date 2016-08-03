@@ -37,6 +37,7 @@
 #include <sys/time.h>
 #include "dfs2rec.h"
 
+#include "TrafDDLdesc.h"
 
 #include "ComOptIncludes.h"
 #include "GroupAttr.h"
@@ -71,6 +72,7 @@
 #include "CmUtil.h"
 
 #include "PCodeExprCache.h"
+#include "TrafDDLdesc.h"
 
 // -----------------------------------------------------------------------
 // When called within arkcmp.exe, fixupVTblPtr() translates to a call
@@ -1485,17 +1487,18 @@ Lng32 Generator::getRecordLength(ComTdbVirtTableIndexInfo * indexInfo,
   return recLen;
 }
 
-desc_struct* Generator::createColDescs(
+TrafDesc* Generator::createColDescs(
   const char * tableName,
   ComTdbVirtTableColumnInfo * columnInfo,
   Int16 numCols,
-  UInt32 &offset)
+  UInt32 &offset,
+  Space * space)
 {
   if (! columnInfo)
     return NULL;
 
-  desc_struct * first_col_desc = NULL;
-  desc_struct * prev_desc = NULL;
+  TrafDesc * first_col_desc = NULL;
+  TrafDesc * prev_desc = NULL;
   for (Int16 colNum = 0; colNum < numCols; colNum++)
     {
       ComTdbVirtTableColumnInfo * info = columnInfo + colNum;
@@ -1512,106 +1515,124 @@ desc_struct* Generator::createColDescs(
                                                      info->datatype == REC_NCHAR_F_UNICODE ||
                                                      info->datatype == REC_NCHAR_V_ANSI_UNICODE))
         info_charset = SQLCHARSETCODE_UCS2;
-      desc_struct * col_desc = readtabledef_make_column_desc(
-                                    tableName,
-                                    info->colName,
-                                    i,
-                                    info->datatype,
-                                    info->length,
-                                    tmpOffset,
-                                    (short) info->nullable,
-                                    (NABoolean) FALSE,    // tablenameMustBeAllocated = FALSE
-                                    (desc_struct *) NULL, // passedDesc = NULL
-                                    info_charset);
 
+      char * colname = new GENHEAP(space) char[strlen(info->colName)+1];
+      strcpy(colname, info->colName);
+
+      TrafDesc * col_desc = TrafMakeColumnDesc(
+           tableName,
+           colname, //info->colName,
+           i,
+           info->datatype,
+           info->length,
+           tmpOffset,
+           info->nullable,
+           info_charset,
+           space);
+      
       // Virtual tables use SQLARK_EXPLODED_FORMAT in which numeric column
-      // values are aligned.  Ignore readtabledef_make_column_desc's
+      // values are aligned.  Ignore TrafMakeColumnDesc's
       // offset calculation which doesn't reflect column value alignment.
       offset = colOffset + info->length;
 
       // EXPLAIN__ table uses 22-bit precision REAL values
       if (info->datatype == REC_FLOAT32)
-        col_desc->body.columns_desc.precision = 22;
+        col_desc->columnsDesc()->precision = 22;
 
-      col_desc->body.columns_desc.precision = info->precision;
+      col_desc->columnsDesc()->precision = info->precision;
       if (DFS2REC::isInterval(info->datatype))
-	col_desc->body.columns_desc.intervalleadingprec = info->precision;
+	col_desc->columnsDesc()->intervalleadingprec = info->precision;
 
-      col_desc->body.columns_desc.scale = info->scale;
+      col_desc->columnsDesc()->scale = info->scale;
       if ((DFS2REC::isInterval(info->datatype)) ||
 	  (DFS2REC::isDateTime(info->datatype)))
-	col_desc->body.columns_desc.datetimefractprec = info->scale;
+	col_desc->columnsDesc()->datetimefractprec = info->scale;
 
-      col_desc->body.columns_desc.datetimestart = (rec_datetime_field)info->dtStart;
-      col_desc->body.columns_desc.datetimeend = (rec_datetime_field)info->dtEnd;
+      col_desc->columnsDesc()->datetimestart = (rec_datetime_field)info->dtStart;
+      col_desc->columnsDesc()->datetimeend = (rec_datetime_field)info->dtEnd;
 
-      col_desc->body.columns_desc.upshift = (info->upshifted ? 1 : 0);
-      col_desc->body.columns_desc.caseinsensitive = (short)FALSE;
+      col_desc->columnsDesc()->setUpshifted(info->upshifted);
+      col_desc->columnsDesc()->setCaseInsensitive(FALSE);
 
-      col_desc->body.columns_desc.pictureText = new HEAP char[340];
-      NAType::convertTypeToText(col_desc->body.columns_desc.pictureText,//OUT
-				col_desc->body.columns_desc.datatype,
-				col_desc->body.columns_desc.length,
-				col_desc->body.columns_desc.precision,
-				col_desc->body.columns_desc.scale,
-				col_desc->body.columns_desc.datetimestart,
-				col_desc->body.columns_desc.datetimeend,
-				col_desc->body.columns_desc.datetimefractprec,
-				col_desc->body.columns_desc.intervalleadingprec,
-				col_desc->body.columns_desc.upshift,
-				col_desc->body.columns_desc.caseinsensitive,
-				(CharInfo::CharSet)col_desc->body.columns_desc.character_set,
-				(CharInfo::Collation)col_desc->body.columns_desc.collation_sequence,
+      char pt[350];
+      NAType::convertTypeToText(pt, //OUT
+				col_desc->columnsDesc()->datatype,
+				col_desc->columnsDesc()->length,
+				col_desc->columnsDesc()->precision,
+				col_desc->columnsDesc()->scale,
+				col_desc->columnsDesc()->datetimeStart(),
+				col_desc->columnsDesc()->datetimeEnd(),
+				col_desc->columnsDesc()->datetimefractprec,
+				col_desc->columnsDesc()->intervalleadingprec,
+				col_desc->columnsDesc()->isUpshifted(),
+				col_desc->columnsDesc()->isCaseInsensitive(),
+				(CharInfo::CharSet)col_desc->columnsDesc()->character_set,
+				(CharInfo::Collation)col_desc->columnsDesc()->collation_sequence,
 				NULL
 				);
-
-      col_desc->body.columns_desc.defaultClass  = info->defaultClass;
-      if (info->defaultClass == COM_NO_DEFAULT)
-	col_desc->body.columns_desc.defaultvalue = NULL;
+      col_desc->columnsDesc()->pictureText 
+        = new GENHEAP(space) char[strlen(pt)+1];
+      strcpy(col_desc->columnsDesc()->pictureText, pt);
+      col_desc->columnsDesc()->setDefaultClass(info->defaultClass);
+      if ((info->defaultClass == COM_NO_DEFAULT) ||
+          (info->defVal == NULL))
+	col_desc->columnsDesc()->defaultvalue = NULL;
       else
-	col_desc->body.columns_desc.defaultvalue = (char*)info->defVal;
+        {
+          col_desc->columnsDesc()->defaultvalue = new GENHEAP(space) char[strlen(info->defVal) +1];
+          strcpy(col_desc->columnsDesc()->defaultvalue, (char*)info->defVal);
+        }
 
-      col_desc->body.columns_desc.colclass = 'U';
-      col_desc->body.columns_desc.addedColumn = 0;
+      col_desc->columnsDesc()->colclass = 'U';
+      col_desc->columnsDesc()->setAdded(FALSE);
       if (info->columnClass == COM_SYSTEM_COLUMN)
-	col_desc->body.columns_desc.colclass = 'S';
+	col_desc->columnsDesc()->colclass = 'S';
       else if (info->columnClass == COM_ADDED_USER_COLUMN)
 	{
-	  col_desc->body.columns_desc.colclass = 'A';
-	  col_desc->body.columns_desc.addedColumn = 1;
+	  col_desc->columnsDesc()->colclass = 'A';
+	  col_desc->columnsDesc()->setAdded(TRUE);
 	}
       else if (info->columnClass == COM_ALTERED_USER_COLUMN)
 	{
-	  col_desc->body.columns_desc.colclass = 'C';
-	  col_desc->body.columns_desc.addedColumn = 1;
+	  col_desc->columnsDesc()->colclass = 'C';
+	  col_desc->columnsDesc()->setAdded(TRUE);
 	}
 
       if (info->colHeading)
-	col_desc->body.columns_desc.heading = (char*)info->colHeading;
+        {
+          col_desc->columnsDesc()->heading = new GENHEAP(space) char[strlen(info->colHeading) + 1];
+          strcpy(col_desc->columnsDesc()->heading, info->colHeading);
+        }
       else
-	col_desc->body.columns_desc.hbaseColFam = NULL;
+	col_desc->columnsDesc()->heading = NULL;
 
       if (info->hbaseColFam)
-	col_desc->body.columns_desc.hbaseColFam = (char*)info->hbaseColFam;
+        {
+          col_desc->columnsDesc()->hbaseColFam = new GENHEAP(space) char[strlen(info->hbaseColFam) + 1];
+          strcpy(col_desc->columnsDesc()->hbaseColFam, (char*)info->hbaseColFam);
+        }
       else
-	col_desc->body.columns_desc.hbaseColFam = NULL;
+	col_desc->columnsDesc()->hbaseColFam = NULL;
 
       if (info->hbaseColQual)
-	col_desc->body.columns_desc.hbaseColQual = (char*)info->hbaseColQual;
+        {
+          col_desc->columnsDesc()->hbaseColQual = new GENHEAP(space) char[strlen(info->hbaseColQual) + 1];
+          strcpy(col_desc->columnsDesc()->hbaseColQual, (char*)info->hbaseColQual);
+        }
       else
-	col_desc->body.columns_desc.hbaseColQual = NULL;
+	col_desc->columnsDesc()->hbaseColQual = NULL;
 
-      col_desc->body.columns_desc.hbaseColFlags = info->hbaseColFlags;
+      col_desc->columnsDesc()->hbaseColFlags = info->hbaseColFlags;
 
-      col_desc->body.columns_desc.paramDirection =
-           CmGetComDirectionAsComParamDirection(info->paramDirection);
-      col_desc->body.columns_desc.isOptional = info->isOptional;
-      col_desc->body.columns_desc.colFlags = info->colFlags;
+      col_desc->columnsDesc()->setParamDirection(
+           CmGetComDirectionAsComParamDirection(info->paramDirection));
+      col_desc->columnsDesc()->setOptional(info->isOptional);
+      col_desc->columnsDesc()->colFlags = info->colFlags;
 
       if (!first_col_desc)
 	first_col_desc = col_desc;
       else
-	prev_desc->header.next = col_desc;
+	prev_desc->next = col_desc;
 
       prev_desc = col_desc;
     }
@@ -1619,14 +1640,13 @@ desc_struct* Generator::createColDescs(
   return first_col_desc;
 }
 
-static void initKeyDescStruct(keys_desc_struct * tgt,
-			      const ComTdbVirtTableKeyInfo * src)
+static void initKeyDescStruct(TrafKeysDesc * tgt,
+			      const ComTdbVirtTableKeyInfo * src,
+                              Space * space)
 {
-  tgt->indexname = NULL;
-
   if (src->colName)
     {
-      tgt->keyname = new HEAP char[strlen(src->colName) +1];
+      tgt->keyname = new GENHEAP(space) char[strlen(src->colName) +1];
       strcpy(tgt->keyname, src->colName);
     }
   else
@@ -1634,10 +1654,10 @@ static void initKeyDescStruct(keys_desc_struct * tgt,
       
   tgt->keyseqnumber     = src->keySeqNum;
   tgt->tablecolnumber   = src->tableColNum;
-  tgt->ordering         = src->ordering;
+  tgt->setDescending(src->ordering ? TRUE : FALSE);
   if (src->hbaseColFam)
     {
-      tgt->hbaseColFam = new HEAP char[strlen(src->hbaseColFam)+1];
+      tgt->hbaseColFam = new GENHEAP(space) char[strlen(src->hbaseColFam)+1];
       strcpy(tgt->hbaseColFam, src->hbaseColFam);
     }
   else
@@ -1645,65 +1665,67 @@ static void initKeyDescStruct(keys_desc_struct * tgt,
 
   if (src->hbaseColQual)
     {
-      tgt->hbaseColQual = new HEAP char[strlen(src->hbaseColQual)+1];
+      tgt->hbaseColQual = new GENHEAP(space) char[strlen(src->hbaseColQual)+1];
       strcpy(tgt->hbaseColQual, src->hbaseColQual);
     }
   else
     tgt->hbaseColQual = NULL;
 }
 
-desc_struct * Generator::createKeyDescs(Int32 numKeys,
-					const ComTdbVirtTableKeyInfo * keyInfo)
+TrafDesc * Generator::createKeyDescs(Int32 numKeys,
+					const ComTdbVirtTableKeyInfo * keyInfo,
+                                        Space * space)
 {
-  desc_struct * first_key_desc = NULL;
+  TrafDesc * first_key_desc = NULL;
 
   if (keyInfo == NULL)
     return NULL;
 
   // create key descs
-  desc_struct * prev_desc = NULL;
+  TrafDesc * prev_desc = NULL;
   for (Int32 keyNum = 0; keyNum < numKeys; keyNum++)
     {
-      desc_struct * key_desc = readtabledef_allocate_desc(DESC_KEYS_TYPE);
+      TrafDesc * key_desc = TrafAllocateDDLdesc(DESC_KEYS_TYPE, space);
       if (prev_desc)
-	prev_desc->header.next = key_desc;
+	prev_desc->next = key_desc;
       else
        first_key_desc = key_desc;
 
       prev_desc = key_desc;
 
-      initKeyDescStruct(&key_desc->body.keys_desc,
-			&keyInfo[keyNum]);
+      initKeyDescStruct(key_desc->keysDesc(),
+			&keyInfo[keyNum], space);
     }
 
   return first_key_desc;
 }
 
-desc_struct * Generator::createConstrKeyColsDescs(Int32 numKeys,
-					ComTdbVirtTableKeyInfo * keyInfo)
+TrafDesc * Generator::createConstrKeyColsDescs(Int32 numKeys,
+                                                  ComTdbVirtTableKeyInfo * keyInfo,
+                                                  Space * space)
 {
-  desc_struct * first_key_desc = NULL;
+  TrafDesc * first_key_desc = NULL;
 
   if (keyInfo == NULL)
     return NULL;
 
   // create key descs
-  desc_struct * prev_desc = NULL;
+  TrafDesc * prev_desc = NULL;
   for (Int32 keyNum = 0; keyNum < numKeys; keyNum++)
     {
-      desc_struct * key_desc = readtabledef_allocate_desc(DESC_CONSTRNT_KEY_COLS_TYPE);
+      TrafDesc * key_desc = TrafAllocateDDLdesc(DESC_CONSTRNT_KEY_COLS_TYPE, space);
       if (prev_desc)
-	prev_desc->header.next = key_desc;
+	prev_desc->next = key_desc;
       else
        first_key_desc = key_desc;
 
       prev_desc = key_desc;
 
       ComTdbVirtTableKeyInfo * src = &keyInfo[keyNum];
-      constrnt_key_cols_desc_struct * tgt = &key_desc->body.constrnt_key_cols_desc;
+      TrafConstrntKeyColsDesc * tgt = key_desc->constrntKeyColsDesc();
       if (src->colName)
 	{
-	  tgt->colname = new HEAP char[strlen(src->colName) +1];
+	  tgt->colname = new GENHEAP(space) char[strlen(src->colName) +1];
 	  strcpy(tgt->colname, src->colName);
 	}
       else
@@ -1716,32 +1738,33 @@ desc_struct * Generator::createConstrKeyColsDescs(Int32 numKeys,
 }
 
 // this method is used to create both referencing and referenced constraint structs.
-desc_struct * Generator::createRefConstrDescStructs(
+TrafDesc * Generator::createRefConstrDescStructs(
 						    Int32 numConstrs,
-						    ComTdbVirtTableRefConstraints * refConstrs)
+						    ComTdbVirtTableRefConstraints * refConstrs,
+                                                    Space * space)
 {
-  desc_struct * first_constr_desc = NULL;
+  TrafDesc * first_constr_desc = NULL;
 
   if ((numConstrs == 0) || (refConstrs == NULL))
     return NULL;
 
    // create constr descs
-  desc_struct * prev_desc = NULL;
+  TrafDesc * prev_desc = NULL;
   for (Int32 constrNum = 0; constrNum < numConstrs; constrNum++)
     {
-      desc_struct * constr_desc = readtabledef_allocate_desc(DESC_REF_CONSTRNTS_TYPE);
+      TrafDesc * constr_desc = TrafAllocateDDLdesc(DESC_REF_CONSTRNTS_TYPE, space);
       if (prev_desc)
-	prev_desc->header.next = constr_desc;
+	prev_desc->next = constr_desc;
       else
        first_constr_desc = constr_desc;
 
       prev_desc = constr_desc;
 
       ComTdbVirtTableRefConstraints * src = &refConstrs[constrNum];
-      ref_constrnts_desc_struct * tgt = &constr_desc->body.ref_constrnts_desc;
+      TrafRefConstrntsDesc * tgt = constr_desc->refConstrntsDesc();
       if (src->constrName)
 	{
-	  tgt->constrntname = new HEAP char[strlen(src->constrName) +1];
+	  tgt->constrntname = new GENHEAP(space) char[strlen(src->constrName) +1];
 	  strcpy(tgt->constrntname, src->constrName);
 	}
       else
@@ -1749,7 +1772,7 @@ desc_struct * Generator::createRefConstrDescStructs(
 
       if (src->baseTableName)
 	{
-	  tgt->tablename = new HEAP char[strlen(src->baseTableName) +1];
+	  tgt->tablename = new GENHEAP(space) char[strlen(src->baseTableName) +1];
 	  strcpy(tgt->tablename, src->baseTableName);
 	}
       else
@@ -1761,12 +1784,13 @@ desc_struct * Generator::createRefConstrDescStructs(
 }
 
 static Lng32 createDescStructs(char * rforkName,
-			      Int32 numCols,
-			      ComTdbVirtTableColumnInfo * columnInfo,
-			      Int32 numKeys,
-			      ComTdbVirtTableKeyInfo * keyInfo,
-			      desc_struct* &colDescs,
-			      desc_struct* &keyDescs)
+                               Int32 numCols,
+                               ComTdbVirtTableColumnInfo * columnInfo,
+                               Int32 numKeys,
+                               ComTdbVirtTableKeyInfo * keyInfo,
+                               TrafDesc* &colDescs,
+                               TrafDesc* &keyDescs,
+                               Space * space)
 {
   colDescs = NULL;
   keyDescs = NULL;
@@ -1774,266 +1798,331 @@ static Lng32 createDescStructs(char * rforkName,
 
   // create column descs
   colDescs = Generator::createColDescs(rforkName, columnInfo, (Int16) numCols,
-                                       reclen);
+                                       reclen, space);
 
-  keyDescs = Generator::createKeyDescs(numKeys, keyInfo);
+  keyDescs = Generator::createKeyDescs(numKeys, keyInfo, space);
 
   return (Lng32) reclen;
 }
 
-desc_struct * Generator::createVirtualTableDesc(
-						const char * inTableName,
-						Int32 numCols,
-						ComTdbVirtTableColumnInfo * columnInfo,
-						Int32 numKeys,
-						ComTdbVirtTableKeyInfo * keyInfo,
-						Int32 numConstrs,
-						ComTdbVirtTableConstraintInfo * constrInfo,
-						Int32 numIndexes,
-						ComTdbVirtTableIndexInfo * indexInfo,
-						Int32 numViews,
-						ComTdbVirtTableViewInfo * viewInfo,
-						ComTdbVirtTableTableInfo * tableInfo,
-						ComTdbVirtTableSequenceInfo * seqInfo)
+static void populateRegionDescForEndKey(char* buf, Int32 len, struct TrafDesc* target)
 {
-  // readtabledef_allocate_desc() requires that HEAP (STMTHEAP)
-  // be used for operator new herein
+   target->hbaseRegionDesc()->beginKey = NULL;
+   target->hbaseRegionDesc()->beginKeyLen = 0;
+   target->hbaseRegionDesc()->endKey = buf;
+   target->hbaseRegionDesc()->endKeyLen = len;
+}
 
-  const char * tableName = (tableInfo ? tableInfo->tableName : inTableName);
-  desc_struct * table_desc = readtabledef_allocate_desc(DESC_TABLE_TYPE);
-  table_desc->body.table_desc.tablename = new HEAP char[strlen(tableName)+1];
-  strcpy(table_desc->body.table_desc.tablename, tableName);
+static void populateRegionDescAsRANGE(char* buf, Int32 len, struct TrafDesc* target, NAMemory*, Space*)
+{
+   target->nodetype = DESC_HBASE_RANGE_REGION_TYPE;
+   populateRegionDescForEndKey(buf, len, target);
+}
+
+//
+// Produce a list of TrafDesc objects. In each object, the body_struct
+// field points at hbaseRegion_desc. The order of the keyinfo, obtained from
+// org.apache.hadoop.hbase.client.HTable.getEndKey(), is preserved.
+//
+// Allocate space from STMTHEAP, per the call of this function
+// in CmpSeabaseDDL::getSeabaseTableDesc() and the
+// Generator::createVirtualTableDesc() call make before this one that
+// uses STMTPHEAP througout.
+//
+TrafDesc* Generator::assembleDescs(
+     NAArray<HbaseStr >* keyArray,
+     NAMemory* heap,
+     Space * space)
+{
+   if (keyArray == NULL)
+     return NULL;
+   
+   TrafDesc *result = NULL;
+   Int32 entries = keyArray->entries();
+   Int32 len = 0;
+   char* buf = NULL;
+
+   for (Int32 i=entries-1; i>=0; i-- ) {
+     len = keyArray->at(i).len;
+     if ( len > 0 ) { 
+       buf = new GENHEAP(space) char[len];
+       memcpy(buf, keyArray->at(i).val, len); 
+     } else
+       buf = NULL;
+     
+     TrafDesc* wrapper = 
+       TrafAllocateDDLdesc(DESC_HBASE_RANGE_REGION_TYPE, space);
+     
+     populateRegionDescAsRANGE(buf, len, wrapper, heap, space);
+     
+     wrapper->next = result;
+     result = wrapper;
+   }
+   
+   return result;
+}
+
+TrafDesc * Generator::createVirtualTableDesc
+(
+     const char * inTableName,
+     Int32 numCols,
+     ComTdbVirtTableColumnInfo * columnInfo,
+     Int32 numKeys,
+     ComTdbVirtTableKeyInfo * keyInfo,
+     Int32 numConstrs,
+     ComTdbVirtTableConstraintInfo * constrInfo,
+     Int32 numIndexes,
+     ComTdbVirtTableIndexInfo * indexInfo,
+     Int32 numViews,
+     ComTdbVirtTableViewInfo * viewInfo,
+     ComTdbVirtTableTableInfo * tableInfo,
+     ComTdbVirtTableSequenceInfo * seqInfo,
+     NAArray<HbaseStr>* endKeyArray,
+     char * snapshotName,
+     NABoolean genPackedDesc,
+     Int32 * packedDescLen,
+     NABoolean isUserTable
+ )
+{
+  // If genPackedDesc is set, then use Space class to allocate descriptors and
+  // returned contiguous packed copy of it.
+  // This packed copy will be stored in metadata.
+
+  Space lSpace(ComSpace::GENERATOR_SPACE);
+  Space * space = NULL;
+  if (genPackedDesc)
+    space = &lSpace;
   
+  const char * tableName = (tableInfo ? tableInfo->tableName : inTableName);
+  TrafDesc * table_desc = TrafAllocateDDLdesc(DESC_TABLE_TYPE, space);
+  table_desc->tableDesc()->tablename = new GENHEAP(space) char[strlen(tableName)+1];
+  strcpy(table_desc->tableDesc()->tablename, tableName);
+
+  table_desc->tableDesc()->tableDescFlags = 0;
+  table_desc->tableDesc()->catUID = 0;
+  table_desc->tableDesc()->schemaUID = 0;
   if (tableInfo)
     {
-      convertInt64ToUInt32Array(tableInfo->createTime, table_desc->body.table_desc.createtime);
-      convertInt64ToUInt32Array(tableInfo->redefTime, table_desc->body.table_desc.redeftime);
-      convertInt64ToUInt32Array(tableInfo->objUID, table_desc->body.table_desc.objectUID);
+      table_desc->tableDesc()->createTime = tableInfo->createTime;
+      table_desc->tableDesc()->redefTime = tableInfo->redefTime;
+      table_desc->tableDesc()->objectUID = tableInfo->objUID;
     }
   else
     {
-      *(Int64*)&table_desc->body.table_desc.createtime = 0;
-      *(Int64*)&table_desc->body.table_desc.redeftime = 0;
+      table_desc->tableDesc()->createTime = 0;
+      table_desc->tableDesc()->redefTime = 0;
 
       ComUID comUID;
       comUID.make_UID();
       Int64 objUID = comUID.get_value();
 
-      *(Int64*)&table_desc->body.table_desc.objectUID = objUID;
+      table_desc->tableDesc()->objectUID = objUID;
     }
 
-  table_desc->body.table_desc.issystemtablecode = 1;
-  table_desc->body.table_desc.underlyingFileType = SQLMX;
-  table_desc->body.table_desc.rowcount = 100;
+  if (isUserTable)
+    table_desc->tableDesc()->setSystemTableCode(FALSE);
+  else
+    table_desc->tableDesc()->setSystemTableCode(TRUE);
 
   if (tableInfo)
-    table_desc->body.table_desc.rowFormat =
-      tableInfo->rowFormat ;
+    table_desc->tableDesc()->setRowFormat(tableInfo->rowFormat);
 
   if (CmpCommon::context()->sqlSession()->validateVolatileName(tableName))
-    table_desc->body.table_desc.isVolatile = 1;
+    table_desc->tableDesc()->setVolatileTable(TRUE);
   else
-    table_desc->body.table_desc.isVolatile = 0;
+    table_desc->tableDesc()->setVolatileTable(FALSE);
 
   if (numViews > 0)
-    table_desc->body.table_desc.objectType = COM_VIEW_OBJECT;
+    table_desc->tableDesc()->setObjectType(COM_VIEW_OBJECT);
   else if ((seqInfo) && (! columnInfo))
-    table_desc->body.table_desc.objectType = COM_SEQUENCE_GENERATOR_OBJECT;
+    table_desc->tableDesc()->setObjectType(COM_SEQUENCE_GENERATOR_OBJECT);
   else
-    table_desc->body.table_desc.objectType = COM_BASE_TABLE_OBJECT;
+    table_desc->tableDesc()->setObjectType(COM_BASE_TABLE_OBJECT);
 
-  table_desc->body.table_desc.owner = (tableInfo ? tableInfo->objOwnerID : SUPER_USER);
-  table_desc->body.table_desc.schemaOwner = (tableInfo ? tableInfo->schemaOwnerID : SUPER_USER);
+  table_desc->tableDesc()->owner = (tableInfo ? tableInfo->objOwnerID : SUPER_USER);
+  table_desc->tableDesc()->schemaOwner = (tableInfo ? tableInfo->schemaOwnerID : SUPER_USER);
 
   if (tableInfo && tableInfo->defaultColFam)
     {
-      table_desc->body.table_desc.default_col_fam = 
-        new HEAP char[strlen(tableInfo->defaultColFam)+1];
-      strcpy(table_desc->body.table_desc.default_col_fam, tableInfo->defaultColFam);
+      table_desc->tableDesc()->default_col_fam = 
+        new GENHEAP(space) char[strlen(tableInfo->defaultColFam)+1];
+      strcpy(table_desc->tableDesc()->default_col_fam, tableInfo->defaultColFam);
     }
 
   if (tableInfo && tableInfo->allColFams)
     {
-      table_desc->body.table_desc.all_col_fams = 
-        new HEAP char[strlen(tableInfo->allColFams)+1];
-      strcpy(table_desc->body.table_desc.all_col_fams, tableInfo->allColFams);
+      table_desc->tableDesc()->all_col_fams = 
+        new GENHEAP(space) char[strlen(tableInfo->allColFams)+1];
+      strcpy(table_desc->tableDesc()->all_col_fams, tableInfo->allColFams);
     }
 
-  table_desc->body.table_desc.objectFlags = (tableInfo ? tableInfo->objectFlags : 0);
-  table_desc->body.table_desc.tablesFlags = (tableInfo ? tableInfo->tablesFlags : 0);
+  table_desc->tableDesc()->objectFlags = (tableInfo ? tableInfo->objectFlags : 0);
+  table_desc->tableDesc()->tablesFlags = (tableInfo ? tableInfo->tablesFlags : 0);
 
-  desc_struct * files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
-  //  files_desc->body.files_desc.audit = -1; // audited table
-  files_desc->body.files_desc.audit = (tableInfo ? tableInfo->isAudited : -1);
+  TrafDesc * files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, space);
+  files_desc->filesDesc()->setAudited(tableInfo ? tableInfo->isAudited : -1);
 
-  files_desc->body.files_desc.fileorganization = KEY_SEQUENCED_FILE;
-  table_desc->body.table_desc.files_desc = files_desc;
+  table_desc->tableDesc()->files_desc = files_desc;
 
-  desc_struct * cols_descs = NULL;
-  desc_struct * keys_descs = NULL;
-  table_desc->body.table_desc.colcount = numCols;
-  table_desc->body.table_desc.record_length =
-    createDescStructs(table_desc->body.table_desc.tablename,
+  TrafDesc * cols_descs = NULL;
+  TrafDesc * keys_descs = NULL;
+  table_desc->tableDesc()->colcount = numCols;
+  table_desc->tableDesc()->record_length =
+    createDescStructs(table_desc->tableDesc()->tablename,
 		      numCols, columnInfo, numKeys, keyInfo,
-		      cols_descs, keys_descs);
+		      cols_descs, keys_descs, space);
 
-  desc_struct * first_constr_desc = NULL;
+  TrafDesc * first_constr_desc = NULL;
   if (numConstrs > 0)
     {
-      desc_struct * prev_desc = NULL;
+      TrafDesc * prev_desc = NULL;
       for (int i = 0; i < numConstrs; i++)
 	{
-	  desc_struct * curr_constr_desc = readtabledef_allocate_desc(DESC_CONSTRNTS_TYPE);
+	  TrafDesc * curr_constr_desc = TrafAllocateDDLdesc(DESC_CONSTRNTS_TYPE, space);
 
 	  if (! first_constr_desc)
 	    first_constr_desc = curr_constr_desc;
 
-	  curr_constr_desc->body.constrnts_desc.tablename = new HEAP char[strlen(constrInfo[i].baseTableName)+1];
-	  strcpy(curr_constr_desc->body.constrnts_desc.tablename, constrInfo[i].baseTableName);
+	  curr_constr_desc->constrntsDesc()->tablename = new GENHEAP(space) char[strlen(constrInfo[i].baseTableName)+1];
+	  strcpy(curr_constr_desc->constrntsDesc()->tablename, constrInfo[i].baseTableName);
 	  
-	  curr_constr_desc->body.constrnts_desc.constrntname = new HEAP char[strlen(constrInfo[i].constrName)+1];
-	  strcpy(curr_constr_desc->body.constrnts_desc.constrntname, constrInfo[i].constrName);
+	  curr_constr_desc->constrntsDesc()->constrntname = new GENHEAP(space) char[strlen(constrInfo[i].constrName)+1];
+	  strcpy(curr_constr_desc->constrntsDesc()->constrntname, constrInfo[i].constrName);
 	  
-	  curr_constr_desc->body.constrnts_desc.indexname = NULL;
-
-	  curr_constr_desc->body.constrnts_desc.check_constrnts_desc = NULL;
-	  curr_constr_desc->body.constrnts_desc.isEnforced = constrInfo[i].isEnforced;
+	  curr_constr_desc->constrntsDesc()->check_constrnts_desc = NULL;
+	  curr_constr_desc->constrntsDesc()->setEnforced(constrInfo[i].isEnforced);
 
 	  switch (constrInfo[i].constrType)
 	    {
 	    case 0: // unique_constr
-	      curr_constr_desc->body.constrnts_desc.type = UNIQUE_CONSTRAINT;
+	      curr_constr_desc->constrntsDesc()->type = UNIQUE_CONSTRAINT;
 	      break;
 
 	    case 1: // ref_constr
-	      curr_constr_desc->body.constrnts_desc.type = REF_CONSTRAINT;
+	      curr_constr_desc->constrntsDesc()->type = REF_CONSTRAINT;
 	      break;
 
 	    case 2: // check_constr
-	      curr_constr_desc->body.constrnts_desc.type = CHECK_CONSTRAINT;
+	      curr_constr_desc->constrntsDesc()->type = CHECK_CONSTRAINT;
 	      break;
 
 	    case 3: // pkey_constr
-	      curr_constr_desc->body.constrnts_desc.type = PRIMARY_KEY_CONSTRAINT;
+	      curr_constr_desc->constrntsDesc()->type = PRIMARY_KEY_CONSTRAINT;
 	      break;
 
 	    } // switch
 
-	  curr_constr_desc->body.constrnts_desc.colcount = constrInfo[i].colCount;
+	  curr_constr_desc->constrntsDesc()->colcount = constrInfo[i].colCount;
 
-	  curr_constr_desc->body.constrnts_desc.constr_key_cols_desc =
-	    Generator::createConstrKeyColsDescs(constrInfo[i].colCount, constrInfo[i].keyInfoArray);
+	  curr_constr_desc->constrntsDesc()->constr_key_cols_desc =
+	    Generator::createConstrKeyColsDescs(constrInfo[i].colCount, constrInfo[i].keyInfoArray, space);
 
 	  if (constrInfo[i].ringConstrArray)
 	    {
-	      curr_constr_desc->body.constrnts_desc.referencing_constrnts_desc =
+	      curr_constr_desc->constrntsDesc()->referencing_constrnts_desc =
 		Generator::createRefConstrDescStructs(constrInfo[i].numRingConstr,
-						      constrInfo[i].ringConstrArray);
+						      constrInfo[i].ringConstrArray, space);
 	    }
 
 	  if (constrInfo[i].refdConstrArray)
 	    {
-	      curr_constr_desc->body.constrnts_desc.referenced_constrnts_desc =
+	      curr_constr_desc->constrntsDesc()->referenced_constrnts_desc =
 		Generator::createRefConstrDescStructs(constrInfo[i].numRefdConstr,
-						      constrInfo[i].refdConstrArray);
+						      constrInfo[i].refdConstrArray, space);
 	    }
 
 	  if ((constrInfo[i].constrType == 2) && // check constr
 	      (constrInfo[i].checkConstrLen > 0))
 	    {
-	      desc_struct * check_constr_desc = readtabledef_allocate_desc(DESC_CHECK_CONSTRNTS_TYPE);
+	      TrafDesc * check_constr_desc = TrafAllocateDDLdesc(DESC_CHECK_CONSTRNTS_TYPE, space);
 	      
-	      check_constr_desc->body.check_constrnts_desc.seqnumber = 1;
-	      check_constr_desc->body.check_constrnts_desc.constrnt_text = 
-		new HEAP char[constrInfo[i].checkConstrLen + 1];
-	      memcpy(check_constr_desc->body.check_constrnts_desc.constrnt_text,
+	      check_constr_desc->checkConstrntsDesc()->constrnt_text = 
+		new GENHEAP(space) char[constrInfo[i].checkConstrLen + 1];
+	      memcpy(check_constr_desc->checkConstrntsDesc()->constrnt_text,
 		     constrInfo[i].checkConstrText, constrInfo[i].checkConstrLen);
-	      check_constr_desc->body.check_constrnts_desc.constrnt_text
+	      check_constr_desc->checkConstrntsDesc()->constrnt_text
 		[constrInfo[i].checkConstrLen] = 0;
 
-	      curr_constr_desc->body.constrnts_desc.check_constrnts_desc =
+	      curr_constr_desc->constrntsDesc()->check_constrnts_desc =
 		check_constr_desc;
 	    }
 
 	  if (prev_desc)
-	    prev_desc->header.next = curr_constr_desc;
+	    prev_desc->next = curr_constr_desc;
 
 	  prev_desc = curr_constr_desc;
 	} // for
     }
 
-  desc_struct * index_desc = readtabledef_allocate_desc(DESC_INDEXES_TYPE);
-  index_desc->body.indexes_desc.tablename = table_desc->body.table_desc.tablename;
-  index_desc->body.indexes_desc.indexname = table_desc->body.table_desc.tablename;
-  index_desc->body.indexes_desc.keytag = 0; // primary index
-  index_desc->body.indexes_desc.indexUID = 0;
-  index_desc->body.indexes_desc.record_length = table_desc->body.table_desc.record_length;
-  index_desc->body.indexes_desc.colcount = table_desc->body.table_desc.colcount;
-  index_desc->body.indexes_desc.isVerticalPartition = 0;
-  index_desc->body.indexes_desc.blocksize = 32*1024; //100000; //4096; // doesn't matter.
-  index_desc->body.indexes_desc.isVolatile = table_desc->body.table_desc.isVolatile;
-  index_desc->body.indexes_desc.hbaseCreateOptions  = NULL;
-  index_desc->body.indexes_desc.numSaltPartns = 0;
-  index_desc->body.indexes_desc.rowFormat = table_desc->body.table_desc.rowFormat;
+  TrafDesc * index_desc = TrafAllocateDDLdesc(DESC_INDEXES_TYPE, space);
+  index_desc->indexesDesc()->tablename = table_desc->tableDesc()->tablename;
+  index_desc->indexesDesc()->indexname = table_desc->tableDesc()->tablename;
+  index_desc->indexesDesc()->keytag = 0; // primary index
+  index_desc->indexesDesc()->indexUID = 0;
+  index_desc->indexesDesc()->record_length = table_desc->tableDesc()->record_length;
+  index_desc->indexesDesc()->colcount = table_desc->tableDesc()->colcount;
+  index_desc->indexesDesc()->blocksize = 32*1024;
+  index_desc->indexesDesc()->setVolatile(table_desc->tableDesc()->isVolatileTable());
+  index_desc->indexesDesc()->hbaseCreateOptions  = NULL;
+  index_desc->indexesDesc()->numSaltPartns = 0;
+  index_desc->indexesDesc()->setRowFormat(table_desc->tableDesc()->rowFormat());
   if (tableInfo)
   {
-    index_desc->body.indexes_desc.indexUID = tableInfo->objUID;
+    index_desc->indexesDesc()->indexUID = tableInfo->objUID;
     
-    index_desc->body.indexes_desc.numSaltPartns = tableInfo->numSaltPartns;
+    index_desc->indexesDesc()->numSaltPartns = tableInfo->numSaltPartns;
     if (tableInfo->hbaseCreateOptions)
       {
-        index_desc->body.indexes_desc.hbaseCreateOptions  = 
-          new HEAP char[strlen(tableInfo->hbaseCreateOptions) + 1];
-        strcpy(index_desc->body.indexes_desc.hbaseCreateOptions, 
+        index_desc->indexesDesc()->hbaseCreateOptions  = 
+          new GENHEAP(space) char[strlen(tableInfo->hbaseCreateOptions) + 1];
+        strcpy(index_desc->indexesDesc()->hbaseCreateOptions, 
                tableInfo->hbaseCreateOptions);
       }
   }
   
   if (numIndexes > 0)
     {
-      desc_struct * prev_desc = index_desc;
+      TrafDesc * prev_desc = index_desc;
       for (int i = 0; i < numIndexes; i++)
 	{
-	  desc_struct * curr_index_desc = readtabledef_allocate_desc(DESC_INDEXES_TYPE);
+	  TrafDesc * curr_index_desc = TrafAllocateDDLdesc(DESC_INDEXES_TYPE, space);
 	  
-	  prev_desc->header.next = curr_index_desc;
+	  prev_desc->next = curr_index_desc;
 
-	  curr_index_desc->body.indexes_desc.tablename = new HEAP char[strlen(indexInfo[i].baseTableName)+1];
-	  strcpy(curr_index_desc->body.indexes_desc.tablename, indexInfo[i].baseTableName);
+	  curr_index_desc->indexesDesc()->tablename = new GENHEAP(space) char[strlen(indexInfo[i].baseTableName)+1];
+	  strcpy(curr_index_desc->indexesDesc()->tablename, indexInfo[i].baseTableName);
 
-	  curr_index_desc->body.indexes_desc.indexname = new HEAP char[strlen(indexInfo[i].indexName)+1];
-	  strcpy(curr_index_desc->body.indexes_desc.indexname, indexInfo[i].indexName);
+	  curr_index_desc->indexesDesc()->indexname = new GENHEAP(space) char[strlen(indexInfo[i].indexName)+1];
+	  strcpy(curr_index_desc->indexesDesc()->indexname, indexInfo[i].indexName);
 
-          curr_index_desc->body.indexes_desc.indexUID = indexInfo[i].indexUID;
-	  curr_index_desc->body.indexes_desc.keytag = indexInfo[i].keytag;
-	  curr_index_desc->body.indexes_desc.unique = indexInfo[i].isUnique;
-	  curr_index_desc->body.indexes_desc.isCreatedExplicitly = indexInfo[i].isExplicit;
-          curr_index_desc->body.indexes_desc.record_length = 
+          curr_index_desc->indexesDesc()->indexUID = indexInfo[i].indexUID;
+	  curr_index_desc->indexesDesc()->keytag = indexInfo[i].keytag;
+	  curr_index_desc->indexesDesc()->setUnique(indexInfo[i].isUnique);
+	  curr_index_desc->indexesDesc()->setExplicit(indexInfo[i].isExplicit);
+          curr_index_desc->indexesDesc()->record_length = 
             getRecordLength(&indexInfo[i], columnInfo);
-	  curr_index_desc->body.indexes_desc.colcount = indexInfo[i].keyColCount + indexInfo[i].nonKeyColCount;
-	  curr_index_desc->body.indexes_desc.isVerticalPartition = 0;
-	  curr_index_desc->body.indexes_desc.blocksize = 32*1024; //100000; //4096; // doesn't matter.
+	  curr_index_desc->indexesDesc()->colcount = indexInfo[i].keyColCount + indexInfo[i].nonKeyColCount;
+	  curr_index_desc->indexesDesc()->blocksize = 32*1024;
 
-	  curr_index_desc->body.indexes_desc.keys_desc = 
-	    Generator::createKeyDescs(indexInfo[i].keyColCount, indexInfo[i].keyInfoArray);
+	  curr_index_desc->indexesDesc()->keys_desc = 
+	    Generator::createKeyDescs(indexInfo[i].keyColCount, indexInfo[i].keyInfoArray, space);
 
-	  curr_index_desc->body.indexes_desc.non_keys_desc = 
-	    Generator::createKeyDescs(indexInfo[i].nonKeyColCount, indexInfo[i].nonKeyInfoArray);
+	  curr_index_desc->indexesDesc()->non_keys_desc = 
+	    Generator::createKeyDescs(indexInfo[i].nonKeyColCount, indexInfo[i].nonKeyInfoArray, space);
 
 	  if (CmpCommon::context()->sqlSession()->validateVolatileName(indexInfo[i].indexName))
-	    curr_index_desc->body.indexes_desc.isVolatile = 1;
+	    curr_index_desc->indexesDesc()->setVolatile(TRUE);
 	  else
-	    curr_index_desc->body.indexes_desc.isVolatile = 0;
-          curr_index_desc->body.indexes_desc.hbaseCreateOptions  = NULL;
-          curr_index_desc->body.indexes_desc.numSaltPartns = 
+	    curr_index_desc->indexesDesc()->setVolatile(FALSE);
+          curr_index_desc->indexesDesc()->hbaseCreateOptions  = NULL;
+          curr_index_desc->indexesDesc()->numSaltPartns = 
             indexInfo[i].numSaltPartns;
-          curr_index_desc->body.indexes_desc.rowFormat = 
-            indexInfo[i].rowFormat;
+          curr_index_desc->indexesDesc()->setRowFormat(indexInfo[i].rowFormat);
           if (indexInfo[i].hbaseCreateOptions)
           {
-            curr_index_desc->body.indexes_desc.hbaseCreateOptions  = 
-              new HEAP char[strlen(indexInfo[i].hbaseCreateOptions) + 1];
-            strcpy(curr_index_desc->body.indexes_desc.hbaseCreateOptions, 
+            curr_index_desc->indexesDesc()->hbaseCreateOptions  = 
+              new GENHEAP(space) char[strlen(indexInfo[i].hbaseCreateOptions) + 1];
+            strcpy(curr_index_desc->indexesDesc()->hbaseCreateOptions, 
                indexInfo[i].hbaseCreateOptions);
           }
 
@@ -2042,144 +2131,177 @@ desc_struct * Generator::createVirtualTableDesc(
 	}
     }
 
-  desc_struct * view_desc = NULL;
+  TrafDesc * view_desc = NULL;
   if (numViews > 0)
     {
-      view_desc = readtabledef_allocate_desc(DESC_VIEW_TYPE);
+      view_desc = TrafAllocateDDLdesc(DESC_VIEW_TYPE, space);
       
-      view_desc->body.view_desc.viewname = new HEAP char[strlen(viewInfo[0].viewName)+1];
-      strcpy(view_desc->body.view_desc.viewname, viewInfo[0].viewName);
+      view_desc->viewDesc()->viewname = new GENHEAP(space) char[strlen(viewInfo[0].viewName)+1];
+      strcpy(view_desc->viewDesc()->viewname, viewInfo[0].viewName);
 
-      view_desc->body.view_desc.viewfilename = view_desc->body.view_desc.viewname;
-      view_desc->body.view_desc.viewtext = new HEAP char[strlen(viewInfo[0].viewText) + 1];
-      strcpy(view_desc->body.view_desc.viewtext, viewInfo[0].viewText);
+      view_desc->viewDesc()->viewfilename = view_desc->viewDesc()->viewname;
+      view_desc->viewDesc()->viewtext = new GENHEAP(space) char[strlen(viewInfo[0].viewText) + 1];
+      strcpy(view_desc->viewDesc()->viewtext, viewInfo[0].viewText);
 
-      view_desc->body.view_desc.viewtextcharset = (CharInfo::CharSet)SQLCHARSETCODE_UTF8;
+      view_desc->viewDesc()->viewtextcharset = (CharInfo::CharSet)SQLCHARSETCODE_UTF8;
 
       if (viewInfo[0].viewCheckText)
 	{
-	  view_desc->body.view_desc.viewchecktext = new HEAP char[strlen(viewInfo[0].viewCheckText)+1];
-	  strcpy(view_desc->body.view_desc.viewchecktext, viewInfo[0].viewCheckText);
+	  view_desc->viewDesc()->viewchecktext = new GENHEAP(space) char[strlen(viewInfo[0].viewCheckText)+1];
+	  strcpy(view_desc->viewDesc()->viewchecktext, viewInfo[0].viewCheckText);
 	}
       else
-	view_desc->body.view_desc.viewchecktext = NULL;
+	view_desc->viewDesc()->viewchecktext = NULL;
 
-      view_desc->body.view_desc.updatable = viewInfo[0].isUpdatable;
-      view_desc->body.view_desc.insertable = viewInfo[0].isInsertable;
+      view_desc->viewDesc()->setUpdatable(viewInfo[0].isUpdatable);
+      view_desc->viewDesc()->setInsertable(viewInfo[0].isInsertable);
     }
 
-  desc_struct * seq_desc = NULL;
+  TrafDesc * seq_desc = NULL;
   if (seqInfo)
     {
-      seq_desc = readtabledef_allocate_desc(DESC_SEQUENCE_GENERATOR_TYPE);
+      seq_desc = TrafAllocateDDLdesc(DESC_SEQUENCE_GENERATOR_TYPE, space);
       
-      seq_desc->body.sequence_generator_desc.sgType = (ComSequenceGeneratorType)seqInfo->seqType;
+      seq_desc->sequenceGeneratorDesc()->setSgType((ComSequenceGeneratorType)seqInfo->seqType);
 
-      seq_desc->body.sequence_generator_desc.fsDataType = (ComFSDataType)seqInfo->datatype;
-      seq_desc->body.sequence_generator_desc.startValue = seqInfo->startValue;
-      seq_desc->body.sequence_generator_desc.increment = seqInfo->increment;
+      seq_desc->sequenceGeneratorDesc()->fsDataType = (ComFSDataType)seqInfo->datatype;
+      seq_desc->sequenceGeneratorDesc()->startValue = seqInfo->startValue;
+      seq_desc->sequenceGeneratorDesc()->increment = seqInfo->increment;
 
-      seq_desc->body.sequence_generator_desc.maxValue = seqInfo->maxValue;
-      seq_desc->body.sequence_generator_desc.minValue = seqInfo->minValue;
-      seq_desc->body.sequence_generator_desc.cycleOption = 
+      seq_desc->sequenceGeneratorDesc()->maxValue = seqInfo->maxValue;
+      seq_desc->sequenceGeneratorDesc()->minValue = seqInfo->minValue;
+      seq_desc->sequenceGeneratorDesc()->cycleOption = 
 	(seqInfo->cycleOption ? TRUE : FALSE);
-      seq_desc->body.sequence_generator_desc.cache = seqInfo->cache;      
-      seq_desc->body.sequence_generator_desc.objectUID = seqInfo->seqUID;
+      seq_desc->sequenceGeneratorDesc()->cache = seqInfo->cache;      
+      seq_desc->sequenceGeneratorDesc()->objectUID = seqInfo->seqUID;
       
-      seq_desc->body.sequence_generator_desc.nextValue = seqInfo->nextValue;
-      seq_desc->body.sequence_generator_desc.redefTime = seqInfo->redefTime;
+      seq_desc->sequenceGeneratorDesc()->nextValue = seqInfo->nextValue;
+      seq_desc->sequenceGeneratorDesc()->redefTime = seqInfo->redefTime;
     }
 
   // cannot simply point to same files desc as the table one,
   // because then ReadTableDef::deleteTree frees same memory twice (error)
-  desc_struct * i_files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
-  i_files_desc->body.files_desc.audit = -1; // audited table
-  i_files_desc->body.files_desc.fileorganization = KEY_SEQUENCED_FILE;
-  index_desc->body.indexes_desc.files_desc = i_files_desc;
+  TrafDesc * i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, space);
+  i_files_desc->filesDesc()->setAudited(TRUE); // audited table
+  index_desc->indexesDesc()->files_desc = i_files_desc;
 
-  index_desc->body.indexes_desc.keys_desc  = keys_descs;
-  table_desc->body.table_desc.columns_desc = cols_descs;
-  table_desc->body.table_desc.indexes_desc = index_desc;
-  table_desc->body.table_desc.views_desc = view_desc;
-  table_desc->body.table_desc.constrnts_desc = first_constr_desc;
-  table_desc->body.table_desc.constr_count = numConstrs; 
-  table_desc->body.table_desc.sequence_generator_desc = seq_desc;
+  index_desc->indexesDesc()->keys_desc  = keys_descs;
+  table_desc->tableDesc()->columns_desc = cols_descs;
+  table_desc->tableDesc()->indexes_desc = index_desc;
+  table_desc->tableDesc()->views_desc = view_desc;
+  table_desc->tableDesc()->constrnts_desc = first_constr_desc;
+  table_desc->tableDesc()->constr_count = numConstrs; 
+  table_desc->tableDesc()->sequence_generator_desc = seq_desc;
+
+  if (endKeyArray)
+    {
+      // create a list of region descriptors
+      table_desc->tableDesc()->hbase_regionkey_desc = 
+        assembleDescs(endKeyArray, STMTHEAP, space);
+    }
+
+  if (snapshotName != NULL)
+    {
+      table_desc->tableDesc()->snapshotName = 
+        new GENHEAP(space) char[strlen(snapshotName) + 1];
+      strcpy(table_desc->tableDesc()->snapshotName, snapshotName);
+    }
+
+  if (genPackedDesc && space)
+    {
+      // pack generated desc and move it to a contiguous buffer before return.
+      DescStructPtr((TrafDesc*)table_desc).pack(space);
+
+      Lng32 allocSize = space->getAllocatedSpaceSize();
+      char * contigTableDesc = new HEAP char[allocSize];
+      if (! space->makeContiguous(contigTableDesc, allocSize))
+        {
+          table_desc = NULL;
+          return table_desc;
+        }
+
+      table_desc = (TrafDesc*)contigTableDesc;
+
+      if (packedDescLen)
+        *packedDescLen = allocSize;
+    }
 
   return table_desc;
 }
 
-
-desc_struct *Generator::createVirtualLibraryDesc(
-   const char *libraryName,
-   ComTdbVirtTableLibraryInfo *libraryInfo)
-   
+TrafDesc *Generator::createVirtualLibraryDesc(
+     const char *libraryName,
+     ComTdbVirtTableLibraryInfo *libraryInfo,
+     Space * space)
 {
 
-   desc_struct *library_desc = readtabledef_allocate_desc(DESC_LIBRARY_TYPE);
-   library_desc->body.library_desc.libraryName = new HEAP char[strlen(libraryName) + 1];
-   strcpy(library_desc->body.library_desc.libraryName, libraryName);
-   library_desc->body.library_desc.libraryFilename = new HEAP char[strlen(libraryInfo->library_filename) + 1];
-   strcpy(library_desc->body.library_desc.libraryFilename, libraryInfo->library_filename);
-   library_desc->body.library_desc.libraryVersion = libraryInfo->library_version;
-   library_desc->body.library_desc.libraryUID = libraryInfo->library_UID;
-   library_desc->body.library_desc.libraryOwnerID = libraryInfo->object_owner_id;
-   library_desc->body.library_desc.librarySchemaOwnerID = libraryInfo->schema_owner_id;
+  TrafDesc *library_desc = TrafAllocateDDLdesc(DESC_LIBRARY_TYPE, space);
+   library_desc->libraryDesc()->libraryName = new GENHEAP(space) char[strlen(libraryName) + 1];
+   strcpy(library_desc->libraryDesc()->libraryName, libraryName);
+   library_desc->libraryDesc()->libraryFilename = new GENHEAP(space) char[strlen(libraryInfo->library_filename) + 1];
+   strcpy(library_desc->libraryDesc()->libraryFilename, libraryInfo->library_filename);
+   library_desc->libraryDesc()->libraryVersion = libraryInfo->library_version;
+   library_desc->libraryDesc()->libraryUID = libraryInfo->library_UID;
+   library_desc->libraryDesc()->libraryOwnerID = libraryInfo->object_owner_id;
+   library_desc->libraryDesc()->librarySchemaOwnerID = libraryInfo->schema_owner_id;
    
    return library_desc;
    
 }
 
 
-desc_struct *Generator::createVirtualRoutineDesc(
-                                  const char *routineName,
-                                  ComTdbVirtTableRoutineInfo *routineInfo,
-                                  Int32 numParams,
-                                  ComTdbVirtTableColumnInfo *paramsArray)
+TrafDesc *Generator::createVirtualRoutineDesc(
+     const char *routineName,
+     ComTdbVirtTableRoutineInfo *routineInfo,
+     Int32 numParams,
+     ComTdbVirtTableColumnInfo *paramsArray,
+     Space * space)
 {
-   desc_struct *routine_desc = readtabledef_allocate_desc(DESC_ROUTINE_TYPE);
-   routine_desc->body.routine_desc.objectUID = routineInfo->object_uid;
-   routine_desc->body.routine_desc.routineName = new HEAP char[strlen(routineName)+1];
-   strcpy(routine_desc->body.routine_desc.routineName, routineName);
-   routine_desc->body.routine_desc.externalName = new HEAP char[strlen(routineInfo->external_name)+1];
-   strcpy(routine_desc->body.routine_desc.externalName, routineInfo->external_name);
-   routine_desc->body.routine_desc.librarySqlName = NULL; 
-   routine_desc->body.routine_desc.libraryFileName = new HEAP char[strlen(routineInfo->library_filename)+1];
-   strcpy(routine_desc->body.routine_desc.libraryFileName, routineInfo->library_filename);
-   routine_desc->body.routine_desc.signature = new HEAP char[strlen(routineInfo->signature)+1];
-   strcpy(routine_desc->body.routine_desc.signature, routineInfo->signature);
-   routine_desc->body.routine_desc.librarySqlName = new HEAP char[strlen(routineInfo->library_sqlname)+1];
-   strcpy(routine_desc->body.routine_desc.librarySqlName, routineInfo->library_sqlname);
-   routine_desc->body.routine_desc.language  = 
+  TrafDesc *routine_desc = TrafAllocateDDLdesc(DESC_ROUTINE_TYPE, space);
+   routine_desc->routineDesc()->objectUID = routineInfo->object_uid;
+   routine_desc->routineDesc()->routineName = new GENHEAP(space) char[strlen(routineName)+1];
+   strcpy(routine_desc->routineDesc()->routineName, routineName);
+   routine_desc->routineDesc()->externalName = new GENHEAP(space) char[strlen(routineInfo->external_name)+1];
+   strcpy(routine_desc->routineDesc()->externalName, routineInfo->external_name);
+   routine_desc->routineDesc()->librarySqlName = NULL; 
+   routine_desc->routineDesc()->libraryFileName = new GENHEAP(space) char[strlen(routineInfo->library_filename)+1];
+   strcpy(routine_desc->routineDesc()->libraryFileName, routineInfo->library_filename);
+   routine_desc->routineDesc()->signature = new GENHEAP(space) char[strlen(routineInfo->signature)+1];
+   strcpy(routine_desc->routineDesc()->signature, routineInfo->signature);
+   routine_desc->routineDesc()->librarySqlName = new GENHEAP(space) char[strlen(routineInfo->library_sqlname)+1];
+   strcpy(routine_desc->routineDesc()->librarySqlName, routineInfo->library_sqlname);
+   routine_desc->routineDesc()->language  = 
            CmGetComRoutineLanguageAsRoutineLanguage(routineInfo->language_type);
-   routine_desc->body.routine_desc.UDRType  = 
+   routine_desc->routineDesc()->UDRType  = 
            CmGetComRoutineTypeAsRoutineType(routineInfo->UDR_type);
-   routine_desc->body.routine_desc.sqlAccess  = 
+   routine_desc->routineDesc()->sqlAccess  = 
            CmGetComRoutineSQLAccessAsRoutineSQLAccess(routineInfo->sql_access);
-   routine_desc->body.routine_desc.transactionAttributes  = 
+   routine_desc->routineDesc()->transactionAttributes  = 
            CmGetComRoutineTransactionAttributesAsRoutineTransactionAttributes
                   (routineInfo->transaction_attributes);
-   routine_desc->body.routine_desc.maxResults = routineInfo->max_results;
-   routine_desc->body.routine_desc.paramStyle  = 
+   routine_desc->routineDesc()->maxResults = routineInfo->max_results;
+   routine_desc->routineDesc()->paramStyle  = 
            CmGetComRoutineParamStyleAsRoutineParamStyle(routineInfo->param_style);
-   routine_desc->body.routine_desc.isDeterministic = routineInfo->deterministic;
-   routine_desc->body.routine_desc.isCallOnNull = routineInfo->call_on_null;
-   routine_desc->body.routine_desc.isIsolate = routineInfo->isolate;
-   routine_desc->body.routine_desc.externalSecurity  = 
+   routine_desc->routineDesc()->isDeterministic = routineInfo->deterministic;
+   routine_desc->routineDesc()->isCallOnNull = routineInfo->call_on_null;
+   routine_desc->routineDesc()->isIsolate = routineInfo->isolate;
+   routine_desc->routineDesc()->externalSecurity  = 
            CmGetRoutineExternalSecurityAsComRoutineExternalSecurity
                   (routineInfo->external_security);
-   routine_desc->body.routine_desc.executionMode  = 
+   routine_desc->routineDesc()->executionMode  = 
            CmGetRoutineExecutionModeAsComRoutineExecutionMode
                  (routineInfo->execution_mode);
-   routine_desc->body.routine_desc.stateAreaSize = routineInfo->state_area_size;
-   routine_desc->body.routine_desc.parallelism  = 
+   routine_desc->routineDesc()->stateAreaSize = routineInfo->state_area_size;
+   routine_desc->routineDesc()->parallelism  = 
            CmGetRoutineParallelismAsComRoutineParallelism(routineInfo->parallelism);
    UInt32 reclen; 
-   routine_desc->body.routine_desc.paramsCount = numParams;
-   routine_desc->body.routine_desc.params = 
+   routine_desc->routineDesc()->paramsCount = numParams;
+   routine_desc->routineDesc()->params = 
              Generator::createColDescs(routineName, 
-              paramsArray, (Int16) numParams, reclen);
-   routine_desc->body.routine_desc.owner = routineInfo->object_owner_id;
-   routine_desc->body.routine_desc.schemaOwner = routineInfo->schema_owner_id; 
+                                       paramsArray, (Int16) numParams, reclen, 
+                                       space);
+   routine_desc->routineDesc()->owner = routineInfo->object_owner_id;
+   routine_desc->routineDesc()->schemaOwner = routineInfo->schema_owner_id; 
    return routine_desc;
 }
 

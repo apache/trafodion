@@ -389,6 +389,7 @@ log LOG122;
 ?section drop_tab
 
 set schema $$TEST_SCHEMA$$;
+obey $$scriptsdir$$/tools/sbdefs;
 
 log LOG122;
 
@@ -400,6 +401,7 @@ insert into t122t1 values ('i'), ('ii'), ('iii'), ('iv');
 
 ?section alter_tbl_add
 set schema $$TEST_SCHEMA$$;
+obey $$scriptsdir$$/tools/sbdefs;
 
 log LOG122;
 -- add columns, constraints, and indexes
@@ -412,6 +414,8 @@ create index t122t3_index on t122t3(c2);
 
 ?section alter_tbl_drop
 set schema $$TEST_SCHEMA$$;
+obey $$scriptsdir$$/tools/sbdefs;
+
 log LOG122;
 -- drop columns, constraints, and indexes
 alter table t122t3_col drop column c3;
@@ -423,6 +427,8 @@ drop index t122t3_index;
 
 ?section drop_view
 set schema $$TEST_SCHEMA$$;
+obey $$scriptsdir$$/tools/sbdefs;
+
 log LOG122;
 
 drop view t122_v7;

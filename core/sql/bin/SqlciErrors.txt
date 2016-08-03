@@ -290,7 +290,7 @@
 1295 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Target column $0~ColumnName has mismatching default type.    
 1296 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Character data type of target column and literal are different.    
 1297 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The $0~string0 command cannot be executed because volatile schema $1~string1 exists.
-1298 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ----- Msg used in Trafodion ------
+1298 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~SchemaName could not be altered. $0~String0
 1299 ZZZZZ 99999 BEGINNER MAJOR DBADMIN You cannot specify some columns with just the name and others with name & data attributes.
 1300 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Catman generated unknown Exception for procedure $0~TableName.
 1301 ZZZZZ 99999 BEGINNER MAJOR DBADMIN NO ACTION referential action for $0~string0 clause is not yet supported as specified by ANSI SQL99 standard. To alter the behavior, set an appropriate value for the REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT default.
@@ -1434,6 +1434,7 @@ $1~String1 --------------------------------
 4490 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD into a salted table is not supported if ESP parallelism is turned off. 
 4491 42000 99999 BEGINNER MINOR LOGONLY The user does not have $0~string0 privilege on sequence $1~string1$2~string2.
 4492 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD option UPDATE STATISTICS cannot be used with UPSERT USING LOAD option.
+4493 ZZZZZ 99999 BEGINNER MINOR LOGONLY Stored Descriptor Status: $0~String0
 5000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query normalizer.
 6000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query optimizer.
 6001 0A000 99999 BEGINNER MAJOR DBADMIN DISTINCT aggregates can be computed for only one column per table expression.

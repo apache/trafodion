@@ -259,6 +259,7 @@ class StmtDDLAddConstraintRI;
 class StmtDDLAddConstraintUnique;
 class StmtDDLAlterAuditConfig;
 class StmtDDLAlterCatalog;
+class StmtDDLAlterSchema;
 class StmtDDLAlterIndex;
 class StmtDDLAlterIndexAttribute;
 class StmtDDLAlterIndexHBaseOptions;
@@ -274,6 +275,7 @@ class StmtDDLAlterTableColumn;
 class StmtDDLAlterTableMove;
 class StmtDDLAlterTablePartition;
 class StmtDDLAlterTableRename;
+class StmtDDLAlterTableStoredDesc;
 class StmtDDLAlterTableNamespace;
 class StmtDDLAlterTableAlterColumnDatatype;
 class StmtDDLAlterTableAlterColumnRename;
@@ -586,6 +588,7 @@ public:
   virtual StmtDDLAddConstraintUnique    * castToStmtDDLAddConstraintUnique(); 
   virtual StmtDDLAlterAuditConfig       * castToStmtDDLAlterAuditConfig();
   virtual StmtDDLAlterCatalog           * castToStmtDDLAlterCatalog();
+  virtual StmtDDLAlterSchema            * castToStmtDDLAlterSchema();
   virtual StmtDDLAlterIndex             * castToStmtDDLAlterIndex();
   virtual StmtDDLAlterIndexAttribute    * castToStmtDDLAlterIndexAttribute();
   virtual StmtDDLAlterIndexHBaseOptions * castToStmtDDLAlterIndexHBaseOptions();
@@ -604,6 +607,7 @@ public:
   virtual StmtDDLAlterTableHBaseOptions * castToStmtDDLAlterTableHBaseOptions();
   virtual StmtDDLAlterTablePartition    * castToStmtDDLAlterTablePartition();
   virtual StmtDDLAlterTableRename       * castToStmtDDLAlterTableRename();
+  virtual StmtDDLAlterTableStoredDesc   * castToStmtDDLAlterTableStoredDesc();
   virtual StmtDDLAlterTableNamespace    * castToStmtDDLAlterTableNamespace();
   virtual StmtDDLAlterTableAlterColumnDefaultValue* 
                 castToStmtDDLAlterTableAlterColumnDefaultValue();

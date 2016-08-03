@@ -1370,45 +1370,61 @@ public:
   static Lng32 getRecordLength(ComTdbVirtTableIndexInfo * indexInfo,
                                ComTdbVirtTableColumnInfo * columnInfoArray);
 
-  static desc_struct *createColDescs(
-	const char * tableName,
-	ComTdbVirtTableColumnInfo * columnInfo,
-	Int16 numCols,
-	UInt32 &offset);
-
-  static desc_struct * createKeyDescs(Int32 numKeys,
-				      const ComTdbVirtTableKeyInfo * keyInfo);
-
-  static desc_struct * createConstrKeyColsDescs(Int32 numKeys,
-				      ComTdbVirtTableKeyInfo * keyInfo);
-
-  static desc_struct * createRefConstrDescStructs(
-						  Int32 numConstrs,
-						  ComTdbVirtTableRefConstraints * refConstrs);
+  static TrafDesc *createColDescs(
+       const char * tableName,
+       ComTdbVirtTableColumnInfo * columnInfo,
+       Int16 numCols,
+       UInt32 &offset,
+       Space * space);
   
-  static desc_struct *createVirtualTableDesc(
-					     const char * tableName, 
-					     Int32 numCols,
-					     ComTdbVirtTableColumnInfo * columnInfo,
-					     Int32 numKeys,
-					     ComTdbVirtTableKeyInfo * keyInfo,
-					     Int32 numConstrs = 0,
-					     ComTdbVirtTableConstraintInfo * constrInfo = NULL,
-					     Int32 numIndexes = 0,
-					     ComTdbVirtTableIndexInfo * indexInfo = NULL,
-					     Int32 numViews = 0,
-					     ComTdbVirtTableViewInfo * viewInfo = NULL,
-					     ComTdbVirtTableTableInfo * tableInfo = NULL,
-					     ComTdbVirtTableSequenceInfo * seqInfo = NULL);
+  static TrafDesc * createKeyDescs(Int32 numKeys,
+				      const ComTdbVirtTableKeyInfo * keyInfo,
+                                      Space * space);
 
-  static desc_struct *createVirtualRoutineDesc(
+  static TrafDesc * createConstrKeyColsDescs(Int32 numKeys,
+                                                ComTdbVirtTableKeyInfo * keyInfo,
+                                                Space * space);
+
+  static TrafDesc * createRefConstrDescStructs(
+						  Int32 numConstrs,
+						  ComTdbVirtTableRefConstraints * refConstrs,
+                                                  Space * space);
+  
+  static TrafDesc *createVirtualTableDesc(
+       const char * tableName, 
+       Int32 numCols,
+       ComTdbVirtTableColumnInfo * columnInfo,
+       Int32 numKeys,
+       ComTdbVirtTableKeyInfo * keyInfo,
+       Int32 numConstrs = 0,
+       ComTdbVirtTableConstraintInfo * constrInfo = NULL,
+       Int32 numIndexes = 0,
+       ComTdbVirtTableIndexInfo * indexInfo = NULL,
+       Int32 numViews = 0,
+       ComTdbVirtTableViewInfo * viewInfo = NULL,
+       ComTdbVirtTableTableInfo * tableInfo = NULL,
+       ComTdbVirtTableSequenceInfo * seqInfo = NULL,
+       NAArray<HbaseStr>* endKeyArray = NULL,
+       char * snapshotName = NULL,
+       NABoolean genPackedDesc = FALSE,
+       Int32 * packedDescLen = NULL,
+       NABoolean isUserTable = FALSE);
+
+  static TrafDesc* assembleDescs(
+     NAArray<HbaseStr >* keyArray, 
+     NAMemory* heap,
+     Space * space);
+
+  static TrafDesc *createVirtualRoutineDesc(
                                   const char *routineName,
                                   ComTdbVirtTableRoutineInfo *routineInfo,
                                   Int32 numParams,
-                                  ComTdbVirtTableColumnInfo *paramsArray);
-  static desc_struct *createVirtualLibraryDesc(
+                                  ComTdbVirtTableColumnInfo *paramsArray,
+                                  Space * space);
+  static TrafDesc *createVirtualLibraryDesc(
                                   const char *libraryName,
-                                  ComTdbVirtTableLibraryInfo *libraryInfo);
+                                  ComTdbVirtTableLibraryInfo *libraryInfo,
+                                  Space * space);
   static short genAndEvalExpr(
 			      CmpContext * cmpContext,
 			      char * exprStr, Lng32 numChildren, 

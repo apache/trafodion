@@ -50,6 +50,7 @@
 #include "RelUpdate.h"
 #include "HDFSHook.h"
 #include "CmpSeabaseDDL.h"
+#include "TrafDDLdesc.h"
 
 
 /////////////////////////////////////////////////////////////////////
@@ -1385,21 +1386,19 @@ NABoolean HbaseAccess::validateVirtualTableDesc(NATable * naTable)
   return TRUE;
 }
 
-void populateRangeDescForBeginKey(char* buf, Int32 len, struct desc_struct* target, NAMemory* heap)
+void populateRangeDescForBeginKey(char* buf, Int32 len, struct TrafDesc* target, NAMemory* heap)
 {  
-   target->header.nodetype = DESC_HBASE_RANGE_REGION_TYPE;
-   target->body.hbase_region_desc.beginKey = buf;
-   target->body.hbase_region_desc.beginKeyLen = len;
-   target->body.hbase_region_desc.endKey = NULL;
-   target->body.hbase_region_desc.endKeyLen = 0;   
+  target->nodetype = DESC_HBASE_RANGE_REGION_TYPE;
+  target->hbaseRegionDesc()->beginKey = buf;
+  target->hbaseRegionDesc()->beginKeyLen = len;
+  target->hbaseRegionDesc()->endKey = NULL;
+  target->hbaseRegionDesc()->endKeyLen = 0;   
 }
 
-void populateRegionDescAsRANGE(char* buf, Int32 len, struct desc_struct* target, NAMemory*);
-
-desc_struct *HbaseAccess::createVirtualTableDesc(const char * name,
+TrafDesc *HbaseAccess::createVirtualTableDesc(const char * name,
 						 NABoolean isRW, NABoolean isCW, NAArray<HbaseStr>* beginKeys)
 {
-  desc_struct * table_desc = NULL;
+  TrafDesc * table_desc = NULL;
 
   if (isRW)
     table_desc =
@@ -1419,9 +1418,9 @@ desc_struct *HbaseAccess::createVirtualTableDesc(const char * name,
 
   if (table_desc)
     {
-       struct desc_struct* head = assembleDescs(beginKeys, populateRangeDescForBeginKey, STMTHEAP);
+      struct TrafDesc* head = Generator::assembleDescs(beginKeys, NULL, NULL);
 
-      ((table_desc_struct*)table_desc)->hbase_regionkey_desc = head;
+      table_desc->tableDesc()->hbase_regionkey_desc = head;
 
       Lng32 v1 = 
 	(Lng32) CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_NAME_LENGTH);
@@ -1430,26 +1429,26 @@ desc_struct *HbaseAccess::createVirtualTableDesc(const char * name,
       Lng32 v3 = 
 	(Lng32) CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_INFO_LENGTH);
 
-      desc_struct * cols_desc =  table_desc->body.table_desc.columns_desc;
-      for (Lng32 i = 0; i < table_desc->body.table_desc.colcount; i++)
+      TrafDesc * cols_desc =  table_desc->tableDesc()->columns_desc;
+      for (Lng32 i = 0; i < table_desc->tableDesc()->colcount; i++)
 	{
 	  if (isRW)
 	    {
 	      if (i == HBASE_ROW_ROWID_INDEX)
-		cols_desc->body.columns_desc.length = v1;
+		cols_desc->columnsDesc()->length = v1;
 	      else if (i == HBASE_COL_DETAILS_INDEX)
-		cols_desc->body.columns_desc.length = v3;
+		cols_desc->columnsDesc()->length = v3;
 	    }
 	  else
 	    {
 	      if ((i == HBASE_ROW_ID_INDEX) ||
 		  (i == HBASE_COL_NAME_INDEX) ||
 		  (i == HBASE_COL_FAMILY_INDEX))
-		cols_desc->body.columns_desc.length = v1;
+		cols_desc->columnsDesc()->length = v1;
 	      else if (i == HBASE_COL_VALUE_INDEX)
-		cols_desc->body.columns_desc.length = v2;
+		cols_desc->columnsDesc()->length = v2;
 	    }
-	  cols_desc = cols_desc->header.next;
+	  cols_desc = cols_desc->next;
 
 	} // for
     }
@@ -1457,11 +1456,11 @@ desc_struct *HbaseAccess::createVirtualTableDesc(const char * name,
   return table_desc;
 }
 
-desc_struct *HbaseAccess::createVirtualTableDesc(const char * name,
+TrafDesc *HbaseAccess::createVirtualTableDesc(const char * name,
 						 NAList<char*> &colNameList,
 						 NAList<char*> &colValList)
 {
-  desc_struct * table_desc = NULL;
+  TrafDesc * table_desc = NULL;
 
   Lng32 arrSize = colNameList.entries();
   ComTdbVirtTableColumnInfo * colInfoArray = (ComTdbVirtTableColumnInfo*)

@@ -245,10 +245,15 @@ enum SeabaseObjectsFlags {
   SEABASE_OBJECT_IS_EXTERNAL_HIVE  = 0x0000000000000001, // set if this object
                                                          // references external
                                                          // HIVE table
-  SEABASE_OBJECT_IS_EXTERNAL_HBASE  = 0x0000000000000002 // set if this object
+  SEABASE_OBJECT_IS_EXTERNAL_HBASE = 0x0000000000000002, // set if this object
                                                          // references external
                                                          // HBASE table
+  
+  // descriptor was generated for this table and is stored in TEXT table
+  MD_OBJECTS_STORED_DESC           = 0x0000000000000004,
 
+  // stored descriptor is disabled, should not be used
+  MD_OBJECTS_DISABLE_STORED_DESC   = 0x0000000000000008
 };
 
 static const QString seabaseRefConstraintsDDL[] =

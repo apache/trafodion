@@ -1848,6 +1848,37 @@ StmtDDLDropSchema::bindNode(BindWA * pBindWA)
   return this;
 }
 
+// -----------------------------------------------------------------------
+// definition of method bindNode() for class StmtDDLAlterSchema
+// -----------------------------------------------------------------------
+
+//
+// a virtual function for performing name
+// binding within the AlterSchema tree
+//
+ExprNode *
+StmtDDLAlterSchema::bindNode(BindWA * pBindWA)
+{
+  ComASSERT(pBindWA);
+  if (pBindWA->raiseAccessDefaultSchemaOnlyError())
+    return this;
+
+  // expand schema Name.
+
+  if (schemaQualName_.getCatalogName().isNull())
+  {
+    schemaQualName_.setCatalogName(pBindWA->getDefaultSchema().
+                                   getCatalogName());
+  }
+     
+  schemaName_ = ToAnsiIdentifier(schemaQualName_.getCatalogName()) + "." + 
+                ToAnsiIdentifier(schemaQualName_.getSchemaName()) ;
+
+  markAsBound();
+
+  return this;
+}
+
 // ----------------------------------------------------------------------
 // definition of method bindNode() for class StmtDDLDropSynonym
 // ----------------------------------------------------------------------
