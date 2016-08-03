@@ -1173,7 +1173,6 @@ if (hTabStats->isOrcFile())
    {
      hdfsBufSize = (Int64)CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE);
      hdfsBufSize = hdfsBufSize * 1024; // convert to bytes
-     
      Int64 hdfsBufSizeTesting = (Int64)
        CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE_BYTES);
      if (hdfsBufSizeTesting)
@@ -1182,6 +1181,15 @@ if (hTabStats->isOrcFile())
 
   UInt32 rangeTailIOSize = (UInt32)
       CmpCommon::getDefaultNumeric(HDFS_IO_RANGE_TAIL);
+  if (rangeTailIOSize == 0) 
+    {
+      rangeTailIOSize = getTableDesc()->getNATable()->getRecordLength() +
+	(getTableDesc()->getNATable()->getClusteringIndex()->
+	 getAllColumns().entries())*2;
+      // for each range we look ahead in the next range upto the maximum
+      // record length to find the end of record delimiter.
+      rangeTailIOSize = MAXOF(rangeTailIOSize, 16*1024);
+    }
 
   char * tablename = 
     space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);

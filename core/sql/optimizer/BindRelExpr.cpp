@@ -7582,6 +7582,24 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
         }
     }
 
+   if (naTable->isHiveTable() && 
+       !(naTable->getClusteringIndex()->getHHDFSTableStats()->isOrcFile() ||
+	 naTable->getClusteringIndex()->getHHDFSTableStats()
+	 ->isSequenceFile()) &&
+       (CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE_BYTES) == 0) && 
+       (naTable->getRecordLength() >
+	CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE)*1024))
+     {
+       // do not raise error if buffersize is set though buffersize_bytes.
+       // Typically this setting is used for testing alone.
+       *CmpCommon::diags() << DgSqlCode(-4226)
+			   << DgTableName(
+					  naTable->getTableName().
+					  getQualifiedNameAsAnsiString())
+			   << DgInt0(naTable->getRecordLength());
+       bindWA->setErrStatus();
+       return NULL;
+     }
   // Bind the base class.
   //
   RelExpr *boundExpr = bindSelf(bindWA);

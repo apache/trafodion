@@ -166,6 +166,25 @@ delete from t031t1;
 insert into t031t1 select * from hive.hive.t031hive;
 select count(*) from t031t1;
 
+control query shape sort_groupby(exchange(cut));
+cqd hive_min_bytes_per_esp_partition '2000000' ;
+prepare s2 from select count(*) from hive.hive.t031hive;
+explain options 'f' s2 ;
+execute s2 ;
+
+cqd hive_min_bytes_per_esp_partition '1000000' ;
+prepare s2 from select count(*) from hive.hive.t031hive;
+explain options 'f' s2 ;
+execute s2 ;
+
+-- test error
+cqd hdfs_io_buffersize '3' ;
+prepare s2 from select count(*) from hive.hive.t031hive;
+
+control query shape cut ;
+cqd hdfs_io_buffersize reset ;
+cqd hive_min_bytes_per_esp_partition reset;
+
 -- default USER
 drop table if exists t031t1;
 create table t031t1 (a int, b varchar(20) default user);

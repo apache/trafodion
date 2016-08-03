@@ -2800,7 +2800,7 @@ Ex_Lob_Error ExLobGlobals::performRequest(ExLobHdfsRequest *request)
           buf->data_ = (char *) (getHeap())->allocateMemory( cursor->bufMaxSize_);
           lobPtr->stats_.buffersUsed++;
         }
-        size = min(cursor->bufMaxSize_, (cursor->maxBytes_ - cursor->bytesRead_ + (16 * 1024)));
+        size = min(cursor->bufMaxSize_, (cursor->maxBytes_ - cursor->bytesRead_));
         if (buf->data_) {
           lobPtr->readCursorDataSimple(buf->data_, size, *cursor, buf->bytesRemaining_);
           buf->bytesUsed_ = 0;
