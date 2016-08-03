@@ -522,9 +522,20 @@ echo
 
 if [[ "$UPGRADE_TRAF" == "true" ]]; then
    sudo chmod 777 $HOME_DIR/$TRAF_USER/.bashrc
-   sudo sed -i -e "s@export NODE_LIST=.*@export NODE_LIST=\"$NODE_LIST\"@" $HOME_DIR/$TRAF_USER/.bashrc   
-   sudo sed -i -e "s@export MY_NODES=.*@export MY_NODES=\"$MY_NODES\"@" $HOME_DIR/$TRAF_USER/.bashrc
    
+   sudo sed -i -e "/export NODE_LIST/d" $HOME_DIR/$TRAF_USER/.bashrc
+   sudo sed -i -e "/export MY_NODES=/d" $HOME_DIR/$TRAF_USER/.bashrc
+   sudo sed -i -e "/export JAVA_HOME=/d" $HOME_DIR/$TRAF_USER/.bashrc
+   if [ $node_count -gt "1" ]; then
+      sudo cp -r $HOME_DIR/$TRAF_USER/.bashrc $HOME/tempBash
+      sudo chown $(whoami):$(whoami) $HOME/tempBash
+      $TRAF_PDCP $HOME/tempBash $HOME
+      $TRAF_PDSH sudo cp $HOME/tempBash $HOME_DIR/$TRAF_USER/.bashrc
+      $TRAF_PDSH sudo chown $TRAF_USER.trafodion $HOME_DIR/$TRAF_USER/.bashrc
+      $TRAF_PDSH sudo chmod 777 $HOME_DIR/$TRAF_USER/.bashrc
+      $TRAF_PDSH rm -rf $HOME/tempBash
+   fi
+ 
    for node in $ALL_NODE_LIST
    do
       userForTrafodion=$(ssh -q -n $node grep "$TRAF_USER:" /etc/passwd | wc -l)

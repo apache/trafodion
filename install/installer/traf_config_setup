@@ -236,26 +236,6 @@ echo "export NODE_LIST=\"$NODE_LIST\"" >> $LOCAL_TRAF_CONFIG
 node_count=$(echo $NODE_LIST | wc -w)
 
 #==============================================
-#Elasticity
-echo -n "Enable elasticity (Y/N), default is N: "
-read answer
-if [[ "${answer}" =~ ^[Yy]$ ]]; then
-   echo "export ELASTICITY_ENABLED=\"Y\"" >> $LOCAL_TRAF_CONFIG
-   echo "***INFO: When elasticity is enabled, there will be copy errors"
-   sleep 10
-   NUM_ELASTIC_NODES="$node_count"
-   echo -n "Number of elastic nodes, default is [ $NUM_ELASTIC_NODES ]: "
-   read answer
-   if [[ -z "$answer" ]]; then
-      echo "export NUM_ELASTIC_NODES=\"$NUM_ELASTIC_NODES\"" >> $LOCAL_TRAF_CONFIG
-   else
-     echo "export NUM_ELASTIC_NODES=\"$answer\"" >> $LOCAL_TRAF_CONFIG
-   fi
-else
-   echo "export ELASTICITY_ENABLED=\"N\"" >> $LOCAL_TRAF_CONFIG
-fi
-
-#==============================================
 echo -n "Do you have a set of management nodes (Y/N), default is N: "
 read answer
  

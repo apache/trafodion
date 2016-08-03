@@ -204,31 +204,17 @@ else
    echo "export node_count=\"$node_count\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 
-   MY_NODES=""
+   NODES_W=""
 
    for node in $NODE_LIST
    do
-      MY_NODES="$MY_NODES -w $node"
+      NODES_W="$NODES_W -w $node"
    done
-
-   if [[ "$ELASTICITY_ENABLED" == "Y" ]]; then
-      node_id="0"
-      TRAF_EXCLUDE_LIST=""
-      while [[ "$node_id" -lt "$NUM_ELASTIC_NODES" ]]
-      do
-          TRAF_EXCLUDE_LIST="$TRAF_EXCLUDE_LIST extranode$node_id"
-          ((node_id++))
-      done
-
-      sudo chmod 777 $TRAF_CONFIG
-      sed -i '/TRAF_EXCLUDE_LIST\=/d' $TRAF_CONFIG
-      echo "export TRAF_EXCLUDE_LIST=\"$TRAF_EXCLUDE_LIST\"" >> $TRAF_CONFIG
-      sudo chmod 777 $TRAF_CONFIG
-   fi
 
    sudo chmod 777 $TRAF_CONFIG
    sed -i '/MY_NODES\=/d' $TRAF_CONFIG
-   echo "export MY_NODES=\"$MY_NODES\"" >> $TRAF_CONFIG
+   sed -i '/NODES_W\=/d' $TRAF_CONFIG
+   echo "export NODES_W=\"$NODES_W\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 
 fi
@@ -354,7 +340,7 @@ sed -i '/all_node_count\=/d' $TRAF_CONFIG
 echo "export all_node_count=\"$all_node_count\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 
-ALL_NODES="$MY_MANAGEMENT_NODES $MY_NODES"
+ALL_NODES="$MY_MANAGEMENT_NODES $NODES_W"
 
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/ALL_NODES\=/d' $TRAF_CONFIG
