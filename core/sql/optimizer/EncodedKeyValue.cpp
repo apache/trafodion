@@ -25,7 +25,7 @@
 *
 * File:         EncodedKeyValue.cpp
 * Description:  Functions to compute binary encoded keys that can be written 
-                to disk for a given set of desc_structs.
+                to disk for a given set of TrafDescs.
 * Origin:       Copy of existing code from GenRFork.cpp
 * Created:      10/30/2013
 * Language:     C++
@@ -42,6 +42,7 @@
 #include "exp_clause_derived.h"
 #include "CmpStatement.h"
 #include "NATable.h"
+#include "TrafDDLdesc.h"
 
 // defined in SynthType.cpp
 extern
@@ -55,15 +56,15 @@ void emitDyadicTypeSQLnameMsg(Lng32 sqlCode,
 
 
 
-NAString * getMinMaxValue(desc_struct * column,
-				 desc_struct * key,
+NAString * getMinMaxValue(TrafDesc * column,
+				 TrafDesc * key,
 				 NABoolean highKey,
                                  CollHeap * h)
 {
   NAString * minMaxValue = NULL;
   
   NAType * type; // deleted at the end of this method
-  if (NAColumn::createNAType(&column->body.columns_desc, NULL, type, NULL))
+  if (NAColumn::createNAType(column->columnsDesc(), NULL, type, NULL))
     return NULL;
   
   Lng32 buflen = type->getTotalSize();
@@ -73,7 +74,7 @@ NAString * getMinMaxValue(desc_struct * column,
   if (highKey == FALSE)
     {
       // low key needed
-      if (key->body.keys_desc.ordering == 0) // ascending
+      if (NOT key->keysDesc()->isDescending()) // ascending
 	type->minRepresentableValue(buf, &buflen, 
 				    &minMaxValue,
 				    h) ;
@@ -95,7 +96,7 @@ NAString * getMinMaxValue(desc_struct * column,
   else
     {
       // high key needed
-      if (key->body.keys_desc.ordering == 0) // ascending
+      if (NOT key->keysDesc()->isDescending()) // ascending
 	{
 	  if (type->supportsSQLnull())
 	    {
@@ -119,8 +120,8 @@ NAString * getMinMaxValue(desc_struct * column,
   return minMaxValue;
 }
 
-NAString ** createInArrayForLowOrHighKeys(desc_struct   * column_descs,
-					  desc_struct   * key_descs,
+NAString ** createInArrayForLowOrHighKeys(TrafDesc   * column_descs,
+					  TrafDesc   * key_descs,
 					  Lng32 numKeys,
 					  NABoolean highKey,
                                           NABoolean isIndex,
@@ -128,30 +129,30 @@ NAString ** createInArrayForLowOrHighKeys(desc_struct   * column_descs,
 {
   NAString ** inValuesArray = new (h) NAString * [numKeys];
   
-  desc_struct * column = column_descs;
-  desc_struct * key    = key_descs;
+  TrafDesc * column = column_descs;
+  TrafDesc * key    = key_descs;
   Int32 i = 0;
   while (key)
     {
       if (!isIndex) {
         column = column_descs;
-        for (Int32 j = 0; j < key->body.keys_desc.tablecolnumber; j++)
-          column = column->header.next;
+        for (Int32 j = 0; j < key->keysDesc()->tablecolnumber; j++)
+          column = column->next;
       }
 
       inValuesArray[i] = getMinMaxValue(column, key, highKey, h) ;
       
       i++;
-      key = key->header.next;
+      key = key->next;
       if (isIndex)
-        column = column->header.next;
+        column = column->next;
     }
   
   return inValuesArray;
 }
 
-ItemExpr * buildEncodeTree(desc_struct * column,
-                           desc_struct * key,
+ItemExpr * buildEncodeTree(TrafDesc * column,
+                           TrafDesc * key,
                            NAString * dataBuffer, //IN:contains original value
                            Generator * generator,
                            ComDiagsArea * diagsArea)
@@ -176,17 +177,17 @@ ItemExpr * buildEncodeTree(desc_struct * column,
   NABoolean nullValue = FALSE;
 
   NABoolean caseinsensitiveEncode = FALSE;
-  if (column->body.columns_desc.caseinsensitive)
+  if (column->columnsDesc()->isCaseInsensitive())
     caseinsensitiveEncode = TRUE;
 
-  if (column->body.columns_desc.null_flag &&
+  if (column->columnsDesc()->isNullable() &&
       dataBuffer->length() >= 4 &&
       str_cmp(*dataBuffer, "NULL", 4) == 0)
     {
       nullValue = TRUE;
 
       ns = "CAST ( @A1 AS ";
-      ns += column->body.columns_desc.pictureText;
+      ns += column->columnsDesc()->pictureText;
       ns += ");";
   
       // create a NULL constant
@@ -203,7 +204,7 @@ ItemExpr * buildEncodeTree(desc_struct * column,
       ns = "CAST ( ";
       ns += *dataBuffer;
       ns += " AS ";
-      ns += column->body.columns_desc.pictureText;
+      ns += column->columnsDesc()->pictureText;
       ns += ");";
   
       itemExpr = expGen->createExprTree(ns,
@@ -234,7 +235,7 @@ ItemExpr * buildEncodeTree(desc_struct * column,
 	  emitDyadicTypeSQLnameMsg(-4039, 
 				   itemExpr->getValueId().getType(),
 				   srcNode->getValueId().getType(),
-				   column->body.columns_desc.colname,
+				   column->columnsDesc()->colname,
 				   NULL,
 				   diagsArea);
 	}
@@ -242,7 +243,7 @@ ItemExpr * buildEncodeTree(desc_struct * column,
       return NULL;
     }
 
-  if (column->body.columns_desc.null_flag)
+  if (column->columnsDesc()->isNullable())
     ((NAType *)&(itemExpr->getValueId().getType()))->setNullable(TRUE);
   else
     ((NAType *)&(itemExpr->getValueId().getType()))->setNullable(FALSE);
@@ -250,39 +251,39 @@ ItemExpr * buildEncodeTree(desc_struct * column,
   // Explode varchars by moving them to a fixed field
   // whose length is equal to the max length of varchar.
   ////collation??
-  DataType datatype = column->body.columns_desc.datatype;
+  Int16 datatype = column->columnsDesc()->datatype;
   if (DFS2REC::isSQLVarChar(datatype))
     {
       char lenBuf[10];
       NAString vc((NASize_T)100);	// preallocate a big-enough buf
 
-      size_t len = column->body.columns_desc.length;
+      size_t len = column->columnsDesc()->length;
       if (datatype == REC_BYTE_V_DOUBLE) len /= SQL_DBCHAR_SIZE;
 
       vc = "CAST (@A1 as CHAR(";
       vc += str_itoa(len, lenBuf);
-      if ( column->body.columns_desc.character_set == CharInfo::UTF8 ||
-           ( column->body.columns_desc.character_set == CharInfo::SJIS &&
-             column->body.columns_desc.encoding_charset == CharInfo::SJIS ) )
+      if ( column->columnsDesc()->character_set == CharInfo::UTF8 ||
+           ( column->columnsDesc()->character_set == CharInfo::SJIS &&
+             column->columnsDesc()->encoding_charset == CharInfo::SJIS ) )
         {
           vc += " BYTE";
           if (len > 1)
             vc += "S";
         }
       vc += ") CHARACTER SET ";
-      vc += CharInfo::getCharSetName(column->body.columns_desc.character_set);
+      vc += CharInfo::getCharSetName(column->columnsDesc()->characterSet());
       vc += ");";
 
       itemExpr = expGen->createExprTree(vc, CharInfo::UTF8, vc.length(), 1, itemExpr);
       itemExpr->synthTypeAndValueId();
 
       ((NAType *)&(itemExpr->getValueId().getType()))->
-        setNullable(column->body.columns_desc.null_flag);
+        setNullable(column->columnsDesc()->isNullable());
   }
 
   // add the encode node on top of it.
   short desc_flag = TRUE;
-  if (key->body.keys_desc.ordering == 0) // ascending
+  if (NOT key->keysDesc()->isDescending()) // ascending
     desc_flag = FALSE;
   
   itemExpr = new(expGen->wHeap()) CompEncode(itemExpr, desc_flag);
@@ -301,8 +302,8 @@ ItemExpr * buildEncodeTree(desc_struct * column,
 // value in the encodedKeyBuffer. 
 // RETURNS: -1, if error. 0, if all Ok.
 ///////////////////////////////////////////////////////////////////
-short encodeKeyValues(desc_struct   * column_descs,
-		      desc_struct   * key_descs,
+short encodeKeyValues(TrafDesc   * column_descs,
+		      TrafDesc   * key_descs,
 		      NAString      * inValuesArray[],          // INPUT
                       NABoolean isIndex,
                       NABoolean isMaxKey,                       // INPUT
@@ -333,8 +334,8 @@ short encodeKeyValues(desc_struct   * column_descs,
 
   // Let's start with a list of size 4 rather than resizing continuously
   ValueIdList encodedValueIdList(4);
-  desc_struct * column = column_descs;
-  desc_struct * key    = key_descs;
+  TrafDesc * column = column_descs;
+  TrafDesc * key    = key_descs;
   Int32 i = 0;
 
   if (inValuesArray == NULL)
@@ -346,8 +347,8 @@ short encodeKeyValues(desc_struct   * column_descs,
       // the following for loop is not needed.
       if (!isIndex) {
       column = column_descs;
-      for (Int32 j = 0; j < key->body.keys_desc.tablecolnumber; j++)
-	column = column->header.next;
+      for (Int32 j = 0; j < key->keysDesc()->tablecolnumber; j++)
+	column = column->next;
       }
 
       if (inValuesArray[i] == NULL)
@@ -361,9 +362,9 @@ short encodeKeyValues(desc_struct   * column_descs,
       encodedValueIdList.insert(itemExpr->getValueId());
       
       i++;
-      key = key->header.next;
+      key = key->next;
       if (isIndex)
-        column = column->header.next;
+        column = column->next;
     }
   
   // allocate a work cri desc to encode keys. It has

@@ -279,6 +279,9 @@ create index customer_idx1 on customer_salt(c_first_name, c_last_name);
 
 sh  regrhbase.ksh $REGRTSTDIR/TEST018_create_hbase_objects.hbase &> $REGRRUNDIR/LOG018_create_hbase_tables.log ;
 
+alter table hbase.customer_address generate stored descriptor;
+alter table hbase.customer_demographics_salt generate stored descriptor;
+alter table hbase.customer_salt generate stored descriptor;
 
 --exp1
 explain options 'f' 

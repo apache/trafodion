@@ -484,12 +484,12 @@ public:
   inline void setTableDesc(TableDesc * tdesc) { tabId_ = tdesc; };
 
   //! createVirtualTableDesc method
-  //  creates a desc_struct for the Virtual Table
-  virtual desc_struct *createVirtualTableDesc();
+  //  creates a TrafDesc for the Virtual Table
+  virtual TrafDesc *createVirtualTableDesc();
 
   //! deleteVirtualTableDesc method
-  //  deletes the given desc_struct
-  virtual  void deleteVirtualTableDesc(desc_struct *vtd);
+  //  deletes the given TrafDesc
+  virtual  void deleteVirtualTableDesc(TrafDesc *vtd);
 
   //! bindNode method
   // a virtual function for performing name binding within the query tree
@@ -752,7 +752,7 @@ public :
   virtual PredefinedTableMappingFunction * castToPredefinedTableMappingFunction();
 
   virtual RelExpr* bindNode(BindWA* bindWA); 
-  virtual desc_struct   *createVirtualTableDesc();
+  virtual TrafDesc   *createVirtualTableDesc();
   virtual void transformNode(NormWA & normWARef,
     ExprGroupId & locationOfPointerToMe);
   virtual void rewriteNode(NormWA & normWARef) ;
@@ -1211,8 +1211,8 @@ public:
   // mutators
 
   //! createVirtualTableDesc method
-  //  creates a desc_struct for the Virtual Table
-  virtual desc_struct *createVirtualTableDesc();
+  //  creates a TrafDesc for the Virtual Table
+  virtual TrafDesc *createVirtualTableDesc();
 
   //! getPotentialOutputValues method
   //  computes the output values the node can generate
@@ -1335,8 +1335,8 @@ public:
 
   // mutators
   //! createVirtualTableDesc method
-  //  returns a desc_struct pointer to the name of the Virtual Table descriptor
-  virtual desc_struct *createVirtualTableDesc();
+  //  returns a TrafDesc pointer to the name of the Virtual Table descriptor
+  virtual TrafDesc *createVirtualTableDesc();
 
 
   //! preCodeGen method
@@ -1410,8 +1410,8 @@ public:
   // mutators
 
   //! createVirtualTableDesc method
-  //  creates a desc_struct for the Virtual Table
-  virtual desc_struct *createVirtualTableDesc();
+  //  creates a TrafDesc for the Virtual Table
+  virtual TrafDesc *createVirtualTableDesc();
 
   //! getPotentialOutputValues method
   //  computes the output values the node can generate
@@ -1567,12 +1567,12 @@ public:
   //! populateColumnDesc method
   // Copy attributes getColumns to colDescs
 void populateColumnDesc(char *tableNam,
-                        desc_struct *&colDescs,
+                        TrafDesc *&colDescs,
                         Lng32 &reclen) const;
 
   //! createVirtualTableDesc method
-  //  create the desc_struct for the Virtual Table
-  virtual desc_struct *createVirtualTableDesc();
+  //  create the TrafDesc for the Virtual Table
+  virtual TrafDesc *createVirtualTableDesc();
 
   // The RelExpr interface
   //! bindNode method

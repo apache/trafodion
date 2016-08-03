@@ -86,7 +86,7 @@ ifeq ($(SQ_USE_INTC),0)
 HPCWARN		= -Wno-unused-parameter
 HPCXXWARN	= -Wno-unused-parameter -Wno-non-virtual-dtor
 endif
-INCLUDES	= -I$(INCEXPDIR) -I$(INCMONDIR) -I$(TMINC) -I$(MY_SQROOT)/export/include -I$(MY_SPROOT)/export/include -I$(MY_SPROOT)/source/publications -I$(PROTOBUFS_INC) -I$(INC_JAVA) -I$(INC_JAVALINUX) -I$(MY_SQROOT)/commonLogger
+INCLUDES	= -I$(INCEXPDIR) -I$(INCMONDIR) -I$(TMINC) -I$(MY_SQROOT)/export/include -I$(MY_SPROOT)/export/include -I$(MY_SPROOT)/source/publications -I$(PROTOBUFS_INC) -I$(INC_JAVA) -I$(INC_JAVALINUX) -I$(MY_SQROOT)/commonLogger  -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/lib4cxx
 
 LIBSSB         = -L$(JAVA_HOME)/jre/lib/i386/client -L$(JAVA_HOME)/jre/lib/amd64/server -L$(LIBEXPDIR) -ltmjni -ljvm
 

@@ -848,19 +848,33 @@ short ExpGenerator::handleUnsupportedCast(Cast * castNode)
   if ((srcFsType == REC_BIN8_SIGNED) ||
       (srcFsType == REC_BIN8_UNSIGNED) ||
       (tgtFsType == REC_BIN8_SIGNED) ||
-      (tgtFsType == REC_BIN8_UNSIGNED))
+      (tgtFsType == REC_BIN8_UNSIGNED) ||
+      (DFS2REC::isInterval(srcFsType)) ||
+      (DFS2REC::isInterval(tgtFsType)))
     {
       // add a Cast node to convert from/to tinyint to/from small int.
-      const NumericType &srcNum = (NumericType&)srcNAType; 
-      NumericType * newType;
-      if (srcNum.getScale() == 0)
-        newType = new (generator->wHeap())
-          SQLSmall(NOT srcNum.isUnsigned(),
-                   srcNAType.supportsSQLnull());
+      NumericType * newType = NULL;
+      if (DFS2REC::isInterval(srcFsType))
+        {
+          const IntervalType &srcInt = (IntervalType&)srcNAType; 
+          newType = new (generator->wHeap())
+            SQLNumeric(sizeof(short), srcInt.getTotalPrecision(), 
+                       srcInt.getFractionPrecision(),
+                       TRUE, srcNAType.supportsSQLnull());
+        }
       else
-        newType = new (generator->wHeap())
-          SQLNumeric(sizeof(short), srcNum.getPrecision(), srcNum.getScale(),
-                     NOT srcNum.isUnsigned(), srcNAType.supportsSQLnull());
+        {
+          const NumericType &srcNum = (NumericType&)srcNAType; 
+          if (srcNum.getScale() == 0)
+            newType = new (generator->wHeap())
+              SQLSmall(NOT srcNum.isUnsigned(),
+                       srcNAType.supportsSQLnull());
+          else
+            newType = new (generator->wHeap())
+              SQLNumeric(sizeof(short), srcNum.getPrecision(), srcNum.getScale(),
+                         NOT srcNum.isUnsigned(), srcNAType.supportsSQLnull());
+        }
+
       ItemExpr * newChild =
         new (generator->wHeap())
         Cast(castNode->child(0), newType);

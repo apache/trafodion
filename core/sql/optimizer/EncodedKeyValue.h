@@ -27,8 +27,8 @@
 *
 * File:         EncodedKeyValue.h
 * Description:  Functions to compute binary encoded keys that can be written 
-                to disk for a given set of desc_structs.
-* Origin:       Copy of existing code from GenRFork.cpp
+                to disk for a given set of TrafDescs.
+* Origin:       
 * Created:      10/30/2013
 * Language:     C++
 *
@@ -36,32 +36,31 @@
 */
 
 #include "Platform.h"
-#include "desc.h"
 #include "NAString.h"
 #include "Generator.h"
 
 
-NAString * getMinMaxValue(desc_struct * column,
-                          desc_struct * key,
+NAString * getMinMaxValue(TrafDesc * column,
+                          TrafDesc * key,
                           NABoolean highKey,
                           CollHeap * h);
 
-NAString ** createInArrayForLowOrHighKeys(desc_struct   * column_descs,
-					  desc_struct   * key_descs,
+NAString ** createInArrayForLowOrHighKeys(TrafDesc   * column_descs,
+					  TrafDesc   * key_descs,
 					  Lng32 numKeys,
 					  NABoolean highKey,
                                           NABoolean isIndex,
                                           CollHeap * h);
 
 
-ItemExpr * buildEncodeTree(desc_struct * column,
-                           desc_struct * key,
+ItemExpr * buildEncodeTree(TrafDesc * column,
+                           TrafDesc * key,
                            NAString * dataBuffer, //IN:contains original value
                            Generator * generator,
                            ComDiagsArea * diagsArea);
 
-short encodeKeyValues(desc_struct   * column_descs,
-		      desc_struct   * key_descs,
+short encodeKeyValues(TrafDesc   * column_descs,
+		      TrafDesc   * key_descs,
 		      NAString      * inValuesArray[],          // INPUT
                       NABoolean isIndex,
                       NABoolean isMaxKey,			// INPUT

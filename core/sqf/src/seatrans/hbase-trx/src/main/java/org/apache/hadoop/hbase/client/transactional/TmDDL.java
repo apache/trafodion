@@ -36,11 +36,9 @@ import java.io.ByteArrayInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hadoop.hbase.client.HConnection;
-import org.apache.hadoop.hbase.client.HConnectionManager;
-import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.Get;
@@ -57,7 +55,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 public class TmDDL {
 
    static final Log LOG = LogFactory.getLog(TmDDL.class);
-   private HBaseAdmin hbadmin;
+   private Connection connection;
    private Configuration config;
    private int dtmid;
    private static final byte[] TDDL_FAMILY = Bytes.toBytes("tddlcf");
@@ -66,29 +64,31 @@ public class TmDDL {
    private static final byte[] TDDL_TRUNCATE = Bytes.toBytes("truncateList");
    private static final byte[] TDDL_STATE = Bytes.toBytes("state");
    private static Object tablePutLock;            // Lock for synchronizing table.put operations
-   private static HTable table;
+   private static Table table;
 
-   public TmDDL (Configuration config) throws IOException {
+   public TmDDL (Configuration config, Connection connection) throws IOException {
 
       this.config = config;
+      this.connection = connection;
       this.dtmid = Integer.parseInt(config.get("dtmid"));
       TableName tablename = TableName.valueOf("TRAFODION._DTM_.TDDL");
 
       if (LOG.isTraceEnabled()) LOG.trace("Enter TmDDL constructor for dtmid: " + dtmid);
 
-      hbadmin = new HBaseAdmin(config);
+      Admin admin = connection.getAdmin();
 
-      boolean tDDLTableExists = hbadmin.tableExists(tablename);
+      boolean tDDLTableExists = admin.tableExists(tablename);
 
-      if(tDDLTableExists==false && dtmid ==0) {
+      if (tDDLTableExists==false && dtmid ==0) {
             HTableDescriptor desc = new HTableDescriptor(tablename);
             desc.addFamily(new HColumnDescriptor(TDDL_FAMILY));
-            hbadmin.createTable(desc);
+            admin.createTable(desc);
       }
 
       tablePutLock = new Object();
 
-      table = new HTable(config, tablename);
+      table = connection.getTable(tablename);
+      admin.close();
    }
 
    public void putRow(final long transid, final String Operation, final String tableName) throws IOException {

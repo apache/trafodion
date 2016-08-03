@@ -72,7 +72,7 @@
 #include "StmtDDLCreateView.h"
 #include "ElemDDLColRefArray.h"
 #include "ElemDDLSaltOptions.h"
-#include "desc.h"
+#include "TrafDDLdesc.h"
 #include "UdrErrors.h"
 #include "SequenceGeneratorAttributes.h"
 
@@ -717,7 +717,7 @@ static ItemExpr *intersectColumns(const RETDesc &leftTable,
     ItemExpr *leftExpr  = leftTable.getValueId(i).getItemExpr();
     ItemExpr *rightExpr = rightTable.getValueId(i).getItemExpr();
     BiRelat *compare = new (bindWA->wHeap())
-      BiRelat(ITM_EQUAL, leftExpr, rightExpr);
+      BiRelat(ITM_EQUAL, leftExpr, rightExpr, TRUE);
     if (predicate)
       predicate = new (bindWA->wHeap()) BiLogic(ITM_AND, predicate, compare);
     else
@@ -1294,9 +1294,9 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
   }   // loop over cols in RETDesc
 }   // castComputedColumnsToAnsiTypes()
 
-desc_struct *generateSpecialDesc(const CorrName& corrName)
+TrafDesc *generateSpecialDesc(const CorrName& corrName)
 {
-  desc_struct * desc = NULL;
+  TrafDesc * desc = NULL;
 
   if (corrName.getSpecialType() == ExtendedQualName::VIRTUAL_TABLE)
     {
@@ -1347,7 +1347,7 @@ NARoutine *BindWA::getNARoutine ( const QualifiedName &name )
   NARoutine * naRoutine = getSchemaDB()->getNARoutineDB()->get(this, &key);
   if (!naRoutine)
   {
-     desc_struct *udfMetadata = NULL;
+     TrafDesc *udfMetadata = NULL;
      CmpSeabaseDDL cmpSBD(STMTHEAP);
      udfMetadata =  cmpSBD.getSeabaseRoutineDesc(
 				       name.getCatalogName(),
@@ -1389,7 +1389,7 @@ NARoutine *BindWA::getNARoutine ( const QualifiedName &name )
 
 NATable *BindWA::getNATable(CorrName& corrName,
                             NABoolean catmanCollectTableUsages, // default TRUE
-                            desc_struct *inTableDescStruct)     // default NULL
+                            TrafDesc *inTableDescStruct)     // default NULL
 {
   BindWA *bindWA = this;   // for coding convenience
 
@@ -2971,12 +2971,15 @@ RelExpr *Intersect::bindNode(BindWA *bindWA)
     return this;
   }
 
-  // Join the columns of both sides.  This is wrong semantics tho! ##
+  // Join the columns of both sides. 
   //
-  *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
-      << DgString0("INTERSECT");             // ##
-  bindWA->setErrStatus();                    // ##
-  if (bindWA->errStatus()) return NULL;      // ##
+  if(CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON)
+  {
+    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
+        << DgString0("INTERSECT");             // ##
+    bindWA->setErrStatus();                    // ##
+    if (bindWA->errStatus()) return NULL;      // ##
+  }
   //
   ItemExpr *predicate = intersectColumns(leftTable, rightTable, bindWA);
   RelExpr *join = new (bindWA->wHeap())
@@ -13232,7 +13235,7 @@ RelExpr *BuiltinTableValuedFunction::bindNode(BindWA *bindWA)
 	
 	if (NOT naTable) 
 	  {
-	    desc_struct *tableDesc = createVirtualTableDesc();
+	    TrafDesc *tableDesc = createVirtualTableDesc();
 	    if (tableDesc)
 	      naTable = bindWA->getNATable(corrName, FALSE/*catmanUsages*/, tableDesc);
 	    
@@ -13676,55 +13679,54 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
   //
   #define MAX_DESCRIBE_LEN 3000 // e.g., SQL/MP Views.ViewText column
 
-  // readtabledef_allocate_desc requires that HEAP (STMTHEAP) be used for new's!
+  // TrafAllocateDDLdesc requires that HEAP (STMTHEAP) be used for new's!
 
-  desc_struct * table_desc = readtabledef_allocate_desc(DESC_TABLE_TYPE);
-  table_desc->body.table_desc.tablename = new HEAP char[strlen("DESCRIBE__")+1];
-  strcpy(table_desc->body.table_desc.tablename, "DESCRIBE__");
+  TrafDesc * table_desc = TrafAllocateDDLdesc(DESC_TABLE_TYPE, NULL);
+  table_desc->tableDesc()->tablename = new HEAP char[strlen("DESCRIBE__")+1];
+  strcpy(table_desc->tableDesc()->tablename, "DESCRIBE__");
 
   // see nearly identical code below for indexes file desc
-  desc_struct * files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
-  table_desc->body.table_desc.files_desc = files_desc;
-  files_desc->body.files_desc.fileorganization = KEY_SEQUENCED_FILE;
+  TrafDesc * files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
+  table_desc->tableDesc()->files_desc = files_desc;
 
   Lng32 colnumber = 0, offset = 0;
-  desc_struct * column_desc = readtabledef_make_column_desc(
-                                     table_desc->body.table_desc.tablename,
-                                     "DESCRIBE__COL",
-                                     colnumber,      // INOUT
-                                     REC_BYTE_V_ASCII,
-                                     MAX_DESCRIBE_LEN,
-                                     offset);      // INOUT
-  column_desc->body.columns_desc.character_set    = CharInfo::UTF8;
-  column_desc->body.columns_desc.encoding_charset = CharInfo::UTF8;
+  TrafDesc * column_desc = TrafMakeColumnDesc(
+       table_desc->tableDesc()->tablename,
+       "DESCRIBE__COL",
+       colnumber,      // INOUT
+       REC_BYTE_V_ASCII,
+       MAX_DESCRIBE_LEN,
+       offset,      // INOUT
+       FALSE/*not null*/,
+       SQLCHARSETCODE_UNKNOWN,
+       NULL);
+  column_desc->columnsDesc()->character_set    = CharInfo::UTF8;
+  column_desc->columnsDesc()->encoding_charset = CharInfo::UTF8;
 
-  table_desc->body.table_desc.colcount = colnumber;
-  table_desc->body.table_desc.record_length = offset;
+  table_desc->tableDesc()->colcount = colnumber;
+  table_desc->tableDesc()->record_length = offset;
 
-  desc_struct * index_desc = readtabledef_allocate_desc(DESC_INDEXES_TYPE);
-  index_desc->body.indexes_desc.tablename = table_desc->body.table_desc.tablename;
-  index_desc->body.indexes_desc.indexname = table_desc->body.table_desc.tablename;
-  index_desc->body.indexes_desc.ext_indexname = table_desc->body.table_desc.tablename;
-  index_desc->body.indexes_desc.keytag = 0; // primary index
-  index_desc->body.indexes_desc.record_length = table_desc->body.table_desc.record_length;
-  index_desc->body.indexes_desc.colcount = table_desc->body.table_desc.colcount;
-  index_desc->body.indexes_desc.blocksize = 4096; // anything > 0
+  TrafDesc * index_desc = TrafAllocateDDLdesc(DESC_INDEXES_TYPE, NULL);
+  index_desc->indexesDesc()->tablename = table_desc->tableDesc()->tablename;
+  index_desc->indexesDesc()->indexname = table_desc->tableDesc()->tablename;
+  index_desc->indexesDesc()->keytag = 0; // primary index
+  index_desc->indexesDesc()->record_length = table_desc->tableDesc()->record_length;
+  index_desc->indexesDesc()->colcount = table_desc->tableDesc()->colcount;
+  index_desc->indexesDesc()->blocksize = 4096; // anything > 0
 
   // Cannot simply point to same files desc as the table one,
   // because then ReadTableDef::deleteTree frees same memory twice (error)
-  desc_struct * i_files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
-  index_desc->body.indexes_desc.files_desc = i_files_desc;
-  i_files_desc->body.files_desc.fileorganization = KEY_SEQUENCED_FILE;
+  TrafDesc * i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
+  index_desc->indexesDesc()->files_desc = i_files_desc;
 
-  desc_struct * key_desc = readtabledef_allocate_desc(DESC_KEYS_TYPE);
-  key_desc->body.keys_desc.indexname = index_desc->body.indexes_desc.indexname;
-  key_desc->body.keys_desc.keyseqnumber = 1;
-  key_desc->body.keys_desc.tablecolnumber = 0;
-  key_desc->body.keys_desc.ordering= 0;
+  TrafDesc * key_desc = TrafAllocateDDLdesc(DESC_KEYS_TYPE, NULL);
+  key_desc->keysDesc()->keyseqnumber = 1;
+  key_desc->keysDesc()->tablecolnumber = 0;
+  key_desc->keysDesc()->setDescending(FALSE);
 
-  index_desc->body.indexes_desc.keys_desc = key_desc;
-  table_desc->body.table_desc.columns_desc = column_desc;
-  table_desc->body.table_desc.indexes_desc = index_desc;
+  index_desc->indexesDesc()->keys_desc = key_desc;
+  table_desc->tableDesc()->columns_desc = column_desc;
+  table_desc->tableDesc()->indexes_desc = index_desc;
 
   //
   // Get the NATable for this object.
@@ -15469,7 +15471,7 @@ RelExpr *CallSP::bindNode(BindWA *bindWA)
 
 
   CmpSeabaseDDL cmpSBD((NAHeap*)bindWA->wHeap());
-  desc_struct *catRoutine = 
+  TrafDesc *catRoutine = 
 	    cmpSBD.getSeabaseRoutineDesc(
 				       name.getCatalogName(),
 				       name.getSchemaName(),
@@ -16221,10 +16223,10 @@ void RelRoutine::gatherParamValueIds (const ItemExpr *tree, ValueIdList &paramsL
 
 void ProxyFunc::createProxyFuncTableDesc(BindWA *bindWA, CorrName &corrName)
 {
-  // Map column definitions into a desc_struct
-  desc_struct *tableDesc = createVirtualTableDesc();
+  // Map column definitions into a TrafDesc
+  TrafDesc *tableDesc = createVirtualTableDesc();
 
-  // Map the desc_struct into an NATable. This will also add an
+  // Map the TrafDesc into an NATable. This will also add an
   // NATable entry into the bindWA's NATableDB.
   NATable *naTable =
     bindWA->getNATable(corrName, FALSE /*catmanUsages*/, tableDesc);

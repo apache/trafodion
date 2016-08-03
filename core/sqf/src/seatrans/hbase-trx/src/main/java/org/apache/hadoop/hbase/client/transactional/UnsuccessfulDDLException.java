@@ -22,11 +22,12 @@
 **/
 
 package org.apache.hadoop.hbase.client.transactional;
+import java.io.IOException;
 
 /** Thrown when a transaction specific to DDL operation cannot be committed. 
  * 
  */
-public class UnsuccessfulDDLException extends Exception {
+public class UnsuccessfulDDLException extends IOException {
 
   private static final long serialVersionUID = 7062921444531109202L;
 

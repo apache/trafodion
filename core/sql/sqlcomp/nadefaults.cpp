@@ -2771,7 +2771,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDansi_(OUTPUT_DATE_FORMAT,		        ""),
 
   // Overflow mode for scratch files
-  DDkwd__(OVERFLOW_MODE,                  "MMAP"),
+  DDkwd__(OVERFLOW_MODE,                  "DISK"),
 
   // Sequence generator override identity values
   DDkwd__(OVERRIDE_GENERATED_IDENTITY_VALUES,	  "OFF"),
@@ -3336,10 +3336,10 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
 
   DDkwd__(TRAF_CREATE_TINYINT_LITERAL,        "ON"),   
-
- DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
  
- DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
+  DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
+ 
+  DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
 
   DDkwd__(TRAF_INDEX_ALIGNED_ROW_FORMAT,        "ON"),   
   DDkwd__(TRAF_INDEX_CREATE_OPT,          "OFF"),
@@ -3383,9 +3383,13 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDint__(TRAF_NUM_OF_SALT_PARTNS,                     "-1"),
 
+  DDkwd__(TRAF_READ_OBJECT_DESC,                       "OFF"),   
+
   DDkwd__(TRAF_RELOAD_NATABLE_CACHE,                   "OFF"),
   DD_____(TRAF_SAMPLE_TABLE_LOCATION,                  "/sample/"),
   DDint__(TRAF_SEQUENCE_CACHE_SIZE,        "-1"),
+
+  DDkwd__(TRAF_STORE_OBJECT_DESC,                    "OFF"),   
 
   DDkwd__(TRAF_STRING_AUTO_TRUNCATE,      "OFF"),
   DDkwd__(TRAF_STRING_AUTO_TRUNCATE_WARNING,      "OFF"),

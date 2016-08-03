@@ -41,6 +41,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.transactional.TransactionManager;
 import org.apache.hadoop.hbase.client.transactional.TransactionState;
@@ -81,6 +83,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HBaseTxClient {
 
    static final Log LOG = LogFactory.getLog(HBaseTxClient.class);
+   private static Connection connection;
    private static TmAuditTlog tLog;
    private static HBaseTmZK tmZK;
    private static RecoveryThread recovThread;
@@ -120,8 +123,10 @@ public class HBaseTxClient {
       setupLog4j();
       if (LOG.isDebugEnabled()) LOG.debug("Enter init, hBasePath:" + hBasePath);
       if (LOG.isTraceEnabled()) LOG.trace("mapTransactionStates " + mapTransactionStates + " entries " + mapTransactionStates.size());
-      config = HBaseConfiguration.create();
-
+      if (config == null) {
+         config = HBaseConfiguration.create();
+         connection = ConnectionFactory.createConnection(config);
+      }
       config.set("hbase.zookeeper.quorum", zkServers);
       config.set("hbase.zookeeper.property.clientPort",zkPort);
       config.set("hbase.rootdir", hBasePath);
@@ -168,10 +173,10 @@ public class HBaseTxClient {
       }
 
       if (useTlog) {
-            tLog = new TmAuditTlog(config);
+            tLog = new TmAuditTlog(config, connection);
       }
       try {
-        trxManager = TransactionManager.getInstance(config);
+        trxManager = TransactionManager.getInstance(config, connection);
       } catch (IOException e ){
           LOG.error("Unable to create TransactionManager, throwing exception", e);
           throw e;
@@ -197,7 +202,10 @@ public class HBaseTxClient {
 
       setupLog4j();
       if (LOG.isDebugEnabled()) LOG.debug("Enter init(" + dtmid + ")");
-      config = HBaseConfiguration.create();
+      if (config == null) {
+         config = HBaseConfiguration.create();
+         connection = ConnectionFactory.createConnection(config);
+      }
       config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
       config.set("hbase.hlog.splitter.impl", "org.apache.hadoop.hbase.regionserver.transactional.THLogSplitter");
       config.set("dtmid", String.valueOf(dtmid));
@@ -232,7 +240,7 @@ public class HBaseTxClient {
       }
 
       if (useDDLTrans)
-         tmDDL = new TmDDL(config);
+         tmDDL = new TmDDL(config, connection);
 
       useForgotten = true;
          String useAuditRecords = System.getenv("TM_ENABLE_FORGOTTEN_RECORDS");
@@ -270,9 +278,9 @@ public class HBaseTxClient {
          LOG.error("TM_ENABLE_TLOG_WRITES is not valid in ms.env");
       }
       if (useTlog) {
-         tLog = new TmAuditTlog(config);
+         tLog = new TmAuditTlog(config, connection);
       }
-      trxManager = TransactionManager.getInstance(config);
+      trxManager = TransactionManager.getInstance(config, connection);
       if(useDDLTrans)
           trxManager.init(tmDDL);
 
@@ -420,14 +428,7 @@ public class HBaseTxClient {
 
       try {
          trxManager.abort(ts);
-      } catch(IOException e) {
-          synchronized(mapLock) {
-             mapTransactionStates.remove(transactionID);
-          }
-          LOG.error("Returning from HBaseTxClient:abortTransaction, txid: " + transactionID + " retval: EXCEPTION", e);
-          return TransReturnCode.RET_EXCEPTION.getShort();
-      }
-      catch (UnsuccessfulDDLException ddle) {
+      } catch (UnsuccessfulDDLException ddle) {
           LOG.error("FATAL DDL Exception from HBaseTxClient:abort, WAITING INDEFINETLY !! retval: " + TransReturnCode.RET_EXCEPTION.toString() + " UnsuccessfulDDLException" + " txid: " + transactionID, ddle);
 
           //Reaching here means several attempts to perform the DDL operation has failed in abort phase.
@@ -452,7 +453,15 @@ public class HBaseTxClient {
              } while (loopBack);
           }
           return TransReturnCode.RET_EXCEPTION.getShort();
+      } 
+      catch(IOException e) {
+          synchronized(mapLock) {
+             mapTransactionStates.remove(transactionID);
+          }
+          LOG.error("Returning from HBaseTxClient:abortTransaction, txid: " + transactionID + " retval: EXCEPTION", e);
+          return TransReturnCode.RET_EXCEPTION.getShort();
       }
+
       if (useTlog && useForgotten) {
          if (forceForgotten) {
             tLog.putSingleRecord(transactionID, -1, "FORGOTTEN", null, true);

@@ -1907,7 +1907,7 @@ PhysicalTableMappingUDF::codeGen(Generator *generator)
   return result;
 }
 
-desc_struct *TableMappingUDF::createVirtualTableDesc()
+TrafDesc *TableMappingUDF::createVirtualTableDesc()
 {
 
   Int32 numOutputCols = getNARoutine()->getOutParamCount();
@@ -1922,7 +1922,7 @@ desc_struct *TableMappingUDF::createVirtualTableDesc()
     outColsInfo[i].length = outCol->getType()->getNominalSize();
     outColsInfo[i].nullable = (Lng32) outCol->getType()->supportsSQLnull();
   }
-  desc_struct * table_desc =
+  TrafDesc * table_desc =
     Generator::createVirtualTableDesc(getRoutineName().getQualifiedNameAsString().data(),
                                       numOutputCols,
 				      outColsInfo,
