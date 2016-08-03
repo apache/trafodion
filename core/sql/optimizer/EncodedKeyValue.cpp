@@ -72,7 +72,8 @@ NAString * getMinMaxValue(desc_struct * column,
   if (type->supportsSQLnullPhysical())
   {
       Lng32 nullHdrSize = type->getSQLnullHdrSize();
-      buf[0] = buf[1] = '\0';
+      for(int i = 0; i < nullHdrSize; i++)
+        buf[i] = '\0';
       buflen-= nullHdrSize;
   }
 
