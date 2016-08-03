@@ -186,7 +186,8 @@ class CmpSeabaseDDL
        Int64 constrUID,
        ComTextType textType,
        Lng32 textSubID,
-       NAString &constrText);
+       NAString &constrText,
+       NABoolean binaryData = FALSE);
   
   static short createHistogramTables(
     ExeCliInterface *cliInterface,
@@ -770,7 +771,9 @@ protected:
                         Int64 objUID, 
                         ComTextType textType, 
                         Lng32 subID, 
-                        NAString &text,
+                        NAString &textInputData,
+                        char * binaryInputData = NULL,
+                        Lng32 binaryInputDataLen = -1,
                         NABoolean withDelete = FALSE); // del before ins
 
   // input data in non-char format.
@@ -1176,7 +1179,8 @@ protected:
        Int64 constrUID,
        ComTextType textType,
        Lng32 textSubID,
-       NAString &constrText);
+       NAString &constrText,
+       NABoolean binaryData = FALSE);
   
   void alterSeabaseTableAddCheckConstraint(
 					StmtDDLAddConstraint * alterAddConstraint,

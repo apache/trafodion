@@ -1034,7 +1034,7 @@ void CmpSeabaseDDL::alterSeabaseSchema(StmtDDLAlterSchema * alterSchemaNode)
       goto label_error;
    }
 
-   if (!isDDLOperationAuthorized(SQLOperation::DROP_SCHEMA,
+   if (!isDDLOperationAuthorized(SQLOperation::ALTER_SCHEMA,
                                  schemaOwnerID,schemaOwnerID))
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);

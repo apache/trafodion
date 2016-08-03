@@ -5318,7 +5318,7 @@ short CmpSeabaseDDL::checkAndGetStoredObjectDesc(
 
   NAString packedDesc;
   cliRC = getTextFromMD(
-       cliInterface, objUID, COM_STORED_DESC_TEXT, 0, packedDesc);
+       cliInterface, objUID, COM_STORED_DESC_TEXT, 0, packedDesc, TRUE);
   if (cliRC < 0)
     {
       *CmpCommon::diags() << DgSqlCode(-4493)
@@ -6122,7 +6122,9 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
                                      Int64 objUID, 
                                      ComTextType textType, 
                                      Lng32 subID, 
-                                     NAString &text,
+                                     NAString &textInputData,
+                                     char * binaryInputData,
+                                     Lng32 binaryInputDataLen,
                                      NABoolean withDelete)
 {
   Lng32 cliRC = 0;
@@ -6140,34 +6142,46 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
         }
     }
 
-  Lng32 textLen = text.length();
-  Lng32 bufLen = (textLen>TEXTLEN ? TEXTLEN : textLen) + 1000;
-  char * buf = new(STMTHEAP) char[bufLen];
-  Lng32 numRows = (textLen / TEXTLEN) + 1;
+  char * dataToInsert = NULL;
+  Lng32 dataLen = -1;
+  if (binaryInputData)
+    {
+      Lng32 encodedMaxLen = str_encoded_len(binaryInputDataLen);
+      char * encodedData = new(STMTHEAP) char[encodedMaxLen];
+      Lng32 encodedLen = 
+        str_encode(encodedData, encodedMaxLen, binaryInputData, binaryInputDataLen);
+
+      dataToInsert = encodedData;
+      dataLen =  encodedLen;
+    }
+  else
+    {
+      dataToInsert = (char*)textInputData.data();
+      dataLen =  textInputData.length();
+    }
+
+  Int32 maxLen = TEXTLEN;
+  char queryBuf[1000];
+  Lng32 numRows = (dataLen / maxLen) + 1;
   Lng32 currPos = 0;
+  Lng32 currDataLen = 0;
+
   for (Lng32 i = 0; i < numRows; i++)
     {
-      NAString temp;
-
       if (i < numRows-1)
-        ToQuotedString(temp, text(currPos, TEXTLEN));
+        currDataLen = maxLen;
       else
-        ToQuotedString(temp, text(currPos, (textLen - currPos)));
+        currDataLen = dataLen - currPos;
 
-      if (snprintf(buf, bufLen, "insert into %s.\"%s\".%s values (%ld, %d, %d, %d, 0, %s)",
-                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-                   objUID,
-                   textType,
-                   subID,
-                   i,
-                   temp.data()) >= bufLen)
-        {
-          // we left room in buf for a few hundred quotes, but using
-          // too many could get us here
-          *CmpCommon::diags() << DgSqlCode(-1207);
-          return -1;
-        }
-      cliRC = cliInterface->executeImmediate(buf);
+      str_sprintf(queryBuf, "insert into %s.\"%s\".%s values (%Ld, %d, %d, %d, 0, cast(? as char(%d bytes) not null))",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+                  objUID,
+                  textType,
+                  subID,
+                  i,
+                  currDataLen);
+      cliRC = cliInterface->executeImmediateCEFC
+        (queryBuf, &dataToInsert[currPos], currDataLen, NULL, NULL, NULL);
       
       if (cliRC < 0)
         {
@@ -6175,7 +6189,7 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
           return -1;
         }
 
-      currPos += TEXTLEN;
+      currPos += maxLen;
     }
 
   return 0;
@@ -6190,82 +6204,9 @@ short CmpSeabaseDDL::updateTextTableWithBinaryData
  Int32 inputDataLen,
  NABoolean withDelete)
 {
-  Lng32 cliRC = 0;
-  if (withDelete)
-    {
-      // Note: It might be tempting to try an upsert instead of a
-      // delete followed by an insert, but this won't work. It is
-      // possible that the metadata text could shrink and take fewer
-      // rows in its new form than the old. So we do the simple thing
-      // to avoid such complications.
-      cliRC = deleteFromTextTable(cliInterface, objUID, textType, subID);
-      if (cliRC < 0)
-        {
-          return -1;
-        }
-    }
-
-  // convert input data to utf8 first.
-  ComDiagsArea * diagsArea = CmpCommon::diags();
-  char * inputDataUTF8 = new(STMTHEAP) char[inputDataLen*4];
-  Lng32 inputDataLenUTF8 = 0;
-  ex_expr::exp_return_type rc =
-    convDoIt(inputData,
-             inputDataLen,
-             REC_BYTE_F_ASCII,
-             0,
-             (Int32)CharInfo::ISO88591,
-             inputDataUTF8,
-             inputDataLen*4,
-             REC_BYTE_V_ASCII,
-             inputDataLen,
-             (Int32)CharInfo::UTF8,
-             (char*)&inputDataLenUTF8,
-             sizeof(Lng32),
-             STMTHEAP,
-             &diagsArea,
-             CONV_ASCII_F_V);
-  if ((rc != ex_expr::EXPR_OK) ||
-      (inputDataLenUTF8 <= 0))
-    {
-      return -1;
-    }
-  
-  Int32 maxLen = TEXTLEN;
-  char queryBuf[1000];
-  Lng32 numRows = (inputDataLenUTF8 / maxLen) + 1;
-  Lng32 currPos = 0;
-  Int32 currDataLen = 0;
-
-  for (Lng32 i = 0; i < numRows; i++)
-    {
-      NAString temp;
-
-      if (i < numRows-1)
-        currDataLen = maxLen;
-      else
-        currDataLen = inputDataLenUTF8 - currPos;
-
-      str_sprintf(queryBuf, "insert into %s.\"%s\".%s values (%Ld, %d, %d, %d, 0, cast(? as char(%d bytes) character set utf8 not null))",
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-                  objUID,
-                  textType,
-                  subID,
-                  i,
-                  currDataLen);
-      cliRC = cliInterface->executeImmediateCEFC
-        (queryBuf, &inputData[currPos], currDataLen, NULL, NULL, NULL);
-      
-      if (cliRC < 0)
-        {
-          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-          return -1;
-        }
-
-      currPos += maxLen;
-    }
-
-  return 0;
+  NAString dummy;
+  return updateTextTable(cliInterface, objUID, textType, subID, dummy,
+                         inputData, inputDataLen, withDelete);
 }
 
 short CmpSeabaseDDL::deleteFromTextTable(ExeCliInterface *cliInterface,
