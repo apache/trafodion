@@ -50,7 +50,7 @@ public class KeyValueListScanner implements KeyValueScanner {
         Collections.sort(data, this.comparator);
         this.iter = data.iterator();
         if (!data.isEmpty()) {
-            this.current = KeyValueUtil.createFirstOnRow(CellUtil.cloneRow(data.get(0)));
+            this.current = KeyValue.createFirstOnRow(data.get(0).getRow());
         }
     }
 

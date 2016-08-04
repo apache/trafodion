@@ -604,10 +604,6 @@ public class TrxTransactionState extends TransactionState {
             byte[] row = action.getRow();
             List<Cell> kvs = action.getKeyValues();
 
-for (Cell cell : kvs) {
-   LOG.trace("before get kv  : "+ Bytes.toString(cell.getRow())+" ,value="+Bytes.toString(cell.getValue())); 
-}
-LOG.trace("scan start & end key"+Bytes.toString(scan.getStartRow())+ " && "+Bytes.toString(scan.getStopRow()));
             if (scan.getStartRow() != null && !Bytes.equals(scan.getStartRow(), HConstants.EMPTY_START_ROW)
                     && Bytes.compareTo(row, scan.getStartRow()) < 0) {
                 continue;
@@ -765,8 +761,6 @@ LOG.trace("scan start & end key"+Bytes.toString(scan.getStartRow())+ " && "+Byte
             List<Cell> results = new ArrayList<Cell>();
             LOOP: while ((kv = this.peek()) != null) {
                 ScanQueryMatcher.MatchCode qcode = matcher.match(kv);
-                LOG.trace("qcode="+qcode.name());
-                LOG.trace("kv="+kv +"...value="+Bytes.toString(kv.getValueArray()));
                 switch (qcode) {
                     case INCLUDE:
                         Cell next = this.next();
