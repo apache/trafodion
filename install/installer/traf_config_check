@@ -204,17 +204,16 @@ else
    echo "export node_count=\"$node_count\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 
-   NODES_W=""
+   MY_NODES=""
 
    for node in $NODE_LIST
    do
-      NODES_W="$NODES_W -w $node"
+      MY_NODES="$MY_NODES -w $node"
    done
-
+   
    sudo chmod 777 $TRAF_CONFIG
    sed -i '/MY_NODES\=/d' $TRAF_CONFIG
-   sed -i '/NODES_W\=/d' $TRAF_CONFIG
-   echo "export NODES_W=\"$NODES_W\"" >> $TRAF_CONFIG
+   echo "export MY_NODES=\"$MY_NODES\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 
 fi
@@ -340,7 +339,7 @@ sed -i '/all_node_count\=/d' $TRAF_CONFIG
 echo "export all_node_count=\"$all_node_count\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 
-ALL_NODES="$MY_MANAGEMENT_NODES $NODES_W"
+ALL_NODES="$MY_MANAGEMENT_NODES $MY_NODES"
 
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/ALL_NODES\=/d' $TRAF_CONFIG
@@ -721,8 +720,8 @@ cdhVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | grep -o "cd
 CDH_VERSION=${cdhVersion:3:5}
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
    #Check that Cloudera 5.2 or 5.3 are not installed.
-   if [[ "$CDH_5_4_SUPPORT" == "Y" ]] || [[ "$CDH_5_5_SUPPORT" == "Y" ]] || [[ "$CDH_5_7_SUPPORT" == "Y" ]]; then
-      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[4-8].*)
+   if [[ "$CDH_5_4_SUPPORT" == "Y" ]] || [[ "$CDH_5_5_SUPPORT" == "Y" ]]; then
+      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[4-6].*)
       #Check that Cloudera 5.[n>4].* is not installed.
       if [[ -z $nameOfVersion ]]; then
          versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[5-9].[7-9].* | wc -l)
@@ -1014,15 +1013,6 @@ if [[ ! -z $install_features_path ]]; then
    sudo chmod 777 $TRAF_CONFIG
    echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
-   if [[ -z $CDH_5_7_SUPPORT ]]; then
-      sudo chmod 777 $TRAF_CONFIG
-      echo "export CDH_5_7_SUPPORT=\"N\"" >> $TRAF_CONFIG
-      sudo chmod 777 $TRAF_CONFIG
-   else
-      sudo chmod 777 $TRAF_CONFIG
-      echo "export CDH_5_7_SUPPORT=\"$CDH_5_5_SUPPORT\"" >> $TRAF_CONFIG
-      sudo chmod 777 $TRAF_CONFIG
-   fi
    if [[ -z $CDH_5_5_SUPPORT ]]; then
       sudo chmod 777 $TRAF_CONFIG
       echo "export CDH_5_5_SUPPORT=\"N\"" >> $TRAF_CONFIG
@@ -1063,14 +1053,12 @@ else
    CDH_5_3_HDP_2_2_SUPPORT="N"
    CDH_5_4_SUPPORT="N"
    CDH_5_5_SUPPORT="N"
-   CDH_5_7_SUPPORT="N"
    HDP_2_3_SUPPORT="N"
    APACHE_1_0_X_SUPPORT="N"
    sudo chmod 777 $TRAF_CONFIG
    echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
    echo "export CDH_5_4_SUPPORT=\"$CDH_5_4_SUPPORT\"" >> $TRAF_CONFIG
    echo "export CDH_5_5_SUPPORT=\"$CDH_5_5_SUPPORT\"" >> $TRAF_CONFIG
-   echo "export CDH_5_7_SUPPORT=\"$CDH_5_7_SUPPORT\"" >> $TRAF_CONFIG
    echo "export HDP_2_3_SUPPORT=\"$HDP_2_3_SUPPORT\"" >> $TRAF_CONFIG
    echo "export APACHE_1_0_X_SUPPORT=\"$APACHE_1_0_X_SUPPORT\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG

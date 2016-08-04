@@ -119,25 +119,16 @@ do
       if [[ $HADOOP_TYPE == "cloudera" ]]; then
          if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
             if [[ $CDH_5_4_SUPPORT == "Y" ]] || [[ $CDH_5_5_SUPPORT == "Y" ]]; then
-               if [[ $CDH_5_7_SUPPORT == "Y" ]]; then
-                  supportedHBase=$(echo $version | grep "1.2" | wc -l)
-                  if [[ $supportedHBase -eq "0" ]]; then
-                     echo "***ERROR: HBase installed must be 1.2 on node $node"
-                     exit -1
-                  fi
-                  CDH_VERSION="5.7"
-               else 
-                  supportedHBase=$(echo $version | grep "1.0.0" | wc -l)
-                  if [[ $supportedHBase -eq "0" ]]; then
-                     echo "***ERROR: HBase installed must be 1.0.0 on node $node"
-                     exit -1
-                  fi
-                  cdhVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | grep "cdh5.4.*" | wc -l)
-                  if [[ "$cdhVersion" -ge "1" ]]; then
-                     CDH_VERSION="5.4"
-                  else
-                     CDH_VERSION="5.5"
-                  fi
+               supportedHBase=$(echo $version | grep "1.0.0" | wc -l)
+               if [[ $supportedHBase -eq "0" ]]; then
+                  echo "***ERROR: HBase installed must be 1.0.0 on node $node"
+                  exit -1
+               fi
+               cdhVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | grep "cdh5.4.*" | wc -l)
+               if [[ "$cdhVersion" -ge "1" ]]; then
+                  CDH_VERSION="5.4"
+               else
+                  CDH_VERSION="5.5"
                fi
             else
                supportedHBase=$(echo $version | grep "0.98.1" | wc -l)
@@ -522,7 +513,6 @@ echo
 
 if [[ "$UPGRADE_TRAF" == "true" ]]; then
    sudo chmod 777 $HOME_DIR/$TRAF_USER/.bashrc
-   
    sudo sed -i -e "/export NODE_LIST/d" $HOME_DIR/$TRAF_USER/.bashrc
    sudo sed -i -e "/export MY_NODES=/d" $HOME_DIR/$TRAF_USER/.bashrc
    sudo sed -i -e "/export JAVA_HOME=/d" $HOME_DIR/$TRAF_USER/.bashrc
@@ -534,8 +524,7 @@ if [[ "$UPGRADE_TRAF" == "true" ]]; then
       $TRAF_PDSH sudo chown $TRAF_USER.trafodion $HOME_DIR/$TRAF_USER/.bashrc
       $TRAF_PDSH sudo chmod 777 $HOME_DIR/$TRAF_USER/.bashrc
       $TRAF_PDSH rm -rf $HOME/tempBash
-   fi
- 
+   fi 
    for node in $ALL_NODE_LIST
    do
       userForTrafodion=$(ssh -q -n $node grep "$TRAF_USER:" /etc/passwd | wc -l)
