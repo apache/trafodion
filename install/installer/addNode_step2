@@ -280,15 +280,34 @@ $TRAF_PDSH sudo rm -rf $HOME/known_hosts
 
 }
 
+function copySqcert {
+
+source $TRAF_CONFIG
+
+$TRAF_PDSH mkdir -p $HOME/tmpTraf
+sudo cp -r $HOME_DIR/$TRAF_USER/sqcert $HOME/tmpTraf
+sudo chown -R $(whoami).$(whoami) $HOME/tmpTraf
+$TRAF_PDCP -r $HOME/tmpTraf $HOME
+$TRAF_PDSH sudo mkdir -p $HOME_DIR/$TRAF_USER/sqcert
+$TRAF_PDSH sudo chown -R $TRAF_USER.trafodion $HOME_DIR/$TRAF_USER/sqcert 2>&1 > /dev/null
+$TRAF_PDSH sudo cp -rf $HOME/tmpTraf/sqcert $HOME_DIR/$TRAF_USER/sqcert 2>&1 > /dev/null
+$TRAF_PDSH sudo chown -R $TRAF_USER.trafodion $HOME_DIR/$TRAF_USER/sqcert 2>&1 > /dev/null
+$TRAF_PDSH rm -r $HOME/tmpTraf
+
+}
+
+
 function copysqConfig {
 
 source $TRAF_CONFIG
 
 $TRAF_PDSH mkdir -p $HOME/tmpTraf
-sudo cp -r $SQ_ROOT/sql/scripts/sqconfig* $HOME/tmpTraf
+sudo cp -r $SQ_ROOT/sql/scripts/sqconfig $HOME/tmpTraf
+sudo cp -r $SQ_ROOT/sql/scripts/sqconfig.db $HOME/tmpTraf
 sudo chown -R $(whoami).$(whoami) $HOME/tmpTraf
 $TRAF_PDCP -r $HOME/tmpTraf $HOME
-$TRAF_PDSH sudo cp -rf $HOME/tmpTraf/sqconfig* $SQ_ROOT/sql/scripts 2>&1 > /dev/null
+$TRAF_PDSH sudo cp -rf $HOME/tmpTraf/sqconfig $SQ_ROOT/sql/scripts 2>&1 > /dev/null
+$TRAF_PDSH sudo cp -rf $HOME/tmpTraf/sqconfig.db $SQ_ROOT/sql/scripts 2>&1 > /dev/null
 $TRAF_PDSH sudo chown -R $TRAF_USER.trafodion $SQ_ROOT/sql/scripts 2>&1 > /dev/null
 $TRAF_PDSH rm -r $HOME/tmpTraf
 

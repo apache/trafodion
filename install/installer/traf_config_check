@@ -204,17 +204,16 @@ else
    echo "export node_count=\"$node_count\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 
-   NODES_W=""
+   MY_NODES=""
 
    for node in $NODE_LIST
    do
-      NODES_W="$NODES_W -w $node"
+      MY_NODES="$MY_NODES -w $node"
    done
 
    sudo chmod 777 $TRAF_CONFIG
    sed -i '/MY_NODES\=/d' $TRAF_CONFIG
-   sed -i '/NODES_W\=/d' $TRAF_CONFIG
-   echo "export NODES_W=\"$NODES_W\"" >> $TRAF_CONFIG
+   echo "export MY_NODES=\"$MY_NODES\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 
 fi
@@ -340,7 +339,7 @@ sed -i '/all_node_count\=/d' $TRAF_CONFIG
 echo "export all_node_count=\"$all_node_count\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 
-ALL_NODES="$MY_MANAGEMENT_NODES $NODES_W"
+ALL_NODES="$MY_MANAGEMENT_NODES $MY_NODES"
 
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/ALL_NODES\=/d' $TRAF_CONFIG

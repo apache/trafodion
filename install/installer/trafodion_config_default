@@ -68,7 +68,7 @@ export node_count=""
 
 # another list of the same nodes in NODE_LIST but specified in a pdsh usable format
 # i.e.  "-w centos-cdh[1-6]"  or "-w node1 -w node2 -w node3"
-export NODES_W=""
+export MY_NODES=""
 
 # the directory prefix for the trafodion userid's $HOME directory
 # i.e. /opt/home, not /opt/home/trafodion

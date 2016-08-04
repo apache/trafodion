@@ -32,7 +32,7 @@ rm $SQ_ROOT/logs/securityErrors.txt 2>/dev/null
 if [[ "$all_node_count" -eq "1" ]]; then
     STARTING_NODE=$NODE_LIST
 else
-    STARTING_NODE=$(echo $NODES_W | awk '{print $2}')
+    STARTING_NODE=$(echo $MY_NODES | awk '{print $2}')
 fi
 
 #==========================================
