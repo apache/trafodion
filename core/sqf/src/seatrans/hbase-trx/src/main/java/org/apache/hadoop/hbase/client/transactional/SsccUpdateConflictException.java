@@ -22,11 +22,12 @@
 **/
 
 package org.apache.hadoop.hbase.client.transactional;
+import java.io.IOException;
 
 /** Thrown when a transaction cannot be committed. 
  * 
  */
-public class SsccUpdateConflictException extends Exception {
+public class SsccUpdateConflictException extends IOException {
 
   private static final long serialVersionUID = 7062921444531109202L;
 

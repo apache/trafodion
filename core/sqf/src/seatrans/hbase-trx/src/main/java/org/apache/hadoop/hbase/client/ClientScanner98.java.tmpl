@@ -62,7 +62,7 @@ public class ClientScanner98 extends AbstractClientScanner {
     // Keep lastResult returned successfully in case we have to reset scanner.
     protected Result lastResult = null;
     protected final long maxScannerResultSize;
-    private final HConnection connection;
+    private final Connection connection;
     private final TableName tableName;
     protected final int scannerTimeout;
     protected boolean scanMetricsPublished = false;
@@ -70,7 +70,7 @@ public class ClientScanner98 extends AbstractClientScanner {
     protected RpcControllerFactory rpcControllerFactory;
 
     /**
-     * Create a new ClientScanner for the specified table. An HConnection will be
+     * Create a new ClientScanner for the specified table. An Connection will be
      * retrieved using the passed Configuration.
      * Note that the passed {@link Scan}'s start row maybe changed changed.
      *
@@ -79,20 +79,24 @@ public class ClientScanner98 extends AbstractClientScanner {
      * @param tableName The table that we wish to scan
      * @throws IOException
      */
+/*
     @Deprecated
     public ClientScanner98(final Configuration conf, final Scan scan,
         final TableName tableName) throws IOException {
-      this(conf, scan, tableName, HConnectionManager.getConnection(conf));
+      this(conf, scan, tableName, ConnectionFactory.createConnection(conf));
     }
+*/
 
     /**
      * @deprecated Use {@link #ClientScanner(Configuration, Scan, TableName)}
      */
+/*
     @Deprecated
     public ClientScanner98(final Configuration conf, final Scan scan,
         final byte [] tableName) throws IOException {
       this(conf, scan, TableName.valueOf(tableName));
     }
+*/
 
 
     /**
@@ -106,30 +110,30 @@ public class ClientScanner98 extends AbstractClientScanner {
      * @throws IOException
      */
   public ClientScanner98(final Configuration conf, final Scan scan, final TableName tableName,
-      HConnection connection) throws IOException {
+      Connection connection) throws IOException {
     this(conf, scan, tableName, connection, RpcRetryingCallerFactory.instantiate(conf),
         RpcControllerFactory.instantiate(conf));
   }
 
   /**
-   * @deprecated Use {@link #ClientScanner(Configuration, Scan, TableName, HConnection)}
+   * @deprecated Use {@link #ClientScanner(Configuration, Scan, TableName, Connection)}
    */
   @Deprecated
   public ClientScanner98(final Configuration conf, final Scan scan, final byte [] tableName,
-      HConnection connection) throws IOException {
+      Connection connection) throws IOException {
     this(conf, scan, TableName.valueOf(tableName), connection, new RpcRetryingCallerFactory(conf),
         RpcControllerFactory.instantiate(conf));
   }
 
   /**
    * @deprecated Use
-   *             {@link #ClientScanner(Configuration, Scan, TableName, HConnection,
+   *             {@link #ClientScanner(Configuration, Scan, TableName, Connection,
    *             RpcRetryingCallerFactory, RpcControllerFactory)}
    *             instead
    */
   @Deprecated
   public ClientScanner98(final Configuration conf, final Scan scan, final TableName tableName,
-      HConnection connection, RpcRetryingCallerFactory rpcFactory) throws IOException {
+      Connection connection, RpcRetryingCallerFactory rpcFactory) throws IOException {
     this(conf, scan, tableName, connection, rpcFactory, RpcControllerFactory.instantiate(conf));
   }
 
@@ -143,7 +147,7 @@ public class ClientScanner98 extends AbstractClientScanner {
    * @throws IOException
    */
   public ClientScanner98(final Configuration conf, final Scan scan, final TableName tableName,
-      HConnection connection, RpcRetryingCallerFactory rpcFactory,
+      Connection connection, RpcRetryingCallerFactory rpcFactory,
       RpcControllerFactory controllerFactory) throws IOException {
       if (LOG.isTraceEnabled()) {
         LOG.trace("Scan table=" + tableName
@@ -188,7 +192,7 @@ public class ClientScanner98 extends AbstractClientScanner {
       nextScanner(this.caching, false);
     }
 
-    protected HConnection getConnection() {
+    protected Connection getConnection() {
       return this.connection;
     }
 

@@ -53,7 +53,6 @@
 
 #include "ExExeUtilCli.h"
 #include "Generator.h"
-#include "desc.h"
 
 // for privilege checking
 #include "PrivMgrCommands.h"
@@ -938,6 +937,17 @@ void CmpSeabaseDDL::createSeabaseView(
 
       processReturn();
 
+      return;
+    }
+
+  if (updateObjectRedefTime(&cliInterface, 
+                            catalogNamePart, schemaNamePart, objectNamePart,
+                            COM_VIEW_OBJECT_LIT, -2, objUID))
+    {
+      deallocEHI(ehi);
+
+      processReturn();
+      
       return;
     }
 

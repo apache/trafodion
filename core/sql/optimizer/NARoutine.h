@@ -100,7 +100,7 @@ public:
   // How to set up the NARoutineDB and delete the NARoutineDB entry at the
   // end of the statement, use contextHeap()
   NARoutine(const QualifiedName   &name,
-            const desc_struct    *desc_struct,
+            const TrafDesc    *TrafDesc,
             BindWA                *bindWA,
             Int32                   &errorOccurred,
             NAMemory              *heap = CmpCommon::contextHeap());

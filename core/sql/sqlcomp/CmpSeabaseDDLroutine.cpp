@@ -60,7 +60,6 @@
 
 #include "ExExeUtilCli.h"
 #include "Generator.h"
-#include "desc.h"
 #include "ComSmallDefs.h"
 #include "CmpDDLCatErrorCodes.h"
 

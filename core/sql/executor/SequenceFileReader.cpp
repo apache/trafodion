@@ -530,8 +530,6 @@ SFW_RetCode SequenceFileWriter::init()
     JavaMethods_[JM_CREATE_SNAPSHOT].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
     JavaMethods_[JM_DELETE_SNAPSHOT].jm_name      = "deleteSnapshot";
     JavaMethods_[JM_DELETE_SNAPSHOT].jm_signature = "(Ljava/lang/String;)Z";
-    JavaMethods_[JM_RELEASE].jm_name      = "release";
-    JavaMethods_[JM_RELEASE].jm_signature = "()Z";
     JavaMethods_[JM_VERIFY_SNAPSHOT].jm_name      = "verifySnapshot";
     JavaMethods_[JM_VERIFY_SNAPSHOT].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
     JavaMethods_[JM_HDFS_DELETE_PATH].jm_name      = "hdfsDeletePath";
@@ -924,30 +922,6 @@ SFW_RetCode SequenceFileWriter::deleteSnapshot( const NAString&  snapshotName)
   return SFW_OK;
 }
 
-
-SFW_RetCode SequenceFileWriter::release( )
-{
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::release() called.");
-
-  tsRecentJMFromJNI = JavaMethods_[JM_RELEASE].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_RELEASE].methodID);
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::release()", getLastError());
-    return SFW_ERROR_RELEASE_EXCEPTION;
-  }
-
-  if (jresult == false)
-  {
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::release()", getLastError());
-    return SFW_ERROR_RELEASE_EXCEPTION;
-  }
-
-  return SFW_OK;
-}
 
 SFW_RetCode SequenceFileWriter::hdfsMergeFiles( const NAString& srcPath,
                                                 const NAString& dstPath)

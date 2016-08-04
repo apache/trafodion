@@ -1,6 +1,6 @@
 >>
 >>-- tests for PRIMARY KEY constraint usage
->>drop table if exists t031t1;
+>>drop table if exists t031t1 cascade;
 
 --- SQL operation complete.
 >>create table t031t1 (a int not null, b int not null, constraint ppk primary key(a));
@@ -431,19 +431,19 @@ Z            Z            (EXPR)  (EXPR)
 --- 1 row(s) selected.
 >>select substring(a, 1, 10), cast(b as char(10)) from hive.hive.t031hive;
 
-(EXPR)                                    (EXPR)
-----------------------------------------  ----------------------------------------
+(EXPR)      (EXPR)    
+----------  ----------
 
-aaaaaaaaaa                                def                                     
-aaaaaaaaaa                                zzz                                     
-aaaaaaaaaa                                zzz                                     
-aaaaaaaaaa                                zzz                                     
-aaaaaaaaaa                                zzz                                     
-aaaaaaaaaa                                zzz                                     
-a                                         zzz                                     
-aaaaaaaaaa                                ?                                       
-aaaaaaaaaa                                ?                                       
-aaaaaaaaaa                                ?                                       
+aaaaaaaaaa  def       
+aaaaaaaaaa  zzz       
+aaaaaaaaaa  zzz       
+aaaaaaaaaa  zzz       
+aaaaaaaaaa  zzz       
+aaaaaaaaaa  zzz       
+a           zzz       
+aaaaaaaaaa  ?         
+aaaaaaaaaa  ?         
+aaaaaaaaaa  ?         
 
 --- 10 row(s) selected.
 >>select [last 0] * from hive.hive.t031hive;
@@ -482,7 +482,7 @@ aaaaaaaaaa                                ?
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Wed Jul 13 23:30:01 2016
+-- Definition current  Tue Aug  2 19:11:21 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -513,7 +513,7 @@ A            B
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Wed Jul 13 23:30:02 2016
+-- Definition current  Tue Aug  2 19:11:28 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -547,5 +547,245 @@ A            B                     C
           ?  DB__ROOT              DB__ROOT            
 
 --- 3 row(s) selected.
+>>
+>>-- metadata stored descriptor tests
+>>cqd traf_store_object_desc 'OFF';
+
+--- SQL operation complete.
+>>cqd traf_read_object_desc 'OFF';
+
+--- SQL operation complete.
+>>drop table if exists t031t1 cascade;
+
+--- SQL operation complete.
+>>create table t031t1 (a int);
+
+--- SQL operation complete.
+>>invoke t031t1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T031T1
+-- Definition current  Tue Aug  2 19:11:35 2016
+
+  (
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>alter table t031t1 check stored descriptor;
+
+*** ERROR[4493] Stored Descriptor Status: Does not exist. It needs to be regenerated.
+
+--- SQL operation failed with errors.
+>>
+>>cqd traf_store_object_desc 'ON';
+
+--- SQL operation complete.
+>>cqd traf_read_object_desc 'ON';
+
+--- SQL operation complete.
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (a int);
+
+--- SQL operation complete.
+>>invoke t031t1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T031T1
+-- Definition current  Tue Aug  2 19:11:42 2016
+
+  (
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>alter table t031t1 check stored descriptor;
+
+*** WARNING[4493] Stored Descriptor Status: Uptodate and current.
+
+--- SQL operation complete.
+>>
+>>alter table t031t1 delete stored descriptor;
+
+--- SQL operation complete.
+>>alter table t031t1 check stored descriptor;
+
+*** ERROR[4493] Stored Descriptor Status: Does not exist. It needs to be regenerated.
+
+--- SQL operation failed with errors.
+>>invoke t031t1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T031T1
+-- Definition current  Tue Aug  2 19:11:51 2016
+
+  (
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>alter table t031t1 generate stored descriptor;
+
+--- SQL operation complete.
+>>alter table t031t1 check stored descriptor;
+
+*** WARNING[4493] Stored Descriptor Status: Uptodate and current.
+
+--- SQL operation complete.
+>>invoke t031t1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T031T1
+-- Definition current  Tue Aug  2 19:11:53 2016
+
+  (
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>create view t031v1 as select * from t031t1;
+
+--- SQL operation complete.
+>>invoke t031v1;
+
+-- Definition of Trafodion view TRAFODION.SCH.T031V1
+-- Definition current  Tue Aug  2 19:11:54 2016
+
+  (
+    A                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>alter table t031v1 check stored descriptor;
+
+*** WARNING[4493] Stored Descriptor Status: Uptodate and current.
+
+--- SQL operation complete.
+>>alter table t031v1 delete stored descriptor;
+
+--- SQL operation complete.
+>>alter table t031v1 check stored descriptor;
+
+*** ERROR[4493] Stored Descriptor Status: Does not exist. It needs to be regenerated.
+
+--- SQL operation failed with errors.
+>>invoke t031v1;
+
+-- Definition of Trafodion view TRAFODION.SCH.T031V1
+-- Definition current  Tue Aug  2 19:11:59 2016
+
+  (
+    A                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>alter table t031v1 generate stored descriptor;
+
+--- SQL operation complete.
+>>alter table t031v1 check stored descriptor;
+
+*** WARNING[4493] Stored Descriptor Status: Uptodate and current.
+
+--- SQL operation complete.
+>>invoke t031v1;
+
+-- Definition of Trafodion view TRAFODION.SCH.T031V1
+-- Definition current  Tue Aug  2 19:12:01 2016
+
+  (
+    A                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>create index t031t1i1 on t031t1(a);
+
+--- SQL operation complete.
+>>showddl t031t1;
+
+CREATE TABLE TRAFODION.SCH.T031T1
+  (
+    A                                INT DEFAULT NULL
+  )
+;
+
+CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
+  (
+    A ASC
+  )
+;
+
+--- SQL operation complete.
+>>alter table t031t1 check stored descriptor;
+
+*** WARNING[4493] Stored Descriptor Status: Uptodate and current.
+
+--- SQL operation complete.
+>>alter table t031t1 delete stored descriptor;
+
+--- SQL operation complete.
+>>alter table t031t1 check stored descriptor;
+
+*** ERROR[4493] Stored Descriptor Status: Does not exist. It needs to be regenerated.
+
+--- SQL operation failed with errors.
+>>showddl t031t1;
+
+CREATE TABLE TRAFODION.SCH.T031T1
+  (
+    A                                INT DEFAULT NULL
+  )
+;
+
+CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
+  (
+    A ASC
+  )
+;
+
+--- SQL operation complete.
+>>alter table t031t1 generate stored descriptor;
+
+--- SQL operation complete.
+>>alter table t031t1 check stored descriptor;
+
+*** WARNING[4493] Stored Descriptor Status: Uptodate and current.
+
+--- SQL operation complete.
+>>showddl t031t1;
+
+CREATE TABLE TRAFODION.SCH.T031T1
+  (
+    A                                INT DEFAULT NULL
+  )
+;
+
+CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
+  (
+    A ASC
+  )
+;
+
+--- SQL operation complete.
+>>
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>invoke table(index_table t031t1i1);
+
+-- Definition of Trafodion table TRAFODION.SCH.T031T1I1
+-- Definition current  Tue Aug  2 19:12:17 2016
+
+  (
+    "A@"                             INT NO DEFAULT
+  , SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  PRIMARY KEY ("A@" ASC, SYSKEY ASC)
+
+--- SQL operation complete.
 >>
 >>log;

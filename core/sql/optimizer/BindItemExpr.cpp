@@ -78,6 +78,7 @@
 #include "CmpSeabaseDDL.h"
 #include "QCache.h"
 
+#include "TrafDDLdesc.h"
 #include "exp_datetime.h"
 
 #include <stack>
@@ -9277,8 +9278,8 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
 
 
   // Find UDF in cache or metadata
-  desc_struct *udfMetadata = NULL;
-  desc_struct *oldUdfMetadata = NULL; // not used, just to get code to compile
+  TrafDesc *udfMetadata = NULL;
+  TrafDesc *oldUdfMetadata = NULL; // not used, just to get code to compile
   CmpSeabaseDDL cmpSBD(heap);
 
   try 
@@ -9426,7 +9427,7 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
     ComRoutineType udrType;
     if (CmpCommon::getDefault(COMP_BOOL_191) == DF_OFF)
       {
-         udrType = udfMetadata->body.routine_desc.UDRType ;
+        udrType = udfMetadata->routineDesc()->UDRType ;
       }
 
     if (udrType != COM_SCALAR_UDF_TYPE &&

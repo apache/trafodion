@@ -24,7 +24,6 @@
 #ifndef READREALARK_H
 #define READREALARK_H
 
-#include "desc.h"
 #include "ComSmallDefs.h"
 #include "ObjectNames.h"
 

@@ -86,7 +86,7 @@
 */
 #endif // documentation
 
-
+#include "TrafDDLdesc.h"
 #include "BindWA.h"
 #include "ItemConstr.h"
 #include "NATable.h"
@@ -185,21 +185,21 @@ AbstractRIConstraint *AbstractRIConstraint::findConstraint(
 } // AbstractRIConstraint::findConstraint
 
 void AbstractRIConstraint::setKeyColumns(
-				      const struct constrnts_desc_struct *desc,
-				      CollHeap *heap)
+     const struct TrafConstrntsDesc *desc,
+     CollHeap *heap)
 {
-  struct constrnt_key_cols_desc_struct *colDesc;
+  TrafConstrntKeyColsDesc *colDesc;
   NAColumn *column;
   CollIndex i = 0;
-  struct desc_struct *keyColDesc = desc->constr_key_cols_desc;
+  TrafDesc *keyColDesc = desc->constr_key_cols_desc;
 
   while (keyColDesc)
   {
-    colDesc = &keyColDesc->body.constrnt_key_cols_desc;
+    colDesc = keyColDesc->constrntKeyColsDesc();
     column = new (heap) NAColumn(colDesc->colname, colDesc->position, NULL, heap);
     keyColumns_.insertAt(i, column);
     i++;
-    keyColDesc = keyColDesc->header.next; 
+    keyColDesc = keyColDesc->next; 
   }
 
   CMPASSERT(desc->colcount == (signed)i);
@@ -273,19 +273,19 @@ Int32 UniqueConstraint::getRefConstraints(BindWA *bindWA,
 
 
 void UniqueConstraint::setRefConstraintsReferencingMe (
-						       const struct constrnts_desc_struct* desc, 
-						       CollHeap* heap,
-						       BindWA* bindWA)
+     const struct TrafConstrntsDesc* desc, 
+     CollHeap* heap,
+     BindWA* bindWA)
 {
-  struct desc_struct *referencingConstraintDesc = desc->referencing_constrnts_desc;
+  struct TrafDesc *referencingConstraintDesc = desc->referencing_constrnts_desc;
   ComplementaryRIConstraint *constraintsReferencingMe;
 
   while (referencingConstraintDesc)
     {
       char *refConstrntName = 
-        referencingConstraintDesc->body.ref_constrnts_desc.constrntname;
+        referencingConstraintDesc->refConstrntsDesc()->constrntname;
       char *refTableName = 
-        referencingConstraintDesc->body.ref_constrnts_desc.tablename;
+        referencingConstraintDesc->refConstrntsDesc()->tablename;
       
       QualifiedName refConstrnt(refConstrntName, 3, heap, bindWA);
       QualifiedName refTable(refTableName, 3, heap, bindWA);
@@ -295,7 +295,7 @@ void UniqueConstraint::setRefConstraintsReferencingMe (
                                                                       heap);
       refConstraintsReferencingMe_.insert(constraintsReferencingMe);
       
-      referencingConstraintDesc = referencingConstraintDesc->header.next;
+      referencingConstraintDesc = referencingConstraintDesc->next;
     }
 } // UniqueConstraint::setRefConstraintsReferencingMe
 

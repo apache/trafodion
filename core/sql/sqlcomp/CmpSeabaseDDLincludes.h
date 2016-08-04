@@ -40,6 +40,7 @@
 #include "StmtDDLCreateTable.h"
 #include "StmtDDLDropTable.h"
 #include "StmtDDLAlterTableRename.h"
+#include "StmtDDLAlterTableStoredDesc.h"
 #include "StmtDDLCreateIndex.h"
 #include "StmtDDLPopulateIndex.h"
 #include "StmtDDLDropIndex.h"
@@ -86,7 +87,6 @@
 
 #include "ExExeUtilCli.h"
 #include "Generator.h"
-#include "desc.h"
 
 #include "ComCextdecs.h"
 

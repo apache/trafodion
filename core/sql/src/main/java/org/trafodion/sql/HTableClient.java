@@ -50,7 +50,7 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.client.HConnection;
+import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.client.coprocessor.AggregationClient;
 import org.apache.hadoop.hbase.client.transactional.RMInterface;
@@ -88,7 +88,7 @@ import org.apache.hadoop.hbase.filter.ByteArrayComparable;
 import org.apache.hadoop.hbase.filter.NullComparator;
 
 import org.apache.hadoop.hbase.client.TableSnapshotScanner;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.fs.FileSystem;
@@ -104,7 +104,7 @@ public class HTableClient {
 	private boolean useTRex;
 	private boolean useTRexScanner;
 	private String tableName;
-
+        private static Connection connection;
 	private ResultScanner scanner = null;
         private ScanHelper scanHelper = null;
 	Result[] getResultSet = null;
@@ -133,7 +133,7 @@ public class HTableClient {
 	 class SnapshotScanHelper
 	 {
 	   Path snapRestorePath = null;
-	   HBaseAdmin admin  = null;
+	   Admin admin  = null;
 	   Configuration conf = null;
 	   SnapshotDescription snpDesc = null;
 	   String tmpLocation = null;
@@ -142,8 +142,7 @@ public class HTableClient {
 	   SnapshotScanHelper( Configuration cnfg , String tmpLoc, String snapName) 
 	       throws IOException
 	   {
-	     conf = cnfg;
-	     admin = new HBaseAdmin(conf);
+             conf = cnfg;
 	     tmpLocation = tmpLoc;
 	     setSnapshotDescription(snapName);
 	     Path rootDir = new Path(conf.get(HConstants.HBASE_DIR));
@@ -177,7 +176,10 @@ public class HTableClient {
 	   boolean snapshotExists() throws IOException
 	   {
 	     if (logger.isTraceEnabled()) logger.trace("[Snapshot Scan] SnapshotScanHelper.snapshotExists() called. ");
-	     return !admin.listSnapshots(snpDesc.getName()).isEmpty();
+             Admin admin = connection.getAdmin();
+	     boolean retcode = !(admin.listSnapshots(snpDesc.getName()).isEmpty());
+             admin.close();
+             return retcode; 
 	   }
 
 	   void deleteSnapshot() throws IOException
@@ -185,13 +187,16 @@ public class HTableClient {
 	     if (logger.isTraceEnabled()) logger.trace("[Snapshot Scan] SnapshotScanHelper.deleteSnapshot() called. ");
 	     if (snapshotExists())
 	     {
+               Admin admin = connection.getAdmin();
 	       admin.deleteSnapshot(snpDesc.getName());
+               admin.close();
 	       if (logger.isTraceEnabled()) logger.trace("[Snapshot Scan] SnapshotScanHelper.deleteSnapshot(). snapshot: " + snpDesc.getName() + " deleted.");
 	     }
 	     else
 	     {
 	       if (logger.isTraceEnabled()) logger.trace("[Snapshot Scan] SnapshotScanHelper.deleteSnapshot(). snapshot: " + snpDesc.getName() + " does not exist.");
 	     }
+    
 	   }
 	   void deleteRestorePath() throws IOException
 	   {
@@ -219,7 +224,7 @@ public class HTableClient {
 	       try
 	       {
                  ioExc = null;
-	         scanner = new TableSnapshotScanner(table.getConfiguration(), snapHelper.getSnapRestorePath(), snapHelper.getSnapshotName(), scan);
+	         scanner = new TableSnapshotScanner(connection.getConfiguration(), snapHelper.getSnapRestorePath(), snapHelper.getSnapshotName(), scan);
 	       }
 	       catch(IOException e )
 	       {
@@ -262,6 +267,10 @@ public class HTableClient {
 	     }
 	   }
 	 }
+
+        public HTableClient(Connection connection) {
+           this.connection = connection;
+        }
 
 	class ScanHelper implements Callable {
             public Result[] call() throws IOException {
@@ -344,7 +353,7 @@ public class HTableClient {
 		}
 	    }
 
-	    table = new RMInterface(tblName);
+	    table = new RMInterface(tblName, connection);
 	    if (logger.isDebugEnabled()) logger.debug("Exit HTableClient::init, useTRex: " + this.useTRex + ", useTRexScanner: "
 	              + this.useTRexScanner + ", table object: " + table);
 	    return true;
@@ -997,7 +1006,7 @@ public class HTableClient {
 	  }
 	  else
 	  {
-	    snapHelper = new SnapshotScanHelper(table.getConfiguration(), tmpLoc,snapName);
+	    snapHelper = new SnapshotScanHelper(connection.getConfiguration(), tmpLoc,snapName);
 
 	    if (logger.isTraceEnabled()) 
 	      logger.trace("[Snapshot Scan] HTableClient.startScan(). useSnapshotScan: " + useSnapshotScan + 
@@ -1686,12 +1695,12 @@ public class HTableClient {
               boolean cacheBlocks, int numCacheRows) 
                           throws IOException, Throwable {
 
-		    Configuration customConf = table.getConfiguration();
+		    Configuration customConf = connection.getConfiguration();
                     long rowCount = 0;
 
                     if (transID > 0) {
 		      TransactionalAggregationClient aggregationClient = 
-                          new TransactionalAggregationClient(customConf);
+                          new TransactionalAggregationClient(customConf, connection);
 		      Scan scan = new Scan();
 		      scan.addFamily(colFamily);
 		      scan.setCacheBlocks(false);
@@ -1771,11 +1780,12 @@ public class HTableClient {
            if (logger.isTraceEnabled()) logger.trace("Enter close() " + tableName);
            if (table != null) 
            {
+/*
               if (clearRegionCache)
               {
-                 HConnection connection = table.getConnection();
                  connection.clearRegionCache(tableName.getBytes());
               }
+*/
               table.close();
               table = null;
            }

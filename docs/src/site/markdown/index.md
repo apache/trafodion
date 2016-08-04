@@ -19,12 +19,17 @@
 Trafodion brings enterprise-class operational workloads to Hadoop! You can now run all of your data workloads on a single platform based on Hadoop.
 -->
 
+#### [Happy Hour Meetup Hosted by Esgyn Corporation][meetup]
+
+[![Meetup](images/carousel/meetup.png)][meetup]
+
+Meet the committers and contributors to Apache Trafodion and learn how you can get involved.
+
 #### [Hadoop-Scale with SQL Access][scale]
 
 [![Hadoop Scale](images/carousel/scale.png)][scale]
 
 Running out of room with your current SQL solution? Starting a new operational application? Trafodion allows you to work in SQL at Hadoop-scale levels.
-
 
 #### [Fully Integrated with HBase and Hive][stack]
 
@@ -32,10 +37,11 @@ Running out of room with your current SQL solution? Starting a new operational a
 
 Trafodion provides SQL access to structured, semi-structured, and unstructured data allowing you to run operational, historical, and analytical workloads on a single platform.
 
-
-[revolution]: http://trafodion.apache.org
-[scale]: http://trafodion.apache.org
+[revolution]: http://trafodion.incubator.apache.org
+[scale]: http://trafodion.incubator.apache.org
 [stack]: index.html
+[meetup]: http://www.meetup.com/Milpitas-bigdata-Meetup/events/232896605/
+
 
 ---
 

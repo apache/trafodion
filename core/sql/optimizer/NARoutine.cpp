@@ -32,7 +32,7 @@
 **************************************************************************
 */
 #include "BaseTypes.h"
-#include "desc.h"
+#include "TrafDDLdesc.h"
 #include "BindWA.h"
 #include "NAType.h"
 #include "NumericType.h"
@@ -343,29 +343,29 @@ NARoutine::NARoutine (const NARoutine &old, CollHeap *h)
 }
 
 NARoutine::NARoutine(const QualifiedName   &name,
-           const desc_struct    *routine_desc,
+           const TrafDesc    *routine_desc,
            BindWA                *bindWA,
            Int32                 &errorOccurred,
            NAMemory              *heap)
     : name_                   (name, heap)
     , hashKey_                (name, heap) 
-    , language_               (routine_desc->body.routine_desc.language)
-    , UDRType_                (routine_desc->body.routine_desc.UDRType)
-    , sqlAccess_              (routine_desc->body.routine_desc.sqlAccess)
-    , transactionAttributes_  (routine_desc->body.routine_desc.transactionAttributes)
-    , maxResults_             (routine_desc->body.routine_desc.maxResults)
-    , stateAreaSize_          (routine_desc->body.routine_desc.stateAreaSize)
+    , language_               (routine_desc->routineDesc()->language)
+    , UDRType_                (routine_desc->routineDesc()->UDRType)
+    , sqlAccess_              (routine_desc->routineDesc()->sqlAccess)
+    , transactionAttributes_  (routine_desc->routineDesc()->transactionAttributes)
+    , maxResults_             (routine_desc->routineDesc()->maxResults)
+    , stateAreaSize_          (routine_desc->routineDesc()->stateAreaSize)
     , externalFile_           ("", heap)
-    , externalPath_           (routine_desc->body.routine_desc.libraryFileName, heap)
+    , externalPath_           (routine_desc->routineDesc()->libraryFileName, heap)
     , externalName_           ("", heap)
-    , librarySqlName_         (routine_desc->body.routine_desc.librarySqlName, COM_UNKNOWN_NAME, FALSE, heap) //TODO
-    , signature_              (routine_desc->body.routine_desc.signature, heap)
-    , paramStyle_             (routine_desc->body.routine_desc.paramStyle)
+    , librarySqlName_         (routine_desc->routineDesc()->librarySqlName, COM_UNKNOWN_NAME, FALSE, heap) //TODO
+    , signature_              (routine_desc->routineDesc()->signature, heap)
+    , paramStyle_             (routine_desc->routineDesc()->paramStyle)
     , paramStyleVersion_      (COM_ROUTINE_PARAM_STYLE_VERSION_1)
-    , isDeterministic_        (routine_desc->body.routine_desc.isDeterministic)
-    , isCallOnNull_           (routine_desc->body.routine_desc.isCallOnNull )
-    , isIsolate_              (routine_desc->body.routine_desc.isIsolate)
-    , externalSecurity_       (routine_desc->body.routine_desc.externalSecurity)
+    , isDeterministic_        (routine_desc->routineDesc()->isDeterministic)
+    , isCallOnNull_           (routine_desc->routineDesc()->isCallOnNull )
+    , isIsolate_              (routine_desc->routineDesc()->isIsolate)
+    , externalSecurity_       (routine_desc->routineDesc()->externalSecurity)
     , isExtraCall_            (FALSE) //TODO
     , hasOutParams_           (FALSE)
     , redefTime_              (0)  //TODO
@@ -379,33 +379,33 @@ NARoutine::NARoutine(const QualifiedName   &name,
     , isUniversal_            (0) // TODO
     , actionPosition_         (0) // TODO
     , executionMode_          (COM_ROUTINE_SAFE_EXECUTION)
-    , objectUID_              (routine_desc->body.routine_desc.objectUID)
-    , dllName_                (routine_desc->body.routine_desc.libraryFileName, heap)
-    , dllEntryPoint_          (routine_desc->body.routine_desc.externalName, heap)
+    , objectUID_              (routine_desc->routineDesc()->objectUID)
+    , dllName_                (routine_desc->routineDesc()->libraryFileName, heap)
+    , dllEntryPoint_          (routine_desc->routineDesc()->externalName, heap)
     , sasFormatWidth_         ("", heap) //TODO
     , systemName_             ("", heap) // TODO
     , dataSource_             ("", heap) // TODO
     , fileSuffix_             ("", heap) // TODO
     , schemaVersionOfRoutine_ ((COM_VERSION)0) // TODO
-    , objectOwner_            (routine_desc->body.routine_desc.owner)
-    , schemaOwner_            (routine_desc->body.routine_desc.schemaOwner)
+    , objectOwner_            (routine_desc->routineDesc()->owner)
+    , schemaOwner_            (routine_desc->routineDesc()->schemaOwner)
     , privInfo_               (NULL)
     , heap_(heap)
 {
   char parallelism[5];
-  CmGetComRoutineParallelismAsLit(routine_desc->body.routine_desc.parallelism, parallelism);
+  CmGetComRoutineParallelismAsLit(routine_desc->routineDesc()->parallelism, parallelism);
   comRoutineParallelism_ = ((char *)parallelism);
 
   if (paramStyle_ == COM_STYLE_JAVA_CALL)
   {
-    NAString extName(routine_desc->body.routine_desc.externalName);
+    NAString extName(routine_desc->routineDesc()->externalName);
     size_t pos=extName.last('.');
     externalName_ = extName(pos+1, (extName.length()-pos-1)); // method_name
     externalFile_ = extName.remove (pos); // package_name.class_name 
   }
   else
   {
-    externalName_ = routine_desc->body.routine_desc.externalName;
+    externalName_ = routine_desc->routineDesc()->externalName;
     if (language_ == COM_LANGUAGE_C ||
         language_ == COM_LANGUAGE_CPP)
       {
@@ -434,7 +434,7 @@ NARoutine::NARoutine(const QualifiedName   &name,
       } // if (len > 0)
   }
 
-  ComSInt32 colCount = routine_desc->body.routine_desc.paramsCount;
+  ComSInt32 colCount = routine_desc->routineDesc()->paramsCount;
   NAColumn *newCol = NULL;
   NAType   *newColType = NULL;
   extRoutineName_ = new (heap) ExtendedQualName( name_, heap );
@@ -475,16 +475,16 @@ NARoutine::NARoutine(const QualifiedName   &name,
   normalRowCost_.setIOTime( normIOCost < 0 ? csMinusOne  : normalIOCost);
   normalRowCost_.setMSGTime( normMsgCost < 0 ? csMinusOne  : normalMsgCost);
 
-  const desc_struct *params_desc_list  = routine_desc->body.routine_desc.params;
-  const columns_desc_struct *param_desc;
+  TrafDesc *params_desc_list  = routine_desc->routineDesc()->params;
+  TrafColumnsDesc *param_desc;
 
   int i = 0;
   while (params_desc_list)
   {
-    param_desc = &params_desc_list->body.columns_desc;
+    param_desc = params_desc_list->columnsDesc();
 
     // Create the new NAType.
-    if (NAColumn::createNAType((columns_desc_struct *)param_desc, (const NATable *)NULL, newColType, heap_))
+    if (NAColumn::createNAType(param_desc->columnsDesc(), (const NATable *)NULL, newColType, heap_))
       {
       errorOccurred = TRUE;
       return;
@@ -494,7 +494,7 @@ NARoutine::NARoutine(const QualifiedName   &name,
       memset(param_desc->colname, 0, 2);
     }
 
-    ComParamDirection colDirection = param_desc->paramDirection;
+    ComParamDirection colDirection = param_desc->paramDirection();
     
     // Create the new NAColumn and insert it into the NAColumnArray
     newCol = new (heap) NAColumn(
@@ -507,10 +507,10 @@ NARoutine::NARoutine(const QualifiedName   &name,
          , COM_NO_DEFAULT
          , NULL   // default value
          , UDRCopyString("", heap) // TODO:heading can it have some value
-         , param_desc->upshift
+         , param_desc->isUpshifted()
          , FALSE // addedColumn
          , (ComColumnDirection) colDirection
-         , param_desc->isOptional
+         , param_desc->isOptional()
          , (char *) COM_NORMAL_PARAM_TYPE_LIT
 				 );
 	
@@ -566,7 +566,7 @@ NARoutine::NARoutine(const QualifiedName   &name,
 
     direction[i] = (ComColumnDirection) colDirection;
     
-    params_desc_list = params_desc_list->header.next;
+    params_desc_list = params_desc_list->next;
     i++;
   } // for
 

@@ -2350,18 +2350,6 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
     case UNLOAD_END_:
     case UNLOAD_END_ERROR_:
     {
-      if (step_ == UNLOAD_END_ &&
-          (hblTdb().getScanType() == ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_CREATE ||
-           hblTdb().getScanType() == ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_EXISTING))
-      {
-        sfwRetCode = sequenceFileWriter_->release( );
-        if (sfwRetCode != SFW_OK)
-        {
-          createHdfsFileError(sfwRetCode);
-          step_ = UNLOAD_END_ERROR_;
-          break;
-        }
-      }
       if (restoreCQD("TRAF_TABLE_SNAPSHOT_SCAN") < 0)
       {
         step_ = UNLOAD_ERROR_;

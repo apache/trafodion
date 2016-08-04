@@ -3859,6 +3859,12 @@ enum DefaultConstants
   // if TRUE, create tinyint literal insteadl of smallint.
   TRAF_CREATE_TINYINT_LITERAL,
 
+  // if ON, generate object descriptor during DDL and store it in metadata.
+  TRAF_STORE_OBJECT_DESC,
+
+  // if ON, read object descriptor from metadata, if it was stored.
+  TRAF_READ_OBJECT_DESC,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

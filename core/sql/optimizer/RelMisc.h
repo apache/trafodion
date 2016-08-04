@@ -48,7 +48,7 @@
 #include "SequenceGeneratorAttributes.h"
 #include "ComSecurityKey.h"
 
-struct desc_struct;
+class TrafDesc;
 
 // -----------------------------------------------------------------------
 // contents of this file
