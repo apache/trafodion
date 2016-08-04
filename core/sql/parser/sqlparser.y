@@ -18333,15 +18333,22 @@ non_join_query_expression : non_join_query_term
 
 	      | query_expression TOK_EXCEPT query_term
 		{
-		  // EXCEPT is not yet supported
-		  *SqlParser_Diags << DgSqlCode(-3022) << DgString0("EXCEPT");
-		  YYERROR;
+  	            $$ = new (PARSERHEAP())
+  	                     RelRoot(new (PARSERHEAP())
+  				  GroupByAgg(
+  					     new (PARSERHEAP())
+  					     Except($1,$3),
+  					     REL_GROUPBY,
+  					     new (PARSERHEAP())
+  					     ColReference(new (PARSERHEAP())
+  					       ColRefName(TRUE, PARSERHEAP())
+  					     )));
 		}
   
 	      | query_expression TOK_EXCEPT TOK_ALL query_term
 		{
 		  // EXCEPT is not yet supported
-		  *SqlParser_Diags << DgSqlCode(-3022) << DgString0("EXCEPT");
+		  *SqlParser_Diags << DgSqlCode(-3022) << DgString0("EXCEPT ALL");
 		  YYERROR;
 		}
 

@@ -3035,6 +3035,98 @@ RelExpr *Intersect::bindNode(BindWA *bindWA)
 // LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
+// member functions for class Except 
+// -----------------------------------------------------------------------
+
+// LCOV_EXCL_START - cnu
+RelExpr *Except::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound())
+  {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  // Bind the child nodes.
+  //
+  bindChildren(bindWA);
+  if (bindWA->errStatus()) return this;
+
+  // Check that there are an equal number of select items on both sides.
+  //
+  const RETDesc &leftTable = *child(0)->getRETDesc();
+  const RETDesc &rightTable = *child(1)->getRETDesc();
+  if (leftTable.getDegree() != rightTable.getDegree()) {
+    // 4014 The operands of an intersect must be of equal degree.
+    *CmpCommon::diags() << DgSqlCode(-4014);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  // Join the columns of both sides. 
+  //
+  if(CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON)
+  {
+    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
+        << DgString0("EXCEPT");             // ##
+    bindWA->setErrStatus();                    // ##
+    if (bindWA->errStatus()) return NULL;      // ##
+  }
+  //
+  ItemExpr *predicate = intersectColumns(leftTable, rightTable, bindWA);
+  RelExpr *join = new (bindWA->wHeap())
+    Join(child(0)->castToRelExpr(),
+         child(1)->castToRelExpr(),
+         REL_ANTI_SEMIJOIN,
+         predicate);
+
+  // Bind the join.
+  //
+  join = join->bindNode(bindWA)->castToRelExpr();
+  if (bindWA->errStatus()) return join;
+
+  // Change the output of the join to just the left side.
+  //
+  delete join->getRETDesc();
+  join->setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA, leftTable));
+  bindWA->getCurrentScope()->setRETDesc(join->getRETDesc());
+
+  // QSTUFF
+  NAString fmtdList1(bindWA->wHeap());
+  LIST(TableNameMap*) xtnmList1(bindWA->wHeap());
+  NAString fmtdList2(bindWA->wHeap());
+  LIST(TableNameMap*) xtnmList2(bindWA->wHeap());
+
+  leftTable.getTableList(xtnmList1, &fmtdList1);
+  rightTable.getTableList(xtnmList2, &fmtdList2);
+
+  if (child(0)->getGroupAttr()->isStream() &&
+      child(1)->getGroupAttr()->isStream()){
+    *CmpCommon::diags() << DgSqlCode(-4159)
+                << DgString0(fmtdList1) << DgString1(fmtdList2);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  // Needs to be removed when supporting get_next for INTERSECT
+  if (getGroupAttr()->isEmbeddedUpdateOrDelete()) {
+    *CmpCommon::diags() << DgSqlCode(-4160)
+                << DgString0(fmtdList1)
+                << DgString1(fmtdList2)
+                << (child(0)->getGroupAttr()->isEmbeddedUpdate() ?
+                             DgString2("UPDATE"):DgString2("DELETE"))
+                << (child(1)->getGroupAttr()->isEmbeddedUpdate() ?
+                             DgString3("UPDATE"):DgString3("DELETE"));
+    bindWA->setErrStatus();
+    return this;
+  }
+  // QSTUFF
+
+  return join;
+} // Excpet::bindNode()
+// LCOV_EXCL_STOP
+
+// -----------------------------------------------------------------------
 // member functions for class Union
 // -----------------------------------------------------------------------
 
