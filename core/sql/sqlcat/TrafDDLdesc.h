@@ -597,8 +597,12 @@ public:
   Int16 /*ComRowFormat*/          rowFormat_;
   Lng32 numSaltPartns; // number of salted partns created for a seabase table.
 
+  Lng32 numInitialSaltRegions; // initial # of regions created for salted table
+  char filler0[4];
+
   Int64 indexesDescFlags; // my flags
 
+  char*  hbaseSplitClause;
   char*  hbaseCreateOptions;
 
   DescStructPtr files_desc;
@@ -799,13 +803,13 @@ public:
   char* librarySqlName;
   char* libraryFileName;
   char* signature;
-  ComSInt32 paramsCount;
+  Int32 paramsCount;
   DescStructPtr params;
   ComRoutineLanguage language;
   ComRoutineType UDRType;
   ComRoutineSQLAccess sqlAccess;
   ComRoutineTransactionAttributes transactionAttributes;
-  ComSInt32 maxResults;
+  Int32 maxResults;
   ComRoutineParamStyle paramStyle;
   NABoolean isDeterministic;
   NABoolean isCallOnNull;
