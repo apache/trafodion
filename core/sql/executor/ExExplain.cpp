@@ -544,8 +544,16 @@ short ExExplainTcb::processExplainStmt()
     {
       explainFragLen_ = str_decoded_len(cliInterface.getExplainDataLen());
       explainFrag_ = new(getHeap()) char[explainFragLen_];
-      str_decode(explainFrag_, explainFragLen_, 
-                 cliInterface.getExplainDataPtr(), cliInterface.getExplainDataLen());
+      if (str_decode(explainFrag_, explainFragLen_, 
+                     cliInterface.getExplainDataPtr(), cliInterface.getExplainDataLen()) < 0)
+        {
+          diagsArea = pEntryDown->getAtp()->getDiagsArea();
+          ExRaiseSqlError(getGlobals()->getDefaultHeap(),
+                          &diagsArea, EXE_NO_EXPLAIN_INFO);
+          if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
+            pEntryDown->getAtp()->setDiagsArea(diagsArea);
+          goto label_error2;
+        }
 
       // skip ExplainReposInfo and point explainAddr to actual explain structures.
       setExplainAddr((Int64)&explainFrag_[sizeof(ExplainReposInfo)]);  
@@ -602,7 +610,8 @@ short ExExplainTcb::processExplainPlan()
   
   explainFragLen_ = str_decoded_len(explainPlanLen_);
   explainFrag_ = new(getHeap()) char[explainFragLen_];
-  str_decode(explainFrag_, explainFragLen_, explainPlan_, explainPlanLen_);
+  if (str_decode(explainFrag_, explainFragLen_, explainPlan_, explainPlanLen_) < 0)
+    return 0;
 
   // explain repos info header is at the beginning of stored data.
   ExplainReposInfo * eri = (ExplainReposInfo*)explainFrag_;
@@ -1731,7 +1740,16 @@ short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
   
   explainFragLen_ = str_decoded_len(len-1); // remove trailing null terminator
   explainFrag_ = new(getHeap()) char[explainFragLen_];
-  str_decode(explainFrag_, explainFragLen_, ptr, len-1);
+  if (str_decode(explainFrag_, explainFragLen_, ptr, len-1) < 0)
+    {
+      diagsArea = pEntryDown->getAtp()->getDiagsArea();
+      ExRaiseSqlError(getGlobals()->getDefaultHeap(), 
+                      &diagsArea, EXE_NO_EXPLAIN_INFO);
+      if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
+        pEntryDown->getAtp()->setDiagsArea(diagsArea);
+
+      goto label_error2;
+    }
 
   // explain repos info header is at the beginning of stored data.
   eri = (ExplainReposInfo*)explainFrag_;

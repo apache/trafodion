@@ -1751,15 +1751,24 @@ public:
                      NABoolean summaryOnly,
                      NABoolean isIndex,
                      NABoolean forDisplay,
-                     RelExpr * child = NULL,
+                     NABoolean clusterView,
+                     RelExpr * child,
                      CollHeap *oHeap = CmpCommon::statementHeap());
   
   ExeUtilRegionStats():
        summaryOnly_(FALSE),
        isIndex_(FALSE),
-       displayFormat_(FALSE)
+       displayFormat_(FALSE),
+       clusterView_(FALSE)
   {}
- 
+
+  ExeUtilRegionStats(NABoolean clusterView):
+       summaryOnly_(FALSE),
+       isIndex_(FALSE),
+       displayFormat_(FALSE),
+       clusterView_(clusterView)
+  {}
+
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
 
   // a method used for recomputing the outer references (external dataflow
@@ -1775,13 +1784,17 @@ public:
   virtual const char 	*getVirtualTableName();
   static const char * getVirtualTableNameStr() 
   { return "EXE_UTIL_REGION_STATS__";}
+
   virtual TrafDesc 	*createVirtualTableDesc();
+
+  static const char * getVirtualTableClusterViewNameStr() 
+  { return "EXE_UTIL_CLUSTER_STATS__"; }
 
   virtual NABoolean producesOutput() { return TRUE; }
 
   virtual int getArity() const { return ((child(0) == NULL) ? 0 : 1); }
 
- virtual NABoolean aqrSupported() { return TRUE; }
+  virtual NABoolean aqrSupported() { return TRUE; }
 
 private:
   ItemExpr * inputColList_;
@@ -1791,6 +1804,8 @@ private:
   NABoolean isIndex_;
 
   NABoolean displayFormat_;
+
+  NABoolean clusterView_;
 
   NABoolean errorInParams_;
 };
