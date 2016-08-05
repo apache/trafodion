@@ -6963,6 +6963,11 @@ DefaultToken NADefaults::token(Int32 attrEnum,
         isValid = TRUE;
       break;
 
+    case SUBQUERY_UNNESTING_P2:
+      if (tok == DF_OFF || tok == DF_ON || tok == DF_INTERNAL)
+         isValid = TRUE;
+      break;
+
     case SORT_INTERMEDIATE_SCRATCH_CLEANUP:
       if(tok == DF_ON || tok == DF_OFF)
         isValid = TRUE;
