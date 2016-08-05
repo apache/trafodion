@@ -328,14 +328,27 @@ function addUpNodes {
 
 for node in $NEW_NODES
 do 
+  
+    nodeToAdd="node-name $node, cores $CORES, processors $PROCESSORS, roles connection,aggregation,storage"
 
-    sudo su $TRAF_USER --login --command "cd $SQ_ROOT/sql/scripts; echo \"node add $node\" | sqshell -a"
+    sudo su $TRAF_USER --login --command "cd $SQ_ROOT/sql/scripts; echo \"node add $nodeToAdd \" | sqshell -a"
     sleep 30
     sudo su $TRAF_USER --login --command "cd $SQ_ROOT/sql/scripts; echo \"node up $node\" | sqshell -a"
     sleep 30
 
 done
 
+}
+
+function sqRegen {
+
+sudo su $TRAF_USER --login --command "cd $SQ_ROOT/sql/scripts; sqregen -config"
+
+}
+
+function dcsStart {
+
+sudo su $TRAF_USER --login --command "cd $SQ_ROOT/sql/scripts; dcsstart"
 }
 
 
@@ -358,6 +371,8 @@ editDCSServers
 addTraftoHBase
 copySqcert
 addUpNodes
+sqRegen
 copysqConfig
+dcsStart
 printMessage
 
