@@ -2615,7 +2615,7 @@ PrivStatus PrivMgrPrivileges::getAffectedObjects(
 
 
   // Find list of affected constraints
-  if (command != PrivCommand::GRANT_OBJECT && command != PrivCommand::GRANT_COLUMN)  
+  if (isGrantCommand(command))
   {
     // TBD optimization: if no "references" privilege has been revoked, skip
     retcode = dealWithConstraints (objectUsage, listOfAffectedObjects);
