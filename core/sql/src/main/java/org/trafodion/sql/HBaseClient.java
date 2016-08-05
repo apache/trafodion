@@ -748,7 +748,7 @@ public class HBaseClient {
 
             while (true) {
                 switch (clusterStatsState) {
-                case 1:
+                case 1: // open
                     {
                         rsc = new TrafRegionStats();
                         rsc.Open();
@@ -761,16 +761,16 @@ public class HBaseClient {
                     }
                     break;
                     
-                case 3:
+                case 3: // close
                     {
                         rsc.Close();
                         
                         clusterStatsState = 1;
 
-                         return null;
+                        return null;
                     }
                     
-                case 2:
+                case 2: // fetch
                     {
                         if (currRegion >= MAX_REGION_INFO_ROWS) {
 
@@ -786,9 +786,8 @@ public class HBaseClient {
 
                                 regionStatsEntries = currRegion;
 
-                                
                                 currRegion = 0;
-                                return regionInfo;
+                                return Arrays.copyOf(regionInfo, regionStatsEntries);
                             }
 
                             clusterStatsState = 3;
