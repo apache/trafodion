@@ -69,7 +69,14 @@ NAString * getMinMaxValue(TrafDesc * column,
   
   Lng32 buflen = type->getTotalSize();
   char * buf = new char[buflen]; // deleted at the end of this method
-
+  if (type->supportsSQLnullPhysical())
+  {
+      Lng32 nullHdrSize = type->getSQLnullHdrSize();
+      for(int i = 0; i < nullHdrSize; i++)
+        buf[i] = '\0';
+      buflen-= nullHdrSize;
+  }
+  
   NABoolean nullValue = FALSE;
   if (highKey == FALSE)
     {
