@@ -163,14 +163,30 @@ public class TestGetIndexInfo {
 			
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbTableName ", indexInfo.dbTableName, rs.getString("TABLE_NAME"));
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbNoneUnique ", indexInfo.dbNoneUnique, rs.getBoolean("NON_UNIQUE"));
+			// By the Document, dbNoneUnique will return null if the type is SQL_TABLE_STAT
+			System.out.println(rs.wasNull());
+			if (indexInfo.dbType == DatabaseMetaData.tableIndexStatistic)
+				assertTrue(rs.wasNull());
+
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbIndexQualifier ", indexInfo.dbIndexQualifier, rs.getString("INDEX_QUALIFIER"));
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbIndexName ", indexInfo.dbIndexName, rs.getString("INDEX_NAME"));
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbType ", indexInfo.dbType, rs.getShort("TYPE"));
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbOridinalPosition ", indexInfo.dbOrdinalPosition, rs.getShort("ORDINAL_POSITION"));
+			// By the Document, it return NULL when the type is SQL_TABLE_STAT
+			if (indexInfo.dbType == DatabaseMetaData.tableIndexStatistic)
+				assertTrue(rs.wasNull());
+
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbColumnName ", indexInfo.dbColumnName, rs.getString("COLUMN_NAME"));
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbAscOrDesc ", indexInfo.dbAscOrDesc, rs.getString("ASC_OR_DESC"));
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbCardinality ", indexInfo.dbCardinality, rs.getInt("CARDINALITY"));
+			// When the type is not SQL_TABLE_STAT, dbCardinality will be NULL
+			if (indexInfo.dbType != DatabaseMetaData.tableIndexStatistic)
+				assertTrue(rs.wasNull());
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbPages ", indexInfo.dbPages, rs.getInt("PAGES"));
+			// Since dbPages is not supported now, it always return NULL
+			// here check if it is real NULL
+			assertTrue(rs.wasNull());
+
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbFilterCondition ", indexInfo.dbFilterCondition, rs.getString("FILTER_CONDITION"));
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
