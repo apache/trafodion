@@ -712,7 +712,7 @@ PrivStatus PrivMgrMDAdmin::getViewColUsages (ViewUsage &viewUsage)
   selectStmt += textMDTable;
   selectStmt += " where o.object_uid = ";
   selectStmt += UIDToString(viewUsage.viewUID);
-  selectStmt += "and o.object_uid = t.text_uid and t.text_type = 7";
+  selectStmt += "and o.object_uid = t.text_uid and t.text_type = 8";
   selectStmt += " order by seq_num";
   
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
@@ -731,7 +731,7 @@ PrivStatus PrivMgrMDAdmin::getViewColUsages (ViewUsage &viewUsage)
   // so just return.
   if (cliRC == 100) // did not find the row
   { 
-    return STATUS_GOOD;
+    return STATUS_NOTFOUND;
   }
   
   char * ptr = NULL;
@@ -795,6 +795,12 @@ PrivStatus PrivMgrMDAdmin::getViewsThatReferenceObject (
   selectStmt += "  or o.object_owner in (select role_id from ";
   selectStmt += roleUsageMDTable;
   selectStmt += " where grantee_id = ";
+  selectStmt += UIDToString(objectUsage.granteeID);
+
+  // for role owners, get list of users granted role
+  selectStmt += " ) or o.object_owner in (select grantee_id from ";
+  selectStmt += roleUsageMDTable;
+  selectStmt += " where role_id = ";
   selectStmt += UIDToString(objectUsage.granteeID);
 
   selectStmt += ")) order by o.create_time ";
@@ -864,7 +870,7 @@ int32_t diagsMark = pDiags_->mark();
 
     // column 5: is insertable
     pCliRow->get(5,ptr,len);
-    viewUsage.isInsertable = (ptr == 0) ? false : true;
+    viewUsage.isInsertable = (*ptr == 0) ? false : true;
 
     // column 6: is updatable
     pCliRow->get(6,ptr,len);

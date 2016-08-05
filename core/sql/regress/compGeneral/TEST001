@@ -35,6 +35,8 @@
 ?section ddl
 drop table t01emp;
 drop table t01dept;
+drop table t021;
+drop table t022;
 #ifMX
 drop table t01sample;
 drop table t02sample;
@@ -53,7 +55,15 @@ create table t01dept(dno int not null ,
                   dname char(20) not null,
                   dregion int not null,
                   primary key (dno) );
-
+create table t021(eno int not null ,
+                 ename char(20),
+                 dno int,
+                 salary numeric(8,2),
+                 primary key(eno) );
+create table t022(eno int ,
+                  ename char(20) ,
+                  dno int
+                  );
 #ifMX
 create table t01sample (l_partkey int not null not droppable,
 l_suppkey int not null not droppable,
@@ -95,12 +105,49 @@ insert into t01emp values (4, 'Miller', 55, 1000);
 insert into t01dept values (33, 'Sales',      1),
                         (44, 'Marketing',  1),
                         (55, 'Production', 2);
+insert into t021 values (1, 'Smith',  33, 2000);
+insert into t021 values (2, 'Jones',  33, 3000);
+insert into t021 values (3, 'Gray',   44, 4000);
+insert into t021 values (4, 'Miller', 55, 1000);
+insert into t021 values (5, 'Miller', null, null);
+insert into t021 values (6, 'Miller', null, null);
 
+insert into t022 values (1, 'Simith',   33),
+                        (2, 'Jones',  33),
+                        (3, 'Gray', 44),
+                        (3, 'Gray', 44),
+                        (4, 'Miller', null),
+                        (6, 'Miller', null);
 -- simulate a full outer join
 select * from t01emp natural left  join t01dept
  union
 select * from t01emp natural right join t01dept;
 
+-- do a intersect
+cqd mode_special_4 'on';
+select eno, ename, dno from t021
+ intersect
+select eno, ename, dno from t022;
+
+select eno, ename, dno from t021
+ intersect  all
+select eno, ename, dno from t022;
+
+select eno, ename, dno from t021 where dno >10
+ intersect
+select eno, ename, dno from t022 where dno <50;
+
+select * from  t021 
+ intersect
+select * from  t022;
+
+select * from 
+(
+select eno, ename, dno from t021
+ intersect
+select eno, ename, dno from t022
+) ;
+cqd mode_special_4 reset;
 -- groupby can be pushed down
 -- add showshape statement to ensure that the group by is
 -- actually pushed down

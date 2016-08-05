@@ -138,7 +138,11 @@ create external table tbl_type
      d           double,
      t           timestamp,
      dt          date,
-     vc          varchar(10)
+     vc          varchar(10),
+     d10         decimal,
+     d18         decimal(8,2),
+     d181        decimal(10),
+     d30         decimal(30)
 )
 row format delimited fields terminated by '|'
 location '/user/hive/exttables/tbl_type';
@@ -155,7 +159,11 @@ create table tbl_type_temp
      d           double,
      t           timestamp,
      dt          date,
-     vc          varchar(10)
+     vc          varchar(10),
+     d10         decimal,
+     d18         decimal(8,2),
+     d181        decimal(10),
+     d30         decimal(30)
 )
 row format delimited fields terminated by '|';
 

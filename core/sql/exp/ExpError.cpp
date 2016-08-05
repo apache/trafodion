@@ -616,3 +616,28 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
   NADELETEBASICARRAY(buf, (heap));
   return *diagsArea;
 }
+
+//////////////////////////////////////////////////////////////////
+////
+//// A helper function to show buffer in HEX
+////
+//// ///////////////////////////////////////////////////////////////
+
+char *stringToHex(char * out, Int32 outLen, char * in, Int32 inLen)
+{
+  //clear out buffer first
+  memset(out,0,outLen);
+
+  outLen = (outLen / 2) -1 ;
+
+  if(inLen < outLen) outLen = inLen;
+
+  char hex[3];
+  for(int i = 0; i < outLen; i++)
+  {
+    sprintf(hex, "%02x", in[i]);
+    strcat(out,hex);
+  }
+  return out;
+}
+

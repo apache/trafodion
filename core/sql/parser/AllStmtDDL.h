@@ -45,6 +45,7 @@
 #include "AllStmtDDLAlter.h" // MV - RG
 #include "AllStmtDDLGive.h"
 #include "StmtDDLAlterCatalog.h"
+#include "StmtDDLAlterSchema.h"
 #include "StmtDDLAlterTrigger.h"
 #include "StmtDDLAlterIndexAttribute.h"
 #include "StmtDDLAlterIndexHBaseOptions.h"

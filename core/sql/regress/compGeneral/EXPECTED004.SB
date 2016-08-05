@@ -1127,8 +1127,8 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 4    .    5    root                                                  1.00E+002
 1    3    4    nested_join                                           1.00E+002
 2    .    3    probe_cache                                           1.00E+000
-.    .    2    trafodion_index_scan            OBJECTS_UNIQ_IDX               1.00E+000
-.    .    1    trafodion_scan                  TABLE_CONSTRAINTS     1.00E+002
+.    .    2    trafodion_index_scan            OBJECTS_UNIQ_IDX      1.00E+000
+.    .    1    trafodion_index_scan            TABLE_CONSTRAINTS_I   1.00E+002
 
 --- SQL operation complete.
 >>

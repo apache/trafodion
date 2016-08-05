@@ -76,6 +76,19 @@ class PrivMgr
                        UNKNOWN_PRIV_COMMAND   = 36
                      };
 
+    bool isRevokeCommand (const PrivCommand command)
+    {
+      return (command == REVOKE_OBJECT_RESTRICT ||
+              command == REVOKE_OBJECT_CASCADE ||
+              command == REVOKE_COLUMN_RESTRICT ||
+              command == REVOKE_COLUMN_CASCADE);
+    }
+
+    bool isGrantCommand (const PrivCommand command)
+    {
+      return (command == GRANT_OBJECT || command == GRANT_COLUMN);
+    }
+
     // -------------------------------------------------------------------
     // Static functions:
     // -------------------------------------------------------------------

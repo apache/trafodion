@@ -26,14 +26,14 @@ package org.apache.hadoop.hbase.client.transactional;
 import java.io.IOException;
 import java.util.Random;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
 import org.apache.hadoop.hbase.client.Put;
@@ -45,35 +45,28 @@ public class HBaseBackedTransactionLogger implements TransactionLogger {
     /** The name of the transaction status table. */
     public static final String TABLE_NAME = "__GLOBAL_TRX_LOG__";
 
-    private static final byte[] INFO_FAMILY = Bytes.toBytes("Info");
 
+    private static final byte[] INFO_FAMILY = Bytes.toBytes("Info");
     /**
      * Column which holds the transaction status.
      */
     private static final byte[] STATUS_QUALIFIER = Bytes.toBytes("Status");
 
-    /**
-     * Create the global transaction table.
-     * 
-     * @throws IOException
-     */
-    public static void createTable() throws IOException {
-        createTable(HBaseConfiguration.create());
-    }
 
     /**
      * Create the global transaction table with the given configuration.
      * 
-     * @param conf
+     * @param Connection
      * @throws IOException
      */
-    public static void createTable(final Configuration conf) throws IOException {
+    public static void createTable(Connection connection) throws IOException {
         HTableDescriptor tableDesc = new HTableDescriptor(TABLE_NAME);
         tableDesc.addFamily(new HColumnDescriptor(INFO_FAMILY));
-        HBaseAdmin admin = new HBaseAdmin(conf);
-        if (!admin.tableExists(TABLE_NAME)) {
+        Admin admin = connection.getAdmin();
+        if (! admin.tableExists(TableName.valueOf(TABLE_NAME))) {
             admin.createTable(tableDesc);
         }
+        admin.close();
     }
 
     private Random random = new Random();
@@ -90,20 +83,17 @@ public class HBaseBackedTransactionLogger implements TransactionLogger {
         tablePool.putTable(t);
     }
 
-    public HBaseBackedTransactionLogger() throws IOException {
-        initTable(HBaseConfiguration.create());
+    public HBaseBackedTransactionLogger(Connection connection) throws IOException {
+        initTable(connection);
     }
 
-    public HBaseBackedTransactionLogger(final Configuration conf) throws IOException {
-        initTable(conf);
-    }
-
-    private void initTable(final Configuration conf) throws IOException {
-        HBaseAdmin admin = new HBaseAdmin(conf);
-
-        if (!admin.tableExists(TABLE_NAME)) {
+    private void initTable(Connection connection) throws IOException {
+        boolean retcode ;
+        Admin admin = connection.getAdmin();
+        retcode =  (!admin.tableExists(TableName.valueOf(TABLE_NAME)));
+        admin.close();
+        if (retcode) 
             throw new RuntimeException("Table not created. Call createTable() first");
-        }
     }
 
     public long createNewTransactionLog() {

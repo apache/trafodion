@@ -179,7 +179,8 @@ public:
                           ComCondition *errorCond,
                           ExpHbaseInterface * ehi,
                           NABoolean & LoggingFileCreated,
-                          char * loggingFileName);
+                          char * loggingFileName,
+                          ComDiagsArea **loggingErrorDiags);
   static void buildLoggingPath(const char * loggingLocation,
                                char *logId,
                                const char *tableName,
@@ -497,6 +498,7 @@ protected:
   NABoolean *resultArray_;
   NABoolean asyncOperation_;
   Int32 asyncOperationTimeout_;
+  ComDiagsArea *loggingErrorDiags_;
 
   // Redefined and used by ExHbaseAccessBulkLoadPrepSQTcb.
 

@@ -67,7 +67,7 @@ static NABoolean canBeSQLUnknown(const ItemExpr *ie,
 {
   const NAType &typ = ie->getValueId().getType();
   if (typ.getTypeQualifier() == NA_BOOLEAN_TYPE)
-    return ((SQLBoolean &)typ).canBeSQLUnknown();
+    return ((SQLBooleanRelat &)typ).canBeSQLUnknown();
   CMPASSERT(!typeMustBeSQLBoolean);
   return FALSE;
 }

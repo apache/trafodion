@@ -25,7 +25,7 @@
 log LOG031 clear;
 
 -- tests for PRIMARY KEY constraint usage
-drop table if exists t031t1;
+drop table if exists t031t1 cascade;
 create table t031t1 (a int not null, b int not null, constraint ppk primary key(a));
 alter table t031t1 add constraint ppk primary key(b);
 alter table t031t1 add constraint ppk2 primary key(b);
@@ -165,5 +165,64 @@ for hive.hive.t031hive;
 delete from t031t1;
 insert into t031t1 select * from hive.hive.t031hive;
 select count(*) from t031t1;
+
+-- default USER
+drop table if exists t031t1;
+create table t031t1 (a int, b varchar(20) default user);
+invoke t031t1;
+insert into t031t1 (a) values (10);
+insert into t031t1 default values;
+select * from t031t1;
+alter table t031t1 add column c char(20) default user;
+invoke t031t1;
+select * from t031t1;
+insert into t031t1 default values;
+select * from t031t1;
+
+-- metadata stored descriptor tests
+cqd traf_store_object_desc 'OFF';
+cqd traf_read_object_desc 'OFF';
+drop table if exists t031t1 cascade;
+create table t031t1 (a int);
+invoke t031t1;
+alter table t031t1 check stored descriptor;
+
+cqd traf_store_object_desc 'ON';
+cqd traf_read_object_desc 'ON';
+drop table if exists t031t1;
+create table t031t1 (a int);
+invoke t031t1;
+alter table t031t1 check stored descriptor;
+
+alter table t031t1 delete stored descriptor;
+alter table t031t1 check stored descriptor;
+invoke t031t1;
+
+alter table t031t1 generate stored descriptor;
+alter table t031t1 check stored descriptor;
+invoke t031t1;
+
+create view t031v1 as select * from t031t1;
+invoke t031v1;
+alter table t031v1 check stored descriptor;
+alter table t031v1 delete stored descriptor;
+alter table t031v1 check stored descriptor;
+invoke t031v1;
+alter table t031v1 generate stored descriptor;
+alter table t031v1 check stored descriptor;
+invoke t031v1;
+
+create index t031t1i1 on t031t1(a);
+showddl t031t1;
+alter table t031t1 check stored descriptor;
+alter table t031t1 delete stored descriptor;
+alter table t031t1 check stored descriptor;
+showddl t031t1;
+alter table t031t1 generate stored descriptor;
+alter table t031t1 check stored descriptor;
+showddl t031t1;
+
+set parserflags 1;
+invoke table(index_table t031t1i1);
 
 log;

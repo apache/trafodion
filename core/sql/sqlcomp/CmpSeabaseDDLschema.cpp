@@ -39,6 +39,7 @@
 #include "CmpSeabaseDDLincludes.h"
 #include "StmtDDLCreateSchema.h"
 #include "StmtDDLDropSchema.h"
+#include "StmtDDLAlterSchema.h"
 #include "StmtDDLGive.h"
 #include "ElemDDLColDefault.h"
 #include "NumericType.h"
@@ -967,6 +968,251 @@ label_error:
   return;
 }
 //****************** End of CmpSeabaseDDL::dropSeabaseSchema *******************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: CmpSeabaseDDL::alterSeabaseSchema                                *
+// *                                                                           *
+// *    Implements the ALTER SCHEMA command.                                    *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <alterSchemaNode>                StmtDDLAlterSchema *             In       *
+// *    is a pointer to a create schema parser node.                           *
+// *                                                                           *
+// *****************************************************************************
+void CmpSeabaseDDL::alterSeabaseSchema(StmtDDLAlterSchema * alterSchemaNode)
+   
+{
+   Lng32 cliRC = 0;
+
+   ComSchemaName schemaName(alterSchemaNode->getSchemaName());
+   NAString catName = schemaName.getCatalogNamePartAsAnsiString();
+   ComAnsiNamePart schNameAsComAnsi = schemaName.getSchemaNamePart();
+   NAString schName = schNameAsComAnsi.getInternalName();
+   ComObjectName objName(catName,schName,NAString("dummy"),COM_TABLE_NAME,TRUE);
+
+   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+                                CmpCommon::context()->sqlSession()->getParentQid());
+   Int32 objectOwnerID = 0;
+   Int32 schemaOwnerID = 0;
+   ComObjectType objectType;
+
+   bool isVolatile = (memcmp(schName.data(),"VOLATILE_SCHEMA",strlen("VOLATILE_SCHEMA")) == 0);
+   int32_t length = 0;
+   int32_t rowCount = 0;
+   bool someObjectsCouldNotBeAltered = false;
+   char errorObjs[1010];
+   Queue * objectsQueue = NULL;
+   Queue * otherObjectsQueue = NULL;
+
+   NABoolean dirtiedMetadata = FALSE;
+   Int32 checkErr = 0;
+
+   StmtDDLAlterTableStoredDesc::AlterStoredDescType sdo = 
+     alterSchemaNode->getStoredDescOperation();
+
+   errorObjs[0] = 0;
+
+   Int64 schemaUID = getObjectTypeandOwner(&cliInterface,catName.data(),schName.data(),
+                               SEABASE_SCHEMA_OBJECTNAME,objectType,schemaOwnerID);
+   
+   // if schemaUID == -1, then either the schema does not exist or an unexpected error occurred
+   if (schemaUID == -1)
+   {
+      // If an error occurred, return
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
+          goto label_error;
+ 
+      // A Trafodion schema does not exist if the schema object row is not
+      // present: CATALOG-NAME.SCHEMA-NAME.__SCHEMA__.
+      *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
+                          << DgSchemaName(schemaName.getExternalName().data());
+      goto label_error;
+   }
+
+   if (!isDDLOperationAuthorized(SQLOperation::DROP_SCHEMA,
+                                 schemaOwnerID,schemaOwnerID))
+   {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      goto label_error;
+   }
+
+   if ((isSeabaseReservedSchema(objName) ||
+        (schName == SEABASE_SYSTEM_SCHEMA)) &&
+       !Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+   {
+      *CmpCommon::diags() << DgSqlCode(-CAT_USER_CANNOT_DROP_SMD_SCHEMA)
+                          << DgSchemaName(schemaName.getExternalName().data());
+      goto label_error;
+   }
+
+   // Can't alter a schema whose name begins with VOLATILE_SCHEMA unless the 
+   // keyword VOLATILE was specified in the ALTER SCHEMA command. 
+   if (isVolatile && !alterSchemaNode->isVolatile())
+   {
+      *CmpCommon::diags() << DgSqlCode(-CAT_RESERVED_METADATA_SCHEMA_NAME)
+                          << DgTableName(schName);
+      goto label_error;
+   }
+
+   if (alterSchemaNode->isDropAllTables())
+     {
+       // should not reach here, is transformed to DropSchema during parsing
+       *CmpCommon::diags() << DgSqlCode(-3242)
+                           << DgString0("Should not reach here. Should have been transformed to DropSchema during parsing.");
+      goto label_error;
+     }
+
+   if (alterSchemaNode->isRenameSchema())
+     {
+       // Not yet supported
+       *CmpCommon::diags() << DgSqlCode(-3242)
+                           << DgString0("Cannot rename a schema.");
+      goto label_error;
+     }
+
+   if (NOT alterSchemaNode->isAlterStoredDesc())
+     {
+       // unsupported option
+       *CmpCommon::diags() << DgSqlCode(-3242)
+                           << DgString0("Unsupported option specified.");
+      goto label_error;
+     }
+
+   // Get a list of all objects in the schema, excluding the schema object itself.
+   char query[4000];
+
+   // select objects in the schema to alter
+   str_sprintf(query,"SELECT distinct TRIM(object_name), TRIM(object_type), object_uid "
+                     "FROM %s.\"%s\".%s "
+                     "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
+                     "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"' AND "
+                     "(object_type = 'BT' OR "
+                     " object_type = 'VI') "
+                     "FOR READ COMMITTED ACCESS",
+               getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
+               (char*)catName.data(),(char*)schName.data());
+  
+   cliRC = cliInterface.fetchAllRows(objectsQueue, query, 0, FALSE, FALSE, TRUE);
+   if (cliRC < 0)
+   {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      goto label_error;
+   }
+
+   objectsQueue->position();
+   for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
+     {
+       OutputInfo * vi = (OutputInfo*)objectsQueue->getNext(); 
+
+       NAString objName = vi->get(0);
+       NAString objType = vi->get(1);
+       Int64 objUID = *(Int64*)vi->get(2);
+       
+       if (sdo == StmtDDLAlterTableStoredDesc::GENERATE)
+         {
+           cliRC = 
+             updateObjectRedefTime(&cliInterface, 
+                                   getSystemCatalog(), schName, objName,
+                                   COM_BASE_TABLE_OBJECT_LIT,
+                                   -1, objUID, TRUE);
+           if (cliRC < 0)
+             {
+               // append error and move on to next one
+               appendErrorObjName(errorObjs, objName);
+               someObjectsCouldNotBeAltered = true;               
+
+               CmpCommon::diags()->clear();
+             }
+         }
+       else if (sdo == StmtDDLAlterTableStoredDesc::DELETE)
+         {
+           cliRC = deleteFromTextTable
+             (&cliInterface, objUID, COM_STORED_DESC_TEXT, 0);
+           if (cliRC < 0)
+             {
+               // append error and move on to next one
+               appendErrorObjName(errorObjs, objName);
+               someObjectsCouldNotBeAltered = true;  
+
+               CmpCommon::diags()->clear();
+             }    
+           
+         } // delete stored desc
+       else if (sdo == StmtDDLAlterTableStoredDesc::ENABLE)
+         {
+           Int64 flags = MD_OBJECTS_DISABLE_STORED_DESC;
+           cliRC = updateObjectFlags(&cliInterface, objUID, flags, TRUE);
+           if (cliRC < 0)
+             {
+               appendErrorObjName(errorObjs, objName);
+               someObjectsCouldNotBeAltered = true;  
+
+               CmpCommon::diags()->clear();
+             }    
+         }
+       else if (sdo == StmtDDLAlterTableStoredDesc::DISABLE)
+         {
+           Int64 flags = MD_OBJECTS_DISABLE_STORED_DESC;
+           cliRC = updateObjectFlags(&cliInterface, objUID, flags, FALSE);
+           if (cliRC < 0)
+             {
+               appendErrorObjName(errorObjs, objName);
+               someObjectsCouldNotBeAltered = true;  
+
+               CmpCommon::diags()->clear();
+             }    
+         }
+       else if (sdo == StmtDDLAlterTableStoredDesc::CHECK)
+         {
+           cliRC = checkAndGetStoredObjectDesc(&cliInterface, objUID, NULL);
+           CmpCommon::diags()->clear();
+           if (cliRC < 0)
+             {
+               checkErr = cliRC;
+               appendErrorObjName(errorObjs, objName);
+               someObjectsCouldNotBeAltered = true;  
+             }    
+         }
+       
+     } // for
+
+   if (someObjectsCouldNotBeAltered)
+     {
+       NAString reason;
+       if (sdo == StmtDDLAlterTableStoredDesc::CHECK)
+         {
+           reason = "Reason: Following objects failed stored descriptor check";
+           if (checkErr == -1)
+             reason += " (object could not be accessed) ";
+           else if (checkErr == -2)
+             reason += " (object does not exist) ";
+           else if (checkErr == -3)
+             reason += " (change in stored structures) ";
+           reason += ": ";
+           reason += errorObjs;
+         }
+       else 
+         reason = "Reason: Some objects could not be accessed in schema " 
+           + schName + ". ObjectsInSchema: " 
+           + errorObjs;
+       *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_ALTER_SCHEMA)
+                           << DgSchemaName(catName + "." + schName)
+                           << DgString0(reason);
+       goto label_error;
+     }
+
+  // Everything succeeded, return
+  return;
+    
+label_error:
+  return;
+}
+//****************** End of CmpSeabaseDDL::alterSeabaseSchema *****************
 
 
 // *****************************************************************************

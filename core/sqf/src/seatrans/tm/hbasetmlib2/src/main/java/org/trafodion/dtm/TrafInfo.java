@@ -32,9 +32,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.ServerName;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hadoop.hbase.client.HConnection;
-import org.apache.hadoop.hbase.client.HConnectionManager;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 //H98import org.apache.hadoop.hbase.ipc.HMasterInterface;
 //H98import org.apache.hadoop.hbase.ipc.TransactionalRegionInterface;
 //H98import org.apache.hadoop.hbase.ipc.HRegionInterface;
@@ -42,8 +41,7 @@ import org.apache.hadoop.hbase.client.HConnectionManager;
 
 public class TrafInfo {
 
-    private HBaseAdmin hbadmin;
-    private HConnection connection;
+    private Connection connection;
     Configuration     config;
     //    HMasterInterface  hmaster;
 
@@ -53,16 +51,7 @@ public class TrafInfo {
 
     public void init() throws IOException {
         this.config = HBaseConfiguration.create();
-        this.connection = HConnectionManager.createConnection(config);
-
-        try {
-            hbadmin = new HBaseAdmin(config);
-	    //H98            hmaster = hbadmin.getMaster();
-        } catch(Exception e) {
-            System.out.println("ERROR: Unable to obtain HBase accessors, Exiting");
-            e.printStackTrace();
-            System.exit(1);
-        }
+        this.connection = ConnectionFactory.createConnection(config);
     }
 
     public static void printHelp() {
@@ -149,15 +138,13 @@ public class TrafInfo {
                     }
                 }
 
-            } catch(Exception e) {
+            } catch(IOException e) {
                 System.out.println("ERROR: Unable to get region info, Exiting");
                 e.printStackTrace();
                 System.exit(1);
             }
         }
 	*/
-	
-
     }
 
     public static void main(String[] args) throws IOException {

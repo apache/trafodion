@@ -100,16 +100,15 @@
 #include "ComSmallDefs.h"
 #include "sql_buffer_size.h"
 #include "ExSqlComp.h"		// for NAExecTrans
-
-
+#include "TrafDDLdesc.h"
 
 #include "ComCextdecs.h"
 
 #include "SqlParserGlobals.h"   // Parser Flags
 
 // this comes from GenExplain.cpp (sorry, should have a header file)
-desc_struct * createVirtExplainTableDesc();
-void deleteVirtExplainTableDesc(desc_struct *);
+TrafDesc * createVirtExplainTableDesc();
+void deleteVirtExplainTableDesc(TrafDesc *);
 
 
 short GenericUtilExpr::processOutputRow(Generator * generator,
@@ -276,9 +275,9 @@ short ExeUtilProcessVolatileTable::codeGen(Generator * generator)
 const char * ExeUtilExpr::getVirtualTableName()
 { return ("EXE_UTIL_EXPR__"); }
 
-desc_struct *ExeUtilExpr::createVirtualTableDesc()
+TrafDesc *ExeUtilExpr::createVirtualTableDesc()
 {
-  desc_struct * table_desc =
+  TrafDesc * table_desc =
     Generator::createVirtualTableDesc(getVirtualTableName(),
 				      ComTdbExeUtil::getVirtTableNumCols(),
 				      ComTdbExeUtil::getVirtTableColumnInfo(),
@@ -295,7 +294,7 @@ desc_struct *ExeUtilExpr::createVirtualTableDesc()
 const char * ExeUtilDisplayExplain::getVirtualTableName()
 { return "EXE_UTIL_DISPLAY_EXPLAIN__"; }
 
-desc_struct *ExeUtilDisplayExplain::createVirtualTableDesc()
+TrafDesc *ExeUtilDisplayExplain::createVirtualTableDesc()
 {
   Lng32 outputRowSize =  
     (Lng32) CmpCommon::getDefaultNumeric(EXPLAIN_OUTPUT_ROW_SIZE);
@@ -309,7 +308,7 @@ desc_struct *ExeUtilDisplayExplain::createVirtualTableDesc()
   else
     vtci = ComTdbExeUtilDisplayExplain::getVirtTableColumnInfo();
 
-  desc_struct * table_desc = 
+  TrafDesc * table_desc = 
     Generator::createVirtualTableDesc
     (getVirtualTableName(),
      ComTdbExeUtilDisplayExplain::getVirtTableNumCols(),
@@ -390,17 +389,17 @@ short ExeUtilDisplayExplain::codeGen(Generator * generator)
     }
 
   ExplainFunc ef;
-  desc_struct * desc = ef.createVirtualTableDesc();
+  TrafDesc * desc = ef.createVirtualTableDesc();
 
-  desc_struct * column_desc = desc->body.table_desc.columns_desc;
+  TrafDesc * column_desc = desc->tableDesc()->columns_desc;
   Lng32 ij = 0;
   while (ij < EXPLAIN_DESCRIPTION_INDEX)
     {
-      column_desc = column_desc->header.next;
+      column_desc = column_desc->next;
       ij++;
     }
 
-  Lng32 colDescSize =  column_desc->body.columns_desc.length;
+  Lng32 colDescSize =  column_desc->columnsDesc()->length;
 
   Lng32 outputRowSize =  
     (Lng32) CmpCommon::getDefaultNumeric(EXPLAIN_OUTPUT_ROW_SIZE);
@@ -1214,9 +1213,9 @@ short ExeUtilGetProcessStatistics::codeGen(Generator * generator)
 const char * ExeUtilGetUID::getVirtualTableName()
 { return "EXE_UTIL_GET_UID__"; }
 
-desc_struct *ExeUtilGetUID::createVirtualTableDesc()
+TrafDesc *ExeUtilGetUID::createVirtualTableDesc()
 {
-  desc_struct * table_desc =
+  TrafDesc * table_desc =
     Generator::createVirtualTableDesc(getVirtualTableName(),
 				      ComTdbExeUtilGetUID::getVirtTableNumCols(),
 				      ComTdbExeUtilGetUID::getVirtTableColumnInfo(),
@@ -1292,9 +1291,9 @@ short ExeUtilGetUID::codeGen(Generator * generator)
 const char * ExeUtilGetQID::getVirtualTableName()
 { return "EXE_UTIL_GET_QID__"; }
 
-desc_struct *ExeUtilGetQID::createVirtualTableDesc()
+TrafDesc *ExeUtilGetQID::createVirtualTableDesc()
 {
-  desc_struct * table_desc =
+  TrafDesc * table_desc =
     Generator::createVirtualTableDesc(getVirtualTableName(),
 				      ComTdbExeUtilGetQID::getVirtTableNumCols(),
 				      ComTdbExeUtilGetQID::getVirtTableColumnInfo(),
@@ -3369,9 +3368,9 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
 const char * ExeUtilRegionStats::getVirtualTableName()
 { return ("EXE_UTIL_REGION_STATS__"); }
 
-desc_struct *ExeUtilRegionStats::createVirtualTableDesc()
+TrafDesc *ExeUtilRegionStats::createVirtualTableDesc()
 {
-  desc_struct * table_desc = NULL;
+  TrafDesc * table_desc = NULL;
   if (displayFormat_)
     table_desc = ExeUtilExpr::createVirtualTableDesc();
   else
@@ -3486,9 +3485,9 @@ short ExeUtilRegionStats::codeGen(Generator * generator)
 const char * ExeUtilLobInfo::getVirtualTableName()
 { return ("EXE_UTIL_LOB_INFO__"); }
 
-desc_struct *ExeUtilLobInfo::createVirtualTableDesc()
+TrafDesc *ExeUtilLobInfo::createVirtualTableDesc()
 {
-  desc_struct * table_desc = NULL;
+  TrafDesc * table_desc = NULL;
    if (tableFormat_)
     table_desc = Generator::createVirtualTableDesc(
 	 getVirtualTableName(),
@@ -4288,9 +4287,9 @@ const char * HiveMDaccessFunc::getVirtualTableName()
     return "HIVEMD__"; 
 }
 
-desc_struct *HiveMDaccessFunc::createVirtualTableDesc()
+TrafDesc *HiveMDaccessFunc::createVirtualTableDesc()
 {
-  desc_struct * table_desc =
+  TrafDesc * table_desc =
     Generator::createVirtualTableDesc(
 				      getVirtualTableName(),
 				      ComTdbExeUtilHiveMDaccess::getVirtTableNumCols((char*)mdType_.data()),

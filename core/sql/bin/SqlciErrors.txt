@@ -26,7 +26,7 @@
 1024 ZZZZZ 99999 BEGINNER MINOR DBADMIN File system error $0~NSKCode occurred on $1~String0. $2~String1
 1025 ZZZZZ 99999 BEGINNER MINOR DBADMIN Request failed.  Dependent object $0~string0 exists.
 1026 ZZZZZ 99999 BEGINNER MINOR DBADMIN Only the schema owner or super ID can drop a schema.
-1027 ZZZZZ 99999 BEGINNER MINOR DBADMIN The definition schema $0~SchemaName is dropped when its catalog is dropped.
+1027 ZZZZZ 99999 BEGINNER MINOR DBADMIN The view $0~TableName was created before column privileges was supported. To grant column privileges, please recreate the view.
 1028 ZZZZZ 99999 BEGINNER MINOR DBADMIN The schema must be empty.  It contains at least one object $0~TableName.
 1029 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName could not be created.
 1030 ZZZZZ 99999 BEGINNER MINOR DBADMIN The HBase name has a length of $0~Int0 which is too long. Maximum length supported is $1~Int1.  
@@ -290,7 +290,7 @@
 1295 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Target column $0~ColumnName has mismatching default type.    
 1296 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Character data type of target column and literal are different.    
 1297 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The $0~string0 command cannot be executed because volatile schema $1~string1 exists.
-1298 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ----- Msg used in Trafodion ------
+1298 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~SchemaName could not be altered. $0~String0
 1299 ZZZZZ 99999 BEGINNER MAJOR DBADMIN You cannot specify some columns with just the name and others with name & data attributes.
 1300 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Catman generated unknown Exception for procedure $0~TableName.
 1301 ZZZZZ 99999 BEGINNER MAJOR DBADMIN NO ACTION referential action for $0~string0 clause is not yet supported as specified by ANSI SQL99 standard. To alter the behavior, set an appropriate value for the REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT default.
@@ -1026,6 +1026,7 @@ $1~String1 --------------------------------
 3285 ZZZZZ 99999 BEGINNER MINOR DBADMIN The C interface for this type of routine is deprecated, please consider migrating to a TMUDF with a C++ or Java interface.
 3286 ZZZZZ 99999 BEGINNER MINOR DBADMIN The routine language that was either specified or implied from the library file name is not supported for this type of routine.
 3287 42000 99999 BEGINNER MINOR DBADMIN The $0~string0 option is not supported for this type of routine.
+3288 42000 99999 BEGINNER MINOR DBADMIN A syntax error occurred. WITH clause redefined. WITH name $0~String0 .
 3300 42000 99999 BEGINNER MAJOR DBADMIN --- available ---
 3301 42000 99999 BEGINNER MAJOR DBADMIN $0~string0 is too long (longer than $1~int0 $2~string1).
 
@@ -1432,6 +1433,7 @@ $1~String1 --------------------------------
 4490 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD into a salted table is not supported if ESP parallelism is turned off. 
 4491 42000 99999 BEGINNER MINOR LOGONLY The user does not have $0~string0 privilege on sequence $1~string1$2~string2.
 4492 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD option UPDATE STATISTICS cannot be used with UPSERT USING LOAD option.
+4493 ZZZZZ 99999 BEGINNER MINOR LOGONLY Stored Descriptor Status: $0~String0
 5000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query normalizer.
 6000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query optimizer.
 6001 0A000 99999 BEGINNER MAJOR DBADMIN DISTINCT aggregates can be computed for only one column per table expression.
@@ -1494,6 +1496,7 @@ $1~String1 --------------------------------
 8033 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Explain information is too large to be stored in repository.
 8034 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Column $0~String0 of object $1~string0 does not have a default clause but it is missing in database. This indicates inconsistent data.
 8035 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Truncation of hive table failed. $0~String0
+8036 ZZZZZ 99999 ADVANCED MINOR LOGONLY Error while creating the error logging file or logging the error row to file $0~String0: Details :$1~String1 
 8100 ZZZZZ 99999 BEGINNER MINOR LOGONLY Define $1~string0 does not exist
 8101 23000 99999 BEGINNER MAJOR DBADMIN The operation is prevented by check constraint $0~ConstraintName on table $1~TableName.
 8102 23000 99999 BEGINNER MAJOR DBADMIN The operation is prevented by a unique constraint.
@@ -1531,9 +1534,9 @@ $1~String1 --------------------------------
 8410 22025 99999 BEGINNER MINOR LOGONLY An escape character in a LIKE pattern must be followed by another escape character, an underscore, or a percent character.
 8411 22003 99999 BEGINNER MINOR LOGONLY A numeric overflow occurred during an arithmetic computation or data conversion.$0~string0
 8412 22024 99999 BEGINNER MINOR LOGONLY An input character host variable is missing its null terminator.
-8413 22007 99999 BEGINNER MINOR LOGONLY The string argument contains characters that cannot be converted.
-8414 0A000 99999 BEGINNER MINOR LOGONLY The attempted conversion is not supported on this platform.
-8415 22007 99999 BEGINNER MINOR LOGONLY The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+8413 22007 99999 BEGINNER MINOR LOGONLY The string argument contains characters that cannot be converted. Source data $0~string0
+8414 0A000 99999 BEGINNER MINOR LOGONLY The attempted conversion is not supported on this platform.$0~string0
+8415 22007 99999 BEGINNER MINOR LOGONLY The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data $0~string0
 8416 22008 99999 BEGINNER MINOR LOGONLY A datetime expression evaluated to an invalid datetime value.
 8417 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during the evaluation of USER function. The provided userid $0~string0 is invalid, incorrect, obsolete or inexistent and could not be converted to username.
 8418 0A000 99999 BEGINNER MINOR LOGONLY The USER function is not supported on this platform.
@@ -1544,7 +1547,7 @@ $1~String1 --------------------------------
 8423 ZZZZZ 99999 BEGINNER MINOR LOGONLY The provided field number is not valid.
 8424 0A000 99999 BEGINNER MINOR LOGONLY Function $0~string0 is not yet supported.
 8425 ZZZZZ 99999 BEGINNER MINOR LOGONLY NULL cannot be assigned to a DEFAULT NULL NOT NULL column.
-8426 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 03/30/04 ---
+8426 22007 99999 BEGINNER MINOR LOGONLY The provided value, $0~string0, is an invalid BOOLEAN value.
 8427 ZZZZZ 99999 BEGINNER INFRM LOGONLY $0~string0
 8428 ZZZZZ 99999 BEGINNER MINOR LOGONLY The argument to function $0~string0 is not valid.
 8429 ZZZZZ 99999 BEGINNER INFRM LOGONLY The preceding error actually occurred in function $0~string0.
@@ -1563,7 +1566,7 @@ $1~String1 --------------------------------
 8444 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only one lob handle can be returned by child for data extract.
 8445 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during transformation of hdfs row to sql row. Error Detail: $0~string0 
 8446 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during hdfs buffer fetch. Error Detail: $0~string0 
-8447 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during hdfs access. Error Detail: $0~string0 
+8447 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during hdfs access. Error Detail: $0~string0 $1~string1 
 8448 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to access Hbase interface. Call to $0~string0 returned error $1~string1($0~int0). Cause: $2~string2.
 8449 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid HBase table option or option value was specified: ($0~string0 = $1~string1)
 8450 ZZZZZ 99999 BEGINNER MINOR LOGONLY ESP number ($0~Int0) has processed ($1~Int1) transactions of the LRU operation on table $2~String0.

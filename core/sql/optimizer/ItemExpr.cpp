@@ -3551,6 +3551,18 @@ NABoolean BiArith::hasEquivalentProperties(ItemExpr * other)
     (this->divToDownscale_ == otherBiArith->divToDownscale_);
 }
 
+ItemExpr * UnArith::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  UnArith *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) UnArith();
+  else
+    result = (UnArith*)derivedNode;
+
+  return result;
+}
+
 // -----------------------------------------------------------------------
 // member functions for class ColReference
 // -----------------------------------------------------------------------
@@ -8250,7 +8262,8 @@ ItemExpr * DateFormat::copyTopNode(ItemExpr *derivedNode,
   else
     result = (DateFormat*)derivedNode;
 
-  frmt_ = result->frmt_;
+  result->frmt_ = frmt_;
+  result->dateFormat_ = dateFormat_;
 
   return BuiltinFunction::copyTopNode(result,outHeap);
 
@@ -10416,11 +10429,19 @@ NABoolean ConstValue::isExactNumeric() const
 	  ((NumericType *)type_)->isExact());
 }
 
+// exact numeric value can only be returned for certain types
+// and if the value is within max largeint range.
 NABoolean ConstValue::canGetExactNumericValue() const
 {
   if (isExactNumeric())
     {
       NumericType &t = (NumericType &) *type_;
+
+      // if unsigned largeint and value greater than largeint max,
+      // cannot return exact numeric value.
+      if ((t.getFSDatatype() == REC_BIN64_UNSIGNED) &&
+          ((*(UInt64*)value_) > LLONG_MAX))
+        return FALSE;
 
       // for now we can't do it for arbitrary exact numeric types, sorry
       if (NOT t.isDecimal() AND
@@ -10445,6 +10466,13 @@ Int64 ConstValue::getExactNumericValue(Lng32 &scale) const
   CMPASSERT(t.getNominalSize() == storageSize_);
   switch (storageSize_)
     {
+    case 1:
+      if (t.isUnsigned())
+	result = *((UInt8 *) value_);
+      else
+	result = *((Int8 *) value_);
+      break;
+
     case 2:
       if (t.isUnsigned())
 	result = *((unsigned short *) value_);
@@ -10460,8 +10488,17 @@ Int64 ConstValue::getExactNumericValue(Lng32 &scale) const
       break;
 
     case 8:
-      CMPASSERT(t.isSigned());
-      result = *((Int64 *) value_);
+      if (t.isUnsigned())
+        {
+          if ((*(UInt64*)value_) > LLONG_MAX)
+            {
+              CMPASSERT(0);
+            }
+          else
+            result = *(UInt64*)value_;
+        }
+      else
+        result = *((Int64 *) value_);
       break;
 
     default:
@@ -11153,6 +11190,7 @@ UInt32 ConstValue::computeHashValue(const NAType& columnType)
            flags = ExHDPHash::SWAP_FOUR;
            break;
          case REC_BIN64_SIGNED:
+         case REC_BIN64_UNSIGNED:
          case REC_IEEE_FLOAT64:
            flags = ExHDPHash::SWAP_EIGHT;
            break;
@@ -12013,6 +12051,14 @@ Cast::Cast(ItemExpr *val1Ptr, const NAType *type, OperatorTypeEnum otype,
   flags_(0)
 {
   ValueId vid = val1Ptr ? val1Ptr->getValueId() : NULL_VALUE_ID;
+
+  if ((type->getFSDatatype() == 132) &&
+      (vid != NULL_VALUE_ID) &&
+      (vid.getType().getFSDatatype() == 136))
+    {
+      Lng32 ij = 1;
+    }
+
   checkForTruncation_ = FALSE;
   if (checkForTrunc)
     if (vid == NULL_VALUE_ID)

@@ -40,7 +40,6 @@
 #include "ExpLOBenums.h"
 #include "NADefaults.h"
 #include "NAColumn.h"
-#include "desc.h"
 #include "CmpMessage.h"
 #include "PrivMgrDefs.h"
 #include "PrivMgrMD.h"
@@ -81,6 +80,7 @@ class StmtDDLCreateSequence;
 class StmtDDLDropSequence;
 
 class StmtDDLDropSchema;
+class StmtDDLAlterSchema;
 
 // Classes for user management
 class StmtDDLRegisterUser;
@@ -111,7 +111,7 @@ class NADefaults;
 
 class NAType;
 
-struct desc_struct;
+struct TrafDesc;
 class OutputInfo;
 
 class HbaseCreateOption;
@@ -120,7 +120,7 @@ class Parser;
 
 class NAColumnArray;
 
-struct routine_desc_struct;
+class TrafRoutineDesc;
 struct MDDescsInfo;
 
 class CmpDDLwithStatusInfo;
@@ -232,7 +232,7 @@ class CmpSeabaseDDL
 			  NAString &currCatName, NAString &currSchName,
                           CmpDDLwithStatusInfo *dws = NULL);
 
-  desc_struct * getSeabaseTableDesc(const NAString &catName, 
+  TrafDesc * getSeabaseTableDesc(const NAString &catName, 
 				    const NAString &schName, 
 				    const NAString &objName,
 				    const ComObjectType objType,
@@ -279,12 +279,12 @@ class CmpSeabaseDDL
                                      Int64 objectUID,
                                      ElemDDLHbaseOptions * edhbo);
 
-  desc_struct * getSeabaseLibraryDesc(
+  TrafDesc * getSeabaseLibraryDesc(
      const NAString &catName, 
      const NAString &schName, 
      const NAString &libraryName);
      
-  desc_struct *getSeabaseRoutineDesc(const NAString &catName,
+  TrafDesc *getSeabaseRoutineDesc(const NAString &catName,
                                      const NAString &schName,
                                      const NAString &objName);
   
@@ -334,19 +334,19 @@ class CmpSeabaseDDL
   // The next three methods do use anything from the CmpSeabaseDDL class.
   // They are placed here as a packaging convinience, to avoid code 
   // duplication that would occur if non-member static functions were used.
-  // These methods convert VirtTable*Info classes to corresponding desc_struct
+  // These methods convert VirtTable*Info classes to corresponding TrafDesc
   // objects
   void convertVirtTableColumnInfoToDescStruct( 
        const ComTdbVirtTableColumnInfo * colInfo,
        const ComObjectName * objectName,
-       desc_struct * column_desc);
+       TrafDesc * column_desc);
 
-  desc_struct * convertVirtTableColumnInfoArrayToDescStructs(
+  TrafDesc * convertVirtTableColumnInfoArrayToDescStructs(
      const ComObjectName * objectName,
      const ComTdbVirtTableColumnInfo * colInfoArray,
      Lng32 numCols);
 
-  desc_struct * convertVirtTableKeyInfoArrayToDescStructs(
+  TrafDesc * convertVirtTableKeyInfoArrayToDescStructs(
        const ComTdbVirtTableKeyInfo *keyInfoArray,
        const ComTdbVirtTableColumnInfo *colInfoArray,
        Lng32 numKeys);
@@ -430,7 +430,13 @@ class CmpSeabaseDDL
   
   enum {
     // set if we need to get the hbase snapshot info of the table
-    GET_SNAPSHOTS = 0x0002
+    GET_SNAPSHOTS     = 0x0002,
+
+    // set if descr is to be generated in packed format to be stored in metadata
+    GEN_PACKED_DESC   = 0x0004,
+
+    // set if stored object descriptor is to be read from metadata.
+    READ_OBJECT_DESC  = 0x0008
   };
 
 protected:
@@ -482,7 +488,7 @@ protected:
   void getColName(const char * colFam, const char * colQual,
 		  NAString &colName);
 
-  desc_struct *getSeabaseRoutineDescInternal(const NAString &catName,
+  TrafDesc *getSeabaseRoutineDescInternal(const NAString &catName,
                                              const NAString &schName,
                                              const NAString &objName);
 
@@ -720,13 +726,22 @@ protected:
 			 const char * schName,
 			 const char * objName);
 
+  // retrieved stored desc from metadata, check if it is good,
+  // and set retDesc, if passed in.
+  short checkAndGetStoredObjectDesc(
+       ExeCliInterface *cliInterface,
+       Int64 objUID,
+       TrafDesc* *retDesc);
+
   short updateObjectRedefTime(
                               ExeCliInterface *cliInterface,
                               const NAString &catName,
                               const NAString &schName,
                               const NAString &objName,
                               const char * objType,
-                              Int64 rt = -1);
+                              Int64 rt = -1,
+                              Int64 objUID = -1,
+                              NABoolean force = FALSE);
 
   short updateObjectValidDef(
 			     ExeCliInterface *cliInterface,
@@ -744,6 +759,12 @@ protected:
 			    NABoolean audited,
                             const NAString& objType);
 
+  short updateObjectFlags(
+       ExeCliInterface *cliInterface,
+       const Int64 objUID,
+       const Int64 inFlags,
+       NABoolean reset);
+
   // subID: 0, for text that belongs to table. colNumber, for column based text.
   short updateTextTable(ExeCliInterface *cliInterface,
                         Int64 objUID, 
@@ -752,6 +773,15 @@ protected:
                         NAString &text,
                         NABoolean withDelete = FALSE); // del before ins
 
+  // input data in non-char format.
+  short updateTextTableWithBinaryData(ExeCliInterface *cliInterface,
+                                      Int64 objUID, 
+                                      ComTextType textType, 
+                                      Lng32 subID, 
+                                      char * data,
+                                      Int32 dataLen,
+                                      NABoolean withDelete);
+  
   short deleteFromTextTable(ExeCliInterface *cliInterface,
                             Int64 objUID, 
                             ComTextType textType, 
@@ -764,7 +794,7 @@ protected:
 
   short createEncodedKeysBuffer(char** &encodedKeysBuffer,
                                 int &numSplits,
-				desc_struct * colDescs, desc_struct * keyDescs,
+				TrafDesc * colDescs, TrafDesc * keyDescs,
 				int numSaltPartitions,
                                 Lng32 numSaltSplits,
                                 NAString *splitByClause,
@@ -826,7 +856,7 @@ protected:
   short gatherViewPrivileges (const StmtDDLCreateView * createViewParseNode,
                               ExeCliInterface * cliInterface,
                               NABoolean viewCreator,
-                              Int32 schemaID,
+                              Int32 userID,
                               PrivMgrBitmap &privilegesBitmap,
                               PrivMgrBitmap &grantableBitmap);
 
@@ -951,12 +981,14 @@ protected:
                             ExeCliInterface &cliInterface,
                             StmtDDLCreateTable * createTableNode,
                             NAString &currCatName, NAString &currSchName,
-                            NABoolean isCompound = FALSE);
+                            NABoolean isCompound,
+                            Int64 &objUID);
   
   void createSeabaseTable(
 			  StmtDDLCreateTable * createTableNode,
 			  NAString &currCatName, NAString &currSchName,
-                          NABoolean isCompound = FALSE);
+                          NABoolean isCompound = FALSE,
+                          Int64 * retObjUID = NULL);
  
   void createSeabaseTableCompound(
 			  StmtDDLCreateTable                  * createTableNode,
@@ -1016,6 +1048,10 @@ protected:
   void renameSeabaseTable(
 			  StmtDDLAlterTableRename                  * renameTableNode,
 			  NAString &currCatName, NAString &currSchName);
+
+  void alterSeabaseTableStoredDesc(
+       StmtDDLAlterTableStoredDesc * alterStoredDesc,
+       NAString &currCatName, NAString &currSchName);
 
   void alterSeabaseTableHBaseOptions(
 			  StmtDDLAlterTableHBaseOptions * hbaseOptionsNode,
@@ -1232,6 +1268,9 @@ protected:
                                NAString &currCatName, NAString &currSchName);
 
   void dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode);
+
+  void alterSeabaseSchema(StmtDDLAlterSchema * alterSchemaNode);
+                          
   
   bool dropOneTableorView(
      ExeCliInterface & cliInterface,
@@ -1248,7 +1287,7 @@ protected:
 			     StmtDDLDropHbaseTable                  * createTableNode,
 			     NAString &currCatName, NAString &currSchName);
   
-  void initSeabaseMD(NABoolean ddlXns);
+  void initSeabaseMD(NABoolean ddlXns, NABoolean minimal);
   void dropSeabaseMD(NABoolean ddlXns);
   void createSeabaseMDviews();
   void dropSeabaseMDviews();
@@ -1291,10 +1330,18 @@ protected:
 
   short createRepos(ExeCliInterface * cliInterface);
   short dropRepos(ExeCliInterface * cliInterface, 
-                  NABoolean oldRepos = FALSE, NABoolean dropSchema = TRUE);
+                  NABoolean oldRepos = FALSE, NABoolean dropSchema = TRUE,
+                  NABoolean inRecovery = FALSE);
   short alterRenameRepos(ExeCliInterface * cliInterface, NABoolean newToOld);
   short copyOldReposToNew(ExeCliInterface * cliInterface);
+
+public:
+
   short upgradeRepos(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
+  short upgradeReposComplete(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
+  short upgradeReposUndo(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
+
+protected:
 
   void processRepository(NABoolean createR, NABoolean dropR, NABoolean upgradeR);
 
@@ -1312,12 +1359,12 @@ protected:
      ComTdbVirtTableTableInfo* &tableInfo
      );
 
-  desc_struct * getSeabaseMDTableDesc(const NAString &catName, 
+  TrafDesc * getSeabaseMDTableDesc(const NAString &catName, 
 				      const NAString &schName, 
 				      const NAString &objName,
 				      const ComObjectType objType);
 
-  desc_struct * getSeabaseHistTableDesc(const NAString &catName, 
+  TrafDesc * getSeabaseHistTableDesc(const NAString &catName, 
 					const NAString &schName, 
 					const NAString &objName);
 
@@ -1330,7 +1377,7 @@ protected:
      Int32 & schemaOwner,
      Int64 & seqUID);
 
-  desc_struct * getSeabaseSequenceDesc(const NAString &catName, 
+  TrafDesc * getSeabaseSequenceDesc(const NAString &catName, 
 				       const NAString &schName, 
 				       const NAString &seqName);
     
@@ -1345,12 +1392,13 @@ protected:
                              Lng32 *numCols,
                              ComTdbVirtTableColumnInfo **colInfoArray);
   
-  desc_struct * getSeabaseUserTableDesc(const NAString &catName, 
+  TrafDesc * getSeabaseUserTableDesc(const NAString &catName, 
 					const NAString &schName, 
 					const NAString &objName,
 					const ComObjectType objType,
 					NABoolean includeInvalidDefs,
-					Int32 ctlFlags);
+					Int32 ctlFlags,
+                                        Int32 &packedDescLen);
  
   static NABoolean getMDtableInfo(const ComObjectName &ansiName,
                                   ComTdbVirtTableTableInfo* &tableInfo,
@@ -1448,8 +1496,5 @@ private:
 
   NABoolean cmpSwitched_;
 };
-
-desc_struct* assembleDescs(NAArray<HbaseStr>*keyArray, populateFuncT func, NAMemory* heap);
-
 
 #endif // _CMP_SEABASE_DDL_H_

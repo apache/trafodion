@@ -30,7 +30,7 @@
 #include "ResStatisticsStatement.h"
 
 void sendAggrStats(pub_struct_type pub_type, std::tr1::shared_ptr<SESSION_AGGREGATION> pAggr_info);
-void sendSessionEnd(std::tr1::shared_ptr<SESSION_END> pSession_info);
+void sendSessionStats(std::tr1::shared_ptr<SESSION_INFO> pSession_info);
 
 using namespace SRVR;
 void ResStatisticsSession::start(struct collect_info *setinit)
@@ -102,10 +102,59 @@ void ResStatisticsSession::start(struct collect_info *setinit)
 		entryTime_ts = entryTime;
 		if( srvrGlobal->m_bStatisticsEnabled && srvrGlobal->m_statisticsPubType == STATISTICS_AGGREGATED )
 		{
+                        sendSessionInfo(session_status, startTime_ts, endTime_ts);
 			std::tr1::shared_ptr<SESSION_AGGREGATION> pAggr_info = getAggrStats();
 			sendAggrStats(PUB_TYPE_SESSION_START_AGGREGATION, pAggr_info);
 		}
 	}
+}
+
+void ResStatisticsSession::sendSessionInfo(string session_status, long long startTime, long long endTime)
+{
+        std::tr1::shared_ptr<SESSION_INFO> pSession_info = std::tr1::shared_ptr<SESSION_INFO>(new SESSION_INFO);
+        *pSession_info = {0};
+        
+	pSession_info->m_process_id = srvrGlobal->process_id;
+	pSession_info->m_thread_id = srvrGlobal->receiveThrId;
+	pSession_info->m_node_id = srvrGlobal->m_NodeId;
+	pSession_info->m_ip_address_id = srvrGlobal->IpAddress;
+	pSession_info->m_process_name = srvrGlobal->m_ProcName;
+	pSession_info->m_sessionId = srvrGlobal->sessionId;
+	pSession_info->m_session_status = session_status;
+	pSession_info->m_session_start_utc_ts = startTime;
+	pSession_info->m_session_end_utc_ts = endTime;
+	pSession_info->m_user_id = srvrGlobal->userID;
+	pSession_info->m_user_name = srvrGlobal->userSID;
+	pSession_info->m_role_name = srvrGlobal->QSRoleName;
+	pSession_info->m_client_name = srvrGlobal->ClientComputerName;
+	pSession_info->m_client_user_name = resCollectinfo.clientUserName;
+	pSession_info->m_application_name = srvrGlobal->ApplicationName;
+        UpdateStringText(pSession_info->m_application_name);
+	pSession_info->m_profile_name = srvrGlobal->mappedProfileName;
+	pSession_info->m_sla_name= srvrGlobal->mappedSLAName;
+	pSession_info->m_total_odbc_exection_time = totalOdbcExecutionTime;
+	pSession_info->m_total_odbc_elapsed_time = totalOdbcElapseTime;
+	pSession_info->m_total_insert_stmts_executed = totalInsertStatements;
+	pSession_info->m_total_delete_stmts_executed = totalDeleteStatements;
+	pSession_info->m_total_update_stmts_executed = totalUpdateStatements;
+	pSession_info->m_total_select_stmts_executed = totalSelectStatements;
+	pSession_info->m_total_catalog_stmts = totalCatalogStatements;
+	pSession_info->m_total_prepares = totalPrepares;
+	pSession_info->m_total_executes = totalExecutes;
+	pSession_info->m_total_fetches = totalFetches;
+	pSession_info->m_total_closes = totalCloses;
+	pSession_info->m_total_execdirects = totalExecDirects;
+	pSession_info->m_total_errors = totalErrors;
+	pSession_info->m_total_warnings = totalWarnings;
+	pSession_info->m_total_login_elapsed_time_mcsec = resCollectinfo.totalLoginTime;
+	pSession_info->m_ldap_login_elapsed_time_mcsec = resCollectinfo.ldapLoginTime;
+	pSession_info->m_sql_user_elapsed_time_mcsec = resCollectinfo.sqlUserTime;
+	pSession_info->m_search_connection_elapsed_time_mcsec = resCollectinfo.searchConnectionTime;
+	pSession_info->m_search_elapsed_time_mcsec = resCollectinfo.searchTime;
+	pSession_info->m_authentication_connection_elapsed_time_mcsec = resCollectinfo.authenticationConnectionTime;
+	pSession_info->m_authentication_elapsed_time_mcsec =  resCollectinfo.authenticationTime;
+
+        sendSessionStats(pSession_info);
 }
 
 void ResStatisticsSession::end()
@@ -151,51 +200,9 @@ void ResStatisticsSession::end()
 	}
 	stringstream ss;
  	ss << "File: " << __FILE__ << ", Fuction: " << __FUNCTION__ << ", Line: " << __LINE__ << ", SESSIONID: " << srvrGlobal->sessionId;
-	string session_status = "END";
 	int64 endTime = JULIANTIMESTAMP();
 
 	endTime_ts = endTime;
-
-	std::tr1::shared_ptr<SESSION_END> pSession_info = std::tr1::shared_ptr<SESSION_END>(new SESSION_END);
-	*pSession_info = {0};
-
-	pSession_info->m_process_id = srvrGlobal->process_id;
-	pSession_info->m_thread_id = srvrGlobal->receiveThrId;
-	pSession_info->m_node_id = srvrGlobal->m_NodeId;
-	pSession_info->m_ip_address_id = srvrGlobal->IpAddress;
-	pSession_info->m_process_name = srvrGlobal->m_ProcName;
-	pSession_info->m_sessionId = srvrGlobal->sessionId;
-	pSession_info->m_session_status = "END";
-	pSession_info->m_session_start_utc_ts = startTime_ts;
-	pSession_info->m_session_end_utc_ts = endTime_ts;
-	pSession_info->m_user_id = srvrGlobal->userID;
-	pSession_info->m_user_name = srvrGlobal->userSID;
-	pSession_info->m_role_name = srvrGlobal->QSRoleName;
-	pSession_info->m_client_name = srvrGlobal->ClientComputerName;
-	pSession_info->m_client_user_name = resCollectinfo.clientUserName;
-	pSession_info->m_application_name = srvrGlobal->ApplicationName;
-    UpdateStringText(pSession_info->m_application_name);
-	pSession_info->m_total_odbc_exection_time = totalOdbcExecutionTime;
-	pSession_info->m_total_odbc_elapsed_time = totalOdbcElapseTime;
-	pSession_info->m_total_insert_stmts_executed = totalInsertStatements;
-	pSession_info->m_total_delete_stmts_executed = totalDeleteStatements;
-	pSession_info->m_total_update_stmts_executed = totalUpdateStatements;
-	pSession_info->m_total_select_stmts_executed = totalSelectStatements;
-	pSession_info->m_total_catalog_stmts = totalCatalogStatements;
-	pSession_info->m_total_prepares = totalPrepares;
-	pSession_info->m_total_executes = totalExecutes;
-	pSession_info->m_total_fetches = totalFetches;
-	pSession_info->m_total_closes = totalCloses;
-	pSession_info->m_total_execdirects = totalExecDirects;
-	pSession_info->m_total_errors = totalErrors;
-	pSession_info->m_total_warnings = totalWarnings;
-	pSession_info->m_total_login_elapsed_time_mcsec = resCollectinfo.totalLoginTime;
-	pSession_info->m_ldap_login_elapsed_time_mcsec = resCollectinfo.ldapLoginTime;
-	pSession_info->m_sql_user_elapsed_time_mcsec = resCollectinfo.sqlUserTime;
-	pSession_info->m_search_connection_elapsed_time_mcsec = resCollectinfo.searchConnectionTime;
-	pSession_info->m_search_elapsed_time_mcsec = resCollectinfo.searchTime;
-	pSession_info->m_authentication_connection_elapsed_time_mcsec = resCollectinfo.authenticationConnectionTime;
-	pSession_info->m_authentication_elapsed_time_mcsec =  resCollectinfo.authenticationTime;
 
 	if ( srvrGlobal->m_bStatisticsEnabled )
 	{
@@ -204,7 +211,7 @@ void ResStatisticsSession::end()
 			std::tr1::shared_ptr<SESSION_AGGREGATION> pAggr_info = getAggrStats();
 			sendAggrStats(PUB_TYPE_SESSION_END_AGGREGATION, pAggr_info);
 		}
-		sendSessionEnd(pSession_info);
+                sendSessionInfo("END", startTime_ts, endTime_ts);
 	}
 }
 

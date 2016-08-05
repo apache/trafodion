@@ -118,6 +118,10 @@ cd $REST_DIR/conf
 echo "***INFO: modifying $REST_DIR/conf/rest-site.xml"
 # add zookeeper quorum property to end of configuration
 rm rest-site.temp 2>/dev/null
+cat rest-site.xml | sed -e "s@</configuration>@  <property>\n    <name>rest.zookeeper.property.clientPort</name>\n    <value>$ZOOKEEPER_PORT</value>\n  </property>\n </configuration>@" > rest-site.temp
+cp rest-site.temp rest-site.xml
+rm rest-site.temp 2>/dev/null
+
 cat rest-site.xml | sed -e "s@</configuration>@  <property>\n    <name>rest.zookeeper.quorum</name>\n    <value>$ZOOKEEPER_NODES</value>\n  </property>\n </configuration>@" > rest-site.temp
 cp rest-site.temp rest-site.xml
 rm rest-site.temp 2>/dev/null

@@ -543,9 +543,11 @@ Int32 ExHdfsFastExtractTcb::fixup()
 
   if(!myTdb().getSkipWritingToFiles() &&
      !myTdb().getBypassLibhdfs())
-
+    memset (hdfsHost_, '\0', sizeof(hdfsHost_));
+      strncpy(hdfsHost_, myTdb().getHdfsHostName(), sizeof(hdfsHost_));
+      hdfsPort_ = myTdb().getHdfsPortNum();
     ExpLOBinterfaceInit
-      (lobGlob_, getGlobals()->getDefaultHeap(),TRUE);
+      (lobGlob_, getGlobals()->getDefaultHeap(),getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE,hdfsHost_,hdfsPort_);
 
   modTS_ = myTdb().getModTSforDir();
 
@@ -1338,7 +1340,6 @@ NABoolean ExHdfsFastExtractTcb::isHdfsCompressed()
 
 void ExHdfsFastExtractTcb::createSequenceFileError(Int32 sfwRetCode)
 {
-#ifndef __EID 
   ContextCli *currContext = GetCliGlobals()->currContext();
 
   ComDiagsArea * diagsArea = NULL;
@@ -1352,7 +1353,6 @@ void ExHdfsFastExtractTcb::createSequenceFileError(Int32 sfwRetCode)
   //ex_queue_entry *pentry_down = qParent_.down->getHeadEntry();
   //pentry_down->setDiagsArea(diagsArea);
   updateWorkATPDiagsArea(diagsArea);
-#endif
 }
 
 ExFastExtractPrivateState::ExFastExtractPrivateState()

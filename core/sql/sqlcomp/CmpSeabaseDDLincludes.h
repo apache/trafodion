@@ -40,6 +40,7 @@
 #include "StmtDDLCreateTable.h"
 #include "StmtDDLDropTable.h"
 #include "StmtDDLAlterTableRename.h"
+#include "StmtDDLAlterTableStoredDesc.h"
 #include "StmtDDLCreateIndex.h"
 #include "StmtDDLPopulateIndex.h"
 #include "StmtDDLDropIndex.h"
@@ -86,7 +87,6 @@
 
 #include "ExExeUtilCli.h"
 #include "Generator.h"
-#include "desc.h"
 
 #include "ComCextdecs.h"
 
@@ -97,14 +97,14 @@
 #define SOFTWARE_UPDATE_VERSION TRAF_SOFTWARE_VERS_UPDATE
 #define HBASE_OPTIONS_MAX_LENGTH 6000
 
-// new metadata version 1.1.0 changed for release 1.1.0.
-// Old metadata version 3.0.
+// new metadata version 2.1.0 changed for release 2.1.0.
+// Old metadata version 1.1.
 enum { 
-  METADATA_MAJOR_VERSION = 1,
-  METADATA_OLD_MAJOR_VERSION = 3,
+  METADATA_MAJOR_VERSION = 2,
+  METADATA_OLD_MAJOR_VERSION = 1,
   METADATA_MINOR_VERSION = 1,
   METADATA_UPDATE_VERSION = 0,
-  METADATA_OLD_MINOR_VERSION = 0,
+  METADATA_OLD_MINOR_VERSION = 1,
   METADATA_OLD_UPDATE_VERSION = 0,
   DATAFORMAT_MAJOR_VERSION = 1,
   DATAFORMAT_MINOR_VERSION = 1

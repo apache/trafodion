@@ -29,7 +29,7 @@ import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.RegionLoad;
 import org.apache.hadoop.hbase.ServerLoad;
 import org.apache.hadoop.hbase.ServerName;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.HTable;
 
 import java.io.IOException;
@@ -75,16 +75,8 @@ public class TrafRegionStats {
         return Collections.unmodifiableMap(sizeInfoMap);
     }
     
-    /**
-     * Computes size of each region for table and given column families.
-     * */
-    public TrafRegionStats(HTable table) throws IOException {
-        this(table, new HBaseAdmin(table.getConfiguration()));
-    }
-    
-    public TrafRegionStats (HTable table, HBaseAdmin admin) throws IOException {
+    public TrafRegionStats (HTable table, Admin admin) throws IOException {
         
-        try {
             if (!enabled(table.getConfiguration())) {
                 System.out.println("Region size calculation disabled.");
                 return;
@@ -131,14 +123,10 @@ public class TrafRegionStats {
 
                         sizeInfoMap.put(regionId, sizeInfo);
                         
-                        //                        System.out.println("RegionNameAsString " + regionLoad.getNameAsString());
                      }
                 }
             }
             
-        } finally {
-            admin.close();
-        }
     }
 }
 

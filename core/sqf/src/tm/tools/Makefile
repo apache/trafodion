@@ -43,7 +43,7 @@ endif
 
 CFILES		= `ls *.c`
 ifeq ($(USE_LOGGING),1)
-LIBSX		= -L$(LIBEXPDIR) -levlsq
+LIBSX		= -L$(LIBEXPDIR) -levlsq -lshbasetmlib
 endif
 
 #TESTAROBJS        = adp_read_test.o \
@@ -56,12 +56,12 @@ PROGS = dtmci \
 
 all:   $(PROGS)
 
-dtmci: $(OUTDIR)/dtmci.o $(OUTDIR)/versdtmci.o
-	$(CXX) $(CXXFLAGS) -o $@ $(OUTDIR)/dtmci.o $(OUTDIR)/versdtmci.o $(LIBSTM)
+dtmci: $(OUTDIR)/dtmci.o $(OUTDIR)/versdtmci.o $(LIBEXPDIR)/libshbasetmlib.so
+	$(CXX) $(CXXFLAGS) -o $@ $(OUTDIR)/dtmci.o $(OUTDIR)/versdtmci.o $(LIBSTM) -lshbasetmlib 
 	cp -fup dtmci $(BINEXPDIR)
 
-tmshutdown: $(OUTDIR)/tmshutdown.o $(OUTDIR)/verstmshutdown.o
-	$(CXX) $(CXXFLAGS) -o $@ $(OUTDIR)/tmshutdown.o $(OUTDIR)/verstmshutdown.o $(LIBSTM) 
+tmshutdown: $(OUTDIR)/tmshutdown.o $(OUTDIR)/verstmshutdown.o $(LIBEXPDIR)/libshbasetmlib.so
+	$(CXX) $(CXXFLAGS) -o $@ $(OUTDIR)/tmshutdown.o $(OUTDIR)/verstmshutdown.o $(LIBSTM)  -lshbasetmlib
 	cp -fup tmshutdown $(BINEXPDIR)
 
 

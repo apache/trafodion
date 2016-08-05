@@ -7483,6 +7483,7 @@ Lng32 SQL_EXEC_LOBddlInterface
   return retcode;
 }
 
+#ifdef __ignore
 Lng32 SQL_EXEC_LOBloader2sqlInterface
 (
  /*IN*/     char * lobHandle,
@@ -7532,7 +7533,7 @@ Lng32 SQL_EXEC_LOBloader2sqlInterface
   RecordError(NULL, retcode);
   return retcode;
 }
-
+#endif
 Int32 SQL_EXEC_SWITCH_TO_COMPILER_TYPE
 (
  /*IN*/     Int32 cmpCntxtType

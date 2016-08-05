@@ -61,7 +61,7 @@ class HistogramsCacheEntry;
 class BindWA;
 class MVInfoForDML;
 class NATableDB;
-struct desc_struct;
+struct TrafDesc;
 class HbaseCreateOption;
 class PrivMgrUserPrivs;
 class ExpHbaseInterface;
@@ -385,7 +385,7 @@ public:
   // ---------------------------------------------------------------------
 
   NATable(BindWA *bindWA, const CorrName &corrName, NAMemory *heap,
-          desc_struct *inTableDesc = NULL);
+          TrafDesc *inTableDesc = NULL);
 
   NATable(BindWA *bindWA, const CorrName &corrName, NAMemory *heap,
           struct hive_tbl_desc*);
@@ -490,7 +490,7 @@ public:
 				       NABoolean *isPkey = NULL,
                                        NAList<int> *reorderList = NULL);
     
-  const desc_struct * getPartnsDesc() const { return partnsDesc_; }
+  const TrafDesc * getPartnsDesc() const { return partnsDesc_; }
 
   // A not-found partition is an offline partition.
   NABoolean containsPartition(const NAString &partitionName) const
@@ -828,7 +828,7 @@ public:
 
   NABoolean insertMissingStatsWarning(CollIndexSet colsSet) const;
 
-  const desc_struct * getTableDesc() const { return tableDesc_; }
+  const TrafDesc * getTableDesc() const { return tableDesc_; }
   NAList<HbaseCreateOption*> * hbaseCreateOptions()
     { return clusteringIndex_->hbaseCreateOptions();}
 
@@ -1147,9 +1147,9 @@ private:
 
   ComSecurityKeySet secKeySet_ ;
 
-  desc_struct *partnsDesc_;
+  TrafDesc *partnsDesc_;
 
-  desc_struct *tableDesc_;
+  TrafDesc *tableDesc_;
 
   // hash table to store all the column positions for which missing
   // stats warning has been generated. We are not storing ValueIdSet
@@ -1257,7 +1257,7 @@ public:
 
   NATable * get(const ExtendedQualName* key, BindWA * bindWA = NULL, NABoolean findInCacheOnly = FALSE);
   NATable * get(CorrName& corrName, BindWA * bindWA,
-                desc_struct *inTableDescStruct);
+                TrafDesc *inTableDescStruct);
 
   void removeNATable2(CorrName &corrName, ComQiScope qiScope, 
                       ComObjectType ot);

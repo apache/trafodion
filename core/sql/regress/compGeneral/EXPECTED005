@@ -71,6 +71,12 @@
 
 --- SQL operation complete.
 >>
+>>create table witht1 (c1 int, c2 int);
+
+--- SQL operation complete.
+>>create table witht2 (c1 int, c2 int);
+
+--- SQL operation complete.
 >>?section populate_tables 
 >>-- Populate t005t01
 >>insert into t005t01 values (30, 33);
@@ -194,7 +200,36 @@
 
 --- 1 row(s) inserted.
 >>
->>
+>>insert into witht1 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into witht1 values(2,2);
+
+--- 1 row(s) inserted.
+>>insert into witht1 values(3,3);
+
+--- 1 row(s) inserted.
+>>insert into witht1 values(4,4);
+
+--- 1 row(s) inserted.
+>>insert into witht1 values(5,5);
+
+--- 1 row(s) inserted.
+>>insert into witht2 values(3,3);
+
+--- 1 row(s) inserted.
+>>insert into witht2 values(4,4);
+
+--- 1 row(s) inserted.
+>>insert into witht2 values(5,5);
+
+--- 1 row(s) inserted.
+>>insert into witht2 values(6,6);
+
+--- 1 row(s) inserted.
+>>insert into witht2 values(7,7);
+
+--- 1 row(s) inserted.
 >>
 >>?section prep
 >>control query default query_cache '0';
@@ -1018,6 +1053,73 @@ DNO                   DNAME                 ENO          DNO
 *** ERROR[8822] The statement was not prepared.
 
 >>
+>>cqd mode_special_4 'on';
+
+--- SQL operation complete.
+>>with w1 as (select * from witht1),
++>w2 as (select * from w1)
++>select * from w2;
+
+C1 C2
+----------
+
+ 1 1
+ 2 2
+ 3 3
+ 4 4
+ 5 5
+
+--- SQL operation complete.
+>>
+>>with w1 as (select c1, c2 from witht1),
++>w2 as (select c1,c2 from witht2)
++>select * from w1 , w2 where w1.c1 = w2.c1;
+
+C1 C2 C1 C2
+----------
+
+ 3 3 3 3
+ 4 4 4 4
+ 5 5 5 5
+
+--- SQL operation complete.
+>>
+>>with w1 as (select * from witht1)
++>select * from w1
++>union all
++>select * from w1;
+
+C1 C2
+----------
+
+ 1 1
+ 1 1
+ 2 2
+ 2 2
+ 3 3
+ 3 3
+ 4 4
+ 4 4
+ 5 5
+ 5 5
+
+--- SQL operation complete.
+>>
+>>with recursive w1 as (select c1, c2 from witht1 union all select origin.c1 , origin.c2 from w1 join t1 origin on origin.c1 = w1.c1 );
+
+*** ERROR[3022] The WITH RECURSIVE operator is not yet supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>with w1 as (select * from witht1), w1 as (select * from witht2) select * from w1;
+
+*** ERROR[3288] A syntax error occurred. WITH clause redefined. WITH name W1 .
+
+*** ERROR[8822] The statement was not prepared.
+
+>>cqd mode_special_4 reset;
+
+--- SQL operation complete.
 >>
 >>?section cleanup
 >>
@@ -1051,7 +1153,12 @@ DNO                   DNAME                 ENO          DNO
 >>drop table t005_fx;
 
 --- SQL operation complete.
->>
+>>drop table witht1;
+
+--- SQL operation complete.
+>>drop table witht2;
+
+--- SQL operation complete.
 >>exit;
 
 End of MXCI Session

@@ -84,7 +84,7 @@ $(OUTDIR)/idtm.o: idtm.cpp
 test:   testrun
 
 testrun: testrun.cpp $(LIBEXPDIR)/libshbasetmlib.so
-	$(CXX) -g -o $@ -Wall $(LIBSTESTRUN) $(LIBJVM) $(LIBTMB) $(INCLUDES) testrun.cpp
+	$(CXX) -g -o $@ -Wall $(LIBSTESTRUN) $(LIBJVM) $(LIBTMB) -lstmlib $(INCLUDES) testrun.cpp
 
 setup:
 	@echo "OUTDIR =" $(OUTDIR)

@@ -145,6 +145,10 @@ Lng32 Formatter::display_length(Lng32 datatype,
       d_len = d_buflen = SQL_LARGE_DISPLAY_SIZE + scale_len;
       break;
        
+    case REC_BIN64_UNSIGNED:
+      d_len = d_buflen = SQL_ULARGE_DISPLAY_SIZE + scale_len;
+      break;
+       
     case REC_BYTE_F_ASCII:
 // 12/9/97: added for Unicode case
     case REC_NCHAR_F_UNICODE:
@@ -222,6 +226,10 @@ Lng32 Formatter::display_length(Lng32 datatype,
 	d_len = d_buflen = ExpDatetime::getDisplaySize((short)precision, (short)scale);
       }
     break;
+
+    case REC_BOOLEAN:
+      d_len = d_buflen = SQL_BOOLEAN_DISPLAY_SIZE;
+      break;
 
     default:
       d_len = d_buflen = length;
@@ -324,6 +332,7 @@ Int32 Formatter::buffer_it(SqlciEnv * sqlci_env, char *data,
 
   case REC_BPINT_UNSIGNED:
   case REC_BIN64_SIGNED:
+  case REC_BIN64_UNSIGNED:
   case REC_BIN32_SIGNED:
   case REC_BIN32_UNSIGNED:
   case REC_BIN16_SIGNED:
@@ -336,6 +345,7 @@ Int32 Formatter::buffer_it(SqlciEnv * sqlci_env, char *data,
   case REC_FLOAT32:
   case REC_FLOAT64: 
   case REC_DATETIME: 
+  case REC_BOOLEAN:
   {
     short retcode = convDoIt(data,
 			     length,
