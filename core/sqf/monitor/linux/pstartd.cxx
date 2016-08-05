@@ -57,6 +57,144 @@ CMonLog *SnmpLog = NULL;
 DEFINE_EXTERN_COMP_DOVERS(pstartd)
 DEFINE_EXTERN_COMP_PRINTVERS(pstartd)
 
+const char *MessageTypeString( MSGTYPE type )
+{
+    const char *str = NULL;
+    
+    switch( type )
+    {
+        case MsgType_Change:
+            str = "MsgType_Change";
+            break;
+        case MsgType_Close:
+            str = "MsgType_Close";
+            break;
+        case MsgType_Event:
+            str = "MsgType_Event";
+            break;
+        case MsgType_NodeAdded:
+            str = "MsgType_NodeAdded";
+            break;
+        case MsgType_NodeChanged:
+            str = "MsgType_NodeChanged";
+            break;
+        case MsgType_NodeDeleted:
+            str = "MsgType_NodeDeleted";
+            break;
+        case MsgType_NodeDown:
+            str = "MsgType_NodeDown";
+            break;
+        case MsgType_NodeJoining:
+            str = "MsgType_NodeJoining";
+            break;
+        case MsgType_NodePrepare:
+            str = "MsgType_NodePrepare";
+            break;
+        case MsgType_NodeQuiesce:
+            str = "MsgType_NodeQuiesce";
+            break;
+        case MsgType_NodeUp:
+            str = "MsgType_NodeUp";
+            break;
+        case MsgType_Open:
+            str = "MsgType_Open";
+            break;
+        case MsgType_ProcessCreated:
+            str = "MsgType_ProcessCreated";
+            break;
+        case MsgType_ProcessDeath:
+            str = "MsgType_ProcessDeath";
+            break;
+        case MsgType_ReintegrationError:
+            str = "MsgType_ReintegrationError";
+            break;
+        case MsgType_Service:
+            str = "MsgType_Service";
+            break;
+        case MsgType_Shutdown:
+            str = "MsgType_Shutdown";
+            break;
+        case MsgType_SpareUp:
+            str = "MsgType_SpareUp";
+            break;
+        case MsgType_TmRestarted:
+            str = "MsgType_TmRestarted";
+            break;
+        case MsgType_TmSyncAbort:
+            str = "MsgType_TmSyncAbort";
+            break;
+        case MsgType_TmSyncCommit:
+            str = "MsgType_TmSyncCommit";
+            break;
+        case MsgType_UnsolicitedMessage:
+            str = "MsgType_UnsolicitedMessage";
+            break;
+        default:
+            str = "MsgType - Undefined";
+            break;
+    }
+    return( str );
+}
+
+const char *ProcessTypeString( PROCESSTYPE type )
+{
+    const char *str;
+
+    switch( type )
+    {
+        case ProcessType_TSE:
+            str = "TSE";
+            break;
+        case ProcessType_DTM:
+            str = "DTM";
+            break;
+        case ProcessType_ASE:
+            str = "ASE";
+            break;
+        case ProcessType_Generic:
+            str = "Generic";
+            break;
+        case ProcessType_Watchdog:
+            str = "Watchdog";
+            break;
+        case ProcessType_AMP:
+            str = "AMP";
+            break;
+        case ProcessType_Backout:
+            str = "Backout";
+            break;
+        case ProcessType_VolumeRecovery:
+            str = "VolumeRecovery";
+            break;
+        case ProcessType_MXOSRVR:
+            str = "MXOSRVR";
+            break;
+        case ProcessType_SPX:
+            str = "SPX";
+            break;
+        case ProcessType_SSMP:
+            str = "SSMP";
+            break;
+        case ProcessType_PSD:
+            str = "PSD";
+            break;
+        case ProcessType_SMS:
+            str = "SMS";
+            break;
+        case ProcessType_TMID:
+            str = "TMID";
+            break;
+        case ProcessType_PERSIST:
+            str = "PERSIST";
+            break;
+        default:
+            str = "Undefined";
+            break;
+    }
+
+    return( str );
+}
+
 void InitLocalIO( void )
 {
     gp_local_mon_io = new Local_IO_To_Monitor( -1 );
@@ -67,8 +205,15 @@ void localIONoticeCallback(struct message_def *recv_msg, int )
     const char method_name[] = "localIONoticeCallback";
     char buf[MON_STRING_BUF_SIZE];
 
-    //    CAutoLock autoLock(Watchdog->getLocker());
+    CAutoLock autoLock(pStartD->getLocker());
 
+    if ( tracing )
+    {
+        trace_printf( "%s@%d Received notice: %s\n",
+                      method_name, __LINE__,
+                      MessageTypeString( recv_msg->type ) );
+    }
+    
     switch ( recv_msg->type )
     {
     case MsgType_NodeDown:
@@ -146,9 +291,13 @@ void localIOEventCallback(struct message_def *recv_msg, int )
         [recv_msg->u.request.u.event_notice.length] = '\0';
     if ( tracing )
     {
-        trace_printf( "%s@%d CB Event: Type=%d, id=%d, data length=%d, data=%s\n",
+        trace_printf( "%s@%d CB Event: Type=%d, id=%d(%s), data length=%d, data=%s\n",
                       method_name,  __LINE__, recv_msg->type,
                       recv_msg->u.request.u.event_notice.event_id,
+                      recv_msg->u.request.u.event_notice.event_id
+                        == PStartD_StartPersist 
+                        ? "PStartD_StartPersist"
+                        : "PStartD_StartPersistDTM",
                       recv_msg->u.request.u.event_notice.length,
                       recv_msg->u.request.u.event_notice.data);
     }
@@ -167,6 +316,7 @@ void localIOEventCallback(struct message_def *recv_msg, int )
         return;
     }
 
+    CAutoLock autoLock(pStartD->getLocker());
     CNodeUpReq * req = NULL;
 
     if ( eventId == PStartD_StartPersist )
@@ -435,7 +585,7 @@ bool CMonUtil::requestNewProcess (int nid, PROCESSTYPE type,
     msg->u.request.u.new_process.debug = 0;
     msg->u.request.u.new_process.priority = 0;
     msg->u.request.u.new_process.backup = 0;
-    msg->u.request.u.new_process.unhooked = false;
+    msg->u.request.u.new_process.unhooked = true; // keep child alive if this process aborts
     msg->u.request.u.new_process.nowait = false;
     msg->u.request.u.new_process.tag = 0;
     strcpy (msg->u.request.u.new_process.process_name, processName);
@@ -809,14 +959,19 @@ CPStartD::~CPStartD()
 
 CRequest * CPStartD::getReq ( )
 {
-    CAutoLock autoLock(getLocker());
-
     CRequest *req;
+    CAutoLock autoLock(getLocker());
 
     req = workQ_.front();
     workQ_.pop_front();
 
     return req;
+}
+
+int CPStartD::getReqCount( )
+{
+    CAutoLock autoLock(getLocker());
+    return(workQ_.size());
 }
 
 void CPStartD::enqueueReq(CRequest * req)
@@ -825,18 +980,20 @@ void CPStartD::enqueueReq(CRequest * req)
     workQ_.push_back ( req );
 }
 
-void CPStartD::WaitForEvent( void )
+void CPStartD::waitForEvent( void )
 {
     CAutoLock autoLock(getLocker());
     wait();
 }
 
 
-void CPStartD::startProcess(const char * pName, string prefix, map<string,string> * persistMap)
+void CPStartD::startProcess( const char * pName
+                           , string prefix
+                           , map<string,string> * persistMap)
 {
     const char method_name[] = "CPStartD::startProcess";
 
-    int progType = -1;
+    PROCESSTYPE progType = ProcessType_Undefined;
     int progArgC = 0;
     string progArgs;
     string progStdout;
@@ -857,12 +1014,22 @@ void CPStartD::startProcess(const char * pName, string prefix, map<string,string
         okMask |= 0x1;
         if (value.compare("DTM") == 0)
             progType = ProcessType_DTM;
-        else if (value.compare("SSMP") == 0)
-            progType = ProcessType_SSMP;
-        else if (value.compare("TMID") == 0)
-            progType = ProcessType_TMID;
         else if (value.compare("GENERIC") == 0)
             progType = ProcessType_Generic;
+        else if (value.compare("PERSIST") == 0)
+            progType = ProcessType_PERSIST;
+        else if (value.compare("PSD") == 0)
+            progType = ProcessType_PSD;
+        else if (value.compare("SPX") == 0)
+            progType = ProcessType_SPX;
+        else if (value.compare("SSMP") == 0)
+            progType = ProcessType_SSMP;
+        else if (value.compare("SMS") == 0)
+            progType = ProcessType_SMS;
+        else if (value.compare("TMID") == 0)
+            progType = ProcessType_TMID;
+        else if (value.compare("WDG") == 0)
+            progType = ProcessType_Watchdog;
     }
     fIt = persistMap->find(prefix + "_STDOUT");
     if (fIt != persistMap->end()) 
@@ -881,10 +1048,10 @@ void CPStartD::startProcess(const char * pName, string prefix, map<string,string
     {
         if ( tracing )
         {
-            trace_printf("%s@%d Will start process: nid=%d, type=%d, name=%s, "
+            trace_printf("%s@%d Will start process: nid=%d, type=%s, name=%s, "
                          "prog=%s, stdout=%s, argc=%d, args=%s\n",
                          method_name, __LINE__, progNid,
-                         progType, pName, progProgram.c_str(),
+                         ProcessTypeString(progType), pName, progProgram.c_str(),
                          progStdout.c_str(), progArgC, progArgs.c_str());
         }
 
@@ -894,7 +1061,7 @@ void CPStartD::startProcess(const char * pName, string prefix, map<string,string
         monproc_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
 
         result = monUtil.requestNewProcess(progNid,
-                                           (PROCESSTYPE) progType, pName,
+                                           progType, pName,
                                            progProgram.c_str(), "",
                                            progStdout.c_str(),
                                            progArgC, progArgs.c_str(),
@@ -1029,6 +1196,7 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
     for (keyIt = keys.begin(); keyIt != keys.end(); ++keyIt)
     {
         string procName = "";
+        string procType = "";
         string requiresDtm = "";
         string zones = "";
         string prefix = (*keyIt);
@@ -1045,15 +1213,81 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
         if (fIt != persistDataMap.end()) 
         {
             requiresDtm = fIt->second;
-            if (requiresDtm.compare("Y"))
+            if ( tracing )
             {
-                if (!requiresDTM)
-                    zones = "";
+                trace_printf("%s@%d %s = %s, requiresDTM = %d\n",
+                             method_name, __LINE__,
+                             keyRequiresDtm.c_str(),
+                             requiresDtm.c_str(),
+                             requiresDTM);
             }
-            else if (requiresDtm.compare("N"))
+            if ((requiresDtm.compare("Y") == 0) && !requiresDTM)
             {
-                if (requiresDTM)
-                    zones = "";
+                if ( tracing )
+                {
+                    trace_printf("%s@%d Persist type %s NOT targeted for restart DTM not ready\n",
+                                 method_name, __LINE__, prefix.c_str());
+                }
+                continue;
+            }
+            else if ((requiresDtm.compare("N") == 0) && requiresDTM)
+            {
+                if ( tracing )
+                {
+                    trace_printf("%s@%d Persist type %s NOT targeted for restart DTM ready\n",
+                                 method_name, __LINE__, prefix.c_str());
+                }
+                continue;
+            }
+        }
+
+        string keyProcessType = prefix + "_PROCESS_TYPE";
+        fIt = persistDataMap.find(keyProcessType);
+        if (fIt != persistDataMap.end()) 
+        {
+            string procType = fIt->second;
+            if ( tracing )
+            {
+                trace_printf("%s@%d %s = %s\n",
+                             method_name, __LINE__,
+                             keyProcessType.c_str(), procType.c_str());
+            }
+            if (procType.compare("PERSIST") == 0)
+            {
+                if ( tracing )
+                {
+                    trace_printf("%s@%d Persist %s process type %s targeted for restart\n",
+                                 method_name, __LINE__,
+                                 prefix.c_str(), procType.c_str());
+                }
+            }
+            else if (procType.compare("SSMP") == 0)
+            {
+                if ( tracing )
+                {
+                    trace_printf("%s@%d Persist %s process type %s targeted for restart\n",
+                                 method_name, __LINE__,
+                                 prefix.c_str(), procType.c_str());
+                }
+            }
+            else if (procType.compare("TMID") == 0)
+            {
+                if ( tracing )
+                {
+                    trace_printf("%s@%d Persist %s process type %s targeted for restart\n",
+                                 method_name, __LINE__,
+                                 prefix.c_str(), procType.c_str());
+                }
+            }
+            else
+            {
+                if ( tracing )
+                {
+                    trace_printf("%s@%d Persist %s process type %s NOT targeted for restart\n",
+                                 method_name, __LINE__,
+                                 prefix.c_str(), procType.c_str());
+                }
+                continue;
             }
         }
 
@@ -1102,28 +1336,12 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
         const char * procName = (*it).first.c_str();
         const char * prefix = (*it).second.c_str();
 
-        if ( strncmp(procName, "$XDN", 4) == 0 && seapilotDisabled())
+        if ( tracing )
         {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "Not starting process %s "
-                      "because SeaPilot is disabled.\n",
-                      procName);
-            monproc_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
-
-            if ( tracing )
-            {
-                trace_printf("%s@%d %s", method_name, __LINE__, buf);
-            }
+            trace_printf("%s@%d Will start process %s for zone %d\n",
+                         method_name, __LINE__, procName, nid);
         }
-        else
-        {
-            if ( tracing )
-            {
-                trace_printf("%s@%d Will start process %s for zone %d\n",
-                             method_name, __LINE__, procName, nid);
-            }
-            startProcess( procName, prefix, &persistDataMap );
-        }
+        startProcess( procName, prefix, &persistDataMap );
     }
     procsToStart.clear();
 }
@@ -1272,9 +1490,17 @@ int main (int argc, char *argv[])
     const char method_name[] = "main";
 
     bool done = false;
+    unsigned int initSleepTime = 1; // 1 second
 
     CALL_COMP_DOVERS(pstartd, argc, argv);
     CALL_COMP_PRINTVERS(pstartd)
+
+    // Setup HP_MPI software license
+    int key = 413675219; //413675218 to display banner
+    MPI_Initialized(&key);
+
+    // Initialize MPI environment
+    MPI_Init (&argc, &argv);
 
     TraceInit ( argc, argv );
 
@@ -1312,6 +1538,14 @@ int main (int argc, char *argv[])
 
     monUtil.requestStartup ();
 
+    // Debugging aid, set # seconds in mon.env
+    char *env = getenv("PSD_INIT_SLEEP"); 
+    if ( env && isdigit(*env) )
+    {
+        initSleepTime = atoi(env);
+    }
+    sleep( initSleepTime );
+
     CRequest *req;
 
     do
@@ -1321,17 +1555,25 @@ int main (int argc, char *argv[])
             trace_printf("%s@%d waiting for event\n", method_name, __LINE__);
         }
 
-        pStartD->WaitForEvent();
-        req = pStartD->getReq();
-        if ( tracing )
+        pStartD->waitForEvent();
+        do
         {
-            trace_printf("%s@%d Got event\n",  method_name, __LINE__);
+            if ( tracing )
+            {
+                trace_printf("%s@%d Got event\n",  method_name, __LINE__);
+            }
+            req = pStartD->getReq();
+            if (req)
+            {
+                req->performRequest();
+                delete req;
+            }
         }
-
-        req->performRequest();
-        delete req;
+        while( pStartD->getReqCount() );
     }
     while ( !done && !shuttingDown );
+
+    trace_printf("%s@%d Exiting!\n",  method_name, __LINE__);
 
     monUtil.requestExit ();
 }

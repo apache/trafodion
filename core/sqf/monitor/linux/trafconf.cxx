@@ -91,6 +91,8 @@ long trace_settings = 0;
 const char *FormatNidString( FormatNid_t type );
 const char *FormatZidString( FormatZid_t type );
 
+extern const char *PersistProcessTypeString( PROCESSTYPE type );
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Function/Method: mon_log_write()
@@ -138,54 +140,6 @@ void DisplayUsage( void )
 "          -node        Displays node configuration (bracketed with begin/end).\n"
 "          -persist     Displays persist configuration (bracketed with begin/end).\n\n"
            );
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// Function/Method: PersistProcessTypeString()
-//
-///////////////////////////////////////////////////////////////////////////////
-const char *PersistProcessTypeString( PROCESSTYPE type )
-{
-    const char *str;
-
-    switch( type )
-    {
-        case ProcessType_Undefined:
-            str = "Undefined";
-            break;
-        case ProcessType_DTM:
-            str = "DTM";
-            break;
-        case ProcessType_Generic:
-            str = "GENERIC";
-            break;
-        case ProcessType_PSD:
-            str = "PSD";
-            break;
-        case ProcessType_SPX:
-            str = "SPX";
-            break;
-        case ProcessType_PERSIST:
-            str = "PERSIST";
-            break;
-        case ProcessType_SSMP:
-            str = "SSMP";
-            break;
-        case ProcessType_SMS:
-            str = "SMS";
-            break;
-        case ProcessType_TMID:
-            str = "TMID";
-            break;
-        case ProcessType_Watchdog:
-            str = "WDG";
-            break;
-        default:
-            str = "Invalid";
-    }
-
-    return( str );
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -158,6 +158,7 @@ CProcess::CProcess (CProcess * parent, int nid, int pid, PROCESSTYPE type,
     , program_()
     , pathStrId_(pathStrId)
     , ldpathStrId_(ldpathStrId)
+    , firstInstance_(true)
     , cmpOrEsp_(false)
     , sqRoot_()
     , fd_stdin_(-1)
@@ -2707,6 +2708,7 @@ void CProcess::Exit( CProcess *parent )
             case ProcessType_VolumeRecovery:
             case ProcessType_SPX:
             case ProcessType_PSD:
+            case ProcessType_PERSIST:
                 // No special handling needed on exit
                 break;
             default:
@@ -5421,7 +5423,9 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
 
     assert(clusterConfig != NULL);
 
-    persistConfig = clusterConfig->GetPersistConfig( process->GetType() );
+    persistConfig = clusterConfig->GetPersistConfig( process->GetType()
+                                                   , process->GetName()
+                                                   , process->GetNid() );
     if (persistConfig)
     {
         max_retries = persistConfig->GetPersistRetries();
@@ -5433,10 +5437,9 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
         snprintf( buf, sizeof(buf)
                 , "[%s], Persistent process %s not "
                   "restarted because the persist configuration is "
-                  "missing for key %s.\n"
+                  "missing.\n"
                 , method_name
-                , process->GetName()
-                , persistConfig->GetPersistPrefix() );
+                , process->GetName() );
         mon_log_write(MON_PROCESS_PERSIST_2, SQ_LOG_ERR, buf);
         return false;
     }
@@ -5444,6 +5447,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
     // if 1st time retrying to restart process
     if (process->GetPersistentCreateTime() == 0)
     {
+        process->SetFirstInstance(false);
         process->SetPersistentCreateTime ( time(NULL) );
     }
 

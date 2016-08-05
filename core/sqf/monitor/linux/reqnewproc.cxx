@@ -37,61 +37,7 @@ extern CNodeContainer *Nodes;
 extern CReplicate Replicator;
 extern CDeviceContainer *Devices;
 
-const char *ProcessTypeString( PROCESSTYPE type )
-{
-    const char *str;
-    
-    switch( type )
-    {
-        case ProcessType_TSE:
-            str = "TSE";
-            break;
-        case ProcessType_DTM:
-            str = "DTM";
-            break;
-        case ProcessType_ASE:
-            str = "ASE";
-            break;
-        case ProcessType_Generic:
-            str = "Generic";
-            break;
-        case ProcessType_Watchdog:
-            str = "Watchdog";
-            break;
-        case ProcessType_AMP:
-            str = "AMP";
-            break;
-        case ProcessType_Backout:
-            str = "Backout";
-            break;
-        case ProcessType_VolumeRecovery:
-            str = "VolumeRecovery";
-            break;
-        case ProcessType_MXOSRVR:
-            str = "MXOSRVR";
-            break;
-        case ProcessType_SPX:
-            str = "SPX";
-            break;
-        case ProcessType_SSMP:
-            str = "SSMP";
-            break;
-        case ProcessType_PSD:
-            str = "PSD";
-            break;
-        case ProcessType_SMS:
-            str = "SMS";
-            break;
-        case ProcessType_TMID:
-            str = "TMID";
-            break;
-        default:
-            str = "Undefined";
-            break;
-    }
-
-    return( str );
-}
+extern const char *ProcessTypeString( PROCESSTYPE type );
 
 CExtNewProcReq::CExtNewProcReq (reqQueueMsg_t msgType, int pid,
                                 struct message_def *msg )

@@ -130,6 +130,9 @@ struct message_def *msg;
 
 static const char EnvNotStarted[] = "[%s] Environment has not been started!\n";
 
+extern const char *ProcessTypeString( PROCESSTYPE type );
+extern const char *PersistProcessTypeString( PROCESSTYPE type );
+
 // forwards
 
 char *cd_cmd (char *cmd_tail, char *wdir);
@@ -249,107 +252,6 @@ MonCwd::~MonCwd()
 }
 
 // functions
-
-const char *PersistProcessTypeString( PROCESSTYPE type )
-{
-    const char *str;
-
-    switch( type )
-    {
-        case ProcessType_Undefined:
-            str = "Undefined";
-            break;
-        case ProcessType_DTM:
-            str = "DTM";
-            break;
-        case ProcessType_Generic:
-            str = "GENERIC";
-            break;
-        case ProcessType_PSD:
-            str = "PSD";
-            break;
-        case ProcessType_SPX:
-            str = "SPX";
-            break;
-        case ProcessType_PERSIST:
-            str = "PERSIST";
-            break;
-        case ProcessType_SSMP:
-            str = "SSMP";
-            break;
-        case ProcessType_SMS:
-            str = "SMS";
-            break;
-        case ProcessType_TMID:
-            str = "TMID";
-            break;
-        case ProcessType_Watchdog:
-            str = "WDG";
-            break;
-        default:
-            str = "Invalid";
-    }
-
-    return( str );
-}
-
-const char *ProcessTypeString( PROCESSTYPE type )
-{
-    const char *str;
-
-    switch( type )
-    {
-        case ProcessType_Undefined:
-            str = "ProcessType_Undefined";
-            break;
-        case ProcessType_TSE:
-            str = "ProcessType_TSE";
-            break;
-        case ProcessType_DTM:
-            str = "ProcessType_DTM";
-            break;
-        case ProcessType_ASE:
-            str = "ProcessType_ASE";
-            break;
-        case ProcessType_Generic:
-            str = "ProcessType_Generic";
-            break;
-        case ProcessType_Watchdog:
-            str = "ProcessType_Watchdog";
-            break;
-        case ProcessType_AMP:
-            str = "ProcessType_AMP";
-            break;
-        case ProcessType_Backout:
-            str = "ProcessType_Backout";
-            break;
-        case ProcessType_VolumeRecovery:
-            str = "ProcessType_VolumeRecovery";
-            break;
-        case ProcessType_MXOSRVR:
-            str = "ProcessType_MXOSRVR";
-            break;
-        case ProcessType_SPX:
-            str = "ProcessType_SPX";
-            break;
-        case ProcessType_SSMP:
-            str = "ProcessType_SSMP";
-            break;
-        case ProcessType_PSD:
-            str = "ProcessType_PSD";
-            break;
-        case ProcessType_SMS:
-            str = "ProcessType_SMS";
-            break;
-        case ProcessType_TMID:
-            str = "ProcessType_TMID";
-            break;
-        default:
-            str = "ProcessType_Invalid";
-    }
-
-    return( str );
-}
 
 const char *RoleTypeString( ZoneType type )
 {
@@ -2640,6 +2542,28 @@ int get_lnodes_count( int nid )
     return( -1 );
 }
 
+int get_first_nid( char *node_name )
+{
+    CLNodeConfig   *lnodeConfig;
+    CPNodeConfig   *pnodeConfig;
+
+    pnodeConfig = ClusterConfig.GetFirstPNodeConfig();
+    for ( ; pnodeConfig; pnodeConfig = pnodeConfig->GetNext() )
+    {
+        if ( strcmp( node_name, pnodeConfig->GetName() ) == 0 )
+        {
+            lnodeConfig = pnodeConfig->GetFirstLNodeConfig();
+            if ( lnodeConfig )
+            {
+                return( lnodeConfig->GetNid() );
+            }
+            break;
+        }
+    }
+
+    return( -1 );
+}
+
 int get_node_name( char *node_name )
 {
     CPNodeConfig   *pnodeConfig;
@@ -4158,6 +4082,7 @@ void persist_info( char *prefix )
                             , persistConfig->GetProcessNamePrefix()
                             );
                 }
+                //printf ("[%s] Persist process info for: %s\n", MyName, prefix);
                 get_proc_info( -1
                              , -1
                              , process_name_str
@@ -6022,7 +5947,7 @@ void help_cmd (void)
     if ( Debug && (trace_settings & TRACE_SHELL_CMD) )
         trace_printf ("%s@%d [%s] -- debug\n", method_name, __LINE__, MyName);
     printf ("[%s] -- delay <seconds>\n", MyName);
-    printf ("[%s] -- down <nid> [, <reason-string>]\n", MyName);
+    printf ("[%s] -- down <nid>|<node-name> [, <reason-string>]\n", MyName);
     printf ("[%s] -- dump [{path <pathname>}] <process name> | <nid,pid>\n", MyName);
     printf ("[%s] -- echo [<string>]\n", MyName);
     printf ("[%s] -- event [{DTM|CS}] <event_id> [<nid,pid> [ event-data] ]\n", MyName);
@@ -6042,7 +5967,7 @@ void help_cmd (void)
     printf ("[%s] --          roles {connection|aggregation|storage}\n", MyName);
     printf ("[%s] -- node config [<nid>|<node-name>]\n", MyName);
     printf ("[%s] -- node delete <node-name>\n", MyName);
-    printf ("[%s] -- node down <nid> [, <reason-string>]\n", MyName);
+    printf ("[%s] -- node down <nid>|<node-name> [, <reason-string>]\n", MyName);
     printf ("[%s] -- node info [<nid>]\n", MyName);
     printf ("[%s] -- node name <old-node-name> <new-node-name>\n", MyName);
     printf ("[%s] -- node up <name>\n", MyName);
@@ -6701,13 +6626,14 @@ void node_down_cmd( char *cmd )
     char *cmd_tail = cmd;
     char delim;
     char msgString[MAX_BUFFER] = { 0 };
+    char node_name[MAX_TOKEN] = { 0 };
     char token[MAX_TOKEN] = { 0 };
 
     if ( trace_settings & TRACE_SHELL_CMD )
         trace_printf ("%s@%d [%s] processing node down command.\n",
                       method_name, __LINE__, MyName);
     
-    // <nid> [, <reason-string>]
+    // <node-name> | <nid> [, <reason-string>]
     cmd_tail = get_token( cmd_tail, token, &delim );
     if ( isNumeric( token ) )
     {
@@ -6724,6 +6650,7 @@ void node_down_cmd( char *cmd )
                     , MyName, token );
         }
         write_startup_log( msgString );
+        printf ("%s\n", msgString);
         nid = atoi (token);
         if (nid < 0 || nid > LNodesConfigMax - 1)
         {
@@ -6735,8 +6662,30 @@ void node_down_cmd( char *cmd )
     }
     else
     {
-        printf ("[%s] Invalid node id!\n", MyName);
-        return;
+        if ( get_node_name( token ) != 0 ) 
+        {
+            sprintf( msgString, "[%s] Node %s is not configured!"
+                   , MyName, token);
+            write_startup_log( msgString );
+            printf ("%s\n", msgString);
+            return;
+        }
+        STRCPY(node_name, token);
+        nid = get_first_nid( node_name );
+        if (cmd_tail[0] != 0)
+        {
+            snprintf( msgString, sizeof(msgString)
+                    , "[%s] Executing node down. (node_name=%s) \"%s\""
+                    , MyName, node_name, cmd_tail );
+        }
+        else
+        {
+            snprintf( msgString, sizeof(msgString)
+                    , "[%s] Executing node down. (node_name=%s)"
+                    , MyName, node_name );
+        }
+        write_startup_log( msgString );
+        printf ("%s\n", msgString);
     }
 
     numLNodes = get_lnodes_count( nid );
@@ -6747,7 +6696,6 @@ void node_down_cmd( char *cmd )
 
     int pnid;
     int zid = -1;
-    char node_name[MAX_PROCESS_PATH];
     STATE state;
 
     if ( !get_zone_state( nid, zid, node_name, pnid, state ) )

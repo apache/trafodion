@@ -257,6 +257,8 @@ class CProcess
     inline bool IsOpened ( ) { return (OpenedCount > 0); }
     inline void SetStartupCompleted ( bool completed ) 
                           { StartupCompleted = completed; }
+    inline bool IsFirstInstance ( ) { return firstInstance_; }
+    inline void SetFirstInstance ( bool firstInstance ) { firstInstance_ = firstInstance; }
     inline bool IsPersistent ( ) { return Persistent; }
     inline void SetPersistent ( bool isPersistent ) { Persistent = isPersistent; }
     inline bool IsPaired ( ) { return Paired; }
@@ -458,6 +460,7 @@ private:
     string       program_;   // object file name
     strId_t      pathStrId_;
     strId_t      ldpathStrId_;
+    bool         firstInstance_; // reset on persistent process re-creation
     bool         cmpOrEsp_;
     string       sqRoot_;     // MY_SQROOT passed to object file
 

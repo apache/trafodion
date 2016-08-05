@@ -55,6 +55,9 @@ char Node_name[MPI_MAX_PROCESSOR_NAME];
 int MyPNID = -1;
 long trace_settings = 0;
 
+extern const char *PersistProcessTypeString( PROCESSTYPE type );
+extern const char *ProcessTypeString( PROCESSTYPE type );
+
 const char *FormatNidString( FormatNid_t type );
 const char *FormatZidString( FormatZid_t type );
 
@@ -127,68 +130,6 @@ void SpareListString( char *str, int sparePNids[], int spareCount )
     {
         len = sprintf(str, "%d ", sparePNids[i] );
     }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// Function/Method: ProcessTypeString()
-//
-// Usage:           Invoked by TestClusterConfig()
-//
-///////////////////////////////////////////////////////////////////////////////
-const char *ProcessTypeString( PROCESSTYPE type )
-{
-    const char *str;
-    
-    switch( type )
-    {
-        case ProcessType_Undefined:
-            str = "ProcessType_Undefined";
-            break;
-        case ProcessType_TSE:
-            str = "ProcessType_TSE";
-            break;
-        case ProcessType_DTM:
-            str = "ProcessType_DTM";
-            break;
-        case ProcessType_ASE:
-            str = "ProcessType_ASE";
-            break;
-        case ProcessType_Generic:
-            str = "ProcessType_Generic";
-            break;
-        case ProcessType_Watchdog:
-            str = "ProcessType_Watchdog";
-            break;
-        case ProcessType_AMP:
-            str = "ProcessType_AMP";
-            break;
-        case ProcessType_Backout:
-            str = "ProcessType_Backout";
-            break;
-        case ProcessType_VolumeRecovery:
-            str = "ProcessType_VolumeRecovery";
-            break;
-        case ProcessType_MXOSRVR:
-            str = "ProcessType_MXOSRVR";
-            break;
-        case ProcessType_SPX:
-            str = "ProcessType_SPX";
-            break;
-        case ProcessType_SSMP:
-            str = "ProcessType_SSMP";
-            break;
-        case ProcessType_PSD:
-            str = "ProcessType_PSD";
-            break;
-        case ProcessType_SMS:
-            str = "ProcessType_SMS";
-            break;
-        default:
-            str = "ProcessType_Invalid";
-    }
-
-    return( str );
 }
 
 ///////////////////////////////////////////////////////////////////////////////

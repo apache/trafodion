@@ -73,7 +73,9 @@ public:
     void          DeletePersistConfig( CPersistConfig *persistConfig );
     inline CPersistConfig *GetFirstPersistConfig( void ) { return ( head_ ); }
     CPersistConfig *GetPersistConfig( const char *persistPrefix );
-    CPersistConfig *GetPersistConfig( PROCESSTYPE processType );
+    CPersistConfig *GetPersistConfig( PROCESSTYPE processType
+                                    , const char *processName
+                                    , int         nid );
     inline int    GetPersistConfigCount( void ) { return ( persistsCount_ ); }
 
 protected:
@@ -121,6 +123,7 @@ public:
     inline CPersistConfig *GetNext( void ){ return( next_); }
 
     inline const char   *GetPersistPrefix( void ) { return( persistPrefix_.c_str() ); }
+    const char          *GetProcessName( int nid );
     inline const char   *GetProcessNamePrefix( void ) { return( processNamePrefix_.c_str() ); }
     inline const char   *GetProcessNameFormat( void ) { return( processNameFormat_.c_str() ); }
     inline FormatNid_t   GetProcessNameNidFormat( void ) { return( processNameNidFormat_ ); }
@@ -134,10 +137,12 @@ public:
     inline bool          GetRequiresDTM( void ) { return ( requiresDTM_ ); }
     inline int           GetPersistRetries( void ) { return ( persistRetries_ ); }
     inline int           GetPersistWindow( void ) { return ( persistWindow_ ); }
+    inline bool          IsPersistConfig( const char *processName, int nid );
 
 protected:
 private:
     string          persistPrefix_;
+    string          processName_;
     string          processNamePrefix_;
     string          processNameFormat_;
     string          stdoutPrefix_;

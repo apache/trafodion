@@ -1270,7 +1270,7 @@ void CNode::StartPStartDPersistent( void )
                 // Send local PSD process event to start persistent processes 
                 // that don't require transactions
                 process = lnode->GetProcessLByType( ProcessType_PSD );
-                if ( process )
+                if ( process && process->IsFirstInstance() )
                 {
                     char nidString[6];
                     sprintf(nidString,"%d",lnode->GetNid());

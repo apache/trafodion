@@ -51,6 +51,10 @@ export MY_SQROOT=$SQ_HOME
 # other env vars needed by Trafodion
 #-------------------------------------------
 
+# These env vars define all nodes in the cluster
+export NODE_LIST=XXXXX
+export MY_NODES=XXXXX
+
 # directory where needed libraries can be found
 export TOOLSDIR=XXXXX
 

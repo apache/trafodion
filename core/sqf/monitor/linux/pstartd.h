@@ -136,9 +136,13 @@ class CPStartD : public CLock
 
     CRequest * getReq( void );
 
-    void WaitForEvent( void ) ;
+    int getReqCount( void );
 
-    void startProcess ( const char * pName, string prefix, map<string, string> *persistMap );
+    void waitForEvent( void ) ;
+
+    void startProcess( const char *pName
+                     , string prefix
+                     , map<string, string> *persistMap );
 
     void startProcs ( int nid, bool requiresDTM );
 

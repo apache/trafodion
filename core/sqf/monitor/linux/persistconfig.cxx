@@ -27,6 +27,126 @@ using namespace std;
 #include "monlogging.h"
 #include "persistconfig.h"
 
+const char *PersistProcessTypeString( PROCESSTYPE type )
+{
+    const char *str;
+
+    switch( type )
+    {
+        case ProcessType_TSE:
+            str = "TSE";
+            break;
+        case ProcessType_DTM:
+            str = "DTM";
+            break;
+        case ProcessType_ASE:
+            str = "ASE";
+            break;
+        case ProcessType_Generic:
+            str = "GENERIC";
+            break;
+        case ProcessType_Watchdog:
+            str = "WDG";
+            break;
+        case ProcessType_AMP:
+            str = "AMP";
+            break;
+        case ProcessType_Backout:
+            str = "BO";
+            break;
+        case ProcessType_VolumeRecovery:
+            str = "VR";
+            break;
+        case ProcessType_MXOSRVR:
+            str = "MXOSRVR";
+            break;
+        case ProcessType_SPX:
+            str = "SPX";
+            break;
+        case ProcessType_SSMP:
+            str = "SSMP";
+            break;
+        case ProcessType_PSD:
+            str = "PSD";
+            break;
+        case ProcessType_SMS:
+            str = "SMS";
+            break;
+        case ProcessType_TMID:
+            str = "TMID";
+            break;
+        case ProcessType_PERSIST:
+            str = "PERSIST";
+            break;
+        default:
+            str = "Undefined";
+            break;
+    }
+
+    return( str );
+}
+
+const char *ProcessTypeString( PROCESSTYPE type )
+{
+    const char *str;
+    
+    switch( type )
+    {
+        case ProcessType_Undefined:
+            str = "ProcessType_Undefined";
+            break;
+        case ProcessType_TSE:
+            str = "ProcessType_TSE";
+            break;
+        case ProcessType_DTM:
+            str = "ProcessType_DTM";
+            break;
+        case ProcessType_ASE:
+            str = "ProcessType_ASE";
+            break;
+        case ProcessType_Generic:
+            str = "ProcessType_Generic";
+            break;
+        case ProcessType_Watchdog:
+            str = "ProcessType_Watchdog";
+            break;
+        case ProcessType_AMP:
+            str = "ProcessType_AMP";
+            break;
+        case ProcessType_Backout:
+            str = "ProcessType_Backout";
+            break;
+        case ProcessType_VolumeRecovery:
+            str = "ProcessType_VolumeRecovery";
+            break;
+        case ProcessType_MXOSRVR:
+            str = "ProcessType_MXOSRVR";
+            break;
+        case ProcessType_SPX:
+            str = "ProcessType_SPX";
+            break;
+        case ProcessType_SSMP:
+            str = "ProcessType_SSMP";
+            break;
+        case ProcessType_PSD:
+            str = "ProcessType_PSD";
+            break;
+        case ProcessType_SMS:
+            str = "ProcessType_SMS";
+            break;
+        case ProcessType_TMID:
+            str = "ProcessType_TMID";
+            break;
+        case ProcessType_PERSIST:
+            str = "ProcessType_PERSIST";
+            break;
+        default:
+            str = "ProcessType_Invalid";
+    }
+
+    return( str );
+}
+
 const char *FormatNidString( FormatNid_t type )
 {
     const char *str;
@@ -144,6 +264,62 @@ CPersistConfig::~CPersistConfig( void )
     TRACE_ENTRY;
 
     TRACE_EXIT;
+}
+
+
+const char *CPersistConfig::GetProcessName( int nid )
+{
+    const char method_name[] = "CPersistConfig::GetProcessName";
+    TRACE_ENTRY;
+
+    char nidStr[MAX_PROCESS_NAME];
+
+    switch (processNameNidFormat_)
+    {
+    case Nid_ALL:
+    case Nid_RELATIVE:
+        if (nid == -1)
+        {
+            processName_ = processNamePrefix_;
+        }
+        else
+        {
+            sprintf( nidStr, "%d", nid );
+            processName_ = processNamePrefix_ + nidStr;
+        }
+        break;
+    case Nid_Undefined:
+        processName_ = processNamePrefix_;
+    }
+
+    if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    {
+        trace_printf( "%s@%d Process prefix=%s, name=%s, format=%s\n"
+                    , method_name, __LINE__
+                    , processNamePrefix_.c_str()
+                    , processName_.c_str()
+                    , FormatNidString(processNameNidFormat_));
+    }
+
+    TRACE_EXIT;
+    return( processName_.c_str() );
+}
+
+bool CPersistConfig::IsPersistConfig( const char *processName, int nid )
+{
+    const char method_name[] = "CPersistConfig:IsPersistConfig";
+    TRACE_ENTRY;
+    
+    bool match = false;
+
+    string name = GetProcessName( nid );
+    if ( name.compare( processName ) == 0 )
+    {
+        match = true;
+    }
+
+    TRACE_EXIT;
+    return( match );
 }
 
 CPersistConfigContainer::CPersistConfigContainer( void )
@@ -288,7 +464,9 @@ CPersistConfig *CPersistConfigContainer::GetPersistConfig( const char *persistPr
     return config;
 }
 
-CPersistConfig *CPersistConfigContainer::GetPersistConfig( PROCESSTYPE processType )
+CPersistConfig *CPersistConfigContainer::GetPersistConfig( PROCESSTYPE processType
+                                                         , const char *processName
+                                                         , int         nid )
 {
     CPersistConfig *config = head_;
 
@@ -299,7 +477,17 @@ CPersistConfig *CPersistConfigContainer::GetPersistConfig( PROCESSTYPE processTy
     {
         if (config->GetProcessType() == processType)
         {
-            break;
+            if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            {
+                trace_printf( "%s@%d Process type=%s, name=%s\n"
+                            , method_name, __LINE__
+                            , PersistProcessTypeString(processType)
+                            , processName);
+            }
+            if (config->IsPersistConfig( processName, nid ))
+            {
+                break;
+            }
         }
         config = config->GetNext();
     }
