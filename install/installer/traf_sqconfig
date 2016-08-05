@@ -25,7 +25,8 @@
 
 #=================================================
 
-source /etc/trafodion/trafodion_config
+TRAF_CONFIG="/etc/trafodion/trafodion_config"
+source $TRAF_CONFIG
 
 typeset TRAF_USER_DIR="$HOME_DIR/$TRAF_USER"
 typeset TRAF_GROUP="trafodion"
@@ -58,10 +59,15 @@ if [ "$processors" == "" ]; then
       processors="1"
    fi
 fi
-echo "# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P." > $sqconfig
-echo "#" >> $sqconfig
-echo "# This sqconfig file is for the Trafodion open source version" >> $sqconfig
-echo "#" >> $sqconfig
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/CORES\=/d' $TRAF_CONFIG
+echo "export CORES=\"$cores\"" >> $TRAF_CONFIG
+sed -i '/PROCESSORS\=/d' $TRAF_CONFIG
+echo "export PROCESSORS=\"$processors\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+
+
+echo "#" > $sqconfig
 echo "begin node" >> $sqconfig
 node_id=0
 for node in $NODE_LIST
