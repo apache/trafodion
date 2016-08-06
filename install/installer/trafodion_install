@@ -509,7 +509,8 @@ source $TRAF_CONFIG
 #Check to make sure HBase Version is the correct version
 
 if [[ $HADOOP_TYPE != "apache" ]]; then
-   checkHBaseVersion
+   echo "Not checking HBase version, yet!"
+   #checkHBaseVersion
 fi
 #==============================================
 # Run trafodion_setup
