@@ -1315,6 +1315,11 @@ TrafDesc *generateSpecialDesc(const CorrName& corrName)
           ExeUtilRegionStats eudss;
           desc = eudss.createVirtualTableDesc();
         }
+      else if (corrName.getQualifiedNameObj().getObjectName() == ExeUtilRegionStats::getVirtualTableClusterViewNameStr())
+        {
+          ExeUtilRegionStats eudss(TRUE);
+          desc = eudss.createVirtualTableDesc();
+        }
     }
 
   return desc;
@@ -1324,22 +1329,6 @@ TrafDesc *generateSpecialDesc(const CorrName& corrName)
 // -----------------------------------------------------------------------
 // member functions for class BindWA
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START - cnu
-/*
-static NABoolean checkForReservedObjectName(QualifiedName &inName)
-{
-  if ((inName.getCatalogName() == "NEO") &&
-      (inName.getSchemaName() == "PUBLIC_ACCESS_SCHEMA") &&
-      (inName.getObjectName() == "_MAINTAIN_CONTROL_INFO_"))
-    {
-      return TRUE;
-    }
-
-  return FALSE;
-}
-*/
-
-// LCOV_EXCL_STOP
 
 NARoutine *BindWA::getNARoutine ( const QualifiedName &name )
 {
