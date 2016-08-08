@@ -147,6 +147,7 @@ select eno, ename, dno from t021
  intersect
 select eno, ename, dno from t022
 ) ;
+select eno, ename, dno from t021 except select * from t022;
 cqd mode_special_4 reset;
 -- groupby can be pushed down
 -- add showshape statement to ensure that the group by is
