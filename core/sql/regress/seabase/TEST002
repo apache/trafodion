@@ -19,13 +19,14 @@
 --
 -- @@@ END COPYRIGHT @@@
 
--- Tests to retrieve region space and access stats
+-- Tests to retrieve region/cluster space and access stats
 
 obey TEST002(clean_up);
 
 log LOG002 clear;
 obey TEST002(setup);
-obey TEST002(dml);
+obey TEST002(region_stats);
+obey TEST002(cluster_stats);
 log;
 exit;
 
@@ -54,7 +55,8 @@ sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T2I1';
 
 select * from t002t2;
 
-?section dml
+
+?section region_stats
 set schema t002sch;
 invoke table(region stats ());
 invoke table(region stats (t002t1));
@@ -136,9 +138,37 @@ get region stats for
   (select * from 
     (get tables in schema t002sch, no header, return full names)x(a)), summary;
 
+-- where preds
+select cast(trim(schema_name) || '.' || trim(object_name) as char(30) character set iso88591),
+ region_num, region_name, num_stores, num_store_files
+ from table(region stats(t002t1))
+ where object_name = 'T002T1';
+
+select  cast(trim(object_name) as char(30) character set iso88591),
+ sum(store_file_size)
+ from table(region statistics (using (select * from (
+   get tables in schema t002sch, no header, return full names) x(a) ))) 
+ where object_name like 'T002T1%'
+ group by 1 order by 2 desc;
+
+?section cluster_stats
+invoke table(cluster stats());
+
+select cast(trim(schema_name) || '.' || trim(object_name) as char(30) character set iso88591),
+ sum(store_file_size)
+ from table(cluster stats())
+ where schema_name = 'T002SCH'
+ group by 1 order by 2 desc;
+
+select cast('RegionName: ' || trim(region_name) as char(30) character set iso88591),
+ sum(store_file_size)
+ from table(cluster stats())
+ where schema_name = 'T002SCH'
+ group by 1 order by 2 desc;
+
 ?section clean_up
 set schema t002sch;
 drop table t002t1 cascade;
 drop table t002t2 cascade;
-drop schema t002sch;
+drop schema t002sch cascade;
 

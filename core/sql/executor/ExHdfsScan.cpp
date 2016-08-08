@@ -563,7 +563,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      }
 	    else
 	      {
-               
+                Int64 rangeTail  = hdfo_->fileIsSplitEnd() ? 
+                  hdfsScanTdb().rangeTailIOSize_ : 0;
                 openType = 2; // must open
                 retcode = ExpLOBInterfaceSelectCursor
                   (lobGlob_,
@@ -573,7 +574,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                    hdfsScanTdb().hostName_,
                    hdfsScanTdb().port_,
                    0, NULL, // handle not valid for non lob access
-                   bytesLeft_, // max bytes
+                   bytesLeft_ + rangeTail, // max bytes
                    cursorId_, 
 		       
                    requestTag_, Lob_Memory,
@@ -608,6 +609,9 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 
                     hdfsFileName_ = hdfo->fileName();
                     sprintf(cursorId, "%d", currRangeNum_ + 1);
+		    rangeTail  = hdfo->fileIsSplitEnd() ? 
+		      hdfsScanTdb().rangeTailIOSize_ : 0;
+
                     openType = 1; // preOpen
                 
                     retcode = ExpLOBInterfaceSelectCursor
@@ -618,7 +622,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                        hdfsScanTdb().hostName_,
                        hdfsScanTdb().port_,
                        0, NULL,//handle not relevant for non lob access
-                       hdfo->getBytesToRead(), // max bytes
+                       hdfo->getBytesToRead() + rangeTail, // max bytes
                        cursorId, 
                            
                        requestTag_, Lob_Memory,
@@ -812,23 +816,39 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      {
 		// Position in the hdfsScanBuffer_ to the
 		// first record delimiter.  
-		hdfsBufNextRow_ = hdfs_strchr(hdfsScanBuffer_,
-                                         hdfsScanTdb().recordDelimiter_, hdfsScanBuffer_+trailingPrevRead_+ bytesRead_, checkRangeDelimiter_, hdfsScanTdb().getHiveScanMode(), &changedLen);
+		hdfsBufNextRow_ = 
+		  hdfs_strchr(hdfsScanBuffer_,
+			      hdfsScanTdb().recordDelimiter_, 
+			      hdfsScanBuffer_+trailingPrevRead_+ 
+			      min(bytesRead_, hdfo_->bytesToRead_), 
+			      checkRangeDelimiter_, 
+			      hdfsScanTdb().getHiveScanMode(), &changedLen);
 		// May be that the record is too long? Or data isn't ascii?
 		// Or delimiter is incorrect.
 		if (! hdfsBufNextRow_)
 		  {
-		    ComDiagsArea *diagsArea = NULL;
-
-		    ExRaiseSqlError(getHeap(), &diagsArea, 
-				    (ExeErrorCode)(8446), NULL, 
-				    NULL, NULL, NULL,
-				    (char*)"No record delimiter found in buffer from hdfsRead.",
-				    NULL);
-		    // no need to log errors in this case (bulk load) since this is a major issue
-		    // and need to be correxted
-		    pentry_down->setDiagsArea(diagsArea);
-		    step_ = HANDLE_ERROR_WITH_CLOSE;
+		    if (hdfo_->bytesToRead_ < hdfsScanTdb().rangeTailIOSize_)
+		      {
+			// for wide rows it is not an error if a whole range
+			// does not include a record delimiter. RangeTaileIOSize
+			// is set to max row size in generator by default.
+			// It is also checked in the compiler that rowsize
+			// is less than buffer size.
+			step_ = CLOSE_HDFS_CURSOR;
+		      }
+		    else 
+		      {
+			ComDiagsArea *diagsArea = NULL;
+			ExRaiseSqlError(getHeap(), &diagsArea, 
+					(ExeErrorCode)(8446), NULL, 
+					NULL, NULL, NULL,
+					(char*)"No record delimiter found in buffer from hdfsRead.",
+					NULL);
+			// no need to log errors in this case (bulk load) since
+			// this is a major issue and needs to be corrected
+			pentry_down->setDiagsArea(diagsArea);
+			step_ = HANDLE_ERROR_WITH_CLOSE;
+		      }
 		    break;
 		  }
 		
