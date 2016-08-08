@@ -67,7 +67,7 @@ static Int64 juliantimestamp_()
   return tUsec;
 }
 
-SQScratchFile::SQScratchFile(char* path, ScratchSpace *scratchSpace,
+SQScratchFile::SQScratchFile(ScratchSpace *scratchSpace,
             SortError* sorterror,
             CollHeap* heap, NABoolean breakEnabled,
             Int32 scratchMaxOpens,
@@ -84,34 +84,7 @@ SQScratchFile::SQScratchFile(char* path, ScratchSpace *scratchSpace,
   Int32 error = 0;
   resultFileSize_ = SCRATCH_FILE_SIZE;
   asynchReadQueue_ = asynchReadQueue;
-//------------------------------------------------------------------------
-// if the path is a directory and fileSize is bigger than zero, then
-// get the name of the temp file and add the FILE_DELETE_ONCLOSE flag.
-// Else just copy it in.
-//------------------------------------------------------------------------
-  if (checkDirectory(path) != SORT_SUCCESS)
-  {
-
-    if (mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
-    {
-        if (checkDirectory(path) == 0)
-        {
-   // some other process probably created the TdmTmp directory
-   // in the meantime so the directory exists.. proceed
-
-        }
-        else
-        {
-           error = obtainError();
-           sortError_->setErrorInfo( ECreateDir        //sort error
-                  ,(short)error      //syserr: the actual FS error
-                   ,NULL              //syserrdetail
-                   ,"SQScratchFile::SQScratchFile1" //methodname
-                   );
-            return;
-        }
-    }
-  }
+  
 
   //Inform overflow mode to STFS layer indicating that overflow
   //file be created on SSD or HDD or MMAP media.
@@ -129,6 +102,28 @@ SQScratchFile::SQScratchFile(char* path, ScratchSpace *scratchSpace,
       error = STFS_set_overflow(STFS_HDD);
       break;
   }
+
+  if (scratchSpace_->getScratchDirListSpec())
+    {
+      //construct a ":" separated string and pass it to STFS to override
+      //the environment settings done during installation for 
+      //STFS_HDD_LOCATION or STFS_SSD_LOCATION
+      char *scratchDirString = (char *)((NAHeap *)heap)->allocateMemory(PATH_MAX*scratchSpace_->getNumDirsSpec(),FALSE);
+      short i = 0;
+      short nextindex = 0;
+      for (i = 0 ; i < scratchSpace_->getNumDirsSpec(); i++)
+        {
+          if (nextindex >0)
+            scratchDirString[nextindex-1] = ':';
+          str_cpy_all(&scratchDirString[nextindex],(scratchSpace_->getScratchDirListSpec())[i].getDirName(),(scratchSpace_->getScratchDirListSpec())[i].getDirNameLength());
+         
+          nextindex += (scratchSpace_->getScratchDirListSpec())[i].getDirNameLength()+1;
+            
+        }
+      scratchDirString[nextindex-1] = '\0';
+      STFS_set_scratch_dirs(scratchDirString);
+      ((NAHeap *)heap)->deallocateMemory(scratchDirString);
+    }
 
   //Error 0 is success, 1 is unknown overflow type
   //error 2 is specified overflow type not configured.
@@ -152,7 +147,7 @@ SQScratchFile::SQScratchFile(char* path, ScratchSpace *scratchSpace,
   }
 
   // XXXXXX is required by mkstemp
-  str_sprintf(fileName_, "%s/SCRXXXXXX", path);
+  str_sprintf(fileName_, "SCRXXXXXX");
 
   if ((scratchSpace_->getScratchOverflowMode() == SCRATCH_DISK) ||
 	 (scratchSpace_->getScratchOverflowMode() == SCRATCH_MMAP))

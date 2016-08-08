@@ -1637,12 +1637,8 @@ NABoolean Cluster::initScratch(ExeErrorCode * rc)
       return TRUE;
     };
 
-    tempFile->setScratchDiskListSpec(sfo->getSpecifiedScratchDisks());
-    tempFile->setNumDisksSpec(sfo->getNumSpecifiedDisks());
-    tempFile->setScratchDiskListPref(sfo->getPreferredScratchDisks());
-    tempFile->setNumDisksPref(sfo->getNumPreferredDisks());
-    tempFile->setScratchDiskListExcl(sfo->getExcludedScratchDisks());
-    tempFile->setNumDisksExcl(sfo->getNumExcludedDisks());
+    tempFile->setScratchDirListSpec(sfo->getSpecifiedScratchDirs());
+    tempFile->setNumDirsSpec(sfo->getNumSpecifiedDirs());
     tempFile->setNumEsps(numOfInstances);
     tempFile->setEspInstance(myInstanceNumber);
 

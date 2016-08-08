@@ -275,12 +275,8 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
     glob->castToExExeStmtGlobals()->getScratchFileOptions();
   if (sfo)
     {
-      sortCfg_->setScratchDiskListSpec(sfo->getSpecifiedScratchDisks());
-      sortCfg_->setNumDisksSpec(sfo->getNumSpecifiedDisks());
-      sortCfg_->setScratchDiskListExcl(sfo->getExcludedScratchDisks());
-      sortCfg_->setNumDisksExcl(sfo->getNumExcludedDisks());
-      sortCfg_->setScratchDiskListPref(sfo->getPreferredScratchDisks());
-      sortCfg_->setNumDisksPref(sfo->getNumPreferredDisks());
+      sortCfg_->setScratchDirListSpec(sfo->getSpecifiedScratchDirs());
+      sortCfg_->setNumDirsSpec(sfo->getNumSpecifiedDirs());
       sortCfg_->setScratchMgmtOption(sfo->getScratchMgmtOption());
       sortCfg_->setScratchMaxOpens(sfo->getScratchMaxOpensSort());
       sortCfg_->setPreallocateExtents(sfo->getScratchPreallocateExtents());

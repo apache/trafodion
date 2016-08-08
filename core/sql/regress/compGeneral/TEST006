@@ -97,10 +97,6 @@ update statistics for table x3 on every column;
 
 ?section negative_tests
 
--- Error 2055
-control query default mp_subvolume 'raydddddd';
-control query default mp_subvolume 'raydd~@';
-
 -- Error 3233
 prepare xx from update with no rollback t006t4 set a = b;
 
@@ -505,10 +501,6 @@ cqd COMP_INT_51 reset;
 --cqd PUBLISHING_ROLES 'a.b';
 --cqd PUBLISHING_ROLES reset;
 
-cqd POS 'off';
-cqd HIST_SCRATCH_VOL '\n.$a.b.c';
-cqd HIST_SCRATCH_VOL reset;
-cqd POS reset;
 
 cqd EID_TRACE_STR 'abc';
 cqd EID_TRACE_STR reset;

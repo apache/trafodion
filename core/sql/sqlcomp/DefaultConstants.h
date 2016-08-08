@@ -1300,12 +1300,8 @@ enum DefaultConstants
   // For Scratch files
   // -------------------------------------------------------------------------
 
-  SCRATCH_DISKS,
-  SCRATCH_DISKS_EXCLUDED,
-  SCRATCH_DISKS_PREFERRED,
-  SCRATCH_DRIVE_LETTERS,
-  SCRATCH_DRIVE_LETTERS_EXCLUDED,
-  SCRATCH_DRIVE_LETTERS_PREFERRED,
+  SCRATCH_DIRS,
+  
 
   // -------------------------------------------------------------------------
   // For SortGroupBy.
@@ -1443,10 +1439,6 @@ enum DefaultConstants
   RECOMPILATION_WARNINGS,
 
   SHOWCONTROL_SHOW_ALL,
-  MP_CATALOG,
-  MP_SUBVOLUME,
-  MP_SYSTEM,
-  MP_VOLUME,
   NAMETYPE,
 
 
@@ -2596,13 +2588,11 @@ enum DefaultConstants
 
 
  PARTIAL_SORT_ADJST_FCTR,
-
   SCRATCH_MAX_OPENS_HASH,
   SCRATCH_MAX_OPENS_SORT,
-
+  SCRATCH_DISK_LOGGING,
   SCRATCH_MGMT_OPTION,
   SCRATCH_PREALLOCATE_EXTENTS,
-  SCRATCH_DISK_LOGGING,
   SCRATCH_IO_BLOCKSIZE_SORT,
   SCRATCH_IO_VECTOR_SIZE_HASH,
   SCRATCH_IO_VECTOR_SIZE_SORT,

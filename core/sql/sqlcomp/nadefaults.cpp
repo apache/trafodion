@@ -195,10 +195,6 @@ struct DefaultDefault
 
 #define  DDcoll_(name,value)		 DD(name,value,&validateCollList)
 
-#define  DDdskNS(name,value)		 DD(name,value,&validateDiskListNSK)
-#define SDDdskNS(name,value)		SDD(name,value,&validateDiskListNSK)
-//SCARTCH_DRIVE_LETTERS* made internal RV 06/21/01 CR 10-010425-2440
-#define  DDdskNT(name,value)		 DD(name,value,&validateDiskListNT)
 #define  DDint__(name,value)		 DD(name,value,&validateInt)
 #define SDDint__(name,value)		SDD(name,value,&validateInt)
 #define XDDint__(name,value)		XDD(name,value,&validateInt)
@@ -259,16 +255,10 @@ struct DefaultDefault
 #define SDDkwd__(name,value)		SDD(name,value,&validateKwd)
 #define  DDSkwd__(name,value)		 DDS(name,value,&validateKwd)
 #define SDDSkwd__(name,value)		SDDS(name,value,&validateKwd)
-#define  DDnskv_(name,value)		 DD(name,value,&validateNSKV)
-#define  DDnsksv(name,value)		 DD(name,value,&validateNSKSV)
-#define  DDnsksy(name,value)		 DD(name,value,&validateNSKSY)
-#define  DDnsklo(name,value)		DD(name,value,&validateNSKMPLoc)
 #define  DD1_4096(name,value)	         DD(name,value,&validate1_4096)
 #define  DD0_18(name,value)	         DD(name,value,&validate0_18)
 #define DD0_64(name,value)	        DD(name,value,&validate0_64)
 #define DD16_64(name,value)	        DD(name,value,&validate16_64)
-#define  DDvol__(name,value)		 DD(name,value,&validateVol)
-#define SDDvol__(name,value)		SDD(name,value,&validateVol)
 #define  DDalis_(name,value)		 DD(name,value,&validateAnsiList)
 #define XDDalis_(name,value)		XDD(name,value,&validateAnsiList)
 #define XDDpos__(name,value)            XDD(name,value,&validatePOSTableSizes)
@@ -288,8 +278,7 @@ struct DefaultDefault
 
 const DefaultValidator	validateUnknown;
 const DefaultValidator	validateAnsiName(CASE_SENSITIVE_ANSI); // e.g. 'c.s.tbl'
-const ValidateDiskListNSK	validateDiskListNSK;
-const ValidateDiskListNT	validateDiskListNT;
+
       ValidateCollationList	validateCollList(TRUE/*mp-format*/);  // list collations
 const ValidateInt		validateInt;	// allows neg, zero, pos ints
 const ValidateIntNeg1         validateIntNeg1;// allows -1 to +infinity ints
@@ -322,11 +311,6 @@ const ValidateFltMin1		validateFlt1;	// allows pos only (>= 1)
 const ValidateSelectivity	ValidateSelectivity;	// allows 0 to 1 (float)
 const ValidateFlt_0_1		validateFlt_0_1;	// allows 0 to 1 (float)
 const ValidateKeyword		validateKwd;	// allows relevant keywords only
-const ValidateNSKVol		validateNSKV;	// allows NSK volumes ($X, e.g.)
-const ValidateNSKSubVol	validateNSKSV;	// allows NSK subvols
-const ValidateVolumeList      validateVol;    // allows ':' separ. list of $volumes
-const ValidateNSKSystem	validateNSKSY;	// allows NSK system names
-const ValidateNSKMPLoc	validateNSKMPLoc;	// allows NSK MP cat names($X.Y)
 const Validate_1_4096		validate1_4096;	    // allows 1 to 4096 (integer) which is max character size supported.
 const Validate_0_18		validate0_18;	    // allows 0 to 18 (integer) because 18 is max precision supported.
 const Validate_1_1024     validate1_1024;     // allows 1 to 1024 (integer).
@@ -1170,7 +1154,7 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDkwd__(DATA_FLOW_OPTIMIZATION,		"ON"),
 
   // DDL Default location support
- DDdskNS(DDL_DEFAULT_LOCATIONS,                ""),
+ DD_____(DDL_DEFAULT_LOCATIONS,                ""),
 
   DDkwd__(DDL_EXPLAIN,                           "OFF"),
   DDkwd__(DDL_TRANSACTIONS,         "ON"),
@@ -1932,7 +1916,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDansi_(HIST_ROOT_NODE,                            ""),
  XDDflt1_(HIST_ROWCOUNT_REQUIRING_STATS,        "500"),
   DDflt0_(HIST_SAME_TABLE_PRED_REDUCTION,       "0.0"),
-  DDvol__(HIST_SCRATCH_VOL,                     ""),
+  DD_____(HIST_SCRATCH_VOL,                     ""),
   // control the amount of data in each partition of the sample tble.
   DDflt1_(HIST_SCRATCH_VOL_THRESHOLD,           "10240000"),
   DDflt_0_1(HIST_SKEW_COST_ADJUSTMENT,            "0.2"),
@@ -2295,12 +2279,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(MODE_SPECIAL_3,                       "OFF"),
   DDkwd__(MODE_SPECIAL_4,                       "OFF"),
   DDkwd__(MODE_SPECIAL_5,                       "OFF"),
-
-  DDnsklo(MP_CATALOG,				"$SYSTEM.SQL"),
-  DDnsksv(MP_SUBVOLUME,				"SUBVOL"),
-  DDnsksy(MP_SYSTEM,				""),
-  DDnskv_(MP_VOLUME,                            "$VOL"),
-
   DDflt0_(MSCF_CONCURRENCY_IO,			"0.10"),
   DDflt0_(MSCF_CONCURRENCY_MSG,			"0.10"),
 
@@ -2877,10 +2855,10 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
    // default to 72GB 
    DDui___(POS_DEFAULT_SMALLEST_DISK_SIZE_GB,            "72"),
-   DDdskNS(POS_DISKS_IN_SEGMENT,                 ""),
-  SDDui___(POS_DISK_POOL,			"0"),
+   DD_____(POS_DISKS_IN_SEGMENT,                 ""),
+   DD_____(POS_DISK_POOL,			"0"),
    DD_____(POS_FILE_OPTIONS,                    ""),
-  SDDdskNS(POS_LOCATIONS,                        ""),
+   DD_____(POS_LOCATIONS,                        ""),
    DDkwd__(POS_MAP_HASH_TO_HASH2,               "ON"),
    DDpos__(POS_MAX_EXTENTS,                     ""),
   SDDui___(POS_NUM_DISK_POOLS,                  "0"),
@@ -2891,7 +2869,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   SDDpos__(POS_SEC_EXT_SIZE,			""),
   SDDpos__(POS_TABLE_SIZE,			""),
   SDDpct__(POS_TEMP_TABLE_FREESPACE_THRESHOLD_PERCENT,      "0"),
-  SDDdskNS(POS_TEMP_TABLE_LOCATIONS,            ""),
+  DD_____(POS_TEMP_TABLE_LOCATIONS,            ""),
   SDDpos__(POS_TEMP_TABLE_SIZE,                 ""),
    DDkwd__(POS_TEST_MODE,      "OFF"),
    DDui___(POS_TEST_NUM_NODES,  "0"),
@@ -3121,14 +3099,12 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   DDkwd__(SAP_PREFER_KEY_NESTED_JOIN,           "OFF"),
   DDint__(SAP_TUPLELIST_SIZE_THRESHOLD,         "5000"),
  XDDkwd__(SAVE_DROPPED_TABLE_DDL,               "OFF"),
- XDDansi_(SCHEMA,                               "SEABASE"),
- SDDdskNS(SCRATCH_DISKS,                        ""),
- SDDdskNS(SCRATCH_DISKS_EXCLUDED,               "$SYSTEM"),
-  DDdskNS(SCRATCH_DISKS_PREFERRED,              ""),
-  DDkwd__(SCRATCH_DISK_LOGGING,                 "OFF"),
-  DDdskNT(SCRATCH_DRIVE_LETTERS,                ""),
-  DDdskNT(SCRATCH_DRIVE_LETTERS_EXCLUDED,       ""),
-  DDdskNT(SCRATCH_DRIVE_LETTERS_PREFERRED,      ""),
+ XDDansi_(SCHEMA,                               "SEABASE"), 
+ //specify a : separated list of full path names where scratch files
+ //should reside. Ensure each specified directoy exisst on each node and 
+ //Trafodion user has permissions to access them.
+ DD_____(SCRATCH_DIRS,                        ""),
+ DDkwd__(SCRATCH_DISK_LOGGING,                 "OFF"),
  SDDpct__(SCRATCH_FREESPACE_THRESHOLD_PERCENT,      "1"),
   DDui___(SCRATCH_IO_BLOCKSIZE_SORT,            "524288"),
   //On LINUX, writev and readv calls are used to perform
@@ -3296,7 +3272,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   // TARGET_MSG_REMOTE_TIME are seconds
   DDflte_(TARGET_MSG_REMOTE_TIME,		"0.00125"),
 
-  DDvol__(TEMPORARY_TABLE_HASH_PARTITIONS,     	"" ),
+  DD_____(TEMPORARY_TABLE_HASH_PARTITIONS,     	"" ),
   DDkwd__(TERMINAL_CHARSET,             (char *)SQLCHARSETSTRING_ISO88591),
 
   DDint__(TEST_PASS_ONE_ASSERT_TASK_NUMBER,	"-1"),
@@ -5407,10 +5383,7 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	    }
 	}
     }
-    else if (attrEnum == MP_SUBVOLUME && value.first('.') != NA_NPOS) {
-      if (!setMPLoc(value, errOrWarn, overwriteIfNotYet))
-        attrEnum = __INVALID_DEFAULT_ATTRIBUTE;
-    }
+   
     else {
       if ( attrEnum == MAX_LONG_VARCHAR_DEFAULT_SIZE ||
            attrEnum == MAX_LONG_WVARCHAR_DEFAULT_SIZE ) {
@@ -5541,12 +5514,7 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 
 	      // Now fall thru to insert the string "SYSTEM" or ""
 	    }
-	    if (attrEnum == MP_CATALOG) {
-	      // This will apply default \sys to value if only $v.sv was specified.
-	      ComMPLoc loc(value, ComMPLoc::SUBVOL);
-	      value = loc.getMPName();
-	    }
-
+	   
 	    if (!insert(attrEnum, value, errOrWarn))
 	      attrEnum = __INVALID_DEFAULT_ATTRIBUTE;
 	  }	  // overwrite (i.e. insert)
@@ -5564,14 +5532,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	}
 
       switch (attrEnum) {
-
-      case MP_SYSTEM:
-      case MP_VOLUME:
-      case MP_SUBVOLUME:
-	//
-	// Signal to reconstruct MPLOC and MPLOC_as_SchemaName
-	// on the next query, i.e. next call to getSqlParser_NADefaults().
-	SqlParser_NADefaults_->MPLOC_.setUnknown();
 
       case CATALOG:
       case SCHEMA:
@@ -6161,35 +6121,6 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
 
 const SqlParser_NADefaults *NADefaults::getSqlParser_NADefaults()
 {
-  // "Precompile" the MPLOC into a handier format for name resolution.
-  // The pure ComMPLoc is used in a few places, and the SchemaName form
-  // is used when NAMETYPE is NSK.
-  //
-  if (SqlParser_NADefaults_->MPLOC_.getFormat() == ComMPLoc::UNKNOWN) {
-    NAString sys, vol, subvol;
-    getValue(MP_SYSTEM, sys);
-    getValue(MP_VOLUME, vol);
-    getValue(MP_SUBVOLUME, subvol);
-    if (!sys.isNull())
-      sys += ".";
-    sys += vol + "." + subvol;
-    SqlParser_NADefaults_->MPLOC_.parse(sys, ComMPLoc::SUBVOL);
-
-    // For NAMETYPE NSK, catalog name is e.g. "\AZTEC.$FOO"
-    SqlParser_NADefaults_->MPLOC_as_SchemaName_.setCatalogName(
-    SqlParser_NADefaults_->MPLOC_.getSysDotVol());
-
-    // For NAMETYPE NSK, schema name is e.g. "
-    SqlParser_NADefaults_->MPLOC_as_SchemaName_.setSchemaName(
-    SqlParser_NADefaults_->MPLOC_.getSubvolName());
-
-    // We've already validated the heck out of this
-    // in validateAndInsert() and setMPLoc()!
-#if defined(NA_NSK) || defined(_DEBUG)
-    CMPASSERT(SqlParser_NADefaults_->MPLOC_.isValid(ComMPLoc::SUBVOL));
-#endif  // defined(NA_NSK) || defined(_DEBUG)
-  }
-
   return SqlParser_NADefaults_;
 }
 
@@ -6299,43 +6230,7 @@ NABoolean NADefaults::setCatalog(NAString &value,
   }
 }
 
-NABoolean NADefaults::setMPLoc(const NAString &value,
-			       Int32 errOrWarn,
-			       Provenance overwriteIfNotYet)
-{
-  NABoolean isValid = TRUE;
 
-  // Validate the entire string all at once,
-  // so that if any namepart is in error,
-  // we insert NONE of the MP_xxx values.
-  ComMPLoc loc(value, ComMPLoc::SUBVOL);
-
-  if (!loc.isValid(ComMPLoc::SUBVOL)) {
-    // Call the MPLOC validator solely to emit proper errmsg
-    validateNSKMPLoc.validate(value, this, MP_SUBVOLUME, errOrWarn);
-    isValid = FALSE;
-  }
-  else {
-    NAString v;
-    DefaultConstants e;
-
-    if (loc.hasSystemName()) {
-      v = loc.getSystemName();
-      e = validateAndInsert("MP_SYSTEM", v, 0, errOrWarn, overwriteIfNotYet);
-      CMPASSERT(e >= 0);			// this is just double-checking!
-    }
-
-    v = loc.getVolumeName();
-    e = validateAndInsert("MP_VOLUME", v, 0, errOrWarn, overwriteIfNotYet);
-    CMPASSERT(e >= 0);				// this is just double-checking!
-
-    v = loc.getSubvolName();
-    e = validateAndInsert("MP_SUBVOLUME", v, 0, errOrWarn, overwriteIfNotYet);
-    CMPASSERT(e >= 0);				// this is just double-checking!
-  }
-
-  return isValid;
-}
 
 NABoolean NADefaults::setSchema(NAString &value,
 				Int32 errOrWarn,

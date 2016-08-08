@@ -64,10 +64,6 @@ SQDisk::~SQDisk()
 NABoolean 
  SQDisk::generateDiskTable(const ExScratchDiskDrive * scratchDiskSpecified,
             ULng32 numSpecified,
-            const ExScratchDiskDrive * scratchDiskPreferred,
-            ULng32 numPreferred,
-            const ExScratchDiskDrive * scratchDiskExcluded,
-            ULng32 numExcluded,
             char * volumeNameMask, 
             answer including,
             NABoolean includeAuditTrailDisks
