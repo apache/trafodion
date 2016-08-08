@@ -193,6 +193,14 @@ echo "***INFO: hbase-trx file copied correctly! Huzzah."
 
 }
 
+function cleanUp {
+
+$TRAF_NEW_PDSH rm -rf $HOME/hbase-trx*
+$TRAF_NEW_PDSH rm -rf trafodion_config
+$TRAF_NEW_PDSH rm -rf trafodion-util*
+
+}
+
 function printMessage {
 
 source $TRAF_CONFIG
@@ -213,5 +221,6 @@ createNewNodes
 createConfigDir
 copyConfig
 checkHBaseTrx
+cleanUp
 printMessage
 
