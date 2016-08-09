@@ -280,6 +280,13 @@ NAString Int64ToNAString(Int64 l)
   return NAString(resultstr);
 }
 
+NAString RealToNAString(double d)
+{
+  char resultstr[200];
+  sprintf(resultstr,"%G",d);
+  return NAString(resultstr);
+}
+
 NAString &replaceAll(NAString &source, const NAString &searchFor,
                      const NAString &replaceWith)
 {

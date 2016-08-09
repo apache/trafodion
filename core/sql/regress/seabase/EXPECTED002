@@ -183,8 +183,9 @@ T002SCH.T002T2                                                               1  
 T002SCH.T002T2                                                               0  ReadRequestsCount: 1           WriteRequestsCount: 1         
 T002SCH.SB_HIS                                                               0  ReadRequestsCount: 0           WriteRequestsCount: 0         
 T002SCH.T002T1                                                               0  ReadRequestsCount: 2           WriteRequestsCount: 1         
+T002SCH.SB_PER                                                               0  ReadRequestsCount: 0           WriteRequestsCount: 0         
 
---- 3 row(s) selected.
+--- 4 row(s) selected.
 >>
 >>select left(trim(schema_name) || '.' || trim(object_name), 14),
 +> sum(store_file_size), 
@@ -200,8 +201,9 @@ T002SCH.T002T1                                                               0  
 T002SCH.T002T2                                                               0  ReadRequestsCount: 1           WriteRequestsCount: 1         
 T002SCH.SB_HIS                                                               0  ReadRequestsCount: 0           WriteRequestsCount: 0         
 T002SCH.T002T1                                                               0  ReadRequestsCount: 2           WriteRequestsCount: 1         
+T002SCH.SB_PER                                                               0  ReadRequestsCount: 0           WriteRequestsCount: 0         
 
---- 3 row(s) selected.
+--- 4 row(s) selected.
 >>
 >>get region stats for table t002t1;
 
@@ -446,7 +448,35 @@ Stats Details
 =============
 
   RegionNum:          1
-  RegionName:         TRAFODION.T002SCH.SB_HISTOGRAM_INTERVALS/94b6ffefc5df9a62180e5a2401e18d9e
+  RegionName:         TRAFODION.T002SCH.SB_HISTOGRAM_INTERVALS/72bc6242dfa139b77bd15125cf46593f
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  0
+  WriteRequestsCount: 0
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.SB_PERSISTENT_SAMPLES
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  0
+  TotalWriteRequestsCount: 0
+
+Stats Details
+=============
+
+  RegionNum:          1
+  RegionName:         TRAFODION.T002SCH.SB_PERSISTENT_SAMPLES/121ea772487c23e7f165e29db4647fd4
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -720,6 +750,20 @@ Stats Summary
 =============
 
   ObjectName:              TRAFODION.T002SCH.SB_HISTOGRAM_INTERVALS
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  0
+  TotalWriteRequestsCount: 0
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.SB_PERSISTENT_SAMPLES
   NumRegions:              1
   RegionsLocation:         /hbase/data/default
   TotalNumStores:          2

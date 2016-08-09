@@ -501,9 +501,6 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
 
     HSClearCLIDiagnostics();
 
-    if ( hs_globals_obj.canDoIUS() )
-      hs_globals_obj.end_IUS_work();
-
     hs_globals_y = NULL;
 
     // Remove IUS persistent sample if necessary.

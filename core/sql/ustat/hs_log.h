@@ -135,21 +135,16 @@ private:
 // Log the location of the error.
 void HSFuncLogError(Lng32 error, char *filename, Lng32 lineno);
 
-// Wrapper to handle assertion failure.
+// Wrapper to handle assertion failure. Do not assert a condition with any
+// side effects, as it is evaluated a second time if false.
 #define HS_ASSERT(b)                                        \
+      {                                                     \
         if (NOT (b))                                        \
           {                                                 \
-            HSTranMan *TM = HSTranMan::Instance();          \
-            HSLogMan *LM = HSLogMan::Instance();            \
-            if (LM->LogNeeded())                            \
-              {                                             \
-                sprintf(LM->msg, "***[ERROR] INTERNAL ASSERTION (%s) AT %s:%i", "" # b "", __FILE__, __LINE__); \
-                LM->Log(LM->msg);                           \
-              }                                             \
-            if (TM->StartedTransaction())                   \
-              TM->Rollback();                               \
+            GetHSContext()->preAssertionFailure("" # b "", __FILE__, __LINE__); \
             CMPASSERT(b);                                   \
-          }
+          }                                                 \
+      }
  
 //Ignore the following WARNINGS
 //    [6008] missing single-column histograms
@@ -157,11 +152,13 @@ void HSFuncLogError(Lng32 error, char *filename, Lng32 lineno);
 //    [4030] non-standard DATETIME format
 //    [4]    internal Warning
 #define HSFilterWarning(retcode) \
+        { \
           if ((retcode == 6008) || \
               (retcode == 6007) || \
               (retcode == 4030) || \
               (retcode == HS_WARNING)) \
-            retcode = 0;
+            retcode = 0; \
+        }
 
 // Map any error (<0) code other than HS_PKEY_FLOAT_ERROR to -1.
 #define  HSFilterError(retcode) \
