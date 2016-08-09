@@ -4848,7 +4848,7 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
   "('INTERVAL', 112, 0, '{INTERVAL ''', ''' HOUR TO SECOND}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 206, NULL, 6, 34, 100, 12, 2, 4, 6, 3, 0), "
   "('INTERVAL', 110, 0, '{INTERVAL ''', ''' DAY TO SECOND}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 207, NULL, 9, 34, 100, 10, 2, 3, 6, 3, 0), "
   "('INTERVAL', 109, 0, '{INTERVAL ''', ''' DAY TO MINUTE}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 203, NULL, 6, 34, 100, 9, 2, 3, 5, 3, 0), "
-  "('INTERVAL', 103, 0, '{INTERVAL ''', ''' DAY}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 197, NULL, 0, 34, 100, 3, 2, 3, 3, 3, 0), "
+  "('INTERVAL', 103, 0, '{INTERVAL ''', ''' DAY}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 198, NULL, 0, 34, 100, 3, 2, 3, 3, 3, 0), "
   "('NUMERIC', 2, 128, NULL, NULL, 'precision,scale', 1, 0, 2, 0, 0, 0, 'NUMERIC', 0, 128, 'SIGNED NUMERIC', 156, 10, -2, -3, 2, NULL, NULL, 0, 0, 3, 0), "
   "('NUMERIC UNSIGNED', 2, 128, NULL, NULL, 'precision,scale', 1, 0, 2, 1, 0, 0, 'NUMERIC', 0, 128, 'UNSIGNED NUMERIC', 155, 10, -2, -3, 2, NULL, NULL, 0, 0, 3, 0), "
   "('REAL', 7, 7, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'REAL', NULL, NULL, 'REAL', 142, 2, 22, -1, 7, NULL, NULL, 0, 0, 3, 0), "
