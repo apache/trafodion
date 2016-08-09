@@ -188,28 +188,25 @@ echo "***INFO: Create DCS servers file"
 source $TRAF_CONFIG
 DCS_DIR=$(sudo ls $SQ_ROOT | grep dcs\*)
 
-sudo cp $SQ_ROOT/$DCS_DIR/conf/servers $PWD
-sudo chown $(whoami).$(whoami) $PWD/servers
 
 let per_node=$DCS_SERVERS_PARM/$node_count
 let extras=$DCS_SERVERS_PARM%$node_count
 count=1
-for node_name in $NEW_NODES
+for node_name in $NODE_LIST
 do
    if [ $count -le $extras ]; then
       let node_servers=$per_node+1
    else
       node_servers=$per_node
    fi
-   echo $node_name $node_servers >> $PWD/servers
+   echo $node_name $node_servers >> $PWD/tempServers
    (( count++ ))
 done
 
 
-$TRAF_PDCP $PWD/servers $HOME
-$TRAF_PDSH sudo cp $HOME/servers $SQ_ROOT/$DCS_DIR/conf
+$TRAF_PDCP $PWD/tempServers $HOME
+$TRAF_PDSH sudo cp $HOME/tempServers $SQ_ROOT/$DCS_DIR/conf/servers
 $TRAF_PDSH sudo chown $TRAF_USER.trafodion $SQ_ROOT/$DCS_DIR/conf/servers
-
 
 
 }
