@@ -41,7 +41,7 @@ This guide assumes that a Hadoop environment exists upon which your provisioning
 [[introduction-security-considerations]]
 == Security Considerations
 
-The following users need be considered for {project-name}:
+The following users and principals need be considered for {project-name}:
 
 * *Provisioning User*: A Linux-level user that performs the {project-name} provisioning tasks. This user ID
 requires `sudo` access and passwordless ssh among the nodes where {project-name} is installed. In addition,
@@ -55,30 +55,51 @@ as a user in the Hadoop Distributed File System (HDFS) to store and  access obje
 In addition, this  user ID requires passwordless access among the nodes where {project-name} is installed.
 Refer to <<requirements-trafodion-runtime-user,{project-name} Runtime User>> for more information about this user ID.
 
-* *{project-name} Database Users*: {project-name} users are managed by the {project-name} security features (grant, revoke, etc.),
+* *{project-name} Database Users*: {project-name} users are managed by {project-name} security features (grant, revoke, etc.),
 which can be integrated with LDAP if so desired. These users are referred to as *database users* and
-do not have direct access to the operating system. Refer to 
-{docs-url}/sql_reference/index.html#register_user_statement[Register User],
+do not have direct access to the operating system. Refer to <<enable-security-ldap,LDAP>> for 
+details on enabling LDAP for authenticating database users. 
+Refer to {docs-url}/sql_reference/index.html#register_user_statement[Register User],
 {docs-url}/sql_reference/index.html#grant_statement[Grant], and other SQL statements
 in the {docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual] for
 more information about managing {project-name} Database Users.
  +
  +
-Optionally, you can enable {project-name} Security. If you do not enable security in {project-name}, then a client interface
-to {project-name} may request a user name and password, but {project-name} ignores the user name and password entered in the
-client interface, and the session runs as the database *root* user, `DB__ROOT`, without restrictions. If you want
-to restrict users, restrict access to certain users only, or restrict access to an object or operation, then you must
-enable security, which enforces authentication and authorization. Refer to
-<<enable-security,Enable Security>> for more information about this option.
+If your environment has been provisioned with Kerberos, then the following additional information is required. 
+
+* *KDC admin principal*: {project-name} requires administrator access to Kerberos to create principals 
+and keytabs for the `trafodion` user, and to look-up principal names for HDFS and HBase keytabs.  Refer to 
+<<enable-security-kerberos,Kerberos>> for more information about the requirements and usage associated with this principal.
+
+* *HBase keytab location*: {project-name} requires administrator access to HBase to grant required privileges to the `trafodion` user.  Refer to
+<<enable-security-kerberos,Kerberos>> for more information about the requirements and usage associated with this keytab.
+
+* *HDFS keytab location*: {project-name} requires administrator access to HDFS to create directories that store files needed to perform SQL requests 
+such as data loads and backups.  Refer to
+<<enable-security-kerberos,Kerberos>> for more information about the requirements and usage associated with this keytab.
+ +
+ +
+If your environment is using LDAP for authentication, then the following additional information is required.
+
+* *LDAP username for database root access*:  When {project-name} is installed, it creates a predefined database user referred to as the DB\__ROOT user.  
+In order to connect to the database as database root, there must be a mapping between the database user DB__ROOT and an LDAP user. Refer to  
+<<enable-security-ldap,LDAP>> for more information about this option.
+
+* *LDAP search user name*: {project-name} optionally requests an LDAP username and password in order to perform LDAP operations 
+such as LDAP search.  Refer to
+<<enable-security-ldap,LDAP>> for more information about this option.
 
 [[introduction-provisioning-options]]
 == Provisioning Options
 
-{project-name} ships with a set of scripts (the {project-name} Installer) that takes care of many of the installation and upgrade
-tasks associated with the {project-name} software and its requirements. There is a separate set of scripts to remove {project-name},
-if needed.
+{project-name} ships with a set of scripts that takes care of many of the installation and upgrade
+tasks associated with the {project-name} software and its requirements. The main features include:
 
-Currently, the {project-name} Installer is able to install {project-name} on select Cloudera and  Hortonworks Hadoop distributions only.
+* *{project-name} installer*: Performs installation and upgrade for {project-name}
+* *{project-name} uninstaller*: Uninstalls {project-name}
+* *{project-name} security installer*: Enables security features including Kerberos and LDAP for an existing {project-name} installation
+
+Currently, the {project-name} Installer is able to install {project-name} on select Cloudera and  Hortonworks Hadoop distributions, and for select vanilla Hadoop installations.
 The {project-name} Installer limitations are noted as they apply in the different chapters below. For example, the {project-name} Installer
 is less capable on SUSE than it is on RedHat/CentOS; you have to install the prerequisite software packages outside the {project-name} Installer.
 
@@ -86,7 +107,7 @@ The {project-name} Installer automates many of the tasks required to install/upg
 installing required software packages and making required changes to your Hadoop environment via creating
 the {project-name} runtime user ID to installing and starting {project-name}. It is, therefore,  highly recommend that
 you use the {project-name} Installer for initial installation and upgrades of {project-name}. These steps are referred to as
-"Script-Based Provisioning" in this guide. Refer to <<introduction-trafodion-installer, {project-name} Installer>> provides
+"Script-Based Provisioning" in this guide. Refer to <<introduction-trafodion-installer, {project-name} Installer>> that provides
 usage information.
 
 If, for any reason, you choose not to use the {project-name} Installer, then separate chapters provide
@@ -102,28 +123,30 @@ administrative tasks if using Recipe-Based Provisioning.
 * *<<requirements,Requirements>>*: Activities and documentation required to install the {project-name} software.
 These activities include tasks such as understanding hardware and operating system requirements,
 Hadoop requirements, what software packages that need to be downloaded, configuration settings that need to be changed,
-user IDs requirements, and so on.
+and user ID requirements.
 
 * *<<prepare,Prepare>>*: Activities to prepare the operating system and the Hadoop ecosystem to run
 {project-name}. These activities include tasks such as installing required software packages, configure
-the {project-name} Installation User, gather information about the Hadoop environment, modify configuration
-for different Hadoop services, and so forth.
+the {project-name} Installation User, gather information about the Hadoop environment, and the modify configuration
+for different Hadoop services.
 
 * *<<install,Install>>*: Activities related to installing the {project-name} software. These activities
 include tasks such as unpacking the {project-name} tar files, creating the {project-name} Runtime User,
-creating {project-name} HDFS directories, installing the {project-name} software, and so forth.
+creating {project-name} HDFS directories, installing the {project-name} software, and enabling security features.
 
-<<<
 * *<<upgrade,Upgrade>>*: Activities related to the upgrading the {project-name} software. These activities
-include tasks such as shutting down {project-name}, installing a new version of the {project-name} software,
-and so on. The upgrade tasks vary depending on the differences between the current and new release of
+include tasks such as shutting down {project-name} and installing a new version of the {project-name} software.
+The upgrade tasks vary depending on the differences between the current and new release of
 {project-name}. For example, an upgrade may or may not include an upgrade of the {project-name} metadata.
 
 * *<<activate,Activate>>*: Activities related to starting the {project-name} software. These actives
-include basic management tasks such as starting and checking the status of the {project-name} components,
-performing basic smoke tests, and so forth.
+include basic management tasks such as starting and checking the status of the {project-name} components and performing basic smoke tests.
 
 * *<<remove,Remove>>*: Activities related to removing {project-name} from your Hadoop cluster.
+
+* *<<enable-security,Enable Security>>*: Activities related to enabling security features on an already installed
+{project-name} installation.  These activities include tasks such as adding Kerberos principals and keytabs,
+and setting up the LDAP configuration files.
 
 [[introduction-provisioning-master-node]]
 == Provisioning Master Node
@@ -147,12 +170,6 @@ Next, you unpack the tar file.
 $ mkdir $HOME/trafodion-installer
 $ cd $HOME/trafodion-downloads
 $ tar -zxf apache-trafodion-installer-1.3.0-incubating-bin.tar.gz -C $HOME/trafodion-installer
-$ ls $HOME/trafodion-installer/installer
-bashrc_default           tools                             traf_config_check           trafodion_apache_hadoop_install  traf_package_setup
-build-version-1.3.0.txt  traf_add_user                     traf_config_setup           trafodion_config_default         traf_setup
-dcs_installer            traf_apache_hadoop_config_setup   traf_create_systemdefaults  trafodion_install                traf_sqconfig
-rest_installer           traf_authentication_conf_default  traf_getHadoopNodes         trafodion_license                traf_start
-setup_known_hosts.exp    traf_cloudera_mods98              traf_hortonworks_mods98     trafodion_uninstaller
 $ 
 ```
 
@@ -161,12 +178,14 @@ The {project-name} Installer supports two different modes:
 
 1. *Guided Setup*: Prompts for information as it works through the installation/upgrade process. This mode is recommended for new users.
 2. *Automated Setup*: Required information is provided in a pre-formatted bash-script configuration file, which is provided
-via a command argument when running the {project-name} Installer thereby suppressing all prompts.
+via a command argument when running the {project-name} Installer thereby suppressing all prompts. There is one exception, 
+if Kerberos is enabled on the cluster, then you will always be prompted for the KDC admin password.  We do not store the 
+KDC admin password as part of installation anywhere.
 +
 A template of the configuration file is available here within the installer directory: `trafodion_config_default`.
 Make a copy of the file in your directory and populate the needed information.
 +
-Automated Setup is recommended since it allows you to record the required provisioning information information ahead of time.
+Automated Setup is recommended since it allows you to record the required provisioning information ahead of time.
 Refer to <<introduction-trafodion-automated-setup,Automated Setup>> for information about how to
 populate this file.
 
@@ -246,6 +265,9 @@ NOTE: Your {project-name} Configuration File contains the password for the {proj
 and for the Distribution Manager. Therefore, we recommend that you secure the file in a manner
 that matches the security policies of your organization. 
 
+NOTE: If you are installing {project-name} on a version of Hadoop that has been instrumented with Kerberos,
+you will be asked for a password associated with a Kerberos administrator.  
+
 ==== Example: Creating a {project-name} Configuration File
 
 Using the instructions in <<prepare-gather-configuration-information,Gather Configuration Information>>
@@ -255,10 +277,12 @@ in the <<prepare,Prepare>> chapter, you record the following information.
 |===
 | ID                      | Information                                                                                | Setting                       
 | ADMIN                   | Administrator user name for Apache Ambari or Cloudera Manager.                             | admin                         
+| ADMIN_PRINCIPAL         | Kerberos principal for the KDC admin user including the realm.                             |
 | BACKUP_DCS_NODES        | List of nodes where to start the backup DCS Master components.                             | 
 | CLOUD_CONFIG            | Whether you're installing {project-name} on a cloud environment.                                | N 
 | CLOUD_TYPE              | What type of cloud environment you're installing {project-name} on.                             | 
 | CLUSTER_NAME            | The name of the Hadoop Cluster.                                                            | Cluster 1
+| DB_ROOT_NAME            | LDAP name used to connect as database root user | trafodion
 | DCS_BUILD               | Tar file containing the DCS component.                                                     | 
 | DCS_PRIMARY_MASTER_NODE | The node where the primary DCS should run.                                                 | 
 | DCS_SERVER_PARM         | Number of concurrent client sessions per node.                                             | 8
@@ -267,30 +291,38 @@ in the <<prepare,Prepare>> chapter, you record the following information.
 | FLOATING_IP             | IP address if running DCS in HA mode.                                                      | 
 | HADOOP_TYPE             | The type of Hadoop distribution you're installing {project-name} on.                            | cloudera
 | HBASE_GROUP             | Linux group name for the HBASE administrative user.                                         | hbase
+| HBASE_KEYTAB            | Kerberos service keytab for HBase admin principal.                                                      | Default based on distribution
 | HBASE_USER              | Linux user name for the HBASE administrative user.                                          | hbase
+| HDFS_KEYTAB             | Kerberos service keytab for HDFS admin principal.                                                       | Default based on distribution
 | HDFS_USER               | Linux user name for the HDFS administrative user.                                           | hdfs 
 | HOME_DIR                | Root directory under which the `trafodion` home directory should be created.               | /home 
 | INIT_TRAFODION          | Whether to automatically initialize the {project-name} database.                                | Y
 | INTERFACE               | Interface type used for $FLOATING_IP.                                                      | 
 | JAVA_HOME               | Location of Java 1.7.0_65 or higher (JDK).                                                 | /usr/java/jdk1.7.0_67-cloudera
+| KDC_SERVER              | Location of Kerberos server for admin access                                               |
 | LDAP_CERT               | Full path to TLS certificate.                                                              | 
 | LDAP_HOSTS              | List of nodes where LDAP Identity Store servers are running.                               | 
 | LDAP_ID                 | List of LDAP unique identifiers.                                                           | 
 | LDAP_LEVEL              | LDAP Encryption Level.                                                                     | 
 | LDAP_PASSWORD           | Password for LDAP_USER.                                                                    | 
 | LDAP_PORT               | Port used to communicate with LDAP Identity Store.                                         | 
-| LDAP_SECURITY           | Whether to enable simple LDAP authentication.                                            | N   
+| LDAP_SECURITY           | Whether to enable LDAP authentication.                                                     | N   
 | LDAP_USER               | LDAP Search user name.                                                                     | 
 | LOCAL_WORKDIR           | The directory where the {project-name} Installer is located.                                    | /home/centos/trafodion-installer/installer
 | MANAGEMENT_ENABLED      | Whether your installation uses separate management nodes.                                  | N
 | MANAGEMENT_NODES        | The FQDN names of management nodes, if any.                                                | 
+| MAX_LIFETIME            | Kerberos ticket lifetime for {project-name} principal                                      | 24hours
 | NODE_LIST               | The FQDN names of the nodes where {project-name} will be installed.                             | trafodion-1 trafodion-2
 | PASSWORD                | Administrator password for Apache Ambari or Cloudera Manager.                              | admin
+| RENEW_LIFETIME          | Kerberos ticket renewal lifetime for {project-name} principal                              | 7days
 | REST_BUILD              | Tar file containing the REST component.                                                    | 
+| SECURE_HADOOP           | Indicates whether Hadoop has Kerberos enabled                                               | Based on whether Kerberos is enabled for your Hadoop installation
 | SQ_ROOT                 | Target directory for the {project-name} software.                                               | /home/trafodion/apache-trafodion-1.3.0-incubating-bin
 | START                   | Whether to start {project-name} after install/upgrade.                                          | Y
 | SUSE_LINUX              | Whether your installing {project-name} on SUSE Linux.                                           | false
 | TRAF_PACKAGE            | The location of the {project-name} installation package tar file or core installation tar file. | /home/centos/trafodion-download/apache-trafodion-1.3.0-incubating-bin.tar.gz
+| TRAF_KEYTAB             | Kerberos keytab for `trafodion` principal.                                                      | Default keytab based on distribution
+| TRAF_KEYTAB_DIR         | Location of Kerberos keytab for the `trafodion` principal.                                      | Default location based on distribution
 | TRAF_USER               | The {project-name} runtime user ID. Must be `trafodion` in this release.                         | trafodion
 | TRAF_USER_PASSWORD      | The password used for the `trafodion:trafodion` user ID.                                   | traf123
 | URL                     | FQDN and port for the Distribution Manager's REST API.                                     | trafodion-1.apache.org:7180
@@ -436,13 +468,45 @@ export INIT_TRAFODION="Y"
 # Default is to leave as is and this file will be created.
 export SQCONFIG=""
 
-export CONFIG_COMPLETE="true"
+#-----------------  security configuration information -----------------
+#Enter in Kerberos details if Kerberos is enabled on your cluster
 
-#Turn on simple security. MUST have existing LDAP configured.
-export LDAP_SECURITY="N"
+#Indicate Kerberos is enabled
+export SECURE_HADOOP="N"
+
+#Location of Kerberos server for admin access
+export KDC_SERVER=""
+
+#Kerberos Admin principal used to create Trafodion principals and keytabs
+#Please include realm, for example: trafadmin/admin@MYREALM.COM
+export ADMIN_PRINCIPAL=""
+
+#Keytab for HBase admin user, used to grant Trafodion user CRWE privilege
+export HBASE_KEYTAB=""
+
+#Keytab for HDFS admin user, used to create data directories for Trafodion 
+export HDFS_KEYTAB=""
+
+#Kerberos ticket defaults for the Trafodion user
+export MAX_LIFETIME="24hours"
+export RENEW_LIFETIME="7days"
+
+#Trafodion keytab information
+export TRAF_KEYTAB=""
+export TRAF_KEYTAB_DIR=""
+
+#Enter in LDAP configuration information
+#Turn on authentication - MUST have existing LDAP configured.
+export LDAP_SECURITY="Y"
 
 #Name of LDAP Config file
-export LDAP_AUTH_FILE="traf_authentication_config_${HOSTNAME}"
+export LDAP_AUTH_FILE="traf_authentication_config_`hostname -s`"
+
+#LDAP name to map to database user DB__ROOT
+DB_ROOT_NAME="trafodion"
+#-----------------      end security configuration     -----------------
+
+export CONFIG_COMPLETE="true"
 ```
 
 Once completed, run the {project-name} Installer with the `--config_file` option.
@@ -457,8 +521,8 @@ Refer to the following sections for examples:
 
 {project-name} stores its provisioning information in the following directories on each node in the cluster:
 
-* `/etc/trafodion`: Configurtion information.
-* `/usr/lib/trafodion`: Copies of the installer files.
+* `/etc/trafodion`: Configuration information.
+* `/usr/lib/trafodion`: Copies of the files required by the installer.
 
 
 

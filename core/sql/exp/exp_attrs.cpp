@@ -227,6 +227,7 @@ switch (datatype)
   case REC_BIN32_SIGNED: return extFormat? (char *)"INTEGER SIGNED":(char *)"REC_BIN32_SIGNED";
   case REC_BIN32_UNSIGNED: return extFormat? (char *)"INTEGER UNSIGNED":(char *)"REC_BIN32_UNSIGNED";
   case REC_BIN64_SIGNED: return extFormat? (char *)"LARGEINT":(char *)"REC_BIN64_SIGNED";
+  case REC_BIN64_UNSIGNED: return extFormat? (char *)"LARGEINT UNSIGNED":(char *)"REC_BIN64_UNSIGNED";
   case REC_BPINT_UNSIGNED: return extFormat? (char *)"BIT PRECISION INTEGER":(char *)"REC_BPINT_UNSIGNED";
 
   case REC_IEEE_FLOAT32: return extFormat? (char *)"IEEE FLOAT":(char *)"REC_IEEE_FLOAT32";
@@ -277,6 +278,8 @@ switch (datatype)
   case REC_INT_FRACTION: return extFormat? (char *)"INTERVAL FRACTION":(char *)"REC_INT_FRACTION";
   case REC_BLOB: return extFormat? (char *)"BLOB":(char *)"REC_BLOB";
   case REC_CLOB: return extFormat? (char *)"CLOB":(char *)"REC_CLOB";
+  case REC_BOOLEAN: return extFormat ? (char *)"BOOLEAN" : (char *)"REC_BOOLEAN";
+
   // When you add new datatype in /common/dfs2rec.h, don't
   // forget add new case here. Otherwise, showplan won't display it.
   default: return extFormat? (char *)"UNKNOWN":(char *)"add datatype in getDatatypeAsString()";

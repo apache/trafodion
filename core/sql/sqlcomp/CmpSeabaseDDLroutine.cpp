@@ -60,7 +60,6 @@
 
 #include "ExExeUtilCli.h"
 #include "Generator.h"
-#include "desc.h"
 #include "ComSmallDefs.h"
 #include "CmpDDLCatErrorCodes.h"
 
@@ -390,7 +389,7 @@ void CmpSeabaseDDL::createSeabaseLibrary(
     }
  
   char * query = new(STMTHEAP) char[1000];
-  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d)",
+  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
 	      objUID,
               libFileName.data(),
@@ -675,7 +674,7 @@ void  CmpSeabaseDDL::alterSeabaseLibrary(StmtDDLAlterLibrary  *alterLibraryNode,
       return;
     }
   usingRoutinesQueue->position();
-  for (size_t i = 0; i < usingRoutinesQueue->numEntries(); i)
+  for (size_t i = 0; i < usingRoutinesQueue->numEntries(); i++)
     { 
       OutputInfo * rou = (OutputInfo*)usingRoutinesQueue->getNext();    
       char * routineName = rou->get(0);
@@ -1237,7 +1236,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   
 
   char * query = new(STMTHEAP) char[2000+MAX_SIGNATURE_LENGTH];
-  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, %d, '%s', '%s', '%s', '%s', '%s', %Ld, '%s' )",
+  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, %d, '%s', '%s', '%s', '%s', '%s', %Ld, '%s', 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_ROUTINES,
 	      objUID,
               udrType.data(),
@@ -1268,7 +1267,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
     }
 
   char * query1 = new(STMTHEAP) char[1000];
-  str_sprintf(query1, "insert into %s.\"%s\".%s values (%Ld, %Ld)",
+  str_sprintf(query1, "insert into %s.\"%s\".%s values (%Ld, %Ld, 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES_USAGE,
 	      libUID, objUID);
   

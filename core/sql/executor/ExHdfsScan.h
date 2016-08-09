@@ -255,7 +255,6 @@ protected:
   sql_buffer_pool * pool_;            // row images after selection pred,
                                       // with only the required columns. 
   hdfsFile hdfsFp_;
-  hdfsFS hdfsFs_;     // shallow copy from cliGlobals.
 
   void * lobGlob_;
 
@@ -292,6 +291,7 @@ protected:
   NABoolean checkRangeDelimiter_;
 
   NABoolean dataModCheckDone_;
+  ComDiagsArea * loggingErrorDiags_;
 };
 
 class ExOrcScanTcb  : public ExHdfsScanTcb

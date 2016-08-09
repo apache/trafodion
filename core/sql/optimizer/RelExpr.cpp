@@ -6630,6 +6630,23 @@ const NAString Intersect::getText() const
 }
 
 // -----------------------------------------------------------------------
+// // member functions for class Except
+// // -----------------------------------------------------------------------
+Except::Except(RelExpr *leftChild,
+             RelExpr *rightChild)
+: RelExpr(REL_EXCEPT, leftChild, rightChild)
+{ setNonCacheable(); }
+
+Except::~Except() {}
+
+Int32 Except::getArity() const { return 2; }
+
+const NAString Except::getText() const
+{
+  return "except";
+}
+
+// -----------------------------------------------------------------------
 // member functions for class Union
 // -----------------------------------------------------------------------
 Union::Union(RelExpr *leftChild,

@@ -81,7 +81,7 @@ public class TrafParallelClientScanner extends AbstractClientScanner implements 
    * (should be larger than the individual scans' caching setting)
    * @throws IOException
    */
-  public TrafParallelClientScanner(final HConnection connection, final Collection<Scan> scans,
+  public TrafParallelClientScanner(final Connection connection, final Collection<Scan> scans,
       final TableName tableName, final int bufferSize) throws IOException {
     createDefaultPool(scans.size());
     SingleReaderMultiWriterQueue rw = new SingleReaderMultiWriterQueue(bufferSize, scans.size());
@@ -100,7 +100,7 @@ public class TrafParallelClientScanner extends AbstractClientScanner implements 
    * @param parallelScaling The scaling factor to use. if between 0 and 1, percent of regions run in parallel, if > 1 fixed number of thread run in parallel
    * @throws IOException
    */
-  public TrafParallelClientScanner(final HConnection connection, final Scan scan,
+  public TrafParallelClientScanner(final Connection connection, final Scan scan,
       final TableName tableName, final float parallelScaling) throws IOException {
     if (parallelScaling <= 0)
       throw new IllegalArgumentException("scalingFactor must > 0");
@@ -190,7 +190,7 @@ public class TrafParallelClientScanner extends AbstractClientScanner implements 
     // interrupt all running threads, don't wait for completion
     pool.shutdownNow();
   }
-#ifndef CDH1.0
+#ifndef CDH5.4 CDH5.5
   @Override
   public boolean renewLease() {return false;}//fake, never needed.
 #endif
@@ -288,10 +288,10 @@ public class TrafParallelClientScanner extends AbstractClientScanner implements 
   protected class ScanTask implements Runnable {
     private Scan s;
     private ResultWriter writer;
-    private HConnection connection;
+    private Connection connection;
     private TableName tableName;
     private int taskNb;
-    public ScanTask(Scan s, HConnection connection, TableName tableName, ResultWriter writer, int taskNb) {
+    public ScanTask(Scan s, Connection connection, TableName tableName, ResultWriter writer, int taskNb) {
       this.s = s;
       this.connection = connection;
       this.tableName = tableName;

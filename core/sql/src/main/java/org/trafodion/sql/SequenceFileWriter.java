@@ -34,10 +34,10 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.TableSnapshotScanner;
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription;
 import org.apache.hadoop.hbase.snapshot.SnapshotCreationException;
@@ -77,13 +77,14 @@ public class SequenceFileWriter {
 
     static Logger logger = Logger.getLogger(SequenceFileWriter.class.getName());
     Configuration conf = null;           // File system configuration
-    HBaseAdmin admin = null;
+    private Connection connection;
     
     SequenceFile.Writer writer = null;
 
     FSDataOutputStream fsOut = null;
     OutputStream outStream = null;
-    
+    boolean sameStream = true;
+
     FileSystem  fs = null;
     /**
      * Class Constructor
@@ -91,12 +92,12 @@ public class SequenceFileWriter {
     SequenceFileWriter() throws MasterNotRunningException, ZooKeeperConnectionException, ServiceException, IOException
     {
       init("", "");
+      conf = connection.getConfiguration();
       conf.set("fs.hdfs.impl","org.apache.hadoop.hdfs.DistributedFileSystem");
     }
     
 	
-    public String open(String path)	{
-      try {
+    public String open(String path) throws IOException {
         Path filename = new Path(path);
         writer = SequenceFile.createWriter(conf, 
           	       SequenceFile.Writer.file(filename),
@@ -104,14 +105,9 @@ public class SequenceFileWriter {
           	       SequenceFile.Writer.valueClass(BytesWritable.class),
           	       SequenceFile.Writer.compression(CompressionType.NONE));
         return null;
-      } catch (Exception e) {
-        //e.printStackTrace();
-        return e.getMessage();
-      }	
     }
 	
-    public String open(String path, int compressionType)	{
-      try {
+    public String open(String path, int compressionType) throws IOException	{
         Path filename = new Path(path);
         
         CompressionType compType=null;
@@ -129,48 +125,31 @@ public class SequenceFileWriter {
             break;
           
           default:
-            return "Wrong argument for compression type.";
-        }
-        
+            throw new IOException("Wrong argument for compression type.");
+        }   
         writer = SequenceFile.createWriter(conf, 
           	                               SequenceFile.Writer.file(filename),
           	                               SequenceFile.Writer.keyClass(BytesWritable.class),
           	                               SequenceFile.Writer.valueClass(Text.class),
           	                               SequenceFile.Writer.compression(compType));
         return null;
-      } catch (Exception e) {
-        //e.printStackTrace();
-        return e.getMessage();
-      }	
     }
 	
-    public String write(String data) {
-		  if (writer == null)
-			  return "open() was not called first.";
+    public String write(String data) throws IOException {
+        if (writer == null)
+           throw new IOException("open() was not called first.");
 			
-      try {
-	      writer.append(new BytesWritable(), new Text(data.getBytes()));
+	writer.append(new BytesWritable(), new Text(data.getBytes()));
         return null;
-    	} catch (IOException e) {
-    	  //e.printStackTrace();
-        return e.getMessage();
-    	}
     }
 	
-    public String close() {
-		  if (writer == null)
-			  return "open() was not called first.";
-			
-      try {
-        writer.close();
+    public String close() throws IOException {
+        if (writer != null) {
+           writer.close();
+           writer = null;
+        }
         return null;
-      } catch (Exception e) {
-        //e.printStackTrace();
-        return e.getMessage();
-      }
     }
-    
-    
     
     boolean hdfsCreate(String fname , boolean compress) throws IOException
     {
@@ -192,6 +171,7 @@ public class SequenceFileWriter {
         GzipCodec gzipCodec = (GzipCodec) ReflectionUtils.newInstance( GzipCodec.class, conf);
         Compressor gzipCompressor = CodecPool.getCompressor(gzipCodec);
         outStream = gzipCodec.createOutputStream(fsOut, gzipCompressor);
+        sameStream = false;
       }
       
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsCreate() - compressed output stream created" );
@@ -199,7 +179,6 @@ public class SequenceFileWriter {
     }
     
     boolean hdfsWrite(byte[] buff, long len) throws IOException
-      //,OutOfMemoryError
     {
 
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsWrite() - started" );
@@ -212,8 +191,23 @@ public class SequenceFileWriter {
     boolean hdfsClose() throws IOException
     {
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsClose() - started" );
-      outStream.close();
-      fsOut.close();
+      if (sameStream) { 
+         if (outStream != null) {
+            outStream.close();
+            outStream = null;
+         }
+         fsOut = null;
+      }
+      else {
+         if (outStream != null) {
+            outStream.close();
+            outStream = null;
+         }
+         if (fsOut != null) {
+            fsOut.close();
+            fsOut = null;
+         }
+      }
       return true;
     }
 
@@ -315,19 +309,16 @@ public class SequenceFileWriter {
       , ServiceException
   {
     logger.debug("SequenceFileWriter.init(" + zkServers + ", " + zkPort + ") called.");
-    if (conf != null)		
-       return true;		
-    conf = HBaseConfiguration.create();		
-    HBaseAdmin.checkHBaseAvailable(conf);
+    connection = HBaseClient.getConnection();
     return true;
   }
   
   public boolean createSnapshot( String tableName, String snapshotName)
       throws IOException
   {
-      if (admin == null)
-        admin = new HBaseAdmin(conf);
-      admin.snapshot(snapshotName, tableName);
+      Admin admin = connection.getAdmin();
+      admin.snapshot(snapshotName, TableName.valueOf(tableName));
+      admin.close();
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.createSnapshot() - Snapshot created: " + snapshotName);
     return true;
   }
@@ -335,10 +326,10 @@ public class SequenceFileWriter {
   public boolean verifySnapshot( String tableName, String snapshotName)
       throws IOException
   {
-      if (admin == null)
-        admin = new HBaseAdmin(conf);
+      Admin admin = connection.getAdmin();
       List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
-
+      try 
+      {
       for (SnapshotDescription snpd : lstSnaps) 
       {
         if (snpd.getName().compareTo(snapshotName) == 0 && 
@@ -348,27 +339,21 @@ public class SequenceFileWriter {
           return true;
         }
       }
+      } finally {
+        admin.close();
+      }
     return false;
   }
  
   public boolean deleteSnapshot( String snapshotName)
       throws MasterNotRunningException, IOException, SnapshotCreationException, 
-             InterruptedException, ZooKeeperConnectionException, ServiceException, Exception
+             InterruptedException, ZooKeeperConnectionException, ServiceException
   {
-      if (admin == null)
-        admin = new HBaseAdmin(conf);
+      Admin admin = connection.getAdmin();
       admin.deleteSnapshot(snapshotName);
+      admin.close();
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.deleteSnapshot() - Snapshot deleted: " + snapshotName);
       return true;
   }
 
-  public boolean release()  throws IOException
-  {
-    if (admin != null)
-    {
-      admin.close();
-      admin = null;
-    }
-    return true;
-  }
 }

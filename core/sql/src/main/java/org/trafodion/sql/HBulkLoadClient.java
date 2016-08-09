@@ -41,7 +41,7 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Scan;
@@ -77,12 +77,12 @@ import org.apache.hadoop.io.compress.Compressor;
 import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 
 import org.apache.hive.jdbc.HiveDriver;
-import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -96,6 +96,7 @@ public class HBulkLoadClient
   private final static String BULKLOAD_STAGING_DIR = "hbase.bulkload.staging.dir";
   private final static long MAX_HFILE_SIZE = 10737418240L; //10 GB
   
+  private Connection connection_; 
   public static int BLOCKSIZE = 64*1024;
   public static String COMPRESSION = Compression.Algorithm.NONE.getName();
   String lastError;
@@ -111,24 +112,19 @@ public class HBulkLoadClient
   DataBlockEncoding dataBlockEncoding = DataBlockEncoding.NONE;
   FSDataOutputStream fsOut = null;
 
-  public HBulkLoadClient()
+  public HBulkLoadClient() throws IOException
   {
     if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.HBulkLoadClient() called.");
+    connection_ = HBaseClient.getConnection();
   }
 
   public HBulkLoadClient(Configuration conf) throws IOException
   {
     if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.HBulkLoadClient(...) called.");
     config = conf;
+    connection_ = HBaseClient.getConnection();
   }
 
-  public String getLastError() {
-    return lastError;
-  }
-
-  void setLastError(String err) {
-      lastError = err;
-  }
   public boolean initHFileParams(String hFileLoc, String hFileNm, long userMaxSize /*in MBs*/, String tblName,
                                  String sampleTblName, String sampleTblDDL) 
   throws UnsupportedOperationException, IOException, SQLException, ClassNotFoundException
@@ -170,10 +166,9 @@ public class HBulkLoadClient
     if (sampleTblDDL.length() > 0)
     {
       Class.forName("org.apache.hive.jdbc.HiveDriver");
-      Connection conn = DriverManager.getConnection("jdbc:hive2://", "hive", "");
+      java.sql.Connection conn = DriverManager.getConnection("jdbc:hive2://", "hive", "");
       Statement stmt = conn.createStatement();
       stmt.execute("drop table if exists " + sampleTblName);
-      //System.out.println("*** DDL for Hive sample table is: " + sampleTblDDL);
       stmt.execute(sampleTblDDL);
     }
 
@@ -242,7 +237,7 @@ public class HBulkLoadClient
      bbRowIDs = (ByteBuffer)rowIDs;
      bbRows = (ByteBuffer)rows;
      numRows = bbRowIDs.getShort();
-     HTableClient htc = new HTableClient();
+     HTableClient htc = new HTableClient(HBaseClient.getConnection());
      long now = System.currentTimeMillis();
      for (short rowNum = 0; rowNum < numRows; rowNum++) 
      {
@@ -286,12 +281,12 @@ public class HBulkLoadClient
   }
 
   private boolean createSnapshot( String tableName, String snapshotName)
-      throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException, Exception
+      throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException
   {
-    HBaseAdmin admin = null;
+    Admin admin = null;
     try 
     {
-      admin = new HBaseAdmin(config);
+      admin = connection_.getAdmin();
       List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
       if (! lstSnaps.isEmpty())
       {
@@ -304,13 +299,11 @@ public class HBulkLoadClient
             }
         }
       }
-      admin.snapshot(snapshotName, tableName);
+      admin.snapshot(snapshotName, TableName.valueOf(tableName));
     }
     finally
     {
-      //close HBaseAdmin instance 
-      if (admin !=null)
-        admin.close();
+      admin.close();
     }
     return true;
   }
@@ -318,34 +311,33 @@ public class HBulkLoadClient
   private boolean restoreSnapshot( String snapshotName, String tableName)
       throws IOException, RestoreSnapshotException
   {
-    HBaseAdmin admin = null;
+    Admin admin = null;
     try
     {
-      admin = new HBaseAdmin(config);
-      if (! admin.isTableDisabled(tableName))
-          admin.disableTable(tableName);
+      admin = connection_.getAdmin();
+      TableName table = TableName.valueOf(tableName);
+      if (! admin.isTableDisabled(table))
+          admin.disableTable(table);
       
       admin.restoreSnapshot(snapshotName);
   
-      admin.enableTable(tableName);
+      admin.enableTable(table);
     }
     finally
     {
-      //close HBaseAdmin instance 
-      if (admin != null) 
-        admin.close();
+       admin.close();
     }
     return true;
   }
   private boolean deleteSnapshot( String snapshotName, String tableName)
-      throws IOException, Exception
+      throws IOException
   {
     
-    HBaseAdmin admin = null;
+    Admin admin = null;
     boolean snapshotExists = false;
     try
     {
-      admin = new HBaseAdmin(config);
+      admin = connection_.getAdmin();
       List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
       if (! lstSnaps.isEmpty())
       {
@@ -362,23 +354,22 @@ public class HBulkLoadClient
       }
       if (!snapshotExists)
         return true;
-      if (admin.isTableDisabled(tableName))
-          admin.enableTable(tableName);
+      TableName table = TableName.valueOf(tableName);
+      if (admin.isTableDisabled(table))
+          admin.enableTable(table);
       admin.deleteSnapshot(snapshotName);
     }
     finally 
     {
-      //close HBaseAdmin instance 
-      if (admin != null) 
-        admin.close();
+       admin.close();
     }
     return true;
   }
   
   private void doSnapshotNBulkLoad(Path hFilePath, String tableName, HTable table, LoadIncrementalHFiles loader, boolean snapshot)
-      throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException, RestoreSnapshotException, Exception
+      throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException, RestoreSnapshotException
   {
-    HBaseAdmin admin = new HBaseAdmin(config);
+    Admin admin = connection_.getAdmin();
     String snapshotName= null;
     if (snapshot)
     {
@@ -394,7 +385,7 @@ public class HBulkLoadClient
     }
     catch (IOException e)
     {
-      if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - Exception: " + e.toString());
+      if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - Exception: ", e);
       if (snapshot)
       {
         restoreSnapshot(snapshotName, tableName);
@@ -411,10 +402,12 @@ public class HBulkLoadClient
         deleteSnapshot(snapshotName, tableName);
         if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot deleted: " + snapshotName);
       }
+      admin.close();
     }
     
   }
-  public boolean doBulkLoad(String prepLocation, String tableName, boolean quasiSecure, boolean snapshot) throws Exception
+  public boolean doBulkLoad(String prepLocation, String tableName, boolean quasiSecure, boolean snapshot) throws UnsupportedOperationException, 
+     MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException, RestoreSnapshotException
   {
     if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.doBulkLoad() - start");
     if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.doBulkLoad() - Prep Location: " + prepLocation + 
@@ -424,7 +417,15 @@ public class HBulkLoadClient
 
       
     HTable table = new HTable(config, tableName);
-    LoadIncrementalHFiles loader = new LoadIncrementalHFiles(config);    
+    LoadIncrementalHFiles loader = null;
+    // The constructor below throws Exception, so it is caught
+    // and thrown as IOException
+    try {
+       loader = new LoadIncrementalHFiles(config);    
+    }
+    catch (Exception e) {
+       throw new IOException(e);
+    }
     Path prepPath = new Path(prepLocation );
     prepPath = prepPath.makeQualified(prepPath.toUri(), null);
     FileSystem prepFs = FileSystem.get(prepPath.toUri(),config);
@@ -458,7 +459,7 @@ public class HBulkLoadClient
     return true;
   }
 
-  public boolean bulkLoadCleanup(String location) throws Exception
+  public boolean bulkLoadCleanup(String location) throws IOException
   {
       Path dir = new Path(location );
       dir = dir.makeQualified(dir.toUri(), null);
@@ -475,10 +476,12 @@ public class HBulkLoadClient
        writer.close();
        writer = null;
     }
-    if (fileSys !=null)
+    //  This is one place that is unconditionally closing the 
+    // hdfsFs that's part of this thread's JNIenv.
+    // if (fileSys !=null)
     {
-      fileSys.close();
-      fileSys = null;
+        //  fileSys.close();
+        //  fileSys = null;
     }
     if (config != null) 
     {

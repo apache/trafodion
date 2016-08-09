@@ -24,25 +24,33 @@ package org.trafodion.sql;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.ClusterStatus;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.RegionLoad;
 import org.apache.hadoop.hbase.ServerLoad;
 import org.apache.hadoop.hbase.ServerName;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import java.lang.Byte;
+
 class SizeInfo {
+    String serverName;
+    String regionName;
+    String tableName;
     int  numStores;
     int  numStoreFiles;
     Long storeUncompSize;
@@ -53,10 +61,22 @@ class SizeInfo {
 };
 
 public class TrafRegionStats {
-    
+
+    private HBaseAdmin hbAdmin;
+    private ClusterStatus clusterStatus;
+    private Collection<ServerName> servers;
+    private ServerName server;
+    private ServerLoad serverLoad;
+    private Iterator iterServer;
+    private Iterator iterRegion;
+    private boolean firstTime;
+    final long megaByte = 1024L * 1024L;
+
     private final Map<byte[], SizeInfo> sizeInfoMap = 
         new TreeMap<byte[], SizeInfo>(Bytes.BYTES_COMPARATOR);
-    
+
+    private SizeInfo currRegionSizeInfo = null;
+
     static final String ENABLE_REGIONSIZECALCULATOR = "hbase.regionsizecalculator.enable";
     
     boolean enabled(Configuration configuration) {
@@ -74,17 +94,11 @@ public class TrafRegionStats {
     public Map<byte[], SizeInfo> getRegionSizeMap() {
         return Collections.unmodifiableMap(sizeInfoMap);
     }
+
     
-    /**
-     * Computes size of each region for table and given column families.
-     * */
-    public TrafRegionStats(HTable table) throws IOException {
-        this(table, new HBaseAdmin(table.getConfiguration()));
-    }
-    
-    public TrafRegionStats (HTable table, HBaseAdmin admin) throws IOException {
+
+    public TrafRegionStats (HTable table, Admin admin) throws IOException {
         
-        try {
             if (!enabled(table.getConfiguration())) {
                 System.out.println("Region size calculation disabled.");
                 return;
@@ -104,7 +118,7 @@ public class TrafRegionStats {
             //iterate all cluster regions, filter regions from our table and compute their size
             for (ServerName serverName: servers) {
                 ServerLoad serverLoad = clusterStatus.getLoad(serverName);
-                
+
                 for (RegionLoad regionLoad: serverLoad.getRegionsLoad().values()) {
                     byte[] regionId = regionLoad.getName();
                     
@@ -119,7 +133,12 @@ public class TrafRegionStats {
                         // this method is available in HBase 2.0.0
                         //                        Long lastMajorCompactionTs = regionLoad.getLastMajorCompactionTs();
 
+                        byte[][] regNameParts = HRegionInfo.parseRegionName(regionLoad.getName());
+
                         SizeInfo sizeInfo = new SizeInfo();
+                        sizeInfo.serverName = serverName.toShortString();
+                        sizeInfo.regionName = new String(regNameParts[2]); 
+                        sizeInfo.tableName = new String(regNameParts[0]);
                         sizeInfo.numStores = numStores;
                         sizeInfo.numStoreFiles = numStoreFiles;
                         sizeInfo.storeUncompSize = storeUncompSizeBytes;
@@ -131,14 +150,95 @@ public class TrafRegionStats {
 
                         sizeInfoMap.put(regionId, sizeInfo);
                         
-                        //                        System.out.println("RegionNameAsString " + regionLoad.getNameAsString());
                      }
                 }
             }
             
-        } finally {
-            admin.close();
-        }
     }
+
+
+    public TrafRegionStats () throws IOException {
+        Configuration config = HBaseConfiguration.create();
+
+        hbAdmin = new HBaseAdmin(config);
+    }
+
+    public boolean Open () throws IOException {
+        
+        clusterStatus = hbAdmin.getClusterStatus();
+        servers = clusterStatus.getServers();
+        iterServer = servers.iterator();
+
+        firstTime = true;
+
+        return true;
+    }
+
+    public boolean GetNextServer () throws IOException {
+        
+        if (! iterServer.hasNext())
+            return false;
+        
+        server = (ServerName)iterServer.next();
+        serverLoad = clusterStatus.getLoad(server);
+
+        return true;
+    }
+
+    public boolean GetNextRegion () throws IOException {
+        
+        if ((firstTime) || (! iterRegion.hasNext())) {
+            firstTime = false;
+            if (! GetNextServer())
+                return false;
+            else
+              iterRegion = serverLoad.getRegionsLoad().values().iterator();  
+        }
+
+        RegionLoad regionLoad = (RegionLoad)iterRegion.next();
+
+        byte[] regionId = regionLoad.getName();
+        
+        int  numStores = regionLoad.getStores();
+        int  numStoreFiles = regionLoad.getStorefiles();
+        Long storeUncompSizeBytes = regionLoad.getStoreUncompressedSizeMB() * megaByte;
+        Long storeFileSizeBytes = regionLoad.getStorefileSizeMB() * megaByte;
+        Long memStoreSizeBytes = regionLoad.getMemStoreSizeMB() * megaByte;
+        
+        // this method is available in HBase 2.0.0
+        // Long lastMajorCompactionTs = regionLoad.getLastMajorCompactionTs();
+        
+        byte[][] regNameParts = HRegionInfo.parseRegionName(regionLoad.getName());
+
+        currRegionSizeInfo = new SizeInfo();
+
+        currRegionSizeInfo.serverName = new String(server.toShortString());
+        currRegionSizeInfo.regionName = new String(regNameParts[2]);
+
+  
+        currRegionSizeInfo.tableName = new String(regNameParts[0]);
+        currRegionSizeInfo.numStores = numStores;
+        currRegionSizeInfo.numStoreFiles = numStoreFiles;
+        currRegionSizeInfo.storeUncompSize = storeUncompSizeBytes;
+        currRegionSizeInfo.storeFileSize = storeFileSizeBytes;
+        currRegionSizeInfo.memStoreSize = memStoreSizeBytes;
+        
+        currRegionSizeInfo.readRequestsCount = regionLoad.getReadRequestsCount();
+        currRegionSizeInfo.writeRequestsCount = regionLoad.getWriteRequestsCount();
+
+        return true;
+    }
+
+    public SizeInfo getCurrRegionSizeInfo() {
+        return currRegionSizeInfo;
+    }
+    
+    public boolean Close () throws IOException {
+        
+        hbAdmin.close();
+
+        return true;
+    }
+
 }
 

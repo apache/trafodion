@@ -13,7 +13,19 @@
 +>                  primary key (dno) );
 
 --- SQL operation complete.
->>
+>>create table t021(eno int not null ,
++>                 ename char(20),
++>                 dno int,
++>                 salary numeric(8,2),
++>                 primary key(eno) );
+
+--- SQL operation complete.
+>>create table t022(eno int ,
++>                  ename char(20) ,
++>                  dno int
++>                  );
+
+--- SQL operation complete.
 >>#ifMX
 >>create table t01sample (l_partkey int not null not droppable,
 +>l_suppkey int not null not droppable,
@@ -69,7 +81,33 @@
 +>                        (55, 'Production', 2);
 
 --- 3 row(s) inserted.
+>>insert into t021 values (1, 'Smith',  33, 2000);
+
+--- 1 row(s) inserted.
+>>insert into t021 values (2, 'Jones',  33, 3000);
+
+--- 1 row(s) inserted.
+>>insert into t021 values (3, 'Gray',   44, 4000);
+
+--- 1 row(s) inserted.
+>>insert into t021 values (4, 'Miller', 55, 1000);
+
+--- 1 row(s) inserted.
+>>insert into t021 values (5, 'Miller', null, null);
+
+--- 1 row(s) inserted.
+>>insert into t021 values (6, 'Miller', null, null);
+
+--- 1 row(s) inserted.
 >>
+>>insert into t022 values (1, 'Simith',   33),
++>                        (2, 'Jones',  33),
++>                        (3, 'Gray', 44),
++>                        (3, 'Gray', 44),
++>                        (4, 'Miller', null),
++>                        (6, 'Miller', null);
+
+--- 6 row(s) inserted.
 >>-- simulate a full outer join
 >>select * from t01emp natural left  join t01dept
 +> union
@@ -85,6 +123,81 @@ DNO          ENO          ENAME                 SALARY        DNAME             
 
 --- 4 row(s) selected.
 >>
+>>-- do a intersect
+>>cqd mode_special_4 'on';
+
+--- SQL operation complete.
+>>select eno, ename, dno from t021
++> intersect
++>select eno, ename, dno from t022;
+
+ENO          ENAME                 DNO
+-----------  --------------------  -----------
+
+          2  Jones                          33
+          3  Gray                           44
+          6  Miller                          ?
+
+--- 3 row(s) selected.
+>>
+>>select eno, ename, dno from t021
++> intersect  all
++>select eno, ename, dno from t022;
+
+*** ERROR[3022] The INTERSECT ALL operator is not yet supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select eno, ename, dno from t021 where dno >10
++> intersect
++>select eno, ename, dno from t022 where dno <50;
+
+ENO          ENAME                 DNO
+-----------  --------------------  -----------
+
+          2  Jones                          33
+          3  Gray                           44
+
+--- 2 row(s) selected.
+>>
+>>select * from  t021
++> intersect
++>select * from  t022;
+
+*** ERROR[4014] The operands of an INTERSECT must be of equal degree.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select * from
++>(
++>select eno, ename, dno from t021
++> intersect
++>select eno, ename, dno from t022
++>) ;
+
+ENO          ENAME                 DNO
+-----------  --------------------  -----------
+
+          2  Jones                          33
+          3  Gray                           44
+          6  Miller                          ?
+
+--- 3 row(s) selected.
+>>select eno, ename, dno from t021 except select * from t022;
+
+ENO          ENAME                 DNO
+-----------  --------------------  -----------
+
+          1  Smith                          33
+          4  Miller                         55
+          5  Miller                          ?
+
+--- 3 row(s) selected.
+>>cqd mode_special_4 reset;
+
+--- SQL operation complete.
 >>-- groupby can be pushed down
 >>-- add showshape statement to ensure that the group by is
 >>-- actually pushed down

@@ -375,7 +375,7 @@ struct hive_column_desc* populateColumns(HiveMetaData *md, Int32 cdID,
         return NULL;
       
       NAText typeStr;
-      if(!extractValueStr(md, tblStr, pos, "type:", ",", 
+      if(!extractValueStr(md, tblStr, pos, "type:", ", comment", 
                           typeStr, "populateColumns::type:###"))
         return NULL;
       
@@ -436,7 +436,7 @@ struct hive_pkey_desc* populatePartitionKey(HiveMetaData *md, Int32 tblID,
       NAText nameStr = tblStr->substr(foundB, pos-foundB);
       
       NAText typeStr;
-      if(!extractValueStr(md, tblStr, pos, "type:", ",", 
+      if(!extractValueStr(md, tblStr, pos, "type:", ", comment", 
                           typeStr, "populatePartitionKeys::type:###"))
         return NULL;
       

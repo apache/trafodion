@@ -29,7 +29,7 @@
 
 {project-name} reports exception condition messages at a {project-name} Database
 Connectivity Service conversational interface (DCS) window and in the
-Trafodion Command Interface (TrafCI).
+{project-name} Command Interface (TrafCI).
 
 Most {project-name}  exception condition messages describe error conditions
 for which recovery action is required. Some messages are warnings that

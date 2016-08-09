@@ -158,6 +158,15 @@ fi
 sudo cp $HOME/hbase-site.xml $TRAF_WORKDIR
 sudo chown trafodion.trafodion $TRAF_WORKDIR/hbase-site.xml
 
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hdfs dfs -mkdir -p /user/'"$TRAF_USER"'"'
+if [ $? != 0 ]; then
+   echo "***ERROR: '$HADOOP_BIN_PATH/hdfs dfs -mkdir -p /user/$TRAF_USER' command failed"
+   exit -1
+fi
+
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hdfs dfs -chown -R '"$TRAF_USER"' /user/'"$TRAF_USER"'"'
+
+
 ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -mkdir -p /hbase-staging"'
 if [ $? != 0 ]; then
    echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir -p /hbase-staging' command failed"
@@ -214,6 +223,9 @@ curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
     "items": [ {
              "name":"dfs_namenode_acls_enabled",
              "value":"true"
+             }, {
+             "name":"dfs_umaskmode",
+             "value":"0002"          
              } ]
 }' \
 $URL/api/v1/clusters/$CLUSTER_NAME/services/$HDFS/config > $LOCAL_WORKDIR/traf_hdfs_config_temp
@@ -263,7 +275,7 @@ curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
 		"value" : "600000"
 		}, {
 		"name" : "hbase_regionserver_config_safety_valve", 
-		"value" : "<property>\r\n   <name>hbase.hregion.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>\r\n</property>\r\n <property>\r\n   <name>hbase.regionserver.region.split.policy</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy</value>\r\n</property>\r\n  <property>\r\n   <name>hbase.snapshot.enabled</name>\r\n   <value>true</value>\r\n</property>\r\n <property>\r\n   <name>hbase.bulkload.staging.dir</name>\r\n   <value>/hbase-staging</value>\r\n</property>\r\n <property>\r\n   <name>hbase.regionserver.region.transactional.tlog</name>\r\n   <value>true</value>\r\n</property>\r\n <property>\r\n   <name>hbase.snapshot.region.timeout</name>\r\n   <value>600000</value>\r\n</property>\r\n "
+		"value" : "<property>\r\n   <name>hbase.hregion.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>\r\n</property>\r\n <property>\r\n   <name>hbase.regionserver.region.split.policy</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy</value>\r\n</property>\r\n  <property>\r\n   <name>hbase.snapshot.enabled</name>\r\n   <value>true</value>\r\n</property>\r\n <property>\r\n   <name>hbase.snapshot.region.timeout</name>\r\n   <value>600000</value>\r\n</property>\r\n "
 		} ] 
 	} ] 
 }' \
@@ -367,27 +379,37 @@ ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfsadmi
 #       enabled and HDFS has been restarted
 echo "***INFO: Setting HDFS ACLs for snapshot scan support"
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -mkdir -p /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+if [ $errorFound != 0 ]; then
+   echo "ERROR Code: $errorFound"
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -mkdir -p /hbase/archive) command failed"
    exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -chown hbase:hbase /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+if [ $errorFound != 0 ]; then
+   echo "ERROR Code: $errorFound"
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -chown hbase:hbase /hbase/archive) command failed"
    exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -setfacl -R -m user:'"$TRAF_USER"':rwx /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+if [ $errorFound != 0 ]; then
+   echo "ERROR Code: $errorFound"
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive) command failed"
    exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -setfacl -R -m default:user:'"$TRAF_USER"':rwx /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+if [ $errorFound != 0 ]; then
+   echo "ERROR Code: $errorFound"
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /hbase/archive) command failed"
    exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -setfacl -R -m mask::rwx /hbase/archive"'
-if [ $? != 0 ]; then
+errorFound=$?
+if [ $errorFound != 0 ]; then
+   echo "ERROR Code: $errorFound"
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m mask::rwx /hbase/archive) command failed"
    exit -1
 fi

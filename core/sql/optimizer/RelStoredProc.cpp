@@ -384,7 +384,7 @@ RelExpr* RelInternalSP::bindNode(BindWA *bindWA)
       CmpSPOutputFormat outFormat(bindWA->currentCmpContext());
       if ( !cmpInternalSP->OutputFormat(outFormat) )
         return 0;      
-      desc_struct* outTableDesc = outFormat.tableDesc();      
+      TrafDesc* outTableDesc = outFormat.tableDesc();      
       
       // the outTableDesc is expected to be deleteed in NATable::NATable
       if (outTableDesc)

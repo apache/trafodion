@@ -314,7 +314,7 @@ select a from hive.hive.thive;
 select * from hive.hive.thive;
 
 -- truncate of hive data
-cqd query_cache '0';
+--cqd query_cache '0';
 truncate hive.hive.thive;
 select * from hive.hive.thive;
 insert into hive.hive.thive values (10, 20);

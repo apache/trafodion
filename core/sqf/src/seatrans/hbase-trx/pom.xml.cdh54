@@ -21,28 +21,29 @@
 -->
   <repositories>
     <repository>
-      <id>Apache</id>
-      <url>http://mvnrepository.com/artifact/</url>
-      <layout>default</layout>
+      <id>cloudera</id>
+      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
     </repository>
-  </repositories> 
+  </repositories>
 
   <properties>
-    <hadoop.version>2.4.0</hadoop.version>
-    <hbase.version>${env.HBASE_DEP_VER_APACHE}</hbase.version>
+    <hadoop.version>2.6.0</hadoop.version>
+    <hbase.version>1.0.0-cdh5.4.4</hbase.version>
+    <protobuf.version>2.5.0</protobuf.version>
+    <protocVersion>2.5.0</protocVersion>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <protobuf.version>2.5.0</protobuf.version>                                                                                              
-    <protocVersion>2.5.0</protocVersion>                                                                                                    
     <java.version>1.7</java.version>
-    <trx-suffix>apache</trx-suffix>
+    <trx-suffix>cdh5_4</trx-suffix>
   </properties>
+
 
   <groupId>org.apache</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>hbase-trx-apache1_0_2</artifactId>
+  <artifactId>hbase-trx-cdh5_4</artifactId>
   <version>${env.TRAFODION_VER}</version>
   <name>HBase - Trx</name>
   <description>Trx of HBase usage</description>
+
 
   <build>
     <defaultGoal>package</defaultGoal>
@@ -115,11 +116,6 @@
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-thrift</artifactId>
-      <version>${hbase.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-annotations</artifactId>
       <version>${hbase.version}</version>
     </dependency>
     <dependency>

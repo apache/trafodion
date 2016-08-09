@@ -66,8 +66,6 @@ struct hash<std::string> {
 
 class CDataSourceList ;
 class ODBCMXTraceMsg;
-//class ResStatisticsStatement;
-//class ResStatisticsSession;
 
 
 #define	MAX_IP_ADDRESS_LEN		128
@@ -89,7 +87,6 @@ class ODBCMXTraceMsg;
 #include "QSGlobal.h"
 #include "PubInterface.h"
 #define DEFAULT_QS_PROCESS_NAME		"$ZWMGR"
-//define DEFAULT_QS_PROCESS_NAME	"$QSMGR"
 #define DEFAULT_SYNC_PROCESS_NAME	"$ZWSYN"
 
 #define DEFAULT_QS_POLLING			2
@@ -1024,6 +1021,8 @@ typedef struct _SRVR_GLOBAL_Def
 //
 	char				ClientComputerName[MAX_COMPUTER_NAME_LEN + 1];
 	char				ApplicationName[MAX_APPLICATION_NAME_LEN + 1];
+	char				mappedProfileName[MAX_APPLICATION_NAME_LEN + 1];
+	char				mappedSLAName[MAX_APPLICATION_NAME_LEN + 1];
 	int		                CreatorAccessId;
 	int		                ProcessAccessId;
 	char				RoleName[MAX_ROLE_LEN + 1];		// ROLE Name

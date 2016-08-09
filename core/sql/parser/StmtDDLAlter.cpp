@@ -60,6 +60,7 @@
 #include "AllElemDDLFileAttr.h"
 #include "StmtDDLAlterAuditConfig.h"
 #include "StmtDDLAlterCatalog.h"
+#include "StmtDDLAlterSchema.h"
 #include "StmtDDLAlterLibrary.h"
 #include "StmtDDLAlterSynonym.h"
 #include "StmtDDLAlterTableDisableIndex.h"
@@ -439,6 +440,96 @@ StmtDDLAlterCatalog::setAllPrivileges(NABoolean isAll)
   isAllSchemaPrivileges_ = isAll;
 }
 
+
+// -----------------------------------------------------------------------
+// Methods for class StmtDDLAlterSchema
+// -----------------------------------------------------------------------
+
+void StmtDDLAlterSchema::initChecks()
+{
+  if (schemaQualName_.getCatalogName().isNull())
+    {
+      schemaName_ = ToAnsiIdentifier(schemaQualName_.getSchemaName());
+    }
+  else
+    {
+      schemaName_ = ToAnsiIdentifier(schemaQualName_.getCatalogName()) + "." +
+        ToAnsiIdentifier(schemaQualName_.getSchemaName());
+    }
+  
+  // If the schema name specified is reserved name, users cannot drop them.
+  // They can only be dropped internally.
+  if ((! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
+      (ComIsTrafodionReservedSchemaName(schemaQualName_.getSchemaName())) &&
+      (!ComIsTrafodionExternalSchemaName(schemaQualName_.getSchemaName())))
+    {
+      // error.
+      *SqlParser_Diags << DgSqlCode(-1430)
+                       << DgSchemaName(schemaName_);
+    }
+}
+
+StmtDDLAlterSchema::StmtDDLAlterSchema(const ElemDDLSchemaName & aSchemaNameParseNode,
+                                       CollHeap    * heap)
+: StmtDDLNode(DDL_ALTER_SCHEMA),
+  schemaQualName_(aSchemaNameParseNode.getSchemaName(), heap),
+  dropAllTables_(TRUE),
+  renameSchema_(FALSE),
+  alterStoredDesc_(FALSE)
+{
+  initChecks();
+}
+
+StmtDDLAlterSchema::StmtDDLAlterSchema(const ElemDDLSchemaName & aSchemaNameParseNode,
+                                       NAString &renamedSchName,
+                                       CollHeap    * heap)
+: StmtDDLNode(DDL_ALTER_SCHEMA),
+  schemaQualName_(aSchemaNameParseNode.getSchemaName(), heap),
+  dropAllTables_(FALSE),
+  renameSchema_(TRUE),
+  renamedSchName_(renamedSchName),
+  alterStoredDesc_(FALSE)
+{
+  initChecks();
+}
+
+StmtDDLAlterSchema::StmtDDLAlterSchema(const ElemDDLSchemaName & aSchemaNameParseNode,
+                                       const StmtDDLAlterTableStoredDesc::AlterStoredDescType oper,
+                                       CollHeap    * heap)
+     
+: StmtDDLNode(DDL_ALTER_SCHEMA),
+  schemaQualName_(aSchemaNameParseNode.getSchemaName(), heap),
+  dropAllTables_(FALSE),
+  renameSchema_(FALSE),
+  alterStoredDesc_(TRUE),
+  storedDescOper_(oper)
+{
+  initChecks();
+}
+
+StmtDDLAlterSchema::~StmtDDLAlterSchema()
+{}
+
+// cast
+
+StmtDDLAlterSchema *
+StmtDDLAlterSchema::castToStmtDDLAlterSchema()
+{
+   return this;
+}
+
+// for tracing
+const NAString
+StmtDDLAlterSchema::displayLabel1() const
+{
+   return NAString("Schema name: " ) + getSchemaName();
+}
+
+const NAString
+StmtDDLAlterSchema::getText() const
+{
+   return "StmtDDLAlterSchema";
+}
 
 // -----------------------------------------------------------------------
 // Methods for class StmtDDLAlterSynonym

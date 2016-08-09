@@ -82,16 +82,17 @@ ex_globals::ex_globals(short num_temps,
 	tempList_[i] = NULL;
     }
 
-  // lobGlob_ = NULL;
-  lobGlobals_ = new(heap) LOBglobals(heap);
+  
+  lobGlobals_ = new(heap_) LOBglobals(heap_);
 }
 
-void *& ex_globals::lobGlobal() { return lobGlobals()->lobAccessGlobals(); }
+void *& ex_globals::getExLobGlobal() { return lobGlobals()->lobAccessGlobals(); }
 
-void ex_globals::initLOBglobal()
+void ex_globals::initLOBglobal(void *context)
 {
   // initialize lob interface
-  ExpLOBoper::initLOBglobal(lobGlobal(), heap_);
+  ExpLOBoper::initLOBglobal(getExLobGlobal(), heap_, context,(char *)"default",0);
+
 }
 
 void ex_globals::reAllocate(short create_gui_sched)
@@ -137,9 +138,10 @@ void ex_globals::deleteMe(NABoolean fatalError)
 #endif
   }
   statsArea_ = NULL;
-
   cleanupTcbs();
   tcbList_.deallocate();
+  NADELETE(lobGlobals_,LOBglobals,heap_);
+  lobGlobals_ = NULL;
 }
 
 void ex_globals::deleteMemory(void *mem)

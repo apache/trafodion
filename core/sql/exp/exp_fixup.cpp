@@ -324,13 +324,14 @@ ex_expr::exp_return_type ex_clause::fixup(Space * space,
 					  NABoolean spaceCompOnly)
 {
   for (Lng32 i=0; i<numOperands_;i++)
+    if (op_[i])
       op_[i]->fixup(space, 
 		    constantsArea,
 		    tempsArea,
 		    persistentArea,
 		    fixupFlag,
 		    spaceCompOnly);
-
+  
   return ex_expr::EXPR_OK;
 };
 
@@ -468,7 +469,10 @@ const ex_arith_struct * ex_arith_clause::getMatchingRow(OperatorTypeEnum op,
       {ITM_DIVIDE, REC_BIN16_UNSIGNED, REC_BIN32_UNSIGNED, REC_BIN32_UNSIGNED, DIV_BIN16U_BIN32U_BIN32U},
       {ITM_DIVIDE, REC_BIN32_UNSIGNED, REC_BIN16_UNSIGNED, REC_BIN32_UNSIGNED, DIV_BIN32U_BIN16U_BIN32U},
       {ITM_DIVIDE, REC_BIN32_UNSIGNED, REC_BIN32_UNSIGNED, REC_BIN32_UNSIGNED, DIV_BIN32U_BIN32U_BIN32U},
-      {ITM_DIVIDE, REC_FLOAT64, REC_FLOAT64, REC_FLOAT64, DIV_FLOAT64_FLOAT64_FLOAT64}
+      {ITM_DIVIDE, REC_FLOAT64, REC_FLOAT64, REC_FLOAT64, DIV_FLOAT64_FLOAT64_FLOAT64},
+
+      {ITM_NEGATE, REC_BOOLEAN, REC_BOOLEAN, REC_BOOLEAN, NEGATE_BOOLEAN},
+
     };
 
   Int32 max_array_size = sizeof(as) / sizeof(ex_arith_struct);
@@ -503,10 +507,16 @@ const ex_arith_clause::arith_case_index ex_arith_clause::computeCaseIndex(Operat
   getCaseDatatypes(attr1->getDatatype(), attr1->getLength(), type_op1,
                    result->getDatatype(), result->getLength(), type_result,
                    0 /* don't need to take scale difference into account here */);
+
+// attr2 eill be null for unary operands.
+// Some methods below expect 2 operands. Change oper2 to be the same as oper1
+// to avoid null pointer exception.
+  if (!attr2)
+    attr2 = attr1;
   getCaseDatatypes(attr2->getDatatype(), attr2->getLength(), type_op2,
                    result->getDatatype(), result->getLength(), type_result,
                    0 /* don't need to take scale difference into account here */);
-
+  
   const ex_arith_struct * as = getMatchingRow(op, 
 					      type_op1,
 					      type_op2,
@@ -573,7 +583,9 @@ void ex_arith_clause::set_case_index()
   else
     {
       // Simple types are handled here.
-      case_index = computeCaseIndex(getOperType(), getOperand(1), getOperand(2),
+      case_index = computeCaseIndex(getOperType(), 
+                                    getOperand(1), 
+                                    (getNumOperands() == 3 ? getOperand(2) : NULL),
 				    getOperand(0));
     }
 }
@@ -620,6 +632,10 @@ const ex_comp_struct * ex_comp_clause::getMatchingRow(OperatorTypeEnum op,
   const static ex_comp_struct cs[] =
     {
       // op       op1 datatype        op2 datatype        case statement index
+
+      {ITM_EQUAL, REC_BIN8_SIGNED,    REC_BIN8_SIGNED,    EQ_BIN8S_BIN8S},
+      {ITM_EQUAL, REC_BIN8_UNSIGNED,  REC_BIN8_UNSIGNED,  EQ_BIN8U_BIN8U},
+
       {ITM_EQUAL, REC_BIN16_SIGNED,   REC_BIN16_SIGNED,   EQ_BIN16S_BIN16S},
       {ITM_EQUAL, REC_BIN16_SIGNED,   REC_BIN32_SIGNED,   EQ_BIN16S_BIN32S},
       {ITM_EQUAL, REC_BIN16_SIGNED,   REC_BPINT_UNSIGNED, EQ_BIN16S_BIN16U},
@@ -650,7 +666,10 @@ const ex_comp_struct * ex_comp_clause::getMatchingRow(OperatorTypeEnum op,
       {ITM_EQUAL, REC_BIN32_UNSIGNED, REC_BIN16_UNSIGNED, EQ_BIN32U_BIN16U},
       {ITM_EQUAL, REC_BIN32_UNSIGNED, REC_BIN32_UNSIGNED, EQ_BIN32U_BIN32U},    // Was BIN32S. Error? ANS
 
-      {ITM_EQUAL, REC_BIN64_SIGNED,   REC_BIN64_SIGNED,   EQ_BIN64S_BIN64S},
+      {ITM_EQUAL, REC_BIN64_SIGNED,   REC_BIN64_SIGNED,     EQ_BIN64S_BIN64S},
+      {ITM_EQUAL, REC_BIN64_UNSIGNED, REC_BIN64_UNSIGNED,   EQ_BIN64U_BIN64U},
+      {ITM_EQUAL, REC_BIN64_SIGNED,   REC_BIN64_UNSIGNED,   EQ_BIN64S_BIN64U},
+      {ITM_EQUAL, REC_BIN64_UNSIGNED, REC_BIN64_SIGNED,     EQ_BIN64U_BIN64S},
 
       {ITM_EQUAL, REC_DECIMAL_UNSIGNED, REC_DECIMAL_UNSIGNED, EQ_DECU_DECU},
       {ITM_EQUAL, REC_DECIMAL_LSE,      REC_DECIMAL_LSE,      EQ_DECS_DECS},
@@ -671,13 +690,18 @@ const ex_comp_struct * ex_comp_clause::getMatchingRow(OperatorTypeEnum op,
       {ITM_EQUAL, REC_BYTE_V_ASCII_LONG,  REC_BYTE_V_ASCII,       EQ_ASCII_COMP},
       {ITM_EQUAL, REC_BYTE_V_ASCII_LONG,  REC_BYTE_V_ASCII_LONG,  EQ_ASCII_COMP},
 
-       {ITM_EQUAL,REC_NCHAR_F_UNICODE,REC_NCHAR_F_UNICODE,EQ_UNICODE_F_F},
-       {ITM_EQUAL, REC_NCHAR_F_UNICODE,REC_NCHAR_V_UNICODE,UNICODE_COMP},
-       {ITM_EQUAL, REC_NCHAR_V_UNICODE,REC_NCHAR_F_UNICODE,UNICODE_COMP},
-       {ITM_EQUAL, REC_NCHAR_V_UNICODE,REC_NCHAR_V_UNICODE,UNICODE_COMP},
+      {ITM_EQUAL,REC_NCHAR_F_UNICODE,REC_NCHAR_F_UNICODE,EQ_UNICODE_F_F},
+      {ITM_EQUAL, REC_NCHAR_F_UNICODE,REC_NCHAR_V_UNICODE,UNICODE_COMP},
+      {ITM_EQUAL, REC_NCHAR_V_UNICODE,REC_NCHAR_F_UNICODE,UNICODE_COMP},
+      {ITM_EQUAL, REC_NCHAR_V_UNICODE,REC_NCHAR_V_UNICODE,UNICODE_COMP},
+      
+      {ITM_EQUAL, REC_BLOB,REC_BLOB,EQ_BLOB},
 
-       {ITM_EQUAL, REC_BLOB,REC_BLOB,EQ_BLOB},
-	
+      {ITM_EQUAL, REC_BOOLEAN, REC_BOOLEAN, EQ_BOOL_BOOL},
+
+      {ITM_NOT_EQUAL, REC_BIN8_SIGNED,    REC_BIN8_SIGNED,    NE_BIN8S_BIN8S},
+      {ITM_NOT_EQUAL, REC_BIN8_UNSIGNED,  REC_BIN8_UNSIGNED,  NE_BIN8U_BIN8U},
+      
       {ITM_NOT_EQUAL, REC_BIN16_SIGNED,   REC_BIN16_SIGNED,   NE_BIN16S_BIN16S},
       {ITM_NOT_EQUAL, REC_BIN16_SIGNED,   REC_BIN32_SIGNED,   NE_BIN16S_BIN32S},
       {ITM_NOT_EQUAL, REC_BIN16_SIGNED,   REC_BPINT_UNSIGNED, NE_BIN16S_BIN16U},
@@ -709,6 +733,9 @@ const ex_comp_struct * ex_comp_clause::getMatchingRow(OperatorTypeEnum op,
       {ITM_NOT_EQUAL, REC_BIN32_UNSIGNED, REC_BIN32_UNSIGNED, NE_BIN32U_BIN32U},  //Was 32S. Error? ANS
 
       {ITM_NOT_EQUAL, REC_BIN64_SIGNED,   REC_BIN64_SIGNED,   NE_BIN64S_BIN64S},
+      {ITM_NOT_EQUAL, REC_BIN64_UNSIGNED, REC_BIN64_UNSIGNED, NE_BIN64U_BIN64U},
+      {ITM_NOT_EQUAL, REC_BIN64_SIGNED,   REC_BIN64_UNSIGNED, NE_BIN64S_BIN64U},
+      {ITM_NOT_EQUAL, REC_BIN64_UNSIGNED, REC_BIN64_SIGNED,   NE_BIN64U_BIN64S},
 
       {ITM_NOT_EQUAL, REC_DECIMAL_UNSIGNED, REC_DECIMAL_UNSIGNED, NE_DECU_DECU},
       {ITM_NOT_EQUAL, REC_DECIMAL_LSE,      REC_DECIMAL_LSE,      NE_DECS_DECS},
@@ -733,6 +760,11 @@ const ex_comp_struct * ex_comp_clause::getMatchingRow(OperatorTypeEnum op,
       {ITM_NOT_EQUAL, REC_NCHAR_F_UNICODE,      REC_NCHAR_V_UNICODE,      UNICODE_COMP},
       {ITM_NOT_EQUAL, REC_NCHAR_V_UNICODE,      REC_NCHAR_F_UNICODE,      UNICODE_COMP},
       {ITM_NOT_EQUAL, REC_NCHAR_V_UNICODE,      REC_NCHAR_V_UNICODE,      UNICODE_COMP},
+
+      {ITM_NOT_EQUAL, REC_BOOLEAN, REC_BOOLEAN, NE_BOOL_BOOL},
+
+      {ITM_LESS, REC_BIN8_SIGNED,    REC_BIN8_SIGNED,    LT_BIN8S_BIN8S},
+      {ITM_LESS, REC_BIN8_UNSIGNED,  REC_BIN8_UNSIGNED,  LT_BIN8U_BIN8U},
 
       {ITM_LESS, REC_BIN16_SIGNED,   REC_BIN16_SIGNED,   LT_BIN16S_BIN16S},
       {ITM_LESS, REC_BIN16_SIGNED,   REC_BIN32_SIGNED,   LT_BIN16S_BIN32S},
@@ -765,6 +797,9 @@ const ex_comp_struct * ex_comp_clause::getMatchingRow(OperatorTypeEnum op,
       {ITM_LESS, REC_BIN32_UNSIGNED, REC_BIN32_UNSIGNED, LT_BIN32U_BIN32U},   // Was 32S. Error? ANS
 
       {ITM_LESS, REC_BIN64_SIGNED,   REC_BIN64_SIGNED,   LT_BIN64S_BIN64S},
+      {ITM_LESS, REC_BIN64_UNSIGNED, REC_BIN64_UNSIGNED, LT_BIN64U_BIN64U},
+      {ITM_LESS, REC_BIN64_SIGNED,   REC_BIN64_UNSIGNED,   LT_BIN64S_BIN64U},
+      {ITM_LESS, REC_BIN64_UNSIGNED, REC_BIN64_SIGNED,     LT_BIN64U_BIN64S},
 
       {ITM_LESS, REC_DECIMAL_UNSIGNED, REC_DECIMAL_UNSIGNED, LT_DECU_DECU},
       {ITM_LESS, REC_DECIMAL_LSE,      REC_DECIMAL_LSE,      LT_DECS_DECS},
@@ -789,6 +824,9 @@ const ex_comp_struct * ex_comp_clause::getMatchingRow(OperatorTypeEnum op,
       {ITM_LESS, REC_NCHAR_V_UNICODE,     REC_NCHAR_F_UNICODE,     UNICODE_COMP},
       {ITM_LESS, REC_NCHAR_V_UNICODE,     REC_NCHAR_V_UNICODE,     UNICODE_COMP},
 
+
+      {ITM_LESS_EQ, REC_BIN8_SIGNED,    REC_BIN8_SIGNED,    LE_BIN8S_BIN8S},
+      {ITM_LESS_EQ, REC_BIN8_UNSIGNED,  REC_BIN8_UNSIGNED,  LE_BIN8U_BIN8U},
 
       {ITM_LESS_EQ, REC_BIN16_SIGNED,   REC_BIN16_SIGNED,   LE_BIN16S_BIN16S},
       {ITM_LESS_EQ, REC_BIN16_SIGNED,   REC_BIN32_SIGNED,   LE_BIN16S_BIN32S},
@@ -821,6 +859,9 @@ const ex_comp_struct * ex_comp_clause::getMatchingRow(OperatorTypeEnum op,
       {ITM_LESS_EQ, REC_BIN32_UNSIGNED, REC_BIN32_UNSIGNED, LE_BIN32U_BIN32U},    // Was 32S. Error? ANS
 
       {ITM_LESS_EQ, REC_BIN64_SIGNED,   REC_BIN64_SIGNED,   LE_BIN64S_BIN64S},
+      {ITM_LESS_EQ, REC_BIN64_UNSIGNED, REC_BIN64_UNSIGNED, LE_BIN64U_BIN64U},
+      {ITM_LESS_EQ, REC_BIN64_SIGNED,   REC_BIN64_UNSIGNED,   LE_BIN64S_BIN64U},
+      {ITM_LESS_EQ, REC_BIN64_UNSIGNED, REC_BIN64_SIGNED,     LE_BIN64U_BIN64S},
 
       {ITM_LESS_EQ, REC_DECIMAL_UNSIGNED, REC_DECIMAL_UNSIGNED, LE_DECU_DECU},
       {ITM_LESS_EQ, REC_DECIMAL_LSE,      REC_DECIMAL_LSE,      LE_DECS_DECS},
@@ -845,6 +886,10 @@ const ex_comp_struct * ex_comp_clause::getMatchingRow(OperatorTypeEnum op,
       {ITM_LESS_EQ, REC_NCHAR_F_UNICODE,     REC_NCHAR_V_UNICODE,     UNICODE_COMP},
       {ITM_LESS_EQ, REC_NCHAR_V_UNICODE,     REC_NCHAR_F_UNICODE,     UNICODE_COMP},
       {ITM_LESS_EQ, REC_NCHAR_V_UNICODE,     REC_NCHAR_V_UNICODE,     UNICODE_COMP},
+
+
+      {ITM_GREATER, REC_BIN8_SIGNED,    REC_BIN8_SIGNED,    GT_BIN8S_BIN8S},
+      {ITM_GREATER, REC_BIN8_UNSIGNED,  REC_BIN8_UNSIGNED,  GT_BIN8U_BIN8U},
 
       {ITM_GREATER, REC_BIN16_SIGNED,   REC_BIN16_SIGNED,   GT_BIN16S_BIN16S},
       {ITM_GREATER, REC_BIN16_SIGNED,   REC_BIN32_SIGNED,   GT_BIN16S_BIN32S},
@@ -877,6 +922,9 @@ const ex_comp_struct * ex_comp_clause::getMatchingRow(OperatorTypeEnum op,
       {ITM_GREATER, REC_BIN32_UNSIGNED, REC_BIN32_UNSIGNED, GT_BIN32U_BIN32U},    // Was 32S. Error? ANS
 
       {ITM_GREATER, REC_BIN64_SIGNED,   REC_BIN64_SIGNED,   GT_BIN64S_BIN64S},
+      {ITM_GREATER, REC_BIN64_UNSIGNED, REC_BIN64_UNSIGNED, GT_BIN64U_BIN64U},
+      {ITM_GREATER, REC_BIN64_SIGNED,   REC_BIN64_UNSIGNED,   GT_BIN64S_BIN64U},
+      {ITM_GREATER, REC_BIN64_UNSIGNED, REC_BIN64_SIGNED,     GT_BIN64U_BIN64S},
 
       {ITM_GREATER, REC_DECIMAL_UNSIGNED, REC_DECIMAL_UNSIGNED, GT_DECU_DECU},
       {ITM_GREATER, REC_DECIMAL_LSE,      REC_DECIMAL_LSE,      GT_DECS_DECS},
@@ -901,6 +949,10 @@ const ex_comp_struct * ex_comp_clause::getMatchingRow(OperatorTypeEnum op,
       {ITM_GREATER, REC_NCHAR_F_UNICODE,     REC_NCHAR_V_UNICODE,     UNICODE_COMP},
       {ITM_GREATER, REC_NCHAR_V_UNICODE,     REC_NCHAR_F_UNICODE,     UNICODE_COMP},
       {ITM_GREATER, REC_NCHAR_V_UNICODE,     REC_NCHAR_V_UNICODE,     UNICODE_COMP},
+
+
+      {ITM_GREATER_EQ, REC_BIN8_SIGNED,    REC_BIN8_SIGNED,    GE_BIN8S_BIN8S},
+      {ITM_GREATER_EQ, REC_BIN8_UNSIGNED,  REC_BIN8_UNSIGNED,  GE_BIN8U_BIN8U},
 
       {ITM_GREATER_EQ, REC_BIN16_SIGNED,   REC_BIN16_SIGNED,   GE_BIN16S_BIN16S},
       {ITM_GREATER_EQ, REC_BIN16_SIGNED,   REC_BIN32_SIGNED,   GE_BIN16S_BIN32S},
@@ -933,6 +985,9 @@ const ex_comp_struct * ex_comp_clause::getMatchingRow(OperatorTypeEnum op,
       {ITM_GREATER_EQ, REC_BIN32_UNSIGNED, REC_BIN32_UNSIGNED, GE_BIN32U_BIN32U},   // Was 32S. Error? ANS
 
       {ITM_GREATER_EQ, REC_BIN64_SIGNED,   REC_BIN64_SIGNED,   GE_BIN64S_BIN64S},
+      {ITM_GREATER_EQ, REC_BIN64_UNSIGNED, REC_BIN64_UNSIGNED, GE_BIN64U_BIN64U},
+      {ITM_GREATER_EQ, REC_BIN64_SIGNED,   REC_BIN64_UNSIGNED,   GE_BIN64S_BIN64U},
+      {ITM_GREATER_EQ, REC_BIN64_UNSIGNED, REC_BIN64_SIGNED,     GE_BIN64U_BIN64S},
 
       {ITM_GREATER_EQ, REC_DECIMAL_UNSIGNED, REC_DECIMAL_UNSIGNED, GE_DECU_DECU},
       {ITM_GREATER_EQ, REC_DECIMAL_LSE,      REC_DECIMAL_LSE,      GE_DECS_DECS},
@@ -1132,11 +1187,15 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_BPINT_UNSIGNED, REC_NCHAR_V_UNICODE,        CONV_BIN16U_UNICODE},
 
     {REC_BIN8_SIGNED,    REC_BIN16_SIGNED,           CONV_BIN8S_BIN16S},
+    {REC_BIN8_SIGNED,    REC_BIN32_SIGNED,           CONV_BIN8S_BIN32S},
+    {REC_BIN8_SIGNED,    REC_BIN64_SIGNED,           CONV_BIN8S_BIN64S},
     {REC_BIN8_SIGNED,    REC_BIN8_SIGNED,            CONV_BIN8S_BIN8S},
     {REC_BIN8_SIGNED,    REC_BYTE_F_ASCII,           CONV_BIN8S_ASCII},
     {REC_BIN8_SIGNED,    REC_BYTE_V_ASCII,           CONV_BIN8S_ASCII},
 
     {REC_BIN8_UNSIGNED,  REC_BIN16_UNSIGNED,         CONV_BIN8U_BIN16U},
+    {REC_BIN8_UNSIGNED,  REC_BIN32_UNSIGNED,         CONV_BIN8U_BIN32U},
+    {REC_BIN8_UNSIGNED,  REC_BIN64_UNSIGNED,         CONV_BIN8U_BIN64U},
     {REC_BIN8_UNSIGNED,  REC_BIN16_SIGNED,           CONV_BIN8U_BIN16S},
     {REC_BIN8_UNSIGNED,  REC_BIN8_UNSIGNED,          CONV_BIN8U_BIN8U},
     {REC_BIN8_UNSIGNED,  REC_BYTE_F_ASCII,           CONV_BIN8U_ASCII},
@@ -1226,6 +1285,7 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_BIN64_SIGNED,   REC_BIN32_SIGNED,           CONV_BIN64S_BIN32S},
     {REC_BIN64_SIGNED,   REC_BIN32_UNSIGNED,         CONV_BIN64S_BIN32U},
     {REC_BIN64_SIGNED,   REC_BIN64_SIGNED,           CONV_BIN64S_BIN64S},
+    {REC_BIN64_SIGNED,   REC_BIN64_UNSIGNED,         CONV_BIN64S_BIN64U},
     {REC_BIN64_SIGNED,   REC_DECIMAL_LSE,            CONV_BIN64S_DECS},
     {REC_BIN64_SIGNED,   REC_DECIMAL_UNSIGNED,       CONV_BIN64S_DECU},
     {REC_BIN64_SIGNED,   REC_FLOAT32,                CONV_BIN64S_FLOAT32},
@@ -1238,7 +1298,16 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_BIN64_SIGNED,   REC_NCHAR_F_UNICODE,        CONV_BIN64S_UNICODE},
     {REC_BIN64_SIGNED,   REC_NCHAR_V_UNICODE,        CONV_BIN64S_UNICODE},
     {REC_BIN64_SIGNED,   REC_DATETIME,               CONV_BIN64S_DATETIME},
-    
+
+    {REC_BIN64_UNSIGNED,   REC_BIN64_SIGNED,           CONV_BIN64U_BIN64S},
+    {REC_BIN64_UNSIGNED,   REC_BIN64_UNSIGNED,         CONV_BIN64U_BIN64U},
+    {REC_BIN64_UNSIGNED,   REC_NUM_BIG_SIGNED,         CONV_BIN64U_BIGNUM},
+    {REC_BIN64_UNSIGNED,   REC_NUM_BIG_UNSIGNED,       CONV_BIN64U_BIGNUM},
+    {REC_BIN64_UNSIGNED,   REC_FLOAT32,                CONV_BIN64U_FLOAT32},
+    {REC_BIN64_UNSIGNED,   REC_FLOAT64,                CONV_BIN64U_FLOAT64},
+    {REC_BIN64_UNSIGNED,   REC_BYTE_F_ASCII,           CONV_BIN64U_ASCII},
+    {REC_BIN64_UNSIGNED,   REC_BYTE_V_ASCII,           CONV_BIN64U_ASCII},
+
     {REC_DECIMAL_UNSIGNED,   REC_BPINT_UNSIGNED,         CONV_DECS_BIN32U},
     {REC_DECIMAL_UNSIGNED,   REC_BIN16_UNSIGNED,         CONV_DECS_BIN32U},
     {REC_DECIMAL_UNSIGNED,   REC_BIN16_SIGNED,           CONV_DECS_BIN32S},
@@ -1282,6 +1351,7 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_FLOAT32,            REC_BIN32_SIGNED,       CONV_FLOAT32_BIN32S},
     {REC_FLOAT32,            REC_BIN32_UNSIGNED,     CONV_FLOAT32_BIN32U},
     {REC_FLOAT32,            REC_BIN64_SIGNED,       CONV_FLOAT32_BIN64S},
+    {REC_FLOAT32,            REC_BIN64_UNSIGNED,     CONV_FLOAT32_BIN64U},
     {REC_FLOAT32,            REC_DECIMAL_LSE,        CONV_FLOAT32_DECS},
     {REC_FLOAT32,            REC_DECIMAL_UNSIGNED,   CONV_FLOAT32_DECU},
     {REC_FLOAT32,            REC_FLOAT32,            CONV_FLOAT32_FLOAT32},
@@ -1298,6 +1368,7 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_FLOAT64,            REC_BIN32_SIGNED,       CONV_FLOAT64_BIN32S},
     {REC_FLOAT64,            REC_BIN32_UNSIGNED,     CONV_FLOAT64_BIN32U},
     {REC_FLOAT64,            REC_BIN64_SIGNED,       CONV_FLOAT64_BIN64S},
+    {REC_FLOAT64,            REC_BIN64_UNSIGNED,     CONV_FLOAT64_BIN64U},
     {REC_FLOAT64,            REC_DECIMAL_LSE,        CONV_FLOAT64_DECS},
     {REC_FLOAT64,            REC_DECIMAL_UNSIGNED,   CONV_FLOAT64_DECU},
     {REC_FLOAT64,            REC_FLOAT32,            CONV_FLOAT64_FLOAT32},
@@ -1314,6 +1385,7 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_NUM_BIG_UNSIGNED, REC_BIN32_SIGNED,           CONV_BIGNUM_BIN32S},
     {REC_NUM_BIG_UNSIGNED, REC_BIN32_UNSIGNED,         CONV_BIGNUM_BIN32U},
     {REC_NUM_BIG_UNSIGNED, REC_BIN64_SIGNED,           CONV_BIGNUM_BIN64S},
+    {REC_NUM_BIG_UNSIGNED, REC_BIN64_UNSIGNED,         CONV_BIGNUM_BIN64U},
     {REC_NUM_BIG_UNSIGNED, REC_DECIMAL_LSE,            CONV_BIGNUM_DECS},
     {REC_NUM_BIG_UNSIGNED, REC_DECIMAL_UNSIGNED,       CONV_BIGNUM_DECU},
     {REC_NUM_BIG_UNSIGNED, REC_FLOAT32,                CONV_BIGNUM_FLOAT32},
@@ -1332,6 +1404,7 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_NUM_BIG_SIGNED, REC_BIN32_SIGNED,           CONV_BIGNUM_BIN32S},
     {REC_NUM_BIG_SIGNED, REC_BIN32_UNSIGNED,         CONV_BIGNUM_BIN32U},
     {REC_NUM_BIG_SIGNED, REC_BIN64_SIGNED,           CONV_BIGNUM_BIN64S},
+    {REC_NUM_BIG_SIGNED, REC_BIN64_UNSIGNED,         CONV_BIGNUM_BIN64U},
     {REC_NUM_BIG_SIGNED, REC_DECIMAL_LSE,            CONV_BIGNUM_DECS},
     {REC_NUM_BIG_SIGNED, REC_DECIMAL_UNSIGNED,       CONV_BIGNUM_DECU},
     {REC_NUM_BIG_SIGNED, REC_FLOAT32,                CONV_BIGNUM_FLOAT32},
@@ -1399,6 +1472,7 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_BYTE_F_ASCII,       REC_BIN32_SIGNED,           CONV_ASCII_BIN32S},
     {REC_BYTE_F_ASCII,       REC_BIN32_UNSIGNED,         CONV_ASCII_BIN32U},
     {REC_BYTE_F_ASCII,       REC_BIN64_SIGNED,           CONV_ASCII_BIN64S},
+    {REC_BYTE_F_ASCII,       REC_BIN64_UNSIGNED,         CONV_ASCII_BIN64U},
     {REC_BYTE_F_ASCII,       REC_DECIMAL_LSE,            CONV_ASCII_DEC},
     {REC_BYTE_F_ASCII,       REC_DECIMAL_UNSIGNED,       CONV_ASCII_DEC},
 
@@ -1417,6 +1491,8 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_BYTE_F_ASCII,       REC_NCHAR_F_UNICODE,        CONV_ASCII_UNICODE_F},
     {REC_BYTE_F_ASCII,       REC_NCHAR_V_UNICODE,        CONV_ASCII_UNICODE_V},
     {REC_BYTE_F_ASCII,       REC_NCHAR_V_ANSI_UNICODE,   CONV_ASCII_TO_ANSI_V_UNICODE},
+
+    {REC_BYTE_F_ASCII,      REC_BOOLEAN,                 CONV_ASCII_BOOL},
 
 // 12/8/97: added for Unicode. Note the importance of
 // grouping tuples with similar source types together.
@@ -1479,6 +1555,7 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_BYTE_V_ASCII,       REC_BIN32_SIGNED,           CONV_ASCII_BIN32S},
     {REC_BYTE_V_ASCII,       REC_BIN32_UNSIGNED,         CONV_ASCII_BIN32U},
     {REC_BYTE_V_ASCII,       REC_BIN64_SIGNED,           CONV_ASCII_BIN64S},
+    {REC_BYTE_V_ASCII,       REC_BIN64_UNSIGNED,         CONV_ASCII_BIN64U},
     {REC_BYTE_V_ASCII,       REC_DECIMAL_LSE,            CONV_ASCII_DEC},
     {REC_BYTE_V_ASCII,       REC_DECIMAL_UNSIGNED,       CONV_ASCII_DEC},
 
@@ -1500,6 +1577,7 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_BYTE_V_ASCII,       REC_NCHAR_V_UNICODE,        CONV_ASCII_UNICODE_V},
     {REC_BYTE_V_ASCII,       REC_NCHAR_V_ANSI_UNICODE,   CONV_ASCII_TO_ANSI_V_UNICODE},
 
+    {REC_BYTE_V_ASCII,      REC_BOOLEAN,                 CONV_ASCII_BOOL},
 
     {REC_BYTE_V_ASCII_LONG,   REC_BPINT_UNSIGNED,         CONV_ASCII_BIN16U},  
     {REC_BYTE_V_ASCII_LONG,   REC_BIN16_SIGNED,           CONV_ASCII_BIN16S},
@@ -1534,8 +1612,12 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_NCHAR_V_ANSI_UNICODE, REC_NCHAR_V_UNICODE, CONV_ANSI_V_UNICODE_TO_UNICODE_V},
     {REC_BLOB,          REC_BLOB,         CONV_BLOB_BLOB},
     {REC_BLOB,          REC_BYTE_F_ASCII,      CONV_BLOB_ASCII_F},
-    {REC_CLOB,          REC_CLOB,         CONV_BLOB_BLOB},
-    {REC_CLOB,          REC_BYTE_F_ASCII,      CONV_BLOB_ASCII_F}
+    {REC_CLOB,          REC_CLOB,              CONV_BLOB_BLOB},
+    {REC_CLOB,          REC_BYTE_F_ASCII,      CONV_BLOB_ASCII_F},
+
+    {REC_BOOLEAN,       REC_BOOLEAN,           CONV_BOOL_BOOL},
+    {REC_BOOLEAN,       REC_BYTE_F_ASCII,      CONV_BOOL_ASCII},
+    {REC_BOOLEAN,       REC_BYTE_V_ASCII,      CONV_BOOL_ASCII},
   };
   
   getConvCaseDatatypes(sourceType, sourceLen, sourceType, targetType, targetLen, targetType, scaleDifference);
@@ -1559,14 +1641,6 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     i++;
   };
 
-  if (case_index == CONV_NOT_SUPPORTED) {
-#if (!defined (__TANDEM) && !defined(__EID))
-    //    cout << sourceType << " to " 
-    //	 << targetType << " conversion not yet supported. \n";
-#endif
-  };
-
-
   if (case_index == CONV_INTERVALS_INTERVALS_DIV)
     {
     // have to look at scale difference to distinguish whether
@@ -1581,6 +1655,17 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
 
 };
 
+NABoolean ex_conv_clause::isConversionSupported
+(short sourceType, short targetType)
+{
+  conv_case_index ci = 
+    find_case_index(sourceType, 0, targetType, 0, 0);
+  if (ci == CONV_NOT_SUPPORTED)
+    return FALSE;
+  else
+    return TRUE;
+}
+
 void ex_conv_clause::set_case_index() {
   // Test added to allow conditional union to be rowset-aware
   if((getOperand(0)->getRowsetSize() > 0) && (getOperand(1)->getRowsetSize() > 0)) 
@@ -1589,9 +1674,7 @@ void ex_conv_clause::set_case_index() {
       SimpleType *op0 = (SimpleType *) getOperand(0);
       SimpleType *op1 = (SimpleType *) getOperand(1);
       if (!(op0->getUseTotalRowsetSize())) {
-#pragma nowarn(1506)   // warning elimination 
 	op0->setLength(sizeof(Lng32) + (op0->getLength() * op0->getRowsetSize()));
-#pragma warn(1506)  // warning elimination 
 	op0->setUseTotalRowsetSize();
 	op1->setUseTotalRowsetSize();
       }

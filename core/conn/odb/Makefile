@@ -29,7 +29,7 @@ include $(MY_SQROOT)/macros.gmk #top level
 # Standard Linux flags
 #--------------------------------------------------------------------------
 CFLAGS_LNX = -rdynamic -pipe -pthread \
-			 -fomit-frame-pointer -pedantic -Wall -Wextra -Wshadow \
+			 -fomit-frame-pointer -pedantic -Wall -Wextra \
 			 -Wno-missing-field-initializers -Wformat=2 \
 			 -Wunused -Wpragmas -Wstack-protector -Wcast-qual \
 			 -Wl,-allow-shlib-undefined \

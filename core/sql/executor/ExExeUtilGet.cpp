@@ -738,31 +738,6 @@ Lng32 ExExeUtilGetMetadataInfoTcb::getUsedObjects(Queue * infoList,
     }
 }
 
-ex_expr::exp_return_type ExExeUtilGetMetadataInfoTcb::evalScanExpr(char * ptr, Lng32 len)
-{
-  ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
-
-  if (getMItdb().scanExpr_)
-    {
-      ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
-
-      char * exprPtr = new(getGlobals()->getDefaultHeap())
-	char[SQL_VARCHAR_HDR_SIZE + len];
-      short shortLen = (short)len;
-      str_cpy_all((char*)exprPtr, (char*)&shortLen, SQL_VARCHAR_HDR_SIZE);
-      str_cpy_all(&exprPtr[SQL_VARCHAR_HDR_SIZE], ptr, shortLen);
-      workAtp_->getTupp(getMItdb().workAtpIndex())
-	.setDataPointer(exprPtr);
-
-      exprRetCode =
-	getMItdb().scanExpr_->eval(pentry_down->getAtp(), workAtp_);
-
-      NADELETEBASIC(exprPtr, getGlobals()->getDefaultHeap());
-    }
-
-  return exprRetCode;
-}
-
 short ExExeUtilGetMetadataInfoTcb::displayHeading()
 {
   if (getMItdb().noHeader())
@@ -2186,7 +2161,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	      exprRetCode = ex_expr::EXPR_FALSE;
 
 	    if (exprRetCode == ex_expr::EXPR_TRUE)
-	      exprRetCode = evalScanExpr(ptr, len);
+	      exprRetCode = evalScanExpr(ptr, len, TRUE);
 	    if (exprRetCode == ex_expr::EXPR_FALSE)
 	      {
 		// row does not pass the scan expression,
@@ -2289,7 +2264,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		break;
 	      }
 
-	    exprRetCode = evalScanExpr(viewName, len);
+	    exprRetCode = evalScanExpr(viewName, len, TRUE);
 	    if (exprRetCode == ex_expr::EXPR_FALSE)
 	      {
 		// row does not pass the scan expression,
@@ -2338,7 +2313,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		break;
 	      }
 
-	    exprRetCode = evalScanExpr(viewName, len);
+	    exprRetCode = evalScanExpr(viewName, len, TRUE);
 	    if (exprRetCode == ex_expr::EXPR_FALSE)
 	      {
 		// row does not pass the scan expression,
@@ -3152,7 +3127,7 @@ short ExExeUtilGetHbaseObjectsTcb::work()
 
         case EVAL_EXPR_:
           {
-            exprRetCode = evalScanExpr(hbaseName_, strlen(hbaseName_));
+            exprRetCode = evalScanExpr(hbaseName_, strlen(hbaseName_), TRUE);
 	    if (exprRetCode == ex_expr::EXPR_FALSE)
 	      {
 		// row does not pass the scan expression,
@@ -5253,7 +5228,7 @@ short ExExeUtilHiveMDaccessTcb::work()
 		infoCol->colScale = 0;
 	        str_pad(infoCol->dtQualifier, 28, ' ');
 		infoCol->dtStartField = 1;
-		infoCol->dtEndField = 6;
+		infoCol->dtEndField = 3;
               }
 	    }
 
@@ -5438,9 +5413,11 @@ ex_tcb * ExExeUtilRegionStatsTdb::build(ex_globals * glob)
 
   if (displayFormat())
     exe_util_tcb = new(glob->getSpace()) ExExeUtilRegionStatsFormatTcb(*this, glob);
+  else if (clusterView())
+    exe_util_tcb = new(glob->getSpace()) ExExeUtilClusterStatsTcb(*this, glob);
   else
     exe_util_tcb = new(glob->getSpace()) ExExeUtilRegionStatsTcb(*this, glob);
-    
+  
   exe_util_tcb->registerSubtasks();
 
   return (exe_util_tcb);
@@ -5568,6 +5545,8 @@ short ExExeUtilRegionStatsTcb::populateStats
   if (nullTerminate)
     stats_->objectName[strlen(objName_)] = 0;
   
+  str_pad(stats_->regionServer, sizeof(stats_->regionServer), ' ');
+
   str_pad(stats_->regionName, sizeof(stats_->regionName), ' ');
   stats_->regionNum       = currIndex_+1;
   
@@ -5590,14 +5569,25 @@ short ExExeUtilRegionStatsTcb::populateStats
   char * sep1 = strchr(regionInfo, '|');
   if (sep1)
     {
-      str_cpy_all(stats_->regionName, regionInfo, 
+      str_cpy_all(stats_->regionServer, regionInfo, 
                   (Lng32)(sep1 - regionInfo)); 
 
       if (nullTerminate)
-        stats_->regionName[sep1 - regionInfo] = 0;
+        stats_->regionServer[sep1 - regionInfo] = 0;
+    }
+
+  char * sepStart = sep1+1;
+  sep1 = strchr(sepStart, '|');
+  if (sep1)
+    {
+      str_cpy_all(stats_->regionName, sepStart, 
+                  (Lng32)(sep1 - sepStart)); 
+
+      if (nullTerminate)
+        stats_->regionName[sep1 - sepStart] = 0;
     }
   
-  char * sepStart = sep1;
+  sepStart = sep1;
   stats_->numStores = getEmbeddedNumValue(sepStart, '|', FALSE);
   stats_->numStoreFiles = getEmbeddedNumValue(sepStart, '|', FALSE);
   stats_->storeFileUncompSize = getEmbeddedNumValue(sepStart, '|', FALSE);
@@ -5613,6 +5603,7 @@ short ExExeUtilRegionStatsTcb::work()
 {
   short retcode = 0;
   Lng32 cliRC = 0;
+  ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
 
   // if no parent request, return
   if (qparent_.down->isEmpty())
@@ -5705,9 +5696,26 @@ short ExExeUtilRegionStatsTcb::work()
                 break;
               }
 
-	    step_ = RETURN_STATS_BUF_;
+	    step_ = EVAL_EXPR_;
 	  }
 	break;
+
+        case EVAL_EXPR_:
+          {
+            exprRetCode = evalScanExpr((char*)stats_, statsBufLen_, FALSE);
+	    if (exprRetCode == ex_expr::EXPR_FALSE)
+	      {
+		// row does not pass the scan expression,
+		// move to the next row.
+                currIndex_++;
+
+		step_ = POPULATE_STATS_BUF_;
+		break;
+	      }
+            
+            step_ = RETURN_STATS_BUF_;
+          }
+          break;
 
 	case RETURN_STATS_BUF_:
 	  {
@@ -5829,6 +5837,8 @@ short ExExeUtilRegionStatsFormatTcb::computeTotals()
 
   str_pad(statsTotals_->objectName, sizeof(statsTotals_->objectName), ' ');
   str_cpy_all(statsTotals_->objectName, objName_, strlen(objName_));
+
+  str_pad(statsTotals_->regionServer, sizeof(statsTotals_->regionServer), ' ');
 
   str_pad(statsTotals_->regionName, sizeof(statsTotals_->regionName), ' ');
 
@@ -6116,6 +6126,11 @@ short ExExeUtilRegionStatsFormatTcb::work()
             char buf[1000];
 	    short rc = 0;
 
+            str_sprintf(buf, "  RegionServer:       %s", 
+                        removeTrailingBlanks(stats_->regionServer, STATS_NAME_MAX_LEN).data(), TRUE);
+	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
+	      return rc;
+  
             str_sprintf(buf, "  RegionNum:          %d", currIndex_+1);
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
@@ -6173,6 +6188,319 @@ short ExExeUtilRegionStatsFormatTcb::work()
             return WORK_RESCHEDULE_AND_RETURN;
           }
           break;
+
+	case HANDLE_ERROR_:
+	  {
+	    retcode = handleError();
+	    if (retcode == 1)
+	      return WORK_OK;
+	    
+	    step_ = DONE_;
+	  }
+	break;
+	
+	case DONE_:
+	  {
+            if (regionInfoList_ != NULL) {
+               deleteNAArray(getHeap(), regionInfoList_);
+               regionInfoList_ = NULL;
+            }
+	    retcode = handleDone();
+	    if (retcode == 1)
+	      return WORK_OK;
+	    
+	    step_ = INITIAL_;
+	    
+	    return WORK_CALL_AGAIN;
+	  }
+	break;
+
+
+	} // switch
+
+    } // while
+
+  return WORK_OK;
+}
+
+////////////////////////////////////////////////////////////////
+// Constructor for class ExExeUtilClusterStatsTcb
+///////////////////////////////////////////////////////////////
+ExExeUtilClusterStatsTcb::ExExeUtilClusterStatsTcb(
+     const ComTdbExeUtilRegionStats & exe_util_tdb,
+     ex_globals * glob)
+     : ExExeUtilRegionStatsTcb( exe_util_tdb, glob)
+{
+  statsBuf_ = new(glob->getDefaultHeap()) char[sizeof(ComTdbClusterStatsVirtTableColumnStruct)];
+  statsBufLen_ = sizeof(ComTdbClusterStatsVirtTableColumnStruct);
+
+  stats_ = (ComTdbClusterStatsVirtTableColumnStruct*)statsBuf_;
+
+  int jniDebugPort = 0;
+  int jniDebugTimeout = 0;
+  ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
+					(char*)"", //exe_util_tdb.server(), 
+					(char*)"", //exe_util_tdb.zkPort(),
+                                        jniDebugPort,
+                                        jniDebugTimeout);
+
+  regionInfoList_ = NULL;
+  
+  // get hbase rootdir location. Max linux pathlength is 1024.
+  hbaseRootdir_ = new(glob->getDefaultHeap()) char[1030];
+  strcpy(hbaseRootdir_, "/hbase");
+
+  step_ = INITIAL_;
+}
+
+ExExeUtilClusterStatsTcb::~ExExeUtilClusterStatsTcb()
+{
+  if (statsBuf_)
+    NADELETEBASIC(statsBuf_, getGlobals()->getDefaultHeap());
+
+  if (ehi_)
+    delete ehi_;
+
+  statsBuf_ = NULL;
+}
+
+short ExExeUtilClusterStatsTcb::collectStats()
+{
+  numRegionStatsEntries_ = 0;
+  regionInfoList_ = ehi_->getClusterStats(numRegionStatsEntries_);
+  if (! regionInfoList_)
+    {
+      return 1; // EOD
+    }
+ 
+  currIndex_ = 0;
+
+  return 0;
+}
+
+// RETURN: 1, not a TRAFODION region. 0, is a TRAFODION region.
+//        -1, error.
+short ExExeUtilClusterStatsTcb::populateStats
+(Int32 currIndex, NABoolean nullTerminate)
+{
+  str_pad(stats_->catalogName, sizeof(stats_->catalogName), ' ');
+  str_pad(stats_->schemaName, sizeof(stats_->schemaName), ' ');
+  str_pad(stats_->objectName, sizeof(stats_->objectName), ' ');
+
+  str_pad(stats_->regionServer, sizeof(stats_->regionServer), ' ');
+
+  str_pad(stats_->regionName, sizeof(stats_->regionName), ' ');
+   
+  char regionInfoBuf[5000];
+  Int32 len = 0;
+  char *regionInfo = regionInfoBuf;
+  char *val = regionInfoList_->at(currIndex).val;
+  len = regionInfoList_->at(currIndex).len; 
+  if (len >= sizeof(regionInfoBuf))
+     len = sizeof(regionInfoBuf)-1;
+  strncpy(regionInfoBuf, val, len);
+  regionInfoBuf[len] = '\0';
+  stats_->numStores                = 0;
+  stats_->numStoreFiles            = 0;
+  stats_->storeFileUncompSize      = 0;
+  stats_->storeFileSize            = 0;
+  stats_->memStoreSize             = 0;
+  
+  char longBuf[30];
+  char * sep1 = strchr(regionInfo, '|');
+  if (sep1)
+    {
+      str_cpy_all(stats_->regionServer, regionInfo, 
+                  (Lng32)(sep1 - regionInfo)); 
+
+      if (nullTerminate)
+        stats_->regionServer[sep1 - regionInfo] = 0;
+    }
+
+  char * sepStart = sep1+1;
+  sep1 = strchr(sepStart, '|');
+  if (sep1)
+    {
+      str_cpy_all(stats_->regionName, sepStart, 
+                  (Lng32)(sep1 - sepStart)); 
+
+      if (nullTerminate)
+        stats_->regionName[sep1 - sepStart] = 0;
+    }
+
+  char tableName[3*STATS_NAME_MAX_LEN + 3];
+  sepStart = sep1+1;
+  sep1 = strchr(sepStart, '|');
+  if (sep1)
+    {
+      str_cpy_all(tableName, sepStart, 
+                  (Lng32)(sep1 - sepStart)); 
+
+      tableName[sep1 - sepStart] = 0;
+
+      char tableNameBuf[3*STATS_NAME_MAX_LEN + 30];
+
+      Lng32 numParts = 0;
+      char *parts[4];
+      LateNameInfo::extractParts(tableName, tableNameBuf, numParts, parts, FALSE);
+
+      if (numParts == 3)
+        {
+          str_cpy_all(stats_->catalogName, parts[0], strlen(parts[0]));
+          if (nullTerminate)
+            stats_->catalogName[strlen(parts[0])] = 0;
+
+          str_cpy_all(stats_->schemaName, parts[1], strlen(parts[1]));
+          if (nullTerminate)
+            stats_->schemaName[strlen(parts[1])] = 0;
+      
+          str_cpy_all(stats_->objectName, parts[2], strlen(parts[2]));
+          if (nullTerminate)
+            stats_->objectName[strlen(parts[2])] = 0;
+        }
+
+      if ((numParts != 3) ||
+          (str_cmp(stats_->catalogName, TRAFODION_SYSCAT_LIT, strlen(TRAFODION_SYSCAT_LIT)) != 0))
+        {
+          // this is not a trafodion region, skip it.
+          return 1;
+        }
+    }
+  
+  sepStart = sep1;
+  stats_->numStores = getEmbeddedNumValue(sepStart, '|', FALSE);
+  stats_->numStoreFiles = getEmbeddedNumValue(sepStart, '|', FALSE);
+  stats_->storeFileUncompSize = getEmbeddedNumValue(sepStart, '|', FALSE);
+  stats_->storeFileSize = getEmbeddedNumValue(sepStart, '|', FALSE);
+  stats_->memStoreSize = getEmbeddedNumValue(sepStart, '|', FALSE);
+  stats_->readRequestsCount = getEmbeddedNumValue(sepStart, '|', FALSE);
+  stats_->writeRequestsCount = getEmbeddedNumValue(sepStart, '|', FALSE);
+  
+  return 0;
+}
+
+short ExExeUtilClusterStatsTcb::work()
+{
+  short retcode = 0;
+  Lng32 cliRC = 0;
+  ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
+
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+  
+  // if no room in up queue, won't be able to return data/status.
+  // Come back later.
+  if (qparent_.up->isFull())
+    return WORK_OK;
+  
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate =
+    *((ExExeUtilPrivateState*) pentry_down->pstate);
+
+  // Get the globals stucture of the master executor.
+  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
+  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
+  ContextCli * currContext = masterGlob->getCliGlobals()->currContext();
+
+  ComDiagsArea * diags = getDiagsArea();
+
+  while (1)
+    {
+      switch (step_)
+	{
+	case INITIAL_:
+	  {
+            if (ehi_ == NULL)
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+
+	    step_ = COLLECT_STATS_;
+	  }
+	break;
+
+       case COLLECT_STATS_:
+          {
+            retcode = collectStats();
+            if (retcode == 1) // EOD
+              {
+                step_ = DONE_;
+                break;
+              }
+            else if (retcode < 0)
+              {
+		*diags << DgSqlCode(-8451);
+
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+
+            currIndex_ = 0;
+
+            step_ = POPULATE_STATS_BUF_;
+          }
+          break;
+
+	case POPULATE_STATS_BUF_:
+	  {
+            if (currIndex_ == numRegionStatsEntries_) //regionInfoList_->entries())
+              {
+                step_ = COLLECT_STATS_;
+                break;
+              }
+            
+            retcode = populateStats(currIndex_);
+            if (retcode == 1) // not TRAFODION region, skip it
+              {
+                currIndex_++;
+
+                step_ = POPULATE_STATS_BUF_;
+                break;
+              }
+            else if (retcode < 0)
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+
+	    step_ = EVAL_EXPR_;
+	  }
+	break;
+
+        case EVAL_EXPR_:
+          {
+            exprRetCode = evalScanExpr((char*)stats_, statsBufLen_, FALSE);
+	    if (exprRetCode == ex_expr::EXPR_FALSE)
+	      {
+		// row does not pass the scan expression,
+		// move to the next row.
+                currIndex_++;
+
+		step_ = POPULATE_STATS_BUF_;
+		break;
+	      }
+            
+            step_ = RETURN_STATS_BUF_;
+          }
+          break;
+
+	case RETURN_STATS_BUF_:
+	  {
+	    if (qparent_.up->isFull())
+	      return WORK_OK;
+
+	    short rc = 0;
+	    if (moveRowToUpQueue((char*)stats_, statsBufLen_, &rc, FALSE))
+	      return rc;
+
+ 
+            currIndex_++;
+
+            step_ = POPULATE_STATS_BUF_;
+	  }
+	break;
 
 	case HANDLE_ERROR_:
 	  {
@@ -6337,7 +6665,8 @@ else
     return rc;  
                 
   //EOD of LOB data file
-  hdfsFS fs = hdfsConnect((char*)getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
+  
+  hdfsFS fs = currContext->getHdfsServerConnection((char*)getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
   if (fs == NULL)
     return LOB_DATA_FILE_OPEN_ERROR;
 
@@ -6626,7 +6955,7 @@ short ExExeUtilLobInfoTableTcb::collectLobInfo(char * tableName,Int32 currLobNum
                                         lobDescChunkFileBuf, LOBINFO_MAX_FILE_LEN*2);
     char *lobDataFile = 
 	      ExpLOBoper::ExpGetLOBname
-	      (getLItdb().objectUID_, currLobNum, 
+      (getLItdb().objectUID_, currLobNum, 
 	       tgtLobNameBuf, LOBINFO_MAX_FILE_LEN);
    
   if (getLItdb().getLobTypeList()[(currLobNum-1)*sizeof(Int32)] == Lob_External_HDFS_File)
@@ -6638,7 +6967,8 @@ short ExExeUtilLobInfoTableTcb::collectLobInfo(char * tableName,Int32 currLobNum
       str_cpy_all(lobInfo_->lobDataFile,  lobDataFile,strlen(lobDataFile));
     }             
   //EOD of LOB data file
-  hdfsFS fs = hdfsConnect(getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
+  // hdfsFS fs = hdfsConnect(getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
+  hdfsFS fs = currContext->getHdfsServerConnection((char*)getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
   if (fs == NULL)
     return LOB_DATA_FILE_OPEN_ERROR;
 

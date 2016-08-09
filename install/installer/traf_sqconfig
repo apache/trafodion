@@ -82,6 +82,14 @@ if [ "$node_count" -ne "1" ]; then
         ((node_id++))
     done
 
+    if [[ "$ELASTICITY_ENABLED" == "Y" ]]; then
+       for node in $TRAF_EXCLUDE_LIST
+       do
+           echo "node-id=$node_id;node-name=$node;cores=$cores;processors=$processors;roles=connection,aggregation,storage" >> $sqconfig
+           ((node_id++))
+       done
+    fi
+
     echo "end node" >> $sqconfig
     sudo cp $sqconfig $UNTAR_DIR
     sudo cp $sqconfig $TRAF_USER_DIR/sqconfig

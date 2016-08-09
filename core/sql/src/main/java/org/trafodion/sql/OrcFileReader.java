@@ -22,6 +22,7 @@
 package org.trafodion.sql;
 
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -65,46 +66,25 @@ public class OrcRowReturnSQL
 //********************************************************************************
 
 //  ORIGINAL VERSION BEFORE ADDING SUPPORT FOR COLUMN SELECTION
-    public String open(String pv_file_name) throws IOException {
+    public String open(String pv_file_name) throws IOException, FileNotFoundException {
 //    pv_file_name= pv_file_name + "/000000_0";
 
 	m_file_path = new Path(pv_file_name);
 
-		try{
-				m_reader = OrcFile.createReader(m_file_path, OrcFile.readerOptions(m_conf));
-		} catch (java.io.FileNotFoundException e1) {
-						return "file not found";
-		}
-	if (m_reader == null)
-			return "open failed!";
+  	m_reader = OrcFile.createReader(m_file_path, OrcFile.readerOptions(m_conf));
 	m_types = m_reader.getTypes();
 	m_oi = (StructObjectInspector) m_reader.getObjectInspector();
 	m_fields = m_oi.getAllStructFieldRefs();
-	
-	try{
-			m_rr = m_reader.rows();
-	} catch (java.io.IOException e1) {
-					return (e1.getMessage());
-	}
-	
-	if (m_rr == null)
-			return "open:RecordReader is null";
+        m_rr = m_reader.rows();
 	return null;
     }
 
 //********************************************************************************
 /*
-    public String open(String pv_file_name) throws Exception {
+    public String open(String pv_file_name) throws IOException, FileNotFoundException {
 //    pv_file_name= pv_file_name + "/000000_0";
 	m_file_path = new Path(pv_file_name);
-
-		try{
-				m_reader = OrcFile.createReader(m_file_path, OrcFile.readerOptions(m_conf));
-		} catch (java.io.FileNotFoundException e1) {
-						return "file not found";
-		}
-	if (m_reader == null)
-			return "open failed!";
+	m_reader = OrcFile.createReader(m_file_path, OrcFile.readerOptions(m_conf));
 	m_types = m_reader.getTypes();
 	m_oi = (StructObjectInspector) m_reader.getObjectInspector();
 	m_fields = m_oi.getAllStructFieldRefs();
@@ -134,7 +114,7 @@ public class OrcRowReturnSQL
 	}
 
 
-    public void printFileInfo() throws Exception {
+    public void printFileInfo() throws IOException {
 
 	System.out.println("Reader: " + m_reader);
 
@@ -211,7 +191,7 @@ public class OrcRowReturnSQL
     }
 
     // Dumps the content of the file. The columns are '|' separated.
-    public void readFile_String() throws Exception {
+    public void readFile_String() throws IOException {
 
 	seeknSync(0);
 	OrcStruct lv_row = null;
@@ -234,7 +214,7 @@ public class OrcRowReturnSQL
 
 
     // Dumps the contents of the file as ByteBuffer.
-    public void readFile_ByteBuffer() throws Exception {
+    public void readFile_ByteBuffer() throws IOException {
 
 	OrcStruct lv_row = null;
 	Object lv_field_val = null;
@@ -262,7 +242,7 @@ public class OrcRowReturnSQL
 	}
     }
 
-    public String getNext_String(char pv_ColSeparator) throws Exception {
+    public String getNext_String(char pv_ColSeparator) throws IOException {
 
 	if ( ! m_rr.hasNext()) {
 	    return null;
@@ -285,7 +265,7 @@ public class OrcRowReturnSQL
     }
 
     // returns the next row as a byte array
-    public byte[] fetchNextRow() throws Exception {
+    public byte[] fetchNextRow() throws IOException {
 
 	if ( ! m_rr.hasNext()) {
 	    return null;
@@ -317,7 +297,7 @@ public class OrcRowReturnSQL
 //****************************************************************************
 	
 //THIS IS THE ORIGINAL FORM BEFORE ADDING SUPPORT FOR COLUMN SELECTION !!!!
-public OrcRowReturnSQL fetchNextRowObj() throws Exception
+public OrcRowReturnSQL fetchNextRowObj() throws IOException
 {
 //		int	lv_integerLength = Integer.Bytes;
 		int	lv_integerLength = 4;
@@ -361,7 +341,7 @@ public OrcRowReturnSQL fetchNextRowObj() throws Exception
 
 //****************************************************************************
 /*
-public OrcRowReturnSQL fetchNextRowObj() throws Exception
+public OrcRowReturnSQL fetchNextRowObj() throws IOException
 {
 //		int	lv_integerLength = Integer.Bytes;
 		int	lv_integerLength = 4;
@@ -415,7 +395,7 @@ String getLastError() {
   }
 
 //****************************************************************************
-public boolean isEOF() throws Exception
+public boolean isEOF() throws IOException
 { 
 	if (m_rr.hasNext())
 	{
@@ -427,7 +407,7 @@ public boolean isEOF() throws Exception
 			}
 }  
 //****************************************************************************
- public String fetchNextRow(char pv_ColSeparator) throws Exception {
+ public String fetchNextRow(char pv_ColSeparator) throws IOException {
 
 	if ( ! m_rr.hasNext()) {
 	    return null;
@@ -451,7 +431,7 @@ public boolean isEOF() throws Exception
     
 
 
-    public static void main(String[] args) throws Exception
+    public static void main(String[] args) throws IOException
     {
 	System.out.println("OrcFile Reader main");
 

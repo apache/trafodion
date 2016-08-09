@@ -39,6 +39,7 @@
 #include "NATable.h"
 #include "Sqlcomp.h"
 #include "ex_error.h"
+#include "TrafDDLdesc.h"
 
 // -----------------------------------------------------------------------
 // Can't be inline because then circular #include-dependencies
@@ -154,17 +155,16 @@ const QualifiedName& NAColumn::getNotNullConstraintName() const
 
 // warning elimination (removed "inline")
 static NAString makeTableName(const NATable *table,
-			      const columns_desc_struct *column_desc)
+			      const TrafColumnsDesc *column_desc)
 {
   return NAString(
-	      table ?
-		table->getTableName().getQualifiedNameAsAnsiString().data() :
-	      column_desc->tablename ?
-		column_desc->tablename : "");
+       table ?
+       table->getTableName().getQualifiedNameAsAnsiString().data() : "");
 }
+
 // warning elimination (removed "inline")
 static NAString makeColumnName(const NATable *table,
-			       const columns_desc_struct *column_desc)
+			       const TrafColumnsDesc *column_desc)
 {
   NAString nam(makeTableName(table, column_desc));
   if (!nam.isNull()) nam += ".";
@@ -173,9 +173,9 @@ static NAString makeColumnName(const NATable *table,
 }
 
 // -----------------------------------------------------------------------
-// Method for creating NAType from desc_struct.
+// Method for creating NAType from TrafDesc.
 // -----------------------------------------------------------------------
-NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
+NABoolean NAColumn::createNAType(TrafColumnsDesc *column_desc	/*IN*/,
 				 const NATable *table  		/*IN*/,
 				 NAType *&type       		/*OUT*/,
 				 NAMemory *heap			/*IN*/,
@@ -187,7 +187,7 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
   //
   #define REC_INTERVAL REC_MIN_INTERVAL
 
-  DataType datatype = column_desc->datatype;
+  Int16 datatype = column_desc->datatype;
   if (REC_MIN_INTERVAL <= datatype && datatype <= REC_MAX_INTERVAL)
     datatype = REC_INTERVAL;
 
@@ -195,7 +195,7 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 
   if ( DFS2REC::isAnyCharacter(column_desc->datatype) )
   {
-     if ( CharInfo::isCharSetSupported(column_desc->character_set) == FALSE ) {
+     if ( CharInfo::isCharSetSupported(column_desc->characterSet()) == FALSE ) {
        if (!errorCode)
        {
          *CmpCommon::diags() << DgSqlCode(-4082)
@@ -208,7 +208,7 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
        return TRUE; // error
      }
 
-     if ( CharInfo::is_NCHAR_MP(column_desc->character_set) )
+     if ( CharInfo::is_NCHAR_MP(column_desc->characterSet()) )
         charCount /= SQL_DBCHAR_SIZE;
   }
 
@@ -217,7 +217,7 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 
     case REC_BPINT_UNSIGNED :
       type = new (heap)
-      SQLBPInt(column_desc->precision, column_desc->null_flag, FALSE, heap);
+      SQLBPInt(column_desc->precision, column_desc->isNullable(), FALSE, heap);
       break;
 
     case REC_BIN8_SIGNED:
@@ -227,13 +227,13 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 		   column_desc->precision,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->null_flag,
+		   column_desc->isNullable(),
                    heap
 		   );
       else
 	type = new (heap)
 	SQLTiny(TRUE,
-		 column_desc->null_flag,
+		 column_desc->isNullable(),
                  heap
 		 );
       break;
@@ -244,13 +244,13 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 		   column_desc->precision,
 		   column_desc->scale,
 		   FALSE,
-		   column_desc->null_flag,
+		   column_desc->isNullable(),
                    heap
 		   );
       else
 	type = new (heap)
 	SQLTiny(FALSE,
-		 column_desc->null_flag,
+		 column_desc->isNullable(),
                  heap
 		 );
       break;
@@ -262,13 +262,13 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 		   column_desc->precision,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->null_flag,
+		   column_desc->isNullable(),
                    heap
 		   );
       else
 	type = new (heap)
 	SQLSmall(TRUE,
-		 column_desc->null_flag,
+		 column_desc->isNullable(),
                  heap
 		 );
       break;
@@ -279,13 +279,13 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 		   column_desc->precision,
 		   column_desc->scale,
 		   FALSE,
-		   column_desc->null_flag,
+		   column_desc->isNullable(),
                    heap
 		   );
       else
 	type = new (heap)
 	SQLSmall(FALSE,
-		 column_desc->null_flag,
+		 column_desc->isNullable(),
                  heap
 		 );
       break;
@@ -297,13 +297,13 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 		   column_desc->precision,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->null_flag,
+		   column_desc->isNullable(),
                    heap
 		   );
       else
 	type = new (heap)
 	SQLInt(TRUE,
-	       column_desc->null_flag,
+	       column_desc->isNullable(),
                heap
 	       );
       break;
@@ -314,13 +314,13 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 		   column_desc->precision,
 		   column_desc->scale,
 		   FALSE,
-		   column_desc->null_flag,
+		   column_desc->isNullable(),
                    heap
 		   );
       else
 	type = new (heap)
 	SQLInt(FALSE,
-	       column_desc->null_flag,
+	       column_desc->isNullable(),
                heap
 	       );
       break;
@@ -331,13 +331,30 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 		   column_desc->precision,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->null_flag,
+		   column_desc->isNullable(),
                    heap
 		   );
       else
 	type = new (heap)
 	SQLLargeInt(TRUE,
-		    column_desc->null_flag,
+		    column_desc->isNullable(),
+                    heap
+		    );
+      break;
+    case REC_BIN64_UNSIGNED:
+      if (column_desc->precision > 0)
+	type = new (heap)
+	SQLNumeric(column_desc->length,
+		   column_desc->precision,
+		   column_desc->scale,
+		   FALSE,
+		   column_desc->isNullable(),
+                   heap
+		   );
+      else
+	type = new (heap)
+        SQLLargeInt(FALSE,
+		    column_desc->isNullable(),
                     heap
 		    );
       break;
@@ -346,7 +363,7 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 	SQLDecimal(column_desc->length,
 		   column_desc->scale,
 		   FALSE,
-		   column_desc->null_flag,
+		   column_desc->isNullable(),
                    heap
 		   );
       break;
@@ -355,7 +372,7 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 	SQLDecimal(column_desc->length,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->null_flag,
+		   column_desc->isNullable(),
                    heap
 		   );
       break;
@@ -365,7 +382,7 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 		  column_desc->scale,
 		  TRUE, // is a real bignum
 		  FALSE,
-		  column_desc->null_flag,
+		  column_desc->isNullable(),
 		  heap
 		  );
       break;
@@ -375,65 +392,65 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 		  column_desc->scale,
 		  TRUE, // is a real bignum
 		  TRUE,
-		  column_desc->null_flag,
+		  column_desc->isNullable(),
 		  heap
 		  );
       break;
 
     case REC_FLOAT32:
       type = new (heap)
-	SQLReal(column_desc->null_flag, heap, column_desc->precision);
+	SQLReal(column_desc->isNullable(), heap, column_desc->precision);
       break;
 
     case REC_FLOAT64:
       type = new (heap)
-	SQLDoublePrecision(column_desc->null_flag, heap, column_desc->precision);
+	SQLDoublePrecision(column_desc->isNullable(), heap, column_desc->precision);
       break;
 
     case REC_BYTE_F_DOUBLE:
       charCount /= SQL_DBCHAR_SIZE;	    // divide the storage length by 2
       type = new (heap)
 	SQLChar(charCount,
-		column_desc->null_flag,
-		column_desc->upshift,
-		column_desc->caseinsensitive,
+		column_desc->isNullable(),
+		column_desc->isUpshifted(),
+		column_desc->isCaseInsensitive(),
 		FALSE,
-		column_desc->character_set,
-		column_desc->collation_sequence,
+		column_desc->characterSet(),
+		column_desc->collationSequence(),
 		CharInfo::IMPLICIT
 		);
       break;
 
     case REC_BYTE_F_ASCII:
-      if (column_desc->character_set == CharInfo::UTF8 ||
-          (column_desc->character_set == CharInfo::SJIS &&
-           column_desc->encoding_charset == CharInfo::SJIS))
+      if (column_desc->characterSet() == CharInfo::UTF8 ||
+          (column_desc->characterSet() == CharInfo::SJIS &&
+           column_desc->encodingCharset() == CharInfo::SJIS))
       {
-        Lng32 maxBytesPerChar = CharInfo::maxBytesPerChar(column_desc->character_set);
+        Lng32 maxBytesPerChar = CharInfo::maxBytesPerChar(column_desc->characterSet());
         Lng32 sizeInChars = charCount ;  // Applies when CharLenUnit == BYTES
         if ( column_desc->precision > 0 )
            sizeInChars = column_desc->precision;
         type = new (heap)
 	SQLChar(CharLenInfo(sizeInChars, charCount/*in_bytes*/),
-		column_desc->null_flag,
-		column_desc->upshift,
-		column_desc->caseinsensitive,
+		column_desc->isNullable(),
+		column_desc->isUpshifted(),
+		column_desc->isCaseInsensitive(),
 		FALSE, // varLenFlag
-		column_desc->character_set,
-		column_desc->collation_sequence,
+		column_desc->characterSet(),
+		column_desc->collationSequence(),
 		CharInfo::IMPLICIT, // Coercibility
-		column_desc->encoding_charset
+		column_desc->encodingCharset()
 		);
       }
       else // keep the old behavior
       type = new (heap)
 	SQLChar(charCount,
-		column_desc->null_flag,
-		column_desc->upshift,
-		column_desc->caseinsensitive,
+		column_desc->isNullable(),
+		column_desc->isUpshifted(),
+		column_desc->isCaseInsensitive(),
 		FALSE,
-		column_desc->character_set,
-		column_desc->collation_sequence,
+		column_desc->characterSet(),
+		column_desc->collationSequence(),
 		CharInfo::IMPLICIT
 		);
       break;
@@ -442,32 +459,32 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
       charCount /= SQL_DBCHAR_SIZE;	    // divide the storage length by 2
       // fall thru
     case REC_BYTE_V_ASCII:
-      if (column_desc->character_set == CharInfo::SJIS ||
-          column_desc->character_set == CharInfo::UTF8)
+      if (column_desc->characterSet() == CharInfo::SJIS ||
+          column_desc->characterSet() == CharInfo::UTF8)
       {
-        Lng32 maxBytesPerChar = CharInfo::maxBytesPerChar(column_desc->character_set);
+        Lng32 maxBytesPerChar = CharInfo::maxBytesPerChar(column_desc->characterSet());
         Lng32 sizeInChars = charCount ;  // Applies when CharLenUnit == BYTES
         if ( column_desc->precision > 0 )
            sizeInChars = column_desc->precision;
         type = new (heap)
 	SQLVarChar(CharLenInfo(sizeInChars, charCount/*in_bytes*/),
-		   column_desc->null_flag,
-		   column_desc->upshift,
-		   column_desc->caseinsensitive,
-		   column_desc->character_set,
-		   column_desc->collation_sequence,
+		   column_desc->isNullable(),
+		   column_desc->isUpshifted(),
+		   column_desc->isCaseInsensitive(),
+		   column_desc->characterSet(),
+		   column_desc->collationSequence(),
 		   CharInfo::IMPLICIT, // Coercibility
-		   column_desc->encoding_charset
+		   column_desc->encodingCharset()
 		   );
       }
       else // keep the old behavior
       type = new (heap)
 	SQLVarChar(charCount,
-		   column_desc->null_flag,
-		   column_desc->upshift,
-		   column_desc->caseinsensitive,
-		   column_desc->character_set,
-		   column_desc->collation_sequence,
+		   column_desc->isNullable(),
+		   column_desc->isUpshifted(),
+		   column_desc->isCaseInsensitive(),
+		   column_desc->characterSet(),
+		   column_desc->collationSequence(),
 		   CharInfo::IMPLICIT
 		   );
       break;
@@ -476,47 +493,47 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
       type = new (heap)
 	SQLLongVarChar(charCount,
 		       FALSE,
-		       column_desc->null_flag,
-		       column_desc->upshift,
-		       column_desc->caseinsensitive,
-		       column_desc->character_set,
-		       column_desc->collation_sequence,
+		       column_desc->isNullable(),
+		       column_desc->isUpshifted(),
+		       column_desc->isCaseInsensitive(),
+		       column_desc->characterSet(),
+		       column_desc->collationSequence(),
 		       CharInfo::IMPLICIT
 		      );
       break;
     case REC_DATETIME:
       type = DatetimeType::constructSubtype(
-					    column_desc->null_flag,
-					    column_desc->datetimestart,
-					    column_desc->datetimeend,
+					    column_desc->isNullable(),
+					    column_desc->datetimeStart(),
+					    column_desc->datetimeEnd(),
 					    column_desc->datetimefractprec,
 					    heap
 					    );
       CMPASSERT(type);
       if (!type->isSupportedType())
 	{
-         column_desc->defaultClass = COM_NO_DEFAULT;           // can't set a default for these, either.
+          column_desc->setDefaultClass(COM_NO_DEFAULT);           // can't set a default for these, either.
 	  // 4030 Column is an unsupported combination of datetime fields
-     if (!errorCode)
-     {
-         *CmpCommon::diags() << DgSqlCode(4030)
-	    << DgColumnName(makeColumnName(table, column_desc))
-	    << DgInt0(column_desc->datetimestart)
-	    << DgInt1(column_desc->datetimeend)
-	    << DgInt2(column_desc->datetimefractprec);
-     }
-     else
-     {
-       *errorCode = 4030;
-     }
+          if (!errorCode)
+            {
+              *CmpCommon::diags() << DgSqlCode(4030)
+                                  << DgColumnName(makeColumnName(table, column_desc))
+                                  << DgInt0(column_desc->datetimeStart())
+                                  << DgInt1(column_desc->datetimeEnd())
+                                  << DgInt2(column_desc->datetimefractprec);
+            }
+          else
+            {
+              *errorCode = 4030;
+            }
 	}
       break;
     case REC_INTERVAL:
       type = new (heap)
-         SQLInterval(column_desc->null_flag,
-		    column_desc->datetimestart,
+         SQLInterval(column_desc->isNullable(),
+		    column_desc->datetimeStart(),
 		    column_desc->intervalleadingprec,
-		    column_desc->datetimeend,
+		    column_desc->datetimeEnd(),
 		    column_desc->datetimefractprec,
                     heap
 		    );
@@ -525,7 +542,7 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
          return TRUE;                                            // error
       if (!type->isSupportedType())
       {
-        column_desc->defaultClass = COM_NO_DEFAULT;           // can't set a default for these, either.
+        column_desc->setDefaultClass(COM_NO_DEFAULT);           // can't set a default for these, either.
         if (!errorCode)
           *CmpCommon::diags() << DgSqlCode(3044) << DgString0(column_desc->colname);
         else
@@ -536,13 +553,17 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
     case REC_BLOB :
       type = new (heap)
 	SQLBlob(column_desc->precision, Lob_Invalid_Storage,
-		column_desc->null_flag);
+		column_desc->isNullable());
       break;
 
     case REC_CLOB :
       type = new (heap)
 	SQLClob(column_desc->precision, Lob_Invalid_Storage,
-		column_desc->null_flag);
+		column_desc->isNullable());
+      break;
+
+    case REC_BOOLEAN :
+      type = new (heap) SQLBooleanNative(column_desc->isNullable());
       break;
 
     default:

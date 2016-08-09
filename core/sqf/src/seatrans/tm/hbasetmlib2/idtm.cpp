@@ -173,6 +173,8 @@ jint Java_org_apache_hadoop_hbase_regionserver_transactional_IdTm_native_1id(JNI
     jclass   lv_id_class;
     jfieldID lv_id_val;
 
+    if (gv_verbose)
+        printf("cli: id() timeout=%d\n", (int)j_timeout);
     lv_ferr = do_init(pp_j_env);
     lv_id = 0;
     if (lv_ferr == XZFIL_ERR_OK) {

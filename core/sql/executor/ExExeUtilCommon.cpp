@@ -1834,6 +1834,37 @@ Lng32 ExExeUtilTcb::extractParts
   return 0;
 }
 
+ex_expr::exp_return_type ExExeUtilTcb::evalScanExpr(char * ptr, Lng32 len,
+                                                    NABoolean copyToVCbuf)
+{
+  ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
+
+  if (exeUtilTdb().scanExpr_)
+    {
+      ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+
+      char * exprPtr = ptr;
+      if (copyToVCbuf)
+        {
+          exprPtr = new(getGlobals()->getDefaultHeap())
+            char[SQL_VARCHAR_HDR_SIZE + len];
+          short shortLen = (short)len;
+          str_cpy_all((char*)exprPtr, (char*)&shortLen, SQL_VARCHAR_HDR_SIZE);
+          str_cpy_all(&exprPtr[SQL_VARCHAR_HDR_SIZE], ptr, shortLen);
+        }
+
+      workAtp_->getTupp(exeUtilTdb().workAtpIndex())
+	.setDataPointer(exprPtr);
+
+      exprRetCode =
+	exeUtilTdb().scanExpr_->eval(pentry_down->getAtp(), workAtp_);
+
+      if (exprPtr != ptr)
+        NADELETEBASIC(exprPtr, getGlobals()->getDefaultHeap());
+    }
+
+  return exprRetCode;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////

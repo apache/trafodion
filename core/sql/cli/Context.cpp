@@ -59,6 +59,8 @@
 #include "exp_clause_derived.h"
 #include "ComUser.h"
 #include "CmpSeabaseDDLauth.h"
+
+#include "hdfs.h"
 #include "StmtCompilationMode.h"
 
 #include "ExCextdecs.h"
@@ -171,7 +173,7 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     mxcmpSessionInUse_(FALSE),
     volatileSchemaCreated_(FALSE),
     prevStmtStats_(NULL),
-    lobGlobals_(NULL),
+    hdfsHandleList_(NULL),
     seqGen_(NULL),
     dropInProgress_(FALSE),
     isEmbeddedArkcmpInitialized_(FALSE),
@@ -244,7 +246,6 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
   mxcmpNodeName_ = NULL;
   indexIntoCompilerArray_ = 0;
   transaction_  = 0;
-
   externalUsername_ = new(exCollHeap()) char[ComSqlId::MAX_LDAP_USER_NAME_LEN+1];
   memset(externalUsername_, 0, ComSqlId::MAX_LDAP_USER_NAME_LEN+1);
 
@@ -298,6 +299,8 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
 
   seqGen_ = new(exCollHeap()) SequenceValueGenerator(exCollHeap());
 
+  hdfsHandleList_ = new(exCollHeap()) HashQueue(exCollHeap(), 50); // The hfsHandleList_ represents a list of distict hdfs Handles with unique hdfs port numbers and server names. Assume not more than 50 hdfsServers could be connected in the Trafodion setup.  These will get initialized the first time access is made to a particular hdfs server. This list gets cleaned up when the thread exits. 
+  
   // For CmpContext switch
   cmpContextInfo_.setHeap(exCollHeap());
   cmpContextInUse_.setHeap(exCollHeap());
@@ -442,6 +445,9 @@ void ContextCli::deleteMe()
   NADELETE(ipcHeap_, NAHeap, parentHeap);
   HBaseClient_JNI::deleteInstance();
   HiveClient_JNI::deleteInstance();
+  disconnectHdfsConnections();
+  delete hdfsHandleList_;
+  hdfsHandleList_ = NULL;
 }
 
 Lng32 ContextCli::initializeSessionDefaults()
@@ -4151,6 +4157,7 @@ void ContextCli::dropSession(NABoolean clearCmpCache)
   
   HBaseClient_JNI::deleteInstance();
   HiveClient_JNI::deleteInstance();
+  disconnectHdfsConnections();
 }
 
 void ContextCli::resetVolatileSchemaState()
@@ -5023,7 +5030,9 @@ void ContextCli::killAndRecreateMxcmp()
                                COM_VERS_COMPILER_VERSION, NULL, env_));
   arkcmpInitFailed_.insertAt(0, arkcmpIS_OK_);
 }
-    
+   
+
+
 // Initialize the database user ID from the OS user ID. If a row in
 // the USERS table contains the OS user ID in the EXTERNAL_USER_NAME
 // column, we switch to the user associated with that row. Otherwise
@@ -5969,4 +5978,50 @@ void ContextCli::putTrustedRoutine(CollIndex ix)
   if (res != LM_OK)
     diags() << DgSqlCode(-CLI_ROUTINE_DEALLOC_ERROR);
   trustedRoutines_.remove(ix);
+}
+
+// This method looks for an hdfsServer connection with the given hdfsServer 
+// name and port. If the conection does not exist, a new connection is made and 
+// cached in the hdfsHandleList_ hashqueue for later use. The hdfsHandleList_ 
+// gets cleaned up when the thread exits.
+hdfsFS ContextCli::getHdfsServerConnection(char * hdfs_server, Int32 port)
+{
+  if (hdfsHandleList_)
+    {
+      // Look for the entry on the list
+      hdfsHandleList_->position(hdfs_server,strlen(hdfs_server));
+      hdfsConnectStruct *hdfsConnectEntry = NULL;
+      while (hdfsConnectEntry = (hdfsConnectStruct *)(hdfsHandleList_->getNext()))
+        {
+          if ((strcmp(hdfsConnectEntry->hdfsServer_,hdfs_server)==0) && 
+              (hdfsConnectEntry->hdfsPort_ == port))
+            return (hdfsConnectEntry->hdfsHandle_);
+          
+        }
+    }
+
+  // If not found create a new one and add to list.
+  hdfsFS newFS = hdfsConnect(hdfs_server,port);
+  hdfsConnectStruct *hdfsConnectEntry = new (exCollHeap()) hdfsConnectStruct;
+  memset(hdfsConnectEntry,0,sizeof(hdfsConnectStruct));  
+  hdfsConnectEntry->hdfsHandle_ = newFS;
+  hdfsConnectEntry->hdfsPort_ = port;
+  str_cpy_all(hdfsConnectEntry->hdfsServer_,hdfs_server,str_len(hdfs_server));
+  hdfsHandleList_->insert(hdfs_server,strlen(hdfs_server),hdfsConnectEntry);
+   
+  return newFS;   
+    
+}
+
+void ContextCli::disconnectHdfsConnections()
+{
+  if (hdfsHandleList_)
+    {
+      hdfsConnectStruct * entry = NULL;
+      while(entry = (hdfsConnectStruct *)hdfsHandleList_->getNext())
+        {
+          hdfsDisconnect(entry->hdfsHandle_);         
+        }
+    }
+  
 }

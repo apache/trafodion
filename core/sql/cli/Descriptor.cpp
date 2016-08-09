@@ -95,6 +95,7 @@ Lng32 Descriptor::setIndLength(desc_struct &descItem)
       descItem.ind_length = 4;
       break;
     case REC_BIN64_SIGNED:
+    case REC_BIN64_UNSIGNED:
       descItem.ind_length = 8;
       break;
     default:
@@ -117,6 +118,7 @@ Lng32 Descriptor::setVarLength(desc_struct &descItem)
       descItem.length = 4;
       break;
     case REC_BIN64_SIGNED:
+    case REC_BIN64_UNSIGNED:
     case REC_FLOAT64:
       descItem.length = 8;
       break;
@@ -1361,6 +1363,7 @@ short Descriptor::isIntegralFSType(Lng32 datatype)
    case REC_BIN32_SIGNED:
    case REC_BIN32_UNSIGNED:
    case REC_BIN64_SIGNED:
+   case REC_BIN64_UNSIGNED:
       return TRUE;
 
    default:
@@ -2047,12 +2050,15 @@ RETCODE Descriptor::processNumericDatatypeWithPrecision(desc_struct &descItem,
 	}
       else if ((descItem.datatype == REC_BIN16_UNSIGNED) ||
 	       (descItem.datatype == REC_BIN32_UNSIGNED) ||
+	       (descItem.datatype == REC_BIN64_UNSIGNED) ||
 	       (descItem.datatype == REC_NUM_BIG_UNSIGNED))
 	{
 	  if (((descItem.datatype == REC_BIN16_UNSIGNED) &&
 	       (descItem.precision > 4)) ||
 	      ((descItem.datatype == REC_BIN32_UNSIGNED) &&
 	       (descItem.precision > 9)) ||
+	      ((descItem.datatype == REC_BIN64_UNSIGNED) &&
+	       (descItem.precision > 20)) ||
 	      ((descItem.datatype == REC_NUM_BIG_UNSIGNED) &&
 	       (descItem.precision > 128)))
 	    {
@@ -2061,6 +2067,8 @@ RETCODE Descriptor::processNumericDatatypeWithPrecision(desc_struct &descItem,
 		maxPrec = 4;
 	      else if (descItem.datatype == REC_BIN32_UNSIGNED)
 		maxPrec = 9;
+	      else if (descItem.datatype == REC_BIN64_UNSIGNED)
+		maxPrec = 19;
 	      else
 		maxPrec = 128;
 	      diags << DgSqlCode(-3008) 

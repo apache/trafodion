@@ -348,6 +348,7 @@ enum SQLTYPE_CODE {
     /* INTEGER/INT Tandem extensions */
     SQLTYPECODE_INTEGER_UNSIGNED       = -401,
     SQLTYPECODE_LARGEINT               = -402,
+    SQLTYPECODE_LARGEINT_UNSIGNED      = -405,
 
     /* TINYINT */
     SQLTYPECODE_TINYINT                = -403,
@@ -416,6 +417,10 @@ enum SQLTYPE_CODE {
     /* BLOB TYPE */
     SQLTYPECODE_BLOB  = -602,
     SQLTYPECODE_CLOB  = -603,
+
+    /* BOOLEAN TYPE */
+    SQLTYPECODE_BOOLEAN = -701,
+
     /* no ANSI value 13 */
 
     /* BIT */

@@ -41,7 +41,7 @@
 #define SQLPARSERGLOBALS_NADEFAULTS
 
 #include "CmpStoredProc.h"
-#include "desc.h"
+#include "TrafDDLdesc.h"
 #include "parser.h"
 #include "str.h"
 
@@ -273,7 +273,7 @@ NABoolean CmpSPOutputFormat::SetFormat(Lng32 nCols,
   nCols_ = nCols;
   // set up tableDesc_, allocate the storage from allocate routine,
   // so the delete of the tableDesc_ could be done correctly. 
-  // As in sqlcat/desc.h readtabledef_allocate_desc(), allocate routine gets 
+  // As in sqlcat/desc.h TrafAllocateDDLdesc(), allocate routine gets 
   // the storage from HEAP ( i.e. CmpCommon::statementHeap() ). 
   // Likewise, copyString should be the same implementation as in 
   // readRealArk.cpp. It was externalized originally, but being put as
@@ -281,44 +281,43 @@ NABoolean CmpSPOutputFormat::SetFormat(Lng32 nCols,
   // in the beginning of the file. ( which will allocate the memory from
   // statementHeap ).
 
-  desc_struct* table_desc = readtabledef_allocate_desc(DESC_TABLE_TYPE);
+  TrafDesc* table_desc = TrafAllocateDDLdesc(DESC_TABLE_TYPE, NULL);
   tableDesc_ = table_desc;
 
   char* objName = copyString(NAString(tableName));
-  table_desc->body.table_desc.tablename = objName;
+  table_desc->tableDesc()->tablename = objName;
 
-  table_desc->body.table_desc.record_length = 0; // to be set later in generator.
-  table_desc->body.table_desc.colcount = (Int32)nCols;
+  table_desc->tableDesc()->record_length = 0; // to be set later in generator.
+  table_desc->tableDesc()->colcount = (Int32)nCols;
 
-  desc_struct * files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
-  table_desc->body.table_desc.files_desc = files_desc;
-  files_desc->body.files_desc.fileorganization = KEY_SEQUENCED_FILE;
+  TrafDesc * files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
+  table_desc->tableDesc()->files_desc = files_desc;
   
-  // populate the columns_desc_struct
-  desc_struct* prev_col_desc = 0;
-  desc_struct* first_col_desc =  0;
+  // populate the TrafColumnsDesc
+  TrafDesc* prev_col_desc = 0;
+  TrafDesc* first_col_desc =  0;
   for ( Int32 i=0; i < nCols; i++ )
     {
-      desc_struct* column_desc = readtabledef_allocate_desc(DESC_COLUMNS_TYPE);
+      TrafDesc* column_desc = TrafAllocateDDLdesc(DESC_COLUMNS_TYPE, NULL);
       if (prev_col_desc)
-	 prev_col_desc->header.next = column_desc;
+	 prev_col_desc->next = column_desc;
       else
 	 first_col_desc = column_desc;
       prev_col_desc = column_desc;
-      if ( !getColumnDesc( &(fields[i]), &(column_desc->body.columns_desc) ) ) 
+      if ( !getColumnDesc( &(fields[i]), (column_desc->columnsDesc())))
 	{
 	  *(context_->diags()) << DgSqlCode(arkcmpErrorISPFieldDef);
 	  tableDesc_ = 0; // since HEAP is from statement heap, it will
 	  // be removed automatically at the end of statement.
 	  return FALSE;
         }
-      column_desc->body.columns_desc.colnumber = i;      
+      column_desc->columnsDesc()->colnumber = i;      
     }
 
-  table_desc->body.table_desc.columns_desc = first_col_desc;
+  table_desc->tableDesc()->columns_desc = first_col_desc;
 
   // populate index_desc and key_desc
-  desc_struct* keys_desc = 0;
+  TrafDesc* keys_desc = 0;
   if ( !getKeysDesc( nKeys, keys, keys_desc) )
      {
        *(context_->diags()) << DgSqlCode(arkcmpErrorISPFieldDef);
@@ -326,24 +325,23 @@ NABoolean CmpSPOutputFormat::SetFormat(Lng32 nCols,
        return FALSE;
      }
 
-  desc_struct * index_desc = readtabledef_allocate_desc(DESC_INDEXES_TYPE);
-  index_desc->body.indexes_desc.tablename = objName;
-  index_desc->body.indexes_desc.indexname = objName;
-  index_desc->body.indexes_desc.keytag = 0; // primary index
-  index_desc->body.indexes_desc.record_length = 
-    table_desc->body.table_desc.record_length;
-  index_desc->body.indexes_desc.colcount =
-    table_desc->body.table_desc.colcount;
-  index_desc->body.indexes_desc.blocksize = 4096; // anything > 0
+  TrafDesc * index_desc = TrafAllocateDDLdesc(DESC_INDEXES_TYPE, NULL);
+  index_desc->indexesDesc()->tablename = objName;
+  index_desc->indexesDesc()->indexname = objName;
+  index_desc->indexesDesc()->keytag = 0; // primary index
+  index_desc->indexesDesc()->record_length = 
+    table_desc->tableDesc()->record_length;
+  index_desc->indexesDesc()->colcount =
+    table_desc->tableDesc()->colcount;
+  index_desc->indexesDesc()->blocksize = 4096; // anything > 0
 
   // cannot simply point to same files desc as the table one,
   // because then ReadTableDef::deleteTree frees same memory twice (error)
-  desc_struct * i_files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
-  index_desc->body.indexes_desc.files_desc = i_files_desc;
-  i_files_desc->body.files_desc.fileorganization = KEY_SEQUENCED_FILE;
+  TrafDesc * i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
+  index_desc->indexesDesc()->files_desc = i_files_desc;
 
-  index_desc->body.indexes_desc.keys_desc  = keys_desc;
-  table_desc->body.table_desc.indexes_desc = index_desc;       
+  index_desc->indexesDesc()->keys_desc  = keys_desc;
+  table_desc->tableDesc()->indexes_desc = index_desc;       
 
   return TRUE;
 }
@@ -353,7 +351,7 @@ CmpSPOutputFormat::~CmpSPOutputFormat()
 }
 
 NABoolean CmpSPOutputFormat::getColumnDesc(SP_FIELDDESC_STRUCT* fDesc, 
-					   columns_desc_struct* colsDesc )
+					   TrafColumnsDesc* colsDesc )
 {
   ElemDDLColDef* elemDDL;
   
@@ -363,7 +361,7 @@ NABoolean CmpSPOutputFormat::getColumnDesc(SP_FIELDDESC_STRUCT* fDesc,
     {
       // convert ElemDDLColViewDef into CatColumn, then column_desc
       if ( !ElemDDLColDef2ColumnDescStruct
-	   (elemDDL, tableDesc_->body.table_desc.tablename, colsDesc) )
+	   (elemDDL, tableDesc_->tableDesc()->tablename, colsDesc) )
 	return FALSE;      
     }
   
@@ -372,23 +370,23 @@ NABoolean CmpSPOutputFormat::getColumnDesc(SP_FIELDDESC_STRUCT* fDesc,
 
 NABoolean CmpSPOutputFormat::getKeysDesc(Lng32 nKeys, 
 				  SP_KEYDESC_STRUCT* keys, 
-				  desc_struct* &keysDesc)
+				  TrafDesc* &keysDesc)
 {
   // key is not supported yet in FCS ( Sep. 97 release ) needs to rework on this.
-  desc_struct* prev_key_desc = 0;
-  desc_struct* first_key_desc = 0;
+  TrafDesc* prev_key_desc = 0;
+  TrafDesc* first_key_desc = 0;
   for ( Int32 i=0; i < nKeys; i++ )
   {
-    desc_struct* key_desc = readtabledef_allocate_desc(DESC_KEYS_TYPE);
+    TrafDesc* key_desc = TrafAllocateDDLdesc(DESC_KEYS_TYPE, NULL);
     if (prev_key_desc)
-      prev_key_desc->header.next = key_desc;
+      prev_key_desc->next = key_desc;
     else
       first_key_desc = key_desc;
     prev_key_desc = key_desc;
-    key_desc->body.keys_desc.keyseqnumber = i;
+    key_desc->keysDesc()->keyseqnumber = i;
     // TODO, find out the tablecolnumber from column name ????
-    key_desc->body.keys_desc.tablecolnumber = 0;
-    key_desc->body.keys_desc.ordering = 0; // ?????
+    key_desc->keysDesc()->tablecolnumber = 0;
+    key_desc->keysDesc()->setDescending(FALSE);
   }
   keysDesc = first_key_desc;
   return TRUE;
@@ -400,18 +398,18 @@ NABoolean CmpSPOutputFormat::getKeysDesc(Lng32 nKeys,
 NABoolean CmpSPOutputFormat::ElemDDLColDef2ColumnDescStruct
   (ElemDDLColDef* elem,
   const char* tableName,
-  columns_desc_struct* colDesc)
+  TrafColumnsDesc* colDesc)
 {
   // Just copy the pointer for this name --
   // no need to alloc + strcpy a la copyString
-  colDesc->tablename = (char *)tableName;
+  //  colDesc->tablename = (char *)tableName;
 
   colDesc->colname = copyString(elem->getColumnName());
 
   // colDesc->colnumber, filled outside
   
   NAType* genericType = elem->getColumnDataType();  
-  colDesc->datatype = (DataType) genericType->getFSDatatype();
+  colDesc->datatype = genericType->getFSDatatype();
   colDesc->length = genericType->getNominalSize();
   colDesc->pictureText = (char *)emptyString;
 
@@ -451,7 +449,7 @@ NABoolean CmpSPOutputFormat::ElemDDLColDef2ColumnDescStruct
       colDesc->character_set	  = charType.getCharSet();
       colDesc->encoding_charset	  = charType.getEncodingCharSet();
       colDesc->collation_sequence = charType.getCollation();
-      colDesc->upshift		  = charType.isUpshifted();
+      colDesc->setUpshifted(charType.isUpshifted());
     }
 
   if ( genericType->getTypeQualifier() == NA_DATETIME_TYPE ||
@@ -468,12 +466,10 @@ NABoolean CmpSPOutputFormat::ElemDDLColDef2ColumnDescStruct
   
   // offset, to be done (do we need it?)
 
-  colDesc->null_flag = NOT elem->isNotNullConstraintSpecified();
+  colDesc->setNullable(NOT elem->isNotNullConstraintSpecified());
   
   colDesc->colclass = 'U';
-  colDesc->addedColumn = 0;
-  colDesc->uec = (Cardinality)0;
-  colDesc->highval = colDesc->lowval = 0;
+  colDesc->setAdded(FALSE);
   
   // defaultclass, to be done? (not referenced, not needed)
 

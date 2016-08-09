@@ -34,11 +34,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
-import org.apache.hadoop.hbase.client.HConnection;
+import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
@@ -68,6 +67,13 @@ import org.apache.hadoop.hbase.regionserver.transactional.IdTm;
 import org.apache.hadoop.hbase.regionserver.transactional.IdTmException;
 import org.apache.hadoop.hbase.regionserver.transactional.IdTmId;
 
+import org.apache.hadoop.hbase.ipc.BlockingRpcCallback;
+import org.apache.hadoop.hbase.ipc.ServerRpcController;
+
+import org.apache.zookeeper.KeeperException;
+
+import com.google.protobuf.ByteString;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -84,6 +90,7 @@ public class RMInterface {
     public AlgorithmType TRANSACTION_ALGORITHM;
     static Map<Long, Set<RMInterface>> mapRMsPerTransaction = new HashMap<Long,  Set<RMInterface>>();
     private TransactionalTableClient ttable = null;
+    private Connection connection;
     static {
         System.loadLibrary("stmlib");
     }
@@ -99,7 +106,7 @@ public class RMInterface {
     }
 
     private IdTm idServer;
-    private static final int ID_TM_SERVER_TIMEOUT = 1000;
+    private static final int ID_TM_SERVER_TIMEOUT = 1000; // 1 sec 
 
     public enum AlgorithmType {
        MVCC, SSCC
@@ -107,8 +114,9 @@ public class RMInterface {
 
     private AlgorithmType transactionAlgorithm;
 
-    public RMInterface(final String tableName) throws IOException {
+    public RMInterface(final String tableName, Connection connection) throws IOException {
         //super(conf, Bytes.toBytes(tableName));
+        this.connection = connection;
         transactionAlgorithm = AlgorithmType.MVCC;
         String envset = System.getenv("TM_USE_SSCC");
         if( envset != null)
@@ -117,23 +125,18 @@ public class RMInterface {
         }
         if( transactionAlgorithm == AlgorithmType.MVCC) //MVCC
         {
-            ttable = new TransactionalTable(Bytes.toBytes(tableName));
+            ttable = new TransactionalTable(Bytes.toBytes(tableName), connection);
         }
         else if(transactionAlgorithm == AlgorithmType.SSCC)
         {
-            ttable = new SsccTransactionalTable( Bytes.toBytes(tableName));
+            ttable = new SsccTransactionalTable( Bytes.toBytes(tableName), connection);
         }
-
-        try {
-           idServer = new IdTm(false);
-        }
-        catch (Exception e){
-           LOG.error("RMInterface: Exception creating new IdTm: " + e);
-        }
+        idServer = new IdTm(false);
         if (LOG.isTraceEnabled()) LOG.trace("RMInterface constructor exit");
     }
 
-    public RMInterface() throws IOException {
+    public RMInterface(Connection connection) throws IOException {
+       this.connection = connection;
 
     }
 
@@ -159,7 +162,7 @@ public class RMInterface {
               IdTmId startId;
               try {
                  startId = new IdTmId();
-                 if (LOG.isTraceEnabled()) LOG.trace("registerTransaction getting new startId");
+                 if (LOG.isTraceEnabled()) LOG.trace("registerTransaction getting new startId with timeout " + ID_TM_SERVER_TIMEOUT);
                  idServer.id(ID_TM_SERVER_TIMEOUT, startId);
                  if (LOG.isTraceEnabled()) LOG.trace("registerTransaction idServer.id returned: " + startId.val);
               } catch (IdTmException exc) {
@@ -222,12 +225,12 @@ public class RMInterface {
     }
 
     public void createTable(HTableDescriptor desc, byte[][] keys, int numSplits, int keyLength, long transID) throws IOException {
-
-        if (LOG.isTraceEnabled()) LOG.trace("createTable ENTER: ");
-            byte[] lv_byte_desc = desc.toByteArray();
-            byte[] lv_byte_tblname = desc.getNameAsString().getBytes();
-            if (LOG.isTraceEnabled()) LOG.trace("createTable: htabledesc bytearray: " + lv_byte_desc + "desc in hex: " + Hex.encodeHexString(lv_byte_desc));
-            createTableReq(lv_byte_desc, keys, numSplits, keyLength, transID, lv_byte_tblname);
+    	if (LOG.isTraceEnabled()) LOG.trace("Enter createTable, txid: " + transID + " Table: " + desc.getNameAsString());
+        byte[] lv_byte_desc = desc.toByteArray();
+        byte[] lv_byte_tblname = desc.getNameAsString().getBytes();
+        if (LOG.isTraceEnabled()) LOG.trace("createTable: htabledesc bytearray: " + lv_byte_desc + "desc in hex: " + Hex.encodeHexString(lv_byte_desc));
+        createTableReq(lv_byte_desc, keys, numSplits, keyLength, transID, lv_byte_tblname);
+        if (LOG.isTraceEnabled()) LOG.trace("Exit createTable, txid: " + transID + " Table: " + desc.getNameAsString());
     }
 
     public void truncateTableOnAbort(String tblName, long transID) throws IOException {
@@ -261,15 +264,18 @@ public class RMInterface {
     static public synchronized void unregisterTransaction(final long transactionID) {
       TransactionState ts = null;
       if (LOG.isTraceEnabled()) LOG.trace("Enter unregisterTransaction txid: " + transactionID);
-        ts = mapTransactionStates.remove(transactionID);
+      ts = mapTransactionStates.remove(transactionID);
       if (ts == null) {
         LOG.warn("mapTransactionStates.remove did not find transid " + transactionID);
       }
+      if (LOG.isTraceEnabled()) LOG.trace("Exit unregisterTransaction txid: " + transactionID);
     }
 
     // Not used?
     static public synchronized void unregisterTransaction(TransactionState ts) {
+        if (LOG.isTraceEnabled()) LOG.trace("Enter unregisterTransaction ts: " + ts.getTransactionId());
         mapTransactionStates.remove(ts.getTransactionId());
+        if (LOG.isTraceEnabled()) LOG.trace("Exit unregisterTransaction ts: " + ts.getTransactionId());
     }
 
     public synchronized Result get(final long transactionID, final Get get) throws IOException {
@@ -358,10 +364,6 @@ public class RMInterface {
     }
     public void flushCommits() throws IOException {
          ttable.flushCommits();
-    }
-    public HConnection getConnection()
-    {
-        return ttable.getConnection();
     }
     public byte[][] getEndKeys()
                     throws IOException

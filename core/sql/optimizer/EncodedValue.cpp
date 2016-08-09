@@ -501,6 +501,7 @@ EncodedValue::outputToBufferToComputeRTHash(
       flags = ExHDPHash::NO_FLAGS;
       switch (naType->getFSDatatype()) {
         case REC_BIN8_UNSIGNED:
+        case REC_BOOLEAN:
            len = 1;
            { UInt8 y = (UInt8)x; memcpy(data, &y, len); }
            break;
@@ -529,8 +530,14 @@ EncodedValue::outputToBufferToComputeRTHash(
            { Int32 y = (Int32)x; memcpy(data, &y, len); }
            break;
         case REC_BIN64_SIGNED:
+           len = 8;
            flags =ExHDPHash::SWAP_EIGHT;
            { Int64 y = (Int64)x; len = 8; memcpy(data, &y, len); }
+           break;
+        case REC_BIN64_UNSIGNED:
+           len = 8;
+           flags =ExHDPHash::SWAP_EIGHT;
+           { UInt64 y = (UInt64)x; len = 8; memcpy(data, &y, len); }
            break;
         default:
           len = 0; // For column types not supported by SB, we just

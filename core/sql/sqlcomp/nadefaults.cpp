@@ -1796,7 +1796,8 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDui1__(HDFS_IO_BUFFERSIZE,                            "65536"),
   DDui___(HDFS_IO_BUFFERSIZE_BYTES,               "0"),
-  DDui1__(HDFS_IO_RANGE_TAIL,                     "16384"),
+  // The value 0 denotes RangeTail = max record length of table.
+  DDui___(HDFS_IO_RANGE_TAIL,                     "0"),
   DDkwd__(HDFS_PREFETCH,                           "ON"),
   DDkwd__(HDFS_READ_CONTINUE_ON_ERROR,                           "OFF"),
   DDui1__(HDFS_REPLICATION,                            "1"),
@@ -2771,7 +2772,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDansi_(OUTPUT_DATE_FORMAT,		        ""),
 
   // Overflow mode for scratch files
-  DDkwd__(OVERFLOW_MODE,                  "MMAP"),
+  DDkwd__(OVERFLOW_MODE,                  "DISK"),
 
   // Sequence generator override identity values
   DDkwd__(OVERRIDE_GENERATED_IDENTITY_VALUES,	  "OFF"),
@@ -3323,20 +3324,29 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
+  DDkwd__(TRAF_BOOLEAN_IO,                        "OFF"),
+
   DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),   
 
   DDkwd__(TRAF_CLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
   DDkwd__(TRAF_COL_LENGTH_IS_CHAR,                 "ON"),   
 
+  DDkwd__(TRAF_CREATE_SIGNED_NUMERIC_LITERAL,      "ON"),   
+
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
 
- DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
+  DDkwd__(TRAF_CREATE_TINYINT_LITERAL,        "ON"),   
  
- DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
+  DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
+ 
+  DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
 
   DDkwd__(TRAF_INDEX_ALIGNED_ROW_FORMAT,        "ON"),   
   DDkwd__(TRAF_INDEX_CREATE_OPT,          "OFF"),
+
+  DDkwd__(TRAF_LARGEINT_UNSIGNED_IO,                        "OFF"),
+
   DDkwd__(TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE,        "OFF"),
   DDkwd__(TRAF_LOAD_CONTINUE_ON_ERROR,          "OFF"),
   DD_____(TRAF_LOAD_ERROR_COUNT_ID,             "" ),
@@ -3374,9 +3384,13 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDint__(TRAF_NUM_OF_SALT_PARTNS,                     "-1"),
 
+  DDkwd__(TRAF_READ_OBJECT_DESC,                       "OFF"),   
+
   DDkwd__(TRAF_RELOAD_NATABLE_CACHE,                   "OFF"),
   DD_____(TRAF_SAMPLE_TABLE_LOCATION,                  "/sample/"),
   DDint__(TRAF_SEQUENCE_CACHE_SIZE,        "-1"),
+
+  DDkwd__(TRAF_STORE_OBJECT_DESC,                    "OFF"),   
 
   DDkwd__(TRAF_STRING_AUTO_TRUNCATE,      "OFF"),
   DDkwd__(TRAF_STRING_AUTO_TRUNCATE_WARNING,      "OFF"),

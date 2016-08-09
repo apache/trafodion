@@ -72,7 +72,7 @@
 #include "StmtDDLCreateView.h"
 #include "ElemDDLColRefArray.h"
 #include "ElemDDLSaltOptions.h"
-#include "desc.h"
+#include "TrafDDLdesc.h"
 #include "UdrErrors.h"
 #include "SequenceGeneratorAttributes.h"
 
@@ -717,7 +717,7 @@ static ItemExpr *intersectColumns(const RETDesc &leftTable,
     ItemExpr *leftExpr  = leftTable.getValueId(i).getItemExpr();
     ItemExpr *rightExpr = rightTable.getValueId(i).getItemExpr();
     BiRelat *compare = new (bindWA->wHeap())
-      BiRelat(ITM_EQUAL, leftExpr, rightExpr);
+      BiRelat(ITM_EQUAL, leftExpr, rightExpr, TRUE);
     if (predicate)
       predicate = new (bindWA->wHeap()) BiLogic(ITM_AND, predicate, compare);
     else
@@ -1010,21 +1010,21 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
     if (col->getValueId().getType().getTypeQualifier() == NA_ROWSET_TYPE) {
       return;
     }
-    const NAType &naType = col->getValueId().getType();
+    NAType *naType = &(NAType&)col->getValueId().getType();
     //
     // Note: the unsupported and DATETIME cases are mutually exclusive with the LARGEDEC case below.
     //
-    if (!naType.isSupportedType()) {
+    if (!naType->isSupportedType()) {
       // Unsupported types are displayed as strings of '#' to their display length
       ItemExpr *theRepeat =
         new (bindWA->wHeap()) Repeat(new (bindWA->wHeap()) SystemLiteral("#"),
                                        new (bindWA->wHeap()) SystemLiteral(
-                                         naType.getDisplayLength(
-                                           naType.getFSDatatype(),
-                                           0,
-                                           naType.getPrecision(),
-                                           naType.getScale(),
-                                           0)));
+                                            naType->getDisplayLength(
+                                                 naType->getFSDatatype(),
+                                                 0,
+                                                 naType->getPrecision(),
+                                                 naType->getScale(),
+                                                 0)));
       theRepeat = theRepeat->bindNode(bindWA);
       col->setValueId(theRepeat->getValueId());
       compExpr[i] = theRepeat->getValueId();
@@ -1033,8 +1033,8 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
              (NOT bindWA->inViewDefinition()) &&
              (NOT bindWA->inMVDefinition()) &&
              (NOT bindWA->inCTAS()) &&
-             (naType.getTypeQualifier()== NA_DATETIME_TYPE &&
-              ((const DatetimeType &)naType).getSubtype() == 
+             (naType->getTypeQualifier()== NA_DATETIME_TYPE &&
+              ((const DatetimeType *)naType)->getSubtype() == 
               DatetimeType::SUBTYPE_SQLDate) &&
              (! CmpCommon::context()->getSqlmxRegress()) &&
              (strcmp(ActiveSchemaDB()->getDefaults().getValue(OUTPUT_DATE_FORMAT),
@@ -1048,26 +1048,88 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         compExpr[i] = newChild->getValueId();
       }
 
-    // if ON, return tinyint as smallint.
+    if ((naType->getFSDatatype() == REC_BIN64_UNSIGNED) &&
+        (CmpCommon::getDefault(TRAF_LARGEINT_UNSIGNED_IO) == DF_OFF) &&
+        (NOT bindWA->inCTAS()) &&
+        (NOT bindWA->inViewDefinition()))
+      {
+        NumericType *nTyp = (NumericType *)naType;
+        
+        ItemExpr * cast = new (bindWA->wHeap())
+          Cast(col->getValueId().getItemExpr(),
+               new (bindWA->wHeap())
+               SQLBigNum(MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION,
+                         nTyp->getScale(),
+                         FALSE,
+                         FALSE,
+                         naType->supportsSQLnull(),
+                         NULL));
+        
+        cast = cast->bindNode(bindWA);
+        if (bindWA->errStatus()) 
+          return;
+        col->setValueId(cast->getValueId());
+        compExpr[i] = cast->getValueId();
+
+        naType = (NAType*)&cast->getValueId().getType();
+      }
+
+    if ((naType->getFSDatatype() == REC_BOOLEAN) &&
+        (CmpCommon::getDefault(TRAF_BOOLEAN_IO) == DF_OFF) &&
+        (NOT bindWA->inCTAS()) &&
+        (NOT bindWA->inViewDefinition()))
+      {
+        NumericType *nTyp = (NumericType *)naType;
+        
+        ItemExpr * cast = new (bindWA->wHeap())
+          Cast(col->getValueId().getItemExpr(),
+               new (bindWA->wHeap())
+               SQLChar(SQL_BOOLEAN_DISPLAY_SIZE, naType->supportsSQLnull()));
+        
+        cast = cast->bindNode(bindWA);
+        if (bindWA->errStatus()) 
+          return;
+        col->setValueId(cast->getValueId());
+        compExpr[i] = cast->getValueId();
+        
+        naType = (NAType*)&cast->getValueId().getType();
+      }
+    
+    // if OFF, return tinyint as smallint.
     // This is needed until all callers/drivers have full support to
     // handle IO of tinyint datatypes.
-    if ((naType.getTypeName() == LiteralTinyInt) &&
+    if (((naType->getFSDatatype() == REC_BIN8_SIGNED) ||
+         (naType->getFSDatatype() == REC_BIN8_UNSIGNED)) &&
+        (NOT bindWA->inCTAS()) &&
+        (NOT bindWA->inViewDefinition()) &&
         ((CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF) ||
          (CmpCommon::getDefault(TRAF_TINYINT_RETURN_VALUES) == DF_OFF)))
       {
+        NumericType *srcNum = (NumericType*)naType; 
+        NumericType * newType;
+        if (srcNum->getScale() == 0)
+          newType = new (bindWA->wHeap())
+            SQLSmall(NOT srcNum->isUnsigned(),
+                     naType->supportsSQLnull());
+        else
+          newType = new (bindWA->wHeap())
+            SQLNumeric(sizeof(short), srcNum->getPrecision(), 
+                       srcNum->getScale(),
+                       NOT srcNum->isUnsigned(), 
+                       naType->supportsSQLnull());
+
         ItemExpr * cast = new (bindWA->wHeap())
-          Cast(col->getValueId().getItemExpr(),
-               new (bindWA->wHeap()) SQLSmall(TRUE, naType.supportsSQLnull()));
+          Cast(col->getValueId().getItemExpr(), newType);
+
         cast = cast->bindNode(bindWA);
         if (bindWA->errStatus()) 
           return;
         col->setValueId(cast->getValueId());
         compExpr[i] = cast->getValueId();
       }
-    
-    else if (naType.getTypeQualifier() == NA_NUMERIC_TYPE && 
+    else if (naType->getTypeQualifier() == NA_NUMERIC_TYPE && 
              !((NumericType &)col->getValueId().getType()).binaryPrecision()) {
-      NumericType &nTyp = (NumericType &)col->getValueId().getType();
+      NumericType *nTyp = (NumericType *)naType;
       
       ItemExpr * ie = col->getValueId().getItemExpr();
       NAType *newTyp = NULL;
@@ -1082,8 +1144,8 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         bignumIO = FALSE; // explicitely set to OFF
       else if (CmpCommon::getDefault(BIGNUM_IO) == DF_SYSTEM)
         {
-          if ((((NumericType &)col->getValueId().getType()).isBigNum()) &&
-              (((SQLBigNum &)col->getValueId().getType()).isARealBigNum()))
+          if ((nTyp->isBigNum()) &&
+              (((SQLBigNum*)nTyp)->isARealBigNum()))
             bignumIO = TRUE;
         }
 
@@ -1092,14 +1154,14 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         bignumIO = FALSE;
 
       if (bignumIO)
-        bignumOflow = nTyp.getPrecision() - 
+        bignumOflow = nTyp->getPrecision() - 
           (Lng32)CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED);
       else
         {
-          if (nTyp.isSigned())
-            oflow = nTyp.getPrecision() - MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION;
+          if (nTyp->isSigned())
+            oflow = nTyp->getPrecision() - MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION;
           else
-            oflow = nTyp.getPrecision() - MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION;
+            oflow = nTyp->getPrecision() - MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION;
         }
 
       if ((bignumOflow > 0) || (oflow > 0))
@@ -1107,7 +1169,7 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
           if (bignumOflow > 0) {
             newPrec = 
               (Lng32)CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED);
-            Lng32 orgMagnitude = nTyp.getPrecision() - nTyp.getScale();
+            Lng32 orgMagnitude = nTyp->getPrecision() - nTyp->getScale();
         
             // set the newScale
             // IF there is overflow in magnitude set the scale to 0.
@@ -1127,17 +1189,16 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
               SQLBigNum(newPrec,
                         newScale,
                         ((SQLBigNum &)col->getValueId().getType()).isARealBigNum(),
-                        nTyp.isSigned(),
-                        nTyp.supportsSQLnull(),
+                        nTyp->isSigned(),
+                        nTyp->supportsSQLnull(),
                         NULL);
           }
           else if (oflow > 0) {
             // If it's not a computed expr, but a column w/ a legal type, re-loop
             if (col->getValueId().getNAColumn(TRUE/*don't assert*/)) {
-              //CMPASSERT(!nTyp.isInternalType());
+              //CMPASSERT(!nTyp->isInternalType());
               //continue;
             }
-            CMPASSERT(nTyp.isInternalType());
             
             OperatorTypeEnum op = ie->origOpType();
             CMPASSERT(op != NO_OPERATOR_TYPE &&      // Init'd correctly?
@@ -1154,7 +1215,7 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
 
             // ANSI 6.5 SR 7 - 9:  aggregates must be exact if column is exact.
             newPrec  = MAX_NUMERIC_PRECISION;
-            Lng32 orgMagnitude = (nTyp.getMagnitude() + 9) / 10;
+            Lng32 orgMagnitude = (nTyp->getMagnitude() + 9) / 10;
             // set the newScale
             // IF there is overflow in magnitude set the scale to 0.
             // ELSE set the accomodate the magnitude part and truncate the scale
@@ -1198,14 +1259,14 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
             if (newScale == 0)
               newTyp = new (bindWA->wHeap())
                          SQLLargeInt(TRUE, // hardware only supports signed
-                                     nTyp.supportsSQLnull());
+                                     nTyp->supportsSQLnull());
             else
               newTyp = new (bindWA->wHeap())
                          SQLNumeric(sizeof(Int64),
                                     newPrec,
                                     newScale,
-                                    nTyp.isSigned(),
-                                    nTyp.supportsSQLnull());
+                                    nTyp->isSigned(),
+                                    nTyp->supportsSQLnull());
             
           } // overflow
           
@@ -1233,9 +1294,9 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
   }   // loop over cols in RETDesc
 }   // castComputedColumnsToAnsiTypes()
 
-desc_struct *generateSpecialDesc(const CorrName& corrName)
+TrafDesc *generateSpecialDesc(const CorrName& corrName)
 {
-  desc_struct * desc = NULL;
+  TrafDesc * desc = NULL;
 
   if (corrName.getSpecialType() == ExtendedQualName::VIRTUAL_TABLE)
     {
@@ -1254,6 +1315,11 @@ desc_struct *generateSpecialDesc(const CorrName& corrName)
           ExeUtilRegionStats eudss;
           desc = eudss.createVirtualTableDesc();
         }
+      else if (corrName.getQualifiedNameObj().getObjectName() == ExeUtilRegionStats::getVirtualTableClusterViewNameStr())
+        {
+          ExeUtilRegionStats eudss(TRUE);
+          desc = eudss.createVirtualTableDesc();
+        }
     }
 
   return desc;
@@ -1263,22 +1329,6 @@ desc_struct *generateSpecialDesc(const CorrName& corrName)
 // -----------------------------------------------------------------------
 // member functions for class BindWA
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START - cnu
-/*
-static NABoolean checkForReservedObjectName(QualifiedName &inName)
-{
-  if ((inName.getCatalogName() == "NEO") &&
-      (inName.getSchemaName() == "PUBLIC_ACCESS_SCHEMA") &&
-      (inName.getObjectName() == "_MAINTAIN_CONTROL_INFO_"))
-    {
-      return TRUE;
-    }
-
-  return FALSE;
-}
-*/
-
-// LCOV_EXCL_STOP
 
 NARoutine *BindWA::getNARoutine ( const QualifiedName &name )
 {
@@ -1286,7 +1336,7 @@ NARoutine *BindWA::getNARoutine ( const QualifiedName &name )
   NARoutine * naRoutine = getSchemaDB()->getNARoutineDB()->get(this, &key);
   if (!naRoutine)
   {
-     desc_struct *udfMetadata = NULL;
+     TrafDesc *udfMetadata = NULL;
      CmpSeabaseDDL cmpSBD(STMTHEAP);
      udfMetadata =  cmpSBD.getSeabaseRoutineDesc(
 				       name.getCatalogName(),
@@ -1328,7 +1378,7 @@ NARoutine *BindWA::getNARoutine ( const QualifiedName &name )
 
 NATable *BindWA::getNATable(CorrName& corrName,
                             NABoolean catmanCollectTableUsages, // default TRUE
-                            desc_struct *inTableDescStruct)     // default NULL
+                            TrafDesc *inTableDescStruct)     // default NULL
 {
   BindWA *bindWA = this;   // for coding convenience
 
@@ -2910,12 +2960,15 @@ RelExpr *Intersect::bindNode(BindWA *bindWA)
     return this;
   }
 
-  // Join the columns of both sides.  This is wrong semantics tho! ##
+  // Join the columns of both sides. 
   //
-  *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
-      << DgString0("INTERSECT");             // ##
-  bindWA->setErrStatus();                    // ##
-  if (bindWA->errStatus()) return NULL;      // ##
+  if(CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON)
+  {
+    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
+        << DgString0("INTERSECT");             // ##
+    bindWA->setErrStatus();                    // ##
+    if (bindWA->errStatus()) return NULL;      // ##
+  }
   //
   ItemExpr *predicate = intersectColumns(leftTable, rightTable, bindWA);
   RelExpr *join = new (bindWA->wHeap())
@@ -2968,6 +3021,98 @@ RelExpr *Intersect::bindNode(BindWA *bindWA)
 
   return join;
 } // Intersect::bindNode()
+// LCOV_EXCL_STOP
+
+// -----------------------------------------------------------------------
+// member functions for class Except 
+// -----------------------------------------------------------------------
+
+// LCOV_EXCL_START - cnu
+RelExpr *Except::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound())
+  {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  // Bind the child nodes.
+  //
+  bindChildren(bindWA);
+  if (bindWA->errStatus()) return this;
+
+  // Check that there are an equal number of select items on both sides.
+  //
+  const RETDesc &leftTable = *child(0)->getRETDesc();
+  const RETDesc &rightTable = *child(1)->getRETDesc();
+  if (leftTable.getDegree() != rightTable.getDegree()) {
+    // 4014 The operands of an intersect must be of equal degree.
+    *CmpCommon::diags() << DgSqlCode(-4014);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  // Join the columns of both sides. 
+  //
+  if(CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON)
+  {
+    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
+        << DgString0("EXCEPT");             // ##
+    bindWA->setErrStatus();                    // ##
+    if (bindWA->errStatus()) return NULL;      // ##
+  }
+  //
+  ItemExpr *predicate = intersectColumns(leftTable, rightTable, bindWA);
+  RelExpr *join = new (bindWA->wHeap())
+    Join(child(0)->castToRelExpr(),
+         child(1)->castToRelExpr(),
+         REL_ANTI_SEMIJOIN,
+         predicate);
+
+  // Bind the join.
+  //
+  join = join->bindNode(bindWA)->castToRelExpr();
+  if (bindWA->errStatus()) return join;
+
+  // Change the output of the join to just the left side.
+  //
+  delete join->getRETDesc();
+  join->setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA, leftTable));
+  bindWA->getCurrentScope()->setRETDesc(join->getRETDesc());
+
+  // QSTUFF
+  NAString fmtdList1(bindWA->wHeap());
+  LIST(TableNameMap*) xtnmList1(bindWA->wHeap());
+  NAString fmtdList2(bindWA->wHeap());
+  LIST(TableNameMap*) xtnmList2(bindWA->wHeap());
+
+  leftTable.getTableList(xtnmList1, &fmtdList1);
+  rightTable.getTableList(xtnmList2, &fmtdList2);
+
+  if (child(0)->getGroupAttr()->isStream() &&
+      child(1)->getGroupAttr()->isStream()){
+    *CmpCommon::diags() << DgSqlCode(-4159)
+                << DgString0(fmtdList1) << DgString1(fmtdList2);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  // Needs to be removed when supporting get_next for INTERSECT
+  if (getGroupAttr()->isEmbeddedUpdateOrDelete()) {
+    *CmpCommon::diags() << DgSqlCode(-4160)
+                << DgString0(fmtdList1)
+                << DgString1(fmtdList2)
+                << (child(0)->getGroupAttr()->isEmbeddedUpdate() ?
+                             DgString2("UPDATE"):DgString2("DELETE"))
+                << (child(1)->getGroupAttr()->isEmbeddedUpdate() ?
+                             DgString3("UPDATE"):DgString3("DELETE"));
+    bindWA->setErrStatus();
+    return this;
+  }
+  // QSTUFF
+
+  return join;
+} // Excpet::bindNode()
 // LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
@@ -7518,6 +7663,24 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
         }
     }
 
+   if (naTable->isHiveTable() && 
+       !(naTable->getClusteringIndex()->getHHDFSTableStats()->isOrcFile() ||
+	 naTable->getClusteringIndex()->getHHDFSTableStats()
+	 ->isSequenceFile()) &&
+       (CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE_BYTES) == 0) && 
+       (naTable->getRecordLength() >
+	CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE)*1024))
+     {
+       // do not raise error if buffersize is set though buffersize_bytes.
+       // Typically this setting is used for testing alone.
+       *CmpCommon::diags() << DgSqlCode(-4226)
+			   << DgTableName(
+					  naTable->getTableName().
+					  getQualifiedNameAsAnsiString())
+			   << DgInt0(naTable->getRecordLength());
+       bindWA->setErrStatus();
+       return NULL;
+     }
   // Bind the base class.
   //
   RelExpr *boundExpr = bindSelf(bindWA);
@@ -9908,7 +10071,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           assign = new (bindWA->wHeap())
             Assign(target.getItemExpr(), defaultValueExpr,
                     FALSE /*Not user Specified */);
-          if (nacol->getDefaultClass() != COM_CURRENT_DEFAULT)
+          if ((nacol->getDefaultClass() != COM_CURRENT_DEFAULT) &&
+              (nacol->getDefaultClass() != COM_USER_FUNCTION_DEFAULT))
              assign->setToBeSkipped(TRUE);
           assign->bindNode(bindWA);
         }
@@ -13170,7 +13334,7 @@ RelExpr *BuiltinTableValuedFunction::bindNode(BindWA *bindWA)
 	
 	if (NOT naTable) 
 	  {
-	    desc_struct *tableDesc = createVirtualTableDesc();
+	    TrafDesc *tableDesc = createVirtualTableDesc();
 	    if (tableDesc)
 	      naTable = bindWA->getNATable(corrName, FALSE/*catmanUsages*/, tableDesc);
 	    
@@ -13614,55 +13778,54 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
   //
   #define MAX_DESCRIBE_LEN 3000 // e.g., SQL/MP Views.ViewText column
 
-  // readtabledef_allocate_desc requires that HEAP (STMTHEAP) be used for new's!
+  // TrafAllocateDDLdesc requires that HEAP (STMTHEAP) be used for new's!
 
-  desc_struct * table_desc = readtabledef_allocate_desc(DESC_TABLE_TYPE);
-  table_desc->body.table_desc.tablename = new HEAP char[strlen("DESCRIBE__")+1];
-  strcpy(table_desc->body.table_desc.tablename, "DESCRIBE__");
+  TrafDesc * table_desc = TrafAllocateDDLdesc(DESC_TABLE_TYPE, NULL);
+  table_desc->tableDesc()->tablename = new HEAP char[strlen("DESCRIBE__")+1];
+  strcpy(table_desc->tableDesc()->tablename, "DESCRIBE__");
 
   // see nearly identical code below for indexes file desc
-  desc_struct * files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
-  table_desc->body.table_desc.files_desc = files_desc;
-  files_desc->body.files_desc.fileorganization = KEY_SEQUENCED_FILE;
+  TrafDesc * files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
+  table_desc->tableDesc()->files_desc = files_desc;
 
   Lng32 colnumber = 0, offset = 0;
-  desc_struct * column_desc = readtabledef_make_column_desc(
-                                     table_desc->body.table_desc.tablename,
-                                     "DESCRIBE__COL",
-                                     colnumber,      // INOUT
-                                     REC_BYTE_V_ASCII,
-                                     MAX_DESCRIBE_LEN,
-                                     offset);      // INOUT
-  column_desc->body.columns_desc.character_set    = CharInfo::UTF8;
-  column_desc->body.columns_desc.encoding_charset = CharInfo::UTF8;
+  TrafDesc * column_desc = TrafMakeColumnDesc(
+       table_desc->tableDesc()->tablename,
+       "DESCRIBE__COL",
+       colnumber,      // INOUT
+       REC_BYTE_V_ASCII,
+       MAX_DESCRIBE_LEN,
+       offset,      // INOUT
+       FALSE/*not null*/,
+       SQLCHARSETCODE_UNKNOWN,
+       NULL);
+  column_desc->columnsDesc()->character_set    = CharInfo::UTF8;
+  column_desc->columnsDesc()->encoding_charset = CharInfo::UTF8;
 
-  table_desc->body.table_desc.colcount = colnumber;
-  table_desc->body.table_desc.record_length = offset;
+  table_desc->tableDesc()->colcount = colnumber;
+  table_desc->tableDesc()->record_length = offset;
 
-  desc_struct * index_desc = readtabledef_allocate_desc(DESC_INDEXES_TYPE);
-  index_desc->body.indexes_desc.tablename = table_desc->body.table_desc.tablename;
-  index_desc->body.indexes_desc.indexname = table_desc->body.table_desc.tablename;
-  index_desc->body.indexes_desc.ext_indexname = table_desc->body.table_desc.tablename;
-  index_desc->body.indexes_desc.keytag = 0; // primary index
-  index_desc->body.indexes_desc.record_length = table_desc->body.table_desc.record_length;
-  index_desc->body.indexes_desc.colcount = table_desc->body.table_desc.colcount;
-  index_desc->body.indexes_desc.blocksize = 4096; // anything > 0
+  TrafDesc * index_desc = TrafAllocateDDLdesc(DESC_INDEXES_TYPE, NULL);
+  index_desc->indexesDesc()->tablename = table_desc->tableDesc()->tablename;
+  index_desc->indexesDesc()->indexname = table_desc->tableDesc()->tablename;
+  index_desc->indexesDesc()->keytag = 0; // primary index
+  index_desc->indexesDesc()->record_length = table_desc->tableDesc()->record_length;
+  index_desc->indexesDesc()->colcount = table_desc->tableDesc()->colcount;
+  index_desc->indexesDesc()->blocksize = 4096; // anything > 0
 
   // Cannot simply point to same files desc as the table one,
   // because then ReadTableDef::deleteTree frees same memory twice (error)
-  desc_struct * i_files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
-  index_desc->body.indexes_desc.files_desc = i_files_desc;
-  i_files_desc->body.files_desc.fileorganization = KEY_SEQUENCED_FILE;
+  TrafDesc * i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
+  index_desc->indexesDesc()->files_desc = i_files_desc;
 
-  desc_struct * key_desc = readtabledef_allocate_desc(DESC_KEYS_TYPE);
-  key_desc->body.keys_desc.indexname = index_desc->body.indexes_desc.indexname;
-  key_desc->body.keys_desc.keyseqnumber = 1;
-  key_desc->body.keys_desc.tablecolnumber = 0;
-  key_desc->body.keys_desc.ordering= 0;
+  TrafDesc * key_desc = TrafAllocateDDLdesc(DESC_KEYS_TYPE, NULL);
+  key_desc->keysDesc()->keyseqnumber = 1;
+  key_desc->keysDesc()->tablecolnumber = 0;
+  key_desc->keysDesc()->setDescending(FALSE);
 
-  index_desc->body.indexes_desc.keys_desc = key_desc;
-  table_desc->body.table_desc.columns_desc = column_desc;
-  table_desc->body.table_desc.indexes_desc = index_desc;
+  index_desc->indexesDesc()->keys_desc = key_desc;
+  table_desc->tableDesc()->columns_desc = column_desc;
+  table_desc->tableDesc()->indexes_desc = index_desc;
 
   //
   // Get the NATable for this object.
@@ -15407,7 +15570,7 @@ RelExpr *CallSP::bindNode(BindWA *bindWA)
 
 
   CmpSeabaseDDL cmpSBD((NAHeap*)bindWA->wHeap());
-  desc_struct *catRoutine = 
+  TrafDesc *catRoutine = 
 	    cmpSBD.getSeabaseRoutineDesc(
 				       name.getCatalogName(),
 				       name.getSchemaName(),
@@ -16159,10 +16322,10 @@ void RelRoutine::gatherParamValueIds (const ItemExpr *tree, ValueIdList &paramsL
 
 void ProxyFunc::createProxyFuncTableDesc(BindWA *bindWA, CorrName &corrName)
 {
-  // Map column definitions into a desc_struct
-  desc_struct *tableDesc = createVirtualTableDesc();
+  // Map column definitions into a TrafDesc
+  TrafDesc *tableDesc = createVirtualTableDesc();
 
-  // Map the desc_struct into an NATable. This will also add an
+  // Map the TrafDesc into an NATable. This will also add an
   // NATable entry into the bindWA's NATableDB.
   NATable *naTable =
     bindWA->getNATable(corrName, FALSE /*catmanUsages*/, tableDesc);

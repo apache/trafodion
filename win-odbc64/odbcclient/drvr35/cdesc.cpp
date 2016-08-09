@@ -373,16 +373,13 @@ unsigned long CDescRec::setDescRec(short DescMode, SQLItemDesc_def *SQLItemDesc)
 		break;
 	case SQL_DATE:
 	case SQL_TYPE_DATE:
-		if (ODBCAppVersion >= SQL_OV_ODBC3)
-		{
-			if(m_DescConciseType == SQL_DATE)
-				m_DescConciseType = SQL_TYPE_DATE;
-		}
-		else
-		{
-			if(m_DescConciseType == SQL_TYPE_DATE)
-				m_DescConciseType = SQL_DATE;
-		}
+#if (ODBCVER >= 0x0300)
+		if (m_DescConciseType == SQL_DATE)
+			m_DescConciseType = SQL_TYPE_DATE;
+#else
+		if(m_DescConciseType == SQL_TYPE_DATE)
+			m_DescConciseType = SQL_DATE;
+#endif
 		strcpy((char*)m_DescLiteralPrefix,"{d'");
 		strcpy((char*)m_DescLiteralSuffix,"'}");
 		m_DescLength = 10;
@@ -390,16 +387,13 @@ unsigned long CDescRec::setDescRec(short DescMode, SQLItemDesc_def *SQLItemDesc)
 		break;
 	case SQL_TIME:
 	case SQL_TYPE_TIME:
-		if (ODBCAppVersion >= SQL_OV_ODBC3)
-		{
-			if(m_DescConciseType == SQL_TIME)
-				m_DescConciseType = SQL_TYPE_TIME;
-		}
-		else
-		{
-			if(m_DescConciseType == SQL_TYPE_TIME)
-				m_DescConciseType = SQL_TIME;
-		}
+#if (ODBCVER >= 0x0300)
+		if (m_DescConciseType == SQL_TIME)
+			m_DescConciseType = SQL_TYPE_TIME;
+#else
+		if(m_DescConciseType == SQL_TYPE_TIME)
+			m_DescConciseType = SQL_TIME;
+#endif
 		strcpy((char*)m_DescLiteralPrefix,"{t'");
 		strcpy((char*)m_DescLiteralSuffix,"'}");
 		m_DescLength = 8;
@@ -411,16 +405,13 @@ unsigned long CDescRec::setDescRec(short DescMode, SQLItemDesc_def *SQLItemDesc)
 		break;
 	case SQL_TYPE_TIMESTAMP:
 	case SQL_TIMESTAMP:
-		if (ODBCAppVersion >= SQL_OV_ODBC3)
-		{
-			if(m_DescConciseType == SQL_TIMESTAMP)
-				m_DescConciseType = SQL_TYPE_TIMESTAMP;
-		}
-		else
-		{
-			if(m_DescConciseType == SQL_TYPE_TIMESTAMP)
-				m_DescConciseType = SQL_TIMESTAMP;
-		}
+#if (ODBCVER >= 0x0300)
+		if (m_DescConciseType == SQL_TIMESTAMP)
+			m_DescConciseType = SQL_TYPE_TIMESTAMP;
+#else
+		if(m_DescConciseType == SQL_TYPE_TIMESTAMP)
+			m_DescConciseType = SQL_TIMESTAMP;
+#endif
 		strcpy((char*)m_DescLiteralPrefix,"{ts'");
 		strcpy((char*)m_DescLiteralSuffix,"'}");
 		m_DescPrecision = SQLItemDesc->precision; // Should come for Server - Must be changed

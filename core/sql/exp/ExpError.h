@@ -58,6 +58,8 @@ class ex_clause;
 
 class ComCondition;
 
+#define MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN  256
+
 // This version of ExRaiseSqlError is used by the expressions code.  In
 // addition to having slightly different parameters, it differs from the
 // above version in that it puts an error condition in the supplied
@@ -138,6 +140,9 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
                                     UInt32 flags,
                                     Int32 tgtLength = -1,
                                     Int32 tgtScale = -1);
+NA_EIDPROC
+SQLEXP_LIB_FUNC
+char *stringToHex(char * out, Int32 outLen, char * in, Int32 inLen);
                                                                 
 #endif /* EXP_ERROR_H */
 

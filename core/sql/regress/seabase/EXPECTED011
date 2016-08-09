@@ -1292,6 +1292,8 @@ METRIC_TEXT_TABLE
       DROPPABLE
   , QUERY_ID                         CHAR(160) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , QUERY_SIGNATURE_ID               CHAR(160) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
   , USER_NAME                        CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
       DEFAULT DEFAULT NULL
   , ROLE_NAME                        CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
@@ -1398,7 +1400,7 @@ METRIC_TEXT_TABLE
       COLLATE DEFAULT DEFAULT NULL
   , QUERY_TEXT                       VARCHAR(50000 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT DEFAULT NULL
-  , EXPLAIN_PLAN                     VARCHAR(200000) CHARACTER SET ISO88591
+  , EXPLAIN_PLAN                     VARCHAR(1000000) CHARACTER SET ISO88591
       COLLATE DEFAULT DEFAULT NULL
   , LAST_ERROR_BEFORE_AQR            INT DEFAULT NULL
   , DELAY_TIME_BEFORE_AQR_SEC        LARGEINT DEFAULT NULL
@@ -1424,6 +1426,7 @@ METRIC_TEXT_TABLE
   , NUM_NODES                        LARGEINT DEFAULT NULL
   , UDR_PROCESS_BUSY_TIME            LARGEINT DEFAULT NULL
   , PERTABLE_STATS                   INT DEFAULT NULL
+  , LAST_UPDATED_TIME                TIMESTAMP(6) DEFAULT NULL
   , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
       DROPPABLE
   )
@@ -1661,9 +1664,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL command prepared.
 >>store explain for explstmt4 in repository;
 
-*** ERROR[8033] Explain information is too large to be stored in repository.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>explain options 'f' explstmt4;
 
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
