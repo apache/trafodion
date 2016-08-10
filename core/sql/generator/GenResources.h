@@ -43,7 +43,7 @@
 // -----------------------------------------------------------------------
 class Generator;
 class ExScratchFileOptions;
-
+#define MAX_SCRATCH_LOCATIONS 32  //keep in sync with STFS_stub::MAX_STFS_LOCATIONS
 
 // -----------------------------------------------------------------------
 // Contents of this file

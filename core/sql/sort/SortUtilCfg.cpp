@@ -60,12 +60,8 @@ SortUtilConfig::SortUtilConfig(CollHeap* heap)
  heapAddr_                   = heap;
  minMem_                     = 150000L;
  maxMem_                     = 10000000L; //arbitrarily chosen 10MB max memory
- scratchDiskListSpec_		 = NULL;   // Information about scratchvols to  include or exclude.
- numDisksSpec_				 = 0;
- scratchDiskListPref_		 = NULL;
- numDisksPref_				 = 0;
- scratchDiskListExcl_		 = NULL;
- numDisksExcl_				 = 0;
+ scratchDirListSpec_		 = NULL;   // Information about scratchvols to  include or exclude.
+ numDirsSpec_				 = 0;
  espInstance_				 = 0;
  numEsps_					 = 0;
  useBufferedWrites_ = TRUE;
