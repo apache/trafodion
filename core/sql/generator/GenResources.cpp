@@ -62,7 +62,7 @@ static ExScratchDiskDrive * genScratchDisks(const NAString &def,
   // end temporary
 
   const char *str = def.data();
-  if (!str || str=="")
+  if (!str || str[0]=='\0')
     {
       numDirs = 0;
       return result;		// fast return if empty NADefaults val
@@ -81,10 +81,12 @@ static ExScratchDiskDrive * genScratchDisks(const NAString &def,
   
  
   Lng32 nodeNum;
-  char *token = new(heap) char[PATH_MAX];
+ 
+  char *token,*saveptr = NULL;
+  //save the pointer to this since token will keep changing.
 
   char *sep = (char *)":";
-  token = strtok((char *)str,sep);
+  token = strtok_r((char *)str,sep,&saveptr);
   while (token != NULL)
     {
       //validate the directory
@@ -103,10 +105,10 @@ static ExScratchDiskDrive * genScratchDisks(const NAString &def,
                                token,
                                strlen(token) ));
         }
-      token = strtok(NULL,sep);
+      token = strtok_r(NULL,sep,&saveptr);
     }
       
-  NADELETEBASIC(token, heap);
+ 
   token  = NULL;
     
 
