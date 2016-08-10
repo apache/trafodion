@@ -185,6 +185,16 @@ ENO          ENAME                 DNO
           6  Miller                          ?
 
 --- 3 row(s) selected.
+>>select eno, ename, dno from t021 except select * from t022;
+
+ENO          ENAME                 DNO
+-----------  --------------------  -----------
+
+          1  Smith                          33
+          4  Miller                         55
+          5  Miller                          ?
+
+--- 3 row(s) selected.
 >>cqd mode_special_4 reset;
 
 --- SQL operation complete.

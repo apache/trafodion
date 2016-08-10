@@ -6035,21 +6035,26 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
 
     $$ = lle;
   }
+| TOK_TABLE '(' TOK_CLUSTER stats_or_statistics '(' ')' ')'
+  {
+    $$ = new (PARSERHEAP()) 
+      ExeUtilRegionStats(CorrName(""), FALSE, FALSE, FALSE, TRUE, NULL, PARSERHEAP());
+  }
 | TOK_TABLE '(' TOK_REGION stats_or_statistics '(' ')' ')'
   {
     $$ = new (PARSERHEAP()) 
-      ExeUtilRegionStats(CorrName(""), FALSE, FALSE, FALSE, NULL, PARSERHEAP());
+      ExeUtilRegionStats(CorrName(""), FALSE, FALSE, FALSE, FALSE, NULL, PARSERHEAP());
   }
 | TOK_TABLE '(' TOK_REGION stats_or_statistics '(' table_name ')' ')'
   {
     $$ = new (PARSERHEAP()) 
-      ExeUtilRegionStats(*$6, FALSE, FALSE, FALSE, NULL, PARSERHEAP());
+      ExeUtilRegionStats(*$6, FALSE, FALSE, FALSE, FALSE, NULL, PARSERHEAP());
   }
 | TOK_TABLE '(' TOK_REGION stats_or_statistics '(' TOK_INDEX table_name ')' ')'
   {
     $7->setSpecialType(ExtendedQualName::INDEX_TABLE);
     $$ = new (PARSERHEAP()) 
-      ExeUtilRegionStats(*$7, FALSE, TRUE, FALSE, NULL, PARSERHEAP());
+      ExeUtilRegionStats(*$7, FALSE, TRUE, FALSE, FALSE, NULL, PARSERHEAP());
   }
 | TOK_TABLE '(' TOK_LOB stats_or_statistics '(' ')' ')'
   {
@@ -6064,7 +6069,7 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
 | TOK_TABLE '(' TOK_REGION stats_or_statistics '(' TOK_USING rel_subquery ')' ')'
   {
     $$ = new (PARSERHEAP()) 
-      ExeUtilRegionStats(CorrName("DUMMY"), FALSE, FALSE, FALSE, $7, PARSERHEAP());
+      ExeUtilRegionStats(CorrName("DUMMY"), FALSE, FALSE, FALSE, FALSE, $7, PARSERHEAP());
   }
 
 hivemd_identifier : 
@@ -16404,38 +16409,38 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 exe_util_get_region_access_stats : TOK_GET TOK_REGION stats_or_statistics TOK_FOR TOK_TABLE table_name
                {
                  $$ = new (PARSERHEAP()) 
-                   ExeUtilRegionStats(*$6, FALSE, FALSE, TRUE, NULL, PARSERHEAP());
+                   ExeUtilRegionStats(*$6, FALSE, FALSE, TRUE, FALSE, NULL, PARSERHEAP());
 	       } 
              | TOK_GET TOK_REGION stats_or_statistics TOK_FOR TOK_INDEX table_name
                {
                  $6->setSpecialType(ExtendedQualName::INDEX_TABLE);
 
                  $$ = new (PARSERHEAP()) 
-                   ExeUtilRegionStats(*$6, FALSE, TRUE, TRUE, NULL, PARSERHEAP());
+                   ExeUtilRegionStats(*$6, FALSE, TRUE, TRUE, FALSE, NULL, PARSERHEAP());
 	       } 
              | TOK_GET TOK_REGION stats_or_statistics TOK_FOR rel_subquery 
                {
                  $$ = new (PARSERHEAP()) 
                    ExeUtilRegionStats(
-                        CorrName("DUMMY"), FALSE, TRUE, TRUE, $5, PARSERHEAP());
+                        CorrName("DUMMY"), FALSE, TRUE, TRUE, FALSE, $5, PARSERHEAP());
 	       } 
              | TOK_GET TOK_REGION stats_or_statistics TOK_FOR TOK_TABLE table_name ',' TOK_SUMMARY
                {
                  $$ = new (PARSERHEAP()) 
-                   ExeUtilRegionStats(*$6, TRUE, FALSE, TRUE, NULL, PARSERHEAP());
+                   ExeUtilRegionStats(*$6, TRUE, FALSE, TRUE, FALSE, NULL, PARSERHEAP());
 	       } 
              | TOK_GET TOK_REGION stats_or_statistics TOK_FOR TOK_INDEX table_name ',' TOK_SUMMARY
                {
                  $6->setSpecialType(ExtendedQualName::INDEX_TABLE);
 
                  $$ = new (PARSERHEAP()) 
-                   ExeUtilRegionStats(*$6, TRUE, TRUE, TRUE, NULL, PARSERHEAP());
+                   ExeUtilRegionStats(*$6, TRUE, TRUE, TRUE, FALSE, NULL, PARSERHEAP());
 	       } 
              | TOK_GET TOK_REGION stats_or_statistics TOK_FOR rel_subquery ',' TOK_SUMMARY
                {
                  $$ = new (PARSERHEAP()) 
                    ExeUtilRegionStats(
-                        CorrName("DUMMY"), TRUE, TRUE, TRUE, $5, PARSERHEAP());
+                        CorrName("DUMMY"), TRUE, TRUE, TRUE, FALSE, $5, PARSERHEAP());
 	       } 
 
 stats_or_statistics : TOK_STATS
@@ -18333,15 +18338,22 @@ non_join_query_expression : non_join_query_term
 
 	      | query_expression TOK_EXCEPT query_term
 		{
-		  // EXCEPT is not yet supported
-		  *SqlParser_Diags << DgSqlCode(-3022) << DgString0("EXCEPT");
-		  YYERROR;
+  	            $$ = new (PARSERHEAP())
+  	                     RelRoot(new (PARSERHEAP())
+  				  GroupByAgg(
+  					     new (PARSERHEAP())
+  					     Except($1,$3),
+  					     REL_GROUPBY,
+  					     new (PARSERHEAP())
+  					     ColReference(new (PARSERHEAP())
+  					       ColRefName(TRUE, PARSERHEAP())
+  					     )));
 		}
   
 	      | query_expression TOK_EXCEPT TOK_ALL query_term
 		{
 		  // EXCEPT is not yet supported
-		  *SqlParser_Diags << DgSqlCode(-3022) << DgString0("EXCEPT");
+		  *SqlParser_Diags << DgSqlCode(-3022) << DgString0("EXCEPT ALL");
 		  YYERROR;
 		}
 

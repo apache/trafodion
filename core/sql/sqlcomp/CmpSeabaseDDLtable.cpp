@@ -8585,6 +8585,8 @@ short CmpSeabaseDDL::getTextFromMD(const char * catalogName,
       Lng32 decodedLen =
         str_decode(decodedData, decodedMaxLen,
                    binaryText.data(), binaryText.length());
+      if (decodedLen < 0)
+        return -1;
 
       outText.append(decodedData, decodedLen);
     }

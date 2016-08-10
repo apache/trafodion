@@ -68,14 +68,22 @@ NAString * getMinMaxValue(TrafDesc * column,
     return NULL;
   
   Lng32 buflen = type->getTotalSize();
+  Lng32 nullHdrSize = 0;
   char * buf = new char[buflen]; // deleted at the end of this method
-
+  if (type->supportsSQLnullPhysical())
+  {
+      nullHdrSize = type->getSQLnullHdrSize();
+      for(int i = 0; i < nullHdrSize; i++)
+        buf[i] = '\0';
+      buflen-= nullHdrSize;
+  }
+  
   NABoolean nullValue = FALSE;
   if (highKey == FALSE)
     {
       // low key needed
       if (NOT key->keysDesc()->isDescending()) // ascending
-	type->minRepresentableValue(buf, &buflen, 
+	type->minRepresentableValue(buf + nullHdrSize, &buflen, 
 				    &minMaxValue,
 				    h) ;
       else
@@ -87,7 +95,7 @@ NAString * getMinMaxValue(TrafDesc * column,
 	    }
 	  else
 	    {
-	      type->maxRepresentableValue(buf, &buflen, 
+	      type->maxRepresentableValue(buf + nullHdrSize, &buflen, 
 					  &minMaxValue,
 					  h) ;
 	    }
@@ -104,12 +112,12 @@ NAString * getMinMaxValue(TrafDesc * column,
 	      nullValue = TRUE;
 	    }
 	  else
-	    type->maxRepresentableValue(buf, &buflen, 
+	    type->maxRepresentableValue(buf + nullHdrSize, &buflen, 
 					&minMaxValue,
 					h) ;
 	}
       else
-	type->minRepresentableValue(buf, &buflen, 
+	type->minRepresentableValue(buf + nullHdrSize, &buflen, 
 				    &minMaxValue,
 				    h) ;
     }

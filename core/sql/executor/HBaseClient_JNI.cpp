@@ -232,6 +232,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_LIST_ALL       ].jm_signature = "(Ljava/lang/String;)[[B";
     JavaMethods_[JM_GET_REGION_STATS       ].jm_name      = "getRegionStats";
     JavaMethods_[JM_GET_REGION_STATS       ].jm_signature = "(Ljava/lang/String;)[[B";
+    JavaMethods_[JM_GET_REGION_STATS_ENTRIES       ].jm_name      = "getRegionStatsEntries";
+    JavaMethods_[JM_GET_REGION_STATS_ENTRIES       ].jm_signature = "()I";
     JavaMethods_[JM_COPY       ].jm_name      = "copy";
     JavaMethods_[JM_COPY       ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;Z)Z";
     JavaMethods_[JM_EXISTS     ].jm_name      = "exists";
@@ -1174,6 +1176,37 @@ NAArray<HbaseStr>* HBaseClient_JNI::listAll(NAHeap *heap, const char* pattern)
      return hbaseTables;
 }
 
+Int32 HBaseClient_JNI::getRegionStatsEntries()
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::getRegionStatsEntries() called.");
+
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+       return NULL;
+
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return NULL;
+  }
+
+  tsRecentJMFromJNI = JavaMethods_[JM_GET_REGION_STATS_ENTRIES].jm_full_name;
+  jint numEntries = 
+    (jint)jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_GET_REGION_STATS_ENTRIES].methodID);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(jenv_);
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getRegionStatsEntries()", getLastError());
+    jenv_->PopLocalFrame(NULL);
+    return NULL;
+  }
+
+  jenv_->PopLocalFrame(NULL);
+
+  return numEntries;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
@@ -1189,12 +1222,15 @@ NAArray<HbaseStr>* HBaseClient_JNI::getRegionStats(NAHeap *heap, const char* tbl
      getExceptionDetails();
      return NULL;
   }
-  jstring js_tblName = jenv_->NewStringUTF(tblName);
-  if (js_tblName == NULL) 
-  {
-    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_REGION_STATS));
-    jenv_->PopLocalFrame(NULL);
-    return NULL;
+  jstring js_tblName = NULL;
+  if (tblName) {
+    js_tblName = jenv_->NewStringUTF(tblName);
+    if (js_tblName == NULL) 
+      {
+        GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_REGION_STATS));
+        jenv_->PopLocalFrame(NULL);
+        return NULL;
+      }
   }
 
   tsRecentJMFromJNI = JavaMethods_[JM_GET_REGION_STATS].jm_full_name;

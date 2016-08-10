@@ -2418,7 +2418,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 	public static final int SQL_ALTER_MP_ALIAS = SQL_ALTER_TRIGGER + 1;
 	public boolean isClosed() throws SQLException {
 		// TODO Auto-generated method stub
-		return false;
+		return isClosed_;
 	}
 
 	public void setPoolable(boolean poolable) throws SQLException {

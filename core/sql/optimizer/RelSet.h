@@ -46,6 +46,7 @@
 // -----------------------------------------------------------------------
 class Union;
 class Intersect;
+class Except;
 
 // The following are physical operators
 class MergeUnion;
@@ -82,6 +83,28 @@ public:
 };
 
 
+
+// Except Operator
+// -----------------------------------------------------------------------
+
+class Except: public RelExpr
+{
+public:
+  // constructor
+  Except(RelExpr *leftChild,
+	RelExpr *rightChild);
+
+  // virtual destructor
+  virtual ~Except();
+
+  // get the degree of this node (it is a binary op).
+  virtual Int32 getArity() const;
+
+  const NAString getText() const;
+
+  // a virtual function for performing name binding within the query tree
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+};
 
 
 // -----------------------------------------------------------------------
