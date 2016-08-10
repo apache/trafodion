@@ -74,6 +74,15 @@ struct ColumnReference {
     originalPrivs(),
     updatedPrivs(){};
 
+  ColumnReference & operator=(const ColumnReference& other)
+  {
+    columnOrdinal = other.columnOrdinal;
+    originalPrivs = other.originalPrivs;
+    updatedPrivs = other.updatedPrivs;
+
+    return *this;
+  }
+
   void describe (std::string &details) const
   {
     details = "column usage - column number is ";
@@ -191,6 +200,7 @@ class ObjectUsage
         delete columnReferences->back(), columnReferences->pop_back();
       delete columnReferences;
     }
+    columnReferences = NULL;
   }
 
   int64_t objectUID;
@@ -204,6 +214,9 @@ class ObjectUsage
 
   void copyColumnReferences(const std::vector<ColumnReference *> *refsToCopy)
   {
+    if (columnReferences != NULL)
+      delete columnReferences;
+
     if (refsToCopy == NULL)
       columnReferences = NULL;
     else
@@ -212,10 +225,8 @@ class ObjectUsage
       for (int i = 0; i < refsToCopy->size(); i++)
       {
         ColumnReference *newRef = new ColumnReference;
-        const ColumnReference *oldRef = (*refsToCopy)[i];
-        newRef->columnOrdinal = oldRef->columnOrdinal;
-        newRef->originalPrivs = oldRef->originalPrivs;
-        newRef->updatedPrivs = oldRef->updatedPrivs;
+        ColumnReference *copyRef = (*refsToCopy)[i];
+        newRef->operator=(*copyRef);
         columnReferences->push_back(newRef);
       }
     }

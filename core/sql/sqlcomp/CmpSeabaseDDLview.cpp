@@ -295,12 +295,10 @@ short CmpSeabaseDDL::buildViewTblColUsage(const StmtDDLCreateView * createViewPa
         return -1;
      }
 
-     ComViewColUsage colUsage;
-     colUsage.setViewUID (objUID);
-     colUsage.setViewColNumber (usingColNum);
-     colUsage.setRefdUID (naTable->objectUid().get_value());
-     colUsage.setRefdColNumber (naCol->getPosition());
-     colUsage.setRefdObjectType (naTable->getObjectType());
+     ComViewColUsage colUsage(objUID, usingColNum, 
+                              naTable->objectUid().get_value(),
+                              naCol->getPosition(),
+                              naTable->getObjectType());
      NAString viewColUsageStr;
      colUsage.packUsage(viewColUsageStr);
      viewColUsageText += viewColUsageStr;

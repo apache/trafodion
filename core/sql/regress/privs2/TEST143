@@ -47,6 +47,7 @@ drop schema if exists t143_udr cascade;
 drop schema if exists t143_user1 cascade;
 drop schema if exists t143_user2 cascade;
 drop schema if exists t143_user3 cascade;
+drop schema if exists t143_user5 cascade;
 
 revoke role user2_role from sql_user2;
 revoke role user3_role from sql_user3;

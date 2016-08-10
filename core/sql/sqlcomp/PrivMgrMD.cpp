@@ -637,17 +637,13 @@ bool PrivMgrMDAdmin::isAuthorized (void)
 // **************************************************************************** 
 PrivStatus PrivMgrMDAdmin::getColumnReferences (ObjectReference *objectRef)
 {
-  std::string objectMDTable = trafMetadataLocation_ + ".OBJECTS o";
   std::string colMDTable = trafMetadataLocation_ + ".COLUMNS c";
 
   // Select column details for object 
   std::string selectStmt = "select c.column_number from ";
-  selectStmt += objectMDTable;
-  selectStmt += ", ";
   selectStmt += colMDTable;
-  selectStmt += " where o.object_uid = ";
+  selectStmt += " where c.object_uid = ";
   selectStmt += UIDToString(objectRef->objectUID);
-  selectStmt += " and o.object_uid = c.object_uid";
   selectStmt += " order by column_number";
 
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
@@ -696,23 +692,20 @@ PrivStatus PrivMgrMDAdmin::getColumnReferences (ObjectReference *objectRef)
 //  relationship.
 //
 //  This relationship is stored in one or more text records with the text_type
-//  COM_VIEW_REF_COLS_TEXT (7) see ComSmallDefs.h 
+//  COM_VIEW_REF_COLS_TEXT (8) see ComSmallDefs.h 
 //
 //  The text rows are concatenated together and saved in the ViewUsage.
 // **************************************************************************** 
 PrivStatus PrivMgrMDAdmin::getViewColUsages (ViewUsage &viewUsage)
 {
-  std::string objectMDTable = trafMetadataLocation_ + ".OBJECTS o";
   std::string textMDTable = trafMetadataLocation_ + ".TEXT t";
 
   // Select text rows describing view <=> object column relationships
   std::string selectStmt = "select text from ";
-  selectStmt += objectMDTable;
-  selectStmt += ", ";
   selectStmt += textMDTable;
-  selectStmt += " where o.object_uid = ";
+  selectStmt += " where t.text_uid = ";
   selectStmt += UIDToString(viewUsage.viewUID);
-  selectStmt += "and o.object_uid = t.text_uid and t.text_type = 8";
+  selectStmt += "and t.text_type = 8";
   selectStmt += " order by seq_num";
   
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
@@ -745,7 +738,6 @@ PrivStatus PrivMgrMDAdmin::getViewColUsages (ViewUsage &viewUsage)
   for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
   { 
     OutputInfo * pCliRow = (OutputInfo*)objectsQueue->getNext();
-    ColumnReference *columnReference = new ColumnReference;
 
     // column 0: text 
     pCliRow->get(0,ptr,len);

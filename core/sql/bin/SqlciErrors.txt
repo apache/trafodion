@@ -26,7 +26,7 @@
 1024 ZZZZZ 99999 BEGINNER MINOR DBADMIN File system error $0~NSKCode occurred on $1~String0. $2~String1
 1025 ZZZZZ 99999 BEGINNER MINOR DBADMIN Request failed.  Dependent object $0~string0 exists.
 1026 ZZZZZ 99999 BEGINNER MINOR DBADMIN Only the schema owner or super ID can drop a schema.
-1027 ZZZZZ 99999 BEGINNER MINOR DBADMIN The view $0~TableName was created before column privileges was supported. To grant column privileges, please recreate the view.
+1027 ZZZZZ 99999 BEGINNER MINOR DBADMIN The view $0~TableName was created before column privileges were supported. To grant column privileges, please recreate the view.
 1028 ZZZZZ 99999 BEGINNER MINOR DBADMIN The schema must be empty.  It contains at least one object $0~TableName.
 1029 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName could not be created.
 1030 ZZZZZ 99999 BEGINNER MINOR DBADMIN The HBase name has a length of $0~Int0 which is too long. Maximum length supported is $1~Int1.  

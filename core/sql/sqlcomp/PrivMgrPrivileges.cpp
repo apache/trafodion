@@ -2163,8 +2163,9 @@ PrivStatus PrivMgrPrivileges::gatherViewColUsages(
     {
       traceMsg += "getting column references: number references found ";
       traceMsg += to_string((long long int)objectRef->columnReferences->size());
+      traceMsg += ", ";
     }
-    traceMsg += ", retcode is ";
+    traceMsg += "retcode is ";
     traceMsg += privStatusEnumToLit(retcode);
     log (__FILE__, traceMsg, -1);
     if (retcode == STATUS_ERROR)
@@ -2176,7 +2177,7 @@ PrivStatus PrivMgrPrivileges::gatherViewColUsages(
   if (viewUsage.viewColUsagesStr.empty())
   {
     retcode = admin.getViewColUsages(viewUsage);
-    traceMsg += "getting view column usages";
+    traceMsg = "getting view column usages";
     traceMsg += ", retcode is ";
     traceMsg += privStatusEnumToLit(retcode);
     log (__FILE__, traceMsg, -1);
@@ -2615,7 +2616,7 @@ PrivStatus PrivMgrPrivileges::getAffectedObjects(
 
 
   // Find list of affected constraints
-  if (isGrantCommand(command))
+  if (isRevokeCommand(command))
   {
     // TBD optimization: if no "references" privilege has been revoked, skip
     retcode = dealWithConstraints (objectUsage, listOfAffectedObjects);
@@ -4531,7 +4532,6 @@ void PrivMgrPrivileges::summarizeColPrivs(
       {
         ColumnPrivsMDRow &row = static_cast<ColumnPrivsMDRow &> (*rowList[j]);
         PrivMgrCoreDesc originalPrivs(row.privsBitmap_, row.grantableBitmap_);
-        PrivMgrCoreDesc original = originalPrivs;
         PrivMgrCoreDesc updated = originalPrivs;
 
         // Update if privileges have been changed by request
@@ -4547,7 +4547,7 @@ void PrivMgrPrivileges::summarizeColPrivs(
               updated = changedRef->updatedPrivs;
           }
         }
-        summarized->originalPrivs.unionOfPrivs(original);
+        summarized->originalPrivs.unionOfPrivs(originalPrivs);
         summarized->updatedPrivs.unionOfPrivs(updated);
       }
     }

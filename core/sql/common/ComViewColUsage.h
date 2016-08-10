@@ -47,6 +47,27 @@ class ComViewColUsage
   ComObjectType refdObjectType_;
 
 public:
+  ComViewColUsage ()
+  : viewUID_ (0),
+    viewColNumber_ (-1),
+    refdUID_(0),
+    refdColNumber_(-1),
+    refdObjectType_(COM_UNKNOWN_OBJECT)
+  {}
+
+  ComViewColUsage (
+   Int64 viewUID,
+   Int32 viewColNumber,
+   Int64 refdUID,
+   Int32 refdColNumber,
+   ComObjectType refdObjectType)
+ : viewUID_ (viewUID),
+   viewColNumber_ (viewColNumber),
+   refdUID_ (refdUID),
+   refdColNumber_ (refdColNumber),
+   refdObjectType_ (refdObjectType)
+{}
+
   virtual ~ComViewColUsage()
   {};
 
@@ -67,7 +88,9 @@ public:
 
   void packUsage (NAString &viewColUsageStr)
   {
-      char buf[sizeof(Int64)*2 + sizeof(Int32)*3 + 100];
+      // usage contains 2 int64 and 3 int32, 100 chars is big enough to hold 
+      // the string representation
+      char buf[100];
       str_sprintf(buf, "viewUID: %Ld viewCol: %d refUID: %Ld refCol: %d refType: %d;",
                   viewUID_, viewColNumber_,
                   refdUID_, refdColNumber_, refdObjectType_);
@@ -77,10 +100,10 @@ public:
   void unpackUsage (const char *viewColUsageStr)
   {
       Int32 theRefdObjectType;
-      sscanf(viewColUsageStr, "viewUID: %Ld viewCol: %d refUID: %Ld refCol: %d refType: %d%*s",
+      Int32 retcode = sscanf(viewColUsageStr, "viewUID: %Ld viewCol: %d refUID: %Ld refCol: %d refType: %d%*s" ,
              (long long int *)&viewUID_, &viewColNumber_, 
              (long long int *)&refdUID_, &refdColNumber_, &theRefdObjectType);
-
+      assert (retcode == 5);
       refdObjectType_ = (ComObjectType) theRefdObjectType;
   }
 };
