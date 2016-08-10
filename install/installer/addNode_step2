@@ -208,8 +208,28 @@ $TRAF_PDCP $PWD/tempServers $HOME
 $TRAF_PDSH sudo cp $HOME/tempServers $SQ_ROOT/$DCS_DIR/conf/servers
 $TRAF_PDSH sudo chown $TRAF_USER.trafodion $SQ_ROOT/$DCS_DIR/conf/servers
 
-
 }
+
+function editDCSBackUp {
+
+echo "***INFO: Create DCS Backup Master file"
+
+source $TRAF_CONFIG
+DCS_DIR=$(sudo ls $SQ_ROOT | grep dcs\*)
+
+if [[ ! -z $NEW_BACKUP_DCS_NODES ]]; then 
+   for node_name in $BACKUP_DCS_NODES
+   do
+      echo $node_name >> $PWD/tempbackup
+   done
+
+   $TRAF_PDCP $PWD/tempbackup $HOME
+   $TRAF_PDSH sudo cp $HOME/tempbackup $SQ_ROOT/$DCS_DIR/conf/backup-master
+   $TRAF_PDSH sudo chown $TRAF_USER.trafodion $SQ_ROOT/$DCS_DIR/conf/backup-master
+
+fi
+}
+
 
 function copyAll {
 
@@ -365,6 +385,9 @@ copyTrafbashrc
 copyAll
 trafAcceptKeys
 editDCSServers
+if [[ "$ENABLE_HA" == "true"]]; then 
+   editDCSBackUp
+fi
 addTraftoHBase
 copySqcert
 addUpNodes
