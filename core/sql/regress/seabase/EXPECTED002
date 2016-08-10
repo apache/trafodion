@@ -188,8 +188,9 @@ T002SCH.T002T2                                                               1  
 T002SCH.T002T2                                                               0  ReadRequestsCount: 1           WriteRequestsCount: 1         
 T002SCH.SB_HIS                                                               0  ReadRequestsCount: 0           WriteRequestsCount: 0         
 T002SCH.T002T1                                                               0  ReadRequestsCount: 2           WriteRequestsCount: 1         
+T002SCH.SB_PER                                                               0  ReadRequestsCount: 0           WriteRequestsCount: 0         
 
---- 3 row(s) selected.
+--- 4 row(s) selected.
 >>
 >>select left(trim(schema_name) || '.' || trim(object_name), 14),
 +> sum(store_file_size), 
@@ -205,8 +206,9 @@ T002SCH.T002T1                                                               0  
 T002SCH.T002T2                                                               0  ReadRequestsCount: 1           WriteRequestsCount: 1         
 T002SCH.SB_HIS                                                               0  ReadRequestsCount: 0           WriteRequestsCount: 0         
 T002SCH.T002T1                                                               0  ReadRequestsCount: 2           WriteRequestsCount: 1         
+T002SCH.SB_PER                                                               0  ReadRequestsCount: 0           WriteRequestsCount: 0         
 
---- 3 row(s) selected.
+--- 4 row(s) selected.
 >>
 >>get region stats for table t002t1;
 
@@ -461,7 +463,36 @@ Stats Details
 
   RegionServer:       ansharma-3:44229
   RegionNum:          1
-  RegionName:         TRAFODION.T002SCH.SB_HISTOGRAM_INTERVALS/1470338660549
+  RegionName:         TRAFODION.T002SCH.SB_HISTOGRAM_INTERVALS/72bc6242dfa139b77bd15125cf46593f
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  0
+  WriteRequestsCount: 0
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.SB_PERSISTENT_SAMPLES
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  0
+  TotalWriteRequestsCount: 0
+
+Stats Details
+=============
+
+  RegionServer:       edev06:54527
+  RegionNum:          1
+  RegionName:         TRAFODION.T002SCH.SB_PERSISTENT_SAMPLES/121ea772487c23e7f165e29db4647fd4
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -755,6 +786,20 @@ Stats Summary
 Stats Summary
 =============
 
+  ObjectName:              TRAFODION.T002SCH.SB_PERSISTENT_SAMPLES
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  0
+  TotalWriteRequestsCount: 0
+
+Stats Summary
+=============
+
   ObjectName:              TRAFODION.T002SCH.T002T1
   NumRegions:              1
   RegionsLocation:         /hbase/data/default
@@ -848,13 +893,14 @@ T002T1                                             0
 
 T002SCH.SB_HISTOGRAM_INTERVALS                     0
 T002SCH.T002T1I2                                   0
-T002SCH.SB_HISTOGRAMS                              0
 T002SCH.T002T1                                     0
-T002SCH.T002T2                                     0
+T002SCH.SB_PERSISTENT_SAMPLES                      0
 T002SCH.T002T1I1                                   0
+T002SCH.T002T2                                     0
+T002SCH.SB_HISTOGRAMS                              0
 T002SCH.T002T2I1                                   0
 
---- 7 row(s) selected.
+--- 8 row(s) selected.
 >>
 >>select cast('RegionName: ' || trim(region_name) as char(30) character set iso88591),
 +> sum(store_file_size)
@@ -872,7 +918,8 @@ RegionName: 1470338660549                          0
 RegionName: 1470338665125                          0
 RegionName: 1470338701334                          0
 RegionName: 1470338662761                          0
+RegionName: 1470816094440                          0
 
---- 7 row(s) selected.
+--- 8 row(s) selected.
 >>
 >>log;

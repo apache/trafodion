@@ -153,7 +153,8 @@ enum USTAT_ERROR_CODES {UERR_SYNTAX_ERROR                    = 15001,
                         UERR_WARNING_IUS_TOO_MUCH_UEC_CHANGE_TOTAL = 9225,
                         UERR_WARNING_IUS_ZERO_UEC_INTERVAL   = 9226,
                         UERR_WARNING_IUS_EMPTY_INTERVAL      = 9227,
-                        UERR_IUS_NO_SUFFICIENT_MEMORY        = 9230,
+                        UERR_WARNING_NO_SAMPLE_TABLE         = 9228,
+                        UERR_WARNING_IUS_INSUFFICIENT_MEMORY = 9230,
                         UERR_IUS_WRONG_RANDOM                = 9231,
                         UERR_IUS_IN_PROGRESS                 = 9232,
                         UERR_WARNING_IUS_WHERE_CLAUSE_TOO_LONG = 9233,
@@ -168,10 +169,14 @@ enum USTAT_ERROR_CODES {UERR_SYNTAX_ERROR                    = 15001,
                         UERR_CANT_CREATE_HIVE_STATS_SCHEMA   = 9242,
                         UERR_YOU_WILL_LIKELY_BE_SORRY        = 9243,
                         UERR_USER_TRANSACTION                = 9244,
+                        UERR_UNEXPECTED_BACKWARDS_DATA       = 9245,
                         UERR_LOB_STATS_NOT_SUPPORTED         = 9246,
                         UERR_VOLATILE_TABLES_NOT_SUPPORTED   = 9247,
-                        UERR_NO_ERROR                        = 9250,
-                        UERR_LAST_ERROR                      = 9250
+                        UERR_FASTSTATS_MEM_ALLOCATION_ERROR  = 9248,
+                        UERR_IUS_IS_DISABLED                 = 9249,
+                        UERR_WARNING_IUS_NO_LONGER_ALL_NULL  = 9250,
+                        UERR_NO_ERROR                        = 9259,
+                        UERR_LAST_ERROR                      = 9259
                        };
 
 // reason of a histogram entry. it is a char value.

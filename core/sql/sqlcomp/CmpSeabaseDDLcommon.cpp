@@ -949,7 +949,9 @@ ComBoolean CmpSeabaseDDL::isHbase(const ComObjectName &name)
 bool CmpSeabaseDDL::isHistogramTable(const NAString &name) 
 {
 
-  if (name == HBASE_HIST_NAME || name == HBASE_HISTINT_NAME)
+  if (name == HBASE_HIST_NAME || 
+      name == HBASE_HISTINT_NAME ||
+      name == HBASE_PERS_SAMP_NAME )
     return true;
     
   return false;
@@ -6828,31 +6830,72 @@ short CmpSeabaseDDL::dropSeabaseStats(ExeCliInterface *cliInterface,
 {
   Lng32 cliRC = 0;
   char buf[4000];
+
+  // delete any histogram statistics
   
   str_sprintf(buf, "delete from %s.\"%s\".%s where table_uid = %Ld",
               catName, schName, HBASE_HIST_NAME, tableUID);
 
   cliRC = cliInterface->executeImmediate(buf);
-  // if histogram table does not exist, return now without error
-  // (could return on cliRC == 100, but that seems to happen
-  // even when we deleted some histogram rows)
-  if (cliRC == -4082)
-    return 0;
 
-  if (cliRC < 0)
+  // If the histogram table does not exist, don't bother checking
+  // the histogram intervals table. 
+  //
+  // Note: cliRC == 100 happens when we delete some histogram rows
+  // and also when there are no histogram rows to delete, so we
+  // can't decide based on that.
+ 
+  if (cliRC != -4082)
+    {
+
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
+
+      str_sprintf(buf, "delete from %s.\"%s\".%s where table_uid = %Ld",
+                  catName, schName, HBASE_HISTINT_NAME, tableUID);
+      cliRC = cliInterface->executeImmediate(buf);
+
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
+    }
+
+  // Drop any persistent sample tables also. (It is possible that these
+  // might exist even if the histograms table does not exist.)
+
+  // Delete the row in the persistent_samples table if one exists
+
+  str_sprintf(buf, "select translate(sample_name using ucs2toutf8) from "
+                   " (delete from %s.\"%s\".%s where table_uid = %Ld) as t",
+              catName, schName, HBASE_PERS_SAMP_NAME, tableUID);
+    
+  Lng32 len = 0;
+  char sampleTableName[1000];
+
+  cliRC = cliInterface->executeImmediate(buf, (char*)&sampleTableName, &len, NULL);
+  if (cliRC == -4082)  // if persistent_samples table does not exist
+    cliRC = 0;         // then there isn't a persistent sample table
+  else if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
       return -1;
     }
-
-  str_sprintf(buf, "delete from %s.\"%s\".%s where table_uid = %Ld",
-              catName, schName, HBASE_HISTINT_NAME, tableUID);
-  cliRC = cliInterface->executeImmediate(buf);
-
-  if (cliRC < 0)
+  else if ((len > 0) && (sampleTableName[0])) // if we got a sample table name back
     {
-      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return -1;
+      // try to drop the sample table
+      sampleTableName[len] = '\0';
+      str_sprintf(buf, "drop table %s", sampleTableName);
+      cliRC = cliInterface->executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
     }
 
   return 0;
