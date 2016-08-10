@@ -2118,7 +2118,7 @@ inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOM
 AUTOCOMMIT must be turned ON (the default) for the session.
 
 ```
-CREATE [schema-class] SCHEMA schema-clause
+CREATE [schema-class] SCHEMA [IF NOT EXISTS] schema-clause
 
 schema-class is:
    [ PRIVATE | SHARED ]
@@ -2137,6 +2137,11 @@ indicates whether access to the schema is restricted to the authorization ID by 
 any database user may add objects to the schema (SHARED). The default class is PRIVATE.
 +
 NOTE: Schemas created in {project-name} Release 0.9 or earlier are SHARED schemas.
+
+* `IF NOT EXISTS`
++
+creates the schema if it does not already exist. If omitted, then an error will be raised if the schema
+already exists.
 
 * `_schema-name_`
 +
@@ -3766,7 +3771,7 @@ inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOM
 AUTOCOMMIT must be turned ON (the default) for the session.
 
 ```
-DROP SCHEMA schema-name [RESTRICT|CASCADE]
+DROP SCHEMA schema-name [IF EXISTS] [RESTRICT|CASCADE]
 ```
 
 [[drop_schema_syntax]]
@@ -3775,6 +3780,10 @@ DROP SCHEMA schema-name [RESTRICT|CASCADE]
 * `_schema-name_`
 +
 is the name of the schema to delete.
+
+* `IF EXISTS`
++
+drops the schema if it exists. If omitted, an error is raised if the schema doesn't exist.
 
 * `RESTRICT`
 +
