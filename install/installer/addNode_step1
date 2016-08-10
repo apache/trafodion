@@ -40,6 +40,35 @@ done
 
 source $TRAF_CONFIG
 
+function checkForHA {
+
+source $TRAF_CONFIG
+
+if [[ $ENALBE_HA == "true" ]]; then
+   echo -n "Enter extra backup nodes for HA (if needed): "
+   read answer
+
+   if [[ -z "$answer" ]]; then
+      echo "***INFO: Didn't enter any extra backup nodes, that's okay, but remember that!"
+   else
+      NEW_BACKUP_DCS_NODES="$answer"
+      for node in $NEW_BACKUP_DCS_NODES
+      do
+          BACKUP_DCS_NODES="$BACKUP_DCS_NODES $node"        
+      done
+      sudo chmod 777 $TRAF_CONFIG
+      sed -i '/\<NEW_BACKUP_DCS_NODES\>/d' $TRAF_CONFIG
+      echo "export NEW_BACKUP_DCS_NODES=\"$NEW_BACKUP_DCS_NODES\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG
+      sed -i '/\<BACKUP_DCS_NODES\>/d' $TRAF_CONFIG
+      echo "export BACKUP_DCS_NODES=\"$BACKUP_DCS_NODES\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG 
+   fi
+
+fi
+
+}
+
 function addNewNodesConfig {
 
 source $TRAF_CONFIG
@@ -227,6 +256,7 @@ echo
 
 #Main
 
+checkForHA
 addNewNodesConfig
 copyHBaseTrx
 createNewNodes
