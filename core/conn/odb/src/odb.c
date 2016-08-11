@@ -9889,8 +9889,9 @@ static void Oextract(int eid)
             if ( etab[eid].fho ) {
                 (*hdfswrite)(hfs, etab[eid].fho, (void *)xbuff, xbuffl);
             } else {
-                etab[eid].fo = stdout;
-                (void)fwrite ( xbuff, 1, xbuffl, etab[eid].fo );
+                if ( etab[eid].fo == stdout ) {
+                    (void)fwrite ( xbuff, 1, xbuffl, etab[eid].fo );
+                }
             }
 #else
             (void)fwrite ( xbuff, 1, xbuffl, etab[eid].fo );
