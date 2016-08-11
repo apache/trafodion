@@ -265,7 +265,7 @@ short CmpSeabaseDDL::buildViewTblColUsage(const StmtDDLCreateView * createViewPa
      int32_t usingColNum = vctcu.getUsingViewColumnNumber();
 
      // Get column name for view
-     const ComTdbVirtTableColumnInfo * colInfo = &colInfoArray[usingColNum];
+     //const ComTdbVirtTableColumnInfo * colInfo = &colInfoArray[usingColNum];
 
      // Get column number for referenced table
      const ColRefName &usedColRef = vctcu.getUsedObjectColumnName();
@@ -998,11 +998,14 @@ void CmpSeabaseDDL::createSeabaseView(
       return;
     }
 
-  if (updateTextTable(&cliInterface, objUID, COM_VIEW_REF_COLS_TEXT, 0, viewColUsageText))
+  if (!viewColUsageText.isNull())
     {
-      deallocEHI(ehi);
-      processReturn();
-      return;
+      if (updateTextTable(&cliInterface, objUID, COM_VIEW_REF_COLS_TEXT, 0, viewColUsageText))
+        {
+          deallocEHI(ehi);
+          processReturn();
+          return;
+        }
     }
 
   if (updateViewUsage(createViewNode, objUID, &cliInterface))

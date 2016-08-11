@@ -1127,6 +1127,22 @@ PrivStatus PrivMgrPrivileges::grantColumnPrivileges(
     }
   }
 
+  // Verify that view-col <=> referenced_col relationship exists
+  if (objectType == COM_VIEW_OBJECT)
+  {
+    ViewUsage myUsage;
+    myUsage.viewUID = objectUID_;
+    PrivMgrMDAdmin admin(trafMetadataLocation_, metadataLocation_, pDiags_);
+    if (admin.getViewColUsages(myUsage) == STATUS_ERROR)
+      return STATUS_ERROR;
+    if (myUsage.viewColUsagesStr.empty())
+    {
+      *pDiags_ << DgSqlCode (-CAT_COLUMN_PRIVILEGE_NOT_ALLOWED)
+               << DgTableName (objectName_.c_str());
+       return STATUS_ERROR;
+    }
+  }
+
   // Walk the list of column privileges to grant, and either insert a new
   // row in the COLUMN_PRIVILEGES table or update an existing row.  
 
