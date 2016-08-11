@@ -78,13 +78,13 @@ create table monRegKeyName
 );
 
 -- Process Scope registry entry (monitor gensq.pl)
---create table monRegProcData
---(
---   procId      integer,
---   keyId       integer,
---   dataValue   varchar (4096),
---   primary key (procId, keyId)
---);
+create table monRegProcData
+(
+   procId      integer,
+   keyId       integer,
+   dataValue   varchar (4096),
+   primary key (procId, keyId)
+);
 
 -- Cluster registry entries (monitor gensq.pl)
 create table monRegClusterData
