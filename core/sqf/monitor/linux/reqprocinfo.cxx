@@ -136,12 +136,12 @@ CProcess * CExtProcInfoBase::ProcessInfo_GetProcess (int &nid, bool getDataForAl
                 }
             }
             lnode = lnode->GetNext();
+            nid = lnode ? lnode->GetNid() : nid;
         }
     } while (getDataForAllNodes && lnode);
 
     return(NULL);
 }
-
 
 // Information for more than one process is being requested.  Iterate
 // through the process list and return process information for processes
@@ -152,7 +152,9 @@ int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
                                      bool getDataForAllNodes,
                                      char *pattern)
 {
-    int currentNode = (process != 0) ? process->GetNid() : Nodes->GetLNodesConfigMax();
+    int currentIndex = (process != 0) 
+            ? Nodes->GetNidIndex( process->GetNid() )
+            : Nodes->GetLNodesCount();
     bool moreToRetrieve;
     bool copy = true;
     bool reg = false;
@@ -202,22 +204,25 @@ int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
                 // of whether there is more data remaining.
                 msg->u.reply.u.process_info.more_data
                     = (process != 0)
-                    || (++currentNode < Nodes->GetLNodesConfigMax());
+                    || (++currentIndex < Nodes->GetLNodesCount());
                 return count;
             }
         }
 
         moreToRetrieve = false;
-        if (getDataForAllNodes && ++currentNode < Nodes->GetLNodesConfigMax())
+        if (getDataForAllNodes && ++currentIndex < Nodes->GetLNodesCount())
         {   // Start retrieving process data for next node.  We ask
-            // ProcessInfo_GetProcess for the first process on
-            // "currentNode" which has just been incremented.  Note
+            // ProcessInfo_GetProcess for the first process on lnode of
+            // "currentIndex" which has just been incremented.  Note
             // that it is possible there are no processes on that node
             // so ProcessInfo_GetProcess will return a process on the
-            // first node it finds and "currentNode" will be updated
-            // to be the node number where the process resides.
+            // first node it finds and "currentIndex" will be updated
+            // to be the node index number where the process resides.
 
-            process = ProcessInfo_GetProcess(currentNode, getDataForAllNodes);
+            int nid = Nodes->GetNidByMap( currentIndex );
+            if (nid == -1) break;
+            process = ProcessInfo_GetProcess( nid, getDataForAllNodes);
+            currentIndex = Nodes->GetNidIndex( nid );
             moreToRetrieve = true;
         }
     } while (moreToRetrieve);

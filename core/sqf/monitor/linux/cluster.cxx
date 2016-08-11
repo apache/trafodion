@@ -2840,7 +2840,7 @@ bool CCluster::ReinitializeConfigCluster( bool nodeAdded, int pnid )
     {
         CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
         configPNodesCount_ = clusterConfig->GetPNodesCount();
-        Nodes->UpdateCluster( &indexToPnid_ );
+        Nodes->UpdateCluster();
     }
 
     if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
@@ -2892,8 +2892,8 @@ void CCluster::InitializeConfigCluster( void )
         // (for virtual nodes physical node equals "rank" (previously set))
         MyPNID = clusterConfig->GetPNid( Node_name );
     }
-    Nodes->AddNodes( );
 
+    Nodes->AddNodes( );
     MyNode = Nodes->GetNode(MyPNID);
     Nodes->SetupCluster( &Node, &LNode, &indexToPnid_ );
 

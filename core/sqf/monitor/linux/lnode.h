@@ -153,6 +153,7 @@ private:
     int            eyecatcher_;      // Debuggging aid -- leave as first
                                      // member variable of the class
 public:
+    CLNode  **LNode;      // array of logical node objects
     int     LastNid;      // Last node selected for process startup
 
     CLNodeContainer( CNode *node );
@@ -167,7 +168,16 @@ public:
     void    CheckForPendingCreates( CProcess *process=NULL );
     inline  CLNode *GetFirstLNode( void ) { return ( head_ ); }
     inline  CLNode *GetLastLNode( void ) { return ( tail_ ); }
+
     CLNode *GetLNode( int nid );
+    CLNode *GetLNode( char *process_name, CProcess **process,
+                      bool checkstate=true, bool backupOk=false );
+    CLNode *GetLNodeByMap( int index );
+    CLNode *GetLNodeNext( int nid, bool checkstate=true );
+
+    inline  int    GetNidByMap( int index ) { return ( indexToNid_[index] ); }
+    int     GetNidIndex( int nid );
+
     inline  CNode *GetNode( void ) { return ( node_ ); }
     inline  int    GetLNodesCount( void ) { return ( lnodesCount_ ); }
     bool    IsMyNode( int nid );
@@ -181,6 +191,7 @@ protected:
     inline  void SetLNodesCount( int lnodesCount ) { lnodesCount_ = lnodesCount; }
 
     int      lnodesCount_; // # of logical nodes in this container
+    int     *indexToNid_;  // map of configuration entries to LNode[nid]
 
 private:
     CNode   *node_;        // physical node of this container or 

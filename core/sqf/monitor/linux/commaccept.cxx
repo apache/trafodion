@@ -191,25 +191,6 @@ bool CCommAccept::sendNodeInfoSock( int sockFd )
                     sizeof(nodeInfo[i].syncPort));
             nodeInfo[i].pnid = node->GetPNid();
             nodeInfo[i].creatorPNid = (nodeInfo[i].pnid == MyPNID) ? MyPNID : -1;
-
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            {
-                trace_printf( "%s@%d - Preparing port info for new monitor\n"
-                            , method_name, __LINE__);
-                for (int i=0; i<pnodeCount; i++)
-                {
-                    trace_printf( "Port info for pnid=%d\n"
-                                  "        nodeInfo[%d].nodeName=%s\n"
-                                  "        nodeInfo[%d].commPort=%s\n"
-                                  "        nodeInfo[%d].syncPort=%s\n"
-                                  "        nodeInfo[%d].creatorPNid=%d\n"
-                                , nodeInfo[i].pnid
-                                , i, nodeInfo[i].nodeName
-                                , i, nodeInfo[i].commPort
-                                , i, nodeInfo[i].syncPort
-                                , i, nodeInfo[i].creatorPNid );
-                }
-            }
         }
         else
         {

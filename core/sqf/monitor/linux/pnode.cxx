@@ -1411,9 +1411,8 @@ void CNode::StartSMServiceProcess( void )
 CNodeContainer::CNodeContainer( void )
                :CLNodeContainer(NULL)
                ,Node(NULL)
-               ,LNode(NULL)
-               ,indexToPnid_(NULL)
                ,pnodeCount_(0)
+               ,indexToPnid_(NULL)
                ,clusterConfig_(NULL)
                ,head_(NULL)
                ,tail_(NULL)
@@ -1440,9 +1439,11 @@ CNodeContainer::CNodeContainer( void )
         Node[i] = NULL;
         indexToPnid_[i] = -1;
     }
+    indexToNid_ = new int[clusterConfig_->GetLNodesConfigMax()];
     for (int i = 0; i < clusterConfig_->GetLNodesConfigMax(); i++ )
     {
         LNode[i] = NULL;
+        indexToNid_[i] = -1;
     }
 
     TRACE_EXIT;
@@ -1969,12 +1970,14 @@ void CNodeContainer::UnpackNodeMappings( intBuffPtr_t &buffer, int nodeMapCount 
         pnidConfig = *buffer++;
         pnid = *buffer++;
 
-        Nodes->AddLNodes( Nodes->GetNode(pnid), Nodes->GetNode(pnidConfig) );
-
         if (trace_settings & ( TRACE_INIT || TRACE_RECOVERY || TRACE_REQUEST_DETAIL) )
             trace_printf("%s@%d - Unpacking node mapping, pnidConfig=%d, pnid=%d \n",
                         method_name, __LINE__, pnidConfig, pnid);
+
+        Nodes->AddLNodes( Nodes->GetNode(pnid), Nodes->GetNode(pnidConfig) );
     }
+
+    UpdateCluster();
 
     TRACE_EXIT;
     return;
@@ -2358,134 +2361,6 @@ void CNodeContainer::DeleteNodeLNodes( CNode *node )
     }
     
     TRACE_EXIT;
-}
-
-CLNode *CNodeContainer::GetLNode(int nid)
-{
-    const char method_name[] = "CNodeContainer::GetLNode";
-    TRACE_ENTRY;
-
-    CLNode *lnode = GetFirstLNode();
-    while (lnode)
-    {
-        if ( lnode->GetNid() == nid )
-        { 
-            break;
-        }
-        lnode = lnode->GetNext();
-    }
-
-    TRACE_EXIT;
-    return lnode;
-}
-
-CLNode *CNodeContainer::GetLNodeNext( int nid, bool checkstate )
-{
-    const char method_name[] = "CLNodeContainer::GetLNodeNext";
-    TRACE_ENTRY;
-
-    CLNode *lnode = NULL;
-
-    for (int i = (nid+1); i <  clusterConfig_->GetLNodesCount(); i++ )
-    {
-        lnode = LNode[i];
-        if ( lnode )
-        {
-            if ( lnode->GetNid() > nid )
-            {
-                if (checkstate && lnode->GetState() == State_Up)
-                {
-                    break; // found it
-                }
-                else
-                {
-                    break; // found it
-                }
-            }
-        }
-    }
-    
-    if ( lnode == NULL )
-    {
-        for (int i = 0; i < clusterConfig_->GetLNodesCount(); i++ )
-        {
-            lnode = LNode[i];
-            if ( lnode )
-            {
-                if ( lnode->GetNid() <= nid )
-                {
-                    if (checkstate && lnode->GetState() == State_Up)
-                    {
-                        break; // found it
-                    }
-                    else
-                    {
-                        break; // found it
-                    }
-                }
-            }
-        }
-    }
-
-    TRACE_EXIT;
-    return lnode;
-}
-
-CLNode *CNodeContainer::GetLNode( char *process_name, CProcess **process,
-                                  bool checkstate, bool backupOk )
-{
-    CLNode *lnode = NULL;
-    CNode *node = head_;
-    CProcess *p_process;
-    CLNode *b_lnode = NULL;
-    CProcess *b_process = NULL;
-    const char method_name[] = "CNodeContainer::GetLNode";
-    TRACE_ENTRY;
-
-    // Initialize return value
-    *process = NULL;
-
-    while (node)
-    {
-        if ( !node->IsSpareNode() && 
-             (node->GetState() == State_Up ||
-              node->GetState() == State_Shutdown) )
-        {
-            *process = node->CProcessContainer::GetProcess(process_name, checkstate);
-            if (*process)
-            { 
-                p_process = *process;
-                if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-                    trace_printf("%s@%d - process %s (%d, %d), backup=%d, backupOk=%d\n",
-                                 method_name, __LINE__,
-                                 p_process->GetName(), p_process->GetNid(),
-                                 p_process->GetPid(),  p_process->IsBackup(),
-                                 backupOk);
-                if (!p_process->IsBackup())
-                {
-                    lnode = LNode[p_process->GetNid()];
-                    break;
-                }
-                else
-                {
-                    // Save backup process and lnode
-                    b_process = *process;
-                    b_lnode = LNode[b_process->GetNid()];
-                }
-            }
-        }
-        node = node->GetNext ();
-    }
-
-    if ( !*process && backupOk )
-    {
-        // We did not find the primary and it's ok to return the backup
-        *process = b_process;
-        lnode = b_lnode;
-    }
-
-    TRACE_EXIT;
-    return lnode;
 }
 
 int CNodeContainer::GetFirstNid( void )
@@ -3063,7 +2938,7 @@ struct internal_msg_def *CNodeContainer::PopMsg( struct sync_buffer_def *recvBuf
     const char method_name[] = "CNodeContainer::PopMsg";
     TRACE_ENTRY;
 
-    if ( recvBuf->msgInfo.msg_count )
+    if ( recvBuf->msgInfo.msg_count > 0 )
     {
         msg = (struct internal_msg_def *)&recvBuf->msg[recvBuf->msgInfo.msg_offset];
         recvBuf->msgInfo.msg_count --;
@@ -3220,7 +3095,6 @@ void CNodeContainer::SetupCluster( CNode ***pnode_list, CLNode ***lnode_list, in
     {
         if (node)
         {
-            indexToPnid_[i] = node->GetPNid();
             if (trace_settings & TRACE_INIT)
                 trace_printf( "%s@%d - Node %s (pnid=%d, zid=%d, state=%s) is Spare=%d\n"
                             , method_name, __LINE__
@@ -3253,6 +3127,8 @@ void CNodeContainer::SetupCluster( CNode ***pnode_list, CLNode ***lnode_list, in
             trace_printf("%s@%d - pnid=%d is in spare node list\n", method_name, __LINE__, spareNode->GetPNid());
         }
     }
+
+    UpdateCluster();
 
     TRACE_EXIT;
 }
@@ -3451,53 +3327,42 @@ CLNode *CNodeContainer::NextPossibleLNode( CProcess *requester, ZoneType type, i
     return lnode;
 }
 
-void CNodeContainer::UpdateCluster( int **indexToPnid )
+void CNodeContainer::UpdateCluster( void )
 {
     const char method_name[] = "CNodeContainer::UpdateCluster";
     TRACE_ENTRY;
 
-    *indexToPnid = indexToPnid_;
-
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-    {
-        for ( int i = 0; i < GetPNodesCount(); i++ )
-        {
-            trace_printf( "%s@%d - indexToPnid_[%d]=%d\n"
-                        , method_name, __LINE__, i, indexToPnid_[i]);
-        }
-    }
+    CLNode *lnode;
+    CNode  *node;
 
     for (int i = 0; i < clusterConfig_->GetPNodesConfigMax(); i++ )
     {
         indexToPnid_[i] = -1;
     }
 
+    node = GetFirstNode();
     // Refresh the index to pnid map
-    CNode *node = GetFirstNode();
     for ( int i = 0; node && i < GetPNodesCount(); i++, node = node->GetNext() )
     {
-        if (node)
-        {
-            indexToPnid_[i] = node->GetPNid();
-            if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-            {
-                trace_printf( "%s@%d - Node %s (pnid=%d, zid=%d, state=%s) is Spare=%d\n"
-                            , method_name, __LINE__
-                            , node->GetName()
-                            , node->GetPNid()
-                            , node->GetZone()
-                            , StateString(node->GetState())
-                            , node->IsSpareNode());
-            }
-        }
+        indexToPnid_[i] = node->GetPNid();
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST))
+            trace_printf( "%s@%d - indexToPnid_[%d]=%d\n"
+                        , method_name, __LINE__
+                        , i
+                        , indexToPnid_[i]);
     }
 
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    // Refresh the index to nid map
+    lnode = GetFirstLNode();
+    for ( int i = 0; lnode && i < GetLNodesCount(); i++, lnode = lnode->GetNext() )
     {
-        for ( int i = 0; i < GetPNodesCount(); i++ )
+        indexToNid_[i] = lnode->GetNid();
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST))
         {
-            trace_printf( "%s@%d - indexToPnid_[%d]=%d\n"
-                        , method_name, __LINE__, i, indexToPnid_[i]);
+            trace_printf( "%s@%d - indexToNid_[%d]=%d\n"
+                        , method_name, __LINE__
+                        , i
+                        , indexToNid_[i]);
         }
     }
 

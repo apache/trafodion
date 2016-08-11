@@ -2466,7 +2466,7 @@ void CIntSnapshotReq::performRequest()
 
     // estimate size of snapshot buffer
     // about 100 bytes per process, 1.5 times total
-    int procSize = Nodes->ProcessCount() * 1.5 * 100;
+    int procSize = Nodes->ProcessCount() * 1.75 * 100;
     int spareNodeSize = Nodes->GetSpareNodesList()->size() * sizeof(int); // pnids
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))

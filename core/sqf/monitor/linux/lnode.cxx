@@ -969,8 +969,10 @@ void CLNode::Up( void )
 }
 
 CLNodeContainer::CLNodeContainer(CNode *node)
-                :LastNid(0)
+                :LNode(NULL)
+                ,LastNid(0)
                 ,lnodesCount_(0)
+                ,indexToNid_(NULL)
                 ,node_(node)
                 ,head_(NULL)
                 ,tail_(NULL)
@@ -1169,6 +1171,153 @@ CLNode *CLNodeContainer::GetLNode(int nid)
             break;
         }
         lnode = lnode->GetNext();
+    }
+
+    TRACE_EXIT;
+    return lnode;
+}
+
+CLNode *CLNodeContainer::GetLNode( char *process_name, CProcess **process,
+                                  bool checkstate, bool backupOk )
+{
+    CLNode *lnode = head_;
+    CNode *node = lnode ? lnode->GetNode() : NULL;
+    CProcess *p_process;
+    CLNode *b_lnode = NULL;
+    CProcess *b_process = NULL;
+    const char method_name[] = "CLNodeContainer::GetLNode";
+    TRACE_ENTRY;
+
+    // Initialize return value
+    *process = NULL;
+
+    while (node)
+    {
+        if ( !node->IsSpareNode() && 
+             (node->GetState() == State_Up ||
+              node->GetState() == State_Shutdown) )
+        {
+            *process = node->CProcessContainer::GetProcess(process_name, checkstate);
+            if (*process)
+            { 
+                p_process = *process;
+                if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                    trace_printf("%s@%d - process %s (%d, %d), backup=%d, backupOk=%d\n",
+                                 method_name, __LINE__,
+                                 p_process->GetName(), p_process->GetNid(),
+                                 p_process->GetPid(),  p_process->IsBackup(),
+                                 backupOk);
+                if (!p_process->IsBackup())
+                {
+                    lnode = LNode[p_process->GetNid()];
+                    break;
+                }
+                else
+                {
+                    // Save backup process and lnode
+                    b_process = *process;
+                    b_lnode = LNode[b_process->GetNid()];
+                }
+            }
+        }
+        lnode = lnode->GetNext ();
+        node = lnode ? lnode->GetNode() : NULL;
+    }
+
+    if ( !*process && backupOk )
+    {
+        // We did not find the primary and it's ok to return the backup
+        *process = b_process;
+        lnode = b_lnode;
+    }
+
+    TRACE_EXIT;
+    return lnode;
+}
+
+CLNode *CLNodeContainer::GetLNodeByMap(int index )
+{
+    const char method_name[] = "CNodeContainer::GetLNodeByMap";
+    TRACE_ENTRY;
+
+    CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
+    CLNode *lnode = NULL;
+    
+    if( index >= 0 && index < clusterConfig->GetLNodesCount() )
+    {
+        lnode = LNode[indexToNid_[index]];
+    }
+
+    TRACE_EXIT;
+    return lnode;
+}
+
+int CLNodeContainer::GetNidIndex( int nid )
+{
+    const char method_name[] = "CNodeContainer::GetNidIndex";
+    TRACE_ENTRY;
+
+    CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
+
+    for (int i = 0; i <  clusterConfig->GetLNodesCount(); i++ )
+    {
+        if (LNode[i]->GetNid() == nid)
+        {
+            return(i);
+        }
+    }
+
+    TRACE_EXIT;
+    return(-1);
+}
+
+CLNode *CLNodeContainer::GetLNodeNext( int nid, bool checkstate )
+{
+    const char method_name[] = "CLNodeContainer::GetLNodeNext";
+    TRACE_ENTRY;
+
+    CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
+    CLNode *lnode = NULL;
+
+    for (int i = (nid+1); i <  clusterConfig->GetLNodesCount(); i++ )
+    {
+        lnode = LNode[i];
+        if ( lnode )
+        {
+            if ( lnode->GetNid() > nid )
+            {
+                if (checkstate && lnode->GetState() == State_Up)
+                {
+                    break; // found it
+                }
+                else
+                {
+                    break; // found it
+                }
+            }
+        }
+    }
+    
+    if ( lnode == NULL )
+    {
+        for (int i = 0; i < clusterConfig->GetLNodesCount(); i++ )
+        {
+            lnode = LNode[i];
+            if ( lnode )
+            {
+                if ( lnode->GetNid() <= nid )
+                {
+                    if (checkstate && lnode->GetState() == State_Up)
+                    {
+                        break; // found it
+                    }
+                    else
+                    {
+                        break; // found it
+                    }
+                }
+            }
+        }
     }
 
     TRACE_EXIT;

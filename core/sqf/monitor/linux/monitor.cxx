@@ -544,6 +544,15 @@ char * CMonitor::ProcCopy(char *bufPtr, CProcess *process)
     procObj->argc = process->argc();
     procObj->creation_time = process->GetCreationTime();
 
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+            trace_printf( "%s@%d - Packing process %s (%d,%d:%d)\n"
+                        , method_name, __LINE__
+                        , process->GetName()
+                        , process->GetNid()
+                        , process->GetPid()
+                        , process->GetVerifier() );
+
     char * stringData = &procObj->stringData;
 
     // Copy the program name

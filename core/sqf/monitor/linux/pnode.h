@@ -61,8 +61,6 @@ private:
 
 public:
     CNode   **Node;          // array of physical node objects
-    CLNode  **LNode;         // array of logical node objects
-    int      *indexToPnid_;  // map of configuration entries to Node[pnid]
 
 
     CNodeContainer( void );
@@ -85,10 +83,6 @@ public:
     int     GetFirstNid( void );
     int     GetNextNid( int nid );
     inline CNode *GetFirstNode( void ) { return ( head_ ); }
-    CLNode *GetLNode( int nid );
-    CLNode *GetLNode( char *process_name, CProcess **process,
-                      bool checkstate=true, bool backupOk=false );
-    CLNode *GetLNodeNext( int nid, bool checkstate=true );
     CNode  *GetNode( char *name );
     CNode  *GetNode( int pnid );
     CNode  *GetNodeByMap( int index );
@@ -148,12 +142,13 @@ public:
     void    UnpackSpareNodesList( intBuffPtr_t &buffer, int spareNodesCount );
     void    UnpackZids( intBuffPtr_t &buffer );
 
-    void    UpdateCluster( int **indexToPnid );
+    void    UpdateCluster( void );
 
 protected:
 
 private:
-    int         pnodeCount_;  // # of physical node objects in array
+    int     pnodeCount_;    // # of physical node objects in array
+    int    *indexToPnid_;   // map of configuration entries to Node[pnid]
     CClusterConfig *clusterConfig_;  // 'sqconfig.db' objects
     NodesList  spareNodesList_; // current spare physical nodes list
     NodesList  spareNodesConfigList_; // configured spare physical nodes list

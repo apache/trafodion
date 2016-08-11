@@ -3620,20 +3620,6 @@ void node_info( int nid )
 
                         for (i=0; i < msg->u.reply.u.node_info.num_returned; i++)
                         {
-#if 0
-                            CPNodeConfig *pConfig = ClusterConfig.GetPNodeConfig (msg->u.reply.u.node_info.node[i].pnid);
-                            if (pConfig != NULL)
-                            {
-                                string downNodeToFind = " ";
-                                downNodeToFind += pConfig->GetName();
-                                downNodeToFind += " ";
-
-                                if  ((downNodeList != NULL) && strstr(downNodeString.c_str(),downNodeToFind.c_str()))
-                                {
-                                    continue; // We do not want to consider this node since it is in our exclude list
-                                }
-                            }
-#endif
                             if ( last_nid != -1 )
                             {
                                 if ( (msg->u.reply.u.node_info.node[i].pnid != 
