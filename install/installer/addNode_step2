@@ -236,7 +236,7 @@ function copyAll {
 source $TRAF_CONFIG
 echo 
 echo "***IMPORTANT: Copying files to $NEW_NODES"
-echo "***IMPORTANT: This will take some time, it's alot of file. Please wait...."
+echo "***IMPORTANT: This will take some time, it's a lot of file. Please wait...."
 echo 
 sudo mkdir -p $HOME/tmpTraf/
 $TRAF_NEW_PDSH sudo rm -rf $HOME_DIR/$TRAF_USER/.ssh
@@ -385,7 +385,7 @@ copyTrafbashrc
 copyAll
 trafAcceptKeys
 editDCSServers
-if [[ "$ENABLE_HA" == "true"]]; then 
+if [[ "$ENABLE_HA" == "true" ]]; then 
    editDCSBackUp
 fi
 addTraftoHBase
