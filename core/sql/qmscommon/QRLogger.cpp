@@ -153,26 +153,23 @@ void getMyNidSuffix(char stringNidSuffix[])
   myPhandle.decompose();
   
   char processName[MS_MON_MAX_PROCESS_NAME + 1];
-  
 
   memset(processName, 0, sizeof(processName));
   memcpy(processName, myPhandle.getPhandleString(), myPhandle.getPhandleStringLen());
-  memset(processName, 0, sizeof(processName));
-  memcpy(processName, myPhandle.getPhandleString(), myPhandle.getPhandleStringLen());
-
- 
 
   MS_Mon_Process_Info_Type procInfo;
   Int32 rc = 0;
 
   Int32 myNid = 0;
   
-  do
-  {
-     rc = msg_mon_get_process_info_detail(processName, &procInfo);
-     myNid = procInfo.nid;
-   
-  } while ((rc == XZFIL_ERR_OK) && (procInfo.parent_nid != -1) && (procInfo.parent_pid != -1));
+  rc = msg_mon_get_process_info_detail(processName, &procInfo);
+  if (rc != 0) {
+    // at least let the logging proceed
+    myNid = 9999;
+  }
+  else {
+    myNid = procInfo.nid;
+  }
 
   snprintf (stringNidSuffix, 5+sizeof(Int32), "_%d.log", myNid);
 }
