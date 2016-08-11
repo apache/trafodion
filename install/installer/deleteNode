@@ -104,7 +104,9 @@ do
 done
 
 ALL_NODE_LIST="$temp1"
+echo $ALL_NODE_LIST
 ALL_NODES="$tempW1"
+echo $ALL_NODES
 
 TRAF_PDSH="pdsh -R exec $ALL_NODES $PDSH_SSH_CMD"
 TRAF_PDCP="pdcp -R ssh $ALL_NODES"
@@ -116,22 +118,21 @@ sudo chmod 777 $TRAF_CONFIG
 sed -i '/TRAF_PDCP\=/d' $TRAF_CONFIG
 echo "export TRAF_PDCP=\"$TRAF_PDCP\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
-sed -i '/ALL_NODES\=/d' $TRAF_CONFIG
+sed -i '/\<ALL_NODES\>/d' $TRAF_CONFIG
 echo "export ALL_NODES=\"$ALL_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/\<NODE_LIST\>/d' $TRAF_CONFIG
+echo "export NODE_LIST=\"$NODE_LIST\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/node_count\=/d' $TRAF_CONFIG
 echo "export node_count=\"$node_count\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
-sed -i '/ALL_NODE_LIST\=/d' $TRAF_CONFIG
+sed -i '/\<ALL_NODE_LIST\>/d' $TRAF_CONFIG
 echo "export ALL_NODE_LIST=\"$ALL_NODE_LIST\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
-sed -i '/MY_NODES\=/d' $TRAF_CONFIG
+sed -i '/\<MY_NODES\>/d' $TRAF_CONFIG
 echo "export MY_NODES=\"$MY_NODES\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
-sed -i '/NODE_LIST\=/d' $TRAF_CONFIG
-echo "export NODE_LIST=\"$NODE_LIST\"" >> $TRAF_CONFIG
-sudo chmod 777 $TRAF_CONFIG
-
 }
 
 
@@ -188,9 +189,6 @@ function editDCSServers {
 source $TRAF_CONFIG
 DCS_DIR=$(sudo ls $SQ_ROOT | grep dcs\*)
 
-sudo cp $SQ_ROOT/$DCS_DIR/conf/servers $PWD/tmpServers
-sudo chown $(whoami).$(whoami) $PWD/tmpServers
-
 let per_node=$DCS_SERVERS_PARM/$node_count
 let extras=$DCS_SERVERS_PARM%$node_count
 count=1
@@ -209,7 +207,7 @@ done
 $TRAF_PDCP $PWD/tmpServers $HOME
 $TRAF_PDSH sudo cp $HOME/tmpServers $SQ_ROOT/$DCS_DIR/conf/servers
 $TRAF_PDSH sudo chown $TRAF_USER.trafodion $SQ_ROOT/$DCS_DIR/conf/servers
-
+$TRAF_PDSH sudo rm -rf $HOME/tmp*
 
 }
 

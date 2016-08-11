@@ -1019,7 +1019,7 @@ if [[ ! -z $install_features_path ]]; then
       sudo chmod 777 $TRAF_CONFIG
    else
       sudo chmod 777 $TRAF_CONFIG
-      echo "export CDH_5_7_SUPPORT=\"$CDH_5_5_SUPPORT\"" >> $TRAF_CONFIG
+      echo "export CDH_5_7_SUPPORT=\"$CDH_5_7_SUPPORT\"" >> $TRAF_CONFIG
       sudo chmod 777 $TRAF_CONFIG
    fi
    if [[ -z $CDH_5_5_SUPPORT ]]; then

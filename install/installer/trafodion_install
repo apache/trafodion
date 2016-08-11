@@ -312,10 +312,10 @@ userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
 if [[ "$userForTrafodion" != "0" ]]; then
 
    isTrafUp=$(sudo su $TRAF_USER --login --command "sqcheck" 2>/dev/null)
+   returnCode=$?
 
-   trafodionRunning=$(echo $isTrafUp | grep "The SQ environment is up" | wc -l)
-   if [[ "$trafodionRunning" -eq "1" ]]; then
-      echo "***ERROR: Trafodion is still running."
+   if [[ "$returnCode" -ne "255" ]]; then
+      echo "***ERROR: Trafodion is still has processes running."
       echo -n "Stop Trafodion (Y/N), default is N: "
       read answer
 
@@ -328,12 +328,22 @@ if [[ "$userForTrafodion" != "0" ]]; then
             echo "***INFO: Stopping Trafodion instance."
             sudo su $TRAF_USER --login --command "sqstop"
             sudo su $TRAF_USER --login --command "ckillall"
+            sudo su $TRAF_USER --login --command "dcsstop"
+            sudo su $TRAF_USER --login --command "reststop"
          else
             echo "***ERROR: Please stop Trafodion then rerun trafodion_install"
             echo "***ERROR: Change to trafodion user id then do a 'sqstop'"
             exit -1
          fi
       fi
+   fi
+
+   #This is here until sqstop or ckillall stops dcs and rest
+   isDcsStopped=$(sudo su $TRAF_USER --login --command "jps" | wc -w)
+   if [[ "$isDcsStopped" -gt "2" ]]; then
+      echo "***ERROR: DCS and Rest may still be running, will try to stop them."
+      sudo su $TRAF_USER --login --command "dcsstop" 
+      sudo su $TRAF_USER --login --command "reststop"
    fi
 fi
 
@@ -509,8 +519,7 @@ source $TRAF_CONFIG
 #Check to make sure HBase Version is the correct version
 
 if [[ $HADOOP_TYPE != "apache" ]]; then
-   echo "Not checking HBase version, yet!"
-   #checkHBaseVersion
+   checkHBaseVersion
 fi
 #==============================================
 # Run trafodion_setup
