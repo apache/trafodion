@@ -1246,6 +1246,10 @@ NABoolean PCodeInst::isRange()
     case PCIT::RANGE_HIGH_S16S64:
     case PCIT::RANGE_LOW_U16S64:
     case PCIT::RANGE_HIGH_U16S64:
+    case PCIT::RANGE_LOW_S8S64:
+    case PCIT::RANGE_HIGH_S8S64:
+    case PCIT::RANGE_LOW_U8S64:
+    case PCIT::RANGE_HIGH_U8S64:
     case PCIT::RANGE_MFLT64:
       return TRUE;
   }
@@ -7704,6 +7708,26 @@ void PCodeCfg::loadOperandsOfInst (PCodeInst* newInst)
       addOperand(pcode, newInst->getROps(), 2, 3, -1, PCIT::MBIN8, 1);
       break;
 
+    case PCIT::MOVE_MBIN8S_MBIN16S:
+      addOperand(pcode, newInst->getWOps(), 0, 1, -1, PCIT::MBIN8S, 1);
+      addOperand(pcode, newInst->getROps(), 2, 3, -1, PCIT::MBIN16S, 2);
+      break;
+
+    case PCIT::MOVE_MBIN8U_MBIN16U:
+      addOperand(pcode, newInst->getWOps(), 0, 1, -1, PCIT::MBIN8U, 1);
+      addOperand(pcode, newInst->getROps(), 2, 3, -1, PCIT::MBIN16U, 2);
+      break;
+
+    case PCIT::MOVE_MBIN8U_MBIN16S:
+      addOperand(pcode, newInst->getWOps(), 0, 1, -1, PCIT::MBIN8U, 1);
+      addOperand(pcode, newInst->getROps(), 2, 3, -1, PCIT::MBIN16S, 2);
+      break;
+
+    case PCIT::MOVE_MBIN8S_MBIN16U:
+      addOperand(pcode, newInst->getWOps(), 0, 1, -1, PCIT::MBIN8S, 1);
+      addOperand(pcode, newInst->getROps(), 2, 3, -1, PCIT::MBIN16U, 2);
+      break;
+
     case PCIT::MOVE_MBIN32S_MBIN8S:
       addOperand(pcode, newInst->getWOps(), 0, 1, -1, PCIT::MBIN32S, 4);
       addOperand(pcode, newInst->getROps(), 2, 3, -1, PCIT::MBIN8S, 1);
@@ -8231,6 +8255,16 @@ void PCodeCfg::loadOperandsOfInst (PCodeInst* newInst)
     case PCIT::RANGE_LOW_U16S64:
     case PCIT::RANGE_HIGH_U16S64:
       addOperand(pcode, newInst->getROps(), 0, 1, -1, PCIT::MBIN16U, 2);
+      break;
+
+    case PCIT::RANGE_LOW_S8S64:
+    case PCIT::RANGE_HIGH_S8S64:
+      addOperand(pcode, newInst->getROps(), 0, 1, -1, PCIT::MBIN8S, 2);
+      break;
+
+    case PCIT::RANGE_LOW_U8S64:
+    case PCIT::RANGE_HIGH_U8S64:
+      addOperand(pcode, newInst->getROps(), 0, 1, -1, PCIT::MBIN8U, 2);
       break;
 
     case PCIT::CLAUSE_EVAL:

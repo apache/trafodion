@@ -1623,7 +1623,16 @@ enum conv_case_index {
   CONV_BIN64U_FLOAT32                  =279,
   CONV_BIN64U_FLOAT64                  =280,
   CONV_BIN64U_ASCII                    =281,
-  CONV_ASCII_BIN64U                    =282
+  CONV_ASCII_BIN64U                    =282,
+
+  // more tinyint conversions not handled above. 
+  // At runtime, expression code will handle them based on source datatype.
+  CONV_NUMERIC_BIN8S                    =283,
+  CONV_NUMERIC_BIN8U                    =284,
+
+  CONV_BIN8S_BIN8U                     =285,
+  CONV_BIN8U_BIN8S                     =286,
+
 };
 
 class SQLEXP_LIB_FUNC  ex_conv_clause : public ex_clause {
@@ -1686,7 +1695,8 @@ public:
                                              short targetType, Lng32 targetLen,
                                              Lng32 scaleDifference);
 
-  NABoolean isConversionSupported(short sourceType, short targetType);
+  NABoolean isConversionSupported(short sourceType, Lng32 srcLen, 
+                                  short targetType, Lng32 tgtLen);
 
   NA_EIDPROC NABoolean treatAllSpacesAsZero()
     { return ((flags_ & TREAT_ALL_SPACES_AS_ZERO) != 0); };
