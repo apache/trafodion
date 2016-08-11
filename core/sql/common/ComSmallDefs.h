@@ -104,18 +104,22 @@ typedef NABoolean               ComBoolean;
 #define HIVE_SYSTEM_SCHEMA           "HIVE"
 #define HIVE_STATS_CATALOG           "TRAFODION"
 #define HIVE_STATS_SCHEMA            "\"_HIVESTATS_\""
+#define HIVE_STATS_SCHEMA_NO_QUOTES  "_HIVESTATS_"
 #define HIVE_EXT_SCHEMA_PREFIX       "_HV_"
 
 #define HBASE_SYSTEM_CATALOG          "HBASE"
 #define HBASE_SYSTEM_SCHEMA           "HBASE"
 #define HBASE_HIST_NAME               "SB_HISTOGRAMS"
 #define HBASE_HISTINT_NAME            "SB_HISTOGRAM_INTERVALS"
+#define HBASE_PERS_SAMP_NAME          "SB_PERSISTENT_SAMPLES"
 #define HBASE_HIST_PK                    "SB_HISTOGRAMS_PK"
 #define HBASE_HISTINT_PK               "SB_HISTOGRAM_INTERVALS_PK"
+#define HBASE_PERS_SAMP_PK            "SB_PERSISTENT_SAMPLES_PK"
 #define HBASE_EXT_SCHEMA_PREFIX       "_HB_"
 
 #define HBASE_STATS_CATALOG          "TRAFODION"
 #define HBASE_STATS_SCHEMA           "\"_HBASESTATS_\""
+#define HBASE_STATS_SCHEMA_NO_QUOTES "_HBASESTATS_"
 
 // default null format for data in hive files.
 #define HIVE_DEFAULT_NULL_STRING             "\\N"

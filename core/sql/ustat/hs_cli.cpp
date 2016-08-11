@@ -122,28 +122,29 @@ private:
 //          doPrintPlan = if true, the plan for the query will be
 //                printed after the statement is prepared but before
 //                execution; if false we do a single CLI ExecDirect call
+//          checkForMdam = if true, do a query on the Explain virtual table
+//                to see if MDAM was used in the query being executed, and
+//                display the result in the ulog.
 // -----------------------------------------------------------------------
 
 Lng32 HSExecDirect( SQLSTMT_ID * stmt
                   , SQLDESC_ID * srcDesc
                   , NABoolean doPrintPlan
+                  , NABoolean checkForMdam
                   )
 {
   Lng32 retcode = 0;
 
-  if (doPrintPlan)
+  HSLogMan *LM = HSLogMan::Instance();
+  if ((doPrintPlan || checkForMdam) && LM->LogNeeded())
     {
       retcode = SQL_EXEC_Prepare(stmt, srcDesc);
       if (retcode >= 0) // ignore warnings
         {
           if (doPrintPlan)
-            {
-              HSLogMan *LM = HSLogMan::Instance();
-              if (LM->LogNeeded()) 
-                {
-                  printPlan(stmt);
-                }
-            } 
+            printPlan(stmt);
+          if (checkForMdam)
+            checkMdam(stmt);
           retcode = SQL_EXEC_ExecFetch(stmt,0,0);
         }
     }
@@ -173,6 +174,8 @@ Lng32 HSExecDirect( SQLSTMT_ID * stmt
 //                that should not disrupt execution, such as "schema already
 //                exists" when executing a Create Schema statement. 0 indicates
 //                there is no such expected error.
+//          checkMdam = if TRUE, determine whether the query uses MDAM, and
+//                include this information in the ulog.
 // -----------------------------------------------------------------------
 Lng32 HSFuncExecQuery( const char *dml
                     , short sqlcode
@@ -182,6 +185,7 @@ Lng32 HSFuncExecQuery( const char *dml
                     , const HSTableDef *tabDef
                     , NABoolean doRetry
                     , short errorToIgnore
+                    , NABoolean checkMdam
                     )
 {
   HSLogMan *LM = HSLogMan::Instance();
@@ -272,7 +276,7 @@ Lng32 HSFuncExecQuery( const char *dml
   if (!doRetry)
   {
     // execute immediate this statement
-    retcode = HSExecDirect(&stmt, &srcDesc, srcTabRowCount != 0);
+    retcode = HSExecDirect(&stmt, &srcDesc, srcTabRowCount != 0, checkMdam);
     // If retcode is > 0 or sqlcode is HS_WARNING, then set to 0 (no error/ignore).
     if (retcode >= 0) retcode = 0;
     // If sqlcode is HS_WARNING, then this means failures should be returned as
@@ -303,7 +307,7 @@ Lng32 HSFuncExecQuery( const char *dml
       }
 
       // execute immediate this statement
-      retcode = HSExecDirect(&stmt, &srcDesc, srcTabRowCount != 0);
+      retcode = HSExecDirect(&stmt, &srcDesc, srcTabRowCount != 0, checkMdam);
 
       // filter retcode for HSHandleError
       HSFilterWarning(retcode);
@@ -431,7 +435,7 @@ Lng32 CreateHistTables (const HSGlobalsClass* hsGlobal)
     // do NOT check volatile tables
     if (hsGlobal->objDef->isVolatile()) return retcode;
 
-    LM->StartTimer("Table creation");
+    LM->StartTimer("Create histogram tables");
     NAString tableNotCreated;
 
     // Call createHistogramTables to create any table that does not yet exist.
@@ -452,6 +456,25 @@ Lng32 CreateHistTables (const HSGlobalsClass* hsGlobal)
     return retcode;
  }
 
+Lng32 CreateSeabasePersSamples(const HSGlobalsClass* hsGlobal)
+  {
+    HSLogMan *LM = HSLogMan::Instance();
+    Lng32 retcode = 0;
+    ComObjectName tableName(hsGlobal->hsperssamp_table->data());
+    HSSqTableDef sampleDef(tableName, ANSI_TABLE);
+    if (!sampleDef.objExists()) //DROP existing sample table
+    {
+      if (LM->LogNeeded())
+        {
+          snprintf(LM->msg, sizeof(LM->msg), "Creating %s table for schema %s on demand.",
+                           HBASE_PERS_SAMP_NAME, hsGlobal->catSch->data());
+          LM->Log(LM->msg);
+        }
+
+      retcode = CreateHistTables(hsGlobal);
+    }
+    return retcode;
+}
 
 /***********************************************/
 /* METHOD:  HSSample create() member function  */
@@ -461,27 +484,11 @@ Lng32 CreateHistTables (const HSGlobalsClass* hsGlobal)
 /* RETCODE:  0 - successful                    */
 /*           non-zero otherwise                */
 /***********************************************/
-Lng32 HSSample::create(NABoolean unpartitioned, NABoolean isPersSample,
-                       NABoolean createDandI)
+Lng32 HSSample::create(NABoolean unpartitioned, NABoolean isPersSample)
   {
-      makeTableName(isPersSample); // assigns 'sampleTable' name for MX/MP.
-      Lng32 retcode = 0;
-      retcode = create(sampleTable, unpartitioned, isPersSample);
-
-      if ( !retcode && createDandI ) {
-         NAString tableD(sampleTable);
-         tableD.append("_D");
-
-         //retcode = create(tableD, unpartitioned, isPersSample);
-         //HSHandleError(retcode);
-
-         // The temp. table for sample I is created in ::generateSampleI() on demand.
-         // Otherwise, we end up with 8102 error (rows duplicated) and very slow
-         // performance.
-         //NAString tableI(sampleTable);
-         //tableI.append("_I");
-         //retcode = create(tableI, unpartitioned, isPersSample);
-      }
+    makeTableName(isPersSample); // assigns 'sampleTable' name for MX/MP.
+    Lng32 retcode = 0;
+    retcode = create(sampleTable, unpartitioned, isPersSample);
 
     return retcode;
   }
@@ -524,12 +531,14 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
            tableOptions = " WITH PARTITIONS";
         // If a transaction is running, the table needs to be created as audited.
         // Otherwise, create table as non-audited.
+        /* TEMPTEMP. Dave need to validate this change.
         if (TM->InTransaction())
           tableOptions += " ATTRIBUTE AUDIT";
         else
           tableOptions += " ATTRIBUTE NO AUDIT";
 
         tableOptions += getTempTablePartitionInfo(unpartitioned, isPersSample);
+        */
 
         ddl  = "CREATE TABLE ";
         ddl += tempTabName;
@@ -795,13 +804,6 @@ Lng32 HSSample::dropSample(NAString& sampTblName, HSTableDef *sourceTblDef)
       LM->Log("\tDROP SAMPLE TABLE");
 
       tempTabName = sampTblName;
-      // LCOV_EXCL_START :nsk
-      if (sourceTblDef->getObjectFormat() == SQLMP)
-      {
-        ComMPLoc tempObj(tempTabName, ComMPLoc::FILE);
-        tempTabName = tempObj.getMPName();
-      }
-      // LCOV_EXCL_STOP
 
       // If the table is not volatile, make the sample table 'droppable', except
       // in the case of Trafodion, which does not support this Alter statement.
@@ -1100,7 +1102,7 @@ Lng32 HSTranMan::Rollback()
             if (extTrans_)
               LM->Log("ROBACKWORK(external transaction being used)");
             else
-              LM->Log("ROBACKWORK(no running traction)");
+              LM->Log("ROBACKWORK(no running transaction)");
           }
       }
     return retcode_;
@@ -1239,84 +1241,96 @@ Lng32 HSTranController::lockTable(const char* tableName, NABoolean exclusive)
 /*           one instance of this class.                                     */
 /*****************************************************************************/
 THREAD_P HSPersSamples* HSPersSamples::instance_ = 0;
-THREAD_P NAList<NAString>* HSPersSamples::persSampleTablesList_ = NULL;
-THREAD_P NAString *HSPersSamples::catalog_ = NULL;
-THREAD_P NAString *HSPersSamples::schema_ = NULL;
 
-HSPersSamples::HSPersSamples()
+
+HSPersSamples::HSPersSamples(const NAString & catalog, const NAString & schema) 
+: catalog_(new (CTXTHEAP) NAString(catalog)), 
+  schema_(new (CTXTHEAP) NAString(schema)),
+  triedCreatingSBPersistentSamples_(false)
   {}
-/***********************************************/
-/* METHOD:  Instance()                         */
-/* PURPOSE: Returns the instance of the class  */
-/*          and searches for or creates        */
-/*          PERSISTENT_SAMPLES table (list).   */
-/*          For every catalog for which a      */
-/*          PERSISTENT_SAMPLES table is known  */
-/*          to exist, the catalog name is added*/
-/*          to the 'persSampleTablesList'.     */
-/* RETCODE: 0 if no errors.                    */
-/*          non-zero otherwise.                */
-/* INPUT:   'catalog', the catalog of the table*/
-/*          for which a sample is created.     */
-/*          'createTable', if TRUE, create the */
-/*          PERSISTENT_SAMPLES table for this  */
-/*          catalog if it doesn't exist.       */
-/* NOTES:   We need to instantiate using the   */
-/*          contextHeap because we need this   */
-/*          class to stay around through       */
-/*          multiple statements.               */
-/*                                             */
-/***********************************************/
-HSPersSamples* HSPersSamples::Instance(const NAString &catalog,
-                                       NABoolean createTable)
+
+HSPersSamples::~HSPersSamples()
   {
-    Lng32 retcode = 0;
-    if (instance_ == 0)
-      instance_ = new (CTXTHEAP) HSPersSamples;
+    delete catalog_;
+    delete schema_;
+  }
 
-    if (persSampleTablesList_ == 0)
-       persSampleTablesList_ = new(CTXTHEAP) NAList<NAString>;
-    if (catalog_ == 0)
-       catalog_ = new (CTXTHEAP) NAString("");
-    if (schema_ == 0)
-       schema_  = new (CTXTHEAP) NAString("");
-
-    // Search for an instance of catalog in memory resident list.
-    if (HSGlobalsClass::isHiveCat(catalog))
-      {
-        *catalog_ = HIVE_STATS_CATALOG;
-        *schema_  = HIVE_STATS_SCHEMA;
-      }
-    else if (HSGlobalsClass::isHbaseCat(catalog))
-      {
-	NAString sbCat = ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG);
-
-	//        *catalog_ = SEABASE_SYSTEM_CATALOG;
-        *catalog_ = sbCat;
-        *schema_  = SEABASE_SYSTEM_SCHEMA;
-      }
-    else
+void HSPersSamples::setCatalogSchema(const NAString &catalog,
+                                     const NAString &schema)
+  {
+    if ((schema != *schema_) || (catalog != *catalog_))
       {
         *catalog_ = catalog;
-        *schema_  = "PUBLIC_ACCESS_SCHEMA";
+        *schema_ = schema;
+        triedCreatingSBPersistentSamples_ = false; // will try again on a new schema
       }
-    if (!(*persSampleTablesList_).contains(*catalog_))
-    {
-      *(CmpCommon::diags()) << DgSqlCode(-4222)
-                            << DgString0("Persistent Sample Table");
-      return 0;
-    }
+  }
+
+//
+// METHOD:  Instance()
+// PURPOSE: Returns the instance of the class  */
+//          and searches for or creates        */
+//          SB_PERSISTENT_SAMPLES table (list).   */
+//          For every catalog for which a      */
+//          SB_PERSISTENT_SAMPLES table is known  */
+//          to exist, the catalog name is added*/
+//          to the 'persSampleTablesList'.     */
+// RETCODE: 0 if no errors.                    */
+//          non-zero otherwise.                */
+// INPUT:   'catalog', the catalog of the table*/
+//          for which a sample is created.     */
+//          'createTable', if TRUE, create the */
+//          SB_PERSISTENT_SAMPLES table for this  */
+//          catalog if it doesn't exist.       */
+// NOTES:   We need to instantiate using the   */
+//          contextHeap because we need this   */
+//          class to stay around through       */
+//          multiple statements.
+//
+HSPersSamples* HSPersSamples::Instance(const NAString &catalog,
+                                       const NAString &schema)
+  {
+    Lng32 retcode = 0;
+    HSGlobalsClass *hs_globals = GetHSContext();
+
+    if (instance_ == 0)
+      instance_ = new (CTXTHEAP) HSPersSamples(catalog,schema);
+    else
+      {
+        instance_->setCatalogSchema(catalog,schema);
+      }
+
+    if (HSGlobalsClass::isHiveCat(catalog))
+      {
+        NAString hiveStatsCatalog(HIVE_STATS_CATALOG);
+        NAString hiveStatsSchema(HIVE_STATS_SCHEMA_NO_QUOTES);
+        instance_->setCatalogSchema(hiveStatsCatalog,hiveStatsSchema);
+      }
+    else if (HSGlobalsClass::isNativeHbaseCat(catalog))
+      {
+        NAString hbaseStatsCatalog(HBASE_STATS_CATALOG);
+        NAString hbaseStatsSchema(HBASE_STATS_SCHEMA_NO_QUOTES);
+        instance_->setCatalogSchema(hbaseStatsCatalog,hbaseStatsSchema);
+      }
+
+    // Create the SB_PERSISTENT_SAMPLES table if it does not already exist
+    // Do this at most once
+
+    if ((instance_) && (!instance_->triedCreatingSBPersistentSamples_))
+      {
+        retcode = CreateSeabasePersSamples(hs_globals);
+        instance_->triedCreatingSBPersistentSamples_ = true;
+      }
 
     if (retcode) return 0;
     else         return instance_;
   }
+
 /***********************************************/
 /* METHOD:  find()                             */
-/* PURPOSE: finds a persistent sample table for*/
-/*          UID and sample size.  If a sample  */
-/*          is found that is 'obsolete', then  */
-/*          it will be removed and another will*/
-/*          be searched for.  If a persistent  */
+/* PURPOSE: finds a manual (i.e., not IUS)     */
+/*          persistent sample table for UID    */
+/*          and sample size. If a persistent   */
 /*          sample is found, the name will be  */
 /*          returned in 'table', or blank if   */
 /*          not.                               */
@@ -1335,63 +1349,69 @@ HSPersSamples* HSPersSamples::Instance(const NAString &catalog,
 Lng32 HSPersSamples::find(HSTableDef *objDef, Int64 &actualRows, NABoolean isEstimate,
                          Int64 &sampleRows, double allowedDiff, NAString &table)
   {
+    // Note: Earlier versions of this code supported multiple sample tables
+    // (with different sample ratios) for the same base table, which seems
+    // like overkill. So, in making this code work for Trafodion, we've made
+    // a simplifying assumption: Assume just one sample table per base table.
+    // (Indeed, we defined SB_PERSISTENT_SAMPLES to be keyed solely on the
+    // base table UID.)
+    //
+    // So, this method now ignores the actualRows, isEstimate, sampleRows and
+    // allowedDiff parameters. We can take them out later if this design
+    // decision becomes permanent.
+
     Lng32 retcode = 0;
     NABoolean removedObsolete=FALSE;
-    table="";
+    table="";  // in case no sample table is found
     NAWchar tempTabNameUCS2[408]; // first double byte is varchar length + a few extras NAWchars
     ComObjectName persSampTblObjName(*catalog_,
                                      *schema_,
-                                     "PERSISTENT_SAMPLES",
+                                     "SB_PERSISTENT_SAMPLES",
                                      COM_TABLE_NAME,
                                      ComAnsiNamePart::INTERNAL_FORMAT,
                                      STMTHEAP);
     NAString fromTable = persSampTblObjName.getExternalName();
-    double percent;
-    HSCliStatement::statementIndex del_stmt;
-    HSCliStatement::statementIndex sel_stmt;
-
-    // Create query to search for a matching persistent sample in
-    // PERSISTENT_SAMPLES table.  Persistent samples are matched
-    // by the requested sample rowcount, not the actual that was
-    // created, since the actual can vary due to VARCHARS, ...
-    // A persistent sample is matching if for the same source table
-    // and ABS(RQSTD_NUMROWS - 'sampleRows') <=
-    // ('allowedDiff' * 'sampleRows').  The query will return the
-    // persistent sample table name, sample row count, and sample %.
-    sel_stmt = HSCliStatement::CURSOR_PST;
-    del_stmt = HSCliStatement::DELETE_PST;
     Int64 uid = objDef->getObjectUID();
-    HSCliStatement cursorPST(sel_stmt,
-                             (char *)fromTable.data(),
-                             (char *)&uid,
-                             (char *)&sampleRows,
-                             (char *)&allowedDiff
-                             );
-    retcode = cursorPST.open();
-    HSHandleError(retcode);
+    char uidStr[30];
+    convertInt64ToAscii(uid,uidStr);
 
-    do
-    {
-      // sel_stmt.fetch() will set 'tempTabName' to a persistent table name,
-      // 'sampleRows' to the size, and 'percent' to the % of actual table if
-      // one is found.  Otherwise 'table' is set to "" and 'sampleRows' is not set.
-      retcode = cursorPST.fetch (3, (void *)&tempTabNameUCS2[0], (void *)&sampleRows,
-                                    (void *)&percent);
-      // Handle errors from fetch. If retcode is 100 (meaning no more data),
-      // then set retcode = 0.
-      if (retcode)
+    HSCursor findSampleTableCursor1(STMTHEAP,"findSampleTable1");
+
+    NAString query = "SELECT SAMPLE_NAME FROM ";
+    query += fromTable;
+    query += " WHERE TABLE_UID = ";
+    query += uidStr;
+    query += " AND REASON = 'M'";
+
+    retcode = findSampleTableCursor1.prepareQuery(query, 0, 4); // no input parms, 1 output col
+    HSLogError(retcode);
+
+    retcode = findSampleTableCursor1.open();
+    HSLogError(retcode);
+
+    // expect at most one row will match the condition because of one
+    // IUS sample table only assumption.
+
+    // sel_stmt.fetch() will set 'tempTabName' to a persistent table name,
+    // if one is found. 
+
+    retcode = findSampleTableCursor1.fetch (1, (void *)&tempTabNameUCS2[0]);
+
+    // Handle errors from fetch. If retcode is 100 (meaning no more data),
+    // then set retcode = 0.
+    if (retcode)
       {
         if (retcode != HS_EOF)
-        {
-          HSHandleError(retcode);
-        }
+          {
+            HSHandleError(retcode);
+          }
         else
-        {
-          retcode = 0;
-        }
-        break;
+          {
+            retcode = 0;
+          }
       }
-      else { // fetch() successful.
+    else 
+      { // fetch() successful.
         char tempTabNameUTF8[2*sizeof(tempTabNameUCS2)];
         char *dummyFirstUntranslatedChar;
         unsigned int outputDataLen;
@@ -1408,64 +1428,25 @@ Lng32 HSPersSamples::find(HSTableDef *objDef, Int64 &actualRows, NABoolean isEst
         HS_ASSERT(rc == 0 && outputDataLen >=0 && outputDataLen < sizeof(tempTabNameUTF8));
         tempTabNameUTF8[outputDataLen] = 0;
         table = tempTabNameUTF8;
-
-        //if (/*!forIUS &&*/ table != "" && actualRows != -1  && isEstimate == FALSE &&
-        if ( table != "" && actualRows != -1  && isEstimate == FALSE &&
-            ((fabs((sampleRows*100)/percent - actualRows)/actualRows) >
-             (CmpCommon::getDefaultLong(USTAT_OBSOLETE_PERCENT_ROWCOUNT) / 100.0f)))
-        {
-          // The peristent sample table is 'obsolete' - the base table has changed
-          // by more than USTAT_OBSOLETE_PERCENT_ROWCOUNT % rows since sample created.
-          HSTranMan *TM = HSTranMan::Instance();
-          TM->Begin("DROP PERSISTENT SAMPLE TABLE AND REMOVE FROM LIST VIA FIND.");
-          // Drop persistent sample table and remove from list.
-          NAString ddl  = "DROP TABLE " + table;
-
-          if (!objDef->isVolatile())
-          {
-            // alter the table to droppable before the drop
-            NAString alterdroppableStmt;
-            alterdroppableStmt = "ALTER TABLE ";
-            alterdroppableStmt += table ;
-            alterdroppableStmt += " DROPPABLE ";
-
-            HSFuncExecQuery(alterdroppableStmt, - UERR_INTERNAL_ERROR, NULL,
-                            HS_QUERY_ERROR, NULL, NULL, TRUE/*doRetry*/ );
-          }
-
-          HSFuncExecQuery(ddl, - UERR_INTERNAL_ERROR, NULL,
-                          HS_QUERY_ERROR, NULL, NULL, TRUE/*doRetry*/ );
-
-          // If cannot drop table, attempt to remove from list anyway.
-          HSCliStatement deletePST(del_stmt,
-                                   (char *)fromTable.data(),
-                                   (char *)table.data());
-          retcode = deletePST.execFetch("DELETE " + fromTable );
-          if (retcode) TM->Rollback();
-          else         retcode = TM->Commit();
-          if (!retcode) removedObsolete=TRUE;
-        }
-        else removedObsolete=FALSE;
-      }
-    } while (!retcode && removedObsolete);
+     }
 
     // Don't overwrite the return code if an error has occurred, but attempt to
     // close the cursor anyway (in case it was successfully opened).
     if (retcode < 0)
-      cursorPST.close();
+      findSampleTableCursor1.close();
     else
-      retcode = cursorPST.close();
-   return retcode;
+      retcode = findSampleTableCursor1.close();
+    return retcode;
   }
 
 /***********************************************/
 /* METHOD:  find()                             */
 /* PURPOSE: finds a persistent sample table for*/
-/*          specified reason code.If foundd,   */
+/*          specified reason code.If found,    */
 /*          the name will be returned in       */
 /*          'table', or blank if not.          */
 /* INPUT:   uid - source table UID.            */
-/*          reason - the reason code           */
+/*          reason - I incremental, M manual   */
 /* OUTPUT:  table - the name of a sample table */
 /*            found or "" if none found.       */
 /*            requestedRows: requested rows    */
@@ -1474,9 +1455,9 @@ Lng32 HSPersSamples::find(HSTableDef *objDef, Int64 &actualRows, NABoolean isEst
 /* RETCODE: 0 if no error during search.       */
 /*          non-zero if error                  */
 /***********************************************/
-Lng32 HSPersSamples::find(HSTableDef *objDef, char reason, NAString &table,
-                          Int64 &requestedRows, Int64 &sampleRows,
-                          double &sampleRate)
+Lng32 HSPersSamples::find(HSTableDef *objDef, char reason,
+                          NAString &table, Int64 &requestedRows,
+                          Int64 &sampleRows, double &sampleRate)
   {
     Lng32 retcode = 0;
     NABoolean removedObsolete=FALSE;
@@ -1484,33 +1465,33 @@ Lng32 HSPersSamples::find(HSTableDef *objDef, char reason, NAString &table,
     NAWchar tempTabNameUCS2[408]; // first double byte is varchar length + a few extras NAWchars
     ComObjectName persSampTblObjName(*catalog_,
                                      *schema_,
-                                     "PERSISTENT_SAMPLES",
+                                     "SB_PERSISTENT_SAMPLES",
                                      COM_TABLE_NAME,
                                      ComAnsiNamePart::INTERNAL_FORMAT,
                                      STMTHEAP);
     NAString fromTable = persSampTblObjName.getExternalName();
-    //double percent; //@ZXunref
-    //HSCliStatement::statementIndex del_stmt; //@ZXunref
-    HSCliStatement::statementIndex sel_stmt;
+    Int64 uid = objDef->getObjectUID();
+    char uidStr[30];
+    convertInt64ToAscii(uid,uidStr);
 
     // Create query to search for a matching persistent sample in
-    // PERSISTENT_SAMPLES table.  Persistent samples are matched
-    // by the requested sample rowcount, not the actual that was
-    // created, since the actual can vary due to VARCHARS, ...
-    // A persistent sample is matching if for the same source table
-    // and T.REASON = reason_code
-    sel_stmt = HSCliStatement::CURSOR_PST_REASON_CODE;
-    Int64 uid = objDef->getObjectUID();
-    char reason_code = reason;
+    // SB_PERSISTENT_SAMPLES table.
 
-    // sampleRows and allowedDiff are not used
-    HSCliStatement cursorPST_reason_code(sel_stmt,
-                             (char *)fromTable.data(),
-                             (char *)&uid,
-                             (char *)&reason_code
-                   );
-    retcode = cursorPST_reason_code.open();
-    HSHandleError(retcode);
+    HSCursor findSampleTableCursor(STMTHEAP,"findSampleTable");
+
+    NAString query = "SELECT SAMPLE_NAME, REQUESTED_SAMPLE_ROWS, ACTUAL_SAMPLE_ROWS, SAMPLING_RATIO FROM ";
+    query += fromTable;
+    query += " WHERE TABLE_UID = ";
+    query += uidStr;
+    query += " AND REASON = '";
+    query += reason;
+    query += "'";
+
+    retcode = findSampleTableCursor.prepareQuery(query, 0, 4); // no input parms, 2 output cols
+    HSLogError(retcode);
+
+    retcode = findSampleTableCursor.open();
+    HSLogError(retcode);
 
     // expect at most one row will match the condition because of one
     // IUS sample table only assumption.
@@ -1521,7 +1502,7 @@ Lng32 HSPersSamples::find(HSTableDef *objDef, char reason, NAString &table,
       // is set to "" and requestdRows, sampleRows and sampleRate
       // are not set.
 
-      retcode = cursorPST_reason_code.fetch (4, (void *)&tempTabNameUCS2[0],
+      retcode = findSampleTableCursor.fetch (4, (void *)&tempTabNameUCS2[0],
                                                  (void *)&requestedRows,
                                                  (void *)&sampleRows,
                                                  (void *)&sampleRate
@@ -1563,48 +1544,53 @@ Lng32 HSPersSamples::find(HSTableDef *objDef, char reason, NAString &table,
     // Don't overwrite the return code if an error has occurred, but attempt to
     // close the cursor anyway (in case it was successfully opened).
     if (retcode < 0)
-      cursorPST_reason_code.close();
+      findSampleTableCursor.close();
     else
-      retcode = cursorPST_reason_code.close();
+      retcode = findSampleTableCursor.close();
    return retcode;
   }
 
 Lng32 HSPersSamples::removeSample(HSTableDef* tabDef, NAString& sampTblName,
-                                  NABoolean useTransaction, const char* txnLabel)
+                                  char reason, const char* txnLabel)
 {
   Lng32 retcode = 0;
   HSTranMan *TM = HSTranMan::Instance();
 
   if (sampTblName.length() > 0)
     {
-      if (useTransaction)
-        {
-          TM->Begin(txnLabel);
-        }
-
-      HSSample::dropSample(sampTblName, tabDef);
+      TM->Begin(txnLabel);
 
       // Delete row in persistent samples table regardless of whether sample
       // could be dropped.
       ComObjectName persSampTblObjName(*catalog_,
                                         *schema_,
-                                        "PERSISTENT_SAMPLES",
+                                        "SB_PERSISTENT_SAMPLES",
                                         COM_TABLE_NAME,
                                         ComAnsiNamePart::INTERNAL_FORMAT,
                                         STMTHEAP);
       NAString fromTable = persSampTblObjName.getExternalName();
-      HSCliStatement::statementIndex del_stmt = HSCliStatement::DELETE_PST;
-      HSCliStatement deletePST(del_stmt,
-                                (char*)fromTable.data(),
-                                (char*)sampTblName.data());
-      retcode = deletePST.execFetch("DELETE " + fromTable );
-      if (useTransaction)
-        {
-          if (retcode)
-            TM->Rollback();
-          else
-            TM->Commit();
-        }
+      Int64 objUID = tabDef->getObjectUID();
+
+      NAString dml((size_t)500/*allocate 500 bytes*/, STMTHEAP);
+      dml.append("DELETE FROM ");
+      dml += fromTable; // in UTF8
+      dml += " WHERE TABLE_UID = ";
+      dml += Int64ToNAString(objUID);
+      dml += " AND REASON = '";
+      dml += reason;
+      dml += "'";
+
+      retcode = HSFuncExecQuery(dml, - UERR_INTERNAL_ERROR, NULL,
+                                HS_QUERY_ERROR, NULL, NULL, TRUE/*doRetry*/ );
+      HSHandleError(retcode);
+
+      HSSample::dropSample(sampTblName, tabDef);
+
+      if (retcode)
+        TM->Rollback();
+      else
+        TM->Commit();
+
     }
 
   return retcode;
@@ -1618,7 +1604,7 @@ Lng32 HSPersSamples::removeSample(HSTableDef* tabDef, NAString& sampTblName,
 /*          can be determined from statistics.                  */
 /* INPUTS:  tabDef - a pointer to table struct.                 */
 /*          isEstimate - TRUE if 'actualRows' is est. on input. */
-/*          isManual   - sets REASON in PERSISTENT_SAMPLES.     */
+/*          isManual   - sets REASON in SB_PERSISTENT_SAMPLES.     */
 /* IN/OUTS: sampleRows - the desired size of sample on input,   */
 /*            actual sample size on output.                     */
 /*          actualRows - table size (possibly an est.) on input */
@@ -1644,20 +1630,19 @@ Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
     if (!tabDef || tabDef->setHasSyskeyFlag() != 0) return -1;
       // Sets flag in tabDef indicating primary key is SYSKEY.
 
-    // Drop the prior IUS persistent sample table if it exists, and remove
-    // the corresponding row from the PERSISTENT_SAMPLES table.
-    if (reason == 'I')
-      {
-        Int64 dummy1, dummy2;
-        double dummy3;
-        NAString oldSampTblName;
-        retcode = find(tabDef, char('I'), oldSampTblName,
-                       dummy1, dummy2, dummy3);
-        removeSample(tabDef, oldSampTblName, TRUE,
-                     "DROP OLD IUS PERSISTENT SAMPLE TABLE AND REMOVE FROM LIST");
-      }
+    // Drop the prior persistent sample table if it exists, and remove
+    // the corresponding row from the SB_PERSISTENT_SAMPLES table.
 
-    // Save original requested number of sample rows for inserting to PERSISTENT_SAMPLES.
+    Int64 dummy1, dummy2;
+    double dummy3;
+    NAString oldSampTblName;
+    retcode = find(tabDef, reason, oldSampTblName,
+                   dummy1, dummy2, dummy3);
+    if (retcode == 0)
+      removeSample(tabDef, oldSampTblName, reason,
+                   "DROP OLD PERSISTENT SAMPLE TABLE AND REMOVE FROM LIST");
+
+    // Save original requested number of sample rows for inserting to SB_PERSISTENT_SAMPLES.
     reqSampleRows = sampleRows;
 
     Lng32 st = (CmpCommon::getDefault(USTAT_IUS_USE_PERIODIC_SAMPLING) == DF_ON) ?
@@ -1673,7 +1658,6 @@ Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
 
     retcode = sample.make(isEstimate, sampleName, actualRows, sampleRows, TRUE,
                           reason != 'I', /* partitioned for IUS */
-                          createDandI,
                           minRowCtPerPartition
                          );
       // sampleName output & actualRows will get modified if necessary
@@ -1682,72 +1666,22 @@ Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
     {
 
       // Sample table successfully created, insert entry into
-      // PERSISTENT_SAMPLES table.  If unable to insert entry,
+      // SB_PERSISTENT_SAMPLES table.  If unable to insert entry,
       // drop sample table.
       stmt = HSCliStatement::INSERT_PST;
       percent = ((float)sampleRows/(float)actualRows)*100;
       ComObjectName persSampTblObjName(*catalog_,
                                        *schema_,
-                                       "PERSISTENT_SAMPLES",
+                                       "SB_PERSISTENT_SAMPLES",
                                        COM_TABLE_NAME,
                                        ComAnsiNamePart::INTERNAL_FORMAT,
                                        STMTHEAP);
       into_table = persSampTblObjName.getExternalName();
       objUID = tabDef->getObjectUID();
-      TM->Begin("INSERT INTO PERSISTENT_SAMPLES TABLE.");
+      TM->Begin("INSERT INTO SB_PERSISTENT_SAMPLES TABLE.");
       char timeStr[HS_TIMESTAMP_SIZE];
       hs_formatTimestamp(timeStr);
-#if 1 // Use the static INSERT_PST query defined in w:/ustat/sqlhist.mdf
-      NAWString *pSampleNameInUTF16 =
-        charToUnicode ( (Lng32) CharInfo::UTF8                 // char set of src str
-                      , sampleName/*in_utf8*/.data()           // src str
-                      , (Int32)sampleName/*in_utf8*/.length()  // src str len in bytes
-                      , STMTHEAP                               // heap for allocated target str
-                      );
-      NAWString sampleNameInUTF16(STMTHEAP);
-      if (pSampleNameInUTF16 != NULL && pSampleNameInUTF16->length() > 0)
-        sampleNameInUTF16.append(*pSampleNameInUTF16);
-      delete pSampleNameInUTF16; pSampleNameInUTF16 = NULL;
-      if (!sampleName.isNull() && sampleNameInUTF16.length() <= 0)
-      {
-        NAString str0((size_t)600/*allocate 600 bytes*/, STMTHEAP);
-        str0.append("INSERT ");
-        str0.append(sampleName);
-        *CmpCommon::diags() << DgSqlCode(-UERR_GENERIC_ERROR)
-                            << DgString0(str0.data())
-                            << DgString1("-2109")
-                            << DgString2("Unable to translate sample name from UTF8 to UCS2");
-        // HSHandleError(-UERR_GENERIC_ERROR);
-        return (-UERR_GENERIC_ERROR);
-      }
 
-      HSGlobalsClass *hs_globals = GetHSContext();
-
-      NAWString V1(L"Dummy value for V1 column", STMTHEAP);
-      NAWString V2(L"Dummy value for V2 column", STMTHEAP);
-
-      // Set the UPDATE_DATE to the epoch time '1970-01-01 00:00:00'.
-      // See its usage in HSGlobalsClass::begin_IUS_work() and ::end_IUS_work()
-      HSCliStatement insertPST(stmt,
-                              (char *)into_table.data(),
-                              (char *)&objUID,
-                              (char *)&reqSampleRows,
-                              (char *)&sampleRows,
-                              (char *)&percent,
-                              (char *)&timeStr[0],
-                              (char *)&reason,
-                              (char *)sampleNameInUTF16.data(),
-                              (char *)L"",   // IUS_SEARCH_CONDITION (added after IUS stmt)
-                              (char *)"1970-01-01 00:00:00",   // epoch UPDATE_DATE
-                              (char *)"",                      // dummy IUS_UPDATE_HISTORY
-                              (char *)V1.data(),   // V1
-                              (char *)V2.data());  // V2
-
-      retcode = insertPST.execFetch("INSERT " + sampleName );
-      HSHandleError(retcode);
-
-
-#else // Use dynamic query as a workaround if having problem with the static query
       NAString dml((size_t)500/*allocate 500 bytes*/, STMTHEAP);
       dml.append("INSERT INTO ");
       dml += into_table; // in UTF8
@@ -1770,31 +1704,21 @@ Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
                      , TRUE             // in  - NABoolean encloseInQuotes = TRUE
                      );
       dml += quotedSampleName; // in UTF8
+      HSGlobalsClass *hs_globals = GetHSContext();
       ToQuotedString ( hs_globals->getWherePredicateForIUS()   // out - NAString &quotedStr
                      , ""               // in  - const NAString &internalStr
                      , TRUE             // in  - NABoolean encloseInQuotes = TRUE
                      );
-      dml += "',_UCS2''";               // IUS_SEARCH_CONDITION (added after IUS stmt)
-      dml += ",TIMESTAMP'";
-      dml += timeStr;        // UPDATE_DATE TIMESTAMP
-      dml += ",";
-      dml += ""; // IUS_UPDATE_HISTORY
-      NAWString quotedEmptyWStr(STMTHEAP);
-      ToQuotedString ( quotedEmptyWStr   // out - NAString &quotedStr
-                     , ""               // in  - const NAString &internalStr
-                     , TRUE             // in  - NABoolean encloseInQuotes = TRUE
-                     );
-      dml += "',_UCS2";
-      dml += quotedEmptyWStr; // V1
-      dml += "',_UCS2";
-      dml += quotedEmptyWStr; // V2
+      dml += ",_UCS2''";               // IUS_SEARCH_CONDITION (added after IUS stmt)
+      dml += ",TIMESTAMP'1970-01-01 00:00:00'"; // UPDATE_START_TIME TIMESTAMP
+      dml += ",''"; // UPDATER_INFO
+      dml += ",_UCS2''";  // V1
+      dml += ",_UCS2''";  // V2
       dml += ");";
 
       retcode = HSFuncExecQuery(dml, - UERR_INTERNAL_ERROR, NULL,
                                 HS_QUERY_ERROR, NULL, NULL, TRUE/*doRetry*/ );
       HSHandleError(retcode);
-#endif
-
 
       if (!retcode) TM->Commit();
       else {
@@ -1818,22 +1742,11 @@ Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
     return retcode;
   }
 
-Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
-                                    Int64 &sampleRows, Int64 &actualRows,
-                                    NABoolean isEstimate, NABoolean isManual,
-                                    Int64 minRowCtPerPartition)
-  {
-      char reason = (isManual == TRUE) ? 'M' : 'A';
-      return createAndInsert(tabDef, sampleName, sampleRows, actualRows, isEstimate, reason,
-                             FALSE, // do not create DandI
-                             minRowCtPerPartition
-                            );
-  }
-
 /***********************************************/
 /* METHOD:  remove()                           */
-/* PURPOSE: Remove all persistent sample tables*/
-/*          for the table with object uid 'uid'*/
+/* PURPOSE: Remove all manual (i.e., not IUS)  */
+/*          persistent sample tables for       */
+/*          the table with object uid 'uid'    */
 /*          and within 'allowedDiff' fraction  */
 /*          of 'sampleRows' in size.           */
 /* INPUT:   uid - source table UID.            */
@@ -1860,17 +1773,16 @@ Lng32 HSPersSamples::removeMatchingSamples(HSTableDef *tabDef,
     HSTranMan *TM = HSTranMan::Instance();
     Lng32 retcode = 0;
     NAString ddl, table, fromTable;
-    HSCliStatement::statementIndex stmt;
+    NABoolean nothingToDrop = TRUE;
 
     TM->Begin("DROP PERSISTENT SAMPLE TABLE AND REMOVE FROM LIST.");
     // Loop until all persistent samples matching criteria have been removed.
     Int64 actualRows = -1; // Obsolete samples will not be removed by find().
     NABoolean isEstimate = TRUE;
     retcode = find(tabDef, actualRows, isEstimate, sampleRows, allowedDiff, table);
-    stmt = HSCliStatement::DELETE_PST;
     ComObjectName persSampTblObjName(*catalog_,
                                      *schema_,
-                                     "PERSISTENT_SAMPLES",
+                                     "SB_PERSISTENT_SAMPLES",
                                      COM_TABLE_NAME,
                                      ComAnsiNamePart::INTERNAL_FORMAT,
                                      STMTHEAP);
@@ -1878,19 +1790,27 @@ Lng32 HSPersSamples::removeMatchingSamples(HSTableDef *tabDef,
     while (retcode == 0 && table != "")
     {
       // Drop persistent sample table and remove from list.
-      retcode = removeSample(tabDef, table, FALSE, "");
+      nothingToDrop = FALSE;
+      retcode = removeSample(tabDef, table, 'M', "");
       if (!retcode)
         retcode = find(tabDef, actualRows, isEstimate, sampleRows, allowedDiff, table);
     }
     if (retcode) TM->Rollback();
     else         retcode = TM->Commit();
+
+    if (nothingToDrop)
+    {
+      // we didn't drop anything; warn the user
+      *CmpCommon::diags() << DgSqlCode(UERR_WARNING_NO_SAMPLE_TABLE);
+    }  
+ 
     return retcode;
   }
 
 
 /*********************************************************************/
 /* METHOD:  readIUSUpdateInfo()                                      */
-/* PURPOSE: Retrieve the UPDATE_DATE and IUS_UPDATE_HISTORY columns  */
+/* PURPOSE: Retrieve the UPDATE_START_TIME and UPDATER_INFO columns  */
 /*          of the persistent samples table for the row identified   */
 /*          by the UID of the passed HSTableDef.                     */
 /* INPUT:   tblDef - Ptr to HSTableDef for table the sample is on.   */
@@ -1907,47 +1827,104 @@ Lng32 HSPersSamples::readIUSUpdateInfo(HSTableDef* tblDef,
 
     ComObjectName persSampTblObjName(*catalog_,
                                      *schema_,
-                                     "PERSISTENT_SAMPLES",
+                                     "SB_PERSISTENT_SAMPLES",
                                      COM_TABLE_NAME,
                                      ComAnsiNamePart::INTERNAL_FORMAT,
                                      STMTHEAP);
     NAString fromTable = persSampTblObjName.getExternalName();
-    HSCliStatement::statementIndex sel_stmt;
-
-
-    sel_stmt = HSCliStatement::CURSOR_PST_UPDATE_INFO;
-
     Int64 uid = tblDef->getObjectUID();
-    HSCliStatement cursorPSTUpdInfo(sel_stmt,
-                                    (char*)fromTable.data(),
-                                    (char*)&uid);
-    retcode = cursorPSTUpdInfo.open();
-    HSHandleError(retcode);
+    char uidStr[30];
+    convertInt64ToAscii(uid,uidStr);
 
-    retcode = cursorPSTUpdInfo.fetch(2, (void*)updTimestamp, (void*)updHistory);
+    HSCursor readIUSInfoCursor(STMTHEAP,"readIUSUpdateInfo");
+
+    NAString query = "SELECT UPDATER_INFO, "
+                     "CAST(UPDATE_START_TIME - TIMESTAMP '1970-01-01 00:00:00' AS LARGEINT) FROM ";
+    query += fromTable;
+    query += " WHERE TABLE_UID = ";
+    query += uidStr;
+    query += " AND REASON = 'I'";
+
+    retcode = readIUSInfoCursor.prepareQuery(query, 0, 2); // no input parms, 2 output cols
+    HSLogError(retcode);
+
+    retcode = readIUSInfoCursor.open();
+    HSLogError(retcode);
+
+    if (retcode == 0)
+      {
+        struct 
+          {
+            short len;
+            char data[129];   // to fetch a varchar; UPDATER_INFO is VARCHAR(128)
+          } buffer;
+
+        retcode = readIUSInfoCursor.fetch(2, (void *)&buffer, (void *)updTimestamp);
+        HSLogError(retcode);
+        if (retcode == 0)
+          {
+            memmove(updHistory,buffer.data,buffer.len);
+            updHistory[buffer.len] = '\0';  // to insure a null terminator
+          }
+      }
 
     // Don't overwrite a nonzero return code (error, warning, or HS_EOF) from
     // the fetch, but attempt to close the cursor anyway.
     if (retcode != 0)
-      cursorPSTUpdInfo.close();
+      readIUSInfoCursor.close();
     else
-      retcode = cursorPSTUpdInfo.close();
+      retcode = readIUSInfoCursor.close();
     return retcode;
   }
 
+
+// helper function that doubles any single quotes in text, so that
+// we can write SQL text into a SQL table
+void doubleUpSingleQuotes(const char *text, NAString & result)
+  {
+    const char * next = text;
+    char buf[2];  
+    char doubledSingleQuote[3] = "''";
+
+    buf[1] = '\0';
+
+    while (*next)
+      {
+        if (*next == '\'')
+          result += doubledSingleQuote;  // double up any single quote
+        else
+          {
+            // NAString += with a char doesn't work; have to use a char[]
+            buf[0] = *next;
+            result += buf;
+          }
+        next++;
+      }   
+  }
+
+
 /*********************************************************************/
 /* METHOD:  updIUSUpdateInfo()                                       */
-/* PURPOSE: Update the UPDATE_DATE and IUS_UPDATE_HISTORY columns of */
+/* PURPOSE: Update the UPDATE_START_TIME and UPDATER_INFO columns of */
 /*          the persistent samples table for the row identified by   */
 /*          the UID of the passed HSTableDef.                        */
 /* INPUT:   tblDef - Ptr to HSTableDef for table the sample is on.   */
-/*          updHistory - Buffer containing update history value.     */
+/*          updHistory - Buffer containing updater info.             */
 /*          updTimestamp - Char representation of update timestamp.  */
+/*          updWhereCondition - if not null, the where predicate of  */
+/*          the last completed IUS operation. (If null, we don't     */
+/*          update this column.)                                     */
+/*          requestedSampleRows - if non-null, points to expected #  */
+/*          of rows in sample table (based on sampling rate).        */
+/*          actualSampleRows - if non-null, actual # of rows.        */
 /* RETCODE: Status code from the update operation.                   */
 /*********************************************************************/
 Lng32 HSPersSamples::updIUSUpdateInfo(HSTableDef* tblDef,
-                                      char* updHistory,
-                                      char* updTimestampStr)
+                                      const char* updHistory,
+                                      const char* updTimestampStr,
+                                      const char* updWhereCondition,
+                                      const Int64* requestedSampleRows,
+                                      const Int64* actualSampleRows)
 {
   Lng32 retcode = 0;
   HSErrorCatcher errorCatcher(retcode, - UERR_INTERNAL_ERROR, "updIUSUpdateInfo", TRUE);
@@ -1961,19 +1938,87 @@ Lng32 HSPersSamples::updIUSUpdateInfo(HSTableDef* tblDef,
   // table for the passed table UID.
   ComObjectName persSampTblObjName(*catalog_,
                                    *schema_,
-                                   "PERSISTENT_SAMPLES",
+                                   "SB_PERSISTENT_SAMPLES",
                                    COM_TABLE_NAME,
                                    ComAnsiNamePart::INTERNAL_FORMAT,
                                    STMTHEAP);
   NAString updTable = persSampTblObjName.getExternalName();
-  HSCliStatement::statementIndex updStmt = HSCliStatement::UPDATE_PST_UPDATE_INFO;
-  HSCliStatement updPST(updStmt,
-                        (char*)updTable.data(),
-                        updTimestampStr,
-                        updHistory,
-                        (char*)&tblUID);
-  retcode = updPST.execFetch("UPDATE " + updTable );
+  Int64 uid = tblDef->getObjectUID();
+  char buf[30];
 
+  HSCursor writeIUSInfoCursor(STMTHEAP,"writeIUSUpdateInfo");
+
+  // The caller should have checked to see that the row existed first,
+  // but even so it is possible (though unlikely) that someone could
+  // have deleted the row in the meantime.
+
+  NAString query = "UPDATE ";                   
+  query += updTable;
+  query += " SET UPDATE_START_TIME = TIMESTAMP '";
+  query += updTimestampStr;
+  query += "', UPDATER_INFO = '";
+  query += updHistory;
+  query += "'";
+  if (updWhereCondition)
+    {
+      NAString doubledUp;
+      doubleUpSingleQuotes(updWhereCondition,doubledUp /* out*/);
+      query += ", LAST_WHERE_PREDICATE = ";
+      if (strlen(updWhereCondition) > 250)
+        {
+          // let SQL deal with character truncation issues
+          query += "SUBSTRING('";
+          query += doubledUp;
+          query += "' FOR 250)";
+        }    
+      else
+        {
+          query += "'";
+          query += doubledUp;
+          query += "'";
+        }
+    }
+  if (requestedSampleRows)
+    {
+      convertInt64ToAscii(*requestedSampleRows, buf);
+      query += ", REQUESTED_SAMPLE_ROWS = ";
+      query += buf;
+    }
+  if (actualSampleRows)
+    {
+      convertInt64ToAscii(*actualSampleRows, buf);
+      query += ", ACTUAL_SAMPLE_ROWS = ";
+      query += buf;
+    }
+  query += " WHERE TABLE_UID = ";
+  convertInt64ToAscii(uid,buf);
+  query += buf;
+  query += " AND REASON = 'I'";
+
+  retcode = writeIUSInfoCursor.prepareQuery(query, 0, 0);
+  HSLogError(retcode);
+
+  retcode = writeIUSInfoCursor.open();
+  HSLogError(retcode);
+
+  if (retcode == 0)
+    {
+      retcode = writeIUSInfoCursor.fetch(0,0);
+      if (retcode == 100)  // a successful UPDATE returns 100 on fetch
+        retcode = 0;  
+      HSLogError(retcode);
+    }
+
+  // Don't overwrite a nonzero return code (error, warning) from
+  // the fetch, but attempt to close the cursor anyway.
+  if (retcode != 0)
+    writeIUSInfoCursor.close();
+  else
+    {
+      retcode = writeIUSInfoCursor.close();
+      if (retcode == 100) // a successful UPDATE returns 100 on close too
+        retcode = 0;
+    }
 
   if (retcode)
     TM->Rollback();
@@ -2493,7 +2538,8 @@ HSCursor::HSCursor(NAHeap *heap, const char* stmtName)
    colDesc_(NULL), numEntries_(0),
    ptrNAType_(NULL), dataBuf_(NULL), outputDataLen_(0),
    group_(NULL), boundaryRowSet_(NULL), rowset_fields_(NULL),
-   closeStmtNeeded_(FALSE), retcode_(0), heap_(heap)
+   closeStmtNeeded_(FALSE), retcode_(0), heap_(heap),
+   lastFetchReturned100_(FALSE)
 {
   static SQLMODULE_ID module;
   static NABoolean moduleSet = FALSE;
@@ -5817,6 +5863,45 @@ Lng32 printPlan(SQLSTMT_ID *stmt)
 
 #endif // NA_USTAT_USE_STATIC not defined
 
+// Use a query on the Explain virtual table to see if the plan for stmt uses
+// MDAM, and include this information in the ulog. This function is called
+// only if logging is turned on.
+Lng32 checkMdam(SQLSTMT_ID *stmt)
+{
+  Lng32 retcode = 0;
+  HSLogMan *LM = HSLogMan::Instance();
+
+  NAString stmtStr = "select cast(count(*) as int) from table(explain(null,'";
+  stmtStr.append((char*)stmt->identifier)
+         .append("')) where description like '%mdam%'");
+
+  HSCursor cursor(STMTHEAP, "HS_CLI_CHECK_MDAM");
+  retcode = cursor.prepareQuery(stmtStr.data(), 0, 1);
+  HSHandleError(retcode);
+  SQLSTMT_ID* stmtId = cursor.getStmt();
+  SQLDESC_ID* outputDesc = cursor.getOutDesc();
+  retcode = cursor.open();
+  HSHandleError(retcode);
+
+  Int32 rowCount = 0;
+  retcode = SQL_EXEC_Fetch(stmtId, outputDesc, 1, &rowCount, NULL);
+  if (retcode == 0)
+    {
+      if (rowCount > 0)
+        LM->Log("MDAM is used for this query.");
+      else
+        LM->Log("MDAM is NOT used for this query.");
+    }
+  else if (retcode == 100)
+    LM->Log("MDAM check query returned no rows.");
+  else
+    {
+      LM->Log("MDAM check query failed.");
+      HSLogError(retcode);
+    }
+
+  return retcode;
+}
 
 /***********************************************/
 /* METHOD:  getRowCountFromStats(Int64* )      */
@@ -6127,13 +6212,14 @@ Lng32 HSCursor::prepareQuery(const char *cliStr, Lng32 numParams, Lng32 numResul
 }
 
 //@ZXnew
-Lng32 HSCursor::open(Lng32 numParams)
+Lng32 HSCursor::open(Lng32 numParams, void * in01)
 {
   Lng32 retcode = SQL_EXEC_ClearDiagnostics(stmt_);
   HSHandleError(retcode);
-  retcode = SQL_EXEC_Exec(stmt_, inputDesc_, numParams);
+  retcode = SQL_EXEC_Exec(stmt_, inputDesc_, numParams, in01, NULL);
   HSHandleError(retcode);
   closeStmtNeeded_ = TRUE;
+  lastFetchReturned100_ = FALSE;
   return retcode;
 }
 
@@ -6149,7 +6235,7 @@ Lng32 HSCursor::fetch(Lng32 numResults,
                       void *  out22, void *  out23, void *  out24,
                       void *  out25)
 {
-  HS_ASSERT(numResults > 0 && out01 != NULL);
+  HS_ASSERT((numResults == 0) || (numResults > 0 && out01 != NULL));
   Lng32 retcode = SQL_EXEC_Fetch(stmt_, outputDesc_, numResults,
                                  out01, NULL, out02, NULL, out03, NULL,
                                  out04, NULL, out05, NULL, out06, NULL,
@@ -6160,6 +6246,29 @@ Lng32 HSCursor::fetch(Lng32 numResults,
                                  out19, NULL, out20, NULL, out21, NULL,
                                  out22, NULL, out23, NULL, out24, NULL,
                                  out25, NULL);
+  lastFetchReturned100_ = (retcode == 100);
+  return retcode;
+}
+
+Lng32 HSCursor::close()
+{
+  // This is done by the dtor ordinarily. However, if a cursor needs to
+  // be reused (e.g., different input parameters), we need to be able
+  // to close without destroying the object.
+
+  Lng32 retcode = 0;
+  if (closeStmtNeeded_)
+    {
+      if (lastFetchReturned100_)
+        {
+          // if the last fetch simply ran to the end of the cursor, reset
+          // the diags area so we don't return the 100 again on the close
+          SQL_EXEC_ClearDiagnostics(stmt_);
+        }
+      retcode = SQL_EXEC_CloseStmt(stmt_);
+      closeStmtNeeded_ = FALSE;  // always set to FALSE so we don't try again
+    }
+  lastFetchReturned100_ = FALSE;
   return retcode;
 }
 

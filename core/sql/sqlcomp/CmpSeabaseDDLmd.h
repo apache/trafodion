@@ -539,6 +539,27 @@ static const QString seabaseHistogramIntervalsDDL[] =
   {" ; "}
 };
 
+static const QString seabasePersistentSamplesDDL[] = 
+{
+  {" create table "HBASE_PERS_SAMP_NAME" "},
+  {" ( "},
+  {"   TABLE_UID LARGEINT NOT NULL NOT SERIALIZED, "},
+  {"   REQUESTED_SAMPLE_ROWS LARGEINT NOT NULL NOT SERIALIZED, "},
+  {"   ACTUAL_SAMPLE_ROWS LARGEINT NOT NULL NOT SERIALIZED, "},
+  {"   SAMPLING_RATIO DOUBLE PRECISION NOT NULL NOT SERIALIZED, "},
+  {"   CREATE_TIME TIMESTAMP(0) NOT NULL NOT SERIALIZED, "},
+  {"   REASON CHAR(1) CHARACTER SET UCS2 NOT NULL NOT SERIALIZED, "},
+  {"   SAMPLE_NAME VARCHAR(250) CHARACTER SET UCS2 NOT NULL NOT SERIALIZED, "},
+  {"   LAST_WHERE_PREDICATE VARCHAR(250) CHARACTER SET UCS2 NOT NULL  NOT SERIALIZED, "},
+  {"   UPDATE_START_TIME TIMESTAMP(0) NOT NULL  NOT SERIALIZED, "},
+  {"   UPDATER_INFO VARCHAR(128) CHARACTER SET ISO88591 NOT NULL  NOT SERIALIZED, "},
+  {"   V1 VARCHAR(250) CHARACTER SET UCS2 NOT NULL  NOT SERIALIZED, "},
+  {"   V2 VARCHAR(250) CHARACTER SET UCS2 NOT NULL  NOT SERIALIZED, "},
+  {"   constraint "HBASE_PERS_SAMP_PK" primary key (TABLE_UID) "},
+  {" ) "},
+  {" ; "}
+};
+
 struct MDTableInfo
 {
   // name of the new MD table.
@@ -646,6 +667,10 @@ static const MDTableInfo allMDHistInfo[] = {
 
   {HBASE_HISTINT_NAME,
    seabaseHistogramIntervalsDDL, sizeof(seabaseHistogramIntervalsDDL),
+   NULL, 0, FALSE},
+
+  {HBASE_PERS_SAMP_NAME,
+   seabasePersistentSamplesDDL, sizeof(seabasePersistentSamplesDDL),
    NULL, 0, FALSE}
 };
 

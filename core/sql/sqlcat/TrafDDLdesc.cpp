@@ -396,6 +396,7 @@ Long TrafIndexesDesc::pack(void * space)
 {
   tablename = (tablename ? (char*)(((Space*)space)->convertToOffset(tablename)) : NULL);
   indexname = (indexname ? (char*)(((Space*)space)->convertToOffset(indexname)) : NULL);
+  hbaseSplitClause = (hbaseSplitClause ? (char*)(((Space*)space)->convertToOffset(hbaseSplitClause)) : NULL);
   hbaseCreateOptions = (hbaseCreateOptions ? (char*)(((Space*)space)->convertToOffset(hbaseCreateOptions)) : NULL);
 
   files_desc.pack(space);
@@ -409,6 +410,7 @@ Lng32 TrafIndexesDesc::unpack(void * base, void * reallocator)
 {
   tablename = (tablename ? (char*)((char*)base - (Long)tablename) : NULL);
   indexname = (indexname ? (char*)((char*)base - (Long)indexname) : NULL);
+  hbaseSplitClause = (hbaseSplitClause ? (char*)((char*)base - (Long)hbaseSplitClause) : NULL);
   hbaseCreateOptions = (hbaseCreateOptions ? (char*)((char*)base - (Long)hbaseCreateOptions) : NULL);
 
   if (files_desc.unpack(base, reallocator)) return -1;

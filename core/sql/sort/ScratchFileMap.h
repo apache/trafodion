@@ -76,7 +76,7 @@ class ScratchFileMap : public NABasicObject {
      ~ScratchFileMap();
      void setBreakEnabled (NABoolean flag) { breakEnabled_ = flag; };
      void closeFiles(ScratchFile* keepFile = NULL);
-     ScratchFile* createNewScrFile(char* volname,
+     ScratchFile* createNewScrFile(
                           ScratchSpace *scratchSpace,
                           Int32 scratchMgmtOption,
                           Int32 scratchMaxOpens,

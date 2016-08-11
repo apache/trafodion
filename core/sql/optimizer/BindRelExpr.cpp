@@ -1315,6 +1315,11 @@ TrafDesc *generateSpecialDesc(const CorrName& corrName)
           ExeUtilRegionStats eudss;
           desc = eudss.createVirtualTableDesc();
         }
+      else if (corrName.getQualifiedNameObj().getObjectName() == ExeUtilRegionStats::getVirtualTableClusterViewNameStr())
+        {
+          ExeUtilRegionStats eudss(TRUE);
+          desc = eudss.createVirtualTableDesc();
+        }
     }
 
   return desc;
@@ -1324,22 +1329,6 @@ TrafDesc *generateSpecialDesc(const CorrName& corrName)
 // -----------------------------------------------------------------------
 // member functions for class BindWA
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START - cnu
-/*
-static NABoolean checkForReservedObjectName(QualifiedName &inName)
-{
-  if ((inName.getCatalogName() == "NEO") &&
-      (inName.getSchemaName() == "PUBLIC_ACCESS_SCHEMA") &&
-      (inName.getObjectName() == "_MAINTAIN_CONTROL_INFO_"))
-    {
-      return TRUE;
-    }
-
-  return FALSE;
-}
-*/
-
-// LCOV_EXCL_STOP
 
 NARoutine *BindWA::getNARoutine ( const QualifiedName &name )
 {
@@ -3032,6 +3021,98 @@ RelExpr *Intersect::bindNode(BindWA *bindWA)
 
   return join;
 } // Intersect::bindNode()
+// LCOV_EXCL_STOP
+
+// -----------------------------------------------------------------------
+// member functions for class Except 
+// -----------------------------------------------------------------------
+
+// LCOV_EXCL_START - cnu
+RelExpr *Except::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound())
+  {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  // Bind the child nodes.
+  //
+  bindChildren(bindWA);
+  if (bindWA->errStatus()) return this;
+
+  // Check that there are an equal number of select items on both sides.
+  //
+  const RETDesc &leftTable = *child(0)->getRETDesc();
+  const RETDesc &rightTable = *child(1)->getRETDesc();
+  if (leftTable.getDegree() != rightTable.getDegree()) {
+    // 4014 The operands of an intersect must be of equal degree.
+    *CmpCommon::diags() << DgSqlCode(-4014);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  // Join the columns of both sides. 
+  //
+  if(CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON)
+  {
+    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
+        << DgString0("EXCEPT");             // ##
+    bindWA->setErrStatus();                    // ##
+    if (bindWA->errStatus()) return NULL;      // ##
+  }
+  //
+  ItemExpr *predicate = intersectColumns(leftTable, rightTable, bindWA);
+  RelExpr *join = new (bindWA->wHeap())
+    Join(child(0)->castToRelExpr(),
+         child(1)->castToRelExpr(),
+         REL_ANTI_SEMIJOIN,
+         predicate);
+
+  // Bind the join.
+  //
+  join = join->bindNode(bindWA)->castToRelExpr();
+  if (bindWA->errStatus()) return join;
+
+  // Change the output of the join to just the left side.
+  //
+  delete join->getRETDesc();
+  join->setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA, leftTable));
+  bindWA->getCurrentScope()->setRETDesc(join->getRETDesc());
+
+  // QSTUFF
+  NAString fmtdList1(bindWA->wHeap());
+  LIST(TableNameMap*) xtnmList1(bindWA->wHeap());
+  NAString fmtdList2(bindWA->wHeap());
+  LIST(TableNameMap*) xtnmList2(bindWA->wHeap());
+
+  leftTable.getTableList(xtnmList1, &fmtdList1);
+  rightTable.getTableList(xtnmList2, &fmtdList2);
+
+  if (child(0)->getGroupAttr()->isStream() &&
+      child(1)->getGroupAttr()->isStream()){
+    *CmpCommon::diags() << DgSqlCode(-4159)
+                << DgString0(fmtdList1) << DgString1(fmtdList2);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  // Needs to be removed when supporting get_next for INTERSECT
+  if (getGroupAttr()->isEmbeddedUpdateOrDelete()) {
+    *CmpCommon::diags() << DgSqlCode(-4160)
+                << DgString0(fmtdList1)
+                << DgString1(fmtdList2)
+                << (child(0)->getGroupAttr()->isEmbeddedUpdate() ?
+                             DgString2("UPDATE"):DgString2("DELETE"))
+                << (child(1)->getGroupAttr()->isEmbeddedUpdate() ?
+                             DgString3("UPDATE"):DgString3("DELETE"));
+    bindWA->setErrStatus();
+    return this;
+  }
+  // QSTUFF
+
+  return join;
+} // Excpet::bindNode()
 // LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
@@ -7582,6 +7663,24 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
         }
     }
 
+   if (naTable->isHiveTable() && 
+       !(naTable->getClusteringIndex()->getHHDFSTableStats()->isOrcFile() ||
+	 naTable->getClusteringIndex()->getHHDFSTableStats()
+	 ->isSequenceFile()) &&
+       (CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE_BYTES) == 0) && 
+       (naTable->getRecordLength() >
+	CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE)*1024))
+     {
+       // do not raise error if buffersize is set though buffersize_bytes.
+       // Typically this setting is used for testing alone.
+       *CmpCommon::diags() << DgSqlCode(-4226)
+			   << DgTableName(
+					  naTable->getTableName().
+					  getQualifiedNameAsAnsiString())
+			   << DgInt0(naTable->getRecordLength());
+       bindWA->setErrStatus();
+       return NULL;
+     }
   // Bind the base class.
   //
   RelExpr *boundExpr = bindSelf(bindWA);

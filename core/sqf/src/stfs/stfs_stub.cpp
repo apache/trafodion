@@ -96,7 +96,7 @@ namespace STFS_stub {
   short unlink_                    = 1;
   bool  unlinkEnvChecked_          = false;
 
-  char stfsLocation_[STFS_PATH_MAX - STFS_SUFFIX + 1];
+  char stfsLocation_[STFS_PATH_MAX - STFS_SUFFIX + 1]="";
   bool locationEnvChecked_         = false;
 
   const short MAX_STFS_LOCATIONS   = 32;
@@ -115,6 +115,7 @@ namespace STFS_stub {
   } stfs_directories;
 
   stfs_directories stfsDirsHDD_, stfsDirsSSD_;
+  char scratchCQDLocationString_[MAX_STFS_LOCATIONS*STFS_PATH_MAX - STFS_SUFFIX+1]="";
 
 }
 
@@ -140,29 +141,32 @@ void STFS_checkTrace()
     STFS_stub::traceLevel_ = lv_EnvTraceLevel;
   }
 
-  if (! trace_get_fd()) { // check if there is already a trace file 
+  if (! trace_get_fd()) 
+   { // check if there is already a trace file 
 
     char *lp_TraceFileName = getenv("STFS_TRACE_FILE");
     char lv_TraceFileName[512];
 
-    if (lp_TraceFileName && lp_TraceFileName[0]) {
-      memset(lv_TraceFileName,
+    if (lp_TraceFileName && lp_TraceFileName[0]) 
+      {
+        memset(lv_TraceFileName,
 	     0,
 	     sizeof(lv_TraceFileName));
-      strncpy(lv_TraceFileName,
+        strncpy(lv_TraceFileName,
 	      lp_TraceFileName,
 	      sizeof(lv_TraceFileName) - 1);
-    }
-    else {
+      }
+    else 
+      {
       strcpy(lv_TraceFileName,
 	     "stfs_trace");
-    }
+      }
 
     trace_init(lv_TraceFileName,
 	       true, 
 	       (char *) "stfs", 
 	       false);
-  }
+   }
 }
 
 /// \brief Checks for the Unlink Flag
@@ -328,63 +332,69 @@ copySTFSLocation(int pv_instnum)
 {
 
   //Directory locations not specified 
-  if ((STFS_stub::stfsDirsHDD_.numLocations <= 0) && (STFS_stub::overflowType_ == STFS_HDD)) {
+  if ((STFS_stub::stfsDirsHDD_.numLocations <= 0) && (STFS_stub::overflowType_ == STFS_HDD)) 
     return;
-  }
-  if ((STFS_stub::stfsDirsSSD_.numLocations <= 0) && (STFS_stub::overflowType_ == STFS_SSD)) {
+  
+  if ((STFS_stub::stfsDirsSSD_.numLocations <= 0) && (STFS_stub::overflowType_ == STFS_SSD)) 
     return;
-  }
+  
 
 
-  if(STFS_stub::overflowType_ == STFS_HDD) {
-    copyLocationHelper(STFS_stub::stfsDirsHDD_, pv_instnum);
-  }
-  else if(STFS_stub::overflowType_ == STFS_SSD) {
+  if(STFS_stub::overflowType_ == STFS_HDD) 
+    copyLocationHelper(STFS_stub::stfsDirsHDD_, pv_instnum);  
+  else if(STFS_stub::overflowType_ == STFS_SSD) 
     copyLocationHelper(STFS_stub::stfsDirsSSD_, pv_instnum);
-  }
+  
 
-  if (STFS_stub::stfsLocation_[strlen(STFS_stub::stfsLocation_) - 1] != '/') {
+  if (STFS_stub::stfsLocation_[strlen(STFS_stub::stfsLocation_) - 1] != '/') 
     strcat(STFS_stub::stfsLocation_, "/");
-  }
-
+  
 }
 
+/// \brief Sets the scratchdisks as specified in the CQD SCRATCH_DISKS 
+///        and avoids looking at envvar
+void STFS_set_scratch_dirs(char *pv_scratchloc) 
+{
+   memset(STFS_stub::scratchCQDLocationString_, 0, sizeof(STFS_stub::scratchCQDLocationString_));
+  strcpy((char *)STFS_stub::scratchCQDLocationString_,pv_scratchloc);
+}
 /// \brief Checks for the Location Env Variable 
 ///        and processes it
 void STFS_checkLocation(int pv_instnum) 
 {
+  char *lp_HDDEnvLocation = getenv("STFS_HDD_LOCATION");
+  char *lp_SSDEnvLocation = getenv("STFS_SSD_LOCATION");
   if (STFS_stub::locationEnvChecked_) {
     copySTFSLocation(pv_instnum);
     return;
   }
-
-  char *lp_HDDEnvLocation = getenv("STFS_HDD_LOCATION");
-  char *lp_SSDEnvLocation = getenv("STFS_SSD_LOCATION");
-  char *lp_EnvLocation    = getenv("STFS_LOCATION");
-
+  if ((strlen(STFS_stub::scratchCQDLocationString_)>0) && (STFS_stub::overflowType_ == STFS_HDD)) 
+    {
+      lp_HDDEnvLocation = (char *)STFS_stub::scratchCQDLocationString_;
+    }
+  else if  ((strlen(STFS_stub::scratchCQDLocationString_)>0) && (STFS_stub::overflowType_ == STFS_SSD))
+    {
+      lp_SSDEnvLocation = (char *)STFS_stub::scratchCQDLocationString_;
+    }
+ 
   STFS_stub::locationEnvChecked_ = true;
 
   memset(STFS_stub::stfsLocation_, 0, sizeof(STFS_stub::stfsLocation_));
 
-  if (!lp_HDDEnvLocation) {
-    if (!lp_EnvLocation) {
+  if (!lp_HDDEnvLocation) 
+    if (!lp_SSDEnvLocation) 
       return;
-    }
-    //No HDD directory specified in configuration, use old location 
-    extractLocations(lp_EnvLocation, STFS_HDD);
+    
+    
 
     if(lp_SSDEnvLocation) {
       extractLocations(lp_SSDEnvLocation, STFS_SSD);
     }
-  }
   else {
     if(lp_HDDEnvLocation) {
       extractLocations(lp_HDDEnvLocation, STFS_HDD);
     }
 
-    if(lp_SSDEnvLocation) {
-      extractLocations(lp_SSDEnvLocation, STFS_SSD);
-    }
   }
   
   copySTFSLocation(pv_instnum);
@@ -652,7 +662,7 @@ int STFS_set_overflow(const int pv_overflowtype) {
 
    //Check that specified overflow type is valid
    if(pv_overflowtype == STFS_HDD) {       
-     char *lp_HDDEnvLocation = getenv("STFS_LOCATION");
+     char *lp_HDDEnvLocation = getenv("STFS_HDD_LOCATION");
      if(lp_HDDEnvLocation) {
        STFS_stub::overflowType_ = STFS_HDD;
        return 0;

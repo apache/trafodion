@@ -20,15 +20,17 @@
 #
 # @@@ END COPYRIGHT @@@
 
-# Like the pattern-masking of QACOMP, here we filter out such stuff as
-# transaction id.  Called by the runregr script before doing diff.
+# The names of sample tables are generated from non-deterministic
+# criteria; we filter that out.
 
 fil=$1
+if [ "$fil" = "" ]; then
+  echo "Usage: $0 filename"
+  exit 1
+fi
+
 sed "
-s/^\([ ]*RegionServer:[ ]*[\.]*\) .*/\1 RegionServer removed/g
-s/^\([ ]*RegionName:[ ]*[\.]*\) .*/\1 RegionName removed/g
-#s/\(RegionName:[ ]*TRAFODION.[A-Z0-9._]*\/\)[A-Za-z0-9]*/\1REGION-NAME/g
-s/TRAFODION\.T002SCH\.T002[A-Z0-9]*\/[A-Za-z0-9]*/REGION_NAME /g
-s/ReadRequestsCount: [ ]*[0-9]*/READ_REQUESTS_COUNT /g
-s/WriteRequestsCount: [ ]*[0-9]*/WRITE_REQUESTS_COUNT /g
+s/TRAF_SAMPLE_[0-9]*_[0-9]*_[0-9]*/TRAF_SAMPLE_nn_nnnnnnnnnn_nnnnnn/g
+s/E_[0-9]*_[0-9]*_[0-9]* WHERE/E_nn_nnnnnnnnnn_nnnnnn WHERE/g
 " $fil
+

@@ -106,6 +106,15 @@ public class HBaseClient {
 
     private PoolMap<String, HTableClient> hTableClientsFree;
     private PoolMap<String, HTableClient> hTableClientsInUse;
+
+    // variables used for getRegionStats() and getClusterStats()
+    private int regionStatsEntries = 0;
+    private int clusterStatsState = 1;
+    private TrafRegionStats rsc;
+    private byte[][] regionInfo = null;
+    private int currRegion = 0;
+    private static final int MAX_REGION_INFO_ROWS = 100;
+
     // this set of constants MUST be kept in sync with the C++ enum in
     // ExpHbaseDefs.h
     public static final int HBASE_NAME = 0;
@@ -733,12 +742,109 @@ public class HBaseClient {
             return hbaseTables;
     }
 
+    public byte[][]  getClusterStats() 
+             throws MasterNotRunningException, IOException {
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.getClusterStats called.");
+
+            while (true) {
+                switch (clusterStatsState) {
+                case 1: // open
+                    {
+                        rsc = new TrafRegionStats();
+                        rsc.Open();
+
+                        regionInfo = new byte[MAX_REGION_INFO_ROWS][];
+
+                        currRegion = 0;
+
+                        clusterStatsState = 2;
+                    }
+                    break;
+                    
+                case 3: // close
+                    {
+                        rsc.Close();
+                        
+                        clusterStatsState = 1;
+
+                        return null;
+                    }
+                    
+                case 2: // fetch
+                    {
+                        if (currRegion >= MAX_REGION_INFO_ROWS) {
+
+                            regionStatsEntries = currRegion;
+
+                            currRegion = 0;
+                            return regionInfo;
+                        }
+                            
+                        if (! rsc.GetNextRegion()) {
+                            if (currRegion > 0) {
+                                clusterStatsState = 3;
+
+                                regionStatsEntries = currRegion;
+
+                                currRegion = 0;
+                                return Arrays.copyOf(regionInfo, regionStatsEntries);
+                            }
+
+                            clusterStatsState = 3;
+                            break;
+                        }
+                     
+                        SizeInfo regionSizeInfo  = rsc.getCurrRegionSizeInfo();
+
+                        String serverName = regionSizeInfo.serverName;
+                        String regionName = regionSizeInfo.regionName;
+                        String tableName  = regionSizeInfo.tableName;
+                        
+                        int  numStores           = regionSizeInfo.numStores;
+                        int  numStoreFiles       = regionSizeInfo.numStoreFiles;
+                        Long storeUncompSize     = regionSizeInfo.storeUncompSize;
+                        Long storeFileSize       = regionSizeInfo.storeFileSize;
+                        Long memStoreSize        = regionSizeInfo.memStoreSize;
+                        Long readRequestsCount   = regionSizeInfo.readRequestsCount;
+                        Long writeRequestsCount   = regionSizeInfo.writeRequestsCount;
+                        
+                        String oneRegion = "";
+                        oneRegion += serverName + "|";
+                        oneRegion += regionName + "|";
+                        oneRegion += tableName  + "|";
+                        oneRegion += String.valueOf(numStores) + "|";
+                        oneRegion += String.valueOf(numStoreFiles) + "|";
+                        oneRegion += String.valueOf(storeUncompSize) + "|";
+                        oneRegion += String.valueOf(storeFileSize) + "|";
+                        oneRegion += String.valueOf(memStoreSize) + "|";
+                        oneRegion += String.valueOf(readRequestsCount) + "|";
+                        oneRegion += String.valueOf(writeRequestsCount) + "|";
+                        
+                        regionInfo[currRegion++] = oneRegion.getBytes();
+
+                    }
+
+                } // switch
+            }
+
+    }
+
+    // number of regionInfo entries returned by getRegionStats.
+    public int getRegionStatsEntries() {
+ 
+        return regionStatsEntries;
+    }
 
     public byte[][]  getRegionStats(String tableName) 
              throws MasterNotRunningException, IOException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.getRegionStats(" + tableName + ") called.");
 
             Admin admin = getConnection().getAdmin();
+            if (tableName == null) //tableName.isEmpty())
+                return getClusterStats();
+
+            //            HBaseAdmin admin = new HBaseAdmin(config);
+
             HTable htbl = new HTable(config, tableName);
             HRegionInfo hregInfo = null;
             byte[][] regionInfo = null;
@@ -748,27 +854,31 @@ public class HBaseClient {
                 NavigableMap<HRegionInfo, ServerName> locations
                     = htbl.getRegionLocations();
                 regionInfo = new byte[locations.size()][]; 
-                int i = 0; 
+                regionStatsEntries = 0; 
  
                 for (Map.Entry<HRegionInfo, ServerName> entry: 
                          locations.entrySet()) {
                 
                     hregInfo = entry.getKey();                    
-                    byte[] regionName = hregInfo.getRegionName();
+                    ServerName serverName = entry.getValue();
+                     byte[] regionName = hregInfo.getRegionName();
                     String encodedRegionName = hregInfo.getEncodedName();
                     String ppRegionName = HRegionInfo.prettyPrint(encodedRegionName);
-                    SizeInfo regionSizeInfo = rsc.getRegionSizeInfo(regionName);
+                    SizeInfo regionSizeInfo  = rsc.getRegionSizeInfo(regionName);
+                    String serverNameStr     = regionSizeInfo.serverName;
                     int  numStores           = regionSizeInfo.numStores;
                     int  numStoreFiles       = regionSizeInfo.numStoreFiles;
                     Long storeUncompSize     = regionSizeInfo.storeUncompSize;
                     Long storeFileSize       = regionSizeInfo.storeFileSize;
                     Long memStoreSize        = regionSizeInfo.memStoreSize;
                     Long readRequestsCount   = regionSizeInfo.readRequestsCount;
-                    Long writeRequestsCount   = regionSizeInfo.writeRequestsCount;
+                    Long writeRequestsCount  = regionSizeInfo.writeRequestsCount;
 
+                    String ppTableName = regionSizeInfo.tableName;
+                    ppRegionName = regionSizeInfo.regionName;
                     String oneRegion;
-                    //                    oneRegion  = "/hbase/data/hbase/default/" + tableName + "/" + ppRegionName + "|";
-                    oneRegion  = tableName + "/" + ppRegionName + "|";
+                    oneRegion = serverNameStr + "|";
+                    oneRegion += ppTableName + "/" + ppRegionName + "|";
                     oneRegion += String.valueOf(numStores) + "|";
                     oneRegion += String.valueOf(numStoreFiles) + "|";
                     oneRegion += String.valueOf(storeUncompSize) + "|";
@@ -777,7 +887,7 @@ public class HBaseClient {
                     oneRegion += String.valueOf(readRequestsCount) + "|";
                     oneRegion += String.valueOf(writeRequestsCount) + "|";
                     
-                    regionInfo[i++] = oneRegion.getBytes();
+                    regionInfo[regionStatsEntries++] = oneRegion.getBytes();
 
                 }
             }

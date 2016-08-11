@@ -952,6 +952,18 @@ NABoolean HSHiveTableDef::objExists(NABoolean createExternalTable)
   return TRUE;
 }
 
+NAString HSHiveTableDef::getNodeName() const
+  {
+    HS_ASSERT(FALSE);  // MP only
+    return "";
+  }
+
+NAString HSHiveTableDef::getCatalogLoc(formatType format) const
+  {
+    HS_ASSERT(FALSE);  // MP only
+    return "";
+  }
+
 NAString HSHiveTableDef::getHistLoc(formatType format) const
 {
   return HIVE_STATS_CATALOG "." HIVE_STATS_SCHEMA;
@@ -1020,6 +1032,18 @@ Lng32 HSHiveTableDef::DescribeColumnNames()
 
 //=====================================================
 //
+NAString HSHbaseTableDef::getNodeName() const
+  {
+    HS_ASSERT(FALSE);  // MP only
+    return "";
+  }
+
+NAString HSHbaseTableDef::getCatalogLoc(formatType format) const
+  {
+    HS_ASSERT(FALSE);  // MP only
+    return "";
+  }
+
 NAString HSHbaseTableDef::getHistLoc(formatType format) const
 {
   if ( HSGlobalsClass::isNativeHbaseCat(getCatName(format))) {

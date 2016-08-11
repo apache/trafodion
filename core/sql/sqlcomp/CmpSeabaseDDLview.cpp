@@ -264,9 +264,6 @@ short CmpSeabaseDDL::buildViewTblColUsage(const StmtDDLCreateView * createViewPa
      const ParViewColTableColsUsage &vctcu = vctcul[i];
      int32_t usingColNum = vctcu.getUsingViewColumnNumber();
 
-     // Get column name for view
-     //const ComTdbVirtTableColumnInfo * colInfo = &colInfoArray[usingColNum];
-
      // Get column number for referenced table
      const ColRefName &usedColRef = vctcu.getUsedObjectColumnName();
      ComObjectName usedObjName;
@@ -998,6 +995,8 @@ void CmpSeabaseDDL::createSeabaseView(
       return;
     }
 
+  // Views that contain UNION clauses do not have col usages available so 
+  // viewColUsageText could be null - see TRAFODION-2153
   if (!viewColUsageText.isNull())
     {
       if (updateTextTable(&cliInterface, objUID, COM_VIEW_REF_COLS_TEXT, 0, viewColUsageText))

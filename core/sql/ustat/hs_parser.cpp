@@ -462,15 +462,19 @@ Lng32 AddTableName( const hs_table_type type
 
         *hs_globals->hsintval_table = getHistogramsTableLocation(hs_globals->catSch->data(), FALSE);
 
+        *hs_globals->hsperssamp_table = getHistogramsTableLocation(hs_globals->catSch->data(), FALSE);
+
         NABoolean isHbaseOrHive = HSGlobalsClass::isHbaseCat(catName) ||
                                   HSGlobalsClass::isHiveCat(catName);
 
         if (isHbaseOrHive) {
           hs_globals->hstogram_table->append(".").append(HBASE_HIST_NAME);
           hs_globals->hsintval_table->append(".").append(HBASE_HISTINT_NAME);
+          hs_globals->hsperssamp_table->append(".").append(HBASE_PERS_SAMP_NAME);
         } else {
           hs_globals->hstogram_table->append(".HISTOGRAMS");
           hs_globals->hsintval_table->append(".HISTOGRAM_INTERVALS");
+          hs_globals->hsperssamp_table->append(".PERSISTENT_SAMPLES");
         }
       }
     else
