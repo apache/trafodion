@@ -140,16 +140,18 @@ source $TRAF_CONFIG
 
 for node in $NEW_NODES
 do
-  NODE_LIST="$NODE_LIST $node"
-  MY_NODES="$MY_NODES -w $node"
-  ALL_NODE_LIST="$ALL_NODE_LIST $node"
-  ALL_NODES="$ALL_NODES -w $node"
-  HADOOP_NODES="$HADOOP_NODES $node"
-  MY_HADOOP_NODES="$MY_HADOOP_NODES -w $node"
-  HDFS_NODES="$HDFS_NODES $node"
-  MY_HDFS_NODES="$MY_HDFS_NODES -w $node"
-  HBASE_NODES="$HBASE_NODES $node"
-  MY_HBASE_NODES="$MY_HBASE_NODES -w $node"
+  if [[ ! $NODE_LIST  =~ .*$node.* ]]; then
+     NODE_LIST="$NODE_LIST $node"
+     MY_NODES="$MY_NODES -w $node"
+     ALL_NODE_LIST="$ALL_NODE_LIST $node"
+     ALL_NODES="$ALL_NODES -w $node"
+     HADOOP_NODES="$HADOOP_NODES $node"
+     MY_HADOOP_NODES="$MY_HADOOP_NODES -w $node"
+     HDFS_NODES="$HDFS_NODES $node"
+     MY_HDFS_NODES="$MY_HDFS_NODES -w $node"
+     HBASE_NODES="$HBASE_NODES $node"
+     MY_HBASE_NODES="$MY_HBASE_NODES -w $node"
+  fi
 done
 
 hadoop_node_count=$(echo $HADOOP_NODES | wc -w)
