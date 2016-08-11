@@ -13135,7 +13135,7 @@ static int Otcol(int eid, SQLHDBC *Ocn)
                             str[j]= '\0';
                         }
                     } else {
-                        if ( isspace((int)str[j]))
+                        if ( isspace((int)str[j]) || str[j]=='#' )
                             str[j] = '\0';
                     }
                 }
