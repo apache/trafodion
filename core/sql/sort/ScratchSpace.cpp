@@ -119,12 +119,8 @@ scratchMgmtOption_(scratchMgmtOption)
     ex_assert(scrFilesMap_ != NULL, "ScratchSpace::ScratchSpace, scrFilesMap_ is NULL");
     totalNumOfScrBlocks_ = 1L;
     totalIoWaitTime_     = 0;
-    scratchDiskListSpec_ = NULL;
-    numDisksSpec_ = 0;
-    scratchDiskListPref_ = NULL;
-    numDisksPref_ = 0;
-    scratchDiskListExcl_ = NULL;
-    numDisksExcl_ = 0;
+    scratchDirListSpec_ = NULL;
+    numDirsSpec_ = 0;
     numEsps_ = 0;
     espInstance_ = 0;
     logInfoEvent_ = logInfoEvent;
@@ -208,26 +204,10 @@ void ScratchSpace::setCallingTcb(ex_tcb *tcb)
 RESULT ScratchSpace::CreateANewScrFileAndWrite(char *buffer, Int32 blockNum, UInt32 blockLen, NABoolean waited)
 {
     RESULT retval = SCRATCH_SUCCESS;
-    char *temp;
-    char volname[2 * 9];
-    Int64 iowaittime = 0;
-    if (diskPool_ == NULL)
-    {
-        if (generateDiskTable(sortError_) != SCRATCH_SUCCESS)
-          return SCRATCH_FAILURE;
-    }
-    if (diskPool_ == NULL)
-     return SCRATCH_FAILURE;
- 
-    if ( diskPool_->returnBestDisk(&temp,espInstance_,numEsps_,scratchThreshold_) ) 
-        { return SCRATCH_FAILURE; }
     
-
-    // VO: On NSK, the disk name returned by returnBestDisk is from the local node
-    //     because the call to generateDiskTable only asked for disks from the
-    //     local node. The code below must qualify its name with the name of the
-    //     local node. On NT, don't bother.
-    strcpy(volname, temp);
+   
+    Int64 iowaittime = 0;
+   
     // Before creating the new scratch file, make sure if there are any
     // pending IOs on the current scratch file. If there is, then create 
     // preserve the scratch file pointer in previousWriteScrFile_ so that IOs
@@ -258,7 +238,7 @@ RESULT ScratchSpace::CreateANewScrFileAndWrite(char *buffer, Int32 blockNum, UIn
     ScratchFile *tempRefScrFile = currentWriteScrFile_;
 
     currentIOScrFile_ = currentWriteScrFile_ 
-        = scrFilesMap_->createNewScrFile(volname,
+        = scrFilesMap_->createNewScrFile(
                                 this,
                                 scratchMgmtOption_,
                                 scratchMaxOpens_,
@@ -1021,13 +1001,9 @@ NABoolean ScratchSpace:: generateDiskTable(SortError *sorterror)
     diskPool_->setScratchSpace(this);
     char diskPattern[8]; 
     strcpy(diskPattern, "*");
-    retvalue = diskPool_->generateDiskTable(scratchDiskListSpec_,
-        numDisksSpec_,
-        scratchDiskListPref_,
-        numDisksPref_,
-        scratchDiskListExcl_,
-        numDisksExcl_
-        ,diskPattern) ;
+    retvalue = diskPool_->generateDiskTable(scratchDirListSpec_,
+                                            numDirsSpec_,
+        diskPattern) ;
     
     if (retvalue != SORT_SUCCESS)
     {
@@ -1068,12 +1044,9 @@ void ScratchSpace::configure(const ExExeStmtGlobals* stmtGlobals,
     const ExScratchFileOptions* sfo = stmtGlobals->getScratchFileOptions();
     if (sfo)
     {
-      this->setScratchDiskListSpec(sfo->getSpecifiedScratchDisks());
-      this->setNumDisksSpec(sfo->getNumSpecifiedDisks());
-      this->setScratchDiskListExcl(sfo->getExcludedScratchDisks());
-      this->setNumDisksExcl(sfo->getNumExcludedDisks());
-      this->setScratchDiskListPref(sfo->getPreferredScratchDisks());
-      this->setNumDisksPref(sfo->getNumPreferredDisks());
+      this->setScratchDirListSpec(sfo->getSpecifiedScratchDirs());
+      this->setNumDirsSpec(sfo->getNumSpecifiedDirs());
+     
     }
   }
 

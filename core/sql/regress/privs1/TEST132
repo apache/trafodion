@@ -51,7 +51,7 @@ exit;
 ?section clean_up
 set schema t132sch;
 drop sequence t132_team_number_sequence;
-drop schema t132sch cascade;
+cleanup schema t132sch;
 
 ?section set_up
 create shared schema t132sch;

@@ -954,7 +954,9 @@ Lng32 str_decode(void *tgt, Lng32 tgtMaxLen, const char *src, Lng32 srcLen)
 
   Lng32 length = str_decoded_len(srcLen);
 
-  assert(tgtMaxLen >= length);
+  //  assert(tgtMaxLen >= length);
+  if (NOT (tgtMaxLen >= length))
+    return -1;
 
   Lng32 srcix = 0;
   Lng32 tgtix = 0;
@@ -964,29 +966,30 @@ Lng32 str_decode(void *tgt, Lng32 tgtMaxLen, const char *src, Lng32 srcLen)
   while (srcix+1 < srcLen)
     {
       // first byte comes from 6 bits of first char and 2 bits of second char
-      assert(src1[srcix]-minChar < 64 && src1[srcix+1]-minChar < 64);
-#pragma nowarn(1506)   // warning elimination
+      if (NOT (src1[srcix]-minChar < 64 && src1[srcix+1]-minChar < 64))
+        return -1;
+
+      //      assert(src1[srcix]-minChar < 64 && src1[srcix+1]-minChar < 64);
       target[tgtix]  = (src1[srcix]-minChar) << 2;
-#pragma warn(1506)  // warning elimination
       target[tgtix] |= (src1[srcix+1]-minChar) >> 4;
 
       if (srcix+2 < srcLen)
 	{
           // second byte gets 4 bits from second and 4 bits from third char
-          assert(src1[srcix+2]-minChar < 64);
-#pragma nowarn(1506)   // warning elimination
+          if (NOT (src1[srcix+2]-minChar < 64))
+            return -1;
+          //          assert(src1[srcix+2]-minChar < 64);
           target[tgtix+1]  = ((src1[srcix+1]-minChar) & 0xf) << 4;
-#pragma warn(1506)  // warning elimination
 	  target[tgtix+1] |= (src1[srcix+2]-minChar) >> 2;
 	}
 
       if (srcix+3 < srcLen)
 	{
 	  // third byte gets 2 bits from third and 6 bits from fourth char
-          assert(src1[srcix+3]-minChar < 64);
-#pragma nowarn(1506)   // warning elimination
+          if (NOT (src1[srcix+3]-minChar < 64))
+            return -1;
+          //          assert(src1[srcix+3]-minChar < 64);
           target[tgtix+2]  = ((src1[srcix+2]-minChar) & 0x3) << 6;
-#pragma warn(1506)  // warning elimination
 	  target[tgtix+2] |= ((src1[srcix+3]-minChar) & 0x3f);
 	}
 

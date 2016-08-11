@@ -925,7 +925,6 @@ RelExpr *RelSample::bindNode(BindWA *bindWA)
   RelExpr* myChild = child(0);
   if (myChild->getOperatorType() == REL_SCAN &&
       (static_cast<Scan*>(myChild))->isHbaseTable() &&
-      myChild->selectionPred().entries() == 0 &&
       isSimpleRandomRelative() &&
       trafSampleRate <= 1.0f)
     {

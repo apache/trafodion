@@ -37,6 +37,8 @@
  *****************************************************************************
  */
 
+#include "hs_log.h"
+
 #define NANewArray        NewArray
 
 // -----------------------------------------------------------------------
@@ -55,7 +57,7 @@ public:
     : ptr_(source)
     {
       source = new(STMTHEAP) T[len];
-      assert(source != NULL);
+      HS_ASSERT(source != NULL);
     }
 
   ~NewArray()

@@ -68,28 +68,17 @@ class ExScratchDiskDrive
 public:
 
   ExScratchDiskDrive(
-       char  *diskName = NULL,
-       Lng32 diskNameLen = 0,
-       Int32 nodeNumber = IPC_CPU_DONT_CARE,
-       Int32 clusterNumber = RES_LOCAL_CLUSTER,
-       char *clusterName = NULL,
-       Lng32 clusterNameLen = 0) : diskName_(diskName),
-	 diskNameLength_(diskNameLen), nodeNumber_(nodeNumber),
-	 clusterNumber_(clusterNumber), clusterName_(clusterName),
-         clusterNameLength_(clusterNameLen) {}
+       char  *dirName = NULL,
+       Lng32 dirNameLen = 0)
+       : dirName_(dirName),
+	 dirNameLength_(dirNameLen)
+	 {}
 
-  inline Int32 getClusterNumber() const         { return clusterNumber_; }
-  inline const char * getClusterName() const      { return clusterName_; }
-  inline Int32 getClusterNameLength() const { return clusterNameLength_; }
-  inline Int32 getNodeNumber() const               { return nodeNumber_; }
-  inline const char * getDiskName() const            { return diskName_; }
-  inline Int32 getDiskNameLength() const       { return diskNameLength_; }
-  inline void setClusterNumber(Int32 s)            { clusterNumber_ = s; }
-  inline void setClusterName(const char * s)         { clusterName_ = s; }
-  inline void setClusterNameLength(Int32 s)    { clusterNameLength_ = s; }
-  inline void setNodeNumber(Int32 s)                  { nodeNumber_ = s; }
-  inline void setDiskName(char *s)                      { diskName_ = s; }
-  inline void setDiskNameLength(Int32 s)          { diskNameLength_ = s; }
+ 
+  inline const char * getDirName() const            { return dirName_; }
+  inline Int32 getDirNameLength() const       { return dirNameLength_; }
+  inline void setDirName(char *s)                      { dirName_ = s; }
+  inline void setDirNameLength(Int32 s)          { dirNameLength_ = s; }
 
   // Although this class is not derived from NAVersionedObject, it still
   // gets compiled as a dependent object of ExScratchFileOptions and it
@@ -99,25 +88,12 @@ public:
 
 private:
 
-  // the cluster name from which the disk is to be used
-  // (EXPAND node name on NSK, unused on NT for now),
-  // similar to the data member in ExEspNodeMapEntry
-  NABasicPtr clusterName_;                                     // 00-07
-  Int32      clusterNameLength_;                               // 08-11
-  // primary CPU number on NSK, node number or primary node
-  // number on NT (right now this is needed only on NT for
-  // non-shared disks)
-  Int32      nodeNumber_;                                      // 12-15
-  // name of the disk ("$VOL" for shared disks or "C:" for
-  // local NT disks).
-  NABasicPtr diskName_;                                        // 16-23
+                                   
+  // name of the directory
+  NABasicPtr dirName_;                                       
   // length of disk name
-  Int32      diskNameLength_;                                  // 24-27
-  // the cluster number corresponding to the cluster name
-  // NOTE: this will eventually go away, there are problems
-  // with storing NSK node numbers on disk
-  Int32      clusterNumber_;                                   // 28-31
-  char       fillersExScratchDiskDrive_[16];                   // 32-47
+  Int32      dirNameLength_;                                 
+  char       fillersExScratchDiskDrive_[16];                   
 };
 
 // -----------------------------------------------------------------------
@@ -160,12 +136,9 @@ public:
   Long pack(void * space);
   Lng32 unpack(void *, void * reallocator);
 
-  void setSpecifiedScratchDisks(ExScratchDiskDrive *s,Lng32 numEntries)
-            { specifiedScratchDisks_ = s; numSpecifiedDisks_ = numEntries; }
-  void setExcludedScratchDisks(ExScratchDiskDrive *s,Lng32 numEntries)
-              { excludedScratchDisks_ = s; numExcludedDisks_ = numEntries; }
-  void setPreferredScratchDisks(ExScratchDiskDrive *s,Lng32 numEntries)
-            { preferredScratchDisks_ = s; numPreferredDisks_ = numEntries; }
+  void setSpecifiedScratchDirs(ExScratchDiskDrive *s,Lng32 numEntries)
+            { specifiedScratchDirs_ = s; numSpecifiedDirs_ = numEntries; }
+ 
  
   void setScratchMgmtOption(Lng32 entry)
   { switch(entry)
@@ -266,16 +239,11 @@ public:
   NABoolean getScratchDiskLogging(void)  const
   { return (scratchFlags_ & SCRATCH_DISK_LOGGING) != 0; };
   
-  inline const ExScratchDiskDrive * getSpecifiedScratchDisks() const
-                                          { return specifiedScratchDisks_; }
-  inline const ExScratchDiskDrive * getExcludedScratchDisks() const
-                                           { return excludedScratchDisks_; }
-  inline const ExScratchDiskDrive * getPreferredScratchDisks() const
-                                          { return preferredScratchDisks_; }
+  inline const ExScratchDiskDrive * getSpecifiedScratchDirs() const
+                                          { return specifiedScratchDirs_; }
 
-  inline Int32 getNumSpecifiedDisks() const   { return numSpecifiedDisks_; }
-  inline Int32 getNumExcludedDisks() const     { return numExcludedDisks_; }
-  inline Int32 getNumPreferredDisks() const   { return numPreferredDisks_; }
+  inline Int32 getNumSpecifiedDirs() const   { return numSpecifiedDirs_; }
+ 
   // to make the IPC methods happy, this object also supplies some
   // methods to help packing it into an IpcMessageObj
   Lng32 ipcPackedLength() const;
@@ -305,19 +273,11 @@ private:
 
   // a list of disks (for different nodes in the cluster) to
   // be used (or an empty string if the system can decide)
-  ExScratchDiskDrivePtr specifiedScratchDisks_;                       // 00-07
-
-  // alternatively, a list of disks NOT to be used
-  ExScratchDiskDrivePtr excludedScratchDisks_;                        // 08-15
-
-  // a list of preferred disks (system may also use others)
-  ExScratchDiskDrivePtr preferredScratchDisks_;                       // 16-23
-
-  Int32                 numSpecifiedDisks_;                           // 24-27
-  Int32                 numExcludedDisks_;                            // 28-31
-  Int32                 numPreferredDisks_;                           // 32-35
-  UInt32                scratchFlags_;                     //36-39
-  char                  fillersExScratchFileOptions[24];              // 40-63
+  ExScratchDiskDrivePtr specifiedScratchDirs_;  
+  
+  Int32                 numSpecifiedDirs_;                            
+  UInt32                scratchFlags_;                     
+  char                  fillersExScratchFileOptions[24];             
 };
 
 // -----------------------------------------------------------------------

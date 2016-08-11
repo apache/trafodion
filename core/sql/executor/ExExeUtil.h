@@ -245,6 +245,9 @@ class ExExeUtilTcb : public ex_tcb
                      short &rc,
 		     NABoolean monitorThis=FALSE);
     
+  ex_expr::exp_return_type evalScanExpr(char * ptr, Lng32 len, 
+                                        NABoolean copyToVCbuf);
+
   char * getStatusString(const char * operation,
                          const char * status,
                          const char * object,
@@ -2477,8 +2480,6 @@ protected:
                       NABoolean isShorthandView,
                       char* &viewName, Lng32 &len);
 
-  ex_expr::exp_return_type evalScanExpr(char * ptr, Lng32 len);
-
 private:
 
   Lng32 setupObjectTypeForUserQuery();
@@ -3766,6 +3767,7 @@ private:
     EVAL_INPUT_,
     COLLECT_STATS_,
     POPULATE_STATS_BUF_,
+    EVAL_EXPR_,
     RETURN_STATS_BUF_,
     HANDLE_ERROR_,
     DONE_
@@ -3793,6 +3795,8 @@ protected:
   NAArray<HbaseStr> *regionInfoList_;
 
   Int32 currIndex_;
+
+  Int32 numRegionStatsEntries_;
 
   char * catName_;
   char * schName_;
@@ -3851,6 +3855,46 @@ public:
 protected:
 };
 
+
+//////////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
+// ExExeUtilClusterStatsTcb
+// -----------------------------------------------------------------------
+class ExExeUtilClusterStatsTcb : public ExExeUtilRegionStatsTcb
+{
+  friend class ExExeUtilClusterStatsTdb;
+  friend class ExExeUtilPrivateState;
+
+public:
+  // Constructor
+  ExExeUtilClusterStatsTcb(const ComTdbExeUtilRegionStats & exe_util_tdb,
+                           ex_globals * glob = 0);
+
+  ~ExExeUtilClusterStatsTcb();
+
+  virtual short work();
+
+private:
+  enum Step
+  {
+    INITIAL_,
+    EVAL_INPUT_,
+    COLLECT_STATS_,
+    POPULATE_STATS_BUF_,
+    EVAL_EXPR_,
+    RETURN_STATS_BUF_,
+    HANDLE_ERROR_,
+    DONE_
+  };
+  Step step_;
+
+  short collectStats();
+  short populateStats(Int32 currIndex, NABoolean nullTerminate = FALSE);
+
+protected:
+  ComTdbClusterStatsVirtTableColumnStruct* stats_;  
+
+};
 
 //////////////////////////////////////////////////////////////////////////
 // -----------------------------------------------------------------------

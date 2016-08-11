@@ -2429,7 +2429,18 @@ double getDoubleValue(ConstValue* val, logLevel level)
 
   switch (valueStorageSize)
     {
-      case 2:
+      case 1: // tinyint
+        {
+          assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
+                           isExactNumeric, QRDescriptorException,
+                           "const value of size 1 not exact numeric: %d",
+                           constValType->getTypeQualifier());
+          Int8 i8val;
+          memcpy(&i8val, valuePtr, valueStorageSize);
+          return i8val / scaleDivisor;
+        }
+
+      case 2: // smallint
         {
           assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                            isExactNumeric, QRDescriptorException,
@@ -2440,7 +2451,7 @@ double getDoubleValue(ConstValue* val, logLevel level)
           return i16val / scaleDivisor;
         }
 
-      case 4:
+      case 4: //  int
         if (isExactNumeric)
           {
             Lng32 i32val;
@@ -2454,7 +2465,7 @@ double getDoubleValue(ConstValue* val, logLevel level)
             return fltval;
           }
       
-      case 8:
+      case 8: // largeint
         if (isExactNumeric)
           {
             // possible loss of data

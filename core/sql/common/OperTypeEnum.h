@@ -180,6 +180,7 @@ enum OperatorTypeEnum {
                         REL_LEFT_TSJ,
                         REL_UNION,
                         REL_INTERSECT,
+                        REL_EXCEPT,
                         REL_CHOICE,
                         REL_UPDATE,
                         REL_DELETE,
