@@ -3432,7 +3432,7 @@ CoprocessorService, Coprocessor {
        tmp_env.getRegion();
 #endif
     this.regionInfo = this.m_Region.getRegionInfo();
-ifdef CDH5.7 APACHE1.2
+#ifdef CDH5.7 APACHE1.2
     this.t_Region = (HRegion)tmp_env.getRegion();
 #else
     this.t_Region = (TransactionalRegion) tmp_env.getRegion();
