@@ -9889,7 +9889,7 @@ static void Oextract(int eid)
             if ( etab[eid].fho ) {
                 (*hdfswrite)(hfs, etab[eid].fho, (void *)xbuff, xbuffl);
             } else {
-                if ( etab[eid].fo == stdout ) {
+                if ( etab[eid].fo ) {
                     (void)fwrite ( xbuff, 1, xbuffl, etab[eid].fo );
                 }
             }
