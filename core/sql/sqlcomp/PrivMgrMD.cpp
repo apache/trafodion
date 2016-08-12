@@ -251,14 +251,14 @@ std::vector<std::string> CSOperationCodes;
       
 // Verify counts for tables.
 
-// Expected number of privileges granted is 2 for each operation (one each
+// Minimum number of privileges granted is 2 for each operation (one each
 // for DB__ROOT and DB__ROOTROLE) plus the two grants to PUBLIC.
 
 int64_t expectedPrivCount = static_cast<int64_t>(SQLOperation::NUMBER_OF_OPERATIONS) * 2 + 2;
 
    if (components.getCount() != 1 ||
        componentOperations.getCount() != static_cast<int64_t>(SQLOperation::NUMBER_OF_OPERATIONS) ||
-       componentPrivileges.getCount() != expectedPrivCount)
+       componentPrivileges.getCount() < expectedPrivCount)
    {
       std::string message ("Expecting ");
       message += to_string((long long int)expectedPrivCount);
