@@ -91,6 +91,9 @@ static void getCaseDatatypes(short attr_type1, Lng32 attr_len1, short &type_op1,
         case SQL_LARGE_SIZE:
           type_op1 = REC_BIN64_SIGNED;
           break;
+        default:
+          assert(0);
+          break;
         }
       }
 
@@ -1190,6 +1193,7 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_BIN8_SIGNED,    REC_BIN32_SIGNED,           CONV_BIN8S_BIN32S},
     {REC_BIN8_SIGNED,    REC_BIN64_SIGNED,           CONV_BIN8S_BIN64S},
     {REC_BIN8_SIGNED,    REC_BIN8_SIGNED,            CONV_BIN8S_BIN8S},
+    {REC_BIN8_SIGNED,    REC_BIN8_UNSIGNED,          CONV_BIN8S_BIN8U},
     {REC_BIN8_SIGNED,    REC_BYTE_F_ASCII,           CONV_BIN8S_ASCII},
     {REC_BIN8_SIGNED,    REC_BYTE_V_ASCII,           CONV_BIN8S_ASCII},
 
@@ -1200,6 +1204,7 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_BIN8_UNSIGNED,  REC_BIN8_UNSIGNED,          CONV_BIN8U_BIN8U},
     {REC_BIN8_UNSIGNED,  REC_BYTE_F_ASCII,           CONV_BIN8U_ASCII},
     {REC_BIN8_UNSIGNED,  REC_BYTE_V_ASCII,           CONV_BIN8U_ASCII},
+    {REC_BIN8_UNSIGNED,  REC_BIN8_SIGNED,            CONV_BIN8U_BIN8S},
 
     {REC_BIN16_SIGNED, 	REC_BPINT_UNSIGNED,         CONV_BIN16S_BPINTU},
     {REC_BIN16_SIGNED,  REC_BIN16_SIGNED,           CONV_BIN16S_BIN16S},
@@ -1260,7 +1265,7 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_BIN32_SIGNED,   REC_BYTE_V_ASCII_LONG,      CONV_BIN32S_ASCII},
     {REC_BIN32_SIGNED,   REC_NCHAR_F_UNICODE,        CONV_BIN32S_UNICODE},
     {REC_BIN32_SIGNED,   REC_NCHAR_V_UNICODE,        CONV_BIN32S_UNICODE},
-    
+
     {REC_BIN32_UNSIGNED,  REC_BPINT_UNSIGNED,         CONV_BIN32U_BPINTU}, 
     {REC_BIN32_UNSIGNED,  REC_BIN16_SIGNED,           CONV_BIN32U_BIN16S},
     {REC_BIN32_UNSIGNED,  REC_BIN16_UNSIGNED,         CONV_BIN32U_BIN16U},
@@ -1278,6 +1283,9 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
     {REC_BIN32_UNSIGNED,  REC_BYTE_V_ASCII_LONG,      CONV_BIN32U_ASCII},
     {REC_BIN32_UNSIGNED,  REC_NCHAR_F_UNICODE,        CONV_BIN32U_UNICODE},
     {REC_BIN32_UNSIGNED,  REC_NCHAR_V_UNICODE,        CONV_BIN32U_UNICODE},
+
+    {REC_BIN32_UNSIGNED,   REC_BIN8_SIGNED,            CONV_NUMERIC_BIN8S},
+    {REC_BIN32_UNSIGNED,   REC_BIN8_UNSIGNED,          CONV_NUMERIC_BIN8U},
 
     {REC_BIN64_SIGNED,   REC_BPINT_UNSIGNED,         CONV_BIN64S_BPINTU},
     {REC_BIN64_SIGNED,   REC_BIN16_SIGNED,           CONV_BIN64S_BIN16S},
@@ -1650,16 +1658,39 @@ conv_case_index ex_conv_clause::find_case_index(short sourceType, Lng32 sourceLe
       case_index = CONV_INTERVALS_INTERVALS_MULT;
       }
     }
+  
+  // if this is a conversion from numeric to tinyint and not handled
+  // above, then add a generic conv to tinyint index.
+  // At runtime, actual conversion will be done based on source datatype.
+  // This is done to handle the case where target is a key column used
+  // in a predicate and conversion is being done to its datatype.
+  // In this case, we dont want to return a conversion error.
+  // See handling of dataConversionErrorFlag in exp_conv.cpp.
+  if (case_index == CONV_NOT_SUPPORTED)
+    {
+      if ((DFS2REC::isNumeric(sourceType)) &&
+          (DFS2REC::isTinyint(targetType)))
+        {
+          if (targetType == REC_BIN8_SIGNED)
+            {
+              case_index = CONV_NUMERIC_BIN8S;
+            }
+          else
+            {
+              case_index = CONV_NUMERIC_BIN8U;
+            }
+        }
+    }
 
   return (enum conv_case_index)case_index;
 
 };
 
 NABoolean ex_conv_clause::isConversionSupported
-(short sourceType, short targetType)
+(short sourceType, Lng32 sourceLen, short targetType, Lng32 targetLen)
 {
   conv_case_index ci = 
-    find_case_index(sourceType, 0, targetType, 0, 0);
+    find_case_index(sourceType, sourceLen, targetType, targetLen, 0);
   if (ci == CONV_NOT_SUPPORTED)
     return FALSE;
   else

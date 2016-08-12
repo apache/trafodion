@@ -353,6 +353,8 @@ public:
   static Int32 isLOB(Int32 d)
   { return ((REC_BLOB == d) || (d == REC_CLOB)); }
 
+  static Int32 isTinyint(Int32 d)
+  {return ((d == REC_BIN8_SIGNED) || (d == REC_BIN8_UNSIGNED)); }
 };
 
 

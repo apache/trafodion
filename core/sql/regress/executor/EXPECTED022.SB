@@ -1728,12 +1728,12 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (-10 as numeric(2)) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-10 Target Type:LARGEINT(IBIN64S) Min Target Value:-9. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:TINYINT SIGNED(MBIN8S) Source Value:-10 Target Type:LARGEINT(IBIN64S) Min Target Value:-9. Instruction:RANGE_LOW_S8S64 Operation:RANGE_LOW.
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as numeric(2)) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:10 Target Type:LARGEINT(IBIN64S) Max Target Value:9. Instruction:RANGE_HIGH_S16S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:TINYINT SIGNED(MBIN8S) Source Value:10 Target Type:LARGEINT(IBIN64S) Max Target Value:9. Instruction:RANGE_HIGH_S8S64 Operation:RANGE_HIGH.
 
 --- 0 row(s) selected.
 >>select cast (cast (-1 as smallint) as smallint unsigned) from t022t1;
@@ -1810,12 +1810,12 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (-10 as int) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER SIGNED(MBIN32S) Source Value:-10 Target Type:LARGEINT(IBIN64S) Min Target Value:-9. Instruction:RANGE_LOW_S32S64 Operation:RANGE_LOW.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:INTEGER SIGNED(REC_BIN32_SIGNED) Source Value:-10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as int) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER SIGNED(MBIN32S) Source Value:10 Target Type:LARGEINT(IBIN64S) Max Target Value:9. Instruction:RANGE_HIGH_S32S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:INTEGER SIGNED(REC_BIN32_SIGNED) Source Value:10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (-1 as int) as smallint unsigned) from t022t1;
@@ -1830,7 +1830,7 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (10 as int) as numeric(1) unsigned) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER SIGNED(MBIN32S) Source Value:10 Target Type:LARGEINT(IBIN64S) Max Target Value:9. Instruction:RANGE_HIGH_S32S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:INTEGER SIGNED(REC_BIN32_SIGNED) Source Value:10 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (-100000 as int) as numeric(5)) from t022t1;
@@ -1881,7 +1881,7 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (10 as int unsigned) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER UNSIGNED(MBIN32U) Source Value:10 Target Type:LARGEINT(IBIN64S) Max Target Value:9. Instruction:RANGE_HIGH_U32S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED) Source Value:10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (65536 as int unsigned) as smallint unsigned) from t022t1;
@@ -1891,7 +1891,7 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (10 as int unsigned) as numeric(1) unsigned) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER UNSIGNED(MBIN32U) Source Value:10 Target Type:LARGEINT(IBIN64S) Max Target Value:9. Instruction:RANGE_HIGH_U32S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED) Source Value:10 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (2147483648 as int unsigned) as int) from t022t1;
@@ -1932,12 +1932,12 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (-10 as largeint) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:-10 Target Type:LARGEINT(IBIN64S) Min Target Value:-9. Instruction:RANGE_LOW_S64S64 Operation:RANGE_LOW.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:-10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as largeint) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:10 Target Type:LARGEINT(IBIN64S) Max Target Value:9. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (-1 as largeint) as smallint unsigned) from t022t1;
@@ -2328,22 +2328,22 @@ Hello
 >>-- negative tests for tinyint
 >>select cast(-129 as tinyint) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:-129 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-129 Target Type:LARGEINT(IBIN64S) Min Target Value:-128. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW.
 
 --- 0 row(s) selected.
 >>select cast(128 as tinyint) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:128 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:128 Target Type:LARGEINT(IBIN64S) Max Target Value:127. Instruction:RANGE_HIGH_S16S64 Operation:RANGE_HIGH.
 
 --- 0 row(s) selected.
 >>select cast(256 as tinyint unsigned) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:256 to Target Type:TINYINT UNSIGNED(REC_BIN8_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:256 Target Type:LARGEINT(IBIN64S) Max Target Value:255. Instruction:RANGE_HIGH_S16S64 Operation:RANGE_HIGH.
 
 --- 0 row(s) selected.
 >>select cast(-1 as tinyint unsigned) from t022t1;
 
-*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype.
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-1 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW.
 
 --- 0 row(s) selected.
 >>
@@ -4261,7 +4261,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2016-07-10 05:20:08.800751
+10:13:14.0000  10:13:14.0000  2016-08-11 19:03:15.784758
 
 --- 1 row(s) selected.
 >>--test on precision of time
@@ -6488,22 +6488,22 @@ Hello
 >>
 >>select cast (cast (-10 as smallint) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:-10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:-10 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as smallint) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:10 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (-10 as numeric(2)) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:-10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:TINYINT SIGNED(REC_BIN8_SIGNED) Source Value:-10 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as numeric(2)) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:TINYINT SIGNED(REC_BIN8_SIGNED) Source Value:10 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (-1 as smallint) as smallint unsigned) from t022t1;
@@ -6513,7 +6513,7 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (10 as smallint) as numeric(1) unsigned) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:10 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:10 to Target Type:TINYINT UNSIGNED(REC_BIN8_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (-1 as smallint) as int unsigned) from t022t1;
@@ -6549,12 +6549,12 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (10 as smallint unsigned) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED) Source Value:10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED) Source Value:10 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as smallint unsigned) as numeric(1)unsigned) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED) Source Value:10 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED) Source Value:10 to Target Type:TINYINT UNSIGNED(REC_BIN8_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as smallint unsigned) as decimal(1)) from t022t1;
@@ -9031,7 +9031,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2016-07-10 05:23:22.454801
+10:13:14.0000  10:13:14.0000  2016-08-11 19:06:25.121155
 
 --- 1 row(s) selected.
 >>--test on precision of time

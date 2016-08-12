@@ -902,7 +902,7 @@ ex_expr::exp_return_type ExFunctionRepeat::eval(char *op_data[],
 
   if ((repeatCount < 0) || ((repeatCount * len1) > resultMaxLen))
     {
-      ExRaiseFunctionSqlError(heap, diagsArea, EXE_INTERNAL_ERROR,
+      ExRaiseFunctionSqlError(heap, diagsArea, EXE_STRING_OVERFLOW,
                               derivedFunction(),
                               origFunctionOperType());
 

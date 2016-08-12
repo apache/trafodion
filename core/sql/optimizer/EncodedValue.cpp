@@ -593,6 +593,8 @@ EncodedValue::minMaxValue(const NAType *pType, const NABoolean wantMin)
       len -= nullHdrSize;
     }
 
+
+
   if (wantMin)
     pType->minRepresentableValue(pt, &len, NULL, CmpCommon::statementHeap());
   else

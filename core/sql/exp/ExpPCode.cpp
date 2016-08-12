@@ -1129,6 +1129,17 @@ Int32 PCode::size() {
   I2(Op_MOVE,MBIN64U,MBIN64S,MOVE_MBIN64U_MBIN64S),                  // Instruction 363
   I2(Op_MOVE,MBIN64U,MBIN64U,MOVE_MBIN64U_MBIN64U),                  // Instruction 364
 
+  I2(Op_RANGE_LOW,MBIN8S,IBIN64S,RANGE_LOW_S8S64),               // Instruction 365
+  I2(Op_RANGE_HIGH,MBIN8S,IBIN64S,RANGE_HIGH_S8S64),             // Instruction 366
+  I2(Op_RANGE_LOW,MBIN8U,IBIN64S,RANGE_LOW_U8S64),               // Instruction 367
+  I2(Op_RANGE_HIGH,MBIN8U,IBIN64S,RANGE_HIGH_U8S64),             // Instruction 368
+
+  I2(Op_MOVE,MBIN8S,MBIN16S,MOVE_MBIN8S_MBIN16S),                    // Instruction 369
+  I2(Op_MOVE,MBIN8U,MBIN16U,MOVE_MBIN8U_MBIN16U),                    // Instruction 370
+
+  I2(Op_MOVE,MBIN8U,MBIN16S,MOVE_MBIN8U_MBIN16S),                    // Instruction 371
+  I2(Op_MOVE,MBIN8S,MBIN16U,MOVE_MBIN8S_MBIN16U),                    // Instruction 372
+
   };
 
 #undef I
@@ -1286,6 +1297,10 @@ Int32 PCode::isInstructionRangeType( PCIT::Instruction instruction)
 {
   switch(instruction)
   {
+    case PCIT::RANGE_LOW_S8S64:
+    case PCIT::RANGE_HIGH_S8S64:
+    case PCIT::RANGE_LOW_U8S64:
+    case PCIT::RANGE_HIGH_U8S64:
     case PCIT::RANGE_LOW_S16S64:
     case PCIT::RANGE_HIGH_S16S64:
     case PCIT::RANGE_LOW_U16S64:

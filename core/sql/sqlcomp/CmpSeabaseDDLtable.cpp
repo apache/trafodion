@@ -245,7 +245,7 @@ TrafDesc * CmpSeabaseDDL::convertVirtTableKeyInfoArrayToDescStructs(
       
       key_desc->keysDesc()->tablecolnumber = keyInfoArray[i].tableColNum;
       key_desc->keysDesc()->keyseqnumber = i;
-      key_desc->keysDesc()->setDescending(keyInfoArray[i].ordering == -1 ? TRUE : FALSE);
+      key_desc->keysDesc()->setDescending(keyInfoArray[i].ordering != 0 ? TRUE : FALSE);
     }
 
   return first_key_desc;

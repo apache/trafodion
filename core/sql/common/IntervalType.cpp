@@ -298,12 +298,16 @@ Lng32 IntervalType::getStorageSize(rec_datetime_field startField,
 				  rec_datetime_field endField,
 				  UInt32 fractionPrecision)
 {
-#pragma nowarn(1506)   // warning elimination 
-  return getBinaryStorageSize(getPrecision(startField, 
-					   leadingPrecision,
-					   endField,
-					   fractionPrecision));
-#pragma warn(1506)  // warning elimination
+  Lng32 size = getBinaryStorageSize(getPrecision(startField, 
+                                                 leadingPrecision,
+                                                 endField,
+                                                 fractionPrecision));
+  // interval datatypes are stored as 2(smallint),4(int) or 8(largeint) bytes.
+  // If size is tinyint size based on precision, change it to smallint size.
+  if (size == SQL_TINY_SIZE)
+    size = SQL_SMALL_SIZE;
+  
+  return size;
 } // IntervalType::getStorageSize
 
 size_t IntervalType::getStringSize(rec_datetime_field startField,

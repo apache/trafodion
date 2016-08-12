@@ -2668,6 +2668,11 @@ const  Int32 bpPrecision[] = { 0, 1, 3, 7, 15, 31, 63, 127, 255, 511,
 	  isSigned = 1;
 	  break;
 
+	case REC_BIN8_UNSIGNED:
+	  lowBounds = 0;
+	  highBounds = UCHAR_MAX;
+	  break;
+
 	case REC_BIN16_SIGNED:
 	  lowBounds = SHRT_MIN;
 	  highBounds = SHRT_MAX;
@@ -3043,6 +3048,10 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
   case CONV_BIN8U_BIN32U:
   case CONV_BIN8S_BIN64S:
   case CONV_BIN8U_BIN64U:
+  case CONV_BIN16S_BIN8S:
+  case CONV_BIN16U_BIN8U:
+  case CONV_BIN16S_BIN8U:  
+  case CONV_BIN16U_BIN8S:
     break;
 
   case CONV_BOOL_BOOL:
@@ -3190,6 +3199,8 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
     case CONV_BIN32U_BIN16U: case CONV_BIN32U_BIN16S:
     case CONV_BIN64S_BIN16U: case CONV_BIN64S_BIN16S:
     case CONV_BIN64S_BIN32U: case CONV_BIN64S_BIN32S:
+    case CONV_BIN16S_BIN8S:  case CONV_BIN16U_BIN8U:
+    case CONV_BIN16S_BIN8U:  case CONV_BIN16U_BIN8S:
       {
 	AML aml(PCIT::MBIN8, PCIT::MBIN8, PCIT::IBIN32S);
 #ifdef NA_LITTLE_ENDIAN
