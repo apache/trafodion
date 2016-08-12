@@ -27,7 +27,7 @@
   </repositories>
 
   <properties>
-    <hadoop.version>2.6.0</hadoop.version>
+    <hadoop.version>2.6.0-cdh5.5.1</hadoop.version>
     <hbase.version>1.0.0-cdh5.5.1</hbase.version>
     <protobuf.version>2.5.0</protobuf.version>
     <protocVersion>2.5.0</protocVersion>
