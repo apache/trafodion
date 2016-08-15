@@ -444,9 +444,12 @@ public:
   //
   NA_EIDPROC virtual void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
-
- NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
-				 Int32 clauseNum, char * constsArea, UInt32 clauseFlags);
+  
+  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+                                  Int32 clauseNum, char * constsArea, 
+                                  UInt32 clauseFlags,
+                                  Int16 instruction = -1,
+                                  const char * instrText = NULL);
 
   NA_EIDPROC static void clearVOA(Attributes *attr, atp_struct *atp)
   {
@@ -526,6 +529,9 @@ public:
     globals_ = glob;
   }
 
+  Int16 getInstrArrayIndex() { return instrArrayIndex_; }
+  void setInstrArrayIndex(Int16 index) { instrArrayIndex_ = index; }
+
 protected:
   NA_EIDPROC ex_globals * getExeGlobals() 
   {
@@ -557,7 +563,11 @@ private:
   Int16 /*OperatorTypeEnum*/ operType_;            // 34-35
   Int16 /*clause_type*/      clauseType_;          // 36-37
 
-  Int16 filler1_;                                  // 38-39
+  // index into static clause array struct containing details about
+  // this clause (datatypes, operation, etc) if derived clause has
+  // this array defined.
+  // See derived clauses for details.
+  Int16 instrArrayIndex_;                       // 48-49
 
   // this field is set at runtime when this clause is fixed up.
   // It is used in eval for cases where an expression needs to access 
@@ -571,7 +581,7 @@ private:
   // When a new member is added, size of this filler should be reduced so
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
-  char                       fillers_[16];          // 48-63
+  char                       fillers_[16];          // 52-63
 };
 #pragma warn(1506)  // warning elimination 
 

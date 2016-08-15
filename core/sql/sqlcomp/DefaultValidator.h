@@ -48,10 +48,8 @@ enum CaseSensitivity	  { CASE_INSENSITIVE = 0,
 
 enum DefaultValidatorType { VALID_ANY, VALID_CS_ANSI, VALID_KWD,
 			    VALID_INT, VALID_UINT, VALID_FLT,
-			    VALID_NSKSYSTEM, VALID_NSKVOL, VALID_NSKSUBVOL,
-			    VALID_NSKMPLOC,
-			    VALID_NSKDISKS,
-			    VALID_NTDISKS
+			    VALID_LINUXDISKS
+			    
 			  };
 
 class DefaultValidator
@@ -127,99 +125,9 @@ class ValidateCollationList : public DefaultValidator
 };
 
 
-class ValidateNSKNamePart  : public DefaultValidator
-{public:
-  ValidateNSKNamePart(DefaultValidatorType typ=VALID_NSKSUBVOL,
-		      char punc='\0',
-		      NABoolean blankOK=FALSE)
-		    : DefaultValidator(typ, CASE_INSENSITIVE),
-		      initialPunc_(punc),
-		      blankOK_(blankOK)
-		      {}
-
-  virtual Int32 validate(const char *value,	   // returns FALSE if invalid
-		       const NADefaults *nad,
-		       Int32 attrEnum,
-		       Int32 errOrWarn = -1,
-		       float *flt = NULL) const;
- protected:
-  char initialPunc_;
-  NABoolean blankOK_;
-};
-
-typedef ValidateNSKNamePart ValidateNSKSubVol;
-
-class ValidateNSKSystem	   : public ValidateNSKNamePart
-{public:
-  ValidateNSKSystem() : ValidateNSKNamePart(VALID_NSKSYSTEM, '\\', TRUE) {}
-};
-
-class ValidateNSKVol	   : public ValidateNSKNamePart
-{public:
-  ValidateNSKVol() : ValidateNSKNamePart(VALID_NSKVOL, '$') {}
-};
 
 
-class ValidateVolumeList   : public DefaultValidator 
-{public:
-  ValidateVolumeList() : DefaultValidator() {}   // use VALID_ANY
 
-  virtual NABoolean caseSensitive() const	{ return FALSE; }
-  virtual Int32 validate(const char *value,	   // returns FALSE if invalid
-		       const NADefaults *nad,
-		       Int32 attrEnum,
-		       Int32 errOrWarn = -1,
-		       float *flt = NULL) const;
-};
-
-
-class ValidateNSKMPLoc : public DefaultValidator
-{public:
-  ValidateNSKMPLoc() : DefaultValidator(VALID_NSKMPLOC, CASE_INSENSITIVE) {}
-
-  virtual Int32 validate(const char *value,	   // returns FALSE if invalid
-		       const NADefaults *nad,
-		       Int32 attrEnum,
-		       Int32 errOrWarn = -1,
-		       float *flt = NULL) const;
-};
-
-class ValidateDiskListNSK : public DefaultValidator
-{
-public:
-
-  ValidateDiskListNSK() : DefaultValidator(VALID_NSKDISKS, CASE_INSENSITIVE) {}
-
-  virtual Int32 validate(const char *value,	   // returns FALSE if invalid
-		       const NADefaults *nad,
-		       Int32 attrEnum,
-		       Int32 errOrWarn = -1,
-		       float *flt = NULL) const;
-
-  static Int32 getNextDiskAndAdvance(const char *&defaultString,
-				   const char *&clusterName,
-				   Lng32 &clusterNameLen,
-				   const char *&diskName,
-				   Lng32 &diskNameLen);
-		     
-};
-
-class ValidateDiskListNT : public DefaultValidator
-{
-public:
-
-  ValidateDiskListNT() : DefaultValidator(VALID_NTDISKS, CASE_INSENSITIVE) {}
-
-  virtual Int32 validate(const char *value,	   // returns FALSE if invalid
-		       const NADefaults *nad,
-		       Int32 attrEnum,
-		       Int32 errOrWarn = -1,
-		       float *flt = NULL) const;
-
-  static Int32 getNextDriveLetterAndAdvance(const char *&defaultString,
-					  Lng32 &nodeNum,
-					  char &driveLetter);
-};
 
 class ValidateTraceStr : public DefaultValidator
 {

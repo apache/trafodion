@@ -60,7 +60,7 @@ public:
   
   void initialize(ExpTupleDesc * tupleDesc,
 		  ULng32 totalLen,
-		  conv_case_index * caseIndexArray);
+		  ConvInstruction * caseIndexArray);
 
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
@@ -91,8 +91,8 @@ public:
   
   ULng32 getLength(){return totalLen_;};
 
-  conv_case_index * getCaseIndexArray()
-                  { return (conv_case_index *)(short *)caseIndexArray_; }
+  ConvInstruction * getCaseIndexArray()
+                  { return (ConvInstruction *)(short *)caseIndexArray_; }
 
 protected:
 
@@ -104,7 +104,7 @@ protected:
   // pointer to the record descriptor
   ExpTupleDescPtr tupleDesc_;              // 08-15
 
-  // this is a (enum conv_case_index *) before.
+  // this is a (enum ConvInstruction *) before.
   Int16Ptr caseIndexArray_;                // 16-23
 
   // length of ExSPInputOutput starting at 'this'. All classes following

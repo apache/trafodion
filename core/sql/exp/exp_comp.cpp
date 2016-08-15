@@ -187,7 +187,7 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
 {
   ex_expr::exp_return_type retcode = ex_expr::EXPR_OK;
 
-  switch (get_case_index())
+  switch (getInstruction())
     {
     // EQUAL opcode
     case EQ_BIN8S_BIN8S:

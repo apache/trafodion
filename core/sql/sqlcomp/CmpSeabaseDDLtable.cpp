@@ -245,7 +245,7 @@ TrafDesc * CmpSeabaseDDL::convertVirtTableKeyInfoArrayToDescStructs(
       
       key_desc->keysDesc()->tablecolnumber = keyInfoArray[i].tableColNum;
       key_desc->keysDesc()->keyseqnumber = i;
-      key_desc->keysDesc()->setDescending(keyInfoArray[i].ordering == -1 ? TRUE : FALSE);
+      key_desc->keysDesc()->setDescending(keyInfoArray[i].ordering != 0 ? TRUE : FALSE);
     }
 
   return first_key_desc;
@@ -3661,13 +3661,17 @@ short CmpSeabaseDDL::dropSeabaseTable2(
     }
 
   // drop SB_HISTOGRAMS and SB_HISTOGRAM_INTERVALS entries, if any
-  // if the table that we are dropping itself is not a SB_HISTOGRAMS or SB_HISTOGRAM_INTERVALS table
+  // if the table that we are dropping itself is not a SB_HISTOGRAMS 
+  // or SB_HISTOGRAM_INTERVALS table or sampling tables
   // TBD: need to change once we start updating statistics for external
   // tables
   if (! (tableName.isExternalHive() || tableName.isExternalHbase()) )
     {
       if (objectNamePart != "SB_HISTOGRAMS" && 
-          objectNamePart != "SB_HISTOGRAM_INTERVALS")
+          objectNamePart != "SB_HISTOGRAM_INTERVALS" &&
+          objectNamePart != "SB_PERSISTENT_SAMPLES" &&
+          strncmp(objectNamePart.data(),"TRAF_SAMPLE_",sizeof("TRAF_SAMPLE_")) != 0)
+          
       {
         if (dropSeabaseStats(cliInterface,
                              catalogNamePart.data(),
@@ -11197,6 +11201,18 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
 
       viewInfoArray[0].viewText = new(STMTHEAP) char[viewText.length() + 1];
       strcpy(viewInfoArray[0].viewText, viewText.data());
+
+      // get view col usages from TEXT table
+      NAString viewColUsages;
+      if (getTextFromMD(&cliInterface, objUID, COM_VIEW_REF_COLS_TEXT, 0, viewColUsages))
+        {
+          processReturn();
+          
+          return NULL;
+        }
+
+      viewInfoArray[0].viewColUsages = new(STMTHEAP) char[viewColUsages.length() + 1];
+      strcpy(viewInfoArray[0].viewColUsages, viewColUsages.data());
     }
 
   ComTdbVirtTableSequenceInfo * seqInfo = NULL;

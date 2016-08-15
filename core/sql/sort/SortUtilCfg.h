@@ -115,55 +115,26 @@ public:
       {
         return logDone_;
       }
-      const ExScratchDiskDrive * getScratchDiskListSpec()
+      const ExScratchDiskDrive * getScratchDirListSpec()
       {
-	  return scratchDiskListSpec_;
+	  return scratchDirListSpec_;
       }
 	  
-      void setScratchDiskListSpec(const ExScratchDiskDrive *scratch_disk_list_spec)
+      void setScratchDirListSpec(const ExScratchDiskDrive *scratch_disk_list_spec)
       {
-        scratchDiskListSpec_ = scratch_disk_list_spec;
+        scratchDirListSpec_ = scratch_disk_list_spec;
       }
-      const ExScratchDiskDrive * getScratchDiskListPref()
+     
+      
+      void setNumDirsSpec(ULng32 nd)
       {
-        return scratchDiskListPref_;
+        numDirsSpec_ = nd;
       }
-      void setScratchDiskListPref(const ExScratchDiskDrive *scratch_disk_list_pref)
+      ULng32 getNumDirsSpec()
       {
-         scratchDiskListPref_ = scratch_disk_list_pref;
+       return numDirsSpec_;
       }
-      const ExScratchDiskDrive * getScratchDiskListExcl()
-      {
-        return scratchDiskListExcl_;
-       }
-      void setScratchDiskListExcl(const ExScratchDiskDrive *scratch_disk_list_excl)
-      {
-       scratchDiskListExcl_ = scratch_disk_list_excl;
-      }
-      void setNumDisksSpec(ULng32 nd)
-      {
-        numDisksSpec_ = nd;
-      }
-      ULng32 getNumDisksSpec()
-      {
-       return numDisksSpec_;
-      }
-      void setNumDisksPref(ULng32 nd)
-      {
-       numDisksPref_ = nd;
-      }
-     ULng32 getNumDisksPref()
-     {
-       return numDisksPref_;
-      }
-     void setNumDisksExcl(ULng32 nd)
-      {
-       numDisksExcl_ = nd;
-      }
-       ULng32 getNumDisksExcl()
-       {
-         return numDisksExcl_;
-       }
+     
      void setEspInstance(ULng32 esp_num)
      {
       espInstance_ = esp_num;
@@ -352,12 +323,8 @@ private:
       ULng32 runSizeIncr_; // unused :how much to increment the run size by.
       ULng32 maxNumBuffers_; // Max buffer space as set by the compiler
       unsigned short scratchThreshold_; // percent of disk usage after which a disk will be discarded for use
-      const ExScratchDiskDrive *scratchDiskListSpec_;   // Information about scratchvols to  include or exclude.
-      ULng32 numDisksSpec_;
-      const ExScratchDiskDrive *scratchDiskListPref_;
-      ULng32 numDisksPref_;
-      const ExScratchDiskDrive *scratchDiskListExcl_;
-      ULng32 numDisksExcl_;
+      const ExScratchDiskDrive *scratchDirListSpec_;   // Information about scratchvols to  include or exclude.
+      ULng32 numDirsSpec_;
       ULng32 espInstance_;
       ULng32 numEsps_;
       ExSubtask *ioEventHandler_;

@@ -48,7 +48,7 @@ typedef enum {PEND_NONE, PEND_READ, PEND_WRITE} EPendingIOType;
 
 class SQScratchFile : public ScratchFile {
 public:
-  SQScratchFile(char* filename, ScratchSpace *scratchSpace,
+  SQScratchFile( ScratchSpace *scratchSpace,
        SortError* sorterror, CollHeap* heap = 0,
        NABoolean breakEnabled = FALSE,
        Int32 scratchMaxOpens = 1,

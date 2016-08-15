@@ -221,7 +221,7 @@
 >>delete from "_MD_".objects where catalog_name = 'TRAFODION' and
 +>     schema_name = 'SCH026' and object_type = 'PK';
 
---- 6 row(s) deleted.
+--- 7 row(s) deleted.
 >>cqd hide_indexes reset;
 
 --- SQL operation complete.
@@ -292,7 +292,7 @@ Metadata Cleanup: started, check only
   End:   Cleanup Orphan Hbase Entries (0 entries found)
 
   Start: Cleanup Inconsistent Objects Entries
-  End:   Cleanup Inconsistent Objects Entries (6 entries found)
+  End:   Cleanup Inconsistent Objects Entries (7 entries found)
 
   Start: Cleanup Inconsistent Views Entries
   End:   Cleanup Inconsistent Views Entries (0 entries found)
@@ -327,7 +327,7 @@ Metadata Cleanup: started, check only
   End:   Cleanup Orphan Hbase Entries (1 entry found)
 
   Start: Cleanup Inconsistent Objects Entries
-  End:   Cleanup Inconsistent Objects Entries (8 entries found)
+  End:   Cleanup Inconsistent Objects Entries (9 entries found)
 
   Start: Cleanup Inconsistent Views Entries
   End:   Cleanup Inconsistent Views Entries (0 entries found)
@@ -353,10 +353,11 @@ Metadata Cleanup: started, check only
     Entry #3(OBJECT): TRAFODION.SCH026.T026T2_498588266_9589
     Entry #4(OBJECT): TRAFODION.SCH026.SB_HISTOGRAMS_PK
     Entry #5(OBJECT): TRAFODION.SCH026.SB_HISTOGRAM_INTERVALS_PK
-    Entry #6(OBJECT): TRAFODION.SCH026.LOBMD_00958229992622_255194156_9672
-    Entry #7(OBJECT): TRAFODION.SCH026.LOBDescChunks_009582_898194156_9672
-    Entry #8(UID):    958229992622171473
-  End:   Cleanup Inconsistent Objects Entries (8 entries found)
+    Entry #6(OBJECT): TRAFODION.SCH026.SB_PERSISTENT_SAMPLES_PK
+    Entry #7(OBJECT): TRAFODION.SCH026.LOBMD_03901336551423_331332878_4561
+    Entry #8(OBJECT): TRAFODION.SCH026.LOBDescChunks_039013_645332878_4561
+    Entry #9(UID):    3901336551423203710
+  End:   Cleanup Inconsistent Objects Entries (9 entries found)
 
   Start: Cleanup Inconsistent Views Entries
   End:   Cleanup Inconsistent Views Entries (0 entries found)
@@ -382,10 +383,11 @@ Metadata Cleanup: started
     Entry #3(OBJECT): TRAFODION.SCH026.T026T2_498588266_9589
     Entry #4(OBJECT): TRAFODION.SCH026.SB_HISTOGRAMS_PK
     Entry #5(OBJECT): TRAFODION.SCH026.SB_HISTOGRAM_INTERVALS_PK
-    Entry #6(OBJECT): TRAFODION.SCH026.LOBMD_00958229992622_255194156_9672
-    Entry #7(OBJECT): TRAFODION.SCH026.LOBDescChunks_009582_898194156_9672
-    Entry #8(UID):    958229992622171473
-  End:   Cleanup Inconsistent Objects Entries (8 entries cleaned up)
+    Entry #6(OBJECT): TRAFODION.SCH026.SB_PERSISTENT_SAMPLES_PK
+    Entry #7(OBJECT): TRAFODION.SCH026.LOBMD_03901336551423_331332878_4561
+    Entry #8(OBJECT): TRAFODION.SCH026.LOBDescChunks_039013_645332878_4561
+    Entry #9(UID):    3901336551423203710
+  End:   Cleanup Inconsistent Objects Entries (9 entries cleaned up)
 
   Start: Cleanup Inconsistent Views Entries
   End:   Cleanup Inconsistent Views Entries (0 entries cleaned up)

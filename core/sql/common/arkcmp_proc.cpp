@@ -164,7 +164,7 @@ Int32 arkcmp_main_entry()
 			 cmpContextHeap);
         cliSemaphore->release();
 
-        if (! context->getSchemaDB()->getDefaults().getSqlParser_NADefaults_Ptr())
+         if (! context->getSchemaDB()->getDefaults().getSqlParser_NADefaults_Ptr())
           {
             // error during nadefault creation.
             // Cannot proceed.
@@ -172,7 +172,7 @@ Int32 arkcmp_main_entry()
               (ARKCMP_ERROR_PREFIX "- Cannot initialize NADefaults data.",
                ERROR_SEV, FALSE, FALSE, TRUE);
             return(2);
-          }
+            }
 
       }
       catch (...)

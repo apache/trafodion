@@ -5071,6 +5071,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
      viewTextInNAWchars_(heap),
      viewTextCharSet_(CharInfo::UnknownCharSet),
      viewCheck_(NULL),
+     viewColUsages_(NULL),
      flags_(IS_INSERTABLE | IS_UPDATABLE),
      insertMode_(COM_REGULAR_TABLE_INSERT_MODE),
      isSynonymTranslationDone_(FALSE),
@@ -5372,6 +5373,22 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
         memcpy(viewCheck_, view_desc->viewDesc()->viewchecktext,
                viewCheckLength);
       }
+
+      viewColUsages_ = NULL;
+      if(view_desc->viewDesc()->viewcolusages){
+        viewColUsages_ = new (heap_) NAList<ComViewColUsage *>; //initialize empty list
+        char * beginStr (view_desc->viewDesc()->viewcolusages);
+        char * endStr = strchr(beginStr, ';');
+        while (endStr != NULL) {
+          ComViewColUsage *colUsage = new (heap_) ComViewColUsage;
+          NAString currentUsage(beginStr, endStr - beginStr + 1); 
+          colUsage->unpackUsage (currentUsage.data());
+          viewColUsages_->insert(colUsage);
+          beginStr = endStr+1;
+          endStr = strchr(beginStr, ';');
+        }
+      }
+
       setUpdatable(view_desc->viewDesc()->isUpdatable());
       setInsertable(view_desc->viewDesc()->isInsertable());
 
@@ -5793,6 +5810,7 @@ NATable::NATable(BindWA *bindWA,
     viewTextInNAWchars_(heap),
     viewTextCharSet_(CharInfo::UnknownCharSet),
     viewCheck_(NULL),
+    viewColUsages_(NULL),
     flags_(IS_INSERTABLE | IS_UPDATABLE),
     insertMode_(COM_REGULAR_TABLE_INSERT_MODE),
     isSynonymTranslationDone_(FALSE),
@@ -7032,6 +7050,16 @@ NATable::~NATable()
   {
      NADELETEBASIC(viewCheck_, heap_);
      viewCheck_ = NULL;
+  } 
+  if (viewColUsages_ != NULL)
+  {
+     for(Int32 i = 0; i < viewColUsages_->entries(); i++)
+     {
+        ComViewColUsage *pUsage = viewColUsages_->operator[](i);
+        NADELETEBASIC(pUsage, heap_);
+     }
+     NADELETEBASIC(viewColUsages_, heap_);
+     viewColUsages_ = NULL;
   } 
   if (viewFileName_ != NULL)
   {

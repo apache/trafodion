@@ -43,6 +43,7 @@
 #include <bits/time.h> 
 #include <vector>
 
+
 //    ----------------
 //    Defines
 //    ----------------
@@ -53,7 +54,7 @@
 /* \brief NULL value for stfs_fhndl_t. */
 #define STFS_NULL_FHNDL -1
 /* \brief Maximum Pathname size including NULL terminator (STFS_NAME_MAX + 1). */
-#define STFS_PATH_MAX 256 
+#define STFS_PATH_MAX 4096
 
 /* \brief Maximum size of STFS specific suffix in the STFS file name */
 #define STFS_NAME_SUFFIX_MAX          40    
@@ -427,6 +428,21 @@ int STFS_select( stfs_fhndl_t    nfhs
 int STFS_set_overflow(const int pv_overflowtype);
 
 //---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+/*!  \brief Set the overflow scratch disks from CQD 
+      
+     The STFS_set_scratch_dirs function allows the user to set the list of disk
+     to be used for overflow.  The string passed in should be 
+     a ':' separated string
+
+     \param[in]  char * string containing directories separated by a :
+     \retval      void 
+     
+*/
+//---------------------------------------------------------------------------//
+void STFS_set_scratch_dirs(char *pv_scratchCQDString);
+
+//---------------------------------------------------------------------------//
 /*!  \brief Delete a name and possibly the file that it refers to
  
      The STFS_unlink function deletes a name from the file system. If no processes 
@@ -439,6 +455,7 @@ int STFS_set_overflow(const int pv_overflowtype);
      \retval      int    SUCCESS: 0      \n\n
                          ERROR:   -1 is returned and errno is set
 */
+
 //--------------------------------------------------------------------------//
 int STFS_unlink(const char* path);              
 

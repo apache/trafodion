@@ -174,6 +174,8 @@ ex_clause::ex_clause(clause_type type,
   pciLink_     = NULL;
   nextClause_  = NULL;
   flags_       = 0;
+  //  instruction_   = -1;
+  instrArrayIndex_ = -1;
 
   str_pad(fillers_, sizeof(fillers_), '\0');
 
@@ -1497,9 +1499,11 @@ void ex_clause::displayContents(Space * space, const char * displayStr,
 }
 
 void ex_clause::displayContents(Space * space, const char * displayStr,
-				Int32 clauseNum, char * constsArea, UInt32 clauseFlags)
+				Int32 clauseNum, char * constsArea, 
+                                UInt32 clauseFlags,
+                                Int16 instruction,
+                                const char * instrText)
 {
-#ifndef __EID
   char buf[100];
   if (displayStr)
     {
@@ -1530,7 +1534,17 @@ void ex_clause::displayContents(Space * space, const char * displayStr,
       str_sprintf(buf, "    PCODE  = supported ");
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
-#endif
+
+  if (instruction >= 0)
+    {
+      if (instrText)
+        str_sprintf(buf, "    instruction: %s(%d), instrArrayIndex_: %d", 
+                    instrText, instruction, instrArrayIndex_);
+      else
+        str_sprintf(buf, "    instruction: UNKNOWN(%d), instrArrayIndex_: %d", 
+                    instruction, instrArrayIndex_);
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+    }
   
   if (numOperands_ == 0)
     return;
@@ -1580,7 +1594,7 @@ ex_arith_clause::ex_arith_clause(OperatorTypeEnum oper_type,
     setDivToDownscale(TRUE);
 
   if (attr)
-    set_case_index();
+    setInstruction();
 }
  
 ex_arith_clause::ex_arith_clause(clause_type type,
@@ -1592,7 +1606,7 @@ ex_arith_clause::ex_arith_clause(clause_type type,
 				   flags_(0)
  
 {
-  set_case_index(); 
+  setInstruction(); 
 }
 
 ex_arith_sum_clause::ex_arith_sum_clause(OperatorTypeEnum oper_type,
@@ -1622,7 +1636,7 @@ ex_comp_clause::ex_comp_clause(OperatorTypeEnum oper_type,
      flags_(0)
 {
   if(flags) setSpecialNulls();
-  set_case_index();
+  setInstruction();
 }
  
 ///////////////////////////////////////////////////////////
@@ -1636,7 +1650,6 @@ ex_conv_clause::ex_conv_clause(OperatorTypeEnum oper_type,
                                NABoolean noStringTruncWarnings,
                                NABoolean convertToNullWhenErrorFlag)
      : ex_clause (ex_clause::CONV_TYPE, oper_type, num_operands, attr, space),
-       case_index(CONV_UNKNOWN),
        lastVOAoffset_(0),
        lastVcIndicatorLength_(0),
        lastNullIndicatorLength_(0),
@@ -1660,7 +1673,7 @@ ex_conv_clause::ex_conv_clause(OperatorTypeEnum oper_type,
   if (convertToNullWhenErrorFlag)
     flags_ |= CONV_TO_NULL_WHEN_ERROR;
 
-  set_case_index(); 
+  setInstruction(); 
 }
 #pragma warn(1506)  // warning elimination 
 
@@ -1804,7 +1817,7 @@ void ex_pivot_group_clause::displayContents(Space * space, const char * /*displa
 
 void ex_arith_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
-  set_case_index();
+  setInstruction();
 
 #ifndef __EID
   char buf[100];
@@ -1817,17 +1830,19 @@ void ex_arith_clause::displayContents(Space * space, const char * /*displayStr*/
 		  (short)arithRoundingMode_, (getDivToDownscale() ? 1 : 0));
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
+
 #endif
 
-  ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea);
-  //  cout << "Case Index  = " << get_case_index() << endl;
+  ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea, 0,
+                             ex_arith_clause::getInstruction(getInstrArrayIndex()),
+                             ex_arith_clause::getInstructionStr(getInstrArrayIndex()));
 }
 
 void ex_arith_sum_clause::displayContents(Space * space, 
 					  const char * /*displayStr*/, 
 					  Int32 clauseNum, char * constsArea)
 {
-  set_case_index();
+  setInstruction();
   ex_clause::displayContents(space, "ex_arith_sum_clause", clauseNum, constsArea);
 }
 
@@ -1835,7 +1850,7 @@ void ex_arith_count_clause::displayContents(Space * space,
 					    const char * /*displayStr*/, 
 					    Int32 clauseNum, char * constsArea)
 {
-  set_case_index();
+  setInstruction();
   ex_clause::displayContents(space, "ex_arith_count_clause", clauseNum, constsArea);
 }
 
@@ -1905,17 +1920,21 @@ void ex_branch_clause::displayContents(Space * space, const char * /*displayStr*
 
 void ex_comp_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
-  set_case_index();
-  ex_clause::displayContents(space, "ex_comp_clause", clauseNum, constsArea, flags_);
-  //  cout << "Case Index  = " << get_case_index() << endl;
+  setInstruction();
+  ex_clause::displayContents(space, "ex_comp_clause", clauseNum, constsArea, 
+                             flags_,
+                             ex_comp_clause::getInstruction(getInstrArrayIndex()),                             
+                             ex_comp_clause::getInstructionStr(getInstrArrayIndex()));
+
 }
 
 void ex_conv_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
-  set_case_index();
+  setInstruction();
   ex_clause::displayContents(space, "ex_conv_clause", clauseNum, constsArea, 
-			     flags_);
-  //  cout << "Case Index  = " << get_case_index() << endl;
+                             flags_,
+                             ex_conv_clause::getInstruction(getInstrArrayIndex()),
+                             ex_conv_clause::getInstructionStr(getInstrArrayIndex()));
 }
 
 void ex_function_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)

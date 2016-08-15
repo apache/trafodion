@@ -234,7 +234,9 @@ short CmpSeabaseMDcleanup::validateInputValues(
                                     inObjType.data(),
                                     outObjType, objectOwner_);
       if ((objUID_ == -1) && // not found
-          (inObjType != COM_UNKNOWN_OBJECT_LIT)) // type explicitly specified
+          (inObjType != COM_UNKNOWN_OBJECT_LIT &&
+           inObjType != COM_PRIVATE_SCHEMA_OBJECT_LIT &&
+           inObjType != COM_SHARED_SCHEMA_OBJECT_LIT)) // type explicitly specified
         {
           // check if there is another object type with the same name.
           objUID_ = getCleanupObjectUID(cliInterface,
@@ -941,6 +943,7 @@ void CmpSeabaseMDcleanup::cleanupSchemaObjects(ExeCliInterface *cliInterface)
                FALSE, FALSE
            );
       }
+      schObjList->advance();
    }
 
   // Now drop remaining objects

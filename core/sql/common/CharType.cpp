@@ -1217,7 +1217,9 @@ void CharType::minMaxRepresentableValue(void* bufPtr,
   if (stringLiteral)
     {
       NABoolean isNull = FALSE;
-      NABoolean res = createSQLLiteral((const char *) bufPtr, *stringLiteral, isNull, h);
+      //the bufPtr passed in point to the postion after null header
+      //createSQLLiteral requires the input pointer to be the begin of the buffer
+      NABoolean res = createSQLLiteral((const char *) bufPtr  - getSQLnullHdrSize(), *stringLiteral, isNull, h);
       assert(res);
     }
 }

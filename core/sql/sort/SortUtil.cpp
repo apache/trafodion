@@ -114,12 +114,8 @@ NABoolean SortUtil::scratchInitialize(void)
         return SORT_FAILURE;
       }
 
-    scratch_->setScratchDiskListSpec(config_->scratchDiskListSpec_);
-    scratch_->setNumDisksSpec(config_->numDisksSpec_);
-    scratch_->setScratchDiskListExcl(config_->scratchDiskListExcl_);
-    scratch_->setNumDisksExcl(config_->numDisksExcl_);
-    scratch_->setScratchDiskListPref(config_->scratchDiskListPref_);
-    scratch_->setNumDisksPref(config_->numDisksPref_);
+    scratch_->setScratchDirListSpec(config_->scratchDirListSpec_);
+    scratch_->setNumDirsSpec(config_->numDirsSpec_);
     scratch_->setNumEsps(config_->numEsps_);
     scratch_->setEspInstance(config_->espInstance_);
 

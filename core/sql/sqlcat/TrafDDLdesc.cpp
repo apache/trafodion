@@ -603,6 +603,7 @@ Long TrafViewDesc::pack(void * space)
 
   viewtext = (viewtext ? (char*)(((Space*)space)->convertToOffset(viewtext)) : NULL);
   viewchecktext = (viewchecktext ? (char*)(((Space*)space)->convertToOffset(viewchecktext)) : NULL);
+  viewcolusages = (viewcolusages ? (char*)(((Space*)space)->convertToOffset(viewcolusages)) : NULL);
 
   return TrafDesc::pack(space);
 }
@@ -614,6 +615,7 @@ Lng32 TrafViewDesc::unpack(void * base, void * reallocator)
 
   viewtext = (viewtext ? (char*)((char*)base - (Long)viewtext) : NULL);
   viewchecktext = (viewchecktext ? (char*)((char*)base - (Long)viewchecktext) : NULL);
+  viewcolusages = (viewcolusages ? (char*)((char*)base - (Long)viewcolusages) : NULL);
 
   return TrafDesc::unpack(base, reallocator);
 }

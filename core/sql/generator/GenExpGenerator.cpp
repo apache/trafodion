@@ -831,30 +831,33 @@ short ExpGenerator::handleUnsupportedCast(Cast * castNode)
   short tgtFsType = tgtNAType.getFSDatatype();
 
   // check if conversion involves tinyint or largeint unsigned
-  if ((srcFsType != REC_BIN8_SIGNED) &&
-      (srcFsType != REC_BIN8_UNSIGNED) &&
-      (srcFsType != REC_BIN64_UNSIGNED) &&
-      (tgtFsType != REC_BIN8_SIGNED) &&
-      (tgtFsType != REC_BIN8_UNSIGNED) &&
-      (tgtFsType != REC_BIN64_UNSIGNED))
+  NABoolean tinyintCast = FALSE;
+  NABoolean largeUnsignedCast = FALSE;
+  if (((DFS2REC::isTinyint(srcFsType)) &&
+       (NOT DFS2REC::isTinyint(tgtFsType))) ||
+      ((NOT DFS2REC::isTinyint(srcFsType)) &&
+       (DFS2REC::isTinyint(tgtFsType))))
+    tinyintCast = TRUE;
+
+  if ((srcFsType == REC_BIN64_UNSIGNED) ||
+      (tgtFsType == REC_BIN64_UNSIGNED))
+    largeUnsignedCast = TRUE;
+
+  if ((NOT tinyintCast) && (NOT largeUnsignedCast))
     return 0;
 
   ex_conv_clause tempClause;
-  if (tempClause.isConversionSupported(srcFsType, tgtFsType))
+  if (tempClause.isConversionSupported(srcFsType, srcNAType.getNominalSize(),
+                                       tgtFsType, tgtNAType.getNominalSize()))
     return 0;
 
   // if this cast involved a tinyint and is unsupported, convert to
   // smallint.
-  if ((srcFsType == REC_BIN8_SIGNED) ||
-      (srcFsType == REC_BIN8_UNSIGNED) ||
-      (tgtFsType == REC_BIN8_SIGNED) ||
-      (tgtFsType == REC_BIN8_UNSIGNED) ||
-      (DFS2REC::isInterval(srcFsType)) ||
-      (DFS2REC::isInterval(tgtFsType)))
+  if (tinyintCast)
     {
       // add a Cast node to convert from/to tinyint to/from small int.
       NumericType * newType = NULL;
-      if (DFS2REC::isInterval(srcFsType))
+      if (DFS2REC::isInterval(srcFsType)) // interval to tinyint
         {
           const IntervalType &srcInt = (IntervalType&)srcNAType; 
           newType = new (generator->wHeap())
@@ -862,17 +865,46 @@ short ExpGenerator::handleUnsupportedCast(Cast * castNode)
                        srcInt.getFractionPrecision(),
                        TRUE, srcNAType.supportsSQLnull());
         }
-      else
+      else if (DFS2REC::isInterval(tgtFsType)) // tinyint to interval
         {
           const NumericType &srcNum = (NumericType&)srcNAType; 
-          if (srcNum.getScale() == 0)
+           newType = new (generator->wHeap())
+             SQLNumeric(sizeof(short), srcNum.getPrecision(), 
+                        srcNum.getScale(),
+                        NOT srcNum.isUnsigned(), srcNAType.supportsSQLnull());
+        }
+      else if (DFS2REC::isTinyint(srcFsType)) // tinyint to non-tinyint
+        {
+          const NumericType &srcNum = (NumericType&)srcNAType; 
+          
+          if ((srcNum.getScale() == 0) &&
+              (srcNum.binaryPrecision()))
             newType = new (generator->wHeap())
               SQLSmall(NOT srcNum.isUnsigned(),
-                       srcNAType.supportsSQLnull());
+                       tgtNAType.supportsSQLnull());
           else
             newType = new (generator->wHeap())
-              SQLNumeric(sizeof(short), srcNum.getPrecision(), srcNum.getScale(),
-                         NOT srcNum.isUnsigned(), srcNAType.supportsSQLnull());
+              SQLNumeric(sizeof(short), srcNum.getPrecision(), 
+                         srcNum.getScale(),
+                         NOT srcNum.isUnsigned(), 
+                         tgtNAType.supportsSQLnull());
+        }
+      else if (DFS2REC::isTinyint(tgtFsType)) // non-tinyint to tinyint
+        {
+          const NumericType &srcNum = (NumericType&)srcNAType; 
+          const NumericType &tgtNum = (NumericType&)tgtNAType; 
+          
+          if ((tgtNum.getScale() == 0) &&
+              (tgtNum.binaryPrecision()))
+            newType = new (generator->wHeap())
+              SQLSmall(NOT tgtNum.isUnsigned(),
+                       tgtNAType.supportsSQLnull());
+          else
+            newType = new (generator->wHeap())
+              SQLNumeric(sizeof(short), tgtNum.getPrecision(), 
+                         tgtNum.getScale(),
+                         NOT tgtNum.isUnsigned(), 
+                         tgtNAType.supportsSQLnull());
         }
 
       ItemExpr * newChild =

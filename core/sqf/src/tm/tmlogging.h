@@ -34,8 +34,6 @@ int tm_init_logging();
 
 int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *err_string, char *exception_stack=NULL, long transid=-1);
 
-int tm_alt_log_write(int eventType, posix_sqlog_severity_t severity, char *msg);
-
 int tm_log_event(int event_type, 
                  posix_sqlog_severity_t severity,
                  const char *temp_string, 

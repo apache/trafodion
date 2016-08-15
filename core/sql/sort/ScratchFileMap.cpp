@@ -174,7 +174,7 @@ void ScratchFileMap::closeScrFilesUpto(SBN uptoBlockNum)
 //  NULL if unsuccessful.
 //-----------------------------------------------------------------------
 
-ScratchFile* ScratchFileMap::createNewScrFile(char* volume,
+ScratchFile* ScratchFileMap::createNewScrFile(
                                 ScratchSpace *scratchSpace,
                                 Int32 scratchMgmtOption,
                                 Int32 scratchMaxOpens,
@@ -204,7 +204,7 @@ ScratchFile* ScratchFileMap::createNewScrFile(char* volume,
   tempFileMap->index_   = numScratchFiles_;
 
 
-   tempFileMap->scrFile_ = new (heap_) SQScratchFile(volume, 
+   tempFileMap->scrFile_ = new (heap_) SQScratchFile( 
                          scratchSpace, 
                          sortError_, heap_,
                          breakEnabled_,

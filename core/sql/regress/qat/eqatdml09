@@ -80,12 +80,12 @@
 +>         where partnum = 4102
 +>        );
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-      8  
-     15  
+     15
+      6
+      8
 
 --- 3 row(s) selected.
 >>
@@ -100,13 +100,13 @@ SUPPNUM
 +>         where partnum = 4102
 +>        );
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-     10  
+      2
+      3
+     10
+      1
 
 --- 4 row(s) selected.
 >>
@@ -120,16 +120,16 @@ SUPPNUM
 +>        (select manager
 +>         from region);
 
-EMPNUM  
-------  
+EMPNUM
+------
 
-     1  
-    29  
-    43  
-    72  
-    87  
-   104  
-   343  
+    29
+   104
+    72
+   343
+    43
+    87
+     1
 
 --- 7 row(s) selected.
 >>
@@ -145,15 +145,15 @@ EMPNUM
 +>         from fromsup
 +>         where suppnum = 15);
 
-PARTNUM  
--------  
+PARTNUM
+-------
 
-   4101  
-   4102  
-   4103  
-   5101  
-   5103  
-   5504  
+   4101
+   4102
+   4103
+   5101
+   5103
+   5504
 
 --- 6 row(s) selected.
 >>
@@ -171,15 +171,15 @@ PARTNUM
 +>         from fromsup
 +>         where suppnum = 15);
 
-PARTNUM  
--------  
+PARTNUM
+-------
 
-   4101  
-   4102  
-   4103  
-   5101  
-   5103  
-   5504  
+   4101
+   4102
+   4103
+   5101
+   5103
+   5504
 
 --- 6 row(s) selected.
 >>
@@ -194,15 +194,15 @@ PARTNUM
 +>         from fromsup Y
 +>         where suppnum = 15);
 
-PARTNUM  
--------  
+PARTNUM
+-------
 
-   4101  
-   4102  
-   4103  
-   5101  
-   5103  
-   5504  
+   4101
+   4102
+   4103
+   5101
+   5103
+   5504
 
 --- 6 row(s) selected.
 >>
@@ -219,21 +219,21 @@ PARTNUM
 +>         where  odetail.partnum =  parts.partnum
 +>         and price > 50000);
 
-SALESMAN  ORDERNUM  
---------  --------  
+SALESMAN  ORDERNUM
+--------  --------
 
-     205        21  
-     212        25  
-     222        30  
-     204        32  
-     231        35  
-     218        38  
-     207        41  
-     212        45  
-     225        48  
-     210        51  
-     205        66  
-     221       122  
+     204        32
+     205        21
+     205        66
+     207        41
+     210        51
+     212        25
+     212        45
+     218        38
+     221       122
+     222        30
+     225        48
+     231        35
 
 --- 12 row(s) selected.
 >>
@@ -249,19 +249,19 @@ SALESMAN  ORDERNUM
 +>         where  odetail.partnum =  parts.partnum
 +>         and price > 50000);
 
-SALESMAN  
---------  
+SALESMAN
+--------
 
-     205  
-     212  
-     222  
-     204  
-     231  
-     218  
-     207  
-     225  
-     210  
-     221  
+     204
+     205
+     207
+     210
+     212
+     218
+     221
+     222
+     225
+     231
 
 --- 10 row(s) selected.
 >>
@@ -274,16 +274,16 @@ SALESMAN
 +>        (select partnum
 +>         from expfroms);
 
-PARTNUM  
--------  
+PARTNUM
+-------
 
-    212  
-    244  
-   1403  
-   3103  
-   4102  
-   4103  
-   5505  
+   4102
+   3103
+   4103
+   5505
+   1403
+    212
+    244
 
 --- 7 row(s) selected.
 >>
@@ -299,13 +299,13 @@ PARTNUM
 +>         from supplier
 +>         where suppnum = 1);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-     10  
+      1
+      2
+      3
+     10
 
 --- 4 row(s) selected.
 >>
@@ -334,13 +334,13 @@ SUPPNUM
 +>         from supplier
 +>         where suppnum = 1);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-     10  
+      1
+      2
+      3
+     10
 
 --- 4 row(s) selected.
 >>
@@ -354,13 +354,13 @@ SUPPNUM
 +>         from supplier Y
 +>         where suppnum = 1);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-     10  
+      1
+      2
+      3
+     10
 
 --- 4 row(s) selected.
 >>
@@ -377,10 +377,10 @@ SUPPNUM
 +>         where partcost = 6000
 +>         and suppnum <> 10);
 
-PARTNUM  
--------  
+PARTNUM
+-------
 
-   4101  
+   4101
 
 --- 1 row(s) selected.
 >>
@@ -396,20 +396,20 @@ PARTNUM
 +>         from partsfor
 +>         where col_2 = 'V67');
 
-CUSTNUM  
--------  
+CUSTNUM
+-------
 
-     21  
-    123  
-    143  
-    324  
-    543  
-    926  
-   1234  
-   3333  
-   5635  
-   7654  
-   7777  
+    123
+     21
+   1234
+   3333
+    543
+    926
+   7654
+    324
+   7777
+    143
+   5635
 
 --- 11 row(s) selected.
 >>
@@ -425,20 +425,20 @@ CUSTNUM
 +>         where col_2 = 'V67')
 +>      order by custnum;
 
-CUSTNUM  
--------  
+CUSTNUM
+-------
 
-     21  
-    123  
-    143  
-    324  
-    543  
-    926  
-   1234  
-   3333  
-   5635  
-   7654  
-   7777  
+     21
+    123
+    143
+    324
+    543
+    926
+   1234
+   3333
+   5635
+   7654
+   7777
 
 --- 11 row(s) selected.
 >>
@@ -454,20 +454,20 @@ CUSTNUM
 +>               ( odetail.partnum =  parts.partnum) and
 +>               (location = 'V67'));
 
-CUSTNUM  
--------  
+CUSTNUM
+-------
 
-     21  
-    123  
-    143  
-    324  
-    543  
-    926  
-   1234  
-   3333  
-   5635  
-   7654  
-   7777  
+    123
+     21
+   1234
+   3333
+    543
+    926
+   7654
+    324
+   7777
+    143
+   5635
 
 --- 11 row(s) selected.
 >>
@@ -482,20 +482,20 @@ CUSTNUM
 +>         from partsfor
 +>         where col_2 = 'V67');
 
-CUSTNUM  
--------  
+CUSTNUM
+-------
 
-     21  
-    123  
-    143  
-    324  
-    543  
-    926  
-   1234  
-   3333  
-   5635  
-   7654  
-   7777  
+     21
+    123
+    143
+    324
+    543
+    926
+   1234
+   3333
+   5635
+   7654
+   7777
 
 --- 11 row(s) selected.
 >>
@@ -512,12 +512,12 @@ CUSTNUM
 +>         and suppnum = 8)
 +>      AND partnum = 4102;
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-      8  
-     15  
+      6
+      8
+     15
 
 --- 3 row(s) selected.
 >>
@@ -533,12 +533,12 @@ SUPPNUM
 +>         where partnum = 4102
 +>         and suppnum = 8);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-      8  
-     15  
+      6
+      8
+     15
 
 --- 3 row(s) selected.
 >>
@@ -567,12 +567,12 @@ SUPPNUM
 +>         from fromsup
 +>         where partnum = 4102);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-      8  
-     15  
+     15
+      6
+      8
 
 --- 3 row(s) selected.
 >>
@@ -586,12 +586,12 @@ SUPPNUM
 +>         from fromsup
 +>         where partnum = 4102);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-      8  
-     15  
+     15
+      6
+      8
 
 --- 3 row(s) selected.
 >>
@@ -606,16 +606,16 @@ SUPPNUM
 +>         where partnum = 4102
 +>        );
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-      6  
-      8  
-     10  
-     15  
+      2
+     15
+      3
+      6
+      8
+     10
+      1
 
 --- 7 row(s) selected.
 >>
@@ -630,16 +630,16 @@ SUPPNUM
 +>         where partnum = 4102
 +>        );
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-      6  
-      8  
-     10  
-     15  
+      2
+     15
+      3
+      6
+      8
+     10
+      1
 
 --- 7 row(s) selected.
 >>
@@ -654,16 +654,16 @@ SUPPNUM
 +>         where partnum = 4102
 +>        );
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-      6  
-      8  
-     10  
-     15  
+      2
+     15
+      3
+      6
+      8
+     10
+      1
 
 --- 7 row(s) selected.
 >>
@@ -678,16 +678,16 @@ SUPPNUM
 +>        (select manager
 +>         from region);
 
-EMPNUM  
-------  
+EMPNUM
+------
 
-     1  
-    29  
-    43  
-    72  
-    87  
-   104  
-   343  
+    29
+   104
+    72
+   343
+    43
+    87
+     1
 
 --- 7 row(s) selected.
 >>
@@ -703,15 +703,15 @@ EMPNUM
 +>         from fromsup
 +>         where suppnum = 15);
 
-PARTNUM  
--------  
+PARTNUM
+-------
 
-   4101  
-   4102  
-   4103  
-   5101  
-   5103  
-   5504  
+   4101
+   4102
+   4103
+   5101
+   5103
+   5504
 
 --- 6 row(s) selected.
 >>
@@ -729,15 +729,15 @@ PARTNUM
 +>         from fromsup
 +>         where suppnum = 15);
 
-PARTNUM  
--------  
+PARTNUM
+-------
 
-   4101  
-   4102  
-   4103  
-   5101  
-   5103  
-   5504  
+   4101
+   4102
+   4103
+   5101
+   5103
+   5504
 
 --- 6 row(s) selected.
 >>
@@ -752,15 +752,15 @@ PARTNUM
 +>         from fromsup Y
 +>         where suppnum = 15);
 
-PARTNUM  
--------  
+PARTNUM
+-------
 
-   4101  
-   4102  
-   4103  
-   5101  
-   5103  
-   5504  
+   4101
+   4102
+   4103
+   5101
+   5103
+   5504
 
 --- 6 row(s) selected.
 >>
@@ -778,21 +778,21 @@ PARTNUM
 +>         where  odetail.partnum =  parts.partnum
 +>         and price > 50000);
 
-SALESMAN  ORDERNUM  
---------  --------  
+SALESMAN  ORDERNUM
+--------  --------
 
-     205        21  
-     212        25  
-     222        30  
-     204        32  
-     231        35  
-     218        38  
-     207        41  
-     212        45  
-     225        48  
-     210        51  
-     205        66  
-     221       122  
+     204        32
+     205        21
+     205        66
+     207        41
+     210        51
+     212        25
+     212        45
+     218        38
+     221       122
+     222        30
+     225        48
+     231        35
 
 --- 12 row(s) selected.
 >>
@@ -808,19 +808,19 @@ SALESMAN  ORDERNUM
 +>         where  odetail.partnum =  parts.partnum
 +>         and price > 5000);
 
-SALESMAN  
---------  
+SALESMAN
+--------
 
-     205  
-     212  
-     222  
-     204  
-     231  
-     218  
-     207  
-     225  
-     210  
-     221  
+     204
+     205
+     207
+     210
+     212
+     218
+     221
+     222
+     225
+     231
 
 --- 10 row(s) selected.
 >>
@@ -833,16 +833,16 @@ SALESMAN
 +>        (select partnum
 +>         from expfroms);
 
-PARTNUM  
--------  
+PARTNUM
+-------
 
-    212  
-    244  
-   1403  
-   3103  
-   4102  
-   4103  
-   5505  
+   4102
+   3103
+   4103
+   5505
+   1403
+    212
+    244
 
 --- 7 row(s) selected.
 >>
@@ -858,13 +858,13 @@ PARTNUM
 +>         from supplier
 +>         where suppnum = 1);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-     10  
+      1
+      2
+      3
+     10
 
 --- 4 row(s) selected.
 >>
@@ -880,11 +880,11 @@ SUPPNUM
 +>         where partnum = 4102)
 +>      and partnum = 4102;
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-     15  
+      6
+     15
 
 --- 2 row(s) selected.
 >>
@@ -899,11 +899,11 @@ SUPPNUM
 +>         where partnum = 4102)
 +>      and partnum = 4102;
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-     15  
+      6
+     15
 
 --- 2 row(s) selected.
 >>
@@ -920,10 +920,10 @@ SUPPNUM
 +>         where partnum = 4102)
 +>      and partnum = 4102;
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
+      6
 
 --- 1 row(s) selected.
 >>
@@ -939,13 +939,13 @@ SUPPNUM
 +>         from supplier
 +>         where suppnum = 1);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-     10  
+      1
+      2
+      3
+     10
 
 --- 4 row(s) selected.
 >>
@@ -960,10 +960,10 @@ SUPPNUM
 +>         from odetail
 +>         where quantity > 25);
 
-SALESMAN  
---------  
+SALESMAN
+--------
 
-     221  
+     221
 
 --- 1 row(s) selected.
 >>
@@ -978,10 +978,10 @@ SALESMAN
 +>         from odetail
 +>         where quantity > 25);
 
-SALESMAN  
---------  
+SALESMAN
+--------
 
-     221  
+     221
 
 --- 1 row(s) selected.
 >>
@@ -996,10 +996,10 @@ SALESMAN
 +>         from odetail
 +>         where quantity > 25);
 
-SALESMAN  
---------  
+SALESMAN
+--------
 
-     221  
+     221
 
 --- 1 row(s) selected.
 >>
@@ -1013,16 +1013,16 @@ SALESMAN
 +>        (select C.state
 +>         from customer C);
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-DATA TERMINAL CO    
-DISPLAY INC         
-TANDEM COMPUTERS    
-INFOMATION STORAGE  
-MAGNETICS CORP      
-STEELWORK INC       
-DATADRIVE           
+TANDEM COMPUTERS  
+DATA TERMINAL CO  
+DISPLAY INC       
+INFOMATION STORAGE
+MAGNETICS CORP    
+STEELWORK INC     
+DATADRIVE         
 
 --- 7 row(s) selected.
 >>
@@ -1036,11 +1036,11 @@ DATADRIVE
 +>        (select state
 +>         from customer);
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-INFOMATION STORAGE  
-MAGNETICS CORP      
+INFOMATION STORAGE
+MAGNETICS CORP    
 
 --- 2 row(s) selected.
 >>
@@ -1055,11 +1055,11 @@ MAGNETICS CORP
 +>         group by state
 +>         having state <> 'Texas');
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-INFOMATION STORAGE  
-MAGNETICS CORP      
+INFOMATION STORAGE
+MAGNETICS CORP    
 
 --- 2 row(s) selected.
 >>
@@ -1073,10 +1073,10 @@ MAGNETICS CORP
 +>        (select col_3
 +>         from partsfor);
 
-COL_11  
-------  
+COL_11
+------
 
-   212  
+   212
 
 --- 1 row(s) selected.
 >>
@@ -1108,11 +1108,11 @@ COL_11
 +>         from fromsup
 +>         where partnum = 5504));
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-     15  
+      6
+     15
 
 --- 2 row(s) selected.
 >>
@@ -1135,11 +1135,11 @@ SUPPNUM
 +>         where partnum = 4102
 +>        );
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-     15  
+      6
+     15
 
 --- 2 row(s) selected.
 >>
@@ -1161,13 +1161,13 @@ SUPPNUM
 +>         from fromsup
 +>         where partnum = 5504));
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      2  
-      6  
-      8  
-     15  
+      2
+     15
+      6
+      8
 
 --- 4 row(s) selected.
 >>
@@ -1188,12 +1188,12 @@ SUPPNUM
 +>         from fromsup
 +>         where partnum = 5504))) ;
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      3  
-     10  
+      3
+     10
+      1
 
 --- 3 row(s) selected.
 >>
@@ -1215,13 +1215,13 @@ SUPPNUM
 +>         where partnum = 4102
 +>        );
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-     10  
+      2
+      3
+     10
+      1
 
 --- 4 row(s) selected.
 >>
@@ -1245,10 +1245,10 @@ SUPPNUM
 +>         from fromsup
 +>         where partnum = 5505));
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-     15  
+     15
 
 --- 1 row(s) selected.
 >>
@@ -1267,46 +1267,46 @@ SUPPNUM
 +>         from employee
 +>         where age < 30000);
 
-EMPNUM  
-------  
+EMPNUM
+------
 
-     1  
-    23  
-    29  
-    32  
-    39  
-    43  
-    65  
-    72  
-    75  
-    87  
-    89  
-    93  
-   104  
-   109  
-   111  
-   129  
-   178  
-   180  
-   205  
-   212  
-   213  
-   214  
-   215  
-   216  
-   218  
-   220  
-   221  
-   222  
-   225  
-   227  
-   228  
-   229  
-   231  
-   232  
-   321  
-   337  
-   343  
+     1
+    23
+    29
+    32
+    39
+    43
+    65
+    72
+    75
+    87
+    89
+    93
+   104
+   109
+   111
+   129
+   178
+   180
+   205
+   212
+   213
+   214
+   215
+   216
+   218
+   220
+   221
+   222
+   225
+   227
+   228
+   229
+   231
+   232
+   321
+   337
+   343
 
 --- 37 row(s) selected.
 >>
@@ -1330,12 +1330,12 @@ EMPNUM
 +>         group by branchnum))
 +>      order by job;
 
-JOB           
-------------  
+JOB         
+------------
 
-MANAGER       
-SALESMAN      
-SECRETARY     
+MANAGER     
+SALESMAN    
+SECRETARY   
 
 --- 3 row(s) selected.
 >>
@@ -1356,14 +1356,14 @@ SECRETARY
 +>            where inventory < 0)
 +>        );
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-      6  
-     15  
+      2
+     15
+      3
+      6
+      1
 
 --- 5 row(s) selected.
 >>
@@ -1383,14 +1383,14 @@ SUPPNUM
 +>            where inventory < 0)
 +>        );
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-      6  
-     15  
+      2
+     15
+      3
+      6
+      1
 
 --- 5 row(s) selected.
 >>
@@ -1410,14 +1410,14 @@ SUPPNUM
 +>            where inventory < 0)
 +>        );
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-TANDEM COMPUTERS    
-DATA TERMINAL CO    
-DISPLAY INC         
-INFOMATION STORAGE  
-DATADRIVE           
+DATA TERMINAL CO  
+DATADRIVE         
+DISPLAY INC       
+INFOMATION STORAGE
+TANDEM COMPUTERS  
 
 --- 5 row(s) selected.
 >>
@@ -1436,14 +1436,14 @@ DATADRIVE
 +>            where inventory < 0)
 +>        );
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-      6  
-     15  
+      2
+     15
+      3
+      6
+      1
 
 --- 5 row(s) selected.
 >>
@@ -1461,12 +1461,12 @@ SUPPNUM
 +>            from parts
 +>            where partname = 'LP  900 LPM'));
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      2  
-      6  
-     15  
+      2
+     15
+      6
 
 --- 3 row(s) selected.
 >>
@@ -1483,12 +1483,12 @@ SUPPNUM
 +>            from parts
 +>            where partname = 'LP  900 LPM'));
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      2  
-      6  
-     15  
+      2
+     15
+      6
 
 --- 3 row(s) selected.
 >>
@@ -1505,12 +1505,12 @@ SUPPNUM
 +>            from parts
 +>            where partname = 'LP  900 LPM'));
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-DATA TERMINAL CO    
-INFOMATION STORAGE  
-DATADRIVE           
+DATA TERMINAL CO  
+DATADRIVE         
+INFOMATION STORAGE
 
 --- 3 row(s) selected.
 >>
@@ -1530,14 +1530,14 @@ DATADRIVE
 +>           )
 +>        );
 
-AGE    
------  
+AGE
+---
 
-   24  
-   26  
-   19  
-   22  
-   24  
+ 24
+ 26
+ 19
+ 22
+ 24
 
 --- 5 row(s) selected.
 >>
@@ -1556,14 +1556,14 @@ AGE
 +>           )
 +>        );
 
-AGE    
------  
+AGE
+---
 
-   24  
-   26  
-   19  
-   22  
-   24  
+ 24
+ 26
+ 19
+ 22
+ 24
 
 --- 5 row(s) selected.
 >>
@@ -1583,14 +1583,14 @@ AGE
 +>           )
 +>        );
 
-AGE    
------  
+AGE
+---
 
-   24  
-   26  
-   19  
-   22  
-   24  
+ 24
+ 26
+ 19
+ 22
+ 24
 
 --- 5 row(s) selected.
 >>
@@ -1612,19 +1612,19 @@ AGE
 +>           from parts
 +>           where price = 8000));
 
-SALESMAN  
---------  
+SALESMAN
+--------
 
-     205  
-     212  
-     222  
-     204  
-     231  
-     218  
-     207  
-     225  
-     210  
-     221  
+     204
+     205
+     207
+     210
+     212
+     218
+     221
+     222
+     225
+     231
 
 --- 10 row(s) selected.
 >>
@@ -1645,19 +1645,19 @@ SALESMAN
 +>           from parts
 +>           where price = 8000));
 
-SALESMAN  
---------  
+SALESMAN
+--------
 
-     205  
-     212  
-     222  
-     204  
-     231  
-     218  
-     207  
-     225  
-     210  
-     221  
+     204
+     205
+     207
+     210
+     212
+     218
+     221
+     222
+     225
+     231
 
 --- 10 row(s) selected.
 >>
@@ -1689,20 +1689,20 @@ SALESMAN
 +>           )
 +>        );
 
-CUSTNUM  
--------  
+CUSTNUM
+-------
 
-     21  
-    123  
-    143  
-    324  
-    543  
-    926  
-   1234  
-   3210  
-   3333  
-   5635  
-   7654  
+   3210
+    123
+     21
+   1234
+   3333
+    543
+    926
+   7654
+    324
+    143
+   5635
 
 --- 11 row(s) selected.
 >>
@@ -1732,20 +1732,20 @@ CUSTNUM
 +>           )
 +>        );
 
-CUSTNUM  
--------  
+CUSTNUM
+-------
 
-     21  
-    123  
-    143  
-    324  
-    543  
-    926  
-   1234  
-   3210  
-   3333  
-   5635  
-   7654  
+   3210
+    123
+     21
+   1234
+   3333
+    543
+    926
+   7654
+    324
+    143
+   5635
 
 --- 11 row(s) selected.
 >>
@@ -1776,20 +1776,20 @@ CUSTNUM
 +>           )
 +>        );
 
-CUSTNAME            
-------------------  
+CUSTNAME          
+------------------
 
-CENTRAL UNIVERSITY  
-BROWN MEDICAL CO    
-STEVENS SUPPLY      
-PREMIER INSURANCE   
-FRESNO STATE BANK   
-METALL-AG.          
-DATASPEED           
-BESTFOOD MARKETS    
-DEUTSCHE STAHL      
-VEREINIGTE CHEMIE   
-MOTOR DISTRIBUTING  
+BESTFOOD MARKETS  
+BROWN MEDICAL CO  
+CENTRAL UNIVERSITY
+DATASPEED         
+DEUTSCHE STAHL    
+FRESNO STATE BANK 
+METALL-AG.        
+MOTOR DISTRIBUTING
+PREMIER INSURANCE 
+STEVENS SUPPLY    
+VEREINIGTE CHEMIE 
 
 --- 11 row(s) selected.
 >>
@@ -1821,15 +1821,15 @@ MOTOR DISTRIBUTING
 +>         and omonth < 4
 +>        );
 
-CUSTNUM  
--------  
+CUSTNUM
+-------
 
-     21  
-    123  
-    543  
-    926  
-   1234  
-   7654  
+    123
+     21
+   1234
+    543
+    926
+   7654
 
 --- 6 row(s) selected.
 >>
@@ -1850,11 +1850,11 @@ CUSTNUM
 +>           )
 +>        );
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-MARK FOLEY          
-RICHARD BARTON      
+MARK FOLEY        
+RICHARD BARTON    
 
 --- 2 row(s) selected.
 >>
@@ -1875,14 +1875,14 @@ RICHARD BARTON
 +>         group by suppnum
 +>        );
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-      6  
-     15  
+      2
+     15
+      3
+      6
+      1
 
 --- 5 row(s) selected.
 >>
@@ -1902,13 +1902,13 @@ SUPPNUM
 +>          having suppnum <> 2
 +>         );
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      3  
-      6  
-     15  
+      1
+      3
+      6
+     15
 
 --- 4 row(s) selected.
 >>
@@ -1933,13 +1933,13 @@ SUPPNUM
 +>         )
 +>       order by age;
 
-AGE    
------  
+AGE
+---
 
-   19  
-   24  
-   24  
-   26  
+ 19
+ 24
+ 24
+ 26
 
 --- 4 row(s) selected.
 >>
@@ -1972,15 +1972,15 @@ AGE
 +>        )
 +>      for repeatable access;
 
-PARTNUM  
--------  
+PARTNUM
+-------
 
-   4101  
-   4102  
-   4103  
-   5101  
-   5103  
-   5504  
+   4101
+   4102
+   4103
+   5101
+   5103
+   5504
 
 --- 6 row(s) selected.
 >>
@@ -1999,21 +1999,21 @@ PARTNUM
 +>         for repeatable access
 +>        );
 
-SALESMAN  ORDERNUM  
---------  --------  
+SALESMAN  ORDERNUM
+--------  --------
 
-     205        21  
-     212        25  
-     222        30  
-     204        32  
-     231        35  
-     218        38  
-     207        41  
-     212        45  
-     225        48  
-     210        51  
-     205        66  
-     221       122  
+     204        32
+     205        21
+     205        66
+     207        41
+     210        51
+     212        25
+     212        45
+     218        38
+     221       122
+     222        30
+     225        48
+     231        35
 
 --- 12 row(s) selected.
 >>
@@ -2030,13 +2030,13 @@ SALESMAN  ORDERNUM
 +>        )
 +>      for repeatable access;
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-     10  
+      1
+      2
+      3
+     10
 
 --- 4 row(s) selected.
 >>
@@ -2053,20 +2053,20 @@ SUPPNUM
 +>         for browse access
 +>        );
 
-CUSTNUM  
--------  
+CUSTNUM
+-------
 
-     21  
-    123  
-    143  
-    324  
-    543  
-    926  
-   1234  
-   3333  
-   5635  
-   7654  
-   7777  
+    123
+     21
+   1234
+   3333
+    543
+    926
+   7654
+    324
+   7777
+    143
+   5635
 
 --- 11 row(s) selected.
 >>
@@ -2084,20 +2084,20 @@ CUSTNUM
 +>                for repeatable access
 +>        );
 
-CUSTNUM  
--------  
+CUSTNUM
+-------
 
-     21  
-    123  
-    143  
-    324  
-    543  
-    926  
-   1234  
-   3333  
-   5635  
-   7654  
-   7777  
+    123
+     21
+   1234
+   3333
+    543
+    926
+   7654
+    324
+   7777
+    143
+   5635
 
 --- 11 row(s) selected.
 >>
@@ -2120,11 +2120,11 @@ CUSTNUM
 +>         for stable access)
 +>        );
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-     15  
+      6
+     15
 
 --- 2 row(s) selected.
 >>
@@ -2149,14 +2149,14 @@ SUPPNUM
 +>        )
 +>      for stable access;
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-      6  
-     15  
+      2
+     15
+      3
+      6
+      1
 
 --- 5 row(s) selected.
 >>
@@ -2179,14 +2179,14 @@ SUPPNUM
 +>        )
 +>      for browse access;
 
-AGE    
------  
+AGE
+---
 
-   24  
-   26  
-   19  
-   22  
-   24  
+ 24
+ 26
+ 19
+ 22
+ 24
 
 --- 5 row(s) selected.
 >>
@@ -2213,19 +2213,19 @@ AGE
 +>        )
 +>      for stable access;
 
-SALESMAN  
---------  
+SALESMAN
+--------
 
-     205  
-     212  
-     222  
-     204  
-     231  
-     218  
-     207  
-     225  
-     210  
-     221  
+     204
+     205
+     207
+     210
+     212
+     218
+     221
+     222
+     225
+     231
 
 --- 10 row(s) selected.
 >>
@@ -2248,11 +2248,11 @@ SALESMAN
 +>        )
 +>      for browse access;
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-MARK FOLEY          
-RICHARD BARTON      
+MARK FOLEY        
+RICHARD BARTON    
 
 --- 2 row(s) selected.
 >>
@@ -2282,10 +2282,10 @@ RICHARD BARTON
 +>         group by regnum, branchnum
 +>        );
 
-REGNUM  BRANCHNUM  (EXPR)                
-------  ---------  --------------------  
+REGNUM  BRANCHNUM  (EXPR)              
+------  ---------  --------------------
 
-     4          1                 38750  
+     4          1                 38750
 
 --- 1 row(s) selected.
 >>
@@ -2301,10 +2301,10 @@ REGNUM  BRANCHNUM  (EXPR)
 +>         group by regnum, branchnum
 +>        );
 
-REGNUM  BRANCHNUM  (EXPR)                
-------  ---------  --------------------  
+REGNUM  BRANCHNUM  (EXPR)              
+------  ---------  --------------------
 
-    99          1                 28191  
+    99          1                 28191
 
 --- 1 row(s) selected.
 >>
@@ -2326,16 +2326,16 @@ REGNUM  BRANCHNUM  (EXPR)
 +>           )
 +>        );
 
-JOB           (EXPR)                (EXPR)                
-------------  --------------------  --------------------  
+JOB           (EXPR)                (EXPR)              
+------------  --------------------  --------------------
 
-SALESMAN                     29071                    35  
-SYS.-ANAL.                   27600                    31  
-SECRETARY                    22142                    30  
-PROGRAMMER                   22666                    31  
-MANAGER                      37000                    36  
-ENGINEER                     29333                    30  
-SYST.-ANAL                   31407                    35  
+SALESMAN                     29071                    35
+SYS.-ANAL.                   27600                    31
+MANAGER                      37000                    36
+ENGINEER                     29333                    30
+PROGRAMMER                   22666                    31
+SYST.-ANAL                   31407                    35
+SECRETARY                    22142                    30
 
 --- 7 row(s) selected.
 >>      -- ++++++ may take a long (an hour) time to run
@@ -2373,21 +2373,21 @@ SYST.-ANAL                   31407                    35
 +>         from employee
 +>        );
 
-SALARY      (EXPR)  
-----------  ------  
+SALARY      (EXPR)
+----------  ------
 
-     39500      37  
-     37000      34  
-     36000      39  
-     38000      39  
-     35000      35  
-     40000      41  
-     32000      28  
-     39000      31  
-     33000      31  
-     50000      21  
-     31000      32  
-     32222      36  
+     39500      37
+     50000      21
+     37000      34
+     39000      31
+     31000      32
+     32222      36
+     36000      39
+     35000      35
+     32000      28
+     33000      31
+     38000      39
+     40000      41
 
 --- 12 row(s) selected.
 >>
@@ -2403,20 +2403,20 @@ SALARY      (EXPR)
 +>         from employee
 +>        );
 
-SALARY      (EXPR)  
-----------  ------  
+SALARY      (EXPR)
+----------  ------
 
-     39500      37  
-     37000      34  
-     36000      39  
-     38000      39  
-     35000      35  
-     40000      41  
-     32000      28  
-     39000      31  
-     33000      31  
-     50000      21  
-     32222      36  
+     39500      37
+     50000      21
+     37000      34
+     39000      31
+     32222      36
+     36000      39
+     35000      35
+     32000      28
+     33000      31
+     38000      39
+     40000      41
 
 --- 11 row(s) selected.
 >>
@@ -2432,17 +2432,17 @@ SALARY      (EXPR)
 +>         from employee
 +>        );
 
-SALARY      (EXPR)  
-----------  ------  
+SALARY      (EXPR)
+----------  ------
 
-     39500      37  
-     36000      39  
-     38000      39  
-     35000      35  
-     40000      41  
-     27000      37  
-     22000      55  
-     32222      36  
+     39500      37
+     22000      55
+     32222      36
+     36000      39
+     35000      35
+     27000      37
+     38000      39
+     40000      41
 
 --- 8 row(s) selected.
 >>
@@ -2459,10 +2459,10 @@ SALARY      (EXPR)
 +>         group by salary
 +>        );
 
-SALARY      (EXPR)                
-----------  --------------------  
+SALARY      (EXPR)              
+----------  --------------------
 
-     32000                     6  
+     32000                     6
 
 --- 1 row(s) selected.
 >>

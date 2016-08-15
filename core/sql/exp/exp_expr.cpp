@@ -451,7 +451,7 @@ int ex_expr::formatARow2(const char** srcFldsPtr,
                                             sizeof(vcActualLen),
                                             heap,
                                             diags,
-                                            (conv_case_index)srcFieldsConvIndex[index]
+                                            (ConvInstruction)srcFieldsConvIndex[index]
                                             );
 
     if(err == ex_expr::EXPR_ERROR) return -1;

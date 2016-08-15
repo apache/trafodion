@@ -68,10 +68,26 @@ class PrivMgr
                           };
 
     enum PrivCommand { GRANT_OBJECT           = 30,
-                       REVOKE_OBJECT_RESTRICT = 31,
-                       REVOKE_OBJECT_CASCADE  = 32,
-                       UNKNOWN_PRIV_COMMAND   = 33
+                       GRANT_COLUMN           = 31,
+                       REVOKE_OBJECT_RESTRICT = 32,
+                       REVOKE_OBJECT_CASCADE  = 33,
+                       REVOKE_COLUMN_RESTRICT = 34,
+                       REVOKE_COLUMN_CASCADE  = 35,
+                       UNKNOWN_PRIV_COMMAND   = 36
                      };
+
+    bool isRevokeCommand (const PrivCommand command)
+    {
+      return (command == REVOKE_OBJECT_RESTRICT ||
+              command == REVOKE_OBJECT_CASCADE ||
+              command == REVOKE_COLUMN_RESTRICT ||
+              command == REVOKE_COLUMN_CASCADE);
+    }
+
+    bool isGrantCommand (const PrivCommand command)
+    {
+      return (command == GRANT_OBJECT || command == GRANT_COLUMN);
+    }
 
     // -------------------------------------------------------------------
     // Static functions:

@@ -902,7 +902,7 @@ ex_expr::exp_return_type ExFunctionRepeat::eval(char *op_data[],
 
   if ((repeatCount < 0) || ((repeatCount * len1) > resultMaxLen))
     {
-      ExRaiseFunctionSqlError(heap, diagsArea, EXE_INTERNAL_ERROR,
+      ExRaiseFunctionSqlError(heap, diagsArea, EXE_STRING_OVERFLOW,
                               derivedFunction(),
                               origFunctionOperType());
 
@@ -5727,7 +5727,7 @@ ex_expr::exp_return_type ex_function_translate::eval(char *op_data[],
         op0->getVCIndicatorLength(),
         heap,
         diagsArea,
-        (conv_case_index)convType);
+        (ConvInstruction)convType);
 #pragma warn(1506)  // warning elimination 
 }
   

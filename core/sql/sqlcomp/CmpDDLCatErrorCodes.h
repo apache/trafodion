@@ -59,7 +59,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_FS_ERROR                                  = 1024
                   , CAT_DEPENDENT_OBJECTS_EXIST                   = 1025
                   , CAT_SCHEMA_ID_AND_USER_ID_DO_NOT_MATCH        = 1026
-                  , CAT_DEFINITION_SCHEMA_CAN_NOT_BE_DROPPED_BY_USER
+                  , CAT_COLUMN_PRIVILEGE_NOT_ALLOWED              = 1027
                   , CAT_SCHEMA_IS_NOT_EMPTY                       = 1028
                   , CAT_UNABLE_TO_CREATE_OBJECT                   = 1029
                   , CAT_HBASE_NAME_TOO_LONG                       = 1030
