@@ -93,4 +93,3 @@ ReadTableDef::~ReadTableDef()
   // end any transactions started by "me"
 }
 
-

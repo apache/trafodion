@@ -6164,7 +6164,7 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
 
   Int32 maxLen = TEXTLEN;
   char queryBuf[1000];
-  Lng32 numRows = (dataLen / maxLen) + 1;
+  Lng32 numRows = ((dataLen -1) / maxLen) + 1;
   Lng32 currPos = 0;
   Lng32 currDataLen = 0;
 

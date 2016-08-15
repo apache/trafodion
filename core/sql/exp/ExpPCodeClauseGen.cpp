@@ -807,7 +807,7 @@ ex_expr::exp_return_type ex_comp_clause::pCodeGenerate(Space *space, UInt32 f) {
   // Generate the standard clause->eval PCode for cases that
   // are not handled with more fundamental PCode operations.
   //
-  switch(get_case_index()) {
+  switch(getInstruction()) {
   case NE_ASCII_F_F:
   case EQ_ASCII_F_F:
   case LT_ASCII_F_F:
@@ -979,7 +979,7 @@ ex_expr::exp_return_type ex_comp_clause::pCodeGenerate(Space *space, UInt32 f) {
   // Generate the comparison operator
   //
   PCIT::Operation op = PCIT::Op_OPDATA; // prevent init warning
-  switch(get_case_index()) {
+  switch(getInstruction()) {
 
   case EQ_BIN32S_BIN16S:
   case EQ_BIN32U_BIN16U:
@@ -2033,7 +2033,7 @@ ex_expr::exp_return_type ex_arith_clause::unaryArithPCodeGenerate
 
   AttributesPtr *attrs = getOperand();
 
-  switch(get_case_index()) {
+  switch(getInstruction()) {
 
   case NEGATE_BOOLEAN:
     break;
@@ -2070,7 +2070,7 @@ ex_expr::exp_return_type ex_arith_clause::unaryArithPCodeGenerate
   OL *ol = NULL;
   PCIT::Operation inst = PCIT::Op_OPDATA;  // prevent uninitialized var warning
  
-  switch(get_case_index()) 
+  switch(getInstruction()) 
     {
     case NEGATE_BOOLEAN:
       aml = &aml2;
@@ -2136,7 +2136,7 @@ ex_expr::exp_return_type ex_arith_clause::pCodeGenerate(Space *space, UInt32 f) 
   // are not handled with more fundamental PCode operations.
   //
   AttributesPtr *attrs = getOperand();
-  switch(get_case_index()) {
+  switch(getInstruction()) {
   case ADD_BIN16S_BIN16S_BIN16S:
   case ADD_BIN32S_BIN32S_BIN32S:
   case ADD_BIN64S_BIN64S_BIN64S:
@@ -2290,7 +2290,7 @@ ex_expr::exp_return_type ex_arith_clause::pCodeGenerate(Space *space, UInt32 f) 
   AML *aml = NULL;
   OL *ol = NULL;
   PCIT::Operation inst = PCIT::Op_OPDATA;  // prevent uninitialized var warning
-  switch(get_case_index()) 
+  switch(getInstruction()) 
     {
     case ADD_BIN32S_BIN16S_BIN32S:
     case ADD_BIN64S_BIN32S_BIN64S:
@@ -2446,7 +2446,7 @@ ex_expr::exp_return_type ex_arith_sum_clause::pCodeGenerate(Space *space, UInt32
   // are not handled with more fundamental PCode operations.
   // Since this is arith_sum, only add operations should appear.
   //
-  switch(get_case_index()) {
+  switch(getInstruction()) {
   case ADD_BIN32S_BIN32S_BIN32S:
   case ADD_BIN64S_BIN64S_BIN64S:
     break;
@@ -2521,7 +2521,7 @@ ex_expr::exp_return_type ex_arith_sum_clause::pCodeGenerate(Space *space, UInt32
   // not, choose the appropriate operand number and size for the 
   // increment operation.
   //
-  if (get_case_index() == ADD_COMPLEX)
+  if (getInstruction() == ADD_COMPLEX)
   {
     AML aml(PCIT::MATTR3, PCIT::MATTR3, PCIT::IBIN32S, PCIT::MBIGS,
             PCIT::MBIGS, PCIT::IBIN32S);
@@ -2668,6 +2668,11 @@ const  Int32 bpPrecision[] = { 0, 1, 3, 7, 15, 31, 63, 127, 255, 511,
 	  isSigned = 1;
 	  break;
 
+	case REC_BIN8_UNSIGNED:
+	  lowBounds = 0;
+	  highBounds = UCHAR_MAX;
+	  break;
+
 	case REC_BIN16_SIGNED:
 	  lowBounds = SHRT_MIN;
 	  highBounds = SHRT_MAX;
@@ -2804,7 +2809,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
   // conversions that are not handled with more fundamental PCode 
   // operations.
   //
-  switch(get_case_index()) {
+  switch(getInstruction()) {
   case CONV_BPINTU_BPINTU:
     
   case CONV_BIN16S_BIN16S: case CONV_BIN16S_BIN16U: 
@@ -2902,7 +2907,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
 				   dst->getLength(),
 				   dst->getPrecision(),
 				   dst->getScale(),
-				   get_case_index()
+				   getInstruction()
 				   ))
 	    return ex_clause::pCodeGenerate(space, f);
 	}
@@ -2917,7 +2922,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
   case CONV_ASCII_BIN64S:
   case CONV_ASCII_FLOAT32:
     {
-      if (get_case_index() == CONV_DECS_DECS)
+      if (getInstruction() == CONV_DECS_DECS)
 	{
 	  // not enabled for NEO CA
 	  return ex_clause::pCodeGenerate(space, f);
@@ -2931,12 +2936,12 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
 	    return ex_clause::pCodeGenerate(space, f);
 	}
 
-      if ((get_case_index() == CONV_ASCII_V_V) ||
-	  (get_case_index() == CONV_DATETIME_DATETIME) ||
-	  (get_case_index() == CONV_DECS_DECS))
+      if ((getInstruction() == CONV_ASCII_V_V) ||
+	  (getInstruction() == CONV_DATETIME_DATETIME) ||
+	  (getInstruction() == CONV_DECS_DECS))
 	{
-	  if ((get_case_index() == CONV_DATETIME_DATETIME) ||
-	      (get_case_index() == CONV_DECS_DECS))
+	  if ((getInstruction() == CONV_DATETIME_DATETIME) ||
+	      (getInstruction() == CONV_DECS_DECS))
 	    {
 	      if ((dst->getPrecision() != src->getPrecision()) ||
 		  (dst->getScale() != src->getScale()))
@@ -2954,7 +2959,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
       PCIID nullJmp = PCode::nullBranch(this, code, attrs);
       
       // copy the value
-      switch(get_case_index())
+      switch(getInstruction())
       {
         case CONV_ASCII_V_V:
         case CONV_UNICODE_V_V:
@@ -3043,6 +3048,10 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
   case CONV_BIN8U_BIN32U:
   case CONV_BIN8S_BIN64S:
   case CONV_BIN8U_BIN64U:
+  case CONV_BIN16S_BIN8S:
+  case CONV_BIN16U_BIN8U:
+  case CONV_BIN16S_BIN8U:  
+  case CONV_BIN16U_BIN8S:
     break;
 
   case CONV_BOOL_BOOL:
@@ -3055,7 +3064,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
 #ifdef NA_DEBUG_C_RUNTIME
   // Allow 64 -> 64 with differing scale
   //
-  if(get_case_index() == CONV_BIN64S_BIN64S)
+  if(getInstruction() == CONV_BIN64S_BIN64S)
     {
       if(getenv("PCODE_NO_INT64_SCALE_CONV"))
         {
@@ -3084,19 +3093,19 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
   //
   PCIID nullBranch = PCode::nullBranch(this, code, attrs);
 
-  if((get_case_index() != CONV_BIGNUM_BIN64S) &&
-     (get_case_index() != CONV_BIN64S_BIGNUM) &&
-     (get_case_index() != CONV_BIN32S_BIGNUM) &&
-     (get_case_index() != CONV_BIN16S_BIGNUM) &&
-     (get_case_index() != CONV_BIGNUM_BIGNUM) &&
-     (get_case_index() != CONV_SIMPLE_TO_COMPLEX) &&
-     (get_case_index() != CONV_FLOAT64_FLOAT64) &&
-     (get_case_index() != CONV_FLOAT32_FLOAT32) &&
-     (get_case_index() != CONV_FLOAT32_FLOAT64) &&
-     (get_case_index() != CONV_BIN16S_FLOAT64) &&
-     (get_case_index() != CONV_BIN32S_FLOAT64) &&
-     (get_case_index() != CONV_BIN64S_FLOAT64) &&
-     (get_case_index() != CONV_BOOL_BOOL)) {
+  if((getInstruction() != CONV_BIGNUM_BIN64S) &&
+     (getInstruction() != CONV_BIN64S_BIGNUM) &&
+     (getInstruction() != CONV_BIN32S_BIGNUM) &&
+     (getInstruction() != CONV_BIN16S_BIGNUM) &&
+     (getInstruction() != CONV_BIGNUM_BIGNUM) &&
+     (getInstruction() != CONV_SIMPLE_TO_COMPLEX) &&
+     (getInstruction() != CONV_FLOAT64_FLOAT64) &&
+     (getInstruction() != CONV_FLOAT32_FLOAT32) &&
+     (getInstruction() != CONV_FLOAT32_FLOAT64) &&
+     (getInstruction() != CONV_BIN16S_FLOAT64) &&
+     (getInstruction() != CONV_BIN32S_FLOAT64) &&
+     (getInstruction() != CONV_BIN64S_FLOAT64) &&
+     (getInstruction() != CONV_BOOL_BOOL)) {
 
 
     // Compute the high and low bounds of the source and destination
@@ -3121,7 +3130,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
 
     if(srcLowBounds < dstLowBounds)
       {
-	if (get_case_index() == CONV_DECS_BIN64S)
+	if (getInstruction() == CONV_DECS_BIN64S)
 	  return ex_clause::pCodeGenerate(space, f);
 
         OL ol(srcAtp, srcAtpIndex, srcOffset, (Int64)dstLowBounds); 
@@ -3130,7 +3139,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
       }
     if(srcHighBounds > dstHighBounds) 
       {        
-	if (get_case_index() == CONV_DECS_BIN64S)
+	if (getInstruction() == CONV_DECS_BIN64S)
 	  return ex_clause::pCodeGenerate(space, f);
 
         OL ol(srcAtp, srcAtpIndex, srcOffset, (Int64)dstHighBounds);               
@@ -3142,7 +3151,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
 #if (defined (_DEBUG) && !(defined(__EID)))
   if(!getenv("NO_PCODE_FLOAT_RANGE"))
 #endif
-    if( get_case_index() == CONV_FLOAT64_FLOAT64 &&
+    if( getInstruction() == CONV_FLOAT64_FLOAT64 &&
        !ex_expr::notValidateFloat64(f)) {
       AML aml(PCIT::MFLT64);
       OL ol(src->getAtp(), src->getAtpIndex(), (Int32)src->getOffset());               
@@ -3152,7 +3161,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
 
   // Do the conversion
   //
-  switch(get_case_index()) 
+  switch(getInstruction()) 
     {
       // For conversions that are simple moves, generate the byte move
       // instruction. This includes unmatched signedness conversions such
@@ -3190,6 +3199,8 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
     case CONV_BIN32U_BIN16U: case CONV_BIN32U_BIN16S:
     case CONV_BIN64S_BIN16U: case CONV_BIN64S_BIN16S:
     case CONV_BIN64S_BIN32U: case CONV_BIN64S_BIN32S:
+    case CONV_BIN16S_BIN8S:  case CONV_BIN16U_BIN8U:
+    case CONV_BIN16S_BIN8U:  case CONV_BIN16U_BIN8S:
       {
 	AML aml(PCIT::MBIN8, PCIT::MBIN8, PCIT::IBIN32S);
 #ifdef NA_LITTLE_ENDIAN

@@ -2153,6 +2153,14 @@ TrafDesc * Generator::createVirtualTableDesc
       else
 	view_desc->viewDesc()->viewchecktext = NULL;
 
+      if (viewInfo[0].viewColUsages)
+	{
+	  view_desc->viewDesc()->viewcolusages = new GENHEAP(space) char[strlen(viewInfo[0].viewColUsages)+1];
+	  strcpy(view_desc->viewDesc()->viewcolusages, viewInfo[0].viewColUsages);
+	}
+      else
+	view_desc->viewDesc()->viewcolusages = NULL;
+
       view_desc->viewDesc()->setUpdatable(viewInfo[0].isUpdatable);
       view_desc->viewDesc()->setInsertable(viewInfo[0].isInsertable);
     }

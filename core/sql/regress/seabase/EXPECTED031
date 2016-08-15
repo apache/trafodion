@@ -276,6 +276,13 @@ ABC     ABC
 
 --- 1 row(s) inserted.
 >>
+>>-- should return error, maxlength not sufficient
+>>insert into t031t1 values (11, repeat('a', 100, 10), null);
+
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression.
+
+--- 0 row(s) inserted.
+>>
 >>select char_length(a), char_length(b) from t031t1;
 
 (EXPR)      (EXPR)    
@@ -560,7 +567,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Fri Aug  5 21:55:49 2016
+-- Definition current  Thu Aug 11 21:06:15 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -591,7 +598,7 @@ A            B
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Fri Aug  5 21:55:57 2016
+-- Definition current  Thu Aug 11 21:06:23 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -642,7 +649,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Fri Aug  5 21:56:03 2016
+-- Definition current  Thu Aug 11 21:06:31 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -671,7 +678,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Fri Aug  5 21:56:13 2016
+-- Definition current  Thu Aug 11 21:06:41 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -696,7 +703,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Fri Aug  5 21:56:16 2016
+-- Definition current  Thu Aug 11 21:06:45 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -716,7 +723,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Fri Aug  5 21:56:22 2016
+-- Definition current  Thu Aug 11 21:06:48 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -731,7 +738,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Fri Aug  5 21:56:24 2016
+-- Definition current  Thu Aug 11 21:06:49 2016
 
   (
     A                                INT DEFAULT NULL
@@ -754,7 +761,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Fri Aug  5 21:56:31 2016
+-- Definition current  Thu Aug 11 21:06:56 2016
 
   (
     A                                INT DEFAULT NULL
@@ -772,7 +779,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Fri Aug  5 21:56:35 2016
+-- Definition current  Thu Aug 11 21:07:02 2016
 
   (
     A                                INT DEFAULT NULL
@@ -856,7 +863,7 @@ CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
 >>invoke table(index_table t031t1i1);
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1I1
--- Definition current  Fri Aug  5 21:56:56 2016
+-- Definition current  Thu Aug 11 21:07:19 2016
 
   (
     "A@"                             INT NO DEFAULT

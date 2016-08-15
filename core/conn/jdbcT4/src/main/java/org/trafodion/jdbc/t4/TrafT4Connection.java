@@ -1918,8 +1918,52 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 	}
 
 	public void setSchema(String schema) throws SQLException {
-		// TODO Auto-generated method stub
-		
+            if (props_.t4Logger_.isLoggable(Level.FINE) == true) {
+                Object p[] = T4LoggingUtilities.makeParams(props_, schema);
+                props_.t4Logger_.logp(Level.FINE, "TrafT4Connection", "setSchema", "", p);
+            }
+            if (props_.getLogWriter() != null) {
+                LogRecord lr = new LogRecord(Level.FINE, "");
+                Object p[] = T4LoggingUtilities.makeParams(props_, schema);
+                lr.setParameters(p);
+                lr.setSourceClassName("TrafT4Connection");
+                lr.setSourceMethodName("setSchema");
+                T4LogFormatter lf = new T4LogFormatter();
+                String temp = lf.format(lr);
+                props_.getLogWriter().println(temp);
+            }
+            clearWarnings();
+            if (_isClosed() == true) {
+                throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
+            }
+            if (schema != null && !"".equals(schema)) {
+                Statement stmt = null;
+                try {
+                    stmt = createStatement();
+                    stmt.execute("set schema " + schema);
+                } catch (TrafT4Exception se) {
+                    performConnectionErrorChecks(se);
+                    throw se;
+                } finally {
+                    if (stmt != null) {
+                        try {
+                            stmt.close();
+                        } catch (Exception e) {
+                            if (props_.getLogWriter() != null) {
+                                LogRecord lr = new LogRecord(Level.WARNING, "");
+                                Object p[] = T4LoggingUtilities.makeParams(props_, e.getMessage());
+                                lr.setParameters(p);
+                                lr.setSourceClassName("TrafT4Connection");
+                                lr.setSourceMethodName("setSchema");
+                                T4LogFormatter lf = new T4LogFormatter();
+                                String temp = lf.format(lr);
+                                props_.getLogWriter().println(temp);
+                            }
+                        }
+                    }
+                }
+            }
+
 	}
 
 	public void abort(Executor executor) throws SQLException {

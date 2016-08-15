@@ -1187,12 +1187,12 @@ OUT2
 --- SQL operation failed with errors.
 >>call T100_io_yy(cast(128 as tinyint), ?x);
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:128 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:128 Target Type:LARGEINT(IBIN64S) Max Target Value:127. Instruction:RANGE_HIGH_S16S64 Operation:RANGE_HIGH.
 
 --- SQL operation failed with errors.
 >>call T100_io_yy(cast(-129 as tinyint), ?x);
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:-129 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-129 Target Type:LARGEINT(IBIN64S) Min Target Value:-128. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW.
 
 --- SQL operation failed with errors.
 >>call T100_io_ss(cast(32768 as smallint), ?x);
