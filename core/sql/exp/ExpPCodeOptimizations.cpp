@@ -4480,12 +4480,12 @@ NABoolean PCodeCfg::localCSE(INSTLIST** parent, PCodeBlock* tailBlock,
         switch (clauseHead->getClassID()) {
           case ex_clause::CONV_TYPE:
             match =
-              ((((ex_conv_clause*)clauseHead)->get_case_index() ==
-               ((ex_conv_clause*)clauseTail)->get_case_index()) &&
+              ((((ex_conv_clause*)clauseHead)->getInstruction() ==
+               ((ex_conv_clause*)clauseTail)->getInstruction()) &&
               (((ex_conv_clause*)clauseHead)->treatAllSpacesAsZero() ==
                ((ex_conv_clause*)clauseTail)->treatAllSpacesAsZero()));
             if ( match ) {
-               if ( ((ex_conv_clause*)clauseHead)->get_case_index() ==
+               if ( ((ex_conv_clause*)clauseHead)->getInstruction() ==
                     CONV_DATETIME_DATETIME )
                {
                   Attributes *tgtH = ((ex_conv_clause*)clauseHead)->getOperand(0);
@@ -4506,8 +4506,8 @@ NABoolean PCodeCfg::localCSE(INSTLIST** parent, PCodeBlock* tailBlock,
 
           case ex_clause::ARITH_TYPE:
             match =
-              (((ex_arith_clause*)clauseHead)->get_case_index() ==
-               ((ex_arith_clause*)clauseTail)->get_case_index());
+              (((ex_arith_clause*)clauseHead)->getInstruction() ==
+               ((ex_arith_clause*)clauseTail)->getInstruction());
             break;
         }
 

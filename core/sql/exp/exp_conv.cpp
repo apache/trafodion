@@ -326,7 +326,7 @@ if (targetLen == SQL_LARGE_SIZE)
 else 
   {
   short physicalTargetType = (short) REC_BIN16_SIGNED;
-  conv_case_index index = CONV_BIN64S_BIN16S;
+  ConvInstruction index = CONV_BIN64S_BIN16S;
 
   if (targetLen == SQL_INT_SIZE)
     {
@@ -513,7 +513,7 @@ else
   else 
   {
     short physicalTargetType = (short) REC_BIN16_SIGNED;
-    conv_case_index index = CONV_BIN64S_BIN16S;
+    ConvInstruction index = CONV_BIN64S_BIN16S;
 
     if (targetLen == SQL_INT_SIZE)
     {
@@ -4966,7 +4966,7 @@ convDoIt(char * source,
          Lng32 varCharLenSize,    // 0 if not a varChar
 	 CollHeap *heap,
 	 ComDiagsArea** diagsArea,
-	 conv_case_index index,
+	 ConvInstruction index,
          Lng32 * dataConversionErrorFlag,
 	 ULng32 flags) {
 
@@ -5020,7 +5020,7 @@ convDoIt(char * source,
     if (index == CONV_UNKNOWN_LEFTPAD)
       leftPad = TRUE;
 
-    index = tempClause.find_case_index(sourceType, 
+    index = tempClause.findInstruction(sourceType, 
                                        sourceLen, 
                                        targetType, 
                                        targetLen, 
@@ -10063,7 +10063,7 @@ convDoIt(char * source,
   case CONV_DECS_UNICODE: 
   case CONV_BIGNUM_UNICODE: 
   {
-   conv_case_index cci = CONV_UNKNOWN; // next switch will change.
+   ConvInstruction cci = CONV_UNKNOWN; // next switch will change.
    switch (index) {
            case CONV_BIN16S_UNICODE:  cci = CONV_BIN16S_ASCII;break;
            case CONV_BIN16U_UNICODE:  cci = CONV_BIN16U_ASCII;break;
@@ -10163,7 +10163,7 @@ convDoIt(char * source,
 
       if ( cBuf -> getStrLen() == sourceLen/BYTES_PER_NAWCHAR ) {
 
-         conv_case_index cci = CONV_UNKNOWN;
+         ConvInstruction cci = CONV_UNKNOWN;
          switch (index) {
            case CONV_UNICODE_BIN16S:  cci = CONV_ASCII_BIN16S;break;
            case CONV_UNICODE_BIN16U:  cci = CONV_ASCII_BIN16U;break;
@@ -11664,7 +11664,7 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
       warningMark = 0;
 
 
-  switch (get_case_index()) {
+  switch (getInstruction()) {
 
 
   case CONV_COMPLEX_TO_COMPLEX: {
@@ -11733,7 +11733,7 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
 			tgt->getVCIndicatorLength(),
 			heap,
 			diagsArea,
-			get_case_index(),
+			getInstruction(),
 			dataConversionErrorFlag,
 			convFlags
                         );

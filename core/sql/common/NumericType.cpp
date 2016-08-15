@@ -792,7 +792,7 @@ NABoolean NumericType::createSQLLiteral(const char * buf,
              sizeof(resultLen),
              h,
              &diags,
-             conv_case_index::CONV_UNKNOWN,
+             ConvInstruction::CONV_UNKNOWN,
              0);
 
    if ( ok != ex_expr::EXPR_OK || resultLen == 0)

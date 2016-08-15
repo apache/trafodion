@@ -814,7 +814,7 @@ NABoolean DatetimeType::createSQLLiteral(const char * buf,
              sizeof(resultLen),
              h,
              &diags,
-             conv_case_index::CONV_UNKNOWN,
+             ConvInstruction::CONV_UNKNOWN,
              0);
 
    if ( ok != ex_expr::EXPR_OK || resultLen == 0)
@@ -1079,7 +1079,7 @@ double SQLDate::encodeSqlLiteral(char* source) const
              NULL, 0, 
              0, // heap
              0, // diagsPtr
-             conv_case_index::CONV_UNKNOWN,
+             ConvInstruction::CONV_UNKNOWN,
              0,// data conversionErrorFlag
              0 // flags
             );
@@ -1172,7 +1172,7 @@ double SQLTime::encodeSqlLiteral(char* source) const
              NULL, 0,
              0, // heap
              0, // diagsPtr
-             conv_case_index::CONV_UNKNOWN,
+             ConvInstruction::CONV_UNKNOWN,
              0,// data conversionErrorFlag
              0 // flags
             );
@@ -1274,7 +1274,7 @@ double SQLTimestamp::encodeSqlLiteral(char* source) const
              NULL, 0,
              0, // heap
              0, // diagsPtr
-             conv_case_index::CONV_UNKNOWN,
+             ConvInstruction::CONV_UNKNOWN,
              0,// data conversionErrorFlag
              0 // flags
             );
