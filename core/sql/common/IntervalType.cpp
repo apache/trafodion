@@ -633,7 +633,7 @@ NABoolean IntervalType::createSQLLiteral(const char * buf,
              sizeof(numValLen),
              h,
              &diags,
-             conv_case_index::CONV_UNKNOWN,
+             ConvInstruction::CONV_UNKNOWN,
              0);
 
    if ( ok != ex_expr::EXPR_OK || numValLen == 0)

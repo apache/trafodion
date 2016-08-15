@@ -284,10 +284,7 @@ enum OperatorTypeEnum {
                         // item operators (predicates)
                         // ---------------------------------------------------
                         // NOTE: the numbers for ITM operator types are also
-                        // used for expressions in the executor. Do NOT
-                        // change any numbers in this range without adding
-                        // versioning support in DP2. Try to add new numbers
-                        // rather than changing existing numbers.
+                        // used for expressions in the executor.
                         // ---------------------------------------------------
                         ITM_FIRST_ITEM_OP = 2000,
                         // binary logic operators
@@ -313,6 +310,9 @@ enum OperatorTypeEnum {
                         // new operator type used in the hash anti semi join optimization project
                         //
                         ITM_NOT_IN = 2026,
+
+                        ITM_ANY_COMP = 2027,
+
                         // unary arithmetic operators
                         ITM_NEGATE = 2030,
                         ITM_INVERSE = 2031,

@@ -1830,7 +1830,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
 		}
 	    } // implicit conversion
 	  
-	  conv_case_index case_index = CONV_UNKNOWN;
+	  ConvInstruction case_index = CONV_UNKNOWN;
 	  ULng32 convFlags = 0;
 	  if ((source) &&
 	      (NOT implicitConversion) &&
@@ -3733,9 +3733,9 @@ InputOutputExpr::inputValues(atp_struct *atp,
       Lng32 numToProcess = ((targetRowsetSize > 0) ? targetRowsetSize : 1);
 
       // Define and clear case indexes potentially used for rowsets
-      conv_case_index index1 = CONV_UNKNOWN;
-      conv_case_index index2 = CONV_UNKNOWN;
-      conv_case_index index3 = CONV_UNKNOWN;
+      ConvInstruction index1 = CONV_UNKNOWN;
+      ConvInstruction index2 = CONV_UNKNOWN;
+      ConvInstruction index3 = CONV_UNKNOWN;
       
       for (Lng32 RowNum = 0; RowNum < numToProcess; RowNum++) 
         {
@@ -4014,7 +4014,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
                 // Initialize index for this convDoIt call, if needed
                 if (index1 == CONV_UNKNOWN) {
                   ex_conv_clause tempClause;
-                  index1 = tempClause.find_case_index(sourceType,
+                  index1 = tempClause.findInstruction(sourceType,
                                                       sourceLen,
                                                       REC_BYTE_F_ASCII,
                                                       sourceLen,
@@ -4129,7 +4129,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
                     // Initialize index for this convDoIt call, if needed
                     if (index2 == CONV_UNKNOWN) {
                       ex_conv_clause tempClause;
-                      index2 = tempClause.find_case_index(REC_BYTE_F_ASCII,
+                      index2 = tempClause.findInstruction(REC_BYTE_F_ASCII,
                                                           sourceLen,
                                                           sourceType,
                                                           intermediateLen,
@@ -4176,7 +4176,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
             // Initialize index for this convDoIt call, if needed
             if (index3 == CONV_UNKNOWN) {
               ex_conv_clause tempClause;
-              index3 = tempClause.find_case_index(sourceType,
+              index3 = tempClause.findInstruction(sourceType,
                                                   sourceLen,
                                                   operand->getDatatype(),
                                                   operand->getLength(),

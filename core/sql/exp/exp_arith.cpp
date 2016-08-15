@@ -675,7 +675,7 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
                                                ComDiagsArea** diagsArea)
 {
 
-  switch (get_case_index())
+  switch (getInstruction())
     {
       /* ADD operation */
     case ADD_BIN16S_BIN16S_BIN16S:

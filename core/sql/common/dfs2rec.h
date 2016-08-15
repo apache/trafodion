@@ -237,6 +237,7 @@ enum REC_DATETIME_CODE {
 #define REC_MAX_INTERVAL_MP     212   
 #define REC_MAX_INTERVAL_MP     212   
 
+#define REC_UNKNOWN             -1
 
 // Keep this in synch with ComDateTimeStartEnd in ComSmallDefs.h
 enum rec_datetime_field {

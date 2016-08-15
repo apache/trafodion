@@ -5727,7 +5727,7 @@ ex_expr::exp_return_type ex_function_translate::eval(char *op_data[],
         op0->getVCIndicatorLength(),
         heap,
         diagsArea,
-        (conv_case_index)convType);
+        (ConvInstruction)convType);
 #pragma warn(1506)  // warning elimination 
 }
   
