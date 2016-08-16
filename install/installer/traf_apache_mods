@@ -48,10 +48,11 @@ sudo chmod 777 $TRAF_CONFIG
 source $TRAF_CONFIG
 
 
-hbase_trx_jar="hbase-trx-apache1_1_2*.jar"
-
-if [[ $hbaseVersion =~1.0]]; then
-   hbase_trx_jar="hbase-trx-apache1_0_2*.jar"
+hbase_trx_jar="hbase-trx-apache1_2*.jar"
+if [[ $hbaseVersion =~ "1.1" ]]; then
+   hbase_trx_jar="hbase-trx-apache1_1*.jar"
+elif [[ $hbaseVersion =~ "1.0" ]]; then
+   hbase_trx_jar="hbase-trx-apache1_0*.jar"
 fi
 
 traf_util_jar="trafodion-utility-*.jar"
@@ -93,14 +94,14 @@ else
     scp -q $UNTAR_DIR/export/lib/$traf_util_jar $(whoami)@$node:$TRAF_WORKDIR
     ssh -q -n $node sudo cp $TRAF_WORKDIR/$hbase_trx_jar $HBASE_HOME/lib
     ssh -q -n $node sudo cp $TRAF_WORKDIR/$traf_util_jar $HBASE_HOME/lib
-    ssh -q -n $node sudo chmod 644 $HADOOP_PATH/$hbase_trx_jar
-    ssh -q -n $node sudo chmod 644 $HADOOP_PATH/$traf_util_jar
+    ssh -q -n $node sudo chmod 644 $HBASE_HOME/lib/$hbase_trx_jar
+    ssh -q -n $node sudo chmod 644 $HBASE_HOME/lib/$traf_util_jar
     done
 fi
 
 #=======================================
 #Check that HBase-trx copied to all nodes
-
+echo "Check that HBase-trx copied to all nodes"
 for node in $HBASE_NODES
 do
    copiedOver=$(ssh -q -n $node sudo ls $HBASE_HOME/lib/hbase-trx* | wc -l)

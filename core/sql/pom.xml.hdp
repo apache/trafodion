@@ -32,7 +32,7 @@
     <hbase.version>${env.HBASE_DEP_VER_HDP}</hbase.version>
     <hbase-trx.id>${env.HBASE_TRX_ID_HDP}</hbase-trx.id>
     <hive.version>${env.HIVE_DEP_VER_HDP}</hive.version>
-    <hbase-flavor-id>hdp2_3</hbase-flavor-id>
+    <hbase-flavor-id>hdp</hbase-flavor-id>
     <thrift.version>0.9.0</thrift.version>
     <java.version>1.7</java.version>
   </properties>
