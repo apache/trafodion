@@ -2449,20 +2449,21 @@ void Join::createAFilterGrandChildIfNeeded(NormWA & normWARef)
 
       if ((doNotUnnest == FALSE) && candidateForLeftJoin && 
           (CmpCommon::getDefault(SUBQUERY_UNNESTING_P2) != DF_INTERNAL) &&
-          ((normWARef.getLeftJoinConversionCount() >= 1)||nestedAggInSubQ))
+          ((normWARef.getLeftJoinConversionCount() >= 2)||nestedAggInSubQ))
       {
         doNotUnnest = TRUE;
-        // For phase 2 we only unnest 1 level of subqueries 
-        // containing NonNullRejecting Predicates
+        // For phase 2 we only unnest 2 subqueries 
+        // containing NonNullRejecting Predicates. Later we will ensure
+	// that these 2 subqueries are not nested.
 
         if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG) 
         {
           if (!nestedAggInSubQ)
             *CmpCommon::diags() << DgSqlCode(2997)
-              << DgString1("Skipping unnesting of Subquery due to NonNullRejecting Predicates in more than one subquery");
+              << DgString1("Skipping unnesting of Subquery due to NonNullRejecting Predicates in more than two subqueries");
           else
              *CmpCommon::diags() << DgSqlCode(2997)
-              << DgString1("Skipping unnesting of Subquery since we have both NonNullRejecting predicate and nested nested aggregate in subquery.");
+              << DgString1("Skipping unnesting of Subquery since we have both NonNullRejecting predicate and nested aggregate in subquery.");
         }
 
       }
@@ -3130,6 +3131,7 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
   // method getMoreOutputsIfPossible().
 
   ValueIdSet leftUniqueCols ;
+  child(0)->castToRelExpr()->synthLogProp() ;
   if (NOT (child(0)->getGroupAttr()->findUniqueCols(leftUniqueCols)))
   {
     // Could not find a set of unique cols.
@@ -3458,26 +3460,6 @@ RelExpr* GroupByAgg::nullPreservingTransformation(GroupByAgg* oldGB,
   // that far.
   ValueId ignoreReturnedVid;
   ValueId oneTrueVid;
-  NABoolean  replaceOneTrue = FALSE;
-
-  replaceOneTrue = newGrby->aggregateExpr().containsOneTrue(oneTrueVid);
-  if( replaceOneTrue && 
-      newGrby->getGroupAttr()->getCharacteristicOutputs().referencesTheGivenValue(oneTrueVid, ignoreReturnedVid, FALSE,FALSE))
-  { 
-    // If someone above us needs the oneTrue, skip unnesting it as
-    // we cannot map between a count(1) > 0 expression to 
-    // a oneTrue(return TRUE) one.
-    // This since the only way to do so would be to add "count(1) > 0" to the
-    // grouping expression. For phase 3 we want to evaluate if doing so would be
-    // safe from a semantic point of view.
-    if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG)
-    {
-       *CmpCommon::diags() << DgSqlCode(2997)   
-          << DgString1("Subquery was not unnested. Reason: Upper expressions require OneTrue."); 
-    }
-    oldGB->eliminateFilterChild();
-    return NULL ;
-  } 
 
   // change newJoin into a left join and move preds into the join predicate
   // we have already guaranteed that all selection preds in the newJoin are

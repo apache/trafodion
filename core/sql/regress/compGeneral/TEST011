@@ -1130,4 +1130,23 @@ order by 1 ;
 execute explainIt;
 execute XX ;
 
+
+-- 2 correlated subqueries that require LOJ transformation. The two subqueries
+-- are NOT nested. Use of exists (i.e. oneTrue) predicate
+-- Q52
+prepare XX from
+select t40.a
+from t40
+where exists (select *
+                      from t44
+                      where t40.c = t44.b)
+  OR
+      exists (select *
+                      from t41
+                      where t40.b = t41.b)
+order by 1;
+
+execute explainIt;
+execute XX ;
+
 log;

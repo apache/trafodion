@@ -1106,7 +1106,7 @@ A
 
 *** WARNING[2997]  (Attempting to unnest Subquery)
 
-*** WARNING[2997]  (Skipping unnesting of Subquery due to NonNullRejecting Predicates in more than one subquery)
+*** WARNING[2997]  (Subquery was not unnested. Reason: Left subtree cannot produce output values required for grouping.)
 
 --- SQL command prepared.
 >>execute explainIt;
@@ -1217,8 +1217,6 @@ A
 *** WARNING[2997]  (Attempting to unnest Subquery)
 
 *** WARNING[2997]  (Attempting to unnest Subquery)
-
-*** WARNING[2997]  (Skipping unnesting of Subquery due to NonNullRejecting Predicates in more than one subquery)
 
 --- SQL command prepared.
 >>
@@ -1842,9 +1840,9 @@ ss          ?
 A           (EXPR)    
 ----------  ----------
 
+xx          ?         
+xx          ?         
 ss          ?         
-xx          ?         
-xx          ?         
 
 --- 3 row(s) selected.
 >>
@@ -2165,5 +2163,134 @@ A
          99
 
 --- 99 row(s) selected.
+>>
+>>
+>>-- 2 correlated subqueries that require LOJ transformation. The two subqueries
+>>-- are NOT nested. Use of exists (i.e. oneTrue) predicate
+>>-- Q52
+>>prepare XX from
++>select t40.a
++>from t40
++>where exists (select *
++>                      from t44
++>                      where t40.c = t44.b)
++>  OR
++>      exists (select *
++>                      from t41
++>                      where t40.b = t41.b)
++>order by 1;
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          0
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+         10
+         11
+         12
+         13
+         14
+         15
+         16
+         17
+         18
+         19
+         20
+         21
+         22
+         23
+         24
+         25
+         26
+         27
+         28
+         29
+         30
+         31
+         32
+         33
+         34
+         35
+         36
+         37
+         38
+         39
+         40
+         41
+         42
+         43
+         44
+         45
+         46
+         47
+         48
+         49
+         50
+         51
+         52
+         53
+         54
+         55
+         56
+         57
+         58
+         59
+         60
+         61
+         62
+         63
+         64
+         65
+         66
+         67
+         68
+         69
+         70
+         71
+         72
+         73
+         74
+         75
+         76
+         77
+         78
+         79
+         80
+         81
+         82
+         83
+         84
+         85
+         86
+         87
+         88
+         89
+         90
+         91
+         92
+         93
+         94
+         95
+         96
+         97
+         98
+         99
+
+--- 100 row(s) selected.
 >>
 >>log;
