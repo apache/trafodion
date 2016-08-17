@@ -66,6 +66,10 @@ public:
       std::vector<int32_t> & grantorIDs,
       std::vector<int32_t> & grantDepths);
    
+   PrivStatus fetchUsersForRoles(
+      const std::vector<int32_t> & roleIDs,
+      std::vector<int32_t> & userIDs);
+   
    PrivStatus grantRole(
       const std::vector<int32_t> & roleIDs,
       const std::vector<std::string> & roleNames,

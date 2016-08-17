@@ -1737,6 +1737,82 @@ TrafDesc * Generator::createConstrKeyColsDescs(Int32 numKeys,
   return first_key_desc;
 }
 
+// ****************************************************************************
+// This method creates a set of trafodion descriptors (TrafDesc) based on 
+// ComTdbVirtTablePrivInfo 
+//
+// see ComTdb.h for a description of the ComTdbVirtTablePrivInfo
+// see TrafDDLdesc.h for a description of TrafDesc for the priv_desc
+// ****************************************************************************
+TrafDesc * Generator::createPrivDescs( const ComTdbVirtTablePrivInfo * privInfo,
+                                       Space * space)
+{
+  // When authorization is enabled, each object must have at least one grantee
+  // - the system grant to the object owner
+  std::vector<PrivMgrDesc> *privGrantees = privInfo[0].privmgr_desc_list;
+  DCMPASSERT (privGrantees.size() > 0);
+ 
+  TrafDesc * priv_desc = TrafAllocateDDLdesc(DESC_PRIV_TYPE, space);
+  TrafDesc * first_grantee_desc = NULL;
+  TrafDesc * prev_grantee_desc = NULL;
+
+  // generate a TrafPrivGranteeDesc for each grantee and
+  // attach to the privileges descriptor (priv_desc)
+  for (int i = 0; i < privGrantees->size(); i++)
+    {
+      PrivMgrDesc granteeDesc = (*privGrantees)[i];
+      TrafDesc * curr_grantee_desc = TrafAllocateDDLdesc(DESC_PRIV_GRANTEE_TYPE, space);
+      if (! first_grantee_desc)
+        first_grantee_desc = curr_grantee_desc;
+
+      curr_grantee_desc->privGranteeDesc()->grantee = granteeDesc.getGrantee();
+
+      // generate a TrafPrivBitmap for the object level privs and
+      // attach it to the privilege grantee descriptor (curr_grantee_desc)
+      TrafDesc * bitmap_desc = TrafAllocateDDLdesc(DESC_PRIV_BITMAP_TYPE, space);
+      PrivMgrCoreDesc objDesc = granteeDesc.getTablePrivs();
+      bitmap_desc->privBitmapDesc()->columnOrdinal = -1;
+      bitmap_desc->privBitmapDesc()->privBitmap = objDesc.getPrivBitmap().to_ulong();
+      bitmap_desc->privBitmapDesc()->privWGOBitmap = objDesc.getWgoBitmap().to_ulong();
+      curr_grantee_desc->privGranteeDesc()->objectBitmap = bitmap_desc;
+
+      // generate a list of TrafPrivBitmapDesc, one for each column and
+      // attach it to the TrafPrivGranteeDesc
+      std::vector<PrivMgrCoreDesc> colDescList = granteeDesc.getColumnPrivs();
+      size_t numCols = colDescList.size();
+      if (numCols > 0)
+        {
+          TrafDesc * first_col_desc = NULL;
+          TrafDesc * prev_col_desc = NULL;
+          for (int j = 0; j < numCols; j++)
+            {
+              const PrivMgrCoreDesc colBitmap = colDescList[j];
+              TrafDesc * curr_col_desc = TrafAllocateDDLdesc(DESC_PRIV_BITMAP_TYPE, space);
+              if (! first_col_desc)
+                first_col_desc = curr_col_desc;
+
+              curr_col_desc->privBitmapDesc()->columnOrdinal = colBitmap.getColumnOrdinal();
+              curr_col_desc->privBitmapDesc()->privBitmap = colBitmap.getPrivBitmap().to_ulong();
+              curr_col_desc->privBitmapDesc()->privWGOBitmap = colBitmap.getWgoBitmap().to_ulong();
+
+              if (prev_col_desc)
+                prev_col_desc->next = curr_col_desc;
+              prev_col_desc = curr_col_desc;
+            }
+          curr_grantee_desc->privGranteeDesc()->columnBitmaps = first_col_desc;
+        }
+      else
+        curr_grantee_desc->privGranteeDesc()->columnBitmaps = NULL;
+
+      if (prev_grantee_desc)
+         prev_grantee_desc->next = curr_grantee_desc;
+      prev_grantee_desc = curr_grantee_desc;
+    }
+    priv_desc->privDesc()->privGrantees = first_grantee_desc;
+    return priv_desc;
+}
+
+
 // this method is used to create both referencing and referenced constraint structs.
 TrafDesc * Generator::createRefConstrDescStructs(
 						    Int32 numConstrs,
@@ -1881,7 +1957,8 @@ TrafDesc * Generator::createVirtualTableDesc
      char * snapshotName,
      NABoolean genPackedDesc,
      Int32 * packedDescLen,
-     NABoolean isUserTable
+     NABoolean isUserTable,
+     ComTdbVirtTablePrivInfo * privInfo
  )
 {
   // If genPackedDesc is set, then use Space class to allocate descriptors and
@@ -2187,6 +2264,13 @@ TrafDesc * Generator::createVirtualTableDesc
       seq_desc->sequenceGeneratorDesc()->redefTime = seqInfo->redefTime;
     }
 
+
+  // Setup the privilege descriptors for objects including views, tables, 
+  // libraries, udrs, sequences, and constraints.
+  TrafDesc * priv_desc = NULL;
+  if (privInfo)
+      priv_desc = createPrivDescs(privInfo, space);
+
   // cannot simply point to same files desc as the table one,
   // because then ReadTableDef::deleteTree frees same memory twice (error)
   TrafDesc * i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, space);
@@ -2200,6 +2284,7 @@ TrafDesc * Generator::createVirtualTableDesc
   table_desc->tableDesc()->constrnts_desc = first_constr_desc;
   table_desc->tableDesc()->constr_count = numConstrs; 
   table_desc->tableDesc()->sequence_generator_desc = seq_desc;
+  table_desc->tableDesc()->priv_desc = priv_desc;
 
   if (endKeyArray)
     {
@@ -2263,6 +2348,7 @@ TrafDesc *Generator::createVirtualRoutineDesc(
      ComTdbVirtTableRoutineInfo *routineInfo,
      Int32 numParams,
      ComTdbVirtTableColumnInfo *paramsArray,
+     ComTdbVirtTablePrivInfo *privInfo,
      Space * space)
 {
   TrafDesc *routine_desc = TrafAllocateDDLdesc(DESC_ROUTINE_TYPE, space);
@@ -2310,6 +2396,13 @@ TrafDesc *Generator::createVirtualRoutineDesc(
                                        space);
    routine_desc->routineDesc()->owner = routineInfo->object_owner_id;
    routine_desc->routineDesc()->schemaOwner = routineInfo->schema_owner_id; 
+
+  // Setup the privilege descriptors for routines.
+  TrafDesc * priv_desc = NULL;
+  if (privInfo)
+      priv_desc = createPrivDescs(privInfo, space);
+  routine_desc->routineDesc()->priv_desc = priv_desc;
+
    return routine_desc;
 }
 

@@ -555,6 +555,90 @@ PrivStatus PrivMgrPrivileges::buildSecurityKeys(
 }
 
 // *****************************************************************************
+// * Method: getPrivsOnObject                                
+// *                                                       
+// * Creates a set of priv descriptors for all user grantees on an object
+// * Used by Trafodion compiler to store as part of the table descriptor.
+// *                                                       
+// *  Parameters:    
+// *                                                                       
+// *  <objectType> is the type of object
+// *  <priv>Descs> is the list of privileges the on the object
+// *                                                                  
+// * Returns: PrivStatus                                               
+// *                                                                  
+// * STATUS_GOOD: privilege descriptors were built
+// *           *: unexpected error occurred, see diags.     
+// *  
+// *****************************************************************************
+PrivStatus PrivMgrPrivileges::getPrivsOnObject (
+  const ComObjectType objectType,
+  std::vector<PrivMgrDesc> & privDescs )
+{
+  PrivStatus retcode = STATUS_GOOD;
+
+  if (objectUID_ == 0)
+  {
+    PRIVMGR_INTERNAL_ERROR("objectUID is 0 for getPrivRowsForObject()");
+    return STATUS_ERROR;
+  }
+
+  // generate the list of privileges granted to the object and store in class
+  if (generateObjectRowList() == STATUS_ERROR)
+    return STATUS_ERROR;
+  
+  // generate the list of privileges granted to the object and store in class
+  if (generateColumnRowList() == STATUS_ERROR)
+    return STATUS_ERROR;
+  
+  // Gets all the grantees from the object and column lists
+  // This list is affected userIDs.  The public auth ID is also included if any
+  // privs were granted. 
+  std::vector<int32_t> userIDs;
+  if (getDistinctUserIDs(objectRowList_, columnRowList_, userIDs) == STATUS_ERROR)
+    return STATUS_ERROR;
+
+  for (size_t i = 0; i < userIDs.size(); i++)
+  {
+    int32_t userID = userIDs[i];
+
+    PrivMgrDesc privsOfTheUser(userID);
+    bool hasManagePrivileges = false;
+    std::vector <int32_t> roleIDs;
+ 
+    // Public is not granted roles, skip to avoid extra I/O
+    if (!ComUser::isPublicUserID(userID))
+    {
+      if (getRoleIDsForUserID(userID,roleIDs) == STATUS_ERROR)
+        return STATUS_ERROR;
+    }
+
+    if (getUserPrivs(objectType, userID, roleIDs, privsOfTheUser,
+                     hasManagePrivileges, NULL ) != STATUS_GOOD)
+      return STATUS_ERROR;
+
+    PrivColList colPrivsList;
+    PrivColList colGrantableList;
+    if (getColPrivsForUser(userID,roleIDs,colPrivsList,colGrantableList,NULL) != STATUS_GOOD)
+      return STATUS_ERROR;
+
+    // the returned list are in column ordinal order, if no privileges have
+    // been granted on the column, then the bitmap is all zeroes
+    std::vector<PrivMgrCoreDesc> colPrivs;
+    for (size_t j = 0; j < colPrivsList.size(); j++)
+    {
+      PrivMgrCoreDesc colPriv(colPrivsList[j], colGrantableList[j], j);
+      colPrivs.push_back(colPriv);
+    }
+    privsOfTheUser.setColumnPrivs(colPrivs);
+
+    privDescs.push_back(privsOfTheUser);  
+  }
+  return STATUS_GOOD;
+}
+
+
+// *****************************************************************************
 // * Method: getColPrivsForUser                                
 // *                                                       
 // *    Returns the column privileges a user has been granted on the object.
@@ -649,6 +733,92 @@ void PrivMgrPrivileges::getColRowsForGranteeOrdinal(
   }
 }
 
+// *****************************************************************************
+// * Method: getDistinctUserIDs                                
+// *
+// * Finds all the usersIDs that have been granted at least one privilege on
+// * object.  These userIDs include direct grants: 
+// *   grant <privilege> on <object> to <user>  <== user added to list
+// * Or indirect grants through role:
+// *   grant <privilege> on <object> to <role>
+// *   grant <role> to <user>  <== user added to list
+// * Includes public in the returned list
+// *****************************************************************************
+PrivStatus PrivMgrPrivileges::getDistinctUserIDs(
+  const std::vector <PrivMgrMDRow *> &objectRowList,
+  const std::vector <PrivMgrMDRow *> &columnRowList,
+  std::vector<int32_t> &userIDs)
+{
+  std::vector<int32_t> roleIDs;
+  int32_t authID;
+
+  // DB__ROOTROLE is a special role.  If the current user has been granted 
+  // this role, then they have privileges.  Add it to the roleIDs list for
+  // processing.
+  roleIDs.push_back(ROOT_ROLE_ID);
+
+  // The direct object grants are stored in memory (objectRowList) so no I/O
+  // Save grants to roles for further processing
+  for (size_t i = 0; i < objectRowList.size(); i++)
+  {
+    ObjectPrivsMDRow &row = static_cast<ObjectPrivsMDRow &> (*objectRowList[i]);
+    authID = row.granteeID_;
+
+    // insert authID into correct list, if not already present
+    if (ComUser::isPublicUserID(authID) || 
+        CmpSeabaseDDLauth::isUserID(authID)) 
+    {
+       if (std::find(userIDs.begin(), userIDs.end(), authID) == userIDs.end())
+         userIDs.insert( std::upper_bound( userIDs.begin(), userIDs.end(), authID ), authID);
+    }
+    else
+    {
+       if (std::find(roleIDs.begin(), roleIDs.end(), authID) == roleIDs.end())
+         roleIDs.insert( std::upper_bound( roleIDs.begin(), roleIDs.end(), authID ), authID);
+    }
+  }
+
+  // The direct column grants are stored in memory (columnRowList) so no I/O
+  // Save grants to roles for further processing
+  for (size_t i = 0; i < columnRowList.size(); i++)
+  {
+    ColumnPrivsMDRow &row = static_cast<ColumnPrivsMDRow &> (*columnRowList[i]);
+    authID = row.granteeID_;
+
+    // insert authID into correct list, if not already present
+    if (ComUser::isPublicUserID(authID) ||
+        CmpSeabaseDDLauth::isUserID(authID)) 
+    {
+      if (std::find(userIDs.begin(), userIDs.end(), authID) == userIDs.end())
+        userIDs.insert( std::upper_bound( userIDs.begin(), userIDs.end(), authID ), authID);
+    }
+    else
+    {
+       if (std::find(roleIDs.begin(), roleIDs.end(), authID) == roleIDs.end())
+         roleIDs.insert( std::upper_bound( roleIDs.begin(), roleIDs.end(), authID ), authID);
+    }
+  }
+
+  // Get the list of users that have been granted one or more of the roles in
+  // the role list.  A query that retrieves all userIDs granted to the list of
+  // roles (roleIDs) is performed. 
+  if (roleIDs.size() > 0)
+  {
+    std::vector<int32_t> userIDsForRoleIDs;
+    if (getUserIDsForRoleIDs(roleIDs, userIDsForRoleIDs) == STATUS_ERROR)
+      return STATUS_ERROR;
+
+    for (size_t i = 0; i < userIDsForRoleIDs.size(); i++)
+    {
+      authID = userIDsForRoleIDs[i];
+      if (std::find(userIDs.begin(), userIDs.end(), authID) == userIDs.end())
+         userIDs.insert( std::upper_bound( userIDs.begin(), userIDs.end(), authID ), authID);
+    }
+  }
+  return STATUS_GOOD;
+}
+  
+   
 // *****************************************************************************
 // * Method: getPrivRowsForObject                                
 // *                                                       
@@ -4248,6 +4418,41 @@ std::vector<int32_t> roleDepths;
 //*************** End of PrivMgrPrivileges::getRoleIDsForUserID ****************
 
 // *****************************************************************************
+// * Method: getUserIDsForRoleIDs                              
+// *                                                       
+// *    Returns the userIDs granted to the role passed in role list
+// *                                                       
+// *  Parameters:    
+// *                                                                       
+// *  <roleIDs> list of roles to check
+// *  <userIDs> passed back the list (potentially empty) of users granted to 
+// *            the roleIDs
+// *                                                                     
+// * Returns: PrivStatus                                               
+// *                                                                  
+// * STATUS_GOOD: Role list returned
+// *           *: Unable to fetch granted roles, see diags.     
+// *                                                               
+// *****************************************************************************
+PrivStatus PrivMgrPrivileges::getUserIDsForRoleIDs(
+  const std::vector<int32_t>  & roleIDs,
+  std::vector<int32_t> & userIDs)
+{
+  std::vector<int32_t> userIDsForRoleIDs;
+  PrivMgrRoles roles(" ",metadataLocation_,pDiags_);
+  if (roles.fetchUsersForRoles(roleIDs, userIDsForRoleIDs) == STATUS_ERROR)
+    return STATUS_ERROR;
+
+  for (size_t i = 0; i < userIDsForRoleIDs.size(); i++)
+  {
+     int32_t authID = userIDsForRoleIDs[i];
+     if (std::find(userIDs.begin(), userIDs.end(), authID) == userIDs.end())
+       userIDs.insert( std::upper_bound( userIDs.begin(), userIDs.end(), authID ), authID);
+  }
+  return STATUS_GOOD;
+}
+
+// *****************************************************************************
 // * Method: getUserPrivs                                
 // *                                                       
 // *    Accumulates privileges for a user summarized over all grantors
@@ -4274,7 +4479,7 @@ PrivStatus PrivMgrPrivileges::getUserPrivs(
   const std::vector<int32_t> & roleIDs,
   PrivMgrDesc &summarizedPrivs,
   bool & hasManagePrivileges,
-  std::vector <ComSecurityKey *>* secKeySet 
+  std::vector<ComSecurityKey *>* secKeySet 
   )
 {
    PrivStatus retcode = STATUS_GOOD;

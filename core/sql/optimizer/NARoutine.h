@@ -206,7 +206,7 @@ public:
   inline NABoolean hasResultSets()        const { return (maxResults_ > 0); }
 
 
-  void setupPrivInfo();
+  void getPrivileges(TrafDesc * priv_desc);
 
   // -------------------------------------------------------------------
   // Standard operators

@@ -44,6 +44,8 @@
 #include "exp_expr.h"           // subclasses of TDB contain expressions
 #include "sqlcli.h"
 #include "ComSmallDefs.h"
+#include <vector>               // list of privilege descriptors
+#include "PrivMgrDesc.h"        // Privilege descriptors
 
 // -----------------------------------------------------------------------
 // Classes defined in this file
@@ -1141,6 +1143,33 @@ class ComTdbVirtTableSequenceInfo : public ComTdbVirtTableBase
   Int64                  seqUID;
   Int64                  nextValue;
   Int64                  redefTime;
+};
+
+
+// This class describes object and column privileges and if they are grantable 
+// (WGO) for an object. Privileges are stored as a vector of PrivMgrDesc's, one
+// per distinct grantee.  
+//
+//    PrivMgrDesc:
+//      grantee - Int32
+//      objectPrivs - PrivMgrCoreDesc 
+//      columnPrivs - list of PrivMgrCoreDesc 
+//    PrivMgrCoreDesc:
+//      bitmap of granted privileges
+//      bitmap of associated WGO (with grant option)
+//      column ordinal (number) set to -1 for object privs
+class ComTdbVirtTablePrivInfo : public ComTdbVirtTableBase
+{
+ public:
+  ComTdbVirtTablePrivInfo()
+    : ComTdbVirtTableBase()
+    {
+      init();
+    }
+
+  virtual Int32 size() { return sizeof(ComTdbVirtTablePrivInfo);}
+
+  std::vector<PrivMgrDesc>     *privmgr_desc_list;     
 };
 
 class ComTdbVirtTableLibraryInfo : public ComTdbVirtTableBase
