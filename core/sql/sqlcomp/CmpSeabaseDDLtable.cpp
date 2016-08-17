@@ -4111,23 +4111,27 @@ void CmpSeabaseDDL::renameSeabaseTable(
       return;
     }
 
-  // cannot rename if views are using this table
-  Queue * usingViewsQueue = NULL;
-  cliRC = getUsingViews(&cliInterface, objUID, usingViewsQueue);
-  if (cliRC < 0)
+  if (!renameTableNode->skipViewCheck())
     {
-      processReturn();
+      // cannot rename if views are using this table (unless SKIP VIEW CHECK
+      // option was specified, which is valid for internal queries only)
+      Queue * usingViewsQueue = NULL;
+      cliRC = getUsingViews(&cliInterface, objUID, usingViewsQueue);
+      if (cliRC < 0)
+        {
+          processReturn();
       
-      return;
-    }
+          return;
+        }
   
-  if (usingViewsQueue->numEntries() > 0)
-    {
-      *CmpCommon::diags() << DgSqlCode(-1427)
-                          << DgString0("Reason: Operation not allowed if dependent views exist. Drop the views and recreate them after rename.");
+      if (usingViewsQueue->numEntries() > 0)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1427)
+                              << DgString0("Reason: Operation not allowed if dependent views exist. Drop the views and recreate them after rename.");
       
-      processReturn();
-      return;
+          processReturn();
+          return;
+        }
     }
 
   cliRC = updateObjectName(&cliInterface,
@@ -6120,9 +6124,12 @@ short CmpSeabaseDDL::saveAndDropUsingViews(Int64 objUID,
 short CmpSeabaseDDL::recreateUsingViews(ExeCliInterface *cliInterface,
                                         NAList<NAString> &viewNameList,
                                         NAList<NAString> &viewDefnList,
-                                        NABoolean ddlXns)
+                                        NABoolean ddlXns,
+                                        Lng32 * firstBadOne)
 {
   Lng32 cliRC = 0;
+  if (firstBadOne)
+    *firstBadOne = -1;  // assume success
 
   if (viewDefnList.entries() == 0)
     return 0;
@@ -6139,6 +6146,8 @@ short CmpSeabaseDDL::recreateUsingViews(ExeCliInterface *cliInterface,
           cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
           
           cliRC = -1;
+          if (firstBadOne)
+            *firstBadOne = i;  // tell caller which one was bad
           goto label_return;
         }
     }

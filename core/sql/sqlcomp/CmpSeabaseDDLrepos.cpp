@@ -290,10 +290,10 @@ short CmpSeabaseDDL::alterRenameRepos(ExeCliInterface * cliInterface,
         continue;
 
       if (newToOld)
-        str_sprintf(queryBuf, "alter table %s.\"%s\".%s rename to %s; ",
+        str_sprintf(queryBuf, "alter table %s.\"%s\".%s rename to %s skip view check; ",
                     getSystemCatalog(), SEABASE_REPOS_SCHEMA, rti.newName, rti.oldName);
       else
-        str_sprintf(queryBuf, "alter table %s.\"%s\".%s rename to %s; ",
+        str_sprintf(queryBuf, "alter table %s.\"%s\".%s rename to %s skip view check; ",
                     getSystemCatalog(), SEABASE_REPOS_SCHEMA, rti.oldName, rti.newName);
         
       if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
@@ -356,6 +356,75 @@ short CmpSeabaseDDL::copyOldReposToNew(ExeCliInterface * cliInterface)
     } // for
 
   return 0;
+}
+
+short CmpSeabaseDDL::migrateReposViews(ExeCliInterface * cliInterface,
+                                       NABoolean & someViewSaved /* out */)
+{
+  short retcode = 0;  // assume success
+  someViewSaved = FALSE;
+
+  // for each table that has been migrated, save and drop any views
+  // on the old table, and attempt to recreate them on the new
+
+  for (Int32 i = 0; i < sizeof(allReposUpgradeInfo)/sizeof(MDUpgradeInfo); i++)
+    {
+      const MDUpgradeInfo &rti = allReposUpgradeInfo[i];
+
+      if ((! rti.newName) || (! rti.oldName) || (NOT rti.upgradeNeeded))
+        continue;
+
+      Int64 tableUID = getObjectUID(cliInterface,
+        getSystemCatalog(), SEABASE_REPOS_SCHEMA, rti.oldName,
+        COM_BASE_TABLE_OBJECT_LIT, NULL, NULL, FALSE, FALSE /* ignore error */);
+
+      if (tableUID != -1)  // if we got it
+        {
+          NAList<NAString> viewNameList;
+          NAList<NAString> viewDefnList;
+ 
+          short retcode1 = 
+             saveAndDropUsingViews(tableUID, cliInterface,
+                                   viewNameList /* out */,viewDefnList /* out */);
+          if (retcode1)
+            retcode = -1;  // couldn't get views for old repository table
+          else if (viewDefnList.entries() > 0)  // if there are views to migrate
+            {
+              Lng32 firstBadOne = -1;
+              retcode1 = recreateUsingViews(cliInterface, viewNameList, viewDefnList,
+                                            TRUE, &firstBadOne);
+              if (retcode1)
+                {
+                  retcode = -1; 
+                  Lng32 objUID = -2;  // use a fake objectUID since there is no object
+                  
+                  // For any view that could not be migrated, put its definition text
+                  // back in the TEXT table so the user can deal with it later. We
+                  // use a distinctive TEXT_TYPE for this purpose. We have to "make up"
+                  
+                  NABoolean xnWasStartedHere = FALSE;
+                  if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+                    retcode = -1;
+                  else
+                    {                    
+                      for (Lng32 i = firstBadOne; i < viewDefnList.entries(); i++)
+                        {                      
+                          updateTextTable(cliInterface, objUID, COM_BAD_VIEW_TEXT,
+                                          0, viewDefnList[i], NULL, 0, TRUE);
+                          objUID--;  // get another fake object UID
+
+                          someViewSaved = TRUE; 
+                        }
+                      endXnIfStartedHere(cliInterface, xnWasStartedHere, 0);
+                    }                 
+                }                  
+            }
+        }
+      else
+        retcode = -1;  // couldn't get objectUID for old repository table
+    }
+          
+  return retcode;
 }
 
 short CmpSeabaseDDL::upgradeRepos(ExeCliInterface * cliInterface,
@@ -506,7 +575,7 @@ short CmpSeabaseDDL::upgradeReposComplete(ExeCliInterface * cliInterface,
         {
         case 0:
           {
-            mdui->setMsg("Upgrade Repository: Drop Old Repository");
+            mdui->setMsg("Upgrade Repository: Migrate any views on Repository");
             mdui->subStep()++;
             mdui->setEndStep(FALSE);
         
@@ -515,6 +584,62 @@ short CmpSeabaseDDL::upgradeReposComplete(ExeCliInterface * cliInterface,
           break;
 
         case 1:
+          {
+            // If there were views on the old Repository tables, they are
+            // still there, by virtue of the fact that we did "SKIP VIEW CHECK"
+            // on the ALTER TABLE RENAME. Now we will capture their view
+            // definitions (which will contain the old table name, not the
+            // renamed table name) and replay that against the new Repository
+            // table. If the replay fails, we treat that as an unrecoverable
+            // situation and ignore it. Instead, we'll save the view definition
+            // text in the TEXT table with a different TEXT_TYPE and clue the
+            // user in that it is there. They can then try to create the view
+            // at their leisure. Note that they may have to change the view
+            // definition themselves, e.g. if we dropped a column from the
+            // repository table that their view happened to reference.
+            //
+            // Note that this work is done in one step because the only state
+            // we can depend upon across redrives to this method is the substep
+            // number. Any in-memory list would be lost across redrives.
+            NABoolean someViewSaved = FALSE;
+            migrateReposViews(cliInterface,someViewSaved /* out */);
+
+            mdui->setMsg("Upgrade Repository: View migration done");
+            if (someViewSaved)
+              mdui->subStep()++;
+            else
+              mdui->subStep() += 2;
+
+            mdui->setEndStep(FALSE);
+       
+            return 0;
+          }
+          break;
+
+        case 2:
+          {
+            // This state is here in case we want to report to the user that
+            // there was a view that could not be migrated. But we saved the
+            // view definition for that view in the TEXT table.
+            mdui->setMsg("Some user views could not be migrated. Check metadata TEXT table, TEXT_TYPE = 9.");
+            mdui->subStep()++;
+            mdui->setEndStep(FALSE);
+        
+            return 0;
+          }
+          break;
+
+        case 3:
+          {
+            mdui->setMsg("Upgrade Repository: Drop Old Repository");
+            mdui->subStep()++;
+            mdui->setEndStep(FALSE);
+        
+            return 0;
+          }
+          break;
+
+        case 4:
           {
             // drop old repository; ignore errors
             dropRepos(cliInterface, TRUE/*old repos*/, FALSE/*no schema drop*/);
