@@ -105,6 +105,24 @@ message SsccCheckAndDeleteResponse {
   optional bool hasException = 3;
 }
 
+message SsccCheckAndDeleteRegionTxRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required bytes row = 4;
+  required bytes family = 5;
+  required bytes qualifier = 6;
+  required bytes value = 7;
+  required MutationProto delete = 8;
+  required bool autoCommit = 9;
+}
+
+message SsccCheckAndDeleteRegionTxResponse {
+  required bool result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
 message SsccCheckAndPutRequest {
   required int64 transactionId = 1;
   required int64 startId = 2;
@@ -117,6 +135,24 @@ message SsccCheckAndPutRequest {
 }
 
 message SsccCheckAndPutResponse {
+  required bool result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message SsccCheckAndPutRegionTxRequest {
+  required int64 tid = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required bytes row = 4;
+  required bytes family = 5;
+  required bytes qualifier = 6;
+  required bytes value = 7;
+  required MutationProto put = 8;
+  required bool autoCommit = 9;
+}
+
+message SsccCheckAndPutRegionTxResponse {
   required bool result = 1;
   optional string exception = 2;
   optional bool hasException = 3;
@@ -206,6 +242,23 @@ message SsccPerformScanResponse {
   optional bool   hasException = 6;
 }
 
+message SsccPutRegionTxRequest {
+  required int64 tid = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required MutationProto put = 4;
+  optional bool  isStateless = 5;
+  required bool  autoCommit = 6;
+}
+
+message SsccPutRegionTxResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool   hasException = 3;
+  optional int32  status = 4;
+}
+
+
 message SsccPutTransactionalRequest {
   required int64 transactionId = 1;
   required int64 startId = 2;
@@ -284,8 +337,12 @@ service SsccRegionService {
     returns(SsccBeginTransactionResponse);
   rpc checkAndDelete(SsccCheckAndDeleteRequest)
     returns(SsccCheckAndDeleteResponse);
+//  rpc checkAndDeleteRegionTx(SsccCheckAndDeleteRegionTxRequest)
+//    returns(SsccCheckAndDeleteRegionTxResponse);
   rpc checkAndPut(SsccCheckAndPutRequest)
     returns(SsccCheckAndPutResponse);
+  rpc checkAndPutRegionTx(SsccCheckAndPutRegionTxRequest)
+    returns(SsccCheckAndPutRegionTxResponse);
   rpc closeScanner(SsccCloseScannerRequest)
     returns(SsccCloseScannerResponse);
   rpc commit(SsccCommitRequest)
@@ -304,6 +361,8 @@ service SsccRegionService {
     returns(SsccPerformScanResponse);
   rpc openScanner(SsccOpenScannerRequest)
     returns(SsccOpenScannerResponse);
+  rpc putRegionTx(SsccPutRegionTxRequest)
+    returns(SsccPutRegionTxResponse);
   rpc put(SsccPutTransactionalRequest)
     returns(SsccPutTransactionalResponse);
   rpc putMultiple(SsccPutMultipleTransactionalRequest)

@@ -103,6 +103,7 @@ public class HTableClient {
 	private static final int SCAN_FETCH = 3;
 	private boolean useTRex;
 	private boolean useTRexScanner;
+	private boolean useRegionTransaction;
 	private String tableName;
         private static Connection connection;
 	private ResultScanner scanner = null;
@@ -327,6 +328,7 @@ public class HTableClient {
 	    if (logger.isDebugEnabled()) logger.debug("Enter HTableClient::init, tableName: " + tblName);
 	    this.useTRex = useTRex;
 	    tableName = tblName;
+        this.useRegionTransaction = true;
 	    
 	    if ( !this.useTRex ) {
 		this.useTRexScanner = false;
@@ -1383,20 +1385,33 @@ public class HTableClient {
 			future = executorService.submit(new Callable() {
  				public Object call() throws IOException {
 					boolean res = true;
-					if (useTRex && (transID != 0)) 
-				           table.delete(transID, del);
-				        else
-				           table.delete(del);
-				        return new Boolean(res);
+					if (useTRex && (transID != 0)) {
+			           table.delete(transID, del);
+                    }
+//                    else if (useRegionTransaction){
+//                        logger.info("deleteRow using region TX");
+//                        table.deleteRegionTx(del, /* auto-commit */ true);
+//                    }
+                    else {
+                       logger.info("deleteRow without transID ");
+                       table.delete(del);
+                    }
+					return true;
 				}
 			});
-			return true;
 		}
 		else {
-	          	if (useTRex && (transID != 0)) 
-				table.delete(transID, del);
-			else
-				table.delete(del);
+			if (useTRex && (transID != 0)) {
+	           table.delete(transID, del);
+            }
+//            else if (useRegionTransaction){
+//               logger.info("deleteRow using region TX");
+//               table.deleteRegionTx(del, /* auto-commit */ true);
+//            }
+            else {
+               logger.info("deleteRow without transID ");
+               table.delete(del);
+            }
 		}
 		if (logger.isTraceEnabled()) logger.trace("Exit deleteRow");
 		return true;
@@ -1487,9 +1502,16 @@ public class HTableClient {
 			boolean res;
 			if (useTRex && (transID != 0)) {
 			    res = table.checkAndDelete(transID, rowID, family, qualifier, colValToCheck, del);
-			} else {
-			    res = table.checkAndDelete(rowID, family, qualifier, colValToCheck, del);
-			}
+            }
+//            else if (useRegionTransaction){
+//               logger.info("checkAndDeleteRow using region TX");
+//               res = table.checkAndDeleteRegionTx(rowID, family, qualifier, colValToCheck,
+//               		         del, /* autoCommit */ true);
+//            }
+            else {
+               logger.info("checkAndDeleteRow without transID ");
+			   res = table.checkAndDelete(rowID, family, qualifier, colValToCheck, del);
+            }
 
 			if (res == false)
 			    return false;
@@ -1541,18 +1563,35 @@ public class HTableClient {
 					boolean res = true;
 
 					if (checkAndPut) {
-		    				if (useTRex && (transID != 0)) 
-							res = table.checkAndPut(transID, rowID, 
-								family1, qualifier1, colValToCheck, put);
-		    				else 
-							res = table.checkAndPut(rowID, 
-								family1, qualifier1, colValToCheck, put);
+                       if (useTRex && (transID != 0)){
+                          logger.info("checkAndPut using put with transID " + transID);
+                          res = table.checkAndPut(transID, rowID,
+                                     family1, qualifier1, colValToCheck, put);
+                       }
+                       else if (useRegionTransaction){
+                           logger.info("checkAndPutRegionTx with regionTX ");
+                           res = table.checkAndPutRegionTx(rowID, 
+                                           family1, qualifier1, colValToCheck, put, /* auto-commit */ true);
+                    	   
+                       }
+                       else {
+                          logger.info("checkAndPut without transID ");
+                          res = table.checkAndPut(rowID, 
+                                          family1, qualifier1, colValToCheck, put);
+                       }
 					}
 					else {
-		    				if (useTRex && (transID != 0)) 
-							table.put(transID, put);
-		    				else 
-							table.put(put);
+                       if (useTRex && (transID != 0)){
+                          logger.info("putRow using put with transID " + transID);
+                          table.put(transID, put);
+                       }
+                       else if (useRegionTransaction){
+                          logger.info("putRow using putRegionTx");
+                          table.putRegionTx(put, /* auto-commit */ true);
+                       }else{ 
+                          logger.info("putRow not using putRegionTx");
+                          table.put(put);
+					   }
 					}
 					return new Boolean(res);
 				}
@@ -1561,18 +1600,34 @@ public class HTableClient {
 		} else {
 		 	boolean result = true;
 			if (checkAndPut) {
-		    		if (useTRex && (transID != 0)) 
-					result = table.checkAndPut(transID, rowID, 
+               if (useTRex && (transID != 0)){
+                  logger.info("checkAndPut using put with transID " + transID);
+                  result = table.checkAndPut(transID, rowID, 
 						family1, qualifier1, colValToCheck, put);
-		   		else 
-					result = table.checkAndPut(rowID, 
+               }
+               else if (useRegionTransaction){
+                   logger.info("checkAndPutRegionTx using regionTX ");
+                   result = table.checkAndPutRegionTx(rowID, family1, qualifier1,
+                		   colValToCheck, put, /* auto-commit */ true);
+               }
+               else {
+                  logger.info("checkAndPut without transID ");
+                  result = table.checkAndPut(rowID, 
 						family1, qualifier1, colValToCheck, put);
+               }
 			}
 			else {
-		    		if (useTRex && (transID != 0)) 
-					table.put(transID, put);
-		    		else 
-					table.put(put);
+               if (useTRex && (transID != 0)){
+                  logger.info("putRow using put with transID " + transID);
+                  table.put(transID, put);
+               }
+               else if (useRegionTransaction){
+                  logger.info("putRow using putRegionTx");
+                  table.putRegionTx(put, true /* also commit */);
+               }else{
+                  logger.info("putRow not using putRegionTx");
+                  table.put(put);
+               }
 			}
 			return result;
 		}	

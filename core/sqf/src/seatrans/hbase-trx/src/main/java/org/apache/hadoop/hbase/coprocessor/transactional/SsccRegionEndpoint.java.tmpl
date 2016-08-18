@@ -84,6 +84,8 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionPro
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccBeginTransactionResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerRequest;
@@ -104,6 +106,8 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionPro
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest;
@@ -1955,6 +1959,74 @@ CoprocessorService, Coprocessor {
     }
   }
 
+  public void putRegionTx(RpcController controller,
+                  SsccPutRegionTxRequest request,
+      RpcCallback<SsccPutRegionTxResponse> done) {
+    SsccPutRegionTxResponse response = SsccPutRegionTxResponse.getDefaultInstance();
+
+    boolean stateless = false;
+    if (request.hasIsStateless()) {
+       stateless = request.getIsStateless();
+    }
+    byte [] row = null;
+    MutationProto proto = request.getPut();
+    MutationType type = proto.getMutateType();
+    Put put = null;
+    Throwable t = null;
+    WrongRegionException wre = null;
+    int status = 0;
+    long tid = request.getTid();
+    long startId = request.getStartId();
+    try {
+       put = ProtobufUtil.toPut(proto);
+    } catch (Throwable e) {
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:putRegionTx threw exception");
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Caught exception " + e.getMessage() + "" + stackTraceToString(e));
+       LOG.error("UNIQUE coprocessor:  Caught exception " + e.getMessage() + "" + stackTraceToString(e));
+       t = e;
+    }
+
+    if (type == MutationType.PUT && proto.hasRow()) {
+       row = proto.getRow().toByteArray();
+
+       // Process in local memory
+       try {
+//          status = putRegionTx(tid, startId, put, stateless);
+          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:putRegionTx returned status: " + status);
+       } catch (Throwable e) {
+          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:putRegionTx threw exception after internal putRegionTx");
+          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Caught exception " + e.getMessage() + "" + stackTraceToString(e));
+          t = e;
+       }
+
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: putRegionTx - id " + tid + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
+    }
+    else  {
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: putRegionTx - id " + tid + ", regionName " + regionInfo.getRegionNameAsString() + "- no valid PUT type or does not contain a row");
+    }
+
+    org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.Builder putRegionTxResponseBuilder = SsccPutRegionTxResponse.newBuilder();
+
+    putRegionTxResponseBuilder.setHasException(false);
+
+    if (t != null)
+    {
+      putRegionTxResponseBuilder.setHasException(true);
+      putRegionTxResponseBuilder.setException(t.toString());
+    }
+
+    if (wre != null)
+    {
+      putRegionTxResponseBuilder.setHasException(true);
+      putRegionTxResponseBuilder.setException(wre.toString());
+    }
+
+    putRegionTxResponseBuilder.setStatus(status);
+
+    SsccPutRegionTxResponse papresponse = putRegionTxResponseBuilder.build();
+    done.run(papresponse);
+  }
+
 /***********************************************************************************
 *****************  ALL code to support DELETE   ************************************
 ***********************************************************************************/
@@ -2413,6 +2485,112 @@ CoprocessorService, Coprocessor {
     SsccCheckAndPutResponse checkAndPutResponse = checkAndPutResponseBuilder.build();
 
     done.run(checkAndPutResponse);
+  }
+
+  @Override
+  public void checkAndPutRegionTx(RpcController controller,
+                          SsccCheckAndPutRegionTxRequest request,
+                          RpcCallback<SsccCheckAndPutRegionTxResponse> done) {
+/*
+    SsccCheckAndPutRegionTxResponse response = SsccCheckAndPutRegionTxResponse.getDefaultInstance();
+
+    byte [] rowArray = null;
+    com.google.protobuf.ByteString row = null;
+    com.google.protobuf.ByteString family = null;
+    com.google.protobuf.ByteString qualifier = null;
+    com.google.protobuf.ByteString value = null;
+    MutationProto proto = request.getPut();
+    MutationType type = proto.getMutateType();
+    Put put = null;
+    WrongRegionException wre = null;
+    Throwable t = null;
+    boolean result = false;
+    long transId = request.getTransactionId();
+    long startId = request.getStartId();
+
+    org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.Builder checkAndPutRegionTxResponseBuilder = SsccCheckAndPutRegionTxResponse.newBuilder();
+
+    if (wre == null && type == MutationType.PUT && proto.hasRow())
+    {
+      rowArray = proto.getRow().toByteArray();
+
+      try {
+          put = ProtobufUtil.toPut(proto);
+      } catch (Throwable e) {
+        LOG.error("SsccRegionEndpoint coprocessor: checkAndPutRegionTx caught exception " + e.getMessage() + "" + stackTraceToString(e));
+        t = e;
+      }
+
+      // Process in local memory
+      if (put != null)
+      {
+        if (request.hasRow()) {
+          row = request.getRow();
+
+          if (!Bytes.equals(rowArray, row.toByteArray())) {
+             t = new org.apache.hadoop.hbase.DoNotRetryIOException("Action's Put row must match the passed row");
+             if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndPutRegionTx creating DoNotRetryIOException: setting result: Put row must match the passed row\n" +
+                  "rowArray: " + Bytes.toStringBinary(rowArray) + ", rowArray in hex: " + Hex.encodeHexString(rowArray) + ", row: " +
+                  Bytes.toStringBinary(request.getRow().toByteArray()) + ", row in hex: " + Hex.encodeHexString(request.getRow().toByteArray()));
+          }
+        }
+
+        if (t == null) {
+          if (request.hasRow())
+            row = request.getRow();
+          if (request.hasFamily())
+            family = request.getFamily();
+          if (request.hasQualifier())
+            qualifier = request.getQualifier();
+          if (request.hasValue())
+            value = request.getValue();
+
+          try {
+           if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: attempting checkAndPutRegionTx for trans: " + transId +
+                                 " startid: " + startId);
+           result = checkAndPutRegionTx(transId, startId,
+               request.getRow().toByteArray(),
+               request.getFamily().toByteArray(),
+               request.getQualifier().toByteArray(),
+               request.getValue().toByteArray(),
+               put);
+           if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndPutRegionTx returned " + result);
+          } catch (Throwable e) {
+             if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndPutRegionTx threw exception after internal checkAndPutRegionTx");
+             if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAnd Put caught exception " + e.getMessage() + "" + stackTraceToString(e));
+             t = e;
+          }
+       }
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndPutRegionTx setting result: " + result);
+       checkAndPutRegionTxResponseBuilder.setResult(result);
+     }
+    }
+    else
+    {
+      result = false;
+      checkAndPutRegionTxResponseBuilder.setResult(result);
+    }
+
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  checkAndPutRegionTx result is " + result);
+
+    checkAndPutRegionTxResponseBuilder.setHasException(false);
+
+    if (wre != null)
+    {
+      checkAndPutRegionTxResponseBuilder.setHasException(true);
+      checkAndPutRegionTxResponseBuilder.setException(wre.toString());
+    }
+
+    if (t != null)
+    {
+      checkAndPutRegionTxResponseBuilder.setHasException(true);
+      checkAndPutRegionTxResponseBuilder.setException(t.toString());
+    }
+
+    SsccCheckAndPutRegionTxResponse checkAndPutRegionTxResponse = checkAndPutRegionTxResponseBuilder.build();
+
+    done.run(checkAndPutRegionTxResponse);
+    */
   }
 
   /**

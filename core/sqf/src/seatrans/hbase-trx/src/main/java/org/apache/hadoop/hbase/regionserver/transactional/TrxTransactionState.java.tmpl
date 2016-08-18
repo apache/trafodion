@@ -155,7 +155,21 @@ public class TrxTransactionState extends TransactionState {
 
     public TrxTransactionState(final long transactionId, final long rLogStartSequenceId, AtomicLong hlogSeqId,
             final HRegionInfo regionInfo, HTableDescriptor htd, WAL hLog, boolean logging) {
-        super(transactionId, rLogStartSequenceId, hlogSeqId, regionInfo, htd, hLog, logging);
+       super(transactionId,
+             rLogStartSequenceId,
+             hlogSeqId,
+             regionInfo,
+             htd,
+             hLog,
+             logging,
+             false);  // not a region transaction
+        this.e = new WALEdit();
+        dropTableRecorded = false;
+    }
+
+    public TrxTransactionState(final long transactionId, final long rLogStartSequenceId, AtomicLong hlogSeqId,
+            final HRegionInfo regionInfo, HTableDescriptor htd, WAL hLog, boolean logging, boolean regionTx) {
+        super(transactionId, rLogStartSequenceId, hlogSeqId, regionInfo, htd, hLog, logging, regionTx);
         this.e = new WALEdit();
         dropTableRecorded = false;
     }
