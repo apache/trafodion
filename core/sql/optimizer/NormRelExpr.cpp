@@ -3131,7 +3131,6 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
   // method getMoreOutputsIfPossible().
 
   ValueIdSet leftUniqueCols ;
-  child(0)->castToRelExpr()->synthLogProp() ;
   if (NOT (child(0)->getGroupAttr()->findUniqueCols(leftUniqueCols)))
   {
     // Could not find a set of unique cols.
