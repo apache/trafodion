@@ -1,4 +1,4 @@
-/**********************************************************************
+/************************************************************************
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -47,6 +47,8 @@
 #include <byteswap.h>
 
 #pragma warning ( disable : 4251 )
+
+#define instrAndText(a) a, #a
 
 /////////////////////////////////////////
 // Class ex_aggregate_clause            //
@@ -127,7 +129,7 @@ public:
   // Display
   //
   NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
-					  Int32 clauseNum, char * constsArea);
+                                  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
@@ -185,7 +187,7 @@ public:
   // Display
   //
   NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
-					  Int32 clauseNum, char * constsArea);
+                                  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
@@ -352,92 +354,101 @@ private:
 /////////////////////////////////////////
 // Class arith_clause                  //
 /////////////////////////////////////////
-struct ex_arith_struct; // forward reference
+
+// (these codes must remain invariant across future versions)
+enum ArithInstruction { 
+  ADD_BIN16S_BIN16S_BIN16S      =0, 
+  ADD_BIN16S_BIN16S_BIN32S      =1, 
+  ADD_BIN16S_BIN32S_BIN32S      =2, 
+  ADD_BIN32S_BIN16S_BIN32S      =3, 
+  ADD_BIN32S_BIN32S_BIN32S      =4,
+  ADD_BIN64S_BIN64S_BIN64S      =5,
+  ADD_BIN32S_BIN64S_BIN64S      =6, 
+  ADD_BIN64S_BIN32S_BIN64S      =7,
+  ADD_BIN16U_BIN16U_BIN16U      =8, 
+  ADD_BIN16U_BIN16U_BIN32U      =9, 
+  ADD_BIN16U_BIN32U_BIN32U      =10, 
+  ADD_BIN32U_BIN16U_BIN32U      =11, 
+  ADD_BIN32U_BIN32U_BIN32U      =12,
+  ADD_BPINTU_BIN64S_BIN64S      =13, 
+  ADD_BIN64S_BPINTU_BIN64S      =14, 
+  ADD_BIN32U_BIN64S_BIN64S      =15, 
+  ADD_BIN64S_BIN32U_BIN64S      =16,
+
+  ADD_FLOAT32_FLOAT32_FLOAT32   =17, 
+  ADD_FLOAT64_FLOAT64_FLOAT64   =18,
+  ADD_DATETIME_INTERVAL_DATETIME=19, 
+  ADD_INTERVAL_DATETIME_DATETIME=20,
+    
+  SUB_BIN16S_BIN16S_BIN16S      =21, 
+  SUB_BIN16S_BIN16S_BIN32S      =22, 
+  SUB_BIN16S_BIN32S_BIN32S      =23, 
+  SUB_BIN32S_BIN16S_BIN32S      =24, 
+  SUB_BIN32S_BIN32S_BIN32S      =25, 
+  SUB_BIN64S_BIN64S_BIN64S      =26,
+  SUB_BIN16U_BIN16U_BIN16U      =27, 
+  SUB_BIN16U_BIN16U_BIN32U      =28, 
+  SUB_BIN16U_BIN32U_BIN32U      =29, 
+  SUB_BIN32U_BIN16U_BIN32U      =30, 
+  SUB_BIN32U_BIN32U_BIN32U      =31,
+  SUB_FLOAT32_FLOAT32_FLOAT32   =32, 
+  SUB_FLOAT64_FLOAT64_FLOAT64   =33,
+  SUB_DATETIME_INTERVAL_DATETIME=34, 
+  SUB_DATETIME_DATETIME_INTERVAL=35,
+    
+  MUL_BIN16S_BIN16S_BIN16S      =36, 
+  MUL_BIN16S_BIN16S_BIN32S      =37, 
+  MUL_BIN16S_BIN32S_BIN32S      =38, 
+  MUL_BIN32S_BIN16S_BIN32S      =39, 
+  MUL_BIN32S_BIN32S_BIN32S      =40, 
+  MUL_BIN64S_BIN64S_BIN64S      =41,
+  MUL_BIN16U_BIN16U_BIN16U      =42, 
+  MUL_BIN16U_BIN16U_BIN32U      =43, 
+  MUL_BIN16U_BIN32U_BIN32U      =44, 
+  MUL_BIN32U_BIN16U_BIN32U      =45, 
+  MUL_BIN32U_BIN32U_BIN32U      =46,
+  MUL_FLOAT32_FLOAT32_FLOAT32   =47, 
+  MUL_FLOAT64_FLOAT64_FLOAT64   =48,
+    
+  DIV_BIN16S_BIN16S_BIN16S      =49, 
+  DIV_BIN16S_BIN16S_BIN32S      =50, 
+  DIV_BIN16S_BIN32S_BIN32S      =51, 
+  DIV_BIN32S_BIN16S_BIN32S      =52, 
+  DIV_BIN32S_BIN32S_BIN32S      =53, 
+  DIV_BIN64S_BIN64S_BIN64S      =54,
+  DIV_BIN16U_BIN16U_BIN16U      =55, 
+  DIV_BIN16U_BIN16U_BIN32U      =56, 
+  DIV_BIN16U_BIN32U_BIN32U      =57, 
+  DIV_BIN32U_BIN16U_BIN32U      =58, 
+  DIV_BIN32U_BIN32U_BIN32U      =59,
+  DIV_FLOAT64_FLOAT64_FLOAT64   =60,
+    
+  ADD_COMPLEX                   =61, 
+  SUB_COMPLEX                   =62, 
+  MUL_COMPLEX                   =63, 
+  DIV_COMPLEX                   =64,
+  ARITH_NOT_SUPPORTED           =65,
+  MUL_BIN16S_BIN32S_BIN64S      =66,
+  MUL_BIN32S_BIN16S_BIN64S      =67,
+  MUL_BIN32S_BIN32S_BIN64S      =68,
+
+  DIV_BIN64S_BIN64S_BIN64S_ROUND=69,
+
+  NEGATE_BOOLEAN                =70
+};
 
 class SQLEXP_LIB_FUNC  ex_arith_clause : public ex_clause {
+
+  typedef struct {
+    OperatorTypeEnum op;
+    short type_op1; // left operand
+    short type_op2; // right operand
+    short type_op0; // result
+    ArithInstruction instruction;
+    const char * instrStr;
+  } ArithInstrStruct;
+  
 public:
-
-  // (these codes must remain invariant across future versions)
-  enum arith_case_index { 
-    ADD_BIN16S_BIN16S_BIN16S      =0, 
-    ADD_BIN16S_BIN16S_BIN32S      =1, 
-    ADD_BIN16S_BIN32S_BIN32S      =2, 
-    ADD_BIN32S_BIN16S_BIN32S      =3, 
-    ADD_BIN32S_BIN32S_BIN32S      =4,
-    ADD_BIN64S_BIN64S_BIN64S      =5,
-    ADD_BIN32S_BIN64S_BIN64S      =6, 
-    ADD_BIN64S_BIN32S_BIN64S      =7,
-    ADD_BIN16U_BIN16U_BIN16U      =8, 
-    ADD_BIN16U_BIN16U_BIN32U      =9, 
-    ADD_BIN16U_BIN32U_BIN32U      =10, 
-    ADD_BIN32U_BIN16U_BIN32U      =11, 
-    ADD_BIN32U_BIN32U_BIN32U      =12,
-    ADD_BPINTU_BIN64S_BIN64S      =13, 
-    ADD_BIN64S_BPINTU_BIN64S      =14, 
-    ADD_BIN32U_BIN64S_BIN64S      =15, 
-    ADD_BIN64S_BIN32U_BIN64S      =16,
-
-    ADD_FLOAT32_FLOAT32_FLOAT32   =17, 
-    ADD_FLOAT64_FLOAT64_FLOAT64   =18,
-    ADD_DATETIME_INTERVAL_DATETIME=19, 
-    ADD_INTERVAL_DATETIME_DATETIME=20,
-    
-    SUB_BIN16S_BIN16S_BIN16S      =21, 
-    SUB_BIN16S_BIN16S_BIN32S      =22, 
-    SUB_BIN16S_BIN32S_BIN32S      =23, 
-    SUB_BIN32S_BIN16S_BIN32S      =24, 
-    SUB_BIN32S_BIN32S_BIN32S      =25, 
-    SUB_BIN64S_BIN64S_BIN64S      =26,
-    SUB_BIN16U_BIN16U_BIN16U      =27, 
-    SUB_BIN16U_BIN16U_BIN32U      =28, 
-    SUB_BIN16U_BIN32U_BIN32U      =29, 
-    SUB_BIN32U_BIN16U_BIN32U      =30, 
-    SUB_BIN32U_BIN32U_BIN32U      =31,
-    SUB_FLOAT32_FLOAT32_FLOAT32   =32, 
-    SUB_FLOAT64_FLOAT64_FLOAT64   =33,
-    SUB_DATETIME_INTERVAL_DATETIME=34, 
-    SUB_DATETIME_DATETIME_INTERVAL=35,
-    
-    MUL_BIN16S_BIN16S_BIN16S      =36, 
-    MUL_BIN16S_BIN16S_BIN32S      =37, 
-    MUL_BIN16S_BIN32S_BIN32S      =38, 
-    MUL_BIN32S_BIN16S_BIN32S      =39, 
-    MUL_BIN32S_BIN32S_BIN32S      =40, 
-    MUL_BIN64S_BIN64S_BIN64S      =41,
-    MUL_BIN16U_BIN16U_BIN16U      =42, 
-    MUL_BIN16U_BIN16U_BIN32U      =43, 
-    MUL_BIN16U_BIN32U_BIN32U      =44, 
-    MUL_BIN32U_BIN16U_BIN32U      =45, 
-    MUL_BIN32U_BIN32U_BIN32U      =46,
-    MUL_FLOAT32_FLOAT32_FLOAT32   =47, 
-    MUL_FLOAT64_FLOAT64_FLOAT64   =48,
-    
-    DIV_BIN16S_BIN16S_BIN16S      =49, 
-    DIV_BIN16S_BIN16S_BIN32S      =50, 
-    DIV_BIN16S_BIN32S_BIN32S      =51, 
-    DIV_BIN32S_BIN16S_BIN32S      =52, 
-    DIV_BIN32S_BIN32S_BIN32S      =53, 
-    DIV_BIN64S_BIN64S_BIN64S      =54,
-    DIV_BIN16U_BIN16U_BIN16U      =55, 
-    DIV_BIN16U_BIN16U_BIN32U      =56, 
-    DIV_BIN16U_BIN32U_BIN32U      =57, 
-    DIV_BIN32U_BIN16U_BIN32U      =58, 
-    DIV_BIN32U_BIN32U_BIN32U      =59,
-    DIV_FLOAT64_FLOAT64_FLOAT64   =60,
-    
-    ADD_COMPLEX                   =61, 
-    SUB_COMPLEX                   =62, 
-    MUL_COMPLEX                   =63, 
-    DIV_COMPLEX                   =64,
-    ARITH_NOT_SUPPORTED           =65,
-    MUL_BIN16S_BIN32S_BIN64S      =66,
-    MUL_BIN32S_BIN16S_BIN64S      =67,
-    MUL_BIN32S_BIN32S_BIN64S      =68,
-
-    DIV_BIN64S_BIN64S_BIN64S_ROUND=69,
-
-    NEGATE_BOOLEAN                =70
-    };
 
   // Construction
   //
@@ -455,20 +466,31 @@ public:
  
   // Accessors
   //
-  NA_EIDPROC inline arith_case_index get_case_index()
+  ArithInstruction getInstruction()
   {
-    return (arith_case_index) case_index;
+    if (getInstrArrayIndex() >= 0)
+      return getInstruction(getInstrArrayIndex());
+    else
+      return ARITH_NOT_SUPPORTED;
   };
-  NA_EIDPROC void set_case_index();
-  NA_EIDPROC void set_case_index(OperatorTypeEnum op,
-				 Attributes * attr1,
-				 Attributes * attr2,
-				 Attributes * result);
+  void setInstruction();
+  void setInstruction(OperatorTypeEnum op,
+                      Attributes * attr1,
+                      Attributes * attr2,
+                      Attributes * result);
+  
+  short isArithSupported(OperatorTypeEnum op,
+                         Attributes * attr1,
+                         Attributes * attr2,
+                         Attributes * result);
 
-  NA_EIDPROC short isArithSupported(OperatorTypeEnum op,
-				    Attributes * attr1,
-				    Attributes * attr2,
-				    Attributes * result);
+  static const ArithInstrStruct arithInstrInfo[];
+  static const char * getInstructionStr(Lng32 index) 
+  { return arithInstrInfo[index].instrStr;}
+  static const ArithInstruction getInstruction(Lng32 index) 
+  { return arithInstrInfo[index].instruction;}
+
+  Lng32 findIndexIntoInstrArray(ArithInstruction ci);
 
   // Null Semantics
   //
@@ -533,7 +555,7 @@ private:
     DIV_TO_DOWNSCALE = 0x01
   };
 
-  Int32            case_index;           // 00-03
+  char filler[4];             // 00-03
 
   char arithRoundingMode_;               // 04-04
   char flags_;                           // 05-05
@@ -545,12 +567,12 @@ private:
   // ---------------------------------------------------------------------
   char             fillers_[18];          // 06-23
 
-  NA_EIDPROC const ex_arith_struct * getMatchingRow(OperatorTypeEnum op,
+  NA_EIDPROC const ArithInstrStruct * getMatchingRow(OperatorTypeEnum op,
 						    short datatype1,
 						    short datatype2,
 						    short resulttype);
 
-  NA_EIDPROC const arith_case_index computeCaseIndex(OperatorTypeEnum op,
+  NA_EIDPROC const ArithInstruction computeCaseIndex(OperatorTypeEnum op,
 						     Attributes * attr1,
 						     Attributes * attr2,
 						     Attributes * result);
@@ -661,18 +683,6 @@ private:
   char             fillers_[8];          // 00-07
 
 };
-
-// private helper struct for class ex_arith_clause (can not make it
-// a struct inside the class because of c89 limitations with nested classes)
-struct ex_arith_struct
-{
-  OperatorTypeEnum op;
-  short type_op1; // left operand
-  short type_op2; // right operand
-  short type_op0; // result
-  ex_arith_clause::arith_case_index index;
-};
-
 
 /////////////////////////////////////////
 // Class bool_clause                   //
@@ -917,230 +927,238 @@ private:
 //  return saved_next_clause;
 //};
 
+#define myDefine(a) #a
+
 /////////////////////////////////////////
 // Class comp_clause
 /////////////////////////////////////////
-struct ex_comp_struct; // forward reference
+// (these codes must remain invariant across future versions)
+enum CompInstruction { 
+  EQ_BIN16S_BIN16S    =0,
+  EQ_BIN16S_BIN32S    =1, 
+  EQ_BIN16S_BIN16U    =2, 
+  EQ_BIN16S_BIN32U    =3,
+  NE_BIN16S_BIN16S    =4, 
+  NE_BIN16S_BIN32S    =5, 
+  NE_BIN16S_BIN16U    =6, 
+  NE_BIN16S_BIN32U    =7,
+  LT_BIN16S_BIN16S    =8, 
+  LT_BIN16S_BIN32S    =9, 
+  LT_BIN16S_BIN16U    =10, 
+  LT_BIN16S_BIN32U    =11,
+  LE_BIN16S_BIN16S    =12, 
+  LE_BIN16S_BIN32S    =13, 
+  LE_BIN16S_BIN16U    =14, 
+  LE_BIN16S_BIN32U    =15,
+  GT_BIN16S_BIN16S    =16, 
+  GT_BIN16S_BIN32S    =17, 
+  GT_BIN16S_BIN16U    =18, 
+  GT_BIN16S_BIN32U    =19,
+  GE_BIN16S_BIN16S    =20, 
+  GE_BIN16S_BIN32S    =21, 
+  GE_BIN16S_BIN16U    =22, 
+  GE_BIN16S_BIN32U    =23,
+    
+  EQ_BIN32S_BIN16S    =24, 
+  EQ_BIN32S_BIN32S    =25, 
+  EQ_BIN32S_BIN16U    =26, 
+  EQ_BIN32S_BIN32U    =27,
+  NE_BIN32S_BIN16S    =28, 
+  NE_BIN32S_BIN32S    =29, 
+  NE_BIN32S_BIN16U    =30, 
+  NE_BIN32S_BIN32U    =31,
+  LT_BIN32S_BIN16S    =32, 
+  LT_BIN32S_BIN32S    =33, 
+  LT_BIN32S_BIN16U    =34, 
+  LT_BIN32S_BIN32U    =35,
+  LE_BIN32S_BIN16S    =36, 
+  LE_BIN32S_BIN32S    =37, 
+  LE_BIN32S_BIN16U    =38, 
+  LE_BIN32S_BIN32U    =39,
+  GT_BIN32S_BIN16S    =40, 
+  GT_BIN32S_BIN32S    =41, 
+  GT_BIN32S_BIN16U    =42, 
+  GT_BIN32S_BIN32U    =43,
+  GE_BIN32S_BIN16S    =44, 
+  GE_BIN32S_BIN32S    =45, 
+  GE_BIN32S_BIN16U    =46, 
+  GE_BIN32S_BIN32U    =47,
+    
+  EQ_BIN64S_BIN64S    =48,
+  NE_BIN64S_BIN64S    =49,
+  LT_BIN64S_BIN64S    =50,
+  LE_BIN64S_BIN64S    =51,
+  GT_BIN64S_BIN64S    =52,
+  GE_BIN64S_BIN64S    =53,
+    
+  EQ_BIN16U_BIN16S    =54, 
+  EQ_BIN16U_BIN32S    =55, 
+  EQ_BIN16U_BIN16U    =56, 
+  EQ_BIN16U_BIN32U    =57,
+  NE_BIN16U_BIN16S    =58, 
+  NE_BIN16U_BIN32S    =59, 
+  NE_BIN16U_BIN16U    =60, 
+  NE_BIN16U_BIN32U    =61,
+  LT_BIN16U_BIN16S    =62, 
+  LT_BIN16U_BIN32S    =63, 
+  LT_BIN16U_BIN16U    =64, 
+  LT_BIN16U_BIN32U    =65,
+  LE_BIN16U_BIN16S    =66, 
+  LE_BIN16U_BIN32S    =67, 
+  LE_BIN16U_BIN16U    =68, 
+  LE_BIN16U_BIN32U    =69,
+  GT_BIN16U_BIN16S    =70, 
+  GT_BIN16U_BIN32S    =71, 
+  GT_BIN16U_BIN16U    =72, 
+  GT_BIN16U_BIN32U    =73,
+  GE_BIN16U_BIN16S    =74, 
+  GE_BIN16U_BIN32S    =75, 
+  GE_BIN16U_BIN16U    =76, 
+  GE_BIN16U_BIN32U    =77,
+    
+  EQ_BIN32U_BIN16S    =78, 
+  EQ_BIN32U_BIN32S    =79, 
+  EQ_BIN32U_BIN16U    =80, 
+  EQ_BIN32U_BIN32U    =81,
+  NE_BIN32U_BIN16S    =82, 
+  NE_BIN32U_BIN32S    =83, 
+  NE_BIN32U_BIN16U    =84, 
+  NE_BIN32U_BIN32U    =85,
+  LT_BIN32U_BIN16S    =86, 
+  LT_BIN32U_BIN32S    =87, 
+  LT_BIN32U_BIN16U    =88, 
+  LT_BIN32U_BIN32U    =89,
+  LE_BIN32U_BIN16S    =90, 
+  LE_BIN32U_BIN32S    =91, 
+  LE_BIN32U_BIN16U    =92, 
+  LE_BIN32U_BIN32U    =93,
+  GT_BIN32U_BIN16S    =94, 
+  GT_BIN32U_BIN32S    =95, 
+  GT_BIN32U_BIN16U    =96, 
+  GT_BIN32U_BIN32U    =97,
+  GE_BIN32U_BIN16S    =98, 
+  GE_BIN32U_BIN32S    =99, 
+  GE_BIN32U_BIN16U    =100, 
+  GE_BIN32U_BIN32U    =101,
+    
+  EQ_DECU_DECU        =102, 
+  NE_DECU_DECU        =103, 
+  LT_DECU_DECU        =104, 
+  LE_DECU_DECU        =105, 
+  GT_DECU_DECU        =106,
+  GE_DECU_DECU        =107,
+    
+  EQ_DECS_DECS        =108, 
+  NE_DECS_DECS        =109, 
+  LT_DECS_DECS        =110, 
+  LE_DECS_DECS        =111, 
+  GT_DECS_DECS        =112,
+  GE_DECS_DECS        =113,
+    
+  EQ_FLOAT32_FLOAT32  =114,
+  NE_FLOAT32_FLOAT32  =115,
+  LT_FLOAT32_FLOAT32  =116,
+  LE_FLOAT32_FLOAT32  =117,
+  GT_FLOAT32_FLOAT32  =118,
+  GE_FLOAT32_FLOAT32  =119,
+    
+  EQ_FLOAT64_FLOAT64  =120,
+  NE_FLOAT64_FLOAT64  =121,
+  LT_FLOAT64_FLOAT64  =122,
+  LE_FLOAT64_FLOAT64  =123,
+  GT_FLOAT64_FLOAT64  =124,
+  GE_FLOAT64_FLOAT64  =125,
+    
+  EQ_DATETIME_DATETIME=126,
+  NE_DATETIME_DATETIME=127,
+  LT_DATETIME_DATETIME=128,
+  LE_DATETIME_DATETIME=129,
+  GT_DATETIME_DATETIME=130,
+  GE_DATETIME_DATETIME=131,
+    
+  EQ_ASCII_F_F        =132, 
+  NE_ASCII_F_F        =133, 
+  LT_ASCII_F_F        =134, 
+  LE_ASCII_F_F        =135, 
+  GT_ASCII_F_F        =136,
+  GE_ASCII_F_F        =137,
+    
+  EQ_UNICODE_F_F      =138, 
+  NE_UNICODE_F_F      =139, 
+  LT_UNICODE_F_F      =140, 
+  LE_UNICODE_F_F      =141, 
+  GT_UNICODE_F_F      =142, 
+  GE_UNICODE_F_F      =143,
+  
+  ASCII_COMP          =144,   
+  UNICODE_COMP        =145,
+    
+  COMP_COMPLEX        =146,
+
+  EQ_ASCII_COMP       =147,
+  NE_ASCII_COMP       =148,
+  LT_ASCII_COMP       =149,
+  LE_ASCII_COMP       =150,
+  GT_ASCII_COMP       =151,
+  GE_ASCII_COMP       =152,
+
+  EQ_BLOB        =153, 
+  NE_BLOB        =154, 
+  LT_BLOB        =155, 
+  LE_BLOB        =156, 
+  GT_BLOB        =157,
+  GE_BLOB        =158,
+
+  EQ_BIN64U_BIN64U    =159,
+  EQ_BIN64U_BIN64S    =160,
+  EQ_BIN64S_BIN64U    =161,
+  NE_BIN64U_BIN64U    =162,
+  NE_BIN64U_BIN64S    =163,
+  NE_BIN64S_BIN64U    =164,
+  LT_BIN64U_BIN64U    =165,
+  LT_BIN64U_BIN64S    =166,
+  LT_BIN64S_BIN64U    =167,
+  LE_BIN64U_BIN64U    =168,
+  LE_BIN64U_BIN64S    =169,
+  LE_BIN64S_BIN64U    =170,
+  GT_BIN64U_BIN64U    =171,
+  GT_BIN64U_BIN64S    =172,
+  GT_BIN64S_BIN64U    =173,
+  GE_BIN64U_BIN64U    =174,
+  GE_BIN64U_BIN64S    =175,
+  GE_BIN64S_BIN64U    =176,
+    
+  EQ_BOOL_BOOL        =177,
+  NE_BOOL_BOOL        =178,
+
+  // tinyint operations
+  EQ_BIN8S_BIN8S      =179,
+  EQ_BIN8U_BIN8U      =180,
+  NE_BIN8S_BIN8S      =181,
+  NE_BIN8U_BIN8U      =182,
+  LT_BIN8S_BIN8S      =183,
+  LT_BIN8U_BIN8U      =184,
+  LE_BIN8S_BIN8S      =185,
+  LE_BIN8U_BIN8U      =186,
+  GT_BIN8S_BIN8S      =187,
+  GT_BIN8U_BIN8U      =188,
+  GE_BIN8S_BIN8S      =189,
+  GE_BIN8U_BIN8U      =190,
+
+  COMP_NOT_SUPPORTED  =191
+};
 
 class SQLEXP_LIB_FUNC  ex_comp_clause : public ex_clause {
 
-public:
-
-  // (these codes must remain invariant across future versions)
-  enum comp_case_index { 
-    EQ_BIN16S_BIN16S    =0,
-    EQ_BIN16S_BIN32S    =1, 
-    EQ_BIN16S_BIN16U    =2, 
-    EQ_BIN16S_BIN32U    =3,
-    NE_BIN16S_BIN16S    =4, 
-    NE_BIN16S_BIN32S    =5, 
-    NE_BIN16S_BIN16U    =6, 
-    NE_BIN16S_BIN32U    =7,
-    LT_BIN16S_BIN16S    =8, 
-    LT_BIN16S_BIN32S    =9, 
-    LT_BIN16S_BIN16U    =10, 
-    LT_BIN16S_BIN32U    =11,
-    LE_BIN16S_BIN16S    =12, 
-    LE_BIN16S_BIN32S    =13, 
-    LE_BIN16S_BIN16U    =14, 
-    LE_BIN16S_BIN32U    =15,
-    GT_BIN16S_BIN16S    =16, 
-    GT_BIN16S_BIN32S    =17, 
-    GT_BIN16S_BIN16U    =18, 
-    GT_BIN16S_BIN32U    =19,
-    GE_BIN16S_BIN16S    =20, 
-    GE_BIN16S_BIN32S    =21, 
-    GE_BIN16S_BIN16U    =22, 
-    GE_BIN16S_BIN32U    =23,
-    
-    EQ_BIN32S_BIN16S    =24, 
-    EQ_BIN32S_BIN32S    =25, 
-    EQ_BIN32S_BIN16U    =26, 
-    EQ_BIN32S_BIN32U    =27,
-    NE_BIN32S_BIN16S    =28, 
-    NE_BIN32S_BIN32S    =29, 
-    NE_BIN32S_BIN16U    =30, 
-    NE_BIN32S_BIN32U    =31,
-    LT_BIN32S_BIN16S    =32, 
-    LT_BIN32S_BIN32S    =33, 
-    LT_BIN32S_BIN16U    =34, 
-    LT_BIN32S_BIN32U    =35,
-    LE_BIN32S_BIN16S    =36, 
-    LE_BIN32S_BIN32S    =37, 
-    LE_BIN32S_BIN16U    =38, 
-    LE_BIN32S_BIN32U    =39,
-    GT_BIN32S_BIN16S    =40, 
-    GT_BIN32S_BIN32S    =41, 
-    GT_BIN32S_BIN16U    =42, 
-    GT_BIN32S_BIN32U    =43,
-    GE_BIN32S_BIN16S    =44, 
-    GE_BIN32S_BIN32S    =45, 
-    GE_BIN32S_BIN16U    =46, 
-    GE_BIN32S_BIN32U    =47,
-    
-    EQ_BIN64S_BIN64S    =48,
-    NE_BIN64S_BIN64S    =49,
-    LT_BIN64S_BIN64S    =50,
-    LE_BIN64S_BIN64S    =51,
-    GT_BIN64S_BIN64S    =52,
-    GE_BIN64S_BIN64S    =53,
-    
-    EQ_BIN16U_BIN16S    =54, 
-    EQ_BIN16U_BIN32S    =55, 
-    EQ_BIN16U_BIN16U    =56, 
-    EQ_BIN16U_BIN32U    =57,
-    NE_BIN16U_BIN16S    =58, 
-    NE_BIN16U_BIN32S    =59, 
-    NE_BIN16U_BIN16U    =60, 
-    NE_BIN16U_BIN32U    =61,
-    LT_BIN16U_BIN16S    =62, 
-    LT_BIN16U_BIN32S    =63, 
-    LT_BIN16U_BIN16U    =64, 
-    LT_BIN16U_BIN32U    =65,
-    LE_BIN16U_BIN16S    =66, 
-    LE_BIN16U_BIN32S    =67, 
-    LE_BIN16U_BIN16U    =68, 
-    LE_BIN16U_BIN32U    =69,
-    GT_BIN16U_BIN16S    =70, 
-    GT_BIN16U_BIN32S    =71, 
-    GT_BIN16U_BIN16U    =72, 
-    GT_BIN16U_BIN32U    =73,
-    GE_BIN16U_BIN16S    =74, 
-    GE_BIN16U_BIN32S    =75, 
-    GE_BIN16U_BIN16U    =76, 
-    GE_BIN16U_BIN32U    =77,
-    
-    EQ_BIN32U_BIN16S    =78, 
-    EQ_BIN32U_BIN32S    =79, 
-    EQ_BIN32U_BIN16U    =80, 
-    EQ_BIN32U_BIN32U    =81,
-    NE_BIN32U_BIN16S    =82, 
-    NE_BIN32U_BIN32S    =83, 
-    NE_BIN32U_BIN16U    =84, 
-    NE_BIN32U_BIN32U    =85,
-    LT_BIN32U_BIN16S    =86, 
-    LT_BIN32U_BIN32S    =87, 
-    LT_BIN32U_BIN16U    =88, 
-    LT_BIN32U_BIN32U    =89,
-    LE_BIN32U_BIN16S    =90, 
-    LE_BIN32U_BIN32S    =91, 
-    LE_BIN32U_BIN16U    =92, 
-    LE_BIN32U_BIN32U    =93,
-    GT_BIN32U_BIN16S    =94, 
-    GT_BIN32U_BIN32S    =95, 
-    GT_BIN32U_BIN16U    =96, 
-    GT_BIN32U_BIN32U    =97,
-    GE_BIN32U_BIN16S    =98, 
-    GE_BIN32U_BIN32S    =99, 
-    GE_BIN32U_BIN16U    =100, 
-    GE_BIN32U_BIN32U    =101,
-    
-    EQ_DECU_DECU        =102, 
-    NE_DECU_DECU        =103, 
-    LT_DECU_DECU        =104, 
-    LE_DECU_DECU        =105, 
-    GT_DECU_DECU        =106,
-    GE_DECU_DECU        =107,
-    
-    EQ_DECS_DECS        =108, 
-    NE_DECS_DECS        =109, 
-    LT_DECS_DECS        =110, 
-    LE_DECS_DECS        =111, 
-    GT_DECS_DECS        =112,
-    GE_DECS_DECS        =113,
-    
-    EQ_FLOAT32_FLOAT32  =114,
-    NE_FLOAT32_FLOAT32  =115,
-    LT_FLOAT32_FLOAT32  =116,
-    LE_FLOAT32_FLOAT32  =117,
-    GT_FLOAT32_FLOAT32  =118,
-    GE_FLOAT32_FLOAT32  =119,
-    
-    EQ_FLOAT64_FLOAT64  =120,
-    NE_FLOAT64_FLOAT64  =121,
-    LT_FLOAT64_FLOAT64  =122,
-    LE_FLOAT64_FLOAT64  =123,
-    GT_FLOAT64_FLOAT64  =124,
-    GE_FLOAT64_FLOAT64  =125,
-    
-    EQ_DATETIME_DATETIME=126,
-    NE_DATETIME_DATETIME=127,
-    LT_DATETIME_DATETIME=128,
-    LE_DATETIME_DATETIME=129,
-    GT_DATETIME_DATETIME=130,
-    GE_DATETIME_DATETIME=131,
-    
-    EQ_ASCII_F_F        =132, 
-    NE_ASCII_F_F        =133, 
-    LT_ASCII_F_F        =134, 
-    LE_ASCII_F_F        =135, 
-    GT_ASCII_F_F        =136,
-    GE_ASCII_F_F        =137,
-    
-    EQ_UNICODE_F_F      =138, 
-    NE_UNICODE_F_F      =139, 
-    LT_UNICODE_F_F      =140, 
-    LE_UNICODE_F_F      =141, 
-    GT_UNICODE_F_F      =142, 
-    GE_UNICODE_F_F      =143,
+  typedef struct {
+    OperatorTypeEnum op;
+    short type_op1; // left operand
+    short type_op2; // right operand
+    CompInstruction instruction;
+    const char * instrStr;
+  } CompInstrStruct;
   
-    ASCII_COMP          =144,   
-    UNICODE_COMP        =145,
-    
-    COMP_COMPLEX        =146,
-
-    EQ_ASCII_COMP       =147,
-    NE_ASCII_COMP       =148,
-    LT_ASCII_COMP       =149,
-    LE_ASCII_COMP       =150,
-    GT_ASCII_COMP       =151,
-    GE_ASCII_COMP       =152,
-
-    EQ_BLOB        =153, 
-    NE_BLOB        =154, 
-    LT_BLOB        =155, 
-    LE_BLOB        =156, 
-    GT_BLOB        =157,
-    GE_BLOB        =158,
-
-    EQ_BIN64U_BIN64U    =159,
-    EQ_BIN64U_BIN64S    =160,
-    EQ_BIN64S_BIN64U    =161,
-    NE_BIN64U_BIN64U    =162,
-    NE_BIN64U_BIN64S    =163,
-    NE_BIN64S_BIN64U    =164,
-    LT_BIN64U_BIN64U    =165,
-    LT_BIN64U_BIN64S    =166,
-    LT_BIN64S_BIN64U    =167,
-    LE_BIN64U_BIN64U    =168,
-    LE_BIN64U_BIN64S    =169,
-    LE_BIN64S_BIN64U    =170,
-    GT_BIN64U_BIN64U    =171,
-    GT_BIN64U_BIN64S    =172,
-    GT_BIN64S_BIN64U    =173,
-    GE_BIN64U_BIN64U    =174,
-    GE_BIN64U_BIN64S    =175,
-    GE_BIN64S_BIN64U    =176,
-    
-    EQ_BOOL_BOOL        =177,
-    NE_BOOL_BOOL        =178,
-
-    // tinyint operations
-    EQ_BIN8S_BIN8S      =179,
-    EQ_BIN8U_BIN8U      =180,
-    NE_BIN8S_BIN8S      =181,
-    NE_BIN8U_BIN8U      =182,
-    LT_BIN8S_BIN8S      =183,
-    LT_BIN8U_BIN8U      =184,
-    LE_BIN8S_BIN8S      =185,
-    LE_BIN8U_BIN8U      =186,
-    GT_BIN8S_BIN8S      =187,
-    GT_BIN8U_BIN8U      =188,
-    GE_BIN8S_BIN8S      =189,
-    GE_BIN8U_BIN8U      =190,
-
-    COMP_NOT_SUPPORTED  =191
-    };
+public:
 
   // Construction
   //
@@ -1154,18 +1172,31 @@ public:
 
   // Accessors
   //
-  NA_EIDPROC inline comp_case_index get_case_index()
+  NA_EIDPROC inline CompInstruction getInstruction()
   {
-    return (comp_case_index) case_index;
+    if (getInstrArrayIndex() >= 0)
+      return getInstruction(getInstrArrayIndex());
+    else
+      return COMP_NOT_SUPPORTED;
   };
-  NA_EIDPROC void set_case_index();
-  NA_EIDPROC void set_case_index(OperatorTypeEnum op,
+
+  NA_EIDPROC void setInstruction();
+  NA_EIDPROC void setInstruction(OperatorTypeEnum op,
 				 Attributes * attr1,
 				 Attributes * attr2);
 
   NA_EIDPROC short isComparisonSupported(OperatorTypeEnum op,
 					 Attributes * attr1,
 					 Attributes * attr2);
+
+  static const CompInstrStruct compInstrInfo[];
+  static const char * getInstructionStr(Lng32 index) 
+  { return compInstrInfo[index].instrStr;}
+  static const CompInstruction getInstruction(Lng32 index) 
+  { return compInstrInfo[index].instruction;}
+
+  Lng32 findIndexIntoInstrArray(CompInstruction ci);
+
 
   // Null Semantics
   //
@@ -1241,7 +1272,7 @@ private:
     COLLATION_ENCODE_COMP          = 0x0001
   };
 
-  Int32            case_index;           // 00-03
+  Int32            filler0;           // 00-03
   Int16		   flags_; //04-05		   
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
@@ -1253,30 +1284,20 @@ private:
 					      CollHeap *heap,
 					      ComDiagsArea** diagsArea);
   
-  NA_EIDPROC const ex_comp_struct * getMatchingRow(OperatorTypeEnum op,
+  NA_EIDPROC const CompInstrStruct * getMatchingRow(OperatorTypeEnum op,
 						   short datatype1,
 						   short datatype2);
 
-  NA_EIDPROC const comp_case_index computeCaseIndex(OperatorTypeEnum op,
+  NA_EIDPROC const CompInstruction computeCaseIndex(OperatorTypeEnum op,
 						    Attributes * attr1,
 						    Attributes * attr2);
-};
-
-// private helper struct for class ex_comp_clause (can not make it
-// a struct inside the class because of c89 limitations with nested classes)
-struct ex_comp_struct
-{
-  OperatorTypeEnum op;
-  short type_op1; // left operand
-  short type_op2; // right operand
-  ex_comp_clause::comp_case_index index;
 };
 
   
 /////////////////////////////////////////
 // Class ex_conv_clause
 /////////////////////////////////////////
-enum conv_case_index {
+enum ConvInstruction {
   // (these codes must remain invariant across future versions)
   CONV_BIN16S_BPINTU                   =0,  
   CONV_BIN16S_BIN16S                   =1,    
@@ -1623,10 +1644,26 @@ enum conv_case_index {
   CONV_BIN64U_FLOAT32                  =279,
   CONV_BIN64U_FLOAT64                  =280,
   CONV_BIN64U_ASCII                    =281,
-  CONV_ASCII_BIN64U                    =282
+  CONV_ASCII_BIN64U                    =282,
+
+  // more tinyint conversions not handled above. 
+  // At runtime, expression code will handle them based on source datatype.
+  CONV_NUMERIC_BIN8S                    =283,
+  CONV_NUMERIC_BIN8U                    =284,
+
+  CONV_BIN8S_BIN8U                     =285,
+  CONV_BIN8U_BIN8S                     =286,
+
 };
 
 class SQLEXP_LIB_FUNC  ex_conv_clause : public ex_clause {
+
+  typedef struct {
+    short type_op1; // left operand
+    short type_op2; // right operand
+    ConvInstruction instruction;
+    const char * instrStr;
+  } ConvInstrStruct;
   
 public:
 
@@ -1661,7 +1698,7 @@ public:
 
   // Accessors
   // 
-  NA_EIDPROC void set_case_index();
+  NA_EIDPROC void setInstruction();
 
   // Null Semantics
   //
@@ -1678,15 +1715,30 @@ public:
   NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);  
-  NA_EIDPROC inline conv_case_index get_case_index()
+
+  // case index get and set
+  ConvInstruction getInstruction()
   {
-    return (conv_case_index) case_index;
+    if (getInstrArrayIndex() >= 0)
+      return getInstruction(getInstrArrayIndex());
+    else
+      return CONV_NOT_SUPPORTED;
   };
-  NA_EIDPROC conv_case_index find_case_index(short sourceType, Lng32 sourceLen,
+
+  NA_EIDPROC ConvInstruction findInstruction(short sourceType, Lng32 sourceLen,
                                              short targetType, Lng32 targetLen,
                                              Lng32 scaleDifference);
 
-  NABoolean isConversionSupported(short sourceType, short targetType);
+  NABoolean isConversionSupported(short sourceType, Lng32 srcLen, 
+                                  short targetType, Lng32 tgtLen);
+
+  static const ConvInstrStruct convInstrInfo[];
+  static const char * getInstructionStr(Lng32 index) 
+  { return convInstrInfo[index].instrStr;}
+  static const ConvInstruction getInstruction(Lng32 index) 
+  { return convInstrInfo[index].instruction;}
+
+  Lng32 findIndexIntoInstrArray(ConvInstruction ci);
 
   NA_EIDPROC NABoolean treatAllSpacesAsZero()
     { return ((flags_ & TREAT_ALL_SPACES_AS_ZERO) != 0); };
@@ -1781,16 +1833,6 @@ public:
     return alignment_;
   }
 private:
-  // conv_case_index
-  Int16            case_index;           // 00-01
-
-  // Flags
-  UInt16           flags_;               // 02-03
-  UInt32           lastVOAoffset_;        //
-  Int16       lastVcIndicatorLength_;  // 08-09
-  Int16       lastNullIndicatorLength_;// 10-11
-  UInt32      computedLength_;
-  Int16       alignment_;
   enum flags_type 
     {
       REVERSE_DATA_ERROR_CONVERSION_FLAG = 0x0001,  // Reverse data error conversion flag
@@ -1807,6 +1849,17 @@ private:
       // when convert into error, suppress error, move null into convert target
       CONV_TO_NULL_WHEN_ERROR                = 0x0020
     };
+
+  char        filler_[2];           // 00-01
+
+  // Flags
+  UInt16      flags_;               // 02-03
+  UInt32      lastVOAoffset_;        //
+  Int16       lastVcIndicatorLength_;  // 08-09
+  Int16       lastNullIndicatorLength_;// 10-11
+  UInt32      computedLength_;
+  Int16       alignment_;
+
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
   // When a new member is added, size of this filler should be reduced so
@@ -1875,7 +1928,7 @@ enum ConvDoItFlags
 // for max. number of characters?
 inline int requiresNoConvOrVal(Lng32 sourceLen, Lng32 sourcePrecision, Lng32 sourceScale,
                                Lng32 targetLen, Lng32 targetPrecision, Lng32 targetScale,
-                               conv_case_index index)
+                               ConvInstruction index)
 {
   return (
        // ISO chars are ok - treat UNKNOWN as ISO88591 if the other operand is ISO88591 or unknown
@@ -1917,7 +1970,7 @@ convDoIt(char * source,
          Lng32 varCharLenSize,    // 0 if not a varChar
 	 CollHeap *heap = 0,
 	 ComDiagsArea** diagsArea = 0,
-	 conv_case_index index = CONV_UNKNOWN,
+	 ConvInstruction index = CONV_UNKNOWN,
          Lng32 * dataConversionErrorFlag = 0,
 	 ULng32 flags = 0);
 

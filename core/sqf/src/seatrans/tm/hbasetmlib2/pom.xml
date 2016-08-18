@@ -65,7 +65,7 @@
 
   <groupId>org.trafodion.sql</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>trafodion-dtm</artifactId>
+  <artifactId>trafodion-dtm-cdh</artifactId>
   <version>${env.TRAFODION_VER}</version>
   <name>trafodion-dtm</name>
   <description>Java code for the Trafodion DTM (Distributed Transaction Manager)</description>

@@ -71,8 +71,11 @@ import org.apache.hadoop.hbase.regionserver.RegionCoprocessorHost;
 import org.apache.hadoop.hbase.regionserver.ScanQueryMatcher;
 import org.apache.hadoop.hbase.regionserver.ScanType;
 import org.apache.hadoop.hbase.regionserver.ScanInfo;
-#ifdef HDP2.3 HBASE1.1 CDH5.5
+#ifdef HDP2.3 APACHE1.1 CDH5.5 CDH5.7 APACHE1.2
 import org.apache.hadoop.hbase.regionserver.ScannerContext;
+#endif
+#ifdef CDH5.7 APACHE1.2
+import org.apache.hadoop.hbase.HBaseConfiguration;
 #endif
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -220,7 +223,11 @@ public class TrxTransactionState extends TransactionState {
                 // this.logSeqId, false, HConstants.NO_NONCE, HConstants.NO_NONCE);
                 final WALKey wk = new WALKey(this.regionInfo.getEncodedNameAsBytes(), this.regionInfo.getTable(),
                         EnvironmentEdgeManager.currentTime());
+#ifdef CDH5.7 APACHE1.2
+                long txid = this.tHLog.append(this.tabledescriptor, this.regionInfo, wk, e1, false);
+#else
                 long txid = this.tHLog.append(this.tabledescriptor, this.regionInfo, wk, e1, this.logSeqId, false, null);
+#endif
                 // if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery: Y11 write edit to HLOG during put with txid
                 // " + txid + " ts flush id " + this.flushTxId);
                 if (txid > this.flushTxId)
@@ -276,8 +283,12 @@ public class TrxTransactionState extends TransactionState {
                 // this.logSeqId, false, HConstants.NO_NONCE, HConstants.NO_NONCE);
                 final WALKey wk = new WALKey(this.regionInfo.getEncodedNameAsBytes(), this.regionInfo.getTable(),
                         EnvironmentEdgeManager.currentTime());
-                ;
+
+#ifdef CDH5.7 APACHE1.2
+                long txid = this.tHLog.append(this.tabledescriptor, this.regionInfo, wk, e1, false);
+#else
                 long txid = this.tHLog.append(this.tabledescriptor, this.regionInfo, wk, e1, this.logSeqId, false, null);
+#endif
                 // if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery: Y00 write edit to HLOG during delete with
                 // txid " + txid + " ts flush id " + this.flushTxId);
                 if (txid > this.flushTxId)
@@ -689,9 +700,13 @@ public class TrxTransactionState extends TransactionState {
             super.setSequenceID(Long.MAX_VALUE);
             
             //Store.ScanInfo scaninfo = new Store.ScanInfo(null, 0, 1, HConstants.FOREVER, false, 0, Cell.COMPARATOR);
+#ifdef CDH5.7 APACHE1.2
+            ScanInfo scaninfo = new ScanInfo(HBaseConfiguration.create(), null, 0, 1, HConstants.FOREVER,KeepDeletedCells.FALSE, 0, KeyValue.COMPARATOR);
+#else
             ScanInfo scaninfo = new ScanInfo(null, 0, 1, HConstants.FOREVER,KeepDeletedCells.FALSE, 0, KeyValue.COMPARATOR);
+#endif
            
-#ifdef HDP2.3 HBASE1.1
+#ifdef HDP2.3 APACHE1.1 CDH5.7 APACHE1.2
             //Hbase 1.1.2 and beyond has optimization in TimeRange.compare(cell) to return true for all time ranges if TimeRange.isAllTime() is true.
             //scan.setTimeRange(min, max) instantiates TimeRange with a different constructor (isAllTime is false in this case). This is set 
             //in scan object by the client if specific time range is needed. In all other cases, a default TimeRange() (isAllTime is true)
@@ -744,7 +759,7 @@ public class TrxTransactionState extends TransactionState {
          * @param limit
          * @return true if there are more rows, false if scanner is done
          */
-#ifdef HBASE1.0 CDH5.4
+#ifdef APACHE1.0 CDH5.4
         @Override
 #endif
         public synchronized boolean next(final List<Cell> outResult, final int limit) throws IOException {          	
@@ -810,13 +825,13 @@ public class TrxTransactionState extends TransactionState {
             return false;
         }
 
-#ifndef HDP2.3 HBASE1.1
+#ifndef HDP2.3 APACHE1.1
         @Override
 #endif
         public synchronized boolean next(final List<Cell> results) throws IOException {
           return next(results, -1);
         }
-#ifdef HDP2.3 HBASE1.1 CDH5.5
+#ifdef HDP2.3 APACHE1.1 CDH5.5 CDH5.7 APACHE1.2
         @Override
         public boolean next(List<Cell> results, ScannerContext scannerContext) throws IOException {
             return next(results, -1);

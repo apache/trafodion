@@ -29,6 +29,7 @@
 #include "PrivMgrMDTable.h"
 #include "PrivMgrDesc.h"
 #include "ComSmallDefs.h"
+#include "ComViewColUsage.h"
 
 #include <string>
 #include <bitset>
@@ -327,6 +328,7 @@ private:
   PrivStatus dealWithViews (
     const ObjectUsage &objectUsage,
     const PrivCommand command,
+    const int32_t grantorID,
     std::vector<ObjectUsage *> &listOfAffectedObjects);
 
   void deleteListOfAffectedObjects(
@@ -340,8 +342,15 @@ private:
     ObjectUsage &constraintUsage,
     const std::vector<ObjectUsage *> listOfAffectedObjects);
 
+  PrivStatus gatherViewColUsages(
+    ObjectReference *objectRef,
+    ViewUsage &viewUsage,
+    std::vector<ComViewColUsage> &viewColUsages);
+
   PrivStatus gatherViewPrivileges(
     ViewUsage &viewUsage,
+    const PrivCommand command,
+    const int32_t grantorID,
     const std::vector<ObjectUsage *> listOfAffectedObjects);
 
   PrivStatus generateColumnRowList();
@@ -355,12 +364,25 @@ private:
   void getColRowsForGranteeOrdinal(
     const int32_t granteeID,
     const int32_t columnOrdinal,
+    const std::vector<PrivMgrMDRow *> &columnRows,
     const std::vector<int32_t> &roleIDs,
     std::vector<PrivMgrMDRow *> &rowList);
+
+  PrivStatus getColumnRowList(
+    const int64_t objectUID,
+   std::vector<PrivMgrMDRow *> &columnRows);
 
   PrivStatus getGrantedPrivs(
     const int32_t granteeID,
     PrivMgrMDRow &row);
+
+  PrivStatus getGranteesForViewUsage (
+    const ViewUsage &viewUsage,
+    std::set<int32_t> &granteeList);
+
+  PrivStatus getObjectRowList(
+    const int64_t objectUID, 
+    std::vector<PrivMgrMDRow *> &objectRows);
 
   PrivStatus getRoleIDsForUserID(
      int32_t userID,
@@ -410,6 +432,8 @@ private:
 
   void summarizeColPrivs(
     const ObjectReference &objRef,
+    const int32_t granteeID,
+    const int32_t grantorID,
     const std::vector<int32_t> &roleIDs,
     const std::vector<ObjectUsage *> &listOfAffectedObjects,
     std::vector<ColumnReference *> &columnReferences);
@@ -417,10 +441,15 @@ private:
   PrivStatus summarizeCurrentAndOriginalPrivs(
     const int64_t objectUID,
     const int32_t granteeID,
+    const int32_t grantorID,
     const std::vector<int32_t> & roleIDs,
     const std::vector<ObjectUsage *> listOfChangedPrivs,
     PrivMgrDesc &summarizedOriginalPrivs,
     PrivMgrDesc &summarizedCurrentPrivs);
+
+  PrivStatus updateDependentObjects(
+    const ObjectUsage &objectUsage,
+    const PrivCommand command);
 
 // -------------------------------------------------------------------
 // Data Members:

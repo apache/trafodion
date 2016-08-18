@@ -201,8 +201,6 @@ echo "***INFO: Creating known_hosts file for all nodes"
 NODES_SHORT=""
 for node in $ALL_NODE_LIST
 do 
-   echo $node
-   echo $ALL_NODE_LIST
    newNode=$(ssh -q -n $node hostname -s) 
 
    NODES_SHORT="$NODES_SHORT $newNode"

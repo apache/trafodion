@@ -123,14 +123,14 @@ const ExpDatetime::DatetimeFormatInfo ExpDatetime::datetimeFormat[] =
     {ExpDatetime::DATETIME_FORMAT_TS4,       "HH24:MI:SS",             8,  8},
 
     {ExpDatetime::DATETIME_FORMAT_TS1,       "YYYYMMDDHH24MISS",      14, 14},
-    {ExpDatetime::DATETIME_FORMAT_TS2,       "DD.MM.YYYY:HH24:MI:SS", 19, 19},
+    {ExpDatetime::DATETIME_FORMAT_TS2,       "DD.MM.YYYY:HH24.MI.SS", 19, 19},
     {ExpDatetime::DATETIME_FORMAT_TS3,       "YYYY-MM-DD HH24:MI:SS", 19, 19},
     {ExpDatetime::DATETIME_FORMAT_TS5,       "YYYYMMDD:HH24:MI:SS",   17, 17},
     {ExpDatetime::DATETIME_FORMAT_TS6,       "MMDDYYYY HH24:MI:SS",   17, 17},
     {ExpDatetime::DATETIME_FORMAT_TS7,       "MM/DD/YYYY HH24:MI:SS", 19, 19},
     {ExpDatetime::DATETIME_FORMAT_TS8,       "DD-MON-YYYY HH:MI:SS",  20, 20},
     {ExpDatetime::DATETIME_FORMAT_TS9,       "MONTH DD, YYYY, HH:MI", 19, 25},
-    {ExpDatetime::DATETIME_FORMAT_TS10,      "DD.MM.YYYY HH24:MI:SS", 19, 19},
+    {ExpDatetime::DATETIME_FORMAT_TS10,      "DD.MM.YYYY HH24.MI.SS", 19, 19},
 
     {ExpDatetime::DATETIME_FORMAT_NUM1,      "99:99:99:99",           11, 11},
     {ExpDatetime::DATETIME_FORMAT_NUM2,      "-99:99:99:99",          12, 12}
@@ -2940,8 +2940,8 @@ ExpDatetime::convAsciiToDate(char *srcData,
     };  
     break;
 
-  case DATETIME_FORMAT_TS2:  // DD.MM.YYYY:HH24:MI:SS
-  case DATETIME_FORMAT_TS10: // DD.MM.YYYY HH24:MI:SS
+  case DATETIME_FORMAT_TS2:  // DD.MM.YYYY:HH24.MI.SS
+  case DATETIME_FORMAT_TS10: // DD.MM.YYYY HH24.MI.SS
     {
       // the day
       if (convSrcDataToDst(2, srcData, 1, &dstData[3], ".", heap, diagsArea))
@@ -2964,11 +2964,11 @@ ExpDatetime::convAsciiToDate(char *srcData,
         }
         
       // the hour
-      if (convSrcDataToDst(2, srcData, 1, &dstData[4], ":", heap, diagsArea))
+      if (convSrcDataToDst(2, srcData, 1, &dstData[4], ".", heap, diagsArea))
         return -1;
 
       // the minute
-      if (convSrcDataToDst(2, srcData, 1, &dstData[5], ":", heap, diagsArea))
+      if (convSrcDataToDst(2, srcData, 1, &dstData[5], ".", heap, diagsArea))
         return -1;
 
       // the second
@@ -3510,7 +3510,8 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
       }
       convertToAscii(hour, dstDataPtr, 2);
       if (endField > REC_DATE_HOUR) {
-	if (format == DATETIME_FORMAT_EUROPEAN)
+	if ((format == DATETIME_FORMAT_EUROPEAN) ||
+            (format == DATETIME_FORMAT_TS10))
 	  *dstDataPtr++ = '.';
 	else if (format != DATETIME_FORMAT_TS1)
 	  *dstDataPtr++ = ':';
@@ -3521,7 +3522,8 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
       char minute = *srcData++;
       convertToAscii(minute, dstDataPtr, 2);
       if (endField > REC_DATE_MINUTE) {
-	if (format == DATETIME_FORMAT_EUROPEAN)
+	if ((format == DATETIME_FORMAT_EUROPEAN) ||
+            (format == DATETIME_FORMAT_TS10))
 	  *dstDataPtr++ = '.';
 	else if (format != DATETIME_FORMAT_TS1)
 	  *dstDataPtr++ = ':';
@@ -3602,7 +3604,7 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
         {
         }
       else if ((format == DATETIME_FORMAT_TS2) ||
-          (format == DATETIME_FORMAT_TS5))
+               (format == DATETIME_FORMAT_TS5))
         {
           *dstDataPtr = ':';
           dstDataPtr++;

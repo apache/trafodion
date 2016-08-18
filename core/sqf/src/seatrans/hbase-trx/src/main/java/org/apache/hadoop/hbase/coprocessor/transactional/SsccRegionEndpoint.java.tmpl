@@ -240,7 +240,11 @@ CoprocessorService, Coprocessor {
 
   private HRegionInfo regionInfo = null;
   private HRegion m_Region = null;
+#ifdef CDH5.7 APACHE1.2
+  private HRegion t_Region = null;
+#else
   private TransactionalRegion t_Region = null;
+#endif
   private FileSystem fs = null;
   private RegionCoprocessorHost rch = null;
   private WAL tHLog = null;
@@ -3598,7 +3602,7 @@ CoprocessorService, Coprocessor {
     if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: start");
     RegionCoprocessorEnvironment tmp_env = 
       (RegionCoprocessorEnvironment)env;
-#ifdef HDP2.3 HBASE1.1
+#ifdef HDP2.3 APACHE1.1 CDH5.7 APACHE1.2
     this.m_Region = (HRegion)
        tmp_env.getRegion();
 #else
@@ -3606,7 +3610,11 @@ CoprocessorService, Coprocessor {
        tmp_env.getRegion();
 #endif
     this.regionInfo = this.m_Region.getRegionInfo();
+#ifdef CDH5.7 APACHE1.2
+    this.t_Region = (HRegion)tmp_env.getRegion();
+#else
     this.t_Region = (TransactionalRegion) tmp_env.getRegion();
+#endif
     this.fs = this.m_Region.getFilesystem();
 
     org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration(); 
@@ -3653,8 +3661,11 @@ CoprocessorService, Coprocessor {
         throw new CoprocessorException("SsccRegionEndpoint coprocessor: start threw exception " + e);
       }
     }
-
+#ifdef CDH5.7 APACHE1.2
+    this.t_Region = (HRegion)tmp_env.getRegion();
+#else
     this.t_Region = (TransactionalRegion) tmp_env.getRegion();
+#endif
     this.fs = this.m_Region.getFilesystem();
     tHLog = this.m_Region.getWAL();
 
@@ -3664,8 +3675,16 @@ CoprocessorService, Coprocessor {
     lv_port = sn.getPort();
     if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: Hostname " + lv_hostName + " port " + lv_port);
     this.regionInfo = this.m_Region.getRegionInfo();
+#ifdef CDH5.7 APACHE1.2
+    this.nextLogSequenceId = new AtomicLong(this.m_Region.getSequenceId());
+#else
     this.nextLogSequenceId = this.m_Region.getSequenceId();
+#endif
+#ifdef CDH5.7 APACHE1.2
+    this.t_Region = (HRegion)tmp_env.getRegion();
+#else
     this.t_Region = (TransactionalRegion) tmp_env.getRegion();
+#endif
     zkw1 = rss.getZooKeeper();
 
     this.configuredEarlyLogging = conf.getBoolean("hbase.regionserver.region.transactional.earlylogging", false);
@@ -3760,7 +3779,7 @@ CoprocessorService, Coprocessor {
 
     try {
           if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Trafodion Recovery:  Flushing cache in startRegionAfterRecovery " + m_Region.getRegionInfo().getRegionNameAsString());
-#ifdef HDP2.3 HBASE1.1
+#ifdef HDP2.3 APACHE1.1 CDH5.7 APACHE1.2
           m_Region.flush(true);
 #else
           m_Region.flushcache();
