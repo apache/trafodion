@@ -371,7 +371,7 @@ short CmpSeabaseDDL::migrateReposViews(ExeCliInterface * cliInterface,
     {
       const MDUpgradeInfo &rti = allReposUpgradeInfo[i];
 
-      if ((! rti.newName) || (! rti.oldName) || (NOT rti.upgradeNeeded))
+      if ((! rti.oldName) || (NOT rti.upgradeNeeded))
         continue;
 
       Int64 tableUID = getObjectUID(cliInterface,

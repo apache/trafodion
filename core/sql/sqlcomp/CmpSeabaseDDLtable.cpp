@@ -6142,12 +6142,19 @@ short CmpSeabaseDDL::recreateUsingViews(ExeCliInterface *cliInterface,
     {
       cliRC = cliInterface->executeImmediate(viewDefnList[i]);
       if (cliRC < 0)
-        {
-          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-          
+        {         
           cliRC = -1;
           if (firstBadOne)
-            *firstBadOne = i;  // tell caller which one was bad
+            {
+              // tell caller which one was bad; caller does *not* want
+              // diagnostics
+              *firstBadOne = i;
+            }
+          else
+            {
+              cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+            }
+
           goto label_return;
         }
     }
