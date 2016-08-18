@@ -1749,7 +1749,7 @@ TrafDesc * Generator::createPrivDescs( const ComTdbVirtTablePrivInfo * privInfo,
 {
   // When authorization is enabled, each object must have at least one grantee
   // - the system grant to the object owner
-  std::vector<PrivMgrDesc> *privGrantees = privInfo[0].privmgr_desc_list;
+  NAList<PrivMgrDesc> *privGrantees = privInfo[0].privmgr_desc_list;
   DCMPASSERT (privGrantees.size() > 0);
  
   TrafDesc * priv_desc = TrafAllocateDDLdesc(DESC_PRIV_TYPE, space);
@@ -1758,9 +1758,9 @@ TrafDesc * Generator::createPrivDescs( const ComTdbVirtTablePrivInfo * privInfo,
 
   // generate a TrafPrivGranteeDesc for each grantee and
   // attach to the privileges descriptor (priv_desc)
-  for (int i = 0; i < privGrantees->size(); i++)
+  for (int i = 0; i < privGrantees->entries(); i++)
     {
-      PrivMgrDesc granteeDesc = (*privGrantees)[i];
+      PrivMgrDesc &granteeDesc = (*privGrantees)[i];
       TrafDesc * curr_grantee_desc = TrafAllocateDDLdesc(DESC_PRIV_GRANTEE_TYPE, space);
       if (! first_grantee_desc)
         first_grantee_desc = curr_grantee_desc;
@@ -1778,15 +1778,14 @@ TrafDesc * Generator::createPrivDescs( const ComTdbVirtTablePrivInfo * privInfo,
 
       // generate a list of TrafPrivBitmapDesc, one for each column and
       // attach it to the TrafPrivGranteeDesc
-      std::vector<PrivMgrCoreDesc> colDescList = granteeDesc.getColumnPrivs();
-      size_t numCols = colDescList.size();
+      size_t numCols = granteeDesc.getColumnPrivs().entries();
       if (numCols > 0)
         {
           TrafDesc * first_col_desc = NULL;
           TrafDesc * prev_col_desc = NULL;
           for (int j = 0; j < numCols; j++)
             {
-              const PrivMgrCoreDesc colBitmap = colDescList[j];
+              const PrivMgrCoreDesc colBitmap = granteeDesc.getColumnPrivs()[j];
               TrafDesc * curr_col_desc = TrafAllocateDDLdesc(DESC_PRIV_BITMAP_TYPE, space);
               if (! first_col_desc)
                 first_col_desc = curr_col_desc;

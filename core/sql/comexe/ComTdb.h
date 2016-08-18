@@ -44,7 +44,6 @@
 #include "exp_expr.h"           // subclasses of TDB contain expressions
 #include "sqlcli.h"
 #include "ComSmallDefs.h"
-#include <vector>               // list of privilege descriptors
 #include "PrivMgrDesc.h"        // Privilege descriptors
 
 // -----------------------------------------------------------------------
@@ -1169,7 +1168,7 @@ class ComTdbVirtTablePrivInfo : public ComTdbVirtTableBase
 
   virtual Int32 size() { return sizeof(ComTdbVirtTablePrivInfo);}
 
-  std::vector<PrivMgrDesc>     *privmgr_desc_list;     
+  NAList<PrivMgrDesc>     *privmgr_desc_list;     
 };
 
 class ComTdbVirtTableLibraryInfo : public ComTdbVirtTableBase

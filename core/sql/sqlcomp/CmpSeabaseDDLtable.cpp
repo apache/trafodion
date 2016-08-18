@@ -10367,9 +10367,9 @@ ComTdbVirtTablePrivInfo * CmpSeabaseDDL::getSeabasePrivInfo(
   ComTdbVirtTablePrivInfo *privInfo = new (STMTHEAP) ComTdbVirtTablePrivInfo();
 
   // PrivMgrDesc operator= is a deep copy
-  privInfo->privmgr_desc_list = new (STMTHEAP) std::vector<PrivMgrDesc>;
+  privInfo->privmgr_desc_list = new (STMTHEAP) NAList<PrivMgrDesc>;
   for (size_t i = 0; i < privDescs.size(); i++)
-    privInfo->privmgr_desc_list->push_back(privDescs[i]);
+    privInfo->privmgr_desc_list->insert(privDescs[i]);
 
   return privInfo;
 }

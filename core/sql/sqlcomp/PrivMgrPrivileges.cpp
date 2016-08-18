@@ -563,7 +563,7 @@ PrivStatus PrivMgrPrivileges::buildSecurityKeys(
 // *  Parameters:    
 // *                                                                       
 // *  <objectType> is the type of object
-// *  <priv>Descs> is the list of privileges the on the object
+// *  <privDescs> is the list of privileges the on the object
 // *                                                                  
 // * Returns: PrivStatus                                               
 // *                                                                  
@@ -587,7 +587,7 @@ PrivStatus PrivMgrPrivileges::getPrivsOnObject (
   if (generateObjectRowList() == STATUS_ERROR)
     return STATUS_ERROR;
   
-  // generate the list of privileges granted to the object and store in class
+  // generate the list of privileges granted to the column and store in class
   if (generateColumnRowList() == STATUS_ERROR)
     return STATUS_ERROR;
   
@@ -624,11 +624,11 @@ PrivStatus PrivMgrPrivileges::getPrivsOnObject (
 
     // the returned list are in column ordinal order, if no privileges have
     // been granted on the column, then the bitmap is all zeroes
-    std::vector<PrivMgrCoreDesc> colPrivs;
+    NAList<PrivMgrCoreDesc> colPrivs;
     for (size_t j = 0; j < colPrivsList.size(); j++)
     {
       PrivMgrCoreDesc colPriv(colPrivsList[j], colGrantableList[j], j);
-      colPrivs.push_back(colPriv);
+      colPrivs.insert(colPriv);
     }
     privsOfTheUser.setColumnPrivs(colPrivs);
 

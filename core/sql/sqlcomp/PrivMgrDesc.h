@@ -26,7 +26,6 @@
 
 #include <bitset>
 #include <string>
-#include <vector>
 #include "PrivMgrMDDefs.h"
 #include "PrivMgrDefs.h"
 #include "ComSmallDefs.h"
@@ -483,7 +482,7 @@ public:
    // Accessors
 
    PrivMgrCoreDesc getTablePrivs()  const { return tableLevel_; }
-   std::vector<PrivMgrCoreDesc> getColumnPrivs() const { return columnLevel_; }
+   NAList<PrivMgrCoreDesc> getColumnPrivs() const { return columnLevel_; }
    int32_t getGrantee() const { return grantee_; }
    PrivMgrCoreDesc &       fetchTablePrivs();
    bool       getOneTablePriv(const PrivType which) const;
@@ -502,7 +501,7 @@ public:
    void setGrantee(const int32_t&grantee) { grantee_ = grantee; }
    void setTablePrivs(const PrivMgrCoreDesc &privs) { tableLevel_ = privs; }
    void resetTablePrivs() { tableLevel_.setAllPrivAndWgo(0); }
-   void setColumnPrivs(const std::vector<PrivMgrCoreDesc> &privs) { columnLevel_ = privs; }
+   void setColumnPrivs(const NAList<PrivMgrCoreDesc> &privs) { columnLevel_ = privs; }
 
 #if 0
    void setColumnPriv(const PrivType which,
@@ -627,7 +626,7 @@ CatPrivs::PrivResult applyTableGrants(const int64_t objectUID,
 private:
 
    PrivMgrCoreDesc                 tableLevel_;
-   std::vector<PrivMgrCoreDesc>    columnLevel_;
+   NAList<PrivMgrCoreDesc>         columnLevel_;
    int32_t                         grantee_;
 };
 
