@@ -40,6 +40,7 @@
 #include "PrivMgrComponentPrivileges.h"
 #include "PrivMgrRoles.h"
 #include "ComSecurityKey.h"
+#include "ComUser.h"
 #include <cstdio>
 #include <algorithm>
 
@@ -63,6 +64,100 @@ PrivMgrObjectInfo::PrivMgrObjectInfo(
   }
 }
  
+// ****************************************************************************
+// Class: PrivMgrUserPrivs
+// ****************************************************************************
+PrivMgrUserPrivs::PrivMgrUserPrivs(
+  const TrafDesc *priv_desc,
+  const int32_t userID)
+{
+  assert (priv_desc);
+
+  // generate PrivMgrUserPrivs from the priv_desc structure
+  TrafDesc *priv_grantees_desc = priv_desc->privDesc()->privGrantees;
+  TrafDesc *priv_grantee_desc = NULL;
+  TrafDesc *priv_public_desc = NULL;
+
+  // Find relevant desc for the user
+  while (priv_grantees_desc)
+  {
+    Int32 grantee = priv_grantees_desc->privGranteeDesc()->grantee;
+    if (grantee == userID)
+      priv_grantee_desc = priv_grantees_desc->privGranteeDesc();
+
+    if (ComUser::isPublicUserID(grantee))
+      priv_public_desc = priv_grantees_desc->privGranteeDesc();
+
+    priv_grantees_desc = priv_grantees_desc->next;
+  }
+
+  // If the user has a privilege in the priv_grantees_desc list, use it to
+  // create the PrivMgrUserPrivs class.
+  if (priv_grantee_desc)
+  {
+
+    // Set up object level privileges
+    TrafDesc *objectPrivs = priv_grantee_desc->privGranteeDesc()->objectBitmap;
+    objectBitmap_ = objectPrivs->privBitmapDesc()->privBitmap;
+    grantableBitmap_ = objectPrivs->privBitmapDesc()->privWGOBitmap;
+
+    // Set up column level privileges
+    // The PrivColList is a key <=> value pair structure, the key is the
+    // column ordinal (number) and the value is the associated bitmap.
+    TrafDesc *columnPrivs = priv_grantee_desc->privGranteeDesc()->columnBitmaps;
+    PrivColList colPrivsList;
+    PrivColList colGrantableList;
+    while (columnPrivs)
+    {
+      Int32 columnOrdinal = columnPrivs->privBitmapDesc()->columnOrdinal;
+      colPrivsList[columnOrdinal] = columnPrivs->privBitmapDesc()->privBitmap;
+      colGrantableList[columnOrdinal] = columnPrivs->privBitmapDesc()->privWGOBitmap;
+      columnPrivs = columnPrivs->next;
+    }
+    colPrivsList_= colPrivsList;
+    colGrantableList_ = colGrantableList;
+  }
+
+  // See if there are privileges assigned to public.  If so, "or" the public
+  // list to the user to the current bitmaps. Initially all the bitmap are
+  // set to 0.
+  if (priv_public_desc)
+  {
+    // Set up object level privileges
+    TrafDesc *objectPrivs = priv_public_desc->privGranteeDesc()->objectBitmap;
+    objectBitmap_ |= objectPrivs->privBitmapDesc()->privBitmap;
+    grantableBitmap_ |= objectPrivs->privBitmapDesc()->privWGOBitmap;
+
+    // Set up column level privileges
+    // The PrivColList is a key <=> value pair structure, the key is the
+    // column ordinal (number) and the value is the associated bitmap.
+    TrafDesc *columnPrivs = priv_public_desc->privGranteeDesc()->columnBitmaps;
+    PrivColList colPrivsList;
+    PrivColList colGrantableList;
+    std::map<size_t,PrivColumnBitmap>::iterator it; 
+    while (columnPrivs)
+    {
+      Int32 columnOrdinal = columnPrivs->privBitmapDesc()->columnOrdinal;
+      it = colPrivsList_.find(columnOrdinal);
+      if (it == colPrivsList_.end())
+      {
+        colPrivsList_[columnOrdinal] = columnPrivs->privBitmapDesc()->privBitmap;
+        colGrantableList[columnOrdinal] = columnPrivs->privBitmapDesc()->privWGOBitmap;
+      }
+      else
+      {
+        colPrivsList_[columnOrdinal] |= columnPrivs->privBitmapDesc()->privBitmap;
+        colGrantableList[columnOrdinal] |= columnPrivs->privBitmapDesc()->privWGOBitmap;
+      }
+
+      columnPrivs = columnPrivs->next;
+    }
+  }
+
+  // TBD - add schema privilege bitmaps
+}
+
+
 // ****************************************************************************
 // Class: PrivMgrCommands
 // ****************************************************************************
@@ -395,6 +490,38 @@ PrivStatus PrivMgrCommands::getGrantorDetailsForObject(
    (isGrantedBySpecified, grantedByName, objectOwner, 
     effectiveGrantorID, effectiveGrantorName);
 }
+
+// ----------------------------------------------------------------------------
+// method: getPrivileges
+//
+// Creates a set of priv descriptors for all user grantees on an object
+// Used by Trafodion compiler to store as part of the table descriptor.
+//                                                       
+//  Parameters:    
+//                                                                       
+//  <objectUID> is the unique identifier of the object
+//  <objectType> is the type of object
+//  <privDescs> is the returned list of privileges the on the object
+//                                                                  
+// Returns: PrivStatus                                               
+//                                                                  
+//   STATUS_GOOD: privilege descriptors were built
+//             *: unexpected error occurred, see diags.     
+// ----------------------------------------------------------------------------
+PrivStatus PrivMgrCommands::getPrivileges(
+  const int64_t objectUID,
+  ComObjectType objectType,
+  std::vector <PrivMgrDesc > &privDescs)
+{
+  // If authorization is enabled, go get privilege bitmaps from metadata
+  if (authorizationEnabled())
+  {
+    PrivMgrPrivileges privInfo (objectUID, metadataLocation_, pDiags_);
+    return privInfo.getPrivsOnObject(objectType, privDescs);
+  }
+  return STATUS_GOOD;
+}
+
 
 // ----------------------------------------------------------------------------
 // method: getPrivileges

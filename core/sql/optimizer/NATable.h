@@ -55,6 +55,7 @@ class NATable;
 class NATableDB;
 class HistogramCache;
 class HistogramsCacheEntry;
+
 // -----------------------------------------------------------------------
 // forward references
 // -----------------------------------------------------------------------
@@ -896,7 +897,9 @@ private:
   NATable (const NATable & orig, NAMemory * h=0) ; //not written
 
   void setRecordLength(Int32 recordLength) { recordLength_ = recordLength; }
-  void setupPrivInfo();
+
+  void getPrivileges(TrafDesc * priv_desc);
+  void readPrivileges();
 
   ExpHbaseInterface* getHBaseInterface() const;
   static ExpHbaseInterface* getHBaseInterfaceRaw();
