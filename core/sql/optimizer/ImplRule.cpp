@@ -2034,6 +2034,10 @@ NABoolean HashGroupByRule::topMatch (RelExpr *relExpr,
 
       CMPASSERT(x.getItemExpr()->isAnAggregate());
 
+      //if it is pivot_group(), currently, hash groupby is not supported
+      if (agg->getOperatorType() == ITM_PIVOT_GROUP)
+        return FALSE;
+
       if (agg->isDistinct())
         {
           ValueIdSet uniqueSet = grbyagg->groupExpr();
