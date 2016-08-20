@@ -1278,14 +1278,14 @@ Lng32 ExExeUtilGetMetadataInfoTcb::setupPrivilegesTypeForUserQuery()
 
     // Process table of schema privileges for current catalog
     sprintf(queryBuf_, setupSchemaPrivsForUserQuery,
-            cat_name, extCatName.data(), extCatName.data(), user_name, *cat_uid);
+            cat_name, extCatName.data(), extCatName.data(), user_name, (long long int) *cat_uid);
 
     cliRC = cliInterface.executeImmediate(queryBuf_);
     if (cliRC < 0) return cliRC;
 
     // Process table of table privileges for current catalog
     sprintf(queryBuf_, setupTablePrivsForUserQuery,
-            cat_name, extCatName.data(), extCatName.data(), user_name, *cat_uid);
+            cat_name, extCatName.data(), extCatName.data(), user_name, (long long int) *cat_uid);
 
     cliRC = cliInterface.executeImmediate(queryBuf_);
     if (cliRC < 0) return cliRC;
@@ -1434,7 +1434,7 @@ Lng32 ExExeUtilGetMetadataInfoTcb::setupObjectTypeForUserQuery()
     Int64 * cat_uid = (Int64 *)ptr;
 
     sprintf(queryBuf_, setupObjsForUserQuery,
-            cat_name, extCatName.data(),*cat_uid, user_name, obj_type, predStr);
+            cat_name, extCatName.data(),(long long int) *cat_uid, user_name, obj_type, predStr);
 
     cliRC = cliInterface.executeImmediate(queryBuf_);
     if (cliRC < 0) return cliRC;

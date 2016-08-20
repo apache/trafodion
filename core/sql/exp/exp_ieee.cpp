@@ -26,20 +26,12 @@
 
 void CLEAREXCEPT() 
 { 
-  unsigned int mxcsr;
-  __asm__ ("stmxcsr %0" : "=m" (*&mxcsr)); 
-  /* Clear the relevant bits.  */ 
-  mxcsr &= ~(FE_OVERFLOW | FE_INVALID | FE_DIVBYZERO | FE_UNDERFLOW);
-  /* And put them into effect.  */
-  __asm__ ("ldmxcsr %0" : : "m" (*&mxcsr)); 
+  feclearexcept(FE_OVERFLOW | FE_INVALID | FE_DIVBYZERO | FE_UNDERFLOW);
 }
 
 void GETEXCEPT(unsigned long *mxcsr)
 {
-  unsigned int cs;
-  __asm__ ("stmxcsr %0" : "=m" (*&cs));
-  cs &= (FE_UNDERFLOW | FE_OVERFLOW | FE_DIVBYZERO | FE_INVALID);
-  *mxcsr = cs;
+  *mxcsr = fetestexcept(FE_UNDERFLOW | FE_OVERFLOW | FE_DIVBYZERO | FE_INVALID);
 }
 
 void MathEvalExceptionConv1(double result, unsigned long exc, short * ov)

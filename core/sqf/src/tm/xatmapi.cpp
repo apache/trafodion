@@ -127,7 +127,7 @@ bool tm_XARM_amIaTM()
    msg_mon_get_my_info2(NULL,       // mon node-id
                         NULL,       // mon process-id
                         NULL,       // mon name
-                        0,       // mon name-len
+                        0,          // mon name-len
                         &lv_process_type, // mon process-type
                         NULL,       // mon zone-id
                         NULL,       // os process-id

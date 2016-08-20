@@ -29,10 +29,11 @@ include $(MY_SQROOT)/macros.gmk #top level
 # Standard Linux flags
 #--------------------------------------------------------------------------
 CFLAGS_LNX = -rdynamic -pipe -pthread \
-			 -fomit-frame-pointer -pedantic -Wall -Wextra \
+			 -fomit-frame-pointer -pedantic -Wall -Wextra -Wshadow \
 			 -Wno-missing-field-initializers -Wformat=2 \
 			 -Wunused -Wpragmas -Wstack-protector -Wcast-qual \
 			 -Wl,-allow-shlib-undefined \
+			 -Xlinker --copy-dt-needed-entries \
 			 -std=c99 -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED
 LDFLAGS_LNX = -Wl,--hash-style=both -Wl,--wrap=memcpy
 
@@ -48,7 +49,7 @@ INCPATH_64luo = -I/use/include \
 		-I$(JAVA_HOME)/include/linux \
 		-I$(MY_SQROOT)/export/include
 
-LIBS_64luo = -lodbc -lodbcinst -lz -ldl
+LIBS_64luo = -lodbc -lodbcinst -lz -ldl -lpthread
 EXEC_64luo = odb64luo
 ODBBLD_64luo = "\"linux, amd64, gcc generic m64, uodbc, mreadline, dynamic gzip, dynamic libhdfs, dynamic libxml2\""
 vpath %.c src

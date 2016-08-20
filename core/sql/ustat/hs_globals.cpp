@@ -13099,7 +13099,11 @@ Int32 HSGlobalsClass::estimateAndTestIUSStats(HSColGroupStruct* group,
       // Use the oldUec if estimatedUec is nan.  This is to work around 
       // the nan value produced by lwcUecEstimate() above.
 
+#if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))
+      if ( std::isnan(estIntvlUEC) )
+#else
       if ( isnan(estIntvlUEC) )
+#endif
         estIntvlUEC = oldUec;
 
       // cap the new UEC with the RC

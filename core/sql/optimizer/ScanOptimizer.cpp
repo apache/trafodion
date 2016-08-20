@@ -39,7 +39,7 @@
 
 #include "stdlib.h"
 
-#include <sys/io.h>
+//#include <sys/io.h>
 
 #include "MdamDebug.h"
 #include "ScanOptimizer.h"

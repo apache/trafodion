@@ -39,7 +39,9 @@
 
 #define RMS_STORE_SQL_SOURCE_LEN    254
 
-#define RMS_SHARED_MEMORY_ADDR    0x10000000 
+//#define RMS_SHARED_MEMORY_ADDR    0x10000000 
+#define RMS_SHARED_MEMORY_ADDR    0x134210000
+
 // make the permission rw by owner only so we cannot attach to other 
 // instances' segments
 #define RMS_SHMFLAGS	          0600

@@ -48,7 +48,6 @@
 #include <fstream>
 
 #include <stdlib.h>
-  #include <sys/io.h>      // To pick up "access" function.
 
 #include "cli_stdh.h"
 #include "str.h"

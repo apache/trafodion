@@ -439,7 +439,7 @@ typedef struct PCodeTupleFormats {
   PCodeTupleFormats(char op1Fmt, char op2Fmt) {
     op1Fmt_ = op1Fmt;
     op2Fmt_ = op2Fmt;
-    op3Fmt_ = NULL;
+    op3Fmt_ = 0;
     // 2 operands x (atp, offset, nullbitIndx) + tupleFormat + branch slot
     size_ = (2 * 3) + 1 + 1;
   }

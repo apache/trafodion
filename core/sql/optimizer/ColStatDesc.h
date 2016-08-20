@@ -416,7 +416,7 @@ public:
 
   // default constructor
   ColStatDesc (NAMemory * h=HISTHEAP) :
-       column_(), VEGcolumn_(), nonVegEquals_(h), colStats_(NULL), modified_(FALSE), 
+       column_(), VEGcolumn_(), nonVegEquals_(h), colStats_(0), modified_(FALSE), 
 		 inputCard_(1.0)
   { }
 
