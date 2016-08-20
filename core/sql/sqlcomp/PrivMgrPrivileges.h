@@ -158,6 +158,10 @@ public:
       const PrivMgrCoreDesc &privs,
       std::vector <ComSecurityKey *> & secKeySet);
       
+   PrivStatus getPrivsOnObject (
+      const ComObjectType objectType,
+      std::vector<PrivMgrDesc> & privDescs );
+ 
    PrivStatus getColPrivsForUser(
       const int32_t granteeID,
       const std::vector<int32_t> & roleIDs,
@@ -370,7 +374,12 @@ private:
 
   PrivStatus getColumnRowList(
     const int64_t objectUID,
-   std::vector<PrivMgrMDRow *> &columnRows);
+    std::vector<PrivMgrMDRow *> &columnRows);
+
+  PrivStatus getDistinctUserIDs(
+    const std::vector <PrivMgrMDRow *> &objectRowList,
+    const std::vector <PrivMgrMDRow *> &columnRowList,
+    std::vector<int32_t> &userIDs);
 
   PrivStatus getGrantedPrivs(
     const int32_t granteeID,
@@ -399,6 +408,10 @@ private:
   void getTreeOfGrantors(
     const int32_t granteeID,
     std::set<int32_t> &listOfGrantors);
+
+  PrivStatus getUserIDsForRoleIDs(
+    const std::vector<int32_t> & roleIDs,
+    std::vector<int32_t> & userIDs);
 
   PrivStatus givePriv(
      const int32_t currentOwnerID,

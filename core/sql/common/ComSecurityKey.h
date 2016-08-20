@@ -28,6 +28,9 @@
 #include "ComSmallDefs.h"
 #include "Collections.h"
 #include "sqlcli.h"
+#include "PrivMgrCommands.h"
+
+class PrivMgrUserPrivs;
 
 class ComSecurityKey;
 
@@ -37,6 +40,11 @@ NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
                                    const SQL_QIKEY* invalidationKeys, 
                                    const Int64 objectUID,
                                    const ComSecurityKeySet objectKeys);
+
+bool buildSecurityKeySet(PrivMgrUserPrivs *privInfo,
+                         Int64 objectUID,
+                         ComSecurityKeySet &secKeySet);
+
 
 // ****************************************************************************
 // Class:  ComSecurityKey 

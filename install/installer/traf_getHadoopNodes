@@ -130,20 +130,49 @@ if [[ $HADOOP_TYPE == "hortonworks" ]]; then
    done
 fi
 
-if [ $curlRC != 0 ]; then
+if [[ $HADOOP_TYPE == "apache" ]]; then
+   export HADOOP_PATH="$HADOOP_PREFIX"
+   export HADOOP_BIN_PATH="$HADOOP_PREFIX/bin"
+
+   HDFS_NODES="$HDFS_NODES"
+   MY_HDFS_NODES=""
+   for node in $HDFS_NODES
+   do
+      MY_HDFS_NODES="$MY_HDFS_NODES -w $node"
+   done
+
+   HBASE_NODES="$HBASE_NODES"
+   MY_HBASE_NODES=""
+   for node in $HBASE_NODES
+   do
+      MY_HBASE_NODES="$MY_HBASE_NODES -w $node"
+   done
+
+   HADOOP_NODES="$HADOOP_NODES"
+   MY_HADOOP_NODES=""
+   for node in $HADOOP_NODES
+   do
+      MY_HADOOP_NODES="$MY_HADOOP_NODES -w $node"
+   done
+fi
+
+
+if [[ $curlRC != 0 && $HADOOP_TYPE != "apache" ]]; then
    echo "***ERROR: Unable to get list of hosts from $HADOOP_TYPE (RC=$curlRC)"
    echo "***ERROR: curl command failed."
    exit -1
 fi
 
-# in most cases curl does not return an error
-# so curl's actual output needs to be checked, too
-curl_error=$(grep TITLE tempFile | grep Error | wc -l)
+if [[ $HADOOP_TYPE != "apache" ]]; then
+   # in most cases curl does not return an error
+   # so curl's actual output needs to be checked, too
+   curl_error=$(grep TITLE tempFile | grep Error | wc -l)
 
-if [ $curl_error -ne 0 ]; then
-   echo "***ERROR: Unable to get list of hosts from $HADOOP_TYPE"
-   cat tempFile
-   exit -1
+   if [ $curl_error -ne 0 ]; then
+      echo "***ERROR: Unable to get list of hosts from $HADOOP_TYPE"
+      cat tempFile
+      exit -1
+   fi
 fi
 
 if [[ -z $HADOOP_NODES ]]; then

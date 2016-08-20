@@ -417,7 +417,7 @@ static const QueryString getTrafUsers[] =
 {
   {" select distinct auth_db_name "},
   {"   from %s.\"%s\".%s "},
-  {"  where auth_type = '%s' "},
+  {"  where auth_type = 'U' "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -1835,13 +1835,9 @@ short ExExeUtilGetMetadataInfoTcb::work()
                   qs = getTrafUsers;
                   sizeOfqs = sizeof(getTrafUsers);
 
-                  char type[2];
-                  type[0] = 'U';
-                  type[1] = 0;
                   param_[0] = cat;
                   param_[1] = sch;
                   param_[2] = auths;
-                  param_[3] = (char *)&type;
 		}
                 break;
               case ComTdbExeUtilGetMetadataInfo::PROCEDURES_IN_SCHEMA_:

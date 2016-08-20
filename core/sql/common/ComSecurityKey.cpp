@@ -33,6 +33,7 @@
 #include <vector>
 #include "exp_function.h"
 #include "ComDistribution.h"
+#include "ComUser.h"
 
 NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
                                    const SQL_QIKEY* invalidationKeys,
@@ -72,6 +73,59 @@ NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
   }
   return found;
 }
+
+// ****************************************************************************
+// Function that builds query invalidation keys for privileges. A separate
+// invalidation key is added for each granted DML privilege. 
+// ****************************************************************************
+bool buildSecurityKeySet(PrivMgrUserPrivs *privInfo,
+                         Int64 objectUID,
+                         ComSecurityKeySet &secKeySet)
+{
+  Int32 granteeID = ComUser::getCurrentUser();
+
+  // Build security keys for object privileges
+  for ( Int32 i = FIRST_DML_PRIV; i <= LAST_DML_PRIV; i++ )
+  {
+    if ( privInfo->hasObjectPriv((PrivType)i) )
+      {
+        ComSecurityKey key(granteeID,
+                           objectUID,
+                           PrivType(i),
+                           ComSecurityKey::OBJECT_IS_OBJECT);
+        if (!key.isValid())
+          return false;
+        secKeySet.insert(key);
+      }
+  }
+  // Build security key for column privileges
+  PrivColumnBitmap privBitmap;
+
+  // Optimizer currently does not support OBJECT_IS_COLUMN, so we "or"
+  // all column-level privileges into one priv bitmap.  We create a key for
+  // each priv type where at least one column has that priv.
+  // The security key set is a list of sets, do duplicates are handled by c++
+  for (PrivColIterator columnIterator = privInfo->getColPrivList().begin();
+       columnIterator != privInfo->getColPrivList().end(); ++columnIterator)
+    privBitmap |= columnIterator->second;
+
+  // Now create a security key on the final bitmap
+  for (Int32 j = FIRST_DML_COL_PRIV; j <= LAST_DML_COL_PRIV; j++ )
+    {
+      if (!privBitmap.test(PrivType((PrivType)j)))
+         continue;
+
+      ComSecurityKey key(granteeID,
+                         objectUID,
+                         PrivType(j),
+                         ComSecurityKey::OBJECT_IS_OBJECT);
+      if (!key.isValid())
+        return false;
+      secKeySet.insert(key);
+   }
+   return true;
+}
+
 
 // *****************************************************************************
 //    ComSecurityKey methods

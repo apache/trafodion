@@ -30,9 +30,11 @@
 #include <iterator>
 #include "PrivMgrMD.h"
 #include "PrivMgrDefs.h"
+#include "TrafDDLdesc.h"
 
 class ComDiagsArea;
 class ComSecurityKey;
+struct TrafDesc;
 
 // *****************************************************************************
 // This file contains classes used by callers of privilege manager
@@ -129,6 +131,9 @@ class PrivMgrUserPrivs
   public:
 
   PrivMgrUserPrivs(const int32_t nbrCols = 0){};
+  PrivMgrUserPrivs(
+    const TrafDesc *priv_desc,
+    const int32_t userID);
 
   static std::string convertPrivTypeToLiteral(PrivType which)
   {
@@ -389,8 +394,8 @@ class PrivMgrUserPrivs
 
 
  private:
-   std::bitset<NBR_OF_PRIVS> objectBitmap_;
-   std::bitset<NBR_OF_PRIVS> grantableBitmap_;
+   PrivObjectBitmap objectBitmap_;
+   PrivObjectBitmap grantableBitmap_;
    PrivColList colPrivsList_;
    PrivColList colGrantableList_;
    PrivSchemaBitmap schemaPrivBitmap_;
@@ -458,6 +463,11 @@ public:
       int_32 &effectiveGrantorID,
       std::string &effectiveGrantorName);
 
+   PrivStatus getPrivileges(
+      const int64_t objectUID,
+      ComObjectType objectType,
+      std::vector<PrivMgrDesc> &userPrivileges);
+     
    PrivStatus getPrivileges(
       const int64_t objectUID,
       ComObjectType objectType,

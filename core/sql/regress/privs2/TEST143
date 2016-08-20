@@ -28,6 +28,8 @@
 -- ============================================================================
 
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd traf_store_object_desc 'ON';
+cqd traf_read_object_desc 'ON';
 obey TEST143(clean_up);
 log LOG143 clear ;
 obey TEST143(set_up);
@@ -419,6 +421,8 @@ execute get_col_privs;
 -- executed by sql_user2
 log LOG143;
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd traf_store_object_desc 'ON';
+cqd traf_read_object_desc 'ON';
 values (user);
 set schema t143_user2;
 
@@ -431,6 +435,8 @@ create view u2v2 as select * from t143_user1.u1t2;
 -- executed by sql_user3
 log LOG143;
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd traf_store_object_desc 'ON';
+cqd traf_read_object_desc 'ON';
 values (user);
 set schema t143_user3;
 

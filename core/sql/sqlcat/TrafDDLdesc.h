@@ -24,6 +24,19 @@
 #ifndef TRAF_DDL_DESC_H
 #define TRAF_DDL_DESC_H
 
+// ****************************************************************************
+// This file contains DDLDesc classes. DDLDesc classes are used to store
+// object definitions that are read from system and privilege manager metadata.
+// The DDLDesc's are referenced by other classes such as NATable and SHOWDDL 
+// that save and display metadata contents.  
+//
+// When DDL operations are performed, the associated DDLDesc structure is 
+// flatten out and stored in the text table related to object.  When the
+// compiler or DDL subsequently require this information, the flattened DDLDesc 
+// is read from the metadata and expanded. This information can then be used 
+// by the the different components - such as NATable. 
+// ****************************************************************************
+
 #include "Platform.h"
 #include "NAVersionedObject.h"
 #include "charinfo.h"
@@ -55,7 +68,10 @@ enum desc_nodetype {
   DESC_SCHEMA_LABEL_TYPE,
   DESC_SEQUENCE_GENERATOR_TYPE,
   DESC_ROUTINE_TYPE,
-  DESC_LIBRARY_TYPE
+  DESC_LIBRARY_TYPE,
+  DESC_PRIV_TYPE,
+  DESC_PRIV_GRANTEE_TYPE,
+  DESC_PRIV_BITMAP_TYPE
 };
 
 class TrafDesc;
@@ -79,6 +95,9 @@ class TrafSequenceGeneratorDesc;
 class TrafTableDesc;
 class TrafUsingMvDesc;
 class TrafViewDesc;
+class TrafPrivDesc;
+class TrafPrivGranteeDesc;
+class TrafPrivBitmapDesc;
 
 class TrafDesc : public NAVersionedObject {
 public:
@@ -136,6 +155,9 @@ public:
   virtual TrafTableDesc *tableDesc() const { return NULL; }
   virtual TrafUsingMvDesc *usingMvDesc() const { return NULL; }
   virtual TrafViewDesc *viewDesc() const { return NULL; }
+  virtual TrafPrivDesc *privDesc() const { return NULL; }
+  virtual TrafPrivGranteeDesc *privGranteeDesc() const { return NULL; }
+  virtual TrafPrivBitmapDesc *privBitmapDesc() const { return NULL; }
 
 };
 
@@ -820,6 +842,7 @@ public:
   ComRoutineParallelism parallelism;
   Int32 owner;
   Int32 schemaOwner;
+  DescStructPtr priv_desc;
 
   Int64 routineDescFlags; // my flags
 
@@ -1008,6 +1031,7 @@ public:
   DescStructPtr referencing_tables_desc;
   DescStructPtr histograms_desc;
   DescStructPtr files_desc;
+  DescStructPtr priv_desc;
 
   // for hbase's region keys
   DescStructPtr hbase_regionkey_desc;
@@ -1072,23 +1096,23 @@ public:
   }
 
   virtual short getClassSize()      { return (short)sizeof(TrafViewDesc); }
- 
+
   virtual Long pack(void *space);
   virtual Lng32 unpack(void * base, void * reallocator);
 
   virtual TrafViewDesc *viewDesc() const { return (TrafViewDesc*)this; }
 
   enum ViewDescFlags
-    { 
+    {
       UPDATABLE           = 0x0001,
       INSERTABLE          = 0x0002
     };
 
-  void setUpdatable(NABoolean v) 
+  void setUpdatable(NABoolean v)
   {(v ? viewDescFlags |= UPDATABLE : viewDescFlags &= ~UPDATABLE); };
   NABoolean isUpdatable() { return (viewDescFlags & UPDATABLE) != 0; };
 
-  void setInsertable(NABoolean v) 
+  void setInsertable(NABoolean v)
   {(v ? viewDescFlags |= INSERTABLE : viewDescFlags &= ~INSERTABLE); };
   NABoolean isInsertable() { return (viewDescFlags & INSERTABLE) != 0; };
 
@@ -1104,6 +1128,114 @@ public:
 
   char filler[22];
 };
+
+// --------------------------- privilege descriptors ---------------------------
+// The privilege descriptors are organized as follows:
+//   privDesc - a TrafPrivDesc containing the privGrantees
+//   privGrantees - a TrafPrivGranteeDesc descriptor containing:
+//     grantee - int32 value for each user granted a privilege directly or
+//               through a role granted to the user
+//     objectBitmap  - a TrafPrivBitmapDesc containing granted object privs
+//                     summarized across all grantors
+//     columnBitmaps - list of TrafPrivBitmapDesc, one per colummn, containing 
+//                     granted column privs, summarized across all grantors
+//   priv_bits desc - a TrafPrivBitmapDesc descriptor containing:
+//     privBitmap - bitmap containing granted privs such as SELECT
+//     privWGO - bitmap containing WGO for associated grant (privBitmap)
+//     columnOrdinal - column number for bitmap, for objects, column
+//                     number is not relavent so it is set to -1.
+//   column bits - list of TrafPrivBitmapDesc
+class TrafPrivDesc : public TrafDesc {
+public:
+  TrafPrivDesc() : TrafDesc(DESC_PRIV_TYPE)
+  {}
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(0,getClassVersionID());
+  }
+
+  virtual short getClassSize()      { return (short)sizeof(TrafPrivDesc); }
+
+  virtual Long pack(void *space);
+  virtual Lng32 unpack(void * base, void * reallocator);
+
+  virtual TrafPrivDesc *privDesc() const { return (TrafPrivDesc*)this; }
+
+  DescStructPtr privGrantees;
+  char filler[16];
+};
+
+class TrafPrivGranteeDesc : public TrafDesc {
+public:
+  TrafPrivGranteeDesc() : TrafDesc(DESC_PRIV_GRANTEE_TYPE)
+  {}
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(0,getClassVersionID());
+  }
+
+  virtual short getClassSize()      { return (short)sizeof(TrafPrivGranteeDesc); }
+
+  virtual Long pack(void *space);
+  virtual Lng32 unpack(void * base, void * reallocator);
+
+  virtual TrafPrivGranteeDesc *privGranteeDesc() const { return (TrafPrivGranteeDesc*)this; }
+
+  Int32 grantee;
+  DescStructPtr objectBitmap;
+  DescStructPtr columnBitmaps;
+  char filler[20];
+};
+
+class TrafPrivBitmapDesc : public TrafDesc {
+public:
+  TrafPrivBitmapDesc() : TrafDesc(DESC_PRIV_BITMAP_TYPE)
+  {}
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(0,getClassVersionID());
+  }
+
+  virtual short getClassSize()      { return (short)sizeof(TrafPrivBitmapDesc); }
+
+  //virtual Long pack(void *space);
+  //virtual Lng32 unpack(void * base, void * reallocator);
+
+  virtual TrafPrivBitmapDesc *privBitmapDesc() const { return (TrafPrivBitmapDesc*)this; }
+
+  Int32  columnOrdinal;
+  Int64  privBitmap;
+  Int64  privWGOBitmap;
+  char filler[20];
+};
+// ------------------------- end privilege descriptors -------------------------
 
 // if space is passed in, use it. Otherwise use HEAP of CmpCommon
 TrafDesc *TrafAllocateDDLdesc(desc_nodetype nodetype, 
