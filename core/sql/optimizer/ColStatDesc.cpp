@@ -11477,22 +11477,23 @@ MultiColumnUecList::displayMissingStatsWarning(TableDesc * mostRefdTable,
        // Determine if this is a synonym and if so, get name of table instead.
        Int64 tableUID;
        NAString tableName;
-       NAString histogramTableName;
+       NAString histogramSchemaName;
 
        if (mostRefdNATable->getIsSynonymTranslationDone()) {
          tableName = mostRefdNATable->getSynonymReferenceName();
          tableUID = mostRefdNATable->getSynonymReferenceObjectUid().get_value();
          // Get catalog and schema name.  Find end of schema name.
          QualifiedName qualName(tableName, 3);
-         histogramTableName = qualName.getSchemaNameAsAnsiString() + "." + HBASE_HIST_NAME;
+         histogramSchemaName = qualName.getSchemaNameAsAnsiString();
        }
        else {
          tableName = mostRefdNATable->getExtendedQualName().getText();
          tableUID = mostRefdNATable->objectUid().get_value();
-         histogramTableName = mostRefdNATable->getTableName().getCatalogName() + "."
-                            + mostRefdNATable->getTableName().getSchemaName()
-                            + "." + HBASE_HIST_NAME;
+         histogramSchemaName = mostRefdNATable->getTableName().getCatalogName() + "."
+                            + mostRefdNATable->getTableName().getSchemaName();
        }
+       NAString histogramTableName = getHistogramsTableLocation(histogramSchemaName,FALSE)
+                                     + "." + HBASE_HIST_NAME;
 
        Lng32 retcode = -1;
        HSinsertEmptyHist hist(tableUID, tableName.data(), histogramTableName.data());
