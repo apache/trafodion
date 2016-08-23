@@ -566,6 +566,11 @@ public:
   // phase
   void eliminateFilterChild();
 
+  // used duirng SQO, to check if the child or grandchild of current
+  // node is a filter. Two acceptable patterns are (a) child(0) is filter
+  // child(0) is groupby an child(0)->child(0) is filter
+  NABoolean hasFilterChild();
+
   // used during SQO phase to make the left sub tree of the join
   // being unnested produce the extra outputs that is necessary to
   // group by a set of unique columns of of the left sub tree
