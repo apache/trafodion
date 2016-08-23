@@ -32,25 +32,47 @@
 #
 #=====================================================
 
-
 #=====================================================
+##################################################
+#THESE MUST BE FILLED OUT.
+#IF NOT INSTALL WILL FAIL
+##################################################
+
+# a blank separated list of nodes in your cluster
+# node names should include full domain names
+#This can not be left blank!
+export NODE_LIST=""
+
+#JAVA HOME must be a JDK. Must include FULL Path. Must be 1.7.0_65 or higher.
+export JAVA_HOME=""
+
+# full path of the Trafodion package tar file
+export TRAF_PACKAGE=""
+
+# Either "cloudera" or "hortonworks" (all lowercase)
+export HADOOP_TYPE=""
+
+# The URL for Cloudera/Hortonworks REST API (i.e. http://node1.hp.com:8080)
+# Include 'http' or 'https'
+export URL=""
+
+
+
+##################################################
+#Can MOSTLY LIKELY stay as defaults.
+#Please review though before starting install
+#################################################
+
 #Must be set to 'true' if on a SUSE linux system. If on another type of system
 #this must be set to false. 
-
 export SUSE_LINUX="false"
 
 # The working directory where Trafodion installer untars files, etc.
 # do not change this unless you really know what you are doing
 export TRAF_WORKDIR="/usr/lib/trafodion"
 
-# This is the directory where the installer scripts were untarred to
-export LOCAL_WORKDIR="$HOME/<downloadsDirectory>/installer"
-
 # The maximum number of dcs servers, i.e. client connections
 export DCS_SERVERS_PARM="8"
-
-# "true" if this is an upgrade
-export UPGRADE_TRAF="false"
 
 # Trafodion userid, This is the userid the Trafodion instance will run under
 export TRAF_USER="trafodion"
@@ -58,50 +80,20 @@ export TRAF_USER="trafodion"
 # Trafodion userid's password
 export TRAF_USER_PASSWORD="traf123"
 
-# a blank separated list of nodes in your cluster
-# node names should include full domain names
-#This can not be left blank!
-export NODE_LIST=""
-
-# count of nodes in node list
-export node_count=""
-
-# another list of the same nodes in NODE_LIST but specified in a pdsh usable format
-# i.e.  "-w centos-cdh[1-6]"  or "-w node1 -w node2 -w node3"
-export MY_NODES=""
-
 # the directory prefix for the trafodion userid's $HOME directory
 # i.e. /opt/home, not /opt/home/trafodion
-export HOME_DIR="/home"
-
-#JAVA HOME must be a JDK. Must include FULL Path. Must be 1.7.0_65 or higher.
-
-export JAVA_HOME=""
-
-# If your machine doesn't have external internet access then you must
-# specify the location of the EPEL rpm, otherwise leave blank and it
-# will be installed from the internet
-export EPEL_RPM=""
-
-# full path of the Trafodion package tar file
-export TRAF_PACKAGE=""
+export HOME_DIR="/opt"
 
 #Default value set to "Y" if using a build BEFORE 05/11/2016 set this to "N"
 export ONE_TAR_INSTALL="Y"
 
-# Either "cloudera" or "hortonworks" (all lowercase)
-export HADOOP_TYPE=""
-
-# The URL for Cloudera/Hortonworks REST API (i.e. http://node1.hp.com:8080)
-# Include http or https
-export URL=""
+#This user will be set for backup and restore.
+#Must be able to have select sudo access
+export BACKUP_USER="trafodion"
 
 # Cloudera/Hortonworks UI admin's userid and password
 export ADMIN="admin"
 export PASSWORD="admin"
-
-# hadoop cluster name
-export CLUSTER_NAME=""
 
 # the Hadoop HDFS userid
 export HDFS_USER="hdfs"
@@ -118,17 +110,10 @@ export HBASE="hbase"
 # First time install : /home/trafodion/traf
 # On Upgrade: /home/trafodion/traf_<date>
 # By doing this the previous version will remain and allow for an easier rollback.
-export SQ_ROOT=""
+export SQ_ROOT="/opt/trafodion/trafodion"
 
 # Start Trafodion after install completes
-export START="N"
-
-# initialize trafodion after starting
-export INIT_TRAFODION="N"
-
-# full path to the sqconfig file
-# Default is to leave as is and this file will be created.
-export SQCONFIG=""
+export START="Y"
 
 #-----------------  security configuration information -----------------
 #Enter in Kerberos details if Kerberos is enabled on your cluster
@@ -198,3 +183,9 @@ export CLOUD_OTHER=""
 #dcs start script is run
 export DCS_PRIMARY_MASTER_NODE=`hostname -f`
 
+
+#Ability to add nodes while trafodion is running
+export ELASTICITY_ENABLED="Y"
+
+#Default is number of nodes
+export NUM_ELASTIC_NODES=""
