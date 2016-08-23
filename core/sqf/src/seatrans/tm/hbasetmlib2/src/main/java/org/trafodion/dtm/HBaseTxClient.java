@@ -962,12 +962,6 @@ public class HBaseTxClient {
                  } catch (DeserializationException de) {
                     throw new IOException(de);
                  }
-                 ByteArrayInputStream lv_bis = new ByteArrayInputStream(regionInfo);
-                 DataInputStream lv_dis = new DataInputStream(lv_bis);
-                 regionInfoLoc.readFields(lv_dis);
-                 
-                 //HBase98 TODO: need to set the value of startcode correctly
-                 //HBase98 TODO: Not in CDH 5.1:  ServerName lv_servername = ServerName.valueOf(hostname, port, 0);
 
                  String lv_hostname_port_string = hostname + ":" + port;
                  String lv_servername_string = ServerName.getServerName(lv_hostname_port_string, 0);

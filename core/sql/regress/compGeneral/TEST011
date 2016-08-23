@@ -1119,5 +1119,34 @@ execute XX;
 -- bug #1893
 prepare c1 from UPDATE SQLF177 SET (C2,C3) = (C2 + cast( ? as INT),?)  WHERE C1 = ? ;
 
+-- JIRA [TRAFODION-2159] Unnest correlated subquery with explicit groupby
+-- Q51
+prepare XX from
+select t40.a
+from t40
+where t40.b >= (select avg(counta) from (select count(a) as counta from t41 where t40.c = t41.b group by t41.c))
+order by 1 ;
+
+execute explainIt;
+execute XX ;
+
+
+-- 2 correlated subqueries that require LOJ transformation. The two subqueries
+-- are NOT nested. Use of exists (i.e. oneTrue) predicate
+-- Q52
+prepare XX from
+select t40.a
+from t40
+where exists (select *
+                      from t44
+                      where t40.c = t44.b)
+  OR
+      exists (select *
+                      from t41
+                      where t40.b = t41.b)
+order by 1;
+
+execute explainIt;
+execute XX ;
 
 log;
