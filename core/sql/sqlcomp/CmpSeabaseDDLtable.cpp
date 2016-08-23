@@ -4292,7 +4292,7 @@ void CmpSeabaseDDL::alterSeabaseTableStoredDesc(
       return;
     }
  
-  // Make sure user has the privilege to perform the rename
+  // Make sure user has the privilege to perform the alter
  if (alterStoredDesc->getType() != StmtDDLAlterTableStoredDesc::CHECK)
    {
      if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
@@ -9483,6 +9483,17 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
  
       }
   }
+
+  if (result == STATUS_ERROR)
+    return;
+
+  // Adjust the stored descriptor
+  char objectTypeLit[3] = {0};
+  strncpy(objectTypeLit,PrivMgr::ObjectEnumToLit(objectType),2);
+
+  updateObjectRedefTime(&cliInterface,
+                        catalogNamePart, schemaNamePart, objectNamePart,
+                        objectTypeLit, -1, objectUID);
   return;
 }
 
@@ -10322,6 +10333,48 @@ ComTdbVirtTableSequenceInfo * CmpSeabaseDDL::getSeabaseSequenceInfo(
   return seqInfo;
 }
 
+// ****************************************************************************
+// Method: getSeabasePrivInfo
+//
+// This method retrieves the list of privilege descriptors for each user that
+// has been granted an object or column level privilege on the object.
+// ****************************************************************************
+ComTdbVirtTablePrivInfo * CmpSeabaseDDL::getSeabasePrivInfo(
+  const Int64 objUID,
+  const ComObjectType objType)
+{
+  if (!isAuthorizationEnabled())
+    return NULL;
+
+  // Prepare to call privilege manager
+  NAString MDLoc;
+  CONCAT_CATSCH(MDLoc, getSystemCatalog(), SEABASE_MD_SCHEMA);
+  NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+
+  // Summarize privileges for object
+  PrivStatus privStatus = STATUS_GOOD;
+  std::vector<PrivMgrDesc> privDescs;
+  PrivMgrCommands command(std::string(MDLoc.data()),
+                          std::string(privMgrMDLoc.data()),
+                          CmpCommon::diags());
+  if (command.getPrivileges(objUID, objType, privDescs) != STATUS_GOOD)
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+      return NULL;
+    }
+
+  ComTdbVirtTablePrivInfo *privInfo = new (STMTHEAP) ComTdbVirtTablePrivInfo();
+
+  // PrivMgrDesc operator= is a deep copy
+  privInfo->privmgr_desc_list = new (STMTHEAP) NAList<PrivMgrDesc>;
+  for (size_t i = 0; i < privDescs.size(); i++)
+    privInfo->privmgr_desc_list->insert(privDescs[i]);
+
+  return privInfo;
+}
+
+
 TrafDesc * CmpSeabaseDDL::getSeabaseLibraryDesc(
    const NAString &catName, 
    const NAString &schName, 
@@ -10434,6 +10487,9 @@ TrafDesc * CmpSeabaseDDL::getSeabaseSequenceDesc(const NAString &catName,
     {
       return NULL;
     }
+  
+  ComTdbVirtTablePrivInfo * privInfo = 
+    getSeabasePrivInfo(seqUID, COM_SEQUENCE_GENERATOR_OBJECT);
 
   ComTdbVirtTableTableInfo * tableInfo =
     new(STMTHEAP) ComTdbVirtTableTableInfo[1];
@@ -10458,7 +10514,10 @@ TrafDesc * CmpSeabaseDDL::getSeabaseSequenceDesc(const NAString &catName,
      0, NULL, //indexInfo
      0, NULL, // viewInfo
      tableInfo,
-     seqInfo);
+     seqInfo,
+     NULL, NULL, // endKeyArray, snapshotName
+     FALSE, NULL, FALSE, // genPackedDesc, packedDescLen, isUserTable
+     privInfo);
   
   return tableDesc;
 }
@@ -11230,6 +11289,8 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
                                        extSeqName, objectOwner, schemaOwner, seqUID);
     }
 
+  ComTdbVirtTablePrivInfo * privInfo = getSeabasePrivInfo(objUID, objType);
+
   ComTdbVirtTableTableInfo * tableInfo = new(STMTHEAP) ComTdbVirtTableTableInfo[1];
   tableInfo->tableName = extTableName->data();
   tableInfo->createTime = 0;
@@ -11309,7 +11370,8 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
      snapshotName,
      ((ctlFlags & GEN_PACKED_DESC) != 0),
      &packedDescLen,
-     TRUE /*user table*/);
+     TRUE /*user table*/,
+     privInfo);
   
   deleteNAArray(heap_, endKeyArray);
   
@@ -11638,12 +11700,15 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catName,
       return NULL;
     } 
   
+  ComTdbVirtTablePrivInfo * privInfo = getSeabasePrivInfo(objectUID, objectType);
+
   TrafDesc *routine_desc = NULL;
   routine_desc = Generator::createVirtualRoutineDesc(
        objName.data(),
        routineInfo,
        numParams,
        paramsArray,
+       privInfo,
        NULL);
 
   if (routine_desc == NULL)

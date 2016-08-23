@@ -35,6 +35,8 @@ sh sqlci -i "TEST129(step6)" -u sql_user4;
 sh sqlci -i "TEST129(step7)" -u sql_user4;
 sh sqlci -i "TEST129(invalidate)" -u sql_user1;
 
+obey TEST129(clean_up);
+
 exit;
 
 ?section clean_up

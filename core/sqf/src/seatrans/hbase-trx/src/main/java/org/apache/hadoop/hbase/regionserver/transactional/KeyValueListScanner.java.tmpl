@@ -18,11 +18,15 @@ import java.util.List;
 import java.util.SortedSet;
 
 import org.apache.commons.lang.NotImplementedException;
-
 import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.regionserver.KeyValueScanner;
+#ifdef CDH5.7 APACHE1.2
+import org.apache.hadoop.hbase.regionserver.Store;
+#endif
 
 /**
  * A fixture that implements and presents a KeyValueScanner. It takes a list of key/values which is then sorted
@@ -138,9 +142,13 @@ public class KeyValueListScanner implements KeyValueScanner {
     public boolean  requestSeek(Cell kv, boolean forward, boolean useBloom) {
     	return true;
     }
-    
+#ifdef CDH5.7 APACHE1.2
+    public boolean shouldUseScanner(Scan scan, Store store,
+                       long oldestUnexpiredTS){
+#else    
     public boolean shouldUseScanner(Scan scan, SortedSet<byte[]> columns,
-    		       long oldestUnexpiredTS){
+                       long oldestUnexpiredTS){
+#endif
     	return true;
     }
 

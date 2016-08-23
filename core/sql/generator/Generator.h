@@ -1390,6 +1390,9 @@ public:
 						  ComTdbVirtTableRefConstraints * refConstrs,
                                                   Space * space);
   
+  static TrafDesc * createPrivDescs( const ComTdbVirtTablePrivInfo * privs,
+                                     Space * space);
+
   static TrafDesc *createVirtualTableDesc(
        const char * tableName, 
        Int32 numCols,
@@ -1408,7 +1411,8 @@ public:
        char * snapshotName = NULL,
        NABoolean genPackedDesc = FALSE,
        Int32 * packedDescLen = NULL,
-       NABoolean isUserTable = FALSE);
+       NABoolean isUserTable = FALSE,
+       ComTdbVirtTablePrivInfo * privInfo = NULL);
 
   static TrafDesc* assembleDescs(
      NAArray<HbaseStr >* keyArray, 
@@ -1420,6 +1424,7 @@ public:
                                   ComTdbVirtTableRoutineInfo *routineInfo,
                                   Int32 numParams,
                                   ComTdbVirtTableColumnInfo *paramsArray,
+                                  ComTdbVirtTablePrivInfo *privInfo,
                                   Space * space);
   static TrafDesc *createVirtualLibraryDesc(
                                   const char *libraryName,

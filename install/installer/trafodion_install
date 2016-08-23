@@ -118,20 +118,16 @@ do
       fi
       if [[ $HADOOP_TYPE == "cloudera" ]]; then
          if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-            if [[ $CDH_5_4_SUPPORT == "Y" ]] || [[ $CDH_5_5_SUPPORT == "Y" ]]; then
-                if [[ $CDH_5_7_SUPPORT == "Y" ]]; then
-                  supportedHBase=$(echo $version | grep "1.2" | wc -l)
-                  if [[ $supportedHBase -eq "0" ]]; then
-                     echo "***ERROR: HBase installed must be 1.2 on node $node"
-                     exit -1
-                  fi
+            if [[ $CDH_5_4_SUPPORT == "Y" ]] || [[ $CDH_5_5_SUPPORT == "Y" ]] || [[ $CDH_5_7_SUPPORT == "Y" ]]; then
+               supportedHBase12=$(echo $version | grep "1.2" | wc -l)
+               supportedHBase10=$(echo $version | grep "1.0" | wc -l)
+               if [[ $supportedHBase12 -eq "0" ]] && [[ $supportedHBase10 -eq "0" ]]; then
+                  echo "***ERROR: HBase installed must be 1.2.* or 1.0.* on node $node"
+                  exit -1
+               fi
+               if [[ $supportedHBase12 -eq "1" ]]; then
                   CDH_VERSION="5.7"
                else
-                  supportedHBase=$(echo $version | grep "1.0.0" | wc -l)
-                  if [[ $supportedHBase -eq "0" ]]; then
-                     echo "***ERROR: HBase installed must be 1.0.0 on node $node"
-                     exit -1
-                  fi
                   cdhVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | grep "cdh5.4.*" | wc -l)
                   if [[ "$cdhVersion" -ge "1" ]]; then
                      CDH_VERSION="5.4"

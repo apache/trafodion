@@ -26,7 +26,6 @@
 
 #include <bitset>
 #include <string>
-#include <vector>
 #include "PrivMgrMDDefs.h"
 #include "PrivMgrDefs.h"
 #include "ComSmallDefs.h"
@@ -174,6 +173,21 @@ class PrivMgrCoreDesc
 
     virtual ~PrivMgrCoreDesc()              // destructor
     {}
+
+  // assignment operator
+  PrivMgrCoreDesc& operator=(const PrivMgrCoreDesc& other) 
+  {
+     //  Check for pathological case of X == X.
+      if ( this == &other )
+         return *this;
+
+      priv_ = other.priv_;
+      wgo_ = other.wgo_;
+      columnOrdinal_ = other.columnOrdinal_;
+
+      return *this;
+  }
+
 
   // comparison operator 
   bool operator==(const PrivMgrCoreDesc& other) const;
@@ -366,23 +380,31 @@ class PrivMgrDesc
 
 public:
    PrivMgrDesc(const PrivMgrDesc&other)           // copy constructor
-   : tableLevel_(other.tableLevel_)
+   : tableLevel_(other.tableLevel_),
+     columnLevel_(other.columnLevel_),
+     grantee_(other.grantee_)
    {}
 
    PrivMgrDesc(const int32_t grantee,
                const int32_t nbrCols = 0    // preset constructor
               )
-   : tableLevel_()
+   : tableLevel_(),
+     columnLevel_(),
+     grantee_(grantee)
   {}
 
    //PrivMgrDesc(const int32_t nbrCols);    // preset constructor
    PrivMgrDesc(const PrivMgrDesc &privs,            // preset constructor
                const int32_t grantee)
-   : tableLevel_(privs.tableLevel_)
+   : tableLevel_(privs.tableLevel_),
+     columnLevel_(privs.columnLevel_),
+     grantee_(privs.grantee_)
    {}
 
    PrivMgrDesc(void)
-   : tableLevel_()
+   : tableLevel_(),
+     columnLevel_(),
+     grantee_(0)
    {}
 
    virtual ~PrivMgrDesc()                 // destructor
@@ -396,7 +418,8 @@ public:
          return *this;
 
       tableLevel_  = other.tableLevel_;
-      //columnLevel_ = other.columnLevel_;
+      columnLevel_ = other.columnLevel_;
+      grantee_ = other.grantee_;
 
       return *this;
    }
@@ -410,8 +433,9 @@ public:
          return TRUE;
 
       return ( 
-//             ( columnLevel_ == other.columnLevel_ ) &&
-               ( tableLevel_  == other.tableLevel_  ) );
+               ( columnLevel_ == other.columnLevel_ ) &&
+               ( tableLevel_  == other.tableLevel_  ) &&
+               ( grantee_ == other.grantee_));
    }
 
 
@@ -457,7 +481,9 @@ public:
 
    // Accessors
 
-   PrivMgrCoreDesc getTablePrivs() const { return tableLevel_;}
+   PrivMgrCoreDesc getTablePrivs()  const { return tableLevel_; }
+   NAList<PrivMgrCoreDesc> getColumnPrivs() const { return columnLevel_; }
+   int32_t getGrantee() const { return grantee_; }
    PrivMgrCoreDesc &       fetchTablePrivs();
    bool       getOneTablePriv(const PrivType which) const;
    bool       getOneTableWgo(const PrivType which) const;
@@ -472,11 +498,10 @@ public:
 
    // Mutators
 
-   void setGrantee(const int32_t&);
+   void setGrantee(const int32_t&grantee) { grantee_ = grantee; }
    void setTablePrivs(const PrivMgrCoreDesc &privs) { tableLevel_ = privs; }
    void resetTablePrivs() { tableLevel_.setAllPrivAndWgo(0); }
-
-   //void setColumnPrivs(const CatColPrivsList& privs);
+   void setColumnPrivs(const NAList<PrivMgrCoreDesc> &privs) { columnLevel_ = privs; }
 
 #if 0
    void setColumnPriv(const PrivType which,
@@ -601,7 +626,8 @@ CatPrivs::PrivResult applyTableGrants(const int64_t objectUID,
 private:
 
    PrivMgrCoreDesc                 tableLevel_;
-   std::vector<PrivMgrCoreDesc>    columnLevel_;
+   NAList<PrivMgrCoreDesc>         columnLevel_;
+   int32_t                         grantee_;
 };
 
 

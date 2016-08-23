@@ -57,14 +57,12 @@ fi
 cd $UNTAR_DIR
 
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-   if [[ $CDH_5_4_SUPPORT == "Y" ]] || [[ $CDH_5_5_SUPPORT == "Y" ]]; then
-      if [[ $CDH_VERSION == "5.4" ]]; then
-         hbase_trx_jar="hbase-trx-cdh5_4-*.jar"
-      else
-         hbase_trx_jar="hbase-trx-cdh5_5-*.jar"
-      fi
-   else
-      hbase_trx_jar="hbase-trx-*.jar" 
+   if [[ $CDH_VERSION == "5.4" ]]; then
+      hbase_trx_jar="hbase-trx-cdh5_4-*.jar"
+   elif [[ $CDH_VERSION == "5.5" ]]; then
+      hbase_trx_jar="hbase-trx-cdh5_5-*.jar"
+   elif [[ $CDH_VERSION == "5.7" ]]; then
+      hbase_trx_jar="hbase-trx-cdh5_7-*.jar" 
    fi 
 else
     hbase_trx_jar="hbase-trx-cdh5_3-*.jar"

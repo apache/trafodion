@@ -2358,7 +2358,15 @@ void Join::createAFilterGrandChildIfNeeded(NormWA & normWARef)
   GroupByAgg * gbyNode = (GroupByAgg *) child(1)->castToRelExpr();
   RelExpr * oldRightGrandChild = child(1)->child(0)->castToRelExpr();
   NABoolean candidateForLeftJoin = candidateForSubqueryLeftJoinConversion();
+  NABoolean nestedAggInSubQ = FALSE;
+  GroupByAgg * subQGby = NULL ;
 
+  if (oldRightGrandChild->getOperator().match(REL_GROUPBY))
+  {
+    subQGby = (GroupByAgg *) oldRightGrandChild ;
+    oldRightGrandChild = oldRightGrandChild->child(0)->castToRelExpr();
+    nestedAggInSubQ = TRUE ;
+  }
   if (oldRightGrandChild->getOperator().match(REL_ANY_SEMIJOIN) ||   
       oldRightGrandChild->getOperator().match(REL_ANY_ANTI_SEMIJOIN) ||
       oldRightGrandChild->getOperator().match(REL_GROUPBY))
@@ -2369,7 +2377,7 @@ void Join::createAFilterGrandChildIfNeeded(NormWA & normWARef)
     if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG)
     {
       *CmpCommon::diags() << DgSqlCode(2997)
-                          << DgString1("Subquery was not unnested. Reason: Right grandchild of TSJ is a semijoin or a group by");
+                          << DgString1("Subquery was not unnested. Reason: Right grandchild of TSJ is a semijoin or has more than one group by");
     }
   }
   // -----------------------------------------------------------------------
@@ -2404,8 +2412,13 @@ void Join::createAFilterGrandChildIfNeeded(NormWA & normWARef)
   if (doNotUnnest == FALSE)
   {
     nonLocalPreds.clear();
-    if (oldRightGrandChild->selectionPred().getReferencedPredicates
-                                        (outerReferences, nonLocalPreds))
+    oldRightGrandChild->selectionPred().getReferencedPredicates
+      (outerReferences, nonLocalPreds) ;
+    if (nestedAggInSubQ)
+      subQGby->selectionPred().getReferencedPredicates
+	(outerReferences, nonLocalPreds);
+
+    if (!nonLocalPreds.isEmpty())
     {
       // Right grandchild selection pred has outer references
 
@@ -2436,15 +2449,22 @@ void Join::createAFilterGrandChildIfNeeded(NormWA & normWARef)
 
       if ((doNotUnnest == FALSE) && candidateForLeftJoin && 
           (CmpCommon::getDefault(SUBQUERY_UNNESTING_P2) != DF_INTERNAL) &&
-          (normWARef.getLeftJoinConversionCount() >= 1))
+          ((normWARef.getLeftJoinConversionCount() >= 2)||nestedAggInSubQ))
       {
         doNotUnnest = TRUE;
-        // For phase 2 we only unnest 1 level of subqueries 
-        // containing NonNullRejecting Predicates
+        // For phase 2 we only unnest 2 subqueries 
+        // containing NonNullRejecting Predicates. Later we will ensure
+	// that these 2 subqueries are not nested.
 
-        if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG)
+        if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG) 
+        {
+          if (!nestedAggInSubQ)
             *CmpCommon::diags() << DgSqlCode(2997)
-              << DgString1("Skipping unnesting of Subquery due to NonNullRejecting Predicates in more than one subquery");
+              << DgString1("Skipping unnesting of Subquery due to NonNullRejecting Predicates in more than two subqueries");
+          else
+             *CmpCommon::diags() << DgSqlCode(2997)
+              << DgString1("Skipping unnesting of Subquery since we have both NonNullRejecting predicate and nested aggregate in subquery.");
+        }
 
       }
 
@@ -2455,9 +2475,18 @@ void Join::createAFilterGrandChildIfNeeded(NormWA & normWARef)
                                     Filter(oldRightGrandChild);
         predFilterNode->selectionPred() += nonLocalPreds;
         oldRightGrandChild->selectionPred() -= nonLocalPreds;
-  
-        predFilterNode->getGroupAttr()->setCharacteristicInputs
+	if (nestedAggInSubQ)
+	{
+	  subQGby->selectionPred() -= nonLocalPreds;
+	  predFilterNode->getGroupAttr()->setCharacteristicInputs
+            (subQGby->getGroupAttr()->getCharacteristicInputs());
+	  subQGby->recomputeOuterReferences();
+	}
+	else
+	{
+	  predFilterNode->getGroupAttr()->setCharacteristicInputs
             (oldRightGrandChild->getGroupAttr()->getCharacteristicInputs());
+	}
   
         oldRightGrandChild->recomputeOuterReferences();
 
@@ -2490,7 +2519,10 @@ void Join::createAFilterGrandChildIfNeeded(NormWA & normWARef)
           if (candidateForLeftJoin)
             normWARef.incrementLeftJoinConversionCount();
   
-          gbyNode->child(0) = predFilterNode;
+          if (nestedAggInSubQ)
+	    gbyNode->child(0)->child(0) = predFilterNode;
+	  else
+	    gbyNode->child(0) = predFilterNode;
         }
       }
     }
@@ -3045,10 +3077,49 @@ Join::pullUpGroupByTransformation()
 //             The predicates in the new groupBy and the new Join will have
 //             changed according to the comments above.
 //
+// If there is an explicit groupby in the subquery the transformation above is extended as
+//      TSJ                            GroupBy {pred3,agg2(agg1)}(grouping cols:  
+//     /   \                              |    cluster_key of X (leftUniqueCols)+ 
+//    /     \                             |    other necessary columns of X)
+//   X      ScalarAgg {pred3}   -->   SubQ_GroupBy {agg1} (grouping cols: g1 + 
+//             | {agg2(agg1)}             |    cluster_key of X (leftUniqueCols) +   
+//             |                          |    other necessary columns of X) 
+//          SubQ_GroupBy {agg1}        newJoin {pred2}
+//             | {grouping cols: g1}    /    \
+//             |                       /      \
+//          Filter {pred2}        newLeft  newRight {pred1}
+//             |                  Child    Child
+//             |
+//             Y {pred1}
+//
+// If there is an explicy groupby in the subquery then the flag nestedAggInSubQ is set.
+
 ------------------------------------------------------------------------------*/
 GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
 {
   CollHeap *stmtHeap = CmpCommon::statementHeap() ;
+
+   RelExpr *oldGB = child(1)->castToRelExpr();
+  // note that typically child of oldGB is actually a Filter node, here 
+  // oldGBgrandchild is the child of oldGB before the Filter was added.
+  RelExpr *oldGBgrandchild ;
+  NABoolean nestedAggInSubQ = FALSE;
+  
+  if ((oldGB->child(0)->getOperatorType() == REL_GROUPBY) &&
+    (oldGB->child(0)->child(0)->getOperatorType() == REL_FILTER))
+  {
+    oldGBgrandchild = oldGB->child(0)->child(0)->child(0)->castToRelExpr();
+    nestedAggInSubQ = TRUE;
+  }
+  else if (oldGB->child(0)->getOperatorType() == REL_FILTER)
+    oldGBgrandchild = oldGB->child(0)->child(0)->castToRelExpr();
+  else
+    oldGBgrandchild = oldGB->child(0)->castToRelExpr();
+
+  RelExpr *filterParent = nestedAggInSubQ ? 
+    oldGB->child(0)->castToRelExpr() : oldGB;
+
+  RelExpr *oldLeftChild = child(0)->castToRelExpr();
 
   // Determine a set of unique columns for the left sub-tree.
 
@@ -3065,7 +3136,7 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
     // Could not find a set of unique cols.
     // If the left sub-tree contains a UNION/TRANSPOSE/SEQUENCE or SAMPLE
     // then we will fail to unnest the subquery for this reason.
-    child(1)->eliminateFilterChild();
+    filterParent->eliminateFilterChild();
     // left child does not have a unique constraint
     // cannot unnest this subquery
     if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG)
@@ -3103,18 +3174,6 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
     return NULL ;
   }
 
-  RelExpr *oldGB = child(1)->castToRelExpr();
-  // note that the child of oldGB is actually a Filter node, here 
-  // oldGBgrandchild is the child of oldGB before the Filter was added.
-  RelExpr *oldGBgrandchild ;
-
-  if (oldGB->child(0)->getOperatorType() == REL_FILTER)
-   oldGBgrandchild = oldGB->child(0)->child(0)->castToRelExpr();
-  else
-    oldGBgrandchild = oldGB->child(0)->castToRelExpr();
-
-  RelExpr *oldLeftChild = child(0)->castToRelExpr();
-
   // if subquery needs left joins some additional checks are done here to
   // see if pull up groupby transformation can be done while preserving 
   // semantic correctness. No changes for left joins or preserving nulls
@@ -3131,7 +3190,7 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
          *CmpCommon::diags() << DgSqlCode(2997)   
                 << DgString1("Subquery was not unnested. Reason: Join with selectionPreds cannot be converted to LeftJoin."); 
       }
-      oldGB->eliminateFilterChild();
+      filterParent->eliminateFilterChild();
       return NULL ;
     }
   }
@@ -3155,7 +3214,13 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
   GroupByAgg *newGrby = (GroupByAgg *) copyNode(oldGB, stmtHeap);
       newGrby->setRETDesc(getRETDesc()); 
   newGrby->getGroupAttr()->clearLogProperties(); //logical prop. must be resynthesized
-
+  GroupByAgg *newSubQGrby = NULL;
+  if (nestedAggInSubQ)
+  {
+    newSubQGrby = (GroupByAgg *) copyNode(oldGB->child(0)->castToRelExpr(), 
+					  stmtHeap);
+    newSubQGrby->getGroupAttr()->clearLogProperties();  
+  }
       
   // For multi-level subqueries it is possible that this Join is 
   // not a TSJ, but still contains outer references. This happens 
@@ -3172,8 +3237,25 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
   { 
       // The join contains aggregates
       // Skip such this subquery . 
-     oldGB->eliminateFilterChild();
+     filterParent->eliminateFilterChild();
      return NULL ;
+  }
+
+  if (nestedAggInSubQ)
+  {
+    safeToPullUpGrby = newJoin->pullUpPredsWithAggrs(newSubQGrby); 
+    if (NOT safeToPullUpGrby )
+    {  
+      filterParent->eliminateFilterChild();
+      return NULL ;
+    }
+    // inputs of newSubQGroupBy are same as the old
+    // TSJ/Join that we are replacing. Outputs are join's + aggregates
+    newSubQGrby->getGroupAttr()->addCharacteristicOutputs
+      (getGroupAttr()->getCharacteristicOutputs());
+    newSubQGrby->getGroupAttr()->setCharacteristicInputs
+      (getGroupAttr()->getCharacteristicInputs());
+    newSubQGrby->child(0) = newJoin ;
   }
       
   // inputs and outputs of new GroupBy are same as the old
@@ -3182,7 +3264,11 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
     (getGroupAttr()->getCharacteristicOutputs());
   newGrby->getGroupAttr()->setCharacteristicInputs
     (getGroupAttr()->getCharacteristicInputs());
-  newGrby->child(0) = newJoin ;
+
+  if (nestedAggInSubQ)
+    newGrby->child(0) = newSubQGrby;
+  else
+    newGrby->child(0) = newJoin ;
 
 
   // set the grouping cols for new GroupBy
@@ -3198,6 +3284,16 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
 		oldLeftChildOutputs, 
 		normWARef
 			   );
+  if (nestedAggInSubQ) 
+  {
+    newSubQGrby->getGroupAttr()->
+      addCharacteristicOutputs(newGrby->groupExpr());
+    newSubQGrby->computeGroupExpr(newGrby->groupExpr(), 
+				  oldLeftChildOutputs, 
+				  normWARef); 
+  }
+  
+
 
   // The newGrby cannot be a scalar groupby under any circumstance
   // So if the group expression is empty, add a constant to the 
@@ -3221,6 +3317,10 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
   // decide to not unnest. 
   if (oldGB->child(0)->getOperatorType() == REL_FILTER)
     newJoin->selectionPred() += oldGB->child(0)->castToRelExpr()->selectionPred();
+  else if (nestedAggInSubQ && 
+	   oldGB->child(0)->child(0)->getOperatorType() == REL_FILTER)
+    newJoin->selectionPred() += 
+      oldGB->child(0)->child(0)->castToRelExpr()->selectionPred();  
 
   // If the new GroupBy contains any outer references (i.e. requiredInputs
   // that are not provided by the user) then mark it as needing
@@ -3230,7 +3330,16 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
 					getOuterReferences(outerReferences);
   if (NOT(outerReferences.isEmpty()))
   {
-    newGrby->setRequiresMoveUp(TRUE) ;
+    if (!nestedAggInSubQ)
+      newGrby->setRequiresMoveUp(TRUE) ;
+    else
+    {
+       filterParent->eliminateFilterChild();
+       if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG)
+         *CmpCommon::diags() << DgSqlCode(2997)   
+                             << DgString1("Subquery was not unnested. Reason: More than 1 level of nested subquery and nested aggregate are both present");
+       return NULL;
+    }
   }
  
   return newGrby ;
@@ -3350,26 +3459,6 @@ RelExpr* GroupByAgg::nullPreservingTransformation(GroupByAgg* oldGB,
   // that far.
   ValueId ignoreReturnedVid;
   ValueId oneTrueVid;
-  NABoolean  replaceOneTrue = FALSE;
-
-  replaceOneTrue = newGrby->aggregateExpr().containsOneTrue(oneTrueVid);
-  if( replaceOneTrue && 
-      newGrby->getGroupAttr()->getCharacteristicOutputs().referencesTheGivenValue(oneTrueVid, ignoreReturnedVid, FALSE,FALSE))
-  { 
-    // If someone above us needs the oneTrue, skip unnesting it as
-    // we cannot map between a count(1) > 0 expression to 
-    // a oneTrue(return TRUE) one.
-    // This since the only way to do so would be to add "count(1) > 0" to the
-    // grouping expression. For phase 3 we want to evaluate if doing so would be
-    // safe from a semantic point of view.
-    if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG)
-    {
-       *CmpCommon::diags() << DgSqlCode(2997)   
-          << DgString1("Subquery was not unnested. Reason: Upper expressions require OneTrue."); 
-    }
-    oldGB->eliminateFilterChild();
-    return NULL ;
-  } 
 
   // change newJoin into a left join and move preds into the join predicate
   // we have already guaranteed that all selection preds in the newJoin are
@@ -4056,7 +4145,11 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
 NABoolean GroupByAgg::subqueryUnnestFinalize(ValueIdSet& newGrbyGroupExpr, 
 					     NormWA& normWARef)
 {
-  Join * newJoin = (Join*) child(0)->castToRelExpr();
+  Join * newJoin = NULL ;
+  if (child(0)->getOperatorType() == REL_GROUPBY)
+    newJoin = (Join*) child(0)->child(0)->castToRelExpr();
+  else
+    newJoin = (Join*) child(0)->castToRelExpr();
   RelExpr * newLeftChild  = newJoin->child(0)->castToRelExpr();
   RelExpr * newRightChild = newJoin->child(1)->castToRelExpr();
 
@@ -4449,7 +4542,7 @@ RelExpr * Join::semanticQueryOptimizeNode(NormWA & normWARef)
     // If comp_bool_221 is on we will unnest even if there is no filter node.
     if ((CmpCommon::getDefault(COMP_BOOL_221) == DF_OFF) &&
         ((child(1)->getArity() != 1) ||
-        child(1)->child(0)->getOperatorType() != REL_FILTER))
+	 !(child(1)->castToRelExpr()->hasFilterChild())))
     {
         if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG)
           *CmpCommon::diags() << DgSqlCode(2997)
@@ -4497,7 +4590,17 @@ RelExpr * Join::semanticQueryOptimizeNode(NormWA & normWARef)
     // Apply MoveUp GroupBy transformation. Relevant only for subqueries with
     // two or more levels of nesting. If moveUpGroupBy is not needed
     // movedUpGroupByTail will be set to newGrby.
-    Join * newJoin = (Join*) newGrby->child(0)->castToRelExpr();
+    RelExpr* gbChild = newGrby->child(0)->castToRelExpr();
+    NABoolean nestedAggInSubQ = FALSE;
+    Join * newJoin = NULL;
+    if (gbChild->getOperatorType() == REL_GROUPBY) 
+    {
+      newJoin = (Join*) gbChild->child(0)->castToRelExpr();
+      nestedAggInSubQ = TRUE;
+    }
+    else
+      newJoin = (Join*) gbChild;
+
     GroupByAgg* movedUpGrbyTail = 
       newJoin->moveUpGroupByTransformation(newGrby, normWARef);
 
@@ -4526,7 +4629,10 @@ RelExpr * Join::semanticQueryOptimizeNode(NormWA & normWARef)
     {
       newJoin = newJoin->leftLinearizeJoinTree(normWARef, 
                                                UNNESTING); // Unnesting
-      movedUpGrbyTail->child(0) = newJoin  ;
+      if (nestedAggInSubQ)
+	movedUpGrbyTail->child(0)->child(0) = newJoin  ;
+      else
+	movedUpGrbyTail->child(0) = newJoin  ;
     }
 
       //synthesize logical props for the new nodes.
@@ -7427,6 +7533,16 @@ RelExpr * SortLogical::normalizeNode(NormWA & normWARef)
   return child(0);
 } // SortLogical::normalizeNode()
 
+NABoolean RelExpr::hasFilterChild()
+ {
+   if (getArity() == 1 && child(0)->getOperatorType() == REL_FILTER)
+     return TRUE;
+   else if (getArity() == 1  && child(0)->getArity() == 1 && 
+	    child(0)->child(0)->getOperatorType() == REL_FILTER)
+     return TRUE;
+   else
+     return FALSE;
+ }
 // If subquery unnesting fails for some reason at a particular level
 // then the Filter node at that level can be elimated by pushing
 // its selection predicate to its child. This is not strictly necessary
