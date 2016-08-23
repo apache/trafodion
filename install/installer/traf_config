@@ -139,24 +139,7 @@ sed -e "s@export SQ_HOME=.*@export SQ_HOME=$SQ_ROOT@" <bashrc_temp >$HOME/.bashr
 cp .bashrc bashrc_temp
 sed -e "s@export TOOLSDIR=.*@export TOOLSDIR=$TRAF_TOOLSDIR@" <bashrc_temp >$HOME/.bashrc
 
-if [[ $all_node_count == "1" ]]; then
-
-   # since sqgen uses the existence of /usr/bin/pdsh to determine multi-node cluster
-   # and sqgen uses the existence of /usr/bin/pdcp to determine if it needs to copy
-   # files we will check for these here and warn the user to remove/rename these to
-   # head-off the confusing errors when running sqgen
-   if [ -f /usr/bin/pdsh ] || [ -f /usr/bin/pdcp ]; then
-      echo "***ERROR: This is a single node cluster yet /usr/bin/pdsh or /usr/bin/pdcp is installed on it." | tee -a $INSTALL_LOG
-      echo "***       Please uninstall or rename /usr/bin/pdsh and /usr/bin/pdcp temporarily." | tee -a $INSTALL_LOG
-      echo "***       Please reinstall or rename after successful install." | tee -a $INSTALL_LOG
-      exit -1
-   fi
-fi
-
 cp .bashrc bashrc_temp
-sed -e "s@export NODE_LIST=.*@export NODE_LIST=\"$NODE_LIST\"@" <bashrc_temp >$HOME/.bashrc
-cp .bashrc bashrc_temp
-sed -e "s@export MY_NODES=.*@export MY_NODES=\"$MY_NODES\"@" <bashrc_temp >$HOME/.bashrc
 
 # re-source .bashrc to pick up these changes
 source ~/.bashrc
