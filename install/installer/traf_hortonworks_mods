@@ -99,16 +99,16 @@ if [ $node_count -ne 1 ]; then
     $PDSH_HADOOP_NODES sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
     $TRAF_PDSH mkdir -p $LOCAL_WORKDIR 2>/dev/null
     $PDSH_HADOOP_NODES mkdir -p $LOCAL_WORKDIR 2>/dev/null
-    cp $UNTAR_DIR/export/lib/$hbase_trx_jar $LOCAL_WORKDIR
+#    cp $UNTAR_DIR/export/lib/$hbase_trx_jar $LOCAL_WORKDIR
     cp $UNTAR_DIR/export/lib/$traf_util_jar $LOCAL_WORKDIR
-    $PDCP_HADOOP_NODES $LOCAL_WORKDIR/$hbase_trx_jar $LOCAL_WORKDIR
+#    $PDCP_HADOOP_NODES $LOCAL_WORKDIR/$hbase_trx_jar $LOCAL_WORKDIR
     $PDCP_HADOOP_NODES $LOCAL_WORKDIR/$traf_util_jar $LOCAL_WORKDIR
     $PDSH_HADOOP_NODES sudo cp $LOCAL_WORKDIR/$traf_util_jar $HADOOP_PATH
-    $PDSH_HADOOP_NODES sudo cp $LOCAL_WORKDIR/$hbase_trx_jar $HADOOP_PATH
-    $PDSH_HADOOP_NODES sudo chmod 644 $HADOOP_PATH/$hbase_trx_jar
+#    $PDSH_HADOOP_NODES sudo cp $LOCAL_WORKDIR/$hbase_trx_jar $HADOOP_PATH
+#    $PDSH_HADOOP_NODES sudo chmod 644 $HADOOP_PATH/$hbase_trx_jar
     $PDSH_HADOOP_NODES sudo chmod 644 $HADOOP_PATH/$traf_util_jar
 
-    $PDSH_HADOOP_NODES rm $LOCAL_WORKDIR/$hbase_trx_jar 2>/dev/null
+#    $PDSH_HADOOP_NODES rm $LOCAL_WORKDIR/$hbase_trx_jar 2>/dev/null
     $PDSH_HADOOP_NODES rm $LOCAL_WORKDIR/$traf_util_jar 2>/dev/null
 else
     for node in $HBASE_NODES
@@ -120,11 +120,11 @@ else
     ssh -q -n $node sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
     ssh -q -n $node sudo mkdir -p $TRAF_WORKDIR 2>/dev/null
     ssh -q -n $node sudo chmod 777 $TRAF_WORKDIR
-    scp -q $UNTAR_DIR/export/lib/$hbase_trx_jar $(whoami)@$node:$TRAF_WORKDIR
+#    scp -q $UNTAR_DIR/export/lib/$hbase_trx_jar $(whoami)@$node:$TRAF_WORKDIR
     scp -q $UNTAR_DIR/export/lib/$traf_util_jar $(whoami)@$node:$TRAF_WORKDIR
-    ssh -q -n $node sudo cp $TRAF_WORKDIR/$hbase_trx_jar $HADOOP_PATH
+#    ssh -q -n $node sudo cp $TRAF_WORKDIR/$hbase_trx_jar $HADOOP_PATH
     ssh -q -n $node sudo cp $TRAF_WORKDIR/$traf_util_jar $HADOOP_PATH
-    ssh -q -n $node sudo chmod 644 $HADOOP_PATH/$hbase_trx_jar
+#    ssh -q -n $node sudo chmod 644 $HADOOP_PATH/$hbase_trx_jar
     ssh -q -n $node sudo chmod 644 $HADOOP_PATH/$traf_util_jar
     done
 fi
@@ -200,6 +200,15 @@ if [ $? != 0 ]; then
 fi
 ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "hadoop fs -chown -R' "$TRAF_USER"':trafodion /trafodion_backups"'
 
+#create /hbase/lib to put hbase-trx.jar
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "hadoop fs -mkdir -p /hbase/lib"'
+if [ $? != 0 ]; then
+   echo "***ERROR: 'hadoop fs -mkdir -p /hbase/lib' command failed"
+   exit -1
+fi
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "hadoop fs -chown -R '"$TRAF_USER"':trafodion /hbase/lib"'
+#put hbase-trx.jar into /hbase/lib
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "hadoop fs -put '"$UNTAR_DIR"'/export/lib/'"$hbase_trx_jar"' /hbase/lib/hbase-trx-hdp.jar"'
 
 ssh -q -n $HDFS_NODE 'rm -rf $HOME/traf_temp_output'
 #=====================================

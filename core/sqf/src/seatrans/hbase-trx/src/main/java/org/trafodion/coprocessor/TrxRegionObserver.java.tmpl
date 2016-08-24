@@ -21,7 +21,7 @@
 * @@@ END COPYRIGHT @@@
 **/
 
-package org.apache.hadoop.hbase.coprocessor.transactional;
+package org.trafodion.coprocessor;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,6 +55,7 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.coprocessor.BaseRegionObserver;
 import org.apache.hadoop.hbase.coprocessor.ObserverContext;
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment;
+import org.apache.hadoop.hbase.coprocessor.transactional.SplitBalanceHelper;
 import org.apache.hadoop.hbase.regionserver.HRegion;
 import org.apache.hadoop.hbase.regionserver.RegionServerServices;
 import org.apache.hadoop.hbase.regionserver.ScanType;
@@ -91,6 +92,8 @@ import org.apache.hadoop.hbase.regionserver.ScannerContext;
 #ifdef HDP2.3 APACHE1.1 CDH5.7 APACHE1.2
 import org.apache.hadoop.hbase.regionserver.Region;
 #endif
+
+import org.trafodion.coprocessor.*;
 
 public class TrxRegionObserver extends BaseRegionObserver {
 

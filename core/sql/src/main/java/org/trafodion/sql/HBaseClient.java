@@ -965,12 +965,10 @@ public class HBaseClient {
           if (added) {
               if (logger.isDebugEnabled())
                   logger.debug("  ==> add coprocessor for table : " + tblName);
-              synchronized (admin) {
                   TableName table = TableName.valueOf(tblName);
                   admin.disableTable(table);
                   admin.modifyTable(table, tblDesc);
                   admin.enableTable(table);
-              }
           }
 
           if (logger.isDebugEnabled()) logger.debug("  ==> Created new object.");
