@@ -32,7 +32,7 @@ lv_prev_shell_PS1=$SQ_PS1
 if [ -z "$lv_prev_shell_PS1" ]; then
   lv_execute_killall=1
 else
-  read -p 'This command might cause irreparable damage to your database. Execute sqstop instead. Do you really want to continue? y/n : ' lv_key
+  read -p 'Do you really want to continue? y/n : ' lv_key
   if [ "$lv_key" == "y" ]; then
       lv_execute_killall=1
   fi
