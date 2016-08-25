@@ -147,9 +147,8 @@ do
             if [[ $supportedHBase -eq "0" ]]; then
                echo "***ERROR: HBase installed must be 0.98.6 on node $node"
                exit -1
-            fi
+            fi         
          fi
-
       fi
       hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
       break
@@ -309,10 +308,10 @@ userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
 if [[ "$userForTrafodion" != "0" ]]; then
 
    isTrafUp=$(sudo su $TRAF_USER --login --command "sqcheck" 2>/dev/null)
+   returnCode=$?
 
-   trafodionRunning=$(echo $isTrafUp | grep "The SQ environment is up" | wc -l)
-   if [[ "$trafodionRunning" -eq "1" ]]; then
-      echo "***ERROR: Trafodion is still running."
+   if [[ "$returnCode" -ne "255" ]]; then
+      echo "***ERROR: Trafodion is still has processes running."
       echo -n "Stop Trafodion (Y/N), default is N: "
       read answer
 
@@ -325,12 +324,22 @@ if [[ "$userForTrafodion" != "0" ]]; then
             echo "***INFO: Stopping Trafodion instance."
             sudo su $TRAF_USER --login --command "sqstop"
             sudo su $TRAF_USER --login --command "ckillall"
+            sudo su $TRAF_USER --login --command "dcsstop"
+            sudo su $TRAF_USER --login --command "reststop"
          else
             echo "***ERROR: Please stop Trafodion then rerun trafodion_install"
             echo "***ERROR: Change to trafodion user id then do a 'sqstop'"
             exit -1
          fi
       fi
+   fi
+
+   #This is here until sqstop or ckillall stops dcs and rest
+   isDcsStopped=$(sudo su $TRAF_USER --login --command "jps" | wc -w)
+   if [[ "$isDcsStopped" -gt "2" ]]; then
+      echo "***ERROR: DCS and Rest may still be running, will try to stop them."
+      sudo su $TRAF_USER --login --command "dcsstop" 
+      sudo su $TRAF_USER --login --command "reststop"
    fi
 fi
 
@@ -518,9 +527,18 @@ echo
 
 if [[ "$UPGRADE_TRAF" == "true" ]]; then
    sudo chmod 777 $HOME_DIR/$TRAF_USER/.bashrc
-   sudo sed -i -e "s@export NODE_LIST=.*@export NODE_LIST=\"$NODE_LIST\"@" $HOME_DIR/$TRAF_USER/.bashrc   
-   sudo sed -i -e "s@export MY_NODES=.*@export MY_NODES=\"$MY_NODES\"@" $HOME_DIR/$TRAF_USER/.bashrc
-   
+   sudo sed -i -e "/export NODE_LIST/d" $HOME_DIR/$TRAF_USER/.bashrc
+   sudo sed -i -e "/export MY_NODES=/d" $HOME_DIR/$TRAF_USER/.bashrc
+   sudo sed -i -e "/export JAVA_HOME=/d" $HOME_DIR/$TRAF_USER/.bashrc
+   if [ $node_count -gt "1" ]; then
+      sudo cp -r $HOME_DIR/$TRAF_USER/.bashrc $HOME/tempBash
+      sudo chown $(whoami):$(whoami) $HOME/tempBash
+      $TRAF_PDCP $HOME/tempBash $HOME
+      $TRAF_PDSH sudo cp $HOME/tempBash $HOME_DIR/$TRAF_USER/.bashrc
+      $TRAF_PDSH sudo chown $TRAF_USER.trafodion $HOME_DIR/$TRAF_USER/.bashrc
+      $TRAF_PDSH sudo chmod 777 $HOME_DIR/$TRAF_USER/.bashrc
+      $TRAF_PDSH rm -rf $HOME/tempBash
+   fi 
    for node in $ALL_NODE_LIST
    do
       userForTrafodion=$(ssh -q -n $node grep "$TRAF_USER:" /etc/passwd | wc -l)

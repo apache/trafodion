@@ -55,9 +55,10 @@ else
        echo
        echo
        ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"initialize Trafodion;\" | sqlci" | tee -a $SQ_ROOT/initializeErrors.txt
-        foundError=$(grep "1392" $SQ_ROOT/initializeErrors.txt | wc -l)
-        if [ "$foundError" -ge "1" ]; then
-           ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"get version of metadata;\" | sqlci" | tee -a $SQ_ROOT/initalizeErrors.txt
+       error1392=$(grep "1392" $SQ_ROOT/initializeErrors.txt | wc -l)
+       error1395=$(grep "1395" $SQ_ROOT/initializeErrors.txt | wc -l)
+       if [ "$error1395" -ge "1" ] || [ "$error1392" -ge "1" ]; then
+          ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"get version of metadata;\" | sqlci" | tee -a $SQ_ROOT/initalizeErrors.txt
            metadataCurrent=$(grep "Metadata is current" $SQ_ROOT/initializeErrors.txt | wc -l)
            if [[ "$metadataCurrent" -ne "1" ]]; then
               ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"initialize Trafodion, upgrade;\" | sqlci" | tee -a $SQ_ROOT/initializeErrors.txt
