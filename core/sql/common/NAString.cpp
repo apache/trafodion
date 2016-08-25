@@ -1160,6 +1160,7 @@ static NABoolean tokIsFuncOrParenKeyword(const NAString &sqlText,
 	"FIRSTDAYOFYEAR ",     // Tandem-extension
 	"FLOAT ",              // Datatype with scales/precisions/length
 	"FLOOR ",              // Tandem-extension
+        "GROUP_CONCAT",        // MySQL-extension
 	"HASHPARTFUNC ",       // Tandem-extension
 	"HOUR ",               // Datatype with scales/precisions/length
 	"JULIANTIMESTAMP ",    // Tandem-extension
