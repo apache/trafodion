@@ -2496,6 +2496,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pStmtDDL>                alter_table_disable_index_clause
 %type <uint>  		        alter_stored_descriptor_option
 %type <boolean>   		optional_cascade
+%type <boolean>                 optional_skip_view_check
 %type <pStmtDDL>  		alter_table_add_column_clause
 %type <pStmtDDL>  		alter_table_drop_column_clause
 %type <pStmtDDL>  		alter_table_alter_column_clause //++ MV
@@ -30955,6 +30956,22 @@ optional_cascade : empty
                                   $$ = TRUE;
                                 }
 
+/* type boolean */
+optional_skip_view_check : empty
+                                {
+                                  $$ = FALSE;
+                                }
+
+                      | TOK_SKIP TOK_VIEW TOK_CHECK
+                                {
+                                  if (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+                                    {
+                                      yyerror("");
+                                      YYERROR;     /*internal syntax only!*/
+                                    }
+                                  $$ = TRUE;
+                                }
+
 //-- MV
 //----------------------------------------------------------------------------
 
@@ -31786,12 +31803,13 @@ alter_table_enable_index_clause : TOK_ENABLE TOK_ALL TOK_INDEXES
                                   delete $3;
                                 }
 
-alter_table_rename_clause : TOK_RENAME TOK_TO identifier optional_cascade
+alter_table_rename_clause : TOK_RENAME TOK_TO identifier optional_cascade optional_skip_view_check
                                 {
                                   $$ = new (PARSERHEAP())
 				    StmtDDLAlterTableRename
                                       ( *$3 // identifier (new name)
                                       ,  $4 // optional_cascade
+                                      ,  $5 // optional_skip_view_check
                                       );
                                   delete $3; // identifier
                                 }

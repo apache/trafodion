@@ -1338,6 +1338,8 @@ protected:
                   NABoolean inRecovery = FALSE);
   short alterRenameRepos(ExeCliInterface * cliInterface, NABoolean newToOld);
   short copyOldReposToNew(ExeCliInterface * cliInterface);
+  short dropAndLogReposViews(ExeCliInterface * cliInterface,
+                             NABoolean & someViewSaved /* out */);
 
 public:
 

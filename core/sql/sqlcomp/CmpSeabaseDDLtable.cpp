@@ -4111,23 +4111,26 @@ void CmpSeabaseDDL::renameSeabaseTable(
       return;
     }
 
-  // cannot rename if views are using this table
-  Queue * usingViewsQueue = NULL;
-  cliRC = getUsingViews(&cliInterface, objUID, usingViewsQueue);
-  if (cliRC < 0)
+  if (!renameTableNode->skipViewCheck())
     {
-      processReturn();
+      // cannot rename if views are using this table
+      Queue * usingViewsQueue = NULL;
+      cliRC = getUsingViews(&cliInterface, objUID, usingViewsQueue);
+      if (cliRC < 0)
+        {
+          processReturn();
       
-      return;
-    }
+          return;
+        }
   
-  if (usingViewsQueue->numEntries() > 0)
-    {
-      *CmpCommon::diags() << DgSqlCode(-1427)
-                          << DgString0("Reason: Operation not allowed if dependent views exist. Drop the views and recreate them after rename.");
+      if (usingViewsQueue->numEntries() > 0)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1427)
+                              << DgString0("Reason: Operation not allowed if dependent views exist. Drop the views and recreate them after rename.");
       
-      processReturn();
-      return;
+          processReturn();
+          return;
+        }
     }
 
   cliRC = updateObjectName(&cliInterface,
