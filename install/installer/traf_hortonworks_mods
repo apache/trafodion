@@ -132,18 +132,18 @@ fi
 #=======================================
 #Check that HBase-trx copied to all nodes
 
-for node in $HBASE_NODES
-do
-   copiedOver=$(ssh -q -n $node sudo ls $HADOOP_PATH/hbase-trx* | wc -l)
-   if [[ $copiedOver -ne "1" ]]; then
-      echo "***ERROR: $hbase_trx_jar was not copied on $node"
-      echo "***ERROR: Please investigate why this happened"
-      echo "***ERROR: Trafodion can not start without this. EXITING..."
-      exit -1
-   fi
-done
+#for node in $HBASE_NODES
+#do
+#   copiedOver=$(ssh -q -n $node sudo ls $HADOOP_PATH/hbase-trx* | wc -l)
+#   if [[ $copiedOver -ne "1" ]]; then
+#      echo "***ERROR: $hbase_trx_jar was not copied on $node"
+#      echo "***ERROR: Please investigate why this happened"
+#      echo "***ERROR: Trafodion can not start without this. EXITING..."
+#      exit -1
+#   fi
+#done
 
-echo "***INFO: $hbase_trx_jar copied correctly! Huzzah."
+#echo "***INFO: $hbase_trx_jar copied correctly! Huzzah."
 
 
 
