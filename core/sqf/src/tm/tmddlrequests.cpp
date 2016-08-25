@@ -24,6 +24,7 @@
 #include "dtm/tm.h"
 #include <string.h>
 #include <iostream>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -39,13 +40,24 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
    char la_tbldesc[TM_MAX_DDLREQUEST_STRING];
    char la_tblname[TM_MAX_DDLREQUEST_STRING];
    char* str_key;
-   str_key = new char[TM_MAX_DDLREQUEST_STRING];
+   if(pv_keyLength <= 0) 
+   {
+     cout << "createTableReq bad input pv_keyLength, abort" << endl;
+     abort();
+   }
+   str_key = new char[pv_keyLength];
    char** la_keys;
-   la_keys = new char *[TM_MAX_DDLREQUEST_STRING];
+   if(pv_numSplits < 0)
+   {
+     cout << "createTableReq bad input pv_numSplits, abort" << endl;
+     abort();
+   }
+   la_keys = new char *[pv_numSplits];
 
    int lv_tblname_len = pp_env->GetArrayLength(pv_tblname);
+   
    if(lv_tblname_len > TM_MAX_DDLREQUEST_STRING) {
-      cout << "Table name length is larger than max allowed" << endl;
+      cout << "Table name length is larger than max allowed [" << TM_MAX_DDLREQUEST_STRING << "]" << endl;
    }
    else {
       int lv_tbldesc_length = pp_env->GetArrayLength(pv_tableDescriptor);
