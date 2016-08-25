@@ -1118,7 +1118,8 @@ protected:
   short recreateUsingViews(ExeCliInterface *cliInterface,
                            NAList<NAString> &viewNameList,
                            NAList<NAString> &viewDefnList,
-                           NABoolean ddlXns);
+                           NABoolean ddlXns,
+                           Lng32 * firstBadOne = NULL);
 
   void alterSeabaseTableAlterIdentityColumn(
        StmtDDLAlterTableAlterColumnSetSGOption * alterIdentityColNode,
@@ -1338,6 +1339,8 @@ protected:
                   NABoolean inRecovery = FALSE);
   short alterRenameRepos(ExeCliInterface * cliInterface, NABoolean newToOld);
   short copyOldReposToNew(ExeCliInterface * cliInterface);
+  short migrateReposViews(ExeCliInterface * cliInterface,
+                          NABoolean & someViewSaved /* out */);
 
 public:
 
