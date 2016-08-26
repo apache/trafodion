@@ -44,6 +44,8 @@ import org.apache.hadoop.hbase.zookeeper.ZKUtil;
 import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
 import org.apache.zookeeper.KeeperException;
 
+import org.trafodion.coprocessor.TrxRegionObserver;
+
 public class SplitBalanceHelper {
     private static final Log LOG = LogFactory.getLog(SplitBalanceHelper.class);
 
@@ -284,7 +286,7 @@ public class SplitBalanceHelper {
     	  }
     }
 
-    protected void pendingWait(Set<TrxTransactionState> commitPendingTransactions, int pendingDelayLen) throws IOException {
+    public void pendingWait(Set<TrxTransactionState> commitPendingTransactions, int pendingDelayLen) throws IOException {
         int count = 1;
         while (!pendingListClear(commitPendingTransactions)) {
             try {
@@ -315,7 +317,7 @@ public class SplitBalanceHelper {
     }
     */
 
-    protected void pendingAndScannersWait(Set<TrxTransactionState> commitPendingTransactions,
+    public void pendingAndScannersWait(Set<TrxTransactionState> commitPendingTransactions,
             ConcurrentHashMap<Long, TransactionalRegionScannerHolder> scanners,
             ConcurrentHashMap<String, TrxTransactionState> transactionsById, int pendingDelayLen) throws IOException {
         int count = 1;
@@ -331,7 +333,7 @@ public class SplitBalanceHelper {
         }
     }
 
-    protected void activeWait(ConcurrentHashMap<String, TrxTransactionState> transactionsById, int activeDelayLen,
+    public void activeWait(ConcurrentHashMap<String, TrxTransactionState> transactionsById, int activeDelayLen,
             int splitDelayLimit) throws IOException {
         int counter = 0;
         int minutes = 0;

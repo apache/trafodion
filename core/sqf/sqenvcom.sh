@@ -862,15 +862,9 @@ if [[ -n "$HBASE_CNF_DIR"  ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HBASE_CNF_DIR";
 if [[ -n "$HIVE_CNF_DIR"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HIVE_CNF_DIR";   fi
 if [[ -n "$SQ_CLASSPATH"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:";   fi
 
-# set Trx in classpath only incase of workstation env.
-# In case of cluster, correct version of trx is already installed by
-# installer and hbase classpath already contains the correct trx jar.
-# In future, installer can put additional hints in bashrc to cleanup
-# and fine tune these adjustments for many other jars.
-if [[ -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
-        SQ_CLASSPATH=${SQ_CLASSPATH}:${HBASE_TRXDIR}/${HBASE_TRX_JAR}
-fi
-
+# Trx will put into HDFS hbase classpath will never contains trx jar.
+# this will work for trafodion process.
+SQ_CLASSPATH=${SQ_CLASSPATH}:${HBASE_TRXDIR}/${HBASE_TRX_JAR}
 
 SQ_CLASSPATH=${SQ_CLASSPATH}:\
 $MY_SQROOT/export/lib/${DTM_COMMON_JAR}:\

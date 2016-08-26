@@ -5,13 +5,12 @@ tm/hbasetmlib2/testrun
 hbase-trx/src/main/java/org/apache/hadoop/hbase/client/PatchClientScanner.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/client/transactional/SsccTransactionalScanner.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/client/transactional/TransactionalScanner.java
-hbase-trx/src/main/java/org/apache/hadoop/hbase/coprocessor/transactional/SsccRegionEndpoint.java
-hbase-trx/src/main/java/org/apache/hadoop/hbase/coprocessor/transactional/TrxRegionEndpoint.java
-hbase-trx/src/main/java/org/apache/hadoop/hbase/coprocessor/transactional/TrxRegionObserver.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/regionserver/transactional/CleanOldTransactionsChore.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/regionserver/transactional/KeyValueListScanner.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/regionserver/transactional/MemoryUsageChore.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/regionserver/transactional/TrxTransactionState.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/client/ClientScanner98.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/client/TrafParallelClientScanner.java
-
+hbase-trx/src/main/java/org/trafodion/coprocessor/SsccRegionEndpoint.java
+hbase-trx/src/main/java/org/trafodion/coprocessor/TrxRegionEndpoint.java
+hbase-trx/src/main/java/org/trafodion/coprocessor/TrxRegionObserver.java

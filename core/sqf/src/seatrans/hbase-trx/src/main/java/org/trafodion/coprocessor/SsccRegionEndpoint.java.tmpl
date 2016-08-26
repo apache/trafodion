@@ -21,7 +21,7 @@
 * @@@ END COPYRIGHT @@@
 **/
 
-package org.apache.hadoop.hbase.coprocessor.transactional;
+package org.trafodion.coprocessor;
 
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -145,6 +145,8 @@ import org.apache.hadoop.hbase.wal.WAL;
 import org.apache.hadoop.hbase.zookeeper.ZKUtil;
 import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
 import org.apache.zookeeper.KeeperException;
+
+import org.trafodion.coprocessor.*;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
