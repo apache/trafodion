@@ -470,10 +470,6 @@ NABoolean
 ComResWords::isSqlReservedWord(const char *word,NABoolean mp_context,
 			       UInt32 ifSetFlags)
 {
-  // no reserved words in mode_special_4
-  if ((ifSetFlags & MODE_SPECIAL_4_) != 0)
-    return FALSE;
-
   char uword[MAX_RESWORD_LENGTH];
 
   NABoolean lookup = TRUE;

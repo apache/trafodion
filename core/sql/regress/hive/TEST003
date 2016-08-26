@@ -95,7 +95,7 @@ insert into hive.ins_promotion select *, p_promo_sk from hive.promotion;
 -- number of columns doesn't match
 
 prepare s from
-insert into hive.ins_time_dim values ('a', 2, 3, 4, 5, 6, 'c', 'd', 'e', 'f');
+insert into hive.ins_time_dim values (current_time, 2, 3, 4, 5, 6, 'c', 'd', 'e', 'f');
 -- wrong data types
 
 
@@ -132,7 +132,7 @@ execute s1;
 prepare s1 from values('lp 1425661 - Hang with hive scan and [FIRST N]');
 execute s1;
 
-prepare s from insert into ins_customer_demographics select * from customer_demographics;
+prepare s from insert OVERWRITE TABLE ins_customer_demographics select * from customer_demographics;
 execute s;
 select count(*) from hive.customer_demographics;
 select count(*) from hive.ins_customer_demographics;

@@ -139,15 +139,15 @@ P_PROMO_SK   P_PROMO_ID                 P_START_DATE_SK  P_END_DATE_SK  P_ITEM_S
 >>-- number of columns doesn't match
 >>
 >>prepare s from
-+>insert into hive.ins_time_dim values ('a', 2, 3, 4, 5, 6, 'c', 'd', 'e', 'f');
++>insert into hive.ins_time_dim values (current_time, 2, 3, 4, 5, 6, 'c', 'd', 'e', 'f');
 
-*** ERROR[4039] Column T_TIME_SK is of type INTEGER, incompatible with the value's type, CHAR(1).
+*** ERROR[4039] Column T_TIME_SK is of type INTEGER, incompatible with the value's type, TIME(0).
 
 *** ERROR[8822] The statement was not prepared.
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 
-*** WARNING[4039] Column T_TIME_SK is of type INTEGER, incompatible with the value's type, CHAR(1).
+*** WARNING[4039] Column T_TIME_SK is of type INTEGER, incompatible with the value's type, TIME(0).
 
 >>-- wrong data types
 >>
@@ -291,7 +291,7 @@ lp 1425661 - Hang with hive scan and [FIRST N]
 
 --- 1 row(s) selected.
 >>
->>prepare s from insert into ins_customer_demographics select * from customer_demographics;
+>>prepare s from insert OVERWRITE TABLE ins_customer_demographics select * from customer_demographics;
 
 --- SQL command prepared.
 >>execute s;

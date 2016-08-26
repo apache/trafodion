@@ -2277,8 +2277,7 @@ ItemExpr *processINlist(ItemExpr *lhs, ItemExpr *rhs)
 {
   ItemExpr * retItemExpr = NULL;
   Lng32 defaultsLimit = ActiveSchemaDB()->getDefaults().getAsLong(COMP_INT_22);
-  if ( /*** (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) && *** Allow for NEO users **/
-      (rhs->castToItemExpr()->getOperatorType() == ITM_ITEM_LIST))
+  if (rhs->castToItemExpr()->getOperatorType() == ITM_ITEM_LIST)
     {
       ItemList * il = (ItemList*)rhs;
       if ((defaultsLimit > 0) && // if defaultsLimit == 0 the the feature is turned OFF.

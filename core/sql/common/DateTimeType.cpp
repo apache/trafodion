@@ -130,37 +130,22 @@ NABoolean DatetimeType::isCompatible(const NAType& other, UInt32 * flags) const
   if (NOT NAType::isCompatible(other, flags))
     return FALSE;
 
+  // DATE/TIME, TIMESTAMP/TIME are not compatible. All others are.
   if (getStartField() != ((DatetimeType&) other).getStartField())
     return FALSE;
 
-  NABoolean modeSpecial4 = 
-    ((flags) && ((*flags & NAType::MODE_SPECIAL_4) != 0));
-  
+  NABoolean allowIncompOper = 
+    ((flags) && ((*flags & NAType::ALLOW_INCOMP_OPER) != 0));
   const DatetimeType* datetime2 = (DatetimeType*) &other;
+  if (NOT allowIncompOper)
+    {
+      if (getEndField() == datetime2->getEndField())
+        return TRUE;
+      else
+        return FALSE;
+    }
 
-  if (NOT modeSpecial4)
-    {
-      if (getEndField() == datetime2->getEndField())
-        return TRUE;
-      else
-        return FALSE;
-    }
-  else
-    {
-      // modespecial 4 
-      // DATE/DATE, TIME/TIME, DATE/TIMESTAMP(0), TIMESTAMP(0)/DATE,
-      // TIMESTAMP(*)/TIMESTAMP(*) are compatible.( '*' is 0-6 )
-      // Others are not.
-      if (getEndField() == datetime2->getEndField())
-        return TRUE;
-      else if ((getFractionPrecision() == 0) && 
-               (datetime2->getFractionPrecision() == 0))
-        return TRUE;
-      else
-        return FALSE;
-    }
-  
-  return FALSE;
+  return TRUE;
 }
 
 #if defined( NA_LITTLE_ENDIAN )

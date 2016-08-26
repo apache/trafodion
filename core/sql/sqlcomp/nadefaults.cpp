@@ -376,6 +376,12 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
  // the two is supported. See binder for details.
   DDkwd__(ALLOW_INCOMPATIBLE_COMPARISON,	"OFF"),
 
+ // this default, if set to ON, will allow certain incompatible
+ // comparisons. This includes incompatible comparisons, assignments,
+ // conversions, UNION, arith, string and case stmts.
+ // See binder(BindItemExpr.cpp, SynthType.cpp) for details.
+  DDkwd__(ALLOW_INCOMPATIBLE_OPERATIONS,	"OFF"),
+
   // if set to 2, the replicateNonKeyVEGPred() mdamkey method
   // will try to use inputs to filter out VEG elements that are not
   // local  to the associated table to minimize predicate replication.
@@ -402,8 +408,10 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
   // specified in a regular CREATE VIEW (not a create MV) statement.
   DDkwd__(ALLOW_ORDER_BY_IN_CREATE_VIEW,	"ON"),
 
+  DDkwd__(ALLOW_ORDER_BY_IN_SUBQUERIES,	        "OFF"),
+
   // rand() function in sql is disabled unless this CQD is turned on
-  DDkwd__(ALLOW_RAND_FUNCTION,			"OFF"),
+  DDkwd__(ALLOW_RAND_FUNCTION,			"ON"),
 
   DDkwd__(ALLOW_RANGE_PARTITIONING,	        "TRUE"),
 
@@ -1691,12 +1699,13 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_XPLN_SIZE_DOWN,			"8"),
   DDui1__(GEN_XPLN_SIZE_UP,			"16"),
 
-
   // When less or equal to this CQD (5000 rows by default), a partial root 
   // will be running in the Master. Set to 0 to disable the feature.
   DDint__(GROUP_BY_PARTIAL_ROOT_THRESHOLD,	"5000"),
 
   DDkwd__(GROUP_BY_USING_ORDINAL,		"MINIMUM"),
+
+  DDkwd__(GROUP_OR_ORDER_BY_EXPR,		"OFF"),
 
   // HASH_JOINS ON means do HASH_JOINS
  XDDkwd__(HASH_JOINS,				"ON"),
@@ -2274,12 +2283,8 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
  SDDkwd__(MODE_SPECIAL_1,                       "OFF"),
 
- SDDkwd__(MODE_SPECIAL_2,                       "OFF"),
-
-  // enable special  features in R2.93
-  DDkwd__(MODE_SPECIAL_3,                       "OFF"),
   DDkwd__(MODE_SPECIAL_4,                       "OFF"),
-  DDkwd__(MODE_SPECIAL_5,                       "OFF"),
+
   DDflt0_(MSCF_CONCURRENCY_IO,			"0.10"),
   DDflt0_(MSCF_CONCURRENCY_MSG,			"0.10"),
 
@@ -5162,8 +5167,6 @@ NABoolean NADefaults::isReadonlyAttribute(const char* attrName) const
      return FALSE; // for internal development and testing purposes
 
    if (( stricmp(attrName, "ISO_MAPPING") == 0 )||
-       ( stricmp(attrName, "MODE_SPECIAL_1") == 0 ) ||
-       ( stricmp(attrName, "MODE_SPECIAL_2") == 0 ) ||
        ( stricmp(attrName, "NATIONAL_CHARSET") == 0 ) ||
        ( stricmp(attrName, "VALIDATE_VIEWS_AT_OPEN_TIME") == 0 ) ||
        ( stricmp(attrName, "USER_EXPERIENCE_LEVEL") == 0 ) ||
@@ -5176,7 +5179,7 @@ NABoolean NADefaults::isReadonlyAttribute(const char* attrName) const
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_PA") == 0 ) ||
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_SEQUENCE") == 0 ) ||
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE") == 0 ) ||
-	   ( stricmp(attrName, "SORT_ALGO") == 0 ) ||
+       ( stricmp(attrName, "SORT_ALGO") == 0 ) ||
        ( stricmp(attrName, "OVERFLOW_MODE") == 0 )
      )
      return TRUE;
@@ -5571,15 +5574,30 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
       //}
       //break;
 
+      case ALLOW_INCOMPATIBLE_ASSIGNMENT:
+      case ALLOW_INCOMPATIBLE_COMPARISON:
+	{
+	  NAString val;
+          
+          if (value == "ON")
+            val = "ON";
+          else
+            val = "OFF";
+                    
+          insert(ALLOW_INCOMPATIBLE_OPERATIONS, val, errOrWarn);
+        }
+        break;
+
       case MODE_SPECIAL_1:
 	{
-	  if (getToken(MODE_SPECIAL_2) == DF_ON)
-	    {
-	      // MS1 was already set by now. Reset it and return an error.
-	      insert(MODE_SPECIAL_1, "OFF", errOrWarn);
+	  NAString val;
+          
+          if (value == "ON")
+            val = "ON";
+          else
+            val = "OFF";
 
-	      attrEnum = __INVALID_DEFAULT_ATTRIBUTE;
-	    }
+          insert(ALLOW_INCOMPATIBLE_OPERATIONS, val, errOrWarn);
 
 	  // find_suitable_key to be turned off in this mode, unless
 	  // it has been explicitely set.
@@ -5587,36 +5605,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	    {
 	      insert(VOLATILE_TABLE_FIND_SUITABLE_KEY, "OFF", errOrWarn);
 	    }
-	}
-      break;
-
-      case MODE_SPECIAL_2:
-	{
-	  NAString val;
-	  if (getToken(MODE_SPECIAL_1) == DF_ON)
-	    {
-	      // MS2 was already set by now. Reset it and return an error.
-	      insert(MODE_SPECIAL_2, "OFF", errOrWarn);
-
-	      attrEnum = __INVALID_DEFAULT_ATTRIBUTE;
-	      break;
-	    }
-
-	  if (value == "ON")
-	    val = "ON";
-	  else
-	    val = resetToDefaults_[LIMIT_MAX_NUMERIC_PRECISION];
-
-	  if (getToken(LIMIT_MAX_NUMERIC_PRECISION) == DF_SYSTEM)
-	    {
-	      insert(LIMIT_MAX_NUMERIC_PRECISION, val, errOrWarn);
-	    }
-
-	  if (value == "ON")
-	    val = "2";
-	  else
-	    val = resetToDefaults_[ROUNDING_MODE];
-	  insert(ROUNDING_MODE, val, errOrWarn);
 	}
       break;
 
@@ -5628,15 +5616,10 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
             val = "ON";
           else
             val = "OFF";
-          
-          insert(ALLOW_INCOMPATIBLE_COMPARISON, val, errOrWarn);
-          
-          insert(ALLOW_INCOMPATIBLE_ASSIGNMENT, val, errOrWarn);
-          
+                    
+          insert(ALLOW_INCOMPATIBLE_OPERATIONS, val, errOrWarn);
           insert(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT, val, errOrWarn);
-          
-          insert(MODE_SPECIAL_3, val, errOrWarn);
-          
+                    
           NAString csVal;
           if (value == "ON")
             csVal = SQLCHARSETSTRING_UTF8;
@@ -5671,25 +5654,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
             Set_SqlParser_Flags(IN_MODE_SPECIAL_4);
           else
             Reset_SqlParser_Flags(IN_MODE_SPECIAL_4);
-	}
-      break;
-
-      case MODE_SPECIAL_5:
-	{
-	  NAString val;
-          
-          if (value == "ON")
-            val = "ON";
-          else
-            val = "OFF";
-          
-          insert(ALLOW_INCOMPATIBLE_COMPARISON, val, errOrWarn);
-          
-          insert(ALLOW_INCOMPATIBLE_ASSIGNMENT, val, errOrWarn);
-          
-          insert(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT, val, errOrWarn);
-
-          insert(TRAF_ALLOW_SELF_REF_CONSTR, val, errOrWarn);
 	}
       break;
 

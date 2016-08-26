@@ -124,9 +124,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.SCH.T140C
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.SCH.T140C
 Task:  PREPARATION     Status: Started    Object: TRAFODION.SCH.T140C
        Rows Processed: 2750311 
-Task:  PREPARATION     Status: Ended      ET: 00:00:35.794
+Task:  PREPARATION     Status: Ended      ET: 00:00:45.041
 Task:  COMPLETION      Status: Started    Object: TRAFODION.SCH.T140C
-Task:  COMPLETION      Status: Ended      ET: 00:00:01.515
+Task:  COMPLETION      Status: Ended      ET: 00:00:01.911
 
 --- 2750311 row(s) loaded.
 >>update statistics for table t140c on every column sample;
@@ -147,9 +147,9 @@ Task:  COMPLETION      Status: Ended      ET: 00:00:01.515
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212333332780085319
+PLAN_ID .................. 212338343609062204
 ROWS_OUT ................ 33
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select a from t140 where b>500;
 
 
@@ -158,7 +158,7 @@ ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 33
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 50
   fragment_id ............ 0
@@ -175,20 +175,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  TARGET_CODE ............ DEBUG
-  TARGET_CPU_FREQUENCY   199
-  TARGET_IO_SEEK_TIME .... 0.02
-  TARGET_IO_SEQ_READ_RATE  2.5
-  TARGET_MSG_LOCAL_RATE   10
-  TARGET_MSG_LOCAL_TIME    0.01
-  TARGET_MSG_REMOTE_RAT  100
-  TARGET_MSG_REMOTE_TIME   0.01
-  ARKCMP_FAKE_HW ......... ON
-  SKIP_METADATA_VIEWS .... ON
-  DEF_NUM_SMP_CPUS ....... 2
-  MAX_ESPS_PER_CPU_PER_OP  1
-  DEF_NUM_NODES_IN_ACTIVE  1
-  POS_ALLOW_NON_PK_TABLES  ON
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
@@ -199,7 +185,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 1816740699929440032
+  ObjectUIDs ............. 3636762910170544433
   select_list ............ TRAFODION.SCH.T140.A
 
 
@@ -207,8 +193,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 33
-EST_OPER_COST ............ 0.05
-EST_TOTAL_COST ........... 0.05
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 50
   fragment_id ............ 0
@@ -247,9 +233,9 @@ A
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212333332780433763
+PLAN_ID .................. 212338343609413438
 ROWS_OUT ................ 33
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select an from t140b where b<=200;
 
 
@@ -258,7 +244,7 @@ ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 33
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 75
   fragment_id ............ 0
@@ -275,20 +261,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  TARGET_CODE ............ DEBUG
-  TARGET_CPU_FREQUENCY   199
-  TARGET_IO_SEEK_TIME .... 0.02
-  TARGET_IO_SEQ_READ_RATE  2.5
-  TARGET_MSG_LOCAL_RATE   10
-  TARGET_MSG_LOCAL_TIME    0.01
-  TARGET_MSG_REMOTE_RAT  100
-  TARGET_MSG_REMOTE_TIME   0.01
-  ARKCMP_FAKE_HW ......... ON
-  SKIP_METADATA_VIEWS .... ON
-  DEF_NUM_SMP_CPUS ....... 2
-  MAX_ESPS_PER_CPU_PER_OP  1
-  DEF_NUM_NODES_IN_ACTIVE  1
-  POS_ALLOW_NON_PK_TABLES  ON
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
@@ -299,7 +271,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 1816740699929440212
+  ObjectUIDs ............. 3636762910170544692
   select_list ............ TRAFODION.SCH.T140B.AN
 
 
@@ -307,8 +279,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140B
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 33
-EST_OPER_COST ............ 0.05
-EST_TOTAL_COST ........... 0.05
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 75
   fragment_id ............ 0
@@ -334,9 +306,9 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212333332780550886
+PLAN_ID .................. 212338343609602246
 ROWS_OUT ................ 33
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select an from t140 where b<=200;
 
 
@@ -345,7 +317,7 @@ ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 33
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 75
   fragment_id ............ 0
@@ -362,20 +334,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  TARGET_CODE ............ DEBUG
-  TARGET_CPU_FREQUENCY   199
-  TARGET_IO_SEEK_TIME .... 0.02
-  TARGET_IO_SEQ_READ_RATE  2.5
-  TARGET_MSG_LOCAL_RATE   10
-  TARGET_MSG_LOCAL_TIME    0.01
-  TARGET_MSG_REMOTE_RAT  100
-  TARGET_MSG_REMOTE_TIME   0.01
-  ARKCMP_FAKE_HW ......... ON
-  SKIP_METADATA_VIEWS .... ON
-  DEF_NUM_SMP_CPUS ....... 2
-  MAX_ESPS_PER_CPU_PER_OP  1
-  DEF_NUM_NODES_IN_ACTIVE  1
-  POS_ALLOW_NON_PK_TABLES  ON
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
@@ -386,7 +344,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 1816740699929440032
+  ObjectUIDs ............. 3636762910170544433
   select_list ............ TRAFODION.SCH.T140.AN
 
 
@@ -394,8 +352,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 33
-EST_OPER_COST ............ 0.05
-EST_TOTAL_COST ........... 0.05
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 75
   fragment_id ............ 0
@@ -432,9 +390,9 @@ AN
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212333332780687252
+PLAN_ID .................. 212338343609793981
 ROWS_OUT ................ 10
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select an from t140 where b=200 and an is not null;
 
 
@@ -443,7 +401,7 @@ ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 10
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -460,20 +418,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  TARGET_CODE ............ DEBUG
-  TARGET_CPU_FREQUENCY   199
-  TARGET_IO_SEEK_TIME .... 0.02
-  TARGET_IO_SEQ_READ_RATE  2.5
-  TARGET_MSG_LOCAL_RATE   10
-  TARGET_MSG_LOCAL_TIME    0.01
-  TARGET_MSG_REMOTE_RAT  100
-  TARGET_MSG_REMOTE_TIME   0.01
-  ARKCMP_FAKE_HW ......... ON
-  SKIP_METADATA_VIEWS .... ON
-  DEF_NUM_SMP_CPUS ....... 2
-  MAX_ESPS_PER_CPU_PER_OP  1
-  DEF_NUM_NODES_IN_ACTIVE  1
-  POS_ALLOW_NON_PK_TABLES  ON
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
@@ -484,7 +428,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 1816740699929440032
+  ObjectUIDs ............. 3636762910170544433
   select_list ............ TRAFODION.SCH.T140.AN
   input_variables ........ %(200)
 
@@ -493,8 +437,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 10
-EST_OPER_COST ............ 0.05
-EST_TOTAL_COST ........... 0.05
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -528,9 +472,9 @@ AN
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212333332780824331
+PLAN_ID .................. 212338343609993741
 ROWS_OUT ................ 67
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select an, a from t140 where b!=500;
 
 
@@ -539,7 +483,7 @@ ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 67
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ......... 100
   fragment_id ............ 0
@@ -556,20 +500,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  TARGET_CODE ............ DEBUG
-  TARGET_CPU_FREQUENCY   199
-  TARGET_IO_SEEK_TIME .... 0.02
-  TARGET_IO_SEQ_READ_RATE  2.5
-  TARGET_MSG_LOCAL_RATE   10
-  TARGET_MSG_LOCAL_TIME    0.01
-  TARGET_MSG_REMOTE_RAT  100
-  TARGET_MSG_REMOTE_TIME   0.01
-  ARKCMP_FAKE_HW ......... ON
-  SKIP_METADATA_VIEWS .... ON
-  DEF_NUM_SMP_CPUS ....... 2
-  MAX_ESPS_PER_CPU_PER_OP  1
-  DEF_NUM_NODES_IN_ACTIVE  1
-  POS_ALLOW_NON_PK_TABLES  ON
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
@@ -580,7 +510,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 1816740699929440032
+  ObjectUIDs ............. 3636762910170544433
   select_list ............ TRAFODION.SCH.T140.AN, TRAFODION.SCH.T140.A
 
 
@@ -588,8 +518,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 67
-EST_OPER_COST ............ 0.05
-EST_TOTAL_COST ........... 0.05
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ......... 100
   fragment_id ............ 0
@@ -660,9 +590,9 @@ AN
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212333332781036815
+PLAN_ID .................. 212338343610235075
 ROWS_OUT ................ 10
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select an from t140 where bn=201 and an is not null;
 
 
@@ -671,7 +601,7 @@ ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 10
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -688,20 +618,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  TARGET_CODE ............ DEBUG
-  TARGET_CPU_FREQUENCY   199
-  TARGET_IO_SEEK_TIME .... 0.02
-  TARGET_IO_SEQ_READ_RATE  2.5
-  TARGET_MSG_LOCAL_RATE   10
-  TARGET_MSG_LOCAL_TIME    0.01
-  TARGET_MSG_REMOTE_RAT  100
-  TARGET_MSG_REMOTE_TIME   0.01
-  ARKCMP_FAKE_HW ......... ON
-  SKIP_METADATA_VIEWS .... ON
-  DEF_NUM_SMP_CPUS ....... 2
-  MAX_ESPS_PER_CPU_PER_OP  1
-  DEF_NUM_NODES_IN_ACTIVE  1
-  POS_ALLOW_NON_PK_TABLES  ON
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
@@ -712,7 +628,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 1816740699929440032
+  ObjectUIDs ............. 3636762910170544433
   select_list ............ TRAFODION.SCH.T140.AN
   input_variables ........ %(201)
 
@@ -721,8 +637,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 10
-EST_OPER_COST ............ 0.05
-EST_TOTAL_COST ........... 0.05
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 99
   fragment_id ............ 0
@@ -755,9 +671,9 @@ AN
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212333332781170537
+PLAN_ID .................. 212338343610423954
 ROWS_OUT ................ 67
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select an, a from t140 where bn!=501;
 
 
@@ -766,7 +682,7 @@ ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 67
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ......... 100
   fragment_id ............ 0
@@ -783,20 +699,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  TARGET_CODE ............ DEBUG
-  TARGET_CPU_FREQUENCY   199
-  TARGET_IO_SEEK_TIME .... 0.02
-  TARGET_IO_SEQ_READ_RATE  2.5
-  TARGET_MSG_LOCAL_RATE   10
-  TARGET_MSG_LOCAL_TIME    0.01
-  TARGET_MSG_REMOTE_RAT  100
-  TARGET_MSG_REMOTE_TIME   0.01
-  ARKCMP_FAKE_HW ......... ON
-  SKIP_METADATA_VIEWS .... ON
-  DEF_NUM_SMP_CPUS ....... 2
-  MAX_ESPS_PER_CPU_PER_OP  1
-  DEF_NUM_NODES_IN_ACTIVE  1
-  POS_ALLOW_NON_PK_TABLES  ON
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
@@ -807,7 +709,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 1816740699929440032
+  ObjectUIDs ............. 3636762910170544433
   select_list ............ TRAFODION.SCH.T140.AN, TRAFODION.SCH.T140.A
 
 
@@ -815,8 +717,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 67
-EST_OPER_COST ............ 0.05
-EST_TOTAL_COST ........... 0.05
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ......... 100
   fragment_id ............ 0
@@ -902,9 +804,9 @@ A
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212333332781389304
+PLAN_ID .................. 212338343610685313
 ROWS_OUT ................ 11
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select an from t140 where an between 20 and 40;
 
 
@@ -913,7 +815,7 @@ ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 11
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 75
   fragment_id ............ 0
@@ -930,20 +832,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  TARGET_CODE ............ DEBUG
-  TARGET_CPU_FREQUENCY   199
-  TARGET_IO_SEEK_TIME .... 0.02
-  TARGET_IO_SEQ_READ_RATE  2.5
-  TARGET_MSG_LOCAL_RATE   10
-  TARGET_MSG_LOCAL_TIME    0.01
-  TARGET_MSG_REMOTE_RAT  100
-  TARGET_MSG_REMOTE_TIME   0.01
-  ARKCMP_FAKE_HW ......... ON
-  SKIP_METADATA_VIEWS .... ON
-  DEF_NUM_SMP_CPUS ....... 2
-  MAX_ESPS_PER_CPU_PER_OP  1
-  DEF_NUM_NODES_IN_ACTIVE  1
-  POS_ALLOW_NON_PK_TABLES  ON
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
@@ -954,7 +842,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 1816740699929440032
+  ObjectUIDs ............. 3636762910170544433
   select_list ............ TRAFODION.SCH.T140.AN
 
 
@@ -962,8 +850,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140
 REQUESTS_IN .............. 1
 ROWS_OUT ................ 11
-EST_OPER_COST ............ 0.05
-EST_TOTAL_COST ........... 0.05
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est .......... 75
   fragment_id ............ 0
@@ -1021,9 +909,9 @@ AN
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212333332781583143
+PLAN_ID .................. 212338343610965450
 ROWS_OUT ................. 1
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select avg(a) from t140b;
 
 
@@ -1032,7 +920,7 @@ ROOT ======================================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -1049,20 +937,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  TARGET_CODE ............ DEBUG
-  TARGET_CPU_FREQUENCY   199
-  TARGET_IO_SEEK_TIME .... 0.02
-  TARGET_IO_SEQ_READ_RATE  2.5
-  TARGET_MSG_LOCAL_RATE   10
-  TARGET_MSG_LOCAL_TIME    0.01
-  TARGET_MSG_REMOTE_RAT  100
-  TARGET_MSG_REMOTE_TIME   0.01
-  ARKCMP_FAKE_HW ......... ON
-  SKIP_METADATA_VIEWS .... ON
-  DEF_NUM_SMP_CPUS ....... 2
-  MAX_ESPS_PER_CPU_PER_OP  1
-  DEF_NUM_NODES_IN_ACTIVE  1
-  POS_ALLOW_NON_PK_TABLES  ON
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
@@ -1075,7 +949,7 @@ DESCRIPTION
   PARALLEL_NUM_ESPS ...... 1
   HBASE_DOP_PARALLEL_SCAN  2
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 1816740699929440212
+  ObjectUIDs ............. 3636762910170544692
   select_list ............ cast(cast((cast((cast((cast(sum(TRAFODION.SCH.T140B.
                              A)) * cast(10000 ...0))) / cast(count(1 )))) /
                              cast(10000 ...0))))
@@ -1085,7 +959,7 @@ SORT_SCALAR_AGGR ==========================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -1098,8 +972,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140B
 REQUESTS_IN .............. 1
 ROWS_OUT ............... 100
-EST_OPER_COST ............ 0.05
-EST_TOTAL_COST ........... 0.05
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ......... 100
   fragment_id ............ 0
@@ -1135,9 +1009,9 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212333332781877617
+PLAN_ID .................. 212338343611266473
 ROWS_OUT ................. 1
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select avg(a) from t140b;
 
 
@@ -1146,7 +1020,7 @@ ROOT ======================================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -1163,20 +1037,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  TARGET_CODE ............ DEBUG
-  TARGET_CPU_FREQUENCY   199
-  TARGET_IO_SEEK_TIME .... 0.02
-  TARGET_IO_SEQ_READ_RATE  2.5
-  TARGET_MSG_LOCAL_RATE   10
-  TARGET_MSG_LOCAL_TIME    0.01
-  TARGET_MSG_REMOTE_RAT  100
-  TARGET_MSG_REMOTE_TIME   0.01
-  ARKCMP_FAKE_HW ......... ON
-  SKIP_METADATA_VIEWS .... ON
-  DEF_NUM_SMP_CPUS ....... 2
-  MAX_ESPS_PER_CPU_PER_OP  1
-  DEF_NUM_NODES_IN_ACTIVE  1
-  POS_ALLOW_NON_PK_TABLES  ON
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
@@ -1189,7 +1049,7 @@ DESCRIPTION
   PARALLEL_NUM_ESPS ...... 1
   HBASE_DOP_PARALLEL_SCAN  1
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 1816740699929440212
+  ObjectUIDs ............. 3636762910170544692
   select_list ............ cast(cast((cast((cast((cast(sum(TRAFODION.SCH.T140B.
                              A)) * cast(10000 ...0))) / cast(count(1 )))) /
                              cast(10000 ...0))))
@@ -1199,7 +1059,7 @@ SORT_SCALAR_AGGR ==========================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -1212,8 +1072,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140B
 REQUESTS_IN .............. 1
 ROWS_OUT ............... 100
-EST_OPER_COST ............ 0.05
-EST_TOTAL_COST ........... 0.05
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ......... 100
   fragment_id ............ 0
@@ -1245,9 +1105,9 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212333332781877617
+PLAN_ID .................. 212338343611266473
 ROWS_OUT ................. 1
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select avg(a) from t140b;
 
 
@@ -1256,7 +1116,7 @@ ROOT ======================================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -1273,20 +1133,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  TARGET_CODE ............ DEBUG
-  TARGET_CPU_FREQUENCY   199
-  TARGET_IO_SEEK_TIME .... 0.02
-  TARGET_IO_SEQ_READ_RATE  2.5
-  TARGET_MSG_LOCAL_RATE   10
-  TARGET_MSG_LOCAL_TIME    0.01
-  TARGET_MSG_REMOTE_RAT  100
-  TARGET_MSG_REMOTE_TIME   0.01
-  ARKCMP_FAKE_HW ......... ON
-  SKIP_METADATA_VIEWS .... ON
-  DEF_NUM_SMP_CPUS ....... 2
-  MAX_ESPS_PER_CPU_PER_OP  1
-  DEF_NUM_NODES_IN_ACTIVE  1
-  POS_ALLOW_NON_PK_TABLES  ON
   MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
@@ -1299,7 +1145,7 @@ DESCRIPTION
   PARALLEL_NUM_ESPS ...... 1
   HBASE_DOP_PARALLEL_SCAN  1
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 1816740699929440212
+  ObjectUIDs ............. 3636762910170544692
   select_list ............ cast(cast((cast((cast((cast(sum(TRAFODION.SCH.T140B.
                              A)) * cast(10000 ...0))) / cast(count(1 )))) /
                              cast(10000 ...0))))
@@ -1309,7 +1155,7 @@ SORT_SCALAR_AGGR ==========================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ........... 0.05
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -1322,8 +1168,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140B
 REQUESTS_IN .............. 1
 ROWS_OUT ............... 100
-EST_OPER_COST ............ 0.05
-EST_TOTAL_COST ........... 0.05
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ......... 100
   fragment_id ............ 0

@@ -1693,7 +1693,7 @@ enum DefaultConstants
   // -------------------------------------------------------------------------
   HIST_JOIN_CARD_LOWBOUND,
 
-  // allow any/first N in qubqueries.
+  // allow any/first N in subqueries.
   ALLOW_FIRSTN_IN_SUBQUERIES,
 
   // ------------------------------------------------------------------------
@@ -2542,10 +2542,6 @@ enum DefaultConstants
   // caller is nvci (scripts) process
   NVCI_PROCESS,
 
-  // if set to ON, turns on a subset of the 'special' features which are
-  // enabled using mode_special_1..
-  MODE_SPECIAL_2,
-
   // if this is set, then find a suitable key among all the columns of
   // a volatile table.
   // If this is not set, and there is no user specified primary key or
@@ -2971,8 +2967,6 @@ enum DefaultConstants
   // PUBLISH/UNPUBLISH command
   PUBLISHING_ROLES,
 
-  // enable special features
-  MODE_SPECIAL_3,
 
   // default used to test catman features
   CAT_TEST_BOOL,
@@ -3691,9 +3685,6 @@ enum DefaultConstants
   // hbase table index level, when zero, index level will be read from Hfile 
   HBASE_INDEX_LEVEL,
 
-  // enable special features for certain vendors.
-  MODE_SPECIAL_5,
-
   // enable self referencing foreign key constraints
   TRAF_ALLOW_SELF_REF_CONSTR,
   // enable ESP-RegionServer colocation logic
@@ -3854,6 +3845,14 @@ enum DefaultConstants
 
   // if ON, read object descriptor from metadata, if it was stored.
   TRAF_READ_OBJECT_DESC,
+
+  ALLOW_INCOMPATIBLE_OPERATIONS, 
+
+  // if ON: expr and renamed cols allowed in groupby/orderby expr.
+  GROUP_OR_ORDER_BY_EXPR,
+
+  // allow ORDER BY in subqueries.
+  ALLOW_ORDER_BY_IN_SUBQUERIES,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

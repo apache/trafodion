@@ -2139,19 +2139,6 @@ void OptimizerSimulator::capture_TableOrView(NATable * naTab)
       
       ofstream * viewLogfile = writeSysCallStream_[VIEWDDLS];
 
-      // Need to set CQDs to enable special syntax if running in special modes
-      if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
-      {
-          (*viewLogfile) << "control query default DISABLE_READ_ONLY 'ON';" << endl;
-          (*viewLogfile) << "control query default MODE_SPECIAL_1 'ON';" << endl;
-      }
-
-      if (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)
-      {
-          (*viewLogfile) << "control query default DISABLE_READ_ONLY 'ON';" << endl;
-          (*viewLogfile) << "control query default MODE_SPECIAL_2 'ON';" << endl;
-      }
-
       (*viewLogfile) << viewText <<endl;
 
       // insert viewName into hash table

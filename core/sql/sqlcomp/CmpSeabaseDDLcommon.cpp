@@ -8931,7 +8931,6 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
 
                   if (schemaNamePart == SEABASE_REGRESS_DEFAULT_SCHEMA)
                     {
-                      // create this schema
                       CmpCommon::diags()->clear();
                       cliRC = cliInterface.executeImmediate("create shared schema trafodion.sch");
                       if (cliRC >= 0)

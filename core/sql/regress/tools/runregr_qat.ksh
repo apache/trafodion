@@ -229,16 +229,11 @@ for i in $testfiles; do
         echo "$sqlci -i$tfileshp"
         $sqlci -i$tfileshp
       else
-        cidefsFile=
-        if [ -r "$REGRTSTDIR/cidefs" ]; then
-          cidefsFile="$REGRTSTDIR/cidefs"
-        fi
-
         if [ "$REGRCONCURRENT" -eq 1 ]; then
           echo "create schema ${TEST_SCHEMA}; set schema ${TEST_SCHEMA};" \
-            | cat $cidefsFile $sbdefsfile - $REGRTSTDIR/$tfile > $tfile.tmp
+            | cat $sbdefsfile - $REGRTSTDIR/$tfile > $tfile.tmp
         else
-          cat $cidefsFile $sbdefsfile $REGRTSTDIR/$tfile > $tfile.tmp
+          cat $sbdefsfile $REGRTSTDIR/$tfile > $tfile.tmp
         fi
         echo "$sqlci -i$tfile.tmp"
         $sqlci -i$tfile.tmp

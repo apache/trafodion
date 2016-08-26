@@ -6,12 +6,12 @@
 >>
 >>create table docs_part
 +>  ( seqno int not null not droppable primary key, text_data varchar(4000) )
-+> location $$partition$$
++> location $DATA
 +> hash2 partition
 +> (
-+>     add location $$partition1$$
-+>   , add location $$partition2$$
-+>   , add location $$partition3$$
++>     add location $DATA1
++>   , add location $DATA2
++>   , add location $DATA3
 +> );
 
 --- SQL operation complete.
@@ -19,12 +19,12 @@
 >>create table clicks
 +>  ( seqno int not null primary key, userid varchar(40), ts timestamp(6),
 +>    ipaddr char(20) )
-+> location $$partition$$
++> location $DATA
 +> hash2 partition
 +> (
-+>     add location $$partition1$$
-+>   , add location $$partition2$$
-+>   , add location $$partition3$$
++>     add location $DATA1
++>   , add location $DATA2
++>   , add location $DATA3
 +> );
 
 --- SQL operation complete.
@@ -49,7 +49,7 @@
 *** ERROR[11246] An error occurred locating function or class 'SESSIONIZE' in library 'TEST002.dll'.
 
 *** ERROR[11248] A call to dlsym returned errors 0 and 0. Details: 
-/opt/home/zellerh/trafodion/core/sqf/rundir/udr/TEST002.dll: undefined symbol: SESSIONIZE.
+/home/centos/ansharma_trafr21/incubator-trafodion/core/sqf/rundir/udr/TEST002.dll: undefined symbol: SESSIONIZE.
 
 --- SQL operation failed with errors.
 >>

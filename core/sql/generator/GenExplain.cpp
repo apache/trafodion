@@ -1357,10 +1357,17 @@ static NABoolean isInternalCQD(DefaultConstants attr)
 // regressions run. That can cause explain plan diffs.
 // Specify those cqds in these methods so they are not displayed.
 // This method is only called during regressions run.
-static NABoolean displayDuringRegressRun(DefaultConstants attr)
+NABoolean displayDuringRegressRun(DefaultConstants attr)
 {
   if ((attr == TRAF_READ_OBJECT_DESC) ||
-      (attr == TRAF_STORE_OBJECT_DESC))
+      (attr == TRAF_STORE_OBJECT_DESC) ||
+      (attr == ALLOW_INCOMPATIBLE_ASSIGNMENT) ||
+      (attr == ALLOW_INCOMPATIBLE_COMPARISON) ||
+      (attr == ALLOW_INCOMPATIBLE_OPERATIONS) ||
+      (attr == ALLOW_FIRSTN_IN_SUBQUERIES) ||
+      (attr == ALLOW_ORDER_BY_IN_SUBQUERIES) ||
+      (attr == GROUP_BY_USING_ORDINAL) ||
+      (attr == GROUP_OR_ORDER_BY_EXPR))
     return FALSE;
   else
     return TRUE;

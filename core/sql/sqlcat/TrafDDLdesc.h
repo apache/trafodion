@@ -1007,6 +1007,10 @@ public:
   Int16 /*ComRowFormat*/  rowFormat_;
   Int16 /*ComObjectType*/ objectType_; 
 
+  // next 8 bytes are fillers for future usage
+  Int16 /*ComStorageType*/ storageType_;
+  char filler0[6];
+
   Int64 catUID;
   Int64 schemaUID;
   Int64 objectUID;

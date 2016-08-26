@@ -21,7 +21,7 @@
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue May 24 21:30:23 2016
+-- Definition current  Sun Aug 21 05:08:36 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -50,7 +50,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Tue May 24 21:30:37 2016
+-- Definition current  Sun Aug 21 05:08:59 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -115,7 +115,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue May 24 21:31:43 2016
+-- Definition current  Sun Aug 21 05:10:25 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -141,7 +141,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Tue May 24 21:32:04 2016
+-- Definition current  Sun Aug 21 05:10:55 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -181,7 +181,7 @@ A            B            C
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue May 24 21:32:16 2016
+-- Definition current  Sun Aug 21 05:11:11 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -204,7 +204,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Tue May 24 21:32:22 2016
+-- Definition current  Sun Aug 21 05:11:30 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -430,28 +430,12 @@ CREATE VIEW TRAFODION.T013_SCH.TEMPV AS
 
 CONTROL QUERY DEFAULT
   SHOWCONTROL_SHOW_ALL          	OFF
-  TARGET_CODE                   	DEBUG
-  TARGET_CPU_FREQUENCY          	199.
-  TARGET_IO_SEEK_TIME           	0.020147
-  TARGET_IO_SEQ_READ_RATE       	2.5
-  TARGET_MSG_LOCAL_RATE         	10.
-  TARGET_MSG_LOCAL_TIME         	0.000125
-  TARGET_MSG_REMOTE_RATE        	100.
-  TARGET_MSG_REMOTE_TIME        	0.00125
-  ARKCMP_FAKE_HW                	ON
-  SKIP_METADATA_VIEWS           	ON
-  DEF_NUM_SMP_CPUS              	2
-  MAX_ESPS_PER_CPU_PER_OP       	1
-  DEF_NUM_NODES_IN_ACTIVE_CLUSTERS	1
-  POS_ALLOW_NON_PK_TABLES       	ON
   MODE_SEABASE                  	ON
   SEABASE_VOLATILE_TABLES       	ON
   HBASE_SERIALIZATION           	ON
   HBASE_SMALL_SCANNER           	SYSTEM
   HBASE_FILTER_PREDS            	2
   TRAF_INDEX_CREATE_OPT         	ON
-  TRAF_READ_OBJECT_DESC         	ON
-  TRAF_STORE_OBJECT_DESC        	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
   POS                           	OFF
   SCHEMA                        	TRAFODION.T013_SCH
@@ -464,7 +448,7 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue May 24 21:33:35 2016
+-- Definition current  Sun Aug 21 05:13:08 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -485,7 +469,7 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue May 24 21:33:43 2016
+-- Definition current  Sun Aug 21 05:13:19 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -577,7 +561,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Tue May 24 21:34:35 2016
+-- Definition current  Sun Aug 21 05:14:35 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -595,7 +579,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion volatile table T013T3
--- Definition current  Tue May 24 21:34:42 2016
+-- Definition current  Sun Aug 21 05:14:51 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -611,7 +595,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Tue May 24 21:34:55 2016
+-- Definition current  Sun Aug 21 05:15:07 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -677,7 +661,7 @@ CREATE VOLATILE TABLE T013T3
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Tue May 24 21:35:47 2016
+-- Definition current  Sun Aug 21 05:16:08 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1299,7 +1283,7 @@ CREATE VOLATILE TABLE T013T1
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue May 24 21:42:50 2016
+-- Definition current  Sun Aug 21 05:25:42 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE

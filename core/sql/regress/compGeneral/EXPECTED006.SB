@@ -109,40 +109,6 @@
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>-- Error 4026
->>#ifdef SEABASE_REGRESS
->>control query default DISABLE_READ_ONLY 'ON';
-
---- SQL operation complete.
->>#else
->>control query default COMP_BOOL_58 'ON';
->>#endif
->>control query default MODE_SPECIAL_1 'ON';
-
---- SQL operation complete.
->>control query default R2_HALLOWEEN_SUPPORT 'ON';
-
---- SQL operation complete.
->>prepare s1 from insert into t006t3 select * from t006t3 where a in (select a from t006t3);
-
-*** ERROR[4026] Reading from and inserting into, or updating in, or deleting from the same table, TRAFODION.SCH.T006T3, is not currently supported.
-
-*** ERROR[8822] The statement was not prepared.
-
->>control query default R2_HALLOWEEN_SUPPORT reset;
-
---- SQL operation complete.
->>control query default MODE_SPECIAL_1 reset;
-
---- SQL operation complete.
->>#ifdef SEABASE_REGRESS
->>control query default DISABLE_READ_ONLY reset;
-
---- SQL operation complete.
->>#else
->>control query default COMP_BOOL_58 reset;
->>#endif
->>
 >>-- Error 4034
 >>prepare xx from select * from t006t1 where a = 1234 collate default;
 
@@ -166,24 +132,15 @@
 >>-- Error 4039
 >>prepare xx from insert into t006t3 values ('a');
 
-*** ERROR[4039] Column A is of type INTEGER, incompatible with the value's type, CHAR(1).
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL command prepared.
 >>
 >>-- Error 4043
->>control query default MODE_SPECIAL_3 'ON';
-
---- SQL operation complete.
 >>prepare xx from select * from t006t1 where to_number(1112) = A;
 
 *** ERROR[4043] The operand of function TO_NUMBER must be character.
 
 *** ERROR[8822] The statement was not prepared.
 
->>control query default MODE_SPECIAL_3 reset;
-
---- SQL operation complete.
 >>prepare xx from select tokenstr('a', a) from t006t2;
 
 *** ERROR[4043] The operand of function TOKENSTR must be character.
@@ -261,19 +218,6 @@
 
 *** ERROR[8822] The statement was not prepared.
 
->>
->>control query default MODE_SPECIAL_4 'ON';
-
---- SQL operation complete.
->>prepare xx from select * from t006t1 where to_date(A, '99:99:99:99') = A;
-
-*** ERROR[4045] The operand of function TO_DATE must be numeric.
-
-*** ERROR[8822] The statement was not prepared.
-
->>control query default MODE_SPECIAL_4 reset;
-
---- SQL operation complete.
 >>
 >>-- Error 4046
 >>prepare xx from select ~(a) from t006t7;
@@ -429,33 +373,6 @@
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>#ifdef SEABASE_REGRESS
->>control query default DISABLE_READ_ONLY 'ON';
-
---- SQL operation complete.
->>#else
->>control query default COMP_BOOL_58 'ON';
->>#endif
->>control query default MODE_SPECIAL_1 'ON';
-
---- SQL operation complete.
->>prepare xx from select rows since(a = 11, a) from t006t1 sequence by a;
-
-*** ERROR[4052] The second operand of function ROWS SINCE must be numeric.
-
-*** ERROR[8822] The statement was not prepared.
-
->>control query default MODE_SPECIAL_1 reset;
-
---- SQL operation complete.
->>#ifdef SEABASE_REGRESS
->>control query default DISABLE_READ_ONLY reset;
-
---- SQL operation complete.
->>#else
->>control query default COMP_BOOL_58 reset;
->>#endif
->>
 >>-- Error 4053
 >>prepare xx from select bitextract(a, a, b) from t006t5;
 
@@ -515,44 +432,18 @@
 
 *** ERROR[8822] The statement was not prepared.
 
->>control query default MODE_SPECIAL_3 'ON';
-
---- SQL operation complete.
 >>prepare xx from select trunc(a) from t006t1;
 
 *** ERROR[4059] The first operand of function TRUNC must be numeric.
 
 *** ERROR[8822] The statement was not prepared.
 
->>control query default MODE_SPECIAL_3 reset;
-
---- SQL operation complete.
 >>prepare xx from select a**a from t006t1;
 
 *** ERROR[4059] The first operand of function '**' must be numeric.
 
 *** ERROR[8822] The statement was not prepared.
 
->>
->>-- Error 4065
->>control query default MODE_SPECIAL_4 'ON';
-
---- SQL operation complete.
->>prepare xx from select * from t006t1 where to_date(A, '201005') = A;
-
-*** ERROR[4065] The format, "201005", specified in the TO_DATE function is not supported.
-
-*** ERROR[8822] The statement was not prepared.
-
->>prepare xx from select * from t006t2 where to_date(A, 'YYYYMM') = A;
-
-*** ERROR[4041] Type DATE cannot be compared with type INTEGER.
-
-*** ERROR[8822] The statement was not prepared.
-
->>control query default MODE_SPECIAL_4 reset;
-
---- SQL operation complete.
 >>
 >>-- Error 4067
 >>prepare xx from select * from table (explain(NULL, 5));
@@ -579,18 +470,12 @@
 
 >>
 >>-- Error 4071
->>control query default MODE_SPECIAL_3 'ON';
-
---- SQL operation complete.
 >>prepare xx from select * from t006t1 where last_day(A) = A;
 
 *** ERROR[4071] The first operand of function LAST_DAY must be a datetime.
 
 *** ERROR[8822] The statement was not prepared.
 
->>control query default MODE_SPECIAL_3 reset;
-
---- SQL operation complete.
 >>
 >>prepare xx from select juliantimestamp(a) from t006t1;
 
@@ -729,54 +614,6 @@
 >>prepare xx from select replace(a, a, a) from t006t4;
 
 --- SQL command prepared.
->>
->>#ifdef SEABASE_REGRESS
->>control query default DISABLE_READ_ONLY 'ON';
-
---- SQL operation complete.
->>#else
->>control query default COMP_BOOL_58 'ON';
->>#endif
->>control query default MODE_SPECIAL_1 'ON';
-
---- SQL operation complete.
->>prepare xx from select substring(a for 3) from t006t1;
-
---- SQL command prepared.
->>prepare xx from select substring(a for 3) from t006t3;
-
---- SQL command prepared.
->>prepare xx from select substring(c for 3) from t006t5;
-
---- SQL command prepared.
->>prepare xx from select a from t006t1 group by 1 order by 1;
-
---- SQL command prepared.
->>prepare xx from select a from t006t1 group by A order by A;
-
---- SQL command prepared.
->>prepare xx from select * from t006t5 where c = 1231999;
-
---- SQL command prepared.
->>prepare xx from select * from t006t5 where a = date'12/31/1999';
-
---- SQL command prepared.
->>prepare xx from select * from t006t5 where cast(a as interval day) = 1;
-
---- SQL command prepared.
->>prepare xx from select * from t006t5 where 1 = interval '1' day;
-
---- SQL command prepared.
->>control query default MODE_SPECIAL_1 reset;
-
---- SQL operation complete.
->>#ifdef SEABASE_REGRESS
->>control query default DISABLE_READ_ONLY reset;
-
---- SQL operation complete.
->>#else
->>control query default COMP_BOOL_58 reset;
->>#endif
 >>
 >>prepare xx from select date_trunc('YEAR',a) from t006t1;
 
@@ -1225,5 +1062,89 @@
 >>control query default MEMORY_MONITOR 'OFF';
 
 --- SQL operation complete.
+>>
+>>obey TEST006(mode_special_tests);
+>>-- Error 4026
+>>control query default MODE_SPECIAL_1 'ON';
+
+--- SQL operation complete.
+>>control query default R2_HALLOWEEN_SUPPORT 'ON';
+
+--- SQL operation complete.
+>>prepare s1 from insert into t006t3 select * from t006t3 where a in (select a from t006t3);
+
+*** ERROR[4026] Reading from and inserting into, or updating in, or deleting from the same table, TRAFODION.SCH.T006T3, is not currently supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>control query default R2_HALLOWEEN_SUPPORT reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from select substring(a for 3) from t006t1;
+
+--- SQL command prepared.
+>>prepare xx from select substring(a for 3) from t006t3;
+
+--- SQL command prepared.
+>>prepare xx from select substring(c for 3) from t006t5;
+
+--- SQL command prepared.
+>>prepare xx from select a from t006t1 group by 1 order by 1;
+
+--- SQL command prepared.
+>>prepare xx from select a from t006t1 group by A order by A;
+
+--- SQL command prepared.
+>>prepare xx from select * from t006t5 where c = 1231999;
+
+--- SQL command prepared.
+>>prepare xx from select * from t006t5 where a = date'12/31/1999';
+
+--- SQL command prepared.
+>>prepare xx from select * from t006t5 where cast(a as interval day) = 1;
+
+--- SQL command prepared.
+>>prepare xx from select * from t006t5 where 1 = interval '1' day;
+
+--- SQL command prepared.
+>>
+>>prepare xx from select rows since(a = 11, a) from t006t1 sequence by a;
+
+*** ERROR[4052] The second operand of function ROWS SINCE must be numeric.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>control query default MODE_SPECIAL_1 reset;
+
+--- SQL operation complete.
+>>
+>>control query default MODE_SPECIAL_4 'ON';
+
+--- SQL operation complete.
+>>prepare xx from select * from t006t1 where to_date(A, '99:99:99:99') = A;
+
+*** ERROR[4045] The operand of function TO_DATE must be numeric.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Error 4065
+>>prepare xx from select * from t006t1 where to_date(A, '201005') = A;
+
+*** ERROR[4065] The format, "201005", specified in the TO_DATE function is not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare xx from select * from t006t2 where to_date(A, 'YYYYMM') = A;
+
+*** ERROR[4041] Type DATE cannot be compared with type INTEGER.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>control query default MODE_SPECIAL_4 reset;
+
+--- SQL operation complete.
+>>
 >>
 >>log;

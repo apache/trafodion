@@ -54,6 +54,8 @@ create catalog t013_volatile_cat_$$SYSNAME$$;
 create catalog t013_volatile_cat_NSK;
 #ifNT
 
+cleanup obsolete volatile tables;
+
 log LOG013 clear;
 
 #ifndef SEABASE_REGRESS

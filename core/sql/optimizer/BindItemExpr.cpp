@@ -698,7 +698,13 @@ void ItemExpr::bindSelf(BindWA *bindWA)
   for (Int32 i = 0; i < getArity(); i++, currChildNo()++) {
 
     ItemExpr *boundExpr = child(i)->bindNode(bindWA);
-    if (bindWA->errStatus()) return;
+    if (bindWA->errStatus()) 
+      return;
+    if (! boundExpr)
+      {
+        bindWA->setErrStatus();
+        return;
+      }
 
     if (boundExpr->getOperatorType() == ITM_CONSTANT &&
 	((ConstValue *)boundExpr)->isNullWasDefaultSpec())
@@ -2220,12 +2226,7 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
   }
 
   // Check if we are to allow certain incompatible comparisons
-  // Don't allow incompatible comparisons when DDL is being executed
-  if (((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_COMPARISON) == DF_ON) &&
-       (!CmpCommon::statement()->isDDL())) ||
-      (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-      (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON) ||
-      (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON))
+  if (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON)
   {
     // if left and right operands are incompatible, convert
     // one of them to the other type.
@@ -2344,30 +2345,6 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
 	    }
       }
 
-    if (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON)
-      {
-	if (((type1.getPrecision() == SQLDTCODE_TIMESTAMP) &&
-	     (type2.getPrecision() == SQLDTCODE_DATE)) ||
-	    ((type2.getPrecision() == SQLDTCODE_TIMESTAMP) &&
-	     (type1.getPrecision() == SQLDTCODE_DATE)))
-	  {
-	    // date and timestamp comparison.
-	    // Convert date to timestamp.
-	    conversion = 8;
-
-	    if (type1.getPrecision() == SQLDTCODE_TIMESTAMP)
-	      {
-		srcOpIndex = 1;
-		tgtOpIndex = 0;
-	      }
-	    else
-	      {
-		srcOpIndex = 0;
-		tgtOpIndex = 1;
-	      }
-	  }
-      }
-    
     // check for date to numeric comparison.
     // if one child is a column and the other child is not, then
     // convert the non-column child to the type of the column child.
@@ -2442,22 +2419,6 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
       tgtOpIndex = 1;
       conversion = 4;
     }
-
-
-    if ((CmpCommon::getDefault(MODE_SPECIAL_3) == DF_OFF) &&
-	((conversion == 6) ||
-	 (conversion == 7)))
-      {
-	return NULL; // conversion = 6 only supported with CB217
-      }
-    else if (NOT (((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_COMPARISON) == DF_ON) &&
-		   (!CmpCommon::statement()->isDDL())) ||
-		  (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-		  (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON) ||
-		  (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON)))
-      {
-	return NULL;
-      }
 
     ItemExpr * newOp = NULL;
 
@@ -3570,100 +3531,104 @@ ItemExpr *Concat::bindNode(BindWA *bindWA)
   if (bindWA->errStatus()) 
     return this;
 
-  if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
-    {
-      // allow DATE || CHAR, NUMERIC || CHAR
-      const NAType &type1 = 
-	child(0)->castToItemExpr()->getValueId().getType();
-      const NAType &type2 = 
-	child(1)->castToItemExpr()->getValueId().getType();
-
-      Int32 srcChildIndex = -1;
-      Int32 convType = -1;
-      if ((type1.getTypeQualifier() == NA_CHARACTER_TYPE) &&
-	  (type2.getTypeQualifier() == NA_DATETIME_TYPE))
-	{
-	  // convert child(1)(DATETIME) to char type
-	  srcChildIndex = 1;
-	  convType = 1;
-	}
-      else if ((type1.getTypeQualifier() == NA_DATETIME_TYPE) &&
-	       (type2.getTypeQualifier() == NA_CHARACTER_TYPE))
-	{
-	  // convert child(1)(DATETIME) to char type
-	  srcChildIndex = 0;
-	  convType = 1;
-	}
-      else if ((type1.getTypeQualifier() == NA_NUMERIC_TYPE) &&
-	       (type2.getTypeQualifier() == NA_CHARACTER_TYPE))
-	{
-	  // convert child(0)(NUMERIC) to char type
-	  srcChildIndex = 0;
-	  convType = 2;
-	}
-      else if ((type1.getTypeQualifier() == NA_CHARACTER_TYPE) &&
-	       (type2.getTypeQualifier() == NA_NUMERIC_TYPE))
-	{
-	  // convert child(1)(NUMERIC) to char type
-	  srcChildIndex = 1;
-	  convType = 2;
-	}
-      
-      if (srcChildIndex >= 0)
-	{
-	  Lng32 dLen = 0;
-	  if (convType == 1)
-	    {
-	      DatetimeType &dtType = (DatetimeType&)
-		child(srcChildIndex)->castToItemExpr()->getValueId().getType();
-	      dLen = dtType.getDisplayLength();
-	    }
-	  else if (convType == 2)
-	    {
-	      NumericType &nType = (NumericType&)
-		child(srcChildIndex)->castToItemExpr()->getValueId().getType();
-	      dLen =
-		nType.getDisplayLength(nType.getFSDatatype(),
-				       nType.getNominalSize(),
-				       nType.getPrecision(),
-				       nType.getScale(),
-				       0);
-	    }
-
-	  ItemExpr * newChild = NULL;
-	  if (convType == 1)
-	    {
-	      newChild =
-		new (bindWA->wHeap())
-		Cast(child(srcChildIndex),
-		     new (bindWA->wHeap())
-		     SQLChar(dLen,
-			     child(srcChildIndex)->castToItemExpr()->
-			     getValueId().getType().supportsSQLnull()));
-	      newChild = newChild->bindNode(bindWA);
-	      if (bindWA->errStatus())
-		return this;
-	    }
-	  else if (convType == 2)
-	    {
-	      Parser parser(bindWA->currentCmpContext());
-	      char buf[1000];
-
-	      // right justify the string representation of numeric operand 
-	      // and then do the concat
-	      sprintf(buf, "CAST(SPACE(%d - CHAR_LENGTH(CAST(@A1 AS VARCHAR(%d)))) || CAST(@A1 AS VARCHAR(%d)) AS VARCHAR(%d))",
-		      dLen, dLen, dLen, dLen);
-	      newChild = 
-		parser.getItemExprTree(buf, strlen(buf), BINDITEMEXPR_STMTCHARSET, 1, child(srcChildIndex));
-	      
-	      newChild = newChild->bindNode(bindWA);
-	      if (bindWA->errStatus()) 
-		return this;
-	    }
-
-	  setChild(srcChildIndex, newChild);
-	}
-    }
+  if (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON)
+  {
+    const NAType &type1 = 
+      child(0)->castToItemExpr()->getValueId().getType();
+    const NAType &type2 = 
+      child(1)->castToItemExpr()->getValueId().getType();
+    
+    // allow DATE || CHAR (in mode_special_1)
+    // allow NUMERIC || CHAR for all
+    Int32 srcChildIndex = -1;
+    Int32 convType = -1;
+    if ((type1.getTypeQualifier() == NA_CHARACTER_TYPE) &&
+        (type2.getTypeQualifier() == NA_DATETIME_TYPE))
+      {
+        // convert child(1)(DATETIME) to char type
+        srcChildIndex = 1;
+        convType = 1;
+      }
+    else if ((type1.getTypeQualifier() == NA_DATETIME_TYPE) &&
+             (type2.getTypeQualifier() == NA_CHARACTER_TYPE))
+      {
+        // convert child(1)(DATETIME) to char type
+        srcChildIndex = 0;
+        convType = 1;
+      }
+    else if ((type1.getTypeQualifier() == NA_NUMERIC_TYPE) &&
+             (type2.getTypeQualifier() == NA_CHARACTER_TYPE))
+      {
+        // convert child(0)(NUMERIC) to char type
+        srcChildIndex = 0;
+        convType = 2;
+      }
+    else if ((type1.getTypeQualifier() == NA_CHARACTER_TYPE) &&
+             (type2.getTypeQualifier() == NA_NUMERIC_TYPE))
+      {
+        // convert child(1)(NUMERIC) to char type
+        srcChildIndex = 1;
+        convType = 2;
+      }
+    
+    if ((srcChildIndex >= 0) &&
+        ((convType == 2) ||
+         ((convType == 1) &&
+          (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON))))         
+      {
+        Lng32 dLen = 0;
+        if (convType == 1)
+          {
+            DatetimeType &dtType = (DatetimeType&)
+              child(srcChildIndex)->castToItemExpr()->getValueId().getType();
+            dLen = dtType.getDisplayLength();
+          }
+        else if (convType == 2)
+          {
+            NumericType &nType = (NumericType&)
+              child(srcChildIndex)->castToItemExpr()->getValueId().getType();
+            dLen =
+              nType.getDisplayLength(nType.getFSDatatype(),
+                                     nType.getNominalSize(),
+                                     nType.getPrecision(),
+                                     nType.getScale(),
+                                     0);
+          }
+        
+        ItemExpr * newChild = NULL;
+        if (convType == 1)
+          {
+            newChild =
+              new (bindWA->wHeap())
+              Cast(child(srcChildIndex),
+                   new (bindWA->wHeap())
+                   SQLChar(dLen,
+                           child(srcChildIndex)->castToItemExpr()->
+                           getValueId().getType().supportsSQLnull()));
+            newChild = newChild->bindNode(bindWA);
+            if (bindWA->errStatus())
+              return this;
+          }
+        else if (convType == 2)
+          {
+            Parser parser(bindWA->currentCmpContext());
+            char buf[1000];
+            
+            // right justify the string representation of numeric operand 
+            // and then do the concat
+            sprintf(buf, "CAST(SPACE(%d - CHAR_LENGTH(CAST(@A1 AS VARCHAR(%d)))) || CAST(@A1 AS VARCHAR(%d)) AS VARCHAR(%d))",
+                    dLen, dLen, dLen, dLen);
+            newChild = 
+              parser.getItemExprTree(buf, strlen(buf), BINDITEMEXPR_STMTCHARSET, 1, child(srcChildIndex));
+            
+            newChild = newChild->bindNode(bindWA);
+            if (bindWA->errStatus()) 
+              return this;
+          }
+        
+        setChild(srcChildIndex, newChild);
+      }
+  }
 
   // Concat inherits from BuiltinFunction .. Function .. ItemExpr.
   BuiltinFunction::bindNode(bindWA);
@@ -4279,37 +4244,37 @@ ItemExpr *Trim::bindNode(BindWA *bindWA)
   if (bindWA->errStatus()) 
     return this;
 
-  if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
+  if (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON)
     {
       // if argument is numeric, convert it to string.
       const NAType &type1 = 
-	child(1)->castToItemExpr()->getValueId().getType();
+        child(1)->castToItemExpr()->getValueId().getType();
       if (type1.getTypeQualifier() == NA_NUMERIC_TYPE)
-	{
-	  const NumericType &numeric  = (NumericType&)type1;
-	  if ((numeric.isExact()) &&
-	      (NOT numeric.isBigNum()) &&
-	      (numeric.getScale() == 0))
-	    {
-	      Lng32 dLen =
-		numeric.getDisplayLength(numeric.getFSDatatype(),
-					 numeric.getNominalSize(),
-					 numeric.getPrecision(),
-					 numeric.getScale(),
-					 0);
-	      
-	      ItemExpr * newChild =
-		new (bindWA->wHeap())
-		Cast(child(1),
-		     new (bindWA->wHeap())
-		     SQLChar(dLen, type1.supportsSQLnull()));
-	      
-	      newChild = newChild->bindNode(bindWA);
-	      if (bindWA->errStatus())
-		return this;
-	      setChild(1, newChild);
- 	    }
-	}
+        {
+          const NumericType &numeric  = (NumericType&)type1;
+          if ((numeric.isExact()) &&
+              (NOT numeric.isBigNum()) &&
+              (numeric.getScale() == 0))
+            {
+              Lng32 dLen =
+                numeric.getDisplayLength(numeric.getFSDatatype(),
+                                         numeric.getNominalSize(),
+                                         numeric.getPrecision(),
+                                         numeric.getScale(),
+                                         0);
+              
+              ItemExpr * newChild =
+                new (bindWA->wHeap())
+                Cast(child(1),
+                     new (bindWA->wHeap())
+                     SQLChar(dLen, type1.supportsSQLnull()));
+              
+              newChild = newChild->bindNode(bindWA);
+              if (bindWA->errStatus())
+                return this;
+              setChild(1, newChild);
+            }
+        }
     }
 
   // Trim inherits from BuiltinFunction .. Function .. ItemExpr.
@@ -4751,7 +4716,13 @@ Int32 ItemExpr::convertToValueIdSet(ValueIdSet &vs,
       else
       {
         boundExpr = (ItemExpr *) currIE->bindNodeRoot(bindWA) ;
-        if (bindWA->errStatus()) return TRUE;             // error
+        if (bindWA->errStatus()) 
+          return TRUE;
+        if (! boundExpr)
+          {
+            bindWA->setErrStatus();
+            return TRUE;             // error
+          }
 
         if ( bindWA->getCurrentScope()->context()->inOrderBy() ||
              bindWA->getCurrentScope()->context()->inGroupByClause() )
@@ -5610,10 +5581,6 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
   //
   // <number> is the interval value equivalent of the least sig field 
   // of <datetime> for datetime computation.
-  NABoolean modeSpecial1 = (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON);
-
-  NABoolean modeSpecial4 = (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON);
-
   const NAType *naType0 = &child(0)->getValueId().getType();
   const NAType *naType1 = &child(1)->getValueId().getType();
   if (isDateMathFunction() &&
@@ -5632,28 +5599,20 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 	(naType1->getTypeQualifier() == NA_NUMERIC_TYPE)) ||
        ((naType0->getTypeQualifier() == NA_NUMERIC_TYPE) &&
 	(naType1->getTypeQualifier() == NA_INTERVAL_TYPE)) ) ||
-   	   
+      
       (isDateMathFunction() &&
        (naType0->getTypeQualifier() == NA_DATETIME_TYPE) &&
        (naType1->getTypeQualifier() == NA_INTERVAL_TYPE)) ||
-
-       ((modeSpecial1) &&
+      
+      ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
        (((naType0->getTypeQualifier() == NA_INTERVAL_TYPE) &&
-	(naType1->getTypeQualifier() == NA_INTERVAL_TYPE)) ||
-       ((naType0->getTypeQualifier() == NA_CHARACTER_TYPE) &&
-	(naType1->getTypeQualifier() == NA_NUMERIC_TYPE)) ||
-       ((naType0->getTypeQualifier() == NA_NUMERIC_TYPE) &&
-	 (naType1->getTypeQualifier() == NA_CHARACTER_TYPE)))) ||
-
-       ((modeSpecial4) &&
-       (((naType0->getTypeQualifier() == NA_INTERVAL_TYPE) &&
-	(naType1->getTypeQualifier() == NA_INTERVAL_TYPE)) ||
-       ((naType0->getTypeQualifier() == NA_CHARACTER_TYPE) &&
-	(naType1->getTypeQualifier() == NA_NUMERIC_TYPE)) ||
-       ((naType0->getTypeQualifier() == NA_NUMERIC_TYPE) &&
-	 (naType1->getTypeQualifier() == NA_CHARACTER_TYPE)) ||
-       ((naType0->getTypeQualifier() == NA_DATETIME_TYPE) &&
-        (naType1->getTypeQualifier() == NA_DATETIME_TYPE)))) )
+         (naType1->getTypeQualifier() == NA_INTERVAL_TYPE)) ||
+        ((naType0->getTypeQualifier() == NA_CHARACTER_TYPE) &&
+         (naType1->getTypeQualifier() == NA_NUMERIC_TYPE)) ||
+        ((naType0->getTypeQualifier() == NA_NUMERIC_TYPE) &&
+         (naType1->getTypeQualifier() == NA_CHARACTER_TYPE)) ||
+        ((naType0->getTypeQualifier() == NA_DATETIME_TYPE) &&
+         (naType1->getTypeQualifier() == NA_DATETIME_TYPE)))))
     {
       // if datetime +|- numeric, then cast numeric to interval type.
       // Validate that this is being done for
@@ -5690,7 +5649,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 	// if datetime +|- interval, then cast datetime to timestamp type.
 
      else if ((naType0->getTypeQualifier() == NA_DATETIME_TYPE) &&
-	  (naType1->getTypeQualifier() == NA_INTERVAL_TYPE))
+              (naType1->getTypeQualifier() == NA_INTERVAL_TYPE))
 	{
 	  const DatetimeType* datetime = (DatetimeType*)naType0;
 	  const IntervalType*  interval  = (IntervalType*)naType1;
@@ -5820,7 +5779,6 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 	       (naType1->getTypeQualifier() == NA_DATETIME_TYPE) &&
                (getOperatorType() == ITM_MINUS))
 	{
-          // in mode_special_4, datetime subtraction follows special orc semantics.
           // Column of DATE datatype is internally created as TIMESTAMP(0).
           // timestamp(0) - date               =  diff in days
           // timestamp(0) - timestamp(0)  = diff in days
@@ -5830,9 +5788,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
           if (((datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) ||
                (datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLDate)) &&
               ((datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) ||
-               (datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLDate)) &&
-              (datetime1->getScale() == 0) &&
-              (datetime2->getScale() == 0))
+               (datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLDate)))
             {
               ItemExpr * newChild = NULL;
               if (datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp)
@@ -6117,8 +6073,7 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
 
   if ((NOT child(0)->getValueId().getType().
        isCompatible(child(1)->getValueId().getType())) &&
-      ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-       (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_ASSIGNMENT) == DF_ON)) &&
+      (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
       ((child(1)->getOperatorType() != ITM_CONSTANT) ||
        (NOT ((ConstValue *) child(1).getPtr() )->isNull())))
     {
@@ -6160,8 +6115,7 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
       if ((opType == REL_UPDATE) || (opType == REL_INSERT))
 	{
 	  NABoolean specialMode = 
-	    ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-	     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON));
+	    (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON);
 
           NABoolean checkForTrunc = TRUE;
           NABoolean noStringTruncWarn = FALSE;
@@ -6516,8 +6470,7 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
 
   const ConstValue *patternNode, *escapeNode = NULL;
 
-  NABoolean specialMode = ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) || 
-			   (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON));
+  NABoolean specialMode = (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON);
 
   if (specialMode)
   {
@@ -7142,7 +7095,7 @@ ItemExpr *Case::bindNode(BindWA *bindWA)
     } while (ifThenElse AND ifThenElse->getOperatorType() == ITM_IF_THEN_ELSE);
   }
 
-  if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
+  if (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON)
     {
       // if operands are incompatible, insert cast node to convert them
       // to a common datatype.
@@ -7155,121 +7108,120 @@ ItemExpr *Case::bindNode(BindWA *bindWA)
       Lng32 dLen = 0;
       Lng32 thenClauseNum = 1;
       while ((ifThenElse) && (NOT done))
-	{
-	  thenClause = thenClause->bindNode(bindWA);
-	  if (bindWA->errStatus())
-	    return this;
-
-	  ifThenElse->setChild(thenClauseNum, thenClause);
-	  
-	  if ((thenClause->getOperatorType() == ITM_CONSTANT) &&
-	      ((ConstValue *)thenClause)->isNull())
-	    {
-	      // do nothing
-	    }
-	  else if (thenClause->getValueId().getType().getTypeQualifier() 
-	      == NA_CHARACTER_TYPE)
-	    {
-	      if (thenClause->getValueId().getType().getNominalSize() > dLen)
-		dLen = thenClause->getValueId().getType().getNominalSize();
-	      charFound = TRUE;
-	    }
-	  else if (thenClause->getValueId().getType().getTypeQualifier() 
-		   == NA_NUMERIC_TYPE)
-	    {
-	      NumericType &numeric = (NumericType&)
-		thenClause->getValueId().getType();
-	      if ((numeric.isExact()) &&
-		  //		  (NOT numeric.isBigNum()) &&
-		  (numeric.getScale() == 0))
-		{
-		  Lng32 numericDLen =
-		    numeric.getDisplayLength(numeric.getFSDatatype(),
-					   numeric.getNominalSize(),
-					   numeric.getPrecision(),
-					   numeric.getScale(),
-					   0);
-		  
-		  if (numericDLen > dLen)
-		    dLen = numericDLen;
-		  numericFound = TRUE;
-		}
-	      else
-		{
-		  done = TRUE;
-		}
-	    }
-	  else
-	    {
-	      done = TRUE;
-	    }
-
-	  if (thenClauseNum == 2)
-	    ifThenElse = NULL;
-	  else
-	    {
-	      if (ifThenElse->child(2)->getOperatorType() == ITM_IF_THEN_ELSE)
-		{
-		  ifThenElse = ifThenElse->child(2);
-		  thenClause = ifThenElse->child(1);
-		  thenClauseNum = 1;
-		}
-	      else
-		{
-		  // this is the else clause
-		  thenClause = ifThenElse->child(2);
-		  thenClauseNum = 2;
-		}
-	    }
-	} // while
-
+        {
+          thenClause = thenClause->bindNode(bindWA);
+          if (bindWA->errStatus())
+            return this;
+      
+          ifThenElse->setChild(thenClauseNum, thenClause);
+      
+          if ((thenClause->getOperatorType() == ITM_CONSTANT) &&
+              ((ConstValue *)thenClause)->isNull())
+            {
+              // do nothing
+            }
+          else if (thenClause->getValueId().getType().getTypeQualifier() 
+                   == NA_CHARACTER_TYPE)
+            {
+              if (thenClause->getValueId().getType().getNominalSize() > dLen)
+                dLen = thenClause->getValueId().getType().getNominalSize();
+              charFound = TRUE;
+            }
+          else if (thenClause->getValueId().getType().getTypeQualifier() 
+                   == NA_NUMERIC_TYPE)
+            {
+              NumericType &numeric = (NumericType&)
+                thenClause->getValueId().getType();
+              if ((numeric.isExact()) &&
+                  //		  (NOT numeric.isBigNum()) &&
+                  (numeric.getScale() == 0))
+                {
+                  Lng32 numericDLen =
+                    numeric.getDisplayLength(numeric.getFSDatatype(),
+                                             numeric.getNominalSize(),
+                                             numeric.getPrecision(),
+                                             numeric.getScale(),
+                                             0);
+              
+                  if (numericDLen > dLen)
+                    dLen = numericDLen;
+                  numericFound = TRUE;
+                }
+              else
+                {
+                  done = TRUE;
+                }
+            }
+          else
+            {
+              done = TRUE;
+            }
+      
+          if (thenClauseNum == 2)
+            ifThenElse = NULL;
+          else
+            {
+              if (ifThenElse->child(2)->getOperatorType() == ITM_IF_THEN_ELSE)
+                {
+                  ifThenElse = ifThenElse->child(2);
+                  thenClause = ifThenElse->child(1);
+                  thenClauseNum = 1;
+                }
+              else
+                {
+                  // this is the else clause
+                  thenClause = ifThenElse->child(2);
+                  thenClauseNum = 2;
+                }
+            }
+        } // while
+  
       if ((NOT done) && (charFound) && (numericFound))
-	{
-	  ifThenElse = child(0);
-	  thenClause = ifThenElse->child(1)->castToItemExpr();
-	  thenClauseNum = 1;
-	  while (ifThenElse)
-	    {
-	      if (thenClause->getValueId().getType().getTypeQualifier() 
-		  == NA_NUMERIC_TYPE)
-		{
-		  // cast to character
-		  thenClause =
-		    new (bindWA->wHeap())
-		    Cast(thenClause,
-			 new (bindWA->wHeap())
-			 SQLChar(dLen,
-				 thenClause->
-				 getValueId().getType().supportsSQLnull()));
-
-		  thenClause = thenClause->bindNode(bindWA);
-		  if (bindWA->errStatus())
-		    return this;
-
-		  ifThenElse->setChild(thenClauseNum, thenClause);
-		}
-
-	      if (thenClauseNum == 2)
-		ifThenElse = NULL;
-	      else
-		{
-		  if (ifThenElse->child(2)->getOperatorType() == ITM_IF_THEN_ELSE)
-		    {
-		      ifThenElse = ifThenElse->child(2);
-		      thenClause = ifThenElse->child(1);
-		      thenClauseNum = 1;
-		    }
-		  else
-		    {
-		      // this is the else clause
-		      thenClause = ifThenElse->child(2);
-		      thenClauseNum = 2;
-		    }
-		}
-	    } // while
-
-	}
-    } // mode special1
+        {
+          ifThenElse = child(0);
+          thenClause = ifThenElse->child(1)->castToItemExpr();
+          thenClauseNum = 1;
+          while (ifThenElse)
+            {
+              if (thenClause->getValueId().getType().getTypeQualifier() 
+                  == NA_NUMERIC_TYPE)
+                {
+                  // cast to character
+                  thenClause =
+                    new (bindWA->wHeap())
+                    Cast(thenClause,
+                         new (bindWA->wHeap())
+                         SQLChar(dLen,
+                                 thenClause->
+                                 getValueId().getType().supportsSQLnull()));
+                  
+                  thenClause = thenClause->bindNode(bindWA);
+                  if (bindWA->errStatus())
+                    return this;
+                  
+                  ifThenElse->setChild(thenClauseNum, thenClause);
+                }
+              
+              if (thenClauseNum == 2)
+                ifThenElse = NULL;
+              else
+                {
+                  if (ifThenElse->child(2)->getOperatorType() == ITM_IF_THEN_ELSE)
+                    {
+                      ifThenElse = ifThenElse->child(2);
+                      thenClause = ifThenElse->child(1);
+                      thenClauseNum = 1;
+                    }
+                  else
+                    {
+                      // this is the else clause
+                      thenClause = ifThenElse->child(2);
+                      thenClauseNum = 2;
+                    }
+                }
+            } // while
+        }
+    } // allow incompatible operations
   
   // Case inherits from BuiltinFunction .. Function .. ItemExpr.
   ItemExpr *boundExpr = BuiltinFunction::bindNode(bindWA);
@@ -8998,7 +8950,7 @@ ItemExpr *QuantifiedComp::bindNode(BindWA *bindWA)
 
   // if left child is incompatible with right child, insert a node
   // to convert left to right.
-  if ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) &&
+  if ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
       (createdFromINlist()))
     {
       const NAType &type1 = 
@@ -9998,8 +9950,7 @@ ItemExpr *ValueIdUnion::bindNode(BindWA *bindWA)
   if (nodeIsBound())
     return getValueId().getItemExpr();
 
-
-  if ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) &&
+  if ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
       (isTrueUnion()) &&
       (entries() == 2))
     {
@@ -10702,7 +10653,7 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 	if (tempBoundTree->getValueId().getType().getTypeQualifier() !=
 	    NA_DATETIME_TYPE)
 	  {
-	    // 4071 The operand of a LAST_DAY function must be a datetime.
+	    // 4071 The operand of a NEXT_DAY function must be a datetime.
 	    *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
 	    bindWA->setErrStatus();
 	    return this;

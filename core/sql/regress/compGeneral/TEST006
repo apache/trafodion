@@ -34,6 +34,7 @@ obey TEST006(positive_tests);
 obey TEST006(analyzer_tests);
 obey TEST006(defaults_tests);
 obey TEST006(misc_tests);
+obey TEST006(mode_special_tests);
 log;
 obey TEST006(clean_up);
 
@@ -109,23 +110,6 @@ prepare xx from select sum(max(a)) from t006t1;
 -- Error 4022
 prepare xx from insert into t006t2(a, a) select a, a from t006t3;
 
--- Error 4026
-#ifdef SEABASE_REGRESS
-control query default DISABLE_READ_ONLY 'ON';
-#else
-control query default COMP_BOOL_58 'ON';
-#endif
-control query default MODE_SPECIAL_1 'ON';
-control query default R2_HALLOWEEN_SUPPORT 'ON';
-prepare s1 from insert into t006t3 select * from t006t3 where a in (select a from t006t3);
-control query default R2_HALLOWEEN_SUPPORT reset;
-control query default MODE_SPECIAL_1 reset;
-#ifdef SEABASE_REGRESS
-control query default DISABLE_READ_ONLY reset;
-#else
-control query default COMP_BOOL_58 reset;
-#endif
-
 -- Error 4034
 prepare xx from select * from t006t1 where a = 1234 collate default;
 
@@ -136,9 +120,7 @@ prepare xx from select year(a) from t006t2;
 prepare xx from insert into t006t3 values ('a');
 
 -- Error 4043
-control query default MODE_SPECIAL_3 'ON';
 prepare xx from select * from t006t1 where to_number(1112) = A;
-control query default MODE_SPECIAL_3 reset;
 prepare xx from select tokenstr('a', a) from t006t2;
 prepare xx from select queryid_extract(a, b) from t006t5;
 prepare xx from select os_userid(a) from t006t2;
@@ -154,10 +136,6 @@ prepare xx from select abs(a) from t006t1;
 prepare xx from select user(a) from t006t1;
 prepare xx from select ~a from t006t1;
 prepare xx from select sin(a) from t006t1;
-
-control query default MODE_SPECIAL_4 'ON';
-prepare xx from select * from t006t1 where to_date(A, '99:99:99:99') = A;
-control query default MODE_SPECIAL_4 reset;
 
 -- Error 4046
 prepare xx from select ~(a) from t006t7;
@@ -194,20 +172,6 @@ prepare xx from select round(t006t2.a, t006t1.a) from t006t1, t006t2;
 prepare xx from select repeat(a, a) from t006t1;
 prepare xx from select offset(a,a,a) from t006t1;
 
-#ifdef SEABASE_REGRESS
-control query default DISABLE_READ_ONLY 'ON';
-#else
-control query default COMP_BOOL_58 'ON';
-#endif
-control query default MODE_SPECIAL_1 'ON';
-prepare xx from select rows since(a = 11, a) from t006t1 sequence by a;
-control query default MODE_SPECIAL_1 reset;
-#ifdef SEABASE_REGRESS
-control query default DISABLE_READ_ONLY reset;
-#else
-control query default COMP_BOOL_58 reset;
-#endif
-
 -- Error 4053
 prepare xx from select bitextract(a, a, b) from t006t5;
 prepare xx from select substring(a,1,a) from t006t1;
@@ -223,16 +187,8 @@ prepare xx from select movingcount(a, 1, a) from t006t1 sequence by a;
 
 -- Error 4059
 prepare xx from select round(a) from t006t1;
-control query default MODE_SPECIAL_3 'ON';
 prepare xx from select trunc(a) from t006t1;
-control query default MODE_SPECIAL_3 reset;
 prepare xx from select a**a from t006t1;
-
--- Error 4065
-control query default MODE_SPECIAL_4 'ON';
-prepare xx from select * from t006t1 where to_date(A, '201005') = A;
-prepare xx from select * from t006t2 where to_date(A, 'YYYYMM') = A;
-control query default MODE_SPECIAL_4 reset;
 
 -- Error 4067
 prepare xx from select * from table (explain(NULL, 5));
@@ -244,9 +200,7 @@ prepare xx from select convertfromhex(cast(a as char(1))) from t006t1;
 prepare xx from select converttimestamp(a) from t006t1;
 
 -- Error 4071
-control query default MODE_SPECIAL_3 'ON';
 prepare xx from select * from t006t1 where last_day(A) = A;
-control query default MODE_SPECIAL_3 reset;
 
 prepare xx from select juliantimestamp(a) from t006t1;
 
@@ -298,28 +252,6 @@ control query default MODE_SPECIAL_4 reset;
 prepare xx from select current_running from t006t1;
 prepare xx from select position(a in a) from t006t4;
 prepare xx from select replace(a, a, a) from t006t4;
-
-#ifdef SEABASE_REGRESS
-control query default DISABLE_READ_ONLY 'ON';
-#else
-control query default COMP_BOOL_58 'ON';
-#endif
-control query default MODE_SPECIAL_1 'ON';
-prepare xx from select substring(a for 3) from t006t1;
-prepare xx from select substring(a for 3) from t006t3;
-prepare xx from select substring(c for 3) from t006t5;
-prepare xx from select a from t006t1 group by 1 order by 1;
-prepare xx from select a from t006t1 group by A order by A;
-prepare xx from select * from t006t5 where c = 1231999;
-prepare xx from select * from t006t5 where a = date'12/31/1999';
-prepare xx from select * from t006t5 where cast(a as interval day) = 1;
-prepare xx from select * from t006t5 where 1 = interval '1' day;
-control query default MODE_SPECIAL_1 reset;
-#ifdef SEABASE_REGRESS
-control query default DISABLE_READ_ONLY reset;
-#else
-control query default COMP_BOOL_58 reset;
-#endif
 
 prepare xx from select date_trunc('YEAR',a) from t006t1;
 prepare xx from select date_trunc('YEAR',a) from t006t1;
@@ -519,4 +451,33 @@ control query default MEMORY_MONITOR_LOG_INSTANTLY 'on';
 control query default MEMORY_MONITOR_LOGFILE 'mml.log';
 prepare xx from select * from t006t2;
 control query default MEMORY_MONITOR 'OFF';
+
+?section mode_special_tests
+-- Error 4026
+control query default MODE_SPECIAL_1 'ON';
+control query default R2_HALLOWEEN_SUPPORT 'ON';
+prepare s1 from insert into t006t3 select * from t006t3 where a in (select a from t006t3);
+control query default R2_HALLOWEEN_SUPPORT reset;
+
+prepare xx from select substring(a for 3) from t006t1;
+prepare xx from select substring(a for 3) from t006t3;
+prepare xx from select substring(c for 3) from t006t5;
+prepare xx from select a from t006t1 group by 1 order by 1;
+prepare xx from select a from t006t1 group by A order by A;
+prepare xx from select * from t006t5 where c = 1231999;
+prepare xx from select * from t006t5 where a = date'12/31/1999';
+prepare xx from select * from t006t5 where cast(a as interval day) = 1;
+prepare xx from select * from t006t5 where 1 = interval '1' day;
+
+prepare xx from select rows since(a = 11, a) from t006t1 sequence by a;
+control query default MODE_SPECIAL_1 reset;
+
+control query default MODE_SPECIAL_4 'ON';
+prepare xx from select * from t006t1 where to_date(A, '99:99:99:99') = A;
+
+-- Error 4065
+prepare xx from select * from t006t1 where to_date(A, '201005') = A;
+prepare xx from select * from t006t2 where to_date(A, 'YYYYMM') = A;
+control query default MODE_SPECIAL_4 reset;
+
 

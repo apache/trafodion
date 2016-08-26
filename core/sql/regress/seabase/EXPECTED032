@@ -1,0 +1,297 @@
+>>
+>>-- add/enable support for syntax and functions
+>>drop table if exists t032t1 cascade;
+
+--- SQL operation complete.
+>>
+>>create table t032t1 (a int not null primary key, 
++>                     b byteint, 
++>                     c int not null enable,  
++>                     d date, e time, f timestamp,
++>                     g real);
+
+--- SQL operation complete.
+>>
+>>invoke t032t1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T032T1
+-- Definition current  Wed Aug 24 20:59:45 2016
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                TINYINT DEFAULT NULL
+  , C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , D                                DATE DEFAULT NULL
+  , E                                TIME(0) DEFAULT NULL
+  , F                                TIMESTAMP(6) DEFAULT NULL
+  , G                                REAL DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>insert into t032t1 values (1, 2, 3, date '2016-08-15',  time '10:11:12',
++>                           timestamp '2016-08-15 10:11:12', 4e0);
+
+--- 1 row(s) inserted.
+>>insert into t032t1 values (2, 3, 3, date '2016-08-15',  time '10:11:12',
++>                           timestamp '2016-08-15 10:11:12', 4e0);
+
+--- 1 row(s) inserted.
+>>
+>>select unique b from t032t1;
+
+B   
+----
+
+   2
+   3
+
+--- 2 row(s) selected.
+>>
+>>select greatest(a, 10) from t032t1;
+
+(EXPR)     
+-----------
+
+         10
+         10
+
+--- 2 row(s) selected.
+>>select least(a, 10) from t032t1;
+
+(EXPR)     
+-----------
+
+          1
+          2
+
+--- 2 row(s) selected.
+>>
+>>select ceil(g), ceiling(g) from t032t1;
+
+(EXPR)                     (EXPR)                   
+-------------------------  -------------------------
+
+ 4.00000000000000000E+000   4.00000000000000000E+000
+ 4.00000000000000000E+000   4.00000000000000000E+000
+
+--- 2 row(s) selected.
+>>
+>>select months_between(d, date '2016-01-01') from t032t1;
+
+(EXPR)               
+---------------------
+
+             7.322580
+             7.322580
+
+--- 2 row(s) selected.
+>>select months_between(date '2016-01-01', d) from t032t1;
+
+(EXPR)               
+---------------------
+
+            -7.322580
+            -7.322580
+
+--- 2 row(s) selected.
+>>
+>>select months_between(d, date '2016-01-15') from t032t1;
+
+(EXPR)               
+---------------------
+
+             7.000000
+             7.000000
+
+--- 2 row(s) selected.
+>>select months_between(date '2016-01-15', d) from t032t1;
+
+(EXPR)               
+---------------------
+
+            -7.000000
+            -7.000000
+
+--- 2 row(s) selected.
+>>
+>>select last_day(d), last_day(f) from t032t1;
+
+(EXPR)      (EXPR)                    
+----------  --------------------------
+
+2016-08-31  2016-08-31 10:11:12.000000
+2016-08-31  2016-08-31 10:11:12.000000
+
+--- 2 row(s) selected.
+>>select next_day(d, 'sunday'), next_day(f, 'wednesday') from t032t1;
+
+(EXPR)      (EXPR)                    
+----------  --------------------------
+
+2016-08-21  2016-08-17 10:11:12.000000
+2016-08-21  2016-08-17 10:11:12.000000
+
+--- 2 row(s) selected.
+>>
+>>select 'RANDOMVAL=' ||  trim(cast(rand() as varchar(20) not null)) from (values(1)) x(a);
+
+(EXPR)                        
+------------------------------
+
+RANDOMVAL=1935127796          
+
+--- 1 row(s) selected.
+>>select random() from (values(1)) x(a);
+
+(EXPR)    
+----------
+
+         1
+
+--- 1 row(s) selected.
+>>
+>>select rand(100) from (values(1)) x(a);
+
+(EXPR)    
+----------
+
+   1680700
+
+--- 1 row(s) selected.
+>>
+>>select * from dual;
+
+(EXPR)
+------
+
+     0
+
+--- 1 row(s) selected.
+>>
+>>-- error 8413 enhancement
+>>select cast('a' as int) from dual;
+
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 61
+
+--- 0 row(s) selected.
+>>
+>>-- group by, order by enhancements
+>>select a aa from t032t1 group by aa;
+
+AA         
+-----------
+
+          1
+          2
+
+--- 2 row(s) selected.
+>>select a+1 from t032t1 group by a+1;
+
+(EXPR)              
+--------------------
+
+                   2
+                   3
+
+--- 2 row(s) selected.
+>>select a+1 from t032t1 order by a+1;
+
+(EXPR)              
+--------------------
+
+                   2
+                   3
+
+--- 2 row(s) selected.
+>>select * from (select b from t032t1 order by b desc) x(z);
+
+Z   
+----
+
+   2
+   3
+
+--- 2 row(s) selected.
+>>select * from (select [first 1] a from t032t1) x(z);
+
+Z          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>
+>>-- incompatible operations
+>>select a from t032t1 where a = '2';
+
+A          
+-----------
+
+          2
+
+--- 1 row(s) selected.
+>>select b from t032t1 where b = '2';
+
+B   
+----
+
+   2
+
+--- 1 row(s) selected.
+>>select a + '1' from t032t1;
+
+(EXPR)              
+--------------------
+
+                   2
+                   3
+
+--- 2 row(s) selected.
+>>select a || '1' from t032t1;
+
+(EXPR)      
+------------
+
+          11
+          21
+
+--- 2 row(s) selected.
+>>insert into t032t1 values ('3', 3, 3, date '2016-08-15',  time '10:11:12',
++>                           timestamp '2016-08-15 10:11:12', 4e0);
+
+--- 1 row(s) inserted.
+>>select * from t032t1;
+
+A            B     C            D           E         F                           G
+-----------  ----  -----------  ----------  --------  --------------------------  ---------------
+
+          1     2            3  2016-08-15  10:11:12  2016-08-15 10:11:12.000000   4.0000000E+000
+          2     3            3  2016-08-15  10:11:12  2016-08-15 10:11:12.000000   4.0000000E+000
+          3     3            3  2016-08-15  10:11:12  2016-08-15 10:11:12.000000   4.0000000E+000
+
+--- 3 row(s) selected.
+>>
+>>select * from (values(1)) x(a) where current_date = current_timestamp;
+
+A   
+----
+
+   1
+
+--- 1 row(s) selected.
+>>select * from (values(1)) x(a) where current_timestamp(0) = current_timestamp(6);
+
+--- 0 row(s) selected.
+>>
+>>select cast(1e0 as interval year) from dual;
+
+(EXPR)
+------
+
+     1
+
+--- 1 row(s) selected.
+>>
+>>log;

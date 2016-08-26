@@ -2453,70 +2453,69 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
             }
           break;
 	case L'(':
-	  {
-	    if ((NOT SqlParser_CurrentParser->modeSpecial1()) &&
-		(NOT SqlParser_CurrentParser->modeSpecial2()))
+          {
+	    if (NOT SqlParser_CurrentParser->modeSpecial1())
 	      {
-          /* externalize FORMAT functionality to regular users */
-          do { advance(); } while (U_isspace(peekChar()));  // skip whitespace
-          beginRun2 = mark();
-          while (U_isalnumund(holdChar1=peekChar())) advance();  // end of word
-    	    setCurrChar(0);
-          keyWordEntry1 = ParKeyWords::lookupKeyWord(beginRun2);
+                /* externalize FORMAT functionality to regular users */
+                do { advance(); } while (U_isspace(peekChar()));  // skip whitespace
+                beginRun2 = mark();
+                while (U_isalnumund(holdChar1=peekChar())) advance();  // end of word
+                setCurrChar(0);
+                keyWordEntry1 = ParKeyWords::lookupKeyWord(beginRun2);
 	        setCurrChar(holdChar1);
-          if (keyWordEntry1->getTokenCode() == TOK_FORMAT)  // (FORMAT...
-            {
-              // FORMAT is not a reserved word. Make sure it is used in FORMAT 'string'
-              do { advance(); } while (U_isspace(holdChar2=peekChar())); // advance and skip whitespace
-              if (holdChar2 == '\'')
-                {
-                  // it is '(' in (FORMAT '...
-                  retractToMark(beginRun2);
-                  doBeforeAction();
-                  SqlParser_ParenDepth++;
-                  return aCompoundKeyword(TOK_LPAREN_BEFORE_FORMAT, lvalp);
-                }
-            }
+                if (keyWordEntry1->getTokenCode() == TOK_FORMAT)  // (FORMAT...
+                  {
+                    // FORMAT is not a reserved word. Make sure it is used in FORMAT 'string'
+                    do { advance(); } while (U_isspace(holdChar2=peekChar())); // advance and skip whitespace
+                    if (holdChar2 == '\'')
+                      {
+                        // it is '(' in (FORMAT '...
+                        retractToMark(beginRun2);
+                        doBeforeAction();
+                        SqlParser_ParenDepth++;
+                        return aCompoundKeyword(TOK_LPAREN_BEFORE_FORMAT, lvalp);
+                      }
+                  }
 	        else if (keyWordEntry1->getTokenCode() == TOK_DATE) // (DATE...
-            {
-              while (U_isspace(holdChar2=peekChar())) advance(); // skip whitespace
-              if (holdChar2 == '(') // '(' in (DATE (...
-                {
-                  retractToMark(beginRun2);
-                  doBeforeAction();
-                  SqlParser_ParenDepth++;
-                  return aCompoundKeyword(TOK_LPAREN_BEFORE_DATE_AND_LPAREN, lvalp);
-                }
-              else if (holdChar2 == ',')
-                {
-                  do {  advance(); } while (U_isspace(peekChar())); // advance and skip whitespace
-                  beginRun3 = mark();
-                  while (U_isalnumund(holdChar3=peekChar())) advance(); // end of word
-                  setCurrChar(0);
-                  keyWordEntry2 = ParKeyWords::lookupKeyWord(beginRun3);
-                  setCurrChar(holdChar3);
-                  if (keyWordEntry2->getTokenCode() == TOK_FORMAT) // '(' in (DATE, FORMAT...
-                    {
-                      retractToMark(beginRun2);
-                      doBeforeAction();
-                      SqlParser_ParenDepth++;
-                      return aCompoundKeyword(TOK_LPAREN_BEFORE_DATE_COMMA_AND_FORMAT, lvalp);
-                    }
-                }
-            }
+                  {
+                    while (U_isspace(holdChar2=peekChar())) advance(); // skip whitespace
+                    if (holdChar2 == '(') // '(' in (DATE (...
+                      {
+                        retractToMark(beginRun2);
+                        doBeforeAction();
+                        SqlParser_ParenDepth++;
+                        return aCompoundKeyword(TOK_LPAREN_BEFORE_DATE_AND_LPAREN, lvalp);
+                      }
+                    else if (holdChar2 == ',')
+                      {
+                        do {  advance(); } while (U_isspace(peekChar())); // advance and skip whitespace
+                        beginRun3 = mark();
+                        while (U_isalnumund(holdChar3=peekChar())) advance(); // end of word
+                        setCurrChar(0);
+                        keyWordEntry2 = ParKeyWords::lookupKeyWord(beginRun3);
+                        setCurrChar(holdChar3);
+                        if (keyWordEntry2->getTokenCode() == TOK_FORMAT) // '(' in (DATE, FORMAT...
+                          {
+                            retractToMark(beginRun2);
+                            doBeforeAction();
+                            SqlParser_ParenDepth++;
+                            return aCompoundKeyword(TOK_LPAREN_BEFORE_DATE_COMMA_AND_FORMAT, lvalp);
+                          }
+                      }
+                  }
       		// A separator specified by [(]
-          retractToMark(beginRun2);
-          doBeforeAction();
-          SqlParser_ParenDepth++;
-          return setTokval(yytext_[0], DBGMSG("Separator %s\n"), lvalp);
-/* end of enternalize FORMAT */
-/* old code
+                retractToMark(beginRun2);
+                doBeforeAction();
+                SqlParser_ParenDepth++;
+                return setTokval(yytext_[0], DBGMSG("Separator %s\n"), lvalp);
+                /* end of enternalize FORMAT */
+                /* old code
 		// A separator specified by [(]
 		advance();
 		doBeforeAction();
 		SqlParser_ParenDepth++;
 		return setTokval(yytext_[0], DBGMSG("Separator %s\n"), lvalp);
-*/
+                */
 	      }
 
             SqlParser_ParenDepth++;

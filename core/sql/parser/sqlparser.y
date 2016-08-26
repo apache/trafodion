@@ -82,8 +82,6 @@
 #include "SqlParserGlobals.h"			// must be the second #include
 
 #define CheckModeSpecial1() if (NOT SqlParser_CurrentParser->modeSpecial1()) { YYERROR; } 
-#define CheckModeSpecial2() if (NOT SqlParser_CurrentParser->modeSpecial2()) { YYERROR; } 
-
 
 // This define is to restrict some commands to the DB_Transporter.
 #define CHECK_DBTRANSPORTER \
@@ -94,13 +92,6 @@
      YYERROR; \
   }
                                
-#define CheckModeSpecial3 \
-  if (CmpCommon::getDefault(MODE_SPECIAL_3) != DF_ON) \
-  { \
-     yyerror(""); \
-     YYERROR; \
-  }
-  
 #define CheckModeSpecial4 \
   if (CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON) \
   { \
@@ -3230,14 +3221,14 @@ literal :       numeric_literal
 		  // in MS2, formatting is done as part of Format function.
 		  // Right now limit this to MS2. Once it is tested, we can do
 		  // it for all modes.
-		  if (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)
+                  /*		  if (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)
 		    {
                       $$ = new (PARSERHEAP()) ConstValue
                         (*$1, getStringCharSet(&$1));
                       SqlParser_CurrentParser->collectItem4HQC($$);	
                       $$ = new (PARSERHEAP()) DateFormat($$, *$6, DateFormat::FORMAT_TO_DATE);
 		    }
-		  else
+                    else*/
 		    {
 		      $$ = literalOfDate($1);
 		      if (! $$) YYERROR;
@@ -3314,8 +3305,7 @@ character_literal_notcasespecific_option : '(' TOK_NOT_CASESPECIFIC ')'
                                             {$$=FALSE;}
                                            | empty
                                             {
-					      if ((CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON) ||
-                                              (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON))
+                                              if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
 						$$ = TRUE;
 					      else
 						$$=FALSE;
@@ -6657,7 +6647,7 @@ table_reference : table_name_and_hint
                 } 
              | TOK_DUAL
               {
-                CheckModeSpecial4;
+
 
                 ConstValue * cv = 
                   (ConstValue*)literalOfNumericNoScale(new (PARSERHEAP()) NAString("0", PARSERHEAP()));
@@ -8755,8 +8745,6 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 			       }
     | TOK_TO_NUMBER '(' value_expression ')'
                                {
-				 CheckModeSpecial3;
-
 				 $$ = new (PARSERHEAP()) 
 				   ZZZBinderFunction(ITM_TO_NUMBER, $3);
 			       }
@@ -8767,8 +8755,6 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 			       }
     | TOK_TO_TIMESTAMP '(' value_expression ')'
                                {
-				 CheckModeSpecial4;
-
 				 $$ = new (PARSERHEAP()) 
 				   ZZZBinderFunction(ITM_TO_TIMESTAMP, $3);
 			       }
@@ -8825,8 +8811,6 @@ string_function :
 	  }
      | TOK_CHR '(' value_expression CHAR_FUNC_optional_character_set ')' 
 	  {
-	    //	    CheckModeSpecial3;
-
 	    if (!(($4 == CharInfo::ISO88591) || ( CharInfo::maxBytesPerChar($4) == 2))){
 	      *SqlParser_Diags << DgSqlCode(-3217) << DgString0(CharInfo::getCharSetName($4)) << DgString1("CHAR");
 	      YYABORT;
@@ -8840,8 +8824,6 @@ string_function :
 
      | TOK_COALESCE '(' value_expression_list ')'
         {
-	  // CheckModeSpecial1(); -- Allow general NEO users to use
-
 	  $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_COALESCE,
 						    $3);
 
@@ -8948,7 +8930,7 @@ string_function :
 
      | TOK_INSTR '(' value_expression TOK_IN value_expression ')'
                   {
-		    CheckModeSpecial3;
+		    CheckModeSpecial4;
 
                      $$ = new (PARSERHEAP()) PositionFunc($5,$3,NULL);
                   }
@@ -9518,11 +9500,7 @@ math_func_1_operand :
               TOK_ACOS {$$ = ITM_ACOS;}
            |  TOK_ASIN {$$ = ITM_ASIN;}
            |  TOK_ATAN {$$ = ITM_ATAN;}
-           |  TOK_CEIL 
-                {
-		  CheckModeSpecial3; 
-		  $$ = ITM_CEIL;
-		}
+           |  TOK_CEIL {$$ = ITM_CEIL;}
            |  TOK_CEILING {$$ = ITM_CEIL;}
            |  TOK_COS {$$ = ITM_COS;}
            |  TOK_COSH {$$ = ITM_COSH;}
@@ -9579,16 +9557,12 @@ misc_function :
 
      | TOK_GREATEST '(' value_expression ',' value_expression ')'
                   {
-                    CheckModeSpecial4;
-
                     $$ = new (PARSERHEAP())
                       ZZZBinderFunction(ITM_GREATEST, $3, $5);
                   }
 
      | TOK_LEAST '(' value_expression ',' value_expression ')'
                   {
-                    CheckModeSpecial4;
-
                     $$ = new (PARSERHEAP())
                       ZZZBinderFunction(ITM_LEAST, $3, $5);
                   }
@@ -9774,8 +9748,6 @@ misc_function :
 
     | TOK_MONTHS_BETWEEN '(' value_expression ',' value_expression ')'
                       {
-			CheckModeSpecial3;
-
                         $$ = new (PARSERHEAP())
                              ZZZBinderFunction(ITM_MONTHS_BETWEEN, $3, $5);
 		      }
@@ -9881,20 +9853,17 @@ misc_function :
 
          | TOK_LAST_DAY '(' value_expression ')'
              {
-	       CheckModeSpecial3;
 	       $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_LAST_DAY, $3);
 	     }
 
          | TOK_NEXT_DAY '(' value_expression ',' value_expression ')'
              {
-	       CheckModeSpecial3;
 
 	       $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_NEXT_DAY, $3, $5);
 	     }
 
          | TOK_TRUNC '(' value_expression ',' unsigned_integer ')'
              {
-	       CheckModeSpecial3;
 
 	       ConstValue * cv = new (PARSERHEAP()) ConstValue($5);
 
@@ -9902,7 +9871,6 @@ misc_function :
 	     }
          | TOK_TRUNC '(' value_expression ')'
              {	       
-	       CheckModeSpecial3;
 
 	       ConstValue * cv = new (PARSERHEAP()) ConstValue(0);
 
@@ -10770,16 +10738,16 @@ int_type : TOK_INTEGER signed_option
            $$ = new (PARSERHEAP()) SQLSmall( $2, TRUE);
          else
            $$ = new (PARSERHEAP()) SQLTiny( $2, TRUE);
-         // ((SQLSmall *)$$)->setDisplayDataType("TINYINT");
        }
 	 | TOK_BYTEINT signed_option
        {
-         // For TD compatibility, we map BYTEINT to SMALLINT
+         // For TD compatibility, we map BYTEINT to TINYINT/SMALLINT
          // BYTEINT is supposed to be exact numeric value with precision 3 &
          // scale 0. signed: -128<=n<=127, unsigned: 0<=n<=255.
-         CheckModeSpecial1();
-         $$ = new (PARSERHEAP()) SQLSmall( $2, TRUE);
-         ((SQLSmall *)$$)->setDisplayDataType("BYTEINT");
+         if (CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF)
+           $$ = new (PARSERHEAP()) SQLSmall( $2, TRUE);
+         else
+           $$ = new (PARSERHEAP()) SQLTiny( $2, TRUE);
        }
 
 numeric_type_token :    TOK_NUMERIC
@@ -11082,8 +11050,7 @@ pic_type : TOK_PICTURE char_set collation_option pic_tail pic_notcasespecific_op
 
 		NABoolean caseInsensitive = $5;
 		if ((isStringType) &&
-		    ((SqlParser_CurrentParser->modeSpecial1()) ||
-		     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)))
+		    (SqlParser_CurrentParser->modeSpecial1()))
 		  caseInsensitive = TRUE;
 
                 // picNAType assert fails if precision is 0
@@ -11702,8 +11669,7 @@ upshift_flag :	    { $$ = FALSE; }
 /* type boolean */
 notcasespecific_option : empty 
                            { 
-			     if ((SqlParser_CurrentParser->modeSpecial1()) ||
-				 (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON))
+			     if (SqlParser_CurrentParser->modeSpecial1())
 			       $$ = TRUE;
 			     else
 			       $$ = FALSE; 
@@ -13600,8 +13566,6 @@ set_quantifier : { $$ = FALSE; /* by default, set quantifier is ALL */
              }
           | TOK_UNIQUE
              {
-               CheckModeSpecial4;
-
                 $$ = TRUE;
              }
 
@@ -18481,7 +18445,7 @@ rel_subquery : '(' query_expression order_by_clause ')'
                                   if ( temp->getOperatorType() != REL_ROOT )
                                     temp = new (PARSERHEAP()) RelRoot($2);
 
-                                  if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_OFF) 
+                                  if (CmpCommon::getDefault(ALLOW_ORDER_BY_IN_SUBQUERIES) == DF_OFF) 
                                     {
                                       if ($3)
                                         {
@@ -22910,8 +22874,10 @@ sort_or_group_key :   value_expression
                        }
                      else
                        {
-                         CheckModeSpecial4;
-
+                         if (CmpCommon::getDefault(GROUP_OR_ORDER_BY_EXPR) == DF_OFF)
+			   {
+			     YYERROR;
+			   }
                          ie = $1;
                        }
 
@@ -24987,8 +24953,7 @@ create_table_start_tokens :
 
                    | TOK_CREATE TOK_MULTISET TOK_TABLE optional_if_not_exists_clause 
                    {
-		     if ((NOT SqlParser_CurrentParser->modeSpecial1()) &&
-			 (NOT SqlParser_CurrentParser->modeSpecial2()))
+		     if (NOT SqlParser_CurrentParser->modeSpecial1())
 		       {
 			 YYERROR;
 		       }
@@ -25468,8 +25433,6 @@ column_constraint :  TOK_NOT TOK_NULL
                                 }
                             |  TOK_NOT TOK_NULL TOK_ENABLE
                                 {
-                                  CheckModeSpecial4;
-                                  
 			          NonISO88591LiteralEncountered = FALSE;
                                   $$ = new (PARSERHEAP()) ElemDDLConstraintNotNull(TRUE, PARSERHEAP());
                                 }
@@ -25762,14 +25725,6 @@ constraint_attributes : constraint_attribute
 format_attributes : empty { $$ = NULL; }
                     |  TOK_FORMAT QUOTED_STRING  
                          { 
-/* externalize (FORMAT '...') to regular users
-/*
-			   if ((NOT SqlParser_CurrentParser->modeSpecial1()) &&
-			       (NOT SqlParser_CurrentParser->modeSpecial2()))
-			     {
-			       YYERROR;
-			     }
-*/
 			   $$ = $2; 
 			 }
 

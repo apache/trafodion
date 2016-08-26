@@ -4173,6 +4173,16 @@ void CmpSeabaseDDL::renameSeabaseTable(
       return;
     }
 
+  cliRC = updateObjectRedefTime(&cliInterface,
+                                catalogNamePart, schemaNamePart, newObjectNamePart,
+                                COM_BASE_TABLE_OBJECT_LIT, -1, objUID);
+  if (cliRC < 0)
+    {
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
+
   ActiveSchemaDB()->getNATableDB()->removeNATable
     (cn,
      ComQiScope::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT,
