@@ -210,6 +210,7 @@ do
       echo $node_name $node_servers >> $PWD/servers
       (( count++ ))
    fi
+   found=0
 done
 
 
