@@ -706,6 +706,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_GREATER_EQUAL
 %token <tokval> TOK_GREATEST
 %token <tokval> TOK_GROUP
+%token <tokval> TOK_GROUP_CONCAT
 %token <tokval> TOK_GZIP
 %token <tokval> TOK_HAVING
 %token <tokval> TOK_HIVEMD
@@ -966,6 +967,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_REAL_IEEE
 %token <tokval> TOK_RECOMPUTE             
 %token <tokval> TOK_RECORD_SEPARATOR
+%token <tokval> TOK_SEPARATOR
 %token <tokval> TOK_RECOVER
 %token <tokval> TOK_RECOVERY
 %token <tokval> TOK_RECURSIVE 
@@ -2890,6 +2892,10 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pivotOptionsList>        pivot_options_list
 %type <pivotOptionsList>        pivot_options
 %type <pivotOption>             pivot_option
+
+%type <pivotOptionsList>        concat_options_list
+%type <pivotOptionsList>        concat_options
+%type <pivotOption>             concat_option
 
 %type <maintainObjectOptionsList>    maintain_object_options
 %type <maintainObjectOptionsList>    maintain_object_options_list
@@ -7289,6 +7295,14 @@ set_function_specification : set_function_type '(' set_quantifier value_expressi
 					    '!');
                               }
 			   }
+              | TOK_GROUP_CONCAT '('  set_quantifier value_expression concat_options ')' 
+               {
+                       //comehere
+                  CheckModeSpecial4;
+                  $$ = new (PARSERHEAP())
+                  PivotGroup(ITM_PIVOT_GROUP, $4, $5, $3);
+ 
+               }
               | TOK_PIVOT '(' set_quantifier value_expression pivot_options ')'
                   {
                     CheckModeSpecial4;
@@ -7325,12 +7339,33 @@ set_function_type :   TOK_AVG 		{ $$ = ITM_AVG; }
                     | TOK_VARIANCE 	{ $$ = ITM_VARIANCE; }
                     | TOK_STDDEV 	{ $$ = ITM_STDDEV; }
 
+concat_options : empty
+                       {
+                         $$ = NULL;
+                       }
+                    |  concat_options_list
+                      {
+                        $$ = $1;
+                      }
+
 pivot_options : empty
                        {
                          $$ = NULL;
                        }
                     | ',' pivot_options_list
                       {
+                        $$ = $2;
+                      }
+concat_options_list : concat_option
+                      {
+                        NAList<PivotGroup::PivotOption*> * frol =
+                          new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>;
+                        frol->insert($1);
+                        $$ = frol;
+                      }
+                    | concat_option  concat_options_list
+                      {
+                        $2->insert($1);
                         $$ = $2;
                       }
 
@@ -7347,6 +7382,33 @@ pivot_options_list : pivot_option
 			$$ = $3;
 		      }
 ;
+
+concat_option : TOK_SEPARATOR QUOTED_STRING
+                      {
+                        PivotGroup::PivotOption * po =
+                          new (PARSERHEAP ()) PivotGroup::PivotOption
+                          (PivotGroup::DELIMITER_, NULL, (char*)$2->data(), -1);
+
+                        $$ = po;
+                      }
+                   | TOK_ORDER TOK_BY sort_spec_list  
+                      {
+                        PivotGroup::PivotOption * po =
+                          new (PARSERHEAP ()) PivotGroup::PivotOption
+                          (PivotGroup::ORDER_BY_, $3, NULL, -1);
+
+                        $$ = po;
+                      }
+                   | TOK_MAX TOK_LENGTH NUMERIC_LITERAL_EXACT_NO_SCALE
+                      {
+                        Int64 value = atoInt64($3->data());
+
+                        PivotGroup::PivotOption * po =
+                          new (PARSERHEAP ()) PivotGroup::PivotOption
+                          (PivotGroup::MAX_LENGTH_, NULL, NULL, (Lng32)value);
+
+                        $$ = po;
+                      }
 
 pivot_option : TOK_DELIMITER QUOTED_STRING
                       {
