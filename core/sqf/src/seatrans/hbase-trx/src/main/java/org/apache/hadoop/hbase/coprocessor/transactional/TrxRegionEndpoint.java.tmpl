@@ -5448,8 +5448,6 @@ CoprocessorService, Coprocessor {
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: abort transactionId: " + transactionId + " " + m_Region.getRegionInfo().getRegionNameAsString());
 
-    checkBlockNonPhase2(transactionId);
-
     TrxTransactionState state;
     try {
       state = getTransactionState(transactionId);
