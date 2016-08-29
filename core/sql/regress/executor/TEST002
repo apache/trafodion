@@ -1087,6 +1087,26 @@ control query default hash_joins reset;
 control query default nested_joins reset;
 control query default merge_joins reset;
 
+drop table if exists student;
+create table student( student_name char(10), test_score int );
+insert into student values('s1', 88);
+insert into student values('s1', 79);
+insert into student values('s2', 88);
+insert into student values('s3', 90);
+
+cqd mode_special_4 'on';
+SELECT student_name,
+   GROUP_CONCAT(test_score)
+   FROM student
+   GROUP BY student_name;
+
+SELECT student_name,
+          GROUP_CONCAT(DISTINCT test_score
+                    ORDER BY test_score SEPARATOR '-')
+          FROM student
+          GROUP BY student_name;   
+drop table student;
+cqd mode_special_4 reset;
 ------------------------------------------------------------------------
 
 obey TEST002(BR0198_MULTI);
