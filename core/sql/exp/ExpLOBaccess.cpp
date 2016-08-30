@@ -394,7 +394,8 @@ Ex_Lob_Error ExLob::dataModCheck2(
         {
           Int64 currModTS = fileInfo.mLastMod;
           if ((inputModTS > 0) &&
-              (currModTS > inputModTS))
+              (currModTS > inputModTS) &&
+	      (!strstr(fileInfo.mName, ".hive-staging_hive_")))
             failed = TRUE;
         }
     }
