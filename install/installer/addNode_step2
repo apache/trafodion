@@ -194,13 +194,23 @@ let extras=$DCS_SERVERS_PARM%$node_count
 count=1
 for node_name in $NODE_LIST
 do
-   if [ $count -le $extras ]; then
-      let node_servers=$per_node+1
-   else
-      node_servers=$per_node
+
+   while read line
+   do
+      if [[ $line  =~ .*$node_name.* ]]; then
+         found=1
+      fi
+   done < $PWD/servers
+   if [[ $found -ne "1" ]]; then
+      if [ $count -le $extras ]; then
+         let node_servers=$per_node+1
+      else
+         node_servers=$per_node
+      fi
+      echo $node_name $node_servers >> $PWD/servers
+      (( count++ ))
    fi
-   echo $node_name $node_servers >> $PWD/tempServers
-   (( count++ ))
+   found=0
 done
 
 
