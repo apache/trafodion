@@ -98,8 +98,8 @@ ab   4    abcdefghijklmnopqrstu  1
 >>-- the NCHAR default value bug; reproduced here to avoid breaking it again.
 >>create table  t104t2 (c char(15) not null, d int not null,
 +>                      primary key (c, d))
-+>  range partition (add first key ('Mickey''s', 2) location $$partition$$,
-+>                   add first key ('sad"story', 10) location $$partition2$$);
++>  range partition (add first key ('Mickey''s', 2) location $DATA,
++>                   add first key ('sad"story', 10) location $DATA1);
 
 --- SQL operation complete.
 >>invoke t104t2;

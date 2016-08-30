@@ -65,7 +65,7 @@ A
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Thu Feb 25 08:40:12 2016
+-- Definition current  Fri Aug  5 14:03:34 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -118,7 +118,7 @@ A
 >>execute s3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Thu Feb 25 08:40:13 2016
+-- Definition current  Fri Aug  5 14:03:34 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -178,7 +178,7 @@ iv
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Thu Feb 25 08:40:32 2016
+-- Definition current  Fri Aug  5 14:03:49 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -211,15 +211,11 @@ iv
 >>
 >>execute s2;
 
-*** ERROR[4039] Column A is of type CHAR(4), incompatible with the value's type, NUMERIC(1).
-
-*** ERROR[8822] The statement was not prepared.
-
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 
 *** WARNING[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
 
---- 0 row(s) inserted.
+--- 1 row(s) inserted.
 >>
 >>execute s3;
 
@@ -229,7 +225,7 @@ iv
 
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Thu Feb 25 08:40:34 2016
+-- Definition current  Fri Aug  5 14:03:49 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -248,15 +244,13 @@ iv
 (EXPR)              
 --------------------
 
-                   6
+                   7
 
 --- 1 row(s) selected.
 >>
 >>execute s5;
 
-*** ERROR[4041] Type CHAR(4) cannot be compared with type NUMERIC(1).
-
-*** ERROR[8822] The statement was not prepared.
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 6978
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 
@@ -266,9 +260,7 @@ iv
 >>
 >>execute s6;
 
-*** ERROR[4041] Type CHAR(4) cannot be compared with type NUMERIC(2).
-
-*** ERROR[8822] The statement was not prepared.
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 6978
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 

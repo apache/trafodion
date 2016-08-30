@@ -8408,7 +8408,11 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
   UInt32 flags =
             ((CmpCommon::getDefault(LIMIT_MAX_NUMERIC_PRECISION) == DF_ON)
             ? NAType::LIMIT_MAX_NUMERIC_PRECISION : 0);
-
+  if (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON)
+    {
+      flags |= NAType::ALLOW_INCOMP_OPER;
+    }
+  
   const NAType *result_type = type_op1->synthesizeType(SYNTH_RULE_UNION,
                                                        *type_op1,
                                                        *type_op2,
@@ -8723,6 +8727,35 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 	  setChild(0, newChild);
 	}
 
+    } // numeric to date conversion
+
+  if ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
+      (sourceTypeQual == NA_NUMERIC_TYPE) &&
+      (targetTypeQual == NA_INTERVAL_TYPE))
+    { 
+      NumericType &sourceType =
+	(NumericType &)(child(0)->getValueId().getType());
+
+      if (NOT sourceType.isExact())
+        {
+	  // doing a float numeric to interval conversion.
+	  // convert source to corresponding exact numeric (largeint).
+          // This is the largest interval type that is supported.
+	  ItemExpr * newChild =
+	    new (generator->wHeap())
+	    Cast(child(0),
+		 new (generator->wHeap())
+		 SQLLargeInt(TRUE,
+                             child(0)->castToItemExpr()->
+                             getValueId().getType().supportsSQLnull()));
+	  newChild = newChild->bindNode(generator->getBindWA());
+	  newChild = newChild->preCodeGen(generator);
+	  if (! newChild)
+	    return NULL;
+          
+	  setChild(0, newChild);
+	}
+      
     } // numeric to date conversion
 
   if ((sourceTypeQual == NA_DATETIME_TYPE) &&

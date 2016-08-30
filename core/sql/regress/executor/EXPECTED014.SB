@@ -406,7 +406,7 @@ A            B
 >>-- datatype of AS query columns and target tables must match
 >>create table t014t1t (a char(10), b date) as select * from t014t1s;
 
-*** ERROR[4039] Column A is of type CHAR(10), incompatible with the value's type, INTEGER.
+*** ERROR[4035] Type INTEGER cannot be cast to type DATE.
 
 *** ERROR[8822] The statement was not prepared.
 

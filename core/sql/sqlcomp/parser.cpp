@@ -143,7 +143,6 @@ Parser::Parser(const CmpContext* cmpContext)
   internalExpr_ = NORMAL_TOKEN;
 
   modeSpecial1_ = (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON);
-  modeSpecial2_ = (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON);
   modeSpecial4_ = (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON);
 
   defaultColCharset_ = CharInfo::UnknownCharSet;

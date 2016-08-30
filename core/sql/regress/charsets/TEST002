@@ -101,8 +101,7 @@ create trigger t013t2 after insert on nt008
 
 --no UCS2 strings in a FIRST KEY clause
 create table nt009 (c char(10) character set UCS2)
-	location  $$partition$$
-	partition (add first key (_UCS2'aaa') location  $$partition1$$);
+	partition (add first key (_UCS2'aaa') location  $DATA); 
 
 --INFER_CHARSET works for default values in CREATE TABLE DDL
 control query default infer_charset 'on';

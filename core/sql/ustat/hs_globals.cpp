@@ -243,7 +243,7 @@ Int32 ISFixedChar::compare(const ISFixedChar &rhs)
   if (CollationInfo::isSystemCollation(colCollation))
       return Collated_cmp(content, rhs.content, length, colCollation,
                           sortBuffer1, sortBuffer2);
-  // UCS2 cols not supported in MODE_SPECIAL_1 or 2 and do not support case insensitivity.
+  // UCS2 cols not supported in MODE_SPECIAL_1 and do not support case insensitivity.
   if (!caseInsensitive)
     {
       if (charset != CharInfo::UNICODE)
@@ -1297,7 +1297,7 @@ Int32 ISVarChar::compare(const ISVarChar &rhs)
                           MAXOF(*((short*)content), *((short*)rhs.content)),
                           colCollation, sortBuffer1, sortBuffer2);
 
-  // UCS2 cols not supported in MODE_SPECIAL_1 or 2 and do not support case insensitivity.
+  // UCS2 cols not supported in MODE_SPECIAL_1 and do not support case insensitivity.
   if (!caseInsensitive) {
     if (charset != CharInfo::UNICODE)
       return memcmp(content+VARCHAR_LEN_FIELD_IN_BYTES,
@@ -1324,7 +1324,7 @@ Int32 ISVarChar::operator==(const ISVarChar &rhs)
                         MAXOF(*((short*)content), *((short*)rhs.content)),
                         colCollation, sortBuffer1, sortBuffer2 ) == 0);
 
-  // UCS2 cols not supported in MODE_SPECIAL_1 or 2 and do not support case insensitivity.
+  // UCS2 cols not supported in MODE_SPECIAL_1 and do not support case insensitivity.
   if (!caseInsensitive)
     return !memcmp(content+VARCHAR_LEN_FIELD_IN_BYTES,
                   rhs.content+VARCHAR_LEN_FIELD_IN_BYTES,
@@ -10585,8 +10585,7 @@ bool isInternalSortType(HSColumnStruct &col)
         if (col.charset == CharInfo::UNICODE)
           {
             NAString MS1v = ActiveSchemaDB()->getDefaults().getValue(MODE_SPECIAL_1);
-            NAString MS2v = ActiveSchemaDB()->getDefaults().getValue(MODE_SPECIAL_2);
-            if ( MS1v == "ON"  || MS2v == "ON" )
+            if ( MS1v == "ON" )
               {
                  return false; //In these modes, Internal Sort won't work on UCS2 columns.
               }

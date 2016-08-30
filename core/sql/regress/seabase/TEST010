@@ -23,6 +23,7 @@
 -- @@@ END COPYRIGHT @@@
 
 obey TEST010(clean_up);
+cleanup obsolete volatile tables;
 
 log LOG010 clear;
 obey TEST010(setup);

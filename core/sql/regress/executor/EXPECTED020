@@ -3,6 +3,9 @@
 >>control query default auto_query_retry_warnings 'ON';
 
 --- SQL operation complete.
+>>set session default ESP_RELEASE_WORK_TIMEOUT '-2';
+
+--- SQL operation complete.
 >>
 >>-- TEST 1
 >>create table t020t1

@@ -355,7 +355,7 @@ static short ft_codegen(Generator *generator,
             newExpr = newExpr->bindNode(generator->getBindWA());
             if (!newExpr || generator->getBindWA()->errStatus())
               {
-                GenAssert(0, "newExpr->bindNode failed");
+                GenExit(); //GenAssert(0, "newExpr->bindNode failed");
               }
             
             if (hiveInsertErrMode == 3)

@@ -220,9 +220,8 @@ NormValue::NormValue(const ConstValue * constant, NABoolean negate)
   void * theValue = constant->getConstValue();
 
   NABoolean reset = FALSE;
-  if (((CmpCommon::getDefault(::MODE_SPECIAL_1) == DF_ON) ||
-       (CmpCommon::getDefault(::MODE_SPECIAL_2) == DF_ON)) && 
-      (theType->getTypeQualifier() == NA_CHARACTER_TYPE)) 
+  if ((CmpCommon::getDefault(::MODE_SPECIAL_1) == DF_ON) &&
+      (theType->getTypeQualifier() == NA_CHARACTER_TYPE))
     {
       CharType *cType = (CharType *)theType;
       if((! cType->isCaseinsensitive()) &&

@@ -123,14 +123,12 @@
 >>
 >>--no UCS2 strings in a FIRST KEY clause
 >>create table nt009 (c char(10) character set UCS2)
-+>	location  $$partition$$
-+>	partition (add first key (_UCS2'aaa') location  $$partition1$$);
++>	partition (add first key (_UCS2'aaa') location  $DATA);
 
 *** ERROR[1240] The character set for a PARTITION KEY column must be ISO88591.
 
 *** ERROR[8822] The statement was not prepared.
 
->>
 >>--INFER_CHARSET works for default values in CREATE TABLE DDL
 >>control query default infer_charset 'on';
 
@@ -144,7 +142,7 @@
 >>invoke t013;
 
 -- Definition of Trafodion table TRAFODION.SCH.T013
--- Definition current  Sun Mar 20 15:28:28 2016
+-- Definition current  Fri Aug  5 18:17:57 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -182,10 +180,7 @@ B
 --- SQL command prepared.
 >>prepare xx from insert into t013 select 'a'||'b' from t013a;
 
-*** ERROR[4039] Column A is of type CHAR(10) CHARACTER SET UCS2, incompatible with the value's type, CHAR(2) CHARACTER SET ISO88591.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL command prepared.
 >>
 >>control query default infer_charset 'off';
 

@@ -135,7 +135,7 @@
 >>set param ?ee e;
 >>select * from T050a where d=?ee;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 65
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 65
 
 *** ERROR[15015] PARAM ?ee (value e) cannot be converted to type NUMERIC(18, 6).
 
@@ -235,7 +235,7 @@ PARAM ?c aa
 PARAM ?d foo
 >>execute x using 77;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 666f6f
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 666f6f
 
 *** ERROR[15015] PARAM ?d (value foo) cannot be converted to type NUMERIC(18, 6).
 
@@ -441,10 +441,9 @@ aa     BB     CC               1            1            1
 >>	-- 4004, 4104
 >>select * from T050a,T050a x where x.e='f';
 
-*** ERROR[4041] Type INTEGER cannot be compared with type CHAR(1).
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 66
 
-*** ERROR[8822] The statement was not prepared.
-
+--- 0 row(s) selected.
 >>	-- 4034 or 4041 or like that
 >>
 >>-- Genesis 10-980402-1556 + OLT add'l fix

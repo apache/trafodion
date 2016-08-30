@@ -184,7 +184,8 @@ public:
   #ifndef CLI_SRL
   virtual NABoolean isComparable(const NAType &other,
                                  ItemExpr *parentOp,
-				 Int32 emitErr = EmitErrAlways) const;
+				 Int32 emitErr = EmitErrAlways,
+                                 UInt32 * flags = NULL) const;
   #endif
 
   // ---------------------------------------------------------------------
@@ -402,11 +403,6 @@ public:
     // See other parts of code for what all is done in this case.
     MODE_SPECIAL_1 = 0x0002,
 
-    // indicates that special2 mode is on. Special handling of
-    // syntax, expressions is done in some cases.
-    // See other parts of code for what all is done in this case.
-    MODE_SPECIAL_2 = 0x0004,
-
     // result with scale is requested to be rounded.
     ROUND_RESULT = 0x0008,
 
@@ -422,7 +418,10 @@ public:
     // indicates that special4 mode is on. Special handling of
     // syntax, expressions is done in some cases.
     // See other parts of code for what all is done in this case.
-    MODE_SPECIAL_4 = 0x0080
+    MODE_SPECIAL_4 = 0x0080,
+
+    // enable incompatibe operations.
+    ALLOW_INCOMP_OPER = 0x0100
   };
 
   // ---------------------------------------------------------------------

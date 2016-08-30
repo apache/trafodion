@@ -1076,8 +1076,7 @@ short CmpSeabaseDDL::populateSeabaseIndexFromTable(
   NABoolean useHiveSrc = FALSE;
   NAString saltText;
   NAString hiveSrc = CmpCommon::getDefaultString(USE_HIVE_SOURCE);
-  if ((CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON) &&
-      (! hiveSrc.isNull()))
+  if (! hiveSrc.isNull())
     {
       for (CollIndex i = 0; i < selColList.entries(); i++)
       {

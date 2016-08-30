@@ -228,8 +228,7 @@ NABoolean QRDescGenerator::typeSupported(const NAType* type)
 
       case NA_CHARACTER_TYPE:
         {
-          if ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)||
-              (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)) 
+          if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
             return FALSE;
           return ((CharType*)type)->getCollation() == CharInfo::DefaultCollation;
 	      }

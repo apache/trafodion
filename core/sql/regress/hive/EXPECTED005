@@ -106,7 +106,18 @@ Y                                          9525
 --- SQL command prepared.
 >>execute s1;
 
---- 0 row(s) selected.
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+
+C_PREFERRED_CUST_FLAG      (EXPR)              
+-------------------------  --------------------
+
+                                            685
+N                                          9789
+Y                                          9525
+
+--- 3 row(s) selected.
 >>-- because we don't invalidate in the executor,
 >>-- this should still return 0 rows
 >>
@@ -214,7 +225,18 @@ xyz
 --- SQL command prepared.
 >>execute s1;
 
---- 0 row(s) selected.
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+
+C_PREFERRED_CUST_FLAG      (EXPR)              
+-------------------------  --------------------
+
+                                           1384
+N                                         19631
+Y                                         18984
+
+--- 3 row(s) selected.
 >>-- s1 should still return 0 rows - for now
 >>execute s2;
 
@@ -510,7 +532,7 @@ C1           C2           C3           C4
 --- SQL operation complete.
 >>load with NO OUTPUT into trafodion.seabase.tbl_dos_num select * from tbl_dos_num;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 33393437380d
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 33393437380d
 
 --- 0 row(s) loaded.
 >>cqd HIVE_SCAN_SPECIAL_MODE '1';
@@ -541,7 +563,7 @@ C1           C2
 --- SQL operation complete.
 >>select * from tbl_bad;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 61
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 61
 
 --- 0 row(s) selected.
 >>cqd HIVE_SCAN_SPECIAL_MODE '2';
@@ -582,17 +604,17 @@ C1           C2                    C3                         C4               C
 --- SQL operation complete.
 >>load with no output into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 61
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 61
 
 --- 0 row(s) loaded.
 >>insert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 61
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 61
 
 --- 0 row(s) inserted.
 >>upsert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 61
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 61
 
 --- 0 row(s) inserted.
 >>cqd HIVE_SCAN_SPECIAL_MODE '2';
@@ -834,7 +856,7 @@ t005part.a	t005part.b	t005part.c
 >>invoke hive.hive.thive_insert_smallint;
 
 -- Definition of hive table THIVE_INSERT_SMALLINT
--- Definition current  Fri Jul  8 09:45:59 2016
+-- Definition current  Wed Aug 24 21:29:53 2016
 
   (
     A                                SMALLINT
@@ -939,7 +961,7 @@ A
 >>invoke hive.hive.thive_insert_varchar;
 
 -- Definition of hive table THIVE_INSERT_VARCHAR
--- Definition current  Fri Jul  8 09:46:08 2016
+-- Definition current  Wed Aug 24 21:29:58 2016
 
   (
     A                                VARCHAR(1 CHAR) CHARACTER SET UTF8 COLLATE

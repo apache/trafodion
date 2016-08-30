@@ -523,8 +523,6 @@ const NAType* NumericType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
 
   NABoolean modeSpecial1 = 
     ((flags) && ((*flags & NAType::MODE_SPECIAL_1) != 0));
-  NABoolean modeSpecial2 = 
-    ((flags) && ((*flags & NAType::MODE_SPECIAL_2) != 0));
   NABoolean limitPrecision =
     ((flags) && ((*flags & NAType::LIMIT_MAX_NUMERIC_PRECISION) != 0));
   NABoolean makeUnionResultBinary =
@@ -638,7 +636,7 @@ const NAType* NumericType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
                 scale;
     if (limitPrecision)
       {
-	if (((modeSpecial1) || (modeSpecial2)) &&
+	if ((modeSpecial1) &&
 	    (scale > MAX_NUMERIC_PRECISION))
 	  // scale overflow, return error.
 	  return NULL;

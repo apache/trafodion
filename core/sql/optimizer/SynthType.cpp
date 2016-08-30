@@ -290,26 +290,27 @@ static Int32 getNumCHARACTERArgs(ItemExpr *parentOp)
 
 NABoolean NAType::isComparable(const NAType &other,
 			       ItemExpr *parentOp,
-			       Int32 emitErr) const
+			       Int32 emitErr,
+                               UInt32 * flags) const
 {
   #ifndef NDEBUG
     CMPASSERT(parentOp);	//## reserved for future errmsg 4034 w/ unparse,
   #endif			// for CoAndCo propagation and for errmsgs!
 
-	if (isCompatible(other))
-		return TRUE;
-	NAString defVal;
-	NABoolean charsetInference =
-		(CmpCommon::getDefault(INFER_CHARSET, defVal) == DF_ON);
-	if(charsetInference  &&
-		getTypeQualifier()       == NA_CHARACTER_TYPE &&
-		other.getTypeQualifier() == NA_CHARACTER_TYPE){  // do not reject matches of UNKNOWN_CHARSET with UNKNOWN_CHARSET
-			CharType *ct = (CharType *)this;
-			if (ct->isCompatibleAllowUnknownCharset(other))
-				return TRUE;
-		}
-
-  if (emitErr == EmitErrIfAnyChar)
+    if (isCompatible(other, flags))
+      return TRUE;
+    NAString defVal;
+    NABoolean charsetInference =
+      (CmpCommon::getDefault(INFER_CHARSET, defVal) == DF_ON);
+    if(charsetInference  &&
+       getTypeQualifier()       == NA_CHARACTER_TYPE &&
+       other.getTypeQualifier() == NA_CHARACTER_TYPE){  // do not reject matches of UNKNOWN_CHARSET with UNKNOWN_CHARSET
+      CharType *ct = (CharType *)this;
+      if (ct->isCompatibleAllowUnknownCharset(other))
+        return TRUE;
+    }
+    
+    if (emitErr == EmitErrIfAnyChar)
     if (getTypeQualifier()       != NA_CHARACTER_TYPE &&
         other.getTypeQualifier() != NA_CHARACTER_TYPE)
       emitErr = FALSE;
@@ -342,9 +343,10 @@ NABoolean NAType::isComparable(const NAType &other,
 
 NABoolean CharType::isComparable(const NAType &otherNA,
 				 ItemExpr *parentOp,
-				 Int32 emitErr) const
+				 Int32 emitErr,
+                                 UInt32 * flags) const
 {
-  if (NOT NAType::isComparable(otherNA, parentOp, emitErr))
+  if (NOT NAType::isComparable(otherNA, parentOp, emitErr, flags))
     return FALSE;
 
   const CharType &other = (const CharType &)otherNA;
@@ -567,9 +569,6 @@ static NABoolean synthItemExprLists(ItemExprList &exprList1,
 	// 3. DATE and numeric.  Date is an interval from year 1900.
 	// 4. interval and numeric.
 
-	// Or for MODE_SPECIAL_3:
-	// between date and timestamp.
-
 	// Check if this is char and numeric comparison
 	if (((operand1->getTypeQualifier() == NA_CHARACTER_TYPE) &&
 	     (operand2->getTypeQualifier() == NA_NUMERIC_TYPE) &&
@@ -655,19 +654,18 @@ static NABoolean synthItemExprLists(ItemExprList &exprList1,
 		  return TRUE;
 	      }
 	  }
-
-	if (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON)
-	  {
-	    if (((vid1.getType().getPrecision() == SQLDTCODE_TIMESTAMP) &&
-		 (vid2.getType().getPrecision() == SQLDTCODE_DATE)) ||
-		((vid2.getType().getPrecision() == SQLDTCODE_TIMESTAMP) &&
-		 (vid1.getType().getPrecision() == SQLDTCODE_DATE)))
-	      return TRUE;
-	  }
       }
 
+    UInt32 flags = 0;
+    if (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON)
+      {
+        flags |= NAType::ALLOW_INCOMP_OPER;
+      }
+    
     //## errmsg 4034 w/ unparse?
-    if ( DoCompatibilityTest && NOT operand1->isComparable(*operand2, parentOp) )
+    if ( DoCompatibilityTest && 
+         NOT operand1->isComparable(*operand2, parentOp,
+                                    NAType::EmitErrAlways, &flags) )
       return FALSE; 
   }
   return TRUE;			// success
@@ -1607,10 +1605,9 @@ const NAType *Assign::doSynthesizeType(ValueId & targetId, ValueId & sourceId)
   // Check that the operands are compatible.
   //
   if (NOT targetId.getType().isCompatible(sourceId.getType())) {
-    if (((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-	 (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_ASSIGNMENT) == DF_ON)) &&
+    if ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
         (sourceId.getType().getTypeQualifier() != NA_RECORD_TYPE ) &&
-	((child(1)->getOperatorType() != ITM_CONSTANT) ||
+        ((child(1)->getOperatorType() != ITM_CONSTANT) ||
 	 (NOT ((ConstValue *) child(1).getPtr() )->isNull())))
       {
 	// target type is not the same as source type.
@@ -1705,17 +1702,14 @@ const NAType *Between::synthesizeType()
   NABoolean allowsUnknown = FALSE;
 
   NABoolean allowIncompatibleComparison =
-    (((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_COMPARISON) == DF_ON) ||
-      (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-      (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON)) &&
-     (!CmpCommon::statement()->isDDL())                             &&
+    ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
      (child(0)->castToItemExpr()->getOperatorType() != ITM_ONE_ROW) &&
      (child(1)->castToItemExpr()->getOperatorType() != ITM_ONE_ROW) &&
      (child(2)->castToItemExpr()->getOperatorType() != ITM_ONE_ROW) &&
      (child(0)->castToItemExpr()->getOperatorType() != ITM_ONEROW) &&
      (child(1)->castToItemExpr()->getOperatorType() != ITM_ONEROW) &&
      (child(2)->castToItemExpr()->getOperatorType() != ITM_ONEROW));
-
+  
   for (CollIndex i = 0; i < exprList1.entries(); i++) {
     //
     // Type cast any params.
@@ -1754,21 +1748,6 @@ const NAType *Between::synthesizeType()
 	   (op1.getTypeQualifier() == NA_CHARACTER_TYPE) &&
 	   (vid1.getItemExpr()->getOperatorType() == ITM_CONSTANT)))
         compareOp3 = FALSE;
-
-      if (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON)
-	{
-	  if (((op1.getPrecision() == SQLDTCODE_TIMESTAMP) &&
-	       (op2.getPrecision() == SQLDTCODE_DATE)) ||
-	      ((op2.getPrecision() == SQLDTCODE_TIMESTAMP) &&
-	       (op1.getPrecision() == SQLDTCODE_DATE)))
-	    compareOp2 = FALSE;
-
-	  if (((op1.getPrecision() == SQLDTCODE_TIMESTAMP) &&
-	       (op3.getPrecision() == SQLDTCODE_DATE)) ||
-	      ((op3.getPrecision() == SQLDTCODE_TIMESTAMP) &&
-	       (op1.getPrecision() == SQLDTCODE_DATE)))
-	    compareOp3 = FALSE;
-	}
     }
 
     if (op1.getTypeQualifier() == NA_CHARACTER_TYPE &&
@@ -1840,11 +1819,6 @@ const NAType *BiArith::synthesizeType()
   if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
     {
       flags |= NAType::MODE_SPECIAL_1;
-    }
-
-  if (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)
-    {
-      flags |= NAType::MODE_SPECIAL_2;
     }
 
   if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON)
@@ -2012,17 +1986,14 @@ const NAType *BiRelat::synthesizeType()
   // a CAST node on top of it.
   // This incompatible comparison is not allowed if the statement is a DDL
   NABoolean allowIncompatibleComparison = FALSE;
-  if ((((!CmpCommon::statement()->isDDL()) &&
-        ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_COMPARISON) == DF_ON) ||
-         (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-         (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON))) ||
-       (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON)) &&
+
+  if ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
       (child(0)->castToItemExpr()->getOperatorType() != ITM_ONE_ROW) &&
       (child(1)->castToItemExpr()->getOperatorType() != ITM_ONE_ROW) &&
       (exprList1.entries() == 1) &&
       (exprList2.entries() == 1))
     allowIncompatibleComparison = TRUE;
-
+  
   NABoolean allowsUnknown;
   if (!synthItemExprLists(exprList1, exprList2, allowIncompatibleComparison,
 			  allowsUnknown, this))
@@ -2120,10 +2091,6 @@ const NAType *IfThenElse::synthesizeType()
       flags |= NAType::MODE_SPECIAL_1;
     }
 
-  if (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)
-    {
-      flags |= NAType::MODE_SPECIAL_2;
-    }
   if (CmpCommon::getDefault(TYPE_UNIONED_CHAR_AS_VARCHAR) == DF_ON)
   {
     flags |= NAType::MAKE_RESULT_VARCHAR;
@@ -2161,17 +2128,21 @@ static NABoolean numericCastIsCompatible(const NAType &src, const NAType &tgt)
 {
   if (src.getTypeQualifier() == NA_NUMERIC_TYPE &&
       tgt.getTypeQualifier() == NA_INTERVAL_TYPE &&
-      tgt.isSupportedType()) {
-    NumericType&  numeric  = (NumericType&)src;
-    IntervalType& interval = (IntervalType&)tgt;
-    if (numeric.isExact())
-      {
-	if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
-	  return TRUE;
-	else if (interval.getStartField() == interval.getEndField())
-	  return TRUE;
-      }
-  }
+      tgt.isSupportedType()) 
+    {
+      if (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON)
+        return TRUE;
+      
+      NumericType&  numeric  = (NumericType&)src;
+      IntervalType& interval = (IntervalType&)tgt;
+      if (numeric.isExact())
+        {
+          if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
+            return TRUE;
+          else if (interval.getStartField() == interval.getEndField())
+            return TRUE;
+        }
+    }
   //check for numeric to date conversion
   else if ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) &&
 	   (tgt.getTypeQualifier() == NA_DATETIME_TYPE) &&
@@ -2400,7 +2371,7 @@ const NAType *Cast::synthesizeType()
     }
   }
   else if (srcQual == NA_NUMERIC_TYPE)
-    legal = numericCastIsCompatible(src, tgt) || tgtQual == NA_BOOLEAN_TYPE;
+    legal = numericCastIsCompatible(src, tgt);
   else if (srcQual == NA_INTERVAL_TYPE)
     legal = numericCastIsCompatible(tgt, src);
   else if (srcQual == NA_DATETIME_TYPE && tgtQual == NA_NUMERIC_TYPE)
@@ -2832,18 +2803,6 @@ const NAType *DateFormat::synthesizeType()
     return NULL;
   }
 
-  if (getDateFormat() == DATE_FORMAT_STR)
-    {
-      if ((CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON) &&
-	  ((vid.getType().getTypeQualifier() != NA_DATETIME_TYPE) &&
-	   (vid.getType().getTypeQualifier() != NA_CHARACTER_TYPE)))
-	{
-	  // 4071 The operand of a DATEFORMAT function must be a datetime.
-	  *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
-	  return NULL;
-	}
-    }
-  
   if ((getDateFormat() == TIME_FORMAT_STR) &&
       ((vid.getType().getTypeQualifier() != NA_NUMERIC_TYPE) &&
        (vid.getType().getTypeQualifier() != NA_CHARACTER_TYPE) &&
@@ -5667,7 +5626,7 @@ const NAType *QuantifiedComp::synthesizeType()
   ItemExprList exprList2(getSubquery()->selectList(), HEAP);
   NABoolean allowsUnknown;
   NABoolean allowIncompatibleComparison = FALSE;
-  if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
+  if (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON)
     allowIncompatibleComparison = TRUE; 
   if (!synthItemExprLists(exprList1, exprList2, allowIncompatibleComparison,
 			  allowsUnknown, this))
