@@ -2228,12 +2228,14 @@ Int32 WildCardOp::getArity() const
     case REL_FORCE_ANY_SCALAR_UDF:
     case REL_ANY_SCALAR_UDF_ROUTINE:
     case REL_ANY_LEAF_GEN_UPDATE:
+    case REL_ANY_LEAF_TABLE_MAPPING_UDF:
       return 0;
 
     case REL_ANY_UNARY_GEN_UPDATE:
     case REL_ANY_UNARY_OP:
     case REL_ANY_GROUP:
     case REL_FORCE_EXCHANGE:
+    case REL_ANY_UNARY_TABLE_MAPPING_UDF:
       return 1;
 
     case REL_ANY_BINARY_OP:
@@ -2258,6 +2260,7 @@ Int32 WildCardOp::getArity() const
     case REL_FORCE_HYBRID_HASH_JOIN:
     case REL_FORCE_MERGE_JOIN:
     case REL_FORCE_ORDERED_CROSS_PRODUCT:
+    case REL_ANY_BINARY_TABLE_MAPPING_UDF:
       return 2;
 
     default:

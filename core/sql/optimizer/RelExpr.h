@@ -1947,8 +1947,7 @@ private:
 
 class UDFForceWildCard : public WildCardOp
 {
-  // to be used with operator type REL_FORCE_ANY_UDF or 
-  // REL_FORCE_ANY_SCLAR_UDF.
+  // to be used with operator type REL_FORCE_ANY_SCLAR_UDF.
 public:
 
   // Constructor used when parsing ISOLATED_SCALAR_UDF in controlDB.cpp.

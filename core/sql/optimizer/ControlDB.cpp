@@ -1981,6 +1981,41 @@ ExprNode *DecodeShapeSyntax(const NAString &fname,
           return NULL;
         }
     }
+  else if (fname == "TMUDF")
+    {
+      Int32 numArgs = args->entries();
+      OperatorTypeEnum op = REL_ANY_LEAF_TABLE_MAPPING_UDF;
+      RelExpr *child0 = NULL;
+      RelExpr *child1 = NULL;
+
+      if (numArgs == 1)
+        {
+          if (badSingleArg(fname,args,diags))
+            return NULL;
+          op = REL_ANY_UNARY_TABLE_MAPPING_UDF;
+          child0 = args->at(0)->castToRelExpr();
+        }
+      else if (numArgs == 2)
+        {
+          if (badTwoArgs(fname,args,diags))
+            return NULL;
+          op = REL_ANY_BINARY_TABLE_MAPPING_UDF;
+          child0 = args->at(0)->castToRelExpr();
+          child1 = args->at(1)->castToRelExpr();
+        }
+      else if (numArgs > 2)
+        {
+          *diags << DgSqlCode(-3113) <<
+	    DgString0("TMUDF operator must have 0, 1 or 2 arguments.");
+          return NULL;
+        }
+
+      result = new (heap) WildCardOp(
+	   op,
+	   0,
+	   child0,
+           child1);
+    }
   else
     {
       NAString e(fname, CmpCommon::statementHeap());

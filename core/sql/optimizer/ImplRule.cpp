@@ -5213,7 +5213,7 @@ RelExpr * PhysicalIsolatedScalarUDFRule::nextSubstitute(RelExpr * before,
 PhysicalTMUDFRule::~PhysicalTMUDFRule() {} // LCOV_EXCL_LINE 
 
 NABoolean PhysicalTMUDFRule::topMatch (RelExpr *relExpr,
-                                                Context *context)
+                                       Context *context)
 {
   if (NOT relExpr->getOperator().match(REL_ANY_TABLE_MAPPING_UDF))
     return FALSE;
@@ -5252,6 +5252,11 @@ RelExpr * PhysicalTMUDFRule::nextSubstitute(RelExpr * before,
     result->child(i) = before->child(i);
 
   return result;
+}
+
+NABoolean PhysicalTMUDFRule::canMatchPattern (const RelExpr *pattern) const
+{
+  return OperatorType(REL_TABLE_MAPPING_UDF).match(pattern->getOperator());
 }
 
 PhysicalFastExtractRule::~PhysicalFastExtractRule() {} // LCOV_EXCL_LINE

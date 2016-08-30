@@ -691,6 +691,36 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	      return FALSE;
 	    }
 
+        case REL_ANY_LEAF_TABLE_MAPPING_UDF:
+	  switch (op_)
+	    {
+	    case REL_TABLE_MAPPING_UDF:
+	    case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
+            case REL_TABLE_MAPPING_BUILTIN_JDBC:
+	      return TRUE;
+	    default:
+	      return FALSE;
+	    }
+
+        case REL_ANY_UNARY_TABLE_MAPPING_UDF:
+	  switch (op_)
+	    {
+	    case REL_TABLE_MAPPING_UDF:
+            case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
+	      return TRUE;
+	    default:
+	      return FALSE;
+	    }
+
+        case REL_ANY_BINARY_TABLE_MAPPING_UDF:
+	  switch (op_)
+	    {
+	    case REL_TABLE_MAPPING_UDF:
+	      return TRUE;
+	    default:
+	      return FALSE;
+	    }
+
 	case ANY_REL_OR_ITM_OP:
 	  ABORT("internal error in OperatorType::match()");
 

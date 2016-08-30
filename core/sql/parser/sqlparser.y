@@ -21398,9 +21398,9 @@ query_shape_options : TOK_IMPLICIT TOK_EXCHANGE
 /* type exprnode */
 query_shape_control : shape_identifier
 				{
-				  // tuple, cut, and scan are nodes that are
-				  // allowed without any arguments, TYPE1
-				  // and TYPE2 are allowed as 3rd or 4th
+				  // tuple, cut, scan and misc. others are nodes
+				  // that are allowed without any arguments,
+				  // TYPE1 and TYPE2 are allowed as 3rd or 4th
 				  // arguments of join plan shapes
 				  if (*$1 == "TUPLE")
 				    {
@@ -21428,6 +21428,14 @@ query_shape_control : shape_identifier
                                     {
                                       $$ = new (PARSERHEAP()) ExplainFunc();
                                     }
+				  else if (*$1 == "ISOLATED_SCALAR_UDF" )
+				    {
+				      $$ = new (PARSERHEAP()) UDFForceWildCard(REL_FORCE_ANY_SCALAR_UDF);
+				    }
+				  else if (*$1 == "TMUDF" )
+				    {
+				      $$ = new (PARSERHEAP()) WildCardOp(REL_ANY_LEAF_TABLE_MAPPING_UDF);
+				    }
 				  else if (*$1 == "FORWARD")
 				    {
 				      $$ = new (PARSERHEAP()) ScanForceWildCard();
@@ -21506,10 +21514,6 @@ query_shape_control : shape_identifier
 				      $$ = new (PARSERHEAP())
 				       ControlQueryShape(
 				         NULL, SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), FALSE);
-				    }
-				  else if (*$1 == "ISOLATED_SCALAR_UDF" )
-				    {
-				      $$ = new (PARSERHEAP()) UDFForceWildCard(REL_FORCE_ANY_SCALAR_UDF);
 				    }
 				  else
 				    {
