@@ -9590,26 +9590,20 @@ char objectTypeString[20] = {0};
    str_sprintf(buf,"DROP %s %s %s CASCADE",
                volatileString,objectTypeString,objectName);
                
-// Save the current parserflags setting
-   ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+   // Turn on the internal query parser flag; note that when
+   // this object is destroyed, the flags will be reset to
+   // their original state
+   PushAndSetSqlParserFlags savedParserFlags(INTERNAL_QUERY_FROM_EXEUTIL);
    Lng32 cliRC = 0;
 
    try
-   {            
-      Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
-               
+   {                      
       cliRC = cliInterface.executeImmediate(buf);
    }
    catch (...)
-   {
-      // Restore parser flags settings to what they originally were
-      Assign_SqlParser_Flags(savedParserFlags);
-      
+   {      
       throw;
    }
-   
-// Restore parser flags settings to what they originally were
-   Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
    
    if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
       someObjectsCouldNotBeDropped = true;
