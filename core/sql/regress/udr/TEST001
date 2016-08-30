@@ -267,6 +267,7 @@ FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
                             60000000)) XO
 where session_id < 10;
 
+control query shape tmudf(sort(scan));
 -- predicate on IPADDR is evaluated in child,
 -- predicate on SESSION_ID is evaluated in the UDF
 prepare s from
@@ -281,6 +282,7 @@ FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
                             60000000)) XO
 where SESSION_ID < 2 and
       IPADDR = '12.345.567.345';
+control query shape anything;
 select count(*) from table(explain(null,'S'))
 where operator = 'TMUDF'
   and description like '% preds_evaluated_by_udf: (SESSION_ID < 2) %';
@@ -352,8 +354,10 @@ order by 1;
 select sum(fibonacci_number)
 from UDF(fibonacci_java(50,10)) XO;
 
+control query shape join(tmudf, tmudf);
 select *
 from UDF(fibonacci(1,10)) natural join UDF(fibonacci_java(1,10));
+control query shape off;
 
 select *
 from UDF(fibonacci(1,10)) cpp1 natural join
