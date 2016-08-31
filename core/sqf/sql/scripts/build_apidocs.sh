@@ -105,8 +105,10 @@ do
   esac
 
   if [[ -n "$TGT_DIR" ]]; then
-    echo "Moving $d apidocs to ${TGT_DIR}${TGT_SUBDIR}"
+    echo "Moving $d apidocs from $APIDOC_DIR to ${TGT_DIR}${TGT_SUBDIR}"
+    echo "Current working dir is $PWD"
     if [[ ! -d ${TGT_DIR}${TGT_SUBDIR} ]]; then
+      echo "Making target directory ${TGT_DIR}${TGT_SUBDIR}"
       mkdir -p ${TGT_DIR}${TGT_SUBDIR}
     fi
     mv -f $APIDOC_DIR ${TGT_DIR}${TGT_SUBDIR}
