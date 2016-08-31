@@ -87,7 +87,9 @@ do
          cd $MY_SQROOT ; make genverhdr
          cd $MY_SQROOT/src/seatrans/hbase-trx
          make clean
-         make
+         # make sure the set -pipefail command in the make file is
+         # supported by using bash as the shell
+         make SHELL=/bin/bash
 
          echo "Now make the actual Javadoc"
          cd $MY_SQROOT/../sql
