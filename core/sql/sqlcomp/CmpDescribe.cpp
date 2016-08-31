@@ -2111,9 +2111,6 @@ static short CmpDescribeShape(
   outbuflen = space.getAllocatedSpaceSize();
   outbuf = new (heap) char[outbuflen];
   space.makeContiguous(outbuf, outbuflen);
-#ifdef _DEBUG
-  printf ("%s\n", outbuf );
-#endif
   return 0;
 }
 
