@@ -83,15 +83,6 @@ do
     sql_javadoc)
 
          echo "Building Javadocs for SQL project"
-         echo "Building required HBase-trx jar"
-         cd $MY_SQROOT ; make genverhdr
-         cd $MY_SQROOT/src/seatrans/hbase-trx
-         make clean
-         # make sure the set -pipefail command in the make file is
-         # supported by using bash as the shell
-         make SHELL=/bin/bash
-
-         echo "Now make the actual Javadoc"
          cd $MY_SQROOT/../sql
          mvn javadoc:javadoc
          APIDOC_DIR=target/site/apidocs
