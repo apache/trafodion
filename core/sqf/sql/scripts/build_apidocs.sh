@@ -83,6 +83,13 @@ do
     sql_javadoc)
 
          echo "Building Javadocs for SQL project"
+         echo "Building required HBase-trx jar"
+         cd $MY_SQROOT ; make genverhdr
+         cd $MY_SQROOT/src/seatrans/hbase-trx
+         make clean
+         make
+
+         echo "Now make the actual Javadoc"
          cd $MY_SQROOT/../sql
          mvn javadoc:javadoc
          APIDOC_DIR=target/site/apidocs
@@ -93,8 +100,9 @@ do
 
          echo "Building Doxygen for TMUDF C++ interface"
          cd $MY_SQROOT/../sql/sqludr
-         doxygen doxygen_tmudr*.config
          APIDOC_DIR=tmudr_2.0.1/html
+         rm -rf $APIDOC_DIR
+         doxygen doxygen_tmudr*.config
          TGT_SUBDIR="/tmudr_doxygen"
     ;;
 
@@ -106,10 +114,10 @@ do
 
   if [[ -n "$TGT_DIR" ]]; then
     echo "Moving $d apidocs from $APIDOC_DIR to ${TGT_DIR}${TGT_SUBDIR}"
-    echo "Current working dir is $PWD"
     if [[ ! -d ${TGT_DIR}${TGT_SUBDIR} ]]; then
-      echo "Making target directory ${TGT_DIR}${TGT_SUBDIR}"
       mkdir -p ${TGT_DIR}${TGT_SUBDIR}
+    else
+      rm -rf ${TGT_DIR}${TGT_SUBDIR}
     fi
     mv -f $APIDOC_DIR ${TGT_DIR}${TGT_SUBDIR}
   fi
