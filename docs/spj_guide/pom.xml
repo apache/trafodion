@@ -264,6 +264,30 @@
           </execution>
         </executions>
       </plugin>
+      <!-- Build Doxygen site for Trafodion TMUDF C++ interface -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.1.1</version>
+        <executions>
+          <execution>
+            <id>build-javadoc</id>
+            <phase>site</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <executable>${env.MY_SQROOT}/sql/scripts/build_apidocs.sh</executable>
+          <arguments>
+            <argument>-o</argument>
+            <argument>${basedir}/target/site/apidocs</argument>
+            <argument>sql_javadoc</argument>
+            <argument>udr_doxygen</argument>
+          </arguments>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
