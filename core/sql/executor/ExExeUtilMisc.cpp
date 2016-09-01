@@ -2302,6 +2302,7 @@ short ExExeUtilHiveTruncateTcb::work()
 
       case DATA_MOD_CHECK_:
       {
+        Int64 failedModTS = -1;
         cliRC = ExpLOBinterfaceDataModCheck
           (lobGlob_,
            (htTdb().getPartnLocation() ? 
@@ -2310,7 +2311,8 @@ short ExExeUtilHiveTruncateTcb::work()
            htTdb().getHdfsHost(),
            htTdb().getHdfsPort(),
            htTdb().getModTS(),
-           0);
+           0,
+           failedModTS);
 
         if (cliRC < 0)
         {
@@ -2333,9 +2335,15 @@ short ExExeUtilHiveTruncateTcb::work()
 
         if (cliRC == 1) // data mod check failed
         {
+          char errStr[200];
+          str_sprintf(errStr, "genModTS = %Ld, failedModTS = %Ld", 
+                      htTdb().getModTS(), failedModTS);
+          
           ComDiagsArea * diagsArea = NULL;
           ExRaiseSqlError(getHeap(), &diagsArea, 
-                          (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+                          (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR), NULL,
+                          NULL, NULL, NULL,
+                          errStr);
           pentry_down->setDiagsArea(diagsArea);
           
           step_ = ERROR_;

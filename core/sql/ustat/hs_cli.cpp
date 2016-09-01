@@ -3215,6 +3215,9 @@ NAType* ConstructNumericType( Long addr
 {
   NAType *type;
   switch(length) {
+  case 1:
+    type = new(currHeap) SQLTiny(allowNeg, nullflag, currHeap);
+    break;
   case 2:
     if (!ALIGN2(addr))
       {
