@@ -92,6 +92,30 @@ copyDatetimeFields(rec_datetime_field startField,
                    Lng32 dstLen,
                    NABoolean *roundedDownFlag);
 
+// Helper function to format extra error message text and report error
+// srcData is not null terminated, so need a buffer copy to build a C-style string
+// 
+static void 
+raiseDateConvErrorWithSrcData(int srcLen, ComDiagsArea** diagsArea, char *srcData, CollHeap *heap)
+{
+    char errstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+    memset(errstr, 0 , sizeof(errstr) );
+    if(srcLen > MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN -1 )
+      srcLen = MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN -1;
+    strncpy(errstr, srcData, srcLen);
+    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,errstr);
+}
+
+// Helper function to format extra error message text and report error
+// 
+static void 
+raiseDateConvErrorWithSrcDataNumeric(ComDiagsArea** diagsArea, long srcData, CollHeap *heap)
+{
+   char errstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
+   memset(errstr, 0 , sizeof(errstr) );
+   sprintf(errstr,"%ld",srcData);
+   ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,errstr);
+}
 //////////////////////////////////////////////
 // Defined in exp_datetime.h
 //
@@ -2023,13 +2047,7 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
   // If the format could not be determined, issue an error.
   //
   if (format == DATETIME_FORMAT_ERROR) {
-    char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-    memset(hexstr, 0 , sizeof(hexstr) );
-    int copyLen = strlen(originalSrcData);
-    if(copyLen > sizeof(hexstr) -1 )
-      copyLen = sizeof(hexstr) -1;
-    strncpy(hexstr,originalSrcData,copyLen);
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+    raiseDateConvErrorWithSrcData(originalSrcLen,diagsArea, originalSrcData, heap);
     return -1;
   }
 
@@ -2065,13 +2083,7 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
   // if timezone is specified and end field is not DAY, return error.
   if ((defZ || TZD) && (dstEndField == REC_DATE_DAY))
     {
-      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-      memset(hexstr, 0 , sizeof(hexstr) );
-      int copyLen = strlen(originalSrcData);
-      if(copyLen > sizeof(hexstr) -1 )
-        copyLen = sizeof(hexstr) -1;
-      strncpy(hexstr,originalSrcData,copyLen);
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+      raiseDateConvErrorWithSrcData(originalSrcLen,diagsArea, originalSrcData, heap);
       return -1;
     }
 
@@ -2167,15 +2179,7 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
                      heap,
                      diagsArea,
    	             flags)) {
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-        char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-        memset(hexstr, 0 , sizeof(hexstr) );
-        int copyLen = strlen(originalSrcData);
-        if(copyLen > sizeof(hexstr) -1 )
-          copyLen = sizeof(hexstr) -1;
-        strncpy(hexstr,originalSrcData,copyLen);
-        if(*diagsArea != NULL)
-          **diagsArea << DgString0(hexstr); 
+        raiseDateConvErrorWithSrcData(originalSrcLen,diagsArea, originalSrcData, heap);
         return -1;
       }
     }
@@ -2183,13 +2187,7 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
 
   // If there are any remaining characters in the input string.
   if (src != srcEnd) {
-      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-      memset(hexstr, 0 , sizeof(hexstr) );
-      int copyLen = strlen(originalSrcData);
-      if(copyLen > sizeof(hexstr) -1 )
-          copyLen = sizeof(hexstr) -1;
-      strncpy(hexstr,originalSrcData,copyLen);
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+      raiseDateConvErrorWithSrcData(originalSrcLen,diagsArea, originalSrcData, heap);
       return -1;
   }
 
@@ -2200,13 +2198,7 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
       containsField(REC_DATE_HOUR, dstStartField, dstEndField) &&
       usaAmPm) {
     if (datetimeValues[REC_DATE_HOUR] > 12) {
-      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-      memset(hexstr, 0 , sizeof(hexstr) );
-      int copyLen = strlen(originalSrcData);
-      if(copyLen > sizeof(hexstr) -1 )
-          copyLen = sizeof(hexstr) -1;
-      strncpy(hexstr,originalSrcData,copyLen);
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+      raiseDateConvErrorWithSrcData(originalSrcLen,diagsArea, originalSrcData, heap);
       return -1;
     }
 
@@ -2226,13 +2218,7 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
       }
     }
   } else if (usaAmPm) {
-    char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-    memset(hexstr, 0 , sizeof(hexstr) );
-    int copyLen = strlen(originalSrcData);
-    if(copyLen > sizeof(hexstr) -1 )
-          copyLen = sizeof(hexstr) -1;
-    strncpy(hexstr,originalSrcData,copyLen);
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+    raiseDateConvErrorWithSrcData(originalSrcLen,diagsArea, originalSrcData, heap);
     return -1;
   }
     
@@ -2282,13 +2268,7 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
       }
       break;
     default:
-      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-      memset(hexstr, 0 , sizeof(hexstr) );
-      int copyLen = strlen(originalSrcData);
-      if(copyLen > sizeof(hexstr) - 1 ) 
-        copyLen = sizeof(hexstr) - 1; 
-      strncpy(hexstr,originalSrcData, copyLen);
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+      raiseDateConvErrorWithSrcData(originalSrcLen,diagsArea, originalSrcData, heap);
       return -1;
     }
   }
@@ -2301,13 +2281,7 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
     if (validateDate(dstStartField, dstEndField, 
 		     dstData, NULL, FALSE, 
 		     LastDayPrevMonth)) {
-      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-      memset(hexstr, 0 , sizeof(hexstr) );
-      int copyLen = strlen(originalSrcData);
-      if(copyLen > sizeof(hexstr) - 1 ) 
-        copyLen = sizeof(hexstr) - 1; 
-      strncpy(hexstr,originalSrcData, copyLen);
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+      raiseDateConvErrorWithSrcData(originalSrcLen,diagsArea, originalSrcData, heap);
       return -1;
     };
 
@@ -2323,13 +2297,7 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
     short error;
     Int64 juliantimestamp = COMPUTETIMESTAMP(timestamp, &error);
     if (error) {
-      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-      memset(hexstr, 0 , sizeof(hexstr) );
-      int copyLen = strlen(originalSrcData);
-      if(copyLen > sizeof(hexstr) - 1 ) 
-        copyLen = sizeof(hexstr) - 1; 
-      strncpy(hexstr,originalSrcData, copyLen);
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+      raiseDateConvErrorWithSrcData(originalSrcLen,diagsArea, originalSrcData, heap);
       return -1;
     }
 
@@ -2377,13 +2345,7 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
         }
         break;
       default:
-        char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-        memset(hexstr, 0 , sizeof(hexstr) );
-        int copyLen = strlen(originalSrcData);
-        if(copyLen > sizeof(hexstr) - 1 ) 
-          copyLen = sizeof(hexstr) - 1; 
-        strncpy(hexstr,originalSrcData, copyLen);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+        raiseDateConvErrorWithSrcData(originalSrcLen,diagsArea, originalSrcData, heap);
         return -1;
       }
     }
@@ -2458,12 +2420,7 @@ static NABoolean convertStrToMonth(char* &srcData, char *result,
               if (*srcData != *nextByte)
                 {
                   // string contains non-digit
-                  char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-                  memset(hexstr, 0 , sizeof(hexstr) );
-                  if(copyLen > sizeof(hexstr) -1 ) 
-                    copyLen = sizeof(hexstr) -1;        
-                  strncpy(hexstr,originalSrcData,copyLen);
-                  ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+                  raiseDateConvErrorWithSrcData(copyLen,diagsArea, originalSrcData, heap);
                   return FALSE; // error
                 }    
               srcData++;
@@ -2526,14 +2483,7 @@ static short convSrcDataToDst(Lng32 numSrcBytes, char* &srcData,
   if (src < numSrcBytes) 
     {
       // string contains non-digit
-      //
-      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-      memset(hexstr, 0 , sizeof(hexstr) );
-      int copyLen = strlen(srcData);
-      if( copyLen > sizeof(hexstr) - 1)
-         copyLen = sizeof(hexstr) - 1; 
-      strncpy(hexstr,srcData,copyLen);
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+      raiseDateConvErrorWithSrcData(numSrcBytes,diagsArea, srcData, heap);
       return -1;
     }
 
@@ -2551,13 +2501,7 @@ static short convSrcDataToDst(Lng32 numSrcBytes, char* &srcData,
       if (*srcData != *nextByte)
         {
           // string contains non-digit
-          char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-          memset(hexstr, 0 , sizeof(hexstr) );
-          int copyLen = strlen(srcData);
-          if( copyLen > sizeof(hexstr) - 1)
-            copyLen = sizeof(hexstr) - 1; 
-          strncpy(hexstr,srcData,copyLen);
-          ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+          raiseDateConvErrorWithSrcData(numSrcBytes,diagsArea, srcData, heap);
           return -1;
         }    
 
@@ -2619,14 +2563,7 @@ ExpDatetime::convAsciiToDate(char *srcData,
 
     if (i == srcLen) {
       // string contains only blanks.
-      //
-      char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-      memset(hexstr, 0 , sizeof(hexstr) );
-      int copyLen = strlen(srcData);
-      if(copyLen > sizeof(hexstr) - 1)
-        copyLen = sizeof(hexstr) - 1;
-      strncpy(hexstr,srcData,copyLen);
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+      raiseDateConvErrorWithSrcData(inSrcLen,diagsArea, srcData, heap);
       return -1;
     };
 
@@ -2645,13 +2582,7 @@ ExpDatetime::convAsciiToDate(char *srcData,
   if ((minLength <= 0) || (srcLen < minLength)) {
     // string doesn't seem to contain all date fields.
     //
-    char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-    memset(hexstr, 0 , sizeof(hexstr) );
-    int copyLen = strlen(srcData);
-    if(copyLen > sizeof(hexstr) - 1)
-      copyLen = sizeof(hexstr) - 1;
-    strncpy(hexstr,srcData,copyLen);
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+    raiseDateConvErrorWithSrcData(inSrcLen,diagsArea, srcData, heap);
     return -1;
   };
 
@@ -2862,13 +2793,7 @@ ExpDatetime::convAsciiToDate(char *srcData,
       // the month
       char * prevSrcData = srcData;
       if (! convertStrToMonthLongFormat(srcData, &dstData[2])) {
-        char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-        memset(hexstr, 0 , sizeof(hexstr) );
-        int copyLen = strlen(srcData);
-        if(copyLen > sizeof(hexstr) -1 )
-          copyLen = sizeof(hexstr) -1 ;
-        strncpy(hexstr,srcData,copyLen);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+        raiseDateConvErrorWithSrcData(inSrcLen,diagsArea, srcData, heap);
         return -1;
       }
       minLength += (srcData - prevSrcData);
@@ -3034,14 +2959,7 @@ ExpDatetime::convAsciiToDate(char *srcData,
   default:
     {
     // Format could not be determined, issue an error.
-    //
-    char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-    memset(hexstr, 0 , sizeof(hexstr) );
-    int copyLen = strlen(srcData);
-    if(copyLen > sizeof(hexstr) -1 )
-      copyLen = sizeof(hexstr) -1 ;
-    strncpy(hexstr,srcData,copyLen);
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+    raiseDateConvErrorWithSrcData(inSrcLen,diagsArea, srcData, heap);
     return -1;
     }
   };
@@ -3053,14 +2971,7 @@ ExpDatetime::convAsciiToDate(char *srcData,
     for (i = 0; i < srcLen; i++) {
       if (srcData[i] != ' ') {
         // string contains only blanks.
-        //
-        char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-        memset(hexstr, 0 , sizeof(hexstr) );
-        int copyLen = strlen(srcData);
-        if(copyLen > sizeof(hexstr) -1 )
-          copyLen = sizeof(hexstr) -1 ;
-        strncpy(hexstr,srcData,copyLen);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+        raiseDateConvErrorWithSrcData(inSrcLen,diagsArea,srcData,heap);
         return -1;
       }
     }
@@ -3074,13 +2985,7 @@ ExpDatetime::convAsciiToDate(char *srcData,
 	if (validateDate(REC_DATE_YEAR, REC_DATE_DAY, 
 			 dstData, NULL, FALSE, 
 			 LastDayPrevMonth)) {
-          char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-          memset(hexstr, 0 , sizeof(hexstr) );
-          int copyLen = strlen(srcData);
-          if(copyLen > sizeof(hexstr) -1 )
-            copyLen = sizeof(hexstr) -1 ;
-          strncpy(hexstr,srcData,copyLen);
-	  ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+          raiseDateConvErrorWithSrcData(inSrcLen,diagsArea,srcData,heap);
 	  return -1;
 	};
     }
@@ -3676,13 +3581,7 @@ ExpDatetime::convNumericTimeToASCII(char *srcData,
       // cannot convert negative number with NUM1 format
       if (format == DATETIME_FORMAT_NUM1)
         {
-          char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-          memset(hexstr, 0 , sizeof(hexstr) );
-          int copyLen = strlen(srcData);
-          if(copyLen > sizeof(hexstr) -1 )
-            copyLen = sizeof(hexstr) -1;
-          strncpy(hexstr,srcData,copyLen);
-          ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+          raiseDateConvErrorWithSrcDataNumeric(diagsArea,temp,heap);
           return -1;
         }
 
@@ -3720,13 +3619,7 @@ ExpDatetime::convNumericTimeToASCII(char *srcData,
       // if more digits left in input, error out.
       if (temp > 0)
         {
-          char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-          memset(hexstr, 0 , sizeof(hexstr) );
-          int copyLen = strlen(srcData);
-          if(copyLen > sizeof(hexstr) -1 )
-            copyLen = sizeof(hexstr) -1;
-          strncpy(hexstr,srcData,copyLen);
-          ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,hexstr);
+          raiseDateConvErrorWithSrcDataNumeric(diagsArea,temp,heap);
           return -1;
         }
 
