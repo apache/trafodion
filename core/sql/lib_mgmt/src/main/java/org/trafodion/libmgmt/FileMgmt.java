@@ -33,6 +33,7 @@ import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -71,7 +72,9 @@ public class FileMgmt {
 				"GETFILE - Download a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]GETFILE for more info.",
 				"ADDLIB - Create a library. SHOWDDL PROCEDURE [SCHEMA NAME.]ADDLIB for more info.",
 				"ALTERLIB - Update a library. SHOWDDL PROCEDURE [SCHEMA NAME.]ALTERLIB for more info.",
-				"DROPLIB - Drop a library. SHOWDDL PROCEDURE [SCHEMA NAME.]DROPLIB for more info."
+				"DROPLIB - Drop a library. SHOWDDL PROCEDURE [SCHEMA NAME.]DROPLIB for more info.",
+				"GETSTARTWITH - Get all child of startwith key. SHOWDDL PROCEDURE [SCHEMA NAME.].GETSTARTWITH for more info.",
+				"CONNECTBY - Connect by startwith result. SHOWDDL PROCEDURE [SCHEMA NAME.].CONNECTBY for more info."
 		};
 		List<String> index = new ArrayList<String>(help.length);
 		index.add("PUT");
@@ -80,6 +83,8 @@ public class FileMgmt {
 		index.add("RM");
 		index.add("RMREX");
 		index.add("GETFILE");
+		index.add("GETSTARTWITH");
+		index.add("CONNECTBY");
 		String tmp = helps[0].trim().toUpperCase();
 		helps[0] = "HELP:\r\n";
 		switch (index.indexOf(tmp)) {
@@ -100,6 +105,12 @@ public class FileMgmt {
 			break;
 		case 5:
 			helps[0] = help[5];
+			break;
+		case 6:
+			helps[0] = help[6];
+			break;
+		case 7:
+			helps[0] = help[7];
 			break;
 		default:
 			for (String h : help) {
@@ -546,6 +557,64 @@ public class FileMgmt {
 			LOG.error("Jar file size is over the threshold[100Mb]");
 			throw new SQLException("Jar file size is over the threshold[100Mb]");
 		}
+	}
+	
+	public static void connectBy(String columnName, String originSql, String startWithSql, String startWithKey,ResultSet[] rs) throws SQLException{
+		String[] out =new String[1];
+		getStartWith(startWithSql, startWithKey, out); 
+		String[] s = out[0].replaceAll("^\\[|\\]$", "").split("\\s*,\\s*");
+		String clause = " ";
+		for(int i = 0;i<s.length;i++){
+			if(i == s.length -1){
+				clause += columnName + "=\'" + s[i] + "\'";
+			}else{
+				clause += columnName + "=\'" + s[i] + "\' or ";
+			}
+		}
+		String connectSql = String.format(originSql, clause);
+		Connection conn = getConn();
+		PreparedStatement ps = conn.prepareStatement(connectSql);
+		try{
+			rs[0] = ps.executeQuery();
+		} catch(SQLException e){
+			LOG.error(originSql,e);
+			throw e;
+		} 
+	}
+	
+	
+	public static void getStartWith(String sql, String startWithKey, String[] out) throws SQLException{
+		String sqlTest = String.format(sql, startWithKey);
+		int searchLevel = 0;
+		ArrayList<String> ids = new ArrayList<String>();
+		Connection conn = getConn();
+		PreparedStatement ps = conn.prepareStatement(sqlTest);
+		try{
+			ids.addAll(bfsSearch(sql,startWithKey,searchLevel,ps));
+			out[0]= Arrays.toString(ids.toArray());
+		} catch(SQLException e){
+			LOG.error(sql,e);
+			throw e;
+		} 
+	}
+	
+	private static ArrayList<String> bfsSearch(String sql, String startWithKey,int searchLevel, PreparedStatement ps) throws SQLException{
+		ArrayList<String> ids = new ArrayList<String>();
+		if(searchLevel==99){
+			return ids;
+		}
+		String sqlText = String.format(sql, startWithKey);
+		ResultSet rs = ps.executeQuery(sqlText);
+		while(rs.next()){
+			String parentId = rs.getString(1);
+			String childId = rs.getString(2);
+			ids.add(childId);
+		}
+		searchLevel++;
+		for(int i = 0;i < ids.size();i++){
+			ids.addAll(bfsSearch(sql,ids.get(i),searchLevel,ps));
+		}
+		return ids;
 	}
 
 	private static String getCodeFilePath(Connection conn) throws SQLException {
