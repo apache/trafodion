@@ -2654,6 +2654,9 @@ PrivStatus PrivMgrPrivileges::gatherViewPrivileges(
 // ****************************************************************************
 PrivStatus PrivMgrPrivileges::generateColumnRowList()
 {
+  // If columnRowList_ already allocated, just return
+  if (columnRowList_.size() > 0)
+    return STATUS_GOOD;
   PrivStatus privStatus = getColumnRowList(objectUID_, columnRowList_);
   if (privStatus == STATUS_ERROR)
     return privStatus;
@@ -2718,6 +2721,9 @@ PrivStatus PrivMgrPrivileges::getColumnRowList(
 // ****************************************************************************
 PrivStatus PrivMgrPrivileges::generateObjectRowList()
 {
+  // If objectRowList_ already allocated, just return
+  if (objectRowList_.size() > 0)
+    return STATUS_GOOD;
   PrivStatus privStatus = getObjectRowList(objectUID_, objectRowList_);
   if (privStatus == STATUS_ERROR)
     return privStatus;
@@ -5958,7 +5964,7 @@ std::vector<ColPrivSpec> &colPrivsArray =
       // See if the grantor has been granted WGO at column-level for priv.  
       for (size_t j = 0; j < colRowList.size(); j++)
       {
-          ColumnPrivsMDRow &columnRow = static_cast<ColumnPrivsMDRow &> (*colRowList[i]);
+          ColumnPrivsMDRow &columnRow = static_cast<ColumnPrivsMDRow &> (*colRowList[j]);
           if (columnRow.columnOrdinal_ == colPrivSpec.columnOrdinal)
           {
              if (columnRow.grantableBitmap_.test(colPrivSpec.privType))
