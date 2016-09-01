@@ -37,6 +37,7 @@ concurrent_execution=0
 exclusive_execution=0
 log_qualifier=
 diffs=0
+failed=0
 
 # Parse command line options.  Options must appear on the command line before
 # test names.

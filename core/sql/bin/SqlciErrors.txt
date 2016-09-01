@@ -1558,7 +1558,7 @@ $1~String1 --------------------------------
 8433 22003 99999 BEGINNER MINOR LOGONLY Invalid $0~string0 character encountered in $1~string1.
 8434 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Invalid target column for LOB function. The column needs to be blob/clob type. 
 8435 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
-8436 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mismatch detected between compiletime and runtime hive table definitions.
+8436 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: $0~string0
 8437 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mismatch detected between external table and underlying hive table definitions.
 8440 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The size of the history buffer is too small to execute one or more of the OLAP Windowed Functions in the query. 
 8441 ZZZZZ 99999 BEGINNER MAJOR DBADMIN one or more of the OLAP Windowed Functions in the query may require overflow which is not supported yet.

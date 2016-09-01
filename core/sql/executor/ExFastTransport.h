@@ -405,7 +405,7 @@ protected:
   Lng32 lobInterfaceInsert(ssize_t bytesToWrite);
   Lng32 lobInterfaceCreate();
   Lng32 lobInterfaceClose();
-  Lng32 lobInterfaceDataModCheck();
+  Lng32 lobInterfaceDataModCheck(Int64 &failedModTS);
 
   virtual void insertUpQueueEntry(ex_queue::up_status status,
                           ComDiagsArea *diags,

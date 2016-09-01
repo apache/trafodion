@@ -166,6 +166,7 @@ NA_EIDPROC
 void copyInteger (void *destination, Int32 targetLength, 
 		  void *sourceAddress, Int32 sourceLength);
 
+void copyToInteger1 (Int8 *destination, void *sourceAddress, Int32 sourceSize);
 NA_EIDPROC 
 void copyToInteger2 (short *destination, void *sourceAddress, Int32 sourceSize);
 NA_EIDPROC 
