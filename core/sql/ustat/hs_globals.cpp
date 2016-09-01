@@ -3475,7 +3475,6 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
                                                    true));
     }
 
-  // for UPDATE STATISTICS, no more checking is performed
   // For SHOW STATS command, check for additional privileges
   if (!authorized && isShowStats)
     {
@@ -3489,35 +3488,37 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
       authorized = (componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(),
                                                     SQLOperation::SHOW,
                                                     true));
-     if (!authorized)
-       {
-         if (LM->LogNeeded())
-           {
-             sprintf(LM->msg, "Authorization: check for SELECT object privilege");
-             LM->Log(LM->msg);
-           }
-
-         // check for SELECT privilege
-         PrivMgrUserPrivs *privs = objDef->getNATable()->getPrivInfo();
-         if (privs == NULL)
-           {
-             *CmpCommon::diags() << DgSqlCode(-1034);
-              authorized = FALSE;
-           }
-
-         // Requester must have at least select privilege
-         if ( privs->hasSelectPriv() )
-           authorized = TRUE;
-         else
-           {
-             *CmpCommon::diags()
-              << DgSqlCode( -4481 )
-              << DgString0( "SELECT" )
-              << DgString1( objDef->getNATable()->getTableName().getQualifiedNameAsAnsiString() );
-              authorized = FALSE;
-            }
+     }
+   
+   // Allow operation if requester has SELECT priv
+   if (!authorized)
+     {
+       if (LM->LogNeeded())
+         {
+           sprintf(LM->msg, "Authorization: check for SELECT object privilege");
+           LM->Log(LM->msg);
          }
-      }
+
+       // check for SELECT privilege
+       PrivMgrUserPrivs *privs = objDef->getNATable()->getPrivInfo();
+       if (privs == NULL)
+         {
+           *CmpCommon::diags() << DgSqlCode(-1034);
+            authorized = FALSE;
+         }
+
+       // Requester must have at least select privilege
+       if ( privs->hasSelectPriv() )
+         authorized = TRUE;
+       else
+         {
+           *CmpCommon::diags()
+            << DgSqlCode( -4481 )
+            << DgString0( "SELECT or MANAGE_STATISTICS" )
+            << DgString1( objDef->getNATable()->getTableName().getQualifiedNameAsAnsiString() );
+            authorized = FALSE;
+          }
+       }
 
    LM->LogTimeDiff("Exiting: HSGlobalsClass::isAuthorized");
    return authorized;
