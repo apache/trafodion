@@ -9668,17 +9668,17 @@ int32_t CmpSeabaseDDL::verifyDDLCreateOperationAuthorized(
 
 {
 
-int32_t currentUser = ComUser::getCurrentUser(); 
-NAString privMgrMDLoc;
+   int32_t currentUser = ComUser::getCurrentUser(); 
+   NAString privMgrMDLoc;
 
    CONCAT_CATSCH(privMgrMDLoc,getSystemCatalog(),SEABASE_PRIVMGR_SCHEMA);
    
-PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
-                                               CmpCommon::diags());
+   PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
+                                                  CmpCommon::diags());
                                                
-// CREATE SCHEMA is a special case.  There is no existing schema with an 
-// an owner or class.  A new schema may be created if the user is DB__ROOT,
-// authorization is not enabled, or the user has the CREATE_SCHEMA privilege. 
+   // CREATE SCHEMA is a special case.  There is no existing schema with an 
+   // an owner or class.  A new schema may be created if the user is DB__ROOT,
+   // authorization is not enabled, or the user has the CREATE_SCHEMA privilege. 
 
    if (operation == SQLOperation::CREATE_SCHEMA)
    {
@@ -9699,9 +9699,9 @@ PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
       return CAT_NOT_AUTHORIZED;
    }
 
-// 
-// Not CREATE SCHEMA, but verify the operation is a create operation.
-//
+   // 
+   // Not CREATE SCHEMA, but verify the operation is a create operation.
+   //
    if (!PrivMgr::isSQLCreateOperation(operation))
    {
       SEABASEDDL_INTERNAL_ERROR("Unknown create operation");   
@@ -9709,12 +9709,12 @@ PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
       return CAT_INTERNAL_EXCEPTION_ERROR; 
    }
       
-// User is asking to create an object in an existing schema.  Determine if this
-// schema exists, and if it exists, the owner of the schema.  The schema class     
-// and owner will determine if this user can create an object in the schema and 
-// who will own the object.
+   // User is asking to create an object in an existing schema.  Determine if this
+   // schema exists, and if it exists, the owner of the schema.  The schema class     
+   // and owner will determine if this user can create an object in the schema and 
+   // who will own the object.
        
-ComObjectType objectType;
+   ComObjectType objectType;
 
    if (getObjectTypeandOwner(cliInterface,catalogName.data(),schemaName.data(),
                              SEABASE_SCHEMA_OBJECTNAME,objectType,schemaOwner) == -1)
@@ -9743,29 +9743,33 @@ ComObjectType objectType;
    objectOwner = schemaOwner;
 
 
-// Root user is authorized for all create operations in private schemas.  For 
-// installations with no authentication, all users are mapped to root database  
-// user, so all users have full DDL create authority.
+   // Root user is authorized for all create operations in private schemas.  For 
+   // installations with no authentication, all users are mapped to root database  
+   // user, so all users have full DDL create authority.
 
    if (currentUser == ComUser::getRootUserID())
       return 0;
 
-// If authorization is not enabled, then authentication should not be enabled
-// either, and the previous check should have already returned.  But just in 
-// case, verify authorization is enabled before proceeding.  Eventually this 
-// state should be recorded somewhere, e.g. CLI globals.
+   // If authorization is not enabled, then authentication should not be enabled
+   // either, and the previous check should have already returned.  But just in 
+   // case, verify authorization is enabled before proceeding.  Eventually this 
+   // state should be recorded somewhere, e.g. CLI globals.
 
    if (!isAuthorizationEnabled())
       return 0;
-      
-// To create an object in a private schema, one of three conditions must be true:
-//
-// 1) The user is the owner of the schema.
-// 2) The schema is owned by a role, and the user has been granted the role.
-// 3) The user has been granted the requisite system-level SQL_OPERATIONS
-//    component create privilege.
-//
-// NOTE: In the future, schema-level create authority will be supported.
+
+   // If this is an internal operation, allow the operation.
+  if (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+      return 0;   
+
+   // To create an object in a private schema, one of three conditions must be true:
+   //
+   // 1) The user is the owner of the schema.
+   // 2) The schema is owned by a role, and the user has been granted the role.
+   // 3) The user has been granted the requisite system-level SQL_OPERATIONS
+   //    component create privilege.
+   //
+   // NOTE: In the future, schema-level create authority will be supported.
       
    if (currentUser == schemaOwner)
       return 0;
@@ -9780,14 +9784,14 @@ ComObjectType objectType;
          return 0;              
    }
    
-// Current user is not the schema owner.  See if they have been granted the
-// requisite create privilege.
+   // Current user is not the schema owner.  See if they have been granted the
+   // requisite create privilege.
   
    if (componentPrivileges.hasSQLPriv(currentUser,operation,true))
       return 0;   
    
-// TODO: When schema-level privileges are implemented, see if user has the 
-// requisite create privilege for this specific schema.
+   // TODO: When schema-level privileges are implemented, see if user has the 
+   // requisite create privilege for this specific schema.
 
    objectOwner = schemaOwner = NA_UserIdDefault; 
    return CAT_NOT_AUTHORIZED;
