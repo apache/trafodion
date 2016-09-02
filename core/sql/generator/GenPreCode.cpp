@@ -7665,7 +7665,7 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
       child(0) = generator->getExpGenerator()->convertNumericToInterval(
                                                  child(0)->getValueId(),
                                                  *result_type);
-      strcpy(str, "1");
+      strcpy(str, "001"); // to make sure it is not a tinyint
       child(1) = generator->getExpGenerator()->createExprTree(str, CharInfo::ISO88591);
       child(1)->bindNode(generator->getBindWA());
       type_op2 = (NAType *)(&(child(1)->getValueId().getType()));
@@ -7714,7 +7714,7 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
       child(0) = generator->getExpGenerator()->convertNumericToInterval(
                                                  child(0)->getValueId(),
                                                  *result_type);
-      strcpy(str, "1");
+      strcpy(str, "001"); // to make sure it is not a tinyint
       child(1) = generator->getExpGenerator()->createExprTree(str, CharInfo::ISO88591);
       child(1)->bindNode(generator->getBindWA());
       type_op2 = (NAType *)(&(child(1)->getValueId().getType()));
