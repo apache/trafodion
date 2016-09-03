@@ -99,10 +99,10 @@ static void
 raiseDateConvErrorWithSrcData(int srcLen, ComDiagsArea** diagsArea, char *srcData, CollHeap *heap)
 {
     char errstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-    memset(errstr, 0 , sizeof(errstr) );
+    str_pad(errstr, sizeof(errstr), 0 );
     if(srcLen > MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN -1 )
       srcLen = MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN -1;
-    strncpy(errstr, srcData, srcLen);
+    str_cpy_all(errstr, srcData, srcLen);
     ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,errstr);
 }
 
@@ -112,8 +112,8 @@ static void
 raiseDateConvErrorWithSrcDataNumeric(ComDiagsArea** diagsArea, long srcData, CollHeap *heap)
 {
    char errstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-   memset(errstr, 0 , sizeof(errstr) );
-   sprintf(errstr,"%ld",srcData);
+   str_pad(errstr, sizeof(errstr), 0 );
+   str_sprintf(errstr,"%ld",srcData);
    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,errstr);
 }
 //////////////////////////////////////////////
