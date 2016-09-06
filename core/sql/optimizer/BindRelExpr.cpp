@@ -2964,7 +2964,7 @@ RelExpr *Intersect::bindNode(BindWA *bindWA)
   //
   if(CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON)
   {
-    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
+    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported , not fully tested
         << DgString0("INTERSECT");             // ##
     bindWA->setErrStatus();                    // ##
     if (bindWA->errStatus()) return NULL;      // ##
@@ -3056,7 +3056,7 @@ RelExpr *Except::bindNode(BindWA *bindWA)
   //
   if(CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON)
   {
-    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
+    *CmpCommon::diags() << DgSqlCode(-3022)    // ## EXCEPT not yet supported: not fully tested
         << DgString0("EXCEPT");             // ##
     bindWA->setErrStatus();                    // ##
     if (bindWA->errStatus()) return NULL;      // ##
@@ -3097,7 +3097,7 @@ RelExpr *Except::bindNode(BindWA *bindWA)
     return this;
   }
 
-  // Needs to be removed when supporting get_next for INTERSECT
+  // Needs to be removed when supporting get_next for EXCEPT
   if (getGroupAttr()->isEmbeddedUpdateOrDelete()) {
     *CmpCommon::diags() << DgSqlCode(-4160)
                 << DgString0(fmtdList1)

@@ -688,14 +688,14 @@ A           B                               C
 >>-- ms4 error cases
 >>select to_date(123456789, '99:99:99:99') from (values(1)) x(a);
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: ?
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 1
 
 *** ERROR[8001] An internal executor error occurred.
 
 --- 0 row(s) selected.
 >>select to_date(-12345678, '99:99:99:99') from (values(1)) x(a);
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: ?
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: -12345678
 
 *** ERROR[8001] An internal executor error occurred.
 
