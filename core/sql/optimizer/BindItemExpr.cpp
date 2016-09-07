@@ -12462,7 +12462,6 @@ ItemExpr *ItmSequenceFunction::bindNode(BindWA *bindWA)
     return getValueId().getItemExpr();
 }
 
-
 //-------------------------------------------------------------------------
 //
 // member functions for class AuditImage

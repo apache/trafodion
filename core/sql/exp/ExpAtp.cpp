@@ -293,4 +293,3 @@ void atp_struct::print(char* title, Int16 dt, char* ptr, UInt32 len)
    cout << "\"" << endl;
 }
 
-
