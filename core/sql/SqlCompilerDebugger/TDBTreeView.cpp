@@ -226,8 +226,9 @@ void TDBTreeView::DisplayTDBTree(const class ComTdb* curr,
 
   if (curr != NULL) {
     //col 0 string
-    ComTdb::ex_node_type t = curr->getNodeType();
-    NAString textString = TDBNodeTypeToString(t);
+    //ComTdb::ex_node_type t = curr->getNodeType();
+    //NAString textString = TDBNodeTypeToString(t);
+    NAString textString = curr->getNodeName();
     //col 1 string
     sprintf(labelString,"%d Expressions.",
                ((ComTdb*)curr)->numExpressions());
@@ -274,8 +275,9 @@ void TDBTreeView::on_treeWidget_itemClicked ( QTreeWidgetItem * item, int column
   TDBDlgMdamNet* MdamDlg_;
   QVariant v = item->data(0, Qt::UserRole);
   currTdb = (ComTdb*)v.value <void *>();
-  ComTdb::ex_node_type t = currTdb->getNodeType();
-  NAString textString = TDBNodeTypeToString(t);
+  //ComTdb::ex_node_type t = currTdb->getNodeType();
+  //NAString textString = TDBNodeTypeToString(t);
+  NAString textString = currTdb->getNodeName();
   switch (column) {
     case 1 :  // Expr
             ExprDlg_ = new TDBDlgExprList(this, currTdb, textString);

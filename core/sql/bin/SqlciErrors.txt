@@ -1206,6 +1206,8 @@ $1~String1 --------------------------------
 4137 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A DELETE [FIRST N] statement was specified on table $0~TableName which has more than one partition, without using the PARTITION clause. 
 4138 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of a subquery in the WHERE clause of a DELETE [FIRST N] statement is not supported.
 4139 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of a subquery in the WHERE clause of a Long Running Update statement is not supported.
+4140 42000 99999 BEGINNER MAJOR DBADMIN The second operand of function $0~string0 must be of interger type.
+4141 42000 99999 BEGINNER MAJOR DBADMIN The default value operand of function $0~string0 must be of the same type as the 1st operand.
 4150 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Primary key of table expression $0~string0 must be used for join with embedded $0~string1 expression.  Tables in scope: $2~string2.
 4151 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Stream access is supported only on updatable views. View: $0~TableName.
 4152 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Table $0~TableName cannot be both read and updated.
@@ -1292,6 +1294,7 @@ $1~String1 --------------------------------
 4246 ZZZZZ 99999 BEGINNER MINOR DBADMIN All column values must be specified when loading data by UPSERT USING LOAD syntax.
 4247 0A000 99999 BEGINNER MAJOR DBADMIN Specified size in bytes ($0~Int0) exceeds the maximum size allowed ($1~Int1) for column $0~ColumnName.
 4248 ZZZZZ 99999 BEGINNER MINOR DBADMIN Index $0~string1 cannot be divisioned like a table since table $0~string0 is not divisioned.
+4249 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only non-negative constant offset value is supported in the $0~string0  function.
 4250 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object name could not be retrieved from metadata based on the provided uid. The underlying hbase object will not be removed.
 4251 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object UID could not be retrieved from metadata based on the provided object name. Metadata cleanup will not be performed but the underlying hbase object will be removed, if it exists.
 4252 ZZZZZ 99999 BEGINNER MINOR DBADMIN This metadata cleanup option is not yet supported.

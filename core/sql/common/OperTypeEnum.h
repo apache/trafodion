@@ -461,6 +461,8 @@ enum OperatorTypeEnum {
                         ITM_CURRENT_TIME_UTC = 2174,
 
                         ITM_COMP_DECODE = 2175,
+                        ITM_OLAP_LEAD = 2176,
+                        ITM_OLAP_LAG = 2177,
 
                         // numeric functions
                         ITM_ABS = 2200,
