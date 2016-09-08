@@ -451,3 +451,4 @@ create volatile table vtab1 (a int);
 create volatile table vtab2 (a int);
 get all volatile schemas;
 get all volatile tables;
+
