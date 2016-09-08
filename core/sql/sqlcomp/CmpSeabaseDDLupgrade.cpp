@@ -936,9 +936,6 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		      break;
 		    }
 
-		  // cleanup cached entries in client object.
-		  ehi->cleanupClient();
-
 		  deallocEHI(ehi); 
 
 		  mdui->setMsg("Drop Current Metadata: done");

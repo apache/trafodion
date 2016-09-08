@@ -341,7 +341,6 @@ typedef enum {
  ,HBC_DONE   = HBC_FIRST
  ,HBC_ERROR_INIT_PARAM
  ,HBC_ERROR_INIT_EXCEPTION
- ,HBC_ERROR_CLEANUP_EXCEPTION
  ,HBC_ERROR_GET_HTC_EXCEPTION
  ,HBC_ERROR_REL_HTC_EXCEPTION
  ,HBC_ERROR_CREATE_PARAM
@@ -421,7 +420,6 @@ public:
     return isConnected_;
   }
 
-  HBC_RetCode cleanup();
   HTableClient_JNI* getHTableClient(NAHeap *heap, const char* tableName, 
                bool useTRex, ExHbaseAccessStats *hbs);
   HBulkLoadClient_JNI* getHBulkLoadClient(NAHeap *heap);
@@ -515,7 +513,6 @@ private:
   enum JAVA_METHODS {
     JM_CTOR = 0
    ,JM_INIT
-   ,JM_CLEANUP   
    ,JM_GET_HTC
    ,JM_REL_HTC
    ,JM_CREATE

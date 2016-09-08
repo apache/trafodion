@@ -81,8 +81,6 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 init(ExHbaseAccessStats *hbs = NULL) = 0;
   
   virtual Lng32 cleanup() = 0;
-  virtual Lng32 cleanupClient()
-  { return 0;}
 
   virtual Lng32 close() = 0;
 
@@ -406,8 +404,6 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 init(ExHbaseAccessStats *hbs = NULL);
   
   virtual Lng32 cleanup();
-
-  virtual Lng32 cleanupClient();
 
   virtual Lng32 close();
 

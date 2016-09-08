@@ -196,8 +196,6 @@ public:
   { hbaseClientJNI_ = hbaseClientJNI; }
   HBaseClient_JNI *getHBaseClient() { return hbaseClientJNI_; }
 
-  void flushHtableCache();
-  
   HiveClient_JNI *getHiveClient() { return hiveClientJNI_; }
   void setHiveClient(HiveClient_JNI *hiveClientJNI)
   { hiveClientJNI_ = hiveClientJNI; }

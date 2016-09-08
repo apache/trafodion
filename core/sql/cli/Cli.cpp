@@ -2626,8 +2626,6 @@ Lng32 SQLCLI_ProcessRetryQuery(
 	    {
 	      if (type == AQRInfo::RETRY_WITH_ESP_CLEANUP)
 		aqr->setEspCleanup(TRUE);
-              else if (type == AQRInfo::RETRY_DECACHE_HTABLE)
-                currContext->flushHtableCache();
 
 	      // Before deallocating the statement, set an indication in the 
 	      // master stats for this query id to indicate that AQR is being 

@@ -98,10 +98,10 @@ import com.google.protobuf.ServiceException;
 public class TransactionalTable extends HTable implements TransactionalTableClient {
     static final Log LOG = LogFactory.getLog(RMInterface.class);
     static private Connection connection = null;
-    static ExecutorService     threadPool;
     static int                 retries = 15;
     static int                 delay = 1000;
     private String retryErrMsg = "Coprocessor result is null, retries exhausted";
+
 
     /**
      * @param tableName
@@ -116,7 +116,8 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
      * @throws IOException
      */
     public TransactionalTable(final byte[] tableName, Connection conn) throws IOException {
-       super(tableName, conn, threadPool);     
+       //super(tableName, conn, HTable.getDefaultExecutor(conn.getConfiguration()));     
+       super(tableName, conn, Executors.newCachedThreadPool());
        this.connection = conn; 
     }
 

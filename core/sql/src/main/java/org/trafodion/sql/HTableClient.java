@@ -1773,6 +1773,7 @@ public class HTableClient {
 	  }
           scanHelper = null;
 	  jniObject = 0;
+          table.close();
 	  return retcode;
 	}
 
