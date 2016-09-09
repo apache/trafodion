@@ -5390,7 +5390,7 @@ short CmpSeabaseDDL::updateObjectRedefTime(
 
   char buf[4000];
 
-  Int64 redefTime = (rt == -1 ? NA_JulianTimestamp() : rt);
+  Int64 redefTime = ((rt == -1) ? NA_JulianTimestamp() : rt);
 
   NAString quotedSchName;
   ToQuotedString(quotedSchName, NAString(schName), FALSE);
@@ -5432,6 +5432,7 @@ short CmpSeabaseDDL::updateObjectRedefTime(
       CmpSeabaseDDL::setMDflags(flags, MD_OBJECTS_STORED_DESC);
     }
 
+  buf[0] = 0;
   if ((flags & MD_OBJECTS_STORED_DESC) != 0)
     {
       if (rt == -2)
@@ -5448,7 +5449,7 @@ short CmpSeabaseDDL::updateObjectRedefTime(
                     catName.data(), quotedSchName.data(), quotedObjName.data(),
                     objType);
     }
-  else
+  else if (rt != -2)
     {
       str_sprintf(buf, "update %s.\"%s\".%s set redef_time = %Ld where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
@@ -5457,14 +5458,17 @@ short CmpSeabaseDDL::updateObjectRedefTime(
                   objType);
     }
 
-  cliRC = cliInterface->executeImmediate(buf);
-  
-  if (cliRC < 0)
+  if (strlen(buf) > 0)
     {
-      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return -1;
+      cliRC = cliInterface->executeImmediate(buf);
+      
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
     }
-  
+
   return 0;
 }
 

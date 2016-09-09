@@ -85,7 +85,6 @@ void PCodeCfg::NExLog(const char *data)
      ofstream fileout( NExLogPth, ios::app);
      fileout << data ;
    }
-   else printf( data );
 }
 
 #ifndef __EID
