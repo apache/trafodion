@@ -42,7 +42,6 @@ static const char* const hbcErrorEnumStr[] =
 {
   "Preparing parameters for initConnection()."
  ,"Java exception in initConnection()."
- ,"Java exception in cleanup()."
  ,"Java exception in getHTableClient()."
  ,"Java exception in releaseHTableClient()."
  ,"Preparing parameters for create()."
@@ -179,8 +178,6 @@ HBaseClient_JNI::~HBaseClient_JNI()
     pthread_mutex_destroy(&mutex_);
     pthread_cond_destroy(&workBell_);
   }
-  // Clean the Java Side
-  cleanup();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -210,8 +207,6 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_CTOR       ].jm_signature = "()V";
     JavaMethods_[JM_INIT       ].jm_name      = "init";
     JavaMethods_[JM_INIT       ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
-    JavaMethods_[JM_CLEANUP    ].jm_name      = "cleanup";
-    JavaMethods_[JM_CLEANUP    ].jm_signature = "()Z";
     JavaMethods_[JM_GET_HTC    ].jm_name      = "getHTableClient";
     JavaMethods_[JM_GET_HTC    ].jm_signature = "(JLjava/lang/String;Z)Lorg/trafodion/sql/HTableClient;";
     JavaMethods_[JM_REL_HTC    ].jm_name      = "releaseHTableClient";
@@ -340,47 +335,6 @@ HBC_RetCode HBaseClient_JNI::initConnection(const char* zkServers, const char* z
   }
 
   isConnected_ = TRUE;
-  jenv_->PopLocalFrame(NULL);
-  return HBC_OK;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-HBC_RetCode HBaseClient_JNI::cleanup()
-{
-  //  commenting this out for now - this call causes mxosrv crash some times during mxosrv shutdown!!
-  //QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::cleanup() called.");
- 
-  if (! (isInitialized_ && isConnected_))
-     return HBC_OK;
-
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HBC_ERROR_CLEANUP_EXCEPTION;
-  }
-  // boolean cleanup();
-  tsRecentJMFromJNI = JavaMethods_[JM_CLEANUP].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CLEANUP].methodID);
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::cleanup()", getLastError());
-    jenv_->PopLocalFrame(NULL);
-    return HBC_ERROR_CLEANUP_EXCEPTION;
-  }
-
-  if (jresult == false) 
-  {
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::cleanup()", getLastError());
-    jenv_->PopLocalFrame(NULL);
-    return HBC_ERROR_CLEANUP_EXCEPTION;
-  }
   jenv_->PopLocalFrame(NULL);
   return HBC_OK;
 }

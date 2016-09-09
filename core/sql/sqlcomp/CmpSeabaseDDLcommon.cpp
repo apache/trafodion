@@ -7069,9 +7069,6 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
 
     } // for
  
-  // cleanup cached entries in client object.
-  ehi->cleanupClient();
-
   deallocEHI(ehi); 
   ehi = NULL;
 

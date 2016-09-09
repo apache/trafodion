@@ -388,16 +388,6 @@ Lng32 ExpHbaseInterface_JNI::cleanup()
 }
 
 //----------------------------------------------------------------------------
-Lng32 ExpHbaseInterface_JNI::cleanupClient()
-{
-  if (client_)
-  {
-    client_->cleanup();
-  }
-  return HBASE_ACCESS_SUCCESS;
-}
-
-//----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::close()
 {
 //  HBaseClient_JNI::logIt("ExpHbaseInterface_JNI::close() called.");

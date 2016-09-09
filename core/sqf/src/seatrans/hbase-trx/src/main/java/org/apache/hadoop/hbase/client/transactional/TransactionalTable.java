@@ -45,6 +45,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.HRegionLocation;
@@ -91,6 +92,8 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.HBaseZeroCopyByteString;
 import com.google.protobuf.ServiceException;
 
+import java.util.concurrent.ThreadPoolExecutor;
+
 
 /**
  * Table with transactional support.
@@ -98,10 +101,15 @@ import com.google.protobuf.ServiceException;
 public class TransactionalTable extends HTable implements TransactionalTableClient {
     static final Log LOG = LogFactory.getLog(RMInterface.class);
     static private Connection connection = null;
-    static ExecutorService     threadPool;
+    static ThreadPoolExecutor threadPool = null;
     static int                 retries = 15;
     static int                 delay = 1000;
     private String retryErrMsg = "Coprocessor result is null, retries exhausted";
+
+    static {
+       Configuration config = HBaseConfiguration.create();
+       threadPool = HTable.getDefaultExecutor(config);
+    }
 
     /**
      * @param tableName
@@ -116,7 +124,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
      * @throws IOException
      */
     public TransactionalTable(final byte[] tableName, Connection conn) throws IOException {
-       super(tableName, conn, threadPool);     
+       super(tableName, conn, threadPool);
        this.connection = conn; 
     }
 
