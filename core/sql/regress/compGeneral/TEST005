@@ -507,6 +507,15 @@ with recursive w1 as (select c1, c2 from witht1 union all select origin.c1 , ori
 with w1 as (select * from witht1), w1 as (select * from witht2) select * from w1;
 cqd mode_special_4 reset;
 
+create table test2170 (
+c1 varchar(255) CHARACTER SET UTF8 not null, 
+c2 varchar(256) CHARACTER SET UTF8 not null, 
+c3 varchar(256) CHARACTER SET UTF8 not null, 
+c4 int not null , 
+c5 int, 
+primary key(c1,c2,c3,c4))
+salt using 4 partitions ;
+
 ?section cleanup
 
 -- Clean up test
@@ -523,3 +532,4 @@ drop table t005_hx;
 drop table t005_fx;
 drop table witht1;
 drop table witht2;
+drop table test2170;

@@ -1121,6 +1121,17 @@ C1 C2
 
 --- SQL operation complete.
 >>
+>>create table test2170 (
++>c1 varchar(255) CHARACTER SET UTF8 not null,
++>c2 varchar(256) CHARACTER SET UTF8 not null,
++>c3 varchar(256) CHARACTER SET UTF8 not null,
++>c4 int not null ,
++>c5 int,
++>primary key(c1,c2,c3,c4))
++>salt using 4 partitions ;
+
+--- SQL operation complete.
+>>
 >>?section cleanup
 >>
 >>-- Clean up test
@@ -1157,6 +1168,9 @@ C1 C2
 
 --- SQL operation complete.
 >>drop table witht2;
+
+--- SQL operation complete.
+>>drop table test2170;
 
 --- SQL operation complete.
 >>exit;
