@@ -1651,9 +1651,10 @@ short ExExplainTcb::getExplainData(
   // data stored is explain repos header followed by actual explain tdb data.
   Int32 storedExplLen = sizeof(ExplainReposInfo) + fragLen;
   Lng32 encodedFragLen = str_encoded_len(storedExplLen);
-  *ret_explain_len = encodedFragLen  + 1 /*null terminator*/;
+  *ret_explain_len = encodedFragLen;
   
-  if ((! explain_ptr) || (explain_buf_len < *ret_explain_len))
+  if ((! explain_ptr) || 
+      (explain_buf_len < (*ret_explain_len + 1/*null terminator*/)))
     {
       cliRC = -CLI_GENCODE_BUFFER_TOO_SMALL;
 
@@ -1671,6 +1672,8 @@ short ExExplainTcb::getExplainData(
 
   // encode it before returning
   str_encode(explain_ptr, encodedFragLen, storedExplData, storedExplLen);
+
+  // null terminate explain fragment
   explain_ptr[encodedFragLen] = 0;
 
   NADELETEBASIC(storedExplData, heap);
@@ -1738,9 +1741,9 @@ short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
   if (vi->get(0, ptr, len))
     goto label_error2;
   
-  explainFragLen_ = str_decoded_len(len-1); // remove trailing null terminator
+  explainFragLen_ = str_decoded_len(len); // remove trailing null terminator
   explainFrag_ = new(getHeap()) char[explainFragLen_];
-  if (str_decode(explainFrag_, explainFragLen_, ptr, len-1) < 0)
+  if (str_decode(explainFrag_, explainFragLen_, ptr, len) < 0)
     {
       diagsArea = pEntryDown->getAtp()->getDiagsArea();
       ExRaiseSqlError(getGlobals()->getDefaultHeap(), 

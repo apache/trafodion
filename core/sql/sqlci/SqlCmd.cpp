@@ -715,7 +715,8 @@ short SqlCmd::updateRepos(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt, char * queryI
   Int32 retExplainLen = 0;
   char * explainData = new char[explainDataLen + 1];
   retcode = SQL_EXEC_GetExplainData(stmt,
-                                    explainData, explainDataLen, &retExplainLen
+                                    explainData, explainDataLen+1, 
+                                    &retExplainLen
                                     );
   if (retcode == -CLI_GENCODE_BUFFER_TOO_SMALL)
     {
@@ -726,7 +727,8 @@ short SqlCmd::updateRepos(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt, char * queryI
 
       SqlCmd::clearCLIDiagnostics();
       retcode = SQL_EXEC_GetExplainData(stmt,
-                                        explainData, explainDataLen, &retExplainLen
+                                        explainData, explainDataLen+1, 
+                                        &retExplainLen
                                         );
     }
   
