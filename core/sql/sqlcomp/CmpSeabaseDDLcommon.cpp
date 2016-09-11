@@ -8917,8 +8917,9 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           else
             {
               createSeabaseTable(createTableParseNode, currCatName, currSchName);
-              
-              if ((getenv("SQLMX_REGRESS")) &&
+
+              if (((getenv("SQLMX_REGRESS")) ||
+                   (CmpCommon::getDefault(TRAF_AUTO_CREATE_SCHEMA) == DF_ON)) &&
                   (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_)) &&
                   (CmpCommon::diags()->mainSQLCODE() == -CAT_SCHEMA_DOES_NOT_EXIST_ERROR))
                 {
@@ -8930,16 +8931,43 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
                   const NAString schemaNamePart = 
                     tableName.getSchemaNamePartAsAnsiString(TRUE);
 
-                  if (schemaNamePart == SEABASE_REGRESS_DEFAULT_SCHEMA)
+                  char query[1000];
+                  if ((getenv("SQLMX_REGRESS")) &&
+                      (schemaNamePart == SEABASE_REGRESS_DEFAULT_SCHEMA))
                     {
                       CmpCommon::diags()->clear();
-                      cliRC = cliInterface.executeImmediate("create shared schema trafodion.sch");
+                      str_sprintf(query, "create shared schema %s.%s",
+                                  TRAFODION_SYSCAT_LIT, 
+                                  SEABASE_REGRESS_DEFAULT_SCHEMA);
+                      cliRC = cliInterface.executeImmediate(query);
+                      if (cliRC >= 0)
+                        {
+                          str_sprintf(query, "upsert into %s.\"%s\".%s values ('SCHEMA ', '%s.%s ', 'inserted during regressions run', 0);",
+                                      TRAFODION_SYSCAT_LIT, 
+                                      SEABASE_MD_SCHEMA,
+                                      SEABASE_DEFAULTS,
+                                      TRAFODION_SYSCAT_LIT,
+                                      SEABASE_REGRESS_DEFAULT_SCHEMA);
+                          cliRC = cliInterface.executeImmediate(query);
+                          if (cliRC >= 0)
+                            {
+                              createSeabaseTable(createTableParseNode, currCatName, currSchName);
+                            }
+                        }
+                    } // if
+                  else if (CmpCommon::getDefault(TRAF_AUTO_CREATE_SCHEMA) == DF_ON)
+                    {
+                      // create this schema
+                      CmpCommon::diags()->clear();
+                      str_sprintf(query, "create schema %s.\"%s\";",
+                                  TRAFODION_SYSCAT_LIT, schemaNamePart.data());
+                      cliRC = cliInterface.executeImmediate(query);
                       if (cliRC >= 0)
                         {
                           createSeabaseTable(createTableParseNode, currCatName, currSchName);
                         }
                     }
-                }
+                }     
             }
         }
       else if (ddlNode->getOperatorType() == DDL_CREATE_HBASE_TABLE)

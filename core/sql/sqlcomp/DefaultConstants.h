@@ -3854,6 +3854,10 @@ enum DefaultConstants
   // allow ORDER BY in subqueries.
   ALLOW_ORDER_BY_IN_SUBQUERIES,
 
+  // if the schema specified in a create stmt doesn't exist, automatically
+  // create it.
+  TRAF_AUTO_CREATE_SCHEMA,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
