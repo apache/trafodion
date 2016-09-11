@@ -87,5 +87,20 @@ select * from (values(1)) x(a) where current_timestamp(0) = current_timestamp(6)
 
 select cast(1e0 as interval year) from dual;
 
+
+-- auto create schema
+
+-- should fail, schema doesnt exist
+create table t032sch.t032t2 (a int);
+
+-- should succeed, schema will be automatically created
+cqd traf_auto_create_schema 'ON';
+create table t032sch.t032t2 (a int);
+set schema t032sch;
+invoke t032t2;
+insert into t032t2 values (1);
+
+drop schema t032sch cascade;
+
 log;
 

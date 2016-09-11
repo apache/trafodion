@@ -15,7 +15,7 @@
 >>invoke t032t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T032T1
--- Definition current  Wed Aug 24 20:59:45 2016
+-- Definition current  Sun Sep 11 15:22:27 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -140,7 +140,7 @@ B
 (EXPR)                        
 ------------------------------
 
-RANDOMVAL=1935127796          
+RANDOMVAL=262036305           
 
 --- 1 row(s) selected.
 >>select random() from (values(1)) x(a);
@@ -293,5 +293,44 @@ A
      1
 
 --- 1 row(s) selected.
+>>
+>>
+>>-- auto create schema
+>>
+>>-- should fail, schema doesnt exist
+>>create table t032sch.t032t2 (a int);
+
+*** ERROR[1003] Schema TRAFODION.T032SCH does not exist.
+
+--- SQL operation failed with errors.
+>>
+>>-- should succeed, schema will be automatically created
+>>cqd traf_auto_create_schema 'ON';
+
+--- SQL operation complete.
+>>create table t032sch.t032t2 (a int);
+
+--- SQL operation complete.
+>>set schema t032sch;
+
+--- SQL operation complete.
+>>invoke t032t2;
+
+-- Definition of Trafodion table TRAFODION.T032SCH.T032T2
+-- Definition current  Sun Sep 11 15:22:36 2016
+
+  (
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>insert into t032t2 values (1);
+
+--- 1 row(s) inserted.
+>>
+>>drop schema t032sch cascade;
+
+--- SQL operation complete.
 >>
 >>log;

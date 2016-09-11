@@ -3303,6 +3303,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
 
+  DDkwd__(TRAF_AUTO_CREATE_SCHEMA,                 "OFF"),   
+
   DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
   DDkwd__(TRAF_BOOLEAN_IO,                        "OFF"),
