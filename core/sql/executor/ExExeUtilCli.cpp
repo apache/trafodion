@@ -626,9 +626,10 @@ Lng32 ExeCliInterface::setupExplainData(SQLMODULE_ID * module,
   // get explain fragment.
   explainDataLen_ = 50000; // start with 50K bytes
   Int32 retExplainLen = 0;
-  explainData_ = new(getHeap()) char[explainDataLen_];
+  explainData_ = new(getHeap()) char[explainDataLen_+1];
   retcode = SQL_EXEC_GetExplainData(stmt,
-                                    explainData_, explainDataLen_, &retExplainLen
+                                    explainData_, explainDataLen_+1, 
+                                    &retExplainLen
                                     );
   if (retcode == -CLI_GENCODE_BUFFER_TOO_SMALL)
     {
@@ -638,7 +639,8 @@ Lng32 ExeCliInterface::setupExplainData(SQLMODULE_ID * module,
       explainData_ = new(getHeap()) char[explainDataLen_ + 1];
 
       retcode = SQL_EXEC_GetExplainData(stmt,
-                                        explainData_, explainDataLen_, &retExplainLen
+                                        explainData_, explainDataLen_+1, 
+                                        &retExplainLen
                                         );
     }
   
