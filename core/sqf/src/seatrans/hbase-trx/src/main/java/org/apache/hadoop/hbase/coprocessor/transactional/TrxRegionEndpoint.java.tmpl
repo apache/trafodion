@@ -4996,8 +4996,7 @@ CoprocessorService, Coprocessor {
                     + ", warning memory usage exceeds indicated percentage");
        }
        else {
-//          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putRegionTx - performing memoryPercentage "
-          LOG.info("TrxRegionEndpoint coprocessor: putRegionTx - performing memoryPercentage "
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putRegionTx - performing memoryPercentage "
                              + memoryPercentage + ", generating memory usage exceeds indicated percentage exception");
           mue = new MemoryUsageException("putRegionTx memory usage exceeds " + memoryUsageThreshold
                    + " percent, tid is " + tid);
@@ -5017,19 +5016,16 @@ CoprocessorService, Coprocessor {
           try {   
              putRegionTx(tid, put, autoCommit);
           } catch (Throwable e) {
-             LOG.error("TrxRegionEndpoint coprocessor:putRegionTx - tid " + tid + ", Caught exception after  internal put - "
-                         + e.getMessage() + " " + stackTraceToString(e));
+             LOG.error("TrxRegionEndpoint coprocessor:putRegionTx - tid " + tid + ", Caught exception after  internal put - ", e);
              t = e;
           }
 
-//          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putRegionTx - tid "  + tid + ", regionName " + regionInfo.getRegionNameAsString()
-          LOG.info("TrxRegionEndpoint coprocessor: putRegionTx - tid "  + tid + ", regionName " + regionInfo.getRegionNameAsString()
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putRegionTx - tid "  + tid + ", regionName " + regionInfo.getRegionNameAsString()
                    + ", type " + type + ", row " + Bytes.toStringBinary(proto.getRow().toByteArray())
                     + ", row in hex " + Hex.encodeHexString(proto.getRow().toByteArray()));
        }
        else{
-//          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putRegionTx - tid "  + tid + ", regionName " + regionInfo.getRegionNameAsString()
-          LOG.info("TrxRegionEndpoint coprocessor: putRegionTx - tid "  + tid + ", regionName " + regionInfo.getRegionNameAsString()
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putRegionTx - tid "  + tid + ", regionName " + regionInfo.getRegionNameAsString()
                     + "- no valid PUT type or does not contain a row");
        }
     }
@@ -5052,8 +5048,7 @@ CoprocessorService, Coprocessor {
 
     if (mue != null)
     {
-//      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putRegionTx - performing memoryPercentage " + memoryPercentage
-      LOG.info("TrxRegionEndpoint coprocessor: putRegionTx - performing memoryPercentage " + memoryPercentage
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putRegionTx - performing memoryPercentage " + memoryPercentage
           + ", posting memory usage exceeds indicated percentage exception");
       putRegionTxResponseBuilder.setHasException(true);
       putRegionTxResponseBuilder.setException(mue.toString());
@@ -5088,10 +5083,10 @@ CoprocessorService, Coprocessor {
     boolean success = commitIfPossible(tid, tid, tid, 1, true, autoCommit);
     
     if (! success) {
-       LOG.info("putRegionTx - tid " + tid + " was not successful.  Throwing IOException ");
+       LOG.error("putRegionTx - tid " + tid + " was not successful.  Throwing IOException ");
        throw new IOException("putRegionTx - tid " + tid + " was not successful.  Throwing IOException ");
     }
-    LOG.info("putRegionTx - tid " + tid + " EXIT successful.");
+    if (LOG.isTraceEnabled()) LOG.trace("putRegionTx - tid " + tid + " EXIT successful.");
   }
 
   /**
