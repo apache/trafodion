@@ -341,9 +341,8 @@ public class RMInterface {
     }
 
     public synchronized void putRegionTx(final Put put, final boolean autoCommit) throws IOException {
-        if (LOG.isTraceEnabled()) LOG.trace("Enter putRegionTx, autoCommit: " + autoCommit);
         long tsId = getTmId();
-        LOG.info("Enter putRegionTx, autoCommit: " + autoCommit + ", tsId " + tsId);
+        if (LOG.isTraceEnabled()) LOG.trace("Enter putRegionTx, autoCommit: " + autoCommit + ", tsId " + tsId);
         ttable.putRegionTx(tsId, put, autoCommit);
         if (LOG.isTraceEnabled()) LOG.trace("Exit putRegionTx tsId: " + tsId);
     }
