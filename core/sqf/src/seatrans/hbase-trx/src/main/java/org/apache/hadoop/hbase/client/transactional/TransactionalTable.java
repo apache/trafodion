@@ -348,8 +348,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
   }
 
    public synchronized void putRegionTx(final long tsId, final Put put, final boolean autoCommit) throws IOException{
-//      	if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.putRegionTx ENTRY, autoCommit: " + autoCommit);
-      	LOG.info("TransactionalTable.putRegionTx ENTRY, autoCommit: " + autoCommit);
+        if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.putRegionTx ENTRY, autoCommit: " + autoCommit);
 
         validatePut(put);
         final String regionName = super.getRegionLocation(put.getRow()).getRegionInfo().getRegionNameAsString();
