@@ -958,6 +958,14 @@ bool CmpSeabaseDDL::isHistogramTable(const NAString &name)
 
 }
 
+bool CmpSeabaseDDL::isSampleTable(const NAString &name)
+{
+  if (name(0,min((sizeof(TRAF_SAMPLE_PREFIX)-1), name.length())) == TRAF_SAMPLE_PREFIX)
+    return true;
+
+  return false;
+}
+
 NABoolean CmpSeabaseDDL::isLOBDependentNameMatch(const NAString &name)
 {
   if ((name(0,min((sizeof(LOB_MD_PREFIX)-1), name.length())) == LOB_MD_PREFIX) ||

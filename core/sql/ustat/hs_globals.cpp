@@ -3856,7 +3856,7 @@ void HSSample::makeTableName(NABoolean isPersSample)
 
         convertInt64ToAscii(objDef->getObjectUID(), objectIDStr);
         sprintf(timestampStr, "_%u_%u", (UInt32)tv.tv_sec, (UInt32)tv.tv_usec);
-        sampleTable += "TRAF_SAMPLE_";
+        sampleTable += TRAF_SAMPLE_PREFIX;  // "TRAF_SAMPLE_"
         sampleTable += objectIDStr;
         sampleTable += timestampStr;
 
