@@ -379,8 +379,7 @@ public class RMInterface {
     		byte[] qualifier, byte[] value, Put put, final boolean autoCommit) throws IOException {
 
         long tsId = getTmId();
-//        if (LOG.isTraceEnabled()) LOG.trace("Enter checkAndPutRegionTx tsId: " + tsId
-        LOG.info("Enter checkAndPutRegionTx tsId: " + tsId
+        if (LOG.isTraceEnabled()) LOG.trace("Enter checkAndPutRegionTx tsId: " + tsId
         		           + ": autoCommit " + autoCommit );
         return ttable.checkAndPutRegionTx(tsId, row, family, qualifier, value,
         		                          put, autoCommit);
