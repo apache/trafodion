@@ -5933,9 +5933,7 @@ CoprocessorService, Coprocessor {
   public boolean commitIfPossible(final long transactionId, final long startEpoch, final long commitId, final int participantNum,
                                   final boolean regionTx, final boolean autoCommit) throws IOException {
 
-//    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- ENTRY txId: "
-//               + transactionId);
-    LOG.info("TrxRegionEndpoint coprocessor: commitIfPossible -- ENTRY txId: "
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- ENTRY txId: "
                + transactionId);
 
     checkBlockNonPhase2(transactionId);
@@ -5944,8 +5942,7 @@ CoprocessorService, Coprocessor {
     
     if (! autoCommit) {
        boolean result = ( status == COMMIT_OK || status == COMMIT_OK_READ_ONLY) ? true : false;
-//       if (LOG.isTraceEnabled()) LOG.trace("commitIfPossible -- autoCommit is false, returning early with result " + result);
-       LOG.info("commitIfPossible -- autoCommit is false, returning early with result " + result);
+       if (LOG.isTraceEnabled()) LOG.trace("commitIfPossible -- autoCommit is false, returning early with result " + result);
        return result;
     }
   
@@ -5954,23 +5951,19 @@ CoprocessorService, Coprocessor {
        // Process local memory
        try {
          commit(transactionId, participantNum);
-//         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- EXIT txId: " + transactionId + " COMMIT_OK");
-         LOG.info("TrxRegionEndpoint coprocessor: commitIfPossible -- EXIT txId: " + transactionId + " COMMIT_OK");
+         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- EXIT txId: " + transactionId + " COMMIT_OK");
          return true;
        } catch (Throwable e) {
-//        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible - txId " + transactionId + ", Caught exception after internal commit call "
-        LOG.info("TrxRegionEndpoint coprocessor: commitIfPossible - txId " + transactionId + ", Caught exception after internal commit call "
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible - txId " + transactionId + ", Caught exception after internal commit call "
                     + e.getMessage() + " " + stackTraceToString(e));
         throw new IOException(e.toString());
        }
     } else if (status == COMMIT_OK_READ_ONLY) {
-//            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- EXIT txId: " 
-            LOG.info("TrxRegionEndpoint coprocessor: commitIfPossible -- EXIT txId: " 
+            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- EXIT txId: " 
             + transactionId + " COMMIT_OK_READ_ONLY");
             return true;
     }
-//    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- EXIT txId: " 
-    LOG.info("TrxRegionEndpoint coprocessor: commitIfPossible -- EXIT txId: " 
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- EXIT txId: " 
               + transactionId + " Commit Unsuccessful");
     return false;
   }
