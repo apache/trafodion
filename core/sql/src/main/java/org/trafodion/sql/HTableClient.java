@@ -1393,7 +1393,7 @@ public class HTableClient {
 //                        table.deleteRegionTx(del, /* auto-commit */ true);
 //                    }
                     else {
-                       logger.info("deleteRow without transID ");
+//                       logger.info("deleteRow without transID ");
                        table.delete(del);
                     }
 					return true;
@@ -1409,7 +1409,6 @@ public class HTableClient {
 //               table.deleteRegionTx(del, /* auto-commit */ true);
 //            }
             else {
-               logger.info("deleteRow without transID ");
                table.delete(del);
             }
 		}
@@ -1509,7 +1508,6 @@ public class HTableClient {
 //               		         del, /* autoCommit */ true);
 //            }
             else {
-               logger.info("checkAndDeleteRow without transID ");
 			   res = table.checkAndDelete(rowID, family, qualifier, colValToCheck, del);
             }
 
@@ -1564,32 +1562,28 @@ public class HTableClient {
 
 					if (checkAndPut) {
                        if (useTRex && (transID != 0)){
-                          logger.info("checkAndPut using put with transID " + transID);
                           res = table.checkAndPut(transID, rowID,
                                      family1, qualifier1, colValToCheck, put);
                        }
                        else if (useRegionTransaction){
-                           logger.info("checkAndPutRegionTx with regionTX ");
+                           if (logger.isTraceEnabled()) logger.trace("checkAndPutRegionTx with regionTX ");
                            res = table.checkAndPutRegionTx(rowID, 
                                            family1, qualifier1, colValToCheck, put, /* auto-commit */ true);
                     	   
                        }
                        else {
-                          logger.info("checkAndPut without transID ");
                           res = table.checkAndPut(rowID, 
                                           family1, qualifier1, colValToCheck, put);
                        }
 					}
 					else {
                        if (useTRex && (transID != 0)){
-                          logger.info("putRow using put with transID " + transID);
                           table.put(transID, put);
                        }
                        else if (useRegionTransaction){
-                          logger.info("putRow using putRegionTx");
+                          if (logger.isTraceEnabled()) logger.trace("putRow using putRegionTx");
                           table.putRegionTx(put, /* auto-commit */ true);
                        }else{ 
-                          logger.info("putRow not using putRegionTx");
                           table.put(put);
 					   }
 					}
@@ -1601,31 +1595,27 @@ public class HTableClient {
 		 	boolean result = true;
 			if (checkAndPut) {
                if (useTRex && (transID != 0)){
-                  logger.info("checkAndPut using put with transID " + transID);
                   result = table.checkAndPut(transID, rowID, 
 						family1, qualifier1, colValToCheck, put);
                }
                else if (useRegionTransaction){
-                   logger.info("checkAndPutRegionTx using regionTX ");
+                   if (logger.isTraceEnabled()) logger.trace("checkAndPutRegionTx using regionTX ");
                    result = table.checkAndPutRegionTx(rowID, family1, qualifier1,
                 		   colValToCheck, put, /* auto-commit */ true);
                }
                else {
-                  logger.info("checkAndPut without transID ");
                   result = table.checkAndPut(rowID, 
 						family1, qualifier1, colValToCheck, put);
                }
 			}
 			else {
                if (useTRex && (transID != 0)){
-                  logger.info("putRow using put with transID " + transID);
                   table.put(transID, put);
                }
                else if (useRegionTransaction){
-                  logger.info("putRow using putRegionTx");
+                  if (logger.isTraceEnabled()) logger.trace("putRow using putRegionTx");
                   table.putRegionTx(put, true /* also commit */);
                }else{
-                  logger.info("putRow not using putRegionTx");
                   table.put(put);
                }
 			}
