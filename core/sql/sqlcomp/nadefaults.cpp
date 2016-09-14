@@ -354,7 +354,7 @@ SDDkwd__(ALLOW_AUDIT_ATTRIBUTE_CHANGE,	       "FALSE"), // Used to control if ro
 
 SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
 
- DDkwd__(ALLOW_FIRSTN_IN_SUBQUERIES,	       "FALSE"),
+ DDkwd__(ALLOW_FIRSTN_IN_SUBQUERIES,	       "TRUE"),
 
  // ON/OFF flag to invoke ghost objects from non-licensed process (non-super.super user) who can not use parserflags
  DDkwd__(ALLOW_GHOST_OBJECTS, "OFF"),
@@ -408,7 +408,7 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
   // specified in a regular CREATE VIEW (not a create MV) statement.
   DDkwd__(ALLOW_ORDER_BY_IN_CREATE_VIEW,	"ON"),
 
-  DDkwd__(ALLOW_ORDER_BY_IN_SUBQUERIES,	        "OFF"),
+  DDkwd__(ALLOW_ORDER_BY_IN_SUBQUERIES,	        "ON"),
 
   // rand() function in sql is disabled unless this CQD is turned on
   DDkwd__(ALLOW_RAND_FUNCTION,			"ON"),
@@ -1703,9 +1703,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   // will be running in the Master. Set to 0 to disable the feature.
   DDint__(GROUP_BY_PARTIAL_ROOT_THRESHOLD,	"5000"),
 
-  DDkwd__(GROUP_BY_USING_ORDINAL,		"MINIMUM"),
-
-  DDkwd__(GROUP_OR_ORDER_BY_EXPR,		"OFF"),
+  DDkwd__(GROUP_OR_ORDER_BY_EXPR,		"ON"),
 
   // HASH_JOINS ON means do HASH_JOINS
  XDDkwd__(HASH_JOINS,				"ON"),
@@ -6566,12 +6564,6 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       if (tok == DF_ALL || tok == DF_MEASURE ||
 	  tok == DF_ACCUMULATED || tok == DF_OPERATOR ||
 	  tok == DF_PERTABLE || tok == DF_OFF)
-	isValid = TRUE;
-      break;
-
-    case GROUP_BY_USING_ORDINAL:
-      if (tok == DF_ALL || tok == DF_MINIMUM ||
-	  tok == DF_OFF)
 	isValid = TRUE;
       break;
 

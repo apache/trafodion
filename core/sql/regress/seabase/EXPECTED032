@@ -15,7 +15,7 @@
 >>invoke t032t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T032T1
--- Definition current  Sun Sep 11 15:22:27 2016
+-- Definition current  Wed Sep  7 23:12:38 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -140,7 +140,7 @@ B
 (EXPR)                        
 ------------------------------
 
-RANDOMVAL=262036305           
+RANDOMVAL=345417138           
 
 --- 1 row(s) selected.
 >>select random() from (values(1)) x(a);
@@ -222,6 +222,38 @@ Z
           1
 
 --- 1 row(s) selected.
+>>select count(*) from t032t1 order by count(*);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>select count(*) from t032t1 order by count(*) desc;
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>select count(distinct a) from t032t1 order by count(distinct a);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>
+>>-- error case
+>>select count(a) from t032t1 order by count(distinct a);
+
+*** ERROR[4197] This expression cannot be used in the ORDER BY clause.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- incompatible operations
 >>select a from t032t1 where a = '2';

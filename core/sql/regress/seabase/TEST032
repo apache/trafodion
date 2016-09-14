@@ -72,6 +72,12 @@ select a+1 from t032t1 group by a+1;
 select a+1 from t032t1 order by a+1;
 select * from (select b from t032t1 order by b desc) x(z);
 select * from (select [first 1] a from t032t1) x(z);
+select count(*) from t032t1 order by count(*);
+select count(*) from t032t1 order by count(*) desc;
+select count(distinct a) from t032t1 order by count(distinct a);
+
+-- error case
+select count(a) from t032t1 order by count(distinct a);
 
 -- incompatible operations
 select a from t032t1 where a = '2';
