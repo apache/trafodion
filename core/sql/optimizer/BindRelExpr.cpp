@@ -4064,10 +4064,11 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
 			selListIndex = j;
 			listOfExpressions.insert(j);
 			
-			selectListEntry->setInGroupByOrdinal(TRUE);  		    
+                        selectListEntry->setInGroupByOrdinal(TRUE);
+                        selectListEntry->setIsGroupByExpr(TRUE);
 
 			if (renameColEntry)
-			  renameColEntry->setInGroupByOrdinal(TRUE);  		      
+			  renameColEntry->setInGroupByOrdinal(TRUE);
 		      }
 		      else
 			found = FALSE;

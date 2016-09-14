@@ -76,8 +76,10 @@ select count(*) from t032t1 order by count(*);
 select count(*) from t032t1 order by count(*) desc;
 select count(distinct a) from t032t1 order by count(distinct a);
 
--- error case
+-- error cases
 select count(a) from t032t1 order by count(distinct a);
+select sum(a), b from t032t1 group by sum(a), b;
+select sum(a) from t032t1 group by 1;
 
 -- incompatible operations
 select a from t032t1 where a = '2';
