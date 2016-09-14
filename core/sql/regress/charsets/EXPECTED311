@@ -101,7 +101,7 @@ u1u1
 *** ERROR[8822] The statement was not prepared.
 
 >>--
->>select * from cs311t2, cs311t1 order by 1;
+>>select * from cs311t2, cs311t1 order by 1,2;
 
 U1                A1      
 ----------------  --------
@@ -406,7 +406,7 @@ u1u1
 >>--
 >>-- Tests for basic SQL functions
 >>--
->>select * from cs311t3, cs311t4 order by 1;
+>>select * from cs311t3, cs311t4 order by 1,2;
 
 A1        U1              
 --------  ----------------

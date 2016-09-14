@@ -570,8 +570,7 @@ FileScan::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   // now get columns_retrieved
   description += "columns_retrieved: ";
   char buf[27];
-  //sprintf(buf, "%d ", retrievedCols().entries());
-  sprintf(buf, "%d ", getIndexDesc()->getIndexColumns().entries());
+  sprintf(buf, "%d ", retrievedCols().entries());
   description += buf;
 
   // now get the probe counters
