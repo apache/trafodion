@@ -3670,7 +3670,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
       if (objectNamePart != "SB_HISTOGRAMS" && 
           objectNamePart != "SB_HISTOGRAM_INTERVALS" &&
           objectNamePart != "SB_PERSISTENT_SAMPLES" &&
-          strncmp(objectNamePart.data(),"TRAF_SAMPLE_",sizeof("TRAF_SAMPLE_")) != 0)
+          strncmp(objectNamePart.data(),TRAF_SAMPLE_PREFIX,sizeof(TRAF_SAMPLE_PREFIX)) != 0)
           
       {
         if (dropSeabaseStats(cliInterface,

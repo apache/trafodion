@@ -684,10 +684,14 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
        // drop user objects first
        if (objType == COM_BASE_TABLE_OBJECT_LIT) 
 	 {
-	   // histogram tables have already been dropped
-	   // Avoid any tables that match LOB dependent tablenames.
-	   // (there is no special type for these tables) 
-	   if (!isHistogramTable(objName) && !isLOBDependentNameMatch(objName))
+	   // Histogram tables are dropped later. Sample tables
+	   // are dropped when their corresponding tables are dropped
+	   // so we don't need to drop them directly. Also,
+	   // avoid any tables that match LOB dependent tablenames
+	   // (there is no special type for these tables).
+	   if (!isHistogramTable(objName) &&
+               !isSampleTable(objName) &&
+               !isLOBDependentNameMatch(objName))
 	     {
 	       dirtiedMetadata = TRUE;
 	       if (dropOneTable(cliInterface,(char*)catName.data(), 
