@@ -68,7 +68,7 @@ public class LmUDRObjMethodInvoke
         return result;
     }
 
-    public class ReturnInfo
+    public static class ReturnInfo
     {
         // return status:
         // <0: Internal error, check for Java exception
