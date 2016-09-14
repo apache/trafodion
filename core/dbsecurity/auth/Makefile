@@ -27,6 +27,7 @@ include $(MY_SQROOT)/macros.gmk #top level
 include ../macros.gmk
 
 #OUTDIR	= .
+
 RM	= /bin/rm
 CP	= /bin/cp
 DBG_FLAGS	= $(DBG_FLGS)  
@@ -37,8 +38,10 @@ all: $(LIBEXPDIR)/libsqauth.so $(BINEXPDIR)/ldapconfigcheck $(BINEXPDIR)/ldapche
 #Source files required to build the library
 
 OBJS	= $(OUTDIR)/dbUserAuth.o \
-	  $(OUTDIR)/ldapconfignode.o $(OUTDIR)/ld_port.o \
+	  $(OUTDIR)/ldapconfignode.o \
+  	  $(OUTDIR)/authEvents.o \
 	  $(OUTDIR)/ldapconfigfile.o  \
+	  $(OUTDIR)/CommonLogger.o  \
 	  $(OUTDIR)/token.o  \
 	  $(OUTDIR)/tokenkey.o \
 	  $(OUTDIR)/verssqauth.o
@@ -50,16 +53,10 @@ OBJS2	= \
 
 OBJS3	= \
 	  $(OUTDIR)/ldapconfignode.o \
+ 	  $(OUTDIR)/authEvents.o \
 	  $(OUTDIR)/versldapcheck.o \
 	  $(OUTDIR)/ldapcheck.o \
-	  $(OUTDIR)/ldapconfigfile.o  
-
-OBJS4	= \
-	  $(OUTDIR)/ldapconfignode.o \
-	  $(OUTDIR)/dbUserAuth.o \
-	  $(OUTDIR)/dbuserauthcheck.o \
-	  $(OUTDIR)/token.o  \
-	  $(OUTDIR)/tokenkey.o \
+	  $(OUTDIR)/CommonLogger.o  \
 	  $(OUTDIR)/ldapconfigfile.o  
 
 
@@ -70,10 +67,11 @@ INCLUDES	= -I. -I./inc -I ../shared/inc \
 	        -I $(MY_SQROOT)/../sql/export \
 	        -I $(MY_SQROOT)/../sql/porting_layer \
 	        -I $(MY_SQROOT)/export/include \
+	        -I $(MY_SQROOT)/commonLogger \
 	        -I ../../sql/common
 
 
-LINK_OPTIONS	= -L$(LIBEXPDIR) -lldap -lssl -llber
+LINK_OPTIONS	= -L$(LIBEXPDIR) -lldap -lssl -llber -llog4cxx
 LINK_OPTIONS   += $(LNK_FLGS) 
 
 COMMON_LIBS =  -ltdm_sqlcli -larkcmp_dll  
@@ -93,9 +91,6 @@ $(BINEXPDIR)/ldapconfigcheck:	$(OBJS2)
 $(BINEXPDIR)/ldapcheck:	$(OBJS3)
 	$(CXX) -fPIC $(DBG_FLAGS) $(GCCMODEXX) -o $@ $(INCLUDES) $(LINK_OPTIONS) $(OBJS3)
 
-$(BINEXPDIR)/dbuserauthcheck:	$(OBJS4)
-	$(CXX) -fPIC $(DBG_FLAGS) $(GCCMODEXX) -o $@ $(INCLUDES) $(LINK_OPTIONS) $(COMMON_LIBS) $(OBJS4)
-
 
 
 clean:
@@ -105,7 +100,6 @@ clean:
 	$(RM) -f  $(LIBEXPDIR)/libsqauth.so
 	$(RM) -f  $(INCEXPDIR)/dbUserAuth.h 
 	$(RM) -f  $(INCEXPDIR)/auth.h 
-	$(RM) -f  $(BINEXPDIR)/dbuserauthcheck
 	$(RM) -f  $(BINEXPDIR)/ldapcheck
 	$(RM) -f  $(BINEXPDIR)/ldapconfigcheck
 

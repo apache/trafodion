@@ -49,6 +49,17 @@ enum UA_Status{
    UA_STATUS_PARAM5 = 5
 };
 
+enum AUTH_OUTCOME{
+  AUTH_OK = 0,
+  AUTH_NOT_REGISTERED = 1,
+  AUTH_MD_NOT_AVAILABLE = 2,
+  AUTH_USER_INVALID = 3,
+  AUTH_TYPE_INCORRECT = 4,
+  AUTH_NO_PASSWORD = 5,
+  AUTH_REJECTED = 6,
+  AUTH_FAILED = 7
+};
+
 // Define a struct to populate the fields needed by authentication audit
 
 typedef struct client_info

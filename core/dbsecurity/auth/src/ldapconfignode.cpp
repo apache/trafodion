@@ -1,4 +1,3 @@
-//******************************************************************************
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -25,10 +24,11 @@
 //                    from the header files slip into the coverage count
 
 
-
+#include "authEvents.h"
 #include "ldapconfignode.h" 
 #include "ldapconfigfile.h"
 #include <sys/stat.h>
+
 
 // These defines affect openLDAP header files and must appear before s
 // those includes.
@@ -66,7 +66,6 @@
 #include <ctime>
 #include <netdb.h>
 
-#include "ld_globals.h"
 #include "common/evl_sqlog_eventnum.h"
 
 // LCOV_EXCL_STOP
@@ -83,11 +82,7 @@ enum NodeState {
 
 enum LDAP_VERSIONS { LDAP_VERSION_2 = 2, LDAP_VERSION_3 = 3};
 
-
-// define max size this module uses for an EMS message
-#define EMS_MSG_SIZE 500
-
-#define LOG_AUTH_EVENT(eventID,eventText) logAuthEvent(eventID,eventText,__FILE__,__LINE__)
+#define INSERT_EVENT(eventID,eventText) insertAuthEvent(eventID,eventText,LL_ERROR)
 
 static size_t numBindRetries = 0;
 static size_t numSearchRetries = 0;
@@ -783,7 +778,7 @@ LDAuthStatus LDAPConfigNode::authenticateUser(
 
 int LDAPError = LDAP_SUCCESS;
 LD_Status status = LD_STATUS_OK;
-char emsMsg[EMS_MSG_SIZE];
+char eventMsg[MAX_EVENT_MSG_SIZE];
 
    LDAuthStatus authStatus = bindUser(self,username,password,true,LDAPError);
                                                  
@@ -834,12 +829,12 @@ int retry_count = self.host_->LDAPConfig_->retryCount;
 //  
 
    if (self.host_->LDAPConfig_->retryCount)
-      sprintf(emsMsg, "Failed to authenticate LDAP user %s after %d retries\n",
+      snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "Failed to authenticate LDAP user %s after %d retries\n",
               username,self.host_->LDAPConfig_->retryCount);
    else
-      sprintf(emsMsg, "Failed to authenticate LDAP user %s\n",username);
+      snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "Failed to authenticate LDAP user %s\n",username);
 
-   LOG_AUTH_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,emsMsg);
+   INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,eventMsg);
    return LDAuthResourceFailure;
 
 }
@@ -902,7 +897,7 @@ bool LDAPConfigNode::initialize(char * hostName)
 // connection and setup the rest of the node.
    if (!selfCheck(self,false))
    {
-      LOG_AUTH_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"Self check failed in initialize");
+      INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"Self check failed in initialize");
       return false;
    }   
 
@@ -956,16 +951,16 @@ int retry_count = self.host_->LDAPConfig_->retryCount;
          return true;
    } 
    
-char emsMsg[EMS_MSG_SIZE];
+char eventMsg[MAX_EVENT_MSG_SIZE];
 
    if (self.host_->LDAPConfig_->retryCount > 0)
-      sprintf(emsMsg,"Unable to establish initial LDAP connection after %d retries, error %d\n",
+      snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "Unable to establish initial LDAP connection after %d retries, error %d\n",
               self.host_->LDAPConfig_->retryCount,retCode);
    else
-      sprintf(emsMsg,"Unable to establish initial LDAP connection, error %d\n",
+      snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "Unable to establish initial LDAP connection, error %d\n",
               retCode);
 
-   LOG_AUTH_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,emsMsg);
+   INSERT_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg);
    
    return false;
    
@@ -1011,7 +1006,7 @@ LDSearchStatus LDAPConfigNode::lookupUser(
 {
 
 int rc = 0;
-char emsMsg[EMS_MSG_SIZE];
+char eventMsg[MAX_EVENT_MSG_SIZE];
 
 LDSearchStatus searchStatus = searchUser(self,inputName,userDN);
                                                  
@@ -1062,12 +1057,12 @@ int retry_count = self.host_->LDAPConfig_->retryCount;
 //  
 
    if (self.host_->LDAPConfig_->retryCount > 0)
-      sprintf(emsMsg, "Failed to search for LDAP user %s after %d retries\n",
+      snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "Failed to search for LDAP user %s after %d retries\n",
               inputName,self.host_->LDAPConfig_->retryCount);
    else
-      sprintf(emsMsg, "Failed to search for LDAP user %s\n",inputName);
+      snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "Failed to search for LDAP user %s\n",inputName);
    
-   LOG_AUTH_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,emsMsg);
+   INSERT_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg);
    return LDSearchResourceFailure;
 
 }
@@ -1105,24 +1100,24 @@ static void addExcludedHostName(
 
 {
 
-char emsMsg[EMS_MSG_SIZE];
+   char eventMsg[MAX_EVENT_MSG_SIZE];
 
-// If the size of the excluded host list is being limited, clear out 
-// older excluded hosts to make room for the newest entry.
+   // If the size of the excluded host list is being limited, clear out 
+   // older excluded hosts to make room for the newest entry.
    if (self.host_->LDAPConfig_->maxExcludeListSize > 0)
       while (self.host_->excludedHostNames.size() >= self.host_->LDAPConfig_->maxExcludeListSize)
       {
-         sprintf(emsMsg,"Exclude list full, LDAP server %s removed from exclude list\n",
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "Exclude list full, LDAP server %s removed from exclude list\n",
                  self.host_->excludedHostNames[0].c_str());
-         LOG_AUTH_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,emsMsg); 
+         INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,eventMsg); 
          
          self.host_->excludedHostNames.erase(self.host_->excludedHostNames.begin());
       }
           
    self.host_->excludedHostNames.push_back(hostName);
    
-   sprintf(emsMsg,"LDAP server %s added to exclude list\n",hostName);
-   LOG_AUTH_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,emsMsg); 
+   snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "LDAP server %s added to exclude list\n",hostName);
+   INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,eventMsg); 
    
 }
 //************************ End of addExcludedHostName **************************
@@ -1179,7 +1174,7 @@ int rc, msgid, err;
 struct timeval timeout;
 LDAP *ld;
 LDAPMessage *result;  
-char emsMsg[EMS_MSG_SIZE];
+char eventMsg[MAX_EVENT_MSG_SIZE];
 
 int parserc;
 LDAPControl **psrvctrls = NULL;
@@ -1193,7 +1188,7 @@ bool isInitialized = reconnect;
    {
       if (!selfCheck(self,isInitialized))
       {
-         LOG_AUTH_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"Self check failed in bindUser");
+         INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"Self check failed in bindUser");
       
          return LDAuthResourceFailure;
       }
@@ -1217,17 +1212,17 @@ bool isInitialized = reconnect;
             LD_Status status = initConnection(self,NULL,true);
             if (status != LD_STATUS_OK)
             {
-               LOG_AUTH_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"LDAP Auth Error in bindUser; unable to connect to server");
+               INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"LDAP Auth Error in bindUser; unable to connect to server");
                return LDAuthResourceFailure;
             }
             reconnect = false;
             continue;            
          }
-         sprintf(emsMsg, "LDAP Auth Error in bindUser; error code: %ld, ", (long) LDAPError);
+         snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "LDAP Auth Error in bindUser; error code: %ld, ", (long) LDAPError);
          errorTextString = ldap_err2string(LDAPError);
-         strncat(emsMsg, errorTextString, (EMS_MSG_SIZE - (strlen(emsMsg)+4)));
-         strcat(emsMsg,"\n");
-         LOG_AUTH_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,emsMsg);
+         strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
+         strcat(eventMsg,"\n");
+         INSERT_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);
          return LDAuthResourceFailure;
 // LCOV_EXCL_STOP 
       }
@@ -1248,7 +1243,7 @@ bool isInitialized = reconnect;
             if (status != LD_STATUS_OK)
             {
 // LCOV_EXCL_START 
-               LOG_AUTH_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"LDAP Auth Error in bindUser; unable to connect to server");
+               INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"LDAP Auth Error in bindUser; unable to connect to server");
                return LDAuthResourceFailure;
 // LCOV_EXCL_STOP 
             }
@@ -1256,11 +1251,11 @@ bool isInitialized = reconnect;
             continue;
          }
          ldap_get_option(ld, LDAP_OPT_ERROR_NUMBER, &err);
-         sprintf(emsMsg, "LDAP Auth Error in bindUser; error code: %ld, ", (long)err);
+         snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "LDAP Auth Error in bindUser; error code: %ld, ", (long)err);
          errorTextString = ldap_err2string(err);
-         strncat(emsMsg, errorTextString, (EMS_MSG_SIZE - (strlen(emsMsg)+4)));
-         strcat(emsMsg, "\n");
-         LOG_AUTH_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,emsMsg);
+         strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
+         strcat(eventMsg, "\n");
+         INSERT_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);
          LDAPError = err;
          return LDAuthResourceFailure;
       }
@@ -1274,13 +1269,13 @@ bool isInitialized = reconnect;
          char *p = ldap_err2string(parserc);
          if (p != NULL)
          {
-            strcpy(emsMsg, "LDAP Auth Error in bindUser; Failed to get bind result: ");
-            strncat(emsMsg, p, (EMS_MSG_SIZE - (strlen(emsMsg)+4)) );
-            strcat(emsMsg, "\n");
+            strcpy(eventMsg, "LDAP Auth Error in bindUser; Failed to get bind result: ");
+            strncat(eventMsg, p, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)) );
+            strcat(eventMsg, "\n");
          }
          else
-            strcpy(emsMsg, "LDAP Auth Error in bindUser; Failed to get bind result.\n");
-         LOG_AUTH_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,emsMsg);
+            strcpy(eventMsg, "LDAP Auth Error in bindUser; Failed to get bind result.\n");
+         INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,eventMsg);
          LDAPError = parserc;
          return LDAuthResourceFailure;
 // LCOV_EXCL_STOP 
@@ -1341,11 +1336,11 @@ bool isInitialized = reconnect;
             break;
          default:
 // LCOV_EXCL_START 
-            sprintf(emsMsg, "LDAP Auth Error in bindUser; error code: %ld, ", (long)rc);
+            snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "LDAP Auth Error in bindUser; error code: %ld, ", (long)rc);
             errorTextString = ldap_err2string(rc);
-            strncat(emsMsg, errorTextString, (EMS_MSG_SIZE - (strlen(emsMsg)+4)));
-            strcat(emsMsg, "\n"); 
-            LOG_AUTH_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,emsMsg);
+            strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
+            strcat(eventMsg, "\n"); 
+            INSERT_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);
             LDAPError = rc;
             return LDAuthResourceFailure;
             break; 
@@ -1511,7 +1506,7 @@ static LD_Status connectToURL(
 int version;
 int debug = 0;
 int rc;
-char emsMsg[EMS_MSG_SIZE];
+char eventMsg[MAX_EVENT_MSG_SIZE];
 char *errorTextString; 
 
 LDAP *ld = NULL;
@@ -1522,11 +1517,11 @@ struct timeval tv;
    if (rc != LDAP_SUCCESS)
    {
 // LCOV_EXCL_START 
-      sprintf(emsMsg, "ldap_initialize failed for LDAP server %s. Error: %d, ",url.lud_host, rc);
+      snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "ldap_initialize failed for LDAP server %s. Error: %d, ",url.lud_host, rc);
       errorTextString = ldap_err2string(rc);
-      strncat(emsMsg, errorTextString, (EMS_MSG_SIZE - (strlen(emsMsg)+4)));
-      strcat(emsMsg, "\n");    
-      LOG_AUTH_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,emsMsg); 
+      strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
+      strcat(eventMsg, "\n");    
+      INSERT_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
       return LD_STATUS_RESOURCE_FAILURE;
 // LCOV_EXCL_STOP 
    }
@@ -1534,8 +1529,8 @@ struct timeval tv;
    if (ld == NULL)
    {
 // LCOV_EXCL_START 
-      sprintf(emsMsg, "Failed to initialize the connection to LDAP server %s.  Error: ld is NULL", url.lud_host);
-      LOG_AUTH_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,emsMsg); 
+      snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "Failed to initialize the connection to LDAP server %s.  Error: ld is NULL", url.lud_host);
+      INSERT_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
       return LD_STATUS_RESOURCE_FAILURE;
 // LCOV_EXCL_STOP 
    }
@@ -1611,11 +1606,11 @@ int ldapderef = LDAP_DEREF_ALWAYS;
       rc = ldap_set_option(ld,LDAP_OPT_X_TLS_REQUIRE_CERT,&demand);
       if (rc != LDAP_SUCCESS)
       {
-         sprintf(emsMsg, "Require TLS certificate failed for LDAP server %s.  Error: %d, ", url.lud_host, rc);
+         snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "Require TLS certificate failed for LDAP server %s.  Error: %d, ", url.lud_host, rc);
          errorTextString = ldap_err2string(rc);
-         strncat(emsMsg, errorTextString, (EMS_MSG_SIZE - (strlen(emsMsg)+4)));
-         strcat(emsMsg, "\n");
-         LOG_AUTH_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,emsMsg); 
+         strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
+         strcat(eventMsg, "\n");
+         INSERT_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
          return LD_STATUS_RESOURCE_FAILURE;
       }
       
@@ -1623,11 +1618,11 @@ int ldapderef = LDAP_DEREF_ALWAYS;
                            config.TLS_CACERTFilename.c_str());
       if (rc != LDAP_SUCCESS)
       {
-         sprintf(emsMsg, "Set TLS certificate file failed for LDAP server %s.  Error: %d, ", url.lud_host, rc);
+         snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "Set TLS certificate file failed for LDAP server %s.  Error: %d, ", url.lud_host, rc);
          errorTextString = ldap_err2string(rc);
-         strncat(emsMsg, errorTextString, (EMS_MSG_SIZE - (strlen(emsMsg)+4)));
-         strcat(emsMsg, "\n");
-         LOG_AUTH_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,emsMsg); 
+         strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
+         strcat(eventMsg, "\n");
+         INSERT_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
          return LD_STATUS_RESOURCE_FAILURE;
       }
    }   
@@ -1638,11 +1633,11 @@ int ldapderef = LDAP_DEREF_ALWAYS;
       rc = ldap_start_tls_s (ld, NULL, NULL);
       if (rc != LDAP_SUCCESS)
       {
-         sprintf(emsMsg, "StartTLS failed for LDAP server %s.  Error: %d, ", url.lud_host, rc);
+         snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "StartTLS failed for LDAP server %s.  Error: %d, ", url.lud_host, rc);
          errorTextString = ldap_err2string(rc);
-         strncat(emsMsg, errorTextString, (EMS_MSG_SIZE - (strlen(emsMsg)+4)));
-         strcat(emsMsg, "\n");
-         LOG_AUTH_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,emsMsg); 
+         strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
+         strcat(eventMsg, "\n");
+         INSERT_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
          return LD_STATUS_RESOURCE_FAILURE;
       }
    }
@@ -1665,12 +1660,12 @@ LDAuthStatus authStatus;
       if (authStatus != LDAuthSuccessful) 
       {
 // LCOV_EXCL_START 
-         sprintf(emsMsg,"Initial bind failed for LDAP server %s. Error: %d, ", 
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "Initial bind failed for LDAP server %s. Error: %d, ", 
                  url.lud_host,LDAPError);
          errorTextString = ldap_err2string(LDAPError);
-         strncat(emsMsg, errorTextString, (EMS_MSG_SIZE - (strlen(emsMsg)+4)));
-         strcat(emsMsg, "\n");
-         LOG_AUTH_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,emsMsg);  
+         strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
+         strcat(eventMsg, "\n");
+         INSERT_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);  
          return LD_STATUS_RESOURCE_FAILURE;
 // LCOV_EXCL_STOP  
       }
@@ -1688,11 +1683,11 @@ LDAuthStatus authStatus;
    if (authStatus != LDAuthSuccessful) 
    {
 // LCOV_EXCL_START 
-      sprintf(emsMsg, "Initial bind with search user failed for LDAP server %s. Error: %d, ", url.lud_host, LDAPError);
+      snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "Initial bind with search user failed for LDAP server %s. Error: %d, ", url.lud_host, LDAPError);
       errorTextString = ldap_err2string(LDAPError);
-      strncat(emsMsg, errorTextString, (EMS_MSG_SIZE - (strlen(emsMsg)+4)));
-      strcat(emsMsg, "\n");
-      LOG_AUTH_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,emsMsg);  
+      strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
+      strcat(eventMsg, "\n");
+      INSERT_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);  
       return LD_STATUS_RESOURCE_FAILURE;
 // LCOV_EXCL_STOP 
    }
@@ -1982,7 +1977,7 @@ inline static void logConfigFileError(
    
 {
 
-char emsMsg[EMS_MSG_SIZE];
+char eventMsg[MAX_EVENT_MSG_SIZE];
 
    switch (fileCode)
    {
@@ -1991,52 +1986,52 @@ char emsMsg[EMS_MSG_SIZE];
          break;
       case LDAPConfigFile_NoFileProvided:
       case LDAPConfigFile_FileNotFound:
-         sprintf(emsMsg, "****** .traf_authentication_config file not found\n");
+         snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "****** .traf_authentication_config file not found\n");
          break;
       case LDAPConfigFile_BadAttributeName:
-         sprintf(emsMsg,"****** Unrecognized attribute in .traf_authentication_config configuration file.  Line %d %s",
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "****** Unrecognized attribute in .traf_authentication_config configuration file.  Line %d %s",
                  lastLineNumber,lastLine.c_str());
          break;
       case LDAPConfigFile_MissingValue:
-         sprintf(emsMsg,"****** Missing required value in .traf_authentication_config configuration file.  Line %d %s",
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "****** Missing required value in .traf_authentication_config configuration file.  Line %d %s",
                  lastLineNumber,lastLine.c_str());
          break;
       case LDAPConfigFile_ValueOutofRange:
-         sprintf(emsMsg,"****** Value out of range in .traf_authentication_config configuration file.  Line %d %s",
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "****** Value out of range in .traf_authentication_config configuration file.  Line %d %s",
                  lastLineNumber,lastLine.c_str());
          break;
       case LDAPConfigFile_CantOpenFile:
-         sprintf(emsMsg,"****** Unable to open .traf_authentication_config configuration file");
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "****** Unable to open .traf_authentication_config configuration file");
          break;
       case LDAPConfigFile_CantReadFile:
-         sprintf(emsMsg,"****** Unable to read .traf_authentication_config configuration file");
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "****** Unable to read .traf_authentication_config configuration file");
          break;
       case LDAPConfigFile_MissingCACERTFilename:
-         sprintf(emsMsg,"****** TLS requested but no TLS CACERTFilename was provided");
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "****** TLS requested but no TLS CACERTFilename was provided");
          break;
       case LDAPConfigFile_MissingHostName:
-         sprintf(emsMsg,"****** Missing host name in .traf_authentication_config");
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "****** Missing host name in .traf_authentication_config");
          break;
       case LDAPConfigFile_MissingUniqueIdentifier:
-         sprintf(emsMsg,"****** Missing unique identifier in .traf_authentication_config");
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "****** Missing unique identifier in .traf_authentication_config");
          break;
       case LDAPConfigFile_MissingSection:
-         sprintf(emsMsg,"****** Missing directory server configuration in .traf_authentication_config");
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "****** Missing directory server configuration in .traf_authentication_config");
          break;
       case LDAPConfigFile_ParseError:
-         sprintf(emsMsg,"****** Internal error parsing .traf_authentication_config");
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "****** Internal error parsing .traf_authentication_config");
          break;
       case LDAPConfigFile_CantOpenLDAPRC:
-         sprintf(emsMsg,"****** Unable to open .ldaprc to determine TLS CACERTFilename");
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "****** Unable to open .ldaprc to determine TLS CACERTFilename");
          break;
       case LDAPConfigFile_MissingLDAPRC:
-         sprintf(emsMsg,"****** Missing .ldaprc and TLS_CACERTFilename not provided; cannot determine TLS CACERT filename");
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "****** Missing .ldaprc and TLS_CACERTFilename not provided; cannot determine TLS CACERT filename");
          break;
       default:
-         sprintf(emsMsg,"****** Error parsing .traf_authentication_config configuration file");
+         snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "****** Error parsing .traf_authentication_config configuration file");
    }
 
-   LOG_AUTH_EVENT(DBS_AUTH_CONFIG,emsMsg); 
+   INSERT_EVENT(DBS_AUTH_CONFIG,eventMsg); 
 
 }
 //************************** End of logConfigFileError *************************
@@ -2301,7 +2296,7 @@ char *attrs[3];
 char *attr, **vals;
 BerElement *ptr = 0;
 char createTimestamp[16];
-char emsMsg[EMS_MSG_SIZE];
+char eventMsg[MAX_EVENT_MSG_SIZE];
 
 // Use "createTimestamp" as our "unique ID" for the user on the LDAP server.
    strcpy(createTimestamp, "createTimestamp");
@@ -2339,7 +2334,7 @@ int reconnect = 1;
    {
       if (!selfCheck(self,true))
       {
-         LOG_AUTH_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"Self check failed in searchUserByDN");
+         INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"Self check failed in searchUserByDN");
       
          return LDSearchResourceFailure;
       }
@@ -2380,8 +2375,8 @@ int reconnect = 1;
          // resource failure error so we will retry per configuration settings.
          if (status != LD_STATUS_OK)
          {
-            sprintf(emsMsg, "LDAP search error.   Unable to connect to server\n");  
-            LOG_AUTH_EVENT(DBS_LDAP_SEARCH_ERROR,emsMsg);
+            snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "LDAP search error.   Unable to connect to server\n");  
+            INSERT_EVENT(DBS_LDAP_SEARCH_ERROR,eventMsg);
             return LDSearchResourceFailure;
          }
          reconnect--;
@@ -2391,9 +2386,9 @@ int reconnect = 1;
       // For all other search errors, report an error and return a resource 
       // failure (LDAP server or network problem) so we will retry per
       // configuration settings.   
-      sprintf(emsMsg, "LDAP search error.  Error code: %d, %s\n", 
+      snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "LDAP search error.  Error code: %d, %s\n", 
                       rc, ldap_err2string(rc)); 
-      LOG_AUTH_EVENT(DBS_LDAP_SEARCH_ERROR,emsMsg);
+      INSERT_EVENT(DBS_LDAP_SEARCH_ERROR,eventMsg);
       return LDSearchResourceFailure;
    }
    
@@ -2431,8 +2426,8 @@ int numberFound = ldap_count_entries(ld,res);
          ldap_msgfree(res);
 
       // log error message
-      sprintf(emsMsg, "LDAP search error.   Attribute %s does not exist in the entry %s", attrs[0], userDN.c_str());  
-      LOG_AUTH_EVENT(DBS_LDAP_SEARCH_ERROR,emsMsg);
+      snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "LDAP search error.   Attribute %s does not exist in the entry %s", attrs[0], userDN.c_str());  
+      INSERT_EVENT(DBS_LDAP_SEARCH_ERROR,eventMsg);
       return LDSearchResourceFailure;
    }
 

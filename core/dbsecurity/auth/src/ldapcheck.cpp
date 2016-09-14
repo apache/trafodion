@@ -30,6 +30,7 @@
 //                                                                             *
 //******************************************************************************
 #include "ldapconfignode.h"
+#include "authEvents.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -43,19 +44,9 @@
 #include <unistd.h>
 #include <time.h>
 #include <vector>
-#include "common/evl_sqlog_eventnum.h"
+
 
 using namespace std;
-
-struct AuthEvents
-{
-DB_SECURITY_EVENTID eventID;
-std::string         eventText;
-std::string         filename;
-int32_t             lineNumber;
-};
-
-std::vector<AuthEvents> authEvents;
 
 enum Operation {
    Authenticate = 2,
@@ -86,12 +77,6 @@ void doCanaryCheck(
    bool                           verbose,
    int &                          exitCode);   
    
-void logAuthEvent(
-   DB_SECURITY_EVENTID eventID,
-   const char *        msg,
-   const std::string & filename, 
-   int32_t             lineNumber);
-   
 LDSearchStatus lookupLDAPUser(
    const char *                    username,          
    LDAPConfigNode::LDAPConfigType  configType,        
@@ -99,7 +84,7 @@ LDSearchStatus lookupLDAPUser(
    
 void printTime();        
       
-void reportAuthenticationErrors();
+void reportAuthenticationErrors(bool displayErrors);
 
 void reportRetries(Operation operation);
     
@@ -261,8 +246,10 @@ LDAPAuthResult rc = authenticateLDAPUser(username,password,configType,
    if (verbose)
    {
       reportRetries(Authenticate);
-      reportAuthenticationErrors(); 
+      reportAuthenticationErrors(true); 
    }
+   else
+      reportAuthenticationErrors(false);
 
 }
 //*************************** End of doAuthenticate ****************************
@@ -294,14 +281,13 @@ void doCanaryCheck(
    int &                          exitCode)   
    
 {
-
    exitCode = 0;
    
-char searchHostName[256];
+   char searchHostName[256];
 
    searchHostName[0] = 0;
    
-LDSearchStatus searchStatus = lookupLDAPUser(username,configType,searchHostName);
+   LDSearchStatus searchStatus = lookupLDAPUser(username,configType,searchHostName);
 
    if (verbose)
       cout << "Search host name: " << searchHostName << endl;
@@ -330,79 +316,15 @@ LDSearchStatus searchStatus = lookupLDAPUser(username,configType,searchHostName)
    }
    
    if (verbose)
-   {
+      {
       reportRetries(Lookup);
-      reportAuthenticationErrors(); 
+      reportAuthenticationErrors(true); 
    }
+   else
+      reportAuthenticationErrors(false);
 
 }
 //*************************** End of doCanaryCheck *****************************
-
-
-// *****************************************************************************
-// *                                                                           *
-// * Function: logAuthEvent                                                    *
-// *                                                                           *
-// *    Stores an authentication event (mostly resource errors) in a vector    *
-// *  for later retrieval.                                                     *
-// *                                                                           *
-// *    The function signature must exactly match the same function in         *
-// *  ld_port.cpp.                                                             *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameter:                                                               *
-// *                                                                           *
-// *  <eventID>                 DB_SECURITY_EVENTID                    In      *
-// *    is the event ID associated with the authentication event.              *
-// *                                                                           *
-// *  <msg>                     const char *                           In      *
-// *    is the text associated with the authentication event.                  *
-// *                                                                           *
-// *  <filename>                const std::string &                    In      *
-// *    is the filename where the error/event was detected.                    *
-// *                                                                           *
-// *  <lineNumber>              int32_t                                In      *
-// *    is the line number where the error/event was detected.                 *
-// *                                                                           *
-// *****************************************************************************
-void logAuthEvent(
-   DB_SECURITY_EVENTID eventID,
-   const char *        msg,
-   const std::string & filename, 
-   int32_t             lineNumber)
-   
-{ 
-
-// Format the timestamp
-
-char tbuff[24] = {0};
-struct tm *stm;
-
-   time_t now = time(0);
-   stm = gmtime(&now);
-   strftime(tbuff, sizeof(tbuff), "%Y-%m-%d %H:%M:%S %Z", stm);
-   
-// Format the event message, with the timestamp at the beginning.
-   
-char eventMessage[5100];
-
-   sprintf(eventMessage,
-           "%s (pid=%d) Error detected while establishing LDAP connection: %s\n",
-           tbuff,getpid(),msg); 
-
-AuthEvents authEvent;
-
-   authEvent.eventID = eventID;
-   authEvent.eventText = eventMessage;
-   authEvent.filename = filename;
-   authEvent.lineNumber = lineNumber;
-   authEvents.push_back(authEvent);       
-
-} 
-//**************************** End of logAuthEvent *****************************
-
-
 
 
 // *****************************************************************************
@@ -501,41 +423,30 @@ void printUsage()
 
 
 // *****************************************************************************
-// *                                                                           *
-// * Function: reportAuthenticationErrors                                      *
-// *                                                                           *
-// *    Displays any resource errors encountered during authentication.        *
-// *                                                                           *
+// Function: reportAuthenticationErrors
+//                                    
+//    Logs and optionally displays any resource errors encountered during LDAP 
+//    checking.
 // *****************************************************************************
-void reportAuthenticationErrors()
-
+void reportAuthenticationErrors(bool displayErrors)
 {
+  if (authEvents.size() > 0)
+    authInitEventLog();
 
-size_t errorCount = authEvents.size();
+  //  Walk the list of errors encountered during the attempt to authenticate
+  //  the username, or username and password, and for each error, log the event 
+  //  ID and text. If displayErrors is true and logLevel is above the error 
+  //  level, send message to standard out.
+  std::string callerName ("ldapcheck");
 
-// *****************************************************************************
-// *                                                                           *
-// *    Walk the list of errors encountered during the attempt to authenticate *
-// * the username and password, and for each error, display the event ID and   *
-// * text along with the file and line number where the error was detected.    *
-// *                                                                           *
-// * If there is more than one error, number the errors.                       *
-// *                                                                           *
-// *****************************************************************************
-
-   for (size_t index = 0; index < errorCount; index++)
-   {
-      if (errorCount > 1)
-         cout << "Error #" << index + 1 << endl;
-   
-      const AuthEvents &authEvent = authEvents[index];
-      
-      cout << "Filename: " << authEvent.filename << 
-              " Line number: " << authEvent.lineNumber << endl;  
-      cout << "Event ID: " << authEvent.eventID << endl;
-      cout << authEvent.eventText << endl;
-   }
-
+  for (size_t i = 0; i < authEvents.size(); i++)
+  {
+     AuthEvent authEvent = authEvents[i];
+     authEvent.setCallerName(callerName);
+     authEvent.logAuthEvent();
+     if (displayErrors)  
+       cout  << "ERROR: " << authEvent.getEventText().c_str() << endl;
+  }
 }
 //********************** End of reportAuthenticationErrors *********************
 
@@ -638,12 +549,8 @@ termios tty;
 int main(int argc,char *argv[])
 
 {
-
-//
-// ldapcheck needs a username.  If not supplied, issue an error
-// and print usage information. 
-//
-
+   // ldapcheck needs a username.  If not supplied, issue an error
+   // and print usage information. 
    if (argc <= 1)
    {
       cout << "Username required to check LDAP" << endl;
@@ -651,37 +558,31 @@ int main(int argc,char *argv[])
       exit(1);
    }
    
-//
-// Help!
-//
-   
+   // Help!
    if (strcmp(argv[1],"-h") == 0 || strcmp(argv[1],"--help") == 0)
    {
       printUsage();
       exit(0);
    } 
    
-enum Options {
-   Primary = 1,
-   Secondary = 0,
-   Platform = 2};
+   enum Options {
+      Primary = 1,
+      Secondary = 0,
+      Platform = 2};
    
-int c;
-int optionFlag = Primary;
-int verbose = 0;
-string password;
-char username[129];
-bool usernameSpecified = false;
-bool passwordSpecified = false;
-int loopCount = 1;
-int delayTime = 0;
-bool looping = false;
+   int c;
+   int optionFlag = Primary;
+   int verbose = 0;
+   string password;
+   char username[129];
+   bool usernameSpecified = false;
+   bool passwordSpecified = false;
+   int loopCount = 1;
+   int delayTime = 0;
+   bool looping = false;
 
-//
-// Walk the list of options.  Username and password are required, although
-// the password can be left blank and prompted for.
-//
-     
+   // Walk the list of options.  Username and password are required, although
+   // the password can be left blank and prompted for.
    while (true)
    {
       static struct option long_options[] =
@@ -784,7 +685,7 @@ bool looping = false;
       }
    }
  
-// If there are any remaining command line arguments, report an error
+   // If there are any remaining command line arguments, report an error
    if (optind < argc)
    {
       cout << "Unrecognized text" << endl; 
@@ -795,7 +696,7 @@ bool looping = false;
       exit(1);
    }
    
-// Verify a username was supplied, or we have nothing to do
+   // Verify a username was supplied, or we have nothing to do
    if (!usernameSpecified)
    {
       cout << "Username required" << endl;
@@ -803,7 +704,7 @@ bool looping = false;
       exit(1);   
    }
    
-LDAPConfigNode::LDAPConfigType configType = LDAPConfigNode::PrimaryConfiguration;
+   LDAPConfigNode::LDAPConfigType configType = LDAPConfigNode::PrimaryConfiguration;
 
    switch (optionFlag)
    {
@@ -820,9 +721,11 @@ LDAPConfigNode::LDAPConfigType configType = LDAPConfigNode::PrimaryConfiguration
          configType = LDAPConfigNode::PrimaryConfiguration;
    }    
 
-// If no password is supplied, we just perform a name lookup.  This was 
-// added to provide a canary check for the LDAP server without having to 
-// supply a valid password.   
+
+
+   // If no password is supplied, we just perform a name lookup.  This was 
+   // added to provide a canary check for the LDAP server without having to 
+   // supply a valid password.   
    if (!passwordSpecified)
    {
       int exitCode = 0;
@@ -834,7 +737,7 @@ LDAPConfigNode::LDAPConfigType configType = LDAPConfigNode::PrimaryConfiguration
          if (loopCount > 0)
             sleep(delayTime);
       }
-      //
+
       // For the LDAP Canary check mode of ldapcheck, we return one of 
       // three exit codes to be used by a health check:
       //
@@ -842,13 +745,10 @@ LDAPConfigNode::LDAPConfigType configType = LDAPConfigNode::PrimaryConfiguration
       // 1) LDAP configuration and server(s) good, retries occurred 
       // 2) Could not communicate with LDAP server(s).  Check LDAP configuration or server(s).
       // 3) User was not defined in LDAP
-      //
       exit(exitCode);
    }
             
-//
-// We have a username and password.  Let's authenticate!
-//
+   // We have a username and password.  Let's authenticate!
    while (loopCount--)
    {
       if (verbose && looping)
