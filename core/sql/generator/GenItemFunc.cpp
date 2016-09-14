@@ -218,6 +218,33 @@ short BuiltinFunction::codeGen(Generator * generator)
       
       break;
 
+   case ITM_ISIPV4:
+   case ITM_ISIPV6:
+      {
+	function_clause =
+	  new(generator->getSpace()) ExFunctionIsIP(getOperatorType(), 
+							 attr, space);
+      }
+      
+      break;
+    case ITM_INET_ATON:
+      {
+        function_clause =
+          new(generator->getSpace()) ExFunctionInetAton(getOperatorType(),
+                                                         attr, space);
+      }
+
+      break;
+
+    case ITM_INET_NTOA:
+      {
+        function_clause =
+          new(generator->getSpace()) ExFunctionInetNtoa(getOperatorType(),
+                                                         attr, space);
+      }
+
+      break;
+
     // -- MV
     case ITM_CONCAT:
       {

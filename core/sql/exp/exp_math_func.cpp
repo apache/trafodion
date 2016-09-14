@@ -50,6 +50,7 @@
 #define MathFloor(op, err) floor(op)
 #define MathLog(op, err) log(op)
 #define MathLog10(op, err) log10(op)
+#define MathLog2(op, err) log2(op)
 #define MathModf(op, err) modf(op)
 #define MathPow(op1, op2, err) pow(op1, op2)
 //extern double MathPow(double Base, double Power, short &err);
@@ -348,7 +349,18 @@ ex_expr::exp_return_type ExFunctionMath::eval(char *op_data[],
 	  return ex_expr::EXPR_ERROR;
 	}
       
-      *(double *)op_data[0] = MathLog10(*(double *)op_data[1], err);
+      *(double *)op_data[0] = MathLog2(*(double *)op_data[1], err);
+      break;
+
+    case ITM_LOG2:
+      if (*(double *)op_data[1] <= 0)
+	{
+	  ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+	  **diagsArea << DgString0("LOG2");
+	  return ex_expr::EXPR_ERROR;
+	}
+      
+      *(double *)op_data[0] = MathLog2(*(double *)op_data[1], err);
       break;
 
     case ITM_SIN:

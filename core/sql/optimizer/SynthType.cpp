@@ -1010,7 +1010,81 @@ const NAType *BuiltinFunction::synthesizeType()
 	    SQLChar(maxLength, typ1.supportsSQLnull());
       }
     break;
+ 
+    case ITM_ISIPV4:
+    case ITM_ISIPV6:
+      {
+        // type cast any params
+        ValueId vid1 = child(0)->getValueId();
+        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        vid1.coerceType(c1, NA_CHARACTER_TYPE);
+        //input type must be string
+        const NAType &typ1 = child(0)->getValueId().getType();
 
+        if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("IS_IP");
+	    return NULL;
+          }
+        retType = new HEAP
+           SQLSmall(TRUE, FALSE);
+	if (typ1.supportsSQLnull())
+	  {
+	    retType->setNullable(TRUE);
+	  }
+      }
+    break;
+    case ITM_INET_ATON:
+      {
+        // type cast any params
+        ValueId vid1 = child(0)->getValueId();
+        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        vid1.coerceType(c1, NA_CHARACTER_TYPE);
+
+        //input type must be string
+        const NAType &typ1 = child(0)->getValueId().getType();
+
+        if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("INET_ATON");
+	    return NULL;
+          }
+        retType = new HEAP
+           SQLInt(FALSE, FALSE);
+	if (typ1.supportsSQLnull())
+	  {
+	    retType->setNullable(TRUE);
+	  }
+      }
+    break;
+    case ITM_INET_NTOA:
+      {
+	// type cast any params
+	ValueId vid = child(0)->getValueId();
+	vid.coerceType(NA_NUMERIC_TYPE);
+
+	const NAType &typ1 = child(0)->getValueId().getType();
+	if (typ1.getTypeQualifier() != NA_NUMERIC_TYPE)
+	  {
+	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("INET_NTOA");
+	    return NULL;
+	  }
+        const NumericType &ntyp1 = (NumericType &) typ1;
+        if (NOT ntyp1.isExact() || ntyp1.getScale() != 0)
+	  {
+	    *CmpCommon::diags() << DgSqlCode(-4046) << DgString0("INET_NTOA");
+	    return NULL;
+	  }
+
+	retType = new HEAP
+	  SQLVarChar(15, FALSE);
+           SQLInt(FALSE, FALSE);
+	if (typ1.supportsSQLnull())
+	  {
+	    retType->setNullable(TRUE);
+          }
+      }
+    break;
     case ITM_NULLIFZERO:
       {
 	// type cast any params
@@ -3399,6 +3473,7 @@ const NAType *MathFunc::synthesizeType()
     case ITM_FLOOR:
     case ITM_LOG:
     case ITM_LOG10:
+    case ITM_LOG2:
     case ITM_PI:
     case ITM_POWER:
     case ITM_RADIANS:
