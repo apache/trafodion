@@ -758,6 +758,8 @@ short FileScan::codeGenForHive(Generator * generator)
     
   }
 
+  setRetrievedCols(neededHdfsVals);
+
   ex_expr *executor_expr = 0;
   ex_expr *proj_expr = 0;
   ex_expr *convert_expr = 0;
