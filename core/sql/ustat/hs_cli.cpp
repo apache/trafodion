@@ -1328,7 +1328,7 @@ HSPersSamples* HSPersSamples::Instance(const NAString &catalog,
 
 /***********************************************/
 /* METHOD:  find()                             */
-/* PURPOSE: finds a manual (i.e., not IUS)     */
+/* PURPOSE: finds a                            */
 /*          persistent sample table for UID    */
 /*          and sample size. If a persistent   */
 /*          sample is found, the name will be  */
@@ -1381,7 +1381,6 @@ Lng32 HSPersSamples::find(HSTableDef *objDef, Int64 &actualRows, NABoolean isEst
     query += fromTable;
     query += " WHERE TABLE_UID = ";
     query += uidStr;
-    query += " AND REASON = 'M'";
 
     retcode = findSampleTableCursor1.prepareQuery(query, 0, 4); // no input parms, 1 output col
     HSLogError(retcode);
@@ -1446,7 +1445,7 @@ Lng32 HSPersSamples::find(HSTableDef *objDef, Int64 &actualRows, NABoolean isEst
 /*          the name will be returned in       */
 /*          'table', or blank if not.          */
 /* INPUT:   uid - source table UID.            */
-/*          reason - I incremental, M manual   */
+/*          reason - (ignored for now)         */
 /* OUTPUT:  table - the name of a sample table */
 /*            found or "" if none found.       */
 /*            requestedRows: requested rows    */
@@ -1483,9 +1482,6 @@ Lng32 HSPersSamples::find(HSTableDef *objDef, char reason,
     query += fromTable;
     query += " WHERE TABLE_UID = ";
     query += uidStr;
-    query += " AND REASON = '";
-    query += reason;
-    query += "'";
 
     retcode = findSampleTableCursor.prepareQuery(query, 0, 4); // no input parms, 2 output cols
     HSLogError(retcode);
@@ -1576,9 +1572,7 @@ Lng32 HSPersSamples::removeSample(HSTableDef* tabDef, NAString& sampTblName,
       dml += fromTable; // in UTF8
       dml += " WHERE TABLE_UID = ";
       dml += Int64ToNAString(objUID);
-      dml += " AND REASON = '";
-      dml += reason;
-      dml += "'";
+      // for now, the reason is ignored
 
       retcode = HSFuncExecQuery(dml, - UERR_INTERNAL_ERROR, NULL,
                                 HS_QUERY_ERROR, NULL, NULL, TRUE/*doRetry*/ );
@@ -1604,7 +1598,7 @@ Lng32 HSPersSamples::removeSample(HSTableDef* tabDef, NAString& sampTblName,
 /*          can be determined from statistics.                  */
 /* INPUTS:  tabDef - a pointer to table struct.                 */
 /*          isEstimate - TRUE if 'actualRows' is est. on input. */
-/*          isManual   - sets REASON in SB_PERSISTENT_SAMPLES.     */
+/*          reason - sets REASON in SB_PERSISTENT_SAMPLES.      */
 /* IN/OUTS: sampleRows - the desired size of sample on input,   */
 /*            actual sample size on output.                     */
 /*          actualRows - table size (possibly an est.) on input */
@@ -1630,17 +1624,20 @@ Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
     if (!tabDef || tabDef->setHasSyskeyFlag() != 0) return -1;
       // Sets flag in tabDef indicating primary key is SYSKEY.
 
-    // Drop the prior persistent sample table if it exists, and remove
-    // the corresponding row from the SB_PERSISTENT_SAMPLES table.
+    // If a persistent sample table already exists, raise an error telling
+    // the user about it.
 
     Int64 dummy1, dummy2;
     double dummy3;
     NAString oldSampTblName;
     retcode = find(tabDef, reason, oldSampTblName,
                    dummy1, dummy2, dummy3);
-    if (retcode == 0)
-      removeSample(tabDef, oldSampTblName, reason,
-                   "DROP OLD PERSISTENT SAMPLE TABLE AND REMOVE FROM LIST");
+    if ((retcode == 0) && (oldSampTblName.length() > 0))
+      {
+        retcode = -UERR_DROP_PERSISTANT_SAMPLE_FIRST;
+        HSFuncMergeDiags(retcode);
+        HSHandleError(retcode);
+      }
 
     // Save original requested number of sample rows for inserting to SB_PERSISTENT_SAMPLES.
     reqSampleRows = sampleRows;
@@ -1657,7 +1654,7 @@ Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
     // (reason code is 'I').
 
     retcode = sample.make(isEstimate, sampleName, actualRows, sampleRows, TRUE,
-                          reason != 'I', /* partitioned for IUS */
+                          TRUE, /* partitioned */
                           minRowCtPerPartition
                          );
       // sampleName output & actualRows will get modified if necessary
@@ -1726,18 +1723,6 @@ Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
         sample.drop();
       }
     }
-
-/* Begin Test code
-      NAString data("data for CBF");
-      NAString newData("", 32000,STMTHEAP);
-      HSPersData *persDataList = HSPersData::Instance(tabDef->getCatName());
-      ULng32 objectSubId = ((ULng32)(rand()/2));
-      ULng32 seqNum = ((ULng32)(rand()/3));;
-
-      retcode = persDataList->insert(sampleName, objectSubId, seqNum, data);
-      retcode = persDataList->fetch(sampleName, objectSubId, seqNum, newData);
-      retcode = persDataList->remove(sampleName, objectSubId, seqNum);
-  End Test code */
 
     return retcode;
   }
@@ -1843,7 +1828,6 @@ Lng32 HSPersSamples::readIUSUpdateInfo(HSTableDef* tblDef,
     query += fromTable;
     query += " WHERE TABLE_UID = ";
     query += uidStr;
-    query += " AND REASON = 'I'";
 
     retcode = readIUSInfoCursor.prepareQuery(query, 0, 2); // no input parms, 2 output cols
     HSLogError(retcode);
@@ -1993,7 +1977,6 @@ Lng32 HSPersSamples::updIUSUpdateInfo(HSTableDef* tblDef,
   query += " WHERE TABLE_UID = ";
   convertInt64ToAscii(uid,buf);
   query += buf;
-  query += " AND REASON = 'I'";
 
   retcode = writeIUSInfoCursor.prepareQuery(query, 0, 0);
   HSLogError(retcode);
