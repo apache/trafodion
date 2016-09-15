@@ -349,7 +349,7 @@ ex_expr::exp_return_type ExFunctionMath::eval(char *op_data[],
 	  return ex_expr::EXPR_ERROR;
 	}
       
-      *(double *)op_data[0] = MathLog2(*(double *)op_data[1], err);
+      *(double *)op_data[0] = MathLog10(*(double *)op_data[1], err);
       break;
 
     case ITM_LOG2:

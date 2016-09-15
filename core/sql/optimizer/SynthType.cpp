@@ -1078,7 +1078,7 @@ const NAType *BuiltinFunction::synthesizeType()
 
 	retType = new HEAP
 	  SQLVarChar(15, FALSE);
-           SQLInt(FALSE, FALSE);
+
 	if (typ1.supportsSQLnull())
 	  {
 	    retType->setNullable(TRUE);

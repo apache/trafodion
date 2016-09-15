@@ -45,11 +45,6 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
-/*
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-*/
 
 #include "NLSConversion.h"
 #include "nawstring.h"
@@ -7768,11 +7763,11 @@ static Lng32 string2ipv4(char *srcData, Lng32 slen, unsigned int *inet_addr)
 
    if(srcData[0] == ' ')
    { 
-     leadingspace++;
-     for(i=1; i< slen; i++)
+     char * next = srcData;
+     while (*next == ' ')
      {
-       if(srcData[i] == ' ') leadingspace++;
-       else break; 
+       leadingspace++;
+       next++;
      }
    }
    
@@ -7889,14 +7884,10 @@ ex_expr::exp_return_type ExFunctionInetNtoa::eval(char * op_data[],
    Attributes *resultAttr = getOperand(0);
    const unsigned char *ipv4_bytes= (const unsigned char *) &addr;
 
-   if( ipv4_bytes[0] > 255 || 
-       ipv4_bytes[1] > 255 ||
-       ipv4_bytes[2] > 255 ||
-       ipv4_bytes[3] > 255 ||
-       addr > 4294967295 )
+   if( addr > 4294967295 ) 
    {
-      ExRaiseSqlError(heap, diags, EXE_INVALID_CHARACTER);
-      *(*diags) << DgString0("IP value") << DgString1("INET_NTOA FUNCTION"); 
+      ExRaiseSqlError(heap, diags, EXE_BAD_ARG_TO_MATH_FUNC);
+      *(*diags) << DgString0("INET_NTOA"); 
       return ex_expr::EXPR_ERROR;
    }
 
@@ -7955,16 +7946,13 @@ ex_expr::exp_return_type ExFunctionIsIP::eval(char * op_data[],
     //cannot start with single :
     if (*ptr == ':')
     {
-      ++ptr;
-
-      if (*ptr != ':')
+      if (*(ptr+1) != ':')
       {
         *(Int16 *)op_data[0] = 0;
         return ex_expr::EXPR_OK;
       }
     }
-
-    if (*ptr == ' ')
+    else if (*ptr == ' ')
     {
       while(*ptr==' ') ptr++;
     }     
