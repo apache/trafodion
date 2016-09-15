@@ -2525,6 +2525,12 @@ void LSDecimal::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
     }
 } // LSDecimal::maxRepresentableValue()
 
+NABoolean NumericType::isInteger() const      
+{ 
+  return ( qualifier_ == SQLInt_TYPE || qualifier_ == SQLSmall_TYPE ||
+           (getTypeQualifier() == NA_NUMERIC_TYPE && getPrecision() > 0 && getScale() == 0) ); 
+}
+
 // -----------------------------------------------------------------------
 // Type synthesis for binary operators
 // -----------------------------------------------------------------------
