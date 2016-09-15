@@ -66,6 +66,8 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProt
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndDeleteResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutRegionTxRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutRegionTxResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteMultipleTransactionalRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteMultipleTransactionalResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteTransactionalRequest;
@@ -74,6 +76,8 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProt
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.GetTransactionalResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.OpenScannerRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.OpenScannerResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutRegionTxRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutRegionTxResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutMultipleTransactionalRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutMultipleTransactionalResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutTransactionalRequest;
@@ -351,6 +355,65 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
     if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put EXIT");
   }
 
+   public synchronized void putRegionTx(final long tsId, final Put put, final boolean autoCommit) throws IOException{
+        if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.putRegionTx ENTRY, autoCommit: " + autoCommit);
+
+        validatePut(put);
+        final String regionName = super.getRegionLocation(put.getRow()).getRegionInfo().getRegionNameAsString();
+
+        Batch.Call<TrxRegionService, PutRegionTxResponse> callable =
+        new Batch.Call<TrxRegionService, PutRegionTxResponse>() {
+        ServerRpcController controller = new ServerRpcController();
+        BlockingRpcCallback<PutRegionTxResponse> rpcCallback =
+            new BlockingRpcCallback<PutRegionTxResponse>();
+        @Override
+        public PutRegionTxResponse call(TrxRegionService instance) throws IOException {
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutRegionTxRequest.Builder builder = PutRegionTxRequest.newBuilder();
+          builder.setTid(tsId);
+          builder.setAutoCommit(autoCommit);
+          builder.setRegionName(ByteString.copyFromUtf8(regionName));
+          MutationProto m1 = ProtobufUtil.toMutation(MutationType.PUT, put);
+          builder.setPut(m1);
+
+          instance.putRegionTx(controller, builder.build(), rpcCallback);
+        return rpcCallback.get();
+        }
+      };
+      PutRegionTxResponse result = null; 
+      try {
+        int retryCount = 0;
+        boolean retry = false;
+        do {
+          Iterator<Map.Entry<byte[], PutRegionTxResponse>> it= super.coprocessorService(TrxRegionService.class, 
+                                                                                            put.getRow(), 
+                                                                                            put.getRow(), 
+                                                                                            callable)
+                                                                                            .entrySet().iterator();
+          if(it.hasNext()) {
+            result = it.next().getValue();
+            retry = false;
+          }
+
+          if(result == null || result.getException().contains("closing region")) {
+            Thread.sleep(TransactionalTable.delay);
+            retry = true;
+            retryCount++;
+          }
+
+        } while(retryCount < TransactionalTable.retries && retry == true);
+      } catch (Throwable e) {
+        throw new IOException("ERROR while calling coprocessor in putRegionTx ", e);
+      }    
+      if(result == null)
+        throw new IOException(retryErrMsg);
+      else if(result.hasException())
+        throw new IOException(result.getException());
+
+      // put is void, may not need to check result
+      if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.putRegionTx EXIT");
+
+  }
+
   public synchronized ResultScanner getScanner(final TransactionState transactionState, final Scan scan) throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.getScanner");
     if (scan.getCaching() <= 0) {
@@ -523,6 +586,107 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
       return result.getResult();          
     }
 
+    /**
+     * CheckAndPut to the table using a region transaction, not the DTM.
+     * This is valid for single row, single table operations only.
+     * After the checkAndPut operation the region performs conflict checking
+     * and prepare processing automatically.  If the autoCommit flag is
+     * true, the region also commits the region transaction before returning 
+     * <p>
+     * If autoFlush is false, the update is buffered.
+     * 
+     * @param tsId       // Id to be used by the region as a transId
+     * @param row
+     * @param family
+     * @param qualifier
+     * @param value
+     * @param put
+     * @param autoCommit // should the region transaction be committed 
+     * @throws IOException
+     * @since 2.1.0
+     */
+	public boolean checkAndPutRegionTx(final long tsId, final byte[] row,
+			final byte[] family, final byte[] qualifier, final byte[] value,
+			final Put put, final boolean autoCommit) throws IOException{
+		
+			if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.checkAndPutRegionTx row: " + row
+					+ " family: " + family + " qualifier: " + qualifier
+					+ " value: " + value + " autoCommit: " + autoCommit);
+			if (!Bytes.equals(row, put.getRow())) {
+				throw new IOException("Action's getRow must match the passed row");
+			}
+			final String regionName = super.getRegionLocation(put.getRow()).getRegionInfo().getRegionNameAsString();
+			if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx, region name: " + regionName);
+		    //if(regionName == null) 
+		    	//throw new IOException("Null regionName");
+		    //System.out.println("RegionName: " + regionName);
+			Batch.Call<TrxRegionService, CheckAndPutRegionTxResponse> callable =
+	        new Batch.Call<TrxRegionService, CheckAndPutRegionTxResponse>() {
+	      ServerRpcController controller = new ServerRpcController();
+	      BlockingRpcCallback<CheckAndPutRegionTxResponse> rpcCallback =
+	        new BlockingRpcCallback<CheckAndPutRegionTxResponse>();
+
+	      @Override
+	      public CheckAndPutRegionTxResponse call(TrxRegionService instance) throws IOException {
+	        org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutRegionTxRequest.Builder builder = CheckAndPutRegionTxRequest.newBuilder();
+	        builder.setTid(tsId);
+	        builder.setRegionName(ByteString.copyFromUtf8(regionName));
+	        builder.setRow(HBaseZeroCopyByteString.wrap(row));
+	        if (family != null)
+	        	builder.setFamily(HBaseZeroCopyByteString.wrap(family));
+	        else 
+	        	builder.setFamily(HBaseZeroCopyByteString.wrap(new byte[]{}));
+	        if (qualifier != null )
+	        	builder.setQualifier(HBaseZeroCopyByteString.wrap(qualifier));
+	        else 
+	        	builder.setQualifier(HBaseZeroCopyByteString.wrap(new byte[]{}));
+	        if (value != null)
+	        	builder.setValue(HBaseZeroCopyByteString.wrap(value));
+	        else
+	        	builder.setValue(HBaseZeroCopyByteString.wrap(new byte[]{}));
+	        //Put p = new Put(ROW1);
+	        MutationProto m1 = ProtobufUtil.toMutation(MutationType.PUT, put);
+	        builder.setPut(m1);
+	        builder.setAutoCommit(autoCommit);
+
+	        instance.checkAndPutRegionTx(controller, builder.build(), rpcCallback);
+	        return rpcCallback.get();
+	      }
+	    };
+
+	      CheckAndPutRegionTxResponse result = null;
+	      try {
+	        int retryCount = 0;
+	        boolean retry = false;
+	        do {
+	          Iterator<Map.Entry<byte[], CheckAndPutRegionTxResponse>> it = super.coprocessorService(TrxRegionService.class, 
+	                                                                                      put.getRow(), 
+	                                                                                      put.getRow(), 
+	                                                                                      callable)
+	                                                                                      .entrySet()
+	                                                                                      .iterator();
+	          if(it.hasNext()) {
+	            result = it.next().getValue();
+	            retry = false;
+	          }
+
+	          if(result == null || result.getException().contains("closing region")) {
+	            Thread.sleep(TransactionalTable.delay);
+	            retry = true;
+	            retryCount++;
+	          }
+	        } while (retryCount < TransactionalTable.retries && retry == true);
+	      } catch (Throwable e) {        
+	        throw new IOException("ERROR while calling coprocessor ",e);       
+	      }
+
+	      if(result == null)
+	        throw new IOException(retryErrMsg);
+	      else if(result.hasException())
+	        throw new IOException(result.getException());
+
+	      return result.getResult();          
+	}
        /**
    	 * Looking forward to TransactionalRegion-side implementation
    	 * 

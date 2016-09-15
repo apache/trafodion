@@ -7500,6 +7500,1897 @@ public final class SsccRegionProtos {
     // @@protoc_insertion_point(class_scope:SsccCheckAndDeleteResponse)
   }
 
+  public interface SsccCheckAndDeleteRegionTxRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required int64 transactionId = 1;
+    /**
+     * <code>required int64 transactionId = 1;</code>
+     */
+    boolean hasTransactionId();
+    /**
+     * <code>required int64 transactionId = 1;</code>
+     */
+    long getTransactionId();
+
+    // required int64 startId = 2;
+    /**
+     * <code>required int64 startId = 2;</code>
+     */
+    boolean hasStartId();
+    /**
+     * <code>required int64 startId = 2;</code>
+     */
+    long getStartId();
+
+    // required bytes regionName = 3;
+    /**
+     * <code>required bytes regionName = 3;</code>
+     */
+    boolean hasRegionName();
+    /**
+     * <code>required bytes regionName = 3;</code>
+     */
+    com.google.protobuf.ByteString getRegionName();
+
+    // required bytes row = 4;
+    /**
+     * <code>required bytes row = 4;</code>
+     */
+    boolean hasRow();
+    /**
+     * <code>required bytes row = 4;</code>
+     */
+    com.google.protobuf.ByteString getRow();
+
+    // required bytes family = 5;
+    /**
+     * <code>required bytes family = 5;</code>
+     */
+    boolean hasFamily();
+    /**
+     * <code>required bytes family = 5;</code>
+     */
+    com.google.protobuf.ByteString getFamily();
+
+    // required bytes qualifier = 6;
+    /**
+     * <code>required bytes qualifier = 6;</code>
+     */
+    boolean hasQualifier();
+    /**
+     * <code>required bytes qualifier = 6;</code>
+     */
+    com.google.protobuf.ByteString getQualifier();
+
+    // required bytes value = 7;
+    /**
+     * <code>required bytes value = 7;</code>
+     */
+    boolean hasValue();
+    /**
+     * <code>required bytes value = 7;</code>
+     */
+    com.google.protobuf.ByteString getValue();
+
+    // required .MutationProto delete = 8;
+    /**
+     * <code>required .MutationProto delete = 8;</code>
+     */
+    boolean hasDelete();
+    /**
+     * <code>required .MutationProto delete = 8;</code>
+     */
+    org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto getDelete();
+    /**
+     * <code>required .MutationProto delete = 8;</code>
+     */
+    org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder getDeleteOrBuilder();
+
+    // required bool autoCommit = 9;
+    /**
+     * <code>required bool autoCommit = 9;</code>
+     */
+    boolean hasAutoCommit();
+    /**
+     * <code>required bool autoCommit = 9;</code>
+     */
+    boolean getAutoCommit();
+  }
+  /**
+   * Protobuf type {@code SsccCheckAndDeleteRegionTxRequest}
+   */
+  public static final class SsccCheckAndDeleteRegionTxRequest extends
+      com.google.protobuf.GeneratedMessage
+      implements SsccCheckAndDeleteRegionTxRequestOrBuilder {
+    // Use SsccCheckAndDeleteRegionTxRequest.newBuilder() to construct.
+    private SsccCheckAndDeleteRegionTxRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private SsccCheckAndDeleteRegionTxRequest(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final SsccCheckAndDeleteRegionTxRequest defaultInstance;
+    public static SsccCheckAndDeleteRegionTxRequest getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public SsccCheckAndDeleteRegionTxRequest getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private SsccCheckAndDeleteRegionTxRequest(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 8: {
+              bitField0_ |= 0x00000001;
+              transactionId_ = input.readInt64();
+              break;
+            }
+            case 16: {
+              bitField0_ |= 0x00000002;
+              startId_ = input.readInt64();
+              break;
+            }
+            case 26: {
+              bitField0_ |= 0x00000004;
+              regionName_ = input.readBytes();
+              break;
+            }
+            case 34: {
+              bitField0_ |= 0x00000008;
+              row_ = input.readBytes();
+              break;
+            }
+            case 42: {
+              bitField0_ |= 0x00000010;
+              family_ = input.readBytes();
+              break;
+            }
+            case 50: {
+              bitField0_ |= 0x00000020;
+              qualifier_ = input.readBytes();
+              break;
+            }
+            case 58: {
+              bitField0_ |= 0x00000040;
+              value_ = input.readBytes();
+              break;
+            }
+            case 66: {
+              org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000080) == 0x00000080)) {
+                subBuilder = delete_.toBuilder();
+              }
+              delete_ = input.readMessage(org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(delete_);
+                delete_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000080;
+              break;
+            }
+            case 72: {
+              bitField0_ |= 0x00000100;
+              autoCommit_ = input.readBool();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndDeleteRegionTxRequest_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndDeleteRegionTxRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest.class, org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<SsccCheckAndDeleteRegionTxRequest> PARSER =
+        new com.google.protobuf.AbstractParser<SsccCheckAndDeleteRegionTxRequest>() {
+      public SsccCheckAndDeleteRegionTxRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new SsccCheckAndDeleteRegionTxRequest(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<SsccCheckAndDeleteRegionTxRequest> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required int64 transactionId = 1;
+    public static final int TRANSACTIONID_FIELD_NUMBER = 1;
+    private long transactionId_;
+    /**
+     * <code>required int64 transactionId = 1;</code>
+     */
+    public boolean hasTransactionId() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required int64 transactionId = 1;</code>
+     */
+    public long getTransactionId() {
+      return transactionId_;
+    }
+
+    // required int64 startId = 2;
+    public static final int STARTID_FIELD_NUMBER = 2;
+    private long startId_;
+    /**
+     * <code>required int64 startId = 2;</code>
+     */
+    public boolean hasStartId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>required int64 startId = 2;</code>
+     */
+    public long getStartId() {
+      return startId_;
+    }
+
+    // required bytes regionName = 3;
+    public static final int REGIONNAME_FIELD_NUMBER = 3;
+    private com.google.protobuf.ByteString regionName_;
+    /**
+     * <code>required bytes regionName = 3;</code>
+     */
+    public boolean hasRegionName() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>required bytes regionName = 3;</code>
+     */
+    public com.google.protobuf.ByteString getRegionName() {
+      return regionName_;
+    }
+
+    // required bytes row = 4;
+    public static final int ROW_FIELD_NUMBER = 4;
+    private com.google.protobuf.ByteString row_;
+    /**
+     * <code>required bytes row = 4;</code>
+     */
+    public boolean hasRow() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>required bytes row = 4;</code>
+     */
+    public com.google.protobuf.ByteString getRow() {
+      return row_;
+    }
+
+    // required bytes family = 5;
+    public static final int FAMILY_FIELD_NUMBER = 5;
+    private com.google.protobuf.ByteString family_;
+    /**
+     * <code>required bytes family = 5;</code>
+     */
+    public boolean hasFamily() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>required bytes family = 5;</code>
+     */
+    public com.google.protobuf.ByteString getFamily() {
+      return family_;
+    }
+
+    // required bytes qualifier = 6;
+    public static final int QUALIFIER_FIELD_NUMBER = 6;
+    private com.google.protobuf.ByteString qualifier_;
+    /**
+     * <code>required bytes qualifier = 6;</code>
+     */
+    public boolean hasQualifier() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    /**
+     * <code>required bytes qualifier = 6;</code>
+     */
+    public com.google.protobuf.ByteString getQualifier() {
+      return qualifier_;
+    }
+
+    // required bytes value = 7;
+    public static final int VALUE_FIELD_NUMBER = 7;
+    private com.google.protobuf.ByteString value_;
+    /**
+     * <code>required bytes value = 7;</code>
+     */
+    public boolean hasValue() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    /**
+     * <code>required bytes value = 7;</code>
+     */
+    public com.google.protobuf.ByteString getValue() {
+      return value_;
+    }
+
+    // required .MutationProto delete = 8;
+    public static final int DELETE_FIELD_NUMBER = 8;
+    private org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto delete_;
+    /**
+     * <code>required .MutationProto delete = 8;</code>
+     */
+    public boolean hasDelete() {
+      return ((bitField0_ & 0x00000080) == 0x00000080);
+    }
+    /**
+     * <code>required .MutationProto delete = 8;</code>
+     */
+    public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto getDelete() {
+      return delete_;
+    }
+    /**
+     * <code>required .MutationProto delete = 8;</code>
+     */
+    public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder getDeleteOrBuilder() {
+      return delete_;
+    }
+
+    // required bool autoCommit = 9;
+    public static final int AUTOCOMMIT_FIELD_NUMBER = 9;
+    private boolean autoCommit_;
+    /**
+     * <code>required bool autoCommit = 9;</code>
+     */
+    public boolean hasAutoCommit() {
+      return ((bitField0_ & 0x00000100) == 0x00000100);
+    }
+    /**
+     * <code>required bool autoCommit = 9;</code>
+     */
+    public boolean getAutoCommit() {
+      return autoCommit_;
+    }
+
+    private void initFields() {
+      transactionId_ = 0L;
+      startId_ = 0L;
+      regionName_ = com.google.protobuf.ByteString.EMPTY;
+      row_ = com.google.protobuf.ByteString.EMPTY;
+      family_ = com.google.protobuf.ByteString.EMPTY;
+      qualifier_ = com.google.protobuf.ByteString.EMPTY;
+      value_ = com.google.protobuf.ByteString.EMPTY;
+      delete_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance();
+      autoCommit_ = false;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasTransactionId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasStartId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasRegionName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasRow()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFamily()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasQualifier()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasValue()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasDelete()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasAutoCommit()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getDelete().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeInt64(1, transactionId_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeInt64(2, startId_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBytes(3, regionName_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeBytes(4, row_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeBytes(5, family_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeBytes(6, qualifier_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeBytes(7, value_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        output.writeMessage(8, delete_);
+      }
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        output.writeBool(9, autoCommit_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(1, transactionId_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(2, startId_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(3, regionName_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(4, row_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(5, family_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(6, qualifier_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(7, value_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(8, delete_);
+      }
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(9, autoCommit_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code SsccCheckAndDeleteRegionTxRequest}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndDeleteRegionTxRequest_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndDeleteRegionTxRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest.class, org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest.Builder.class);
+      }
+
+      // Construct using org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getDeleteFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        transactionId_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        startId_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        regionName_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        row_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        family_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        qualifier_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        value_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000040);
+        if (deleteBuilder_ == null) {
+          delete_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance();
+        } else {
+          deleteBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000080);
+        autoCommit_ = false;
+        bitField0_ = (bitField0_ & ~0x00000100);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndDeleteRegionTxRequest_descriptor;
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest getDefaultInstanceForType() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest.getDefaultInstance();
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest build() {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest buildPartial() {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest result = new org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.transactionId_ = transactionId_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.startId_ = startId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.regionName_ = regionName_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.row_ = row_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.family_ = family_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.qualifier_ = qualifier_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        result.value_ = value_;
+        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+          to_bitField0_ |= 0x00000080;
+        }
+        if (deleteBuilder_ == null) {
+          result.delete_ = delete_;
+        } else {
+          result.delete_ = deleteBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
+          to_bitField0_ |= 0x00000100;
+        }
+        result.autoCommit_ = autoCommit_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest) {
+          return mergeFrom((org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest other) {
+        if (other == org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest.getDefaultInstance()) return this;
+        if (other.hasTransactionId()) {
+          setTransactionId(other.getTransactionId());
+        }
+        if (other.hasStartId()) {
+          setStartId(other.getStartId());
+        }
+        if (other.hasRegionName()) {
+          setRegionName(other.getRegionName());
+        }
+        if (other.hasRow()) {
+          setRow(other.getRow());
+        }
+        if (other.hasFamily()) {
+          setFamily(other.getFamily());
+        }
+        if (other.hasQualifier()) {
+          setQualifier(other.getQualifier());
+        }
+        if (other.hasValue()) {
+          setValue(other.getValue());
+        }
+        if (other.hasDelete()) {
+          mergeDelete(other.getDelete());
+        }
+        if (other.hasAutoCommit()) {
+          setAutoCommit(other.getAutoCommit());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasTransactionId()) {
+          
+          return false;
+        }
+        if (!hasStartId()) {
+          
+          return false;
+        }
+        if (!hasRegionName()) {
+          
+          return false;
+        }
+        if (!hasRow()) {
+          
+          return false;
+        }
+        if (!hasFamily()) {
+          
+          return false;
+        }
+        if (!hasQualifier()) {
+          
+          return false;
+        }
+        if (!hasValue()) {
+          
+          return false;
+        }
+        if (!hasDelete()) {
+          
+          return false;
+        }
+        if (!hasAutoCommit()) {
+          
+          return false;
+        }
+        if (!getDelete().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required int64 transactionId = 1;
+      private long transactionId_ ;
+      /**
+       * <code>required int64 transactionId = 1;</code>
+       */
+      public boolean hasTransactionId() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required int64 transactionId = 1;</code>
+       */
+      public long getTransactionId() {
+        return transactionId_;
+      }
+      /**
+       * <code>required int64 transactionId = 1;</code>
+       */
+      public Builder setTransactionId(long value) {
+        bitField0_ |= 0x00000001;
+        transactionId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int64 transactionId = 1;</code>
+       */
+      public Builder clearTransactionId() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        transactionId_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // required int64 startId = 2;
+      private long startId_ ;
+      /**
+       * <code>required int64 startId = 2;</code>
+       */
+      public boolean hasStartId() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required int64 startId = 2;</code>
+       */
+      public long getStartId() {
+        return startId_;
+      }
+      /**
+       * <code>required int64 startId = 2;</code>
+       */
+      public Builder setStartId(long value) {
+        bitField0_ |= 0x00000002;
+        startId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int64 startId = 2;</code>
+       */
+      public Builder clearStartId() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        startId_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // required bytes regionName = 3;
+      private com.google.protobuf.ByteString regionName_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>required bytes regionName = 3;</code>
+       */
+      public boolean hasRegionName() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required bytes regionName = 3;</code>
+       */
+      public com.google.protobuf.ByteString getRegionName() {
+        return regionName_;
+      }
+      /**
+       * <code>required bytes regionName = 3;</code>
+       */
+      public Builder setRegionName(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        regionName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bytes regionName = 3;</code>
+       */
+      public Builder clearRegionName() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        regionName_ = getDefaultInstance().getRegionName();
+        onChanged();
+        return this;
+      }
+
+      // required bytes row = 4;
+      private com.google.protobuf.ByteString row_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>required bytes row = 4;</code>
+       */
+      public boolean hasRow() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>required bytes row = 4;</code>
+       */
+      public com.google.protobuf.ByteString getRow() {
+        return row_;
+      }
+      /**
+       * <code>required bytes row = 4;</code>
+       */
+      public Builder setRow(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000008;
+        row_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bytes row = 4;</code>
+       */
+      public Builder clearRow() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        row_ = getDefaultInstance().getRow();
+        onChanged();
+        return this;
+      }
+
+      // required bytes family = 5;
+      private com.google.protobuf.ByteString family_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>required bytes family = 5;</code>
+       */
+      public boolean hasFamily() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>required bytes family = 5;</code>
+       */
+      public com.google.protobuf.ByteString getFamily() {
+        return family_;
+      }
+      /**
+       * <code>required bytes family = 5;</code>
+       */
+      public Builder setFamily(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        family_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bytes family = 5;</code>
+       */
+      public Builder clearFamily() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        family_ = getDefaultInstance().getFamily();
+        onChanged();
+        return this;
+      }
+
+      // required bytes qualifier = 6;
+      private com.google.protobuf.ByteString qualifier_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>required bytes qualifier = 6;</code>
+       */
+      public boolean hasQualifier() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <code>required bytes qualifier = 6;</code>
+       */
+      public com.google.protobuf.ByteString getQualifier() {
+        return qualifier_;
+      }
+      /**
+       * <code>required bytes qualifier = 6;</code>
+       */
+      public Builder setQualifier(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+        qualifier_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bytes qualifier = 6;</code>
+       */
+      public Builder clearQualifier() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        qualifier_ = getDefaultInstance().getQualifier();
+        onChanged();
+        return this;
+      }
+
+      // required bytes value = 7;
+      private com.google.protobuf.ByteString value_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>required bytes value = 7;</code>
+       */
+      public boolean hasValue() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      /**
+       * <code>required bytes value = 7;</code>
+       */
+      public com.google.protobuf.ByteString getValue() {
+        return value_;
+      }
+      /**
+       * <code>required bytes value = 7;</code>
+       */
+      public Builder setValue(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000040;
+        value_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bytes value = 7;</code>
+       */
+      public Builder clearValue() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        value_ = getDefaultInstance().getValue();
+        onChanged();
+        return this;
+      }
+
+      // required .MutationProto delete = 8;
+      private org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto delete_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder> deleteBuilder_;
+      /**
+       * <code>required .MutationProto delete = 8;</code>
+       */
+      public boolean hasDelete() {
+        return ((bitField0_ & 0x00000080) == 0x00000080);
+      }
+      /**
+       * <code>required .MutationProto delete = 8;</code>
+       */
+      public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto getDelete() {
+        if (deleteBuilder_ == null) {
+          return delete_;
+        } else {
+          return deleteBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>required .MutationProto delete = 8;</code>
+       */
+      public Builder setDelete(org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto value) {
+        if (deleteBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          delete_ = value;
+          onChanged();
+        } else {
+          deleteBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000080;
+        return this;
+      }
+      /**
+       * <code>required .MutationProto delete = 8;</code>
+       */
+      public Builder setDelete(
+          org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder builderForValue) {
+        if (deleteBuilder_ == null) {
+          delete_ = builderForValue.build();
+          onChanged();
+        } else {
+          deleteBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000080;
+        return this;
+      }
+      /**
+       * <code>required .MutationProto delete = 8;</code>
+       */
+      public Builder mergeDelete(org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto value) {
+        if (deleteBuilder_ == null) {
+          if (((bitField0_ & 0x00000080) == 0x00000080) &&
+              delete_ != org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance()) {
+            delete_ =
+              org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.newBuilder(delete_).mergeFrom(value).buildPartial();
+          } else {
+            delete_ = value;
+          }
+          onChanged();
+        } else {
+          deleteBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000080;
+        return this;
+      }
+      /**
+       * <code>required .MutationProto delete = 8;</code>
+       */
+      public Builder clearDelete() {
+        if (deleteBuilder_ == null) {
+          delete_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance();
+          onChanged();
+        } else {
+          deleteBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000080);
+        return this;
+      }
+      /**
+       * <code>required .MutationProto delete = 8;</code>
+       */
+      public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder getDeleteBuilder() {
+        bitField0_ |= 0x00000080;
+        onChanged();
+        return getDeleteFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>required .MutationProto delete = 8;</code>
+       */
+      public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder getDeleteOrBuilder() {
+        if (deleteBuilder_ != null) {
+          return deleteBuilder_.getMessageOrBuilder();
+        } else {
+          return delete_;
+        }
+      }
+      /**
+       * <code>required .MutationProto delete = 8;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder> 
+          getDeleteFieldBuilder() {
+        if (deleteBuilder_ == null) {
+          deleteBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder>(
+                  delete_,
+                  getParentForChildren(),
+                  isClean());
+          delete_ = null;
+        }
+        return deleteBuilder_;
+      }
+
+      // required bool autoCommit = 9;
+      private boolean autoCommit_ ;
+      /**
+       * <code>required bool autoCommit = 9;</code>
+       */
+      public boolean hasAutoCommit() {
+        return ((bitField0_ & 0x00000100) == 0x00000100);
+      }
+      /**
+       * <code>required bool autoCommit = 9;</code>
+       */
+      public boolean getAutoCommit() {
+        return autoCommit_;
+      }
+      /**
+       * <code>required bool autoCommit = 9;</code>
+       */
+      public Builder setAutoCommit(boolean value) {
+        bitField0_ |= 0x00000100;
+        autoCommit_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bool autoCommit = 9;</code>
+       */
+      public Builder clearAutoCommit() {
+        bitField0_ = (bitField0_ & ~0x00000100);
+        autoCommit_ = false;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:SsccCheckAndDeleteRegionTxRequest)
+    }
+
+    static {
+      defaultInstance = new SsccCheckAndDeleteRegionTxRequest(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:SsccCheckAndDeleteRegionTxRequest)
+  }
+
+  public interface SsccCheckAndDeleteRegionTxResponseOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required bool result = 1;
+    /**
+     * <code>required bool result = 1;</code>
+     */
+    boolean hasResult();
+    /**
+     * <code>required bool result = 1;</code>
+     */
+    boolean getResult();
+
+    // optional string exception = 2;
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    boolean hasException();
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    java.lang.String getException();
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getExceptionBytes();
+
+    // optional bool hasException = 3;
+    /**
+     * <code>optional bool hasException = 3;</code>
+     */
+    boolean hasHasException();
+    /**
+     * <code>optional bool hasException = 3;</code>
+     */
+    boolean getHasException();
+  }
+  /**
+   * Protobuf type {@code SsccCheckAndDeleteRegionTxResponse}
+   */
+  public static final class SsccCheckAndDeleteRegionTxResponse extends
+      com.google.protobuf.GeneratedMessage
+      implements SsccCheckAndDeleteRegionTxResponseOrBuilder {
+    // Use SsccCheckAndDeleteRegionTxResponse.newBuilder() to construct.
+    private SsccCheckAndDeleteRegionTxResponse(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private SsccCheckAndDeleteRegionTxResponse(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final SsccCheckAndDeleteRegionTxResponse defaultInstance;
+    public static SsccCheckAndDeleteRegionTxResponse getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public SsccCheckAndDeleteRegionTxResponse getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private SsccCheckAndDeleteRegionTxResponse(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 8: {
+              bitField0_ |= 0x00000001;
+              result_ = input.readBool();
+              break;
+            }
+            case 18: {
+              bitField0_ |= 0x00000002;
+              exception_ = input.readBytes();
+              break;
+            }
+            case 24: {
+              bitField0_ |= 0x00000004;
+              hasException_ = input.readBool();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndDeleteRegionTxResponse_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndDeleteRegionTxResponse_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse.class, org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<SsccCheckAndDeleteRegionTxResponse> PARSER =
+        new com.google.protobuf.AbstractParser<SsccCheckAndDeleteRegionTxResponse>() {
+      public SsccCheckAndDeleteRegionTxResponse parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new SsccCheckAndDeleteRegionTxResponse(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<SsccCheckAndDeleteRegionTxResponse> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required bool result = 1;
+    public static final int RESULT_FIELD_NUMBER = 1;
+    private boolean result_;
+    /**
+     * <code>required bool result = 1;</code>
+     */
+    public boolean hasResult() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required bool result = 1;</code>
+     */
+    public boolean getResult() {
+      return result_;
+    }
+
+    // optional string exception = 2;
+    public static final int EXCEPTION_FIELD_NUMBER = 2;
+    private java.lang.Object exception_;
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    public boolean hasException() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    public java.lang.String getException() {
+      java.lang.Object ref = exception_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          exception_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getExceptionBytes() {
+      java.lang.Object ref = exception_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        exception_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // optional bool hasException = 3;
+    public static final int HASEXCEPTION_FIELD_NUMBER = 3;
+    private boolean hasException_;
+    /**
+     * <code>optional bool hasException = 3;</code>
+     */
+    public boolean hasHasException() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional bool hasException = 3;</code>
+     */
+    public boolean getHasException() {
+      return hasException_;
+    }
+
+    private void initFields() {
+      result_ = false;
+      exception_ = "";
+      hasException_ = false;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasResult()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBool(1, result_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getExceptionBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBool(3, hasException_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(1, result_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, getExceptionBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(3, hasException_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code SsccCheckAndDeleteRegionTxResponse}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndDeleteRegionTxResponse_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndDeleteRegionTxResponse_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse.class, org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse.Builder.class);
+      }
+
+      // Construct using org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        result_ = false;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        exception_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        hasException_ = false;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndDeleteRegionTxResponse_descriptor;
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse getDefaultInstanceForType() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse.getDefaultInstance();
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse build() {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse buildPartial() {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse result = new org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.result_ = result_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.exception_ = exception_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.hasException_ = hasException_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse) {
+          return mergeFrom((org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse other) {
+        if (other == org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse.getDefaultInstance()) return this;
+        if (other.hasResult()) {
+          setResult(other.getResult());
+        }
+        if (other.hasException()) {
+          bitField0_ |= 0x00000002;
+          exception_ = other.exception_;
+          onChanged();
+        }
+        if (other.hasHasException()) {
+          setHasException(other.getHasException());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasResult()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required bool result = 1;
+      private boolean result_ ;
+      /**
+       * <code>required bool result = 1;</code>
+       */
+      public boolean hasResult() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required bool result = 1;</code>
+       */
+      public boolean getResult() {
+        return result_;
+      }
+      /**
+       * <code>required bool result = 1;</code>
+       */
+      public Builder setResult(boolean value) {
+        bitField0_ |= 0x00000001;
+        result_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bool result = 1;</code>
+       */
+      public Builder clearResult() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        result_ = false;
+        onChanged();
+        return this;
+      }
+
+      // optional string exception = 2;
+      private java.lang.Object exception_ = "";
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public boolean hasException() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public java.lang.String getException() {
+        java.lang.Object ref = exception_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          exception_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getExceptionBytes() {
+        java.lang.Object ref = exception_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          exception_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public Builder setException(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        exception_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public Builder clearException() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        exception_ = getDefaultInstance().getException();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public Builder setExceptionBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        exception_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional bool hasException = 3;
+      private boolean hasException_ ;
+      /**
+       * <code>optional bool hasException = 3;</code>
+       */
+      public boolean hasHasException() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>optional bool hasException = 3;</code>
+       */
+      public boolean getHasException() {
+        return hasException_;
+      }
+      /**
+       * <code>optional bool hasException = 3;</code>
+       */
+      public Builder setHasException(boolean value) {
+        bitField0_ |= 0x00000004;
+        hasException_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool hasException = 3;</code>
+       */
+      public Builder clearHasException() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        hasException_ = false;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:SsccCheckAndDeleteRegionTxResponse)
+    }
+
+    static {
+      defaultInstance = new SsccCheckAndDeleteRegionTxResponse(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:SsccCheckAndDeleteRegionTxResponse)
+  }
+
   public interface SsccCheckAndPutRequestOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
@@ -9300,6 +11191,1897 @@ public final class SsccRegionProtos {
     }
 
     // @@protoc_insertion_point(class_scope:SsccCheckAndPutResponse)
+  }
+
+  public interface SsccCheckAndPutRegionTxRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required int64 tid = 1;
+    /**
+     * <code>required int64 tid = 1;</code>
+     */
+    boolean hasTid();
+    /**
+     * <code>required int64 tid = 1;</code>
+     */
+    long getTid();
+
+    // required int64 startId = 2;
+    /**
+     * <code>required int64 startId = 2;</code>
+     */
+    boolean hasStartId();
+    /**
+     * <code>required int64 startId = 2;</code>
+     */
+    long getStartId();
+
+    // required bytes regionName = 3;
+    /**
+     * <code>required bytes regionName = 3;</code>
+     */
+    boolean hasRegionName();
+    /**
+     * <code>required bytes regionName = 3;</code>
+     */
+    com.google.protobuf.ByteString getRegionName();
+
+    // required bytes row = 4;
+    /**
+     * <code>required bytes row = 4;</code>
+     */
+    boolean hasRow();
+    /**
+     * <code>required bytes row = 4;</code>
+     */
+    com.google.protobuf.ByteString getRow();
+
+    // required bytes family = 5;
+    /**
+     * <code>required bytes family = 5;</code>
+     */
+    boolean hasFamily();
+    /**
+     * <code>required bytes family = 5;</code>
+     */
+    com.google.protobuf.ByteString getFamily();
+
+    // required bytes qualifier = 6;
+    /**
+     * <code>required bytes qualifier = 6;</code>
+     */
+    boolean hasQualifier();
+    /**
+     * <code>required bytes qualifier = 6;</code>
+     */
+    com.google.protobuf.ByteString getQualifier();
+
+    // required bytes value = 7;
+    /**
+     * <code>required bytes value = 7;</code>
+     */
+    boolean hasValue();
+    /**
+     * <code>required bytes value = 7;</code>
+     */
+    com.google.protobuf.ByteString getValue();
+
+    // required .MutationProto put = 8;
+    /**
+     * <code>required .MutationProto put = 8;</code>
+     */
+    boolean hasPut();
+    /**
+     * <code>required .MutationProto put = 8;</code>
+     */
+    org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto getPut();
+    /**
+     * <code>required .MutationProto put = 8;</code>
+     */
+    org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder getPutOrBuilder();
+
+    // required bool autoCommit = 9;
+    /**
+     * <code>required bool autoCommit = 9;</code>
+     */
+    boolean hasAutoCommit();
+    /**
+     * <code>required bool autoCommit = 9;</code>
+     */
+    boolean getAutoCommit();
+  }
+  /**
+   * Protobuf type {@code SsccCheckAndPutRegionTxRequest}
+   */
+  public static final class SsccCheckAndPutRegionTxRequest extends
+      com.google.protobuf.GeneratedMessage
+      implements SsccCheckAndPutRegionTxRequestOrBuilder {
+    // Use SsccCheckAndPutRegionTxRequest.newBuilder() to construct.
+    private SsccCheckAndPutRegionTxRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private SsccCheckAndPutRegionTxRequest(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final SsccCheckAndPutRegionTxRequest defaultInstance;
+    public static SsccCheckAndPutRegionTxRequest getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public SsccCheckAndPutRegionTxRequest getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private SsccCheckAndPutRegionTxRequest(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 8: {
+              bitField0_ |= 0x00000001;
+              tid_ = input.readInt64();
+              break;
+            }
+            case 16: {
+              bitField0_ |= 0x00000002;
+              startId_ = input.readInt64();
+              break;
+            }
+            case 26: {
+              bitField0_ |= 0x00000004;
+              regionName_ = input.readBytes();
+              break;
+            }
+            case 34: {
+              bitField0_ |= 0x00000008;
+              row_ = input.readBytes();
+              break;
+            }
+            case 42: {
+              bitField0_ |= 0x00000010;
+              family_ = input.readBytes();
+              break;
+            }
+            case 50: {
+              bitField0_ |= 0x00000020;
+              qualifier_ = input.readBytes();
+              break;
+            }
+            case 58: {
+              bitField0_ |= 0x00000040;
+              value_ = input.readBytes();
+              break;
+            }
+            case 66: {
+              org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000080) == 0x00000080)) {
+                subBuilder = put_.toBuilder();
+              }
+              put_ = input.readMessage(org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(put_);
+                put_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000080;
+              break;
+            }
+            case 72: {
+              bitField0_ |= 0x00000100;
+              autoCommit_ = input.readBool();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndPutRegionTxRequest_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndPutRegionTxRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest.class, org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<SsccCheckAndPutRegionTxRequest> PARSER =
+        new com.google.protobuf.AbstractParser<SsccCheckAndPutRegionTxRequest>() {
+      public SsccCheckAndPutRegionTxRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new SsccCheckAndPutRegionTxRequest(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<SsccCheckAndPutRegionTxRequest> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required int64 tid = 1;
+    public static final int TID_FIELD_NUMBER = 1;
+    private long tid_;
+    /**
+     * <code>required int64 tid = 1;</code>
+     */
+    public boolean hasTid() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required int64 tid = 1;</code>
+     */
+    public long getTid() {
+      return tid_;
+    }
+
+    // required int64 startId = 2;
+    public static final int STARTID_FIELD_NUMBER = 2;
+    private long startId_;
+    /**
+     * <code>required int64 startId = 2;</code>
+     */
+    public boolean hasStartId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>required int64 startId = 2;</code>
+     */
+    public long getStartId() {
+      return startId_;
+    }
+
+    // required bytes regionName = 3;
+    public static final int REGIONNAME_FIELD_NUMBER = 3;
+    private com.google.protobuf.ByteString regionName_;
+    /**
+     * <code>required bytes regionName = 3;</code>
+     */
+    public boolean hasRegionName() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>required bytes regionName = 3;</code>
+     */
+    public com.google.protobuf.ByteString getRegionName() {
+      return regionName_;
+    }
+
+    // required bytes row = 4;
+    public static final int ROW_FIELD_NUMBER = 4;
+    private com.google.protobuf.ByteString row_;
+    /**
+     * <code>required bytes row = 4;</code>
+     */
+    public boolean hasRow() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>required bytes row = 4;</code>
+     */
+    public com.google.protobuf.ByteString getRow() {
+      return row_;
+    }
+
+    // required bytes family = 5;
+    public static final int FAMILY_FIELD_NUMBER = 5;
+    private com.google.protobuf.ByteString family_;
+    /**
+     * <code>required bytes family = 5;</code>
+     */
+    public boolean hasFamily() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>required bytes family = 5;</code>
+     */
+    public com.google.protobuf.ByteString getFamily() {
+      return family_;
+    }
+
+    // required bytes qualifier = 6;
+    public static final int QUALIFIER_FIELD_NUMBER = 6;
+    private com.google.protobuf.ByteString qualifier_;
+    /**
+     * <code>required bytes qualifier = 6;</code>
+     */
+    public boolean hasQualifier() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    /**
+     * <code>required bytes qualifier = 6;</code>
+     */
+    public com.google.protobuf.ByteString getQualifier() {
+      return qualifier_;
+    }
+
+    // required bytes value = 7;
+    public static final int VALUE_FIELD_NUMBER = 7;
+    private com.google.protobuf.ByteString value_;
+    /**
+     * <code>required bytes value = 7;</code>
+     */
+    public boolean hasValue() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    /**
+     * <code>required bytes value = 7;</code>
+     */
+    public com.google.protobuf.ByteString getValue() {
+      return value_;
+    }
+
+    // required .MutationProto put = 8;
+    public static final int PUT_FIELD_NUMBER = 8;
+    private org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto put_;
+    /**
+     * <code>required .MutationProto put = 8;</code>
+     */
+    public boolean hasPut() {
+      return ((bitField0_ & 0x00000080) == 0x00000080);
+    }
+    /**
+     * <code>required .MutationProto put = 8;</code>
+     */
+    public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto getPut() {
+      return put_;
+    }
+    /**
+     * <code>required .MutationProto put = 8;</code>
+     */
+    public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder getPutOrBuilder() {
+      return put_;
+    }
+
+    // required bool autoCommit = 9;
+    public static final int AUTOCOMMIT_FIELD_NUMBER = 9;
+    private boolean autoCommit_;
+    /**
+     * <code>required bool autoCommit = 9;</code>
+     */
+    public boolean hasAutoCommit() {
+      return ((bitField0_ & 0x00000100) == 0x00000100);
+    }
+    /**
+     * <code>required bool autoCommit = 9;</code>
+     */
+    public boolean getAutoCommit() {
+      return autoCommit_;
+    }
+
+    private void initFields() {
+      tid_ = 0L;
+      startId_ = 0L;
+      regionName_ = com.google.protobuf.ByteString.EMPTY;
+      row_ = com.google.protobuf.ByteString.EMPTY;
+      family_ = com.google.protobuf.ByteString.EMPTY;
+      qualifier_ = com.google.protobuf.ByteString.EMPTY;
+      value_ = com.google.protobuf.ByteString.EMPTY;
+      put_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance();
+      autoCommit_ = false;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasTid()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasStartId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasRegionName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasRow()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFamily()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasQualifier()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasValue()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasPut()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasAutoCommit()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getPut().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeInt64(1, tid_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeInt64(2, startId_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBytes(3, regionName_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeBytes(4, row_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeBytes(5, family_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeBytes(6, qualifier_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeBytes(7, value_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        output.writeMessage(8, put_);
+      }
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        output.writeBool(9, autoCommit_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(1, tid_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(2, startId_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(3, regionName_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(4, row_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(5, family_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(6, qualifier_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(7, value_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(8, put_);
+      }
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(9, autoCommit_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code SsccCheckAndPutRegionTxRequest}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndPutRegionTxRequest_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndPutRegionTxRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest.class, org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest.Builder.class);
+      }
+
+      // Construct using org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getPutFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        tid_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        startId_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        regionName_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        row_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        family_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        qualifier_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        value_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000040);
+        if (putBuilder_ == null) {
+          put_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance();
+        } else {
+          putBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000080);
+        autoCommit_ = false;
+        bitField0_ = (bitField0_ & ~0x00000100);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndPutRegionTxRequest_descriptor;
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest getDefaultInstanceForType() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest.getDefaultInstance();
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest build() {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest buildPartial() {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest result = new org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.tid_ = tid_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.startId_ = startId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.regionName_ = regionName_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.row_ = row_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.family_ = family_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.qualifier_ = qualifier_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        result.value_ = value_;
+        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+          to_bitField0_ |= 0x00000080;
+        }
+        if (putBuilder_ == null) {
+          result.put_ = put_;
+        } else {
+          result.put_ = putBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
+          to_bitField0_ |= 0x00000100;
+        }
+        result.autoCommit_ = autoCommit_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest) {
+          return mergeFrom((org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest other) {
+        if (other == org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest.getDefaultInstance()) return this;
+        if (other.hasTid()) {
+          setTid(other.getTid());
+        }
+        if (other.hasStartId()) {
+          setStartId(other.getStartId());
+        }
+        if (other.hasRegionName()) {
+          setRegionName(other.getRegionName());
+        }
+        if (other.hasRow()) {
+          setRow(other.getRow());
+        }
+        if (other.hasFamily()) {
+          setFamily(other.getFamily());
+        }
+        if (other.hasQualifier()) {
+          setQualifier(other.getQualifier());
+        }
+        if (other.hasValue()) {
+          setValue(other.getValue());
+        }
+        if (other.hasPut()) {
+          mergePut(other.getPut());
+        }
+        if (other.hasAutoCommit()) {
+          setAutoCommit(other.getAutoCommit());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasTid()) {
+          
+          return false;
+        }
+        if (!hasStartId()) {
+          
+          return false;
+        }
+        if (!hasRegionName()) {
+          
+          return false;
+        }
+        if (!hasRow()) {
+          
+          return false;
+        }
+        if (!hasFamily()) {
+          
+          return false;
+        }
+        if (!hasQualifier()) {
+          
+          return false;
+        }
+        if (!hasValue()) {
+          
+          return false;
+        }
+        if (!hasPut()) {
+          
+          return false;
+        }
+        if (!hasAutoCommit()) {
+          
+          return false;
+        }
+        if (!getPut().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required int64 tid = 1;
+      private long tid_ ;
+      /**
+       * <code>required int64 tid = 1;</code>
+       */
+      public boolean hasTid() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required int64 tid = 1;</code>
+       */
+      public long getTid() {
+        return tid_;
+      }
+      /**
+       * <code>required int64 tid = 1;</code>
+       */
+      public Builder setTid(long value) {
+        bitField0_ |= 0x00000001;
+        tid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int64 tid = 1;</code>
+       */
+      public Builder clearTid() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        tid_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // required int64 startId = 2;
+      private long startId_ ;
+      /**
+       * <code>required int64 startId = 2;</code>
+       */
+      public boolean hasStartId() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required int64 startId = 2;</code>
+       */
+      public long getStartId() {
+        return startId_;
+      }
+      /**
+       * <code>required int64 startId = 2;</code>
+       */
+      public Builder setStartId(long value) {
+        bitField0_ |= 0x00000002;
+        startId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int64 startId = 2;</code>
+       */
+      public Builder clearStartId() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        startId_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // required bytes regionName = 3;
+      private com.google.protobuf.ByteString regionName_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>required bytes regionName = 3;</code>
+       */
+      public boolean hasRegionName() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required bytes regionName = 3;</code>
+       */
+      public com.google.protobuf.ByteString getRegionName() {
+        return regionName_;
+      }
+      /**
+       * <code>required bytes regionName = 3;</code>
+       */
+      public Builder setRegionName(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        regionName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bytes regionName = 3;</code>
+       */
+      public Builder clearRegionName() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        regionName_ = getDefaultInstance().getRegionName();
+        onChanged();
+        return this;
+      }
+
+      // required bytes row = 4;
+      private com.google.protobuf.ByteString row_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>required bytes row = 4;</code>
+       */
+      public boolean hasRow() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>required bytes row = 4;</code>
+       */
+      public com.google.protobuf.ByteString getRow() {
+        return row_;
+      }
+      /**
+       * <code>required bytes row = 4;</code>
+       */
+      public Builder setRow(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000008;
+        row_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bytes row = 4;</code>
+       */
+      public Builder clearRow() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        row_ = getDefaultInstance().getRow();
+        onChanged();
+        return this;
+      }
+
+      // required bytes family = 5;
+      private com.google.protobuf.ByteString family_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>required bytes family = 5;</code>
+       */
+      public boolean hasFamily() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>required bytes family = 5;</code>
+       */
+      public com.google.protobuf.ByteString getFamily() {
+        return family_;
+      }
+      /**
+       * <code>required bytes family = 5;</code>
+       */
+      public Builder setFamily(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        family_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bytes family = 5;</code>
+       */
+      public Builder clearFamily() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        family_ = getDefaultInstance().getFamily();
+        onChanged();
+        return this;
+      }
+
+      // required bytes qualifier = 6;
+      private com.google.protobuf.ByteString qualifier_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>required bytes qualifier = 6;</code>
+       */
+      public boolean hasQualifier() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <code>required bytes qualifier = 6;</code>
+       */
+      public com.google.protobuf.ByteString getQualifier() {
+        return qualifier_;
+      }
+      /**
+       * <code>required bytes qualifier = 6;</code>
+       */
+      public Builder setQualifier(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+        qualifier_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bytes qualifier = 6;</code>
+       */
+      public Builder clearQualifier() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        qualifier_ = getDefaultInstance().getQualifier();
+        onChanged();
+        return this;
+      }
+
+      // required bytes value = 7;
+      private com.google.protobuf.ByteString value_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>required bytes value = 7;</code>
+       */
+      public boolean hasValue() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      /**
+       * <code>required bytes value = 7;</code>
+       */
+      public com.google.protobuf.ByteString getValue() {
+        return value_;
+      }
+      /**
+       * <code>required bytes value = 7;</code>
+       */
+      public Builder setValue(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000040;
+        value_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bytes value = 7;</code>
+       */
+      public Builder clearValue() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        value_ = getDefaultInstance().getValue();
+        onChanged();
+        return this;
+      }
+
+      // required .MutationProto put = 8;
+      private org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto put_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder> putBuilder_;
+      /**
+       * <code>required .MutationProto put = 8;</code>
+       */
+      public boolean hasPut() {
+        return ((bitField0_ & 0x00000080) == 0x00000080);
+      }
+      /**
+       * <code>required .MutationProto put = 8;</code>
+       */
+      public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto getPut() {
+        if (putBuilder_ == null) {
+          return put_;
+        } else {
+          return putBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>required .MutationProto put = 8;</code>
+       */
+      public Builder setPut(org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto value) {
+        if (putBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          put_ = value;
+          onChanged();
+        } else {
+          putBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000080;
+        return this;
+      }
+      /**
+       * <code>required .MutationProto put = 8;</code>
+       */
+      public Builder setPut(
+          org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder builderForValue) {
+        if (putBuilder_ == null) {
+          put_ = builderForValue.build();
+          onChanged();
+        } else {
+          putBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000080;
+        return this;
+      }
+      /**
+       * <code>required .MutationProto put = 8;</code>
+       */
+      public Builder mergePut(org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto value) {
+        if (putBuilder_ == null) {
+          if (((bitField0_ & 0x00000080) == 0x00000080) &&
+              put_ != org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance()) {
+            put_ =
+              org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.newBuilder(put_).mergeFrom(value).buildPartial();
+          } else {
+            put_ = value;
+          }
+          onChanged();
+        } else {
+          putBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000080;
+        return this;
+      }
+      /**
+       * <code>required .MutationProto put = 8;</code>
+       */
+      public Builder clearPut() {
+        if (putBuilder_ == null) {
+          put_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance();
+          onChanged();
+        } else {
+          putBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000080);
+        return this;
+      }
+      /**
+       * <code>required .MutationProto put = 8;</code>
+       */
+      public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder getPutBuilder() {
+        bitField0_ |= 0x00000080;
+        onChanged();
+        return getPutFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>required .MutationProto put = 8;</code>
+       */
+      public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder getPutOrBuilder() {
+        if (putBuilder_ != null) {
+          return putBuilder_.getMessageOrBuilder();
+        } else {
+          return put_;
+        }
+      }
+      /**
+       * <code>required .MutationProto put = 8;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder> 
+          getPutFieldBuilder() {
+        if (putBuilder_ == null) {
+          putBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder>(
+                  put_,
+                  getParentForChildren(),
+                  isClean());
+          put_ = null;
+        }
+        return putBuilder_;
+      }
+
+      // required bool autoCommit = 9;
+      private boolean autoCommit_ ;
+      /**
+       * <code>required bool autoCommit = 9;</code>
+       */
+      public boolean hasAutoCommit() {
+        return ((bitField0_ & 0x00000100) == 0x00000100);
+      }
+      /**
+       * <code>required bool autoCommit = 9;</code>
+       */
+      public boolean getAutoCommit() {
+        return autoCommit_;
+      }
+      /**
+       * <code>required bool autoCommit = 9;</code>
+       */
+      public Builder setAutoCommit(boolean value) {
+        bitField0_ |= 0x00000100;
+        autoCommit_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bool autoCommit = 9;</code>
+       */
+      public Builder clearAutoCommit() {
+        bitField0_ = (bitField0_ & ~0x00000100);
+        autoCommit_ = false;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:SsccCheckAndPutRegionTxRequest)
+    }
+
+    static {
+      defaultInstance = new SsccCheckAndPutRegionTxRequest(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:SsccCheckAndPutRegionTxRequest)
+  }
+
+  public interface SsccCheckAndPutRegionTxResponseOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required bool result = 1;
+    /**
+     * <code>required bool result = 1;</code>
+     */
+    boolean hasResult();
+    /**
+     * <code>required bool result = 1;</code>
+     */
+    boolean getResult();
+
+    // optional string exception = 2;
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    boolean hasException();
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    java.lang.String getException();
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getExceptionBytes();
+
+    // optional bool hasException = 3;
+    /**
+     * <code>optional bool hasException = 3;</code>
+     */
+    boolean hasHasException();
+    /**
+     * <code>optional bool hasException = 3;</code>
+     */
+    boolean getHasException();
+  }
+  /**
+   * Protobuf type {@code SsccCheckAndPutRegionTxResponse}
+   */
+  public static final class SsccCheckAndPutRegionTxResponse extends
+      com.google.protobuf.GeneratedMessage
+      implements SsccCheckAndPutRegionTxResponseOrBuilder {
+    // Use SsccCheckAndPutRegionTxResponse.newBuilder() to construct.
+    private SsccCheckAndPutRegionTxResponse(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private SsccCheckAndPutRegionTxResponse(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final SsccCheckAndPutRegionTxResponse defaultInstance;
+    public static SsccCheckAndPutRegionTxResponse getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public SsccCheckAndPutRegionTxResponse getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private SsccCheckAndPutRegionTxResponse(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 8: {
+              bitField0_ |= 0x00000001;
+              result_ = input.readBool();
+              break;
+            }
+            case 18: {
+              bitField0_ |= 0x00000002;
+              exception_ = input.readBytes();
+              break;
+            }
+            case 24: {
+              bitField0_ |= 0x00000004;
+              hasException_ = input.readBool();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndPutRegionTxResponse_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndPutRegionTxResponse_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.class, org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<SsccCheckAndPutRegionTxResponse> PARSER =
+        new com.google.protobuf.AbstractParser<SsccCheckAndPutRegionTxResponse>() {
+      public SsccCheckAndPutRegionTxResponse parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new SsccCheckAndPutRegionTxResponse(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<SsccCheckAndPutRegionTxResponse> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required bool result = 1;
+    public static final int RESULT_FIELD_NUMBER = 1;
+    private boolean result_;
+    /**
+     * <code>required bool result = 1;</code>
+     */
+    public boolean hasResult() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required bool result = 1;</code>
+     */
+    public boolean getResult() {
+      return result_;
+    }
+
+    // optional string exception = 2;
+    public static final int EXCEPTION_FIELD_NUMBER = 2;
+    private java.lang.Object exception_;
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    public boolean hasException() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    public java.lang.String getException() {
+      java.lang.Object ref = exception_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          exception_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getExceptionBytes() {
+      java.lang.Object ref = exception_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        exception_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // optional bool hasException = 3;
+    public static final int HASEXCEPTION_FIELD_NUMBER = 3;
+    private boolean hasException_;
+    /**
+     * <code>optional bool hasException = 3;</code>
+     */
+    public boolean hasHasException() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional bool hasException = 3;</code>
+     */
+    public boolean getHasException() {
+      return hasException_;
+    }
+
+    private void initFields() {
+      result_ = false;
+      exception_ = "";
+      hasException_ = false;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasResult()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBool(1, result_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getExceptionBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBool(3, hasException_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(1, result_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, getExceptionBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(3, hasException_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code SsccCheckAndPutRegionTxResponse}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndPutRegionTxResponse_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndPutRegionTxResponse_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.class, org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.Builder.class);
+      }
+
+      // Construct using org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        result_ = false;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        exception_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        hasException_ = false;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccCheckAndPutRegionTxResponse_descriptor;
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse getDefaultInstanceForType() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.getDefaultInstance();
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse build() {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse buildPartial() {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse result = new org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.result_ = result_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.exception_ = exception_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.hasException_ = hasException_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse) {
+          return mergeFrom((org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse other) {
+        if (other == org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.getDefaultInstance()) return this;
+        if (other.hasResult()) {
+          setResult(other.getResult());
+        }
+        if (other.hasException()) {
+          bitField0_ |= 0x00000002;
+          exception_ = other.exception_;
+          onChanged();
+        }
+        if (other.hasHasException()) {
+          setHasException(other.getHasException());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasResult()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required bool result = 1;
+      private boolean result_ ;
+      /**
+       * <code>required bool result = 1;</code>
+       */
+      public boolean hasResult() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required bool result = 1;</code>
+       */
+      public boolean getResult() {
+        return result_;
+      }
+      /**
+       * <code>required bool result = 1;</code>
+       */
+      public Builder setResult(boolean value) {
+        bitField0_ |= 0x00000001;
+        result_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bool result = 1;</code>
+       */
+      public Builder clearResult() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        result_ = false;
+        onChanged();
+        return this;
+      }
+
+      // optional string exception = 2;
+      private java.lang.Object exception_ = "";
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public boolean hasException() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public java.lang.String getException() {
+        java.lang.Object ref = exception_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          exception_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getExceptionBytes() {
+        java.lang.Object ref = exception_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          exception_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public Builder setException(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        exception_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public Builder clearException() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        exception_ = getDefaultInstance().getException();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public Builder setExceptionBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        exception_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional bool hasException = 3;
+      private boolean hasException_ ;
+      /**
+       * <code>optional bool hasException = 3;</code>
+       */
+      public boolean hasHasException() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>optional bool hasException = 3;</code>
+       */
+      public boolean getHasException() {
+        return hasException_;
+      }
+      /**
+       * <code>optional bool hasException = 3;</code>
+       */
+      public Builder setHasException(boolean value) {
+        bitField0_ |= 0x00000004;
+        hasException_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool hasException = 3;</code>
+       */
+      public Builder clearHasException() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        hasException_ = false;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:SsccCheckAndPutRegionTxResponse)
+    }
+
+    static {
+      defaultInstance = new SsccCheckAndPutRegionTxResponse(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:SsccCheckAndPutRegionTxResponse)
   }
 
   public interface SsccCloseScannerRequestOrBuilder
@@ -18934,6 +22716,1794 @@ public final class SsccRegionProtos {
     // @@protoc_insertion_point(class_scope:SsccPerformScanResponse)
   }
 
+  public interface SsccPutRegionTxRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required int64 tid = 1;
+    /**
+     * <code>required int64 tid = 1;</code>
+     */
+    boolean hasTid();
+    /**
+     * <code>required int64 tid = 1;</code>
+     */
+    long getTid();
+
+    // required int64 startId = 2;
+    /**
+     * <code>required int64 startId = 2;</code>
+     */
+    boolean hasStartId();
+    /**
+     * <code>required int64 startId = 2;</code>
+     */
+    long getStartId();
+
+    // required bytes regionName = 3;
+    /**
+     * <code>required bytes regionName = 3;</code>
+     */
+    boolean hasRegionName();
+    /**
+     * <code>required bytes regionName = 3;</code>
+     */
+    com.google.protobuf.ByteString getRegionName();
+
+    // required .MutationProto put = 4;
+    /**
+     * <code>required .MutationProto put = 4;</code>
+     */
+    boolean hasPut();
+    /**
+     * <code>required .MutationProto put = 4;</code>
+     */
+    org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto getPut();
+    /**
+     * <code>required .MutationProto put = 4;</code>
+     */
+    org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder getPutOrBuilder();
+
+    // optional bool isStateless = 5;
+    /**
+     * <code>optional bool isStateless = 5;</code>
+     */
+    boolean hasIsStateless();
+    /**
+     * <code>optional bool isStateless = 5;</code>
+     */
+    boolean getIsStateless();
+
+    // required bool autoCommit = 6;
+    /**
+     * <code>required bool autoCommit = 6;</code>
+     */
+    boolean hasAutoCommit();
+    /**
+     * <code>required bool autoCommit = 6;</code>
+     */
+    boolean getAutoCommit();
+  }
+  /**
+   * Protobuf type {@code SsccPutRegionTxRequest}
+   */
+  public static final class SsccPutRegionTxRequest extends
+      com.google.protobuf.GeneratedMessage
+      implements SsccPutRegionTxRequestOrBuilder {
+    // Use SsccPutRegionTxRequest.newBuilder() to construct.
+    private SsccPutRegionTxRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private SsccPutRegionTxRequest(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final SsccPutRegionTxRequest defaultInstance;
+    public static SsccPutRegionTxRequest getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public SsccPutRegionTxRequest getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private SsccPutRegionTxRequest(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 8: {
+              bitField0_ |= 0x00000001;
+              tid_ = input.readInt64();
+              break;
+            }
+            case 16: {
+              bitField0_ |= 0x00000002;
+              startId_ = input.readInt64();
+              break;
+            }
+            case 26: {
+              bitField0_ |= 0x00000004;
+              regionName_ = input.readBytes();
+              break;
+            }
+            case 34: {
+              org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000008) == 0x00000008)) {
+                subBuilder = put_.toBuilder();
+              }
+              put_ = input.readMessage(org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(put_);
+                put_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000008;
+              break;
+            }
+            case 40: {
+              bitField0_ |= 0x00000010;
+              isStateless_ = input.readBool();
+              break;
+            }
+            case 48: {
+              bitField0_ |= 0x00000020;
+              autoCommit_ = input.readBool();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccPutRegionTxRequest_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccPutRegionTxRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest.class, org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<SsccPutRegionTxRequest> PARSER =
+        new com.google.protobuf.AbstractParser<SsccPutRegionTxRequest>() {
+      public SsccPutRegionTxRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new SsccPutRegionTxRequest(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<SsccPutRegionTxRequest> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required int64 tid = 1;
+    public static final int TID_FIELD_NUMBER = 1;
+    private long tid_;
+    /**
+     * <code>required int64 tid = 1;</code>
+     */
+    public boolean hasTid() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required int64 tid = 1;</code>
+     */
+    public long getTid() {
+      return tid_;
+    }
+
+    // required int64 startId = 2;
+    public static final int STARTID_FIELD_NUMBER = 2;
+    private long startId_;
+    /**
+     * <code>required int64 startId = 2;</code>
+     */
+    public boolean hasStartId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>required int64 startId = 2;</code>
+     */
+    public long getStartId() {
+      return startId_;
+    }
+
+    // required bytes regionName = 3;
+    public static final int REGIONNAME_FIELD_NUMBER = 3;
+    private com.google.protobuf.ByteString regionName_;
+    /**
+     * <code>required bytes regionName = 3;</code>
+     */
+    public boolean hasRegionName() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>required bytes regionName = 3;</code>
+     */
+    public com.google.protobuf.ByteString getRegionName() {
+      return regionName_;
+    }
+
+    // required .MutationProto put = 4;
+    public static final int PUT_FIELD_NUMBER = 4;
+    private org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto put_;
+    /**
+     * <code>required .MutationProto put = 4;</code>
+     */
+    public boolean hasPut() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>required .MutationProto put = 4;</code>
+     */
+    public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto getPut() {
+      return put_;
+    }
+    /**
+     * <code>required .MutationProto put = 4;</code>
+     */
+    public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder getPutOrBuilder() {
+      return put_;
+    }
+
+    // optional bool isStateless = 5;
+    public static final int ISSTATELESS_FIELD_NUMBER = 5;
+    private boolean isStateless_;
+    /**
+     * <code>optional bool isStateless = 5;</code>
+     */
+    public boolean hasIsStateless() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>optional bool isStateless = 5;</code>
+     */
+    public boolean getIsStateless() {
+      return isStateless_;
+    }
+
+    // required bool autoCommit = 6;
+    public static final int AUTOCOMMIT_FIELD_NUMBER = 6;
+    private boolean autoCommit_;
+    /**
+     * <code>required bool autoCommit = 6;</code>
+     */
+    public boolean hasAutoCommit() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    /**
+     * <code>required bool autoCommit = 6;</code>
+     */
+    public boolean getAutoCommit() {
+      return autoCommit_;
+    }
+
+    private void initFields() {
+      tid_ = 0L;
+      startId_ = 0L;
+      regionName_ = com.google.protobuf.ByteString.EMPTY;
+      put_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance();
+      isStateless_ = false;
+      autoCommit_ = false;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasTid()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasStartId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasRegionName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasPut()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasAutoCommit()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getPut().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeInt64(1, tid_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeInt64(2, startId_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBytes(3, regionName_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeMessage(4, put_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeBool(5, isStateless_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeBool(6, autoCommit_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(1, tid_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(2, startId_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(3, regionName_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(4, put_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(5, isStateless_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(6, autoCommit_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code SsccPutRegionTxRequest}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccPutRegionTxRequest_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccPutRegionTxRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest.class, org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest.Builder.class);
+      }
+
+      // Construct using org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getPutFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        tid_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        startId_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        regionName_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        if (putBuilder_ == null) {
+          put_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance();
+        } else {
+          putBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000008);
+        isStateless_ = false;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        autoCommit_ = false;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccPutRegionTxRequest_descriptor;
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest getDefaultInstanceForType() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest.getDefaultInstance();
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest build() {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest buildPartial() {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest result = new org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.tid_ = tid_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.startId_ = startId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.regionName_ = regionName_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        if (putBuilder_ == null) {
+          result.put_ = put_;
+        } else {
+          result.put_ = putBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.isStateless_ = isStateless_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.autoCommit_ = autoCommit_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest) {
+          return mergeFrom((org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest other) {
+        if (other == org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest.getDefaultInstance()) return this;
+        if (other.hasTid()) {
+          setTid(other.getTid());
+        }
+        if (other.hasStartId()) {
+          setStartId(other.getStartId());
+        }
+        if (other.hasRegionName()) {
+          setRegionName(other.getRegionName());
+        }
+        if (other.hasPut()) {
+          mergePut(other.getPut());
+        }
+        if (other.hasIsStateless()) {
+          setIsStateless(other.getIsStateless());
+        }
+        if (other.hasAutoCommit()) {
+          setAutoCommit(other.getAutoCommit());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasTid()) {
+          
+          return false;
+        }
+        if (!hasStartId()) {
+          
+          return false;
+        }
+        if (!hasRegionName()) {
+          
+          return false;
+        }
+        if (!hasPut()) {
+          
+          return false;
+        }
+        if (!hasAutoCommit()) {
+          
+          return false;
+        }
+        if (!getPut().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required int64 tid = 1;
+      private long tid_ ;
+      /**
+       * <code>required int64 tid = 1;</code>
+       */
+      public boolean hasTid() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required int64 tid = 1;</code>
+       */
+      public long getTid() {
+        return tid_;
+      }
+      /**
+       * <code>required int64 tid = 1;</code>
+       */
+      public Builder setTid(long value) {
+        bitField0_ |= 0x00000001;
+        tid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int64 tid = 1;</code>
+       */
+      public Builder clearTid() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        tid_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // required int64 startId = 2;
+      private long startId_ ;
+      /**
+       * <code>required int64 startId = 2;</code>
+       */
+      public boolean hasStartId() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required int64 startId = 2;</code>
+       */
+      public long getStartId() {
+        return startId_;
+      }
+      /**
+       * <code>required int64 startId = 2;</code>
+       */
+      public Builder setStartId(long value) {
+        bitField0_ |= 0x00000002;
+        startId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int64 startId = 2;</code>
+       */
+      public Builder clearStartId() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        startId_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // required bytes regionName = 3;
+      private com.google.protobuf.ByteString regionName_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>required bytes regionName = 3;</code>
+       */
+      public boolean hasRegionName() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required bytes regionName = 3;</code>
+       */
+      public com.google.protobuf.ByteString getRegionName() {
+        return regionName_;
+      }
+      /**
+       * <code>required bytes regionName = 3;</code>
+       */
+      public Builder setRegionName(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        regionName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bytes regionName = 3;</code>
+       */
+      public Builder clearRegionName() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        regionName_ = getDefaultInstance().getRegionName();
+        onChanged();
+        return this;
+      }
+
+      // required .MutationProto put = 4;
+      private org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto put_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder> putBuilder_;
+      /**
+       * <code>required .MutationProto put = 4;</code>
+       */
+      public boolean hasPut() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>required .MutationProto put = 4;</code>
+       */
+      public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto getPut() {
+        if (putBuilder_ == null) {
+          return put_;
+        } else {
+          return putBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>required .MutationProto put = 4;</code>
+       */
+      public Builder setPut(org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto value) {
+        if (putBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          put_ = value;
+          onChanged();
+        } else {
+          putBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000008;
+        return this;
+      }
+      /**
+       * <code>required .MutationProto put = 4;</code>
+       */
+      public Builder setPut(
+          org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder builderForValue) {
+        if (putBuilder_ == null) {
+          put_ = builderForValue.build();
+          onChanged();
+        } else {
+          putBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000008;
+        return this;
+      }
+      /**
+       * <code>required .MutationProto put = 4;</code>
+       */
+      public Builder mergePut(org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto value) {
+        if (putBuilder_ == null) {
+          if (((bitField0_ & 0x00000008) == 0x00000008) &&
+              put_ != org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance()) {
+            put_ =
+              org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.newBuilder(put_).mergeFrom(value).buildPartial();
+          } else {
+            put_ = value;
+          }
+          onChanged();
+        } else {
+          putBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000008;
+        return this;
+      }
+      /**
+       * <code>required .MutationProto put = 4;</code>
+       */
+      public Builder clearPut() {
+        if (putBuilder_ == null) {
+          put_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance();
+          onChanged();
+        } else {
+          putBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000008);
+        return this;
+      }
+      /**
+       * <code>required .MutationProto put = 4;</code>
+       */
+      public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder getPutBuilder() {
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return getPutFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>required .MutationProto put = 4;</code>
+       */
+      public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder getPutOrBuilder() {
+        if (putBuilder_ != null) {
+          return putBuilder_.getMessageOrBuilder();
+        } else {
+          return put_;
+        }
+      }
+      /**
+       * <code>required .MutationProto put = 4;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder> 
+          getPutFieldBuilder() {
+        if (putBuilder_ == null) {
+          putBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.Builder, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder>(
+                  put_,
+                  getParentForChildren(),
+                  isClean());
+          put_ = null;
+        }
+        return putBuilder_;
+      }
+
+      // optional bool isStateless = 5;
+      private boolean isStateless_ ;
+      /**
+       * <code>optional bool isStateless = 5;</code>
+       */
+      public boolean hasIsStateless() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>optional bool isStateless = 5;</code>
+       */
+      public boolean getIsStateless() {
+        return isStateless_;
+      }
+      /**
+       * <code>optional bool isStateless = 5;</code>
+       */
+      public Builder setIsStateless(boolean value) {
+        bitField0_ |= 0x00000010;
+        isStateless_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool isStateless = 5;</code>
+       */
+      public Builder clearIsStateless() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        isStateless_ = false;
+        onChanged();
+        return this;
+      }
+
+      // required bool autoCommit = 6;
+      private boolean autoCommit_ ;
+      /**
+       * <code>required bool autoCommit = 6;</code>
+       */
+      public boolean hasAutoCommit() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <code>required bool autoCommit = 6;</code>
+       */
+      public boolean getAutoCommit() {
+        return autoCommit_;
+      }
+      /**
+       * <code>required bool autoCommit = 6;</code>
+       */
+      public Builder setAutoCommit(boolean value) {
+        bitField0_ |= 0x00000020;
+        autoCommit_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bool autoCommit = 6;</code>
+       */
+      public Builder clearAutoCommit() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        autoCommit_ = false;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:SsccPutRegionTxRequest)
+    }
+
+    static {
+      defaultInstance = new SsccPutRegionTxRequest(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:SsccPutRegionTxRequest)
+  }
+
+  public interface SsccPutRegionTxResponseOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // optional .Result result = 1;
+    /**
+     * <code>optional .Result result = 1;</code>
+     */
+    boolean hasResult();
+    /**
+     * <code>optional .Result result = 1;</code>
+     */
+    org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result getResult();
+    /**
+     * <code>optional .Result result = 1;</code>
+     */
+    org.apache.hadoop.hbase.protobuf.generated.ClientProtos.ResultOrBuilder getResultOrBuilder();
+
+    // optional string exception = 2;
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    boolean hasException();
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    java.lang.String getException();
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getExceptionBytes();
+
+    // optional bool hasException = 3;
+    /**
+     * <code>optional bool hasException = 3;</code>
+     */
+    boolean hasHasException();
+    /**
+     * <code>optional bool hasException = 3;</code>
+     */
+    boolean getHasException();
+
+    // optional int32 status = 4;
+    /**
+     * <code>optional int32 status = 4;</code>
+     */
+    boolean hasStatus();
+    /**
+     * <code>optional int32 status = 4;</code>
+     */
+    int getStatus();
+  }
+  /**
+   * Protobuf type {@code SsccPutRegionTxResponse}
+   */
+  public static final class SsccPutRegionTxResponse extends
+      com.google.protobuf.GeneratedMessage
+      implements SsccPutRegionTxResponseOrBuilder {
+    // Use SsccPutRegionTxResponse.newBuilder() to construct.
+    private SsccPutRegionTxResponse(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private SsccPutRegionTxResponse(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final SsccPutRegionTxResponse defaultInstance;
+    public static SsccPutRegionTxResponse getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public SsccPutRegionTxResponse getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private SsccPutRegionTxResponse(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000001) == 0x00000001)) {
+                subBuilder = result_.toBuilder();
+              }
+              result_ = input.readMessage(org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(result_);
+                result_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000001;
+              break;
+            }
+            case 18: {
+              bitField0_ |= 0x00000002;
+              exception_ = input.readBytes();
+              break;
+            }
+            case 24: {
+              bitField0_ |= 0x00000004;
+              hasException_ = input.readBool();
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              status_ = input.readInt32();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccPutRegionTxResponse_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccPutRegionTxResponse_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.class, org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<SsccPutRegionTxResponse> PARSER =
+        new com.google.protobuf.AbstractParser<SsccPutRegionTxResponse>() {
+      public SsccPutRegionTxResponse parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new SsccPutRegionTxResponse(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<SsccPutRegionTxResponse> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // optional .Result result = 1;
+    public static final int RESULT_FIELD_NUMBER = 1;
+    private org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result result_;
+    /**
+     * <code>optional .Result result = 1;</code>
+     */
+    public boolean hasResult() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>optional .Result result = 1;</code>
+     */
+    public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result getResult() {
+      return result_;
+    }
+    /**
+     * <code>optional .Result result = 1;</code>
+     */
+    public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.ResultOrBuilder getResultOrBuilder() {
+      return result_;
+    }
+
+    // optional string exception = 2;
+    public static final int EXCEPTION_FIELD_NUMBER = 2;
+    private java.lang.Object exception_;
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    public boolean hasException() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    public java.lang.String getException() {
+      java.lang.Object ref = exception_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          exception_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string exception = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getExceptionBytes() {
+      java.lang.Object ref = exception_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        exception_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // optional bool hasException = 3;
+    public static final int HASEXCEPTION_FIELD_NUMBER = 3;
+    private boolean hasException_;
+    /**
+     * <code>optional bool hasException = 3;</code>
+     */
+    public boolean hasHasException() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional bool hasException = 3;</code>
+     */
+    public boolean getHasException() {
+      return hasException_;
+    }
+
+    // optional int32 status = 4;
+    public static final int STATUS_FIELD_NUMBER = 4;
+    private int status_;
+    /**
+     * <code>optional int32 status = 4;</code>
+     */
+    public boolean hasStatus() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional int32 status = 4;</code>
+     */
+    public int getStatus() {
+      return status_;
+    }
+
+    private void initFields() {
+      result_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result.getDefaultInstance();
+      exception_ = "";
+      hasException_ = false;
+      status_ = 0;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, result_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getExceptionBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBool(3, hasException_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeInt32(4, status_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(1, result_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, getExceptionBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(3, hasException_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(4, status_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code SsccPutRegionTxResponse}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccPutRegionTxResponse_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccPutRegionTxResponse_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.class, org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.Builder.class);
+      }
+
+      // Construct using org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getResultFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        if (resultBuilder_ == null) {
+          result_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result.getDefaultInstance();
+        } else {
+          resultBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
+        exception_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        hasException_ = false;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        status_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.internal_static_SsccPutRegionTxResponse_descriptor;
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse getDefaultInstanceForType() {
+        return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.getDefaultInstance();
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse build() {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse buildPartial() {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse result = new org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        if (resultBuilder_ == null) {
+          result.result_ = result_;
+        } else {
+          result.result_ = resultBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.exception_ = exception_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.hasException_ = hasException_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.status_ = status_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse) {
+          return mergeFrom((org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse other) {
+        if (other == org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.getDefaultInstance()) return this;
+        if (other.hasResult()) {
+          mergeResult(other.getResult());
+        }
+        if (other.hasException()) {
+          bitField0_ |= 0x00000002;
+          exception_ = other.exception_;
+          onChanged();
+        }
+        if (other.hasHasException()) {
+          setHasException(other.getHasException());
+        }
+        if (other.hasStatus()) {
+          setStatus(other.getStatus());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // optional .Result result = 1;
+      private org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result result_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result.Builder, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.ResultOrBuilder> resultBuilder_;
+      /**
+       * <code>optional .Result result = 1;</code>
+       */
+      public boolean hasResult() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>optional .Result result = 1;</code>
+       */
+      public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result getResult() {
+        if (resultBuilder_ == null) {
+          return result_;
+        } else {
+          return resultBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>optional .Result result = 1;</code>
+       */
+      public Builder setResult(org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result value) {
+        if (resultBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          result_ = value;
+          onChanged();
+        } else {
+          resultBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>optional .Result result = 1;</code>
+       */
+      public Builder setResult(
+          org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result.Builder builderForValue) {
+        if (resultBuilder_ == null) {
+          result_ = builderForValue.build();
+          onChanged();
+        } else {
+          resultBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>optional .Result result = 1;</code>
+       */
+      public Builder mergeResult(org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result value) {
+        if (resultBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              result_ != org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result.getDefaultInstance()) {
+            result_ =
+              org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result.newBuilder(result_).mergeFrom(value).buildPartial();
+          } else {
+            result_ = value;
+          }
+          onChanged();
+        } else {
+          resultBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>optional .Result result = 1;</code>
+       */
+      public Builder clearResult() {
+        if (resultBuilder_ == null) {
+          result_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result.getDefaultInstance();
+          onChanged();
+        } else {
+          resultBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
+        return this;
+      }
+      /**
+       * <code>optional .Result result = 1;</code>
+       */
+      public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result.Builder getResultBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getResultFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .Result result = 1;</code>
+       */
+      public org.apache.hadoop.hbase.protobuf.generated.ClientProtos.ResultOrBuilder getResultOrBuilder() {
+        if (resultBuilder_ != null) {
+          return resultBuilder_.getMessageOrBuilder();
+        } else {
+          return result_;
+        }
+      }
+      /**
+       * <code>optional .Result result = 1;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result.Builder, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.ResultOrBuilder> 
+          getResultFieldBuilder() {
+        if (resultBuilder_ == null) {
+          resultBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result.Builder, org.apache.hadoop.hbase.protobuf.generated.ClientProtos.ResultOrBuilder>(
+                  result_,
+                  getParentForChildren(),
+                  isClean());
+          result_ = null;
+        }
+        return resultBuilder_;
+      }
+
+      // optional string exception = 2;
+      private java.lang.Object exception_ = "";
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public boolean hasException() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public java.lang.String getException() {
+        java.lang.Object ref = exception_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          exception_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getExceptionBytes() {
+        java.lang.Object ref = exception_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          exception_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public Builder setException(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        exception_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public Builder clearException() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        exception_ = getDefaultInstance().getException();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string exception = 2;</code>
+       */
+      public Builder setExceptionBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        exception_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional bool hasException = 3;
+      private boolean hasException_ ;
+      /**
+       * <code>optional bool hasException = 3;</code>
+       */
+      public boolean hasHasException() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>optional bool hasException = 3;</code>
+       */
+      public boolean getHasException() {
+        return hasException_;
+      }
+      /**
+       * <code>optional bool hasException = 3;</code>
+       */
+      public Builder setHasException(boolean value) {
+        bitField0_ |= 0x00000004;
+        hasException_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool hasException = 3;</code>
+       */
+      public Builder clearHasException() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        hasException_ = false;
+        onChanged();
+        return this;
+      }
+
+      // optional int32 status = 4;
+      private int status_ ;
+      /**
+       * <code>optional int32 status = 4;</code>
+       */
+      public boolean hasStatus() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional int32 status = 4;</code>
+       */
+      public int getStatus() {
+        return status_;
+      }
+      /**
+       * <code>optional int32 status = 4;</code>
+       */
+      public Builder setStatus(int value) {
+        bitField0_ |= 0x00000008;
+        status_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int32 status = 4;</code>
+       */
+      public Builder clearStatus() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        status_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:SsccPutRegionTxResponse)
+    }
+
+    static {
+      defaultInstance = new SsccPutRegionTxResponse(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:SsccPutRegionTxResponse)
+  }
+
   public interface SsccPutTransactionalRequestOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
@@ -25686,11 +31256,24 @@ public final class SsccRegionProtos {
 
       /**
        * <code>rpc checkAndPut(.SsccCheckAndPutRequest) returns (.SsccCheckAndPutResponse);</code>
+       *
+       * <pre>
+       *  rpc checkAndDeleteRegionTx(SsccCheckAndDeleteRegionTxRequest)
+       *    returns(SsccCheckAndDeleteRegionTxResponse);
+       * </pre>
        */
       public abstract void checkAndPut(
           com.google.protobuf.RpcController controller,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutResponse> done);
+
+      /**
+       * <code>rpc checkAndPutRegionTx(.SsccCheckAndPutRegionTxRequest) returns (.SsccCheckAndPutRegionTxResponse);</code>
+       */
+      public abstract void checkAndPutRegionTx(
+          com.google.protobuf.RpcController controller,
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest request,
+          com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse> done);
 
       /**
        * <code>rpc closeScanner(.SsccCloseScannerRequest) returns (.SsccCloseScannerResponse);</code>
@@ -25763,6 +31346,14 @@ public final class SsccRegionProtos {
           com.google.protobuf.RpcController controller,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse> done);
+
+      /**
+       * <code>rpc putRegionTx(.SsccPutRegionTxRequest) returns (.SsccPutRegionTxResponse);</code>
+       */
+      public abstract void putRegionTx(
+          com.google.protobuf.RpcController controller,
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest request,
+          com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse> done);
 
       /**
        * <code>rpc put(.SsccPutTransactionalRequest) returns (.SsccPutTransactionalResponse);</code>
@@ -25882,6 +31473,14 @@ public final class SsccRegionProtos {
         }
 
         @java.lang.Override
+        public  void checkAndPutRegionTx(
+            com.google.protobuf.RpcController controller,
+            org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest request,
+            com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse> done) {
+          impl.checkAndPutRegionTx(controller, request, done);
+        }
+
+        @java.lang.Override
         public  void closeScanner(
             com.google.protobuf.RpcController controller,
             org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerRequest request,
@@ -25951,6 +31550,14 @@ public final class SsccRegionProtos {
             org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest request,
             com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse> done) {
           impl.openScanner(controller, request, done);
+        }
+
+        @java.lang.Override
+        public  void putRegionTx(
+            com.google.protobuf.RpcController controller,
+            org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest request,
+            com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse> done) {
+          impl.putRegionTx(controller, request, done);
         }
 
         @java.lang.Override
@@ -26064,42 +31671,46 @@ public final class SsccRegionProtos {
             case 3:
               return impl.checkAndPut(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRequest)request);
             case 4:
-              return impl.closeScanner(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerRequest)request);
+              return impl.checkAndPutRegionTx(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest)request);
             case 5:
-              return impl.commit(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequest)request);
+              return impl.closeScanner(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerRequest)request);
             case 6:
-              return impl.commitIfPossible(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleRequest)request);
+              return impl.commit(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequest)request);
             case 7:
-              return impl.commitRequest(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestRequest)request);
+              return impl.commitIfPossible(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleRequest)request);
             case 8:
-              return impl.delete(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalRequest)request);
+              return impl.commitRequest(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestRequest)request);
             case 9:
-              return impl.deleteMultiple(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalRequest)request);
+              return impl.delete(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalRequest)request);
             case 10:
-              return impl.get(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalRequest)request);
+              return impl.deleteMultiple(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalRequest)request);
             case 11:
-              return impl.performScan(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanRequest)request);
+              return impl.get(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalRequest)request);
             case 12:
-              return impl.openScanner(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest)request);
+              return impl.performScan(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanRequest)request);
             case 13:
-              return impl.put(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest)request);
+              return impl.openScanner(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest)request);
             case 14:
-              return impl.putMultiple(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalRequest)request);
+              return impl.putRegionTx(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest)request);
             case 15:
-              return impl.recoveryRequest(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestRequest)request);
+              return impl.put(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest)request);
             case 16:
-              return impl.getMax(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request);
+              return impl.putMultiple(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalRequest)request);
             case 17:
-              return impl.getMin(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request);
+              return impl.recoveryRequest(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestRequest)request);
             case 18:
-              return impl.getSum(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request);
+              return impl.getMax(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request);
             case 19:
-              return impl.getRowNum(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request);
+              return impl.getMin(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request);
             case 20:
-              return impl.getAvg(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request);
+              return impl.getSum(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request);
             case 21:
-              return impl.getStd(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request);
+              return impl.getRowNum(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request);
             case 22:
+              return impl.getAvg(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request);
+            case 23:
+              return impl.getStd(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request);
+            case 24:
               return impl.getMedian(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request);
             default:
               throw new java.lang.AssertionError("Can't get here.");
@@ -26124,33 +31735,33 @@ public final class SsccRegionProtos {
             case 3:
               return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRequest.getDefaultInstance();
             case 4:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerRequest.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest.getDefaultInstance();
             case 5:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequest.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerRequest.getDefaultInstance();
             case 6:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleRequest.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequest.getDefaultInstance();
             case 7:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestRequest.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleRequest.getDefaultInstance();
             case 8:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalRequest.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestRequest.getDefaultInstance();
             case 9:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalRequest.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalRequest.getDefaultInstance();
             case 10:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalRequest.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalRequest.getDefaultInstance();
             case 11:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanRequest.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalRequest.getDefaultInstance();
             case 12:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanRequest.getDefaultInstance();
             case 13:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest.getDefaultInstance();
             case 14:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalRequest.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest.getDefaultInstance();
             case 15:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestRequest.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest.getDefaultInstance();
             case 16:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalRequest.getDefaultInstance();
             case 17:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestRequest.getDefaultInstance();
             case 18:
               return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest.getDefaultInstance();
             case 19:
@@ -26160,6 +31771,10 @@ public final class SsccRegionProtos {
             case 21:
               return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest.getDefaultInstance();
             case 22:
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest.getDefaultInstance();
+            case 23:
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest.getDefaultInstance();
+            case 24:
               return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest.getDefaultInstance();
             default:
               throw new java.lang.AssertionError("Can't get here.");
@@ -26184,33 +31799,33 @@ public final class SsccRegionProtos {
             case 3:
               return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutResponse.getDefaultInstance();
             case 4:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerResponse.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.getDefaultInstance();
             case 5:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitResponse.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerResponse.getDefaultInstance();
             case 6:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleResponse.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitResponse.getDefaultInstance();
             case 7:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestResponse.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleResponse.getDefaultInstance();
             case 8:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalResponse.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestResponse.getDefaultInstance();
             case 9:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalResponse.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalResponse.getDefaultInstance();
             case 10:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalResponse.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalResponse.getDefaultInstance();
             case 11:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanResponse.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalResponse.getDefaultInstance();
             case 12:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanResponse.getDefaultInstance();
             case 13:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalResponse.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse.getDefaultInstance();
             case 14:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalResponse.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.getDefaultInstance();
             case 15:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestResponse.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalResponse.getDefaultInstance();
             case 16:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalResponse.getDefaultInstance();
             case 17:
-              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance();
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestResponse.getDefaultInstance();
             case 18:
               return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance();
             case 19:
@@ -26220,6 +31835,10 @@ public final class SsccRegionProtos {
             case 21:
               return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance();
             case 22:
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance();
+            case 23:
+              return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance();
+            case 24:
               return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance();
             default:
               throw new java.lang.AssertionError("Can't get here.");
@@ -26255,11 +31874,24 @@ public final class SsccRegionProtos {
 
     /**
      * <code>rpc checkAndPut(.SsccCheckAndPutRequest) returns (.SsccCheckAndPutResponse);</code>
+     *
+     * <pre>
+     *  rpc checkAndDeleteRegionTx(SsccCheckAndDeleteRegionTxRequest)
+     *    returns(SsccCheckAndDeleteRegionTxResponse);
+     * </pre>
      */
     public abstract void checkAndPut(
         com.google.protobuf.RpcController controller,
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRequest request,
         com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutResponse> done);
+
+    /**
+     * <code>rpc checkAndPutRegionTx(.SsccCheckAndPutRegionTxRequest) returns (.SsccCheckAndPutRegionTxResponse);</code>
+     */
+    public abstract void checkAndPutRegionTx(
+        com.google.protobuf.RpcController controller,
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest request,
+        com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse> done);
 
     /**
      * <code>rpc closeScanner(.SsccCloseScannerRequest) returns (.SsccCloseScannerResponse);</code>
@@ -26332,6 +31964,14 @@ public final class SsccRegionProtos {
         com.google.protobuf.RpcController controller,
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest request,
         com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse> done);
+
+    /**
+     * <code>rpc putRegionTx(.SsccPutRegionTxRequest) returns (.SsccPutRegionTxResponse);</code>
+     */
+    public abstract void putRegionTx(
+        com.google.protobuf.RpcController controller,
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest request,
+        com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse> done);
 
     /**
      * <code>rpc put(.SsccPutTransactionalRequest) returns (.SsccPutTransactionalResponse);</code>
@@ -26456,96 +32096,106 @@ public final class SsccRegionProtos {
               done));
           return;
         case 4:
+          this.checkAndPutRegionTx(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest)request,
+            com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse>specializeCallback(
+              done));
+          return;
+        case 5:
           this.closeScanner(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerResponse>specializeCallback(
               done));
           return;
-        case 5:
+        case 6:
           this.commit(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitResponse>specializeCallback(
               done));
           return;
-        case 6:
+        case 7:
           this.commitIfPossible(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleResponse>specializeCallback(
               done));
           return;
-        case 7:
+        case 8:
           this.commitRequest(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestResponse>specializeCallback(
               done));
           return;
-        case 8:
+        case 9:
           this.delete(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalResponse>specializeCallback(
               done));
           return;
-        case 9:
+        case 10:
           this.deleteMultiple(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalResponse>specializeCallback(
               done));
           return;
-        case 10:
+        case 11:
           this.get(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalResponse>specializeCallback(
               done));
           return;
-        case 11:
+        case 12:
           this.performScan(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanResponse>specializeCallback(
               done));
           return;
-        case 12:
+        case 13:
           this.openScanner(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse>specializeCallback(
               done));
           return;
-        case 13:
+        case 14:
+          this.putRegionTx(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest)request,
+            com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse>specializeCallback(
+              done));
+          return;
+        case 15:
           this.put(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalResponse>specializeCallback(
               done));
           return;
-        case 14:
+        case 16:
           this.putMultiple(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalResponse>specializeCallback(
               done));
           return;
-        case 15:
+        case 17:
           this.recoveryRequest(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestResponse>specializeCallback(
               done));
           return;
-        case 16:
+        case 18:
           this.getMax(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse>specializeCallback(
               done));
           return;
-        case 17:
+        case 19:
           this.getMin(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse>specializeCallback(
               done));
           return;
-        case 18:
+        case 20:
           this.getSum(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse>specializeCallback(
               done));
           return;
-        case 19:
+        case 21:
           this.getRowNum(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse>specializeCallback(
               done));
           return;
-        case 20:
+        case 22:
           this.getAvg(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse>specializeCallback(
               done));
           return;
-        case 21:
+        case 23:
           this.getStd(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse>specializeCallback(
               done));
           return;
-        case 22:
+        case 24:
           this.getMedian(controller, (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest)request,
             com.google.protobuf.RpcUtil.<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse>specializeCallback(
               done));
@@ -26573,33 +32223,33 @@ public final class SsccRegionProtos {
         case 3:
           return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRequest.getDefaultInstance();
         case 4:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerRequest.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest.getDefaultInstance();
         case 5:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequest.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerRequest.getDefaultInstance();
         case 6:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleRequest.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequest.getDefaultInstance();
         case 7:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestRequest.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleRequest.getDefaultInstance();
         case 8:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalRequest.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestRequest.getDefaultInstance();
         case 9:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalRequest.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalRequest.getDefaultInstance();
         case 10:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalRequest.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalRequest.getDefaultInstance();
         case 11:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanRequest.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalRequest.getDefaultInstance();
         case 12:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanRequest.getDefaultInstance();
         case 13:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest.getDefaultInstance();
         case 14:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalRequest.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest.getDefaultInstance();
         case 15:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestRequest.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest.getDefaultInstance();
         case 16:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalRequest.getDefaultInstance();
         case 17:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestRequest.getDefaultInstance();
         case 18:
           return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest.getDefaultInstance();
         case 19:
@@ -26609,6 +32259,10 @@ public final class SsccRegionProtos {
         case 21:
           return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest.getDefaultInstance();
         case 22:
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest.getDefaultInstance();
+        case 23:
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest.getDefaultInstance();
+        case 24:
           return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest.getDefaultInstance();
         default:
           throw new java.lang.AssertionError("Can't get here.");
@@ -26633,33 +32287,33 @@ public final class SsccRegionProtos {
         case 3:
           return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutResponse.getDefaultInstance();
         case 4:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerResponse.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.getDefaultInstance();
         case 5:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitResponse.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerResponse.getDefaultInstance();
         case 6:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleResponse.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitResponse.getDefaultInstance();
         case 7:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestResponse.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleResponse.getDefaultInstance();
         case 8:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalResponse.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestResponse.getDefaultInstance();
         case 9:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalResponse.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalResponse.getDefaultInstance();
         case 10:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalResponse.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalResponse.getDefaultInstance();
         case 11:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanResponse.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalResponse.getDefaultInstance();
         case 12:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanResponse.getDefaultInstance();
         case 13:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalResponse.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse.getDefaultInstance();
         case 14:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalResponse.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.getDefaultInstance();
         case 15:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestResponse.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalResponse.getDefaultInstance();
         case 16:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalResponse.getDefaultInstance();
         case 17:
-          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance();
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestResponse.getDefaultInstance();
         case 18:
           return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance();
         case 19:
@@ -26669,6 +32323,10 @@ public final class SsccRegionProtos {
         case 21:
           return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance();
         case 22:
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance();
+        case 23:
+          return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance();
+        case 24:
           return org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance();
         default:
           throw new java.lang.AssertionError("Can't get here.");
@@ -26751,12 +32409,27 @@ public final class SsccRegionProtos {
             org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutResponse.getDefaultInstance()));
       }
 
+      public  void checkAndPutRegionTx(
+          com.google.protobuf.RpcController controller,
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest request,
+          com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(4),
+          controller,
+          request,
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.class,
+            org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.getDefaultInstance()));
+      }
+
       public  void closeScanner(
           com.google.protobuf.RpcController controller,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(4),
+          getDescriptor().getMethods().get(5),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerResponse.getDefaultInstance(),
@@ -26771,7 +32444,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(5),
+          getDescriptor().getMethods().get(6),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitResponse.getDefaultInstance(),
@@ -26786,7 +32459,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(6),
+          getDescriptor().getMethods().get(7),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleResponse.getDefaultInstance(),
@@ -26801,7 +32474,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(7),
+          getDescriptor().getMethods().get(8),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestResponse.getDefaultInstance(),
@@ -26816,7 +32489,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(8),
+          getDescriptor().getMethods().get(9),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalResponse.getDefaultInstance(),
@@ -26831,7 +32504,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(9),
+          getDescriptor().getMethods().get(10),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalResponse.getDefaultInstance(),
@@ -26846,7 +32519,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(10),
+          getDescriptor().getMethods().get(11),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalResponse.getDefaultInstance(),
@@ -26861,7 +32534,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(11),
+          getDescriptor().getMethods().get(12),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanResponse.getDefaultInstance(),
@@ -26876,7 +32549,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(12),
+          getDescriptor().getMethods().get(13),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse.getDefaultInstance(),
@@ -26886,12 +32559,27 @@ public final class SsccRegionProtos {
             org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse.getDefaultInstance()));
       }
 
+      public  void putRegionTx(
+          com.google.protobuf.RpcController controller,
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest request,
+          com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(14),
+          controller,
+          request,
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.class,
+            org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.getDefaultInstance()));
+      }
+
       public  void put(
           com.google.protobuf.RpcController controller,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(13),
+          getDescriptor().getMethods().get(15),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalResponse.getDefaultInstance(),
@@ -26906,7 +32594,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(14),
+          getDescriptor().getMethods().get(16),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalResponse.getDefaultInstance(),
@@ -26921,7 +32609,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(15),
+          getDescriptor().getMethods().get(17),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestResponse.getDefaultInstance(),
@@ -26936,7 +32624,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(16),
+          getDescriptor().getMethods().get(18),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance(),
@@ -26951,7 +32639,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(17),
+          getDescriptor().getMethods().get(19),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance(),
@@ -26966,7 +32654,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(18),
+          getDescriptor().getMethods().get(20),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance(),
@@ -26981,7 +32669,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(19),
+          getDescriptor().getMethods().get(21),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance(),
@@ -26996,7 +32684,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(20),
+          getDescriptor().getMethods().get(22),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance(),
@@ -27011,7 +32699,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(21),
+          getDescriptor().getMethods().get(23),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance(),
@@ -27026,7 +32714,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest request,
           com.google.protobuf.RpcCallback<org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(22),
+          getDescriptor().getMethods().get(24),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance(),
@@ -27061,6 +32749,11 @@ public final class SsccRegionProtos {
       public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutResponse checkAndPut(
           com.google.protobuf.RpcController controller,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRequest request)
+          throws com.google.protobuf.ServiceException;
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse checkAndPutRegionTx(
+          com.google.protobuf.RpcController controller,
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest request)
           throws com.google.protobuf.ServiceException;
 
       public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerResponse closeScanner(
@@ -27106,6 +32799,11 @@ public final class SsccRegionProtos {
       public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse openScanner(
           com.google.protobuf.RpcController controller,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest request)
+          throws com.google.protobuf.ServiceException;
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse putRegionTx(
+          com.google.protobuf.RpcController controller,
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest request)
           throws com.google.protobuf.ServiceException;
 
       public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalResponse put(
@@ -27214,12 +32912,24 @@ public final class SsccRegionProtos {
       }
 
 
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse checkAndPutRegionTx(
+          com.google.protobuf.RpcController controller,
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest request)
+          throws com.google.protobuf.ServiceException {
+        return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(4),
+          controller,
+          request,
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.getDefaultInstance());
+      }
+
+
       public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerResponse closeScanner(
           com.google.protobuf.RpcController controller,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(4),
+          getDescriptor().getMethods().get(5),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerResponse.getDefaultInstance());
@@ -27231,7 +32941,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(5),
+          getDescriptor().getMethods().get(6),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitResponse.getDefaultInstance());
@@ -27243,7 +32953,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(6),
+          getDescriptor().getMethods().get(7),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleResponse.getDefaultInstance());
@@ -27255,7 +32965,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(7),
+          getDescriptor().getMethods().get(8),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestResponse.getDefaultInstance());
@@ -27267,7 +32977,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(8),
+          getDescriptor().getMethods().get(9),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalResponse.getDefaultInstance());
@@ -27279,7 +32989,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(9),
+          getDescriptor().getMethods().get(10),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalResponse.getDefaultInstance());
@@ -27291,7 +33001,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(10),
+          getDescriptor().getMethods().get(11),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalResponse.getDefaultInstance());
@@ -27303,7 +33013,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(11),
+          getDescriptor().getMethods().get(12),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanResponse.getDefaultInstance());
@@ -27315,10 +33025,22 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(12),
+          getDescriptor().getMethods().get(13),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse.getDefaultInstance());
+      }
+
+
+      public org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse putRegionTx(
+          com.google.protobuf.RpcController controller,
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest request)
+          throws com.google.protobuf.ServiceException {
+        return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(14),
+          controller,
+          request,
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.getDefaultInstance());
       }
 
 
@@ -27327,7 +33049,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(13),
+          getDescriptor().getMethods().get(15),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalResponse.getDefaultInstance());
@@ -27339,7 +33061,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(14),
+          getDescriptor().getMethods().get(16),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalResponse.getDefaultInstance());
@@ -27351,7 +33073,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(15),
+          getDescriptor().getMethods().get(17),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestResponse.getDefaultInstance());
@@ -27363,7 +33085,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(16),
+          getDescriptor().getMethods().get(18),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance());
@@ -27375,7 +33097,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(17),
+          getDescriptor().getMethods().get(19),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance());
@@ -27387,7 +33109,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(18),
+          getDescriptor().getMethods().get(20),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance());
@@ -27399,7 +33121,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(19),
+          getDescriptor().getMethods().get(21),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance());
@@ -27411,7 +33133,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(20),
+          getDescriptor().getMethods().get(22),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance());
@@ -27423,7 +33145,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(21),
+          getDescriptor().getMethods().get(23),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance());
@@ -27435,7 +33157,7 @@ public final class SsccRegionProtos {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateRequest request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(22),
+          getDescriptor().getMethods().get(24),
           controller,
           request,
           org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccTransactionalAggregateResponse.getDefaultInstance());
@@ -27507,6 +33229,16 @@ public final class SsccRegionProtos {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_SsccCheckAndDeleteResponse_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_SsccCheckAndDeleteRegionTxRequest_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_SsccCheckAndDeleteRegionTxRequest_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_SsccCheckAndDeleteRegionTxResponse_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_SsccCheckAndDeleteRegionTxResponse_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_SsccCheckAndPutRequest_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -27516,6 +33248,16 @@ public final class SsccRegionProtos {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_SsccCheckAndPutResponse_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_SsccCheckAndPutRegionTxRequest_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_SsccCheckAndPutRegionTxRequest_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_SsccCheckAndPutRegionTxResponse_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_SsccCheckAndPutRegionTxResponse_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_SsccCloseScannerRequest_descriptor;
   private static
@@ -27576,6 +33318,16 @@ public final class SsccRegionProtos {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_SsccPerformScanResponse_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_SsccPutRegionTxRequest_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_SsccPutRegionTxRequest_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_SsccPutRegionTxResponse_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_SsccPutRegionTxResponse_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_SsccPutTransactionalRequest_descriptor;
   private static
@@ -27654,120 +33406,145 @@ public final class SsccRegionProtos {
       "\007 \002(\014\022\036\n\006delete\030\010 \002(\0132\016.MutationProto\"U\n" +
       "\032SsccCheckAndDeleteResponse\022\016\n\006result\030\001 " +
       "\002(\010\022\021\n\texception\030\002 \001(\t\022\024\n\014hasException\030\003" +
-      " \001(\010\"\260\001\n\026SsccCheckAndPutRequest\022\025\n\rtrans",
-      "actionId\030\001 \002(\003\022\017\n\007startId\030\002 \002(\003\022\022\n\nregio" +
-      "nName\030\003 \002(\014\022\013\n\003row\030\004 \002(\014\022\016\n\006family\030\005 \002(\014" +
-      "\022\021\n\tqualifier\030\006 \002(\014\022\r\n\005value\030\007 \002(\014\022\033\n\003pu" +
-      "t\030\010 \002(\0132\016.MutationProto\"R\n\027SsccCheckAndP" +
-      "utResponse\022\016\n\006result\030\001 \002(\010\022\021\n\texception\030" +
-      "\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\"W\n\027SsccClose" +
-      "ScannerRequest\022\025\n\rtransactionId\030\001 \002(\003\022\022\n" +
-      "\nregionName\030\002 \002(\014\022\021\n\tscannerId\030\003 \002(\003\"C\n\030" +
-      "SsccCloseScannerResponse\022\021\n\texception\030\001 " +
-      "\001(\t\022\024\n\014hasException\030\002 \001(\010\"\204\001\n&SsccDelete",
-      "MultipleTransactionalRequest\022\025\n\rtransact" +
-      "ionId\030\001 \002(\003\022\017\n\007startId\030\002 \002(\003\022\022\n\nregionNa" +
-      "me\030\003 \002(\014\022\036\n\006delete\030\004 \003(\0132\016.MutationProto" +
-      "\"{\n\'SsccDeleteMultipleTransactionalRespo" +
+      " \001(\010\"\322\001\n!SsccCheckAndDeleteRegionTxReque",
+      "st\022\025\n\rtransactionId\030\001 \002(\003\022\017\n\007startId\030\002 \002" +
+      "(\003\022\022\n\nregionName\030\003 \002(\014\022\013\n\003row\030\004 \002(\014\022\016\n\006f" +
+      "amily\030\005 \002(\014\022\021\n\tqualifier\030\006 \002(\014\022\r\n\005value\030" +
+      "\007 \002(\014\022\036\n\006delete\030\010 \002(\0132\016.MutationProto\022\022\n" +
+      "\nautoCommit\030\t \002(\010\"]\n\"SsccCheckAndDeleteR" +
+      "egionTxResponse\022\016\n\006result\030\001 \002(\010\022\021\n\texcep" +
+      "tion\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\"\260\001\n\026Ssc" +
+      "cCheckAndPutRequest\022\025\n\rtransactionId\030\001 \002" +
+      "(\003\022\017\n\007startId\030\002 \002(\003\022\022\n\nregionName\030\003 \002(\014\022" +
+      "\013\n\003row\030\004 \002(\014\022\016\n\006family\030\005 \002(\014\022\021\n\tqualifie",
+      "r\030\006 \002(\014\022\r\n\005value\030\007 \002(\014\022\033\n\003put\030\010 \002(\0132\016.Mu" +
+      "tationProto\"R\n\027SsccCheckAndPutResponse\022\016" +
+      "\n\006result\030\001 \002(\010\022\021\n\texception\030\002 \001(\t\022\024\n\014has" +
+      "Exception\030\003 \001(\010\"\302\001\n\036SsccCheckAndPutRegio" +
+      "nTxRequest\022\013\n\003tid\030\001 \002(\003\022\017\n\007startId\030\002 \002(\003" +
+      "\022\022\n\nregionName\030\003 \002(\014\022\013\n\003row\030\004 \002(\014\022\016\n\006fam" +
+      "ily\030\005 \002(\014\022\021\n\tqualifier\030\006 \002(\014\022\r\n\005value\030\007 " +
+      "\002(\014\022\033\n\003put\030\010 \002(\0132\016.MutationProto\022\022\n\nauto" +
+      "Commit\030\t \002(\010\"Z\n\037SsccCheckAndPutRegionTxR" +
+      "esponse\022\016\n\006result\030\001 \002(\010\022\021\n\texception\030\002 \001",
+      "(\t\022\024\n\014hasException\030\003 \001(\010\"W\n\027SsccCloseSca" +
+      "nnerRequest\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\nre" +
+      "gionName\030\002 \002(\014\022\021\n\tscannerId\030\003 \002(\003\"C\n\030Ssc" +
+      "cCloseScannerResponse\022\021\n\texception\030\001 \001(\t" +
+      "\022\024\n\014hasException\030\002 \001(\010\"\204\001\n&SsccDeleteMul" +
+      "tipleTransactionalRequest\022\025\n\rtransaction" +
+      "Id\030\001 \002(\003\022\017\n\007startId\030\002 \002(\003\022\022\n\nregionName\030" +
+      "\003 \002(\014\022\036\n\006delete\030\004 \003(\0132\016.MutationProto\"{\n" +
+      "\'SsccDeleteMultipleTransactionalResponse" +
+      "\022\027\n\006result\030\001 \001(\0132\007.Result\022\021\n\texception\030\002",
+      " \001(\t\022\024\n\014hasException\030\003 \001(\010\022\016\n\006status\030\004 \001" +
+      "(\005\"|\n\036SsccDeleteTransactionalRequest\022\025\n\r" +
+      "transactionId\030\001 \002(\003\022\017\n\007startId\030\002 \002(\003\022\022\n\n" +
+      "regionName\030\003 \002(\014\022\036\n\006delete\030\004 \002(\0132\016.Mutat" +
+      "ionProto\"s\n\037SsccDeleteTransactionalRespo" +
       "nse\022\027\n\006result\030\001 \001(\0132\007.Result\022\021\n\texceptio" +
       "n\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\022\016\n\006status\030" +
-      "\004 \001(\005\"|\n\036SsccDeleteTransactionalRequest\022" +
+      "\004 \001(\005\"l\n\033SsccGetTransactionalRequest\022\025\n\r" +
+      "transactionId\030\001 \002(\003\022\017\n\007startId\030\002 \002(\003\022\022\n\n" +
+      "regionName\030\003 \002(\014\022\021\n\003get\030\004 \002(\0132\004.Get\"`\n\034S",
+      "sccGetTransactionalResponse\022\027\n\006result\030\001 " +
+      "\001(\0132\007.Result\022\021\n\texception\030\002 \001(\t\022\024\n\014hasEx" +
+      "ception\030\003 \001(\010\"i\n\026SsccOpenScannerRequest\022" +
       "\025\n\rtransactionId\030\001 \002(\003\022\017\n\007startId\030\002 \002(\003\022" +
-      "\022\n\nregionName\030\003 \002(\014\022\036\n\006delete\030\004 \002(\0132\016.Mu" +
-      "tationProto\"s\n\037SsccDeleteTransactionalRe",
-      "sponse\022\027\n\006result\030\001 \001(\0132\007.Result\022\021\n\texcep" +
-      "tion\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\022\016\n\006stat" +
-      "us\030\004 \001(\005\"l\n\033SsccGetTransactionalRequest\022" +
-      "\025\n\rtransactionId\030\001 \002(\003\022\017\n\007startId\030\002 \002(\003\022" +
-      "\022\n\nregionName\030\003 \002(\014\022\021\n\003get\030\004 \002(\0132\004.Get\"`" +
-      "\n\034SsccGetTransactionalResponse\022\027\n\006result" +
-      "\030\001 \001(\0132\007.Result\022\021\n\texception\030\002 \001(\t\022\024\n\014ha" +
-      "sException\030\003 \001(\010\"i\n\026SsccOpenScannerReque" +
-      "st\022\025\n\rtransactionId\030\001 \002(\003\022\017\n\007startId\030\002 \002" +
-      "(\003\022\022\n\nregionName\030\003 \002(\014\022\023\n\004scan\030\004 \002(\0132\005.S",
-      "can\"U\n\027SsccOpenScannerResponse\022\021\n\tscanne" +
-      "rId\030\001 \002(\003\022\021\n\texception\030\002 \001(\t\022\024\n\014hasExcep" +
-      "tion\030\003 \001(\010\"\250\001\n\026SsccPerformScanRequest\022\025\n" +
-      "\rtransactionId\030\001 \002(\003\022\017\n\007startId\030\002 \002(\003\022\022\n" +
-      "\nregionName\030\003 \002(\014\022\021\n\tscannerId\030\004 \002(\003\022\024\n\014" +
-      "numberOfRows\030\005 \002(\005\022\024\n\014closeScanner\030\006 \002(\010" +
-      "\022\023\n\013nextCallSeq\030\007 \002(\003\"\220\001\n\027SsccPerformSca" +
-      "nResponse\022\027\n\006result\030\001 \003(\0132\007.Result\022\r\n\005co" +
-      "unt\030\002 \002(\003\022\023\n\013nextCallSeq\030\003 \002(\003\022\017\n\007hasMor" +
-      "e\030\004 \002(\010\022\021\n\texception\030\005 \001(\t\022\024\n\014hasExcepti",
-      "on\030\006 \001(\010\"\213\001\n\033SsccPutTransactionalRequest" +
-      "\022\025\n\rtransactionId\030\001 \002(\003\022\017\n\007startId\030\002 \002(\003" +
-      "\022\022\n\nregionName\030\003 \002(\014\022\033\n\003put\030\004 \002(\0132\016.Muta" +
-      "tionProto\022\023\n\013isStateless\030\005 \001(\010\"p\n\034SsccPu" +
-      "tTransactionalResponse\022\027\n\006result\030\001 \001(\0132\007" +
-      ".Result\022\021\n\texception\030\002 \001(\t\022\024\n\014hasExcepti" +
-      "on\030\003 \001(\010\022\016\n\006status\030\004 \001(\005\"\223\001\n#SsccPutMult" +
-      "ipleTransactionalRequest\022\025\n\rtransactionI" +
-      "d\030\001 \002(\003\022\017\n\007startId\030\002 \002(\003\022\022\n\nregionName\030\003" +
-      " \002(\014\022\033\n\003put\030\004 \003(\0132\016.MutationProto\022\023\n\013isS",
-      "tateless\030\005 \001(\010\"x\n$SsccPutMultipleTransac" +
-      "tionalResponse\022\027\n\006result\030\001 \001(\0132\007.Result\022" +
-      "\021\n\texception\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010" +
-      "\022\016\n\006status\030\004 \001(\005\"f\n\032SsccRecoveryRequestR" +
-      "equest\022\025\n\rtransactionId\030\001 \002(\003\022\017\n\007startId" +
-      "\030\002 \002(\003\022\022\n\nregionName\030\003 \002(\014\022\014\n\004tmId\030\004 \002(\005" +
-      "\"V\n\033SsccRecoveryRequestResponse\022\016\n\006resul" +
-      "t\030\001 \003(\003\022\021\n\texception\030\002 \001(\t\022\024\n\014hasExcepti" +
-      "on\030\003 \001(\010\"\270\001\n!SsccTransactionalAggregateR" +
-      "equest\022\022\n\nregionName\030\001 \002(\014\022\025\n\rtransactio",
-      "nId\030\002 \002(\003\022\017\n\007startId\030\003 \002(\003\022\036\n\026interprete" +
-      "r_class_name\030\004 \002(\t\022\023\n\004scan\030\005 \002(\0132\005.Scan\022" +
-      "\"\n\032interpreter_specific_bytes\030\006 \001(\014\"M\n\"S" +
-      "sccTransactionalAggregateResponse\022\022\n\nfir" +
-      "st_part\030\003 \003(\014\022\023\n\013second_part\030\004 \001(\0142\206\016\n\021S" +
-      "sccRegionService\022O\n\020abortTransaction\022\034.S" +
-      "sccAbortTransactionRequest\032\035.SsccAbortTr" +
-      "ansactionResponse\022O\n\020beginTransaction\022\034." +
-      "SsccBeginTransactionRequest\032\035.SsccBeginT" +
-      "ransactionResponse\022I\n\016checkAndDelete\022\032.S",
-      "sccCheckAndDeleteRequest\032\033.SsccCheckAndD" +
-      "eleteResponse\022@\n\013checkAndPut\022\027.SsccCheck" +
-      "AndPutRequest\032\030.SsccCheckAndPutResponse\022" +
-      "C\n\014closeScanner\022\030.SsccCloseScannerReques" +
-      "t\032\031.SsccCloseScannerResponse\0221\n\006commit\022\022" +
-      ".SsccCommitRequest\032\023.SsccCommitResponse\022" +
-      "O\n\020commitIfPossible\022\034.SsccCommitIfPossib" +
-      "leRequest\032\035.SsccCommitIfPossibleResponse" +
-      "\022F\n\rcommitRequest\022\031.SsccCommitRequestReq" +
-      "uest\032\032.SsccCommitRequestResponse\022K\n\006dele",
-      "te\022\037.SsccDeleteTransactionalRequest\032 .Ss" +
-      "ccDeleteTransactionalResponse\022c\n\016deleteM" +
-      "ultiple\022\'.SsccDeleteMultipleTransactiona" +
-      "lRequest\032(.SsccDeleteMultipleTransaction" +
-      "alResponse\022B\n\003get\022\034.SsccGetTransactional" +
-      "Request\032\035.SsccGetTransactionalResponse\022@" +
-      "\n\013performScan\022\027.SsccPerformScanRequest\032\030" +
-      ".SsccPerformScanResponse\022@\n\013openScanner\022" +
-      "\027.SsccOpenScannerRequest\032\030.SsccOpenScann" +
-      "erResponse\022B\n\003put\022\034.SsccPutTransactional",
-      "Request\032\035.SsccPutTransactionalResponse\022Z" +
-      "\n\013putMultiple\022$.SsccPutMultipleTransacti" +
-      "onalRequest\032%.SsccPutMultipleTransaction" +
-      "alResponse\022L\n\017recoveryRequest\022\033.SsccReco" +
-      "veryRequestRequest\032\034.SsccRecoveryRequest" +
-      "Response\022Q\n\006GetMax\022\".SsccTransactionalAg" +
-      "gregateRequest\032#.SsccTransactionalAggreg" +
-      "ateResponse\022Q\n\006GetMin\022\".SsccTransactiona" +
-      "lAggregateRequest\032#.SsccTransactionalAgg" +
-      "regateResponse\022Q\n\006GetSum\022\".SsccTransacti",
-      "onalAggregateRequest\032#.SsccTransactional" +
-      "AggregateResponse\022T\n\tGetRowNum\022\".SsccTra" +
+      "\022\n\nregionName\030\003 \002(\014\022\023\n\004scan\030\004 \002(\0132\005.Scan" +
+      "\"U\n\027SsccOpenScannerResponse\022\021\n\tscannerId" +
+      "\030\001 \002(\003\022\021\n\texception\030\002 \001(\t\022\024\n\014hasExceptio" +
+      "n\030\003 \001(\010\"\250\001\n\026SsccPerformScanRequest\022\025\n\rtr" +
+      "ansactionId\030\001 \002(\003\022\017\n\007startId\030\002 \002(\003\022\022\n\nre" +
+      "gionName\030\003 \002(\014\022\021\n\tscannerId\030\004 \002(\003\022\024\n\014num",
+      "berOfRows\030\005 \002(\005\022\024\n\014closeScanner\030\006 \002(\010\022\023\n" +
+      "\013nextCallSeq\030\007 \002(\003\"\220\001\n\027SsccPerformScanRe" +
+      "sponse\022\027\n\006result\030\001 \003(\0132\007.Result\022\r\n\005count" +
+      "\030\002 \002(\003\022\023\n\013nextCallSeq\030\003 \002(\003\022\017\n\007hasMore\030\004" +
+      " \002(\010\022\021\n\texception\030\005 \001(\t\022\024\n\014hasException\030" +
+      "\006 \001(\010\"\220\001\n\026SsccPutRegionTxRequest\022\013\n\003tid\030" +
+      "\001 \002(\003\022\017\n\007startId\030\002 \002(\003\022\022\n\nregionName\030\003 \002" +
+      "(\014\022\033\n\003put\030\004 \002(\0132\016.MutationProto\022\023\n\013isSta" +
+      "teless\030\005 \001(\010\022\022\n\nautoCommit\030\006 \002(\010\"k\n\027Sscc" +
+      "PutRegionTxResponse\022\027\n\006result\030\001 \001(\0132\007.Re",
+      "sult\022\021\n\texception\030\002 \001(\t\022\024\n\014hasException\030" +
+      "\003 \001(\010\022\016\n\006status\030\004 \001(\005\"\213\001\n\033SsccPutTransac" +
+      "tionalRequest\022\025\n\rtransactionId\030\001 \002(\003\022\017\n\007" +
+      "startId\030\002 \002(\003\022\022\n\nregionName\030\003 \002(\014\022\033\n\003put" +
+      "\030\004 \002(\0132\016.MutationProto\022\023\n\013isStateless\030\005 " +
+      "\001(\010\"p\n\034SsccPutTransactionalResponse\022\027\n\006r" +
+      "esult\030\001 \001(\0132\007.Result\022\021\n\texception\030\002 \001(\t\022" +
+      "\024\n\014hasException\030\003 \001(\010\022\016\n\006status\030\004 \001(\005\"\223\001" +
+      "\n#SsccPutMultipleTransactionalRequest\022\025\n" +
+      "\rtransactionId\030\001 \002(\003\022\017\n\007startId\030\002 \002(\003\022\022\n",
+      "\nregionName\030\003 \002(\014\022\033\n\003put\030\004 \003(\0132\016.Mutatio" +
+      "nProto\022\023\n\013isStateless\030\005 \001(\010\"x\n$SsccPutMu" +
+      "ltipleTransactionalResponse\022\027\n\006result\030\001 " +
+      "\001(\0132\007.Result\022\021\n\texception\030\002 \001(\t\022\024\n\014hasEx" +
+      "ception\030\003 \001(\010\022\016\n\006status\030\004 \001(\005\"f\n\032SsccRec" +
+      "overyRequestRequest\022\025\n\rtransactionId\030\001 \002" +
+      "(\003\022\017\n\007startId\030\002 \002(\003\022\022\n\nregionName\030\003 \002(\014\022" +
+      "\014\n\004tmId\030\004 \002(\005\"V\n\033SsccRecoveryRequestResp" +
+      "onse\022\016\n\006result\030\001 \003(\003\022\021\n\texception\030\002 \001(\t\022" +
+      "\024\n\014hasException\030\003 \001(\010\"\270\001\n!SsccTransactio",
+      "nalAggregateRequest\022\022\n\nregionName\030\001 \002(\014\022" +
+      "\025\n\rtransactionId\030\002 \002(\003\022\017\n\007startId\030\003 \002(\003\022" +
+      "\036\n\026interpreter_class_name\030\004 \002(\t\022\023\n\004scan\030" +
+      "\005 \002(\0132\005.Scan\022\"\n\032interpreter_specific_byt" +
+      "es\030\006 \001(\014\"M\n\"SsccTransactionalAggregateRe" +
+      "sponse\022\022\n\nfirst_part\030\003 \003(\014\022\023\n\013second_par" +
+      "t\030\004 \001(\0142\242\017\n\021SsccRegionService\022O\n\020abortTr" +
+      "ansaction\022\034.SsccAbortTransactionRequest\032" +
+      "\035.SsccAbortTransactionResponse\022O\n\020beginT" +
+      "ransaction\022\034.SsccBeginTransactionRequest",
+      "\032\035.SsccBeginTransactionResponse\022I\n\016check" +
+      "AndDelete\022\032.SsccCheckAndDeleteRequest\032\033." +
+      "SsccCheckAndDeleteResponse\022@\n\013checkAndPu" +
+      "t\022\027.SsccCheckAndPutRequest\032\030.SsccCheckAn" +
+      "dPutResponse\022X\n\023checkAndPutRegionTx\022\037.Ss" +
+      "ccCheckAndPutRegionTxRequest\032 .SsccCheck" +
+      "AndPutRegionTxResponse\022C\n\014closeScanner\022\030" +
+      ".SsccCloseScannerRequest\032\031.SsccCloseScan" +
+      "nerResponse\0221\n\006commit\022\022.SsccCommitReques" +
+      "t\032\023.SsccCommitResponse\022O\n\020commitIfPossib",
+      "le\022\034.SsccCommitIfPossibleRequest\032\035.SsccC" +
+      "ommitIfPossibleResponse\022F\n\rcommitRequest" +
+      "\022\031.SsccCommitRequestRequest\032\032.SsccCommit" +
+      "RequestResponse\022K\n\006delete\022\037.SsccDeleteTr" +
+      "ansactionalRequest\032 .SsccDeleteTransacti" +
+      "onalResponse\022c\n\016deleteMultiple\022\'.SsccDel" +
+      "eteMultipleTransactionalRequest\032(.SsccDe" +
+      "leteMultipleTransactionalResponse\022B\n\003get" +
+      "\022\034.SsccGetTransactionalRequest\032\035.SsccGet" +
+      "TransactionalResponse\022@\n\013performScan\022\027.S",
+      "sccPerformScanRequest\032\030.SsccPerformScanR" +
+      "esponse\022@\n\013openScanner\022\027.SsccOpenScanner" +
+      "Request\032\030.SsccOpenScannerResponse\022@\n\013put" +
+      "RegionTx\022\027.SsccPutRegionTxRequest\032\030.Sscc" +
+      "PutRegionTxResponse\022B\n\003put\022\034.SsccPutTran" +
+      "sactionalRequest\032\035.SsccPutTransactionalR" +
+      "esponse\022Z\n\013putMultiple\022$.SsccPutMultiple" +
+      "TransactionalRequest\032%.SsccPutMultipleTr" +
+      "ansactionalResponse\022L\n\017recoveryRequest\022\033" +
+      ".SsccRecoveryRequestRequest\032\034.SsccRecove",
+      "ryRequestResponse\022Q\n\006GetMax\022\".SsccTransa" +
+      "ctionalAggregateRequest\032#.SsccTransactio" +
+      "nalAggregateResponse\022Q\n\006GetMin\022\".SsccTra" +
       "nsactionalAggregateRequest\032#.SsccTransac" +
-      "tionalAggregateResponse\022Q\n\006GetAvg\022\".Sscc" +
+      "tionalAggregateResponse\022Q\n\006GetSum\022\".Sscc" +
       "TransactionalAggregateRequest\032#.SsccTran" +
-      "sactionalAggregateResponse\022Q\n\006GetStd\022\".S" +
-      "sccTransactionalAggregateRequest\032#.SsccT" +
-      "ransactionalAggregateResponse\022T\n\tGetMedi" +
-      "an\022\".SsccTransactionalAggregateRequest\032#" +
-      ".SsccTransactionalAggregateResponseBT\n;o",
-      "rg.apache.hadoop.hbase.coprocessor.trans" +
-      "actional.generatedB\020SsccRegionProtosH\001\210\001" +
-      "\001"
+      "sactionalAggregateResponse\022T\n\tGetRowNum\022" +
+      "\".SsccTransactionalAggregateRequest\032#.Ss" +
+      "ccTransactionalAggregateResponse\022Q\n\006GetA" +
+      "vg\022\".SsccTransactionalAggregateRequest\032#",
+      ".SsccTransactionalAggregateResponse\022Q\n\006G" +
+      "etStd\022\".SsccTransactionalAggregateReques" +
+      "t\032#.SsccTransactionalAggregateResponse\022T" +
+      "\n\tGetMedian\022\".SsccTransactionalAggregate" +
+      "Request\032#.SsccTransactionalAggregateResp" +
+      "onseBT\n;org.apache.hadoop.hbase.coproces" +
+      "sor.transactional.generatedB\020SsccRegionP" +
+      "rotosH\001\210\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -27846,134 +33623,170 @@ public final class SsccRegionProtos {
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccCheckAndDeleteResponse_descriptor,
               new java.lang.String[] { "Result", "Exception", "HasException", });
-          internal_static_SsccCheckAndPutRequest_descriptor =
+          internal_static_SsccCheckAndDeleteRegionTxRequest_descriptor =
             getDescriptor().getMessageTypes().get(12);
+          internal_static_SsccCheckAndDeleteRegionTxRequest_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_SsccCheckAndDeleteRegionTxRequest_descriptor,
+              new java.lang.String[] { "TransactionId", "StartId", "RegionName", "Row", "Family", "Qualifier", "Value", "Delete", "AutoCommit", });
+          internal_static_SsccCheckAndDeleteRegionTxResponse_descriptor =
+            getDescriptor().getMessageTypes().get(13);
+          internal_static_SsccCheckAndDeleteRegionTxResponse_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_SsccCheckAndDeleteRegionTxResponse_descriptor,
+              new java.lang.String[] { "Result", "Exception", "HasException", });
+          internal_static_SsccCheckAndPutRequest_descriptor =
+            getDescriptor().getMessageTypes().get(14);
           internal_static_SsccCheckAndPutRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccCheckAndPutRequest_descriptor,
               new java.lang.String[] { "TransactionId", "StartId", "RegionName", "Row", "Family", "Qualifier", "Value", "Put", });
           internal_static_SsccCheckAndPutResponse_descriptor =
-            getDescriptor().getMessageTypes().get(13);
+            getDescriptor().getMessageTypes().get(15);
           internal_static_SsccCheckAndPutResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccCheckAndPutResponse_descriptor,
               new java.lang.String[] { "Result", "Exception", "HasException", });
+          internal_static_SsccCheckAndPutRegionTxRequest_descriptor =
+            getDescriptor().getMessageTypes().get(16);
+          internal_static_SsccCheckAndPutRegionTxRequest_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_SsccCheckAndPutRegionTxRequest_descriptor,
+              new java.lang.String[] { "Tid", "StartId", "RegionName", "Row", "Family", "Qualifier", "Value", "Put", "AutoCommit", });
+          internal_static_SsccCheckAndPutRegionTxResponse_descriptor =
+            getDescriptor().getMessageTypes().get(17);
+          internal_static_SsccCheckAndPutRegionTxResponse_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_SsccCheckAndPutRegionTxResponse_descriptor,
+              new java.lang.String[] { "Result", "Exception", "HasException", });
           internal_static_SsccCloseScannerRequest_descriptor =
-            getDescriptor().getMessageTypes().get(14);
+            getDescriptor().getMessageTypes().get(18);
           internal_static_SsccCloseScannerRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccCloseScannerRequest_descriptor,
               new java.lang.String[] { "TransactionId", "RegionName", "ScannerId", });
           internal_static_SsccCloseScannerResponse_descriptor =
-            getDescriptor().getMessageTypes().get(15);
+            getDescriptor().getMessageTypes().get(19);
           internal_static_SsccCloseScannerResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccCloseScannerResponse_descriptor,
               new java.lang.String[] { "Exception", "HasException", });
           internal_static_SsccDeleteMultipleTransactionalRequest_descriptor =
-            getDescriptor().getMessageTypes().get(16);
+            getDescriptor().getMessageTypes().get(20);
           internal_static_SsccDeleteMultipleTransactionalRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccDeleteMultipleTransactionalRequest_descriptor,
               new java.lang.String[] { "TransactionId", "StartId", "RegionName", "Delete", });
           internal_static_SsccDeleteMultipleTransactionalResponse_descriptor =
-            getDescriptor().getMessageTypes().get(17);
+            getDescriptor().getMessageTypes().get(21);
           internal_static_SsccDeleteMultipleTransactionalResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccDeleteMultipleTransactionalResponse_descriptor,
               new java.lang.String[] { "Result", "Exception", "HasException", "Status", });
           internal_static_SsccDeleteTransactionalRequest_descriptor =
-            getDescriptor().getMessageTypes().get(18);
+            getDescriptor().getMessageTypes().get(22);
           internal_static_SsccDeleteTransactionalRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccDeleteTransactionalRequest_descriptor,
               new java.lang.String[] { "TransactionId", "StartId", "RegionName", "Delete", });
           internal_static_SsccDeleteTransactionalResponse_descriptor =
-            getDescriptor().getMessageTypes().get(19);
+            getDescriptor().getMessageTypes().get(23);
           internal_static_SsccDeleteTransactionalResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccDeleteTransactionalResponse_descriptor,
               new java.lang.String[] { "Result", "Exception", "HasException", "Status", });
           internal_static_SsccGetTransactionalRequest_descriptor =
-            getDescriptor().getMessageTypes().get(20);
+            getDescriptor().getMessageTypes().get(24);
           internal_static_SsccGetTransactionalRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccGetTransactionalRequest_descriptor,
               new java.lang.String[] { "TransactionId", "StartId", "RegionName", "Get", });
           internal_static_SsccGetTransactionalResponse_descriptor =
-            getDescriptor().getMessageTypes().get(21);
+            getDescriptor().getMessageTypes().get(25);
           internal_static_SsccGetTransactionalResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccGetTransactionalResponse_descriptor,
               new java.lang.String[] { "Result", "Exception", "HasException", });
           internal_static_SsccOpenScannerRequest_descriptor =
-            getDescriptor().getMessageTypes().get(22);
+            getDescriptor().getMessageTypes().get(26);
           internal_static_SsccOpenScannerRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccOpenScannerRequest_descriptor,
               new java.lang.String[] { "TransactionId", "StartId", "RegionName", "Scan", });
           internal_static_SsccOpenScannerResponse_descriptor =
-            getDescriptor().getMessageTypes().get(23);
+            getDescriptor().getMessageTypes().get(27);
           internal_static_SsccOpenScannerResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccOpenScannerResponse_descriptor,
               new java.lang.String[] { "ScannerId", "Exception", "HasException", });
           internal_static_SsccPerformScanRequest_descriptor =
-            getDescriptor().getMessageTypes().get(24);
+            getDescriptor().getMessageTypes().get(28);
           internal_static_SsccPerformScanRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccPerformScanRequest_descriptor,
               new java.lang.String[] { "TransactionId", "StartId", "RegionName", "ScannerId", "NumberOfRows", "CloseScanner", "NextCallSeq", });
           internal_static_SsccPerformScanResponse_descriptor =
-            getDescriptor().getMessageTypes().get(25);
+            getDescriptor().getMessageTypes().get(29);
           internal_static_SsccPerformScanResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccPerformScanResponse_descriptor,
               new java.lang.String[] { "Result", "Count", "NextCallSeq", "HasMore", "Exception", "HasException", });
+          internal_static_SsccPutRegionTxRequest_descriptor =
+            getDescriptor().getMessageTypes().get(30);
+          internal_static_SsccPutRegionTxRequest_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_SsccPutRegionTxRequest_descriptor,
+              new java.lang.String[] { "Tid", "StartId", "RegionName", "Put", "IsStateless", "AutoCommit", });
+          internal_static_SsccPutRegionTxResponse_descriptor =
+            getDescriptor().getMessageTypes().get(31);
+          internal_static_SsccPutRegionTxResponse_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_SsccPutRegionTxResponse_descriptor,
+              new java.lang.String[] { "Result", "Exception", "HasException", "Status", });
           internal_static_SsccPutTransactionalRequest_descriptor =
-            getDescriptor().getMessageTypes().get(26);
+            getDescriptor().getMessageTypes().get(32);
           internal_static_SsccPutTransactionalRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccPutTransactionalRequest_descriptor,
               new java.lang.String[] { "TransactionId", "StartId", "RegionName", "Put", "IsStateless", });
           internal_static_SsccPutTransactionalResponse_descriptor =
-            getDescriptor().getMessageTypes().get(27);
+            getDescriptor().getMessageTypes().get(33);
           internal_static_SsccPutTransactionalResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccPutTransactionalResponse_descriptor,
               new java.lang.String[] { "Result", "Exception", "HasException", "Status", });
           internal_static_SsccPutMultipleTransactionalRequest_descriptor =
-            getDescriptor().getMessageTypes().get(28);
+            getDescriptor().getMessageTypes().get(34);
           internal_static_SsccPutMultipleTransactionalRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccPutMultipleTransactionalRequest_descriptor,
               new java.lang.String[] { "TransactionId", "StartId", "RegionName", "Put", "IsStateless", });
           internal_static_SsccPutMultipleTransactionalResponse_descriptor =
-            getDescriptor().getMessageTypes().get(29);
+            getDescriptor().getMessageTypes().get(35);
           internal_static_SsccPutMultipleTransactionalResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccPutMultipleTransactionalResponse_descriptor,
               new java.lang.String[] { "Result", "Exception", "HasException", "Status", });
           internal_static_SsccRecoveryRequestRequest_descriptor =
-            getDescriptor().getMessageTypes().get(30);
+            getDescriptor().getMessageTypes().get(36);
           internal_static_SsccRecoveryRequestRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccRecoveryRequestRequest_descriptor,
               new java.lang.String[] { "TransactionId", "StartId", "RegionName", "TmId", });
           internal_static_SsccRecoveryRequestResponse_descriptor =
-            getDescriptor().getMessageTypes().get(31);
+            getDescriptor().getMessageTypes().get(37);
           internal_static_SsccRecoveryRequestResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccRecoveryRequestResponse_descriptor,
               new java.lang.String[] { "Result", "Exception", "HasException", });
           internal_static_SsccTransactionalAggregateRequest_descriptor =
-            getDescriptor().getMessageTypes().get(32);
+            getDescriptor().getMessageTypes().get(38);
           internal_static_SsccTransactionalAggregateRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccTransactionalAggregateRequest_descriptor,
               new java.lang.String[] { "RegionName", "TransactionId", "StartId", "InterpreterClassName", "Scan", "InterpreterSpecificBytes", });
           internal_static_SsccTransactionalAggregateResponse_descriptor =
-            getDescriptor().getMessageTypes().get(33);
+            getDescriptor().getMessageTypes().get(39);
           internal_static_SsccTransactionalAggregateResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccTransactionalAggregateResponse_descriptor,
