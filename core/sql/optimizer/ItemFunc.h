@@ -262,6 +262,8 @@ public:
   virtual ValueId mapAndRewrite(ValueIdMap &map,
 				NABoolean mapDownwards = FALSE);
 
+  virtual NABoolean duplicateMatch(const ItemExpr & other) const;
+
   // get a printable string that identifies the operator
   virtual const NAString getText() const;
 

@@ -4505,10 +4505,18 @@ Int32 ItemExpr::convertToValueIdList(ValueIdList &vl,
 	    {
 	      currScope->context()->inGroupByOrdinal() = TRUE;
 	    }
+          if (current_ie->isGroupByExpr())
+	    {
+	      currScope->context()->inGroupByExpr() = TRUE;
+	    }
 	  boundExpr = (ItemExpr *) (current_ie->bindNodeRoot(bindWA));
 	  if (current_ie->inGroupByOrdinal())
 	    {
 	      currScope->context()->inGroupByOrdinal() = FALSE;
+	    }
+          if (current_ie->isGroupByExpr())
+	    {
+	      currScope->context()->inGroupByExpr() = FALSE;
 	    }
 
 	  if (!boundExpr || bindWA->errStatus())
@@ -4896,6 +4904,14 @@ ItemExpr *Aggregate::bindNode(BindWA *bindWA)
   if (context->inAggregate()) {
     // 4009 An aggregate is not allowed inside an aggregate.
     *CmpCommon::diags() << DgSqlCode(-4009);
+    bindWA->setErrStatus();
+    return NULL;
+  }
+
+  // an aggregate is not allowed to be referenced as a group by expr.
+  if (bindWA->getCurrentScope()->context()->inGroupByExpr()) {
+    *CmpCommon::diags() << DgSqlCode(-4197)
+                        << DgString0("GROUP BY");
     bindWA->setErrStatus();
     return NULL;
   }

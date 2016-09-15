@@ -6111,6 +6111,22 @@ NABoolean Aggregate::operator== (const ItemExpr& other) const	// virtual meth
   return TRUE;
 }
 
+NABoolean Aggregate::duplicateMatch(const ItemExpr& other) const
+{
+  if (NOT genericDuplicateMatch(other))
+    return FALSE;
+
+  const Aggregate &ag = (Aggregate &)other;
+
+  if (isDistinct_ != ag.isDistinct_)
+    return FALSE;
+
+  if (NOT isSensitiveToDuplicates())
+    return FALSE;
+
+  return TRUE;
+}
+
 NABoolean Aggregate::isCovered
                       (const ValueIdSet& newExternalInputs,
 		       const GroupAttributes& coveringGA,

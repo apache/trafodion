@@ -1365,7 +1365,6 @@ NABoolean displayDuringRegressRun(DefaultConstants attr)
       (attr == ALLOW_INCOMPATIBLE_OPERATIONS) ||
       (attr == ALLOW_FIRSTN_IN_SUBQUERIES) ||
       (attr == ALLOW_ORDER_BY_IN_SUBQUERIES) ||
-      (attr == GROUP_BY_USING_ORDINAL) ||
       (attr == GROUP_OR_ORDER_BY_EXPR))
     return FALSE;
   else

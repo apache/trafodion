@@ -15,7 +15,7 @@
 >>invoke t032t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T032T1
--- Definition current  Sun Sep 11 15:22:27 2016
+-- Definition current  Wed Sep 14 14:50:10 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -140,7 +140,7 @@ B
 (EXPR)                        
 ------------------------------
 
-RANDOMVAL=262036305           
+RANDOMVAL=1244080372          
 
 --- 1 row(s) selected.
 >>select random() from (values(1)) x(a);
@@ -222,6 +222,50 @@ Z
           1
 
 --- 1 row(s) selected.
+>>select count(*) from t032t1 order by count(*);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>select count(*) from t032t1 order by count(*) desc;
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>select count(distinct a) from t032t1 order by count(distinct a);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>
+>>-- error cases
+>>select count(a) from t032t1 order by count(distinct a);
+
+*** ERROR[4197] This expression cannot be used in the ORDER BY clause.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select sum(a), b from t032t1 group by sum(a), b;
+
+*** ERROR[4197] This expression cannot be used in the GROUP BY clause.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select sum(a) from t032t1 group by 1;
+
+*** ERROR[4185] Select list index is not allowed to be specified in the GROUP BY clause for this query.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- incompatible operations
 >>select a from t032t1 where a = '2';
@@ -317,7 +361,7 @@ A
 >>invoke t032t2;
 
 -- Definition of Trafodion table TRAFODION.T032SCH.T032T2
--- Definition current  Sun Sep 11 15:22:36 2016
+-- Definition current  Wed Sep 14 14:50:21 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
