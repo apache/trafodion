@@ -631,6 +631,22 @@ A            B            C
 
 --- 4 row(s) selected.
 >>
+>>merge into t015t3 on a = 1
++>  when matched then update set b = 20, c = 40;
+
+--- 1 row(s) updated.
+>>select * from t015t3;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           20           40
+          2            3            4
+          3            3            4
+          4            5            6
+
+--- 4 row(s) selected.
+>>
 >>-- test fix to bugzilla 3405
 >>delete from t015t3;
 

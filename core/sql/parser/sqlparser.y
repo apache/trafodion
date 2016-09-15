@@ -19564,7 +19564,7 @@ merge_stmt_when_matched     : TOK_WHEN TOK_MATCHED TOK_THEN TOK_UPDATE TOK_SET m
 			    }
 
 /* type item */
-merge_stmt_set_clause       : set_clause
+merge_stmt_set_clause       : set_update_commit_list
 
 /* type ptr_placeholder */
 merge_stmt_when_not_matched : TOK_WHEN TOK_NOT TOK_MATCHED TOK_THEN TOK_INSERT merge_insert_with_values
@@ -33665,6 +33665,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_RESTORE
                       | TOK_RESUME
                       | TOK_RETRIES
+                      | TOK_RETURNS
                       | TOK_RMAX
                       | TOK_RMIN
                       | TOK_ROUND
