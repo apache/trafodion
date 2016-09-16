@@ -170,9 +170,9 @@ public:
   NABoolean advanceHistoryRow(NABoolean checkMemoryPressure = FALSE);
   //void unAdvanceHistoryRow();
   inline NABoolean isHistoryFull() const;
-  inline NABoolean isHistoryEmpty() const;
+  inline NABoolean isHistoryEmpty() const;//if the history buffer is empty (i.e. histRowsToReturn_ == 0)
   inline NABoolean canReturnRows() const;
-  inline Lng32 numFollowingRows() const;
+  inline Lng32 numFollowingRows() const;//number of rows following the current row
   void advanceReturnHistoryRow();
   //inline char * getCurrentRetHistRowPtr() 
   inline void updateHistRowsToReturn() ;

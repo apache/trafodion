@@ -368,19 +368,19 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
  // assignment, like string to int. The assignment will be done by
  // implicitely CASTing one operand to another as long as CAST between
  // the two is supported. See binder for details.
-  DDkwd__(ALLOW_INCOMPATIBLE_ASSIGNMENT,	"OFF"),
+  DDkwd__(ALLOW_INCOMPATIBLE_ASSIGNMENT,	"ON"),
 
  // this default, if set to ON, will allow certain incompatible
  // comparisons, like string to int. The comparison will be done by
  // implicitely CASTing one operand to another as long as CAST between
  // the two is supported. See binder for details.
-  DDkwd__(ALLOW_INCOMPATIBLE_COMPARISON,	"OFF"),
+  DDkwd__(ALLOW_INCOMPATIBLE_COMPARISON,	"ON"),
 
  // this default, if set to ON, will allow certain incompatible
  // comparisons. This includes incompatible comparisons, assignments,
  // conversions, UNION, arith, string and case stmts.
  // See binder(BindItemExpr.cpp, SynthType.cpp) for details.
-  DDkwd__(ALLOW_INCOMPATIBLE_OPERATIONS,	"OFF"),
+  DDkwd__(ALLOW_INCOMPATIBLE_OPERATIONS,	"ON"),
 
   // if set to 2, the replicateNonKeyVEGPred() mdamkey method
   // will try to use inputs to filter out VEG elements that are not
