@@ -12942,6 +12942,7 @@ const NAString MathFunc::getText() const
     case ITM_FLOOR:        return "floor";
     case ITM_LOG:          return "log";
     case ITM_LOG10:        return "log10";
+    case ITM_LOG2:         return "log2";
     case ITM_PI:           return "pi";
     case ITM_POWER:        return "power";
     case ITM_RADIANS:      return "radians";

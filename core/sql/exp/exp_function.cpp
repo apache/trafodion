@@ -202,6 +202,9 @@ ExFunctionPack::ExFunctionPack(){};
 ExUnPackCol::ExUnPackCol(){};
 ExFunctionRangeLookup::ExFunctionRangeLookup(){};
 ExAuditImage::ExAuditImage(){};
+ExFunctionIsIP::ExFunctionIsIP(){};
+ExFunctionInetAton::ExFunctionInetAton(){};
+ExFunctionInetNtoa::ExFunctionInetNtoa(){};
 ExFunctionAscii::ExFunctionAscii(OperatorTypeEnum oper_type,
 				 Attributes ** attr, Space * space)
      : ex_function_clause(oper_type, 2, attr, space)
@@ -210,6 +213,27 @@ ExFunctionAscii::ExFunctionAscii(OperatorTypeEnum oper_type,
 };
 
 ExFunctionChar::ExFunctionChar(OperatorTypeEnum oper_type,
+			       Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 2, attr, space)
+{
+  
+};
+
+ExFunctionIsIP::ExFunctionIsIP(OperatorTypeEnum oper_type,
+			       Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 2, attr, space)
+{
+  
+};
+            
+ExFunctionInetAton::ExFunctionInetAton(OperatorTypeEnum oper_type,
+			       Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 2, attr, space)
+{
+  
+};
+
+ExFunctionInetNtoa::ExFunctionInetNtoa(OperatorTypeEnum oper_type,
 			       Attributes ** attr, Space * space)
      : ex_function_clause(oper_type, 2, attr, space)
 {
@@ -7724,5 +7748,347 @@ Lng32 ExFunctionExtractColumns::unpack (void * base, void * reallocator)
    if (extractColList_.unpack(base)) return -1;
    return unpackClause(base, reallocator);
 }
+
+//helper function, convert a string into IPV4 , if valid, it can support leading and padding space
+static Lng32 string2ipv4(char *srcData, Lng32 slen, unsigned int *inet_addr)
+{
+   Int16 i = 0, j = 0 , p=0, leadingspace=0;
+   char buf[16]; 
+   Int16 dot=0;
+
+   if(slen < MIN_IPV4_STRING_LEN ) 
+     return 0;
+
+   unsigned char *ipv4_bytes= (unsigned char *)inet_addr;
+
+   if(srcData[0] == ' ')
+   { 
+     char * next = srcData;
+     while (*next == ' ')
+     {
+       leadingspace++;
+       next++;
+     }
+   }
+   
+      
+   for(i=leadingspace , j = 0; i < slen ; i++)
+   {
+      if(srcData[i] == '.')
+      {
+         buf[j]=0;
+         p = str_atoi(buf, j);
+         if( p < 0 || p > 255 || j == 0) 
+         {
+           return 0;
+         }
+         else
+         {
+           if(ipv4_bytes)
+             ipv4_bytes[dot] = (unsigned char)p;
+         }
+         j = 0;
+         dot++;
+         if(dot > 3) return 0;
+      }
+      else if(srcData[i] == ' ')
+      {
+        break; //space is terminator
+      }
+      else
+      {
+        if(isdigit(srcData[i]) == 0) 
+         {
+           return 0;
+         }
+        else
+         buf[j] = srcData[i];
+        j++;
+      }
+   } 
+   Int16 stoppos=i;
+
+   // the last part
+   buf[j]=0;  //null terminator
+
+   for(i = 0; i < j; i ++) //check for invalid character
+   {
+     if(isdigit(buf[i]) == 0)
+     {
+       return 0;
+     }
+   }
+   p = str_atoi(buf, j);
+   if( p < 0 || p > 255 || j == 0) // check for invalid number
+   {
+     return 0;
+   }
+   else
+   {
+     if(ipv4_bytes)
+       ipv4_bytes[dot] = (unsigned char)p;
+   }
+
+   //if terminated by space
+   if( stoppos < slen -1)
+   {
+     for(j = stoppos ; j < slen; j++)
+     {
+       if(srcData[j] != ' ') return 0;
+     }
+   }
+
+   if(dot != 3) 
+     return 0;
+   else
+     return 1;
+  
+}
+
+ex_expr::exp_return_type ExFunctionInetAton::eval(char * op_data[],
+                                                        CollHeap *heap,
+                                                        ComDiagsArea **diags)
+{
+   char * srcData = op_data[1];
+   char * resultData = op_data[0];
+
+  Attributes *resultAttr   = getOperand(0);
+  Attributes *srcAttr   = getOperand(1);
+
+  Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
+  Lng32 rlen = resultAttr->getLength();
+
+  unsigned int addr;
+  int ret=string2ipv4(srcData, slen, &addr);
+  if(ret)
+  {
+       *(unsigned int *)op_data[0]=addr;
+       return ex_expr::EXPR_OK;
+  } 
+  else
+  {
+      ExRaiseSqlError(heap, diags, EXE_INVALID_CHARACTER);
+      *(*diags) << DgString0("IP format") << DgString1("INET_ATON FUNCTION"); 
+      return ex_expr::EXPR_ERROR;
+  }
+}
+
+
+ex_expr::exp_return_type ExFunctionInetNtoa::eval(char * op_data[],
+                                                        CollHeap *heap,
+                                                        ComDiagsArea **diags)
+{
+   char buf[16]; //big enough
+   unsigned long addr =  *(unsigned long*)op_data[1];
+   char * resultData = op_data[0];
+   Attributes *resultAttr = getOperand(0);
+   const unsigned char *ipv4_bytes= (const unsigned char *) &addr;
+
+   if( addr > 4294967295 ) 
+   {
+      ExRaiseSqlError(heap, diags, EXE_BAD_ARG_TO_MATH_FUNC);
+      *(*diags) << DgString0("INET_NTOA"); 
+      return ex_expr::EXPR_ERROR;
+   }
+
+   str_sprintf(buf, "%d.%d.%d.%d",
+          ipv4_bytes[0], ipv4_bytes[1], ipv4_bytes[2], ipv4_bytes[3]);
+   int slen = str_len(buf);
+   str_cpy_all(resultData, buf, slen);
+   getOperand(0)->setVarLength(slen, op_data[-MAX_OPERANDS]);
+
+   return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type ExFunctionIsIP::eval(char * op_data[],
+                                                        CollHeap *heap,
+                                                        ComDiagsArea **diags)
+{
+  
+  char * resultData = op_data[0];
+  char * srcData = op_data[1];
+  Int16 i = 0, j = 0 , p=0;
+  Attributes *resultAttr   = getOperand(0);
+  Attributes *srcAttr   = getOperand(1);
+
+  Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
+  Lng32 rlen = resultAttr->getLength();
+  
+  if(getOperType() == ITM_ISIPV4)
+  { 
+   if(string2ipv4(srcData, slen, NULL) == 0)
+   {
+       *(Int16 *)op_data[0] = 0; 
+       return ex_expr::EXPR_OK;
+   }
+   else
+   {
+       *(Int16 *)op_data[0] = 1; 
+       return ex_expr::EXPR_OK;
+   }
+ 
+  }
+  else
+  {
+    Int16 gapcounter = 0 , portidx = 0;;
+    char portion[IPV6_PARTS_NUM][MAX_IPV6_STRING_LEN + 1];
+    char trimdata[MAX_IPV6_STRING_LEN + 1];
+    str_pad(trimdata,MAX_IPV6_STRING_LEN + 1, 0);
+    
+    if(slen < MIN_IPV6_STRING_LEN ) 
+    {
+      *(Int16 *)op_data[0] = 0;
+      return ex_expr::EXPR_OK;
+    }
+
+    char *ptr= srcData;
+
+    //cannot start with single :
+    if (*ptr == ':')
+    {
+      if (*(ptr+1) != ':')
+      {
+        *(Int16 *)op_data[0] = 0;
+        return ex_expr::EXPR_OK;
+      }
+    }
+    else if (*ptr == ' ')
+    {
+      while(*ptr==' ') ptr++;
+    }     
+    
+    char * start=ptr;
+    if(slen - (srcData - ptr) > MAX_IPV6_STRING_LEN ) // must be padding space
+    {
+       if( start[MAX_IPV6_STRING_LEN] != ' ')
+       {
+        *(Int16 *)op_data[0] = 0;
+        return ex_expr::EXPR_OK;
+       }
+       else { 
+         for(j = MAX_IPV6_STRING_LEN; j >=0; j--)
+         {
+           if(ptr[j] != ' ') //stop, j is the last non-space char
+             break;
+         }
+         str_cpy_all(trimdata,start, j);
+         start = trimdata;
+       }
+    } 
+
+    char ipv4[MAX_IPV6_STRING_LEN + 1]; 
+    j = 0;
+    int ipv4idx = 0;
+    // try to split the string into portions delieted by ':'
+    // also check '::', call it gap, there is only up to 1 gap
+    // if there is a gap, portion number can be smaller than 8
+    // without gap, portion number should be 8
+    // each portion must be 16 bit integer in HEX format
+    // leading 0 can be omit
+    for(i = 0; i< slen; i++)
+    {
+      if(start[i] == ':')
+      {
+        portion[portidx][j] = 0; //set the terminator
+
+        if(start[i+1] == ':')
+        {
+          if(j != 0)  //some characters are already saved into current portion
+            portidx++;
+          gapcounter++;
+          j = 0; //reset temp buffer pointer
+          i++; 
+          continue;
+        }
+        else
+        {
+          //new portion start
+          if( j == 0 )
+          {
+            *(Int16 *)op_data[0] = 0;
+            return ex_expr::EXPR_OK;
+          }
+          portidx++;
+          j=0;
+          continue;     
+        }
+      }     
+      else if( start[i] == '.') //ipv4 mixed format
+      {
+        if( ipv4idx > 0 ) 
+        {
+          *(Int16 *)op_data[0] = 0; 
+          return ex_expr::EXPR_OK;
+        }
+   
+        str_cpy_all(ipv4, portion[portidx],str_len(portion[portidx]));
+        if(strlen(start+i) < MAX_IPV4_STRING_LEN)  //15 is the maximum IPV4 string length
+          str_cat((const char*)ipv4, start+i, ipv4);
+        else
+        {
+          *(Int16 *)op_data[0] = 0; 
+          return ex_expr::EXPR_OK;
+        }
+         
+        if(string2ipv4(ipv4, strlen(ipv4), NULL) == 0)
+        {
+          *(Int16 *)op_data[0] = 0; 
+          return ex_expr::EXPR_OK;
+        }
+        else
+        {
+          ipv4idx = 2;  //ipv4 use 2 portions, 32 bits
+          break; // ipv4 string must be the last portion
+        }
+      }
+
+      portion[portidx][j] = start[i]; 
+      j++;
+      
+    }
+
+    if(gapcounter > 1 || portidx > IPV6_PARTS_NUM - 1)
+    { 
+      *(Int16 *)op_data[0] = 0; 
+      return ex_expr::EXPR_OK;
+    }
+    else if(gapcounter ==0 && portidx+ipv4idx < IPV6_PARTS_NUM - 1)
+    { 
+      *(Int16 *)op_data[0] = 0; 
+      return ex_expr::EXPR_OK;
+    }
+
+    //check each IPV6 portion 
+    for(i =0; i < portidx ; i++)
+    {
+      int len = strlen(portion[i]);
+      if( len > 4)  //IPV4 portion can be longer than 4 chars
+      {
+        if(ipv4idx == 0 || ((ipv4idx == 2) && ( i != portidx -1)  ) )  // no IPV4 portion, or this is not the IPV4 portion
+        {
+          *(Int16 *)op_data[0] = 0;
+          return ex_expr::EXPR_OK;
+        }
+      }
+      for(j = 0; j < len; j++)
+      {
+        if( (portion[i][j] >= 'A' && portion[i][j] <= 'F') || 
+            (portion[i][j] >= 'a' && portion[i][j] <= 'f') ||
+            (portion[i][j] >= '0' && portion[i][j] <= '9')  
+          ) //good
+            continue;
+        else
+        {
+          *(Int16 *)op_data[0] = 0; 
+          return ex_expr::EXPR_OK;
+        } 
+      }
+    }
+    //everything is good, this is IPV6
+    *(Int16 *)op_data[0] = 1; 
+    return ex_expr::EXPR_OK;
+  }
+}
+
 // LCOV_EXCL_STOP
 #pragma warn(1506)  // warning elimination 

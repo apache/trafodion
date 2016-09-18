@@ -398,6 +398,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_NAME                /* ANSI SQL non-reserved word */
 %token <tokval> TOK_UNNAMED             /* ANSI SQL non-reserved word */
 %token <tokval> TOK_INDICATOR_TYPE      /* Tandem extension non-reserved word */
+%token <tokval> TOK_INET_ATON           /* MySQL extension non-reserved word */
+%token <tokval> TOK_INET_NTOA           /* MySQL extension non-reserved word */
 %token <tokval> TOK_VARIABLE_POINTER    /* Tandem extension non-reserved word */
 %token <tokval> TOK_INDICATOR_POINTER   /* Tandem extension non-reserved word */
 %token <tokval> TOK_RETURNED_LENGTH     /* ANSI SQL non-reserved word */
@@ -803,6 +805,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_IUD_LOG_TABLE          
 %token <tokval> TOK_RANGE_LOG_TABLE		//++ MV
 %token <tokval> TOK_LOG10
+%token <tokval> TOK_LOG2
 %token <tokval> TOK_LONGWVARCHAR
 
 %token <tokval> TOK_LOW_VALUE           /* Tandem extension non-reserved word */
@@ -1292,6 +1295,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_INSERTLOG			// MV 
 %token <tokval> TOK_INVALID
 %token <tokval> TOK_INVALIDATE
+%token <tokval> TOK_ISIPV4
+%token <tokval> TOK_ISIPV6
 %token <tokval> TOK_ISLACK              /* Tandem extension */
 %token <tokval> TOK_K                   /* Tandem extension */
 %token <tokval> TOK_KEY
@@ -9583,6 +9588,7 @@ math_func_1_operand :
            |  TOK_FLOOR {$$ = ITM_FLOOR;}
            |  TOK_LOG {$$ = ITM_LOG;}
            |  TOK_LOG10 {$$ = ITM_LOG10;}
+           |  TOK_LOG2 {$$ = ITM_LOG2;}
            |  TOK_RADIANS {$$ = ITM_RADIANS;}
            |  TOK_SIN {$$ = ITM_SIN;}
            |  TOK_SINH {$$ = ITM_SINH;}
@@ -9648,7 +9654,34 @@ misc_function :
                             CmpCommon::statementHeap(), 
                             1, $3);
                 }
-
+     | TOK_ISIPV4 '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_ISIPV4,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+     | TOK_ISIPV6 '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_ISIPV6,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+     | TOK_INET_ATON '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_INET_ATON,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+     | TOK_INET_NTOA '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_INET_NTOA,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
      | TOK_ISNULL '(' value_expression ',' value_expression ')'
                   {
                     $$ = new (PARSERHEAP())
@@ -33692,8 +33725,12 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_HBASE_TIMESTAMP
                       | TOK_HBASE_VERSION
                       | TOK_HIVEMD
+                      | TOK_INET_ATON
+                      | TOK_INET_NTOA
                       | TOK_INITIAL
                       | TOK_INSTR
+                      | TOK_ISIPV4
+                      | TOK_ISIPV6
                       | TOK_KEY_RANGE_COMPARE
                       | TOK_JULIANTIMESTAMP
                       | TOK_LASTNOTNULL
@@ -33704,6 +33741,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_LOCATE
                       | TOK_LOG
                       | TOK_LOG10
+                      | TOK_LOG2
                       | TOK_LPAD
                       | TOK_LTRIM
                       | TOK_MAVG

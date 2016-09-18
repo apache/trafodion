@@ -3161,6 +3161,11 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
   ItemExpr * ie = NULL;
   switch (getOperatorType())
     {
+    case ITM_ISIPV4:
+    case ITM_ISIPV6:
+      {
+         break;
+      }
     case ITM_NULLIFZERO:
       {
 	// binder has already verified that child is numeric
