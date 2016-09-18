@@ -341,7 +341,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Tue Jun 21 06:53:37 2016
+-- Definition current  Sat Sep 17 23:53:11 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -359,7 +359,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Tue Jun 21 06:53:37 2016
+-- Definition current  Sat Sep 17 23:53:11 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -374,7 +374,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Tue Jun 21 06:53:38 2016
+-- Definition current  Sat Sep 17 23:53:11 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -391,7 +391,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Tue Jun 21 06:53:42 2016
+-- Definition current  Sat Sep 17 23:53:19 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -406,7 +406,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Tue Jun 21 06:53:43 2016
+-- Definition current  Sat Sep 17 23:53:19 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -423,7 +423,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Tue Jun 21 06:53:46 2016
+-- Definition current  Sat Sep 17 23:53:22 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -438,7 +438,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Tue Jun 21 06:53:46 2016
+-- Definition current  Sat Sep 17 23:53:23 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -456,7 +456,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Tue Jun 21 06:53:46 2016
+-- Definition current  Sat Sep 17 23:53:23 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -471,7 +471,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Tue Jun 21 06:53:46 2016
+-- Definition current  Sat Sep 17 23:53:23 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -488,7 +488,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Tue Jun 21 06:53:53 2016
+-- Definition current  Sat Sep 17 23:53:32 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -503,7 +503,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Tue Jun 21 06:53:53 2016
+-- Definition current  Sat Sep 17 23:53:33 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -521,7 +521,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Tue Jun 21 06:53:58 2016
+-- Definition current  Sat Sep 17 23:53:37 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -536,7 +536,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Tue Jun 21 06:53:58 2016
+-- Definition current  Sat Sep 17 23:53:37 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -595,7 +595,7 @@ End of MXCI Session
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Tue Jun 21 06:54:14 2016
+-- Definition current  Sat Sep 17 23:53:58 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -692,6 +692,10 @@ T116T1
 
 --- SQL operation complete.
 >>
+>>set schema sch;
+
+--- SQL operation complete.
+>>
 >>-- ddl with autocommit off
 >>set transaction autocommit off;
 
@@ -704,7 +708,7 @@ T116T1
 --- SQL operation complete.
 >>invoke t116t2;
 
-*** ERROR[4082] Object TRAFODION.T116SCH1.T116T2 does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.T116T2 does not exist or is inaccessible.
 
 --- SQL operation failed with errors.
 >>create table t116t2 (a int);
@@ -712,8 +716,8 @@ T116T1
 --- SQL operation complete.
 >>invoke t116t2;
 
--- Definition of Trafodion table TRAFODION.T116SCH1.T116T2
--- Definition current  Tue Jun 21 06:55:12 2016
+-- Definition of Trafodion table TRAFODION.SCH.T116T2
+-- Definition current  Sat Sep 17 23:55:00 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -726,7 +730,7 @@ T116T1
 --- SQL operation complete.
 >>invoke t116t2;
 
-*** ERROR[4082] Object TRAFODION.T116SCH1.T116T2 does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.T116T2 does not exist or is inaccessible.
 
 --- SQL operation failed with errors.
 >>create table t116t2 (a int);
@@ -737,8 +741,8 @@ T116T1
 --- SQL operation complete.
 >>invoke t116t2;
 
--- Definition of Trafodion table TRAFODION.T116SCH1.T116T2
--- Definition current  Tue Jun 21 06:55:17 2016
+-- Definition of Trafodion table TRAFODION.SCH.T116T2
+-- Definition current  Sat Sep 17 23:55:13 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -784,7 +788,7 @@ T116T1
 --- SQL operation complete.
 >>create index t116t5_i1 on t116t5(c2);
 
-*** ERROR[1390] Object TRAFODION.T116SCH1.T116T5_I1 already exists in Trafodion.
+*** ERROR[1390] Object TRAFODION.SCH.T116T5_I1 already exists in Trafodion.
 
 --- SQL operation failed with errors.
 >>set parserflags 1;
@@ -803,14 +807,14 @@ T116T1
 
 *** ERROR[8110] Duplicate rows detected.
 
-*** ERROR[1053] Unique index TRAFODION.T116SCH1.T116T5_I2 could not be created because the specified column(s) contain duplicate data.
+*** ERROR[1053] Unique index TRAFODION.SCH.T116T5_I2 could not be created because the specified column(s) contain duplicate data.
 
 --- SQL operation failed with errors.
 >>create unique index t116t5_i2 on t116t5(c3);
 
 *** ERROR[8110] Duplicate rows detected.
 
-*** ERROR[1053] Unique index TRAFODION.T116SCH1.T116T5_I2 could not be created because the specified column(s) contain duplicate data.
+*** ERROR[1053] Unique index TRAFODION.SCH.T116T5_I2 could not be created because the specified column(s) contain duplicate data.
 
 --- SQL operation failed with errors.
 >>-- create unique index with no populate
@@ -822,35 +826,575 @@ T116T1
 
 *** ERROR[8110] Duplicate rows detected.
 
-*** ERROR[1053] Unique index TRAFODION.T116SCH1.T116T5_I2 could not be created because the specified column(s) contain duplicate data.
+*** ERROR[1053] Unique index TRAFODION.SCH.T116T5_I2 could not be created because the specified column(s) contain duplicate data.
 
 --- SQL operation failed with errors.
 >>populate index t116t5_i2 on t116t5;
 
 *** ERROR[8110] Duplicate rows detected.
 
-*** ERROR[1053] Unique index TRAFODION.T116SCH1.T116T5_I2 could not be created because the specified column(s) contain duplicate data.
+*** ERROR[1053] Unique index TRAFODION.SCH.T116T5_I2 could not be created because the specified column(s) contain duplicate data.
 
 --- SQL operation failed with errors.
+>>
+>>-- region transactions support
+>>create table t116t6 (a int not null primary key, b int);
+
+--- SQL operation complete.
+>>
+>>-- scenario 1, concurrent hbase transaction with insert(checkAndPut)
+>>begin work;
+
+--- SQL operation complete.
+>>insert into t116t6 values (1,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- insert a row using a concurrent hbase xn
+>>sh sqlci -iTEST116\(concurrent_hbase_xn_ins\) >> LOG116;
+Apache Trafodion Conversational Interface 2.1.0
+Copyright (c) 2015-2016 Apache Software Foundation
+>>?section concurrent_hbase_xn_ins
+>>cqd traf_use_region_xn 'OFF';
+
+--- SQL operation complete.
+>>prepare s from insert into trafodion.sch.t116t6 values (1,2);
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_insert                T116T6                1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- 1 row(s) inserted.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- should not show conflict
+>>commit work;
+
+--- SQL operation complete.
+>>select * from t116t6;
+
+A            B          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
+>>
+>>-- scenario 2, concurrent region transaction with insert(checkAndPut)
+>>delete from t116t6;
+
+--- 1 row(s) deleted.
+>>begin work;
+
+--- SQL operation complete.
+>>insert into t116t6 values (1,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- insert a row using a concurrent region xn
+>>sh sqlci -iTEST116\(concurrent_region_xn_ins\) >> LOG116;
+Apache Trafodion Conversational Interface 2.1.0
+Copyright (c) 2015-2016 Apache Software Foundation
+>>?section concurrent_region_xn_ins
+>>cqd traf_use_region_xn 'ON';
+
+--- SQL operation complete.
+>>prepare s from insert into trafodion.sch.t116t6 values (1,2);
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_insert      r         T116T6                1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- 1 row(s) inserted.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- should show conflict
+>>commit work;
+
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted.
+
+--- SQL operation failed with errors.
+>>select * from t116t6;
+
+A            B          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
+>>
+>>-- scenario 3, concurrent hbase transaction with upsert(put)
+>>delete from t116t6;
+
+--- 1 row(s) deleted.
+>>begin work;
+
+--- SQL operation complete.
+>>upsert into t116t6 values (1,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- upsert a row using a concurrent hbase xn
+>>sh sqlci -iTEST116\(concurrent_hbase_xn_ups\) >> LOG116;
+Apache Trafodion Conversational Interface 2.1.0
+Copyright (c) 2015-2016 Apache Software Foundation
+>>?section concurrent_hbase_xn_ups
+>>cqd traf_use_region_xn 'OFF';
+
+--- SQL operation complete.
+>>prepare s from upsert into trafodion.sch.t116t6 values (1,2);
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_upsert                T116T6                1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- 1 row(s) inserted.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- should not show conflict
+>>commit work;
+
+--- SQL operation complete.
+>>select * from t116t6;
+
+A            B          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
+>>
+>>-- scenario 4, concurrent region transaction with upsert(put)
+>>delete from t116t6;
+
+--- 1 row(s) deleted.
+>>begin work;
+
+--- SQL operation complete.
+>>upsert into t116t6 values (1,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- insert a row using a concurrent region xn
+>>sh sqlci -iTEST116\(concurrent_region_xn_ups\) >> LOG116;
+Apache Trafodion Conversational Interface 2.1.0
+Copyright (c) 2015-2016 Apache Software Foundation
+>>?section concurrent_region_xn_ups
+>>cqd traf_use_region_xn 'ON';
+
+--- SQL operation complete.
+>>prepare s from upsert into trafodion.sch.t116t6 values (1,2);
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_upsert      r         T116T6                1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- 1 row(s) inserted.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- should show conflict
+>>commit work;
+
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted.
+
+--- SQL operation failed with errors.
+>>select * from t116t6;
+
+A            B          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
+>>
+>>-- scenario 5, concurrent hbase transaction with delete
+>>delete from t116t6;
+
+--- 1 row(s) deleted.
+>>insert into t116t6 values (1,1);
+
+--- 1 row(s) inserted.
+>>begin work;
+
+--- SQL operation complete.
+>>delete from t116t6 where a = 1 and b > 0;
+
+--- 1 row(s) deleted.
+>>
+>>-- delete a row using a concurrent hbase xn
+>>sh sqlci -iTEST116\(concurrent_hbase_xn_del\) >> LOG116;
+Apache Trafodion Conversational Interface 2.1.0
+Copyright (c) 2015-2016 Apache Software Foundation
+>>?section concurrent_hbase_xn_del
+>>cqd traf_use_region_xn 'OFF';
+
+--- SQL operation complete.
+>>prepare s from delete from trafodion.sch.t116t6 where a = 1 and b > 0;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_delete                T116T6                1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- 1 row(s) deleted.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- should not show conflict
+>>commit work;
+
+--- SQL operation complete.
+>>select * from t116t6;
+
+--- 0 row(s) selected.
+>>
+>>-- scenario 6, concurrent region transaction with delete
+>>delete from t116t6;
+
+--- 0 row(s) deleted.
+>>insert into t116t6 values (1,1);
+
+--- 1 row(s) inserted.
+>>begin work;
+
+--- SQL operation complete.
+>>delete from t116t6 where a = 1 and b > 0;
+
+--- 1 row(s) deleted.
+>>
+>>-- delete a row using a concurrent region xn
+>>sh sqlci -iTEST116\(concurrent_region_xn_del\) >> LOG116;
+Apache Trafodion Conversational Interface 2.1.0
+Copyright (c) 2015-2016 Apache Software Foundation
+>>?section concurrent_region_xn_del
+>>cqd traf_use_region_xn 'ON';
+
+--- SQL operation complete.
+>>prepare s from delete from trafodion.sch.t116t6 where a = 1 and b > 0;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_delete      r         T116T6                1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- 1 row(s) deleted.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- should show conflict
+>>commit work;
+
+--- SQL operation complete.
+>>select * from t116t6;
+
+--- 0 row(s) selected.
+>>
+>>-- scenario 7, concurrent hbase transaction with checkanddelete
+>>delete from t116t6;
+
+--- 0 row(s) deleted.
+>>insert into t116t6 values (1,1);
+
+--- 1 row(s) inserted.
+>>begin work;
+
+--- SQL operation complete.
+>>delete from t116t6 where a = 1;
+
+--- 1 row(s) deleted.
+>>
+>>-- delete a row using a concurrent hbase xn
+>>sh sqlci -iTEST116\(concurrent_hbase_xn_checkanddel\) >> LOG116;
+Apache Trafodion Conversational Interface 2.1.0
+Copyright (c) 2015-2016 Apache Software Foundation
+>>?section concurrent_hbase_xn_checkanddel
+>>cqd traf_use_region_xn 'OFF';
+
+--- SQL operation complete.
+>>prepare s from delete from trafodion.sch.t116t6 where a = 1;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_delete                T116T6                1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- 1 row(s) deleted.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- should not show conflict
+>>commit work;
+
+--- SQL operation complete.
+>>select * from t116t6;
+
+--- 0 row(s) selected.
+>>
+>>-- scenario 8, concurrent region transaction with checkanddelete
+>>delete from t116t6;
+
+--- 0 row(s) deleted.
+>>insert into t116t6 values (1,1);
+
+--- 1 row(s) inserted.
+>>begin work;
+
+--- SQL operation complete.
+>>delete from t116t6 where a = 1;
+
+--- 1 row(s) deleted.
+>>
+>>-- delete a row using a concurrent region xn
+>>sh sqlci -iTEST116\(concurrent_region_xn_checkanddel\) >> LOG116;
+Apache Trafodion Conversational Interface 2.1.0
+Copyright (c) 2015-2016 Apache Software Foundation
+>>?section concurrent_region_xn_checkanddel
+>>cqd traf_use_region_xn 'ON';
+
+--- SQL operation complete.
+>>prepare s from delete from trafodion.sch.t116t6 where a = 1;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_delete      r         T116T6                1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- 1 row(s) deleted.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- should show conflict
+>>commit work;
+
+--- SQL operation complete.
+>>select * from t116t6;
+
+--- 0 row(s) selected.
+>>
+>>-- scenario 9, concurrent hbase transaction with checkandupdate
+>>delete from t116t6;
+
+--- 0 row(s) deleted.
+>>insert into t116t6 values (1,1);
+
+--- 1 row(s) inserted.
+>>begin work;
+
+--- SQL operation complete.
+>>update t116t6 set b = 333 where a = 1;
+
+--- 1 row(s) updated.
+>>
+>>-- update row using a concurrent hbase xn
+>>sh sqlci -iTEST116\(concurrent_hbase_xn_checkandupd\) >> LOG116;
+Apache Trafodion Conversational Interface 2.1.0
+Copyright (c) 2015-2016 Apache Software Foundation
+>>?section concurrent_hbase_xn_checkandupd
+>>cqd traf_use_region_xn 'OFF';
+
+--- SQL operation complete.
+>>prepare s from update trafodion.sch.t116t6 set b = 111 where a = 1;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update                T116T6                1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- 1 row(s) updated.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- should not show conflict
+>>commit work;
+
+--- SQL operation complete.
+>>select * from t116t6;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>
+>>-- scenario 10, concurrent region transaction with checkandupdate
+>>delete from t116t6;
+
+--- 1 row(s) deleted.
+>>insert into t116t6 values (1,1);
+
+--- 1 row(s) inserted.
+>>begin work;
+
+--- SQL operation complete.
+>>update t116t6 set b = 333 where a = 1;
+
+--- 1 row(s) updated.
+>>
+>>-- update row using a concurrent region xn
+>>sh sqlci -iTEST116\(concurrent_region_xn_checkandupd\) >> LOG116;
+Apache Trafodion Conversational Interface 2.1.0
+Copyright (c) 2015-2016 Apache Software Foundation
+>>?section concurrent_region_xn_checkandupd
+>>cqd traf_use_region_xn 'ON';
+
+--- SQL operation complete.
+>>prepare s from update trafodion.sch.t116t6 set b = 111 where a = 1;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update      r         T116T6                1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- 1 row(s) updated.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- should show conflict
+>>commit work;
+
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted.
+
+--- SQL operation failed with errors.
+>>select * from t116t6;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>
 >>
 >>obey TEST116(clean_up);
 >>drop table t116t1;
 
---- SQL operation complete.
+*** ERROR[1389] Object TRAFODION.SCH.T116T1 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
 >>drop table t116t2;
 
 --- SQL operation complete.
 >>drop table t116t3;
 
-*** ERROR[1389] Object TRAFODION.T116SCH1.T116T3 does not exist in Trafodion.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>drop table t116t4;
 
-*** ERROR[1389] Object TRAFODION.T116SCH1.T116T4 does not exist in Trafodion.
+*** ERROR[1389] Object TRAFODION.SCH.T116T4 does not exist in Trafodion.
 
 --- SQL operation failed with errors.
 >>drop table t116t5;
+
+--- SQL operation complete.
+>>drop table t116t6;
 
 --- SQL operation complete.
 >>

@@ -92,15 +92,16 @@ class ExpHbaseInterface : public NABasicObject
 		       NAText * hbaseCreateOptionsArray,
                        int numSplits, int keyLength,
                        const char ** splitValues,
-                       NABoolean noXn,
+                       NABoolean useHbaseXn,
                        NABoolean isMVCC) =0;
 
   virtual Lng32 alter(HbaseStr &tblName,
 		      NAText * hbaseCreateOptionsArray,
-                      NABoolean noXn) =0;
+                      NABoolean useHbaseXn) = 0;
 
   // During upsert using load, register truncate on abort will be used
-  virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn) = 0;
+  virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, 
+                                        NABoolean useHbaseXn) = 0;
 
   // During a drop of seabase table or index, the object is first removed from 
   // seabase metadata. If that succeeds, the corresponding hbase object is dropped.
@@ -109,10 +110,10 @@ class ExpHbaseInterface : public NABasicObject
   // If a create of the same table comes in later and an error is returned
   // during create, we delay and retry for a fixed number of times since that table
   // may still be dropped by the worked thread.
-  virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn) = 0;
+  virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean useHbaseXn) = 0;
 
   // drops all objects from hbase that match the pattern
-  virtual Lng32 dropAll(const char * pattern, NABoolean async, NABoolean noXn) = 0;
+  virtual Lng32 dropAll(const char * pattern, NABoolean async, NABoolean useHbaseXn) = 0;
 
   // retrieve all objects from hbase that match the pattern
   virtual NAArray<HbaseStr> *listAll(const char * pattern) = 0;
@@ -206,7 +207,8 @@ class ExpHbaseInterface : public NABasicObject
 		  HbaseStr tblName,
 		  HbaseStr row, 
 		  const LIST(HbaseStr) *columns,
-		  NABoolean noXn,
+		  NABoolean useHbaseXn,
+                  NABoolean useRegionXn,
 		  const int64_t timestamp,
                   NABoolean asyncOperation) = 0;
 
@@ -216,7 +218,7 @@ class ExpHbaseInterface : public NABasicObject
 		  HbaseStr tblName,
                   short rowIDLen,
 		  HbaseStr rowIDs,
-		  NABoolean noXn,
+		  NABoolean useHbaseXn,
 		  const int64_t timestamp,
                   NABoolean asyncOperation) = 0;
 
@@ -226,7 +228,8 @@ class ExpHbaseInterface : public NABasicObject
 				  HbaseStr& row, 
 				  HbaseStr& columnToCheck,
 				  HbaseStr& colValToCheck,
-                                  NABoolean noXn,
+                                  NABoolean useHbaseXn,
+                                  NABoolean useRegionXn,
 				  const int64_t timestamp) = 0;
 
 
@@ -239,7 +242,8 @@ class ExpHbaseInterface : public NABasicObject
 		  HbaseStr tblName,
 		  HbaseStr rowID, 
 		  HbaseStr row,
-		  NABoolean noXn,
+		  NABoolean useHbaseXn,
+                  NABoolean useRegionXn,
 		  const int64_t timestamp,
                   NABoolean asyncOperation) = 0;
 
@@ -254,7 +258,7 @@ class ExpHbaseInterface : public NABasicObject
                   short rowIDLen,
                   HbaseStr rowIDs,
                   HbaseStr rows,
-		  NABoolean noXn,
+		  NABoolean useHbaseXn,
 		  const int64_t timestamp,
                   NABoolean asyncOperation) = 0; 
  
@@ -303,7 +307,8 @@ class ExpHbaseInterface : public NABasicObject
 				  HbaseStr &tblName,
 				  HbaseStr& rowID, 
 				  HbaseStr& row,
-                                  NABoolean noXn,
+                                  NABoolean useHbaseXn,
+                                  NABoolean useRegionXn,
 				  const int64_t timestamp,
                                   NABoolean asyncOperation) = 0;
 
@@ -314,7 +319,8 @@ class ExpHbaseInterface : public NABasicObject
 				  HbaseStr& row,
 				  HbaseStr& columnToCheck,
 				  HbaseStr& colValToCheck,
-                                  NABoolean noXn,				
+                                  NABoolean useHbaseXn,
+                                  NABoolean useRegionXn,
 				  const int64_t timestamp,
                                   NABoolean asyncOperation) = 0;
 
@@ -415,17 +421,17 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 	               NAText* hbaseCreateOptionsArray,
                        int numSplits, int keyLength,
                        const char ** splitValues,
-                       NABoolean noXn,
+                       NABoolean useHbaseXn,
                        NABoolean isMVCC);
 
   virtual Lng32 alter(HbaseStr &tblName,
 		      NAText * hbaseCreateOptionsArray,
-                      NABoolean noXn);
+                      NABoolean useHbaseXn);
 
-  virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn);
+  virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean useHbaseXn);
 
-  virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn);
-  virtual Lng32 dropAll(const char * pattern, NABoolean async, NABoolean noXn);
+  virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean useHbaseXn);
+  virtual Lng32 dropAll(const char * pattern, NABoolean async, NABoolean useHbaseXn);
 
   virtual NAArray<HbaseStr>* listAll(const char * pattern);
 
@@ -509,7 +515,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		  HbaseStr tblName,
 		  HbaseStr row, 
 		  const LIST(HbaseStr) *columns,
-		  NABoolean noXn,
+		  NABoolean useHbaseXn,
+                  NABoolean useRegionXn,
 		  const int64_t timestamp,
                   NABoolean asyncOperation);
 
@@ -518,7 +525,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		  HbaseStr tblName,
                   short rowIDLen,
 		  HbaseStr rowIDs,
-		  NABoolean noXn,		 		  
+		  NABoolean useHbaseXn,
 		  const int64_t timestamp,
                   NABoolean asyncOperation);
 
@@ -528,7 +535,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 				  HbaseStr& row, 
 				  HbaseStr& columnToCheck,
 				  HbaseStr& colValToCheck,
-                                  NABoolean noXn,     
+                                  NABoolean useHbaseXn,     
+                                  NABoolean useRegionXn,
 				  const int64_t timestamp);
 
 
@@ -540,7 +548,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		  HbaseStr tblName,
 		  HbaseStr rowID, 
                   HbaseStr row,
-		  NABoolean noXn,
+		  NABoolean useHbaseXn,
+                  NABoolean useRegionXn,
 		  const int64_t timestamp,
                   NABoolean asyncOperation);
 
@@ -555,7 +564,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                   short rowIDLen,
                   HbaseStr rowIDs,
                   HbaseStr rows,
-		  NABoolean noXn,
+		  NABoolean useHbaseXn,
 		  const int64_t timestamp,
                   NABoolean asyncOperation); 
   
@@ -603,7 +612,8 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 				  HbaseStr &tblName,
 				  HbaseStr& rowID, 
 				  HbaseStr& row,
-                                  NABoolean noXn,
+                                  NABoolean useHbaseXn,
+                                  NABoolean useRegionXn,
 				  const int64_t timestamp,
                   		  NABoolean asyncOperation);
 
@@ -615,7 +625,8 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 				  HbaseStr& row,
 				  HbaseStr& columnToCheck,
 				  HbaseStr& colValToCheck,
-                                  NABoolean noXn,			
+                                  NABoolean useHbaseXn,			
+                                  NABoolean useRegionXn,
 				  const int64_t timestamp,
                                   NABoolean asyncOperation);
 

@@ -13879,7 +13879,8 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
                   (CmpCommon::diags()->mainSQLCODE() == -4193) ||
                   (CmpCommon::diags()->mainSQLCODE() == -4155) || // define not supported
                   (CmpCommon::diags()->mainSQLCODE() == -4086) || // catch Define Not Found error
-                  (CmpCommon::diags()->mainSQLCODE() == -30044))  // default schema access error
+                  (CmpCommon::diags()->mainSQLCODE() == -30044)|| // default schema access error
+                  (CmpCommon::diags()->mainSQLCODE() == -1398))   // uninit hbase
                     return this;
       
               CmpCommon::diags()->clear();
