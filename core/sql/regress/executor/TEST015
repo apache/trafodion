@@ -404,6 +404,10 @@ merge into t015t3 using (select * from t015t4) as t015t4
   when not matched then insert values (t015t4.a,t015t4.b,t015t4.c);
 select * from t015t3;
 
+merge into t015t3 on a = 1
+  when matched then update set b = 20, c = 40;
+select * from t015t3;
+
 -- test fix to bugzilla 3405
 delete from t015t3;
 delete from t015t4;

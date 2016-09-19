@@ -663,12 +663,7 @@ SELECT PROTECTED PROTECTED from (values(0)) PROTECTED(PROTECTED);
 >>-- Expect error [3128]
 >>prepare s1 from SELECT RETURNS RETURNS from (values(0)) RETURNS(RETURNS);
 
-*** ERROR[15001] A syntax error occurred at or before: 
-SELECT RETURNS RETURNS from (values(0)) RETURNS(RETURNS);
-             ^ (14 characters from start of SQL statement)
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL command prepared.
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT ROUTINE ROUTINE from (values(0)) ROUTINE(ROUTINE);

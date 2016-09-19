@@ -74,7 +74,7 @@ select ascii( _ucs2'a') from cs311t1 order by 1;
 select ascii(u1) from cs311t2 order by 1;
 select ascii( TRANSLATE(_iso88591'abcdefghijklmnop' using Iso88591ToUCS2) ) from cs311t2 order by 1;
 --
-select * from cs311t2, cs311t1 order by 1;
+select * from cs311t2, cs311t1 order by 1,2;
 select * from cs311t2, cs311t1 where 'a' = CHAR(ASCII('a1a1')) order by 1,2; -- SEE NOTE ABOVE
 select * from cs311t2, cs311t1 where 'u' = CHAR(ASCII('u1u1'),UCS2) order by 1,2; -- SEE NOTE ABOVE
 select * from cs311t2, cs311t1 where 'u' = lower(CHAR(ASCII(upper(a1)))) order by 1,2; -- SEE NOTE ABOVE
@@ -118,7 +118,7 @@ select * from cs311t3 union all (select * from cs311t4) order by 1;
 --
 -- Tests for basic SQL functions
 --
-select * from cs311t3, cs311t4 order by 1;
+select * from cs311t3, cs311t4 order by 1,2;
 select * from cs311t3, cs311t4 where a1 = case when a1 > 'a1a' then u1 else 'a100' end order by 1,2;
 select * from cs311t3, cs311t4 where a1 = case when a1 > 'a1a' then 'a1a1' else 'a100' end order by 1,2;
 select * from cs311t3, cs311t4 where a1 = coalesce(cast(NULL as varchar(8) character set ISO88591), u1, a1) order by 1,2;

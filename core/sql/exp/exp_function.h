@@ -69,6 +69,11 @@ class ex_function_clause;
   )
 
 #define EXP_SCRAMBLE 0x35
+#define MAX_IPV4_STRING_LEN  15
+#define MAX_IPV6_STRING_LEN  8 * 4 + 7 
+#define MIN_IPV4_STRING_LEN  7
+#define MIN_IPV6_STRING_LEN  2
+#define IPV6_PARTS_NUM       8
 
 SQLEXP_LIB_FUNC NA_EIDPROC UInt32 FastHash(char *data, Int32 length);
 
@@ -845,6 +850,94 @@ public:
   {
     setImageVersionID(3,getClassVersionID());
     ex_function_trim::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  // ---------------------------------------------------------------------
+};
+
+class SQLEXP_LIB_FUNC ExFunctionIsIP : public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionIsIP(OperatorTypeEnum oper_type,
+				Attributes ** attr,
+				Space * space);
+  NA_EIDPROC ExFunctionIsIP();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);  
+  NA_EIDPROC Long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  // ---------------------------------------------------------------------
+};
+
+class SQLEXP_LIB_FUNC ExFunctionInetAton: public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionInetAton(OperatorTypeEnum oper_type,
+				Attributes ** attr,
+				Space * space);
+  NA_EIDPROC ExFunctionInetAton();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);  
+  NA_EIDPROC Long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  // ---------------------------------------------------------------------
+};
+
+
+class SQLEXP_LIB_FUNC ExFunctionInetNtoa: public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionInetNtoa(OperatorTypeEnum oper_type,
+				Attributes ** attr,
+				Space * space);
+  NA_EIDPROC ExFunctionInetNtoa();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);  
+  NA_EIDPROC Long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
   }
 
   NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }

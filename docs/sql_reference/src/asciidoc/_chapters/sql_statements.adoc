@@ -2344,6 +2344,10 @@ creates an HBase table if it does not already exist when the table is created. T
 +
 specifies the ANSI logical name of the table. See <<database_object_names,Database Object Names>>. This name must be
 unique among names of tables and views within its schema.
++
+TIP: Avoid using table names that begin with "TRAF_SAMPLE_", as {project-name} SQL assumes that
+such tables are persistent sample tables. See also <<update_statistics_incremental_update_statistics,
+Incremental Update Statistics>>.
 
 * `SALT USING _num_ PARTITIONS [ON (_column_[, _column_]&#8230;)]`
 +

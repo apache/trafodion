@@ -1,6 +1,5 @@
 // @@@ START COPYRIGHT @@@
 //
-// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -145,6 +144,23 @@ message CheckAndDeleteResponse {
   optional bool hasException = 3;
 }
 
+message CheckAndDeleteRegionTxRequest {
+  required int64 transactionId = 1;
+  required bytes regionName = 2;
+  required bytes row = 3;
+  required bytes family = 4;
+  required bytes qualifier = 5;
+  required bytes value = 6;
+  required MutationProto delete = 7;
+  required bool autoCommit = 8;
+}
+
+message CheckAndDeleteRegionTxResponse {
+  required bool result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
 message CheckAndPutRequest {
   required int64 transactionId = 1;
   required bytes regionName = 2;
@@ -156,6 +172,23 @@ message CheckAndPutRequest {
 }
 
 message CheckAndPutResponse {
+  required bool result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message CheckAndPutRegionTxRequest {
+  required int64 tid = 1;
+  required bytes regionName = 2;
+  required bytes row = 3;
+  required bytes family = 4;
+  required bytes qualifier = 5;
+  required bytes value = 6;
+  required MutationProto put = 7;
+  required bool autoCommit = 8;
+}
+
+message CheckAndPutRegionTxResponse {
   required bool result = 1;
   optional string exception = 2;
   optional bool hasException = 3;
@@ -236,6 +269,19 @@ message PerformScanResponse {
   required bool   hasMore = 4;
   optional string exception = 5;
   optional bool   hasException = 6;
+}
+
+message PutRegionTxRequest {
+  required int64 tid = 1;
+  required bytes regionName = 2;
+  required MutationProto put = 3;
+  required bool  autoCommit = 4;
+}
+
+message PutRegionTxResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
 }
 
 message PutTransactionalRequest {
@@ -396,8 +442,12 @@ service TrxRegionService {
     returns(BeginTransactionResponse);
   rpc checkAndDelete(CheckAndDeleteRequest)
     returns(CheckAndDeleteResponse);
+//  rpc checkAndDeleteRegionTx(CheckAndDeleteRegionTxRequest)
+//    returns(CheckAndDeleteRegionTxResponse);
   rpc checkAndPut(CheckAndPutRequest)
     returns(CheckAndPutResponse);
+  rpc checkAndPutRegionTx(CheckAndPutRegionTxRequest)
+    returns(CheckAndPutRegionTxResponse);
   rpc closeScanner(CloseScannerRequest)
     returns(CloseScannerResponse);
   rpc commit(CommitRequest)
@@ -420,6 +470,8 @@ service TrxRegionService {
     returns(PerformScanResponse);
   rpc openScanner(OpenScannerRequest)
     returns(OpenScannerResponse);
+  rpc putRegionTx(PutRegionTxRequest)
+    returns(PutRegionTxResponse);
   rpc put(PutTransactionalRequest)
     returns(PutTransactionalResponse);
   rpc putMultiple(PutMultipleTransactionalRequest)

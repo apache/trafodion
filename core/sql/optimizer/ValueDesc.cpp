@@ -6630,3 +6630,43 @@ ValueIdList::computeEncodedKey(const TableDesc* tDesc, NABoolean isMaxKey,
    }
 }
 
+void ValueIdSet::findAllOpType(OperatorTypeEnum type, ValueIdSet & result) const
+{
+    for(ValueId valId = init(); next(valId); advance(valId)) {
+  
+      ItemExpr *itmExpr = valId.getItemExpr();
+      if(itmExpr->getOperatorType() == type) 
+         result += valId;
+    }
+}
+
+void ValueIdSet::findAllChildren(ValueIdSet & result) const
+{   
+    for(ValueId valId = init(); next(valId); advance(valId)) {
+      
+      ItemExpr *itmExpr = valId.getItemExpr();
+
+      for ( Lng32 i = 0; i < itmExpr->getArity(); i++ )
+         result += itmExpr->child(i).getValueId();
+    }
+}
+
+void ValueIdSet::addOlapLeadFuncs(const ValueIdSet& input, ValueIdSet& result)
+{
+    for(ValueId valId = init(); next(valId); advance(valId)) {
+       ItemExpr *itmExpr = valId.getItemExpr();
+       if ( itmExpr->getOperatorType() == ITM_OLAP_LEAD ) {
+
+          ItmLeadOlapFunction* me = (ItmLeadOlapFunction*)(itmExpr);  
+
+          for(ValueId j= input.init(); input.next(j); input.advance(j)) {
+             ItemExpr* child = j.getItemExpr();
+             ItmLeadOlapFunction* lead = 
+                 new (STMTHEAP) ItmLeadOlapFunction(child, me->getOffset());
+             lead->synthTypeAndValueId();
+             result.insert(lead->getValueId());
+         }
+      }
+    }
+}
+

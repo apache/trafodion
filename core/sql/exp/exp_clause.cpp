@@ -338,6 +338,16 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_CURR_TRANSID:
 	  setClassID(FUNC_CURR_TRANSID_ID);
 	  break;
+	case ITM_ISIPV4:
+	case ITM_ISIPV6:
+	  setClassID(FUNC_ISIP_ID);
+	  break;
+        case ITM_INET_ATON:
+          setClassID(FUNC_INETATON_ID);
+          break;
+        case ITM_INET_NTOA:
+          setClassID(FUNC_INETNTOA_ID);
+          break;
 	case ITM_USER:
 	case ITM_USERID:
 	case ITM_AUTHTYPE:
@@ -415,6 +425,7 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_FLOOR:
 	case ITM_LOG:
 	case ITM_LOG10:
+	case ITM_LOG2:
 	case ITM_SIN:
 	case ITM_SINH:
 	case ITM_SQRT:
@@ -973,6 +984,15 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
     case ex_clause::FUNC_HBASE_VERSION:
       GetVTblPtr(vtblPtr, ExFunctionHbaseVersion);
       break;
+    case ex_clause::FUNC_ISIP_ID:
+      GetVTblPtr(vtblPtr, ExFunctionIsIP);
+      break;
+    case ex_clause::FUNC_INETATON_ID:
+      GetVTblPtr(vtblPtr, ExFunctionInetAton);
+      break;
+    case ex_clause::FUNC_INETNTOA_ID:
+      GetVTblPtr(vtblPtr, ExFunctionInetNtoa);
+      break;
      default:
       GetVTblPtr(vtblPtr, ex_clause);
       break;
@@ -1218,6 +1238,7 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_FLOOR: return "ITM_FLOOR";
     case ITM_LOG: return "ITM_LOG";
     case ITM_LOG10: return "ITM_LOG10";
+    case ITM_LOG2: return "ITM_LOG2";
     case ITM_MOD: return "ITM_MOD";
     case ITM_POWER: return "ITM_POWER";
     case ITM_ROUND: return "ITM_ROUND";
