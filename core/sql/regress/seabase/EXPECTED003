@@ -1160,6 +1160,20 @@ A                     (EXPR)
 
 --- 2 row(s) selected.
 >>
+>>select cast('-9223372036854775808' as largeint) from (values(1)) x(a);
+
+(EXPR)
+----------
+
+-9223372036854775808
+
+--- 1 row(s) selected.
+>>select cast('-9223372036854775809' as largeint) from (values(1)) x(a);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:CHAR(REC_BYTE_F_ASCII,20 BYTES,ISO88591) Source Value:-9223372036854775809 to Target Type:LARGEINT(REC_BIN64_SIGNED).
+
+--- 0 row(s) selected.
+>>
 >>select a+10 from t003t2 where a = 1 or a = -1;
 
 (EXPR)              
@@ -1503,6 +1517,20 @@ A                     (EXPR)
 18446744073709551615  18446744073709551615
 
 --- 2 row(s) selected.
+>>
+>>select cast('-9223372036854775808' as largeint) from (values(1)) x(a);
+
+(EXPR)
+----------
+
+-9223372036854775808
+
+--- 1 row(s) selected.
+>>select cast('-9223372036854775809' as largeint) from (values(1)) x(a);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:CHAR(REC_BYTE_F_ASCII,20 BYTES,ISO88591) Source Value:-9223372036854775809 to Target Type:LARGEINT(REC_BIN64_SIGNED).
+
+--- 0 row(s) selected.
 >>
 >>select a+10 from t003t2 where a = 1 or a = -1;
 
@@ -1850,6 +1878,20 @@ A                      (EXPR)
  18446744073709551615   18446744073709551615
 
 --- 2 row(s) selected.
+>>
+>>select cast('-9223372036854775808' as largeint) from (values(1)) x(a);
+
+(EXPR)
+----------
+
+-9223372036854775808
+
+--- 1 row(s) selected.
+>>select cast('-9223372036854775809' as largeint) from (values(1)) x(a);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:CHAR(REC_BYTE_F_ASCII,20 BYTES,ISO88591) Source Value:-9223372036854775809 to Target Type:LARGEINT(REC_BIN64_SIGNED).
+
+--- 0 row(s) selected.
 >>
 >>select a+10 from t003t2 where a = 1 or a = -1;
 

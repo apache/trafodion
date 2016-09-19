@@ -34,7 +34,6 @@ cqd traf_read_object_desc 'ON';
 cqd traf_store_object_desc 'ON';
 cqd allow_incompatible_operations 'ON';
 cqd allow_firstn_in_subqueries 'TRUE';
-cqd group_by_using_ordinal 'ALL';
 cqd allow_order_by_in_subqueries 'ON';
 cqd group_or_order_by_expr 'ON';
 set SCHEMA $$TEST_SCHEMA$$;

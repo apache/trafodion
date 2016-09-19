@@ -36,7 +36,9 @@ programmers who use the {project-name} database software conversational or
 programmatic interface.
 
 == New and Changed Information
-This is a new manual.
+
+Messages for UPDATE STATISTICS have been corrected. Also messages for
+the new incremental UPDATE STATISTICS features have been added.
 
 == Notation Conventions
 This list summarizes the notation conventions for syntax presentation in this manual.

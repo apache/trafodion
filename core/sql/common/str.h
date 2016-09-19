@@ -453,6 +453,16 @@ Int32 str_convertToHexAscii(const char * src,                   // in
                           const size_t maxResultSize,         // in - including NULL terminator if addNullAtEnd
                           NABoolean    addNullAtEnd = TRUE);  // in
 
+
+// Print the data pointed at by a tupp. The data type
+// is inferred from the characters. The arguments
+// are the obtained from a tupp as follows.
+//
+//    char * dataPointer = getDataPointer();
+//    Lng32 len = tupp_.getAllocatedSize();
+//
+//    printBrief(dataPointer, len) 
+//    
 NA_EIDPROC
 void printBrief(char* dataPointer, Lng32 keyLen); 
 #endif // STR_H

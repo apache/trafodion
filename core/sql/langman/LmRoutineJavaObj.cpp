@@ -192,6 +192,7 @@ LmResult LmRoutineJavaObj::invokeRoutineMethod(
           (*emitRowPtr_)(NULL,0,&qs);
         }
     }
+  jni->DeleteLocalRef(jniResult);
 
   if (invocationInfoLenOut)
     *invocationInfoLenOut = static_cast<Int32>(iiLen_);

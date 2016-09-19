@@ -190,16 +190,19 @@ public:
     LOB_FUNC_SUBSTR          =105,
     FUNC_HIVEHASH_ID         =106,
     FUNC_HIVEHASHCOMB_ID     =107,
-    FUNC_UNIQUE_ID                  = 108,
-    FUNC_HBASE_COLUMN_LOOKUP      = 109,
-    FUNC_HBASE_COLUMNS_DISPLAY     = 110,
+    FUNC_UNIQUE_ID           = 108,
+    FUNC_HBASE_COLUMN_LOOKUP = 109,
+    FUNC_HBASE_COLUMNS_DISPLAY   = 110,
     FUNC_HBASE_COLUMN_CREATE = 111,
-    FUNC_CAST_TYPE = 112,
-    FUNC_SEQUENCE_VALUE = 113,
-    FUNC_PIVOT_GROUP = 114,
-    FUNC_ROWNUM    = 115,
+    FUNC_CAST_TYPE           = 112,
+    FUNC_SEQUENCE_VALUE      = 113,
+    FUNC_PIVOT_GROUP         = 114,
+    FUNC_ROWNUM              = 115,
     FUNC_HBASE_TIMESTAMP     = 116,
-    FUNC_HBASE_VERSION = 117
+    FUNC_HBASE_VERSION       = 117,
+    FUNC_ISIP_ID             = 118,
+    FUNC_INETATON_ID         = 119,
+    FUNC_INETNTOA_ID         = 120
   };
 
   // max number of operands (including result) in a clause.

@@ -196,6 +196,8 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProt
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndDeleteResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutRegionTxRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutRegionTxResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteMultipleTransactionalRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteMultipleTransactionalResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteTransactionalRequest;
@@ -206,6 +208,8 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProt
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PerformScanResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.OpenScannerRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.OpenScannerResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutRegionTxRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutRegionTxResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutTransactionalRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutTransactionalResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutMultipleTransactionalRequest;
@@ -1284,6 +1288,142 @@ CoprocessorService, Coprocessor {
     CheckAndPutResponse checkAndPutResponse = checkAndPutResponseBuilder.build();
 
     done.run(checkAndPutResponse);
+  }
+
+  @Override
+  public void checkAndPutRegionTx(RpcController controller,
+                          CheckAndPutRegionTxRequest request,
+                          RpcCallback<CheckAndPutRegionTxResponse> done) {
+
+    CheckAndPutRegionTxResponse response = CheckAndPutRegionTxResponse.getDefaultInstance();
+
+    byte [] rowArray = null;
+    com.google.protobuf.ByteString row = null;
+    com.google.protobuf.ByteString family = null;
+    com.google.protobuf.ByteString qualifier = null;
+    com.google.protobuf.ByteString value = null;
+    long tid = request.getTid();
+    MutationProto proto = request.getPut();
+    MutationType type = proto.getMutateType();
+    boolean autoCommit = request.getAutoCommit();
+    Put put = null;
+    MemoryUsageException mue = null;
+    WrongRegionException wre = null;
+    Throwable t = null;
+    boolean result = false;
+
+    /* commenting it out for the time-being
+    java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
+
+    // First test if this region matches our region name
+    if (!name.equals(regionInfo.getRegionNameAsString())) {
+      wre =  new WrongRegionException("Request Region Name, " +
+        name + ",  does not match this region, " +
+        regionInfo.getRegionNameAsString());
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:checkAndPutRegionTx threw WrongRegionException" +
+      "Request Region Name, " +
+        name + ",  does not match this region, " +
+        regionInfo.getRegionNameAsString());
+   }
+    */
+
+    org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutRegionTxResponse.Builder checkAndPutRegionTxResponseBuilder = CheckAndPutRegionTxResponse.newBuilder();
+
+    if (memoryThrottle == true) {
+        if(memoryUsageWarnOnly == true)  {
+          LOG.warn("TrxRegionEndpoint coprocessor: checkAndPutRegionTx - performing memoryPercentage " + memoryPercentage + ", warning memory usage exceeds indicated percentage");
+        }
+        else {
+          mue = new MemoryUsageException("checkAndPutRegionTx memory usage exceeds " + memoryUsageThreshold + " percent, tid is " + tid);
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkAndPutRegionTx - performing memoryPercentage " + memoryPercentage + ", generating memory usage exceeds indicated percentage exception");
+        }
+    }
+
+    if (mue == null &&
+        wre == null && 
+        type == MutationType.PUT && 
+        proto.hasRow())
+    {
+      rowArray = proto.getRow().toByteArray();
+
+      try {
+          put = ProtobufUtil.toPut(proto);
+      } catch (Throwable e) {
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkAndPutRegionTx - tid " + tid + ", Caught exception " + e.getMessage() + " " + stackTraceToString(e));
+        t = e;
+      }
+
+      // Process in local memory
+      if ((put != null) && (t == null))
+      {
+        if (request.hasRow()) {
+          row = request.getRow();
+
+        if (!Bytes.equals(rowArray, request.getRow().toByteArray()))
+          t = new org.apache.hadoop.hbase.DoNotRetryIOException("Action's " +
+          "Put row must match the passed row");
+        }
+
+        if (t == null) {
+          if (request.hasRow())
+            row = request.getRow();
+          if (request.hasFamily())
+            family = request.getFamily();
+          if (request.hasQualifier())
+            qualifier = request.getQualifier();
+          if (request.hasValue())
+            value = request.getValue();
+      
+          try {
+           result = checkAndPutRegionTx(tid,
+               request.getRow().toByteArray(),
+               request.getFamily().toByteArray(),
+               request.getQualifier().toByteArray(),
+               request.getValue().toByteArray(),
+               put,
+               autoCommit);
+           } catch (Throwable e) {
+             LOG.warn("TrxRegionEndpoint coprocessor: checkAndPutRegionTx - tid " + tid + ", Caught exception after internal checkAndPutRegionTx call - "
+                          + e.getMessage() + " " + stackTraceToString(e));
+             t = e;
+           }
+         }
+
+       checkAndPutRegionTxResponseBuilder.setResult(result);
+     }
+    }
+    else
+    {
+      result = false;
+      checkAndPutRegionTxResponseBuilder.setResult(result);
+    }
+
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkAndPutRegionTx - tid " + tid + ", result is " + result);
+
+    checkAndPutRegionTxResponseBuilder.setHasException(false);
+
+    if (wre != null)
+    {
+      checkAndPutRegionTxResponseBuilder.setHasException(true);
+      checkAndPutRegionTxResponseBuilder.setException(wre.toString());
+    }
+
+    if (t != null)
+    {
+      checkAndPutRegionTxResponseBuilder.setHasException(true);
+      checkAndPutRegionTxResponseBuilder.setException(t.toString());
+    }
+
+    if (mue != null)
+    {
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkAndPutRegionTx - performing memoryPercentage " + memoryPercentage + ", posting memory usage exceeds indicated percentage exception");
+      checkAndPutRegionTxResponseBuilder.setHasException(true);
+      checkAndPutRegionTxResponseBuilder.setException(mue.toString());
+    }
+
+    CheckAndPutRegionTxResponse checkAndPutRegionTxResponse = checkAndPutRegionTxResponseBuilder.build();
+
+    done.run(checkAndPutRegionTxResponse);
   }
 
   @Override
@@ -4631,6 +4771,80 @@ CoprocessorService, Coprocessor {
   }
 
   /**
+   * Processes a checkAndPut using a region transaction
+   * @param long tid
+   * @param byte[] row
+   * @param byte[] family
+   * @param byte[] qualifier
+   * @param byte[] value
+   * @param Put put  
+   * @param boolean autoCommit    
+   * @return boolean
+   * @throws IOException 
+   */
+  public boolean checkAndPutRegionTx(final long tid, byte[] row, byte[] family,
+                            byte[] qualifier, byte[] value, Put put, final boolean autoCommit)
+    throws IOException {
+
+    if (LOG.isTraceEnabled()) LOG.trace("Enter checkAndPutRegionTx, tid: "
+                + tid + " autoCommit " + autoCommit + ", on HRegion " + this);
+    TrxTransactionState state = this.beginTransIfNotExist(tid, true); // This is a Region TX
+                
+    boolean result = false;
+    byte[] rsValue = null;
+    byte[] startKey = null;
+    byte[] endKey = null;
+
+    if(this.checkRowBelongs)
+      checkRow(row, "checkAndPutRegionTx");
+
+    try {
+      Get get = new Get(row);
+      get.addColumn(family, qualifier);
+    
+      Result rs = this.get(tid, get);
+
+      boolean valueIsNull = value == null ||
+                            value.length == 0;
+
+      if (rs.isEmpty() && valueIsNull) {
+        this.putRegionTx(tid, put, autoCommit);
+        result = true;
+      } else if (!rs.isEmpty() && valueIsNull) {
+        rsValue = rs.getValue(family, qualifier);
+        if (rsValue != null && rsValue.length == 0) {
+          this.putRegionTx(tid, put, autoCommit);
+          result = true;
+        }
+        else {
+          if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx - tid " + tid
+           + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row)
+           + ", first check setting result to false");
+          result = false;
+        }
+      } else if ((!rs.isEmpty()) && !valueIsNull   
+                && (Bytes.equals(rs.getValue(family, qualifier), value))) {
+         this.putRegionTx(tid, put, autoCommit);
+         result = true;
+      } else {
+          if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx - tid " + tid
+           + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row)
+           + ", second check setting result to false");
+        result = false;
+      }
+    } catch (Exception e) {
+      if (LOG.isWarnEnabled()) LOG.warn("checkAndPutRegionTx - tid " + tid + ", Caught internal exception " + e.toString() + ", returning false");
+      throw new IOException("checkAndPutRegionTx - " + e.toString());
+    }
+
+    if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx EXIT - returns "
+        + result + ", tid " + tid + ", row " + Bytes.toStringBinary(row)
+        + ", row in hex " + Hex.encodeHexString(row));
+
+    return result;
+  }
+
+  /**
    * Obtains a transactional Result for Get          
    * @param long transactionId
    * @param Get get             
@@ -4759,6 +4973,120 @@ CoprocessorService, Coprocessor {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: new filter array, wrapWithDeleteFilter -- EXIT");
 
     return scan;
+  }
+
+  public void putRegionTx(RpcController controller,
+                  PutRegionTxRequest request,
+      RpcCallback<PutRegionTxResponse> done) {
+    PutRegionTxResponse response = PutRegionTxResponse.getDefaultInstance();
+    
+    byte [] row = null;
+    MutationProto proto = request.getPut();
+    MutationType type = proto.getMutateType();
+    Put put = null;
+    Throwable t = null;
+    MemoryUsageException mue = null;
+    WrongRegionException wre = null;
+    long tid = request.getTid();
+    boolean autoCommit = request.getAutoCommit();
+
+    if (memoryThrottle == true) {
+       if(memoryUsageWarnOnly == true)  {
+          LOG.warn("TrxRegionEndpoint coprocessor: putRegionTx - performing memoryPercentage " + memoryPercentage
+                    + ", warning memory usage exceeds indicated percentage");
+       }
+       else {
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putRegionTx - performing memoryPercentage "
+                             + memoryPercentage + ", generating memory usage exceeds indicated percentage exception");
+          mue = new MemoryUsageException("putRegionTx memory usage exceeds " + memoryUsageThreshold
+                   + " percent, tid is " + tid);
+       }
+    }
+    else{
+       try {
+          put = ProtobufUtil.toPut(proto);
+       } catch (Throwable e) {
+         LOG.error("TrxRegionEndpoint coprocessor:putRegionTx - tid " + tid
+                    + ", Caught exception " + e.getMessage() + " " + stackTraceToString(e));
+         t = e;
+       }
+
+       if ((mue == null && type == MutationType.PUT && proto.hasRow()) && (put != null)){
+          // Process in local memory
+          try {   
+             putRegionTx(tid, put, autoCommit);
+          } catch (Throwable e) {
+             LOG.error("TrxRegionEndpoint coprocessor:putRegionTx - tid " + tid + ", Caught exception after  internal put - ", e);
+             t = e;
+          }
+
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putRegionTx - tid "  + tid + ", regionName " + regionInfo.getRegionNameAsString()
+                   + ", type " + type + ", row " + Bytes.toStringBinary(proto.getRow().toByteArray())
+                    + ", row in hex " + Hex.encodeHexString(proto.getRow().toByteArray()));
+       }
+       else{
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putRegionTx - tid "  + tid + ", regionName " + regionInfo.getRegionNameAsString()
+                    + "- no valid PUT type or does not contain a row");
+       }
+    }
+
+    org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutRegionTxResponse.Builder putRegionTxResponseBuilder = PutRegionTxResponse.newBuilder();
+
+    putRegionTxResponseBuilder.setHasException(false);
+
+    if (t != null)
+    {
+      putRegionTxResponseBuilder.setHasException(true);
+      putRegionTxResponseBuilder.setException(t.toString());
+    }
+
+    if (wre != null)
+    {
+      putRegionTxResponseBuilder.setHasException(true);
+      putRegionTxResponseBuilder.setException(wre.toString());
+    }
+
+    if (mue != null)
+    {
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putRegionTx - performing memoryPercentage " + memoryPercentage
+          + ", posting memory usage exceeds indicated percentage exception");
+      putRegionTxResponseBuilder.setHasException(true);
+      putRegionTxResponseBuilder.setException(mue.toString());
+    }
+
+    PutRegionTxResponse presponse = putRegionTxResponseBuilder.build();
+    done.run(presponse);
+  }
+
+  /**
+   * Do a transactional put using a region transaction
+   *
+   * @param long tid
+   * @param boolean autoCommit
+   * @param Put put
+   * @throws IOException
+   */
+
+  public void putRegionTx(final long tid, final Put put, final boolean autoCommit)
+    throws IOException {
+    if (LOG.isTraceEnabled()) LOG.trace("putRegionTx Enter, tid: " + tid);
+
+//    checkBlockNonPhase2(transactionId);
+
+    if(this.checkRowBelongs)
+      checkRow(put.getRow(),"putRegionTx");
+    TrxTransactionState state = this.beginTransIfNotExist(tid, true); // This is a Region TX
+
+    state.addWrite(put);
+    
+    // Now we must perform conflict checking.
+    boolean success = commitIfPossible(tid, tid, tid, 1, true, autoCommit);
+    
+    if (! success) {
+       LOG.error("putRegionTx - tid " + tid + " was not successful.  Throwing IOException ");
+       throw new IOException("putRegionTx - tid " + tid + " was not successful.  Throwing IOException ");
+    }
+    if (LOG.isTraceEnabled()) LOG.trace("putRegionTx - tid " + tid + " EXIT successful.");
   }
 
   /**
@@ -4911,8 +5239,20 @@ CoprocessorService, Coprocessor {
 
   public void beginTransaction(final long transactionId)
      throws IOException {
+     beginTransaction(transactionId, false);
+  }
+  
+  /**
+   * Begin a transaction
+   * @param longtransactionId
+   * @throws IOException
+   */
 
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: beginTransaction -- ENTRY txId: " + transactionId);
+  public void beginTransaction(final long transactionId, final boolean regionTransaction)
+     throws IOException {
+
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: beginTransaction -- ENTRY txId: " + transactionId
+                                + " regionTransaction " + regionTransaction);
 
     checkBlockNonPhase2(transactionId);
 
@@ -4957,7 +5297,8 @@ CoprocessorService, Coprocessor {
 				      m_Region.getRegionInfo(),
 				      m_Region.getTableDesc(), 
 				      tHLog, 
-				      configuredEarlyLogging);
+				      configuredEarlyLogging,
+				      regionTransaction);
 
       state.setFullEditInCommit(this.fullEditInCommit);
       state.setStartSequenceNumber(nextSequenceId.get());
@@ -5028,9 +5369,19 @@ CoprocessorService, Coprocessor {
     * @throws IOException
    */
   private TrxTransactionState beginTransIfNotExist(final long transactionId) throws IOException{
+     return beginTransIfNotExist(transactionId, false);
+  }
+  
+  /**begin transaction if not yet
+    * @param transactionId
+    * @return true: begin; false: not necessary to begin
+    * @throws IOException
+   */
+  private TrxTransactionState beginTransIfNotExist(final long transactionId, final boolean regionTx) throws IOException{
 
     if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: beginTransIfNotExist, txid: "
-            + transactionId + ", regionName " + regionInfo.getRegionNameAsString()
+            + transactionId + ", regionTx: " + regionTx
+            + ", regionName " + regionInfo.getRegionNameAsString()
             + " transactionsById size: " + transactionsById.size());
     checkBlockNewTrans(transactionId);
 
@@ -5041,13 +5392,13 @@ CoprocessorService, Coprocessor {
       if (state == null) {
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: Begin transaction for txid: " + transactionId
                 + " in beginTransIfNotExist beginning the transaction internally as state was null for key " + key);
-        this.beginTransaction(transactionId);
+        this.beginTransaction(transactionId, regionTx);
         state =  transactionsById.get(key);
       }
+      
       return state;
     }
   }
-
 
   /**
    * Commits the transaction
@@ -5567,7 +5918,18 @@ CoprocessorService, Coprocessor {
    * @throws IOException
    */
   public boolean commitIfPossible(final long transactionId, final long startEpoch, final long commitId, final int participantNum)
-    throws IOException {
+                 throws IOException {
+
+     return commitIfPossible(transactionId, startEpoch, commitId, participantNum, /* regionTx */ false, /* autoCommit */ true);
+  }
+  /**
+   * Determines if the transaction can be committed, and if possible commits the transaction.
+   * @param long transactionId
+   * @return boolean
+   * @throws IOException
+   */
+  public boolean commitIfPossible(final long transactionId, final long startEpoch, final long commitId, final int participantNum,
+                                  final boolean regionTx, final boolean autoCommit) throws IOException {
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- ENTRY txId: "
                + transactionId);
@@ -5575,13 +5937,19 @@ CoprocessorService, Coprocessor {
     checkBlockNonPhase2(transactionId);
 
     int status = commitRequest(transactionId, startEpoch, participantNum);
+    
+    if (! autoCommit) {
+       boolean result = ( status == COMMIT_OK || status == COMMIT_OK_READ_ONLY) ? true : false;
+       if (LOG.isTraceEnabled()) LOG.trace("commitIfPossible -- autoCommit is false, returning early with result " + result);
+       return result;
+    }
   
     if (status == COMMIT_OK) {
 
        // Process local memory
        try {
          commit(transactionId, participantNum);
-         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- ENTRY txId: " + transactionId + " COMMIT_OK");
+         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- EXIT txId: " + transactionId + " COMMIT_OK");
          return true;
        } catch (Throwable e) {
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible - txId " + transactionId + ", Caught exception after internal commit call "
@@ -5589,11 +5957,11 @@ CoprocessorService, Coprocessor {
         throw new IOException(e.toString());
        }
     } else if (status == COMMIT_OK_READ_ONLY) {
-            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- ENTRY txId: " 
+            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- EXIT txId: " 
             + transactionId + " COMMIT_OK_READ_ONLY");
             return true;
     }
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- ENTRY txId: " 
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- EXIT txId: " 
               + transactionId + " Commit Unsuccessful");
     return false;
   }

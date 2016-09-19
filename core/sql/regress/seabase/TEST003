@@ -221,6 +221,9 @@ select * from t003t2 where b = 18446744073709551615;
 
 select a, cast(cast(a as varchar(40)) as largeint unsigned) from t003t2;
 
+select cast('-9223372036854775808' as largeint) from (values(1)) x(a);
+select cast('-9223372036854775809' as largeint) from (values(1)) x(a);
+
 select a+10 from t003t2 where a = 1 or a = -1;
 
 select cast(100 as largeint unsigned) from (values(1)) x(a);

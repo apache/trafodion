@@ -1010,7 +1010,81 @@ const NAType *BuiltinFunction::synthesizeType()
 	    SQLChar(maxLength, typ1.supportsSQLnull());
       }
     break;
+ 
+    case ITM_ISIPV4:
+    case ITM_ISIPV6:
+      {
+        // type cast any params
+        ValueId vid1 = child(0)->getValueId();
+        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        vid1.coerceType(c1, NA_CHARACTER_TYPE);
+        //input type must be string
+        const NAType &typ1 = child(0)->getValueId().getType();
 
+        if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("IS_IP");
+	    return NULL;
+          }
+        retType = new HEAP
+           SQLSmall(TRUE, FALSE);
+	if (typ1.supportsSQLnull())
+	  {
+	    retType->setNullable(TRUE);
+	  }
+      }
+    break;
+    case ITM_INET_ATON:
+      {
+        // type cast any params
+        ValueId vid1 = child(0)->getValueId();
+        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        vid1.coerceType(c1, NA_CHARACTER_TYPE);
+
+        //input type must be string
+        const NAType &typ1 = child(0)->getValueId().getType();
+
+        if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("INET_ATON");
+	    return NULL;
+          }
+        retType = new HEAP
+           SQLInt(FALSE, FALSE);
+	if (typ1.supportsSQLnull())
+	  {
+	    retType->setNullable(TRUE);
+	  }
+      }
+    break;
+    case ITM_INET_NTOA:
+      {
+	// type cast any params
+	ValueId vid = child(0)->getValueId();
+	vid.coerceType(NA_NUMERIC_TYPE);
+
+	const NAType &typ1 = child(0)->getValueId().getType();
+	if (typ1.getTypeQualifier() != NA_NUMERIC_TYPE)
+	  {
+	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("INET_NTOA");
+	    return NULL;
+	  }
+        const NumericType &ntyp1 = (NumericType &) typ1;
+        if (NOT ntyp1.isExact() || ntyp1.getScale() != 0)
+	  {
+	    *CmpCommon::diags() << DgSqlCode(-4046) << DgString0("INET_NTOA");
+	    return NULL;
+	  }
+
+	retType = new HEAP
+	  SQLVarChar(15, FALSE);
+
+	if (typ1.supportsSQLnull())
+	  {
+	    retType->setNullable(TRUE);
+          }
+      }
+    break;
     case ITM_NULLIFZERO:
       {
 	// type cast any params
@@ -3399,6 +3473,7 @@ const NAType *MathFunc::synthesizeType()
     case ITM_FLOOR:
     case ITM_LOG:
     case ITM_LOG10:
+    case ITM_LOG2:
     case ITM_PI:
     case ITM_POWER:
     case ITM_RADIANS:
@@ -5787,6 +5862,65 @@ const NAType *ItmSeqOffset::synthesizeType()
  }
  return result;
 }
+
+
+const NAType *ItmLagOlapFunction::synthesizeType()
+{
+// Return the type of child 0.
+  const NAType &operand1 = child(0)->getValueId().getType();
+
+  if (getArity() > 1)  {
+    const NAType &operand2 = child(1)->getValueId().getType();
+
+    if (operand2.getTypeQualifier() != NA_NUMERIC_TYPE) {
+    // The second operand of an OFFSET function must be numeric.
+    *CmpCommon::diags() << DgSqlCode(-4052) << DgString0(getTextUpper());
+    return NULL;
+    }
+
+    // check the default expression which should have the same type as the
+    // child(0).
+    if (getArity() > 2)  {
+        const NAType& typeForOp0 = child(0)->castToItemExpr()->getValueId().getType();
+        const NAType& typeForDefault = child(2)->castToItemExpr()->getValueId().getType();
+     
+        UInt32 flags =
+            ((CmpCommon::getDefault(LIMIT_MAX_NUMERIC_PRECISION) == DF_ON)
+              ? NAType::LIMIT_MAX_NUMERIC_PRECISION : 0);
+  
+         if ( !(typeForOp0 == typeForDefault) ) {
+          
+                NATypeSynthRuleEnum rule = SYNTH_RULE_ADD;
+          
+                if ( typeForOp0.getTypeQualifier() == NA_CHARACTER_TYPE )
+                  rule = SYNTH_RULE_CONCAT;
+          
+                const NAType* resultType = typeForOp0.synthesizeType(rule,
+                                              typeForOp0,
+                                              typeForDefault,
+                                              HEAP, &flags);
+          
+                if ( !resultType ) {
+                   *CmpCommon::diags() << DgSqlCode(-4141) << DgString0("LAG");
+                   return NULL;
+                }
+          
+                // Set the null attribute of the default value to TRUE.
+                NAType* newType = typeForDefault.newCopy(HEAP);
+                newType->setNullable(TRUE);
+                ValueId vid2 = child(2)->castToItemExpr()->getValueId();
+                vid2.changeType(newType);
+         }
+     }
+  }
+
+ NAType *result = operand1.newCopy(HEAP);
+
+ result->setNullable(TRUE);
+
+ return result;
+}
+
 // -----------------------------------------------------------------------
 // member functions for class ItmSeqDiff1
 // -----------------------------------------------------------------------
@@ -6595,5 +6729,108 @@ const NAType *LOBextract::synthesizeType()
   NAType *result = new HEAP SQLVarChar(tgtSize, Lob_Invalid_Storage,
 				       typ1.supportsSQLnull());
   return result;
+}
+
+const NAType * ItmLeadOlapFunction::synthesizeType()
+{
+   // check the type of the offset operand, if present
+   if (getArity() > 1)  {
+      const NAType &operand2 = child(1)->getValueId().getType();
+
+      NABoolean isInteger = FALSE;
+      if (operand2.getTypeQualifier() == NA_NUMERIC_TYPE ) {
+
+         const NumericType& nt = (NumericType&)operand2;
+         if ( nt.isInteger() ) 
+           isInteger = TRUE;
+      }
+            
+         // The second operand of a LEAD function must be of integer type.
+     if ( !isInteger ) {
+         *CmpCommon::diags() << DgSqlCode(-4140) << DgString0(getTextUpper());
+         return NULL;
+     }
+
+     // check the value of the offset expression constant
+     NABoolean offsetOK = FALSE;
+     Int64 value = 0;
+  
+     if ( getArity() > 1 )
+     {
+        ValueId vid1 = child(1)->getValueId();
+        ItemExpr *offsetExpr = vid1.getItemExpr();
+  
+        if (offsetExpr) {
+           if ( offsetExpr->getOperatorType() == ITM_CONSTANT ) 
+           {
+              ConstValue* cv = (ConstValue*)offsetExpr;
+              if ( cv->canGetExactNumericValue() )
+              {
+                 value = cv->getExactNumericValue();
+                 if ( value >= 0 ) {
+                    offsetOK = TRUE;
+                    offset_ = (Int32)value;
+                 }
+              }
+           } else 
+             offsetOK = TRUE; // delay making the decision. It coud be a row subquery
+       }
+  
+     } else { 
+  
+        if ( offset_ >= 0 )
+          offsetOK = TRUE;
+     }
+  
+     if ( !offsetOK ) {
+  
+        *CmpCommon::diags() << DgSqlCode(-4249) << DgString0("LEAD");
+        return NULL;
+     }
+   }
+
+   // check the default expression which should have the same type as the
+   // child(0).
+   if (getArity() > 2)  {
+      const NAType& typeForOp0 = child(0)->castToItemExpr()->getValueId().getType();
+      const NAType& typeForDefault = child(2)->castToItemExpr()->getValueId().getType();
+
+      UInt32 flags =
+          ((CmpCommon::getDefault(LIMIT_MAX_NUMERIC_PRECISION) == DF_ON)
+            ? NAType::LIMIT_MAX_NUMERIC_PRECISION : 0);
+
+      if ( !(typeForOp0 == typeForDefault) ) {
+
+         NATypeSynthRuleEnum rule = SYNTH_RULE_ADD;
+
+         if ( typeForOp0.getTypeQualifier() == NA_CHARACTER_TYPE )
+           rule = SYNTH_RULE_CONCAT;
+
+         const NAType* resultType = typeForOp0.synthesizeType(rule,
+                                       typeForOp0,
+                                       typeForDefault,
+                                       HEAP, &flags);
+
+         if ( !resultType ) {
+            *CmpCommon::diags() << DgSqlCode(-4141) << DgString0("LEAD");
+            return NULL;
+         }
+
+         // Set the null attribute of the default value to TRUE.
+         NAType* newType = typeForDefault.newCopy(HEAP);
+         newType->setNullable(TRUE);
+         ValueId vid2 = child(2)->castToItemExpr()->getValueId();
+         vid2.changeType(newType);
+      }
+   }
+    
+   // the type of the LEAD() is the type of the 1st argument.
+   const NAType& operand = child(0)->castToItemExpr()->getValueId().getType();
+   NAType* result = operand.newCopy(HEAP);
+
+   // LEAD can return NULL.
+   result->setNullable(TRUE);
+
+   return result;
 }
 

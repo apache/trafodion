@@ -2091,8 +2091,11 @@ ex_expr::exp_return_type convAsciiToInt64(Int64 &target,
                           heap, diagsArea, flags);
   if (ert == ex_expr::EXPR_ERROR)
     return ert;
-
-  if (tempTgt > LLONG_MAX)
+  UInt64 maxLongPlus1 = LLONG_MAX ;
+  maxLongPlus1 ++; // min 64bit long integer is -9223372036854775808
+                   // max 64bit long integer is 9223372036854775807
+                   // so if negative value convert to non-negative value, should check with LLONG_MAX + 1
+  if ((tempTgt > LLONG_MAX && NOT negative) || (tempTgt > maxLongPlus1) )
     {
       ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
                             source, sourceLen, REC_BYTE_F_ASCII,
@@ -2106,6 +2109,10 @@ ex_expr::exp_return_type convAsciiToInt64(Int64 &target,
       target = (Int64)tempTgt;
       return ex_expr::EXPR_OK;
     }
+  /* remove below code according to discussion in github
+   * https://github.com/apache/incubator-trafodion/pull/706
+   * with above validation, below checking is no longer needed
+   * comment out
   
   if (-(Int64)tempTgt < LLONG_MIN)
     {
@@ -2115,7 +2122,7 @@ ex_expr::exp_return_type convAsciiToInt64(Int64 &target,
                             REC_BIN64_SIGNED, flags);
       return ex_expr::EXPR_ERROR;
     }
-
+  */
   target = - (Int64)tempTgt;
 
   return ex_expr::EXPR_OK;
