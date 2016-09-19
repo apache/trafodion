@@ -24,6 +24,7 @@
 #include "dtm/tm.h"
 #include <string.h>
 #include <iostream>
+#include "../../inc/fs/feerrors.h" 
 
 using namespace std;
 
@@ -33,7 +34,7 @@ using namespace std;
 * Signature: ([B)V
 */
 
-JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_createTableReq
+JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_createTableReq
   (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tableDescriptor, jobjectArray pv_keys, jint pv_numSplits, jint pv_keyLength, jlong pv_transid, jbyteArray pv_tblname){
 
    char la_tbldesc[TM_MAX_DDLREQUEST_STRING];
@@ -42,6 +43,7 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
    str_key = new char[TM_MAX_DDLREQUEST_STRING];
    char** la_keys;
    la_keys = new char *[TM_MAX_DDLREQUEST_STRING];
+   int lv_error = FEOK;
 
    int lv_tblname_len = pp_env->GetArrayLength(pv_tblname);
    if(lv_tblname_len > TM_MAX_DDLREQUEST_STRING) {
@@ -75,11 +77,12 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
          pp_env->DeleteLocalRef(jba_keyarray);
       }
 
-      CREATETABLE(la_tbldesc, lv_tbldesc_length, la_tblname, la_keys, lv_numSplits, lv_keyLength, lv_transid);
+      lv_error  = CREATETABLE(la_tbldesc, lv_tbldesc_length, la_tblname, la_keys, lv_numSplits, lv_keyLength, lv_transid);
 
       pp_env->ReleaseByteArrayElements(pv_tableDescriptor, lp_tbldesc, 0);
       pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
-   }   
+   }
+   return lv_error;
 }
 
 
@@ -88,10 +91,11 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
  * Method:    dropTableReq
  * Signature: ([BJ)V
  */
-JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_dropTableReq
+JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_dropTableReq
   (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tblname, jlong pv_transid) {
 
    char la_tblname[TM_MAX_DDLREQUEST_STRING];
+   int lv_error = FEOK;
 
    int lv_tblname_len = pp_env->GetArrayLength(pv_tblname);
    if(lv_tblname_len > TM_MAX_DDLREQUEST_STRING) {
@@ -104,9 +108,10 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
 
       long lv_transid = (long) pv_transid;
 
-      DROPTABLE(la_tblname, lv_tblname_len, lv_transid);
+      lv_error = DROPTABLE(la_tblname, lv_tblname_len, lv_transid);
       pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
    }
+   return lv_error;
 }
 
 /*
@@ -114,10 +119,11 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
  * Method:    truncateOnAbortReq
  * Signature: ([BJ)V
  */
-JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_truncateOnAbortReq
+JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_truncateOnAbortReq
   (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tblname, jlong pv_transid) {
 
    char la_tblname[TM_MAX_DDLREQUEST_STRING];
+   int lv_error = FEOK;
 
    int lv_tblname_len = pp_env->GetArrayLength(pv_tblname);
    if(lv_tblname_len > TM_MAX_DDLREQUEST_STRING) {
@@ -130,9 +136,10 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
 
       long lv_transid = (long) pv_transid;
 
-      REGTRUNCATEONABORT(la_tblname, lv_tblname_len, lv_transid);
+      lv_error = REGTRUNCATEONABORT(la_tblname, lv_tblname_len, lv_transid);
       pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
    }
+   return lv_error;
 }
 
 /*
@@ -140,9 +147,10 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
  * Method:    alterTableReq
  * Signature: ([B[Ljava/lang/Object;J)V
  */
-JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_alterTableReq
+JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_alterTableReq
   (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tblName, jobjectArray pv_tableOptions, jlong pv_transID) {
 
+   int lv_error = FEOK;
    int tblopts_len =0;
    char la_tblname[TM_MAX_DDLREQUEST_STRING];
 
@@ -182,8 +190,9 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
       }
 
       long lv_transid = (long) pv_transID;
-      ALTERTABLE(la_tblname, lv_tblname_len, tbl_options, tblopts_len, tbloptions_cnt, lv_transid);
+      lv_error = ALTERTABLE(la_tblname, lv_tblname_len, tbl_options, tblopts_len, tbloptions_cnt, lv_transid);
       pp_env->ReleaseByteArrayElements(pv_tblName, lp_tblname, 0);
    }
+   return lv_error;
 }
  
