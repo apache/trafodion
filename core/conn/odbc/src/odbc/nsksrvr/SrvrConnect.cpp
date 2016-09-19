@@ -1015,12 +1015,14 @@ static void* SessionWatchDog(void* arg)
                                               }
                                             else if (retcode < 0)
                                               {
-						char errStr[256];
-						sprintf( errStr, "Error updating explain data. SQL_EXEC_StoreExplainData() returned: %d", retcode );
-						SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                                char errStr[256];
+                                                sprintf( errStr, "Error updating explain data. SQL_EXEC_StoreExplainData() returned: %d", retcode );
+                                                SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
                                                              0, ODBCMX_SERVER,
                                                              srvrGlobal->srvrObjRef, 1, errStr);
                                               }
+                                            // Clear diagnostics
+                                            SRVR::WSQL_EXEC_ClearDiagnostics(NULL);
                                           }
 				}
 			}
@@ -6712,7 +6714,7 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 					return true;
 					
 				// allocate explainDataLen bytes of explainData space
-				explainData = new char[explainDataLen];
+				explainData = new char[explainDataLen + 1];
 				if (explainData == NULL)
 				{
 					char errStr[128];
@@ -6724,16 +6726,19 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 				}
 				iqqcode = SQL_EXEC_GetExplainData(&(pSrvrStmt->stmt),
 													explainData,
-													explainDataLen,
+													explainDataLen + 1,
 													&retExplainLen);
 				if (iqqcode == -CLI_GENCODE_BUFFER_TOO_SMALL)
 				{
 					explainDataLen = retExplainLen;
 
+					// Clear diagnostics
+					SRVR::WSQL_EXEC_ClearDiagnostics(NULL);
+
 					// allocate explainDataLen bytes of explainData space
 					if (explainData)
 						delete explainData;
-					explainData = new char[explainDataLen];
+					explainData = new char[explainDataLen + 1];
 					if (explainData == NULL)
 					{
 						char errStr[128];
@@ -6743,18 +6748,24 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 								srvrGlobal->srvrObjRef, 1, errStr);
 						return false;
 					}
+
 					iqqcode = SQL_EXEC_GetExplainData(&(pSrvrStmt->stmt),
 												explainData,
-												explainDataLen,
+												explainDataLen + 1,
 												&retExplainLen);
 				}
-                                else if (iqqcode == -EXE_NO_EXPLAIN_INFO)
-                                {
-                                  retExplainLen = 0;
-                                  if (explainData)
-                                    delete explainData;
-                                  explainData = 0;
-                                }
+				else if (iqqcode == -EXE_NO_EXPLAIN_INFO)
+				{
+					retExplainLen = 0;
+					if (explainData)
+						delete explainData;
+					explainData = 0;
+					iqqcode = 0;
+
+					// Clear diagnostics
+					SRVR::WSQL_EXEC_ClearDiagnostics(NULL);
+				}
+
 				if (iqqcode < 0)
 				{
 					char errStr[256];
@@ -6770,8 +6781,10 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 					delete pSrvrStmt->sqlPlan;
 					pSrvrStmt->sqlPlan = NULL;
 				}
+
 				pSrvrStmt->sqlPlan = explainData;
-				pSrvrStmt->sqlPlanLen = retExplainLen;
+				if (retExplainLen > 0)
+					pSrvrStmt->sqlPlanLen = retExplainLen + 1; // include null terminator
 				pSrvrStmt->exPlan = SRVR_STMT_HDL::COLLECTED;
 				return true;
 			break;
@@ -9379,43 +9392,56 @@ bailout:
 }
 
 short DO_WouldLikeToExecute(
-		IDL_char *stmtLabel
-		, Long stmtHandle
-		, IDL_long* returnCode
-		, IDL_long* sqlWarningOrErrorLength
-		, BYTE*& sqlWarningOrError
-		)
+                  IDL_char *stmtLabel
+                , Long stmtHandle
+                , IDL_long* returnCode
+                , IDL_long* sqlWarningOrErrorLength
+                , BYTE*& sqlWarningOrError
+                )
 {
-	SRVR_STMT_HDL *pSrvrStmt = NULL;
-	if (stmtLabel != NULL && stmtLabel[0] != 0)
-		pSrvrStmt = SRVR::getSrvrStmt(stmtLabel, FALSE);
-	else
-		pSrvrStmt = (SRVR_STMT_HDL *)stmtHandle;
+        SRVR_STMT_HDL *pSrvrStmt = NULL;
+        if (stmtLabel != NULL && stmtLabel[0] != 0)
+            pSrvrStmt = SRVR::getSrvrStmt(stmtLabel, FALSE);
+        else
+            pSrvrStmt = (SRVR_STMT_HDL *)stmtHandle;
 
-	if (pSrvrStmt == NULL)
-		return 0;
+        if (pSrvrStmt == NULL)
+            return 0;
 
-	if (srvrGlobal->sqlPlan)
-		getSQLInfo( EXPLAIN_PLAN, stmtHandle, stmtLabel );
+        if (srvrGlobal->sqlPlan)
+        {
+            if (! getSQLInfo( EXPLAIN_PLAN, stmtHandle, stmtLabel ))
+            {
+                // Clear diagnostics if there were errors while retrieving the plan
+                SRVR::WSQL_EXEC_ClearDiagnostics(NULL);
 
-	if(resStatStatement != NULL)
-	{
-		resStatStatement->wouldLikeToStart_ts = JULIANTIMESTAMP();
-		resStatStatement->pubStarted = false;
-		resStatStatement->queryFinished = false;
-	}
+                if (pSrvrStmt->sqlPlan != NULL)
+                {
+                    delete pSrvrStmt->sqlPlan;
+                    pSrvrStmt->sqlPlan = NULL;
+                    pSrvrStmt->sqlPlanLen = 0;
+                }
+            }
+        }
 
-	// Update the query status
-	pSrvrStmt->m_state = QUERY_EXECUTING;
+        if (resStatStatement != NULL)
+        {
+            resStatStatement->wouldLikeToStart_ts = JULIANTIMESTAMP();
+            resStatStatement->pubStarted = false;
+            resStatStatement->queryFinished = false;
+        }
 
-	pQueryStmt = pSrvrStmt;
-	pSrvrStmt->m_bDoneWouldLikeToExecute = true;
-	if ((srvrGlobal->m_bStatisticsEnabled)&&(srvrGlobal->m_statisticsPubType==STATISTICS_AGGREGATED)&&(srvrGlobal->m_iQueryPubThreshold>=0))
-	{
-		limit_count=0;
-	}	
-	
-	return 0;
+// Update the query status
+        pSrvrStmt->m_state = QUERY_EXECUTING;
+
+        pQueryStmt = pSrvrStmt;
+        pSrvrStmt->m_bDoneWouldLikeToExecute = true;
+        if ((srvrGlobal->m_bStatisticsEnabled)&&(srvrGlobal->m_statisticsPubType==STATISTICS_AGGREGATED)&&(srvrGlobal->m_iQueryPubThreshold>=0))
+        {
+            limit_count=0;
+        }
+
+        return 0;
 }
 
 short qrysrvc_ExecuteFinished(
