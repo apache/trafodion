@@ -74,8 +74,6 @@ INCLUDES	= -I. -I./inc -I ../shared/inc \
 LINK_OPTIONS	= -L$(LIBEXPDIR) -lldap -lssl -llber -llog4cxx
 LINK_OPTIONS   += $(LNK_FLGS) 
 
-COMMON_LIBS =  -ltdm_sqlcli -larkcmp_dll  
-
 $(LIBEXPDIR)/libsqauth.so:	$(OBJS)
 	$(CXX) -fPIC $(DBG_FLAGS) -shared $(GCCMODEXX) -o $@ $(INCLUDES) $(LINK_OPTIONS) $(OBJS)
 

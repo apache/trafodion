@@ -25,11 +25,11 @@
 #include <unistd.h> 
 #include <stdio.h>
 #include <iostream>
-#include "seabed/ms.h"
-#include "seabed/fserr.h"
+
+class AuthEvent;
 
 static std::string AUTH_COMPONENT = "DBSECURITY";
-std::vector<AuthEvent> authEvents;
+
 
 // ****************************************************************************
 // function: insertAuthEvent
@@ -42,12 +42,13 @@ std::vector<AuthEvent> authEvents;
 // severity - severity of the event
 // ****************************************************************************
 void insertAuthEvent(
+  std::vector<AuthEvent> & authEvents,
   DB_SECURITY_EVENTID eventID,
   const char * eventText,
   logLevel severity)
 {
   AuthEvent authEvent(eventID,
-                      AuthEvent::formatEventText(eventText),
+                      eventText,
                       severity);
   authEvents.push_back(authEvent);
 }
@@ -81,6 +82,47 @@ void authInitEventLog()
   char log_name_suffix[log_name_suffix_len];
   snprintf( log_name_suffix, log_name_suffix_len, "_%s_%d.log", my_hostname, my_nid );
   CommonLogger::instance().initLog4cxx("log4cxx.trafodion.auth.config",log_name_suffix);
+}
+
+// ****************************************************************************
+//  function getAuthOutcome
+//
+//  Returns a text representation of the error from the AUTH_OUTCOME enum
+//
+// ****************************************************************************
+std::string getAuthOutcome(AUTH_OUTCOME outcome)
+{
+   std::string outcomeDesc;
+   switch (outcome)
+   {
+      case AUTH_OK:
+         outcomeDesc = "Authentication successful";
+         break;
+      case AUTH_NOT_REGISTERED:
+         outcomeDesc = "User not registered";
+         break;
+      case AUTH_MD_NOT_AVAILABLE:
+         outcomeDesc = "Unexpected error occurred looking up user in database";
+         break;
+      case AUTH_USER_INVALID:
+         outcomeDesc = "User is not valid";
+         break;
+      case AUTH_TYPE_INCORRECT:
+         outcomeDesc = "Unexpected authorization type detected";
+         break;
+      case AUTH_NO_PASSWORD:
+         outcomeDesc = "Invalid password";
+         break;
+      case AUTH_REJECTED:
+         outcomeDesc = "Invalid username or password";
+         break;
+      case AUTH_FAILED:
+         outcomeDesc = "Unexpected error returned from LDAP";
+         break;
+      default:
+         outcomeDesc = "Unexpected error occurred";
+    }
+  return outcomeDesc;
 }
 
 // ****************************************************************************
@@ -123,7 +165,7 @@ void AuthEvent::logAuthEvent()
   
     // Log4cxx logging
     char buf[MAX_EVENT_MSG_SIZE];
-    snprintf(buf, MAX_EVENT_MSG_SIZE, "Node Number: %u, CPU: %u, PIN: %u ,,,, Message: %s", 
+    snprintf(buf, MAX_EVENT_MSG_SIZE, "Node Number: %u, CPU: %u, PIN: %u ,,,, %s", 
             my_nid, my_cpu, my_pid, eventText_.c_str());
     
     // strip off final new line before logging

@@ -31,6 +31,7 @@
 //******************************************************************************
 #include "ldapconfignode.h"
 #include "authEvents.h"
+#include "auth.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -53,12 +54,8 @@ enum Operation {
    Lookup = 3
 };
 
-enum  LDAPAuthResult {
-    AuthResult_Successful,       // User was authenticated on LDAP server
-    AuthResult_Rejected,         // User was rejected by LDAP server
-    AuthResult_ResourceError};   // An error prevented authentication
-    
-LDAPAuthResult authenticateLDAPUser(
+AUTH_OUTCOME authenticateLDAPUser(
+   std::vector<AuthEvent> &       authEvents,
    const char *                   username,
    const char *                   password,
    LDAPConfigNode::LDAPConfigType configType,
@@ -66,28 +63,34 @@ LDAPAuthResult authenticateLDAPUser(
    char *                         authHostName);
    
 void doAuthenticate(
+   std::vector<AuthEvent> &       authEvents,
    const char *                   username,
    const char *                   password,
    LDAPConfigNode::LDAPConfigType configType,
    bool                           verbose);
    
 void doCanaryCheck(
+   std::vector<AuthEvent> &       authEvents,
    const char *                   username,
    LDAPConfigNode::LDAPConfigType configType,
    bool                           verbose,
-   int &                          exitCode);   
+   AUTH_OUTCOME                   exitCode);   
    
 LDSearchStatus lookupLDAPUser(
+   std::vector<AuthEvent> &        authEvents,
    const char *                    username,          
    LDAPConfigNode::LDAPConfigType  configType,        
    char *                          searchHostName);
    
 void printTime();        
       
-void reportAuthenticationErrors(bool displayErrors);
+void reportResults(
+    Operation                      operation, 
+    const std::vector<AuthEvent> & authEvents,
+    const char                   * username,
+    AUTH_OUTCOME                   outcome,
+    int                            verbose);
 
-void reportRetries(Operation operation);
-    
 void setEcho(bool enable);
 
 // *****************************************************************************
@@ -101,6 +104,9 @@ void setEcho(bool enable);
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
+// *                                                                           *
 // *  <username>                      const char *                    In       *
 // *    is the external username to be checked on the directory server.        *
 // *                                                                           *
@@ -112,14 +118,15 @@ void setEcho(bool enable);
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
-// * Returns: LDAPAuthResult                                                   *
+// * Returns: AUTH_OUTCOME                                                   *
 // *                                                                           *
-// *    AuthResult_Successful,       -- User was authenticated on LDAP server  *
-// *    AuthResult_Rejected,         -- User was rejected by LDAP server       *
-// *    AuthResult_ResourceError     -- An error prevented authentication      *
+// *    AUTH_OK                      -- User was authenticated on LDAP server  *
+// *    AUTH_REJECTED                -- User was rejected by LDAP server       *
+// *    AUTH_FAILED                  -- An error prevented authentication      *
 // *                                                                           *
 // *****************************************************************************
-LDAPAuthResult authenticateLDAPUser(
+AUTH_OUTCOME authenticateLDAPUser(
+   std::vector<AuthEvent> &       authEvents,
    const char *                   username,
    const char *                   password,
    LDAPConfigNode::LDAPConfigType configType,
@@ -128,50 +135,48 @@ LDAPAuthResult authenticateLDAPUser(
 
 {
 
-string userDN = "";       // User DN, used to bind to LDAP serer
-LDAPConfigNode *searchNode;
+   string userDN = "";       // User DN, used to bind to LDAP serer
+   LDAPConfigNode *searchNode;
 
-// Zero len password is a non-auth bind in LDAP, so we treat it
-// as a failed authorization.
+   // Zero len password is a non-auth bind in LDAP, so we treat it
+   // as a failed authorization.
    if (strlen(password) == 0)
-      return AuthResult_Rejected;
+      return AUTH_REJECTED;
 
-   searchNode = LDAPConfigNode::GetLDAPConnection(configType,SearchConnection,
+   searchNode = LDAPConfigNode::GetLDAPConnection(authEvents,configType,SearchConnection,
                                                   searchHostName);
 
    if (searchNode == NULL) 
-      return AuthResult_ResourceError;
+      return AUTH_FAILED;
 
-LDSearchStatus searchStatus = searchNode->lookupUser(username,userDN);
+   LDSearchStatus searchStatus = searchNode->lookupUser(authEvents,username,userDN);
                                                      
    if (searchStatus == LDSearchNotFound)
-      return AuthResult_Rejected;
+      return AUTH_REJECTED;
       
    if (searchStatus != LDSearchFound)
-      return AuthResult_ResourceError;
+      return AUTH_FAILED;
 
-// User is defined there.  But is their password correct?
+   // User is defined there.  But is their password correct?
 
-LDAPConfigNode *authNode = LDAPConfigNode::GetLDAPConnection(configType,
-                                                             AuthenticationConnection,
-                                                             authHostName);
+   LDAPConfigNode *authNode = LDAPConfigNode::GetLDAPConnection(authEvents,configType,
+                                                                AuthenticationConnection,
+                                                                authHostName);
 
    if (authNode == NULL)
-      return AuthResult_ResourceError;
+      return AUTH_FAILED;
 
-//
-// User exists, let's validate that non-blank password!
-//
+   // User exists, let's validate that non-blank password!
 
-LDAuthStatus authStatus = authNode->authenticateUser(userDN.c_str(),password);
+   LDAuthStatus authStatus = authNode->authenticateUser(authEvents,userDN.c_str(),password);
 
    if (authStatus == LDAuthSuccessful)
-      return AuthResult_Successful;
+      return AUTH_OK;
       
    if (authStatus == LDAuthRejected)
-      return AuthResult_Rejected;
+      return AUTH_REJECTED;
 
-   return AuthResult_ResourceError;
+   return AUTH_FAILED;
 
 }
 //************************ End of authenticateLDAPUser *************************
@@ -187,6 +192,9 @@ LDAuthStatus authStatus = authNode->authenticateUser(userDN.c_str(),password);
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
+// *                                                                           *
 // *  <username>                      const char *                    In       *
 // *    is the external username to be checked on the directory server.        *
 // *                                                                           *
@@ -201,6 +209,7 @@ LDAuthStatus authStatus = authNode->authenticateUser(userDN.c_str(),password);
 // *                                                                           *
 // *****************************************************************************
 void doAuthenticate(
+   std::vector<AuthEvent> &       authEvents,
    const char *                   username,
    const char *                   password,
    LDAPConfigNode::LDAPConfigType configType,
@@ -210,13 +219,13 @@ void doAuthenticate(
 
    LDAPConfigNode::ClearRetryCounts();
    
-char searchHostName[256];
-char authHostName[256];
+   char searchHostName[256];
+   char authHostName[256];
 
    searchHostName[0] = authHostName[0] = 0;
  
-LDAPAuthResult rc = authenticateLDAPUser(username,password,configType,
-                                         searchHostName,authHostName);
+   AUTH_OUTCOME rc = authenticateLDAPUser(authEvents,username,password,configType,
+                                          searchHostName,authHostName);
                              
    if (verbose)
    {
@@ -224,32 +233,14 @@ LDAPAuthResult rc = authenticateLDAPUser(username,password,configType,
       cout << "Auth host name: " << authHostName << endl;
    }
        
-//
-// How'd it go?  In addition to a thumbs up/down, print diagnostics if 
-// requested.  This matches production behavior; we log retries if
-// successful, and we log all internal errors as well as number of retries
-// if authentication failed due to a resource error.  Resource errors include
-// problems with the LDAP servers and parsing the LDAP connection configuration
-// file (.traf_authentication_config).
-//      
-   if (rc == AuthResult_Rejected)
-   {                                          
-      cout << "Invalid username or password" << endl; 
-      return;
-   }
-   
-   if (rc == AuthResult_Successful)
-      cout << "Authentication successful" << endl;
-   else
-      cout << "Authentication failed: resource error" << endl;
-
-   if (verbose)
-   {
-      reportRetries(Authenticate);
-      reportAuthenticationErrors(true); 
-   }
-   else
-      reportAuthenticationErrors(false);
+   // How'd it go?  In addition to a thumbs up/down, print diagnostics if 
+   // requested.  This matches production behavior; we log retries if
+   // successful, and we log all internal errors as well as number of retries
+   // if authentication failed due to a resource error.  Resource errors include
+   // problems with the LDAP servers and parsing the LDAP connection configuration
+   // file (.traf_authentication_config).
+           
+   reportResults(Authenticate,authEvents,username,rc,verbose);
 
 }
 //*************************** End of doAuthenticate ****************************
@@ -264,6 +255,9 @@ LDAPAuthResult rc = authenticateLDAPUser(username,password,configType,
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
+// *                                                                           *
 // *  <username>                      const char *                    In       *
 // *    is the external username to be checked on the directory server.        *
 // *                                                                           *
@@ -275,53 +269,41 @@ LDAPAuthResult rc = authenticateLDAPUser(username,password,configType,
 // *                                                                           *
 // *****************************************************************************
 void doCanaryCheck(
+   std::vector<AuthEvent> &       authEvents,
    const char *                   username,
    LDAPConfigNode::LDAPConfigType configType,
    bool                           verbose,
-   int &                          exitCode)   
+   AUTH_OUTCOME                   exitCode)   
    
 {
-   exitCode = 0;
-   
+   exitCode = AUTH_OK;
+
    char searchHostName[256];
 
    searchHostName[0] = 0;
    
-   LDSearchStatus searchStatus = lookupLDAPUser(username,configType,searchHostName);
+   LDSearchStatus searchStatus = lookupLDAPUser(authEvents,username,configType,searchHostName);
 
    if (verbose)
       cout << "Search host name: " << searchHostName << endl;
    
-   if (authEvents.size() > 0)
-      exitCode = 1;
-
    switch (searchStatus)
    {
       case LDSearchFound:
-         cout << "User " << username << " found" << endl;
+         exitCode = AUTH_OK;
          break;
       case LDSearchNotFound:
-         cout << "User " << username << " not found" << endl;
-         exitCode = 3;
+         exitCode = AUTH_REJECTED;
          break;
       case LDSearchResourceFailure:
-         cout << "Unable to lookup user due to LDAP errors" << endl;
-         exitCode = 2;
+         exitCode = AUTH_FAILED;
          break;
       default:
-      {
-         cout << "Internal error" << endl;
-         exitCode = 2;
-      }
+         exitCode = AUTH_FAILED;
    }
    
-   if (verbose)
-      {
-      reportRetries(Lookup);
-      reportAuthenticationErrors(true); 
-   }
-   else
-      reportAuthenticationErrors(false);
+
+   reportResults(Lookup,authEvents,username,exitCode,verbose);
 
 }
 //*************************** End of doCanaryCheck *****************************
@@ -337,6 +319,9 @@ void doCanaryCheck(
 // *****************************************************************************
 // *                                                                           *
 // *  Parameters:                                                              *
+// *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
 // *                                                                           *
 // *  <username>                      const char *                    In       *
 // *    is the external username to be checked on the directory server.        *
@@ -355,6 +340,7 @@ void doCanaryCheck(
 // *                                                                           *
 // *****************************************************************************
 LDSearchStatus lookupLDAPUser(
+   std::vector<AuthEvent> &        authEvents,
    const char *                    username,          
    LDAPConfigNode::LDAPConfigType  configType,        
    char *                          searchHostName)
@@ -363,7 +349,7 @@ LDSearchStatus lookupLDAPUser(
   
 LDAPConfigNode *searchNode;
 
-   searchNode = LDAPConfigNode::GetLDAPConnection(configType,SearchConnection,
+   searchNode = LDAPConfigNode::GetLDAPConnection(authEvents,configType,SearchConnection,
                                                   searchHostName);
 
    if (searchNode == NULL) 
@@ -371,7 +357,7 @@ LDAPConfigNode *searchNode;
       
 string userDN = "";
 
-   return searchNode->lookupUser(username,userDN);
+   return searchNode->lookupUser(authEvents,username,userDN);
 
 }
 //************************** End of lookupLDAPUser *****************************
@@ -423,19 +409,73 @@ void printUsage()
 
 
 // *****************************************************************************
-// Function: reportAuthenticationErrors
-//                                    
-//    Logs and optionally displays any resource errors encountered during LDAP 
-//    checking.
+// *                                                                           *
+// * Function: reportResults                                                   *
+// *                                                                           *
+// * Logs and optionally displays any retries, errors, and outcome of an       *
+// * authentication or lookup operation.                                       *
+// *                                                                           *
 // *****************************************************************************
-void reportAuthenticationErrors(bool displayErrors)
+void reportResults(
+    Operation                      operation,
+    const std::vector<AuthEvent> & authEvents,
+    const char                   * username,
+    AUTH_OUTCOME                   outcome,
+    int                            verbose)
+
 {
-  if (authEvents.size() > 0)
-    authInitEventLog();
+
+   std::string msg;
+
+   // Report any retries
+   size_t bindRetryCount = LDAPConfigNode::GetBindRetryCount();
+   size_t searchRetryCount = LDAPConfigNode::GetSearchRetryCount();
+
+   char operationString[20];
+   
+   if (operation == Authenticate)
+      strcpy(operationString,"Authentication");
+   else
+      strcpy(operationString,"Lookup"); 
+      
+
+   // Log and optionally display event for:
+   //    search (name lookup) operation that was retried
+   if (searchRetryCount > 0)
+   { 
+      char searchRetryMessage[5100];
+       
+      sprintf(searchRetryMessage,"%s required %d search retries. ",
+              operationString,searchRetryCount);
+      msg = searchRetryMessage;
+      AuthEvent authEvent (DBS_AUTH_RETRY_SEARCH, msg, LL_INFO);
+      authEvent.setCallerName("ldapcheck");
+      authEvent.logAuthEvent();
+      if (verbose)
+         cout << searchRetryMessage << endl; 
+   }
+   
+   // Log and optionally display event for:
+   //   any bind (password authentication) operation that was retried
+   if (bindRetryCount > 0)
+   { 
+      char bindRetryMessage[5100];
+       
+      sprintf(bindRetryMessage,"%s required %d bind retries. ",
+              operationString,bindRetryCount);
+      msg = bindRetryMessage;
+      AuthEvent authEvent (DBS_AUTH_RETRY_BIND, msg, LL_INFO);
+      authEvent.setCallerName("ldapcheck");
+      authEvent.logAuthEvent();
+      if (verbose)
+         cout << bindRetryMessage << endl; 
+   }
+
+  // report any errors and retries
 
   //  Walk the list of errors encountered during the attempt to authenticate
   //  the username, or username and password, and for each error, log the event 
-  //  ID and text. If displayErrors is true and logLevel is above the error 
+  //  ID and text. If verbose is true and logLevel is above the error 
   //  level, send message to standard out.
   std::string callerName ("ldapcheck");
 
@@ -444,61 +484,26 @@ void reportAuthenticationErrors(bool displayErrors)
      AuthEvent authEvent = authEvents[i];
      authEvent.setCallerName(callerName);
      authEvent.logAuthEvent();
-     if (displayErrors)  
+     if (verbose)
        cout  << "ERROR: " << authEvent.getEventText().c_str() << endl;
   }
-}
-//********************** End of reportAuthenticationErrors *********************
 
-
-// *****************************************************************************
-// *                                                                           *
-// * Function: reportRetries                                                   *
-// *                                                                           *
-// *    Displays any retries that occurred during an authentication or         *
-// * lookup operation.                                                         *
-// *                                                                           *
-// *****************************************************************************
-void reportRetries(Operation operation)
-
-{
-
-size_t bindRetryCount = LDAPConfigNode::GetBindRetryCount();
-size_t searchRetryCount = LDAPConfigNode::GetSearchRetryCount();
-
-// If there were no retries, there is nothing to report.  
-   if (bindRetryCount == 0 && searchRetryCount == 0)
-      return;
-
-char operationString[20];
-   
-   if (operation == Authenticate)
-      strcpy(operationString,"Authentication");
-   else
-      strcpy(operationString,"Lookup"); 
-      
-// Log if the search (name lookup) operation had to be retried.          
-   if (searchRetryCount > 0)
-   { 
-      char searchRetryMessage[5100];
-       
-      sprintf(searchRetryMessage,"%s required %d search retries. ",
-              operationString,searchRetryCount);
-      cout << searchRetryMessage << endl; 
-   }
-   
-// Log if the bind (password authentication) operation had to be retried.          
-   if (bindRetryCount > 0)
-   { 
-      char bindRetryMessage[5100];
-       
-      sprintf(bindRetryMessage,"%s required %d bind retries. ",
-              operationString,bindRetryCount);
-      cout << bindRetryMessage << endl; 
-   }
+  // Finally, report the outcome.
+   std::string outcomeDesc = getAuthOutcome(outcome);
+   char buf[MAX_EVENT_MSG_SIZE];
+   snprintf(buf, MAX_EVENT_MSG_SIZE,
+                "Authentication request: externalUser %s, "
+                "result %d (%s)",
+                username,
+                (int)outcome, outcomeDesc.c_str());
+   msg = buf;
+   AuthEvent authEvent (DBS_AUTHENTICATION_ATTEMPT,msg, LL_INFO);
+   authEvent.setCallerName("ldapcheck");
+   authEvent.logAuthEvent();
+   cout  << "INFO: " << authEvent.getEventText().c_str() << endl;
 
 }
-//*************************** End of reportRetries *****************************
+//*************************** End of reportResults *****************************
 
 
 
@@ -712,9 +717,10 @@ int main(int argc,char *argv[])
          configType = LDAPConfigNode::SecondaryConfiguration;
          break;
       case Primary:
-         configType = LDAPConfigNode::PrimaryConfiguration;
          break;
+         configType = LDAPConfigNode::PrimaryConfiguration;
       case Platform:
+         break;
          configType = LDAPConfigNode::SecondaryInternalConfiguration;
          break;
       default: //Should not happen, but just in case
@@ -722,30 +728,33 @@ int main(int argc,char *argv[])
    }    
 
 
+   // allocate authEvents to store any issues
+   std::vector<AuthEvent>  authEvents;
+   authInitEventLog();
 
    // If no password is supplied, we just perform a name lookup.  This was 
    // added to provide a canary check for the LDAP server without having to 
    // supply a valid password.   
    if (!passwordSpecified)
    {
-      int exitCode = 0;
+      AUTH_OUTCOME exitCode = AUTH_OK;
       while (loopCount--)
       {
          if (verbose && looping)
             printTime();
-         doCanaryCheck(username,configType,verbose,exitCode);
+         doCanaryCheck(authEvents,username,configType,verbose,exitCode);
          if (loopCount > 0)
             sleep(delayTime);
       }
 
       // For the LDAP Canary check mode of ldapcheck, we return one of 
-      // three exit codes to be used by a health check:
+      // three exit codes (AUTH_OUTCOME)
       //
-      // 0) LDAP configuration and server(s) good, no retries 
-      // 1) LDAP configuration and server(s) good, retries occurred 
-      // 2) Could not communicate with LDAP server(s).  Check LDAP configuration or server(s).
-      // 3) User was not defined in LDAP
-      exit(exitCode);
+      // AUTH_OK:       LDAP configuration and server(s) good
+      // AUTH_REJECTED: User was not defined in LDAP
+      // AUTH_FAILED:   Could not communicate with LDAP server(s)  
+      //    (check LDAP configuration or server(s))
+      exit((int)exitCode);
    }
             
    // We have a username and password.  Let's authenticate!
@@ -753,7 +762,7 @@ int main(int argc,char *argv[])
    {
       if (verbose && looping)
          printTime();
-      doAuthenticate(username,password.c_str(),configType,verbose);
+      doAuthenticate(authEvents,username,password.c_str(),configType,verbose);
       if (loopCount > 0)
          sleep(delayTime);
    }

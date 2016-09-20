@@ -82,7 +82,7 @@ enum NodeState {
 
 enum LDAP_VERSIONS { LDAP_VERSION_2 = 2, LDAP_VERSION_3 = 3};
 
-#define INSERT_EVENT(eventID,eventText) insertAuthEvent(eventID,eventText,LL_ERROR)
+#define INSERT_EVENT(authEvents,eventID,eventText) insertAuthEvent(authEvents, eventID,eventText,LL_ERROR)
 
 static size_t numBindRetries = 0;
 static size_t numSearchRetries = 0;
@@ -117,27 +117,31 @@ public:
 };
 
 static void addExcludedHostName(
-   ConfigNodeContents  & self,
-   const char *          hostName);
+   std::vector<AuthEvent> & authEvents,
+   ConfigNodeContents     & self,
+   const char             * hostName);
    
 static LDAuthStatus bindUser(
-   ConfigNodeContents  & self,
-   const char          * username, 
-   const char          * password, 
-   bool                  reconnect,
-   int                 & LDAPError);
+   std::vector<AuthEvent> & authEvents,
+   ConfigNodeContents     & self,
+   const char             * username, 
+   const char             * password, 
+   bool                     reconnect,
+   int                    & LDAPError);
      
 static int closeConnection(ConfigNodeContents  & self);
 
 static inline bool connectToHost(
-   ConfigNodeContents & self,
-   const char *         hostName,
-   bool                 isLoadBalanceHost,
-   LDAPURLDesc &        url);
+   std::vector<AuthEvent> & authEvents,
+   ConfigNodeContents     & self,
+   const char             * hostName,
+   bool                     isLoadBalanceHost,
+   LDAPURLDesc            & url);
    
 static LD_Status connectToURL(
-   ConfigNodeContents & self,
-   LDAPURLDesc        & url);
+   std::vector<AuthEvent> & authEvents,
+   ConfigNodeContents     & self,
+   LDAPURLDesc            & url);
 
 static void convertUsername(string & username);
 
@@ -155,29 +159,33 @@ static bool getNonExcludedHostName(
    int                   retryDelay);
    
 static LD_Status initConnection(
-   ConfigNodeContents & self,
-   char *               hostName,
-   bool                 skipHost = false);
+   std::vector<AuthEvent>  & authEvents,
+   ConfigNodeContents      & self,
+   char *                    hostName,
+   bool                      skipHost = false);
 
 static bool isHostNameExcluded(
    const char *           hostName,
    const vector<string> & excludedHosts);
 
 inline static void logConfigFileError(
+   std::vector<AuthEvent>  & authEvents,
    LDAPConfigFileErrorCode   fileCode,
    int                       lastLineNumber,
    string                  & lastLine);
    
-static bool readLDAPConfigFile();
+static bool readLDAPConfigFile(std::vector<AuthEvent> & authEvents);
    
 static LDSearchStatus searchUser(
-   ConfigNodeContents   & self,
-   const char           * inputName, 
-   string               & userDN);
+   std::vector<AuthEvent>  & authEvents,
+   ConfigNodeContents      & self,
+   const char              * inputName, 
+   string                  & userDN);
    
 static LDSearchStatus searchUserByDN(
-   ConfigNodeContents   & self,
-   const string         & userDN);
+   std::vector<AuthEvent>  & authEvents,
+   ConfigNodeContents      & self,
+   const string            & userDN);
    
 static bool selfCheck(
    ConfigNodeContents   & self,
@@ -368,8 +376,8 @@ void LDAPConfigNode::CloseConnection()
 // LCOV_EXCL_START  -- not called in normal testing
 
 void LDAPConfigNode::FreeInstance(
-   LDAPConfigType     configType,
-   LDAPConnectionType connectionType)
+   LDAPConfigType           configType,
+   LDAPConnectionType       connectionType)
 
 {
 
@@ -456,7 +464,9 @@ size_t LDAPConfigNode::GetBindRetryCount()
 // * false - Unable to create LDAP configuration nodes.                        *
 // *                                                                           *
 // *****************************************************************************
-bool LDAPConfigNode::GetConfiguration(LDAPConfigType &configType)
+bool LDAPConfigNode::GetConfiguration(
+   std::vector<AuthEvent> & authEvents,
+   LDAPConfigType &configType)
 
 {
 
@@ -467,7 +477,7 @@ bool LDAPConfigNode::GetConfiguration(LDAPConfigType &configType)
 // LDAP configuration file.   
    if (!configFile.isInitialized())
    {
-      if (!readLDAPConfigFile())
+      if (!readLDAPConfigFile(authEvents))
          return false;
       // Configuration was successfully read, setup primary and secondary cache   
       primaryHost.refresh(config.primary);
@@ -496,6 +506,9 @@ bool LDAPConfigNode::GetConfiguration(LDAPConfigType &configType)
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
+// *                                                                           *
 // *  <configType>                    LDAPConfigType                  In       *
 // *    is the configuration type of the node to be obtained.  If configType   *
 // *  is UnknownConfiguration, a configType is chosen based on the setting     *
@@ -514,12 +527,13 @@ bool LDAPConfigNode::GetConfiguration(LDAPConfigType &configType)
 // *****************************************************************************
 
 LDAPConfigNode * LDAPConfigNode::GetInstance(
-   LDAPConfigType     configType,
-   LDAPConnectionType connectionType)
+   std::vector<AuthEvent> & authEvents,
+   LDAPConfigType           configType,
+   LDAPConnectionType       connectionType)
 
 {
 
-   if (!GetConfiguration(configType))
+   if (!GetConfiguration(authEvents,configType))
       return NULL;   
 
 // If the config type is not known (not specified, user requests default),
@@ -595,6 +609,9 @@ LDAPConfigNode * LDAPConfigNode::GetInstance(
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
+// *                                                                           *
 // *  <configType>                    LDAPConfigType                  In       *
 // *    is the configuration type of the node to be obtained.  If configType   *
 // *  is UnknownConfiguration, a configType is chosen based on the setting     *
@@ -616,16 +633,20 @@ LDAPConfigNode * LDAPConfigNode::GetInstance(
 // *                                                                           *
 // *****************************************************************************
 LDAPConfigNode *LDAPConfigNode::GetLDAPConnection(
-   LDAPConfigType     configType,
-   LDAPConnectionType connectionType,
-   char *             hostName)
+   std::vector<AuthEvent> & authEvents,
+   LDAPConfigType           configType,
+   LDAPConnectionType       connectionType,
+   char *                   hostName)
    
 {
 
-LDAPConfigNode *node = LDAPConfigNode::GetInstance(configType,connectionType); 
+LDAPConfigNode *node = LDAPConfigNode::GetInstance(authEvents,configType,connectionType); 
 
-   if (node == NULL || !node->initialize(hostName))
+   if (node == NULL || !node->initialize(authEvents,hostName))
+   {
+      // if node is not NULL, extract any events and put in authEvents
       return NULL;
+   }
 
    return node;
 
@@ -637,7 +658,7 @@ LDAPConfigNode *node = LDAPConfigNode::GetInstance(configType,connectionType);
 // * Function: GetSearchRetryCount                                             *
 // *                                                                           *
 // *    Returns the number of times this instance has retried a search         *
-// * operation since the last initialize() call.                               *
+// * operation since the last initialize call.                               *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
@@ -658,18 +679,18 @@ size_t LDAPConfigNode::GetSearchRetryCount()
 #pragma page "LDAPConfigNode::Refresh"
 // *****************************************************************************
 // *                                                                           *
-// * Function: LDAPConfigNode::Refresh                                         *
+// * Function: LDAPConfigNode::Refresh                                         *A
 // *                                                                           *
 // *    Closes any currently opened connections and rereads configuration file *
 // *                                                                           *
 // *****************************************************************************
 
-void LDAPConfigNode::Refresh()
+void LDAPConfigNode::Refresh(std::vector<AuthEvent> &authEvents)
 
 {
 
    CloseConnection();
-   readLDAPConfigFile();
+   readLDAPConfigFile(authEvents);
    
 }
 //********************* End of LDAPConfigNode::Refresh *************************
@@ -696,8 +717,8 @@ void LDAPConfigNode::Refresh()
 // *****************************************************************************
 
 LDAPConfigNode::LDAPConfigNode(
-   LDAPConfigType     configType,
-   LDAPConnectionType connectionType)
+   LDAPConfigType           configType,
+   LDAPConnectionType       connectionType)
 : self(*new ConfigNodeContents(configType,connectionType))
 {
 }
@@ -752,6 +773,9 @@ LDAPConfigNode::~LDAPConfigNode()
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
+// *                                                                           *
 // *  <username>                      const char *                    In       *
 // *    is the external username. Must be defined on LDAP server.              *
 // *                                                                           *
@@ -771,6 +795,7 @@ LDAPConfigNode::~LDAPConfigNode()
 // *                                                                           *
 // *****************************************************************************
 LDAuthStatus LDAPConfigNode::authenticateUser(
+   std::vector<AuthEvent> & authEvents,
    const char   * username, 
    const char   * password)  
    
@@ -780,7 +805,7 @@ int LDAPError = LDAP_SUCCESS;
 LD_Status status = LD_STATUS_OK;
 char eventMsg[MAX_EVENT_MSG_SIZE];
 
-   LDAuthStatus authStatus = bindUser(self,username,password,true,LDAPError);
+   LDAuthStatus authStatus = bindUser(authEvents,self,username,password,true,LDAPError);
                                                  
    if (!self.host_->LDAPConfig_->preserveConnection)   
       closeConnection(self);
@@ -802,10 +827,10 @@ int retry_count = self.host_->LDAPConfig_->retryCount;
       numBindRetries++;
       closeConnection(self);
       sleep(self.host_->LDAPConfig_->retryDelay);
-      status = initConnection(self,NULL,true);
+      status = initConnection(authEvents,self,NULL,true);
       if (status == LD_STATUS_OK)
       {
-         authStatus = bindUser(self,username,password,true,LDAPError);
+         authStatus = bindUser(authEvents,self,username,password,true,LDAPError);
 
          if (!self.host_->LDAPConfig_->preserveConnection)
             closeConnection(self);
@@ -818,7 +843,7 @@ int retry_count = self.host_->LDAPConfig_->retryCount;
       else
       {
       // Should we call initialize and try to read the config file again ?
-      //   Refresh();
+      //   Refresh(authEvents);
       }
     
    }
@@ -834,7 +859,7 @@ int retry_count = self.host_->LDAPConfig_->retryCount;
    else
       snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "Failed to authenticate LDAP user %s\n",username);
 
-   INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,eventMsg);
+   INSERT_EVENT(authEvents,DBS_UNKNOWN_AUTH_STATUS_ERROR,eventMsg);
    return LDAuthResourceFailure;
 
 }
@@ -876,6 +901,9 @@ LDAPConfigNode::LDAPConfigType LDAPConfigNode::getConfigType() const
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
+// *                                                                           *
 // *  <hostName>                     char *                           [Out]    *
 // *    if specified (non-NULL), passes back the name of the host if the       *
 // *  connection is successful.                                                *
@@ -889,7 +917,9 @@ LDAPConfigNode::LDAPConfigType LDAPConfigNode::getConfigType() const
 // *                                                                           *
 // *****************************************************************************
 
-bool LDAPConfigNode::initialize(char * hostName)
+bool LDAPConfigNode::initialize(
+   std::vector<AuthEvent> & authEvents,
+   char * hostName)
 
 {
 
@@ -897,7 +927,7 @@ bool LDAPConfigNode::initialize(char * hostName)
 // connection and setup the rest of the node.
    if (!selfCheck(self,false))
    {
-      INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"Self check failed in initialize");
+      INSERT_EVENT(authEvents,DBS_UNKNOWN_AUTH_STATUS_ERROR,"Self check failed in initialize");
       return false;
    }   
 
@@ -917,7 +947,7 @@ bool doRead = shouldReadLDAPConfig();  //ACH pass in self and config
    {
       // If we cannot read the LDAP configuration file (.traf_authentication_config), 
       // we can't initialize the node.
-      if (!readLDAPConfigFile())
+      if (!readLDAPConfigFile(authEvents))
          return false;
       
       // If we have refreshed the configuration, refresh all host config values
@@ -932,7 +962,7 @@ bool doRead = shouldReadLDAPConfig();  //ACH pass in self and config
    else
       self.host_ = &secondaryHost;
   
-LD_Status retCode = initConnection(self,hostName);
+LD_Status retCode = initConnection(authEvents,self,hostName);
 
    if (retCode == LD_STATUS_OK)
       return true;
@@ -946,7 +976,7 @@ int retry_count = self.host_->LDAPConfig_->retryCount;
       else
          numSearchRetries++;
       sleep(self.host_->LDAPConfig_->retryDelay);
-      retCode = initConnection(self,hostName);
+      retCode = initConnection(authEvents,self,hostName);
       if (retCode == LD_STATUS_OK)
          return true;
    } 
@@ -960,7 +990,7 @@ char eventMsg[MAX_EVENT_MSG_SIZE];
       snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "Unable to establish initial LDAP connection, error %d\n",
               retCode);
 
-   INSERT_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg);
+   INSERT_EVENT(authEvents,DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg);
    
    return false;
    
@@ -979,6 +1009,9 @@ char eventMsg[MAX_EVENT_MSG_SIZE];
 // *****************************************************************************
 // *                                                                           *
 // *  Parameters:                                                              *
+// *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
 // *                                                                           *
 // *  <inputName>                     const char *                    In       *
 // *    is the external username to lookup.                                    *
@@ -1000,6 +1033,7 @@ char eventMsg[MAX_EVENT_MSG_SIZE];
 // *                                                                           *
 // *****************************************************************************
 LDSearchStatus LDAPConfigNode::lookupUser(
+   std::vector<AuthEvent> & authEvents,
    const char             * inputName, 
    string                 & userDN)
    
@@ -1008,7 +1042,7 @@ LDSearchStatus LDAPConfigNode::lookupUser(
 int rc = 0;
 char eventMsg[MAX_EVENT_MSG_SIZE];
 
-LDSearchStatus searchStatus = searchUser(self,inputName,userDN);
+LDSearchStatus searchStatus = searchUser(authEvents,self,inputName,userDN);
                                                  
    if (!self.host_->LDAPConfig_->preserveConnection)
       closeConnection(self);
@@ -1030,10 +1064,10 @@ int retry_count = self.host_->LDAPConfig_->retryCount;
       numSearchRetries++;
       closeConnection(self);
       sleep(self.host_->LDAPConfig_->retryDelay);
-      LD_Status rc = initConnection(self,NULL,true);
+      LD_Status rc = initConnection(authEvents,self,NULL,true);
       if (rc == LD_STATUS_OK)
       {
-         searchStatus = searchUser(self,inputName,userDN);
+         searchStatus = searchUser(authEvents,self,inputName,userDN);
 
          if (!self.host_->LDAPConfig_->preserveConnection)
             closeConnection(self);
@@ -1062,7 +1096,7 @@ int retry_count = self.host_->LDAPConfig_->retryCount;
    else
       snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "Failed to search for LDAP user %s\n",inputName);
    
-   INSERT_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg);
+   INSERT_EVENT(authEvents,DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg);
    return LDSearchResourceFailure;
 
 }
@@ -1086,6 +1120,9 @@ int retry_count = self.host_->LDAPConfig_->retryCount;
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
+// *                                                                           *
 // *  <self>                         ConfigNodeContents &             In       *
 // *    is a reference to an instance of a ConfigNodeContents object.          *
 // *                                                                           *
@@ -1094,8 +1131,9 @@ int retry_count = self.host_->LDAPConfig_->retryCount;
 // *                                                                           *
 // *****************************************************************************
 static void addExcludedHostName(
-   ConfigNodeContents  & self,
-   const char *          hostName)
+   std::vector<AuthEvent> & authEvents,
+   ConfigNodeContents     & self,
+   const char             * hostName)
 
 
 {
@@ -1109,7 +1147,7 @@ static void addExcludedHostName(
       {
          snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "Exclude list full, LDAP server %s removed from exclude list\n",
                  self.host_->excludedHostNames[0].c_str());
-         INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,eventMsg); 
+         INSERT_EVENT(authEvents,DBS_UNKNOWN_AUTH_STATUS_ERROR,eventMsg); 
          
          self.host_->excludedHostNames.erase(self.host_->excludedHostNames.begin());
       }
@@ -1117,7 +1155,7 @@ static void addExcludedHostName(
    self.host_->excludedHostNames.push_back(hostName);
    
    snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "LDAP server %s added to exclude list\n",hostName);
-   INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,eventMsg); 
+   INSERT_EVENT(authEvents,DBS_UNKNOWN_AUTH_STATUS_ERROR,eventMsg); 
    
 }
 //************************ End of addExcludedHostName **************************
@@ -1134,6 +1172,9 @@ static void addExcludedHostName(
 // *****************************************************************************
 // *                                                                           *
 // *  Parameters:                                                              *
+// *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
 // *                                                                           *
 // *  <self>                         ConfigNodeContents &             In       *
 // *    is a reference to an instance of a ConfigNodeContents object.          *
@@ -1162,11 +1203,12 @@ static void addExcludedHostName(
 // *                                                                           *
 // *****************************************************************************
 static LDAuthStatus bindUser(
-   ConfigNodeContents  & self,
-   const char          * username, 
-   const char          * password, 
-   bool                  reconnect,
-   int                 & LDAPError)  
+   std::vector<AuthEvent> & authEvents,
+   ConfigNodeContents     & self,
+   const char             * username, 
+   const char             * password, 
+   bool                     reconnect,
+   int                    & LDAPError)  
 
 {
 
@@ -1188,7 +1230,7 @@ bool isInitialized = reconnect;
    {
       if (!selfCheck(self,isInitialized))
       {
-         INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"Self check failed in bindUser");
+         INSERT_EVENT(authEvents,DBS_UNKNOWN_AUTH_STATUS_ERROR,"Self check failed in bindUser");
       
          return LDAuthResourceFailure;
       }
@@ -1209,10 +1251,10 @@ bool isInitialized = reconnect;
          {
             // reconnect & retry
             closeConnection(self);
-            LD_Status status = initConnection(self,NULL,true);
+            LD_Status status = initConnection(authEvents,self,NULL,true);
             if (status != LD_STATUS_OK)
             {
-               INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"LDAP Auth Error in bindUser; unable to connect to server");
+               INSERT_EVENT(authEvents,DBS_UNKNOWN_AUTH_STATUS_ERROR,"LDAP Auth Error in bindUser; unable to connect to server");
                return LDAuthResourceFailure;
             }
             reconnect = false;
@@ -1222,7 +1264,7 @@ bool isInitialized = reconnect;
          errorTextString = ldap_err2string(LDAPError);
          strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
          strcat(eventMsg,"\n");
-         INSERT_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);
+         INSERT_EVENT(authEvents,DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);
          return LDAuthResourceFailure;
 // LCOV_EXCL_STOP 
       }
@@ -1239,11 +1281,11 @@ bool isInitialized = reconnect;
          {
             // reconnect & retry
             closeConnection(self);
-            LD_Status status = initConnection(self,NULL,true);
+            LD_Status status = initConnection(authEvents,self,NULL,true);
             if (status != LD_STATUS_OK)
             {
 // LCOV_EXCL_START 
-               INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"LDAP Auth Error in bindUser; unable to connect to server");
+               INSERT_EVENT(authEvents,DBS_UNKNOWN_AUTH_STATUS_ERROR,"LDAP Auth Error in bindUser; unable to connect to server");
                return LDAuthResourceFailure;
 // LCOV_EXCL_STOP 
             }
@@ -1255,7 +1297,7 @@ bool isInitialized = reconnect;
          errorTextString = ldap_err2string(err);
          strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
          strcat(eventMsg, "\n");
-         INSERT_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);
+         INSERT_EVENT(authEvents,DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);
          LDAPError = err;
          return LDAuthResourceFailure;
       }
@@ -1275,7 +1317,7 @@ bool isInitialized = reconnect;
          }
          else
             strcpy(eventMsg, "LDAP Auth Error in bindUser; Failed to get bind result.\n");
-         INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,eventMsg);
+         INSERT_EVENT(authEvents,DBS_UNKNOWN_AUTH_STATUS_ERROR,eventMsg);
          LDAPError = parserc;
          return LDAuthResourceFailure;
 // LCOV_EXCL_STOP 
@@ -1340,7 +1382,7 @@ bool isInitialized = reconnect;
             errorTextString = ldap_err2string(rc);
             strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
             strcat(eventMsg, "\n"); 
-            INSERT_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);
+            INSERT_EVENT(authEvents,DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);
             LDAPError = rc;
             return LDAuthResourceFailure;
             break; 
@@ -1408,6 +1450,9 @@ int rc = LDAP_SUCCESS;
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
+// *                                                                           *
 // *  <self>                         ConfigNodeContents &             In       *
 // *    is a reference to an instance of a ConfigNodeContents object.          *
 // *                                                                           *
@@ -1430,6 +1475,7 @@ int rc = LDAP_SUCCESS;
 // *                                                                           *
 // *****************************************************************************
 static inline bool connectToHost(
+   std::vector<AuthEvent> & authEvents,
    ConfigNodeContents & self,
    const char *         hostName,
    bool                 isLoadBalanceHost,
@@ -1451,7 +1497,7 @@ char effectiveHostName[MAX_HOSTNAME_LENGTH + 1];
  
 // We have a good host.  Let's try to connect.
    url.lud_host = effectiveHostName;
-   LD_Status status = connectToURL(self,url);
+   LD_Status status = connectToURL(authEvents,self,url);
    if (status == LD_STATUS_OK)
    {
       self.host_->lastHostName_ = url.lud_host;
@@ -1461,7 +1507,7 @@ char effectiveHostName[MAX_HOSTNAME_LENGTH + 1];
 // Could not connect to that host.  If we are excluding bad hosts, add it 
 // to the exclude host name list. 
    if (self.host_->LDAPConfig_->excludeBadHosts)
-      addExcludedHostName(self,url.lud_host);
+      addExcludedHostName(authEvents,self,url.lud_host);
    
    return false;
 
@@ -1483,6 +1529,9 @@ char effectiveHostName[MAX_HOSTNAME_LENGTH + 1];
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
+// *                                                                           *
 // *  <self>                         ConfigNodeContents &             In       *
 // *    is a reference to an instance of a ConfigNodeContents object.          *
 // *                                                                           *
@@ -1498,6 +1547,7 @@ char effectiveHostName[MAX_HOSTNAME_LENGTH + 1];
 // *                                                                           *
 // *****************************************************************************
 static LD_Status connectToURL(
+   std::vector<AuthEvent> & authEvents,
    ConfigNodeContents & self,
    LDAPURLDesc        & url)
 
@@ -1521,7 +1571,7 @@ struct timeval tv;
       errorTextString = ldap_err2string(rc);
       strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
       strcat(eventMsg, "\n");    
-      INSERT_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
+      INSERT_EVENT(authEvents,DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
       return LD_STATUS_RESOURCE_FAILURE;
 // LCOV_EXCL_STOP 
    }
@@ -1530,7 +1580,7 @@ struct timeval tv;
    {
 // LCOV_EXCL_START 
       snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "Failed to initialize the connection to LDAP server %s.  Error: ld is NULL", url.lud_host);
-      INSERT_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
+      INSERT_EVENT(authEvents,DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
       return LD_STATUS_RESOURCE_FAILURE;
 // LCOV_EXCL_STOP 
    }
@@ -1610,7 +1660,7 @@ int ldapderef = LDAP_DEREF_ALWAYS;
          errorTextString = ldap_err2string(rc);
          strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
          strcat(eventMsg, "\n");
-         INSERT_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
+         INSERT_EVENT(authEvents,DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
          return LD_STATUS_RESOURCE_FAILURE;
       }
       
@@ -1622,7 +1672,7 @@ int ldapderef = LDAP_DEREF_ALWAYS;
          errorTextString = ldap_err2string(rc);
          strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
          strcat(eventMsg, "\n");
-         INSERT_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
+         INSERT_EVENT(authEvents,DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
          return LD_STATUS_RESOURCE_FAILURE;
       }
    }   
@@ -1637,7 +1687,7 @@ int ldapderef = LDAP_DEREF_ALWAYS;
          errorTextString = ldap_err2string(rc);
          strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
          strcat(eventMsg, "\n");
-         INSERT_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
+         INSERT_EVENT(authEvents,DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg); 
          return LD_STATUS_RESOURCE_FAILURE;
       }
    }
@@ -1656,7 +1706,7 @@ LDAuthStatus authStatus;
    if (self.connectionType_ == AuthenticationConnection)  
    {  
       self.authLD_ = ld;
-      authStatus = bindUser(self,"","",false,LDAPError);
+      authStatus = bindUser(authEvents,self,"","",false,LDAPError);
       if (authStatus != LDAuthSuccessful) 
       {
 // LCOV_EXCL_START 
@@ -1665,7 +1715,7 @@ LDAuthStatus authStatus;
          errorTextString = ldap_err2string(LDAPError);
          strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
          strcat(eventMsg, "\n");
-         INSERT_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);  
+         INSERT_EVENT(authEvents,DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);  
          return LD_STATUS_RESOURCE_FAILURE;
 // LCOV_EXCL_STOP  
       }
@@ -1675,7 +1725,7 @@ LDAuthStatus authStatus;
   
 // Search Connection
    self.searchLD_ = ld;
-   authStatus = bindUser(self,
+   authStatus = bindUser(authEvents,self,
                  self.host_->LDAPConfig_->searchDN.c_str(), 
                  self.host_->LDAPConfig_->searchPwd.c_str(), 
                  false,
@@ -1687,7 +1737,7 @@ LDAuthStatus authStatus;
       errorTextString = ldap_err2string(LDAPError);
       strncat(eventMsg, errorTextString, (MAX_EVENT_MSG_SIZE - (strlen(eventMsg)+4)));
       strcat(eventMsg, "\n");
-      INSERT_EVENT(DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);  
+      INSERT_EVENT(authEvents,DBS_NO_LDAP_AUTH_CONNECTION,eventMsg);  
       return LD_STATUS_RESOURCE_FAILURE;
 // LCOV_EXCL_STOP 
    }
@@ -1815,6 +1865,9 @@ struct hostent *hstnm;
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
+// *                                                                           *
 // *  <self>                         ConfigNodeContents &             In       *
 // *    is a reference to an instance of a ConfigNodeContents object.          *
 // *                                                                           *
@@ -1837,6 +1890,7 @@ struct hostent *hstnm;
 // *****************************************************************************
 
 static LD_Status initConnection(
+   std::vector<AuthEvent>  & authEvents,
    ConfigNodeContents & self,
    char *               hostName,
    bool                 skipHost)
@@ -1871,7 +1925,7 @@ vector<string> hostNames;
 // mark that host as bad and move on to the next one in the list.
    if (skipHost)
    {
-      addExcludedHostName(self,self.host_->lastHostName_.c_str());
+      addExcludedHostName(authEvents,self,self.host_->lastHostName_.c_str());
       
       self.host_->lastHostIndex_ = (self.host_->lastHostIndex_ + 1) % hostNames.size(); 
    }
@@ -1884,7 +1938,7 @@ vector<string> hostNames;
 int lastHostIndex = self.host_->lastHostIndex_;
 
    for (int hostIndex = lastHostIndex; hostIndex < hostNames.size(); hostIndex++)
-      if (connectToHost(self,(char *)hostNames[hostIndex].c_str(),
+      if (connectToHost(authEvents,self,(char *)hostNames[hostIndex].c_str(),
                         self.host_->LDAPConfig_->isLoadBalancer[hostIndex],url))
       {
          self.host_->lastHostIndex_ = hostIndex;
@@ -1895,7 +1949,7 @@ int lastHostIndex = self.host_->lastHostIndex_;
 
 // Start from the first Host Name and try the remaining hosts in the list
    for (int hostIndex = 0; hostIndex < lastHostIndex; hostIndex++)
-      if (connectToHost(self,(char *)hostNames[hostIndex].c_str(),
+      if (connectToHost(authEvents,self,(char *)hostNames[hostIndex].c_str(),
                         self.host_->LDAPConfig_->isLoadBalancer[hostIndex],url))
       {
          self.host_->lastHostIndex_ = hostIndex;
@@ -1960,6 +2014,9 @@ static bool isHostNameExcluded(
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
+// *                                                                           *
 // *  <fileCode>                     LDAPConfigFileErrorCode          In       *
 // *    is a reference to an instance of a ConfigNodeContents object.          *
 // *                                                                           *
@@ -1971,6 +2028,7 @@ static bool isHostNameExcluded(
 // *                                                                           *
 // *****************************************************************************
 inline static void logConfigFileError(
+   std::vector<AuthEvent> & authEvents,
    LDAPConfigFileErrorCode   fileCode,
    int                       lastLineNumber,
    string                  & lastLine)
@@ -2031,7 +2089,7 @@ char eventMsg[MAX_EVENT_MSG_SIZE];
          snprintf(eventMsg, MAX_EVENT_MSG_SIZE, "****** Error parsing .traf_authentication_config configuration file");
    }
 
-   INSERT_EVENT(DBS_AUTH_CONFIG,eventMsg); 
+   INSERT_EVENT(authEvents,DBS_AUTH_CONFIG,eventMsg); 
 
 }
 //************************** End of logConfigFileError *************************
@@ -2143,7 +2201,7 @@ static bool getNonExcludedHostName(
 // * false: Error while reading/parsing LDAP config file                       *
 // *                                                                           *
 // *****************************************************************************
-static bool readLDAPConfigFile()
+static bool readLDAPConfigFile(std::vector<AuthEvent> &authEvents)
 
 {
 
@@ -2159,7 +2217,7 @@ LDAPConfigFileErrorCode fileCode = configFile.read(configFilename,
 
    if (fileCode != LDAPConfigFile_OK)
    {
-      logConfigFileError(fileCode,lastLineNumber,lastLine);
+      logConfigFileError(authEvents,fileCode,lastLineNumber,lastLine);
       return false;
    }
    
@@ -2203,6 +2261,9 @@ LDAPConfigFileErrorCode fileCode = configFile.read(configFilename,
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
+// *                                                                           *
 // *  <self>                          ConfigNodeContents &            In       *
 // *    is a reference to a ConfigNodeContents.                                *
 // *                                                                           *
@@ -2218,6 +2279,7 @@ LDAPConfigFileErrorCode fileCode = configFile.read(configFilename,
 // *                                                                           *
 // *****************************************************************************
 static LDSearchStatus searchUser(
+   std::vector<AuthEvent>  & authEvents,
    ConfigNodeContents   & self,
    const char           * inputName, 
    string               & userDN)
@@ -2237,7 +2299,7 @@ string username = inputName;
       uniqueIdentifier = uniqueIdentifiers[j];
       size_t pos = uniqueIdentifier.find('=', 0);  // look for =
       uniqueIdentifier.insert(pos + 1,username);    // insert username to make the DN
-      searchStatus = searchUserByDN(self,uniqueIdentifier);
+      searchStatus = searchUserByDN(authEvents,self,uniqueIdentifier);
       if (searchStatus == LDSearchFound )
       {
          // user found
@@ -2270,6 +2332,9 @@ string username = inputName;
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <authEvents>                    std::vector<AuthEvent> &        Out      *
+// *    detailed event results of request                                      *
+// *                                                                           *
 // *  <self>                          ConfigNodeContents &            In       *
 // *    is a reference to a ConfigNodeContents.                                *
 // *                                                                           *
@@ -2282,6 +2347,7 @@ string username = inputName;
 // *                                                                           *
 // *****************************************************************************
 static LDSearchStatus searchUserByDN(
+   std::vector<AuthEvent>  & authEvents,
    ConfigNodeContents   & self,
    const string         & userDN)
    
@@ -2334,7 +2400,7 @@ int reconnect = 1;
    {
       if (!selfCheck(self,true))
       {
-         INSERT_EVENT(DBS_UNKNOWN_AUTH_STATUS_ERROR,"Self check failed in searchUserByDN");
+         INSERT_EVENT(authEvents,DBS_UNKNOWN_AUTH_STATUS_ERROR,"Self check failed in searchUserByDN");
       
          return LDSearchResourceFailure;
       }
@@ -2370,13 +2436,13 @@ int reconnect = 1;
       {
          // reconnect & retry
          closeConnection(self);
-         LD_Status status = initConnection(self,NULL,true);
+         LD_Status status = initConnection(authEvents,self,NULL,true);
          // If the reconnect failed, report the resource error and return a 
          // resource failure error so we will retry per configuration settings.
          if (status != LD_STATUS_OK)
          {
             snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "LDAP search error.   Unable to connect to server\n");  
-            INSERT_EVENT(DBS_LDAP_SEARCH_ERROR,eventMsg);
+            INSERT_EVENT(authEvents,DBS_LDAP_SEARCH_ERROR,eventMsg);
             return LDSearchResourceFailure;
          }
          reconnect--;
@@ -2388,7 +2454,7 @@ int reconnect = 1;
       // configuration settings.   
       snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "LDAP search error.  Error code: %d, %s\n", 
                       rc, ldap_err2string(rc)); 
-      INSERT_EVENT(DBS_LDAP_SEARCH_ERROR,eventMsg);
+      INSERT_EVENT(authEvents,DBS_LDAP_SEARCH_ERROR,eventMsg);
       return LDSearchResourceFailure;
    }
    
@@ -2427,7 +2493,7 @@ int numberFound = ldap_count_entries(ld,res);
 
       // log error message
       snprintf(eventMsg,  MAX_EVENT_MSG_SIZE, "LDAP search error.   Attribute %s does not exist in the entry %s", attrs[0], userDN.c_str());  
-      INSERT_EVENT(DBS_LDAP_SEARCH_ERROR,eventMsg);
+      INSERT_EVENT(authEvents,DBS_LDAP_SEARCH_ERROR,eventMsg);
       return LDSearchResourceFailure;
    }
 

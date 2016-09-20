@@ -123,7 +123,7 @@ static int32_t fetchFromAUTHSTable(
    int64_t        & redefTime);
  
 
-static void logAuthenticationErrors();
+static void logAuthenticationErrors(std::vector<AuthEvent>  & authEvents);
 
 static void logAuthenticationOutcome(
    const string   & external_user_name,
@@ -182,13 +182,15 @@ public:
 class DBUserAuthContents
 {
 public:
-   BlackBox        bb;
-   int             nodeID;
+   BlackBox                   bb;
+   int                        nodeID;
+   std::vector<AuthEvent>     authEvents;
 
    int bypassAuthentication(
       Token &               token,
       AUTHENTICATION_INFO & authenticationInfo);
 
+   std::vector<AuthEvent> &getAuthEvents() { return authEvents; }
 
    void deserialize(Token &token);
    void reset();
@@ -444,7 +446,8 @@ DBUserAuth::CheckUserResult DBUserAuth::CheckExternalUsernameDefined(
   return CheckUserResult_UserExists;
 #else
 
-char *authEnv;
+   char *authEnv;
+   std::vector<AuthEvent> authEvents;
 
    authEnv = getenv("TRAFODION_ENABLE_AUTHENTICATION");
    if (authEnv == NULL || strcmp(authEnv,"YES") != 0)
@@ -453,10 +456,10 @@ char *authEnv;
       return UserExists;
    }
 
-string userDN = "";       // User DN, used to bind to LDAP serer
-LDAPConfigNode *searchNode;
+   string userDN = "";       // User DN, used to bind to LDAP serer
+   LDAPConfigNode *searchNode;
 
-LDAPConfigNode::LDAPConfigType configType = LDAPConfigNode::UnknownConfiguration;
+   LDAPConfigNode::LDAPConfigType configType = LDAPConfigNode::UnknownConfiguration;
 
    switch (configurationOrdinal)
    {
@@ -470,21 +473,21 @@ LDAPConfigNode::LDAPConfigType configType = LDAPConfigNode::UnknownConfiguration
          configType = LDAPConfigNode::UnknownConfiguration;
     } 
 
-   searchNode = LDAPConfigNode::GetLDAPConnection(configType,SearchConnection);
+   searchNode = LDAPConfigNode::GetLDAPConnection(authEvents,configType,SearchConnection);
 
    if (searchNode == NULL) 
       return ErrorDuringCheck;
 
-LDSearchStatus searchStatus = searchNode->lookupUser(externalUsername,userDN);
+   LDSearchStatus searchStatus = searchNode->lookupUser(authEvents,externalUsername,userDN);
                                                      
    if (searchStatus == LDSearchNotFound)
       return UserDoesNotExist;
      
-// didn't get "found" or "not found", so we have problems!
+   // didn't get "found" or "not found", so we have problems!
    if (searchStatus != LDSearchFound) 
       return ErrorDuringCheck;
 
-// External username was found.  But where?      
+   // External username was found.  But where?      
    switch (searchNode->getConfigType())
    {
       case LDAPConfigNode::UnknownConfiguration:
@@ -1242,7 +1245,7 @@ static void authenticateUser(
                             usersInfo.sessionUserID,clientInfo,
                            (authStatus = LDAuthRejected) ? AUTH_REJECTED : AUTH_FAILED);
    // Log any events generated
-   logAuthenticationErrors();
+   logAuthenticationErrors(self.authEvents);
 
 }
 //************************** End of authenticateUser ***************************
@@ -1336,7 +1339,7 @@ static LDAuthStatus executeLDAPAuthentication(
 {
 
    LDAPConfigNode::ClearRetryCounts();
-   authEvents.clear();
+   self.getAuthEvents().clear();
    
    //
    // First get a search connection for the specified configuration. 
@@ -1345,7 +1348,7 @@ static LDAuthStatus executeLDAPAuthentication(
    //
 
    int64_t startTime = JULIANTIMESTAMP();
-   LDAPConfigNode *searchNode = LDAPConfigNode::GetLDAPConnection(configType,
+   LDAPConfigNode *searchNode = LDAPConfigNode::GetLDAPConnection(self.authEvents,configType,
                                                                SearchConnection);
 
    performanceInfo.searchConnectionTime = JULIANTIMESTAMP() - startTime;
@@ -1358,7 +1361,7 @@ static LDAuthStatus executeLDAPAuthentication(
       self.bb.errorDetail = UA_STATUS_ERR_SYSTEM;
       snprintf(eventMsg, MAX_EVENT_MSG_SIZE,
                "Failed to get LDAP connection for user %s",username);
-      insertAuthEvent(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg, LL_ERROR);
+      insertAuthEvent(self.authEvents,DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg, LL_ERROR);
 
       return LDAuthResourceFailure;
    }
@@ -1367,7 +1370,7 @@ static LDAuthStatus executeLDAPAuthentication(
 
    startTime = JULIANTIMESTAMP();
 
-   LDSearchStatus searchStatus = searchNode->lookupUser(username,userDN);
+   LDSearchStatus searchStatus = searchNode->lookupUser(self.authEvents,username,userDN);
                                                      
    performanceInfo.searchTime = JULIANTIMESTAMP() - startTime; 
                                                        
@@ -1377,7 +1380,7 @@ static LDAuthStatus executeLDAPAuthentication(
       self.bb.errorDetail = UA_STATUS_ERR_INVALID;
       snprintf(eventMsg, MAX_EVENT_MSG_SIZE,
                "Failed LDAP search for user %s",username);
-      insertAuthEvent(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg, LL_ERROR);
+      insertAuthEvent(self.authEvents,DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg, LL_ERROR);
 
       return LDAuthRejected;
    }
@@ -1388,7 +1391,7 @@ static LDAuthStatus executeLDAPAuthentication(
       self.bb.errorDetail = UA_STATUS_ERR_SYSTEM;
       snprintf(eventMsg, MAX_EVENT_MSG_SIZE,
                "Failed LDAP search for user %s",username);
-      insertAuthEvent(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg, LL_ERROR);
+      insertAuthEvent(self.authEvents,DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg, LL_ERROR);
       return LDAuthResourceFailure;
    }
 
@@ -1402,7 +1405,7 @@ static LDAuthStatus executeLDAPAuthentication(
    //
    startTime = JULIANTIMESTAMP();
 
-   LDAPConfigNode *authNode = LDAPConfigNode::GetLDAPConnection(configType,
+   LDAPConfigNode *authNode = LDAPConfigNode::GetLDAPConnection(self.authEvents,configType,
                                                              AuthenticationConnection);
 
    performanceInfo.authenticationConnectionTime = JULIANTIMESTAMP() - startTime;
@@ -1413,7 +1416,7 @@ static LDAuthStatus executeLDAPAuthentication(
       self.bb.errorDetail = UA_STATUS_ERR_SYSTEM;
       snprintf(eventMsg, MAX_EVENT_MSG_SIZE,
                "Failed LDAP search on password for user %s",username);
-      insertAuthEvent(DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg, LL_ERROR);
+      insertAuthEvent(self.authEvents,DBS_NO_LDAP_SEARCH_CONNECTION,eventMsg, LL_ERROR);
       return LDAuthResourceFailure;
    }
 
@@ -1422,7 +1425,7 @@ static LDAuthStatus executeLDAPAuthentication(
    //
    startTime = JULIANTIMESTAMP();
 
-   LDAuthStatus authStatus = authNode->authenticateUser(userDN.c_str(),password);
+   LDAuthStatus authStatus = authNode->authenticateUser(self.authEvents,userDN.c_str(),password);
                                      
    performanceInfo.authenticationTime = JULIANTIMESTAMP() - startTime;
                                           
@@ -1797,7 +1800,7 @@ size_t cacheCount = userCache.size();
 // * Resource failures have already been inserted into authEvents structure    *
 // *                                                                           *
 // *****************************************************************************
-static void logAuthenticationErrors()
+static void logAuthenticationErrors(std::vector<AuthEvent> &authEvents)
 
 {
    size_t errorCount = authEvents.size();
@@ -1847,62 +1850,25 @@ static void logAuthenticationOutcome(
    string internalUser("??");
    if (user_id > 0) 
      internalUser = internal_user_name; 
-   logLevel severity = LL_INFO;
+   logLevel severity = (outcome == AUTH_FAILED) ? LL_ERROR : LL_INFO; 
 
    // Currently this code has hard coded error messages in many places, this
    // need to be fixed in order to allow errors to be reported in different 
    // languages.
-   string outcomeDesc;
-   switch (outcome)
-   {
-      case AUTH_OK:
-         outcomeDesc = "Authentication successful";
-         severity = LL_INFO;
-         break;
-      case AUTH_NOT_REGISTERED:
-         outcomeDesc = "User not registered";
-         break;
-      case AUTH_MD_NOT_AVAILABLE:
-         outcomeDesc = "Unexpected error occurred looking up user in database";
-         severity = LL_INFO;
-         break;
-      case AUTH_USER_INVALID:
-         outcomeDesc = "User is not valid";
-         severity = LL_INFO;
-         break;
-      case AUTH_TYPE_INCORRECT:
-         outcomeDesc = "Unexpected authorization type detected";
-         severity = LL_INFO;
-         break;
-      case AUTH_NO_PASSWORD:
-         outcomeDesc = "Invalid password";
-         severity = LL_INFO;
-         break;
-      case AUTH_REJECTED:
-         outcomeDesc = "Invalid username or password";
-         severity = LL_INFO;
-         break;
-      case AUTH_FAILED:
-         outcomeDesc = "Unexpected error returned from LDAP";
-         severity = LL_ERROR;
-         break;
-      default:
-         severity = LL_ERROR;
-         outcomeDesc = "Unexpected error occurred";
-    }
+   string outcomeDesc = getAuthOutcome(outcome);
    
    char buf[MAX_EVENT_MSG_SIZE];
    snprintf(buf, MAX_EVENT_MSG_SIZE,
-                "Outcome -> externalUser: %s, "
-                "databaseUser: %s, userID: %u, "
-                "clientName: %s, clientUserName: %s, "
-                "result: %d (%s)",
+                "Authentication request: externalUser %s, "
+                "databaseUser %s, userID %u, "
+                "clientName %s, clientUserName %s, "
+                "result %d (%s)",
                 external_user_name.c_str(), 
                 internalUser.c_str(), user_id,
                 clientInfo.clientName, clientInfo.clientUserName,
-                outcome, outcomeDesc.c_str());
+                (int)outcome, outcomeDesc.c_str());
    std::string msg(buf);
-   AuthEvent authEvent (DBS_AUTHENTICATION_ATTEMPT,msg, severity); 
+   AuthEvent authEvent (DBS_AUTHENTICATION_ATTEMPT,msg,severity); 
    authEvent.setCallerName("mxosrvr");
    authEvent.logAuthEvent();
 }

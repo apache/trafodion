@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "auth.h"
+#include "authEvents.h"
 
 enum AuthConfigType
 {
@@ -36,6 +37,7 @@ enum AuthConfigType
 
 enum  LDAPAuthResultEnum {
     AuthResult_Successful,       // User was authenticated on LDAP server
+    AuthResult_NotFound,         // User was not found in search
     AuthResult_Rejected,         // User was rejected by LDAP server
     AuthResult_ResourceError};   // An error prevented authentication
 

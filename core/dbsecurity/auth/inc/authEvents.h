@@ -31,16 +31,36 @@
 // For DBSecurity don't believe any messages will be more than 1M
 #define MAX_EVENT_MSG_SIZE 1024
 
+// Different outcomes can be returned when authenticating the user. 
+// AUTH_OUTCOME is a status for each of these outcomes.
+// getAuthOutcome translates the status into text form.
+enum AUTH_OUTCOME{
+  AUTH_OK               = 0,
+  AUTH_REJECTED         = 1,
+  AUTH_FAILED           = 2,
+  AUTH_NOT_REGISTERED   = 3,
+  AUTH_MD_NOT_AVAILABLE = 4,
+  AUTH_USER_INVALID     = 5,
+  AUTH_TYPE_INCORRECT   = 6,
+  AUTH_NO_PASSWORD      = 7,
+};
+
+std::string getAuthOutcome(AUTH_OUTCOME outcome);
+
 // The ported code had the caller sending in the filename and line number
 // for certain events.  This has not been implemented at this time.
-struct AuthEvent
+class AuthEvent
 {
+  private:
+
   DB_SECURITY_EVENTID eventID_;
   std::string         eventText_;
   logLevel            severity_;
   std::string         filename_;
   int32_t             lineNumber_;
   std::string         callerName_;
+
+  public:
 
   AuthEvent ()
   : eventID_ (DBS_GENERIC_ERROR),
@@ -59,7 +79,7 @@ struct AuthEvent
     lineNumber_(0),
     callerName_ ("??")
   {}
-
+  
   DB_SECURITY_EVENTID getEventID () { return eventID_; }
   logLevel getSeverity() { return severity_; }
   int32_t getLineNum() { return lineNumber_; }
@@ -77,11 +97,9 @@ struct AuthEvent
 
 };
 
-extern std::vector<AuthEvent> authEvents;
-
 void authInitEventLog();
-
 void insertAuthEvent(
+  std::vector<AuthEvent> & authEvents,
   DB_SECURITY_EVENTID eventID,
   const char * eventText,
   logLevel severity);
