@@ -160,6 +160,7 @@ public:
   // Pass in jenv if the thread where the object is created is different than
   // the thread where exception occurred
   NABoolean getExceptionDetails(JNIEnv *jenv = NULL);  
+  void appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, NAString &error_msg);
   
   NAHeap *getHeap() { return heap_; }
 protected:
@@ -169,6 +170,7 @@ protected:
   static jmethodID gGetStackTraceMethodID;
   static jmethodID gThrowableToStringMethodID;
   static jmethodID gStackFrameToStringMethodID;
+  static jmethodID gGetCauseMethodID;
   static jint jniHandleCapacity_;
 
   jobject   javaObj_;

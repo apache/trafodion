@@ -54,6 +54,7 @@ jclass JavaObjectInterfaceTM::gStackTraceClass = NULL;
 jmethodID JavaObjectInterfaceTM::gGetStackTraceMethodID = NULL;
 jmethodID JavaObjectInterfaceTM::gThrowableToStringMethodID = NULL;
 jmethodID JavaObjectInterfaceTM::gStackFrameToStringMethodID = NULL;
+jmethodID JavaObjectInterfaceTM::gGetCauseMethodID = NULL;
 
 //////////////////////////////////////////////////////////////////////////////
 // 
@@ -389,7 +390,7 @@ void JavaObjectInterfaceTM::logError(const char* cat, const char* file, int line
 
 bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
 {
-   std::string *error_msg;
+   std::string *error_msg = NULL;
 
    if (_tlp_error_msg != NULL)
    {
@@ -421,21 +422,32 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
        _tlp_error_msg = error_msg;
        return false;
    }
+
+   appendExceptionMessages(jenv, a_exception, error_msg);
+   *error_msg += "\n";
+   _tlp_error_msg = error_msg;
+   return true;
+}
+
+void JavaObjectInterfaceTM::appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, std::string *error_msg)
+{
     jstring msg_obj =
        (jstring) jenv->CallObjectMethod(a_exception,
                                          gThrowableToStringMethodID);
     const char *msg_str;
-    error_msg = new std::string("");
-    if (msg_obj != NULL) {
+    if (msg_obj != NULL)
+    {
        msg_str = jenv->GetStringUTFChars(msg_obj, 0);
+       // Start the error message in a new line
+       *error_msg = "\n";
        *error_msg += msg_str;
        jenv->ReleaseStringUTFChars(msg_obj, msg_str);
        jenv->DeleteLocalRef(msg_obj);
     }
-    else {
+    else
        msg_str = "Exception is thrown, but tostring is null";
-       *error_msg += msg_str;
-    }
+
+
     // Get the stack trace
     jobjectArray frames =
         (jobjectArray) jenv->CallObjectMethod(
@@ -444,7 +456,7 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
     if (frames == NULL)
     {
        _tlp_error_msg = error_msg;
-       return true;
+       return;
     }
     jsize frames_length = jenv->GetArrayLength(frames);
 
@@ -465,7 +477,10 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
        }
     }
     *error_msg += "\n";
-    _tlp_error_msg = error_msg;
-    return true;
+    jthrowable j_cause = (jthrowable)jenv->CallObjectMethod(a_exception, gGetCauseMethodID);
+    if (j_cause != NULL) {
+       *error_msg += "Caused by ";
+       appendExceptionMessages(jenv, j_cause, error_msg);
+    }
 }
 

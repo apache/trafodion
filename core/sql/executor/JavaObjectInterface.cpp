@@ -43,6 +43,7 @@ jclass JavaObjectInterface::gStackTraceClass = NULL;
 jmethodID JavaObjectInterface::gGetStackTraceMethodID = NULL;
 jmethodID JavaObjectInterface::gThrowableToStringMethodID = NULL;
 jmethodID JavaObjectInterface::gStackFrameToStringMethodID = NULL;
+jmethodID JavaObjectInterface::gGetCauseMethodID = NULL;
 
   
 static const char* const joiErrorEnumStr[] = 
@@ -296,6 +297,9 @@ JOI_RetCode JavaObjectInterface::initJVM()
         gThrowableToStringMethodID = jenv_->GetMethodID(gThrowableClass,
                       "toString",
                       "()Ljava/lang/String;");
+        gGetCauseMethodID = jenv_->GetMethodID(gThrowableClass,
+                      "getCause",
+                      "()Ljava/lang/Throwable;");
      }
   }
   if (gStackTraceClass == NULL)
@@ -455,6 +459,14 @@ NABoolean  JavaObjectInterface::getExceptionDetails(JNIEnv *jenv)
        cli_globals->setJniErrorStr(error_msg);
        return FALSE;
    }
+   appendExceptionMessages(jenv, a_exception, error_msg);
+   error_msg += "\n";
+   cli_globals->setJniErrorStr(error_msg);
+   return TRUE;
+}
+
+void JavaObjectInterface::appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, NAString &error_msg)
+{
     jstring msg_obj =
        (jstring) jenv->CallObjectMethod(a_exception,
                                          gThrowableToStringMethodID);
@@ -480,7 +492,7 @@ NABoolean  JavaObjectInterface::getExceptionDetails(JNIEnv *jenv)
     if (frames == NULL)
     {
        cli_globals->setJniErrorStr(error_msg);
-       return TRUE;
+       return;
     }
     jsize frames_length = jenv->GetArrayLength(frames);
 
@@ -501,8 +513,11 @@ NABoolean  JavaObjectInterface::getExceptionDetails(JNIEnv *jenv)
        }
     }
     error_msg += "\n";
-    cli_globals->setJniErrorStr(error_msg);
-    return TRUE;
+    jthrowable j_cause = (jthrowable)jenv->CallObjectMethod(a_exception, gGetCauseMethodID);
+    if (j_cause != NULL) {
+       error_msg += "Caused by ";
+       appendExceptionMessages(jenv, j_cause, error_msg);
+    }
 } 
 
 NAString JavaObjectInterface::getLastError()
