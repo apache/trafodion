@@ -103,7 +103,6 @@ public class HTableClient {
 	private static final int SCAN_FETCH = 3;
 	private boolean useTRex;
 	private boolean useTRexScanner;
-	private boolean useRegionTransaction;
 	private String tableName;
         private static Connection connection;
 	private ResultScanner scanner = null;
@@ -328,7 +327,6 @@ public class HTableClient {
 	    if (logger.isDebugEnabled()) logger.debug("Enter HTableClient::init, tableName: " + tblName);
 	    this.useTRex = useTRex;
 	    tableName = tblName;
-        this.useRegionTransaction = false;
 	    
 	    if ( !this.useTRex ) {
 		this.useTRexScanner = false;
@@ -1364,56 +1362,57 @@ public class HTableClient {
 	public boolean deleteRow(final long transID, byte[] rowID, 
 				 Object[] columns,
 				 long timestamp,
-                                 boolean asyncOperation) throws IOException {
+                                 boolean asyncOperation,
+                                 boolean useRegionXn) throws IOException {
 
-		if (logger.isTraceEnabled()) logger.trace("Enter deleteRow(" + new String(rowID) + ", "
-			     + timestamp + ") " + tableName);
-
-		final Delete del;
-		if (timestamp == -1)
-			del = new Delete(rowID);
-		else
-			del = new Delete(rowID, timestamp);
-
-		if (columns != null) {
-			for (int i = 0; i < columns.length ; i++) {
-				byte[] col = (byte[]) columns[i];
-				del.deleteColumns(getFamily(col), getName(col));
-			}
-		}
-               	if (asyncOperation) {
-			future = executorService.submit(new Callable() {
- 				public Object call() throws IOException {
-					boolean res = true;
-					if (useTRex && (transID != 0)) {
-			           table.delete(transID, del);
-                    }
-//                    else if (useRegionTransaction){
-//                        logger.info("deleteRow using region TX");
-//                        table.deleteRegionTx(del, /* auto-commit */ true);
-//                    }
-                    else {
-//                       logger.info("deleteRow without transID ");
-                       table.delete(del);
-                    }
-					return true;
-				}
-			});
-		}
-		else {
-			if (useTRex && (transID != 0)) {
-	           table.delete(transID, del);
+            if (logger.isTraceEnabled()) logger.trace("Enter deleteRow(" + new String(rowID) + ", "
+                                                      + timestamp + ") " + tableName);
+            
+            final Delete del;
+            if (timestamp == -1)
+                del = new Delete(rowID);
+            else
+                del = new Delete(rowID, timestamp);
+            
+            if (columns != null) {
+                for (int i = 0; i < columns.length ; i++) {
+                    byte[] col = (byte[]) columns[i];
+                    del.deleteColumns(getFamily(col), getName(col));
+                }
             }
-//            else if (useRegionTransaction){
-//               logger.info("deleteRow using region TX");
-//               table.deleteRegionTx(del, /* auto-commit */ true);
-//            }
+            if (asyncOperation) {
+                future = executorService.submit(new Callable() {
+                        public Object call() throws IOException {
+                            boolean res = true;
+                            if (useTRex && (transID != 0)) {
+                                table.delete(transID, del);
+                            }
+                            //                    else if (useRegionXn){
+                            //                        logger.info("deleteRow using region TX");
+                            //                        table.deleteRegionTx(del, /* auto-commit */ true);
+                            //                    }
+                            else {
+                                //                       logger.info("deleteRow without transID ");
+                                table.delete(del);
+                            }
+                            return true;
+                        }
+                    });
+            }
             else {
-               table.delete(del);
+                if (useTRex && (transID != 0)) {
+                    table.delete(transID, del);
+                }
+                //            else if (useRegionXn){
+                //               logger.info("deleteRow using region TX");
+                //               table.deleteRegionTx(del, /* auto-commit */ true);
+                //            }
+                else {
+                    table.delete(del);
+                }
             }
-		}
-		if (logger.isTraceEnabled()) logger.trace("Exit deleteRow");
-		return true;
+            if (logger.isTraceEnabled()) logger.trace("Exit deleteRow");
+            return true;
 	}
 
 	public boolean deleteRows(final long transID, short rowIDLen, Object rowIDs,
@@ -1479,46 +1478,47 @@ public class HTableClient {
     
 	public boolean checkAndDeleteRow(long transID, byte[] rowID, 
 					 byte[] columnToCheck, byte[] colValToCheck,
-					 long timestamp) throws IOException {
+					 long timestamp, boolean useRegionXn) throws IOException {
 
-		if (logger.isTraceEnabled()) logger.trace("Enter checkAndDeleteRow(" + new String(rowID) + ", "
-			     + new String(columnToCheck) + ", " + new String(colValToCheck) + ", " + timestamp + ") " + tableName);
-
-			Delete del;
-			if (timestamp == -1)
-				del = new Delete(rowID);
-			else
-				del = new Delete(rowID, timestamp);
-
-			byte[] family = null;
-			byte[] qualifier = null;
-
-			if (columnToCheck.length > 0) {
-				family = getFamily(columnToCheck);
-				qualifier = getName(columnToCheck);
-			}
-			
-			boolean res;
-			if (useTRex && (transID != 0)) {
-			    res = table.checkAndDelete(transID, rowID, family, qualifier, colValToCheck, del);
+            if (logger.isTraceEnabled()) logger.trace("Enter checkAndDeleteRow(" + new String(rowID) + ", "
+                                                      + new String(columnToCheck) + ", " + new String(colValToCheck) + ", " + timestamp + ") " + tableName);
+            
+            Delete del;
+            if (timestamp == -1)
+                del = new Delete(rowID);
+            else
+                del = new Delete(rowID, timestamp);
+            
+            byte[] family = null;
+            byte[] qualifier = null;
+            
+            if (columnToCheck.length > 0) {
+                family = getFamily(columnToCheck);
+                qualifier = getName(columnToCheck);
             }
-//            else if (useRegionTransaction){
-//               logger.info("checkAndDeleteRow using region TX");
-//               res = table.checkAndDeleteRegionTx(rowID, family, qualifier, colValToCheck,
-//               		         del, /* autoCommit */ true);
-//            }
+            
+            boolean res;
+            if (useTRex && (transID != 0)) {
+                res = table.checkAndDelete(transID, rowID, family, qualifier, colValToCheck, del);
+            }
+            //            else if (useRegionXn){
+            //               logger.info("checkAndDeleteRow using region TX");
+            //               res = table.checkAndDeleteRegionTx(rowID, family, qualifier, colValToCheck,
+            //               		         del, /* autoCommit */ true);
+            //            }
             else {
-			   res = table.checkAndDelete(rowID, family, qualifier, colValToCheck, del);
+                res = table.checkAndDelete(rowID, family, qualifier, colValToCheck, del);
             }
-
-			if (res == false)
-			    return false;
-		return true;
+            
+            if (res == false)
+                return false;
+            return true;
 	}
-
+    
 	public boolean putRow(final long transID, final byte[] rowID, Object row,
-		byte[] columnToCheck, final byte[] colValToCheck,
-		final boolean checkAndPut, boolean asyncOperation) throws IOException, InterruptedException, 
+                              byte[] columnToCheck, final byte[] colValToCheck,
+                              final boolean checkAndPut, boolean asyncOperation,
+                              final boolean useRegionXn) throws IOException, InterruptedException, 
                           ExecutionException 
 	{
 		if (logger.isTraceEnabled()) logger.trace("Enter putRow() " + tableName);
@@ -1556,79 +1556,79 @@ public class HTableClient {
 		final byte[] family1 = family;
 		final byte[] qualifier1 = qualifier;
 		if (asyncOperation) {
-			future = executorService.submit(new Callable() {
-				public Object call() throws IOException {
-					boolean res = true;
-
-					if (checkAndPut) {
-                       if (useTRex && (transID != 0)){
-                          res = table.checkAndPut(transID, rowID,
-                                     family1, qualifier1, colValToCheck, put);
-                       }
-                       else if (useRegionTransaction){
-                           if (logger.isTraceEnabled()) logger.trace("checkAndPutRegionTx with regionTX ");
-                           res = table.checkAndPutRegionTx(rowID, 
-                                           family1, qualifier1, colValToCheck, put, /* auto-commit */ true);
-                    	   
-                       }
-                       else {
-                          res = table.checkAndPut(rowID, 
-                                          family1, qualifier1, colValToCheck, put);
-                       }
-					}
-					else {
-                       if (useTRex && (transID != 0)){
-                          table.put(transID, put);
-                       }
-                       else if (useRegionTransaction){
-                          if (logger.isTraceEnabled()) logger.trace("putRow using putRegionTx");
-                          table.putRegionTx(put, /* auto-commit */ true);
-                       }else{ 
-                          table.put(put);
-					   }
-					}
-					return new Boolean(res);
-				}
+                    future = executorService.submit(new Callable() {
+                            public Object call() throws IOException {
+                                boolean res = true;
+                                
+                                if (checkAndPut) {
+                                    if (useTRex && (transID != 0)){
+                                        res = table.checkAndPut(transID, rowID,
+                                                                family1, qualifier1, colValToCheck, put);
+                                    }
+                                    else if (useRegionXn){
+                                        if (logger.isTraceEnabled()) logger.trace("checkAndPutRegionTx with regionTX ");
+                                        res = table.checkAndPutRegionTx(rowID, 
+                                                                        family1, qualifier1, colValToCheck, put, /* auto-commit */ true);
+                                        
+                                    }
+                                    else {
+                                        res = table.checkAndPut(rowID, 
+                                                                family1, qualifier1, colValToCheck, put);
+                                    }
+                                }
+                                else {
+                                    if (useTRex && (transID != 0)){
+                                        table.put(transID, put);
+                                    }
+                                    else if (useRegionXn){
+                                        if (logger.isTraceEnabled()) logger.trace("putRow using putRegionTx");
+                                        table.putRegionTx(put, /* auto-commit */ true);
+                                    }else{ 
+                                        table.put(put);
+                                    }
+                                }
+                                return new Boolean(res);
+                            }
 			});
-			return true;
+                    return true;
 		} else {
-		 	boolean result = true;
-			if (checkAndPut) {
-               if (useTRex && (transID != 0)){
-                  result = table.checkAndPut(transID, rowID, 
-						family1, qualifier1, colValToCheck, put);
-               }
-               else if (useRegionTransaction){
-                   if (logger.isTraceEnabled()) logger.trace("checkAndPutRegionTx using regionTX ");
-                   result = table.checkAndPutRegionTx(rowID, family1, qualifier1,
-                		   colValToCheck, put, /* auto-commit */ true);
-               }
-               else {
-                  result = table.checkAndPut(rowID, 
-						family1, qualifier1, colValToCheck, put);
-               }
-			}
-			else {
-               if (useTRex && (transID != 0)){
-                  table.put(transID, put);
-               }
-               else if (useRegionTransaction){
-                  if (logger.isTraceEnabled()) logger.trace("putRow using putRegionTx");
-                  table.putRegionTx(put, true /* also commit */);
-               }else{
-                  table.put(put);
-               }
-			}
-			return result;
+                    boolean result = true;
+                    if (checkAndPut) {
+                        if (useTRex && (transID != 0)){
+                            result = table.checkAndPut(transID, rowID, 
+                                                       family1, qualifier1, colValToCheck, put);
+                        }
+                        else if (useRegionXn){
+                            if (logger.isTraceEnabled()) logger.trace("checkAndPutRegionTx using regionTX ");
+                            result = table.checkAndPutRegionTx(rowID, family1, qualifier1,
+                                                               colValToCheck, put, /* auto-commit */ true);
+                        }
+                        else {
+                            result = table.checkAndPut(rowID, 
+                                                       family1, qualifier1, colValToCheck, put);
+                        }
+                    }
+                    else {
+                        if (useTRex && (transID != 0)){
+                            table.put(transID, put);
+                        }
+                        else if (useRegionXn){
+                            if (logger.isTraceEnabled()) logger.trace("putRow using putRegionTx");
+                            table.putRegionTx(put, true /* also commit */);
+                        }else{
+                            table.put(put);
+                        }
+                    }
+                    return result;
 		}	
 	}
-
-	public boolean insertRow(long transID, byte[] rowID, 
+    
+    public boolean insertRow(long transID, byte[] rowID, 
                          Object row, 
 			 long timestamp,
                          boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
 		return putRow(transID, rowID, row, null, null, 
-				false, asyncOperation);
+                              false, asyncOperation, false);
 	}
 
 	public boolean putRows(final long transID, short rowIDLen, Object rowIDs, 
@@ -1722,7 +1722,7 @@ public class HTableClient {
 			 long timestamp,
                          boolean asyncOperation) throws IOException, InterruptedException, ExecutionException  {
 		return putRow(transID, rowID, row, null, null, 
-				true, asyncOperation);
+                              true, asyncOperation, false);
 	}
 
 	public boolean checkAndUpdateRow(long transID, byte[] rowID, 
@@ -1730,8 +1730,8 @@ public class HTableClient {
              long timestamp, boolean asyncOperation) throws IOException, InterruptedException, 
                                     ExecutionException, Throwable  {
 		return putRow(transID, rowID, columns, columnToCheck, 
-			colValToCheck, 
-				true, asyncOperation);
+                              colValToCheck, 
+                              true, asyncOperation, false);
 	}
 
         public byte[] coProcAggr(long transID, int aggrType, 

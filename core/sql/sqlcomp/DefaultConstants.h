@@ -3587,6 +3587,10 @@ enum DefaultConstants
   // It is run using underlying hbase single row transaction consistency.
   TRAF_NO_DTM_XN,
 
+  // if set to ON, then query is run as part of localized region transaction.
+  // No external transaction is started to run it.
+  TRAF_USE_REGION_XN,
+
   // HBASE_HASH2_PARTITIONING (ON - OFF for now):
   // - OFF: Treat salted table like a non-salted table
   // - ON: Always use HASH2 for salted table

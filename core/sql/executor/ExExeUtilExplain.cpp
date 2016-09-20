@@ -977,6 +977,25 @@ void ExExeUtilDisplayExplainTcb::FormatForF()
       remaining_width -= 2;
     }
 
+  if (str_cmp_c(operName_, "TRAFODION_INSERT") == 0 || 
+      str_cmp_c(operName_, "TRAFODION_UPSERT") == 0 || 
+      str_cmp_c(operName_, "TRAFODION_VSBB_UPSERT") == 0 || 
+      str_cmp_c(operName_, "TRAFODION_LOAD") == 0 || 
+      str_cmp_c(operName_, "TRAFODION_DELETE") == 0 ||
+      str_cmp_c(operName_, "TRAFODION_UPDATE") == 0)
+    {
+      if ((str_str(description_, "region_transaction: enabled") != 0) ||
+          (str_str(description_, "hbase_transaction: used") != 0))
+        {
+          if (str_str(description_, "region_transaction: enabled") != 0)
+            str_cpy(current, "r", 1);
+          else if (str_str(description_, "hbase_transaction: used") != 0)
+            str_cpy(current, "h", 1);
+          ++current;
+          --remaining_width;
+        }
+    } // insert, upsert, delete
+
   //now adjust the pointer so that the width is not exceeded
   if (remaining_width <= 0)
     current += remaining_width;
