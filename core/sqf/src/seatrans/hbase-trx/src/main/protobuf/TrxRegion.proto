@@ -145,7 +145,7 @@ message CheckAndDeleteResponse {
 }
 
 message CheckAndDeleteRegionTxRequest {
-  required int64 transactionId = 1;
+  required int64 tid = 1;
   required bytes regionName = 2;
   required bytes row = 3;
   required bytes family = 4;
@@ -212,6 +212,19 @@ message DeleteMultipleTransactionalRequest {
 }
 
 message DeleteMultipleTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message DeleteRegionTxRequest {
+  required int64 tid = 1;
+  required bytes regionName = 2;
+  required MutationProto delete = 3;
+  required bool autoCommit = 4;
+}
+
+message DeleteRegionTxResponse {
   optional Result result = 1;
   optional string exception = 2;
   optional bool hasException = 3;
@@ -442,8 +455,8 @@ service TrxRegionService {
     returns(BeginTransactionResponse);
   rpc checkAndDelete(CheckAndDeleteRequest)
     returns(CheckAndDeleteResponse);
-//  rpc checkAndDeleteRegionTx(CheckAndDeleteRegionTxRequest)
-//    returns(CheckAndDeleteRegionTxResponse);
+  rpc checkAndDeleteRegionTx(CheckAndDeleteRegionTxRequest)
+    returns(CheckAndDeleteRegionTxResponse);
   rpc checkAndPut(CheckAndPutRequest)
     returns(CheckAndPutResponse);
   rpc checkAndPutRegionTx(CheckAndPutRegionTxRequest)
@@ -460,6 +473,8 @@ service TrxRegionService {
     returns(CommitMultipleResponse);
   rpc commitRequest(CommitRequestRequest)
     returns(CommitRequestResponse);
+  rpc deleteRegionTx(DeleteRegionTxRequest)
+    returns(DeleteRegionTxResponse);
   rpc delete(DeleteTransactionalRequest)
     returns(DeleteTransactionalResponse);
   rpc deleteMultiple(DeleteMultipleTransactionalRequest)
