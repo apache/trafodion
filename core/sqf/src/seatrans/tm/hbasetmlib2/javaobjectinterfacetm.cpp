@@ -422,7 +422,7 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
        _tlp_error_msg = error_msg;
        return false;
    }
-
+   error_msg = new std::string("");
    appendExceptionMessages(jenv, a_exception, error_msg);
    *error_msg += "\n";
    _tlp_error_msg = error_msg;
