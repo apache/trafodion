@@ -328,7 +328,7 @@ public class HTableClient {
 	    if (logger.isDebugEnabled()) logger.debug("Enter HTableClient::init, tableName: " + tblName);
 	    this.useTRex = useTRex;
 	    tableName = tblName;
-        this.useRegionTransaction = true;
+        this.useRegionTransaction = false;
 	    
 	    if ( !this.useTRex ) {
 		this.useTRexScanner = false;
