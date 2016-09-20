@@ -40,14 +40,24 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
    char la_tbldesc[TM_MAX_DDLREQUEST_STRING];
    char la_tblname[TM_MAX_DDLREQUEST_STRING];
    char* str_key;
-   str_key = new char[TM_MAX_DDLREQUEST_STRING];
    char** la_keys;
    la_keys = new char *[TM_MAX_DDLREQUEST_STRING];
    int lv_error = FEOK;
 
+   if( pv_keyLength > TM_MAX_DDLREQUEST_STRING)
+   {
+     cout << "Table key length is larger than max allowed " << pv_keyLength << endl;
+     delete [] la_keys;
+     return FEBADKEYDESC;
+   }
+   str_key = new char[TM_MAX_DDLREQUEST_STRING];
+
    int lv_tblname_len = pp_env->GetArrayLength(pv_tblname);
    if(lv_tblname_len > TM_MAX_DDLREQUEST_STRING) {
       cout << "Table name length is larger than max allowed" << endl;
+      delete [] la_keys;
+      delete str_key;
+      return FEBADNAME;
    }
    else {
       int lv_tbldesc_length = pp_env->GetArrayLength(pv_tableDescriptor);
@@ -82,6 +92,8 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
       pp_env->ReleaseByteArrayElements(pv_tableDescriptor, lp_tbldesc, 0);
       pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
    }
+   delete str_key;
+   delete []  la_keys;
    return lv_error;
 }
 
@@ -193,6 +205,7 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
       lv_error = ALTERTABLE(la_tblname, lv_tblname_len, tbl_options, tblopts_len, tbloptions_cnt, lv_transid);
       pp_env->ReleaseByteArrayElements(pv_tblName, lp_tblname, 0);
    }
+   delete [] tbl_options;
    return lv_error;
 }
  
