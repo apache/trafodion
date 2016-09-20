@@ -106,7 +106,7 @@ message SsccCheckAndDeleteResponse {
 }
 
 message SsccCheckAndDeleteRegionTxRequest {
-  required int64 transactionId = 1;
+  required int64 tid = 1;
   required int64 startId = 2;
   required bytes regionName = 3;
   required bytes row = 4;
@@ -177,6 +177,21 @@ message SsccDeleteMultipleTransactionalRequest {
 }
 
 message SsccDeleteMultipleTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+  optional int32  status = 4;
+}
+
+message SsccDeleteRegionTxRequest {
+  required int64 tid = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required MutationProto delete = 4;
+  required bool autoCommit = 5;
+}
+
+message SsccDeleteRegionTxResponse {
   optional Result result = 1;
   optional string exception = 2;
   optional bool hasException = 3;
@@ -337,8 +352,8 @@ service SsccRegionService {
     returns(SsccBeginTransactionResponse);
   rpc checkAndDelete(SsccCheckAndDeleteRequest)
     returns(SsccCheckAndDeleteResponse);
-//  rpc checkAndDeleteRegionTx(SsccCheckAndDeleteRegionTxRequest)
-//    returns(SsccCheckAndDeleteRegionTxResponse);
+  rpc checkAndDeleteRegionTx(SsccCheckAndDeleteRegionTxRequest)
+    returns(SsccCheckAndDeleteRegionTxResponse);
   rpc checkAndPut(SsccCheckAndPutRequest)
     returns(SsccCheckAndPutResponse);
   rpc checkAndPutRegionTx(SsccCheckAndPutRegionTxRequest)
@@ -351,6 +366,8 @@ service SsccRegionService {
     returns(SsccCommitIfPossibleResponse);
   rpc commitRequest(SsccCommitRequestRequest)
     returns(SsccCommitRequestResponse);
+  rpc deleteRegionTx(SsccDeleteRegionTxRequest)
+    returns(SsccDeleteRegionTxResponse);
   rpc delete(SsccDeleteTransactionalRequest)
     returns(SsccDeleteTransactionalResponse);
   rpc deleteMultiple(SsccDeleteMultipleTransactionalRequest)
