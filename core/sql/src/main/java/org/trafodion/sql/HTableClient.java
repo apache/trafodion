@@ -1388,12 +1388,10 @@ public class HTableClient {
 					if (useTRex && (transID != 0)) {
 			           table.delete(transID, del);
                     }
-//                    else if (useRegionTransaction){
-//                        logger.info("deleteRow using region TX");
-//                        table.deleteRegionTx(del, /* auto-commit */ true);
-//                    }
+                    else if (useRegionTransaction){
+                        table.deleteRegionTx(del, /* auto-commit */ true);
+                    }
                     else {
-//                       logger.info("deleteRow without transID ");
                        table.delete(del);
                     }
 					return true;
@@ -1404,10 +1402,9 @@ public class HTableClient {
 			if (useTRex && (transID != 0)) {
 	           table.delete(transID, del);
             }
-//            else if (useRegionTransaction){
-//               logger.info("deleteRow using region TX");
-//               table.deleteRegionTx(del, /* auto-commit */ true);
-//            }
+            else if (useRegionTransaction){
+               table.deleteRegionTx(del, /* auto-commit */ true);
+            }
             else {
                table.delete(del);
             }
@@ -1502,11 +1499,10 @@ public class HTableClient {
 			if (useTRex && (transID != 0)) {
 			    res = table.checkAndDelete(transID, rowID, family, qualifier, colValToCheck, del);
             }
-//            else if (useRegionTransaction){
-//               logger.info("checkAndDeleteRow using region TX");
-//               res = table.checkAndDeleteRegionTx(rowID, family, qualifier, colValToCheck,
-//               		         del, /* autoCommit */ true);
-//            }
+            else if (useRegionTransaction){
+               res = table.checkAndDeleteRegionTx(rowID, family, qualifier, colValToCheck,
+               		         del, /* autoCommit */ true);
+            }
             else {
 			   res = table.checkAndDelete(rowID, family, qualifier, colValToCheck, del);
             }
@@ -1566,10 +1562,8 @@ public class HTableClient {
                                      family1, qualifier1, colValToCheck, put);
                        }
                        else if (useRegionTransaction){
-                           if (logger.isTraceEnabled()) logger.trace("checkAndPutRegionTx with regionTX ");
-                           res = table.checkAndPutRegionTx(rowID, 
+                          res = table.checkAndPutRegionTx(rowID, 
                                            family1, qualifier1, colValToCheck, put, /* auto-commit */ true);
-                    	   
                        }
                        else {
                           res = table.checkAndPut(rowID, 
@@ -1581,9 +1575,8 @@ public class HTableClient {
                           table.put(transID, put);
                        }
                        else if (useRegionTransaction){
-                          if (logger.isTraceEnabled()) logger.trace("putRow using putRegionTx");
                           table.putRegionTx(put, /* auto-commit */ true);
-                       }else{ 
+                       }else{
                           table.put(put);
 					   }
 					}
@@ -1599,8 +1592,7 @@ public class HTableClient {
 						family1, qualifier1, colValToCheck, put);
                }
                else if (useRegionTransaction){
-                   if (logger.isTraceEnabled()) logger.trace("checkAndPutRegionTx using regionTX ");
-                   result = table.checkAndPutRegionTx(rowID, family1, qualifier1,
+                  result = table.checkAndPutRegionTx(rowID, family1, qualifier1,
                 		   colValToCheck, put, /* auto-commit */ true);
                }
                else {
@@ -1613,8 +1605,7 @@ public class HTableClient {
                   table.put(transID, put);
                }
                else if (useRegionTransaction){
-                  if (logger.isTraceEnabled()) logger.trace("putRow using putRegionTx");
-                  table.putRegionTx(put, true /* also commit */);
+                  table.putRegionTx(put, /* auto commit */ true);
                }else{
                   table.put(put);
                }
