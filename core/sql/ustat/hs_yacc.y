@@ -374,22 +374,7 @@ histogram_options : CLEAR
                         hs_globals_y->optFlags |= CLEAR_OPT;
                       }
                  |  on_clause_wrapper interval_clause
-                 |  incremental_clause
-                      {
-                         if (CmpCommon::getDefault(USTAT_IUS_SIMPLE_SYNTAX) == DF_OFF) {
-                           HSFuncMergeDiags(- UERR_IUS_ON_CLAUSE,
-                                              ": the on existing/necessary clause is missing");
-                           return -1;
-                         }
-                      }
                  |  on_clause_wrapper incremental_clause
-                      {
-                         if (CmpCommon::getDefault(USTAT_IUS_SIMPLE_SYNTAX) == DF_ON) {
-                           HSFuncMergeDiags(- UERR_IUS_ON_CLAUSE,
-                                            "does not take any on-clause");
-                           return -1;
-                         }
-                      }
                  |  on_clause_wrapper sample_clause
                  |  on_clause_wrapper interval_clause sample_clause
                  |  on_clause_wrapper sample_clause interval_clause
@@ -434,31 +419,18 @@ incremental_clause :   INCREMENTAL WHERE WHERE_CONDITION
                        if (CmpCommon::getDefault(USTAT_INCREMENTAL_UPDATE_STATISTICS) == DF_OFF) {
                          HSFuncMergeDiags(-UERR_IUS_IS_DISABLED);
                        }
-                       
-                       if (CmpCommon::getDefault(USTAT_IUS_SIMPLE_SYNTAX) == DF_ON) {
-                         // Via grammar, the incremental clause can only used without the
-                         // on_clause. So it is safe to set the IUS_OPT flag.
-                         hs_globals_y->optFlags |= IUS_OPT;
-                         hs_globals_y->optFlags |= EXISTING_OPT;
-                         hs_globals_y->optFlags |= NECESSARY_OPT;
 
-                         Lng32 retcode = 0;
-                         if (retcode = AddExistingColumns())
-                            HSHandleError(retcode);
-                       } else {
-
-                          if (hs_globals_y->optFlags & (REG_GROUP_OPT | EVERYCOL_OPT | EVERYKEY_OPT ))
-                            HSFuncMergeDiags(-UERR_WRONG_ON_CLAUSE_FOR_IUS, "INCREMENTAL");
+                      if (hs_globals_y->optFlags & (REG_GROUP_OPT | EVERYCOL_OPT | EVERYKEY_OPT ))
+                        HSFuncMergeDiags(-UERR_WRONG_ON_CLAUSE_FOR_IUS, "INCREMENTAL");
+                      else
+                        {
+                          // This check is here to make sure we cover all the possible
+                          // ON clause alternatives
+                          if (!(hs_globals_y->optFlags & (EXISTING_OPT | NECESSARY_OPT)))
+                             HSFuncMergeDiags(-UERR_WRONG_ON_CLAUSE_FOR_IUS, "INCREMENTAL");
                           else
-                            {
-                              // This assert is here to make sure we covered all other possible ON
-                              // clauses in the check above.
-                              if (!(hs_globals_y->optFlags & (EXISTING_OPT | NECESSARY_OPT)))
-                                 HSFuncMergeDiags(-UERR_WRONG_ON_CLAUSE_FOR_IUS, "INCREMENTAL");
-                              else
-                                 hs_globals_y->optFlags |= IUS_OPT;
-                            }
-                       }
+                             hs_globals_y->optFlags |= IUS_OPT;
+                        }
                 }
 ;
 

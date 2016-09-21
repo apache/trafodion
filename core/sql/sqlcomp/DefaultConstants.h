@@ -3319,8 +3319,6 @@ enum DefaultConstants
 
   USTAT_IUS_NO_BLOCK,
 
-  USTAT_IUS_SIMPLE_SYNTAX,
-
   // Collect reorg stats. Default is ON and stats are collected. 
   // This cqd is added in case
   // one need to go back to the old behavior of no reorg stats, or if a problem

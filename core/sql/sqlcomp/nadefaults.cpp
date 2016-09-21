@@ -3548,11 +3548,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_IUS_NO_BLOCK,                   "OFF"),
   DDansi_(USTAT_IUS_PERSISTENT_CBF_PATH,        "SYSTEM"),
 
-  // if turned on, IUS incremental statements will not take any "on existing" or
-  // "on necessary" clause
-  DDkwd__(USTAT_IUS_SIMPLE_SYNTAX,                "OFF"),
-
-
   DDflt0_(USTAT_IUS_TOTAL_ROWCOUNT_CHANGE_THRESHOLD, "0.05"),
   DDflt0_(USTAT_IUS_TOTAL_UEC_CHANGE_THRESHOLD, "0.05"),
   DDkwd__(USTAT_IUS_USE_PERIODIC_SAMPLING,        "OFF"),
