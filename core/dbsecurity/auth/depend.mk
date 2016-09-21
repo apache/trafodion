@@ -38,12 +38,14 @@ $(OUTDIR)/dbUserAuth.o: inc/auth.h
 $(OUTDIR)/dbUserAuth.o: inc/token.h
 $(OUTDIR)/dbUserAuth.o: inc/tokenkey.h
 $(OUTDIR)/dbUserAuth.o: inc/ldapconfignode.h
-$(OUTDIR)/dbUserAuth.o: inc/ld_globals.h
+$(OUTDIR)/dbUserAuth.o: inc/authEvents.h
 
 $(OUTDIR)/ldapconfignode.o: inc/ldapconfignode.h
-$(OUTDIR)/ldapconfignode.o: inc/ld_globals.h
+$(OUTDIR)/ldapconfignode.o: inc/authEvents.h
 
-$(OUTDIR)/ld_port.o: inc/ld_globals.h
+$(OUTDIR)/authEvents.o: inc/authEvents.h
+
+$(OUTDIR)/ldapcheck.o: inc/authEvents.h
 
 $(OUTDIR)/token.o: inc/token.h
 $(OUTDIR)/token.o: inc/tokenkey.h
