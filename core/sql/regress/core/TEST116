@@ -213,6 +213,12 @@ alter table t116t2 alter column a largeint;
 cleanup table t116t2;
 rollback work;
 set transaction autocommit on;
+drop table if exists t116t2;
+create table t116t2 (a int) attribute hbase format;
+set transaction autocommit off;
+alter table t116t2 alter column a largeint;
+rollback work;
+set transaction autocommit on;
 
 -- index creation checking
 -- index creation is done with multiple transactions

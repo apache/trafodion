@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Sat Sep 17 10:17:58 2016
+-- Definition current  Tue Sep 20 23:29:21 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -143,7 +143,7 @@ A            B
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212340867480003695
+PLAN_ID .................. 212341174162429455
 ROWS_OUT ................. 7
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t011t1 where a >= 3 and a < 5;
@@ -177,12 +177,12 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
-  TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   QUERY_CACHE ............ 0
+  TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 2232205300326972159
+  ObjectUIDs ............. 9047840693079464784
   select_list ............ TRAFODION.SCH.T011T1.A, TRAFODION.SCH.T011T1.B
 
 
@@ -1269,7 +1269,7 @@ METRIC_TEXT_TABLE
 >>invoke trafodion."_REPOS_".metric_query_table;
 
 -- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
--- Definition current  Sat Sep 17 10:20:09 2016
+-- Definition current  Tue Sep 20 23:31:38 2016
 
   (
     INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1457,7 +1457,7 @@ METRIC_TEXT_TABLE
 >>-- get qid for the prepared stmt
 >>get qid for statement explstmt;
 
-MXID11000020349212340867451005125000000000206U3333300_2184_EXPLSTMT
+MXID11000032456212341174131726593000000000206U3333300_2185_EXPLSTMT
 
 --- SQL operation complete.
 >>
@@ -1509,7 +1509,7 @@ SEQ_NUM      OPERATOR
 --- SQL command prepared.
 >>get qid for statement explstmt2;
 
-MXID11000020349212340867451005125000000000206U3333300_2195_EXPLSTMT2
+MXID11000032456212341174131726593000000000206U3333300_2196_EXPLSTMT2
 
 --- SQL operation complete.
 >>set qid MXID123456 for explstmt2;
