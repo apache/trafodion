@@ -31,6 +31,7 @@ obey TEST027(clean_up);
 log LOG027 clear;
 
 cqd TRAF_MULTI_COL_FAM 'ON';
+cqd traf_aligned_row_format 'OFF';
 
 drop table if exists t027t01;
 create table t027t01 (a int not null primary key);
