@@ -136,7 +136,6 @@ short  TM_Transaction::register_region(long startid, int port, char *hostName, i
 
 short TM_Transaction::create_table(char* pa_tbldesc, int pv_tbldesc_len, char* pa_tblname, char** pa_keys, int pv_numsplits, int pv_keylen)
 {
-    short lv_error = FEOK;
     Tm_Req_Msg_Type lv_req;
     Tm_Rsp_Msg_Type lv_rsp;
 
@@ -174,12 +173,14 @@ short TM_Transaction::create_table(char* pa_tbldesc, int pv_tbldesc_len, char* p
         TMlibTrace(("TMLIB_TRACE : TM_Transaction::create_table returning error %d\n", iv_last_error), 1);
         return iv_last_error;
     }
-    return lv_error;
+    
+    iv_last_error = lv_rsp.iv_msg_hdr.miv_err.error;
+    
+    return iv_last_error;
 }
 
 short TM_Transaction::alter_table(char * pa_tblname, int pv_tblname_len,  char ** pv_tbloptions,  int pv_tbloptslen, int pv_tbloptscnt)
 {    
-    short lv_error = FEOK;
     Tm_Req_Msg_Type lv_req;
     Tm_Rsp_Msg_Type lv_rsp;
  
@@ -218,12 +219,12 @@ short TM_Transaction::alter_table(char * pa_tblname, int pv_tblname_len,  char *
         return lv_last_error;
     }
 
-    return lv_error;
+    iv_last_error = lv_rsp.iv_msg_hdr.miv_err.error;
+    return lv_last_error;
 }
 
 short TM_Transaction::reg_truncateonabort(char* pa_tblname, int pv_tblname_len)
 {
-    short lv_error = FEOK;
     Tm_Req_Msg_Type lv_req;
     Tm_Rsp_Msg_Type lv_rsp;
 
@@ -244,12 +245,12 @@ short TM_Transaction::reg_truncateonabort(char* pa_tblname, int pv_tblname_len)
         TMlibTrace(("TMLIB_TRACE : TM_Transaction::reg_truncateonabort returning error %d\n", iv_last_error), 1);
         return iv_last_error;
     }
-    return lv_error;
+    iv_last_error = lv_rsp.iv_msg_hdr.miv_err.error;
+    return iv_last_error;
 }
 
 short TM_Transaction::drop_table(char* pa_tblname, int pv_tblname_len)
 {
-    short lv_error = FEOK;
     Tm_Req_Msg_Type lv_req;
     Tm_Rsp_Msg_Type lv_rsp;
 
@@ -270,7 +271,8 @@ short TM_Transaction::drop_table(char* pa_tblname, int pv_tblname_len)
         TMlibTrace(("TMLIB_TRACE : TM_Transaction::drop_table returning error %d\n", iv_last_error), 1);
         return iv_last_error;
     }
-    return lv_error;
+    iv_last_error = lv_rsp.iv_msg_hdr.miv_err.error;
+    return iv_last_error;
 }
 
 // --------------------------------------------------------------------------

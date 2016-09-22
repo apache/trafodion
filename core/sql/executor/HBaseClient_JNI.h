@@ -476,28 +476,36 @@ public:
                  const char * qualName , Int64 incr, Int64 & count);
   HBC_RetCode createCounterTable( const char * tabName,  const char * famName);
   HBC_RetCode insertRow(NAHeap *heap, const char *tableName,
-      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID,
-      HbaseStr row, Int64 timestamp,bool checkAndPut, bool asyncOperation,
-      HTableClient_JNI **outHtc);
+                        ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, 
+                        HbaseStr rowID,
+                        HbaseStr row, Int64 timestamp,bool checkAndPut, 
+                        bool asyncOperation, bool useRegionXn, 
+                        HTableClient_JNI **outHtc);
   HBC_RetCode insertRows(NAHeap *heap, const char *tableName,
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, short rowIDLen, HbaseStr rowIDs,
       HbaseStr rows, Int64 timestamp,  bool asyncOperation,
       HTableClient_JNI **outHtc);
   HBC_RetCode checkAndUpdateRow(NAHeap *heap, const char *tableName,
-      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID,
-      HbaseStr row, HbaseStr columnToCheck, HbaseStr columnValToCheck,
-       Int64 timestamp, bool asyncOperation,
-      HTableClient_JNI **outHtc);
+                                ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, 
+                                HbaseStr rowID,
+                                HbaseStr row, HbaseStr columnToCheck, HbaseStr columnValToCheck,
+                                Int64 timestamp, bool asyncOperation, bool useRegionXn,
+                                HTableClient_JNI **outHtc);
   HBC_RetCode deleteRow(NAHeap *heap, const char *tableName,
-      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, const LIST(HbaseStr) *cols, 
-      Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
+      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, 
+                        const LIST(HbaseStr) *cols, 
+                        Int64 timestamp, 
+                        bool asyncOperation, 
+                        bool useRegionXn,
+                        HTableClient_JNI **outHtc);
   HBC_RetCode deleteRows(NAHeap *heap, const char *tableName,
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, short rowIDLen, HbaseStr rowIDs, 
       Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
   HBC_RetCode checkAndDeleteRow(NAHeap *heap, const char *tableName,
-      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, 
-      HbaseStr columnToCheck, HbaseStr columnValToCheck,
-      Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
+                                ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, 
+                                HbaseStr columnToCheck, HbaseStr columnValToCheck,
+                                Int64 timestamp, bool asyncOperation, bool useRegionXn,
+                                HTableClient_JNI **outHtc);
   NAArray<HbaseStr>* getStartKeys(NAHeap *heap, const char *tableName, bool useTRex);
   NAArray<HbaseStr>* getEndKeys(NAHeap *heap, const char * tableName, bool useTRex);
 

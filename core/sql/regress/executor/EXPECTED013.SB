@@ -21,7 +21,7 @@
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sun Aug 21 05:08:36 2016
+-- Definition current  Tue Sep 20 07:20:12 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -50,7 +50,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Sun Aug 21 05:08:59 2016
+-- Definition current  Tue Sep 20 07:20:38 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -115,7 +115,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sun Aug 21 05:10:25 2016
+-- Definition current  Tue Sep 20 07:22:16 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -141,7 +141,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Sun Aug 21 05:10:55 2016
+-- Definition current  Tue Sep 20 07:22:52 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -181,7 +181,7 @@ A            B            C
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sun Aug 21 05:11:11 2016
+-- Definition current  Tue Sep 20 07:23:09 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -204,7 +204,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Sun Aug 21 05:11:30 2016
+-- Definition current  Tue Sep 20 07:23:33 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -448,7 +448,7 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sun Aug 21 05:13:08 2016
+-- Definition current  Tue Sep 20 07:25:28 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -469,7 +469,7 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sun Aug 21 05:13:19 2016
+-- Definition current  Tue Sep 20 07:25:39 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -561,7 +561,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Sun Aug 21 05:14:35 2016
+-- Definition current  Tue Sep 20 07:27:04 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -579,7 +579,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion volatile table T013T3
--- Definition current  Sun Aug 21 05:14:51 2016
+-- Definition current  Tue Sep 20 07:27:22 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -595,7 +595,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Sun Aug 21 05:15:07 2016
+-- Definition current  Tue Sep 20 07:27:40 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -618,6 +618,7 @@ CREATE VOLATILE TABLE T013T3
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (A ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE VOLATILE INDEX T013T3I1 ON T013T3
@@ -639,6 +640,7 @@ CREATE VOLATILE TABLE T013T3
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (A ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -661,7 +663,7 @@ CREATE VOLATILE TABLE T013T3
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Sun Aug 21 05:16:08 2016
+-- Definition current  Tue Sep 20 07:28:47 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -702,6 +704,7 @@ CREATE VOLATILE TABLE T013T1
     A                                INT DEFAULT NULL
   , PRIMARY KEY (A ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -719,6 +722,7 @@ CREATE VOLATILE TABLE T013T1
     A                                INT DEFAULT NULL
   , PRIMARY KEY (A ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -736,6 +740,7 @@ CREATE VOLATILE TABLE T013T1
     A                                INT DEFAULT NULL
   )
   STORE BY (A ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -757,6 +762,7 @@ CREATE VOLATILE TABLE T013T1
     A                                INT DEFAULT NULL
   , PRIMARY KEY (A ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -778,6 +784,7 @@ CREATE VOLATILE TABLE T013T1
     A                                INT DEFAULT NULL
   )
   STORE BY (A ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -813,6 +820,7 @@ CREATE VOLATILE TABLE T013T1
     A                                INT DEFAULT NULL
   )
   STORE BY (A ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -833,6 +841,7 @@ CREATE VOLATILE TABLE T013T1
   , B                                INT DEFAULT NULL
   )
   STORE BY (B ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -851,6 +860,7 @@ CREATE VOLATILE TABLE T013T1
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
   STORE BY (A ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -871,6 +881,7 @@ CREATE VOLATILE TABLE T013T1
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
   STORE BY (B ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -894,6 +905,7 @@ CREATE VOLATILE TABLE T013T1
   , E                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
   STORE BY (C ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -915,6 +927,7 @@ CREATE VOLATILE TABLE T013T1
   , C                                DATE NO DEFAULT NOT NULL NOT DROPPABLE
   )
   STORE BY (B ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -934,6 +947,7 @@ CREATE VOLATILE TABLE T013T1
   , B                                DATE NO DEFAULT NOT NULL NOT DROPPABLE
   )
   STORE BY (B ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -954,6 +968,7 @@ CREATE VOLATILE TABLE T013T1
       DEFAULT DEFAULT NULL
   )
   STORE BY (B ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -977,6 +992,7 @@ CREATE VOLATILE TABLE T013T1
   , D                                LARGEINT DEFAULT NULL
   )
   STORE BY (D ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -998,6 +1014,7 @@ CREATE VOLATILE TABLE T013T1
       DEFAULT DEFAULT NULL
   )
   STORE BY (B ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -1020,6 +1037,7 @@ CREATE VOLATILE TABLE T013T1
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
   STORE BY (C ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -1037,6 +1055,7 @@ CREATE VOLATILE TABLE T013T1
   (
     A                                REAL NO DEFAULT NOT NULL NOT DROPPABLE
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -1052,6 +1071,7 @@ CREATE VOLATILE TABLE T013T1
   (
     A                                REAL DEFAULT NULL
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -1071,6 +1091,7 @@ CREATE VOLATILE TABLE T013T1
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
   STORE BY (A ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -1088,6 +1109,7 @@ CREATE VOLATILE TABLE T013T1
       DEFAULT DEFAULT NULL
   )
   STORE BY (A ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -1108,6 +1130,7 @@ CREATE VOLATILE TABLE T013T1
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
   STORE BY (B ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -1129,6 +1152,7 @@ CREATE VOLATILE TABLE T013T1
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
   STORE BY (B ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -1148,6 +1172,7 @@ CREATE VOLATILE TABLE T013T1
   , B                                INT DEFAULT NULL
   )
   STORE BY (A ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -1167,6 +1192,7 @@ CREATE VOLATILE TABLE T013T1
   , B                                INT DEFAULT NULL
   )
   STORE BY (A ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -1188,6 +1214,7 @@ CREATE VOLATILE TABLE T013T1
   , B                                INT DEFAULT NULL
   , PRIMARY KEY (B ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -1207,6 +1234,7 @@ CREATE VOLATILE TABLE T013T1
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
   STORE BY (B ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -1230,6 +1258,7 @@ CREATE VOLATILE TABLE T013T1
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
   STORE BY (A ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -1252,6 +1281,7 @@ CREATE VOLATILE TABLE T013T1
     B                                INT DEFAULT NULL
   )
   STORE BY (B ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -1283,7 +1313,7 @@ CREATE VOLATILE TABLE T013T1
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sun Aug 21 05:25:42 2016
+-- Definition current  Tue Sep 20 07:39:44 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE

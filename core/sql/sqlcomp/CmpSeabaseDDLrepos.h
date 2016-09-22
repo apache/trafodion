@@ -178,6 +178,7 @@ static const QString createMetricQueryTable[] =
  {" ) "},
  {" primary key ( exec_start_utc_ts, query_id ) salt using 8 partitions on ( query_id ) "},
  {" hbase_options ( DATA_BLOCK_ENCODING = 'FAST_DIFF', COMPRESSION = 'GZ' ) "},
+ {" attribute hbase format "},
  {" ; "}
  };
 
@@ -233,8 +234,9 @@ static const QString createMetricSessionTable[] =
  {" authentication_connection_elapsed_time_mcsec     largeint                default null serialized, "},
  {" authentication_elapsed_time_mcsec      largeint                          default null serialized "},
  {" ) "},
-{" primary key (session_start_utc_ts, session_id ) salt using 8 partitions on ( session_id ) "},
+ {" primary key (session_start_utc_ts, session_id ) salt using 8 partitions on ( session_id ) "},
  {" hbase_options ( DATA_BLOCK_ENCODING = 'FAST_DIFF', COMPRESSION = 'GZ' ) "},
+ {" attribute hbase format "},
  {" ; "},
  };
 
@@ -312,6 +314,7 @@ static const QString createMetricQueryAggrTable[] =
  {" ) "},
  {" primary key ( session_start_utc_ts, session_id ) salt using 8 partitions on ( session_id ) "},
  {" hbase_options ( DATA_BLOCK_ENCODING = 'FAST_DIFF', COMPRESSION = 'GZ' ) "},
+ {" attribute hbase format "},
  {" ; "}
 };
 
@@ -330,6 +333,7 @@ static const QString createMetricTextTable[] =
     {"   text varchar(50000 bytes) character set iso88591 not null serialized "},
     {" ) "},
     {" primary key (query_id, text_type, sub_id, seq_num) "},
+    {" attribute hbase format "},
     {" ; "}
   };
 

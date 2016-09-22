@@ -11,7 +11,7 @@
 >>
 >>showddl T29x;
 
-CREATE TABLE CAT.SCH.T29X
+CREATE TABLE TRAFODION.SCH.T29X
   (
     A                                INT DEFAULT 10 NOT NULL NOT DROPPABLE
   , B                                INT DEFAULT NULL
@@ -20,6 +20,7 @@ CREATE TABLE CAT.SCH.T29X
   , D                                INT DEFAULT 1
   , E                                INT DEFAULT 0
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 ALTER TABLE TRAFODION.SCH.T29X ADD CONSTRAINT TRAFODION.SCH." T29x" CHECK
@@ -90,8 +91,8 @@ CREATE VIEW TRAFODION.SCH.T29XV3 (S, R, D) AS
 >>
 >>showddl T29xv4;
 
-CREATE VIEW SEABASE.SCH.T29XV4 AS
-  SELECT X.S, X.R, X.D FROM SEABASE.SCH.T29XV3 X WHERE X.R > 5 ;
+CREATE VIEW TRAFODION.SCH.T29XV4 AS
+  SELECT X.S, X.R, X.D FROM TRAFODION.SCH.T29XV3 X WHERE X.R > 5 ;
 
 --- SQL operation complete.
 >>
@@ -112,7 +113,7 @@ CREATE VIEW SEABASE.SCH.T29XV4 AS
 >>
 >>insert into T29x(a,b,c,d) values (8,8,'d',-1);
 
-*** ERROR[8101] The operation is prevented by check constraint CAT.SCH." T29x" on table CAT.SCH.T29X.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH." T29x" on table TRAFODION.SCH.T29X.
 
 --- 0 row(s) inserted.
 >>	-- violates T29X constraint (a<>b)
@@ -173,37 +174,37 @@ S            R            D
 >>
 >>insert into T29xv3 default values;
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV3.
 
 --- 0 row(s) inserted.
 >>	-- null value in B violates v2 WCO
 >>insert into T29xv3(r,s,d) values(10,11,-1);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV3.
 
 --- 0 row(s) inserted.
 >>	-- violates v3 WCO
 >>insert into T29xv3(r,s,d) values(1,0,-1);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV3.
 
 --- 0 row(s) inserted.
 >>	-- violates v2 WCO
 >>insert into T29xv3(r,s,d) values(-1,0,0);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV3.
 
 --- 0 row(s) inserted.
 >>	-- violates v1 cascaded WCO
 >>insert into T29xv3(r,s,d) values(1,1,-1);
 
-*** ERROR[8101] The operation is prevented by check constraint CAT.SCH." T29x" on table CAT.SCH.T29X.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH." T29x" on table TRAFODION.SCH.T29X.
 
 --- 0 row(s) inserted.
 >>	-- violates T29X constraint
 >>insert into T29xv3(r,s,d) values(null,1,-1);
 
-*** ERROR[4122] NULL cannot be assigned to NOT NULL column CAT.SCH.T29X.A.
+*** ERROR[4122] NULL cannot be assigned to NOT NULL column TRAFODION.SCH.T29X.A.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -247,31 +248,31 @@ A            B            C     D            E
 >>
 >>insert into T29xv4(r,s,d) values(10,11,-1);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV3.
 
 --- 0 row(s) inserted.
 >>	-- violates v3 WCO
 >>insert into T29xv4(r,s,d) values(1,0,-1);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV3.
 
 --- 0 row(s) inserted.
 >>	-- violates v2 WCO
 >>insert into T29xv4(r,s,d) values(-1,0,0);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV3.
 
 --- 0 row(s) inserted.
 >>	-- violates v1 cascaded WCO
 >>insert into T29xv4(r,s,d) values(1,1,-1);
 
-*** ERROR[8101] The operation is prevented by check constraint CAT.SCH." T29x" on table CAT.SCH.T29X.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH." T29x" on table TRAFODION.SCH.T29X.
 
 --- 0 row(s) inserted.
 >>	-- violates T29X constraint
 >>insert into T29xv4(r,s,d) values(null,1,-1);
 
-*** ERROR[4122] NULL cannot be assigned to NOT NULL column CAT.SCH.T29X.A.
+*** ERROR[4122] NULL cannot be assigned to NOT NULL column TRAFODION.SCH.T29X.A.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -330,31 +331,31 @@ A            B            C     D            E
 >>
 >>insert into T29xv2 default values;
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV2.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV2.
 
 --- 0 row(s) inserted.
 >>		-- null value in B violates v2 WCO
 >>insert into T29xv2 values(99,0,'c',1);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV2.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV2.
 
 --- 0 row(s) inserted.
 >>		-- violates v2 WCO
 >>insert into T29xv2 values(1,0,'c',1);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV2.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV2.
 
 --- 0 row(s) inserted.
 >>		-- violates v2 WCO
 >>insert into T29xv2 values(1,1,'c',-1);
 
-*** ERROR[8101] The operation is prevented by check constraint CAT.SCH." T29x" on table CAT.SCH.T29X.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH." T29x" on table TRAFODION.SCH.T29X.
 
 --- 0 row(s) inserted.
 >>		-- violates T29X
 >>insert into T29xv2 values(null,1,'c',-1);
 
-*** ERROR[4122] NULL cannot be assigned to NOT NULL column CAT.SCH.T29X.A.
+*** ERROR[4122] NULL cannot be assigned to NOT NULL column TRAFODION.SCH.T29X.A.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -371,7 +372,7 @@ A            B            C     D            E
 >>	-- ok
 >>insert into T29xv2 values(19,20,'a',0);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV2.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV2.
 
 --- 0 row(s) inserted.
 >>	-- violates v1 cascaded WCO
@@ -439,19 +440,19 @@ A            B            C     D            E
 >>	-- ok
 >>insert into T29xv1(z,b,c,d) values(-99,0,'d',1);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV0.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV0.
 
 --- 0 row(s) inserted.
 >>    -- violates v0 constraint
 >>insert into T29xv1(z,b,c,d) values(1,1,'d',-1);
 
-*** ERROR[8101] The operation is prevented by check constraint CAT.SCH." T29x" on table CAT.SCH.T29X.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH." T29x" on table TRAFODION.SCH.T29X.
 
 --- 0 row(s) inserted.
 >>     -- violates T29X constraint
 >>insert into T29xv1(z,b,c,d) values(null,1,'d',-1);
 
-*** ERROR[4122] NULL cannot be assigned to NOT NULL column CAT.SCH.T29X.A.
+*** ERROR[4122] NULL cannot be assigned to NOT NULL column TRAFODION.SCH.T29X.A.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -503,25 +504,25 @@ A            B            C     D            E
 >>
 >>update T29xv3 set r=10;
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV3.
 
 --- 0 row(s) updated.
 >>	-- violates v2
 >>update T29xv3 set r=10,s=11;
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV3.
 
 --- 0 row(s) updated.
 >>	-- violates v3
 >>update T29xv3 set r=s+1;
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV3.
 
 --- 0 row(s) updated.
 >>	-- violates v2
 >>update T29xv3 set r=0,d=0 where r=9;
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV3.
 
 --- 0 row(s) updated.
 >>	-- violates v1 cascaded WCO
@@ -531,13 +532,13 @@ A            B            C     D            E
 >>	-- ok, result is rows (r=2,s=13),()
 >>update T29xv3 set r=s-1,s=s+10;
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV3.
 
 --- 0 row(s) updated.
 >>	-- violates v3
 >>update T29xv3 set r=null;
 
-*** ERROR[4122] NULL cannot be assigned to NOT NULL column CAT.SCH.T29X.A.
+*** ERROR[4122] NULL cannot be assigned to NOT NULL column TRAFODION.SCH.T29X.A.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -550,13 +551,13 @@ A            B            C     D            E
 >>	-- violates notnull
 >>update T29xv3 set s=null;
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XV3.
 
 --- 0 row(s) updated.
 >>	-- violates v2 WCO
 >>update T29xv3 set s=2;
 
-*** ERROR[8101] The operation is prevented by check constraint CAT.SCH." T29x" on table CAT.SCH.T29X.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH." T29x" on table TRAFODION.SCH.T29X.
 
 --- 0 row(s) updated.
 >>		-- violates T29X
@@ -644,7 +645,7 @@ A            B            C     D            E
 >>	-- 11+1 rows
 >>delete from T29xv2 where c like 'f%';
 
-*** ERROR[4001] Column C is not found.  Tables in scope: CAT.SCH.T29XV2.  Default schema: CAT.SCH.
+*** ERROR[4001] Column C is not found.  Tables in scope: TRAFODION.SCH.T29XV2.  Default schema: TRAFODION.SCH.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -733,11 +734,11 @@ CREATE VIEW TRAFODION.SCH.T29XVRN2 AS
 --- SQL operation complete.
 >> showddl T29xvRN3;
 
-CREATE VIEW SEABASE.SCH.T29XVRN3 AS
+CREATE VIEW TRAFODION.SCH.T29XVRN3 AS
   SELECT O.A, O.B, O.E FROM (SELECT I.A, I.B, I.C, I.D, I.E FROM (SELECT
-    SEABASE.SCH.T29X.A, SEABASE.SCH.T29X.B, SEABASE.SCH.T29X.C,
-    SEABASE.SCH.T29X.D, SEABASE.SCH.T29X.E FROM SEABASE.SCH.T29X WHERE
-    SEABASE.SCH.T29X.A > 1) I WHERE I.A < 10) O WHERE O.A <> O.B WITH CHECK
+    TRAFODION.SCH.T29X.A, TRAFODION.SCH.T29X.B, TRAFODION.SCH.T29X.C,
+    TRAFODION.SCH.T29X.D, TRAFODION.SCH.T29X.E FROM TRAFODION.SCH.T29X WHERE
+    TRAFODION.SCH.T29X.A > 1) I WHERE I.A < 10) O WHERE O.A <> O.B WITH CHECK
     OPTION ;
 
 --- SQL operation complete.
@@ -760,7 +761,7 @@ CREATE VIEW TRAFODION.SCH.T29XVRN4 AS
 >>
 >>insert into T29xvRN1(a,b)   values(1,1);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN1.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XVRN1.
 
 --- 0 row(s) inserted.
 >>	-- fail
@@ -770,13 +771,13 @@ CREATE VIEW TRAFODION.SCH.T29XVRN4 AS
 >>	-- ok
 >>insert into T29xvRN2(a,b)   values(1,1);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN2.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XVRN2.
 
 --- 0 row(s) inserted.
 >>	-- fail
 >>insert into T29xvRN2(a,b)   values(11,11);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN2.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XVRN2.
 
 --- 0 row(s) inserted.
 >>	-- fail
@@ -786,19 +787,19 @@ CREATE VIEW TRAFODION.SCH.T29XVRN4 AS
 >>	-- ok
 >>insert into T29xvRN3(a,b)   values(1,1);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XVRN3.
 
 --- 0 row(s) inserted.
 >>	-- fail
 >>insert into T29xvRN3(a,b)   values(11,11);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XVRN3.
 
 --- 0 row(s) inserted.
 >>	-- fail
 >>insert into T29xvRN3(a,b)   values(9,9);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN3.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XVRN3.
 
 --- 0 row(s) inserted.
 >>	-- fail
@@ -808,25 +809,25 @@ CREATE VIEW TRAFODION.SCH.T29XVRN4 AS
 >>	-- ok
 >>insert into T29xvRN4(a,b)   values(8,9);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN4.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XVRN4.
 
 --- 0 row(s) inserted.
 >>	-- fail
 >>insert into T29xvRN4(a,b,e) values(1,1,1);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN4.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XVRN4.
 
 --- 0 row(s) inserted.
 >>	-- fail
 >>insert into T29xvRN4(a,b,e) values(11,11,1);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN4.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XVRN4.
 
 --- 0 row(s) inserted.
 >>	-- fail
 >>insert into T29xvRN4(a,b,e) values(9,9,1);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN4.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XVRN4.
 
 --- 0 row(s) inserted.
 >>	-- fail
@@ -836,7 +837,7 @@ CREATE VIEW TRAFODION.SCH.T29XVRN4 AS
 >>	-- ok
 >>insert into T29xvRN4(a,b,e) values(7,9,5);
 
-*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN4.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SCH.T29XVRN4.
 
 --- 0 row(s) inserted.
 >>	-- fail
@@ -984,7 +985,7 @@ A
 >>-- BindRelExpr fix
 >>select * from T29MISCA a, (select * from T29MISCB b where a.a=b.a) x;
 
-*** ERROR[4002] Column A.A is not found.  Table A not exposed.  Tables in scope: B.  Default schema: CAT.SCH.
+*** ERROR[4002] Column A.A is not found.  Table A not exposed.  Tables in scope: B.  Default schema: TRAFODION.SCH.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -1046,21 +1047,21 @@ SK                    A
 >>-- TableNameMap fix
 >>select count(*) from T29MISCA, T29MISCA;
 
-*** ERROR[4056] Exposed name CAT.SCH.T29MISCA appears more than once.
+*** ERROR[4056] Exposed name TRAFODION.SCH.T29MISCA appears more than once.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>-- 4056
 >>select count(*) from T29MISCA T29MISCA, T29MISCA;
 
-*** ERROR[4057] Correlation name T29MISCA conflicts with qualified identifier of table CAT.SCH.T29MISCA.
+*** ERROR[4057] Correlation name T29MISCA conflicts with qualified identifier of table TRAFODION.SCH.T29MISCA.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>-- 4057
 >>select count(*) from T29MISCA, T29MISCA T29MISCA;
 
-*** ERROR[4057] Correlation name T29MISCA conflicts with qualified identifier of table CAT.SCH.T29MISCA.
+*** ERROR[4057] Correlation name T29MISCA conflicts with qualified identifier of table TRAFODION.SCH.T29MISCA.
 
 *** ERROR[8822] The statement was not prepared.
 

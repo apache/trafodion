@@ -2035,6 +2035,14 @@ GenericUpdate::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     description += lbuf;
   }
 
+  if (natable->isSeabaseTable())
+    {
+      if (((ComTdbHbaseAccess *)tdb)->useRegionXn())
+        description += "region_transaction: enabled ";
+      else if (((ComTdbHbaseAccess *)tdb)->useHbaseXn())
+        description += "hbase_transaction: used ";
+    }
+
   return 0;
 }
 

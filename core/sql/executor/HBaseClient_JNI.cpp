@@ -266,17 +266,17 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_GET_REGN_NODES].jm_name      = "getRegionsNodeName";
     JavaMethods_[JM_GET_REGN_NODES].jm_signature = "(Ljava/lang/String;[Ljava/lang/String;)Z";
     JavaMethods_[JM_HBC_DIRECT_INSERT_ROW].jm_name      = "insertRow";
-    JavaMethods_[JM_HBC_DIRECT_INSERT_ROW].jm_signature = "(JLjava/lang/String;ZJ[BLjava/lang/Object;JZZ)Z";
+    JavaMethods_[JM_HBC_DIRECT_INSERT_ROW].jm_signature = "(JLjava/lang/String;ZJ[BLjava/lang/Object;JZZZ)Z";
     JavaMethods_[JM_HBC_DIRECT_INSERT_ROWS].jm_name      = "insertRows";
     JavaMethods_[JM_HBC_DIRECT_INSERT_ROWS].jm_signature = "(JLjava/lang/String;ZJSLjava/lang/Object;Ljava/lang/Object;JZ)Z";
     JavaMethods_[JM_HBC_DIRECT_CHECKANDUPDATE_ROW].jm_name      = "checkAndUpdateRow";
-    JavaMethods_[JM_HBC_DIRECT_CHECKANDUPDATE_ROW].jm_signature = "(JLjava/lang/String;ZJ[BLjava/lang/Object;[B[BJZ)Z";
+    JavaMethods_[JM_HBC_DIRECT_CHECKANDUPDATE_ROW].jm_signature = "(JLjava/lang/String;ZJ[BLjava/lang/Object;[B[BJZZ)Z";
     JavaMethods_[JM_HBC_DELETE_ROW ].jm_name      = "deleteRow";
-    JavaMethods_[JM_HBC_DELETE_ROW ].jm_signature = "(JLjava/lang/String;ZJ[B[Ljava/lang/Object;JZ)Z";
+    JavaMethods_[JM_HBC_DELETE_ROW ].jm_signature = "(JLjava/lang/String;ZJ[B[Ljava/lang/Object;JZZ)Z";
     JavaMethods_[JM_HBC_DIRECT_DELETE_ROWS ].jm_name      = "deleteRows";
     JavaMethods_[JM_HBC_DIRECT_DELETE_ROWS ].jm_signature = "(JLjava/lang/String;ZJSLjava/lang/Object;JZ)Z";
     JavaMethods_[JM_HBC_CHECKANDDELETE_ROW ].jm_name      = "checkAndDeleteRow";
-    JavaMethods_[JM_HBC_CHECKANDDELETE_ROW ].jm_signature = "(JLjava/lang/String;ZJ[B[B[BJZ)Z";
+    JavaMethods_[JM_HBC_CHECKANDDELETE_ROW ].jm_signature = "(JLjava/lang/String;ZJ[B[B[BJZZ)Z";
     JavaMethods_[JM_HBC_GETSTARTKEYS ].jm_name      = "getStartKeys";
     JavaMethods_[JM_HBC_GETSTARTKEYS ].jm_signature = "(Ljava/lang/String;Z)[[B";
     JavaMethods_[JM_HBC_GETENDKEYS ].jm_name      = "getEndKeys";
@@ -2638,7 +2638,7 @@ HBC_RetCode HBaseClient_JNI::getHbaseTableInfo(const char* tblName,
 HBC_RetCode HBaseClient_JNI::insertRow(NAHeap *heap, const char *tableName,
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID,
       HbaseStr row, Int64 timestamp, bool checkAndPut, bool asyncOperation,
-      HTableClient_JNI **outHtc)
+      bool useRegionXn, HTableClient_JNI **outHtc)
 {
   
   HTableClient_JNI *htc = NULL;
@@ -2689,12 +2689,14 @@ HBC_RetCode HBaseClient_JNI::insertRow(NAHeap *heap, const char *tableName,
   jlong j_ts = timestamp;
   jboolean j_checkAndPut = checkAndPut;
   jboolean j_asyncOperation = asyncOperation;
- 
+  jboolean j_useRegionXn = useRegionXn;
+
   if (hbs)
     hbs->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_HBC_DIRECT_INSERT_ROW].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HBC_DIRECT_INSERT_ROW].methodID, 
-               	j_htc, js_tblName, j_useTRex, j_tid, jba_rowID, jRow, j_ts, j_checkAndPut, j_asyncOperation);
+  jboolean jresult = 
+    jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HBC_DIRECT_INSERT_ROW].methodID, 
+                             j_htc, js_tblName, j_useTRex, j_tid, jba_rowID, jRow, j_ts, j_checkAndPut, j_asyncOperation, j_useRegionXn);
   if (hbs) {
       hbs->incHbaseCalls();
       if (!asyncOperation)
@@ -2817,10 +2819,10 @@ HBC_RetCode HBaseClient_JNI::insertRows(NAHeap *heap, const char *tableName,
 // 
 //////////////////////////////////////////////////////////////////////////////
 HBC_RetCode HBaseClient_JNI::checkAndUpdateRow(NAHeap *heap, const char *tableName,
-      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID,
-      HbaseStr row, HbaseStr columnToCheck, HbaseStr columnValToCheck,
-       Int64 timestamp, bool asyncOperation,
-      HTableClient_JNI **outHtc)
+                                               ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID,
+                                               HbaseStr row, HbaseStr columnToCheck, HbaseStr columnValToCheck,
+                                               Int64 timestamp, bool asyncOperation, bool useRegionXn,
+                                               HTableClient_JNI **outHtc)
 {
   
   HTableClient_JNI *htc = NULL;
@@ -2891,13 +2893,15 @@ HBC_RetCode HBaseClient_JNI::checkAndUpdateRow(NAHeap *heap, const char *tableNa
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
   jboolean j_asyncOperation = asyncOperation;
- 
+  jboolean j_useRegionXn = useRegionXn;
+
   if (hbs)
     hbs->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_HBC_DIRECT_CHECKANDUPDATE_ROW].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HBC_DIRECT_CHECKANDUPDATE_ROW].methodID, 
-               	j_htc, js_tblName, j_useTRex, j_tid, jba_rowID, jRow,
-                jba_columnToCheck, jba_columnValToCheck,  j_ts, j_asyncOperation);
+                                              j_htc, js_tblName, j_useTRex, j_tid, jba_rowID, jRow,
+                                              jba_columnToCheck, jba_columnValToCheck,  j_ts, 
+                                              j_asyncOperation, j_useRegionXn);
   if (hbs) {
       hbs->incHbaseCalls();
       if (!asyncOperation)
@@ -2930,8 +2934,12 @@ HBC_RetCode HBaseClient_JNI::checkAndUpdateRow(NAHeap *heap, const char *tableNa
 // 
 //////////////////////////////////////////////////////////////////////////////
 HBC_RetCode HBaseClient_JNI::deleteRow(NAHeap *heap, const char *tableName,
-      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, const LIST(HbaseStr) *cols, 
-      Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc)
+                                       ExHbaseAccessStats *hbs, bool useTRex, 
+                                       Int64 transID, HbaseStr rowID, 
+                                       const LIST(HbaseStr) *cols, 
+                                       Int64 timestamp, 
+                                       bool asyncOperation, bool useRegionXn,
+                                       HTableClient_JNI **outHtc)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::deleteRow(%ld, %s) called.", transID, rowID.val);
 
@@ -2985,12 +2993,14 @@ HBC_RetCode HBaseClient_JNI::deleteRow(NAHeap *heap, const char *tableName,
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
   jboolean j_asyncOperation = asyncOperation;
+  jboolean j_useRegionXn = useRegionXn;
   if (hbs)
     hbs->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_HBC_DELETE_ROW].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
-          JavaMethods_[JM_HBC_DELETE_ROW].methodID, j_htc, js_tblName, j_useTRex, j_tid, jba_rowID, 
-          j_cols, j_ts, j_asyncOperation);
+  jboolean jresult = 
+    jenv_->CallBooleanMethod(javaObj_, 
+                             JavaMethods_[JM_HBC_DELETE_ROW].methodID, j_htc, js_tblName, j_useTRex, j_tid, jba_rowID, 
+                             j_cols, j_ts, j_asyncOperation, j_useRegionXn);
   if (hbs) {
       hbs->incHbaseCalls();
       if (!asyncOperation) 
@@ -3106,9 +3116,10 @@ HBC_RetCode HBaseClient_JNI::deleteRows(NAHeap *heap, const char *tableName,
 // 
 //////////////////////////////////////////////////////////////////////////////
 HBC_RetCode HBaseClient_JNI::checkAndDeleteRow(NAHeap *heap, const char *tableName,
-      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, 
-      HbaseStr columnToCheck, HbaseStr columnValToCheck,
-      Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc)
+                                               ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, 
+                                               HbaseStr columnToCheck, HbaseStr columnValToCheck,
+                                               Int64 timestamp, bool asyncOperation, bool useRegionXn,
+                                               HTableClient_JNI **outHtc)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::checkAndDeleteRow(%ld, %s) called.", transID, rowID.val);
 
@@ -3167,12 +3178,14 @@ HBC_RetCode HBaseClient_JNI::checkAndDeleteRow(NAHeap *heap, const char *tableNa
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
   jboolean j_asyncOperation = asyncOperation;
+  jboolean j_useRegionXn = useRegionXn;
   if (hbs)
     hbs->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_HBC_CHECKANDDELETE_ROW].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
-          JavaMethods_[JM_HBC_CHECKANDDELETE_ROW].methodID, j_htc, js_tblName, j_useTRex, j_tid, jba_rowID, 
-          jba_columnToCheck, jba_columnValToCheck, j_ts, j_asyncOperation);
+                                              JavaMethods_[JM_HBC_CHECKANDDELETE_ROW].methodID, j_htc, js_tblName, j_useTRex, j_tid, jba_rowID, 
+                                              jba_columnToCheck, jba_columnValToCheck, j_ts, 
+                                              j_asyncOperation, j_useRegionXn);
   if (hbs) {
       hbs->incHbaseCalls();
       if (!asyncOperation) 
@@ -3360,7 +3373,7 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_SCAN_OPEN  ].jm_name      = "startScan";
     JavaMethods_[JM_SCAN_OPEN  ].jm_signature = "(J[B[B[Ljava/lang/Object;JZZI[Ljava/lang/Object;[Ljava/lang/Object;[Ljava/lang/Object;FFZZILjava/lang/String;Ljava/lang/String;II)Z";
     JavaMethods_[JM_DELETE     ].jm_name      = "deleteRow";
-    JavaMethods_[JM_DELETE     ].jm_signature = "(J[B[Ljava/lang/Object;JZ)Z";
+    JavaMethods_[JM_DELETE     ].jm_signature = "(J[B[Ljava/lang/Object;JZZ)Z";
     JavaMethods_[JM_COPROC_AGGR     ].jm_name      = "coProcAggr";
     JavaMethods_[JM_COPROC_AGGR     ].jm_signature = "(JI[B[B[B[BZI)[B";
     JavaMethods_[JM_GET_NAME   ].jm_name      = "getTableName";
@@ -3640,8 +3653,9 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const LI
     hbs_->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_DELETE].jm_full_name;
   jboolean j_asyncOperation = FALSE;
+  jboolean j_useRegionXn = FALSE;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
-          JavaMethods_[JM_DELETE].methodID, j_tid, jba_rowID, j_cols, j_ts, j_asyncOperation);
+                                              JavaMethods_[JM_DELETE].methodID, j_tid, jba_rowID, j_cols, j_ts, j_asyncOperation, j_useRegionXn);
   if (hbs_)
     {
       hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());

@@ -24,6 +24,7 @@ CREATE TABLE TRAFODION.SCH.TLONGVARCHAR0
     A                                VARCHAR(10) CHARACTER SET UCS2 COLLATE
       DEFAULT DEFAULT NULL
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -34,13 +35,14 @@ CREATE TABLE TRAFODION.SCH.TLONGWVARCHAR0
     A                                VARCHAR(50) CHARACTER SET UCS2 COLLATE
       DEFAULT DEFAULT NULL
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
 >>invoke  tlongwvarchar1;
 
 -- Definition of Trafodion table TRAFODION.SCH.TLONGWVARCHAR1
--- Definition current  Thu Feb 25 10:25:29 2016
+-- Definition current  Tue Sep 20 12:53:27 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
