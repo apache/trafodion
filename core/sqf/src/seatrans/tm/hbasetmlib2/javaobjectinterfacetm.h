@@ -142,7 +142,7 @@ public:
     return isInitialized_;
   }
   bool getExceptionDetails(JNIEnv *jenv);
-  void appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, std::string *error_msg);
+  void appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, std::string &error_msg);
   
 protected:
   static JavaVM*   jvm_;

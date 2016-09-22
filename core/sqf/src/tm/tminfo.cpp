@@ -949,8 +949,6 @@ void TM_Info::initialize()
      }
 #endif //deug_mode       
 
-    int result = tm_init_logging();
-    TMTrace (1, ("TM DUAL logging set to %d\n", result));
     unlock();
 }
 
