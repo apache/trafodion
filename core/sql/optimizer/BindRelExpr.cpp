@@ -3856,9 +3856,17 @@ RelRoot * RelRoot::transformOrderByWithExpr(BindWA *bindWA)
           NABoolean found = FALSE;
           Lng32 selListIndex = 0;
           ItemExpr * selItem = NULL;
+          ItemExpr * renameColEntry = NULL;
           while ((NOT found) && (selListIndex < selListCount))
             {
               selItem = origSelectList[selListIndex];
+              
+              if (selItem->getOperatorType() == ITM_RENAME_COL)
+                {
+                  renameColEntry = selItem;
+                  selItem = selItem->child(0);
+                }
+              
               found = currOrderByItemExpr->duplicateMatch(*selItem);
               if (NOT found)
                 selListIndex++;
@@ -13879,7 +13887,8 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
                   (CmpCommon::diags()->mainSQLCODE() == -4193) ||
                   (CmpCommon::diags()->mainSQLCODE() == -4155) || // define not supported
                   (CmpCommon::diags()->mainSQLCODE() == -4086) || // catch Define Not Found error
-                  (CmpCommon::diags()->mainSQLCODE() == -30044))  // default schema access error
+                  (CmpCommon::diags()->mainSQLCODE() == -30044)|| // default schema access error
+                  (CmpCommon::diags()->mainSQLCODE() == -1398))   // uninit hbase
                     return this;
       
               CmpCommon::diags()->clear();

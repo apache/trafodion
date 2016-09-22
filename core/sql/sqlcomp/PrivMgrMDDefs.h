@@ -43,15 +43,15 @@
 #define PRIVMGR_SCHEMA_PRIVILEGES "SCHEMA_PRIVILEGES"
 
 enum PrivMgrTableEnum { OBJECT_PRIVILEGES_ENUM = 30,
-                            COLUMN_PRIVILEGES_ENUM = 31,
-                            SCHEMA_PRIVIELGES_ENUM = 32,
-                            COMPONENTS_ENUM        = 33,
-                            COMPONENT_OPERATIONS_ENUM  = 34,
-                            COMPONENT_PRIVILEGES_ENUM  = 35,
-                            ROLE_USAGES_ENUM           = 36,
-                            OBJECTS_ENUM               = 37,
-                            UNKNOWN_ENUM               = 38
-                          };
+                        COLUMN_PRIVILEGES_ENUM = 31,
+                        SCHEMA_PRIVIELGES_ENUM = 32,
+                        COMPONENTS_ENUM        = 33,
+                        COMPONENT_OPERATIONS_ENUM  = 34,
+                        COMPONENT_PRIVILEGES_ENUM  = 35,
+                        ROLE_USAGES_ENUM           = 36,
+                        OBJECTS_ENUM               = 37,
+                        UNKNOWN_ENUM               = 38
+                      };
 
 // The TableDDLString is used to contain the CREATE text for privilege manager
 // metadata tables
@@ -88,7 +88,7 @@ static const TableDDLString columnPrivilegesDDL[] =
    privileges_bitmap largeint not null, \
    grantable_bitmap largeint not null, \
    primary key (object_uid, grantee_id, grantor_id, column_number) \
-   );" };
+   ) attribute hbase format;" };
 
 static const TableDDLString componentsDDL[] =
 {" ( \
@@ -96,7 +96,7 @@ static const TableDDLString componentsDDL[] =
    component_name varchar(128 bytes) character set ISO88591 not null, \
    is_system char(2) not null, \
    component_description varchar(80 bytes) character set ISO88591 default null \
-   );" };
+   )  attribute hbase format;" };
 
 static const TableDDLString componentOperationsDDL[] =
 { " ( \
@@ -106,7 +106,7 @@ static const TableDDLString componentOperationsDDL[] =
   is_system char(2) not null, \
   operation_description char(80 bytes) character set ISO88591 default null, \
   primary key (component_uid, operation_code) \
-  );" };
+  ) attribute hbase format;" };
 
 static const TableDDLString componentPrivilegesDDL[] = 
 { " ( \
@@ -118,7 +118,7 @@ static const TableDDLString componentPrivilegesDDL[] =
   grantor_name varchar(256 bytes) character set utf8 not null, \
   grant_depth int not null, \
   primary key (grantee_id, grantor_id, component_uid, operation_code) \
-  );" };
+  ) attribute hbase format;" };
 
 static const TableDDLString objectPrivilegesDDL[] = 
 { " ( \
@@ -134,7 +134,7 @@ static const TableDDLString objectPrivilegesDDL[] =
   privileges_bitmap largeint not null, \
   grantable_bitmap largeint not null, \
   primary key (object_uid, grantor_id, grantee_id) \
-  );" };
+  ) attribute hbase format;" };
 
 static const TableDDLString roleUsageDDL[] = 
 { " ( \
@@ -148,7 +148,7 @@ static const TableDDLString roleUsageDDL[] =
   grantor_auth_class char (2 bytes) character set utf8 not null, \
   grant_depth int not null, \
   primary key (role_id, grantor_id, grantee_id) \
-  );" };
+  ) attribute hbase format;" };
   
 static const TableDDLString schemaPrivilegesDDL[] = 
 { " ( \
@@ -161,7 +161,7 @@ static const TableDDLString schemaPrivilegesDDL[] =
   privileges_bitmap largeint not null, \
   grantable_bitmap largeint not null, \
   primary key (schema_uid, grantor_id, grantee_id) \
-  );" };
+  ) attribute hbase format;" };
 
 // The PrivMgrTableStruct describes each table
 static const PrivMgrTableStruct privMgrTables[] =

@@ -12,7 +12,7 @@
 >>invoke t002;
 
 -- Definition of Trafodion table TRAFODION.SCH.T002
--- Definition current  Thu Feb 25 10:23:15 2016
+-- Definition current  Tue Sep 20 12:51:23 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -28,6 +28,7 @@ CREATE TABLE TRAFODION.SCH.T002
     C                                CHAR(10) CHARACTER SET UCS2 COLLATE
       DEFAULT DEFAULT NULL
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.

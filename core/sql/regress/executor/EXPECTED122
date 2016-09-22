@@ -65,7 +65,7 @@ A
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Fri Aug  5 14:03:34 2016
+-- Definition current  Tue Sep 20 08:28:14 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -118,7 +118,7 @@ A
 >>execute s3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Fri Aug  5 14:03:34 2016
+-- Definition current  Tue Sep 20 08:28:14 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -178,7 +178,7 @@ iv
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Fri Aug  5 14:03:49 2016
+-- Definition current  Tue Sep 20 08:28:43 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -225,7 +225,7 @@ iv
 
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Fri Aug  5 14:03:49 2016
+-- Definition current  Tue Sep 20 08:28:44 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1225,6 +1225,7 @@ CREATE TABLE TRAFODION.SCH.T122T6
   , LARGE_2                          LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (INT_1 ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T122T6_IDX1 ON TRAFODION.SCH.T122T6

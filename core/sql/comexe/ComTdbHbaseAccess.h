@@ -727,6 +727,10 @@ public:
   void setUseHbaseXn(NABoolean v)
   {(v ? flags_ |= USE_HBASE_XN : flags_ &= ~USE_HBASE_XN); };
   NABoolean useHbaseXn() { return (flags_ & USE_HBASE_XN) != 0; };
+
+  void setUseRegionXn(NABoolean v)
+  {(v ? flags_ |= USE_REGION_XN : flags_ &= ~USE_REGION_XN); };
+  NABoolean useRegionXn() { return (flags_ & USE_REGION_XN) != 0; };
  
   void setAlignedFormat(NABoolean v)
   {(v ? flags_ |= ALIGNED_FORMAT : flags_ &= ~ALIGNED_FORMAT); };
@@ -904,7 +908,8 @@ public:
     USE_HBASE_XN                     = 0x2000,
     ALIGNED_FORMAT                   = 0x4000,
     ASYNC_OPERATIONS                 = 0x8000,
-    USE_CIF                          = 0x10000
+    USE_CIF                          = 0x10000,
+    USE_REGION_XN                    = 0x20000
   };
 
   enum

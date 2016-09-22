@@ -23,6 +23,7 @@
 // @@@ END COPYRIGHT @@@
 //******************************************************************************
 #include <string>
+#include "authEvents.h"
 using namespace std;
 
 #pragma page "Class LDAPConfigNode"
@@ -88,50 +89,69 @@ enum LDAPConfigType
 };
 
    static void ClearRetryCounts();
+
    static void CloseConnection();
    
    static void FreeInstance(
       LDAPConfigType     configType,
       LDAPConnectionType connectionType);
+
    static size_t GetBindRetryCount();
+
    static LDAPConfigNode *GetLDAPConnection(
-      LDAPConfigType     configType,
-      LDAPConnectionType connectionType,
-      char *             hostName = NULL);
+      std::vector<AuthEvent> & authEvents,
+      LDAPConfigType           configType,
+      LDAPConnectionType       connectionType,
+      char                  *  hostName = NULL);
+
    static LDAPConfigNode * GetInstance(
-      LDAPConfigType     configType,
-      LDAPConnectionType connectionType);
+      std::vector<AuthEvent> & authEvents,
+      LDAPConfigType           configType,
+      LDAPConnectionType       connectionType);
+
    static size_t GetSearchRetryCount();
-   static void Refresh();
+
+   static void Refresh(std::vector<AuthEvent> & authEvents);
+
    static const char * TestGetConfigFilename();
 
    LDAuthStatus authenticateUser(
-      const char         *username, 
-      const char         *password); 
+      std::vector<AuthEvent> & authEvents,
+      const char             * username, 
+      const char             * password); 
       
    LDAPConfigType getConfigType() const;
       
    LDSearchStatus lookupUser(
-      const char *inputName, 
-      string     &userDN);
+      std::vector<AuthEvent> & authEvents,
+      const char             * inputName, 
+      string                 & userDN);
 
 private:
 
 ConfigNodeContents &self;
 
    LDAPConfigNode();
+
    LDAPConfigNode(
       LDAPConfigType     configType,
       LDAPConnectionType connectionType);
 
    LDAPConfigNode( const LDAPConfigNode & other );
-   LDAPConfigNode & operator = ( const LDAPConfigNode & other );
-   virtual ~LDAPConfigNode();
-   static bool GetConfiguration(LDAPConfigType &configType);
-   static void GetDefaultConfiguration();
-   bool initialize(char * hostName);
-                       
 
+   LDAPConfigNode & operator = ( const LDAPConfigNode & other );
+
+   virtual ~LDAPConfigNode();
+
+   static bool GetConfiguration(
+      std::vector<AuthEvent> & authEvents,
+      LDAPConfigType         & configType);
+
+   static void GetDefaultConfiguration();
+
+   bool initialize(
+      std::vector<AuthEvent> & authEvents,
+      char                   * hostName);
 };
 
 #endif

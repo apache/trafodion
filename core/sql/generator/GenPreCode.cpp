@@ -5048,22 +5048,28 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
   generator->setUpdSavepointOnError(FALSE);
   generator->setUpdPartialOnError(FALSE);
   
-  if (CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON)
-    noDTMxn() = TRUE;
-  
   // if unique oper with no index maintanence and autocommit is on, then
-  // do not require a trnsaction. Hbase guarantees single row consistency.
+  // do not require a trnsaction. 
+  // Use hbase or region transactions. 
+  // Hbase guarantees single row consistency.
   Int64 transId = -1;
-  if (((uniqueHbaseOper()) &&
-       (NOT cursorHbaseOper()) &&
-       (NOT uniqueRowsetHbaseOper()) &&
-       (NOT inlinedActions) &&
-       (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
-       (! NAExecTrans(0, transId)) &&
-       (NOT generator->oltOptInfo()->multipleRowsReturned())) ||
-      (noDTMxn()))
+  if (CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON)
     {
       // no transaction needed
+      noDTMxn() = TRUE;
+    }
+  else if ((uniqueHbaseOper()) &&
+           (NOT cursorHbaseOper()) &&
+           (NOT uniqueRowsetHbaseOper()) &&
+           (NOT inlinedActions) &&
+           (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
+           (! NAExecTrans(0, transId)) &&
+           (NOT generator->oltOptInfo()->multipleRowsReturned()))
+    {
+      // no DTM transaction needed
+      useRegionXn() = FALSE;
+      if (CmpCommon::getDefault(TRAF_USE_REGION_XN) == DF_ON)
+        useRegionXn() = TRUE;
     }
   else
     {
@@ -5319,30 +5325,29 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
   generator->setUpdSavepointOnError(FALSE);
   generator->setUpdPartialOnError(FALSE);
 
-  // if seq gen metadata is being updated through an internal query 
-  // and we are running under a user Xn,
-  // do not mark this stmt as a transactional stmt.
-  // This is done so those updates can run in its own transaction and not be
-  // part of the enclosing user Xn.
-  // When we have support for local transactions and repeatable read, we
-  // will then run this update in local transactional mode.
-  if (CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON)
-    noDTMxn() = TRUE;
-
   // if unique oper with no index maintanence and autocommit is on, then
-  // do not require a transaction. Hbase guarantees single row consistency.
+  // do not require a transaction. 
+  // Use hbase or region transactions. 
+  // Hbase guarantees single row consistency.
   Int64 transId = -1;
-  if (((uniqueHbaseOper()) &&
-       (NOT isMerge()) &&
-       (NOT cursorHbaseOper()) &&
-       (NOT uniqueRowsetHbaseOper()) &&
-       (NOT inlinedActions) &&
-       (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
-       (! NAExecTrans(0, transId)) &&
-       (NOT generator->oltOptInfo()->multipleRowsReturned())) ||
-      (noDTMxn()))
+  if (CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON)
     {
       // no transaction needed
+      noDTMxn() = TRUE;
+    }
+  else if ((uniqueHbaseOper()) &&
+           (NOT isMerge()) &&
+           (NOT cursorHbaseOper()) &&
+           (NOT uniqueRowsetHbaseOper()) &&
+           (NOT inlinedActions) &&
+           (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
+           (! NAExecTrans(0, transId)) &&
+           (NOT generator->oltOptInfo()->multipleRowsReturned()))
+    {
+      // no DTM transaction needed
+      useRegionXn() = FALSE;
+      if (CmpCommon::getDefault(TRAF_USE_REGION_XN) == DF_ON)
+        useRegionXn() = TRUE;
     }
   else
     {
@@ -5611,23 +5616,29 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
   generator->setUpdSavepointOnError(FALSE);
   generator->setUpdPartialOnError(FALSE);
 
-  if (CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON)
-    noDTMxn() = TRUE;
-  
   // if unique oper with no index maintanence and autocommit is on, then
-  // do not require a trnsaction. Hbase guarantees single row consistency.
+  // do not require a trnsaction. 
+  // Use hbase or region transactions. 
+  // Hbase guarantees single row consistency.
   Int64 transId = -1;
-  if (((uniqueHbaseOper()) &&
-       (NOT uniqueRowsetHbaseOper()) &&
-       (NOT inlinedActions) &&
-       (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
-       (! NAExecTrans(0, transId)) &&
-       (NOT generator->oltOptInfo()->multipleRowsReturned())) ||
+  if ((CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON) ||
       (isNoRollback()) ||
-      ((isUpsert()) && (insertType_ == UPSERT_LOAD)) ||
-      (noDTMxn()))
+      ((isUpsert()) && (insertType_ == UPSERT_LOAD)))
     {
       // no transaction needed
+      noDTMxn() = TRUE;
+    }
+  else if ((uniqueHbaseOper()) &&
+           (NOT uniqueRowsetHbaseOper()) &&
+           (NOT inlinedActions) &&
+           (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
+           (! NAExecTrans(0, transId)) &&
+           (NOT generator->oltOptInfo()->multipleRowsReturned()))
+    {
+      // no DTM transaction needed
+      useRegionXn() = FALSE;
+      if (CmpCommon::getDefault(TRAF_USE_REGION_XN) == DF_ON)
+        useRegionXn() = TRUE;
     }
   else
     {

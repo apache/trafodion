@@ -30,6 +30,7 @@ obey TEST010(setup);
 
 cqd hbase_serialization 'OFF';
 cqd hbase_filter_preds 'OFF';
+cqd traf_aligned_row_format 'OFF';
 
 -- query_cache on(default), mdam_scan_method on(default)
 cqd query_cache '1024';
@@ -59,6 +60,7 @@ obey TEST010(tests);
 obey TEST010(clean_up);
 cqd hbase_serialization 'ON';
 cqd hbase_filter_preds 'ON';
+cqd traf_aligned_row_format 'ON';
 
 -- query_cache on(default), mdam_scan_method on(default)
 cqd query_cache '1024';

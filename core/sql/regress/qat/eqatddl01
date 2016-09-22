@@ -11,6 +11,9 @@
 >>--            and manuals); create new datasets (e.g. to test all data
 >>--            types; to allow joins).
 >>---------------------------------------------------------------------
+>>cqd traf_aligned_row_format 'OFF';
+
+--- SQL operation complete.
 >>
 >>---------------------------------------------------------------------
 >>-- Table ORDERS.

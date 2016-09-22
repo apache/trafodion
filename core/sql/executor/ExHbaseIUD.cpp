@@ -167,6 +167,7 @@ ExWorkProcRetcode ExHbaseAccessInsertTcb::work()
 				      rowID, 
 				      row_,
                                       hbaseAccessTdb().useHbaseXn(),
+                                      hbaseAccessTdb().useRegionXn(),
 				      *insColTS_,
                                       FALSE); // AsyncOperations is always FALSE for native HBase
 
@@ -337,6 +338,7 @@ ExWorkProcRetcode ExHbaseAccessInsertRowwiseTcb::work()
 					  rowID,
 					  row_,
                                           hbaseAccessTdb().useHbaseXn(),
+                                          hbaseAccessTdb().useRegionXn(),
 					  -1,  //*insColTS_
                                           FALSE); // AsyncOperations is always FALSE for native HBase
 
@@ -536,6 +538,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
                                               rowID,
 	                                      row_,
                                               hbaseAccessTdb().useHbaseXn(),
+                                              hbaseAccessTdb().useRegionXn(),
                                               insColTSval_,
                                               asyncOperation_);
 
@@ -613,6 +616,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 				      rowID,
 				      row_,
                                       hbaseAccessTdb().useHbaseXn(),
+                                      hbaseAccessTdb().useRegionXn(),
 				      insColTSval_,
                                       asyncOperation_);
 
@@ -2081,7 +2085,8 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
             retcode =  tcb_->ehi_->insertRow(tcb_->table_,
                                              tcb_->rowIds_[tcb_->currRowidIdx_],
 	                                     tcb_->row_,
-					     (tcb_->hbaseAccessTdb().useHbaseXn() ? TRUE : FALSE),
+					     tcb_->hbaseAccessTdb().useHbaseXn(),
+					     tcb_->hbaseAccessTdb().useRegionXn(),
 					     -1, //colTS_
                                              tcb_->asyncOperation_);
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
@@ -2116,6 +2121,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 						     columnToCheck_,
 						     colValToCheck_,
                                                      tcb_->hbaseAccessTdb().useHbaseXn(),
+                                                     tcb_->hbaseAccessTdb().useRegionXn(),
 						     -1, //colTS_
                                                      tcb_->asyncOperation_);
 
@@ -2175,6 +2181,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
                                                      rowID,
                                                      tcb_->row_,
                                                      tcb_->hbaseAccessTdb().useHbaseXn(),
+                                                     tcb_->hbaseAccessTdb().useRegionXn(),
 						     -1, // colTS
                                                      tcb_->asyncOperation_); 
 
@@ -2234,6 +2241,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
                                              tcb_->rowIds_[tcb_->currRowidIdx_],
                                              NULL,
                                              tcb_->hbaseAccessTdb().useHbaseXn(),
+                                             tcb_->hbaseAccessTdb().useRegionXn(),
                                              latestRowTimestamp_,
                                              tcb_->asyncOperation_);
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
@@ -2296,6 +2304,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 						     columnToCheck_, 
 						     colValToCheck_,
                                                      tcb_->hbaseAccessTdb().useHbaseXn(),
+                                                     tcb_->hbaseAccessTdb().useRegionXn(),
 						     -1 //colTS_
 						     );
 
@@ -2684,6 +2693,7 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
                                              tcb_->rowIds_[tcb_->currRowidIdx_],
                                              &tcb_->deletedColumns_,
                                              tcb_->hbaseAccessTdb().useHbaseXn(),
+                                             tcb_->hbaseAccessTdb().useRegionXn(),
                                              -1 ,
                                              tcb_->asyncOperation_);
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
@@ -2711,6 +2721,7 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
                                                  tcb_->rowIds_[tcb_->currRowidIdx_],
                                                  tcb_->row_,
                                                  tcb_->hbaseAccessTdb().useHbaseXn(),
+                                                 tcb_->hbaseAccessTdb().useRegionXn(),
                                                  -1, // colTS_
                                                  tcb_->asyncOperation_);
 
@@ -2974,6 +2985,7 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 					    rowID,
 					    tcb_->row_,
                                             tcb_->hbaseAccessTdb().useHbaseXn(),
+                                            tcb_->hbaseAccessTdb().useRegionXn(),
 					    -1, // colTS_
                                             tcb_->asyncOperation_);
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
@@ -3009,6 +3021,7 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 					     rowID,
 					     NULL,
                                              tcb_->hbaseAccessTdb().useHbaseXn(),
+                                             tcb_->hbaseAccessTdb().useRegionXn(),
 					     -1,
 					     tcb_->asyncOperation_);
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
@@ -3384,7 +3397,8 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 		retcode = tcb_->ehi_->insertRow(tcb_->table_,
 						tcb_->rowId_,
 						tcb_->row_,
-                                                tcb_->hbaseAccessTdb().useHbaseXn(),						
+                                                tcb_->hbaseAccessTdb().useHbaseXn(),
+                                                tcb_->hbaseAccessTdb().useRegionXn(),
 						-1,// colTS_
                                                 tcb_->asyncOperation_); 
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
@@ -3409,6 +3423,7 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 					     tcb_->rowId_,
 					     &tcb_->deletedColumns_,
                                              tcb_->hbaseAccessTdb().useHbaseXn(),
+                                             tcb_->hbaseAccessTdb().useRegionXn(),
 					     -1,
 					     tcb_->asyncOperation_);
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))

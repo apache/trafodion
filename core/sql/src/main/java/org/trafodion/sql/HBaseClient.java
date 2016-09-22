@@ -1607,14 +1607,15 @@ public class HBaseClient {
   }
 
   public boolean insertRow(long jniObject, String tblName, boolean useTRex, long transID, byte[] rowID,
-                         Object row,
-                         long timestamp,
-                         boolean checkAndPut,
-                         boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
+                           Object row,
+                           long timestamp,
+                           boolean checkAndPut,
+                           boolean asyncOperation,
+                           boolean useRegionXn) throws IOException, InterruptedException, ExecutionException {
 
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       boolean ret = htc.putRow(transID, rowID, row, null, null,
-                                checkAndPut, asyncOperation);
+                               checkAndPut, asyncOperation, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
       else
@@ -1623,14 +1624,15 @@ public class HBaseClient {
   }
 
   public boolean checkAndUpdateRow(long jniObject, String tblName, boolean useTRex, long transID, byte[] rowID,
-                         Object columnsToUpdate,
-                         byte[] columnToCheck, byte[] columnValToCheck,
-                         long timestamp,
-                         boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
+                                   Object columnsToUpdate,
+                                   byte[] columnToCheck, byte[] columnValToCheck,
+                                   long timestamp,
+                                   boolean asyncOperation,
+                                   boolean useRegionXn) throws IOException, InterruptedException, ExecutionException {
       boolean checkAndPut = true;
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       boolean ret = htc.putRow(transID, rowID, columnsToUpdate, columnToCheck, columnValToCheck,
-                                checkAndPut, asyncOperation);
+                               checkAndPut, asyncOperation, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
       else
@@ -1654,11 +1656,13 @@ public class HBaseClient {
   }
 
   public boolean deleteRow(long jniObject, String tblName, boolean useTRex, long transID, 
-                                 byte[] rowID,
-                                 Object[] columns,
-                                 long timestamp, boolean asyncOperation) throws IOException {
+                           byte[] rowID,
+                           Object[] columns,
+                           long timestamp, 
+                           boolean asyncOperation, boolean useRegionXn) throws IOException {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
-      boolean ret = htc.deleteRow(transID, rowID, columns, timestamp, asyncOperation);
+      boolean ret = htc.deleteRow(transID, rowID, columns, timestamp, 
+                                  asyncOperation, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
       else
@@ -1679,11 +1683,13 @@ public class HBaseClient {
   }
 
   public boolean checkAndDeleteRow(long jniObject, String tblName, boolean useTRex, long transID, 
-                                 byte[] rowID,
-                                 byte[] columnToCheck, byte[] colValToCheck,
-                                 long timestamp, boolean asyncOperation) throws IOException {
+                                   byte[] rowID,
+                                   byte[] columnToCheck, byte[] colValToCheck,
+                                   long timestamp, boolean asyncOperation,
+                                   boolean useRegionXn
+                                   ) throws IOException {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
-      boolean ret = htc.checkAndDeleteRow(transID, rowID, columnToCheck, colValToCheck, timestamp);
+      boolean ret = htc.checkAndDeleteRow(transID, rowID, columnToCheck, colValToCheck, timestamp, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
       else
