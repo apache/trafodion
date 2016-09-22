@@ -2680,8 +2680,11 @@ Lng32 HSCursor::prepareRowsetInternal
 (const char *cliStr, NABoolean orderAndGroup,
  HSColGroupStruct *group, Lng32 maxRows)
   {
-    HSErrorCatcher errorCatcher(retcode_, -UERR_INTERNAL_ERROR,
-                                "HSCursor::prepareRowsetInternal()", TRUE);
+    // Not needed, as there is an error catcher in all of the caller's
+    // code paths. (And having two of them results in double reporting
+    // of the errors.)
+    //HSErrorCatcher errorCatcher(retcode_, -UERR_INTERNAL_ERROR,
+    //                            "HSCursor::prepareRowsetInternal()", TRUE);
     HSLogMan *LM = HSLogMan::Instance();
     HSColGroupStruct *col = group;
     Lng32 numResults = 0;

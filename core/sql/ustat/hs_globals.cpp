@@ -5814,8 +5814,12 @@ Lng32 HSGlobalsClass::doFullIUS(Int64 currentSampleSize,
      //
      if ( colsSelected == 0 ) {
        if ( ranOutOfMem ) {
-         diagsArea << DgSqlCode(UERR_WARNING_IUS_INSUFFICIENT_MEMORY)
-                   << DgInt0(moreColsForIUS());
+         if (LM->LogNeeded())
+           {
+             // only do the warning diagnostic if logging is enabled
+             diagsArea << DgSqlCode(UERR_WARNING_IUS_INSUFFICIENT_MEMORY)
+                       << DgInt0(moreColsForIUS());
+           }
          break;  // Let RUS handle the rest
        } else {
          if (LM->LogNeeded())
@@ -13180,9 +13184,10 @@ Int32 HSGlobalsClass::estimateAndTestIUSStats(HSColGroupStruct* group,
                           "  u = too much UEC change",
                 group->colSet[0].colname->data());
         LM->Log(LM->msg);
+        // only issue the warning diagnostic if logging is on
+        diagsArea << DgSqlCode(shapeTestError)
+                  << DgString0(group->colSet[0].colname->data());
         }
-     diagsArea << DgSqlCode(shapeTestError)
-               << DgString0(group->colSet[0].colname->data());
      LM->StopTimer();
      return shapeTestError;
      }
@@ -13221,8 +13226,12 @@ Int32 HSGlobalsClass::estimateAndTestIUSStats(HSColGroupStruct* group,
 
   if ( (totalRC > (UInt64)origTotalRC) &&
       delta((UInt64)origTotalRC, totalRC)/origTotalRC > rcTotalChangeThreshold )  {
-     diagsArea << DgSqlCode(UERR_WARNING_IUS_TOO_MUCH_RC_CHANGE_TOTAL)
-               << DgString0(group->colSet[0].colname->data());
+     if (LM->LogNeeded()) 
+       {
+         // only do the warning diagnostic if logging is enabled
+         diagsArea << DgSqlCode(UERR_WARNING_IUS_TOO_MUCH_RC_CHANGE_TOTAL)
+                   << DgString0(group->colSet[0].colname->data());
+       }
      LM->StopTimer();
      return UERR_WARNING_IUS_TOO_MUCH_RC_CHANGE_TOTAL;
   }
@@ -13235,8 +13244,12 @@ Int32 HSGlobalsClass::estimateAndTestIUSStats(HSColGroupStruct* group,
 
   if ((totalUEC > (UInt64)origTotalUEC) && 
       delta((UInt64)origTotalUEC, totalUEC)/origTotalUEC > uecTotalChangeThreshold ) {
-     diagsArea << DgSqlCode(UERR_WARNING_IUS_TOO_MUCH_UEC_CHANGE_TOTAL)
-               << DgString0(group->colSet[0].colname->data());
+     if (LM->LogNeeded()) 
+       {
+         // only do the warning diagnostic if logging is enabled
+         diagsArea << DgSqlCode(UERR_WARNING_IUS_TOO_MUCH_UEC_CHANGE_TOTAL)
+                   << DgString0(group->colSet[0].colname->data());
+       }
      LM->StopTimer();
      return UERR_WARNING_IUS_TOO_MUCH_UEC_CHANGE_TOTAL;
   }
@@ -15992,7 +16005,10 @@ Lng32 HSInMemoryTable::populate(NAString& queryText)
   Int64 rowsLeft;
   HSCursor popCursor;
 
-  HSErrorCatcher errorCatcher(retcode, - UERR_INTERNAL_ERROR, 
+  // the most likely error is on a prepare due to a bad WHERE clause
+  // from the UPDATE STATS command itself; e.g. a syntax error or
+  // perhaps a bad column reference due to a typo
+  HSErrorCatcher errorCatcher(retcode, - UERR_IUS_BAD_WHERE_CLAUSE, 
                               "POPULATE_FROM_QUERY", TRUE);
   LM->Log("Preparing rowset...");
   // Allocate descriptors and statements for CLI and prepare rowset by

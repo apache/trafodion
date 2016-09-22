@@ -181,6 +181,10 @@ insert into stest values (100000,1,1),
 
 -- These two CQDs are to get around annoying 9222 and 9224 warnings
 -- that happen non-deterministically due to "gaps" in the sample histograms.
+-- Note: The warnings now only appear if "update statistics log on" is in 
+-- force, which it isn't here. Nevertheless the CQDs encourage the exercise
+-- of a particular code path within the incremental update stats code so
+-- we leave them here.
 cqd USTAT_IUS_INTERVAL_ROWCOUNT_CHANGE_THRESHOLD '0.15';
 cqd USTAT_IUS_INTERVAL_UEC_CHANGE_THRESHOLD '0.15'; 
 
@@ -255,6 +259,9 @@ get tables; -- should be the same as previous "get tables"
 update statistics for table stest on existing columns incremental where 1;
 
 get tables; -- should be the same as previous "get tables"
+
+-- attempt to do incremental with a syntactically valid but semantically invalid where clause
+update statistics for table stest on existing columns incremental where badcol > 5;
 
 -- attempt to do incremental when no persistent sample exists
 update statistics for table stestc remove sample;
