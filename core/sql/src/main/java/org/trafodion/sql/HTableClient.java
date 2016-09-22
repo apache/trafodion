@@ -1363,7 +1363,7 @@ public class HTableClient {
 				 Object[] columns,
 				 long timestamp,
                                  boolean asyncOperation,
-                                 boolean useRegionXn) throws IOException {
+                                 final boolean useRegionXn) throws IOException {
 
             if (logger.isTraceEnabled()) logger.trace("Enter deleteRow(" + new String(rowID) + ", "
                                                       + timestamp + ") " + tableName);
@@ -1475,7 +1475,7 @@ public class HTableClient {
     
 	public boolean checkAndDeleteRow(long transID, byte[] rowID, 
 					 byte[] columnToCheck, byte[] colValToCheck,
-					 long timestamp, boolean useRegionXn) throws IOException {
+					 long timestamp, final boolean useRegionXn) throws IOException {
 
             if (logger.isTraceEnabled()) logger.trace("Enter checkAndDeleteRow(" + new String(rowID) + ", "
                                                       + new String(columnToCheck) + ", " + new String(colValToCheck) + ", " + timestamp + ") " + tableName);

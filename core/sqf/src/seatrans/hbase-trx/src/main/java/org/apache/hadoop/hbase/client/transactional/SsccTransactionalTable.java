@@ -429,7 +429,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
       ServerRpcController controller = new ServerRpcController();
       BlockingRpcCallback<SsccPutRegionTxResponse> rpcCallback =
           new BlockingRpcCallback<SsccPutRegionTxResponse>();
-      @Override
+
       public SsccPutRegionTxResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest.Builder builder = SsccPutRegionTxRequest.newBuilder();
         builder.setTid(tsId);
@@ -705,7 +705,6 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
       BlockingRpcCallback<SsccCheckAndPutRegionTxResponse> rpcCallback =
         new BlockingRpcCallback<SsccCheckAndPutRegionTxResponse>();
 
-      @Override
       public SsccCheckAndPutRegionTxResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest.Builder builder = SsccCheckAndPutRegionTxRequest.newBuilder();
         builder.setTid(tsId);

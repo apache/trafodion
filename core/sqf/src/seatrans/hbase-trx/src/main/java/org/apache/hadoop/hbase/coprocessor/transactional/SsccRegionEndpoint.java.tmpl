@@ -2618,24 +2618,12 @@ CoprocessorService, Coprocessor {
       // Process in local memory
       if (delete != null && t == null)
       {
-        if (request.hasRow()) {
-          row = request.getRow();
-
           if (!Bytes.equals(rowArray, request.getRow().toByteArray()))
             t = new org.apache.hadoop.hbase.DoNotRetryIOException("Action's " +
                  "Delete row must match the passed row");
         }
 
         if (t == null) {
-          if (request.hasRow())
-            row = request.getRow();
-          if (request.hasFamily())
-            family = request.getFamily();
-          if (request.hasQualifier())
-            qualifier = request.getQualifier();
-          if (request.hasValue())
-            value = request.getValue();
-
           try {
            result = checkAndDeleteRegionTx(tid, startId,
                request.getRow().toByteArray(),
