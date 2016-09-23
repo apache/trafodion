@@ -28,8 +28,10 @@
 
 #include "CommonLogger.h"
 
-int gv_dual_logging =1; // Write to both SeaLog and stdout by default
+int gv_dual_logging = 1; // Write to both SeaLog and stdout by default
 static std::string TM_COMPONENT = "TM";
+static bool gv_log4cxx_initialized = false;
+
 int tm_init_logging()
 {
 	// Log4cxx logging
@@ -40,7 +42,7 @@ int tm_init_logging()
         sprintf( logNameSuffix, "_%d.log", myNid );
 
 	CommonLogger::instance().initLog4cxx("log4cxx.trafodion.tm.config",logNameSuffix);
-
+    gv_log4cxx_initialized = true;
     ms_getenv_int ("TM_DUAL_LOGGING", &gv_dual_logging);
     return gv_dual_logging; 
 }
@@ -52,6 +54,11 @@ int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *er
     logLevel ll_severity = LL_INFO;
 
     getTMLoggingHeaderInfo(pv_severity, ll_severity, my_processName, sizeof(my_processName), my_nid, my_pid);
+    if (! gv_log4cxx_initialized) {
+       tm_log_stdout(pv_event_type, pv_severity, err_string, 0, transid, 
+          -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, exception_stack);
+       return -1;
+    }
     if (exception_stack == NULL) 
        CommonLogger::log(TM_COMPONENT, ll_severity, "Node: %d Pid: %d Name: %s TransId: %Ld Event: %d Message: %s ", 
               my_nid, my_pid, my_processName, transid, pv_event_type, err_string);
@@ -91,11 +98,13 @@ int tm_log_event(int event_id,
     int rc = 0;
     char la_buf[DTM_STRING_BUF_SIZE];
     
-    if (gv_dual_logging)
+    if (gv_dual_logging || (! gv_log4cxx_initialized))
     {   
         tm_log_stdout(event_id, severity, temp_string, error_code, -1, rmid, dtmid, seq_num, msgid, xa_error,
                       pool_size, pool_elems, msg_retries, pool_high, pool_low, pool_max, tx_state,
                       data, data1, data2, string1, node, msgid2, offset, tm_event_msg, data4);
+        if (! gv_log4cxx_initialized)
+           return -1;
     }
     char      my_processName[MS_MON_MAX_PROCESS_NAME+1];
     int       my_nid,my_pid;

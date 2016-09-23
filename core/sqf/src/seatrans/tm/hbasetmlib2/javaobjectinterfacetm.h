@@ -142,6 +142,7 @@ public:
     return isInitialized_;
   }
   bool getExceptionDetails(JNIEnv *jenv);
+  void appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, std::string &error_msg);
   
 protected:
   static JavaVM*   jvm_;
@@ -156,6 +157,7 @@ protected:
   static jmethodID gGetStackTraceMethodID;
   static jmethodID gThrowableToStringMethodID;
   static jmethodID gStackFrameToStringMethodID;
+  static jmethodID gGetCauseMethodID;
 };
 
 #endif
