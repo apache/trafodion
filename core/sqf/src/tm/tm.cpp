@@ -3374,13 +3374,13 @@ int main(int argc, char *argv[])
                          NULL);      // component-id
     gv_tm_info.nid (lv_my_nid);
     gv_tm_info.pid (lv_my_pid);
-
 #ifdef MULTITHREADED_TM
     XWAIT(0, -2);
 #endif
 
     msg_mon_process_startup(true); // server?
     msg_debug_hook ("tm.hook", "tm.hook");
+    tm_init_logging();
     msg_mon_tmsync_register(tm_sync_cb);
     msg_mon_enable_mon_messages (1);
     msg_enable_priority_queue();

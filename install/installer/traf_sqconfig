@@ -44,8 +44,8 @@ rm $sqconfig &> /dev/null
 cores=$(lscpu | grep "CPU(s) list" | awk '{print $4}' | sed -e "s@,@-@" )
 maxCores=`echo $cores | sed 's/.*\-//'`
 
-if [[ "$maxCores" -gt "15" ]]; then
-   cores="0-15"
+if [[ "$maxCores" -gt "255" ]]; then
+   cores="0-255"
 fi
 processors=$(lscpu | grep "Socket(s)" | awk '{print $2}')
 

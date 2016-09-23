@@ -60,10 +60,10 @@
 #define MAX_ARGS         60
 #define MAX_ARG_SIZE     256
 
-#define MAX_CORES        64    // Current logic supports Linux limit of 1024
+#define MAX_CORES        256   // Current logic supports Linux limit of 1024
                                // NOTE: Increase with caution as this number
-                               // is also used to gather CPU statistics and
-                               // a large number may degrade performance
+                               //  is also used to gather local CPU statistics
+                               //  and a large number may degrade performance
 #define MAX_NODES        256   // This can be higher when needed and will
                                // have performance implications
                                // Increment by 64 to match node state bitmask
@@ -74,7 +74,7 @@
 
 #define MAX_FAULT_ZONES  16 
 #define MAX_FILE_NAME    256
-#define MAX_KEY_NAME     32
+#define MAX_KEY_NAME     64
 #define MAX_KEY_LIST     32
 #define MAX_NODE_LIST    64
 #define MAX_OPEN_LIST    256

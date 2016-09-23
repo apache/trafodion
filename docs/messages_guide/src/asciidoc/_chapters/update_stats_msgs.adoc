@@ -297,6 +297,21 @@ that lack statistics and need them.
 *Recovery:* If this was not the intended statement correct and resubmit. Otherwise no recovery
 is necessary.
 
+[[SQL-9219]]
+== SQL 9219
+
+```
+Incremental UPDATE STATISTICS: An operation failed, possibly due to an invalid WHERE clause.
+```
+
+*Cause:* UPDATE STATISTICS INCREMENTAL was specified but an operation such as a sample table
+update failed. This message is accompanied by another message giving more detail on the failure. Often this is caused by a bad WHERE clause on the UPDATE STATSITICS INCREMENTAL statement.
+
+*Effect:* The operation is a no-op.
+
+*Recovery:* If the WHERE clause is in error, correct and resubmit. If this does not correct the problem, 
+contact {project-support}.
+
 <<<
 [[SQL-9221]]
 == SQL 9221
