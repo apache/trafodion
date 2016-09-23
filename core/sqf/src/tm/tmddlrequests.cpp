@@ -34,11 +34,13 @@ using namespace std;
 * Signature: ([B)V
 */
 
-JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_createTableReq
-  (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tableDescriptor, jobjectArray pv_keys, jint pv_numSplits, jint pv_keyLength, jlong pv_transid, jbyteArray pv_tblname){
+JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_createTableReq
+  (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tableDescriptor, jobjectArray pv_keys, jint pv_numSplits, jint pv_keyLength, jlong pv_transid, jbyteArray pv_tblname)
+{
 
    char la_tbldesc[TM_MAX_DDLREQUEST_STRING];
    char la_tblname[TM_MAX_DDLREQUEST_STRING];
+   char la_err_str[TM_MAX_ERROR_STRING];
    char* str_key;
    str_key = new char[TM_MAX_DDLREQUEST_STRING];
    char** la_keys;
@@ -77,12 +79,21 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
          pp_env->DeleteLocalRef(jba_keyarray);
       }
 
-      lv_error  = CREATETABLE(la_tbldesc, lv_tbldesc_length, la_tblname, la_keys, lv_numSplits, lv_keyLength, lv_transid);
+      lv_error  = CREATETABLE(la_tbldesc, lv_tbldesc_length, la_tblname, la_keys, lv_numSplits, lv_keyLength, lv_transid, la_err_str);
 
       pp_env->ReleaseByteArrayElements(pv_tableDescriptor, lp_tbldesc, 0);
       pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
    }
-   return lv_error;
+   
+   if(lv_error)
+   {
+	   jstring lv_err_str = pp_env->NewStringUTF(la_err_str);
+	   return lv_err_str;
+   }
+   else
+   {
+	 return 0;
+   }
 }
 
 
@@ -91,10 +102,11 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
  * Method:    dropTableReq
  * Signature: ([BJ)V
  */
-JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_dropTableReq
+JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_dropTableReq
   (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tblname, jlong pv_transid) {
 
    char la_tblname[TM_MAX_DDLREQUEST_STRING];
+   char la_err_str[TM_MAX_ERROR_STRING];
    int lv_error = FEOK;
 
    int lv_tblname_len = pp_env->GetArrayLength(pv_tblname);
@@ -108,10 +120,19 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
 
       long lv_transid = (long) pv_transid;
 
-      lv_error = DROPTABLE(la_tblname, lv_tblname_len, lv_transid);
+      lv_error = DROPTABLE(la_tblname, lv_tblname_len, lv_transid, la_err_str);
       pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
    }
-   return lv_error;
+   
+   if(lv_error)
+   {
+	   jstring lv_err_str = pp_env->NewStringUTF(la_err_str);
+	   return lv_err_str;
+   }
+   else
+   {
+	 return 0;
+   }
 }
 
 /*
@@ -119,10 +140,11 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
  * Method:    truncateOnAbortReq
  * Signature: ([BJ)V
  */
-JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_truncateOnAbortReq
+JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_truncateOnAbortReq
   (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tblname, jlong pv_transid) {
 
    char la_tblname[TM_MAX_DDLREQUEST_STRING];
+   char la_err_str[TM_MAX_ERROR_STRING];
    int lv_error = FEOK;
 
    int lv_tblname_len = pp_env->GetArrayLength(pv_tblname);
@@ -136,10 +158,19 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
 
       long lv_transid = (long) pv_transid;
 
-      lv_error = REGTRUNCATEONABORT(la_tblname, lv_tblname_len, lv_transid);
+      lv_error = REGTRUNCATEONABORT(la_tblname, lv_tblname_len, lv_transid, la_err_str);
       pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
    }
-   return lv_error;
+   
+   if(lv_error)
+   {
+	   jstring lv_err_str = pp_env->NewStringUTF(la_err_str);
+	   return lv_err_str;
+   }
+   else
+   {
+	 return 0;
+   }
 }
 
 /*
@@ -147,12 +178,13 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
  * Method:    alterTableReq
  * Signature: ([B[Ljava/lang/Object;J)V
  */
-JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_alterTableReq
+JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_alterTableReq
   (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tblName, jobjectArray pv_tableOptions, jlong pv_transID) {
 
    int lv_error = FEOK;
    int tblopts_len =0;
    char la_tblname[TM_MAX_DDLREQUEST_STRING];
+   char la_err_str[TM_MAX_ERROR_STRING];
 
    char** tbl_options;
    tbl_options = new char *[TM_MAX_DDLREQUEST_STRING];
@@ -190,9 +222,17 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
       }
 
       long lv_transid = (long) pv_transID;
-      lv_error = ALTERTABLE(la_tblname, lv_tblname_len, tbl_options, tblopts_len, tbloptions_cnt, lv_transid);
+      lv_error = ALTERTABLE(la_tblname, lv_tblname_len, tbl_options, tblopts_len, tbloptions_cnt, lv_transid, la_err_str);
       pp_env->ReleaseByteArrayElements(pv_tblName, lp_tblname, 0);
    }
-   return lv_error;
+   if(lv_error)
+   {
+	   jstring lv_err_str = pp_env->NewStringUTF(la_err_str);
+	   return lv_err_str;
+   }
+   else
+   {
+	 return 0;
+   }
 }
  

@@ -13,7 +13,7 @@ extern "C" {
  * Method:    createTableReq
  * Signature: ([B[[BIIJ[B)V
  */
-JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_createTableReq
+JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_createTableReq
   (JNIEnv *, jobject, jbyteArray, jobjectArray, jint, jint, jlong, jbyteArray);
 
 /*
@@ -21,7 +21,7 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
  * Method:    dropTableReq
  * Signature: ([BJ)V
  */
-JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_dropTableReq
+JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_dropTableReq
   (JNIEnv *, jobject, jbyteArray, jlong);
 
 
@@ -31,7 +31,7 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
  * Method:    dropTableReq
  * Signature: ([BJ)V
  */
-JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_truncateOnAbortReq
+JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_truncateOnAbortReq
   (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tblname, jlong pv_transid);
 
 
@@ -40,7 +40,7 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
  * Method:    alterTableReq
  * Signature: ([B[Ljava/lang/Object;J)V
  */
-JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_alterTableReq
+JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_alterTableReq
   (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tblName, jobjectArray pv_tableOptions, jlong pv_transID);
 
 
