@@ -269,6 +269,9 @@ JOI_RetCode JavaObjectInterfaceTM::initJVM()
         gThrowableToStringMethodID = _tlp_jenv->GetMethodID(gThrowableClass,
                       "toString",
                       "()Ljava/lang/String;");
+        gGetCauseMethodID = _tlp_jenv->GetMethodID(gThrowableClass,
+                      "getCause",
+                      "()Ljava/lang/Throwable;");
      }
   }
   if (gStackTraceClass == NULL)
@@ -415,9 +418,7 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
       return false;
    }
    jthrowable a_exception = jenv->ExceptionOccurred();
-   if (a_exception != NULL)
-       jenv->ExceptionClear();
-   else
+   if (a_exception == NULL)
    {
        error_msg = "No java exception was thrown";
        set_error_msg(error_msg);
@@ -425,8 +426,8 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
    }
    error_msg = "";
    appendExceptionMessages(jenv, a_exception, error_msg);
-   error_msg += "\n";
    set_error_msg(error_msg);
+   jenv->ExceptionClear();
    return true;
 }
 
@@ -439,8 +440,6 @@ void JavaObjectInterfaceTM::appendExceptionMessages(JNIEnv *jenv, jthrowable a_e
     if (msg_obj != NULL)
     {
        msg_str = jenv->GetStringUTFChars(msg_obj, 0);
-       // Start the error message in a new line
-       error_msg = "\n";
        error_msg += msg_str;
        jenv->ReleaseStringUTFChars(msg_obj, msg_str);
        jenv->DeleteLocalRef(msg_obj);
@@ -474,11 +473,11 @@ void JavaObjectInterfaceTM::appendExceptionMessages(JNIEnv *jenv, jthrowable a_e
           jenv->DeleteLocalRef(frame);
        }
     }
-    error_msg += "\n";
     jthrowable j_cause = (jthrowable)jenv->CallObjectMethod(a_exception, gGetCauseMethodID);
     if (j_cause != NULL) {
-       error_msg += "Caused by ";
+       error_msg += " Caused by \n";
        appendExceptionMessages(jenv, j_cause, error_msg);
     }
+    jenv->DeleteLocalRef(a_exception);
 }
 

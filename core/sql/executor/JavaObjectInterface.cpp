@@ -451,17 +451,15 @@ NABoolean  JavaObjectInterface::getExceptionDetails(JNIEnv *jenv)
       return FALSE; 
    }
    jthrowable a_exception = jenv->ExceptionOccurred();
-   if (a_exception != NULL)
-       jenv->ExceptionClear();
-   else
+   if (a_exception == NULL)
    {
        error_msg = "No java exception was thrown";
        cli_globals->setJniErrorStr(error_msg);
        return FALSE;
    }
    appendExceptionMessages(jenv, a_exception, error_msg);
-   error_msg += "\n";
    cli_globals->setJniErrorStr(error_msg);
+   jenv->ExceptionClear();
    return TRUE;
 }
 
@@ -474,8 +472,6 @@ void JavaObjectInterface::appendExceptionMessages(JNIEnv *jenv, jthrowable a_exc
     if (msg_obj != NULL)
     {
        msg_str = jenv->GetStringUTFChars(msg_obj, 0);
-       // Start the error message in a new line
-       error_msg = "\n";
        error_msg += msg_str;
        jenv->ReleaseStringUTFChars(msg_obj, msg_str);
        jenv->DeleteLocalRef(msg_obj);
@@ -490,10 +486,7 @@ void JavaObjectInterface::appendExceptionMessages(JNIEnv *jenv, jthrowable a_exc
                                         a_exception,
                                         gGetStackTraceMethodID);
     if (frames == NULL)
-    {
-       cli_globals->setJniErrorStr(error_msg);
        return;
-    }
     jsize frames_length = jenv->GetArrayLength(frames);
 
     jsize i = 0;
@@ -512,12 +505,12 @@ void JavaObjectInterface::appendExceptionMessages(JNIEnv *jenv, jthrowable a_exc
           jenv->DeleteLocalRef(frame);
        }
     }
-    error_msg += "\n";
     jthrowable j_cause = (jthrowable)jenv->CallObjectMethod(a_exception, gGetCauseMethodID);
     if (j_cause != NULL) {
-       error_msg += "Caused by ";
+       error_msg += " Caused by \n";
        appendExceptionMessages(jenv, j_cause, error_msg);
     }
+    jenv->DeleteLocalRef(a_exception);
 } 
 
 NAString JavaObjectInterface::getLastError()
