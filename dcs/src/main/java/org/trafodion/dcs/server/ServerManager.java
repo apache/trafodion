@@ -85,6 +85,7 @@ public final class ServerManager implements Callable {
     private static String sqlplanEnable;
     private static int userProgPortMapToSecs;
     private static int userProgPortBindToSecs;
+    private static ServerHandler[] serverHandlers;
     private int maxRestartAttempts;
     private int retryIntervalMillis;
     private RetryCounterFactory retryCounterFactory;
@@ -116,6 +117,8 @@ public final class ServerManager implements Callable {
         String registeredPath;
         Stat stat = null;
         boolean isRunning = false;
+        String nid;
+        String pid;
 
         public ServerMonitor(int childInstance, String registeredPath) {
             this.childInstance = childInstance;
@@ -127,14 +130,14 @@ public final class ServerManager implements Callable {
             stat = zkc.exists(registeredPath, false);
             if (stat != null) { // User program znode found in
                                 // /registered...check pid
-                isRunning = isPid();
+                isRunning = isPidRunning();
                 LOG.debug("isRunning [" + isRunning + "]");
             }
 
             return isRunning;
         }
 
-        private boolean isPid() throws Exception {
+        private boolean isPidRunning() throws Exception {
             String data = Bytes.toString(zkc.getData(registeredPath, false,
                     stat));
             Scanner scn = new Scanner(data);
@@ -142,8 +145,8 @@ public final class ServerManager implements Callable {
             scn.next();// state
             scn.next();// timestamp
             scn.next();// dialogue Id
-            scn.next();// nid
-            String pid = scn.next();// pid
+            nid = scn.next();// nid
+            pid = scn.next();// pid
             scn.close();
             scriptContext.setHostName(hostName);
             scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
@@ -202,16 +205,6 @@ public final class ServerManager implements Callable {
 
         public void exec() throws Exception {
             cleanupZk();
-            RetryCounter retryCounter = retryCounterFactory.create();
-            while (!isTrafodionRunning()) {
-                LOG.error("Trafodion is not running");
-                if (!retryCounter.shouldRetry()) {
-                    return;
-                } else {
-                    retryCounter.sleepUntilNextRetry();
-                    retryCounter.useRetry();
-                }
-            }
             LOG.info("User program exec [" + scriptContext.getCommand() + "]");
             ScriptManager.getInstance().runScript(scriptContext);// This will
                                                                  // block while
@@ -248,32 +241,6 @@ public final class ServerManager implements Callable {
                 e.printStackTrace();
                 LOG.debug(e);
             }
-        }
-
-        private boolean isTrafodionRunning() {
-
-        // Check if Trafodion is up and running
-        // If Trafodion is fully or partially up and operational 
-        // return true else return false.
-        // Invoke sqcheck to check Trafodion status. 
-        // 
-        //   sqcheck returns:
-        //   -1 - Not up ($?=255)
-        //    0 - Fully up and operational
-        //    1 - Partially up and operational
-        //    2 - Partially up and NOT operational
-
-            ScriptContext scriptContext = new ScriptContext();
-            scriptContext.setHostName(hostName);
-            scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
-            String command = ("sqcheck");
-            scriptContext.setCommand(command);
-            ScriptManager.getInstance().runScript(scriptContext);// This will
-                                                                 // block while
-                                                                 // script is
-                                                                 // running
-            int exitCode = scriptContext.getExitCode();
-            return (exitCode == 0 || exitCode == 1) ? true : false;
         }
     }
 
@@ -367,6 +334,30 @@ public final class ServerManager implements Callable {
                         Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS);
         this.retryCounterFactory = new RetryCounterFactory(
                 this.maxRestartAttempts, this.retryIntervalMillis);
+        serverHandlers = new ServerHandler[this.childServers];
+    }
+
+    private static boolean isTrafodionRunning(String nid) {
+
+        // Check if the given Node is up and running
+        // return true else return false.
+        // Invoke sqcheck -n <nid> to check Node status. 
+        // 
+        //   sqcheck returns:
+        //    0 - Node up
+        //    1 - Node down
+ 
+        ScriptContext scriptContext = new ScriptContext();
+        scriptContext.setHostName(hostName);
+        scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
+        String command = ("sqcheck -n " + nid);
+        scriptContext.setCommand(command);
+        ScriptManager.getInstance().runScript(scriptContext);// This will
+                                                             // block while
+                                                             // script is
+                                                             // running
+        int exitCode = scriptContext.getExitCode();
+        return (exitCode == 0) ? true : false;
     }
 
     @Override
@@ -390,7 +381,8 @@ public final class ServerManager implements Callable {
             // /bin/dcs-daemon script
             // which DOES NOT set childServers count.
             for (int childInstance = 1; childInstance <= childServers; childInstance++) {
-                completionService.submit(new ServerHandler(childInstance));
+                serverHandlers[childInstance-1] = new ServerHandler(childInstance);
+                completionService.submit(serverHandlers[childInstance-1]);
                 LOG.debug("Started server handler [" + instance + ":"
                         + childInstance + "]");
             }
@@ -403,9 +395,29 @@ public final class ServerManager implements Callable {
                                                              // finish
                 if (f != null) {
                     Integer result = f.get();
+                    int childInstance = result.intValue();
+                    // get the node id
+                    boolean isRunning = serverHandlers[childInstance-1].serverMonitor.isPidRunning();
+                    String nid = serverHandlers[childInstance-1].serverMonitor.nid;
+                    String pid = serverHandlers[childInstance-1].serverMonitor.pid; 
+                    serverHandlers[childInstance-1] = null;
                     LOG.debug("Server handler [" + instance + ":" + result
                             + "] finished, restarting");
-                    completionService.submit(new ServerHandler(result));
+                    if (isRunning)
+                        LOG.error("mxosrvr " + nid + "," + pid + " still running, but restarting another");
+                    else
+                        LOG.error("mxosrvr " + nid + "," + pid + " exited, restarting");
+                    RetryCounter retryCounter = retryCounterFactory.create();
+                    while (!isTrafodionRunning(nid)) {
+                       if (!retryCounter.shouldRetry()) {
+                          throw new IOException("Node " + nid + " is not Up");
+                       } else {
+                           retryCounter.sleepUntilNextRetry();
+                           retryCounter.useRetry();
+                       }
+                   }
+                   serverHandlers[childInstance-1] = new ServerHandler(childInstance);
+                   completionService.submit(serverHandlers[childInstance-1]);
                 }
             }
 
