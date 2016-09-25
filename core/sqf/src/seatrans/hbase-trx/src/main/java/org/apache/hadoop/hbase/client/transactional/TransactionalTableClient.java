@@ -73,6 +73,8 @@ public interface  TransactionalTableClient  {
 
     void delete(final TransactionState transactionState, final Delete delete, final boolean bool_addLocation) throws IOException;
 
+    void deleteRegionTx(final long tid, final Delete delete, final boolean autoCommit) throws IOException;
+
     /**
      * Commit a Put to the table.
      * <p>
@@ -96,17 +98,21 @@ public interface  TransactionalTableClient  {
      * <p>
      * If autoFlush is false, the update is buffered.
      * 
-     * @param tsId       // Id to be used by the region as a transId
+     * @param tid       // Id to be used by the region as a transId
      * @param put
      * @param autoCommit // should the region transaction be committed 
      * @throws IOException
      * @since 0.20.0
      */
-    void putRegionTx(final long tsId, final Put put, final boolean autoCommit) throws IOException;
+    void putRegionTx(final long tid, final Put put, final boolean autoCommit) throws IOException;
 
     boolean checkAndDelete(final TransactionState transactionState,
   		final byte[] row, final byte[] family, final byte[] qualifier, final byte[] value,
                      final Delete delete) throws IOException;
+    
+    boolean checkAndDeleteRegionTx(final long tid, final byte[] row,
+    		final byte[] family, final byte[] qualifier, final byte[] value,
+                     final Delete delete, final boolean autoCommit) throws IOException;
     
 	boolean checkAndPut(final TransactionState transactionState,
 			final byte[] row, final byte[] family, final byte[] qualifier,
@@ -121,7 +127,7 @@ public interface  TransactionalTableClient  {
      * <p>
      * If autoFlush is false, the update is buffered.
      * 
-     * @param tsId       // Id to be used by the region as a transId
+     * @param tid       // Id to be used by the region as a transId
      * @param row
      * @param family
      * @param qualifier
@@ -131,7 +137,7 @@ public interface  TransactionalTableClient  {
      * @throws IOException
      * @since 2.1.0
      */
-	boolean checkAndPutRegionTx(final long tsId, final byte[] row,
+	boolean checkAndPutRegionTx(final long tid, final byte[] row,
 			final byte[] family, final byte[] qualifier, final byte[] value,
 			final Put put, final boolean autoCommit) throws IOException;
 

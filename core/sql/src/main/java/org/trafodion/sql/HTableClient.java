@@ -1363,7 +1363,7 @@ public class HTableClient {
 				 Object[] columns,
 				 long timestamp,
                                  boolean asyncOperation,
-                                 boolean useRegionXn) throws IOException {
+                                 final boolean useRegionXn) throws IOException {
 
             if (logger.isTraceEnabled()) logger.trace("Enter deleteRow(" + new String(rowID) + ", "
                                                       + timestamp + ") " + tableName);
@@ -1387,12 +1387,10 @@ public class HTableClient {
                             if (useTRex && (transID != 0)) {
                                 table.delete(transID, del);
                             }
-                            //                    else if (useRegionXn){
-                            //                        logger.info("deleteRow using region TX");
-                            //                        table.deleteRegionTx(del, /* auto-commit */ true);
-                            //                    }
+                            else if (useRegionXn){
+                                table.deleteRegionTx(del, /* auto-commit */ true);
+                            }
                             else {
-                                //                       logger.info("deleteRow without transID ");
                                 table.delete(del);
                             }
                             return true;
@@ -1403,10 +1401,9 @@ public class HTableClient {
                 if (useTRex && (transID != 0)) {
                     table.delete(transID, del);
                 }
-                //            else if (useRegionXn){
-                //               logger.info("deleteRow using region TX");
-                //               table.deleteRegionTx(del, /* auto-commit */ true);
-                //            }
+                else if (useRegionXn){
+                    table.deleteRegionTx(del, /* auto-commit */ true);
+                }
                 else {
                     table.delete(del);
                 }
@@ -1478,7 +1475,7 @@ public class HTableClient {
     
 	public boolean checkAndDeleteRow(long transID, byte[] rowID, 
 					 byte[] columnToCheck, byte[] colValToCheck,
-					 long timestamp, boolean useRegionXn) throws IOException {
+					 long timestamp, final boolean useRegionXn) throws IOException {
 
             if (logger.isTraceEnabled()) logger.trace("Enter checkAndDeleteRow(" + new String(rowID) + ", "
                                                       + new String(columnToCheck) + ", " + new String(colValToCheck) + ", " + timestamp + ") " + tableName);
@@ -1501,11 +1498,10 @@ public class HTableClient {
             if (useTRex && (transID != 0)) {
                 res = table.checkAndDelete(transID, rowID, family, qualifier, colValToCheck, del);
             }
-            //            else if (useRegionXn){
-            //               logger.info("checkAndDeleteRow using region TX");
-            //               res = table.checkAndDeleteRegionTx(rowID, family, qualifier, colValToCheck,
-            //               		         del, /* autoCommit */ true);
-            //            }
+            else if (useRegionXn){
+               res = table.checkAndDeleteRegionTx(rowID, family, qualifier, colValToCheck,
+               		         del, /* autoCommit */ true);
+            }
             else {
                 res = table.checkAndDelete(rowID, family, qualifier, colValToCheck, del);
             }
