@@ -1,0 +1,497 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+[[update-stats-messages]]
+= Update Statistics Messages (9200 through 9299)
+
+[[SQL-9200]]
+== SQL 9200
+
+```
+UPDATE STATISTICS for table <name> encountered an error <details> from statement <statement-name>.
+```
+
+*Cause:* UPDATE STATISTICS for the given table encountered an error from the {project-name} statement <statement-name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Other error messages will appear with this one, depending on
+what statement caused the error. Use them to diagnose and correct the
+problem.
+
+[[SQL-9201]]
+== SQL 9201
+
+```
+Unable to DROP object <name>.
+```
+
+*Cause:* UPDATE STATISTICS encountered an error during a DROP of the
+object <name>.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* Resubmit the statement. If this does not correct the problem, stop and restart {project-name}. 
+If this does not correct the problem, 
+contact {project-support}.
+
+<<<
+[[SQL-9202]]
+== SQL 9202
+
+```
+UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing column lists are <column-list>.
+```
+
+*Cause:* UPDATE STATISTICS has located previously generated histograms that are not being regenerated.
+
+*Effect:* Processing continues without interruption.
+
+*Recovery:* Remove or replace previously generated histograms by
+performing one of these recovery actions:
+
+* Re-execute the same UPDATE STATISTICS command, but also include the
+<column-list> from the message.
+* Re-execute the same UPDATE STATISTICS command with just the <column-list> from the message. (Note that you will get another 9202 warning for the columns you have just processed. That can be ignored.)
+* Execute an UPDATE STATISTICS CLEAR to discard these histograms if they are no longer needed.
+
+[[SQL-9203]]
+== SQL 9203
+
+```
+Column names must be unique when specified in column list: (<name>).
+```
+
+*Cause:* You specified a duplicate column name in the specified column list.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-9204]]
+== SQL 9204
+
+```
+Invalid option <option> specified. Value must be <range>.
+```
+
+*Cause:* You specified an invalid option for UPDATE STATISTICS. The
+value <range> specifies the valid range for this option.
+
+*Effect:* {project-name} is unable to continue
+processing.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-9205]]
+== SQL 9205
+
+```
+UPDATE STATISTICS is not supported for object <name>.
+```
+
+*Cause:* You attempted to run UPDATE STATISTICS against an object that is not supported.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* If a different object <name> was intended, correct the syntax and resubmit.
+
+<<<
+[[SQL-9206]]
+== SQL 9206
+
+```
+You are not authorized to read/write object <name>. Verify that you have the necessary access privileges.
+```
+
+*Cause:* {project-name} could not perform an UPDATE
+STATISTICS statement because you are not authorized to perform this
+operation against this table. You must either own the object <name> or
+be the super ID.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* Resubmit after checking the table access privileges.
+
+[[SQL-9207]]
+== SQL 9207
+
+```
+The specified SAMPLE option generated an empty sample set. Modify the SAMPLE option and resubmit.
+```
+
+*Cause:* The SAMPLE option you specified generated an empty sample set.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* Modify the SAMPLE option and resubmit.
+
+<<<
+[[SQL-9208]]
+== SQL 9208
+
+```
+Column definitions could not be accessed.
+```
+
+*Cause:* An UPDATE STATISTICS statement was unable to access column definitions.
+
+*Effect:* The operation fails.
+
+*Recovery:* Resubmit the statement. If this does not correct the
+problem, stop and restart the {project-name} database software. If this does
+not correct the problem, report the entire message to {project-support}.
+
+[[SQL-9209]]
+== SQL 9209
+
+```
+Column <name> does not exist in object <name>.
+```
+
+*Cause:* You tried to access column <name>, which does not exist in object <name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Check the column <name> and resubmit.
+
+<<<
+[[SQL-9210]]
+== SQL 9210
+
+```
+One of the column data types is not supported by UPDATE STATISTICS. You must exclude this column from the column list in UPDATE STATISTICS.
+```
+
+*Cause:* You attempted to perform UPDATE STATISTICS on a column whose data type does not support this operation.
+
+*Effect:* The operation fails.
+
+*Recovery:* Exclude this column from the column list and resubmit.
+
+[[SQL-9211]]
+== SQL 9211
+
+```
+In an UPDATE STATISTICS statement that specifies <option>, the ON clause may contain only an EXISTING or NECESSARY clause.
+```
+
+*Cause:* You specified some ON clause other than ON EXISTING COLUMNS or ON NECESSARY COLUMNS
+with the given <option>.
+
+*Effect:* {project-name} is unable to continue
+processing.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-9212]]
+== SQL 9212
+
+```
+Cardinality statistics will be more accurate if you use the SET ROWCOUNT option in the SAMPLE clause.
+```
+
+*Cause:* The SET ROWCOUNT option was not used in the SAMPLE clause.
+
+*Effect:* Processing continues without interruption.
+
+*Recovery:* Provide SET ROWCOUNT option and resubmit for more accurate statistics.
+
+[[SQL-9213]]
+== SQL 9213
+
+```
+If you intend to update histogram statistics for columns, you must specify a column list in the statement.
+```
+
+*Cause:* You attempted to perform UPDATE STATISTICS and did not specify a column list.
+
+*Effect:* Processing continues without interruption.
+
+*Recovery:* Correct your syntax to specify the column list and resubmit.
+
+<<<
+[[SQL-9214]]
+== SQL 9214
+
+```
+Object <name> could not be created.
+```
+
+*Cause:* UPDATE STATISTICS encountered an error during a CREATE of the object <name>.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* Resubmit the statement. If this does not correct the
+problem, stop and restart the {project-name} database software. If this does
+not correct the problem, report the entire message to {project-support}.
+
+[[SQL-9215]]
+== SQL 9215
+
+```
+UPDATE STATISTICS encountered an internal error (from <function-name>, with return value=<value>).  Details: <details>.
+```
+
+*Cause:* UPDATE STATISTICS encountered an internal error. This message may be accompanied by other
+messages that provide further information.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* Resubmit the statement. If this does not correct the problem, stop and restart {project-name}. 
+If this does not correct the problem, 
+contact {project-support}.
+
+<<<
+[[SQL-9217]]
+== SQL 9217
+
+```
+The statement will have no effect because no histograms are currently maintained for the table.
+```
+
+*Cause:* UPDATE STATISTICS ON EXISTING COLUMNS was specified but the table has no existing
+statistics.
+
+*Effect:* The operation is a no-op.
+
+*Recovery:* If this was not the intended statement correct and resubmit. Otherwise no recovery
+is necessary.
+
+[[SQL-9218]]
+== SQL 9218
+
+```
+The statement will have no effect because no histograms need to be updated.
+```
+
+*Cause:* UPDATE STATISTICS ON NECESSARY COLUMNS was specified but the table has no columns
+that lack statistics and need them.
+
+*Effect:* The operation is a no-op.
+
+*Recovery:* If this was not the intended statement correct and resubmit. Otherwise no recovery
+is necessary.
+
+[[SQL-9219]]
+== SQL 9219
+
+```
+Incremental UPDATE STATISTICS: An operation failed, possibly due to an invalid WHERE clause.
+```
+
+*Cause:* UPDATE STATISTICS INCREMENTAL was specified but an operation such as a sample table
+update failed. This message is accompanied by another message giving more detail on the failure. Often this is caused by a bad WHERE clause on the UPDATE STATSITICS INCREMENTAL statement.
+
+*Effect:* The operation is a no-op.
+
+*Recovery:* If the WHERE clause is in error, correct and resubmit. If this does not correct the problem, 
+contact {project-support}.
+
+<<<
+[[SQL-9221]]
+== SQL 9221
+
+```
+Incremental UPDATE STATISTICS cannot be performed due to the absence of the IUS persistent sample table for <table>.  Use a regular UPDATE STATISTICS command with the sample clause and PERSISTENT first to create such a persistent sample table.
+```
+
+*Cause:* UPDATE STATISTICS INCREMENTAL was specified but the table does not have a persistent
+sample table.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* Create a persistent sample table as suggested in the message.
+
+[[SQL-9228]]
+== SQL 9228
+
+```
+There were no sample tables to drop.
+```
+
+*Cause:* UPDATE STATISTICS REMOVE SAMPLE was specified but the table does not have 
+a persistent sample table.
+
+*Effect:* The operation is a no-op.
+
+*Recovery:* If this was not the intended statement correct and resubmit. Otherwise no recovery
+is necessary.
+
+<<<
+[[SQL-9232]]
+== SQL 9232
+
+```
+Incremental UPDATE STATISTICS: cannot proceed because of the on-going IUS transaction originated at <details>. 
+```
+
+*Cause:* UPDATE STATISTICS INCREMENTAL was specified, but {project-name} detected that
+another UPDATE STATISTICS INCREMENTAL operation was already in progress for the same object.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* If this was not the intended statement correct and resubmit. Otherwise no recovery
+is necessary.
+
+[[SQL-9240]]
+== SQL 9240
+
+```
+ON EVERY KEY option is not yet implemented for Update Statistics on <table-type> tables. 
+```
+
+*Cause:* UPDATE STATISTICS ON EVERY KEY was specified, but {project-name} does not yet
+support this clause on tables of the given type.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* If this was not the intended statement correct and resubmit. Otherwise no recovery
+is necessary.
+
+<<<
+[[SQL-9241]]
+== SQL 9241
+
+```
+Insufficient privileges to perform the statistics request for table <table-name>.
+```
+
+*Cause:* {project-name} could not perform an UPDATE
+STATISTICS statement because you are not authorized to perform this
+operation against this table. You must either own the object <name> or
+be the super ID.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* Resubmit after checking the table access privileges.
+
+[[SQL-9242]]
+== SQL 9242
+
+```
+Unable to create schema for Hive statistics.
+```
+
+*Cause:* {project-name} could not perform an UPDATE
+STATISTICS statement against a Hive table because it was unable to create
+the necessary Trafodion schema to store histogram statistics.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* Resubmit after checking schema create privileges.
+
+<<<
+[[SQL-9243]]
+== SQL 9243
+
+```
+This UPDATE STATISTICS command may take too long. It is recommended to use the SAMPLE clause instead. If you wish to do this without a SAMPLE clause, specify NO SAMPLE explicitly.
+```
+
+*Cause:* {project-name} detected that UPDATE STATISTICS was being performed against a very
+large table without sampling.
+
+*Effect:* {project-name} does not continue processing.
+
+*Recovery:* If the intent was to sample, add a SAMPLE clause and resubmit. If the intent was to
+perform UPDATE STATISTICS without sampling, add a NO SAMPLE clause and resubmit. Note that in the
+latter case, the operation is likely to take a long time.
+
+[[SQL-9244]]
+== SQL 9244
+
+```
+UPDATE STATISTICS is not allowed in a user transaction.
+```
+
+*Cause:* {project-name} detected that UPDATE STATISTICS was being performed inside a user transaction.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* Either commit or rollback the user transaction. Then resubmit the statement outside of 
+a user transaction.
+
+<<<
+[[SQL-9245]]
+== SQL 9245
+
+```
+Unexpected out-of-order data encountered during histogram construction on column <column-name> this might result in later 6004 warnings.
+```
+
+*Cause:* {project-name} detected out-of-order data while generating histograms. This is likely an
+internal error. The operation continued, however.
+
+*Effect:* Warning 6004 may occur if the given column is subsequently referenced in a query.
+
+*Recovery:* Please capture a SHOWSTATS DETAIL of the histogram data and forward to {project-support}. 
+Afterwards, resubmitting the UPDATE STATISTICS command may clear this warning.
+
+[[SQL-9246]]
+== SQL 9246
+
+```
+UPDATE STATISTICS is not supported on LOB columns. Column <column-name> is a LOB column.
+```
+
+*Cause:* The UPDATE STATISTICS statement specifies generating histograms on the column named, but
+the column is a BLOB or CLOB column. {project-name} does not support statistics on BLOB or CLOB
+columns.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* Remove the given column from the ON clause _column-list_ and resubmit.
+
+<<<
+[[SQL-9247]]
+== SQL 9247
+
+```
+UPDATE STATISTICS is not supported on volatile tables presently.
+```
+
+*Cause:* The UPDATE STATISTICS statement specifies a volatile table. {project-name} does not support statistics on volatile tables.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* If this was not the intended statement correct and resubmit.
+
+[[SQL-9251]]
+== SQL 9251
+
+```
+A persistent sample table already exists. Use UPDATE STATISTICS REMOVE SAMPLE to drop it first if desired.
+```
+
+*Cause:* The UPDATE STATISTICS statement attempts to create a persistent sample table, but 
+{project-name} detected that one already exists.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* If desired, drop the existing persistent sample table, then resubmit.
+

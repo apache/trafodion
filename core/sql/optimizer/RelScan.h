@@ -1023,6 +1023,11 @@ public:
 
   Int32 getComputedNumOfActivePartiions()  const { return computedNumOfActivePartitions_; }
 
+protected:
+
+  void setRetrievedCols(const ValueIdSet &retrievedCols)
+                                           { retrievedCols_ = retrievedCols; }
+
 private:
 
 

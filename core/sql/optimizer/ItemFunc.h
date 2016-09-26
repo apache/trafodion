@@ -262,6 +262,8 @@ public:
   virtual ValueId mapAndRewrite(ValueIdMap &map,
 				NABoolean mapDownwards = FALSE);
 
+  virtual NABoolean duplicateMatch(const ItemExpr & other) const;
+
   // get a printable string that identifies the operator
   virtual const NAString getText() const;
 
@@ -4666,8 +4668,8 @@ public:
 class ItmSeqOlapFunction : public ItmSequenceFunction
 {
 public:
-  ItmSeqOlapFunction(OperatorTypeEnum itemType, ItemExpr *valPtr): 
-        ItmSequenceFunction(itemType, valPtr),
+  ItmSeqOlapFunction(OperatorTypeEnum itemType, ItemExpr *val1Ptr, ItemExpr *val2Ptr = NULL, ItemExpr *val3Ptr = NULL): 
+        ItmSequenceFunction(itemType, val1Ptr, val2Ptr, val3Ptr),
         frameStart_(0),
         frameEnd_(0)
         {  }
@@ -4694,7 +4696,7 @@ public:
   ItemExpr *transformOlapAvg(CollHeap *heap);
   ItemExpr *transformOlapRank(CollHeap *heap);
   ItemExpr *transformOlapDRank(CollHeap *heap);
-  ItemExpr *transformOlapFunction(CollHeap *heap);
+  virtual ItemExpr *transformOlapFunction(CollHeap *heap);
 
   virtual NABoolean hasEquivalentProperties(ItemExpr * other);
 
@@ -4780,6 +4782,55 @@ private:
   Lng32 frameEnd_;
 } ;
 
+class ItmLeadOlapFunction: public ItmSeqOlapFunction 
+{
+public:
+  ItmLeadOlapFunction(ItemExpr *valPtr, ItemExpr* offsetExpr = NULL, ItemExpr* defaultValue = NULL): 
+        ItmSeqOlapFunction(ITM_OLAP_LEAD, valPtr, offsetExpr, defaultValue),
+        offset_(-1)
+        { }
+
+  ItmLeadOlapFunction(ItemExpr *valPtr, Int32 offset): 
+        ItmSeqOlapFunction(ITM_OLAP_LEAD, valPtr),
+        offset_(offset)
+        { }
+
+  // virtual destructor
+  virtual ~ItmLeadOlapFunction();
+
+  // methods for code generation
+  virtual ItemExpr *preCodeGen(Generator*);  //transfomr into running seq functions
+  virtual short codeGen(Generator*);
+
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+                                 CollHeap* outHeap = 0);
+
+  virtual NABoolean hasEquivalentProperties(ItemExpr * other);
+
+  // a virtual function for type propagating the node
+  virtual const NAType * synthesizeType();
+
+  virtual  NABoolean isOlapFunction() const { return TRUE; } ;  // virtual method
+
+  Int32  getOffset() { return offset_; };
+  void setOffset(Int32 x) { offset_ = x; };
+
+  ItemExpr* transformOlapFunction(CollHeap *wHeap);
+
+  void transformNode(NormWA & normWARef, 
+                     ExprValueId & locationOfPointerToMe,
+                     ExprGroupId & introduceSemiJoinHere, 
+                     const ValueIdSet & externalInputs);
+
+  // get a printable string that identifies the operator
+  virtual const NAString getText() const
+    { return "LEAD"; };
+
+private:
+
+   Int32 offset_;
+} ;
+
 // ------------------------------------------------------------------------
 //
 //  OFFSET sequence function.
@@ -4858,6 +4909,37 @@ private:
   Lng32 winSize_;
 
 }; // class ItmSeqOffset
+
+class ItmLagOlapFunction: public ItmSeqOlapFunction 
+{
+public:
+  ItmLagOlapFunction(ItemExpr *seqColumn, ItemExpr *offsetExpr, ItemExpr* defaultValue = NULL)
+         : ItmSeqOlapFunction(ITM_OLAP_LAG, seqColumn, offsetExpr, defaultValue)
+         {}
+
+  // virtual destructor
+  virtual ~ItmLagOlapFunction(){}
+  // methods to do code generation
+  virtual ItemExpr *preCodeGen(Generator*);
+  virtual short codeGen(Generator*);
+
+  // a virtual function for type propagating the node
+  virtual const NAType * synthesizeType();
+  
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL, CollHeap* outHeap = 0);
+  
+  void transformNode(NormWA & normWARef,
+                ExprValueId & locationOfPointerToMe,
+                ExprGroupId & introduceSemiJoinHere,
+                const ValueIdSet & externalInputs);
+	
+  virtual  NABoolean isOlapFunction() const { return TRUE; }
+
+  ItemExpr * transformOlapFunction(CollHeap *heap) { return this; }
+  // get a printable string that identifies the operator
+  virtual const NAString getText() const    { return "LAG"; };
+};
+
 
 // --------------------------------------------------------------------------
 //

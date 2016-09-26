@@ -82,8 +82,6 @@
 #include "SqlParserGlobals.h"			// must be the second #include
 
 #define CheckModeSpecial1() if (NOT SqlParser_CurrentParser->modeSpecial1()) { YYERROR; } 
-#define CheckModeSpecial2() if (NOT SqlParser_CurrentParser->modeSpecial2()) { YYERROR; } 
-
 
 // This define is to restrict some commands to the DB_Transporter.
 #define CHECK_DBTRANSPORTER \
@@ -94,13 +92,6 @@
      YYERROR; \
   }
                                
-#define CheckModeSpecial3 \
-  if (CmpCommon::getDefault(MODE_SPECIAL_3) != DF_ON) \
-  { \
-     yyerror(""); \
-     YYERROR; \
-  }
-  
 #define CheckModeSpecial4 \
   if (CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON) \
   { \
@@ -407,6 +398,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_NAME                /* ANSI SQL non-reserved word */
 %token <tokval> TOK_UNNAMED             /* ANSI SQL non-reserved word */
 %token <tokval> TOK_INDICATOR_TYPE      /* Tandem extension non-reserved word */
+%token <tokval> TOK_INET_ATON           /* MySQL extension non-reserved word */
+%token <tokval> TOK_INET_NTOA           /* MySQL extension non-reserved word */
 %token <tokval> TOK_VARIABLE_POINTER    /* Tandem extension non-reserved word */
 %token <tokval> TOK_INDICATOR_POINTER   /* Tandem extension non-reserved word */
 %token <tokval> TOK_RETURNED_LENGTH     /* ANSI SQL non-reserved word */
@@ -780,6 +773,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_JAVA                /* Tandem extension non-reserved word */
 %token <tokval> TOK_JOIN
 %token <tokval> TOK_JULIANTIMESTAMP     /* Tandem extension */
+%token <tokval> TOK_LAG                 /* LAG OLAP Function */
 %token <tokval> TOK_LANGUAGE
 %token <tokval> TOK_LARGEINT            /* Tandem extension non-reserved word */
 %token <tokval> TOK_LASTNOTNULL
@@ -789,6 +783,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_LAST_SYSKEY
 %token <tokval> TOK_LASTSYSKEY
 %token <tokval> TOK_LCASE               /* ODBC extension   */
+%token <tokval> TOK_LEAD                /* LEAD OLAP Function */
 %token <tokval> TOK_LEADING
 %token <tokval> TOK_LEAST
 %token <tokval> TOK_LEFT
@@ -810,6 +805,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_IUD_LOG_TABLE          
 %token <tokval> TOK_RANGE_LOG_TABLE		//++ MV
 %token <tokval> TOK_LOG10
+%token <tokval> TOK_LOG2
 %token <tokval> TOK_LONGWVARCHAR
 
 %token <tokval> TOK_LOW_VALUE           /* Tandem extension non-reserved word */
@@ -1299,6 +1295,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_INSERTLOG			// MV 
 %token <tokval> TOK_INVALID
 %token <tokval> TOK_INVALIDATE
+%token <tokval> TOK_ISIPV4
+%token <tokval> TOK_ISIPV6
 %token <tokval> TOK_ISLACK              /* Tandem extension */
 %token <tokval> TOK_K                   /* Tandem extension */
 %token <tokval> TOK_KEY
@@ -2498,6 +2496,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pStmtDDL>                alter_table_disable_index_clause
 %type <uint>  		        alter_stored_descriptor_option
 %type <boolean>   		optional_cascade
+%type <boolean>                 optional_skip_view_check
 %type <pStmtDDL>  		alter_table_add_column_clause
 %type <pStmtDDL>  		alter_table_drop_column_clause
 %type <pStmtDDL>  		alter_table_alter_column_clause //++ MV
@@ -3230,14 +3229,14 @@ literal :       numeric_literal
 		  // in MS2, formatting is done as part of Format function.
 		  // Right now limit this to MS2. Once it is tested, we can do
 		  // it for all modes.
-		  if (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)
+                  /*		  if (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)
 		    {
                       $$ = new (PARSERHEAP()) ConstValue
                         (*$1, getStringCharSet(&$1));
                       SqlParser_CurrentParser->collectItem4HQC($$);	
                       $$ = new (PARSERHEAP()) DateFormat($$, *$6, DateFormat::FORMAT_TO_DATE);
 		    }
-		  else
+                    else*/
 		    {
 		      $$ = literalOfDate($1);
 		      if (! $$) YYERROR;
@@ -3314,8 +3313,7 @@ character_literal_notcasespecific_option : '(' TOK_NOT_CASESPECIFIC ')'
                                             {$$=FALSE;}
                                            | empty
                                             {
-					      if ((CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON) ||
-                                              (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON))
+                                              if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
 						$$ = TRUE;
 					      else
 						$$=FALSE;
@@ -6657,7 +6655,7 @@ table_reference : table_name_and_hint
                 } 
              | TOK_DUAL
               {
-                CheckModeSpecial4;
+
 
                 ConstValue * cv = 
                   (ConstValue*)literalOfNumericNoScale(new (PARSERHEAP()) NAString("0", PARSERHEAP()));
@@ -7728,6 +7726,77 @@ olap_sequence_function : set_function_specification TOK_OVER '('
                               SqlParser_CurrentParser->setTopHasOlapFunctions(TRUE);
                             }
 
+// start of OLAP LEAD function()
+                       | TOK_LEAD '(' value_expression ')' TOK_OVER '('
+                         opt_olap_part_clause opt_olap_order_clause ')'
+                        {
+                          ItmLeadOlapFunction* leadExpr =
+                                       new (PARSERHEAP()) ItmLeadOlapFunction($3, 1);
+                          leadExpr->setOLAPInfo($7, $8);
+                          $$=leadExpr;
+
+                          SqlParser_CurrentParser->setTopHasOlapFunctions(TRUE);
+                        }
+                       | TOK_LEAD '(' value_expression ',' value_expression ')' TOK_OVER '('
+                         opt_olap_part_clause opt_olap_order_clause ')'
+                        { 
+                          ItmLeadOlapFunction* leadExpr = 
+                                       new (PARSERHEAP()) ItmLeadOlapFunction($3, $5);
+                          leadExpr->setOLAPInfo($9, $10);
+                          $$=leadExpr;
+                          
+                          SqlParser_CurrentParser->setTopHasOlapFunctions(TRUE);
+                        }
+                       | TOK_LEAD '(' value_expression ',' value_expression ',' value_expression ')' TOK_OVER '('
+                         opt_olap_part_clause opt_olap_order_clause ')'
+                        { 
+                          ItmLeadOlapFunction* leadExpr = 
+                                       new (PARSERHEAP()) ItmLeadOlapFunction($3, $5, $7);
+                          leadExpr->setOLAPInfo($11, $12);
+                          $$=leadExpr;
+                          
+                          SqlParser_CurrentParser->setTopHasOlapFunctions(TRUE);
+                        }
+// end of OLAP LEAD function()
+// start of OLAP LAG function()
+                       |TOK_LAG '(' value_expression ','  value_expression ','  value_expression ')'  TOK_OVER '('
+                         opt_olap_part_clause
+                         opt_olap_order_clause ')'
+                         {
+                             //3rd value_expression is default value    
+                              ItmLagOlapFunction* lagExpr =
+                                                       new (PARSERHEAP()) ItmLagOlapFunction($3, $5, $7);
+                             lagExpr->setOLAPInfo($11, $12);
+                             $$=lagExpr;
+                             SqlParser_CurrentParser->setTopHasOlapFunctions(TRUE);
+                         }
+                       |TOK_LAG '(' value_expression ','  value_expression ')'  TOK_OVER '('
+                         opt_olap_part_clause
+                         opt_olap_order_clause ')'
+                         {
+                              ItmLagOlapFunction* lagExpr =
+                                                       new (PARSERHEAP()) ItmLagOlapFunction($3, $5);
+                             lagExpr->setOLAPInfo($9, $10);
+                             $$=lagExpr;
+                             SqlParser_CurrentParser->setTopHasOlapFunctions(TRUE);
+                         }
+                       |TOK_LAG '(' value_expression  ')'  TOK_OVER '('
+                          opt_olap_part_clause
+                          opt_olap_order_clause ')'
+                          {    
+                               //default offset is 1;
+                               NAString * defaultOffset = new (PARSERHEAP()) NAString("1");
+                               ItemExpr * offsetExpr = literalOfNumericNoScale(defaultOffset);
+                               if (!offsetExpr) YYERROR;   
+                               ItmLagOlapFunction* lagExpr =
+                                                        new (PARSERHEAP()) ItmLagOlapFunction($3, offsetExpr);
+                              lagExpr->setOLAPInfo($7, $8);
+                              $$=lagExpr;
+                              SqlParser_CurrentParser->setTopHasOlapFunctions(TRUE);
+                          }
+// end of OLAP LAG function()
+
+
 
 opt_olap_part_clause   : empty
                          {
@@ -8755,8 +8824,6 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 			       }
     | TOK_TO_NUMBER '(' value_expression ')'
                                {
-				 CheckModeSpecial3;
-
 				 $$ = new (PARSERHEAP()) 
 				   ZZZBinderFunction(ITM_TO_NUMBER, $3);
 			       }
@@ -8767,8 +8834,6 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 			       }
     | TOK_TO_TIMESTAMP '(' value_expression ')'
                                {
-				 CheckModeSpecial4;
-
 				 $$ = new (PARSERHEAP()) 
 				   ZZZBinderFunction(ITM_TO_TIMESTAMP, $3);
 			       }
@@ -8825,8 +8890,6 @@ string_function :
 	  }
      | TOK_CHR '(' value_expression CHAR_FUNC_optional_character_set ')' 
 	  {
-	    //	    CheckModeSpecial3;
-
 	    if (!(($4 == CharInfo::ISO88591) || ( CharInfo::maxBytesPerChar($4) == 2))){
 	      *SqlParser_Diags << DgSqlCode(-3217) << DgString0(CharInfo::getCharSetName($4)) << DgString1("CHAR");
 	      YYABORT;
@@ -8840,8 +8903,6 @@ string_function :
 
      | TOK_COALESCE '(' value_expression_list ')'
         {
-	  // CheckModeSpecial1(); -- Allow general NEO users to use
-
 	  $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_COALESCE,
 						    $3);
 
@@ -8948,7 +9009,7 @@ string_function :
 
      | TOK_INSTR '(' value_expression TOK_IN value_expression ')'
                   {
-		    CheckModeSpecial3;
+		    CheckModeSpecial4;
 
                      $$ = new (PARSERHEAP()) PositionFunc($5,$3,NULL);
                   }
@@ -9518,11 +9579,7 @@ math_func_1_operand :
               TOK_ACOS {$$ = ITM_ACOS;}
            |  TOK_ASIN {$$ = ITM_ASIN;}
            |  TOK_ATAN {$$ = ITM_ATAN;}
-           |  TOK_CEIL 
-                {
-		  CheckModeSpecial3; 
-		  $$ = ITM_CEIL;
-		}
+           |  TOK_CEIL {$$ = ITM_CEIL;}
            |  TOK_CEILING {$$ = ITM_CEIL;}
            |  TOK_COS {$$ = ITM_COS;}
            |  TOK_COSH {$$ = ITM_COSH;}
@@ -9531,6 +9588,7 @@ math_func_1_operand :
            |  TOK_FLOOR {$$ = ITM_FLOOR;}
            |  TOK_LOG {$$ = ITM_LOG;}
            |  TOK_LOG10 {$$ = ITM_LOG10;}
+           |  TOK_LOG2 {$$ = ITM_LOG2;}
            |  TOK_RADIANS {$$ = ITM_RADIANS;}
            |  TOK_SIN {$$ = ITM_SIN;}
            |  TOK_SINH {$$ = ITM_SINH;}
@@ -9579,16 +9637,12 @@ misc_function :
 
      | TOK_GREATEST '(' value_expression ',' value_expression ')'
                   {
-                    CheckModeSpecial4;
-
                     $$ = new (PARSERHEAP())
                       ZZZBinderFunction(ITM_GREATEST, $3, $5);
                   }
 
      | TOK_LEAST '(' value_expression ',' value_expression ')'
                   {
-                    CheckModeSpecial4;
-
                     $$ = new (PARSERHEAP())
                       ZZZBinderFunction(ITM_LEAST, $3, $5);
                   }
@@ -9600,7 +9654,34 @@ misc_function :
                             CmpCommon::statementHeap(), 
                             1, $3);
                 }
-
+     | TOK_ISIPV4 '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_ISIPV4,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+     | TOK_ISIPV6 '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_ISIPV6,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+     | TOK_INET_ATON '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_INET_ATON,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+     | TOK_INET_NTOA '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_INET_NTOA,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
      | TOK_ISNULL '(' value_expression ',' value_expression ')'
                   {
                     $$ = new (PARSERHEAP())
@@ -9774,8 +9855,6 @@ misc_function :
 
     | TOK_MONTHS_BETWEEN '(' value_expression ',' value_expression ')'
                       {
-			CheckModeSpecial3;
-
                         $$ = new (PARSERHEAP())
                              ZZZBinderFunction(ITM_MONTHS_BETWEEN, $3, $5);
 		      }
@@ -9881,20 +9960,17 @@ misc_function :
 
          | TOK_LAST_DAY '(' value_expression ')'
              {
-	       CheckModeSpecial3;
 	       $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_LAST_DAY, $3);
 	     }
 
          | TOK_NEXT_DAY '(' value_expression ',' value_expression ')'
              {
-	       CheckModeSpecial3;
 
 	       $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_NEXT_DAY, $3, $5);
 	     }
 
          | TOK_TRUNC '(' value_expression ',' unsigned_integer ')'
              {
-	       CheckModeSpecial3;
 
 	       ConstValue * cv = new (PARSERHEAP()) ConstValue($5);
 
@@ -9902,7 +9978,6 @@ misc_function :
 	     }
          | TOK_TRUNC '(' value_expression ')'
              {	       
-	       CheckModeSpecial3;
 
 	       ConstValue * cv = new (PARSERHEAP()) ConstValue(0);
 
@@ -10770,16 +10845,16 @@ int_type : TOK_INTEGER signed_option
            $$ = new (PARSERHEAP()) SQLSmall( $2, TRUE);
          else
            $$ = new (PARSERHEAP()) SQLTiny( $2, TRUE);
-         // ((SQLSmall *)$$)->setDisplayDataType("TINYINT");
        }
 	 | TOK_BYTEINT signed_option
        {
-         // For TD compatibility, we map BYTEINT to SMALLINT
+         // For TD compatibility, we map BYTEINT to TINYINT/SMALLINT
          // BYTEINT is supposed to be exact numeric value with precision 3 &
          // scale 0. signed: -128<=n<=127, unsigned: 0<=n<=255.
-         CheckModeSpecial1();
-         $$ = new (PARSERHEAP()) SQLSmall( $2, TRUE);
-         ((SQLSmall *)$$)->setDisplayDataType("BYTEINT");
+         if (CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF)
+           $$ = new (PARSERHEAP()) SQLSmall( $2, TRUE);
+         else
+           $$ = new (PARSERHEAP()) SQLTiny( $2, TRUE);
        }
 
 numeric_type_token :    TOK_NUMERIC
@@ -11082,8 +11157,7 @@ pic_type : TOK_PICTURE char_set collation_option pic_tail pic_notcasespecific_op
 
 		NABoolean caseInsensitive = $5;
 		if ((isStringType) &&
-		    ((SqlParser_CurrentParser->modeSpecial1()) ||
-		     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)))
+		    (SqlParser_CurrentParser->modeSpecial1()))
 		  caseInsensitive = TRUE;
 
                 // picNAType assert fails if precision is 0
@@ -11702,8 +11776,7 @@ upshift_flag :	    { $$ = FALSE; }
 /* type boolean */
 notcasespecific_option : empty 
                            { 
-			     if ((SqlParser_CurrentParser->modeSpecial1()) ||
-				 (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON))
+			     if (SqlParser_CurrentParser->modeSpecial1())
 			       $$ = TRUE;
 			     else
 			       $$ = FALSE; 
@@ -13600,8 +13673,6 @@ set_quantifier : { $$ = FALSE; /* by default, set quantifier is ALL */
              }
           | TOK_UNIQUE
              {
-               CheckModeSpecial4;
-
                 $$ = TRUE;
              }
 
@@ -18481,7 +18552,7 @@ rel_subquery : '(' query_expression order_by_clause ')'
                                   if ( temp->getOperatorType() != REL_ROOT )
                                     temp = new (PARSERHEAP()) RelRoot($2);
 
-                                  if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_OFF) 
+                                  if (CmpCommon::getDefault(ALLOW_ORDER_BY_IN_SUBQUERIES) == DF_OFF) 
                                     {
                                       if ($3)
                                         {
@@ -19599,7 +19670,7 @@ merge_stmt_when_matched     : TOK_WHEN TOK_MATCHED TOK_THEN TOK_UPDATE TOK_SET m
 			    }
 
 /* type item */
-merge_stmt_set_clause       : set_clause
+merge_stmt_set_clause       : set_update_commit_list
 
 /* type ptr_placeholder */
 merge_stmt_when_not_matched : TOK_WHEN TOK_NOT TOK_MATCHED TOK_THEN TOK_INSERT merge_insert_with_values
@@ -21398,9 +21469,9 @@ query_shape_options : TOK_IMPLICIT TOK_EXCHANGE
 /* type exprnode */
 query_shape_control : shape_identifier
 				{
-				  // tuple, cut, and scan are nodes that are
-				  // allowed without any arguments, TYPE1
-				  // and TYPE2 are allowed as 3rd or 4th
+				  // tuple, cut, scan and misc. others are nodes
+				  // that are allowed without any arguments,
+				  // TYPE1 and TYPE2 are allowed as 3rd or 4th
 				  // arguments of join plan shapes
 				  if (*$1 == "TUPLE")
 				    {
@@ -21428,6 +21499,14 @@ query_shape_control : shape_identifier
                                     {
                                       $$ = new (PARSERHEAP()) ExplainFunc();
                                     }
+				  else if (*$1 == "ISOLATED_SCALAR_UDF" )
+				    {
+				      $$ = new (PARSERHEAP()) UDFForceWildCard(REL_FORCE_ANY_SCALAR_UDF);
+				    }
+				  else if (*$1 == "TMUDF" )
+				    {
+				      $$ = new (PARSERHEAP()) WildCardOp(REL_ANY_LEAF_TABLE_MAPPING_UDF);
+				    }
 				  else if (*$1 == "FORWARD")
 				    {
 				      $$ = new (PARSERHEAP()) ScanForceWildCard();
@@ -21506,10 +21585,6 @@ query_shape_control : shape_identifier
 				      $$ = new (PARSERHEAP())
 				       ControlQueryShape(
 				         NULL, SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), FALSE);
-				    }
-				  else if (*$1 == "ISOLATED_SCALAR_UDF" )
-				    {
-				      $$ = new (PARSERHEAP()) UDFForceWildCard(REL_FORCE_ANY_SCALAR_UDF);
 				    }
 				  else
 				    {
@@ -22910,8 +22985,10 @@ sort_or_group_key :   value_expression
                        }
                      else
                        {
-                         CheckModeSpecial4;
-
+                         if (CmpCommon::getDefault(GROUP_OR_ORDER_BY_EXPR) == DF_OFF)
+			   {
+			     YYERROR;
+			   }
                          ie = $1;
                        }
 
@@ -24987,8 +25064,7 @@ create_table_start_tokens :
 
                    | TOK_CREATE TOK_MULTISET TOK_TABLE optional_if_not_exists_clause 
                    {
-		     if ((NOT SqlParser_CurrentParser->modeSpecial1()) &&
-			 (NOT SqlParser_CurrentParser->modeSpecial2()))
+		     if (NOT SqlParser_CurrentParser->modeSpecial1())
 		       {
 			 YYERROR;
 		       }
@@ -25468,8 +25544,6 @@ column_constraint :  TOK_NOT TOK_NULL
                                 }
                             |  TOK_NOT TOK_NULL TOK_ENABLE
                                 {
-                                  CheckModeSpecial4;
-                                  
 			          NonISO88591LiteralEncountered = FALSE;
                                   $$ = new (PARSERHEAP()) ElemDDLConstraintNotNull(TRUE, PARSERHEAP());
                                 }
@@ -25762,14 +25836,6 @@ constraint_attributes : constraint_attribute
 format_attributes : empty { $$ = NULL; }
                     |  TOK_FORMAT QUOTED_STRING  
                          { 
-/* externalize (FORMAT '...') to regular users
-/*
-			   if ((NOT SqlParser_CurrentParser->modeSpecial1()) &&
-			       (NOT SqlParser_CurrentParser->modeSpecial2()))
-			     {
-			       YYERROR;
-			     }
-*/
 			   $$ = $2; 
 			 }
 
@@ -31017,6 +31083,22 @@ optional_cascade : empty
                                   $$ = TRUE;
                                 }
 
+/* type boolean */
+optional_skip_view_check : empty
+                                {
+                                  $$ = FALSE;
+                                }
+
+                      | TOK_SKIP TOK_VIEW TOK_CHECK
+                                {
+                                  if (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+                                    {
+                                      yyerror("");
+                                      YYERROR;     /*internal syntax only!*/
+                                    }
+                                  $$ = TRUE;
+                                }
+
 //-- MV
 //----------------------------------------------------------------------------
 
@@ -31848,12 +31930,13 @@ alter_table_enable_index_clause : TOK_ENABLE TOK_ALL TOK_INDEXES
                                   delete $3;
                                 }
 
-alter_table_rename_clause : TOK_RENAME TOK_TO identifier optional_cascade
+alter_table_rename_clause : TOK_RENAME TOK_TO identifier optional_cascade optional_skip_view_check
                                 {
                                   $$ = new (PARSERHEAP())
 				    StmtDDLAlterTableRename
                                       ( *$3 // identifier (new name)
                                       ,  $4 // optional_cascade
+                                      ,  $5 // optional_skip_view_check
                                       );
                                   delete $3; // identifier
                                 }
@@ -33642,8 +33725,12 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_HBASE_TIMESTAMP
                       | TOK_HBASE_VERSION
                       | TOK_HIVEMD
+                      | TOK_INET_ATON
+                      | TOK_INET_NTOA
                       | TOK_INITIAL
                       | TOK_INSTR
+                      | TOK_ISIPV4
+                      | TOK_ISIPV6
                       | TOK_KEY_RANGE_COMPARE
                       | TOK_JULIANTIMESTAMP
                       | TOK_LASTNOTNULL
@@ -33654,6 +33741,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_LOCATE
                       | TOK_LOG
                       | TOK_LOG10
+                      | TOK_LOG2
                       | TOK_LPAD
                       | TOK_LTRIM
                       | TOK_MAVG
@@ -33688,6 +33776,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_RESTORE
                       | TOK_RESUME
                       | TOK_RETRIES
+                      | TOK_RETURNS
                       | TOK_RMAX
                       | TOK_RMIN
                       | TOK_ROUND

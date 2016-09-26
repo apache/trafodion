@@ -224,8 +224,6 @@ ItemExpr *get_w_ItemExprTree(const NAWchar * str,
 
   void setmodeSpecial1(NABoolean v) { modeSpecial1_ = v; }
   NABoolean modeSpecial1() { return modeSpecial1_; }
-  void setmodeSpecial2(NABoolean v) { modeSpecial2_ = v; }
-  NABoolean modeSpecial2() { return modeSpecial2_; }
   void setmodeSpecial4(NABoolean v) { modeSpecial4_ = v; }
   NABoolean modeSpecial4() { return modeSpecial4_; }
  
@@ -320,7 +318,6 @@ private:
   NAWcharBuf *wInputBuf_;
 
   NABoolean modeSpecial1_;
-  NABoolean modeSpecial2_;
   NABoolean modeSpecial4_;
 
   LIST(NABoolean )  hasOlapFunctions_;

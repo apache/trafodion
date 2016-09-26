@@ -160,6 +160,7 @@ class CmpSeabaseDDL
   static NABoolean isHbase(const NAString &catName);
 
   static bool isHistogramTable(const NAString &tabName);
+  static bool isSampleTable(const NAString &tabName);
   static NABoolean isLOBDependentNameMatch(const NAString &name);
   static NABoolean isSeabaseMD(const NAString &catName,
 			       const NAString &schName,
@@ -1338,6 +1339,8 @@ protected:
                   NABoolean inRecovery = FALSE);
   short alterRenameRepos(ExeCliInterface * cliInterface, NABoolean newToOld);
   short copyOldReposToNew(ExeCliInterface * cliInterface);
+  short dropAndLogReposViews(ExeCliInterface * cliInterface,
+                             NABoolean & someViewSaved /* out */);
 
 public:
 

@@ -523,8 +523,6 @@ const NAType* NumericType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
 
   NABoolean modeSpecial1 = 
     ((flags) && ((*flags & NAType::MODE_SPECIAL_1) != 0));
-  NABoolean modeSpecial2 = 
-    ((flags) && ((*flags & NAType::MODE_SPECIAL_2) != 0));
   NABoolean limitPrecision =
     ((flags) && ((*flags & NAType::LIMIT_MAX_NUMERIC_PRECISION) != 0));
   NABoolean makeUnionResultBinary =
@@ -638,7 +636,7 @@ const NAType* NumericType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
                 scale;
     if (limitPrecision)
       {
-	if (((modeSpecial1) || (modeSpecial2)) &&
+	if ((modeSpecial1) &&
 	    (scale > MAX_NUMERIC_PRECISION))
 	  // scale overflow, return error.
 	  return NULL;
@@ -2526,6 +2524,12 @@ void LSDecimal::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
       insertScaleIndicator(*stringLiteral, getScale());
     }
 } // LSDecimal::maxRepresentableValue()
+
+NABoolean NumericType::isInteger() const      
+{ 
+  return ( qualifier_ == SQLInt_TYPE || qualifier_ == SQLSmall_TYPE ||
+           (getTypeQualifier() == NA_NUMERIC_TYPE && getPrecision() > 0 && getScale() == 0) ); 
+}
 
 // -----------------------------------------------------------------------
 // Type synthesis for binary operators

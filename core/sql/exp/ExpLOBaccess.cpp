@@ -373,7 +373,8 @@ Ex_Lob_Error ExLob::writeDataSimple(char *data, Int64 size, LobsSubOper subOpera
 Ex_Lob_Error ExLob::dataModCheck2(
        char * dirPath, 
        Int64  inputModTS,
-       Lng32  numOfPartLevels)
+       Lng32  numOfPartLevels,
+       Int64 &failedModTS)
 {
   if (numOfPartLevels == 0)
     return LOB_OPER_OK;
@@ -394,8 +395,12 @@ Ex_Lob_Error ExLob::dataModCheck2(
         {
           Int64 currModTS = fileInfo.mLastMod;
           if ((inputModTS > 0) &&
-              (currModTS > inputModTS))
-            failed = TRUE;
+              (currModTS > inputModTS) &&
+	      (!strstr(fileInfo.mName, ".hive-staging_hive_")))
+            {
+              failed = TRUE;
+              failedModTS = currModTS;
+            }
         }
     }
 
@@ -410,7 +415,8 @@ Ex_Lob_Error ExLob::dataModCheck2(
       for (Lng32 i = 0; ((NOT failed) && (i < currNumFilesInDir)); i++)
         {
           hdfsFileInfo &fileInfo = fileInfos[i];
-          err = dataModCheck2(fileInfo.mName, inputModTS, numOfPartLevels);
+          err = dataModCheck2(fileInfo.mName, inputModTS, numOfPartLevels,
+                              failedModTS);
           if (err != LOB_OPER_OK)
             return err;
         }
@@ -421,12 +427,16 @@ Ex_Lob_Error ExLob::dataModCheck2(
 
 // numOfPartLevels: 0, if not partitioned
 //                  N, number of partitioning cols
+// failedModTS: timestamp value that caused the mismatch
 Ex_Lob_Error ExLob::dataModCheck(
        char * dirPath, 
        Int64  inputModTS,
        Lng32  numOfPartLevels,
-       ExLobGlobals *lobGlobals)
+       ExLobGlobals *lobGlobals,
+       Int64 &failedModTS)
 {
+  failedModTS = -1;
+
   // find mod time of root dir
   hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, dirPath);
   if (fileInfos == NULL)
@@ -438,11 +448,14 @@ Ex_Lob_Error ExLob::dataModCheck(
   hdfsFreeFileInfo(fileInfos, 1);
   if ((inputModTS > 0) &&
       (currModTS > inputModTS))
-    return LOB_DATA_MOD_CHECK_ERROR;
+    {
+      failedModTS = currModTS;
+      return LOB_DATA_MOD_CHECK_ERROR;
+    }
 
   if (numOfPartLevels > 0)
     {
-      return dataModCheck2(dirPath, inputModTS, numOfPartLevels);
+      return dataModCheck2(dirPath, inputModTS, numOfPartLevels, failedModTS);
     }
 
   return LOB_OPER_OK;
@@ -2188,23 +2201,33 @@ Ex_Lob_Error ExLob::initStats()
 
 Ex_Lob_Error ExLobsOper (
 			 char        *lobName,          // lob name
+
 			 char        *handleIn,         // input handle (for cli calls)
 			 Int32       handleInLen,       // input handle len
+
 			 char        *hdfsServer,       // server where hdfs fs resides
 			 Int64       hdfsPort,          // port number to access hdfs server
+
 			 char        *handleOut,        // output handle (for cli calls)
 			 Int32       &handleOutLen,     // output handle len
+
 			 Int64       descNumIn,         // input desc Num (for flat files only)
 			 Int64       &descNumOut,       // output desc Num (for flat files only)
+
 			 Int64       &retOperLen,       // length of data involved in this operation
+
 			 Int64       requestTagIn,      // only for checking status
 			 Int64       &requestTagOut,    // returned with every request other than check status
+
 			 Ex_Lob_Error  &requestStatus,  // returned req status
 			 Int64       &cliError,         // err returned by cli call
+
 			 char        *lobStorageLocation,              // directory in the storage
 			 LobsStorage storage,           // storage type
+
 			 char        *source,           // source (memory addr, filename, foreign lob etc)
 			 Int64       sourceLen,         // source len (memory len, foreign desc offset etc)
+
 			 Int64       cursorBytes,
 			 char        *cursorId,
 			 LobsOper    operation,         // LOB operation
@@ -2506,8 +2529,10 @@ Ex_Lob_Error ExLobsOper (
         Int64 inputModTS = *(Int64*)blackBox;
         Int32 inputNumOfPartLevels = 
           *(Lng32*)&((char*)blackBox)[sizeof(inputModTS)];
+        Int64 failedModTS = -1;
         err = lobPtr->dataModCheck(lobStorageLocation, inputModTS, inputNumOfPartLevels,
-                                   lobGlobals);
+                                   lobGlobals, failedModTS);
+        descNumOut = failedModTS;
       }
       break;
 

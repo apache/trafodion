@@ -124,6 +124,21 @@ short RelExpr::generateShape(CollHeap * c, char * buf, NAString * shapeStr)
      }
     break;
 
+   case REL_TABLE_MAPPING_UDF:
+   case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
+   case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
+   case REL_TABLE_MAPPING_BUILTIN_JDBC:
+     {
+       if (getArity() == 0)
+         {
+           sprintf(mybuf, "tmudf");
+           addParens = FALSE;
+         }
+       else
+         sprintf(mybuf, "tmudf(");
+     }
+    break;
+
     case REL_TUPLE_LIST:
     case REL_STORED_PROC:
     case REL_INTERNALSP:

@@ -1457,7 +1457,8 @@ enum DB_SECURITY_EVENTID
     // dbaudit Errors
     DBS_AMQP_ERROR                              = 119003001,
 
-    // dbsevents Errors
+    // dbaudit info
+    DBS_AUTHENTICATION_ATTEMPT                  = 119004001,
 
     // SQL Errors
     DBS_SQL_ERROR                               = 119005001

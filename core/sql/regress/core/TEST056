@@ -78,22 +78,22 @@ create table T056t10 (swallow int default 121 not null ,
                       barnowl int default 1000 not null);
 
 create unique index T056in5 on T056t10 (barnowl) 
-       location $$partition$$ 
+       location $DATA 
        range partition (
-        add first key 150 location $$partition$$,
-        add first key 180 location $$partition$$)
+        add first key 150 location $DATA,
+        add first key 180 location $DATA)
 ; 
 
 create table T056t11 (wren int not null , 
   junco int not null ,
   blackbird int,
   primary key(wren,junco) )
-      location $$partition2$$
+      location $DATA2
       range partition (
-        add first key (30)  location $$partition2$$,
-        add first key (170) location $$partition2$$,
-        add first key (190) location $$partition2$$,
-        add first key (300) location $$partition2$$)
+        add first key (30)  location $DATA2,
+        add first key (170) location $DATA2,
+        add first key (190) location $DATA2,
+        add first key (300) location $DATA2)
 ;
 
 insert into T056t11 values (1,11,111),(3,13,113),(5,15,115)
@@ -102,10 +102,10 @@ insert into T056t11 values (1,11,111),(3,13,113),(5,15,115)
 
 create unique index T056in6 on T056t11 (blackbird) 
 #ifMX
-       location $$partition2$$ 
+       location $DATA2 
        range partition (
-        add first key 150 location $$partition2$$,
-        add first key 180 location $$partition2$$)
+        add first key 150 location $DATA2,
+        add first key 180 location $DATA2)
 #ifMX
 ;
 
@@ -841,7 +841,7 @@ create table t056t62 (i1 numeric(18) default 71 not null,
                       i2 numeric(18,7) default 69, 
                       i3 largeint default 39 
                         primary key desc not null)
-                      location $$partition$$;
+                      location $DATA;
 					  
 create table t056t63 (i2 numeric (7,0)
                         primary key desc not null,
@@ -849,7 +849,7 @@ create table t056t63 (i2 numeric (7,0)
                       s0Integer PIC S9(4) default 85 not null,
                       i1 decimal(18) default 12734 not null)
                       store by primary key
-                      location $$partition2$$;
+                      location $DATA2;
 					  
 ?section test4data	
 insert into t056t62 values (204, 1.3815032111910257E9, 33);
@@ -931,7 +931,7 @@ create table t056t5 (
     a1 decimal (18) not null not droppable,
     a2 numeric (9, 2) default 49,
     a4 decimal (9,0) ) 
-    location $$partition2$$
+    location $DATA2
     store by (a1 asc);
 insert into t056t5 values ( 1, 66.22, null); 
 alter table t056t5 add column b1 decimal (18) default 1580 not null not droppable;

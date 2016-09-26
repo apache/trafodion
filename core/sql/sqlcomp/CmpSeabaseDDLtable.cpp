@@ -3670,7 +3670,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
       if (objectNamePart != "SB_HISTOGRAMS" && 
           objectNamePart != "SB_HISTOGRAM_INTERVALS" &&
           objectNamePart != "SB_PERSISTENT_SAMPLES" &&
-          strncmp(objectNamePart.data(),"TRAF_SAMPLE_",sizeof("TRAF_SAMPLE_")) != 0)
+          strncmp(objectNamePart.data(),TRAF_SAMPLE_PREFIX,sizeof(TRAF_SAMPLE_PREFIX)) != 0)
           
       {
         if (dropSeabaseStats(cliInterface,
@@ -4111,23 +4111,26 @@ void CmpSeabaseDDL::renameSeabaseTable(
       return;
     }
 
-  // cannot rename if views are using this table
-  Queue * usingViewsQueue = NULL;
-  cliRC = getUsingViews(&cliInterface, objUID, usingViewsQueue);
-  if (cliRC < 0)
+  if (!renameTableNode->skipViewCheck())
     {
-      processReturn();
+      // cannot rename if views are using this table
+      Queue * usingViewsQueue = NULL;
+      cliRC = getUsingViews(&cliInterface, objUID, usingViewsQueue);
+      if (cliRC < 0)
+        {
+          processReturn();
       
-      return;
-    }
+          return;
+        }
   
-  if (usingViewsQueue->numEntries() > 0)
-    {
-      *CmpCommon::diags() << DgSqlCode(-1427)
-                          << DgString0("Reason: Operation not allowed if dependent views exist. Drop the views and recreate them after rename.");
+      if (usingViewsQueue->numEntries() > 0)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1427)
+                              << DgString0("Reason: Operation not allowed if dependent views exist. Drop the views and recreate them after rename.");
       
-      processReturn();
-      return;
+          processReturn();
+          return;
+        }
     }
 
   cliRC = updateObjectName(&cliInterface,
@@ -4170,6 +4173,16 @@ void CmpSeabaseDDL::renameSeabaseTable(
   retcode = dropHbaseTable(ehi, &hbaseTable, FALSE, ddlXns);
   if (retcode < 0)
     {
+      return;
+    }
+
+  cliRC = updateObjectRedefTime(&cliInterface,
+                                catalogNamePart, schemaNamePart, newObjectNamePart,
+                                COM_BASE_TABLE_OBJECT_LIT, -1, objUID);
+  if (cliRC < 0)
+    {
+      deallocEHI(ehi);
+      processReturn();
       return;
     }
 

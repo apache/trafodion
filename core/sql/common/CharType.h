@@ -255,7 +255,8 @@ virtual NABoolean operator==(const NAType& other) const;
 #ifndef CLI_SRL
 virtual NABoolean isComparable(const NAType &other,
 			       ItemExpr *parentOp,
-			       Int32 emitErr = EmitErrAlways) const;
+			       Int32 emitErr = EmitErrAlways,
+                               UInt32 * flags = NULL) const;
 #endif
   
 NABoolean isCharSetAndCollationComboOK() const;

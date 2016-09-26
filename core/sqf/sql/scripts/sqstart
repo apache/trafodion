@@ -424,6 +424,8 @@ $SQPDSHA 'cd $MY_SQROOT/sql/scripts; utilConfigDb -u'
 echoLog "Executing sqipcrm (output to sqipcrm.out)"
 sqipcrm > sqipcrm.out
 
+echoLog "Executing cleanZKNodes (output to cleanZKNodes.out)"
+cleanZKNodes > cleanZKNodes.out 2>&1
 
 rm -f $SQSTART_EXIT_STATUS
 SQStartProcesses &

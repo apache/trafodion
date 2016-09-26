@@ -494,6 +494,10 @@ public:
   NABoolean getUnboundedFollowing() const ;
 
   void setMinFollowingRows(Lng32 v);
+
+  // set the min following rows to max(v, minFollowingRows_);
+  void computeAndSetMinFollowingRows(Lng32 v);
+
   Lng32 getMinFollowingRows() const ;
 
   Lng32 getEstHistoryRowLength() const

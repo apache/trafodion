@@ -94,6 +94,9 @@ enum OperatorTypeEnum {
                         REL_TABLE_MAPPING_BUILTIN_TIMESERIES,
                         REL_TABLE_MAPPING_BUILTIN_JDBC,
                         REL_ANY_TABLE_MAPPING_UDF,
+                        REL_ANY_LEAF_TABLE_MAPPING_UDF,
+                        REL_ANY_UNARY_TABLE_MAPPING_UDF,
+                        REL_ANY_BINARY_TABLE_MAPPING_UDF,
                         REL_ISOLATED_NON_TABLE_UDR,
                         REL_ISOLATED_SCALAR_UDF,
                         REL_FORCE_ANY_SCALAR_UDF,
@@ -458,6 +461,8 @@ enum OperatorTypeEnum {
                         ITM_CURRENT_TIME_UTC = 2174,
 
                         ITM_COMP_DECODE = 2175,
+                        ITM_OLAP_LEAD = 2176,
+                        ITM_OLAP_LAG = 2177,
 
                         // numeric functions
                         ITM_ABS = 2200,
@@ -496,6 +501,7 @@ enum OperatorTypeEnum {
                         ITM_BITNOT = 2234,
                         ITM_BITEXTRACT = 2235,
                         ITM_CONVERTTOBITS = 2236,
+                        ITM_LOG2= 2237,
 
                         // string functions
                         ITM_TRUNC = 2250,
@@ -770,6 +776,12 @@ enum OperatorTypeEnum {
                         ITM_SET_TRANS_ROLLBACK_MODE = 2604,
                         ITM_SET_TRANS_AUTOABORT_INTERVAL = 2605,
                         ITM_SET_TRANS_MULTI_COMMIT = 2606,
+
+                        // Item expressions for MySQL/Oracle/DB2/SQL-Server compatibility
+                        ITM_ISIPV4 = 2630,
+                        ITM_ISIPV6 = 2631,
+                        ITM_INET_ATON = 2632,
+                        ITM_INET_NTOA = 2633,
 
                         // Items for needed for Translating to UCS2 output strings
                         ITM_DATEFMT     = 2990,

@@ -1784,6 +1784,9 @@ inline static NABoolean identMatches2(const NAString &id, const char *c1, const 
 
 #define IDENTMATCHES(c1,c2)     identMatches2(ident, c1, c2, exactMatch)
 
+// defined in generator/GenExplain.cpp
+NABoolean displayDuringRegressRun(DefaultConstants attr);
+
 // these CQDs are used for internal purpose and are set/sent by SQL.
 // Do not display them.
 static NABoolean isInternalCQD(DefaultConstants attr)
@@ -1798,7 +1801,8 @@ static NABoolean isInternalCQD(DefaultConstants attr)
     return TRUE;
   
   if ((getenv("SQLMX_REGRESS")) &&
-      (attr == TRAF_ALIGNED_ROW_FORMAT))
+      ((NOT displayDuringRegressRun(attr)) ||
+       (attr == TRAF_ALIGNED_ROW_FORMAT)))
     return TRUE;
   
   return FALSE;
@@ -2107,9 +2111,6 @@ static short CmpDescribeShape(
   outbuflen = space.getAllocatedSpaceSize();
   outbuf = new (heap) char[outbuflen];
   space.makeContiguous(outbuf, outbuflen);
-#ifdef _DEBUG
-  printf ("%s\n", outbuf );
-#endif
   return 0;
 }
 

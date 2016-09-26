@@ -1693,7 +1693,7 @@ enum DefaultConstants
   // -------------------------------------------------------------------------
   HIST_JOIN_CARD_LOWBOUND,
 
-  // allow any/first N in qubqueries.
+  // allow any/first N in subqueries.
   ALLOW_FIRSTN_IN_SUBQUERIES,
 
   // ------------------------------------------------------------------------
@@ -1878,8 +1878,6 @@ enum DefaultConstants
   QUERY_CACHE_TABLENAME,
 
   QUERY_CACHE_RUNTIME,
-
-  GROUP_BY_USING_ORDINAL,
 
   SKIP_UNAVAILABLE_PARTITION,
 
@@ -2542,10 +2540,6 @@ enum DefaultConstants
   // caller is nvci (scripts) process
   NVCI_PROCESS,
 
-  // if set to ON, turns on a subset of the 'special' features which are
-  // enabled using mode_special_1..
-  MODE_SPECIAL_2,
-
   // if this is set, then find a suitable key among all the columns of
   // a volatile table.
   // If this is not set, and there is no user specified primary key or
@@ -2971,8 +2965,6 @@ enum DefaultConstants
   // PUBLISH/UNPUBLISH command
   PUBLISHING_ROLES,
 
-  // enable special features
-  MODE_SPECIAL_3,
 
   // default used to test catman features
   CAT_TEST_BOOL,
@@ -3327,8 +3319,6 @@ enum DefaultConstants
 
   USTAT_IUS_NO_BLOCK,
 
-  USTAT_IUS_SIMPLE_SYNTAX,
-
   // Collect reorg stats. Default is ON and stats are collected. 
   // This cqd is added in case
   // one need to go back to the old behavior of no reorg stats, or if a problem
@@ -3595,6 +3585,10 @@ enum DefaultConstants
   // It is run using underlying hbase single row transaction consistency.
   TRAF_NO_DTM_XN,
 
+  // if set to ON, then query is run as part of localized region transaction.
+  // No external transaction is started to run it.
+  TRAF_USE_REGION_XN,
+
   // HBASE_HASH2_PARTITIONING (ON - OFF for now):
   // - OFF: Treat salted table like a non-salted table
   // - ON: Always use HASH2 for salted table
@@ -3690,9 +3684,6 @@ enum DefaultConstants
   HBASE_BLOCK_SIZE,
   // hbase table index level, when zero, index level will be read from Hfile 
   HBASE_INDEX_LEVEL,
-
-  // enable special features for certain vendors.
-  MODE_SPECIAL_5,
 
   // enable self referencing foreign key constraints
   TRAF_ALLOW_SELF_REF_CONSTR,
@@ -3854,6 +3845,18 @@ enum DefaultConstants
 
   // if ON, read object descriptor from metadata, if it was stored.
   TRAF_READ_OBJECT_DESC,
+
+  ALLOW_INCOMPATIBLE_OPERATIONS, 
+
+  // if ON: expr and renamed cols allowed in groupby/orderby expr.
+  GROUP_OR_ORDER_BY_EXPR,
+
+  // allow ORDER BY in subqueries.
+  ALLOW_ORDER_BY_IN_SUBQUERIES,
+
+  // if the schema specified in a create stmt doesn't exist, automatically
+  // create it.
+  TRAF_AUTO_CREATE_SCHEMA,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

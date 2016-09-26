@@ -1,0 +1,118 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+
+-- Misc tests.
+
+log LOG032 clear;
+
+-- add/enable support for syntax and functions
+drop table if exists t032t1 cascade;
+
+create table t032t1 (a int not null primary key, 
+                     b byteint, 
+                     c int not null enable,  
+                     d date, e time, f timestamp,
+                     g real);
+
+invoke t032t1;
+
+insert into t032t1 values (1, 2, 3, date '2016-08-15',  time '10:11:12',
+                           timestamp '2016-08-15 10:11:12', 4e0);
+insert into t032t1 values (2, 3, 3, date '2016-08-15',  time '10:11:12',
+                           timestamp '2016-08-15 10:11:12', 4e0);
+
+select unique b from t032t1;
+
+select greatest(a, 10) from t032t1;
+select least(a, 10) from t032t1;
+
+select ceil(g), ceiling(g) from t032t1;
+
+select months_between(d, date '2016-01-01') from t032t1;
+select months_between(date '2016-01-01', d) from t032t1;
+
+select months_between(d, date '2016-01-15') from t032t1;
+select months_between(date '2016-01-15', d) from t032t1;
+
+select last_day(d), last_day(f) from t032t1;
+select next_day(d, 'sunday'), next_day(f, 'wednesday') from t032t1;
+
+select 'RANDOMVAL=' ||  trim(cast(rand() as varchar(20) not null)) from (values(1)) x(a);
+select random() from (values(1)) x(a);
+
+select rand(100) from (values(1)) x(a);
+
+select * from dual;
+
+-- error 8413 enhancement
+select cast('a' as int) from dual;
+
+-- group by, order by enhancements
+select a aa from t032t1 group by aa;
+select a+1 from t032t1 group by a+1;
+select a+1 from t032t1 order by a+1;
+select a+1 aa from t032t1 order by a+1;
+select a+1 aa from t032t1 order by aa;
+select a+1 aa from t032t1 order by 1;
+select * from (select b from t032t1 order by b desc) x(z);
+select * from (select [first 1] a from t032t1) x(z);
+select count(*) from t032t1 order by count(*);
+select count(*) from t032t1 order by count(*) desc;
+select count(*) cc from t032t1 order by count(*) desc;
+select count(distinct a) from t032t1 order by count(distinct a);
+
+-- error cases
+select count(a) from t032t1 order by count(distinct a);
+select sum(a), b from t032t1 group by sum(a), b;
+select sum(a) from t032t1 group by 1;
+
+-- incompatible operations
+select a from t032t1 where a = '2';
+select b from t032t1 where b = '2';
+select a + '1' from t032t1;
+select a || '1' from t032t1;
+insert into t032t1 values ('3', 3, 3, date '2016-08-15',  time '10:11:12',
+                           timestamp '2016-08-15 10:11:12', 4e0);
+select * from t032t1;
+
+select * from (values(1)) x(a) where current_date = current_timestamp;
+select * from (values(1)) x(a) where current_timestamp(0) = current_timestamp(6);
+
+select cast(1e0 as interval year) from dual;
+
+
+-- auto create schema
+
+-- should fail, schema doesnt exist
+create table t032sch.t032t2 (a int);
+
+-- should succeed, schema will be automatically created
+cqd traf_auto_create_schema 'ON';
+create table t032sch.t032t2 (a int);
+set schema t032sch;
+invoke t032t2;
+insert into t032t2 values (1);
+
+drop schema t032sch cascade;
+
+log;
+

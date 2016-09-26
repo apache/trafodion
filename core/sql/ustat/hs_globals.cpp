@@ -243,7 +243,7 @@ Int32 ISFixedChar::compare(const ISFixedChar &rhs)
   if (CollationInfo::isSystemCollation(colCollation))
       return Collated_cmp(content, rhs.content, length, colCollation,
                           sortBuffer1, sortBuffer2);
-  // UCS2 cols not supported in MODE_SPECIAL_1 or 2 and do not support case insensitivity.
+  // UCS2 cols not supported in MODE_SPECIAL_1 and do not support case insensitivity.
   if (!caseInsensitive)
     {
       if (charset != CharInfo::UNICODE)
@@ -1297,7 +1297,7 @@ Int32 ISVarChar::compare(const ISVarChar &rhs)
                           MAXOF(*((short*)content), *((short*)rhs.content)),
                           colCollation, sortBuffer1, sortBuffer2);
 
-  // UCS2 cols not supported in MODE_SPECIAL_1 or 2 and do not support case insensitivity.
+  // UCS2 cols not supported in MODE_SPECIAL_1 and do not support case insensitivity.
   if (!caseInsensitive) {
     if (charset != CharInfo::UNICODE)
       return memcmp(content+VARCHAR_LEN_FIELD_IN_BYTES,
@@ -1324,7 +1324,7 @@ Int32 ISVarChar::operator==(const ISVarChar &rhs)
                         MAXOF(*((short*)content), *((short*)rhs.content)),
                         colCollation, sortBuffer1, sortBuffer2 ) == 0);
 
-  // UCS2 cols not supported in MODE_SPECIAL_1 or 2 and do not support case insensitivity.
+  // UCS2 cols not supported in MODE_SPECIAL_1 and do not support case insensitivity.
   if (!caseInsensitive)
     return !memcmp(content+VARCHAR_LEN_FIELD_IN_BYTES,
                   rhs.content+VARCHAR_LEN_FIELD_IN_BYTES,
@@ -3475,7 +3475,6 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
                                                    true));
     }
 
-  // for UPDATE STATISTICS, no more checking is performed
   // For SHOW STATS command, check for additional privileges
   if (!authorized && isShowStats)
     {
@@ -3489,35 +3488,37 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
       authorized = (componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(),
                                                     SQLOperation::SHOW,
                                                     true));
-     if (!authorized)
-       {
-         if (LM->LogNeeded())
-           {
-             sprintf(LM->msg, "Authorization: check for SELECT object privilege");
-             LM->Log(LM->msg);
-           }
-
-         // check for SELECT privilege
-         PrivMgrUserPrivs *privs = objDef->getNATable()->getPrivInfo();
-         if (privs == NULL)
-           {
-             *CmpCommon::diags() << DgSqlCode(-1034);
-              authorized = FALSE;
-           }
-
-         // Requester must have at least select privilege
-         if ( privs->hasSelectPriv() )
-           authorized = TRUE;
-         else
-           {
-             *CmpCommon::diags()
-              << DgSqlCode( -4481 )
-              << DgString0( "SELECT" )
-              << DgString1( objDef->getNATable()->getTableName().getQualifiedNameAsAnsiString() );
-              authorized = FALSE;
-            }
+     }
+   
+   // Allow operation if requester has SELECT priv
+   if (!authorized)
+     {
+       if (LM->LogNeeded())
+         {
+           sprintf(LM->msg, "Authorization: check for SELECT object privilege");
+           LM->Log(LM->msg);
          }
-      }
+
+       // check for SELECT privilege
+       PrivMgrUserPrivs *privs = objDef->getNATable()->getPrivInfo();
+       if (privs == NULL)
+         {
+           *CmpCommon::diags() << DgSqlCode(-1034);
+            authorized = FALSE;
+         }
+
+       // Requester must have at least select privilege
+       if ( privs->hasSelectPriv() )
+         authorized = TRUE;
+       else
+         {
+           *CmpCommon::diags()
+            << DgSqlCode( -4481 )
+            << DgString0( "SELECT or MANAGE_STATISTICS" )
+            << DgString1( objDef->getNATable()->getTableName().getQualifiedNameAsAnsiString() );
+            authorized = FALSE;
+          }
+       }
 
    LM->LogTimeDiff("Exiting: HSGlobalsClass::isAuthorized");
    return authorized;
@@ -3855,7 +3856,7 @@ void HSSample::makeTableName(NABoolean isPersSample)
 
         convertInt64ToAscii(objDef->getObjectUID(), objectIDStr);
         sprintf(timestampStr, "_%u_%u", (UInt32)tv.tv_sec, (UInt32)tv.tv_usec);
-        sampleTable += "TRAF_SAMPLE_";
+        sampleTable += TRAF_SAMPLE_PREFIX;  // "TRAF_SAMPLE_"
         sampleTable += objectIDStr;
         sampleTable += timestampStr;
 
@@ -5813,8 +5814,12 @@ Lng32 HSGlobalsClass::doFullIUS(Int64 currentSampleSize,
      //
      if ( colsSelected == 0 ) {
        if ( ranOutOfMem ) {
-         diagsArea << DgSqlCode(UERR_WARNING_IUS_INSUFFICIENT_MEMORY)
-                   << DgInt0(moreColsForIUS());
+         if (LM->LogNeeded())
+           {
+             // only do the warning diagnostic if logging is enabled
+             diagsArea << DgSqlCode(UERR_WARNING_IUS_INSUFFICIENT_MEMORY)
+                       << DgInt0(moreColsForIUS());
+           }
          break;  // Let RUS handle the rest
        } else {
          if (LM->LogNeeded())
@@ -10585,8 +10590,7 @@ bool isInternalSortType(HSColumnStruct &col)
         if (col.charset == CharInfo::UNICODE)
           {
             NAString MS1v = ActiveSchemaDB()->getDefaults().getValue(MODE_SPECIAL_1);
-            NAString MS2v = ActiveSchemaDB()->getDefaults().getValue(MODE_SPECIAL_2);
-            if ( MS1v == "ON"  || MS2v == "ON" )
+            if ( MS1v == "ON" )
               {
                  return false; //In these modes, Internal Sort won't work on UCS2 columns.
               }
@@ -13180,9 +13184,10 @@ Int32 HSGlobalsClass::estimateAndTestIUSStats(HSColGroupStruct* group,
                           "  u = too much UEC change",
                 group->colSet[0].colname->data());
         LM->Log(LM->msg);
+        // only issue the warning diagnostic if logging is on
+        diagsArea << DgSqlCode(shapeTestError)
+                  << DgString0(group->colSet[0].colname->data());
         }
-     diagsArea << DgSqlCode(shapeTestError)
-               << DgString0(group->colSet[0].colname->data());
      LM->StopTimer();
      return shapeTestError;
      }
@@ -13221,8 +13226,12 @@ Int32 HSGlobalsClass::estimateAndTestIUSStats(HSColGroupStruct* group,
 
   if ( (totalRC > (UInt64)origTotalRC) &&
       delta((UInt64)origTotalRC, totalRC)/origTotalRC > rcTotalChangeThreshold )  {
-     diagsArea << DgSqlCode(UERR_WARNING_IUS_TOO_MUCH_RC_CHANGE_TOTAL)
-               << DgString0(group->colSet[0].colname->data());
+     if (LM->LogNeeded()) 
+       {
+         // only do the warning diagnostic if logging is enabled
+         diagsArea << DgSqlCode(UERR_WARNING_IUS_TOO_MUCH_RC_CHANGE_TOTAL)
+                   << DgString0(group->colSet[0].colname->data());
+       }
      LM->StopTimer();
      return UERR_WARNING_IUS_TOO_MUCH_RC_CHANGE_TOTAL;
   }
@@ -13235,8 +13244,12 @@ Int32 HSGlobalsClass::estimateAndTestIUSStats(HSColGroupStruct* group,
 
   if ((totalUEC > (UInt64)origTotalUEC) && 
       delta((UInt64)origTotalUEC, totalUEC)/origTotalUEC > uecTotalChangeThreshold ) {
-     diagsArea << DgSqlCode(UERR_WARNING_IUS_TOO_MUCH_UEC_CHANGE_TOTAL)
-               << DgString0(group->colSet[0].colname->data());
+     if (LM->LogNeeded()) 
+       {
+         // only do the warning diagnostic if logging is enabled
+         diagsArea << DgSqlCode(UERR_WARNING_IUS_TOO_MUCH_UEC_CHANGE_TOTAL)
+                   << DgString0(group->colSet[0].colname->data());
+       }
      LM->StopTimer();
      return UERR_WARNING_IUS_TOO_MUCH_UEC_CHANGE_TOTAL;
   }
@@ -15992,7 +16005,10 @@ Lng32 HSInMemoryTable::populate(NAString& queryText)
   Int64 rowsLeft;
   HSCursor popCursor;
 
-  HSErrorCatcher errorCatcher(retcode, - UERR_INTERNAL_ERROR, 
+  // the most likely error is on a prepare due to a bad WHERE clause
+  // from the UPDATE STATS command itself; e.g. a syntax error or
+  // perhaps a bad column reference due to a typo
+  HSErrorCatcher errorCatcher(retcode, - UERR_IUS_BAD_WHERE_CLAUSE, 
                               "POPULATE_FROM_QUERY", TRUE);
   LM->Log("Preparing rowset...");
   // Allocate descriptors and statements for CLI and prepare rowset by

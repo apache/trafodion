@@ -290,26 +290,27 @@ static Int32 getNumCHARACTERArgs(ItemExpr *parentOp)
 
 NABoolean NAType::isComparable(const NAType &other,
 			       ItemExpr *parentOp,
-			       Int32 emitErr) const
+			       Int32 emitErr,
+                               UInt32 * flags) const
 {
   #ifndef NDEBUG
     CMPASSERT(parentOp);	//## reserved for future errmsg 4034 w/ unparse,
   #endif			// for CoAndCo propagation and for errmsgs!
 
-	if (isCompatible(other))
-		return TRUE;
-	NAString defVal;
-	NABoolean charsetInference =
-		(CmpCommon::getDefault(INFER_CHARSET, defVal) == DF_ON);
-	if(charsetInference  &&
-		getTypeQualifier()       == NA_CHARACTER_TYPE &&
-		other.getTypeQualifier() == NA_CHARACTER_TYPE){  // do not reject matches of UNKNOWN_CHARSET with UNKNOWN_CHARSET
-			CharType *ct = (CharType *)this;
-			if (ct->isCompatibleAllowUnknownCharset(other))
-				return TRUE;
-		}
-
-  if (emitErr == EmitErrIfAnyChar)
+    if (isCompatible(other, flags))
+      return TRUE;
+    NAString defVal;
+    NABoolean charsetInference =
+      (CmpCommon::getDefault(INFER_CHARSET, defVal) == DF_ON);
+    if(charsetInference  &&
+       getTypeQualifier()       == NA_CHARACTER_TYPE &&
+       other.getTypeQualifier() == NA_CHARACTER_TYPE){  // do not reject matches of UNKNOWN_CHARSET with UNKNOWN_CHARSET
+      CharType *ct = (CharType *)this;
+      if (ct->isCompatibleAllowUnknownCharset(other))
+        return TRUE;
+    }
+    
+    if (emitErr == EmitErrIfAnyChar)
     if (getTypeQualifier()       != NA_CHARACTER_TYPE &&
         other.getTypeQualifier() != NA_CHARACTER_TYPE)
       emitErr = FALSE;
@@ -342,9 +343,10 @@ NABoolean NAType::isComparable(const NAType &other,
 
 NABoolean CharType::isComparable(const NAType &otherNA,
 				 ItemExpr *parentOp,
-				 Int32 emitErr) const
+				 Int32 emitErr,
+                                 UInt32 * flags) const
 {
-  if (NOT NAType::isComparable(otherNA, parentOp, emitErr))
+  if (NOT NAType::isComparable(otherNA, parentOp, emitErr, flags))
     return FALSE;
 
   const CharType &other = (const CharType &)otherNA;
@@ -567,9 +569,6 @@ static NABoolean synthItemExprLists(ItemExprList &exprList1,
 	// 3. DATE and numeric.  Date is an interval from year 1900.
 	// 4. interval and numeric.
 
-	// Or for MODE_SPECIAL_3:
-	// between date and timestamp.
-
 	// Check if this is char and numeric comparison
 	if (((operand1->getTypeQualifier() == NA_CHARACTER_TYPE) &&
 	     (operand2->getTypeQualifier() == NA_NUMERIC_TYPE) &&
@@ -655,19 +654,18 @@ static NABoolean synthItemExprLists(ItemExprList &exprList1,
 		  return TRUE;
 	      }
 	  }
-
-	if (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON)
-	  {
-	    if (((vid1.getType().getPrecision() == SQLDTCODE_TIMESTAMP) &&
-		 (vid2.getType().getPrecision() == SQLDTCODE_DATE)) ||
-		((vid2.getType().getPrecision() == SQLDTCODE_TIMESTAMP) &&
-		 (vid1.getType().getPrecision() == SQLDTCODE_DATE)))
-	      return TRUE;
-	  }
       }
 
+    UInt32 flags = 0;
+    if (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON)
+      {
+        flags |= NAType::ALLOW_INCOMP_OPER;
+      }
+    
     //## errmsg 4034 w/ unparse?
-    if ( DoCompatibilityTest && NOT operand1->isComparable(*operand2, parentOp) )
+    if ( DoCompatibilityTest && 
+         NOT operand1->isComparable(*operand2, parentOp,
+                                    NAType::EmitErrAlways, &flags) )
       return FALSE; 
   }
   return TRUE;			// success
@@ -1012,7 +1010,81 @@ const NAType *BuiltinFunction::synthesizeType()
 	    SQLChar(maxLength, typ1.supportsSQLnull());
       }
     break;
+ 
+    case ITM_ISIPV4:
+    case ITM_ISIPV6:
+      {
+        // type cast any params
+        ValueId vid1 = child(0)->getValueId();
+        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        vid1.coerceType(c1, NA_CHARACTER_TYPE);
+        //input type must be string
+        const NAType &typ1 = child(0)->getValueId().getType();
 
+        if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("IS_IP");
+	    return NULL;
+          }
+        retType = new HEAP
+           SQLSmall(TRUE, FALSE);
+	if (typ1.supportsSQLnull())
+	  {
+	    retType->setNullable(TRUE);
+	  }
+      }
+    break;
+    case ITM_INET_ATON:
+      {
+        // type cast any params
+        ValueId vid1 = child(0)->getValueId();
+        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        vid1.coerceType(c1, NA_CHARACTER_TYPE);
+
+        //input type must be string
+        const NAType &typ1 = child(0)->getValueId().getType();
+
+        if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("INET_ATON");
+	    return NULL;
+          }
+        retType = new HEAP
+           SQLInt(FALSE, FALSE);
+	if (typ1.supportsSQLnull())
+	  {
+	    retType->setNullable(TRUE);
+	  }
+      }
+    break;
+    case ITM_INET_NTOA:
+      {
+	// type cast any params
+	ValueId vid = child(0)->getValueId();
+	vid.coerceType(NA_NUMERIC_TYPE);
+
+	const NAType &typ1 = child(0)->getValueId().getType();
+	if (typ1.getTypeQualifier() != NA_NUMERIC_TYPE)
+	  {
+	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("INET_NTOA");
+	    return NULL;
+	  }
+        const NumericType &ntyp1 = (NumericType &) typ1;
+        if (NOT ntyp1.isExact() || ntyp1.getScale() != 0)
+	  {
+	    *CmpCommon::diags() << DgSqlCode(-4046) << DgString0("INET_NTOA");
+	    return NULL;
+	  }
+
+	retType = new HEAP
+	  SQLVarChar(15, FALSE);
+
+	if (typ1.supportsSQLnull())
+	  {
+	    retType->setNullable(TRUE);
+          }
+      }
+    break;
     case ITM_NULLIFZERO:
       {
 	// type cast any params
@@ -1607,10 +1679,9 @@ const NAType *Assign::doSynthesizeType(ValueId & targetId, ValueId & sourceId)
   // Check that the operands are compatible.
   //
   if (NOT targetId.getType().isCompatible(sourceId.getType())) {
-    if (((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-	 (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_ASSIGNMENT) == DF_ON)) &&
+    if ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
         (sourceId.getType().getTypeQualifier() != NA_RECORD_TYPE ) &&
-	((child(1)->getOperatorType() != ITM_CONSTANT) ||
+        ((child(1)->getOperatorType() != ITM_CONSTANT) ||
 	 (NOT ((ConstValue *) child(1).getPtr() )->isNull())))
       {
 	// target type is not the same as source type.
@@ -1705,17 +1776,14 @@ const NAType *Between::synthesizeType()
   NABoolean allowsUnknown = FALSE;
 
   NABoolean allowIncompatibleComparison =
-    (((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_COMPARISON) == DF_ON) ||
-      (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-      (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON)) &&
-     (!CmpCommon::statement()->isDDL())                             &&
+    ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
      (child(0)->castToItemExpr()->getOperatorType() != ITM_ONE_ROW) &&
      (child(1)->castToItemExpr()->getOperatorType() != ITM_ONE_ROW) &&
      (child(2)->castToItemExpr()->getOperatorType() != ITM_ONE_ROW) &&
      (child(0)->castToItemExpr()->getOperatorType() != ITM_ONEROW) &&
      (child(1)->castToItemExpr()->getOperatorType() != ITM_ONEROW) &&
      (child(2)->castToItemExpr()->getOperatorType() != ITM_ONEROW));
-
+  
   for (CollIndex i = 0; i < exprList1.entries(); i++) {
     //
     // Type cast any params.
@@ -1754,21 +1822,6 @@ const NAType *Between::synthesizeType()
 	   (op1.getTypeQualifier() == NA_CHARACTER_TYPE) &&
 	   (vid1.getItemExpr()->getOperatorType() == ITM_CONSTANT)))
         compareOp3 = FALSE;
-
-      if (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON)
-	{
-	  if (((op1.getPrecision() == SQLDTCODE_TIMESTAMP) &&
-	       (op2.getPrecision() == SQLDTCODE_DATE)) ||
-	      ((op2.getPrecision() == SQLDTCODE_TIMESTAMP) &&
-	       (op1.getPrecision() == SQLDTCODE_DATE)))
-	    compareOp2 = FALSE;
-
-	  if (((op1.getPrecision() == SQLDTCODE_TIMESTAMP) &&
-	       (op3.getPrecision() == SQLDTCODE_DATE)) ||
-	      ((op3.getPrecision() == SQLDTCODE_TIMESTAMP) &&
-	       (op1.getPrecision() == SQLDTCODE_DATE)))
-	    compareOp3 = FALSE;
-	}
     }
 
     if (op1.getTypeQualifier() == NA_CHARACTER_TYPE &&
@@ -1840,11 +1893,6 @@ const NAType *BiArith::synthesizeType()
   if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
     {
       flags |= NAType::MODE_SPECIAL_1;
-    }
-
-  if (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)
-    {
-      flags |= NAType::MODE_SPECIAL_2;
     }
 
   if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON)
@@ -2012,17 +2060,14 @@ const NAType *BiRelat::synthesizeType()
   // a CAST node on top of it.
   // This incompatible comparison is not allowed if the statement is a DDL
   NABoolean allowIncompatibleComparison = FALSE;
-  if ((((!CmpCommon::statement()->isDDL()) &&
-        ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_COMPARISON) == DF_ON) ||
-         (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-         (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON))) ||
-       (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON)) &&
+
+  if ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
       (child(0)->castToItemExpr()->getOperatorType() != ITM_ONE_ROW) &&
       (child(1)->castToItemExpr()->getOperatorType() != ITM_ONE_ROW) &&
       (exprList1.entries() == 1) &&
       (exprList2.entries() == 1))
     allowIncompatibleComparison = TRUE;
-
+  
   NABoolean allowsUnknown;
   if (!synthItemExprLists(exprList1, exprList2, allowIncompatibleComparison,
 			  allowsUnknown, this))
@@ -2120,10 +2165,6 @@ const NAType *IfThenElse::synthesizeType()
       flags |= NAType::MODE_SPECIAL_1;
     }
 
-  if (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)
-    {
-      flags |= NAType::MODE_SPECIAL_2;
-    }
   if (CmpCommon::getDefault(TYPE_UNIONED_CHAR_AS_VARCHAR) == DF_ON)
   {
     flags |= NAType::MAKE_RESULT_VARCHAR;
@@ -2161,17 +2202,21 @@ static NABoolean numericCastIsCompatible(const NAType &src, const NAType &tgt)
 {
   if (src.getTypeQualifier() == NA_NUMERIC_TYPE &&
       tgt.getTypeQualifier() == NA_INTERVAL_TYPE &&
-      tgt.isSupportedType()) {
-    NumericType&  numeric  = (NumericType&)src;
-    IntervalType& interval = (IntervalType&)tgt;
-    if (numeric.isExact())
-      {
-	if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
-	  return TRUE;
-	else if (interval.getStartField() == interval.getEndField())
-	  return TRUE;
-      }
-  }
+      tgt.isSupportedType()) 
+    {
+      if (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON)
+        return TRUE;
+      
+      NumericType&  numeric  = (NumericType&)src;
+      IntervalType& interval = (IntervalType&)tgt;
+      if (numeric.isExact())
+        {
+          if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
+            return TRUE;
+          else if (interval.getStartField() == interval.getEndField())
+            return TRUE;
+        }
+    }
   //check for numeric to date conversion
   else if ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) &&
 	   (tgt.getTypeQualifier() == NA_DATETIME_TYPE) &&
@@ -2400,7 +2445,7 @@ const NAType *Cast::synthesizeType()
     }
   }
   else if (srcQual == NA_NUMERIC_TYPE)
-    legal = numericCastIsCompatible(src, tgt) || tgtQual == NA_BOOLEAN_TYPE;
+    legal = numericCastIsCompatible(src, tgt);
   else if (srcQual == NA_INTERVAL_TYPE)
     legal = numericCastIsCompatible(tgt, src);
   else if (srcQual == NA_DATETIME_TYPE && tgtQual == NA_NUMERIC_TYPE)
@@ -2832,18 +2877,6 @@ const NAType *DateFormat::synthesizeType()
     return NULL;
   }
 
-  if (getDateFormat() == DATE_FORMAT_STR)
-    {
-      if ((CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON) &&
-	  ((vid.getType().getTypeQualifier() != NA_DATETIME_TYPE) &&
-	   (vid.getType().getTypeQualifier() != NA_CHARACTER_TYPE)))
-	{
-	  // 4071 The operand of a DATEFORMAT function must be a datetime.
-	  *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
-	  return NULL;
-	}
-    }
-  
   if ((getDateFormat() == TIME_FORMAT_STR) &&
       ((vid.getType().getTypeQualifier() != NA_NUMERIC_TYPE) &&
        (vid.getType().getTypeQualifier() != NA_CHARACTER_TYPE) &&
@@ -3440,6 +3473,7 @@ const NAType *MathFunc::synthesizeType()
     case ITM_FLOOR:
     case ITM_LOG:
     case ITM_LOG10:
+    case ITM_LOG2:
     case ITM_PI:
     case ITM_POWER:
     case ITM_RADIANS:
@@ -5667,7 +5701,7 @@ const NAType *QuantifiedComp::synthesizeType()
   ItemExprList exprList2(getSubquery()->selectList(), HEAP);
   NABoolean allowsUnknown;
   NABoolean allowIncompatibleComparison = FALSE;
-  if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
+  if (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON)
     allowIncompatibleComparison = TRUE; 
   if (!synthItemExprLists(exprList1, exprList2, allowIncompatibleComparison,
 			  allowsUnknown, this))
@@ -5828,6 +5862,65 @@ const NAType *ItmSeqOffset::synthesizeType()
  }
  return result;
 }
+
+
+const NAType *ItmLagOlapFunction::synthesizeType()
+{
+// Return the type of child 0.
+  const NAType &operand1 = child(0)->getValueId().getType();
+
+  if (getArity() > 1)  {
+    const NAType &operand2 = child(1)->getValueId().getType();
+
+    if (operand2.getTypeQualifier() != NA_NUMERIC_TYPE) {
+    // The second operand of an OFFSET function must be numeric.
+    *CmpCommon::diags() << DgSqlCode(-4052) << DgString0(getTextUpper());
+    return NULL;
+    }
+
+    // check the default expression which should have the same type as the
+    // child(0).
+    if (getArity() > 2)  {
+        const NAType& typeForOp0 = child(0)->castToItemExpr()->getValueId().getType();
+        const NAType& typeForDefault = child(2)->castToItemExpr()->getValueId().getType();
+     
+        UInt32 flags =
+            ((CmpCommon::getDefault(LIMIT_MAX_NUMERIC_PRECISION) == DF_ON)
+              ? NAType::LIMIT_MAX_NUMERIC_PRECISION : 0);
+  
+         if ( !(typeForOp0 == typeForDefault) ) {
+          
+                NATypeSynthRuleEnum rule = SYNTH_RULE_ADD;
+          
+                if ( typeForOp0.getTypeQualifier() == NA_CHARACTER_TYPE )
+                  rule = SYNTH_RULE_CONCAT;
+          
+                const NAType* resultType = typeForOp0.synthesizeType(rule,
+                                              typeForOp0,
+                                              typeForDefault,
+                                              HEAP, &flags);
+          
+                if ( !resultType ) {
+                   *CmpCommon::diags() << DgSqlCode(-4141) << DgString0("LAG");
+                   return NULL;
+                }
+          
+                // Set the null attribute of the default value to TRUE.
+                NAType* newType = typeForDefault.newCopy(HEAP);
+                newType->setNullable(TRUE);
+                ValueId vid2 = child(2)->castToItemExpr()->getValueId();
+                vid2.changeType(newType);
+         }
+     }
+  }
+
+ NAType *result = operand1.newCopy(HEAP);
+
+ result->setNullable(TRUE);
+
+ return result;
+}
+
 // -----------------------------------------------------------------------
 // member functions for class ItmSeqDiff1
 // -----------------------------------------------------------------------
@@ -6636,5 +6729,108 @@ const NAType *LOBextract::synthesizeType()
   NAType *result = new HEAP SQLVarChar(tgtSize, Lob_Invalid_Storage,
 				       typ1.supportsSQLnull());
   return result;
+}
+
+const NAType * ItmLeadOlapFunction::synthesizeType()
+{
+   // check the type of the offset operand, if present
+   if (getArity() > 1)  {
+      const NAType &operand2 = child(1)->getValueId().getType();
+
+      NABoolean isInteger = FALSE;
+      if (operand2.getTypeQualifier() == NA_NUMERIC_TYPE ) {
+
+         const NumericType& nt = (NumericType&)operand2;
+         if ( nt.isInteger() ) 
+           isInteger = TRUE;
+      }
+            
+         // The second operand of a LEAD function must be of integer type.
+     if ( !isInteger ) {
+         *CmpCommon::diags() << DgSqlCode(-4140) << DgString0(getTextUpper());
+         return NULL;
+     }
+
+     // check the value of the offset expression constant
+     NABoolean offsetOK = FALSE;
+     Int64 value = 0;
+  
+     if ( getArity() > 1 )
+     {
+        ValueId vid1 = child(1)->getValueId();
+        ItemExpr *offsetExpr = vid1.getItemExpr();
+  
+        if (offsetExpr) {
+           if ( offsetExpr->getOperatorType() == ITM_CONSTANT ) 
+           {
+              ConstValue* cv = (ConstValue*)offsetExpr;
+              if ( cv->canGetExactNumericValue() )
+              {
+                 value = cv->getExactNumericValue();
+                 if ( value >= 0 ) {
+                    offsetOK = TRUE;
+                    offset_ = (Int32)value;
+                 }
+              }
+           } else 
+             offsetOK = TRUE; // delay making the decision. It coud be a row subquery
+       }
+  
+     } else { 
+  
+        if ( offset_ >= 0 )
+          offsetOK = TRUE;
+     }
+  
+     if ( !offsetOK ) {
+  
+        *CmpCommon::diags() << DgSqlCode(-4249) << DgString0("LEAD");
+        return NULL;
+     }
+   }
+
+   // check the default expression which should have the same type as the
+   // child(0).
+   if (getArity() > 2)  {
+      const NAType& typeForOp0 = child(0)->castToItemExpr()->getValueId().getType();
+      const NAType& typeForDefault = child(2)->castToItemExpr()->getValueId().getType();
+
+      UInt32 flags =
+          ((CmpCommon::getDefault(LIMIT_MAX_NUMERIC_PRECISION) == DF_ON)
+            ? NAType::LIMIT_MAX_NUMERIC_PRECISION : 0);
+
+      if ( !(typeForOp0 == typeForDefault) ) {
+
+         NATypeSynthRuleEnum rule = SYNTH_RULE_ADD;
+
+         if ( typeForOp0.getTypeQualifier() == NA_CHARACTER_TYPE )
+           rule = SYNTH_RULE_CONCAT;
+
+         const NAType* resultType = typeForOp0.synthesizeType(rule,
+                                       typeForOp0,
+                                       typeForDefault,
+                                       HEAP, &flags);
+
+         if ( !resultType ) {
+            *CmpCommon::diags() << DgSqlCode(-4141) << DgString0("LEAD");
+            return NULL;
+         }
+
+         // Set the null attribute of the default value to TRUE.
+         NAType* newType = typeForDefault.newCopy(HEAP);
+         newType->setNullable(TRUE);
+         ValueId vid2 = child(2)->castToItemExpr()->getValueId();
+         vid2.changeType(newType);
+      }
+   }
+    
+   // the type of the LEAD() is the type of the 1st argument.
+   const NAType& operand = child(0)->castToItemExpr()->getValueId().getType();
+   NAType* result = operand.newCopy(HEAP);
+
+   // LEAD can return NULL.
+   result->setNullable(TRUE);
+
+   return result;
 }
 

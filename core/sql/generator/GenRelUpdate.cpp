@@ -1353,6 +1353,16 @@ short HbaseDelete::codeGen(Generator * generator)
   if (csl())
     hbasescan_tdb->setUpdelColnameIsStr(TRUE);
 
+  if (preCondExpr)
+    hbasescan_tdb->setInsDelPreCondExpr(preCondExpr);
+
+  if (generator->isTransactionNeeded())
+    setTransactionRequired(generator);
+  else if (noDTMxn())
+    hbasescan_tdb->setUseHbaseXn(TRUE);
+  else if (useRegionXn())
+    hbasescan_tdb->setUseRegionXn(TRUE);
+
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
        addExplainInfo(hbasescan_tdb, 0, 0, generator));
@@ -1365,14 +1375,6 @@ short HbaseDelete::codeGen(Generator * generator)
       hbasescan_tdb->setPertableStatsTdbId((UInt16)generator->
 					   getPertableStatsTdbId());
     }
-
-  if (preCondExpr)
-    hbasescan_tdb->setInsDelPreCondExpr(preCondExpr);
-
-  if (generator->isTransactionNeeded())
-    setTransactionRequired(generator);
-  else if (noDTMxn())
-    hbasescan_tdb->setUseHbaseXn(TRUE);
 
   generator->setFoundAnUpdate(TRUE);
 
@@ -2224,6 +2226,13 @@ short HbaseUpdate::codeGen(Generator * generator)
   if (canDoCheckAndUpdel())
     hbasescan_tdb->setCanDoCheckAndUpdel(TRUE);
 
+  if (generator->isTransactionNeeded())
+    setTransactionRequired(generator);
+  else if (noDTMxn())
+    hbasescan_tdb->setUseHbaseXn(TRUE);
+  else if (useRegionXn())
+    hbasescan_tdb->setUseRegionXn(TRUE);
+
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
        addExplainInfo(hbasescan_tdb, 0, 0, generator));
@@ -2235,16 +2244,6 @@ short HbaseUpdate::codeGen(Generator * generator)
     {
       hbasescan_tdb->setPertableStatsTdbId((UInt16)generator->
 					   getPertableStatsTdbId());
-    }
-
-  if (generator->isTransactionNeeded())
-    {
-      setTransactionRequired(generator);
-    }
-  else
-    {
-      if (noDTMxn())
-        hbasescan_tdb->setUseHbaseXn(TRUE);
     }
 
   generator->setFoundAnUpdate(TRUE);
@@ -2991,6 +2990,13 @@ short HbaseInsert::codeGen(Generator *generator)
   if (stt == ComTdbDp2Oper::KEY_SEQ_WITH_SYSKEY_)
     hbasescan_tdb->setAddSyskeyTS(TRUE);
  
+  if (generator->isTransactionNeeded())
+    setTransactionRequired(generator);
+  else if (noDTMxn())
+    hbasescan_tdb->setUseHbaseXn(TRUE);
+  else if (useRegionXn())
+    hbasescan_tdb->setUseRegionXn(TRUE);
+
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
        addExplainInfo(hbasescan_tdb, 0, 0, generator));
@@ -3004,12 +3010,7 @@ short HbaseInsert::codeGen(Generator *generator)
 					   getPertableStatsTdbId());
     }
 
-  if (generator->isTransactionNeeded())
-    setTransactionRequired(generator);
-  else if (noDTMxn())
-    hbasescan_tdb->setUseHbaseXn(TRUE);
-
-   generator->setFoundAnUpdate(TRUE);
+  generator->setFoundAnUpdate(TRUE);
 
   generator->setCriDesc(givenDesc, Generator::DOWN);
   generator->setCriDesc(returnedDesc, Generator::UP);

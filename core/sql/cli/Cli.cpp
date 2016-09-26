@@ -2626,8 +2626,6 @@ Lng32 SQLCLI_ProcessRetryQuery(
 	    {
 	      if (type == AQRInfo::RETRY_WITH_ESP_CLEANUP)
 		aqr->setEspCleanup(TRUE);
-              else if (type == AQRInfo::RETRY_DECACHE_HTABLE)
-                currContext->flushHtableCache();
 
 	      // Before deallocating the statement, set an indication in the 
 	      // master stats for this query id to indicate that AQR is being 
@@ -11599,7 +11597,7 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
   if (! cliInterfaceArr[SEQ_PROCESS_QRY_IDX])
     {
       cliRC = SeqGenCliInterfacePrepQry(
-                                        "select  case when cast(? as largeint not null) = 1 then t.startVal else t.nextVal end, t.redefTS from (update %s.\"%s\".%s set next_value = (case when cast(? as largeint not null) = 1 then start_value + cast(? as largeint not null) else (case when next_value + cast(? as largeint not null) > max_value then max_value+1 else next_value + cast(? as largeint not null) end) end), num_calls = num_calls + 1 where seq_uid = %Ld return old.start_value, old.next_value, old.redef_ts) t(startVal, nextVal, redefTS);",
+                                        "select  case when cast(? as largeint not null) = 1 then t.startVal else t.nextValue end, t.redefTS from (update %s.\"%s\".%s set next_value = (case when cast(? as largeint not null) = 1 then start_value + cast(? as largeint not null) else (case when next_value + cast(? as largeint not null) > max_value then max_value+1 else next_value + cast(? as largeint not null) end) end), num_calls = num_calls + 1 where seq_uid = %Ld return old.start_value, old.next_value, old.redef_ts) t(startVal, nextValue, redefTS);",
                                         SEQ_PROCESS_QRY_IDX,
                                         "SEQ_PROCESS_QRY_IDX",
                                         cliInterfaceArr, sga, myDiags, currContext, diags, exHeap);

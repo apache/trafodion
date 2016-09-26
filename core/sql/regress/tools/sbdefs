@@ -26,16 +26,16 @@ cqd mode_seabase 'ON';
 cqd seabase_volatile_tables 'ON';
 cqd hbase_async_drop_table 'OFF';
 cqd hbase_serialization 'ON';
---cqd hbase_coprocessors 'OFF';
 cqd hbase_small_scanner 'SYSTEM';
 cqd hbase_filter_preds '2';
-cqd traf_aligned_row_format 'OFF';
---cqd traf_default_col_charset 'UTF8';
+cqd traf_aligned_row_format 'ON';
 cqd traf_index_create_opt 'ON';
---cqd ddl_transactions 'ON';
 cqd traf_read_object_desc 'ON';
 cqd traf_store_object_desc 'ON';
-cqd schema '$$TEST_SCHEMA$$';
+cqd allow_incompatible_operations 'ON';
+cqd allow_firstn_in_subqueries 'TRUE';
+cqd allow_order_by_in_subqueries 'ON';
+cqd group_or_order_by_expr 'ON';
 set SCHEMA $$TEST_SCHEMA$$;
 #endif
 

@@ -481,17 +481,20 @@ class ExLob
   // dirPath: path to needed directory (includes directory name)
   // modTS is the latest timestamp on any file/dir under dirPath.
   // This method validates that current modTS is not greater then input modTS.
+  // On return, failedModTS contains current timestamp that caused mismatch.
   // Return: LOB_OPER_OK, if passes. LOB_DATA_MOD_CHECK_ERROR, if fails.
   Ex_Lob_Error dataModCheck(
        char * dirPath, 
        Int64  modTS,
        Lng32  numOfPartLevels,
-       ExLobGlobals *lobGlobals);
+       ExLobGlobals *lobGlobals,
+       Int64 &failedModTS);
 
   Ex_Lob_Error dataModCheck2(
        char * dirPath, 
        Int64  modTS,
-       Lng32  numOfPartLevels);
+       Lng32  numOfPartLevels,
+       Int64 &failedModTS);
 
   Ex_Lob_Error emptyDirectory(char* dirPath, ExLobGlobals* lobGlobals);
 

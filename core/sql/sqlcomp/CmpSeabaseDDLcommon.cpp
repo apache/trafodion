@@ -958,6 +958,14 @@ bool CmpSeabaseDDL::isHistogramTable(const NAString &name)
 
 }
 
+bool CmpSeabaseDDL::isSampleTable(const NAString &name)
+{
+  if (name(0,min((sizeof(TRAF_SAMPLE_PREFIX)-1), name.length())) == TRAF_SAMPLE_PREFIX)
+    return true;
+
+  return false;
+}
+
 NABoolean CmpSeabaseDDL::isLOBDependentNameMatch(const NAString &name)
 {
   if ((name(0,min((sizeof(LOB_MD_PREFIX)-1), name.length())) == LOB_MD_PREFIX) ||
@@ -5390,7 +5398,7 @@ short CmpSeabaseDDL::updateObjectRedefTime(
 
   char buf[4000];
 
-  Int64 redefTime = (rt == -1 ? NA_JulianTimestamp() : rt);
+  Int64 redefTime = ((rt == -1) ? NA_JulianTimestamp() : rt);
 
   NAString quotedSchName;
   ToQuotedString(quotedSchName, NAString(schName), FALSE);
@@ -5432,6 +5440,7 @@ short CmpSeabaseDDL::updateObjectRedefTime(
       CmpSeabaseDDL::setMDflags(flags, MD_OBJECTS_STORED_DESC);
     }
 
+  buf[0] = 0;
   if ((flags & MD_OBJECTS_STORED_DESC) != 0)
     {
       if (rt == -2)
@@ -5448,7 +5457,7 @@ short CmpSeabaseDDL::updateObjectRedefTime(
                     catName.data(), quotedSchName.data(), quotedObjName.data(),
                     objType);
     }
-  else
+  else if (rt != -2)
     {
       str_sprintf(buf, "update %s.\"%s\".%s set redef_time = %Ld where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
@@ -5457,14 +5466,17 @@ short CmpSeabaseDDL::updateObjectRedefTime(
                   objType);
     }
 
-  cliRC = cliInterface->executeImmediate(buf);
-  
-  if (cliRC < 0)
+  if (strlen(buf) > 0)
     {
-      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return -1;
+      cliRC = cliInterface->executeImmediate(buf);
+      
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
     }
-  
+
   return 0;
 }
 
@@ -7069,9 +7081,6 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
 
     } // for
  
-  // cleanup cached entries in client object.
-  ehi->cleanupClient();
-
   deallocEHI(ehi); 
   ehi = NULL;
 
@@ -8916,8 +8925,9 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           else
             {
               createSeabaseTable(createTableParseNode, currCatName, currSchName);
-              
-              if ((getenv("SQLMX_REGRESS")) &&
+
+              if (((getenv("SQLMX_REGRESS")) ||
+                   (CmpCommon::getDefault(TRAF_AUTO_CREATE_SCHEMA) == DF_ON)) &&
                   (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_)) &&
                   (CmpCommon::diags()->mainSQLCODE() == -CAT_SCHEMA_DOES_NOT_EXIST_ERROR))
                 {
@@ -8929,17 +8939,43 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
                   const NAString schemaNamePart = 
                     tableName.getSchemaNamePartAsAnsiString(TRUE);
 
-                  if (schemaNamePart == SEABASE_REGRESS_DEFAULT_SCHEMA)
+                  char query[1000];
+                  if ((getenv("SQLMX_REGRESS")) &&
+                      (schemaNamePart == SEABASE_REGRESS_DEFAULT_SCHEMA))
+                    {
+                      CmpCommon::diags()->clear();
+                      str_sprintf(query, "create shared schema %s.%s",
+                                  TRAFODION_SYSCAT_LIT, 
+                                  SEABASE_REGRESS_DEFAULT_SCHEMA);
+                      cliRC = cliInterface.executeImmediate(query);
+                      if (cliRC >= 0)
+                        {
+                          str_sprintf(query, "upsert into %s.\"%s\".%s values ('SCHEMA ', '%s.%s ', 'inserted during regressions run', 0);",
+                                      TRAFODION_SYSCAT_LIT, 
+                                      SEABASE_MD_SCHEMA,
+                                      SEABASE_DEFAULTS,
+                                      TRAFODION_SYSCAT_LIT,
+                                      SEABASE_REGRESS_DEFAULT_SCHEMA);
+                          cliRC = cliInterface.executeImmediate(query);
+                          if (cliRC >= 0)
+                            {
+                              createSeabaseTable(createTableParseNode, currCatName, currSchName);
+                            }
+                        }
+                    } // if
+                  else if (CmpCommon::getDefault(TRAF_AUTO_CREATE_SCHEMA) == DF_ON)
                     {
                       // create this schema
                       CmpCommon::diags()->clear();
-                      cliRC = cliInterface.executeImmediate("create shared schema trafodion.sch");
+                      str_sprintf(query, "create schema %s.\"%s\";",
+                                  TRAFODION_SYSCAT_LIT, schemaNamePart.data());
+                      cliRC = cliInterface.executeImmediate(query);
                       if (cliRC >= 0)
                         {
                           createSeabaseTable(createTableParseNode, currCatName, currSchName);
                         }
                     }
-                }
+                }     
             }
         }
       else if (ddlNode->getOperatorType() == DDL_CREATE_HBASE_TABLE)
@@ -9591,26 +9627,20 @@ char objectTypeString[20] = {0};
    str_sprintf(buf,"DROP %s %s %s CASCADE",
                volatileString,objectTypeString,objectName);
                
-// Save the current parserflags setting
-   ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+   // Turn on the internal query parser flag; note that when
+   // this object is destroyed, the flags will be reset to
+   // their original state
+   PushAndSetSqlParserFlags savedParserFlags(INTERNAL_QUERY_FROM_EXEUTIL);
    Lng32 cliRC = 0;
 
    try
-   {            
-      Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
-               
+   {                      
       cliRC = cliInterface.executeImmediate(buf);
    }
    catch (...)
-   {
-      // Restore parser flags settings to what they originally were
-      Assign_SqlParser_Flags(savedParserFlags);
-      
+   {      
       throw;
    }
-   
-// Restore parser flags settings to what they originally were
-   Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
    
    if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
       someObjectsCouldNotBeDropped = true;
@@ -9675,17 +9705,17 @@ int32_t CmpSeabaseDDL::verifyDDLCreateOperationAuthorized(
 
 {
 
-int32_t currentUser = ComUser::getCurrentUser(); 
-NAString privMgrMDLoc;
+   int32_t currentUser = ComUser::getCurrentUser(); 
+   NAString privMgrMDLoc;
 
    CONCAT_CATSCH(privMgrMDLoc,getSystemCatalog(),SEABASE_PRIVMGR_SCHEMA);
    
-PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
-                                               CmpCommon::diags());
+   PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
+                                                  CmpCommon::diags());
                                                
-// CREATE SCHEMA is a special case.  There is no existing schema with an 
-// an owner or class.  A new schema may be created if the user is DB__ROOT,
-// authorization is not enabled, or the user has the CREATE_SCHEMA privilege. 
+   // CREATE SCHEMA is a special case.  There is no existing schema with an 
+   // an owner or class.  A new schema may be created if the user is DB__ROOT,
+   // authorization is not enabled, or the user has the CREATE_SCHEMA privilege. 
 
    if (operation == SQLOperation::CREATE_SCHEMA)
    {
@@ -9706,9 +9736,9 @@ PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
       return CAT_NOT_AUTHORIZED;
    }
 
-// 
-// Not CREATE SCHEMA, but verify the operation is a create operation.
-//
+   // 
+   // Not CREATE SCHEMA, but verify the operation is a create operation.
+   //
    if (!PrivMgr::isSQLCreateOperation(operation))
    {
       SEABASEDDL_INTERNAL_ERROR("Unknown create operation");   
@@ -9716,12 +9746,12 @@ PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
       return CAT_INTERNAL_EXCEPTION_ERROR; 
    }
       
-// User is asking to create an object in an existing schema.  Determine if this
-// schema exists, and if it exists, the owner of the schema.  The schema class     
-// and owner will determine if this user can create an object in the schema and 
-// who will own the object.
+   // User is asking to create an object in an existing schema.  Determine if this
+   // schema exists, and if it exists, the owner of the schema.  The schema class     
+   // and owner will determine if this user can create an object in the schema and 
+   // who will own the object.
        
-ComObjectType objectType;
+   ComObjectType objectType;
 
    if (getObjectTypeandOwner(cliInterface,catalogName.data(),schemaName.data(),
                              SEABASE_SCHEMA_OBJECTNAME,objectType,schemaOwner) == -1)
@@ -9750,29 +9780,33 @@ ComObjectType objectType;
    objectOwner = schemaOwner;
 
 
-// Root user is authorized for all create operations in private schemas.  For 
-// installations with no authentication, all users are mapped to root database  
-// user, so all users have full DDL create authority.
+   // Root user is authorized for all create operations in private schemas.  For 
+   // installations with no authentication, all users are mapped to root database  
+   // user, so all users have full DDL create authority.
 
    if (currentUser == ComUser::getRootUserID())
       return 0;
 
-// If authorization is not enabled, then authentication should not be enabled
-// either, and the previous check should have already returned.  But just in 
-// case, verify authorization is enabled before proceeding.  Eventually this 
-// state should be recorded somewhere, e.g. CLI globals.
+   // If authorization is not enabled, then authentication should not be enabled
+   // either, and the previous check should have already returned.  But just in 
+   // case, verify authorization is enabled before proceeding.  Eventually this 
+   // state should be recorded somewhere, e.g. CLI globals.
 
    if (!isAuthorizationEnabled())
       return 0;
-      
-// To create an object in a private schema, one of three conditions must be true:
-//
-// 1) The user is the owner of the schema.
-// 2) The schema is owned by a role, and the user has been granted the role.
-// 3) The user has been granted the requisite system-level SQL_OPERATIONS
-//    component create privilege.
-//
-// NOTE: In the future, schema-level create authority will be supported.
+
+   // If this is an internal operation, allow the operation.
+  if (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+      return 0;   
+
+   // To create an object in a private schema, one of three conditions must be true:
+   //
+   // 1) The user is the owner of the schema.
+   // 2) The schema is owned by a role, and the user has been granted the role.
+   // 3) The user has been granted the requisite system-level SQL_OPERATIONS
+   //    component create privilege.
+   //
+   // NOTE: In the future, schema-level create authority will be supported.
       
    if (currentUser == schemaOwner)
       return 0;
@@ -9787,14 +9821,14 @@ ComObjectType objectType;
          return 0;              
    }
    
-// Current user is not the schema owner.  See if they have been granted the
-// requisite create privilege.
+   // Current user is not the schema owner.  See if they have been granted the
+   // requisite create privilege.
   
    if (componentPrivileges.hasSQLPriv(currentUser,operation,true))
       return 0;   
    
-// TODO: When schema-level privileges are implemented, see if user has the 
-// requisite create privilege for this specific schema.
+   // TODO: When schema-level privileges are implemented, see if user has the 
+   // requisite create privilege for this specific schema.
 
    objectOwner = schemaOwner = NA_UserIdDefault; 
    return CAT_NOT_AUTHORIZED;

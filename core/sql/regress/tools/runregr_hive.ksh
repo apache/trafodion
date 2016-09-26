@@ -161,23 +161,23 @@ exclusiveTests=''
 
 if [ $nsk -ne 0 -o `uname` = "Linux" ]; then
   # upcase all test*, expected*, filters and known diff files
-  lctestfiles=`ls -1 test???* | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
+  lctestfiles=`ls -1 test???* 2>$NULL | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
 
   for lcfile in $lctestfiles; do
     ucfile=`echo $lcfile | tr a-z A-Z`
     cp -f $lcfile $ucfile 2>$NULL
   done
-  lcxptdfiles=`ls -1 expected???* | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
+  lcxptdfiles=`ls -1 expected???* 2>$NULL | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
   for lcfile in $lcxptdfiles; do
     ucfile=`echo $lcfile | tr a-z A-Z`
     cp -f $lcfile $ucfile 2>$NULL
   done
-  lcfiltfiles=`ls -1 filter???* | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
+  lcfiltfiles=`ls -1 filter???* 2>$NULL | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
   for lcfile in $lcfiltfiles; do
     ucfile=`echo $lcfile | tr a-z A-Z`
     cp -f $lcfile $ucfile 2>$NULL
   done
-  lcknownfiles=`ls -1 *.known* | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
+  lcknownfiles=`ls -1 *.known* 2>$NULL | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
   for lcfile in $lcknownfiles; do
     ucfile=`echo $lcfile | tr a-z A-Z`
     cp -f $lcfile $ucfile 2>$NULL
@@ -434,9 +434,9 @@ for i in $prettyfiles; do
 
     if [ "$REGRCONCURRENT" -eq 1 ]; then
       echo "create schema ${TEST_SCHEMA}; set schema ${TEST_SCHEMA};" \
-        | cat $REGRTSTDIR/cidefs $defsfile - $testrun > $test.tmp
+        | cat $defsfile - $testrun > $test.tmp
     else
-      cat $REGRTSTDIR/cidefs $defsfile $testrun > $test.tmp
+      cat $defsfile $testrun > $test.tmp
     fi
 
 

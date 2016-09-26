@@ -73,6 +73,8 @@ public interface  TransactionalTableClient  {
 
     void delete(final TransactionState transactionState, final Delete delete, final boolean bool_addLocation) throws IOException;
 
+    void deleteRegionTx(final long tid, final Delete delete, final boolean autoCommit) throws IOException;
+
     /**
      * Commit a Put to the table.
      * <p>
@@ -87,15 +89,59 @@ public interface  TransactionalTableClient  {
     void put(final TransactionState transactionState, final Put put, final boolean bool_addLocation) throws IOException ;
     ResultScanner getScanner(final TransactionState transactionState, final Scan scan) throws IOException;
 
+    /**
+     * Commit a Put to the table using a region transaction, not the DTM.
+     * This is valid for single row, single table operations only.
+     * After the Put operation the region performs conflict checking and
+     * prepare processing automatically.  If the autoCommit flag is
+     * true the region also commits the region transaction before returning 
+     * <p>
+     * If autoFlush is false, the update is buffered.
+     * 
+     * @param tid       // Id to be used by the region as a transId
+     * @param put
+     * @param autoCommit // should the region transaction be committed 
+     * @throws IOException
+     * @since 0.20.0
+     */
+    void putRegionTx(final long tid, final Put put, final boolean autoCommit) throws IOException;
+
     boolean checkAndDelete(final TransactionState transactionState,
   		final byte[] row, final byte[] family, final byte[] qualifier, final byte[] value,
                      final Delete delete) throws IOException;
+    
+    boolean checkAndDeleteRegionTx(final long tid, final byte[] row,
+    		final byte[] family, final byte[] qualifier, final byte[] value,
+                     final Delete delete, final boolean autoCommit) throws IOException;
     
 	boolean checkAndPut(final TransactionState transactionState,
 			final byte[] row, final byte[] family, final byte[] qualifier,
 			final byte[] value, final Put put) throws IOException ;
 
-       /**
+    /**
+     * CheckAndPut to the table using a region transaction, not the DTM.
+     * This is valid for single row, single table operations only.
+     * After the checkAndPut operation the region performs conflict checking
+     * and prepare processing automatically.  If the autoCommit flag is
+     * true, the region also commits the region transaction before returning 
+     * <p>
+     * If autoFlush is false, the update is buffered.
+     * 
+     * @param tid       // Id to be used by the region as a transId
+     * @param row
+     * @param family
+     * @param qualifier
+     * @param value
+     * @param put
+     * @param autoCommit // should the region transaction be committed 
+     * @throws IOException
+     * @since 2.1.0
+     */
+	boolean checkAndPutRegionTx(final long tid, final byte[] row,
+			final byte[] family, final byte[] qualifier, final byte[] value,
+			final Put put, final boolean autoCommit) throws IOException;
+
+	/**
    	 * Looking forward to TransactionalRegion-side implementation
    	 * 
    	 * @param transactionState

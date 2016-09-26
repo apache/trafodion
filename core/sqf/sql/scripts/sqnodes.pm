@@ -215,7 +215,7 @@ sub verifyCoreList
 
     if ($numArgs == 2)
     {   # Only one core number specified, make sure it is in valid range
-        if ($_[1] > 15)
+        if ($_[1] > 255)
         {
             displayStmt($_[0]);
             print "   Error: core number must be number must be in the range 0 .. 15.\n";
@@ -228,7 +228,7 @@ sub verifyCoreList
             displayStmt($_[0]);
             print "   Error: first core number must be number must be in the range 0 .. 14.\n";
         }
-        if ($_[2] == 0 || $_[2] > 15)
+        if ($_[2] == 0 || $_[2] > 255)
         {
             displayStmt($_[0]);
             print "   Error: second core number must be number must be in the range 1 .. 15.\n";

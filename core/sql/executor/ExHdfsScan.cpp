@@ -402,6 +402,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	    hdfsOffset_ = 0;
             checkRangeDelimiter_ = FALSE;
 
+            dataModCheckDone_ = FALSE;
+
 	    if (hdfsScanTdb().getHdfsFileInfoList()->isEmpty())
 	      {
                 step_ = CHECK_FOR_DATA_MOD_AND_DONE;
@@ -420,8 +422,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
 	    hdfsScanBufMaxSize_ = hdfsScanTdb().hdfsBufSize_;
 
-            dataModCheckDone_ = FALSE;
-
 	    if (numRanges_ > 0)
               step_ = CHECK_FOR_DATA_MOD;
             else
@@ -439,6 +439,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
             if (NOT dataModCheckDone_)
               {
+                dataModCheckDone_ = TRUE;
+
                 Lng32 numOfPartLevels = hdfsScanTdb().numOfPartCols_;
 
                 if (hdfsScanTdb().hdfsDirsToCheck())
@@ -446,13 +448,15 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                     // TBD
                   }
              
+                Int64 failedModTS = -1;
                 retcode = ExpLOBinterfaceDataModCheck
                   (lobGlob_,
                    dirPath,
                    hdfsScanTdb().hostName_,
                    hdfsScanTdb().port_,
                    modTS,
-                   numOfPartLevels);
+                   numOfPartLevels,
+                   failedModTS);
               
                 if (retcode < 0)
                   {
@@ -475,15 +479,19 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
                 if (retcode == 1) // check failed
                   {
+                    char errStr[200];
+                    str_sprintf(errStr, "genModTS = %Ld, failedModTS = %Ld", 
+                                modTS, failedModTS);
+
                     ComDiagsArea * diagsArea = NULL;
                     ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+                                    (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR), NULL,
+                                    NULL, NULL, NULL,
+                                    errStr);
                     pentry_down->setDiagsArea(diagsArea);
                     step_ = HANDLE_ERROR_AND_DONE;
                     break;
                   }
-
-                dataModCheckDone_ = TRUE;
               }
 
             if (step_ == CHECK_FOR_DATA_MOD_AND_DONE)

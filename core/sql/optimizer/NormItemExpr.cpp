@@ -4689,6 +4689,38 @@ void ItmSeqOffset::transformNode(NormWA & normWARef,
 
 } // ItmSeqOffset::transformNode()
 
+void ItmLagOlapFunction::transformNode(NormWA & normWARef,
+                                 ExprValueId & locationOfPointerToMe,
+                                 ExprGroupId & introduceSemiJoinHere,
+                                 const ValueIdSet & externalInputs)
+{
+  if (nodeIsTransformed())
+    {
+      locationOfPointerToMe = getReplacementExpr();
+      return;
+    }
+
+  ItemExpr::transformNode(normWARef, locationOfPointerToMe,
+                          introduceSemiJoinHere, externalInputs);
+
+} // ItmSeqOffset::transformNode()
+
+void ItmLeadOlapFunction::transformNode(NormWA & normWARef,
+                                 ExprValueId & locationOfPointerToMe,
+                                 ExprGroupId & introduceSemiJoinHere,
+                                 const ValueIdSet & externalInputs)
+{
+  if (nodeIsTransformed())
+    {
+      locationOfPointerToMe = getReplacementExpr();
+      return;
+    }
+
+  ItemExpr::transformNode(normWARef, locationOfPointerToMe,
+                          introduceSemiJoinHere, externalInputs);
+
+} // ItmLeadOlapFunction::transformNode()
+
 // ***********************************************************************
 // $$$$ ItmSeqDiff1
 // member functions for class ItmSeqDiff1

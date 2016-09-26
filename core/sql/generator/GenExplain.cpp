@@ -570,8 +570,7 @@ FileScan::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   // now get columns_retrieved
   description += "columns_retrieved: ";
   char buf[27];
-  //sprintf(buf, "%d ", retrievedCols().entries());
-  sprintf(buf, "%d ", getIndexDesc()->getIndexColumns().entries());
+  sprintf(buf, "%d ", retrievedCols().entries());
   description += buf;
 
   // now get the probe counters
@@ -1357,10 +1356,16 @@ static NABoolean isInternalCQD(DefaultConstants attr)
 // regressions run. That can cause explain plan diffs.
 // Specify those cqds in these methods so they are not displayed.
 // This method is only called during regressions run.
-static NABoolean displayDuringRegressRun(DefaultConstants attr)
+NABoolean displayDuringRegressRun(DefaultConstants attr)
 {
   if ((attr == TRAF_READ_OBJECT_DESC) ||
-      (attr == TRAF_STORE_OBJECT_DESC))
+      (attr == TRAF_STORE_OBJECT_DESC) ||
+      (attr == ALLOW_INCOMPATIBLE_ASSIGNMENT) ||
+      (attr == ALLOW_INCOMPATIBLE_COMPARISON) ||
+      (attr == ALLOW_INCOMPATIBLE_OPERATIONS) ||
+      (attr == ALLOW_FIRSTN_IN_SUBQUERIES) ||
+      (attr == ALLOW_ORDER_BY_IN_SUBQUERIES) ||
+      (attr == GROUP_OR_ORDER_BY_EXPR))
     return FALSE;
   else
     return TRUE;
@@ -2029,6 +2034,14 @@ GenericUpdate::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     sprintf(lbuf, "%d ", ((ComTdbHbaseAccess *)tdb)->getTrafLoadFlushSize());
     description += lbuf;
   }
+
+  if (natable->isSeabaseTable())
+    {
+      if (((ComTdbHbaseAccess *)tdb)->useRegionXn())
+        description += "region_transaction: enabled ";
+      else if (((ComTdbHbaseAccess *)tdb)->useHbaseXn())
+        description += "hbase_transaction: used ";
+    }
 
   return 0;
 }

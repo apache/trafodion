@@ -2964,7 +2964,7 @@ RelExpr *Intersect::bindNode(BindWA *bindWA)
   //
   if(CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON)
   {
-    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
+    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported , not fully tested
         << DgString0("INTERSECT");             // ##
     bindWA->setErrStatus();                    // ##
     if (bindWA->errStatus()) return NULL;      // ##
@@ -3056,7 +3056,7 @@ RelExpr *Except::bindNode(BindWA *bindWA)
   //
   if(CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON)
   {
-    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
+    *CmpCommon::diags() << DgSqlCode(-3022)    // ## EXCEPT not yet supported: not fully tested
         << DgString0("EXCEPT");             // ##
     bindWA->setErrStatus();                    // ##
     if (bindWA->errStatus()) return NULL;      // ##
@@ -3097,7 +3097,7 @@ RelExpr *Except::bindNode(BindWA *bindWA)
     return this;
   }
 
-  // Needs to be removed when supporting get_next for INTERSECT
+  // Needs to be removed when supporting get_next for EXCEPT
   if (getGroupAttr()->isEmbeddedUpdateOrDelete()) {
     *CmpCommon::diags() << DgSqlCode(-4160)
                 << DgString0(fmtdList1)
@@ -3796,11 +3796,9 @@ static void fixUpSelectIndeciesInSet(ValueIdSet & expr,
 
 RelRoot * RelRoot::transformOrderByWithExpr(BindWA *bindWA)
 {
-  NABoolean specialMode = (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON);
-  
+  NABoolean specialMode = (CmpCommon::getDefault(GROUP_OR_ORDER_BY_EXPR) == DF_ON);
   if (NOT specialMode)
     return this;
-  
   ItemExprList origSelectList(bindWA->wHeap());
   ItemExprList origOrderByList(bindWA->wHeap());
   
@@ -3858,9 +3856,17 @@ RelRoot * RelRoot::transformOrderByWithExpr(BindWA *bindWA)
           NABoolean found = FALSE;
           Lng32 selListIndex = 0;
           ItemExpr * selItem = NULL;
+          ItemExpr * renameColEntry = NULL;
           while ((NOT found) && (selListIndex < selListCount))
             {
               selItem = origSelectList[selListIndex];
+              
+              if (selItem->getOperatorType() == ITM_RENAME_COL)
+                {
+                  renameColEntry = selItem;
+                  selItem = selItem->child(0);
+                }
+              
               found = currOrderByItemExpr->duplicateMatch(*selItem);
               if (NOT found)
                 selListIndex++;
@@ -3924,17 +3930,10 @@ RelRoot * RelRoot::transformOrderByWithExpr(BindWA *bindWA)
 RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
 {
   NABoolean specialMode =
-    ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON) ||
-     (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON));
-
-  if ((CmpCommon::getDefault(GROUP_BY_USING_ORDINAL) == DF_OFF) &&
-      (NOT specialMode))
-    return this;
+    (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON);
 
   // make sure child of root is a groupby node.or a sequence node 
   // whose child is a group by node
-  // And has groupby clause, if in specialMode
   if (child(0)->getOperatorType() != REL_GROUPBY && 
       (child(0)->getOperatorType() != REL_SEQUENCE || 
        (child(0)->child(0) && child(0)->child(0)->getOperatorType()!=REL_GROUPBY)))
@@ -3985,7 +3984,7 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
   NABoolean foundSelIndex = FALSE;
 
   NABoolean lookForRenamedCols = TRUE;
-  if ((CmpCommon::getDefault(GROUP_BY_USING_ORDINAL) != DF_ALL) &&
+  if ((CmpCommon::getDefault(GROUP_OR_ORDER_BY_EXPR) == DF_OFF) &&
       (NOT specialMode))
     lookForRenamedCols = FALSE;
 
@@ -4073,10 +4072,11 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
 			selListIndex = j;
 			listOfExpressions.insert(j);
 			
-			selectListEntry->setInGroupByOrdinal(TRUE);  		    
+                        selectListEntry->setInGroupByOrdinal(TRUE);
+                        selectListEntry->setIsGroupByExpr(TRUE);
 
 			if (renameColEntry)
-			  renameColEntry->setInGroupByOrdinal(TRUE);  		      
+			  renameColEntry->setInGroupByOrdinal(TRUE);
 		      }
 		      else
 			found = FALSE;
@@ -4247,16 +4247,13 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
       grby->addGroupExprTree(newGroupByList.convertToItemExpr());
     }
 
-  if ((CmpCommon::getDefault(GROUP_BY_USING_ORDINAL) != DF_OFF) ||
-      (specialMode)) {
-    grby->setParentRootSelectList(getCompExprTree());
-  }
+  grby->setParentRootSelectList(getCompExprTree());
 
   // if order by and group by are specified, check to see that
   // all columns specified in the order by clause are also present
   // in the group by clause.
   allOrderByRefsInGby_ = FALSE;
-  if ((specialMode) &&
+  if (
       (getOrderByTree()) &&
       (grby->getGroupExprTree() != NULL))
     {
@@ -4306,9 +4303,7 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
 RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
 {
   NABoolean specialMode =
-    ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON) ||
-     (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON));
+    (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON);
 
   // make sure child of root is a groupby node.or a sequence node 
   // whose child is a group by node
@@ -4481,9 +4476,7 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
   // recreate the groupExpr expression after updating the value ids
   grby->setGroupExpr (groupExprCpy);
 
-  if (((CmpCommon::getDefault(GROUP_BY_USING_ORDINAL) != DF_OFF) ||
-       (specialMode)) &&
-      (grby->selPredTree()) &&
+  if ((grby->selPredTree()) &&
       (grby->selIndexInHaving()))
     {
       setValueIdForRenamedColsInHaving(bindWA, grby->selPredTree(),
@@ -5386,7 +5379,8 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     bindWA->setHostArraysArea(tempWA);
   }
 
-  if (bindWA->errStatus()) return NULL;
+  if (bindWA->errStatus()) 
+    return NULL;
 
   // For SPJ, store the spOutParams_ from the bindWA in RelRoot,
   // We need it at codegen
@@ -5771,11 +5765,9 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
       }
       //10-031125-1549 -end
 
-      NABoolean specialMode =
-        ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-         (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON) ||
-         (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON));
+      NABoolean specialMode = TRUE;
       
+
       // In specialMode, we want to support order by on columns
       // which are not explicitely specified in the select list.
       // Ex: select a+1 from t group by a order by a;
@@ -6845,10 +6837,6 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
 
 RelExpr *GroupByAgg::bindNode(BindWA *bindWA)
 {
-  NABoolean specialMode =
-    ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON));
-
   if (nodeIsBound())
   {
     bindWA->getCurrentScope()->setRETDesc(getRETDesc());
@@ -6917,10 +6905,7 @@ RelExpr *GroupByAgg::bindNode(BindWA *bindWA)
       vid.getItemExpr()->setIsGroupByExpr(TRUE);
     }
 
-
-    if (((CmpCommon::getDefault(GROUP_BY_USING_ORDINAL) != DF_OFF) ||
-        (specialMode)) &&
-        (groupExprTree != NULL) &&
+    if ((groupExprTree != NULL) &&
         (getParentRootSelectList() != NULL))
       {
         RETDesc * childRETDesc = child(0)->getRETDesc();
@@ -9884,7 +9869,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
             // If we allow incompatible type assignments, also include the
             // added cast into the updateToSelectMap
             assignSrcType.getTypeQualifier() !=  sourceType.getTypeQualifier() &&
-            CmpCommon::getDefault(ALLOW_INCOMPATIBLE_ASSIGNMENT) == DF_ON))
+            CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON))
         {
           updateToSelectMap().addMapEntry(target,assign->getSource());
         }
@@ -13902,7 +13887,8 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
                   (CmpCommon::diags()->mainSQLCODE() == -4193) ||
                   (CmpCommon::diags()->mainSQLCODE() == -4155) || // define not supported
                   (CmpCommon::diags()->mainSQLCODE() == -4086) || // catch Define Not Found error
-                  (CmpCommon::diags()->mainSQLCODE() == -30044))  // default schema access error
+                  (CmpCommon::diags()->mainSQLCODE() == -30044)|| // default schema access error
+                  (CmpCommon::diags()->mainSQLCODE() == -1398))   // uninit hbase
                     return this;
       
               CmpCommon::diags()->clear();

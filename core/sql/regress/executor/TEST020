@@ -42,6 +42,7 @@ drop table t020t3 cascade;
 ?section testcases
 
 control query default auto_query_retry_warnings 'ON';
+set session default ESP_RELEASE_WORK_TIMEOUT '-2';
 
 -- TEST 1
 create table t020t1

@@ -37,6 +37,7 @@
 
 #include "CmpSeabaseDDLincludes.h"
 #include "CmpSeabaseDDLrepos.h"
+#include "logmxevent_traf.h"
 
 
 short CmpSeabaseDDL::createRepos(ExeCliInterface * cliInterface)
@@ -290,10 +291,10 @@ short CmpSeabaseDDL::alterRenameRepos(ExeCliInterface * cliInterface,
         continue;
 
       if (newToOld)
-        str_sprintf(queryBuf, "alter table %s.\"%s\".%s rename to %s; ",
+        str_sprintf(queryBuf, "alter table %s.\"%s\".%s rename to %s skip view check; ",
                     getSystemCatalog(), SEABASE_REPOS_SCHEMA, rti.newName, rti.oldName);
       else
-        str_sprintf(queryBuf, "alter table %s.\"%s\".%s rename to %s; ",
+        str_sprintf(queryBuf, "alter table %s.\"%s\".%s rename to %s skip view check; ",
                     getSystemCatalog(), SEABASE_REPOS_SCHEMA, rti.oldName, rti.newName);
         
       if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
@@ -356,6 +357,85 @@ short CmpSeabaseDDL::copyOldReposToNew(ExeCliInterface * cliInterface)
     } // for
 
   return 0;
+}
+
+short CmpSeabaseDDL::dropAndLogReposViews(ExeCliInterface * cliInterface,
+                                          NABoolean & someViewSaved /* out */)
+{
+  short retcode = 0;  // assume success
+  someViewSaved = FALSE;
+
+  // For each table that has been migrated, drop any views that existed
+  // on the old table and save their view text. (In the future, we can
+  // add logic to recreate the views on the new tables.)
+
+  for (Int32 i = 0; i < sizeof(allReposUpgradeInfo)/sizeof(MDUpgradeInfo); i++)
+    {
+      const MDUpgradeInfo &rti = allReposUpgradeInfo[i];
+
+      if ((! rti.oldName) || (NOT rti.upgradeNeeded))
+        continue;
+
+      Int64 tableUID = getObjectUID(cliInterface,
+        getSystemCatalog(), SEABASE_REPOS_SCHEMA, rti.oldName,
+        COM_BASE_TABLE_OBJECT_LIT, NULL, NULL, FALSE, FALSE /* ignore error */);
+
+      if (tableUID != -1)  // if we got it
+        {
+          NAList<NAString> viewNameList;
+          NAList<NAString> viewDefnList;
+ 
+          short retcode1 = 
+             saveAndDropUsingViews(tableUID, cliInterface,
+                                   viewNameList /* out */,viewDefnList /* out */);
+          if (retcode1)
+            retcode = -1;  // couldn't get views for old repository table
+          else if (viewDefnList.entries() > 0)  // if we dropped some views
+            {
+              // Save the view text in the logs. 
+              //
+              // Aside: 
+              // 
+              // In the future we could add logic to recreate the views. One
+              // complication is that we'd need to preserve the privileges as
+              // well, so replaying the view text is not enough. Two possible
+              // designs are:
+              //
+              // 1. Add logic to capture privileges as GRANT statements that can
+              // be replayed, or
+              //
+              // 2. Change repository upgrade to be like metadata upgrade; that is
+              // instead of using vanilla DDL to drop and recreate tables, we do
+              // HBase rename trickery underneath. That preserves object UIDs and
+              // allows the view definitions to survive the upgrade untouched.
+              //
+              // With either of these designs, the question of what to do about
+              // views that are no longer valid needs to be addressed. For example,
+              // a view might reference a column that no longer exists. In the
+              // first design, the view text replay will fail, and we can just
+              // log the view text as we have done here. In the second design,
+              // we have to face the possibility that there is invalid view text
+              // already in the metadata. Perhaps we can compile a query that 
+              // does a select * from each view and if that returns an error we
+              // can either drop the view and log its text, or perhaps mark the
+              // view as invalid.
+              //
+              // End aside.
+              for (int i = 0; i < viewDefnList.entries(); i++)
+                {
+                  SQLMXLoggingArea::logSQLMXPredefinedEvent(
+                    "The following view on a Repository table was dropped as part of upgrade processing:", LL_ERROR);
+                  SQLMXLoggingArea::logSQLMXPredefinedEvent(
+                    viewDefnList[i].data(), LL_ERROR);               
+                }          
+              someViewSaved = TRUE;       
+            }
+        }
+      else
+        retcode = -1;  // couldn't get objectUID for old repository table
+    }
+          
+  return retcode;
 }
 
 short CmpSeabaseDDL::upgradeRepos(ExeCliInterface * cliInterface,
@@ -506,7 +586,7 @@ short CmpSeabaseDDL::upgradeReposComplete(ExeCliInterface * cliInterface,
         {
         case 0:
           {
-            mdui->setMsg("Upgrade Repository: Drop Old Repository");
+            mdui->setMsg("Upgrade Repository: Check for views on Repository");
             mdui->subStep()++;
             mdui->setEndStep(FALSE);
         
@@ -515,6 +595,51 @@ short CmpSeabaseDDL::upgradeReposComplete(ExeCliInterface * cliInterface,
           break;
 
         case 1:
+          {
+            // If there were views on the old Repository tables, they are
+            // still there, by virtue of the fact that we did "SKIP VIEW CHECK"
+            // on the ALTER TABLE RENAME. Now we will drop the views and 
+            // capture their view definitions (which will contain the old table
+            // name, not the renamed table name) and log the view text so that
+            // the user can recreate these views later if he/she wishes.
+            // In the future, perhaps, we will migrate these views automatically.
+            NABoolean someViewSaved = FALSE;
+            dropAndLogReposViews(cliInterface,someViewSaved /* out */);
+
+            mdui->setMsg("Upgrade Repository: View check done");
+            mdui->subStep()++;
+            if (!someViewSaved)
+              mdui->subStep()++;  // skip view text saved message step
+            mdui->setEndStep(FALSE);
+       
+            return 0;
+          }
+          break;
+
+        case 2:
+          {
+            // This state is here in case we want to report to the user that
+            // there was a view that was dropped. But we saved the view text
+            // in the logs.
+            mdui->setMsg("One or more views on a Repository table were dropped. View text was saved in the logs. Look for 'CREATE VIEW' to find it.");
+            mdui->subStep()++;
+            mdui->setEndStep(FALSE);
+        
+            return 0;
+          }
+          break;
+
+        case 3:
+          {
+            mdui->setMsg("Upgrade Repository: Drop Old Repository");
+            mdui->subStep()++;
+            mdui->setEndStep(FALSE);
+        
+            return 0;
+          }
+          break;
+
+        case 4:
           {
             // drop old repository; ignore errors
             dropRepos(cliInterface, TRUE/*old repos*/, FALSE/*no schema drop*/);

@@ -126,13 +126,13 @@ do
                   exit -1
                fi
                if [[ $supportedHBase12 -eq "1" ]]; then
-                  CDH_VERSION="5.7"
+                  cdhVersion="5.7"
                else
                   cdhVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | grep "cdh5.4.*" | wc -l)
                   if [[ "$cdhVersion" -ge "1" ]]; then
-                     CDH_VERSION="5.4"
+                     cdhVersion="5.4"
                   else
-                     CDH_VERSION="5.5"
+                     cdhVersion="5.5"
                   fi
                fi
             else
@@ -169,8 +169,8 @@ sed -i '/HDFS\=/d' $TRAF_CONFIG
 echo "export HDFS=\"$HDFS\"" >> $TRAF_CONFIG
 sed -i '/ZOOKEEPER\=/d' $TRAF_CONFIG
 echo "export ZOOKEEPER=\"$ZOOKEEPER\"" >> $TRAF_CONFIG
-sed -i '/CDH_VERSION\=/d' $TRAF_CONFIG
-echo "export CDH_VERSION=\"$CDH_VERSION\"" >> $TRAF_CONFIG
+sed -i '/cdhVersion\=/d' $TRAF_CONFIG
+echo "export cdhVersion=\"$cdhVersion\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 sudo rm -rf hbaseVersion.txt
 
@@ -307,39 +307,42 @@ userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
 
 if [[ "$userForTrafodion" != "0" ]]; then
 
-   isTrafUp=$(sudo su $TRAF_USER --login --command "sqcheck" 2>/dev/null)
-   returnCode=$?
+   if [[ -e $SQ_ROOT/sql/scripts/sqcheck ]]; then
 
-   if [[ "$returnCode" -ne "255" ]]; then
-      echo "***ERROR: Trafodion is still has processes running."
-      echo -n "Stop Trafodion (Y/N), default is N: "
-      read answer
+      isTrafUp=$(sudo su $TRAF_USER --login --command "sqcheck" 2>/dev/null)
+      returnCode=$?
 
-      if [ -z $answer ]; then
-         echo "***ERROR: Please stop Trafodion then rerun trafodion_install"
-         echo "***ERROR: Change to trafodion userid then do a 'sqstop'"
-         exit -1
-      else
-         if [[ "${answer}" =~ ^[Yy]$ ]]; then
-            echo "***INFO: Stopping Trafodion instance."
-            sudo su $TRAF_USER --login --command "sqstop"
-            sudo su $TRAF_USER --login --command "ckillall"
-            sudo su $TRAF_USER --login --command "dcsstop"
-            sudo su $TRAF_USER --login --command "reststop"
-         else
+      if [[ "$returnCode" -ne "255" ]]; then
+         echo "***ERROR: Trafodion is still has processes running."
+         echo -n "Stop Trafodion (Y/N), default is N: "
+         read answer
+
+         if [ -z $answer ]; then
             echo "***ERROR: Please stop Trafodion then rerun trafodion_install"
-            echo "***ERROR: Change to trafodion user id then do a 'sqstop'"
+            echo "***ERROR: Change to trafodion userid then do a 'sqstop'"
             exit -1
+         else
+            if [[ "${answer}" =~ ^[Yy]$ ]]; then
+               echo "***INFO: Stopping Trafodion instance."
+               sudo su $TRAF_USER --login --command "sqstop"
+               sudo su $TRAF_USER --login --command "ckillall"
+               sudo su $TRAF_USER --login --command "dcsstop"
+               sudo su $TRAF_USER --login --command "reststop"
+            else
+               echo "***ERROR: Please stop Trafodion then rerun trafodion_install"
+               echo "***ERROR: Change to trafodion user id then do a 'sqstop'"
+               exit -1
+            fi
          fi
       fi
-   fi
 
-   #This is here until sqstop or ckillall stops dcs and rest
-   isDcsStopped=$(sudo su $TRAF_USER --login --command "jps" | wc -w)
-   if [[ "$isDcsStopped" -gt "2" ]]; then
-      echo "***ERROR: DCS and Rest may still be running, will try to stop them."
-      sudo su $TRAF_USER --login --command "dcsstop" 
-      sudo su $TRAF_USER --login --command "reststop"
+      #This is here until sqstop or ckillall stops dcs and rest
+      isDcsStopped=$(sudo su $TRAF_USER --login --command "jps" | wc -w)
+      if [[ "$isDcsStopped" -gt "2" ]]; then
+         echo "***ERROR: DCS and Rest may still be running, will try to stop them."
+         sudo su $TRAF_USER --login --command "dcsstop" 
+         sudo su $TRAF_USER --login --command "reststop"
+      fi
    fi
 fi
 

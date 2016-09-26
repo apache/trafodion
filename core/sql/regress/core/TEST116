@@ -193,6 +193,8 @@ select count(*) from "_MD_".objects where schema_name = 'T116SCH1'
 rollback work;
 get tables in schema t116sch1;
 
+set schema sch;
+
 -- ddl with autocommit off
 set transaction autocommit off;
 drop table if exists t116t2;
@@ -209,6 +211,12 @@ invoke t116t2;
 purgedata t116t2;
 alter table t116t2 alter column a largeint;
 cleanup table t116t2;
+rollback work;
+set transaction autocommit on;
+drop table if exists t116t2;
+create table t116t2 (a int) attribute hbase format;
+set transaction autocommit off;
+alter table t116t2 alter column a largeint;
 rollback work;
 set transaction autocommit on;
 
@@ -231,6 +239,135 @@ create unique index t116t5_i2 on t116t5(c3) no populate;
 populate index t116t5_i2 on t116t5;
 populate index t116t5_i2 on t116t5;
 
+-- region transactions support
+create table t116t6 (a int not null primary key, b int);
+
+-- scenario 1, concurrent hbase transaction with insert(checkAndPut)
+begin work;
+insert into t116t6 values (1,1);
+
+-- insert a row using a concurrent hbase xn
+sh sqlci -iTEST116\(concurrent_hbase_xn_ins\) >> LOG116;
+
+-- should not show conflict
+commit work;
+select * from t116t6;
+
+-- scenario 2, concurrent region transaction with insert(checkAndPut)
+delete from t116t6;
+begin work;
+insert into t116t6 values (1,1);
+
+-- insert a row using a concurrent region xn
+sh sqlci -iTEST116\(concurrent_region_xn_ins\) >> LOG116;
+
+-- should show conflict
+commit work;
+select * from t116t6;
+
+-- scenario 3, concurrent hbase transaction with upsert(put)
+delete from t116t6;
+begin work;
+upsert into t116t6 values (1,1);
+
+-- upsert a row using a concurrent hbase xn
+sh sqlci -iTEST116\(concurrent_hbase_xn_ups\) >> LOG116;
+
+-- should not show conflict
+commit work;
+select * from t116t6;
+
+-- scenario 4, concurrent region transaction with upsert(put)
+delete from t116t6;
+begin work;
+upsert into t116t6 values (1,1);
+
+-- insert a row using a concurrent region xn
+sh sqlci -iTEST116\(concurrent_region_xn_ups\) >> LOG116;
+
+-- should show conflict
+commit work;
+select * from t116t6;
+
+-- scenario 5, concurrent hbase transaction with delete
+delete from t116t6;
+insert into t116t6 values (1,1);
+begin work;
+delete from t116t6 where a = 1 and b > 0;
+
+-- delete a row using a concurrent hbase xn
+sh sqlci -iTEST116\(concurrent_hbase_xn_del\) >> LOG116;
+
+-- should not show conflict
+commit work;
+select * from t116t6;
+
+-- scenario 6, concurrent region transaction with delete
+delete from t116t6;
+insert into t116t6 values (1,1);
+begin work;
+delete from t116t6 where a = 1 and b > 0;
+
+-- delete a row using a concurrent region xn
+sh sqlci -iTEST116\(concurrent_region_xn_del\) >> LOG116;
+
+-- should show conflict
+commit work;
+select * from t116t6;
+
+-- scenario 7, concurrent hbase transaction with checkanddelete
+delete from t116t6;
+insert into t116t6 values (1,1);
+begin work;
+delete from t116t6 where a = 1;
+
+-- delete a row using a concurrent hbase xn
+sh sqlci -iTEST116\(concurrent_hbase_xn_checkanddel\) >> LOG116;
+
+-- should not show conflict
+commit work;
+select * from t116t6;
+
+-- scenario 8, concurrent region transaction with checkanddelete
+delete from t116t6;
+insert into t116t6 values (1,1);
+begin work;
+delete from t116t6 where a = 1;
+
+-- delete a row using a concurrent region xn
+sh sqlci -iTEST116\(concurrent_region_xn_checkanddel\) >> LOG116;
+
+-- should show conflict
+commit work;
+select * from t116t6;
+
+-- scenario 9, concurrent hbase transaction with checkandupdate
+delete from t116t6;
+insert into t116t6 values (1,1);
+begin work;
+update t116t6 set b = 333 where a = 1;
+
+-- update row using a concurrent hbase xn
+sh sqlci -iTEST116\(concurrent_hbase_xn_checkandupd\) >> LOG116;
+
+-- should not show conflict
+commit work;
+select * from t116t6;
+
+-- scenario 10, concurrent region transaction with checkandupdate
+delete from t116t6;
+insert into t116t6 values (1,1);
+begin work;
+update t116t6 set b = 333 where a = 1;
+
+-- update row using a concurrent region xn
+sh sqlci -iTEST116\(concurrent_region_xn_checkandupd\) >> LOG116;
+
+-- should show conflict
+commit work;
+select * from t116t6;
+
+
 obey TEST116(clean_up);
 log;
 exit;
@@ -243,10 +380,71 @@ begin work;
 create table t116t1 (a int);
 commit work;
 
+?section concurrent_hbase_xn_ins
+cqd traf_use_region_xn 'OFF';
+prepare s from insert into trafodion.sch.t116t6 values (1,2);
+explain options 'f' s;
+execute s;
+
+?section concurrent_hbase_xn_ups
+cqd traf_use_region_xn 'OFF';
+prepare s from upsert into trafodion.sch.t116t6 values (1,2);
+explain options 'f' s;
+execute s;
+
+?section concurrent_region_xn_ins
+cqd traf_use_region_xn 'ON';
+prepare s from insert into trafodion.sch.t116t6 values (1,2);
+explain options 'f' s;
+execute s;
+
+?section concurrent_region_xn_ups
+cqd traf_use_region_xn 'ON';
+prepare s from upsert into trafodion.sch.t116t6 values (1,2);
+explain options 'f' s;
+execute s;
+
+?section concurrent_hbase_xn_del
+cqd traf_use_region_xn 'OFF';
+prepare s from delete from trafodion.sch.t116t6 where a = 1 and b > 0;
+explain options 'f' s;
+execute s;
+
+?section concurrent_region_xn_del
+cqd traf_use_region_xn 'ON';
+prepare s from delete from trafodion.sch.t116t6 where a = 1 and b > 0;
+explain options 'f' s;
+execute s;
+
+?section concurrent_hbase_xn_checkanddel
+cqd traf_use_region_xn 'OFF';
+prepare s from delete from trafodion.sch.t116t6 where a = 1;
+explain options 'f' s;
+execute s;
+
+?section concurrent_region_xn_checkanddel
+cqd traf_use_region_xn 'ON';
+prepare s from delete from trafodion.sch.t116t6 where a = 1;
+explain options 'f' s;
+execute s;
+
+?section concurrent_hbase_xn_checkandupd
+cqd traf_use_region_xn 'OFF';
+prepare s from update trafodion.sch.t116t6 set b = 111 where a = 1;
+explain options 'f' s;
+execute s;
+
+?section concurrent_region_xn_checkandupd
+cqd traf_use_region_xn 'ON';
+prepare s from update trafodion.sch.t116t6 set b = 111 where a = 1;
+explain options 'f' s;
+execute s;
+
 ?section clean_up
 drop table t116t1;
 drop table t116t2;
 drop table t116t3;
 drop table t116t4;
 drop table t116t5;
+drop table t116t6;
 

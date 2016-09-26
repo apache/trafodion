@@ -1713,7 +1713,7 @@ short ExExeUtilHBaseBulkLoadTcb::setCQDs()
   if (holdAndSetCQD("COMP_BOOL_226", "ON") < 0) { return -1;}
   // next cqd required to allow load into date/timestamp Traf columns from string Hive columns.
   // This is a common use case. Cqd can be removed when Traf hive access supports more Hive types.
-  if (holdAndSetCQD("ALLOW_INCOMPATIBLE_ASSIGNMENT", "ON") < 0) { return -1;}
+  if (holdAndSetCQD("ALLOW_INCOMPATIBLE_OPERATIONS", "ON") < 0) { return -1;}
   if (hblTdb().getForceCIF())
   {
     if (holdAndSetCQD("COMPRESSED_INTERNAL_FORMAT", "ON") < 0) {return -1; }
@@ -1749,7 +1749,7 @@ short ExExeUtilHBaseBulkLoadTcb::restoreCQDs()
 {
   if (restoreCQD("COMP_BOOL_226") < 0) { return -1;}
   if (restoreCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES") < 0)  { return -1;}
-  if (restoreCQD("ALLOW_INCOMPATIBLE_ASSIGNMENT") < 0)  { return -1;}
+  if (restoreCQD("ALLOW_INCOMPATIBLE_OPERATIONS") < 0)  { return -1;}
   if (hblTdb().getForceCIF())
   {
     if (restoreCQD("COMPRESSED_INTERNAL_FORMAT") < 0) { return -1;}
