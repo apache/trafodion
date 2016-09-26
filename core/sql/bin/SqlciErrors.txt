@@ -1372,6 +1372,7 @@ $1~String1 --------------------------------
 4381 42000 99999 BEGINNER MINOR LOGONLY Holdable cursor attribute is incompatible for the isolation level.
 4382 42000 99999 BEGINNER MINOR LOGONLY Holdable cursor attribute cannot be set for a CALL statement.
 4383 ZZZZZ 99999 BEGINNER MINOR DBADMIN A float value cannot be inserted into a numeric data type column $0~ColumnName, if the column is part of the partitioning key.
+4384 ZZZZZ 99999 BEGINNER MINOR DBADMIN GROUP BY ROLLUP clause not allowed for this statement. Reason: $0~String0
 4390 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The OLAP History row size exceeds the limit of $0~Int0 bytes
 4391 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Paramaters and outer references in the PARTITION BY or ORDER BY clause of a window function are not supported.
 4400 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Internal error

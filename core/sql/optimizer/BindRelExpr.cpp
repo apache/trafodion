@@ -4117,7 +4117,6 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
       if (compExprTreeIsNull)
         return this;
 
-
       if (currGroupByItemExpr->getOperatorType() == ITM_SEL_INDEX)
         {
           SelIndex * si = (SelIndex*)currGroupByItemExpr;
@@ -4305,7 +4304,7 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
   NABoolean specialMode =
     (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON);
 
-  // make sure child of root is a groupby node.or a sequence node 
+  // make sure child of root is a groupby node or a sequence node 
   // whose child is a group by node
   if (child(0)->getOperatorType() != REL_GROUPBY && 
        (child(0)->getOperatorType() != REL_SEQUENCE || 
@@ -4327,6 +4326,51 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
 
   DCMPASSERT(grby != NULL);
 
+  if (grby->isRollup())
+    {
+      if (grby->groupExpr().entries() != grby->groupExprList().entries())
+        {
+          *CmpCommon::diags() << DgSqlCode(-4384)
+                              << DgString0("Cannot have duplicate entries.");
+          
+          bindWA->setErrStatus();
+          return NULL;
+        }
+
+      for (ValueId valId = grby->aggregateExpr().init();
+           grby->aggregateExpr().next(valId);
+           grby->aggregateExpr().advance(valId))
+        {
+          ItemExpr * ae = valId.getItemExpr();
+
+          // right now, only support groupby rollup on min/max/sum/avg/count
+          if (NOT ((ae->getOperatorType() == ITM_MIN) ||
+                   (ae->getOperatorType() == ITM_MAX) ||
+                   (ae->getOperatorType() == ITM_SUM) ||
+                   (ae->getOperatorType() == ITM_AVG) ||
+                   (ae->getOperatorType() == ITM_COUNT) ||
+                   (ae->getOperatorType() == ITM_COUNT_NONULL)))
+            {
+              *CmpCommon::diags() << DgSqlCode(-4384)
+                                  << DgString0("Unsupported rollup aggregate function.");
+              
+              bindWA->setErrStatus();
+              return NULL;
+            }
+          
+          // right now, only support groupby rollup on non-distinct aggrs
+          Aggregate * ag = (Aggregate*)ae;
+          if (ag->isDistinct())
+            {
+              *CmpCommon::diags() << DgSqlCode(-4384)
+                                  << DgString0("Distinct rollup aggregates not supported.");
+              
+              bindWA->setErrStatus();
+              return NULL;
+            }
+        }
+    }
+
   ValueIdSet &groupExpr = grby->groupExpr();
   // copy of groupExpr used to identify the changed
   // value ids
@@ -4336,8 +4380,6 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
   // these gets expanded at bind time, and so the select index have to
   // be offset with the expansion number since the sel_index number 
   // reflects the select list at parse time.
-
-
   for (ValueId vid = groupExpr.init(); 
        groupExpr.next(vid);
        groupExpr.advance(vid))
@@ -4351,8 +4393,11 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
           si->setValueId(grpById);
           if (child(0)->getOperatorType() != REL_SEQUENCE)
           {
-          groupExprCpy.remove(vid);
-          groupExprCpy.insert(grpById);
+            groupExprCpy.remove(vid);
+            groupExprCpy.insert(grpById);
+
+            CollIndex idx = grby->groupExprList().index(vid);
+            grby->groupExprList()[idx] = grpById;
           }
           else
           {  //sequence
@@ -4471,6 +4516,23 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
             nacol->setReferencedForSingleIntHist();
           }
        } // found Sel Index
+    }
+
+  ValueId valId;
+  if (grby->isRollup())
+    {
+      for (CollIndex i = 0; i < grby->groupExprList().entries(); i++)
+        {
+          valId = grby->groupExprList()[i];
+          
+          if (NOT valId.getType().supportsSQLnull())
+            {
+              *CmpCommon::diags() << DgSqlCode(-4384)
+                                  << DgString0("Grouped columns must be nullable.");
+              bindWA->setErrStatus();
+              return NULL;
+            }
+        }
     }
 
   // recreate the groupExpr expression after updating the value ids
@@ -5042,13 +5104,8 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 		 NULL, NULL, NULL, child(0), PARSERHEAP());
 	      le->setHandleInStringFormat(FALSE);
 	      setChild(0, le);
-	 
 	    }
-	     
-
 	}
-	
-      
 
       processRownum(bindWA);
       
@@ -6893,15 +6950,17 @@ RelExpr *GroupByAgg::bindNode(BindWA *bindWA)
   ItemExpr *groupExprTree = removeGroupExprTree();
   if (groupExprTree) {
     currScope->context()->inGroupByClause() = TRUE;
-    groupExprTree->convertToValueIdSet(groupExpr(), bindWA, ITM_ITEM_LIST);
+    groupExprTree->convertToValueIdList(groupExprList(), bindWA, ITM_ITEM_LIST);
 
     currScope->context()->inGroupByClause() = FALSE;
     if (bindWA->errStatus()) return this;
 
-    ValueIdList groupByList(groupExpr());
-    for (CollIndex i = 0; i < groupByList.entries(); i++)
+    ValueIdSet vidSet(groupExprList());
+    setGroupExpr(vidSet);
+
+    for (CollIndex i = 0; i < groupExprList().entries(); i++)
     {
-      ValueId vid = groupByList[i];
+      ValueId vid = groupExprList()[i];
       vid.getItemExpr()->setIsGroupByExpr(TRUE);
     }
 
@@ -6911,9 +6970,9 @@ RelExpr *GroupByAgg::bindNode(BindWA *bindWA)
         RETDesc * childRETDesc = child(0)->getRETDesc();
         ItemExprList origSelectList(getParentRootSelectList(), bindWA->wHeap());
         
-        for (CollIndex i = 0; i < groupByList.entries(); i++)
+        for (CollIndex i = 0; i < groupExprList().entries(); i++)
           {
-            ValueId vid = groupByList[i];
+            ValueId vid = groupExprList()[i];
             if((vid.getItemExpr()->getOperatorType() == ITM_SEL_INDEX)&&
                (((SelIndex*)(vid.getItemExpr()))->renamedColNameInGrbyClause()))
               {

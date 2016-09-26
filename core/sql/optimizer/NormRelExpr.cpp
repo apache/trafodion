@@ -5344,10 +5344,24 @@ RelExpr * GroupByAgg::normalizeNode(NormWA & normWARef)
   // Check if any of the HAVING clause predicates can be pushed down
   // (only when a Group By list is given).
   // ---------------------------------------------------------------------
-  pushdownCoveredExpr(getGroupAttr()->getCharacteristicOutputs(),
-                      getGroupAttr()->getCharacteristicInputs(),
-                      selectionPred()
-                      );
+  
+  // if this is a rollup groupby, then do not pushdown having pred to
+  // child node. If pushdown is done, then it might eliminate rows that
+  // are generated during rollup groupby processing.
+  // For ex:
+  //  select a from t group by rollup(a) having a is not null;
+  //  If 'having' pred is pushdown to scan node, then it will not return
+  //  any rows from scan and will elimite processing of rollup groups
+  //  that are returned by groupby.
+  //  Maybe later we can optimize so this pushdown is done if possible,
+  //  for ex, if there are no 'is null/not null' preds on grouping cols.
+  if (NOT isRollup())
+    {
+      pushdownCoveredExpr(getGroupAttr()->getCharacteristicOutputs(),
+                          getGroupAttr()->getCharacteristicInputs(),
+                          selectionPred()
+                          );
+    }
 
   NABoolean needsNewVEGRegion = FALSE;
 

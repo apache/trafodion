@@ -5745,6 +5745,55 @@ RelExpr * HashGroupBy::preCodeGen(Generator * generator,
 
 }
 
+RelExpr *GroupByAgg::processGroupbyRollup(Generator * generator,
+                                          const ValueIdSet & externalInputs,
+                                          ValueIdSet &pulledNewInputs)
+{
+  // if not rollup or no groupby or num of grouping columns is 0, return.
+  if ((! isRollup()) ||
+      (groupExprList().entries() == 0))
+    return this;
+
+  ValueId valId;
+
+  // rollup groups need to be evaluated in the order that they were specified
+  // in the query.
+  // groupExprList() contains grouping items in user specified order.
+  // For each item in groupExpr() set, find its position in groupExprList().
+  // Create a new list corresponding to the rearraned groupExpr() set. This list
+  // will be used during codeGen to generate rollup group expression.
+  for (valId = groupExpr().init();
+       groupExpr().next(valId);
+       groupExpr().advance(valId)) 
+    {
+      ItemExpr * itemExpr = valId.getItemExpr();
+
+      if (itemExpr->getOperatorType() != ITM_INDEXCOLUMN)
+        continue;
+
+      NAColumn * nac = ((IndexColumn*)itemExpr)->getNAColumn();
+      
+      NABoolean found = FALSE;
+      for (CollIndex ii = 0; 
+           (NOT found && ii < groupExprList().entries()); ii++)
+        {
+          ValueId valId2 = groupExprList()[ii];
+          ItemExpr * itemExpr2 = valId2.getItemExpr();
+          if (itemExpr2->getOperatorType() != ITM_BASECOLUMN)
+            continue;
+
+          NAColumn * nac2 = ((BaseColumn*)itemExpr2)->getNAColumn();
+          found = (nac->getColName() == nac2->getColName());
+          if (found)
+            {
+              groupExprList()[ii] = valId;
+            }
+        } // inner for
+    } // outer for
+
+  return this;
+}
+
 RelExpr * GroupByAgg::preCodeGen(Generator * generator,
 				 const ValueIdSet & externalInputs,
 				 ValueIdSet &pulledNewInputs)
@@ -5878,6 +5927,14 @@ RelExpr * GroupByAgg::preCodeGen(Generator * generator,
       generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
 
   }
+
+  if (isRollup())
+    {
+      RelExpr * gbrExpr = processGroupbyRollup
+        (generator, externalInputs, pulledNewInputs);
+      if (! gbrExpr)
+        return NULL;
+    }
 
   markAsPreCodeGenned();
 

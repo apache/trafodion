@@ -5600,7 +5600,6 @@ short ExpGenerator::genItemExpr(ItemExpr * item_expr, Attributes *** out_attr,
     }
 
   /* assign result attributes*/
-  //  attr[0] = map_table->getMapInfo(item_expr->getValueId())->getAttr();
   attr[0] = map_info->getAttr();
 
   if (gen_child)
