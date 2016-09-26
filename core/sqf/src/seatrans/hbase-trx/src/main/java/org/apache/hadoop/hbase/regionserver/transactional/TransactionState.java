@@ -118,7 +118,10 @@ public class TransactionState {
 
     public static final int TS_ACTIVE = 0;
     public static final int TS_COMMIT_REQUEST = 1;
-    public static byte TS_TRAFODION_TXN_TAG_TYPE = 41;
+    public static final int TS_REGION_TX_ACTIVE = 5;
+    public static final int TS_REGION_TX_COMMIT_REQUEST = 6;
+    public static final int TS_REGION_TX_COMMIT = 7;
+    public static final byte TS_TRAFODION_TXN_TAG_TYPE = 41;
 
     public TransactionState(final long transactionId, final long rLogStartSequenceId, AtomicLong hlogSeqId, final HRegionInfo regionInfo,
                                                  HTableDescriptor htd, WAL hLog, boolean logging, boolean isRegionTx) {
@@ -133,7 +136,10 @@ public class TransactionState {
         this.tabledescriptor = htd;
         this.earlyLogging = logging;
         this.tHLog = hLog;
-        if (earlyLogging) {
+        if(isRegionTx){ // RegionTX takes precedence
+           transactionalTag = this.formTransactionalContextTag(TS_REGION_TX_COMMIT_REQUEST);
+        }
+        else if (earlyLogging) {
            transactionalTag = this.formTransactionalContextTag(TS_ACTIVE);
         }
         else {
@@ -374,8 +380,8 @@ public class TransactionState {
 
     @Override
     public String toString() {
-        return "transactionId: " + transactionId + ", status: " + status +
-               ", regionInfo: " + regionInfo;
+        return "transactionId: " + transactionId + ", regionTX: " + getIsRegionTx()
+                + ", status: " + status + ", regionInfo: " + regionInfo;
     }
 
 
