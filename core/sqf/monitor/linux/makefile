@@ -55,7 +55,7 @@ COMMONLOGGERDIR = ../../commonLogger
 
 INCLUDE = monitor.h msgdef.h internal.h monlogging.h clio.h mlio.h localio.h lock.h
 
-LIBS = -L$(LIBEXPDIR) -lrt -lsblogalt -lzookeeper_mt
+LIBS = -L$(LIBEXPDIR) -L$(ZOOKEEPER_DIR)/lib -lrt -lsblogalt -lzookeeper_mt
 
 LIBS+= -lmpich
 
