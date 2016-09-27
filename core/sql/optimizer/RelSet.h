@@ -78,6 +78,8 @@ public:
 
   const NAString getText() const;
 
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL, CollHeap* outHeap = 0);
+
   // a virtual function for performing name binding within the query tree
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
 };
@@ -101,6 +103,8 @@ public:
   virtual Int32 getArity() const;
 
   const NAString getText() const;
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL, CollHeap* outHeap = 0);
 
   // a virtual function for performing name binding within the query tree
   virtual RelExpr * bindNode(BindWA *bindWAPtr);

@@ -427,6 +427,9 @@ CoprocessorService, Coprocessor {
   public static final int TS_COMMIT = 2;
   public static final int TS_ABORT = 3;
   public static final int TS_CONTROL_POINT_COMMIT = 4;
+  public static final int TS_REGION_TX_ACTIVE = 5;
+  public static final int TS_REGION_TX_COMMIT_REQUEST = 6;
+  public static final int TS_REGION_TX_COMMIT = 7;
 
   public static final int REGION_STATE_RECOVERING = 0;
   public static final int REGION_STATE_START = 2;
@@ -909,8 +912,8 @@ CoprocessorService, Coprocessor {
     int numOfRegion = request.getRegionNameCount();
     String requestRegionName;
 
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequestMultiple - txId " + transactionId + ", master regionName " + regionInfo.getRegionNameAsString());
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequestMultiple - txId " + transactionId + " number of region is commitMultiple " + numOfRegion);
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequestMultiple - txId " + transactionId
+          + " number of region is commitMultiple " + numOfRegion + ", master regionName " + regionInfo.getRegionNameAsString());
 
     org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestMultipleResponse.Builder commitRequestMultipleResponseBuilder = CommitRequestMultipleResponse.newBuilder();
     commitRequestMultipleResponseBuilder.setHasException(false);
@@ -4515,13 +4518,18 @@ CoprocessorService, Coprocessor {
     List<Tag> tagList = new ArrayList<Tag>();
     if (state.hasWrite() || state.isReinstated()) {
          if (!state.getFullEditInCommit()) {
-            commitTag = state.formTransactionalContextTag(TS_COMMIT);
+            if (state.getIsRegionTx()){
+               commitTag = state.formTransactionalContextTag(TS_REGION_TX_COMMIT);
+            }
+            else {
+               commitTag = state.formTransactionalContextTag(TS_COMMIT);
+            }
             tagList.add(commitTag);
             WALEdit e1 = state.getEdit();
             WALEdit e = new WALEdit();
             if (e1.isEmpty() || e1.getCells().size() <= 0) {
                if (LOG.isInfoEnabled()) LOG.info("TRAF RCOV endpoint CP: commit - txId "
-                        + transactionId
+                        + transactionId + " regionTx: " + state.getIsRegionTx()
                         + ", Encountered empty TS WAL Edit list during commit, HLog txid "
                         + txid);
             }
@@ -4542,11 +4550,12 @@ CoprocessorService, Coprocessor {
                     AtomicLong lv_seqid = this.m_Region.getSequenceId();
                     txid = this.tHLog.append(this.m_Region.getTableDesc(), this.regionInfo, wk, e, lv_seqid, false, null);
 #endif
-                    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Write commit HLOG seq " + txid);
+                    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId
+                          + " regionTx: " + state.getIsRegionTx() + ", Write commit HLOG seq " + txid);
                  }
                  catch (IOException exp1) {
                     if (LOG.isTraceEnabled()) LOG.trace("TRAF RCOV endpoint CP: commit -" 
-							+ " txId " + transactionId 
+							+ " txId " + transactionId + " regionTx: " + state.getIsRegionTx()
 							+ ", Writing to HLOG : Threw an exception " + exp1.toString()
 							);
                     throw exp1;
@@ -4554,7 +4563,8 @@ CoprocessorService, Coprocessor {
             } // e1 is not empty
          } // not full edit write in commit record during phase 2
         else { //do this for  rollover case
-           if (LOG.isTraceEnabled()) LOG.trace("TRAF RCOV endpoint CP:commit -- HLOG rollover txId: " + transactionId);
+           if (LOG.isTraceEnabled()) LOG.trace("TRAF RCOV endpoint CP:commit -- HLOG rollover txId: "
+                     + transactionId + " regionTx: " + state.getIsRegionTx());
            commitTag = state.formTransactionalContextTag(TS_CONTROL_POINT_COMMIT);
            tagList.add(commitTag);
            WALEdit e1 = state.getEdit();
@@ -4577,17 +4587,18 @@ CoprocessorService, Coprocessor {
                 txid = this.tHLog.append(this.m_Region.getTableDesc(), this.regionInfo, wk, e, lv_seqid, false, null);
 #endif
                 this.tHLog.sync(txid);
-                if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Y11 write commit HLOG seq " + txid);
+                if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId
+                            + " regionTx: " + state.getIsRegionTx() + ", Y11 write commit HLOG seq " + txid);
             }
             catch (IOException exp1) {
                if (LOG.isTraceEnabled()) LOG.trace("TRAF RCOV endpoint CP: commit -" 
-						   + " txId " + transactionId 
+						   + " txId " + transactionId + " regionTx: " + state.getIsRegionTx()
 						   + ", Writing to HLOG : Threw an exception " + exp1.toString()
 						   );
                throw exp1;
              }
-            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:commit -- EXIT" 
-						+ " txId: " + transactionId 
+            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:commit -- EXIT"
+						+ " txId " + transactionId + " regionTx: " + state.getIsRegionTx()
 						+ " HLog seq " + txid
 						);
            // if (this.fullEditInCommit) this.fullEditInCommit = false;
@@ -4599,7 +4610,7 @@ CoprocessorService, Coprocessor {
       synchronized (commitPendingTransactions) {
       if (!commitPendingTransactions.remove(state)) {
           LOG.fatal("TrxRegionEndpoint coprocessor: commit -" 
-		    + " txid: " + transactionId 
+		    + " txId " + transactionId + " regionTx: " + state.getIsRegionTx()
 		    + ", Commiting a non-query transaction that is not in commitPendingTransactions"
 		    );
           // synchronized statements are cleared for a throw
@@ -4631,23 +4642,23 @@ CoprocessorService, Coprocessor {
 						  );
               deleteRecoveryzNode(tmid, lv_encoded);
             } catch (IOException e) {
-            LOG.error("TrxRegionEndpoint coprocessor: commit -" 
-		      + " txId " + transactionId 
+            LOG.error("TrxRegionEndpoint coprocessor: commit -"
+		      + " txId " + transactionId
 		      + ", Trafodion Recovery: delete recovery zNode failed. Caught exception " + e.toString()
 		      );
             }
         }
 
         if ((indoubtTransactionsById == null) || (indoubtTransactionsById.size() == 0)) {
-          if (indoubtTransactionsById == null) 
-            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit -" 
-						+ " txId " + transactionId 
+          if (indoubtTransactionsById == null)
+            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit -"
+						+ " txId " + transactionId
 						+ ", Trafodion Recovery: start region in commit with indoubtTransactionsById null"
 						);
           else
-            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit -" 
-						+ " txId " + transactionId 
-						+ ", Trafodion Recovery: start region in commit with indoubtTransactionsById size " 
+            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit -"
+						+ " txId " + transactionId
+						+ ", Trafodion Recovery: start region in commit with indoubtTransactionsById size "
 						+ indoubtTransactionsById.size()
 						);
           startRegionAfterRecovery();
@@ -5740,7 +5751,7 @@ CoprocessorService, Coprocessor {
 
     TrxTransactionState state;
     if (startEpoch < onlineEpoch) {
-        LOG.info("commitRequest txId: "
+        LOG.error("commitRequest txId: "
                + transactionId + " startEpoch " + startEpoch + " is less than region's onlineEpoch " + onlineEpoch
                + " for regionName " + lv_regionName
                + " must return COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR ");
@@ -5767,20 +5778,20 @@ CoprocessorService, Coprocessor {
     try {
       state = getTransactionState(transactionId);
     } catch (UnknownTransactionException e) {
-      if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commitRequest Unknown transaction ["
+      if (LOG.isWarnEnabled()) LOG.warn("TrxRegionEndpoint coprocessor: commitRequest Unknown transaction ["
                  + transactionId + "] in region [" 
                  + lv_regionName
                  + "], participantNum " + participantNum + " ignoring");
-     state = null;
+      state = null;
     }
-      // may change to indicate a NOTFOUND case  then depends on the TM ts state, if reinstated tx, ignore the exception
-      if (state == null) {
+    // may change to indicate a NOTFOUND case  then depends on the TM ts state, if reinstated tx, ignore the exception
+    if (state == null) {
         String errMsg = "TrxRegionEndpoint coprocessor: commitRequest for participant " + participantNum
                + " encountered unknown transactionID txId: " + transactionId + " in region " + lv_regionName;
-        if (LOG.isTraceEnabled()) LOG.trace(errMsg);
+        if (LOG.isWarnEnabled()) LOG.warn(errMsg);
         //return COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR;
         throw new UnknownTransactionException(errMsg);
-      }
+     }
 
     if (LOG.isInfoEnabled()) 
       hasConflictStartTime = System.nanoTime();
@@ -5804,9 +5815,8 @@ CoprocessorService, Coprocessor {
 
       // No conflicts, we can commit.
       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: No conflicts for transaction " + transactionId
-		+ " found in region "
-        + lv_regionName
-        + ". Participant " + participantNum + " votes to commit");
+                       + " regionTx: " + state.getIsRegionTx() + " found in region " + lv_regionName
+                       + ". Participant " + participantNum + " votes to commit");
 
       // If there are writes we must keep record of the transaction
       putBySequenceStartTime = System.nanoTime();
@@ -5834,29 +5844,35 @@ CoprocessorService, Coprocessor {
       //call HLog by passing tagged WALEdits and associated fields
       try {
 
-      // Once we append edit into HLOG during DML operation, there is no need to do any HLOG write in phase 1.
-      // Likely all the edits have been synced, so just do a sync(state.getLargestFlushTxId()) --> most likely, it is an no-op
-      // This is to leverage the time between last DML and phase 1, so there is no need to do any logging (and waited) in phase 1.
-      // And there is no need to write "prepared" record since we try to optimize normal running mode (99.99% commit)
-      // We can append "commit" or "abort" into HLOG in phase 2 in a no-sync mode, but it can also be eliminated if necessary.
-      // All the transaction reinstated during recovery will be treated as "in-doubt" and need to use TLOG to resolve. 
-      // So TLOG must be kept for a while (likely a few CP), besides, HRegion chore thread can perform ~ CP action by writing
-      //  the smallest sequenceId (not logSeqid), so we don't need to deal with commite case (but we did write abort edit since
-      //  the number of abort is < 0.1% -- we can set this as a configurable property).
+        // Once we append edit into HLOG during DML operation, there is no need to do any HLOG write in phase 1.
+        // Likely all the edits have been synced, so just do a sync(state.getLargestFlushTxId()) --> most likely,
+        // it is a no-op. This is to leverage the time between last DML and phase 1, so there is no need to do any
+        // logging (and waited) in phase 1.  And there is no need to write "prepared" record since we try to optimize
+        // normal running mode (99.99% commit).  We can append "commit" or "abort" into HLOG in phase 2 in a no-sync
+        // mode, but it can also be eliminated if necessary.  All the transaction reinstated during recovery will be
+        // treated as "in-doubt" and need to use TLOG to resolve.  So TLOG must be kept for a while (likely a few CP),
+        // besides, HRegion chore thread can perform ~ CP action by writing the smallest sequenceId (not logSeqid),
+        // so we don't need to deal with commit case (but we did write abort edit since the number of abort is
+        // < 0.1% -- we can set this as a configurable property).
 
             if (!state.getEarlyLogging()) {
-                final WALKey wk = new WALKey(this.regionInfo.getEncodedNameAsBytes(), this.regionInfo.getTable(), EnvironmentEdgeManager.currentTime());
+                final WALKey wk = new WALKey(this.regionInfo.getEncodedNameAsBytes(), this.regionInfo.getTable(),
+                              EnvironmentEdgeManager.currentTime());
 #ifdef CDH5.7 APACHE1.2
                 txid = this.tHLog.append(this.m_Region.getTableDesc(), this.regionInfo, wk, state.getEdit(), false);
                 if ((m_isTrafodionMetadata) || (LOG.isTraceEnabled()))
-                    LOG.info("TrxRegionEndpoint coprocessor: PH1 commitRequest COMMIT_OK -- EXIT " + m_regionName + " isTrafodionMD: " + m_isTrafodionMetadata 
-                      + " txId: " + transactionId + " HLog seq: " + txid + " flushHLOG: " + flushHLOG);
+                   LOG.info("TrxRegionEndpoint coprocessor: PH1 commitRequest COMMIT_OK -- EXIT " + m_regionName
+                        + " isTrafodionMD: " + m_isTrafodionMetadata + " txId: " + transactionId + " HLog seq: " + txid
+                        + " regionTx: " + state.getIsRegionTx() + " flushHLOG: " + flushHLOG);
 #else
                 AtomicLong lv_seqid = this.m_Region.getSequenceId();
-                txid = this.tHLog.append(this.m_Region.getTableDesc(), this.regionInfo, wk, state.getEdit(), lv_seqid, false, null);
+                txid = this.tHLog.append(this.m_Region.getTableDesc(), this.regionInfo, wk, state.getEdit(),
+                           lv_seqid, false, null);
                 if ((m_isTrafodionMetadata) || (LOG.isTraceEnabled()))
-                    LOG.info("TrxRegionEndpoint coprocessor: PH1 commitRequest COMMIT_OK -- EXIT " + m_regionName + " isTrafodionMD: " + m_isTrafodionMetadata 
-                      + " txId: " + transactionId + " seqId: " + lv_seqid + " HLog seq: " + txid + " flushHLOG: " + flushHLOG);
+                   LOG.info("TrxRegionEndpoint coprocessor: PH1 commitRequest COMMIT_OK -- EXIT " + m_regionName
+                          + " isTrafodionMD: " + m_isTrafodionMetadata + " txId: " + transactionId + " seqId: "
+                          + lv_seqid + " HLog seq: " + txid + " regionTx: " + state.getIsRegionTx()
+                          + " flushHLOG: " + flushHLOG);
 #endif
                 if (flushHLOG) this.tHLog.sync(txid);
             }
@@ -5869,12 +5885,14 @@ CoprocessorService, Coprocessor {
                      writeToLogTimes[lv_timeIndex] = writeToLogEndTime - commitCheckEndTime;
                     writeToLogOperations.getAndIncrement();
             }
-            //if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:commitRequest COMMIT_OK -- EXIT txId: " + transactionId + " HLog seq " + txid);
+            //if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:commitRequest COMMIT_OK -- EXIT txId: "
+            // + transactionId + " regionTx: " + state.getIsRegionTx() + " HLog seq " + txid);
       } catch (IOException exp) {
           if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - Caught IOException in HLOG appendNoSync -- EXIT txId: " + transactionId + " HLog seq " + txid);
           throw exp;
       }      
-      if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commitRequest COMMIT_OK -- EXIT txId: " + transactionId);
+      if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commitRequest COMMIT_OK -- EXIT txId: "
+            + transactionId + " regionTx " + state.getIsRegionTx());
       returnPending = true;
     }
     // No write pending

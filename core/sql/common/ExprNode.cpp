@@ -359,6 +359,8 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_HYBRID_HASH_SEMIJOIN:
 	    case REL_HYBRID_HASH_ANTI_SEMIJOIN:
 	    case REL_MERGE_UNION:
+            case REL_INTERSECT:
+            case REL_EXCEPT:
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -401,6 +403,8 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_HYBRID_HASH_SEMIJOIN:
 	    case REL_HYBRID_HASH_ANTI_SEMIJOIN:
 	    case REL_FULL_JOIN:
+            case REL_INTERSECT:
+            case REL_EXCEPT:
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -564,6 +568,7 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_HASH_ANTI_SEMIJOIN:
 	    case REL_HYBRID_HASH_ANTI_SEMIJOIN:
 	    case REL_ORDERED_HASH_ANTI_SEMIJOIN:
+            case REL_EXCEPT:
 	      return TRUE;
 	    default:
 	      return FALSE;

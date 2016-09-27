@@ -208,7 +208,7 @@ public class TrxTransactionState extends TransactionState {
         ListIterator<WriteAction> writeOrderIter = writeOrdering.listIterator(writeOrdering.size());
         writeOrderIter.add(waction = new WriteAction(write));
 
-        if (this.earlyLogging) { // immeditaely write edit out to HLOG during DML (actve transaction state)
+        if (this.earlyLogging) { // immediately write edit out to HLOG during DML (active transaction state)
             for (Cell value : waction.getCells()) {
                 // KeyValue kv = KeyValueUtil.ensureKeyValue(value);
                 kv = KeyValue.cloneAndAddTags(value, tagList);
@@ -517,6 +517,8 @@ public class TrxTransactionState extends TransactionState {
         StringBuilder result = new StringBuilder();
         result.append("[transactionId: ");
         result.append(transactionId);
+        result.append(" regionTX: ");
+        result.append(getIsRegionTx());
         result.append(" status: ");
         result.append(status.name());
         result.append(" scan Size: ");
