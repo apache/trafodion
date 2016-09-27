@@ -341,7 +341,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed Sep 21 03:01:46 2016
+-- Definition current  Thu Sep 22 05:38:39 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -359,7 +359,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed Sep 21 03:01:46 2016
+-- Definition current  Thu Sep 22 05:38:39 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -374,7 +374,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Wed Sep 21 03:01:47 2016
+-- Definition current  Thu Sep 22 05:38:40 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -391,7 +391,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed Sep 21 03:01:55 2016
+-- Definition current  Thu Sep 22 05:38:42 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -406,7 +406,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Wed Sep 21 03:01:56 2016
+-- Definition current  Thu Sep 22 05:38:42 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -423,7 +423,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed Sep 21 03:01:59 2016
+-- Definition current  Thu Sep 22 05:38:45 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -438,7 +438,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Wed Sep 21 03:02:00 2016
+-- Definition current  Thu Sep 22 05:38:46 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -456,7 +456,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed Sep 21 03:02:00 2016
+-- Definition current  Thu Sep 22 05:38:46 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -471,7 +471,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Wed Sep 21 03:02:00 2016
+-- Definition current  Thu Sep 22 05:38:46 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -488,7 +488,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed Sep 21 03:02:10 2016
+-- Definition current  Thu Sep 22 05:38:51 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -503,7 +503,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Wed Sep 21 03:02:10 2016
+-- Definition current  Thu Sep 22 05:38:51 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -521,7 +521,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed Sep 21 03:02:15 2016
+-- Definition current  Thu Sep 22 05:38:55 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -536,7 +536,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Wed Sep 21 03:02:15 2016
+-- Definition current  Thu Sep 22 05:38:56 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -595,7 +595,7 @@ End of MXCI Session
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed Sep 21 03:02:38 2016
+-- Definition current  Thu Sep 22 05:39:13 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -717,7 +717,7 @@ T116T1
 >>invoke t116t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T2
--- Definition current  Wed Sep 21 03:03:44 2016
+-- Definition current  Thu Sep 22 05:40:00 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -742,7 +742,7 @@ T116T1
 >>invoke t116t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T2
--- Definition current  Wed Sep 21 03:03:50 2016
+-- Definition current  Thu Sep 22 05:40:11 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1170,7 +1170,9 @@ End of MXCI Session
 >>-- should show conflict
 >>commit work;
 
---- SQL operation complete.
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted.
+
+--- SQL operation failed with errors.
 >>select * from t116t6;
 
 --- 0 row(s) selected.
@@ -1272,7 +1274,9 @@ End of MXCI Session
 >>-- should show conflict
 >>commit work;
 
---- SQL operation complete.
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted.
+
+--- SQL operation failed with errors.
 >>select * from t116t6;
 
 --- 0 row(s) selected.

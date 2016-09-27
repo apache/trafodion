@@ -82,6 +82,8 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionPro
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccAbortTransactionResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccBeginTransactionRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccBeginTransactionResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest;
@@ -98,6 +100,8 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionPro
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteRegionTxRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteRegionTxResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalRequest;
@@ -340,45 +344,61 @@ CoprocessorService, Coprocessor {
 
   /**
    * Begin a transaction
-   * @param longtransactionId
+   * @param long transactionId
+   * @param long startId
+   * @param boolean regionTx
    * @throws IOException
    */
 
   public void beginTransaction(final long transactionId, final long startId) throws IOException {
+     beginTransaction(transactionId, startId, /* this is a region TX */ false);
+  }
+  
+  /**
+   * Begin a transaction
+   * @param long transactionId
+   * @param long startId
+   * @param boolean regionTx
+   * @throws IOException
+   */
 
-    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  beginTransaction -- ENTRY txId: " + transactionId + " startId: " + startId);
+  public void beginTransaction(final long transactionId, final long startId, final boolean regionTx) throws IOException {
+
+    if (LOG.isTraceEnabled()) LOG.trace("beginTransaction -- ENTRY txId: " + transactionId
+           + " startId: " + startId + " regionTx " + regionTx);
     checkClosing(transactionId);
 
     // TBD until integration with recovery
     if (reconstructIndoubts == 0) {
-       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  RECOV beginTransaction -- ENTRY txId: " + transactionId);
+       if (LOG.isTraceEnabled()) LOG.trace("RECOV beginTransaction -- ENTRY txId: " + transactionId);
 //       try {
           constructIndoubtTransactions();
 //       }
 //       catch (IdTmException e){
-//          LOG.error("SsccRegionEndpoint coprocessor:  RECOV beginTransaction exception" + e);
-//          throw new IOException("SsccRegionEndpoint coprocessor:  RECOV beginTransaction " + e);
+//          LOG.error("RECOV beginTransaction exception" + e);
+//          throw new IOException("RECOV beginTransaction " + e);
 //       }
 //       catch (Exception e2) {
-//          LOG.error("SsccRegionEndpoint coprocessor:  RECOV beginTransaction exception" + e2);
-//          throw new IOException("SsccRegionEndpoint coprocessor:  RECOV beginTransaction exception " + e2);
+//          LOG.error("RECOV beginTransaction exception" + e2);
+//          throw new IOException("RECOV beginTransaction exception " + e2);
 //       }
     }
     if (regionState != 2) {
-       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: Trafodion Recovery: RECOVERY WARN beginTransaction while the region is still in recovering state " +  regionState);
+       if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery: RECOVERY WARN beginTransaction while the region is still in recovering state " +  regionState);
     }
 
     String key = getTransactionalUniqueId(transactionId);
     SsccTransactionState state;
     synchronized (transactionsById) {
-      if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  beginTransaction -- creating new SsccTransactionState without coprocessorHost txId: " + transactionId);
+      if (LOG.isTraceEnabled()) LOG.trace("beginTransaction -- creating new SsccTransactionState without coprocessorHost txId: " + transactionId);
 
       state = new SsccTransactionState(transactionId,
                                 nextLogSequenceId.getAndIncrement(),
                                 nextLogSequenceId,
                                 m_Region.getRegionInfo(),
                                 m_Region.getTableDesc(), tHLog, configuredEarlyLogging,
-                                startId);
+                                startId,
+                                regionTx);
 //                                nextSsccSequenceId.getAndIncrement());
 
 
@@ -393,7 +413,7 @@ CoprocessorService, Coprocessor {
 
       transactionsById.put(key, state);
 
-      if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  beginTransaction - Adding transaction: [" + transactionId + "] in region ["
+      if (LOG.isTraceEnabled()) LOG.trace("beginTransaction - Adding transaction: [" + transactionId + "] in region ["
                 + m_Region.getRegionInfo().getRegionNameAsString() + "]" +
                  " to list");
     }
@@ -401,12 +421,12 @@ CoprocessorService, Coprocessor {
     try {
        transactionLeases.createLease(key, transactionLeaseTimeout, new TransactionLeaseListener(transactionId));
     } catch (LeaseStillHeldException e) {
-       LOG.error("SsccRegionEndpoint coprocessor:  beginTransaction - Lease still held for [" + transactionId + "] in region ["
+       LOG.error("beginTransaction - Lease still held for [" + transactionId + "] in region ["
                 + m_Region.getRegionInfo().getRegionNameAsString() + "]");
        throw new RuntimeException(e);
     }
 
-     if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  beginTransaction -- EXIT txId: " + transactionId
+     if (LOG.isTraceEnabled()) LOG.trace("beginTransaction -- EXIT txId: " + transactionId
           + " transactionsById size: " + transactionsById.size() + " region ID: " + this.regionInfo.getRegionId());
   }
 
@@ -415,18 +435,30 @@ CoprocessorService, Coprocessor {
     * @return true: begin; false: not necessary to begin
     * @throws IOException
    */
-  private SsccTransactionState beginTransIfNotExist(final long transactionId, final long startId) throws IOException{
+  private SsccTransactionState beginTransIfNotExist(final long transactionId, 
+                                                 final long startId) throws IOException{
+     return beginTransIfNotExist(transactionId, startId,
+                                     /* this is a Region Tx */ false);
+  }
 
-    if (LOG.isTraceEnabled()) LOG.trace("Enter SsccRegionEndpoint coprocessor: beginTransIfNotExist, txid: "
-              + transactionId + " startId: " + startId + " transactionsById size: "
-              + transactionsById.size());
+  /**begin transaction if not yet
+    * @param transactionId
+    * @return true: begin; false: not necessary to begin
+    * @throws IOException
+   */
+  private SsccTransactionState beginTransIfNotExist(final long transactionId, final long startId,
+                                             final boolean regionTx) throws IOException{
+
+    if (LOG.isTraceEnabled()) LOG.trace("Enter beginTransIfNotExist, txid: "
+              + transactionId + " startId: " + startId + "regionTx " + regionTx +
+              " transactionsById size: " + transactionsById.size());
 
     String key = getTransactionalUniqueId(transactionId);
     synchronized (transactionsById) {
       SsccTransactionState state = transactionsById.get(key);
       if (state == null) {
         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Begin transaction in beginTransIfNotExist beginning the transaction internally as state was null");
-        this.beginTransaction(transactionId, startId);
+        this.beginTransaction(transactionId, startId, regionTx);
         state =  transactionsById.get(key);
       }
       return state;
@@ -537,8 +569,7 @@ CoprocessorService, Coprocessor {
          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: commitIfPossible - id " + transId + ", regionName, " + regionInfo.getRegionNameAsString() + "calling internal commitIfPossible");
          reply = commitIfPossible(transId);
        } catch (Throwable e) {
-         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:commitIfPossible threw exception after internal commitIfPossible");
-          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Caught exception " + e.getMessage() + "" + stackTraceToString(e));
+         if (LOG.isTraceEnabled()) LOG.trace("commitIfPossible threw exception ", e);
           t = e;
        }
      }
@@ -1070,12 +1101,12 @@ CoprocessorService, Coprocessor {
           idServer.id(ID_TM_SERVER_TIMEOUT, seqId);
           if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  commitIfPossible: IdTM sequence is " + seqId.val);
        } catch (IdTmException exc) {
-          LOG.error("SsccRegionEndpoint coprocessor:  commitIfPossible: IdTm threw exception 1 " + exc);
+          LOG.error("commitIfPossible: IdTm threw exception 1 ", exc);
           throw new IOException("SsccRegionEndpoint coprocessor:  commitIfPossible: IdTm threw exception 1 " + exc);
        }
        catch (Exception e2) {
-          LOG.error("SsccRegionEndpoint coprocessor:  beginTransaction: IdTm threw exception e2 " + e2);
-          throw new IOException("SsccRegionEndpoint coprocessor:  beginTransaction: IdTm threw exception e2 " + e2);
+          LOG.error("commitIfPossible: IdTm threw exception e2 ", e2);
+          throw new IOException("SsccRegionEndpoint coprocessor:  commitIfPossible: IdTm threw exception e2 " + e2);
        }
 
        // Process local memory
@@ -1981,12 +2012,11 @@ CoprocessorService, Coprocessor {
     int status = 0;
     long tid = request.getTid();
     long startId = request.getStartId();
+    boolean autoCommit = request.getAutoCommit();
     try {
        put = ProtobufUtil.toPut(proto);
     } catch (Throwable e) {
-       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:putRegionTx threw exception");
-       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Caught exception " + e.getMessage() + "" + stackTraceToString(e));
-       LOG.error("UNIQUE coprocessor:  Caught exception " + e.getMessage() + "" + stackTraceToString(e));
+       LOG.error("putRegionTx threw exception ", e);
        t = e;
     }
 
@@ -1995,18 +2025,17 @@ CoprocessorService, Coprocessor {
 
        // Process in local memory
        try {
-//          status = putRegionTx(tid, startId, put, stateless);
-          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:putRegionTx returned status: " + status);
+          status = putRegionTx(tid, startId, put, stateless, autoCommit);
+          if (LOG.isTraceEnabled()) LOG.trace("putRegionTx returned status: " + status);
        } catch (Throwable e) {
-          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:putRegionTx threw exception after internal putRegionTx");
-          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Caught exception " + e.getMessage() + "" + stackTraceToString(e));
+          LOG.error("putRegionTx threw exception after internal putRegionTx ", e);
           t = e;
        }
 
-       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: putRegionTx - id " + tid + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
+       if (LOG.isTraceEnabled()) LOG.trace("putRegionTx - id " + tid + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
     }
     else  {
-       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: putRegionTx - id " + tid + ", regionName " + regionInfo.getRegionNameAsString() + "- no valid PUT type or does not contain a row");
+       if (LOG.isTraceEnabled()) LOG.trace("putRegionTx - id " + tid + ", regionName " + regionInfo.getRegionNameAsString() + "- no valid PUT type or does not contain a row");
     }
 
     org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxResponse.Builder putRegionTxResponseBuilder = SsccPutRegionTxResponse.newBuilder();
@@ -2031,9 +2060,275 @@ CoprocessorService, Coprocessor {
     done.run(papresponse);
   }
 
+  /**
+   * Add a write using a region transaction.
+   * process.
+   * @param long tid
+   * @param Put put
+   * @param boolean stateless  // Is this a stateless put?
+   * @param boolean autoCommit // Should we commit immediately?
+   * @return int
+   * @throws IOException
+   */
+
+  public int putRegionTx(final long tid, final long startId, final Put put,
+         final boolean stateless, final boolean autoCommit)throws IOException {
+    if (LOG.isTraceEnabled()) LOG.trace("putRegionTx, tid " + tid +
+                  ", startId " + startId +", stateless: " + stateless + " autoCommit " + autoCommit);
+    SsccTransactionState state = this.beginTransIfNotExist(tid, startId, true); // This is a region TX
+
+    // check whether has del before
+    state.removeDelBeforePut(put, stateless);
+
+    /*need to change the timestamp, but HBase API does not support
+      At this point, the solution is to create a new Put object
+    */
+    //So the solution at this point is
+    //add a mapping of current timestamp of the put row with the startId
+    //mapStartIdFromTs(put.getTimeStamp(),startId);
+    // try to use getFamilyCellMap to get out all data from the put object and generate a new one
+    byte[] rowkey = put.getRow();
+    Put newPut = new Put(rowkey, startId);
+    byte[] mergedCols = null;
+    byte[] mergedColsV = null;
+    byte[] cv = null;
+    NavigableMap<byte[], List<Cell>> familyCellMap = put.getFamilyCellMap();
+    for (Entry<byte[], List<Cell>> entry : familyCellMap.entrySet()) {
+       for (Iterator<Cell> iterator = entry.getValue().iterator(); iterator.hasNext();) {
+          Cell cell = iterator.next();
+          byte[] family = CellUtil.cloneFamily(cell);
+          byte[] qualifier = CellUtil.cloneQualifier(cell);
+          mergedCols = null;
+          mergedCols = byteMerger("|".getBytes(),qualifier);
+          mergedCols = byteMerger(mergedCols,"|".getBytes());
+          byte[] value = CellUtil.cloneValue(cell);
+          newPut.add(family,qualifier,startId,value);
+          byte[] currentCollist =  state.getColList(rowkey);
+          if( indexOf(currentCollist,mergedCols) != -1) //already in this list
+          {
+              mergedColsV = byteMerger(currentCollist,null);
+              continue;
+          }
+          mergedColsV = byteMerger(mergedCols,currentCollist);
+          state.addToColList(rowkey,mergedColsV);
+       }
+    }
+
+    //get the statusList
+    Get statusGet = new Get(rowkey);
+    //statusGet.setTimeStamp(startId);
+    statusGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.STATUS_COL);
+    //statusGet.setTimeRange(0, startId + 1);  //only get data updated before me
+    //statusGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
+    statusGet.setMaxVersions();
+
+    Result statusResult = m_Region.get(statusGet);
+
+    List<Cell> sl = null;
+    List<Cell> vl = null;
+
+    //get the versionList
+    //  If this is a stateless put we don't need the version list
+    if (stateless == false) {
+       Get verGet = new Get(rowkey);
+
+       //verGet.setTimeStamp(startId);
+       verGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.VERSION_COL);
+       verGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
+
+       Result verResult = m_Region.get(verGet);
+       if(verResult != null )  vl = verResult.listCells();
+    }
+
+    if(statusResult != null ) sl = statusResult.listCells();
+    if (LOG.isTraceEnabled()) LOG.trace("putRegionTx stateless: " + stateless);
+    if(state.hasConflict(sl,vl,stateless,startId,tid) == false) {
+        state.addToPutList(rowkey);
+        //update status metadata
+        byte[] statusValue;
+        if (stateless){
+           statusValue = SsccConst.generateStatusValue(SsccConst.S_STATELESS_BYTE,tid); //stateless update
+        }
+        else {
+           statusValue = SsccConst.generateStatusValue(SsccConst.S_STATEFUL_BYTE,tid); //stateful update
+        }
+        newPut.add(DtmConst.TRANSACTION_META_FAMILY ,SsccConst.STATUS_COL,startId , statusValue);
+        newPut.add(DtmConst.TRANSACTION_META_FAMILY ,SsccConst.COLUMNS_COL,startId ,mergedColsV);
+        //perform the put operation, persistently save the data now.
+//        LOG.info("UNIQUE: put ok "   );
+        m_Region.put(newPut);
+    }
+    else { //conflict
+        // Return conflict, but don't trigger and abort.  That needs to be triggered from the client, if desired.
+        if (LOG.isTraceEnabled()) LOG.trace("UNIQUE: putRegionTx STATEFUL_UPDATE_CONFLICT " );
+        return stateless ? STATELESS_UPDATE_CONFLICT : STATEFUL_UPDATE_CONFLICT;
+    }
+
+    // Now we must perform conflict checking.
+    boolean success = commitIfPossible(tid);
+
+    if (! success) {
+       LOG.error("putRegionTx - tid " + tid + " was not successful.  Throwing IOException ");
+       throw new IOException("putRegionTx - tid " + tid + " was not successful.  Throwing IOException ");
+    }
+
+    if (LOG.isTraceEnabled()) LOG.trace("putRegionTx -- EXIT tid: " + tid);    
+    return stateless ? STATELESS_UPDATE_OK : STATEFUL_UPDATE_OK;
+  }
+
 /***********************************************************************************
 *****************  ALL code to support DELETE   ************************************
 ***********************************************************************************/
+  @Override
+  public void deleteRegionTx(RpcController controller,
+                                SsccDeleteRegionTxRequest request,
+    RpcCallback<SsccDeleteRegionTxResponse> done) {
+/*
+    SsccDeleteRegionTxResponse response = SsccDeleteRegionTxResponse.getDefaultInstance();
+
+    byte [] row = null;
+    MutationProto proto = request.getDelete();
+    MutationType type = proto.getMutateType();
+    boolean autoCommit = request.getAutoCommit();
+    Delete delete = null;
+    Throwable t = null;
+    WrongRegionException wre = null;
+    long tid = request.getTid();
+    long startId = request.getStartId();
+
+    if (wre == null && type == MutationType.DELETE && proto.hasRow())
+      row = proto.getRow().toByteArray();
+    try {
+        delete = ProtobufUtil.toDelete(proto); 
+    } catch (Throwable e) {
+      if (LOG.isTraceEnabled()) LOG.trace("deleteRegionTx threw exception ", e);
+      t = e;
+    }
+
+    // Process in local memory
+    int status = 0;
+    try {
+      status = deleteRegionTx(tid, startId, delete, autoCommit);
+    } catch (Throwable e) {
+      if (LOG.isTraceEnabled()) LOG.trace("deleteRegionTx threw exception after internal deleteRegionTx ", e);
+      t = e;
+    }
+
+    if (LOG.isTraceEnabled()) LOG.trace("deleteRegionTx - tid " + tid
+           + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type
+           + ", row " + Bytes.toString(row));
+
+    org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteRegionTxResponse.Builder deleteRegionTxResponseBuilder = SsccDeleteRegionTxResponse.newBuilder();
+    deleteRegionTxResponseBuilder.setHasException(false);
+
+    if (t != null)
+    {
+      deleteRegionTxResponseBuilder.setHasException(true);
+      deleteRegionTxResponseBuilder.setException(t.toString());
+    }
+
+    if (wre != null)
+    {
+      deleteRegionTxResponseBuilder.setHasException(true);
+      deleteRegionTxResponseBuilder.setException(wre.toString());
+    }
+    deleteRegionTxResponseBuilder.setStatus(status);
+
+    SsccDeleteRegionTxResponse dresponse = deleteRegionTxResponseBuilder.build();
+    done.run(dresponse);
+*/
+  }
+
+  /**
+   * Processes a delete using a region transaction
+   * @param long tid
+   * @param Delete delete
+   * @param Boolean autoCommit
+   * @return int
+   * @throws IOException
+   */
+  public int deleteRegionTx(final long tid, final long startId, final Delete delete, final Boolean autoCommit)
+    throws IOException {
+    if (LOG.isTraceEnabled()) LOG.trace("deleteRegionTx -- ENTRY tid: " + tid
+         + ", startId:" + startId);
+    checkClosing(tid);
+    SsccTransactionState state = this.beginTransIfNotExist(tid, startId, true); // This is a Region TX
+
+    //clone the delete
+    //just to change the timestamp. But I hope the overhead is not too big a concern here
+    byte[] rowkey = delete.getRow();
+    Delete newDelete = new Delete( rowkey,startId );
+    NavigableMap<byte[], List<Cell>> familyCellMap = delete.getFamilyCellMap();
+    byte[] mergedColsV = null;
+    byte[] cv = null;
+    for (Entry<byte[], List<Cell>> entry : familyCellMap.entrySet()) {
+        for (Iterator<Cell> iterator = entry.getValue().iterator(); iterator.hasNext();) {
+            Cell cell = iterator.next();
+            byte[] family = CellUtil.cloneFamily(cell);
+            byte[] qualifier = CellUtil.cloneQualifier(cell);
+            cv = null;
+            cv = byteMerger("|".getBytes(), null);
+            cv = byteMerger(cv,qualifier);
+            cv = byteMerger(cv,"|".getBytes());
+            byte[] currentCollist =  state.getColList(rowkey);
+            newDelete.deleteColumns(family,qualifier,startId);  //NOTE: HBase 1.0 this API will change ...
+            //here use deleteColumns with timestamp, so it will delete all history version of this row
+            //but the real delete is not done at this point, but when doCommit
+            //Only when it goes to doCommit(), it is safe to delete all versions
+            //Otherwise, SSCC use MVCC in hbase to save history versions, those versions may need in other transaction
+            //  to get a snapshot value in the before.
+            //Another choice here is to use deleteColumn instead of using deleteColumns, so it will only delete the specific version
+            //  specified by the startId. But I suppose these two methods are same. Need more test maybe.
+
+            if( indexOf(currentCollist,cv) != -1) //already in this list
+            {
+                mergedColsV = byteMerger(currentCollist,null);
+                continue;
+            }
+            mergedColsV = byteMerger(currentCollist,cv);
+            state.addToColList(rowkey,mergedColsV);
+        }
+    }
+    Get statusGet = new Get(rowkey);
+    statusGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.STATUS_COL);
+    statusGet.setMaxVersions();
+    Result statusResult = m_Region.get(statusGet);
+    List<Cell> sl = null;
+    if(statusResult != null ) sl = statusResult.listCells();
+
+    // All deletes are treated as stateless, so no need to retrieve the versions
+    if(state.hasConflict(sl,null,true,startId,tid) == false){
+       state.addToDelList(newDelete);
+       /*update the status metadata*/
+       Put statusPut = new Put(rowkey,startId );
+       byte[] statusValue;
+       statusValue = SsccConst.generateStatusValue(SsccConst.S_DELETE_BYTE,tid); //stateless delete
+       statusPut.add(DtmConst.TRANSACTION_META_FAMILY ,SsccConst.STATUS_COL, startId , statusValue);
+       statusPut.add(DtmConst.TRANSACTION_META_FAMILY ,SsccConst.COLUMNS_COL,startId , mergedColsV);
+       m_Region.put(statusPut);
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: deleteRegionTx: STATELESS_UPDATE_OK");
+    }
+    else
+    {
+       // Return conflict, but don't trigger and abort.  That needs to be triggered from the client, if desired.
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: delete: STATELESS_UPDATE_CONFLICT");
+       return STATELESS_UPDATE_CONFLICT;
+    }
+        // Now we must perform conflict checking.
+    boolean success = commitIfPossible(tid);
+
+    if (! success) {
+       LOG.error("deleteRegionTx - tid " + tid + " was not successful.  Throwing IOException ");
+       throw new IOException("deleteRegionTx - tid " + tid + " was not successful.  Throwing IOException ");
+    }
+    
+    if (LOG.isTraceEnabled()) LOG.trace("deleteRegionTx -- EXIT returning STATELESS_UPDATE_OK for tid: " + tid);    
+    return STATELESS_UPDATE_OK;
+    
+ }
+
+
+
   @Override
   public void delete(RpcController controller,
                                 SsccDeleteTransactionalRequest request,
@@ -2283,6 +2578,98 @@ CoprocessorService, Coprocessor {
 
    }
 
+  public void checkAndDeleteRegionTx(RpcController controller,
+                          SsccCheckAndDeleteRegionTxRequest request,
+                          RpcCallback<SsccCheckAndDeleteRegionTxResponse> done) {
+/*
+    SsccCheckAndDeleteRegionTxResponse response = SsccCheckAndDeleteRegionTxResponse.getDefaultInstance();
+
+    byte [] rowArray = null;
+    com.google.protobuf.ByteString row = null;
+    com.google.protobuf.ByteString family = null;
+    com.google.protobuf.ByteString qualifier = null;
+    com.google.protobuf.ByteString value = null;
+    MutationProto proto = request.getDelete();
+    MutationType type = proto.getMutateType();
+    Delete delete = null;
+    Throwable t = null;
+    WrongRegionException wre = null;
+    int status = 0;
+    boolean result = false;
+    long tid = request.getTid();
+    long startId = request.getStartId();
+    boolean autoCommit = request.getAutoCommit();
+
+    java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
+
+    org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse.Builder checkAndDeleteRegionTxResponseBuilder = SsccCheckAndDeleteRegionTxResponse.newBuilder();
+
+    if (wre == null && type == MutationType.DELETE && proto.hasRow())
+    {
+      rowArray = proto.getRow().toByteArray();
+
+      try {
+         delete = ProtobufUtil.toDelete(proto);
+      } catch (Throwable e) {
+         if (LOG.isTraceEnabled()) LOG.trace("checkAndDeleteRegionTx caught exception ", e);
+         t = e;
+      }
+
+      // Process in local memory
+      if (delete != null && t == null)
+      {
+          if (!Bytes.equals(rowArray, request.getRow().toByteArray()))
+            t = new org.apache.hadoop.hbase.DoNotRetryIOException("Action's " +
+                 "Delete row must match the passed row");
+        }
+
+        if (t == null) {
+          try {
+           result = checkAndDeleteRegionTx(tid, startId,
+               request.getRow().toByteArray(),
+               request.getFamily().toByteArray(),
+               request.getQualifier().toByteArray(),
+               request.getValue().toByteArray(),
+               delete,
+               autoCommit);
+           } catch (Throwable e) {
+             if (LOG.isTraceEnabled()) LOG.trace("checkAndDeleteRegionTx caught exception ", e);
+             t = e;
+           }
+         }
+
+       if (LOG.isTraceEnabled()) LOG.trace("checkAndDeleteRegionTx setting result: " + result);
+       checkAndDeleteRegionTxResponseBuilder.setResult(result);
+     }
+    }
+    else
+    {
+      result = false;
+      checkAndDeleteRegionTxResponseBuilder.setResult(result);
+    }
+
+    if (LOG.isTraceEnabled()) LOG.trace("checkAndDeleteRegionTx result is " + result);
+    checkAndDeleteRegionTxResponseBuilder.setHasException(false);
+
+    if (t != null)
+    {
+      checkAndDeleteRegionTxResponseBuilder.setHasException(true);
+      checkAndDeleteRegionTxResponseBuilder.setException(t.toString());
+    }
+
+    if (wre != null)
+    {
+      checkAndDeleteRegionTxResponseBuilder.setHasException(true);
+      checkAndDeleteRegionTxResponseBuilder.setException(wre.toString());
+    }
+
+    SsccCheckAndDeleteRegionTxResponse checkAndDeleteRegionTxResponse = checkAndDeleteRegionTxResponseBuilder.build();
+
+    done.run(checkAndDeleteRegionTxResponse);
+    
+*/
+  }
+
   @Override
   public void checkAndDelete(RpcController controller,
                           SsccCheckAndDeleteRequest request,
@@ -2495,7 +2882,7 @@ CoprocessorService, Coprocessor {
   public void checkAndPutRegionTx(RpcController controller,
                           SsccCheckAndPutRegionTxRequest request,
                           RpcCallback<SsccCheckAndPutRegionTxResponse> done) {
-/*
+
     SsccCheckAndPutRegionTxResponse response = SsccCheckAndPutRegionTxResponse.getDefaultInstance();
 
     byte [] rowArray = null;
@@ -2509,8 +2896,9 @@ CoprocessorService, Coprocessor {
     WrongRegionException wre = null;
     Throwable t = null;
     boolean result = false;
-    long transId = request.getTransactionId();
+    long tid = request.getTid();
     long startId = request.getStartId();
+    boolean autoCommit = request.getAutoCommit();
 
     org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxResponse.Builder checkAndPutRegionTxResponseBuilder = SsccCheckAndPutRegionTxResponse.newBuilder();
 
@@ -2521,7 +2909,7 @@ CoprocessorService, Coprocessor {
       try {
           put = ProtobufUtil.toPut(proto);
       } catch (Throwable e) {
-        LOG.error("SsccRegionEndpoint coprocessor: checkAndPutRegionTx caught exception " + e.getMessage() + "" + stackTraceToString(e));
+        LOG.error("checkAndPutRegionTx caught exception ", e);
         t = e;
       }
 
@@ -2533,7 +2921,7 @@ CoprocessorService, Coprocessor {
 
           if (!Bytes.equals(rowArray, row.toByteArray())) {
              t = new org.apache.hadoop.hbase.DoNotRetryIOException("Action's Put row must match the passed row");
-             if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndPutRegionTx creating DoNotRetryIOException: setting result: Put row must match the passed row\n" +
+             if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx creating DoNotRetryIOException: setting result: Put row must match the passed row\n" +
                   "rowArray: " + Bytes.toStringBinary(rowArray) + ", rowArray in hex: " + Hex.encodeHexString(rowArray) + ", row: " +
                   Bytes.toStringBinary(request.getRow().toByteArray()) + ", row in hex: " + Hex.encodeHexString(request.getRow().toByteArray()));
           }
@@ -2550,22 +2938,22 @@ CoprocessorService, Coprocessor {
             value = request.getValue();
 
           try {
-           if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: attempting checkAndPutRegionTx for trans: " + transId +
+           if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx for tid: " + tid +
                                  " startid: " + startId);
-           result = checkAndPutRegionTx(transId, startId,
+           result = checkAndPutRegionTx(tid, startId,
                request.getRow().toByteArray(),
                request.getFamily().toByteArray(),
                request.getQualifier().toByteArray(),
                request.getValue().toByteArray(),
-               put);
-           if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndPutRegionTx returned " + result);
+               put,
+               autoCommit);
+           if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx returned " + result);
           } catch (Throwable e) {
-             if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndPutRegionTx threw exception after internal checkAndPutRegionTx");
-             if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAnd Put caught exception " + e.getMessage() + "" + stackTraceToString(e));
+             if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx threw exception after internal checkAndPutRegionTx ", e);
              t = e;
           }
        }
-       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndPutRegionTx setting result: " + result);
+       if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx setting result: " + result);
        checkAndPutRegionTxResponseBuilder.setResult(result);
      }
     }
@@ -2575,7 +2963,7 @@ CoprocessorService, Coprocessor {
       checkAndPutRegionTxResponseBuilder.setResult(result);
     }
 
-    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  checkAndPutRegionTx result is " + result);
+    if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx result is " + result);
 
     checkAndPutRegionTxResponseBuilder.setHasException(false);
 
@@ -2594,7 +2982,76 @@ CoprocessorService, Coprocessor {
     SsccCheckAndPutRegionTxResponse checkAndPutRegionTxResponse = checkAndPutRegionTxResponseBuilder.build();
 
     done.run(checkAndPutRegionTxResponse);
-    */
+  }
+
+  /**
+   * Processes a checkAndDelete operation using a region transaction
+   * @param long transactionId
+   * @param byte[] row
+   * @param byte[] family
+   * @param byte[] qualifier
+   * @param byte[] value
+   * @param Delete delete
+   * @param boolean autoCommit
+   * @return boolean
+   * @throws IOException
+   */
+  public boolean checkAndDeleteRegionTx(long tid, long startId,
+                                byte[] row, byte[] family,
+                                byte[] qualifier, byte[] value,
+                                Delete delete, boolean autoCommit) throws IOException {
+
+    if (LOG.isTraceEnabled()) LOG.trace("Enter checkAndDeleteRegionTx, tid: " + tid);
+    SsccTransactionState state = this.beginTransIfNotExist(tid, startId, true); // This is a regionTX
+    boolean result = false;
+    byte[] rsValue = null;
+
+    Get get = new Get(row);
+    get.addColumn(family, qualifier);
+
+    Result rs = this.get(tid, startId, get);
+
+    boolean valueIsNull = value == null ||
+                          value.length == 0;
+    int lv_return = 0;
+
+    if (rs.isEmpty() && valueIsNull) {
+      lv_return = this.deleteRegionTx(tid, startId, delete, autoCommit);
+      result = (lv_return == STATELESS_UPDATE_OK) ? true: false;
+      if (LOG.isTraceEnabled()) LOG.trace("checkAndDeleteRegionTx, tid: "
+               + tid + " rsValue.length == 0, lv_return: " + lv_return
+               + ", result is " + result);
+
+    } else if (!rs.isEmpty() && valueIsNull) {
+      rsValue = rs.getValue(family, qualifier);
+      if (rsValue != null && rsValue.length == 0) {
+        lv_return = this.deleteRegionTx(tid, startId, delete, autoCommit);
+        result = (lv_return == STATELESS_UPDATE_OK) ? true: false;
+        if (LOG.isTraceEnabled()) LOG.trace("checkAndDeleteRegionTx, tid: "
+               + tid + " rsValue.length == 0, lv_return: " + lv_return
+               + ", result is: " + result);
+      }
+      else {
+        if (LOG.isTraceEnabled()) LOG.trace("checkAndDeleteRegionTx, tid: "
+              + tid + " rsValue.length != 0, result is false");
+        result = false;
+      }
+    } else if ((!rs.isEmpty())
+              && !valueIsNull
+              && (Bytes.equals(rs.getValue(family, qualifier), value))) {
+       lv_return = this.deleteRegionTx(tid, startId, delete, autoCommit);
+       result = (lv_return == STATELESS_UPDATE_OK) ? true : false;
+       if (LOG.isTraceEnabled()) LOG.trace("checkAndDeleteRegionTx, tid: "
+               + tid + " rsValue matches the row, lv_return is: " + lv_return
+               + ", result is: " + result);
+    } else {
+      result = false;
+      if (LOG.isTraceEnabled()) LOG.trace("checkAndDeleteRegionTx setting result to " + result + ", row: " + row);
+    }
+
+    if (LOG.isTraceEnabled()) LOG.trace("checkAndDeleteRegionTx  EXIT, result is " + result + " row: " + row);
+
+    return result;
   }
 
   /**
@@ -2660,6 +3117,84 @@ CoprocessorService, Coprocessor {
 
     if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndDelete  EXIT result is " + result + " row: " + row);
 
+    return result;
+  }
+
+  /**
+   * Processes a checkAndPut operation using a region transaction
+   * @param long tid
+   * @param byte[] row
+   * @param byte[] family
+   * @param byte[] qualifier
+   * @param byte[] value
+   * @param Put put
+   * @param boolean autoCommit
+   * @return boolean
+   * @throws IOException
+   */
+  public boolean checkAndPutRegionTx(long tid, long startId, byte[] row, byte[] family,
+                            byte[] qualifier, byte[] value, Put put,
+                            final boolean autoCommit)throws IOException {
+
+    SsccTransactionState state = this.beginTransIfNotExist(tid, startId, true); // This is a Region TX
+    boolean result = false;
+    byte[] rsValue = null;
+
+    Get get = new Get(row);
+    get.addColumn(family, qualifier);
+    if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx, tid: " + tid +
+                          ", startId: " + startId + ", row " + row + ", autoCommit " + autoCommit);
+
+    Result rs = this.get(tid, startId, get);
+
+    if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx, tid: "
+               + tid + ", result is empty " + rs.isEmpty() +
+               ", value is " + Bytes.toString(value));
+
+    boolean valueIsNull = value == null || value.length == 0;
+    int lv_return = 0;
+    if (rs.isEmpty() && valueIsNull) {
+      lv_return = this.put(tid, startId, put, false /* stateful */);
+      result = (lv_return == STATEFUL_UPDATE_OK) ? true: false;
+      if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx, tid: "
+              + tid + " valueIsNull, lv_return is: " + lv_return + ", result is: " + result);
+    } else if (!rs.isEmpty() && valueIsNull) {
+      rsValue = rs.getValue(family, qualifier);
+      if (rsValue != null && rsValue.length == 0) {
+        lv_return = this.put(tid, startId, put, false /* stateful */);
+        result = (lv_return == STATEFUL_UPDATE_OK) ? true: false;
+        if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx, tid: "
+               + tid + " rsValue.length == 0, lv_return: " + lv_return
+               + ", result is: " + result);
+      }
+      else {
+        result = false;
+        if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx, tid: "
+              + tid + " rsValue.length != 0, result is false");
+      }
+    } else if ((!rs.isEmpty()) && !valueIsNull
+              && (Bytes.equals(rs.getValue(family, qualifier), value))) {
+       lv_return = this.put(tid, startId, put, false /* stateful */);
+       result = (lv_return == STATEFUL_UPDATE_OK) ? true : false;
+       if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx, tid: "
+               + tid + " rsValue matches the row, lv_return is: " + lv_return + ", result is: " + result);
+
+    } else {
+      result = false;
+      if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx, tid: "
+              + tid + " last case, result is false");
+    }
+
+    // Now we must perform conflict checking.
+    boolean success = commitIfPossible(tid);
+
+    if (! success) {
+       LOG.error("checkAndPutRegionTx - tid " + tid + " was not successful.  Throwing IOException ");
+       throw new IOException("checkAndPutRegionTx - tid " + tid + " was not successful.  Throwing IOException ");
+    }
+
+    if (LOG.isTraceEnabled()) LOG.trace("checkAndPutRegionTx tid " + tid
+           + " returns " + result + " for row: " + row);
     return result;
   }
 

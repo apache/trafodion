@@ -62,6 +62,8 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.TrafParallelClientScanner;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndDeleteRegionTxRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndDeleteRegionTxResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndDeleteRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndDeleteResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutRequest;
@@ -70,6 +72,8 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProt
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutRegionTxResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteMultipleTransactionalRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteMultipleTransactionalResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteRegionTxRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteRegionTxResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteTransactionalRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteTransactionalResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.GetTransactionalRequest;
@@ -202,7 +206,8 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
           }
         } while (retryCount < TransactionalTable.retries && retry == true);
       } catch (Throwable e) {
-        throw new IOException("ERROR while calling coprocessor", e);
+        if (LOG.isErrorEnabled()) LOG.error("ERROR while calling getTransactional ", e);
+        throw new IOException("ERROR while calling getTransactional ", e);
       } 
       if(result == null)
         throw new IOException(retryErrMsg);
@@ -271,12 +276,70 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
             }
           } while (retryCount < TransactionalTable.retries && retry == true);
         } catch (Throwable t) {
-          throw new IOException("ERROR while calling coprocessor",t);
+          if (LOG.isErrorEnabled()) LOG.error("ERROR while calling delete ",t);
+          throw new IOException("ERROR while calling coprocessor ",t);
         } 
         if(result == null)
           throw new IOException(retryErrMsg);
         else if(result.hasException())
           throw new IOException(result.getException());
+    }
+
+    public void deleteRegionTx(final long tid, final Delete delete, final boolean autoCommit) throws IOException {
+  	if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.deleteRegionTx ENTRY, autoCommit: " + autoCommit);
+        SingleVersionDeleteNotSupported.validateDelete(delete);
+        final String regionName = super.getRegionLocation(delete.getRow()).getRegionInfo().getRegionNameAsString();
+
+        Batch.Call<TrxRegionService, DeleteRegionTxResponse> callable =
+            new Batch.Call<TrxRegionService, DeleteRegionTxResponse>() {
+          ServerRpcController controller = new ServerRpcController();
+          BlockingRpcCallback<DeleteRegionTxResponse> rpcCallback =
+            new BlockingRpcCallback<DeleteRegionTxResponse>();
+
+          @Override
+          public DeleteRegionTxResponse call(TrxRegionService instance) throws IOException {
+            org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteRegionTxRequest.Builder builder = DeleteRegionTxRequest.newBuilder();
+            builder.setTid(tid);
+            builder.setAutoCommit(autoCommit);
+            builder.setRegionName(ByteString.copyFromUtf8(regionName));
+
+            MutationProto m1 = ProtobufUtil.toMutation(MutationType.DELETE, delete);
+            builder.setDelete(m1);
+
+            instance.deleteRegionTx(controller, builder.build(), rpcCallback);
+            return rpcCallback.get();
+          }
+        };
+
+        byte[] row = delete.getRow();
+        DeleteRegionTxResponse result = null; 
+        try {
+          int retryCount = 0;
+          boolean retry = false;
+          do {
+            Iterator<Map.Entry<byte[], DeleteRegionTxResponse>> it =
+                 super.coprocessorService(TrxRegionService.class, row, row, callable).entrySet().iterator();
+            if(it.hasNext()) {
+              result = it.next().getValue();
+              retry = false;
+            }
+
+            if(result == null || result.getException().contains("closing region")) {
+              Thread.sleep(TransactionalTable.delay);
+              retry = true;
+              retryCount++;
+            }
+          } while (retryCount < TransactionalTable.retries && retry == true);
+        } catch (Throwable t) {
+          if (LOG.isErrorEnabled()) LOG.error("ERROR while calling deleteRegionTx ",t);
+          throw new IOException("ERROR while calling deleteRegionTx",t);
+        } 
+        if(result == null)
+          throw new IOException(retryErrMsg);
+        else if(result.hasException())
+          throw new IOException(result.getException());
+        // deleteRegionTx is void, may not need to check result
+        if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.deleteRegionTx EXIT");
     }
 
     /**
@@ -344,7 +407,8 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 
       } while(retryCount < TransactionalTable.retries && retry == true);
     } catch (Throwable e) {
-      throw new IOException("ERROR while calling coprocessor", e);
+      if (LOG.isErrorEnabled()) LOG.error("ERROR while calling putTransactional ", e);
+      throw new IOException("ERROR while calling putTransactional ", e);
     }    
     if(result == null)
       throw new IOException(retryErrMsg);
@@ -355,7 +419,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
     if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put EXIT");
   }
 
-   public synchronized void putRegionTx(final long tsId, final Put put, final boolean autoCommit) throws IOException{
+   public synchronized void putRegionTx(final long tid, final Put put, final boolean autoCommit) throws IOException{
         if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.putRegionTx ENTRY, autoCommit: " + autoCommit);
 
         validatePut(put);
@@ -369,7 +433,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
         @Override
         public PutRegionTxResponse call(TrxRegionService instance) throws IOException {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutRegionTxRequest.Builder builder = PutRegionTxRequest.newBuilder();
-          builder.setTid(tsId);
+          builder.setTid(tid);
           builder.setAutoCommit(autoCommit);
           builder.setRegionName(ByteString.copyFromUtf8(regionName));
           MutationProto m1 = ProtobufUtil.toMutation(MutationType.PUT, put);
@@ -402,6 +466,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 
         } while(retryCount < TransactionalTable.retries && retry == true);
       } catch (Throwable e) {
+        if (LOG.isErrorEnabled()) LOG.error("ERROR while calling putRegionTx ", e);
         throw new IOException("ERROR while calling coprocessor in putRegionTx ", e);
       }    
       if(result == null)
@@ -424,6 +489,84 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
     TransactionalScanner scanner = new TransactionalScanner(this, transactionState, scan, value);
     
     return scanner;         
+  }
+
+  public boolean checkAndDeleteRegionTx(final long tid,	final byte[] row,
+		  final byte[] family, final byte[] qualifier, final byte[] value,
+          final Delete delete, final boolean autoCommit) throws IOException {
+    if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.checkAndDeleteRegionTx row: " + row
+    		+ " family: " + family + " qualifier: " + qualifier + " value: " + value);
+    if (!Bytes.equals(row, delete.getRow())) {
+       throw new IOException("checkAndDeleteRegionTx action's getRow must match the passed row");
+    }
+    final String regionName = super.getRegionLocation(delete.getRow()).getRegionInfo().getRegionNameAsString();
+    if(regionName == null) 
+    	throw new IOException("Null regionName");
+
+    Batch.Call<TrxRegionService, CheckAndDeleteRegionTxResponse> callable =
+      new Batch.Call<TrxRegionService, CheckAndDeleteRegionTxResponse>() {
+      ServerRpcController controller = new ServerRpcController();
+      BlockingRpcCallback<CheckAndDeleteRegionTxResponse> rpcCallback =
+        new BlockingRpcCallback<CheckAndDeleteRegionTxResponse>();
+
+    public CheckAndDeleteRegionTxResponse call(TrxRegionService instance) throws IOException {
+        org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndDeleteRegionTxRequest.Builder builder = CheckAndDeleteRegionTxRequest.newBuilder();
+        builder.setTid(tid);
+        builder.setRegionName(ByteString.copyFromUtf8(regionName));
+        builder.setRow(HBaseZeroCopyByteString.wrap(row));
+        builder.setAutoCommit(autoCommit);
+        if(family != null)
+           builder.setFamily(HBaseZeroCopyByteString.wrap(family));
+        else
+           builder.setFamily(HBaseZeroCopyByteString.wrap(new byte[]{}));
+
+        if(qualifier != null)
+        	builder.setQualifier(HBaseZeroCopyByteString.wrap(qualifier));
+        else
+        	builder.setQualifier(HBaseZeroCopyByteString.wrap(new byte[]{}));
+        if(value != null)
+        	builder.setValue(HBaseZeroCopyByteString.wrap(value));
+        else 
+        	builder.setValue(HBaseZeroCopyByteString.wrap(new byte[]{}));
+        
+        MutationProto m1 = ProtobufUtil.toMutation(MutationType.DELETE, delete);
+        builder.setDelete(m1);
+
+        instance.checkAndDeleteRegionTx(controller, builder.build(), rpcCallback);
+        return rpcCallback.get();
+      }
+    };
+
+    CheckAndDeleteRegionTxResponse result = null;
+    try {
+       int retryCount = 0;
+       boolean retry = false;
+       do {
+          Iterator<Map.Entry<byte[], CheckAndDeleteRegionTxResponse>> it = super.coprocessorService(TrxRegionService.class, 
+                         delete.getRow(), 
+                         delete.getRow(), 
+                         callable)
+                        .entrySet()
+                        .iterator();
+          if(it.hasNext()) {
+            result = it.next().getValue();
+            retry = false;
+          }
+          if(result == null || result.getException().contains("closing region")) {
+            Thread.sleep(TransactionalTable.delay);
+            retry = true;
+            retryCount++;
+          }
+        } while (retryCount < TransactionalTable.retries && retry == true);
+      } catch (Throwable e) {
+        if (LOG.isErrorEnabled()) LOG.error("ERROR while calling checkAndDeleteRegionTx ",e);
+        throw new IOException("ERROR while calling checkAndDeleteRegionTx",e);
+      }
+      if(result == null)
+        throw new IOException(retryErrMsg);
+      else if(result.hasException())
+        throw new IOException(result.getException());
+      return result.getResult();
   }
 
   public boolean checkAndDelete(final TransactionState transactionState,
@@ -494,7 +637,8 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
           }
         } while (retryCount < TransactionalTable.retries && retry == true);
       } catch (Throwable e) {
-        throw new IOException("ERROR while calling coprocessor",e);
+        if (LOG.isErrorEnabled()) LOG.error("ERROR while calling checkAndDelete ",e);
+        throw new IOException("ERROR while calling checkAndDelete ",e);
       }
       if(result == null)
         throw new IOException(retryErrMsg);
@@ -574,8 +718,9 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
             retryCount++;
           }
         } while (retryCount < TransactionalTable.retries && retry == true);
-      } catch (Throwable e) {        
-        throw new IOException("ERROR while calling coprocessor ",e);       
+      } catch (Throwable e) {
+        if (LOG.isErrorEnabled()) LOG.error("ERROR while calling checkAndPut ",e);
+        throw new IOException("ERROR while calling checkAndPut ",e);       
       }
 
       if(result == null)
@@ -605,7 +750,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
      * @throws IOException
      * @since 2.1.0
      */
-	public boolean checkAndPutRegionTx(final long tsId, final byte[] row,
+	public boolean checkAndPutRegionTx(final long tid, final byte[] row,
 			final byte[] family, final byte[] qualifier, final byte[] value,
 			final Put put, final boolean autoCommit) throws IOException{
 		
@@ -629,7 +774,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 	      @Override
 	      public CheckAndPutRegionTxResponse call(TrxRegionService instance) throws IOException {
 	        org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutRegionTxRequest.Builder builder = CheckAndPutRegionTxRequest.newBuilder();
-	        builder.setTid(tsId);
+	        builder.setTid(tid);
 	        builder.setRegionName(ByteString.copyFromUtf8(regionName));
 	        builder.setRow(HBaseZeroCopyByteString.wrap(row));
 	        if (family != null)
@@ -676,8 +821,9 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 	            retryCount++;
 	          }
 	        } while (retryCount < TransactionalTable.retries && retry == true);
-	      } catch (Throwable e) {        
-	        throw new IOException("ERROR while calling coprocessor ",e);       
+	      } catch (Throwable e) {
+            if (LOG.isErrorEnabled()) LOG.error("ERROR while calling checkAndPutRegionTx ",e);
+	        throw new IOException("ERROR while calling checkAndPutRegionTx ",e);       
 	      }
 
 	      if(result == null)
@@ -773,7 +919,8 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
  	        } while (retryCount < TransactionalTable.retries && retry == true);
  	        
  	      } catch (Throwable e) {
-	        throw new IOException("ERROR while calling coprocessor", e);
+            if (LOG.isErrorEnabled()) LOG.error("ERROR while calling deleteMultipleTransactional ",e);
+	        throw new IOException("ERROR while calling deleteMultipleTransactional", e);
  	      }
 
              if(result == null)
@@ -867,7 +1014,8 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
           }
         } while (retryCount < TransactionalTable.retries && retry == true);
       } catch (Throwable e) {
-        throw new IOException("ERROR while calling coprocessor",e);
+        if (LOG.isErrorEnabled()) LOG.error("ERROR while calling putMultipleTransactional ",e);
+        throw new IOException("ERROR while calling putMultipleTransactional ",e);
       }
       if(result == null)
         throw new IOException(retryErrMsg);

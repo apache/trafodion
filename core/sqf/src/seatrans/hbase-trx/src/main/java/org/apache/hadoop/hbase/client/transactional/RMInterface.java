@@ -335,9 +335,9 @@ public class RMInterface {
     }
 
     public synchronized void deleteRegionTx(final Delete delete, final boolean autoCommit) throws IOException {
-        long tsId = getTmId();
-        if (LOG.isTraceEnabled()) LOG.trace("deleteRegionTx tsId: " + tsId);
- //       ttable.deleteRegionTx(tsId, delete, false, autoCommit);
+        long tid = getTmId();
+        if (LOG.isTraceEnabled()) LOG.trace("deleteRegionTx tid: " + tid);
+        ttable.deleteRegionTx(tid, delete, autoCommit);
     }
 
     public synchronized void delete(final long transactionID, final List<Delete> deletes) throws IOException {
@@ -416,10 +416,9 @@ public class RMInterface {
 
     public synchronized boolean checkAndDeleteRegionTx(byte[] row, byte[] family, byte[] qualifier,
             byte[] value, Delete delete, final boolean autoCommit) throws IOException {
-       long tsId = getTmId();
-       if (LOG.isTraceEnabled()) LOG.trace("Enter checkAndDeleteRegionTx tsId: " + tsId);
-//       return ttable.checkAndDeleteRegionTx(tsId, row, family, qualifier, value, delete, autoCommit);
-       return true;
+       long tid = getTmId();
+       if (LOG.isTraceEnabled()) LOG.trace("Enter checkAndDeleteRegionTx tid: " + tid);
+       return ttable.checkAndDeleteRegionTx(tid, row, family, qualifier, value, delete, autoCommit);
     }
 
     public void close()  throws IOException

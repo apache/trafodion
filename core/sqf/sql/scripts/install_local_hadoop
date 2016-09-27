@@ -947,6 +947,14 @@ EOF
 ${MY_SW_ROOT}/hbase/bin/hbase shell "\$@"
 EOF
 
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swzkcli
+#!/bin/sh
+# command to run hbase zkcli
+
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+${MY_SW_ROOT}/hbase/bin/hbase zkcli "\$@"
+EOF
+
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swuninstall_local_hadoop
 #!/bin/sh
 # uninstall local Hadoop instance.

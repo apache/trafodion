@@ -88,10 +88,14 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionPro
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteRegionTxRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteRegionTxResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRequest;
@@ -274,6 +278,48 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
               throw new IOException(resultArray[0].getException());
           }
 
+    public void deleteRegionTx(final long tid, final Delete delete, final boolean autoCommit) throws IOException {
+      SingleVersionDeleteNotSupported.validateDelete(delete);
+      final String regionName = super.getRegionLocation(delete.getRow()).getRegionInfo().getRegionNameAsString();
+         Batch.Call<SsccRegionService, SsccDeleteRegionTxResponse> callable =
+                new Batch.Call<SsccRegionService, SsccDeleteRegionTxResponse>() {
+            ServerRpcController controller = new ServerRpcController();
+            BlockingRpcCallback<SsccDeleteRegionTxResponse> rpcCallback =
+            new BlockingRpcCallback<SsccDeleteRegionTxResponse>();
+
+            public SsccDeleteRegionTxResponse call(SsccRegionService instance) throws IOException {
+              org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteRegionTxRequest.Builder builder = SsccDeleteRegionTxRequest.newBuilder();      
+              builder.setTid(tid);
+              builder.setStartId(tid);
+              builder.setRegionName(ByteString.copyFromUtf8(regionName));
+              builder.setAutoCommit(autoCommit);
+              MutationProto m1 = ProtobufUtil.toMutation(MutationType.DELETE, delete);
+              builder.setDelete(m1);
+
+              instance.deleteRegionTx(controller, builder.build(), rpcCallback);
+              return rpcCallback.get();
+            }
+          };
+
+          byte[] row = delete.getRow();
+          Map<byte[], SsccDeleteRegionTxResponse> result = null; 
+
+          try {
+            result = super.coprocessorService(SsccRegionService.class, row, row, callable);
+          } catch (Throwable t) {
+            throw new IOException("ERROR while calling deleteRegionTx ",t);
+          } 
+          Collection<SsccDeleteRegionTxResponse> results = result.values();
+          //GetTransactionalResponse[] resultArray = (GetTransactionalResponse[]) results.toArray();
+          SsccDeleteRegionTxResponse[] resultArray = new SsccDeleteRegionTxResponse[results.size()];
+          results.toArray(resultArray);
+          if(resultArray.length == 0)
+            throw new IOException("Problem with calling coprocessor deleteRegionTx, no regions returned result");
+          if(resultArray[0].hasException())
+            throw new IOException(resultArray[0].getException());
+
+        }
+
     /**
      * Commit a Put to the table.
      * <p>
@@ -383,7 +429,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
       ServerRpcController controller = new ServerRpcController();
       BlockingRpcCallback<SsccPutRegionTxResponse> rpcCallback =
           new BlockingRpcCallback<SsccPutRegionTxResponse>();
-      @Override
+
       public SsccPutRegionTxResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutRegionTxRequest.Builder builder = SsccPutRegionTxRequest.newBuilder();
         builder.setTid(tsId);
@@ -416,7 +462,6 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
         if(result == null || result.getException().contains("closing region")) {
           Thread.sleep(TransactionalTable.delay);
           retry = true;
-//          transactionState.setRetried(true);
           retryCount++;
         }
 
@@ -432,7 +477,72 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
     // put is void, may not need to check result
     if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.putRegionTx EXIT");
 
-}
+  }
+
+
+   public boolean checkAndDeleteRegionTx(final long tid, final byte[] row, final byte[] family,
+          final byte[] qualifier, final byte[] value, final Delete delete, final boolean autoCommit) throws IOException {
+   if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.checkAndDelete row: " + row
+		   + " family: " + family + " qualifier: " + qualifier
+		   + " value: " + value + " autocommit " + autoCommit);
+   if (!Bytes.equals(row, delete.getRow())) {
+       throw new IOException("Action's getRow must match the passed row");
+   }
+   final String regionName = super.getRegionLocation(delete.getRow()).getRegionInfo().getRegionNameAsString();
+   if(regionName == null) 
+      throw new IOException("Null regionName");
+   Batch.Call<SsccRegionService, SsccCheckAndDeleteRegionTxResponse> callable =
+     new Batch.Call<SsccRegionService, SsccCheckAndDeleteRegionTxResponse>() {
+     ServerRpcController controller = new ServerRpcController();
+     BlockingRpcCallback<SsccCheckAndDeleteRegionTxResponse> rpcCallback =
+       new BlockingRpcCallback<SsccCheckAndDeleteRegionTxResponse>();
+
+     public SsccCheckAndDeleteRegionTxResponse call(SsccRegionService instance) throws IOException {
+       org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRegionTxRequest.Builder builder = SsccCheckAndDeleteRegionTxRequest.newBuilder();
+       builder.setTid(tid);
+       builder.setStartId(tid);
+       builder.setRegionName(ByteString.copyFromUtf8(regionName));
+       builder.setRow(HBaseZeroCopyByteString.wrap(row));
+       builder.setAutoCommit(autoCommit);
+       if(family != null)
+       	builder.setFamily(HBaseZeroCopyByteString.wrap(family));
+       else
+       	builder.setFamily(HBaseZeroCopyByteString.wrap(new byte[]{}));
+
+       if(qualifier != null)
+       	builder.setQualifier(HBaseZeroCopyByteString.wrap(qualifier));
+       else
+       	builder.setQualifier(HBaseZeroCopyByteString.wrap(new byte[]{}));
+       if(value != null)
+       	builder.setValue(HBaseZeroCopyByteString.wrap(value));
+       else 
+       	builder.setValue(HBaseZeroCopyByteString.wrap(new byte[]{}));
+
+       MutationProto m1 = ProtobufUtil.toMutation(MutationType.DELETE, delete);
+       builder.setDelete(m1);
+
+       instance.checkAndDeleteRegionTx(controller, builder.build(), rpcCallback);
+       return rpcCallback.get();
+       }
+     };
+
+     Map<byte[], SsccCheckAndDeleteRegionTxResponse> result = null;
+     try {
+       result = super.coprocessorService(SsccRegionService.class, delete.getRow(), delete.getRow(), callable);
+     } catch (Throwable e) {
+       throw new IOException("ERROR while calling coprocessor checkAndDeleteRegionTx", e);
+     }
+
+     Collection<SsccCheckAndDeleteRegionTxResponse> results = result.values();
+     SsccCheckAndDeleteRegionTxResponse[] resultArray = new SsccCheckAndDeleteRegionTxResponse[results.size()];
+     results.toArray(resultArray);
+
+     if(resultArray.length == 0) 
+        throw new IOException("Problem with calling coprocessor checkAndDeleteRegionTx, no regions returned result");
+     // Should only be one result, if more than one. Can't handle.
+     return resultArray[0].getResult();
+
+  }
 
   public boolean checkAndDelete(final TransactionState transactionState, final byte[] row, final byte[] family,
            final byte[] qualifier, final byte[] value, final Delete delete) throws IOException {
@@ -595,7 +705,6 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
       BlockingRpcCallback<SsccCheckAndPutRegionTxResponse> rpcCallback =
         new BlockingRpcCallback<SsccCheckAndPutRegionTxResponse>();
 
-      @Override
       public SsccCheckAndPutRegionTxResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRegionTxRequest.Builder builder = SsccCheckAndPutRegionTxRequest.newBuilder();
         builder.setTid(tsId);
