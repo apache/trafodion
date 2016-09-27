@@ -660,7 +660,7 @@ public class TmAuditTlog {
          if (LOG.isTraceEnabled()) LOG.trace("putSingleRecord writing to remote Tlog for transid: " + lvTransid + " state: " + lvTxState + " ASN: " + lvAsn
                   + " in thread " + threadId);
          Table recoveryTable;
-         int lv_ownerNid = (int)(lvTransid >> 32);
+         int lv_ownerNid = (int)TransactionState.getNodeId(lvTransid);
          String lv_tLogName = new String("TRAFODION._DTM_.TLOG" + String.valueOf(lv_ownerNid) + "_LOG_" + Integer.toHexString(lv_lockIndex));
          recoveryTable = connection.getTable(TableName.valueOf(lv_tLogName));
 
@@ -1012,7 +1012,7 @@ public class TmAuditTlog {
       // the appropriate Tlog
       Table unknownTransactionTable;
       long lvTransid = ts.getTransactionId();
-      int lv_ownerNid = (int)(lvTransid >> 32);
+      int lv_ownerNid = (int)TransactionState.getNodeId(lvTransid);
       int lv_lockIndex = (int)(lvTransid & tLogHashKey);
       String lv_tLogName = new String("TRAFODION._DTM_.TLOG" + String.valueOf(lv_ownerNid) + "_LOG_" + Integer.toHexString(lv_lockIndex));
       if (LOG.isTraceEnabled()) LOG.trace("getTransactionState reading from: " + lv_tLogName);
