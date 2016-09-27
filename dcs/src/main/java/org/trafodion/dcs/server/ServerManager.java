@@ -85,10 +85,11 @@ public final class ServerManager implements Callable {
     private static String sqlplanEnable;
     private static int userProgPortMapToSecs;
     private static int userProgPortBindToSecs;
-    private static ServerHandler[] serverHandlers;
+    private ServerHandler[] serverHandlers;
     private int maxRestartAttempts;
     private int retryIntervalMillis;
     private RetryCounterFactory retryCounterFactory;
+    private String nid = null;
 
     class RegisteredWatcher implements Watcher {
         CountDownLatch startSignal;
@@ -344,20 +345,26 @@ public final class ServerManager implements Callable {
         // Invoke sqcheck -n <nid> to check Node status. 
         // 
         //   sqcheck returns:
-        //    0 - Node up
-        //    1 - Node down
+        //    -1 - Not up ($?=255) or node down
+        //     0 - Fully up and operational or node up
+        //     1 - Partially up and operational
+        //     2 - Partially up and NOT operational
  
         ScriptContext scriptContext = new ScriptContext();
         scriptContext.setHostName(hostName);
         scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
-        String command = ("sqcheck -n " + nid);
+        String command;
+        if (nid != null)
+           command = ("sqcheck -n " + nid);
+        else
+           command = ("sqcheck");
         scriptContext.setCommand(command);
         ScriptManager.getInstance().runScript(scriptContext);// This will
                                                              // block while
                                                              // script is
                                                              // running
         int exitCode = scriptContext.getExitCode();
-        return (exitCode == 0) ? true : false;
+        return (exitCode == 0 || exitCode == 1) ? true : false;
     }
 
     @Override
@@ -372,6 +379,18 @@ public final class ServerManager implements Callable {
             getMaster();
             featureCheck();
             registerInRunning(instance);
+            RetryCounter retryCounter = retryCounterFactory.create();
+            while (!isTrafodionRunning(nid)) {
+               if (!retryCounter.shouldRetry()) {
+                  if (nid != null)
+                     throw new IOException("Node " + nid + " is not Up");
+                  else
+                     throw new IOException("Trafodion is not running");
+               } else {
+                  retryCounter.sleepUntilNextRetry();
+                  retryCounter.useRetry();
+               }
+            }
 
             // When started from bin/dcs-start.sh script childServers will
             // contain the
@@ -404,10 +423,10 @@ public final class ServerManager implements Callable {
                     LOG.debug("Server handler [" + instance + ":" + result
                             + "] finished, restarting");
                     if (isRunning)
-                        LOG.error("mxosrvr " + nid + "," + pid + " still running, but restarting another");
+                        LOG.info("mxosrvr " + nid + "," + pid + " still running");
                     else
-                        LOG.error("mxosrvr " + nid + "," + pid + " exited, restarting");
-                    RetryCounter retryCounter = retryCounterFactory.create();
+                        LOG.info("mxosrvr " + nid + "," + pid + " exited, restarting");
+                    retryCounter = retryCounterFactory.create();
                     while (!isTrafodionRunning(nid)) {
                        if (!retryCounter.shouldRetry()) {
                           throw new IOException("Node " + nid + " is not Up");
