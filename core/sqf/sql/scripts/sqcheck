@@ -42,13 +42,14 @@ function Usage {
     echo "-h       Help"
     echo "-v       Verbose"
     echo "-q       Quiet"
+    echo "-n <nid> Check if the node is up"
     echo
 
 }
 
 function GetOpts {
 
-    while getopts "c:i:d:fqvrjh" arg
+    while getopts "c:i:d:fqvrjn:h" arg
       do
       case $arg in 
       c)
@@ -88,6 +89,9 @@ function GetOpts {
           ;;
       j)
           json_output=1
+          ;;
+      n) 
+          check_node=${OPTARG}  
           ;;
       h)
       Usage;
@@ -160,6 +164,21 @@ function getRestInfo {
 
 }
 
+function getNodeStatus {
+  sq_tmp_node_info=`mktemp -t`
+  sqshell -c zone nid $check_node  > $sq_tmp_node_info
+  sq_tmp_lnode_up=`mktemp -t`
+  grep -i 'up' $sq_tmp_node_info | awk '{ print $4 }' | grep -i 'up' > $sq_tmp_lnode_up
+  for lnodeup in `cat $sq_tmp_lnode_up`; do
+    let ++act_lnode_up_cnt
+  done
+  if ( [ $act_lnode_up_cnt '>' 0 ] ); then
+     exit 0;
+  else
+     exit -1;
+  fi
+}
+
 jpscmd=$JAVA_HOME/bin/jps
 tmpjps=/tmp/tmpjps-$USER.log
 begin_time_seconds=$(date +%s)
@@ -169,12 +188,14 @@ declare -i sleep_duration
 declare -i sqc_verbose
 declare -i reset_counter
 declare -i json_output
+declare -i check_node 
 
 let max_checks=2
 let sleep_duration=1
 let sqc_verbose=0
 let reset_counter=0
 let json_output=0
+let check_node=-1
 
 # Set debug_display to 1 to eanble debugging display of values
 let debug_display=0
@@ -229,10 +250,14 @@ let sq_up=0
 if [[ -z $SQSCRIPTS_DIR ]]; then
     SQSCRIPTS_DIR=$MY_SQROOT/sql/scripts
 fi
+
 SQSCRIPT_FILE="$SQSCRIPTS_DIR/gomon.cold"
 STARTSSMP_FILE="$SQSCRIPTS_DIR/ssmpstart"
 STARTSSCP_FILE="$SQSCRIPTS_DIR/sscpstart"
 
+if [ $check_node '>' -1 ]; then
+   getNodeStatus
+fi
 
 ### CONFIGURED NODEs
 sq_tmp_node_info=`mktemp -t`
