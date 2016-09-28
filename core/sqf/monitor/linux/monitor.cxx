@@ -75,6 +75,7 @@ using namespace std;
 
 #include "reqqueue.h"
 #include "reqworker.h"
+#include "zclient.h"
 
 #include "SCMVersHelp.h"
 
@@ -109,6 +110,7 @@ bool SMSIntegrating = false;
 int  CreatorShellPid = -1;
 Verifier_t CreatorShellVerifier = -1;
 bool SpareNodeColdStandby = true;
+bool ZClientEnabled = true;
 
 // Lock to manage memory modifications during fork/exec
 CLock MemModLock;
@@ -128,6 +130,7 @@ CReqQueue ReqQueue;
 CHealthCheck HealthCheck;
 CCommAccept CommAccept;
 extern CReplicate Replicator;
+CZClient  *ZClient = NULL;
 // Seabed disconnect semaphore
 RobSem * sbDiscSem = NULL;
 
@@ -747,6 +750,150 @@ void CMonitor::StartPrimitiveProcesses( void )
     TRACE_EXIT;
 }
 
+void HandleZSessionExpiration( void )
+{
+    const char method_name[] = "HandleZSessionExpiration";
+    TRACE_ENTRY;
+    ReqQueue.enqueueDownReq(MyPNID);
+    TRACE_EXIT;
+}
+
+void HandleNodeExpiration( const char *nodeName )
+{
+    const char method_name[] = "HandleNodeExpiration";
+    TRACE_ENTRY;
+    CNode *node = Nodes->GetNode((char *)nodeName);
+    if (node)
+    {
+        ReqQueue.enqueueDownReq(node->GetPNid());
+    }
+    TRACE_EXIT;
+}
+
+void CMonitor::CreateZookeeperClient( void )
+{
+    const char method_name[] = "CMonitor::CreateZookeeperClient";
+    TRACE_ENTRY;
+
+    if ( ZClientEnabled )
+    {
+        string       hostName;
+        string       zkQuorumHosts;
+        stringstream zkQuorumPort;
+        char *env;
+        char  hostsStr[MAX_PROCESSOR_NAME*3] = { 0 };
+        char *tkn = NULL;
+
+        int zport;
+        env = getenv("ZOOKEEPER_PORT");
+        if ( env && isdigit(*env) )
+        {
+            zport = atoi(env);
+        }
+        else
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf(buf, sizeof(buf),
+                     "[%s], Zookeeper quorum port is not defined!\n"
+                    , method_name);
+            mon_log_write(MON_MONITOR_CREATEZCLIENT_1, SQ_LOG_CRIT, buf);
+
+            ZClientEnabled = false;
+            TRACE_EXIT;
+            return;
+        }
+        
+        env = getenv("ZOOKEEPER_NODES");
+        if ( env )
+        {
+            zkQuorumHosts = env;
+            if ( zkQuorumHosts.length() == 0 )
+            {
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf(buf, sizeof(buf),
+                         "[%s], Zookeeper quorum hosts are not defined!\n"
+                        , method_name);
+                mon_log_write(MON_MONITOR_CREATEZCLIENT_2, SQ_LOG_CRIT, buf);
+
+                ZClientEnabled = false;
+                TRACE_EXIT;
+                return;
+            }
+            
+            strcpy( hostsStr, zkQuorumHosts.c_str() );
+            zkQuorumPort.str( "" );
+            
+            tkn = strtok( hostsStr, "," );
+            do
+            {
+                if ( tkn != NULL )
+                {
+                    hostName = tkn;
+                    zkQuorumPort << hostName.c_str()
+                                 << ":" 
+                                 << zport;
+                }
+                tkn = strtok( NULL, "," );
+                if ( tkn != NULL )
+                {
+                    zkQuorumPort << ",";
+                }
+                
+            }
+            while( tkn != NULL );
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf( "%s@%d zkQuorumPort=%s\n"
+                            , method_name, __LINE__
+                            , zkQuorumPort.str().c_str() );
+            }
+        }
+    
+        ZClient = new CZClient( zkQuorumPort.str().c_str()
+                              , ZCLIENT_TRAFODION_ZNODE
+                              , ZCLIENT_INSTANCE_ZNODE );
+        if ( ZClient == NULL )
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf(buf, sizeof(buf),
+                     "[%s], Failed to allocate ZClient object!\n"
+                    , method_name);
+            mon_log_write(MON_MONITOR_CREATEZCLIENT_3, SQ_LOG_CRIT, buf);
+            abort();
+        }
+    }
+
+    TRACE_EXIT;
+}
+
+void CMonitor::StartZookeeperClient( void )
+{
+    const char method_name[] = "CMonitor::StartZookeeperClient";
+    TRACE_ENTRY;
+
+    int rc = -1;
+
+    if ( ZClientEnabled )
+    {
+        if ( ZClient )
+        {
+            rc = ZClient->StartWork();
+            if (rc == 0)
+            {
+                ZClient->StartMonitoring();
+
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf(buf, sizeof(buf),
+                         "[%s], ZClient node monitoring started\n"
+                        , method_name);
+                mon_log_write(MON_MONITOR_STARTZCLIENT_1, SQ_LOG_INFO, buf);
+            }
+        }
+    }
+
+    TRACE_EXIT;
+}
+
 #ifdef USE_SEQUENCE_NUM
 long long CMonitor::GetTimeSeqNum()
 {
@@ -1294,7 +1441,31 @@ int main (int argc, char *argv[])
             }
         }
 
+        if ( IsRealCluster )
+        {
+            // Zookeeper client is enabled only in a real cluster
+            env = getenv("SQ_MON_ZCLIENT_ENABLED");
+            if ( env )
+            {
+                if ( env && isdigit(*env) )
+                {
+                    if ( strcmp(env,"0")==0 )
+                    {
+                        ZClientEnabled = false;
+                    }
+                }
+            }
 
+            if ( ZClientEnabled )
+            {
+                Monitor->CreateZookeeperClient();
+            }
+        }
+        else
+        {
+            ZClientEnabled = false;
+        }
+    
         if ( IAmIntegrating )
         {
             // This monitor is integrating to (joining) an existing cluster
@@ -1312,6 +1483,16 @@ int main (int argc, char *argv[])
 
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
                 trace_printf("%s@%d" " After ImAlive " "\n", method_name, __LINE__);
+        }
+    }
+
+    // Enable Zookeeper client in real cluster only and
+    // after the integration phase on a node 'up'
+    if ( IsRealCluster )
+    {
+        if ( ZClientEnabled )
+        {
+            Monitor->StartZookeeperClient();
         }
     }
 
@@ -1456,6 +1637,12 @@ int main (int argc, char *argv[])
     if (trace_settings & TRACE_STATS)
     {   // Write malloc statistics info to stderr
         monMallocStats();
+    }
+
+    if ( ZClientEnabled )
+    {
+        ZClient->StopMonitoring();
+        ZClient->ShutdownWork();
     }
 
     Redirector.shutdownWork();

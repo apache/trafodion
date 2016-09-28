@@ -55,7 +55,7 @@ COMMONLOGGERDIR = ../../commonLogger
 
 INCLUDE = monitor.h msgdef.h internal.h monlogging.h clio.h mlio.h localio.h lock.h
 
-LIBS = -L$(LIBEXPDIR) -lrt -lsblogalt
+LIBS = -L$(LIBEXPDIR) -L$(ZOOKEEPER_DIR)/lib -lrt -lsblogalt -lzookeeper_mt
 
 LIBS+= -lmpich
 
@@ -81,6 +81,7 @@ INCLUDES+= -I../../inc
 INCLUDES+= -I../../commonLogger
 INCLUDES+= -I$(LOG4CXX_INC_DIR) 
 INCLUDES+= -I$(LOG4CXX_INC_DIR)/log4cxx
+INCLUDES+= -I$(ZOOKEEPER_DIR)/include
 
 LIBS+=  -lsqlite3
 LIBS+=  -llog4cxx
@@ -212,6 +213,7 @@ MONITOROBJS += $(OUTDIR)/replicate.o
 MONITOROBJS += $(OUTDIR)/gentrap.o
 MONITOROBJS += $(OUTDIR)/monrobsem.o
 MONITOROBJS += $(OUTDIR)/CommonLogger.o
+MONITOROBJS += $(OUTDIR)/zclient.o
 
 SHELLOBJS = $(OUTDIR)/shell.o
 SHELLOBJS += $(OUTDIR)/monclio.o
@@ -260,6 +262,12 @@ CLIENTOBJS += $(OUTDIR)/pnodeconfig.o
 MONWDTOBJS = $(OUTDIR)/monwdt.o
 MONWDTOBJS += $(OUTDIR)/versmwdt.o
 
+ZOOMONOBJS = $(OUTDIR)/zootest.o
+ZOOMONOBJS += $(OUTDIR)/zclient.o
+ZOOMONOBJS += $(OUTDIR)/lock.o
+ZOOMONOBJS += $(OUTDIR)/montrace.o
+ZOOMONOBJS += $(OUTDIR)/CommonLogger.o
+
 MSG_LOG_OBJS = $(OUTDIR)/monlogging.o
 
 TRACE_LOG_OBJS = $(OUTDIR)/trace.o
@@ -280,8 +288,12 @@ ALLOBJS += $(TRACE_LOG_OBJS)
 ALLOBJS += $(CONFOBJS)
 ALLOBJS += $(MEMLOGOBJS)
 ALLOBJS += $(RTSIGBLOCK_OBJS)
+ALLOBJS += $(ZOOMONOBJS)
 
-PGMS = $(BINEXPDIR)/monitor $(BINEXPDIR)/shell $(BINEXPDIR)/sqwatchdog $(BINEXPDIR)/monmemlog
+PGMS = $(BINEXPDIR)/monitor
+PGMS +=  $(BINEXPDIR)/shell
+PGMS +=  $(BINEXPDIR)/sqwatchdog
+PGMS +=  $(BINEXPDIR)/monmemlog
 PGMS +=  $(BINEXPDIR)/pstartd
 PGMS +=  $(LIBEXPDIR)/libseabasesig.so
 
@@ -297,6 +309,7 @@ TEST_PGMS += $(OUTDIR)/testtm
 TEST_PGMS += $(OUTDIR)/pingpong2
 TEST_PGMS += $(OUTDIR)/testspx
 TEST_PGMS += $(OUTDIR)/testconf
+TEST_PGMS += $(OUTDIR)/zootest
 
 #	    $(OUTDIR)/attach \
 #	    $(OUTDIR)/testenv \
@@ -406,6 +419,14 @@ $(OUTDIR)/testconf : $(CONFOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Invoking: Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
 	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
+	@echo 'Finished building target: $@'
+	@echo ' '
+
+$(OUTDIR)/zootest : $(ZOOMONOBJS) $(TRACE_LOG_OBJS) $(MSG_LOG_OBJS)
+	@echo 'Building target: $@'
+	@echo 'Invoking: C++ Compile & Linker'
+	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) -pthread $(OPTIONS) $(INCLUDES) -o $@ $(LIBS) $^
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) -pthread $(INCLUDES) -o $@ $(LIBS) $^
 	@echo 'Finished building target: $@'
 	@echo ' '
 
