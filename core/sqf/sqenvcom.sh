@@ -676,14 +676,27 @@ export SQ_MON_ALTLOG=0
 # Monitor sync thread responsiveness timeout
 # default 15 mins
 export SQ_MON_SYNC_TIMEOUT=900
+
 export SQ_MON_KEEPALIVE=1
 export SQ_MON_KEEPIDLE=60
 export SQ_MON_KEEPINTVL=6
 export SQ_MON_KEEPCNT=5
 
-# The wait timeout is in seconds
-export SQ_MON_EPOLL_WAIT_TIMEOUT=12
-export SQ_MON_EPOLL_RETRY_COUNT=15
+# Monitor sync thread epoll wait timeout is in seconds
+# Currently set to 45 seconds
+export SQ_MON_EPOLL_WAIT_TIMEOUT=15
+export SQ_MON_EPOLL_RETRY_COUNT=3
+
+# Monitor Zookeeper client
+#  - A zero value disables the zclient logic in the monitor process.
+#    It is enabled by default in a real cluster, disabled otherwise.
+#      (must be disabled to debug monitor processes in a real cluster)
+#export SQ_MON_ZCLIENT_ENABLED=0
+#  - Session timeout in seconds defines when Zookeeper quorum determines a
+#    non-responsive monitor zclient which results in a Trafodion node down. 
+#    Default is 60 seconds (1 minute) which is the maximum Zookeeper allows.
+#      (15 seconds longer than EPOLL timeout above).
+#export SQ_MON_ZCLIENT_SESSION_TIMEOUT=60
 
 # set to 0 to disable phandle verifier
 export SQ_PHANDLE_VERIFIER=1
