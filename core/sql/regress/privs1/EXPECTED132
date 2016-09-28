@@ -278,6 +278,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T1
   , C2                               INT DEFAULT NULL
   , PRIMARY KEY (C1 ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132T1 TO DB__ROOT WITH GRANT OPTION;
@@ -291,6 +292,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
   , C2                               INT DEFAULT NULL
   , PRIMARY KEY (C1 ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132T2 TO SQL_USER1 WITH GRANT OPTION;
@@ -304,6 +306,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T3
   , C2                               INT DEFAULT NULL
   , PRIMARY KEY (C1 ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132T3 TO SQL_USER1 WITH GRANT OPTION;
@@ -787,6 +790,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_GAMES
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (GAME_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T132_HOME_GAMES ON TRAFODION.T132SCH.T132_GAMES
@@ -815,6 +819,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_TEAMS
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (TEAM_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
@@ -866,7 +871,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Thu Sep  1 16:41:51 2016
+-- Definition current  Tue Sep 27 10:16:36 2016
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -883,7 +888,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Thu Sep  1 16:41:54 2016
+-- Definition current  Tue Sep 27 10:16:39 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -900,7 +905,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Thu Sep  1 16:41:57 2016
+-- Definition current  Tue Sep 27 10:16:41 2016
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -914,7 +919,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Thu Sep  1 16:41:59 2016
+-- Definition current  Tue Sep 27 10:16:44 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -945,6 +950,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_GAMES
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (GAME_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T132_HOME_GAMES ON TRAFODION.T132SCH.T132_GAMES
@@ -984,7 +990,7 @@ ALTER TABLE TRAFODION.T132SCH.T132_GAMES ADD CONSTRAINT
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Thu Sep  1 16:42:20 2016
+-- Definition current  Tue Sep 27 10:17:03 2016
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1100,6 +1106,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_GAMES
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (GAME_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T132_HOME_GAMES ON TRAFODION.T132SCH.T132_GAMES
@@ -1128,6 +1135,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_TEAMS
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (TEAM_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
@@ -1179,7 +1187,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Thu Sep  1 16:42:56 2016
+-- Definition current  Tue Sep 27 10:17:40 2016
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1196,7 +1204,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Thu Sep  1 16:42:56 2016
+-- Definition current  Tue Sep 27 10:17:40 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1213,7 +1221,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Thu Sep  1 16:42:56 2016
+-- Definition current  Tue Sep 27 10:17:40 2016
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1227,7 +1235,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Thu Sep  1 16:42:56 2016
+-- Definition current  Tue Sep 27 10:17:40 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1273,6 +1281,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_TEAMS
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (TEAM_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
@@ -1307,7 +1316,7 @@ ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Thu Sep  1 16:43:23 2016
+-- Definition current  Tue Sep 27 10:18:07 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1376,6 +1385,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_GAMES
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (GAME_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T132_HOME_GAMES ON TRAFODION.T132SCH.T132_GAMES
@@ -1404,6 +1414,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_TEAMS
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (TEAM_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
@@ -1456,7 +1467,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Thu Sep  1 16:43:46 2016
+-- Definition current  Tue Sep 27 10:18:30 2016
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1473,7 +1484,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Thu Sep  1 16:43:46 2016
+-- Definition current  Tue Sep 27 10:18:30 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1490,7 +1501,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Thu Sep  1 16:43:46 2016
+-- Definition current  Tue Sep 27 10:18:30 2016
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1504,7 +1515,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Thu Sep  1 16:43:46 2016
+-- Definition current  Tue Sep 27 10:18:30 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1537,6 +1548,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_GAMES
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (GAME_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T132_HOME_GAMES ON TRAFODION.T132SCH.T132_GAMES
@@ -1565,6 +1577,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_TEAMS
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (TEAM_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
@@ -1617,7 +1630,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Thu Sep  1 16:44:07 2016
+-- Definition current  Tue Sep 27 10:18:51 2016
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1634,7 +1647,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Thu Sep  1 16:44:07 2016
+-- Definition current  Tue Sep 27 10:18:51 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1651,7 +1664,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Thu Sep  1 16:44:07 2016
+-- Definition current  Tue Sep 27 10:18:51 2016
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1665,7 +1678,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Thu Sep  1 16:44:07 2016
+-- Definition current  Tue Sep 27 10:18:51 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1698,6 +1711,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_GAMES
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (GAME_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T132_HOME_GAMES ON TRAFODION.T132SCH.T132_GAMES
@@ -1726,6 +1740,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_TEAMS
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (TEAM_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
@@ -1778,7 +1793,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Thu Sep  1 16:44:28 2016
+-- Definition current  Tue Sep 27 10:19:11 2016
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1795,7 +1810,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Thu Sep  1 16:44:29 2016
+-- Definition current  Tue Sep 27 10:19:11 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1812,7 +1827,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Thu Sep  1 16:44:29 2016
+-- Definition current  Tue Sep 27 10:19:11 2016
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1826,7 +1841,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Thu Sep  1 16:44:29 2016
+-- Definition current  Tue Sep 27 10:19:11 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2003,26 +2018,26 @@ End of MXCI Session
 >>showstats for table t132t1 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T1
-Table ID: 5832268892549246290
+Table ID: 8170765222353678252
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
-1715115286      8           8           8 SYSKEY
-1715115283      8           8           8 C1
-1715115276      8           8           8 C2
+ 208504770      8           8           8 SYSKEY
+ 208504767      8           8           8 C1
+ 208504760      8           8           8 C2
 
 
 --- SQL operation complete.
 >>showstats for table t132t2 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T2
-Table ID: 5832268892549246382
+Table ID: 8170765222353678398
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
-1721386187      8           8           8 SYSKEY
-1721386182      8           8           8 C1
-1721386177      8           8           8 C2
+ 214964582      8           8           8 SYSKEY
+ 214964577      8           8           8 C1
+ 214964572      8           8           8 C2
 
 
 --- SQL operation complete.
@@ -2132,26 +2147,26 @@ MANAGE_STATISTICS
 >>showstats for table t132t1 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T1
-Table ID: 5832268892549246290
+Table ID: 8170765222353678252
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
-1715115287      8           8           8 SYSKEY
-1715115282      8           8           8 C1
-1715115277      8           8           8 C2
+ 208504771      8           8           8 SYSKEY
+ 208504766      8           8           8 C1
+ 208504761      8           8           8 C2
 
 
 --- SQL operation complete.
 >>showstats for table t132t2 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T2
-Table ID: 5832268892549246382
+Table ID: 8170765222353678398
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
-1721386186      8           8           8 SYSKEY
-1721386183      8           8           8 C1
-1721386176      8           8           8 C2
+ 214964583      8           8           8 SYSKEY
+ 214964576      8           8           8 C1
+ 214964573      8           8           8 C2
 
 
 --- SQL operation complete.
@@ -2201,6 +2216,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T1
     C1                               INT DEFAULT NULL
   , C2                               INT DEFAULT NULL
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132T1 TO DB__ROOT WITH GRANT OPTION;
@@ -2212,13 +2228,13 @@ CREATE TABLE TRAFODION.T132SCH.T132T1
 >>showstats for table t132t1 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T1
-Table ID: 5832268892549246290
+Table ID: 8170765222353678252
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
-1715115287      8           8           8 SYSKEY
-1715115282      8           8           8 C1
-1715115277      8           8           8 C2
+ 208504771      8           8           8 SYSKEY
+ 208504766      8           8           8 C1
+ 208504761      8           8           8 C2
 
 
 --- SQL operation complete.
