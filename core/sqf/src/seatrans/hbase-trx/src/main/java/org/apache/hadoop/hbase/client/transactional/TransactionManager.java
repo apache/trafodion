@@ -3010,12 +3010,12 @@ public class TransactionManager {
               rresult = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
             }
             catch (ServiceException se) {
-                LOG.error("Service exception thrown when recoveryRequest: ", se);
-                throw new IOException("Service exception thrown when recoveryRequest:", se);
+                LOG.error("Service exception thrown when calling recoveryRequest: ", se);
+                throw new IOException("Service exception thrown when calling recoveryRequest:", se);
             }
             catch (Throwable t) {
-                LOG.error("Exception thrown when recoveryRequest: ", t);
-                throw new IOException("Exception thrown when recoveryRequest: ", t);
+                LOG.error("Exception thrown when calling recoveryRequest: ", t);
+                throw new IOException("Exception thrown when calling recoveryRequest: ", t);
             }
 
         Collection<RecoveryRequestResponse> results = rresult.values();
