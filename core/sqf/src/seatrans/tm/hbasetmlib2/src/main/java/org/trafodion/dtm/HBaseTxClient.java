@@ -1034,42 +1034,22 @@ public class HBaseTxClient {
                                 }
                                 try {
                                     TxRecoverList = txnManager.recoveryRequest(hostnamePort, regionBytes, tmID);
-                                }catch (NotServingRegionException e) {
-                                   TxRecoverList = null;
-                                   LOG.error("TRAF RCOV THREAD:NotServingRegionException calling recoveryRequest. regionBytes: " + new String(regionBytes) +
-                                             " TM: " + tmID + " hostnamePort: " + hostnamePort, e);
-
-                                      // First delete the zookeeper entry
-                                      LOG.error("TRAF RCOV THREAD:recoveryRequest. Deleting region entry Entry: " + regionEntry);
-                                      zookeeper.deleteRegionEntry(regionEntry);
-                                      // Create a local HTable object using the regionInfo
-                                      HTable table = new HTable(config, HRegionInfo.parseFrom(regionBytes).getTable().getNameAsString());
-                                      // Repost a zookeeper entry for all current regions in the table
-                                      zookeeper.postAllRegionEntries(table);
-                                }// NotServingRegionException
-                                catch (TableNotFoundException tnfe) {
-                                   // In this case there is nothing to recover.  We just need to delete the region entry.
-                                      // First delete the zookeeper entry
-                                      LOG.warn("TRAF RCOV THREAD:TableNotFoundException calling txnManager.recoveryRequest. " + "TM: " +
+                                catch (Exception e) {
+                                   // For all cases of Exception, we rely on the region to redrive the request.
+                                   // Likely there is nothing to recover, due to a stale region entry, but it is always safe to redrive.
+                                   // We log a warning event and delete the ZKNode entry.
+                                   LOG.warn("TRAF RCOV THREAD:TableNotFoundException calling txnManager.recoveryRequest. " + "TM: " +
                                               tmID + " regionBytes: [" + regionBytes + "].  Deleting zookeeper region entry. \n exception: " + tnfe);
-                                      zookeeper.deleteRegionEntry(regionEntry);
+                                   zookeeper.deleteRegionEntry(regionEntry);
 
-                                }// TableNotFoundException
-                                catch (DeserializationException de) {
-                                   // We are unable to parse the region info from ZooKeeper  We just need to delete the region entry.
-                                      // First delete the zookeeper entry
-                                      LOG.warn("TRAF RCOV THREAD:DeserializationException calling txnManager.recoveryRequest. " + "TM: " +
-                                              tmID + " regionBytes: [" + regionBytes + "].  Deleting zookeeper region entry. \n exception: " + de);
-                                      zookeeper.deleteRegionEntry(regionEntry);
-                                }// DeserializationException
-                                catch (IOException ioe) {
-                                    // It's possible we received a spurious entry from a stale region.
-                                       // It's safe to delete the zookeeper entry and wait for any new posts
-                                       LOG.warn("TRAF RCOV THREAD:IOException calling txnManager.recoveryRequest. " + "TM: " +
-                                               tmID + " regionBytes: [" + regionBytes
-                                               + "].  Deleting zookeeper region entry. exception: " + ioe);
-                                       zookeeper.deleteRegionEntry(regionEntry);
-                                 }// IOException
+                                   // In the case of NotServingRegionException we will repost the ZKNode after refreshing the table.
+                                   if (e instanceOf NotServingRegionException){
+                                       // Create a local HTable object using the regionInfo
+                                       HTable table = new HTable(config, HRegionInfo.parseFrom(regionBytes).getTable().getNameAsString());
+                                       // Repost a zookeeper entry for all current regions in the table
+                                       zookeeper.postAllRegionEntries(table);
+                                   }
+                                } // Exception
 
                                 if (TxRecoverList != null) {
                                     if (LOG.isDebugEnabled()) LOG.trace("TRAF RCOV THREAD:size of TxRecoverList " + TxRecoverList.size());

@@ -2968,7 +2968,8 @@ public class TransactionManager {
      * @return
      * @throws Exception
      */
-    public List<Long> recoveryRequest (String hostnamePort, byte[] regionArray, int tmid) throws DeserializationException, IOException {
+    public List<Long> recoveryRequest (String hostnamePort, byte[] regionArray, int tmid) throws DeserializationException, 
+           ServiceException, IOException, Throwable {
         if (LOG.isTraceEnabled()) LOG.trace("recoveryRequest -- ENTRY TM" + tmid);
         HRegionInfo regionInfo = null;
         HTable table = null;
@@ -3006,17 +3007,7 @@ public class TransactionManager {
             table = new HTable(regionInfo.getTable(), connection, cp_tpe);
 
             Map<byte[], RecoveryRequestResponse> rresult = null;
-            try {
-              rresult = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
-            }
-            catch (ServiceException se) {
-                LOG.error("Service exception thrown when recoveryRequest: ", se);
-                throw new IOException("Service exception thrown when recoveryRequest:", se);
-            }
-            catch (Throwable t) {
-                LOG.error("Exception thrown when recoveryRequest: ", t);
-                throw new IOException("Exception thrown when recoveryRequest: ", t);
-            }
+            rresult = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
 
         Collection<RecoveryRequestResponse> results = rresult.values();
         RecoveryRequestResponse[] resultArray = new RecoveryRequestResponse[results.size()];
