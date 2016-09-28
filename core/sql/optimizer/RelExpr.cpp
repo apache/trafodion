@@ -347,6 +347,8 @@ Int32 RelExpr::getArity() const
     case REL_LEFT_TSJ:
     case REL_NESTED_JOIN:
     case REL_MERGE_JOIN:
+    case REL_INTERSECT:
+    case REL_EXCEPT:
       return 2;
 
     default:
@@ -3807,6 +3809,8 @@ NABoolean RelExpr::isAnyJoin() const
     case REL_FORCE_ORDERED_HASH_JOIN:
     case REL_FORCE_HYBRID_HASH_JOIN:
     case REL_FORCE_MERGE_JOIN:
+    case REL_INTERSECT:
+    case REL_EXCEPT:
       return TRUE;
 
     default:
@@ -5142,6 +5146,39 @@ NABoolean Join::duplicateMatch(const RelExpr & other) const
     return FALSE;
 
   return TRUE;
+}
+
+ 
+RelExpr * Intersect::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  RelExpr *result;
+
+  if (derivedNode == NULL)
+    {
+      result = new (outHeap) Intersect(NULL,
+                                        NULL
+                                        );
+    }
+  else
+    result = derivedNode;
+
+  return RelExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * Except::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  RelExpr *result;
+
+  if (derivedNode == NULL)
+    {
+      result = new (outHeap) Except(NULL,
+                                        NULL
+                                        );
+    }
+  else
+    result = derivedNode;
+
+  return RelExpr::copyTopNode(result, outHeap);
 }
 
 RelExpr * Join::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)

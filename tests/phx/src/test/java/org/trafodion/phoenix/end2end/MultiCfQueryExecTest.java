@@ -231,7 +231,7 @@ public class MultiCfQueryExecTest extends BaseTest {
         conn.createStatement().execute(ddl);
 
         String dml = null;
-        if (tgtPH()||tgtTR()) dml = "upsert into " +
+        if (tgtPH()||tgtTR()) dml = "insert into " +
         "MULTI_CF(" +
         "    ID, " +
         "    RESPONSE_TIME)" +
