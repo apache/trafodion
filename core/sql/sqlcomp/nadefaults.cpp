@@ -3291,7 +3291,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  
   DDint__(TRAF_ALIGNED_FORMAT_ADD_COL_METHOD,	"2"),
  
-  DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "OFF"),   
+  DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "ON"),   
  
   DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
  

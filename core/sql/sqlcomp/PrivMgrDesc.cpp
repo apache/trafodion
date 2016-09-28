@@ -61,10 +61,14 @@ void PrivMgrCoreDesc::setPriv(const PrivType which,
       priv_.set(SELECT_PRIV, value);
       priv_.set(INSERT_PRIV, value);
       priv_.set(UPDATE_PRIV, value);
-      priv_.set(USAGE_PRIV, value);
       priv_.set(DELETE_PRIV, value);
       priv_.set(REFERENCES_PRIV, value);
-      priv_.set(EXECUTE_PRIV, value);
+      
+      // ANSI describes USAGE as a DML priv but it is only
+      // valid in Trafodion for sequence generators.  For now,
+      // don't include in DML
+      //priv_.set(USAGE_PRIV, value);
+      //priv_.set(EXECUTE_PRIV, value);
 
       break;
 
@@ -550,14 +554,28 @@ void PrivMgrCoreDesc::interpretChanges( const bool before,       // in
 // ----------------------------------------------------------------------------
 bool PrivMgrDesc::limitToGrantable( const PrivMgrDesc& other )
 {
-
   bool result = false;
-  PrivMgrCoreDesc logicalTablePrivs(other.tableLevel_);
-  // TDB - include column level privileges
+  if ( tableLevel_.limitToGrantable(other.tableLevel_) )
+    result = true;
 
- if ( tableLevel_.limitToGrantable(logicalTablePrivs) )
-    result = TRUE;
-
-   return result;
+  // Consider table level privileges when checking column privs
+  PrivMgrCoreDesc temp = other.tableLevel_;
+  for (int i = 0; i < columnLevel_.entries(); i++)
+  {
+    // Find associated column in other Desc list
+    int index = other.getColumnPriv(columnLevel_[i].getColumnOrdinal());
+    if (index >= 0)
+    {
+      temp.unionOfPrivs(other.columnLevel_[index]);
+      if (columnLevel_[i].limitToGrantable(temp))
+        result = true;
+    }
+    else
+    {
+      if (columnLevel_[i].limitToGrantable(temp))
+        result = true;
+    }
+  }
+  return result;
 }
 
