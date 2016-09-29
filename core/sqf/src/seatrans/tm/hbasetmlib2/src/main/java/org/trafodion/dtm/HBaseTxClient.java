@@ -64,7 +64,7 @@ import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.NotServingRegionException;
 import org.apache.hadoop.hbase.ServerName;
-import org.apache.hadoop.hbase.TableNotFoundException;
+import org.apache.hadoop.hbase.NotServingRegionException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.trafodion.dtm.HBaseTmZK;
 import org.trafodion.dtm.TmAuditTlog;
@@ -1044,7 +1044,7 @@ public class HBaseTxClient {
                                    zookeeper.deleteRegionEntry(regionEntry);
 
                                    // In the case of NotServingRegionException we will repost the ZKNode after refreshing the table.
-                                   if (e instanceof NotServingRegionException){
+                                   if ((e instanceof NotServingRegionException) || (e.getCause() instanceof NotServingRegionException)){
                                        // Create a local HTable object using the regionInfo
                                        HTable table = new HTable(config, HRegionInfo.parseFrom(regionBytes).getTable().getNameAsString());
                                        // Repost a zookeeper entry for all current regions in the table
