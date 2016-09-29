@@ -158,6 +158,7 @@ NA_EIDPROC
     SORT_GRBY_CHILD_ERROR,
     SORT_GRBY_NEVER_STARTED,
 
+    // next few states are for rollup sortgroupby tcb
     SORT_GRBY_ROLLUP_GROUPS_INIT,
     SORT_GRBY_ROLLUP_GROUP_START,
     SORT_GRBY_ROLLUP_GROUP,
@@ -202,10 +203,13 @@ NA_EIDPROC
   }
   
 protected:
+  // code contained in the next 4 methods was previously part of mainline 
+  // sort groupby code.
+  // That has now been extracted into these methods so it could be
+  // used by regular and rollup sortgroupby tcbs.
   short handleCancel(sort_grby_step &step, short &rc);
   short handleError(sort_grby_step &step, short &rc);
-  short handleFinalize(sort_grby_step &step, short &rc,
-                       NABoolean noRelease = FALSE);
+  short handleFinalize(sort_grby_step &step, short &rc);
   short handleDone(sort_grby_step &step, short &rc,
                    NABoolean noAssert = FALSE);
   
@@ -231,10 +235,18 @@ public:
 
 private:
   short rollupAggrInit();
-  short rollupGrbyNull(Int16 groupNum);
-  short rollupGrbyMove(ex_queue_entry * centry);
+
+  // move null to rollup array for all rollup groups impacted by change 
+  // in group groupNum
+  short rollupGrbyMoveNull(Int16 groupNum);
+
+  // move values from child row to rollup array
+  short rollupGrbyMoveValue(ex_queue_entry * centry);
+
+  // evaluate aggregate for all regular and rollup entries
   short rollupAggrEval(ex_queue_entry * centry);
 
+  // array of entries where rollup aggrs and group values will be computed
   char ** rollupGroupAggrArr_;
 
   sort_grby_step step_;

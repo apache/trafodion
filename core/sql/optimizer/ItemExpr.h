@@ -1282,6 +1282,7 @@ private:
     WAS_DEFAULT_CLAUSE = 0x0040,
 
     // if set, the subtree rooted below was part of "groupby rollup" clause.
+	// Currently used during parsing phase. See parser/sqlparser.y.
     IS_GROUPBY_ROLLUP  = 0x0080
   };
 

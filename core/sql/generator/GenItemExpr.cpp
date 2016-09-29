@@ -633,11 +633,11 @@ short Convert::codeGen(Generator * generator)
   ex_conv_clause * conv_clause =
 	  new(generator->getSpace()) ex_conv_clause(getOperatorType(), attr,
 						    generator->getSpace());
-  /*  conv_clause->setLastVOAoffset(lastVOAOffset_);
+  conv_clause->setLastVOAoffset(lastVOAOffset_);
   conv_clause->setLastNullIndicatorLength(lastNullIndicatorLength_);
   conv_clause->setLastVcIndicatorLength(lastVcIndicatorLength_);
   conv_clause->setAlignment(alignment_);
-  */
+  
 
   generator->getExpGenerator()->linkClause(this, conv_clause);      
   

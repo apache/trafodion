@@ -283,10 +283,12 @@ private:
   // This value is set when grouping expression to compute rollup is
   // evaluated. Caller (sort_grby_rollup_tcb) need to know the number
   // of the grouping column that caused a comparison to fail.
-  // This value is set during comp clause. Caller resets it before and
+  // This value is set during comp clause eval. Caller resets it before and
   // after call to expression evaluator.
-  // It is only a short duration setting.
-  // also see class ex_comp_clause in exp/exp_clause_derived.h on its usage.
+  // It is only a short duration global setting used to pass info from/to
+  // executor to expressions.
+  // also see class ex_comp_clause in exp/exp_clause_derived.h and ex_sort_grby_rollup_tcb
+  // on its usage.
   Int16 rollupColumnNum_;
 
 };

@@ -2565,6 +2565,7 @@ public:
   virtual short codeGen(Generator*);
 
 private:
+  // if set, then cast child to nullable type
   NABoolean makeNullable_;
 }; // CastType
 

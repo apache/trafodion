@@ -808,7 +808,7 @@ ex_expr::exp_return_type ex_comp_clause::pCodeGenerate(Space *space, UInt32 f) {
   // comparison to fail, then do not generate pcode. That functionality is
   // not yet supported in pcode.
   // This is used for rollup group computation which need to know the particular
-  // group that caused comparison to fail.
+  // grouping column that caused the comparison to fail.
   if (getRollupColumnNum() >= 0)
     return ex_clause::pCodeGenerate(space, f);
 

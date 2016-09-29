@@ -4328,7 +4328,7 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
 
   if (grby->isRollup())
     {
-      if (grby->groupExpr().entries() != grby->groupExprList().entries())
+      if (grby->groupExpr().entries() != grby->rollupGroupExprList().entries())
         {
           *CmpCommon::diags() << DgSqlCode(-4384)
                               << DgString0("Cannot have duplicate entries.");
@@ -4396,8 +4396,11 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
             groupExprCpy.remove(vid);
             groupExprCpy.insert(grpById);
 
-            CollIndex idx = grby->groupExprList().index(vid);
-            grby->groupExprList()[idx] = grpById;
+            if (grby->isRollup())
+              {
+                CollIndex idx = grby->rollupGroupExprList().index(vid);
+                grby->rollupGroupExprList()[idx] = grpById;
+              }
           }
           else
           {  //sequence
@@ -4521,9 +4524,9 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
   ValueId valId;
   if (grby->isRollup())
     {
-      for (CollIndex i = 0; i < grby->groupExprList().entries(); i++)
+      for (CollIndex i = 0; i < grby->rollupGroupExprList().entries(); i++)
         {
-          valId = grby->groupExprList()[i];
+          valId = grby->rollupGroupExprList()[i];
           
           if (NOT valId.getType().supportsSQLnull())
             {
@@ -6950,17 +6953,20 @@ RelExpr *GroupByAgg::bindNode(BindWA *bindWA)
   ItemExpr *groupExprTree = removeGroupExprTree();
   if (groupExprTree) {
     currScope->context()->inGroupByClause() = TRUE;
-    groupExprTree->convertToValueIdList(groupExprList(), bindWA, ITM_ITEM_LIST);
+    groupExprTree->convertToValueIdSet(groupExpr(), bindWA, ITM_ITEM_LIST);
+
+    if (isRollup())
+      groupExprTree->convertToValueIdList(
+           rollupGroupExprList(), bindWA, ITM_ITEM_LIST);
 
     currScope->context()->inGroupByClause() = FALSE;
     if (bindWA->errStatus()) return this;
 
-    ValueIdSet vidSet(groupExprList());
-    setGroupExpr(vidSet);
-
-    for (CollIndex i = 0; i < groupExprList().entries(); i++)
+    ValueIdList groupByList(groupExpr());
+ 
+    for (CollIndex i = 0; i < groupByList.entries(); i++)
     {
-      ValueId vid = groupExprList()[i];
+      ValueId vid = groupByList[i];
       vid.getItemExpr()->setIsGroupByExpr(TRUE);
     }
 
@@ -6970,9 +6976,9 @@ RelExpr *GroupByAgg::bindNode(BindWA *bindWA)
         RETDesc * childRETDesc = child(0)->getRETDesc();
         ItemExprList origSelectList(getParentRootSelectList(), bindWA->wHeap());
         
-        for (CollIndex i = 0; i < groupExprList().entries(); i++)
+        for (CollIndex i = 0; i < groupByList.entries(); i++)
           {
-            ValueId vid = groupExprList()[i];
+            ValueId vid = groupByList[i];
             if((vid.getItemExpr()->getOperatorType() == ITM_SEL_INDEX)&&
                (((SelIndex*)(vid.getItemExpr()))->renamedColNameInGrbyClause()))
               {
@@ -6988,6 +6994,13 @@ RelExpr *GroupByAgg::bindNode(BindWA *bindWA)
                       {
                         groupExpr().remove(vid);
                         groupExpr().insert(baseColExpr->getValueId());
+
+                        if (isRollup())
+                          {
+                            CollIndex idx = rollupGroupExprList().index(vid);
+                            rollupGroupExprList()[idx] = baseColExpr->getValueId();
+                          }
+ 
                         baseColExpr->getColumnDesc()->setGroupedFlag();
                         origSelectList[indx]->setInGroupByOrdinal(FALSE);
                       }

@@ -244,8 +244,7 @@ short ex_sort_grby_tcb::handleError(sort_grby_step &step, short &rc)
 }
 
 short ex_sort_grby_tcb::handleFinalize(sort_grby_step &step, 
-                                       short &rc,
-                                       NABoolean noRelease)
+                                       short &rc)
 {
   ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
   ex_sort_grby_private_state * pstate = 
@@ -314,8 +313,7 @@ short ex_sort_grby_tcb::handleFinalize(sort_grby_step &step,
     else
       step = SORT_GRBY_NEW_GROUP;
 
-  if (NOT noRelease)
-    workAtp_->getTupp(sort_grby_tdb().tuppIndex_).release();
+  workAtp_->getTupp(sort_grby_tdb().tuppIndex_).release();
   
   return 0;
 }
@@ -389,6 +387,8 @@ short ex_sort_grby_tcb::handleDone(sort_grby_step &step, short &rc,
 ////////////////////////////////////////////////////////////////////////////
 short ex_sort_grby_tcb::work()
 {
+  short rc = 0;
+
    // if no parent request, return
   if (qparent_.down->isEmpty())
     return WORK_OK;
@@ -468,43 +468,12 @@ short ex_sort_grby_tcb::work()
 	{
 	case ex_sort_grby_tcb::SORT_GRBY_CANCELLED:
 	  {
-	    // request was cancelled. Child was sent a cancel
-	    // request. Ignore all up rows from child.
-	    // Wait for EOF.
-	    if (qchild_.up->isEmpty())
-	      {
-		// nothing returned from child. Get outta here.
-		return WORK_OK;
-	      }
+            if (handleCancel(pstate->step_, rc))
+              return rc;
 
-	    ex_queue_entry * centry = qchild_.up->getHeadEntry();
+            // next step set in handleCancel method
+            // step_ = SORT_GRBY_DONE
 
-            ex_assert(centry->upState.parentIndex == qparent_.down->getHeadIndex(),
-                      "ex_sort_grby_tcb::work() child's reply out of sync");
-
-	    ex_queue::up_status child_status = centry->upState.status;
-	    switch(child_status)
-	      {
-	      case ex_queue::Q_OK_MMORE:
-	      case ex_queue::Q_SQLERROR:
-    		{
-	    	  // just consume the child row
-                  qchild_.up->removeHead();	    
-		}
-		break;
-
-	      case ex_queue::Q_NO_DATA:
-		{
-		  // return EOF to parent.
-		  pstate->step_ = ex_sort_grby_tcb::SORT_GRBY_DONE;
-		}
-    		break;
-
-	      case ex_queue::Q_INVALID:
-	    	ex_assert(0,"ex_sort_grby_tcb::work() Invalid state returned by child");
-		break;
-
-              }; // end of switch on status of child queue
 	  } // request was cancelled
 	  break;
 
@@ -603,7 +572,7 @@ short ex_sort_grby_tcb::work()
 	      }
 
 	  } // start of a new group
-	break;
+          break;
 
 	case ex_sort_grby_tcb::SORT_GRBY_STARTED:
 	  {
@@ -724,148 +693,37 @@ short ex_sort_grby_tcb::work()
 	  }
 	  break;
 	  
-	  
         case SORT_GRBY_CHILD_ERROR:
         case SORT_GRBY_LOCAL_ERROR:
 	  {
-            qchild_.down->cancelRequestWithParentIndex(
-                                  qparent_.down->getHeadIndex());
+           if (handleError(pstate->step_, rc))
+              return rc;
 
-            // check if we've got room in the up queue
-            if (qparent_.up->isFull())
-              return WORK_OK; // parent queue is full. Just return
-
-            ex_queue_entry *pentry_up = qparent_.up->getTailEntry();
-            ex_queue_entry * centry = qchild_.up->getHeadEntry();
-
-            pentry_up->copyAtp(centry);
-            pentry_up->upState.parentIndex = 
-              pentry_down->downState.parentIndex;
-            pentry_up->upState.downIndex = qparent_.down->getHeadIndex();
-            pentry_up->upState.setMatchNo(pstate->matchCount_);
-
-            if ((sort_grby_tdb().isNonFatalErrorTolerated()) && 
-                (SORT_GRBY_LOCAL_ERROR == pstate->step_))
-              pentry_up->upState.status = ex_queue::Q_OK_MMORE;
-            else
-              pentry_up->upState.status = ex_queue::Q_SQLERROR;
-
-            qparent_.up->insert();
-            pstate->step_ = ex_sort_grby_tcb::SORT_GRBY_CANCELLED;
-            break;
+            // next step set in handleError method
+            // step_ = SORT_GRBY_CANCELLED
 	  }
+          break;
 	  
 	case ex_sort_grby_tcb::SORT_GRBY_FINALIZE:
 	case ex_sort_grby_tcb::SORT_GRBY_FINALIZE_CANCEL:
 	  {
-	    // check if we've got room in the up queue
-	    if (qparent_.up->isFull())
-	      return WORK_OK; // parent queue is full. Just return
+            if (handleFinalize(pstate->step_, rc))
+              return rc;
 
-	    ex_expr::exp_return_type evalRetCode = ex_expr::EXPR_OK;
-	    if (havingExpr())
-	      {
-		evalRetCode = havingExpr()->eval(workAtp_, 0);
-	      }
-    
-	    if ((!havingExpr()) ||
-		((havingExpr()) && (evalRetCode == ex_expr::EXPR_TRUE)))
-	      {
-		// if stats are to be collected, collect them.
-		if (getStatsEntry())
-		  {
-		    getStatsEntry()->incActualRowsReturned();
-		  }    
-
-		// return to parent
-		ex_queue_entry * pentry_up = qparent_.up->getTailEntry();
-		
-		pentry_up->copyAtp(workAtp_);
-		
-		pentry_up->upState.status = ex_queue::Q_OK_MMORE;
-		pentry_up->upState.parentIndex = pentry_down->downState.parentIndex;
-	        pentry_up->upState.downIndex = qparent_.down->getHeadIndex();
-		
-		pstate->matchCount_++;
-		pentry_up->upState.setMatchNo(pstate->matchCount_);
-		
-		// insert into parent up queue
-		qparent_.up->insert();
-	      }
-	    else if (evalRetCode == ex_expr::EXPR_ERROR)
-	      {
-                // The SORT_GRBY_LOCAL_ERROR state expects the
-                // diags area to be in the ATP of the head entry of
-                // the child's queue.  It is currently in the workAtp_,
-                // so copy it to the childs head ATP.  
-                // SORT_GRBY_LOCAL_ERROR will copy it from the
-                // child's queue entry to the parents up queue.
-                //
-                ex_queue_entry * centry = qchild_.up->getHeadEntry();
-                centry->copyAtp(workAtp_);
-                pstate->step_ = SORT_GRBY_LOCAL_ERROR;
-                break;
-	      }
-	    
-	    // start a new group, if more rows in child's up queue
-	    if (pstate->step_ == SORT_GRBY_FINALIZE_CANCEL)
-	      pstate->step_ = ex_sort_grby_tcb::SORT_GRBY_CANCELLED;
-	    else
-	      if (qchild_.up->getHeadEntry()->upState.status !=
-		  ex_queue::Q_OK_MMORE)
-		pstate->step_ = ex_sort_grby_tcb::SORT_GRBY_DONE;
-	      else
-		pstate->step_ = ex_sort_grby_tcb::SORT_GRBY_NEW_GROUP;
-	    
-	    workAtp_->getTupp(sort_grby_tdb().tuppIndex_).release();
-	    
-	    break;
+            // next step set in handleFinalize method.
+            // Could be one of the following:
+            // step_ = SORT_GRBY_LOCAL_ERROR
+            //         SORT_GRBY_CANCELLED
+            //         SORT_GRBY_NEW_GROUP
+            //         SORT_GRBY_DONE
 	  }	
+          break;
 	  
 	case ex_sort_grby_tcb::SORT_GRBY_DONE:
 	case ex_sort_grby_tcb::SORT_GRBY_NEVER_STARTED:
 	  {
-	    // check if we've got room in the up queue
-	    if (qparent_.up->isFull())
-	      return WORK_OK; // parent queue is full. Just return
-	    
-	    workAtp_->release();
-	    
-	    ex_queue_entry * pentry_up = qparent_.up->getTailEntry();
-	    
-	    pentry_up->upState.status = ex_queue::Q_NO_DATA;
-	    pentry_up->upState.parentIndex = pentry_down->downState.parentIndex;
-	    pentry_up->upState.downIndex = qparent_.down->getHeadIndex();
-	    pentry_up->upState.setMatchNo(pstate->matchCount_);
-
-            if (pstate->step_ != SORT_GRBY_NEVER_STARTED)
-              {
-	        ex_queue_entry * centry = qchild_.up->getHeadEntry();
-                ex_assert(centry->upState.status == ex_queue::Q_NO_DATA,
-                              "ex_sort_grby_tcb::work() expecting Q_NO_DATA");
-                ex_assert(centry->upState.parentIndex == qparent_.down->getHeadIndex(),
-                      "ex_sort_grby_tcb::work() child's reply out of sync");
-	        qchild_.up->removeHead();
-              }
-
-            // remove the down entry
-	    qparent_.down->removeHead();
-
-	    // insert into parent up queue
-	    qparent_.up->insert();
-
-            // re-initialize pstate
-	    pstate->step_ = ex_sort_grby_tcb::SORT_GRBY_EMPTY;
-            pstate->matchCount_ = 0;
-            workAtp_->release();
-
-            if (qparent_.down->isEmpty())
-              return WORK_OK;
-
-            // If we haven't given to our child the new head
-            // index return and ask to be called again.
-            if (qparent_.down->getHeadIndex() == processedInputs_)
-	      return WORK_CALL_AGAIN;
+            if (handleDone(pstate->step_, rc))
+              return rc;
 
             // postion at the new head
             pentry_down = qparent_.down->getHeadEntry();
@@ -906,7 +764,8 @@ ex_sort_grby_rollup_tcb::ex_sort_grby_rollup_tcb
     }
 }
 
-short ex_sort_grby_rollup_tcb::rollupGrbyNull(Int16 groupNum)
+
+short ex_sort_grby_rollup_tcb::rollupGrbyMoveNull(Int16 groupNum)
 {
   ExpTupleDesc * returnRowTD =
     sort_grby_tdb().getCriDescUp()->getTupleDescriptor
@@ -932,7 +791,7 @@ short ex_sort_grby_rollup_tcb::rollupGrbyNull(Int16 groupNum)
   return 0;
 }
 
-short ex_sort_grby_rollup_tcb::rollupGrbyMove(ex_queue_entry * centry)
+short ex_sort_grby_rollup_tcb::rollupGrbyMoveValue(ex_queue_entry * centry)
 {
   // move initial group by value for the regular aggr
   if (moveExpr()->eval(centry->getAtp(), workAtp_) == ex_expr::EXPR_ERROR)
@@ -1182,7 +1041,7 @@ short ex_sort_grby_rollup_tcb::work()
 
 		// move the group by value to this new row, if grouping
 		// is being done.
-                if (rollupGrbyMove(centry))
+                if (rollupGrbyMoveValue(centry))
                   {
                     step_ = SORT_GRBY_LOCAL_ERROR;
                     break;
@@ -1200,8 +1059,41 @@ short ex_sort_grby_rollup_tcb::work()
 	      }
 	    else
 	      {
-		// no rows returned for a group by. 
-                // Nothing to be returned(except, of course, Q_NO_DATA).
+		// no rows returned. 
+
+                // if aggrExpr, initialize aggragates for rollup group 0 and
+                // return it.
+                if (aggrExpr())
+                  {
+                    // copy the down atp to the work atp for the current request
+                    workAtp_->copyAtp(pentry_down->getAtp());
+
+                    // get space to hold the grouped/aggregated row.
+                    if (pool_->getFreeTuple(workAtp_->getTupp(
+                                                 ((ex_sort_grby_tdb &)tdb).tuppIndex_)))
+                      return WORK_POOL_BLOCKED; // couldn't allocate, try again.
+
+                    char * tempWorkDataPtr = 
+                      workAtp_->getTupp(sort_grby_tdb().tuppIndex_).
+                      getDataPointer();
+                    workAtp_->getTupp(sort_grby_tdb().tuppIndex_)
+                      .setDataPointer(rollupGroupAggrArr_[0]);
+                    
+		    if (((AggrExpr *)aggrExpr())->initializeAggr(workAtp_) ==
+			ex_expr::EXPR_ERROR)
+		      {
+                        pstate->step_ =
+			  SORT_GRBY_LOCAL_ERROR;
+                        break;
+		      }
+                    
+                    workAtp_->getTupp(sort_grby_tdb().tuppIndex_).
+                      setDataPointer(tempWorkDataPtr);
+                    
+                    step_ = SORT_GRBY_ROLLUP_FINAL_GROUP;
+                    break;
+                  }
+
 		step_ = SORT_GRBY_DONE;
 	      }
 
@@ -1329,7 +1221,6 @@ short ex_sort_grby_rollup_tcb::work()
 	case SORT_GRBY_FINALIZE:
 	case SORT_GRBY_FINALIZE_CANCEL:
 	  {
-            //            if (handleFinalize(step_, rc, TRUE/*no workAtp release*/))
             if (handleFinalize(step_, rc))
               return rc;
 
@@ -1400,7 +1291,7 @@ short ex_sort_grby_rollup_tcb::work()
             if (qparent_.up->isFull())
               return WORK_OK; // parent queue is full. Just return
 
-            if (rollupGrbyNull(currGroupNum_))
+            if (rollupGrbyMoveNull(currGroupNum_))
               {
                 step_ = SORT_GRBY_LOCAL_ERROR;
                 break;
@@ -1441,7 +1332,7 @@ short ex_sort_grby_rollup_tcb::work()
                 return WORK_OK; // parent queue is full. Just return
               }
 
-            if (rollupGrbyNull(0))
+            if (rollupGrbyMoveNull(0))
               {
                 step_ = SORT_GRBY_LOCAL_ERROR;
                 break;
@@ -1468,8 +1359,8 @@ short ex_sort_grby_rollup_tcb::work()
             if (handleDone(step_, rc, TRUE/*no child entry assertion check*/))
               return rc;
 
-            // step_: set in handleDone method
-            // value: SORT_GRBY_EMPTY
+            // next step set in handleDone method
+            // step_ = SORT_GRBY_EMPTY
 
             return WORK_CALL_AGAIN;
 	  } // done

@@ -67,7 +67,7 @@
 short GroupByAgg::genAggrGrbyExpr(Generator * generator,
 				  ValueIdSet &aggregateExpr,
 				  ValueIdSet &groupExpr,
-				  ValueIdList &groupExprList,
+				  ValueIdList &rollupGroupExprList,
 				  ValueIdSet &selectionPred,
 				  Int32 workAtp,
 				  Int32 workAtpIndex,
@@ -284,9 +284,9 @@ short GroupByAgg::genAggrGrbyExpr(Generator * generator,
   ValueIdList gbyValIdList;
   ValueIdSet searchValIdSet;
   
-  if (isRollup() && (NOT groupExprList.isEmpty())) {
-    for (CollIndex j = 0; j < groupExprList.entries(); j++) {
-      valId = groupExprList[j];
+  if (isRollup() && (NOT rollupGroupExprList.isEmpty())) {
+    for (CollIndex j = 0; j < rollupGroupExprList.entries(); j++) {
+      valId = rollupGroupExprList[j];
 
       ItemExpr * itemExpr = valId.getItemExpr();
       
@@ -1777,7 +1777,7 @@ short GroupByAgg::codeGen(Generator * generator) {
   genAggrGrbyExpr(generator,
 		  aggregateExpr(),
                   groupExpr(),
-		  groupExprList(),
+		  rollupGroupExprList(),
 		  selectionPred(),
 		  1,
 		  returnedDesc->noTuples() - 1, 
@@ -1821,7 +1821,7 @@ short GroupByAgg::codeGen(Generator * generator) {
     {
       sortGrbyTdb->setIsRollup(TRUE);
 
-      sortGrbyTdb->setNumRollupGroups(groupExprList().entries());
+      sortGrbyTdb->setNumRollupGroups(rollupGroupExprList().entries());
     }
 
   if(!generator->explainDisabled()) {

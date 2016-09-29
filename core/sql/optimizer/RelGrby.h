@@ -152,14 +152,11 @@ public:
   inline void setGroupExpr(ValueIdSet &expr) { groupExpr_ = expr;}
   inline void addGroupExpr(ValueIdSet &expr) { groupExpr_ += expr;}
 
-  ValueIdList & groupExprList() { return groupExprList_; }
-  const ValueIdList & groupExprList() const { return groupExprList_; }
-  void setGroupExprList(ValueIdList &expr) { groupExprList_ = expr;}
+  ValueIdList & rollupGroupExprList() { return rollupGroupExprList_; }
+  const ValueIdList & rollupGroupExprList() const { return rollupGroupExprList_; }
+  void setRollupGroupExprList(ValueIdList &expr) { rollupGroupExprList_ = expr;}
 
-  inline ValueIdList & rollupAggrExpr() { return rollupAggrExpr_; }
-  inline const ValueIdList & rollupAggrExpr() const { return rollupAggrExpr_; }
-
-    // return a (short-lived) read/write reference to the item expressions
+  // return a (short-lived) read/write reference to the item expressions
   inline ValueIdSet & leftUniqueExpr() { return leftUniqueExpr_; }
   inline const ValueIdSet & leftUniqueExpr() const { return leftUniqueExpr_; }
   inline void setLeftUniqueExpr(ValueIdSet &expr) { leftUniqueExpr_ = expr;}
@@ -410,7 +407,7 @@ public:
   short genAggrGrbyExpr(Generator * generator,
 			ValueIdSet &aggregateExpr, 
                         ValueIdSet &groupExpr,
-                        ValueIdList &groupExprList,
+                        ValueIdList &rollupGroupExprList,
 			ValueIdSet &selectionPred,
 			Int32 workAtp, Int32 workAtpIndex,
 			short returnedAtpIndex,
@@ -527,10 +524,6 @@ public:
      ValueIdSet       &pulledPredicates,        // return the pulled-up preds
      ValueIdMap       *optionalMap);            // optional map to rewrite preds
 
-  RelExpr *processGroupbyRollup(Generator * generator,
-                                const ValueIdSet & externalInputs,
-                                ValueIdSet &pulledNewInputs);
-
   void setIsRollup(NABoolean v) { isRollup_ = v; }
   NABoolean isRollup() { return isRollup_; }
   const NABoolean isRollup() const { return isRollup_; }
@@ -563,8 +556,7 @@ private:
   // --------------------------------------
   // used for processing groupby rollup
   // --------------------------------------
-  ValueIdList groupExprList_;
-  ValueIdList rollupAggrExpr_;
+  ValueIdList rollupGroupExprList_;
 
   // ---------------------------------------------------------------------
   // The expression specifying the aggregates to be generated
