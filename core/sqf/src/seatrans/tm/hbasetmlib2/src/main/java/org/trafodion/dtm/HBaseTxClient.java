@@ -1050,7 +1050,7 @@ public class HBaseTxClient {
                                        // Repost a zookeeper entry for all current regions in the table
                                        zookeeper.postAllRegionEntries(table);
                                    }
-                                } // Exception
+                                } // IOException
 
                                 if (TxRecoverList != null) {
                                     if (LOG.isDebugEnabled()) LOG.trace("TRAF RCOV THREAD:size of TxRecoverList " + TxRecoverList.size());
