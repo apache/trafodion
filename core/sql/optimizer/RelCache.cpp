@@ -420,7 +420,15 @@ void GroupByAgg::generateCacheKey(CacheWA &cwa) const
     cwa += " gBy:"; 
 
     if (isRollup())
-      cwa += " roll:";
+      {
+        cwa += " roll:";
+
+        ItemExpr * ie = rollupGroupExprList().rebuildExprTree(ITM_ITEM_LIST);
+        if (ie)
+          {
+            ie->generateCacheKey(cwa);
+          }
+      }
 
     grpExpr->generateCacheKey(cwa); 
   }

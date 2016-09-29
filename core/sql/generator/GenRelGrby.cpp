@@ -351,7 +351,7 @@ short GroupByAgg::genAggrGrbyExpr(Generator * generator,
 			    workAtp,
 			    workAtpIndex,
 			    tupleDesc,
-			    ExpTupleDesc::SHORT_FORMAT);
+			    (isRollup() ? ExpTupleDesc::LONG_FORMAT : ExpTupleDesc::SHORT_FORMAT));
  
   NADELETEBASIC(attrs, generator->wHeap());
 
