@@ -1197,6 +1197,8 @@ public:
 
   Lng32 findIndexIntoInstrArray(CompInstruction ci);
 
+  void setRollupColumnNum(Int16 v) {rollupColumnNum_ = v;}
+  Int16 getRollupColumnNum() { return rollupColumnNum_; }
 
   // Null Semantics
   //
@@ -1274,12 +1276,16 @@ private:
 
   Int32            filler0;           // 00-03
   Int16		   flags_; //04-05		   
+
+  // see optimizer/ItemLog.h, class BiRelat
+  Int16 rollupColumnNum_;   //06-07
+
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
   // When a new member is added, size of this filler should be reduced so
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
-  char             fillers_[26];          // 06-31
+  char             fillers_[24];          // 08-31
   NA_EIDPROC ex_expr::exp_return_type processResult(Int32 compare_code, Lng32* result,
 					      CollHeap *heap,
 					      ComDiagsArea** diagsArea);

@@ -1210,6 +1210,10 @@ public:
   void setWasDefaultClause(NABoolean v)
   { (v ? flags_ |= WAS_DEFAULT_CLAUSE : flags_ &= ~WAS_DEFAULT_CLAUSE); }
 
+  NABoolean isGroupByRollup()   const { return (flags_ & IS_GROUPBY_ROLLUP) != 0; }
+  void setIsGroupByRollup(NABoolean v)
+  { (v ? flags_ |= IS_GROUPBY_ROLLUP : flags_ &= ~IS_GROUPBY_ROLLUP); }
+
   virtual QR::ExprElement getQRExprElem() const;
 
   virtual ItemExpr* removeRangeSpecItems(NormWA* normWA = NULL);
@@ -1275,7 +1279,11 @@ private:
 
     // If set, this subtree was created while processing the DEFAULT
     // clause in DefaultSpecification::bindNode. 
-    WAS_DEFAULT_CLAUSE = 0x0040
+    WAS_DEFAULT_CLAUSE = 0x0040,
+
+    // if set, the subtree rooted below was part of "groupby rollup" clause.
+	// Currently used during parsing phase. See parser/sqlparser.y.
+    IS_GROUPBY_ROLLUP  = 0x0080
   };
 
   // ---------------------------------------------------------------------

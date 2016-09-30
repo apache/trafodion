@@ -2684,14 +2684,17 @@ RelExpr * getTableExpressionRelExpr(
       *SqlParser_Diags << DgSqlCode(-4363);
       return NULL;
     }
- if((groupByClause || havingClause) && (NOT groupByClauseProcessed))
-  { 
-    childPtr = new (PARSERHEAP())
+    if((groupByClause || havingClause) && (NOT groupByClauseProcessed))
+    { 
+      childPtr = new (PARSERHEAP())
 	GroupByAgg(childPtr,
 		   REL_GROUPBY,
 		   groupByClause);
       // add having clause as a selection pred
       childPtr->addSelPredTree(havingClause);
+
+      if (groupByClause)
+        ((GroupByAgg*)childPtr)->setIsRollup(groupByClause->isGroupByRollup());
     }
 
     // sequence node goes right below rel root
@@ -2701,7 +2704,7 @@ RelExpr * getTableExpressionRelExpr(
       seqNode->setHasOlapFunctions(hasOlapFunctions);
       childPtr = seqNode;
     }
-  } 
+  } // !hasTDFunctions
   else
   {
     if (!seqByClause)
