@@ -1,0 +1,162 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+
+-- Tests for GROUP BY ROLLUP feature
+
+log LOG033 clear;
+
+drop table if exists t033t1 cascade;
+drop table if exists t033t2 cascade;
+drop table if exists t033t3 cascade;
+
+create table t033t1 (a int, b int, c int, d int not null);
+
+-- empty table
+select a, sum(b) from t033t1 group by rollup (a);
+select b+1, sum(b) from t033t1 group by rollup (b);
+
+insert into t033t1 values (1,2,3,4),(2,3,4,5),(3,3,3,3),(3,3,4,5),(1,3,3,3),
+   (null,null,null,6);
+
+select * from t033t1 order by 1,2,3,4;
+
+explain options 'f' select a,b,c,sum(d) from t033t1 
+                 group by rollup(a,b,c) order by 1,2,3;
+select a,b,c,min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1 group by rollup(a,b,c) order by 1,2,3,4,5,6,7,8,9,10;
+
+select * from (
+select a,b,c,min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1 group by (a,b,c)
+union all
+select a,b,cast(null as int),min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1 group by (a,b)
+union all
+select a,cast(null as int),cast(null as int),min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1 group by (a)
+union all
+select cast(null as int),cast(null as int),cast(null as int),min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1
+) x(a,b,c,d,e,f,g,h,i,j)
+order by a,b,c,d,e,f,g,h,i,j;
+
+select b,c,a,sum(d) from t033t1 group by rollup(b,c,a) order by 1,2,3;
+
+select * from (
+select b,c,a,sum(d) from t033t1 group by (b,c,a)
+union all
+select b,c,cast(null as int),sum(d) from t033t1 group by (b,c)
+union all
+select b,cast(null as int),cast(null as int),sum(d) from t033t1 group by (b)
+union all
+select cast(null as int),cast(null as int),cast(null as int),sum(d) from t033t1
+) x(a,b,c,d)
+order by 1,2,3;
+
+select a,b,c from t033t1 group by rollup (a,b,c) order by 1,2,3;
+
+select a, count(distinct b) from t033t1 group by rollup (a);
+
+select a,b,c,min(distinct b),sum(distinct d) from t033t1 group by rollup (a,b,c) order by 1,2,3;
+select * from (
+select a,b,c,min(distinct b), sum(distinct d) from t033t1 group by (a,b,c)
+union all
+select a,b,cast(null as int),min(distinct b), sum(distinct d) from t033t1 group by (a,b)
+union all
+select a,cast(null as int),cast(null as int),min(distinct b), sum(distinct d) from t033t1 group by (a)
+union all
+select cast(null as int),cast(null as int),cast(null as int),min(distinct b), sum(distinct d) from t033t1
+) x(a,b,c,d,e)
+order by a,b,c;
+
+select a+1, sum(b) from t033t1 group by rollup (1);
+select cast(d as int), sum(a) from t033t1 group by rollup (cast(d as int));
+select cast(d as nullable), sum(a) from t033t1 group by rollup (1);
+select cast(d as nullable), sum(a) from t033t1 group by rollup (cast(d as nullable));
+
+-- firstN and cancel processing
+select [first 1] a,b,sum(c) from t033t1 group by rollup(1,2);
+select [first 9] a,b,sum(c) from t033t1 group by rollup(1,2);
+
+-- order by descending
+select a from t033t1 group by rollup(a) order by a desc;
+
+-- having clause
+select a, sum(b) from t033t1 group by rollup (a) having a is null;
+select a, sum(b) from t033t1 group by rollup (a) having a is not null;
+
+-- grby rollup and joins and subqueries
+prepare s from 
+select * from (select a,sum(b) from t033t1 group by rollup(a)) x(a1,b1),
+              (select a,sum(b) from t033t1 group by rollup(a)) y(a2,b2)
+   where x.a1 = y.a2;
+explain options 'f' s;
+execute s;
+
+prepare s from 
+select * from (select a,sum(b) from t033t1 group by rollup(a)) x(a1,b1),
+              (select a,sum(b) from t033t1 group by rollup(a)) y(a2,b2)
+   where x.a1 = y.a2 or (x.a1 is null and y.a2 is null);
+explain options 'f' s;
+execute s;
+
+-- should not convert subq to join and eliminate groupby rollup
+prepare s from 
+select a from t033t1 where a in (select a from t033t1 group by rollup(a))
+  or a is null order by a;
+explain options 'f' s;
+execute s;
+
+prepare s from 
+select a from t033t1 where a in (select NVL(a, 2) from t033t1 group by rollup(a))
+   order by 1;
+explain options 'f' s;
+execute s;
+
+-- partitioned table with esp execution
+drop table if exists t033t2 cascade;
+create table t033t2 (z int not null primary key,
+          a int, b int, c int, d int not null)
+          salt using 4 partitions;
+insert into t033t2 values (10,1,2,3,4),(11,2,3,4,5),(12,3,3,3,3),
+                          (13,3,3,4,5),(14,1,3,3,3),(15,null,null,null,6);
+control query shape esp_exchange(cut);                          
+explain options 'f' select a,b,c,sum(d) from t033t2 
+        group by rollup(a,b,c) order by 1,2,3;
+select a,b,c,sum(d) from t033t2 group by rollup(a,b,c) order by 1,2,3;
+control query shape cut;
+
+-- do not eliminate sort groupby rollup on primary keys
+cqd allow_nullable_unique_key_constraint 'ON';
+create table t033t3 (a int primary key, b int);
+insert into t033t3 values (1,1), (2,2), (null,null);
+prepare s from select a, sum(b) from t033t3 group by rollup (a) order by 1,2;
+explain options 'f' s;
+execute s;
+-- regular groupby will eliminate sort groupby
+prepare s from select a, sum(b) from t033t3 group by (a);
+explain options 'f' s;
+
+
+-- error cases. Not allowed or currently not supported
+select a,a,sum(b) from t033t1 group by rollup (a,a);
+select d, sum(b) from t033t1 group by rollup (d);
+
+log;
+
+
+

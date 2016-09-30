@@ -3910,6 +3910,10 @@ NABoolean GroupByEliminationRule::topMatch(RelExpr * expr,
   if (grby->groupExpr().isEmpty())
     return FALSE;
 
+  // do not eliminate group by if rollup is being done
+  if (grby->isRollup())
+    return FALSE;
+
   return (grby->child(0).getGroupAttr()->isUnique(grby->groupExpr()));
 }
 
@@ -4994,7 +4998,13 @@ NABoolean GroupByOnJoinRule::topMatch (RelExpr * expr,
 
   // Do not split the group by if it can be eliminated
   if (NOT bef->groupExpr().isEmpty())
-    return NOT (bef->child(0).getGroupAttr()->isUnique(bef->groupExpr()));
+    {
+      // do not eliminate group by if rollup is being done
+      if (bef->isRollup())
+        return FALSE;
+      
+      return NOT (bef->child(0).getGroupAttr()->isUnique(bef->groupExpr()));
+    }
 
   // the functional dependencies shown below won't hold if this is an
   // aggregate (ok, there are some sick examples where they do, but

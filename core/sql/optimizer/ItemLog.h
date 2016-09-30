@@ -346,6 +346,7 @@ public:
     isNotInPredTransform_(FALSE),
     outerNullFilteringDetected_ (FALSE),
     innerNullFilteringDetected_ (FALSE),
+    rollupColumnNum_(-1),
     flags_(0)
   {
 #ifndef NDEBUG
@@ -452,18 +453,10 @@ public:
       return specialNulls_;
   }
 
-  //++MV - Irena:
-  // The getenv option is being used for testing purposes in MV
   void setSpecialNulls(NABoolean flag)
   {
-#ifndef NDEBUG
-    if (NULL != getenv("FORCE_SPECIAL_NULLS")) {
-      specialNulls_ = TRUE;
-    } else
-#endif
-      specialNulls_ = flag;
+    specialNulls_ = flag;
   }
-  //--MV - Irena:
 
   NABoolean & specialMultiValuePredicateTransformation()
   { return specialMultiValuePredicateTransformation_; }
@@ -575,6 +568,8 @@ public:
   void setCollationEncodeComp(NABoolean v) {collationEncodeComp_= v;}
   NABoolean getCollationEncodeComp() { return collationEncodeComp_;}
   virtual NABoolean hasEquivalentProperties(ItemExpr * other) { return TRUE;}
+
+  Int16 &rollupColumnNum() { return rollupColumnNum_; }
 
   //Not In optimization methods
   // indicate that this birelat is a transformation of a NotIn.
@@ -718,7 +713,6 @@ public:
 
   virtual QR::ExprElement getQRExprElem() const;
 
-
   NABoolean collationEncodeComp_;
 
   // flag to indicate that this birelat is a transformation of a NotIn.
@@ -730,7 +724,15 @@ public:
 
   NABoolean innerNullFilteringDetected_;
 
+  // Used for groupby rollup.
+  // Set in generator during groupby comparison expression generation.
+  // It indicates the position of grouping column that caused the group
+  // change during groupby computation. 
+  // Used to return the rollup groups.
+  Int16 rollupColumnNum_;
+
   UInt32 flags_;
+
 }; // class BiRelat
 
 class KeyRangeCompare : public BiRelat

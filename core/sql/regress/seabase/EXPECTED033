@@ -1,0 +1,617 @@
+>>
+>>drop table if exists t033t1 cascade;
+
+--- SQL operation complete.
+>>drop table if exists t033t2 cascade;
+
+--- SQL operation complete.
+>>drop table if exists t033t3 cascade;
+
+--- SQL operation complete.
+>>
+>>create table t033t1 (a int, b int, c int, d int not null);
+
+--- SQL operation complete.
+>>
+>>-- empty table
+>>select a, sum(b) from t033t1 group by rollup (a);
+
+A            (EXPR)              
+-----------  --------------------
+
+          ?                     ?
+
+--- 1 row(s) selected.
+>>select b+1, sum(b) from t033t1 group by rollup (b);
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   ?                     ?
+
+--- 1 row(s) selected.
+>>
+>>insert into t033t1 values (1,2,3,4),(2,3,4,5),(3,3,3,3),(3,3,4,5),(1,3,3,3),
++>   (null,null,null,6);
+
+--- 6 row(s) inserted.
+>>
+>>select * from t033t1 order by 1,2,3,4;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+          1            3            3            3
+          2            3            4            5
+          3            3            3            3
+          3            3            4            5
+          ?            ?            ?            6
+
+--- 6 row(s) selected.
+>>
+>>explain options 'f' select a,b,c,sum(d) from t033t1 
++>                 group by rollup(a,b,c) order by 1,2,3;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                                                  8.00E+000
+3    .    4    sort                                                  8.00E+000
+2    .    3    sort_groupby_rollup                                   8.00E+000
+1    .    2    sort                                                  1.00E+002
+.    .    1    trafodion_scan                  T033T1                1.00E+002
+
+--- SQL operation complete.
+>>select a,b,c,min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1 group by rollup(a,b,c) order by 1,2,3,4,5,6,7,8,9,10;
+
+A            B            C            (EXPR)       (EXPR)       (EXPR)                (EXPR)                (EXPR)                (EXPR)                (EXPR)
+-----------  -----------  -----------  -----------  -----------  --------------------  --------------------  --------------------  --------------------  --------------------
+
+          1            2            3            4            4                     4                     4                     1                     1                     1
+          1            2            ?            4            4                     4                     4                     1                     1                     1
+          1            3            3            3            3                     3                     3                     1                     1                     1
+          1            3            ?            3            3                     3                     3                     1                     1                     1
+          1            ?            ?            3            4                     7                     3                     2                     2                     2
+          2            3            4            5            5                     5                     5                     1                     1                     1
+          2            3            ?            5            5                     5                     5                     1                     1                     1
+          2            ?            ?            5            5                     5                     5                     1                     1                     1
+          3            3            3            3            3                     3                     3                     1                     1                     1
+          3            3            4            5            5                     5                     5                     1                     1                     1
+          3            3            ?            3            5                     8                     4                     2                     2                     2
+          3            ?            ?            3            5                     8                     4                     2                     2                     2
+          ?            ?            ?            3            6                    26                     4                     6                     6                     5
+          ?            ?            ?            6            6                     6                     6                     1                     1                     0
+          ?            ?            ?            6            6                     6                     6                     1                     1                     0
+          ?            ?            ?            6            6                     6                     6                     1                     1                     0
+
+--- 16 row(s) selected.
+>>
+>>select * from (
++>select a,b,c,min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1 group by (a,b,c)
++>union all
++>select a,b,cast(null as int),min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1 group by (a,b)
++>union all
++>select a,cast(null as int),cast(null as int),min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1 group by (a)
++>union all
++>select cast(null as int),cast(null as int),cast(null as int),min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1
++>) x(a,b,c,d,e,f,g,h,i,j)
++>order by a,b,c,d,e,f,g,h,i,j;
+
+A            B            C            D            E            F                     G                     H                     I                     J
+-----------  -----------  -----------  -----------  -----------  --------------------  --------------------  --------------------  --------------------  --------------------
+
+          1            2            3            4            4                     4                     4                     1                     1                     1
+          1            2            ?            4            4                     4                     4                     1                     1                     1
+          1            3            3            3            3                     3                     3                     1                     1                     1
+          1            3            ?            3            3                     3                     3                     1                     1                     1
+          1            ?            ?            3            4                     7                     3                     2                     2                     2
+          2            3            4            5            5                     5                     5                     1                     1                     1
+          2            3            ?            5            5                     5                     5                     1                     1                     1
+          2            ?            ?            5            5                     5                     5                     1                     1                     1
+          3            3            3            3            3                     3                     3                     1                     1                     1
+          3            3            4            5            5                     5                     5                     1                     1                     1
+          3            3            ?            3            5                     8                     4                     2                     2                     2
+          3            ?            ?            3            5                     8                     4                     2                     2                     2
+          ?            ?            ?            3            6                    26                     4                     6                     6                     5
+          ?            ?            ?            6            6                     6                     6                     1                     1                     0
+          ?            ?            ?            6            6                     6                     6                     1                     1                     0
+          ?            ?            ?            6            6                     6                     6                     1                     1                     0
+
+--- 16 row(s) selected.
+>>
+>>select b,c,a,sum(d) from t033t1 group by rollup(b,c,a) order by 1,2,3;
+
+B            C            A            (EXPR)              
+-----------  -----------  -----------  --------------------
+
+          2            3            1                     4
+          2            3            ?                     4
+          2            ?            ?                     4
+          3            3            1                     3
+          3            3            3                     3
+          3            3            ?                     6
+          3            4            2                     5
+          3            4            3                     5
+          3            4            ?                    10
+          3            ?            ?                    16
+          ?            ?            ?                     6
+          ?            ?            ?                     6
+          ?            ?            ?                     6
+          ?            ?            ?                    26
+
+--- 14 row(s) selected.
+>>
+>>select * from (
++>select b,c,a,sum(d) from t033t1 group by (b,c,a)
++>union all
++>select b,c,cast(null as int),sum(d) from t033t1 group by (b,c)
++>union all
++>select b,cast(null as int),cast(null as int),sum(d) from t033t1 group by (b)
++>union all
++>select cast(null as int),cast(null as int),cast(null as int),sum(d) from t033t1
++>) x(a,b,c,d)
++>order by 1,2,3;
+
+A            B            C            D                   
+-----------  -----------  -----------  --------------------
+
+          2            3            1                     4
+          2            3            ?                     4
+          2            ?            ?                     4
+          3            3            1                     3
+          3            3            3                     3
+          3            3            ?                     6
+          3            4            2                     5
+          3            4            3                     5
+          3            4            ?                    10
+          3            ?            ?                    16
+          ?            ?            ?                     6
+          ?            ?            ?                     6
+          ?            ?            ?                     6
+          ?            ?            ?                    26
+
+--- 14 row(s) selected.
+>>
+>>select a,b,c from t033t1 group by rollup (a,b,c) order by 1,2,3;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1            2            3
+          1            2            ?
+          1            3            3
+          1            3            ?
+          1            ?            ?
+          2            3            4
+          2            3            ?
+          2            ?            ?
+          3            3            3
+          3            3            4
+          3            3            ?
+          3            ?            ?
+          ?            ?            ?
+          ?            ?            ?
+          ?            ?            ?
+          ?            ?            ?
+
+--- 16 row(s) selected.
+>>
+>>select a, count(distinct b) from t033t1 group by rollup (a);
+
+*** ERROR[4384] GROUP BY ROLLUP clause not allowed for this statement. Reason: Distinct rollup aggregates not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select a,b,c,min(distinct b),sum(distinct d) from t033t1 group by rollup (a,b,c) order by 1,2,3;
+
+*** ERROR[4384] GROUP BY ROLLUP clause not allowed for this statement. Reason: Distinct rollup aggregates not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from (
++>select a,b,c,min(distinct b), sum(distinct d) from t033t1 group by (a,b,c)
++>union all
++>select a,b,cast(null as int),min(distinct b), sum(distinct d) from t033t1 group by (a,b)
++>union all
++>select a,cast(null as int),cast(null as int),min(distinct b), sum(distinct d) from t033t1 group by (a)
++>union all
++>select cast(null as int),cast(null as int),cast(null as int),min(distinct b), sum(distinct d) from t033t1
++>) x(a,b,c,d,e)
++>order by a,b,c;
+
+A            B            C            D            E                   
+-----------  -----------  -----------  -----------  --------------------
+
+          1            2            3            2                     4
+          1            2            ?            2                     4
+          1            3            3            3                     3
+          1            3            ?            3                     3
+          1            ?            ?            2                     7
+          2            3            4            3                     5
+          2            3            ?            3                     5
+          2            ?            ?            3                     5
+          3            3            3            3                     3
+          3            3            4            3                     5
+          3            3            ?            3                     8
+          3            ?            ?            3                     8
+          ?            ?            ?            ?                     6
+          ?            ?            ?            ?                     6
+          ?            ?            ?            ?                     6
+          ?            ?            ?            2                    18
+
+--- 16 row(s) selected.
+>>
+>>select a+1, sum(b) from t033t1 group by rollup (1);
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   2                     5
+                   3                     3
+                   4                     6
+                   ?                     ?
+                   ?                    14
+
+--- 5 row(s) selected.
+>>select cast(d as int), sum(a) from t033t1 group by rollup (cast(d as int));
+
+(EXPR)       (EXPR)              
+-----------  --------------------
+
+          3                     4
+          4                     1
+          5                     5
+          6                     ?
+          ?                    10
+
+--- 5 row(s) selected.
+>>select cast(d as nullable), sum(a) from t033t1 group by rollup (1);
+
+(EXPR)       (EXPR)              
+-----------  --------------------
+
+          3                     4
+          4                     1
+          5                     5
+          6                     ?
+          ?                    10
+
+--- 5 row(s) selected.
+>>select cast(d as nullable), sum(a) from t033t1 group by rollup (cast(d as nullable));
+
+(EXPR)       (EXPR)              
+-----------  --------------------
+
+          3                     4
+          4                     1
+          5                     5
+          6                     ?
+          ?                    10
+
+--- 5 row(s) selected.
+>>
+>>-- firstN and cancel processing
+>>select [first 1] a,b,sum(c) from t033t1 group by rollup(1,2);
+
+A            B            (EXPR)              
+-----------  -----------  --------------------
+
+          1            2                     3
+
+--- 1 row(s) selected.
+>>select [first 9] a,b,sum(c) from t033t1 group by rollup(1,2);
+
+A            B            (EXPR)              
+-----------  -----------  --------------------
+
+          1            2                     3
+          1            3                     3
+          1            ?                     6
+          2            3                     4
+          2            ?                     4
+          3            3                     7
+          3            ?                     7
+          ?            ?                     ?
+          ?            ?                     ?
+
+--- 9 row(s) selected.
+>>
+>>-- order by descending
+>>select a from t033t1 group by rollup(a) order by a desc;
+
+A          
+-----------
+
+          ?
+          ?
+          3
+          2
+          1
+
+--- 5 row(s) selected.
+>>
+>>-- having clause
+>>select a, sum(b) from t033t1 group by rollup (a) having a is null;
+
+A            (EXPR)              
+-----------  --------------------
+
+          ?                     ?
+          ?                    14
+
+--- 2 row(s) selected.
+>>select a, sum(b) from t033t1 group by rollup (a) having a is not null;
+
+A            (EXPR)              
+-----------  --------------------
+
+          1                     5
+          2                     3
+          3                     6
+
+--- 3 row(s) selected.
+>>
+>>-- grby rollup and joins and subqueries
+>>prepare s from 
++>select * from (select a,sum(b) from t033t1 group by rollup(a)) x(a1,b1),
++>              (select a,sum(b) from t033t1 group by rollup(a)) y(a2,b2)
++>   where x.a1 = y.a2;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+7    .    8    root                                                  2.00E+000
+6    3    7    hybrid_hash_join      u                               2.00E+000
+5    .    6    sort_groupby_rollup                                   2.00E+000
+4    .    5    sort                                                  1.00E+002
+.    .    4    trafodion_scan                  T033T1                1.00E+002
+2    .    3    sort_groupby_rollup                                   2.00E+000
+1    .    2    sort                                                  1.00E+002
+.    .    1    trafodion_scan                  T033T1                1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+A1           B1                    A2           B2                  
+-----------  --------------------  -----------  --------------------
+
+          1                     5            1                     5
+          2                     3            2                     3
+          3                     6            3                     6
+
+--- 3 row(s) selected.
+>>
+>>prepare s from 
++>select * from (select a,sum(b) from t033t1 group by rollup(a)) x(a1,b1),
++>              (select a,sum(b) from t033t1 group by rollup(a)) y(a2,b2)
++>   where x.a1 = y.a2 or (x.a1 is null and y.a2 is null);
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+7    .    8    root                                                  3.00E+000
+6    3    7    hybrid_hash_join                                      3.00E+000
+5    .    6    sort_groupby_rollup                                   2.00E+000
+4    .    5    sort                                                  1.00E+002
+.    .    4    trafodion_scan                  T033T1                1.00E+002
+2    .    3    sort_groupby_rollup                                   2.00E+000
+1    .    2    sort                                                  1.00E+002
+.    .    1    trafodion_scan                  T033T1                1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+A1           B1                    A2           B2                  
+-----------  --------------------  -----------  --------------------
+
+          1                     5            1                     5
+          2                     3            2                     3
+          3                     6            3                     6
+          ?                     ?            ?                     ?
+          ?                     ?            ?                    14
+          ?                    14            ?                     ?
+          ?                    14            ?                    14
+
+--- 7 row(s) selected.
+>>
+>>-- should not convert subq to join and eliminate groupby rollup
+>>prepare s from 
++>select a from t033t1 where a in (select a from t033t1 group by rollup(a))
++>  or a is null order by a;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  5.09E+001
+7    .    8    sort                                                  5.09E+001
+1    6    7    nested_join                                           5.09E+001
+5    .    6    probe_cache                                           5.09E-001
+4    .    5    sort_scalar_aggr                                      5.09E-001
+3    .    4    sort_groupby_rollup                                   2.00E+000
+2    .    3    sort                                                  1.00E+002
+.    .    2    trafodion_scan                  T033T1                1.00E+002
+.    .    1    trafodion_scan                  T033T1                1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+A          
+-----------
+
+          1
+          1
+          2
+          3
+          3
+          ?
+
+--- 6 row(s) selected.
+>>
+>>prepare s from 
++>select a from t033t1 where a in (select NVL(a, 2) from t033t1 group by rollup(a))
++>   order by 1;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+6    .    7    root                                                  3.29E+001
+5    .    6    sort                                                  3.29E+001
+4    3    5    hybrid_hash_semi_joi  u                               3.29E+001
+.    .    4    trafodion_scan                  T033T1                1.00E+002
+2    .    3    sort_groupby_rollup                                   2.00E+000
+1    .    2    sort                                                  1.00E+002
+.    .    1    trafodion_scan                  T033T1                1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+A          
+-----------
+
+          1
+          1
+          2
+          3
+          3
+
+--- 5 row(s) selected.
+>>
+>>-- partitioned table with esp execution
+>>drop table if exists t033t2 cascade;
+
+--- SQL operation complete.
+>>create table t033t2 (z int not null primary key,
++>          a int, b int, c int, d int not null)
++>          salt using 4 partitions;
+
+--- SQL operation complete.
+>>insert into t033t2 values (10,1,2,3,4),(11,2,3,4,5),(12,3,3,3,3),
++>                          (13,3,3,4,5),(14,1,3,3,3),(15,null,null,null,6);
+
+--- 6 row(s) inserted.
+>>control query shape esp_exchange(cut);
+
+--- SQL operation complete.
+>>explain options 'f' select a,b,c,sum(d) from t033t2 
++>        group by rollup(a,b,c) order by 1,2,3;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  8.00E+000
+7    .    8    esp_exchange                    1:2(hash2) (m)        8.00E+000
+6    .    7    sort                                                  8.00E+000
+5    .    6    esp_exchange                    2(hash2):1            8.00E+000
+4    .    5    sort_partial_groupby                                  8.00E+000
+3    .    4    sort                                                  8.00E+000
+2    .    3    esp_exchange                    1:2(hash2)            8.00E+000
+1    .    2    hash_partial_groupby                                  8.00E+000
+.    .    1    trafodion_scan                  T033T2                1.00E+002
+
+--- SQL operation complete.
+>>select a,b,c,sum(d) from t033t2 group by rollup(a,b,c) order by 1,2,3;
+
+A            B            C            (EXPR)              
+-----------  -----------  -----------  --------------------
+
+          1            2            3                     4
+          1            2            ?                     4
+          1            3            3                     3
+          1            3            ?                     3
+          1            ?            ?                     7
+          2            3            4                     5
+          2            3            ?                     5
+          2            ?            ?                     5
+          3            3            3                     3
+          3            3            4                     5
+          3            3            ?                     8
+          3            ?            ?                     8
+          ?            ?            ?                     6
+          ?            ?            ?                     6
+          ?            ?            ?                     6
+          ?            ?            ?                    26
+
+--- 16 row(s) selected.
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>-- do not eliminate sort groupby rollup on primary keys
+>>cqd allow_nullable_unique_key_constraint 'ON';
+
+--- SQL operation complete.
+>>create table t033t3 (a int primary key, b int);
+
+--- SQL operation complete.
+>>insert into t033t3 values (1,1), (2,2), (null,null);
+
+--- 3 row(s) inserted.
+>>prepare s from select a, sum(b) from t033t3 group by rollup (a) order by 1,2;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.00E+002
+2    .    3    sort                                                  1.00E+002
+1    .    2    sort_groupby_rollup                                   1.00E+002
+.    .    1    trafodion_scan                  T033T3                1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+A            (EXPR)              
+-----------  --------------------
+
+          1                     1
+          2                     2
+          ?                     3
+          ?                     ?
+
+--- 4 row(s) selected.
+>>-- regular groupby will eliminate sort groupby
+>>prepare s from select a, sum(b) from t033t3 group by (a);
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+002
+.    .    1    trafodion_scan                  T033T3                1.00E+002
+
+--- SQL operation complete.
+>>
+>>
+>>-- error cases. Not allowed or currently not supported
+>>select a,a,sum(b) from t033t1 group by rollup (a,a);
+
+*** ERROR[4384] GROUP BY ROLLUP clause not allowed for this statement. Reason: Cannot have duplicate entries.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select d, sum(b) from t033t1 group by rollup (d);
+
+*** ERROR[4384] GROUP BY ROLLUP clause not allowed for this statement. Reason: Grouped columns must be nullable.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>log;

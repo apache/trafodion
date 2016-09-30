@@ -2515,9 +2515,17 @@ const NAType *CastConvert::synthesizeType()
 
 const NAType *CastType::synthesizeType()
 {
-  //  NABuiltInTypeEnum qual = child(0)->getValueId().getType().getTypeQualifier();
-  //  if (qual != NA_CHARACTER_TYPE)
-  //    return NULL; // source must be a character type
+  if (getType())
+    return getType();
+
+  ValueId childVid = child(0)->getValueId();
+  NAType *newType = childVid.getType().newCopy(HEAP);
+  if (makeNullable_ && (NOT newType->supportsSQLnull()))
+    {
+      newType->setNullable(TRUE);
+    }
+  changeType(newType);
+
   return getType();
 }
 

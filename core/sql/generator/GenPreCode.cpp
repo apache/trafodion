@@ -5744,7 +5744,6 @@ RelExpr * HashGroupBy::preCodeGen(Generator * generator,
   return GroupByAgg::preCodeGen(generator, externalInputs, pulledNewInputs);
 
 }
-
 RelExpr * GroupByAgg::preCodeGen(Generator * generator,
 				 const ValueIdSet & externalInputs,
 				 ValueIdSet &pulledNewInputs)
@@ -5812,6 +5811,15 @@ RelExpr * GroupByAgg::preCodeGen(Generator * generator,
 
   // Rebuild the grouping expressions tree. Use bridge values, if possible
   groupExpr().replaceVEGExpressions
+                 (availableValues,
+		  getGroupAttr()->getCharacteristicInputs(),
+                  FALSE, // No key predicates need to be generated here
+		  NULL,
+		  replicatePredicates,
+                  &getGroupAttr()->getCharacteristicOutputs());
+
+  // Rebuild the rollup grouping expressions tree. Use bridge values, if possible
+  rollupGroupExprList().replaceVEGExpressions
                  (availableValues,
 		  getGroupAttr()->getCharacteristicInputs(),
                   FALSE, // No key predicates need to be generated here
