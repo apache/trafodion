@@ -171,7 +171,6 @@ public class TmAuditTlog {
    public static final int TLOG_SLEEP = 1000;      // One second
    public static final int TLOG_SLEEP_INCR = 5000; // Five seconds
    public static final int TLOG_RETRY_ATTEMPTS = 5;
-   private int RETRY_ATTEMPTS;
 
    /**
     * tlogThreadPool - pool of thread for asynchronous requests
@@ -268,7 +267,7 @@ public class TmAuditTlog {
                if (LOG.isTraceEnabled()) LOG.trace("deleteEntriesOlderThanASNX -- location being refreshed : "
                     + location.getRegionInfo().getRegionNameAsString() + "endKey: "
                     + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for ASN: " + auditSeqNum);
-               if(retryCount == RETRY_ATTEMPTS) {
+               if(retryCount == TLOG_RETRY_ATTEMPTS) {
                   LOG.error("Exceeded retry attempts (" + retryCount + ") in deleteEntriesOlderThanASNX for ASN: " + auditSeqNum);
                   // We have received our reply in the form of an exception,
                   // so decrement outstanding count and wake up waiters to avoid
@@ -287,7 +286,7 @@ public class TmAuditTlog {
             }
             retryCount++;
 
-            if (retryCount < RETRY_ATTEMPTS && retry == true) {
+            if (retryCount < TLOG_RETRY_ATTEMPTS && retry == true) {
                try {
                   Thread.sleep(retrySleep);
                } catch(InterruptedException ex) {
@@ -296,7 +295,7 @@ public class TmAuditTlog {
 
                retrySleep += TLOG_SLEEP_INCR;
             }
-       } while (retryCount < RETRY_ATTEMPTS && retry == true);
+       } while (retryCount < TLOG_RETRY_ATTEMPTS && retry == true);
        // We have received our reply so decrement outstanding count
        transactionState.requestPendingCountDec(false);
 
