@@ -234,15 +234,6 @@ public class MultiCfQueryExecTest extends BaseTest {
 
         PreparedStatement statement;
 
-        // BEGIN TEMP: until jira TRAFODION-2247 is fixed.
-        // Remove the begin/end temp block after that
-        if (tgtTR()) {
-            dml = "control query default traf_upsert_mode 'REPLACE'";
-            statement = conn.prepareStatement(dml);
-            statement.execute();
-        }
-        // END TEMP:
-
         if (tgtPH()||tgtTR()) dml = "upsert into " +
         "MULTI_CF(" +
         "    ID, " +
