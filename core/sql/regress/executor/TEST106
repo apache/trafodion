@@ -27,6 +27,10 @@
 -- To do:
 -- Revision history:
 
+-- temporarily turning off ddl xns for this test suite.
+-- it runs into a hang issue in dtm due to cancel processing.
+cqd ddl_transactions 'OFF';
+
 sh echo > cumulative_GET_STATS106; 
 sh echo > LOG106;
 sh echo > T106_INTERLEAVED_LOG;
