@@ -212,8 +212,8 @@ keyMdamGen::~keyMdamGen()
       delete m;
     }
 
-  first_ = NULL;
-  last_ = NULL;
+  first_ = 0;
+  last_ = 0;
 };
 
 
@@ -244,7 +244,7 @@ Lng32 keyMdamGen::unpack(void * base, void * reallocator)
      currGenPtr = nextColumnGen;
   }
   else
-     currGenPtr = NULL;
+     currGenPtr = 0;
 
   while (currGenPtr != (MdamColumnGenPtr)NULL)
   {
@@ -265,7 +265,7 @@ Lng32 keyMdamGen::unpack(void * base, void * reallocator)
      currGenPtr = nextColumnGen;
   }
   else
-     currGenPtr = NULL;
+     currGenPtr = 0;
 
   while (currGenPtr != (MdamColumnGenPtr)NULL)
   {
@@ -329,7 +329,7 @@ MdamColumnGen::~MdamColumnGen()
       next = current->getNext(); // get it before we destroy it
       delete current;
     }
-  preds_ = NULL;
+  preds_ = 0;
 }
 
 
@@ -368,7 +368,7 @@ Lng32 MdamColumnGen::unpack(void * base, void * reallocator)
      currPredPtr = nextPred;
   }
   else
-     currPredPtr = NULL;
+     currPredPtr = 0;
 
   while (currPredPtr != (MdamPredPtr)NULL)
   {

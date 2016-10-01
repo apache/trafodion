@@ -2379,7 +2379,7 @@ public:
   
   void append( T newItem)
   {
-    insertAt( entries(), newItem);
+    this->insertAt( entries(), newItem);
   }
   
   CollIndex entries() const
@@ -2943,7 +2943,7 @@ public:
 
   inline V* get(const K* kk) const                      // retrieve a tuple
   {
-    return getFirstValue(kk);
+    return this->getFirstValue(kk);
   }
        		
   inline void insert(const V* vv)			// insert a tuple

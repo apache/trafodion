@@ -940,7 +940,7 @@ NA_EIDPROC
 				ComSpace * space = 0,
 				CollHeap * exHeap = 0,
 				NABoolean computeSpaceOnly = FALSE,
-				ex_globals * glob = FALSE);
+				ex_globals * glob = 0);
 NA_EIDPROC
   virtual void displayContents(ComSpace * space, short mode, const char * displayStr,
                                ULng32 flag);

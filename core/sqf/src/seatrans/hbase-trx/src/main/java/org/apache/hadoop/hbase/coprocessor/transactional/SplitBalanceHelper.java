@@ -373,7 +373,8 @@ public class SplitBalanceHelper {
             List<String> hbaseTables = ZKUtil.listChildrenNoWatch(zkw, SplitBalanceHelper.zkTable);
             if(trafTables != null && hbaseTables != null) {
               for (String tableName : trafTables) {
-                if (!hbaseTables.contains(tableName)) {
+		        if ((hbaseTables == null) || 
+		           ((hbaseTables != null) && (!hbaseTables.contains(tableName)))) {		      
                     if (LOG.isTraceEnabled()) LOG.trace("zkCleanup, removing " + zSplitBalPath + tableName);
                     ZKUtil.deleteNodeRecursively(zkw, zSplitBalPath + tableName);
                 }

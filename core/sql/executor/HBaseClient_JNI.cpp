@@ -23,9 +23,9 @@
 
 #include "Context.h"
 #include "Globals.h"
+#include <signal.h>
 #include "HBaseClient_JNI.h"
 #include "QRLogger.h"
-#include <signal.h>
 #include "pthread.h"
 //
 // ===========================================================================

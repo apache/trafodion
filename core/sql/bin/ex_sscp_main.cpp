@@ -248,12 +248,13 @@ void runServer(Int32 argc, char **argv)
   {
      cout << tmbuf << " RMS Shared segment exists, attaching to it, shmid="<< shmid << ", key=" << (key_t)getStatsSegmentId() << "\n";
   }
-  if ((statsGlobalsAddr = shmat(shmid, getRmsSharedMemoryAddr(), 0))
+  if ((statsGlobalsAddr = shmat(shmid, getRmsSharedMemoryAddr(), SHM_REMAP | SHM_RND))
 		== (void *)-1)
   {
     cout << tmbuf << "Shmat failed, shmid=" <<shmid << ", key=" << (key_t) getStatsSegmentId() << ", Error code : "  << errno << "(" << strerror(errno) << ")\n";
     exit(errno);
   }
+  gRmsSharedMemoryAddr_ = statsGlobalsAddr;
   char *statsGlobalsStartAddr = (char *)statsGlobalsAddr;
   if (createStatsGlobals)
   {

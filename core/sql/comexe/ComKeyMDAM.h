@@ -258,7 +258,7 @@ public:
 
   NA_EIDPROC MdamColumnGen() // for use by unpack only
        : NAVersionedObject(-1)
-  { preds_ = NULL; };
+  { preds_ = 0; };
 
   NA_EIDPROC MdamColumnGen(MdamColumnGen *previous,
                            ULng32 columnLength,

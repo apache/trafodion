@@ -6383,6 +6383,7 @@ int CCluster::AcceptSock( int sock )
     int csock; // connected socket
     struct sockaddr_in  sockinfo;   // socket address info
 
+    size = sizeof(struct sockaddr *);
     if ( getsockname( sock, (struct sockaddr *) &sockinfo, &size ) )
     {
         char buf[MON_STRING_BUF_SIZE];

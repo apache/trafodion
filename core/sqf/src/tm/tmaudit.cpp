@@ -298,7 +298,6 @@ int32 TM_Audit::write_trans_state(TM_Transid_Type *pv_transid,
 {
     Audit_Transaction_State lv_state_rec;
     char      lv_write_buffer[REC_SIZE];
-    //bool      lv_force = true;
     int32     lv_notify = 0;
 
     TMTrace(2, ("TM_Audit::write_trans_state: ENTRY \n"));
@@ -316,7 +315,6 @@ int32 TM_Audit::write_trans_state(TM_Transid_Type *pv_transid,
 void TM_Audit::write_shutdown(int32 pv_nid, int32 pv_state)
 {
     Audit_TM_Shutdown       lv_rec;
-    //int64                   lv_vsn;
     char                    lv_write_buffer[REC_SIZE];
 
     pv_nid = pv_nid; // 810
