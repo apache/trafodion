@@ -398,6 +398,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_NAME                /* ANSI SQL non-reserved word */
 %token <tokval> TOK_UNNAMED             /* ANSI SQL non-reserved word */
 %token <tokval> TOK_INDICATOR_TYPE      /* Tandem extension non-reserved word */
+%token <tokval> TOK_INET_ATON           /* MySQL extension non-reserved word */
+%token <tokval> TOK_INET_NTOA           /* MySQL extension non-reserved word */
 %token <tokval> TOK_VARIABLE_POINTER    /* Tandem extension non-reserved word */
 %token <tokval> TOK_INDICATOR_POINTER   /* Tandem extension non-reserved word */
 %token <tokval> TOK_RETURNED_LENGTH     /* ANSI SQL non-reserved word */
@@ -771,6 +773,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_JAVA                /* Tandem extension non-reserved word */
 %token <tokval> TOK_JOIN
 %token <tokval> TOK_JULIANTIMESTAMP     /* Tandem extension */
+%token <tokval> TOK_LAG                 /* LAG OLAP Function */
 %token <tokval> TOK_LANGUAGE
 %token <tokval> TOK_LARGEINT            /* Tandem extension non-reserved word */
 %token <tokval> TOK_LASTNOTNULL
@@ -780,6 +783,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_LAST_SYSKEY
 %token <tokval> TOK_LASTSYSKEY
 %token <tokval> TOK_LCASE               /* ODBC extension   */
+%token <tokval> TOK_LEAD                /* LEAD OLAP Function */
 %token <tokval> TOK_LEADING
 %token <tokval> TOK_LEAST
 %token <tokval> TOK_LEFT
@@ -801,6 +805,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_IUD_LOG_TABLE          
 %token <tokval> TOK_RANGE_LOG_TABLE		//++ MV
 %token <tokval> TOK_LOG10
+%token <tokval> TOK_LOG2
 %token <tokval> TOK_LONGWVARCHAR
 
 %token <tokval> TOK_LOW_VALUE           /* Tandem extension non-reserved word */
@@ -1290,6 +1295,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_INSERTLOG			// MV 
 %token <tokval> TOK_INVALID
 %token <tokval> TOK_INVALIDATE
+%token <tokval> TOK_ISIPV4
+%token <tokval> TOK_ISIPV6
 %token <tokval> TOK_ISLACK              /* Tandem extension */
 %token <tokval> TOK_K                   /* Tandem extension */
 %token <tokval> TOK_KEY
@@ -2076,9 +2083,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>      		join_condition
 %type <item>      		where_clause
 %type <uint>                    multi_commit_size
-//%type <item>      		group_by_clause
 %type <item>      		group_by_clause_non_empty
-//%type <item>      		having_clause
 %type <item>      		having_clause_non_empty
 %type <item>      		qualify_clause
 %type <item>      		sort_by_key
@@ -7719,6 +7724,77 @@ olap_sequence_function : set_function_specification TOK_OVER '('
                               SqlParser_CurrentParser->setTopHasOlapFunctions(TRUE);
                             }
 
+// start of OLAP LEAD function()
+                       | TOK_LEAD '(' value_expression ')' TOK_OVER '('
+                         opt_olap_part_clause opt_olap_order_clause ')'
+                        {
+                          ItmLeadOlapFunction* leadExpr =
+                                       new (PARSERHEAP()) ItmLeadOlapFunction($3, 1);
+                          leadExpr->setOLAPInfo($7, $8);
+                          $$=leadExpr;
+
+                          SqlParser_CurrentParser->setTopHasOlapFunctions(TRUE);
+                        }
+                       | TOK_LEAD '(' value_expression ',' value_expression ')' TOK_OVER '('
+                         opt_olap_part_clause opt_olap_order_clause ')'
+                        { 
+                          ItmLeadOlapFunction* leadExpr = 
+                                       new (PARSERHEAP()) ItmLeadOlapFunction($3, $5);
+                          leadExpr->setOLAPInfo($9, $10);
+                          $$=leadExpr;
+                          
+                          SqlParser_CurrentParser->setTopHasOlapFunctions(TRUE);
+                        }
+                       | TOK_LEAD '(' value_expression ',' value_expression ',' value_expression ')' TOK_OVER '('
+                         opt_olap_part_clause opt_olap_order_clause ')'
+                        { 
+                          ItmLeadOlapFunction* leadExpr = 
+                                       new (PARSERHEAP()) ItmLeadOlapFunction($3, $5, $7);
+                          leadExpr->setOLAPInfo($11, $12);
+                          $$=leadExpr;
+                          
+                          SqlParser_CurrentParser->setTopHasOlapFunctions(TRUE);
+                        }
+// end of OLAP LEAD function()
+// start of OLAP LAG function()
+                       |TOK_LAG '(' value_expression ','  value_expression ','  value_expression ')'  TOK_OVER '('
+                         opt_olap_part_clause
+                         opt_olap_order_clause ')'
+                         {
+                             //3rd value_expression is default value    
+                              ItmLagOlapFunction* lagExpr =
+                                                       new (PARSERHEAP()) ItmLagOlapFunction($3, $5, $7);
+                             lagExpr->setOLAPInfo($11, $12);
+                             $$=lagExpr;
+                             SqlParser_CurrentParser->setTopHasOlapFunctions(TRUE);
+                         }
+                       |TOK_LAG '(' value_expression ','  value_expression ')'  TOK_OVER '('
+                         opt_olap_part_clause
+                         opt_olap_order_clause ')'
+                         {
+                              ItmLagOlapFunction* lagExpr =
+                                                       new (PARSERHEAP()) ItmLagOlapFunction($3, $5);
+                             lagExpr->setOLAPInfo($9, $10);
+                             $$=lagExpr;
+                             SqlParser_CurrentParser->setTopHasOlapFunctions(TRUE);
+                         }
+                       |TOK_LAG '(' value_expression  ')'  TOK_OVER '('
+                          opt_olap_part_clause
+                          opt_olap_order_clause ')'
+                          {    
+                               //default offset is 1;
+                               NAString * defaultOffset = new (PARSERHEAP()) NAString("1");
+                               ItemExpr * offsetExpr = literalOfNumericNoScale(defaultOffset);
+                               if (!offsetExpr) YYERROR;   
+                               ItmLagOlapFunction* lagExpr =
+                                                        new (PARSERHEAP()) ItmLagOlapFunction($3, offsetExpr);
+                              lagExpr->setOLAPInfo($7, $8);
+                              $$=lagExpr;
+                              SqlParser_CurrentParser->setTopHasOlapFunctions(TRUE);
+                          }
+// end of OLAP LAG function()
+
+
 
 opt_olap_part_clause   : empty
                          {
@@ -9510,6 +9586,7 @@ math_func_1_operand :
            |  TOK_FLOOR {$$ = ITM_FLOOR;}
            |  TOK_LOG {$$ = ITM_LOG;}
            |  TOK_LOG10 {$$ = ITM_LOG10;}
+           |  TOK_LOG2 {$$ = ITM_LOG2;}
            |  TOK_RADIANS {$$ = ITM_RADIANS;}
            |  TOK_SIN {$$ = ITM_SIN;}
            |  TOK_SINH {$$ = ITM_SINH;}
@@ -9575,7 +9652,34 @@ misc_function :
                             CmpCommon::statementHeap(), 
                             1, $3);
                 }
-
+     | TOK_ISIPV4 '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_ISIPV4,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+     | TOK_ISIPV6 '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_ISIPV6,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+     | TOK_INET_ATON '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_INET_ATON,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+     | TOK_INET_NTOA '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_INET_NTOA,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
      | TOK_ISNULL '(' value_expression ',' value_expression ')'
                   {
                     $$ = new (PARSERHEAP())
@@ -10578,6 +10682,12 @@ cast_specification : TOK_CAST '(' value_expression  TOK_AS  Set_Cast_Global_Fals
                                 {
                                   $$ = new (PARSERHEAP())
                                     CastType($3, $5);
+                                  empty_charlen_specifier_allowed = FALSE;
+                                }
+                   | TOK_CAST '(' value_expression TOK_AS TOK_NULLABLE ')'
+                                {
+                                  $$ = new (PARSERHEAP())
+                                    CastType($3, TRUE);
                                   empty_charlen_specifier_allowed = FALSE;
                                 }
 
@@ -13061,6 +13171,11 @@ where_clause : { $$ = NULL; }
 
 group_by_clause_non_empty : TOK_GROUP TOK_BY value_expression_list 
 			      { $$ = $3; }
+                          | TOK_GROUP TOK_BY TOK_ROLLUP '(' value_expression_list ')'
+			      { 
+                                $5->setIsGroupByRollup(TRUE);
+                                $$ = $5; 
+                              }
 
 /* type item */
 having_clause_non_empty : TOK_HAVING search_condition
@@ -19564,7 +19679,7 @@ merge_stmt_when_matched     : TOK_WHEN TOK_MATCHED TOK_THEN TOK_UPDATE TOK_SET m
 			    }
 
 /* type item */
-merge_stmt_set_clause       : set_clause
+merge_stmt_set_clause       : set_update_commit_list
 
 /* type ptr_placeholder */
 merge_stmt_when_not_matched : TOK_WHEN TOK_NOT TOK_MATCHED TOK_THEN TOK_INSERT merge_insert_with_values
@@ -33619,8 +33734,12 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_HBASE_TIMESTAMP
                       | TOK_HBASE_VERSION
                       | TOK_HIVEMD
+                      | TOK_INET_ATON
+                      | TOK_INET_NTOA
                       | TOK_INITIAL
                       | TOK_INSTR
+                      | TOK_ISIPV4
+                      | TOK_ISIPV6
                       | TOK_KEY_RANGE_COMPARE
                       | TOK_JULIANTIMESTAMP
                       | TOK_LASTNOTNULL
@@ -33631,6 +33750,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_LOCATE
                       | TOK_LOG
                       | TOK_LOG10
+                      | TOK_LOG2
                       | TOK_LPAD
                       | TOK_LTRIM
                       | TOK_MAVG
@@ -33665,6 +33785,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_RESTORE
                       | TOK_RESUME
                       | TOK_RETRIES
+                      | TOK_RETURNS
                       | TOK_RMAX
                       | TOK_RMIN
                       | TOK_ROUND

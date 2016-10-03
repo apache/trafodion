@@ -115,6 +115,8 @@ public:
     return isExact() AND isUnsigned() AND binaryPrecision();
   }
 
+  NABoolean isInteger() const;
+
   NABoolean isDecimal() const      { return qualifier_ == SQLDecimal_TYPE ||
 				  	    qualifier_ == LSDecimal_TYPE; }
   NABoolean isBigNum() const { return qualifier_ == SQLBigNum_TYPE;}

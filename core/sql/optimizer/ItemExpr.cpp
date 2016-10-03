@@ -6111,6 +6111,22 @@ NABoolean Aggregate::operator== (const ItemExpr& other) const	// virtual meth
   return TRUE;
 }
 
+NABoolean Aggregate::duplicateMatch(const ItemExpr& other) const
+{
+  if (NOT genericDuplicateMatch(other))
+    return FALSE;
+
+  const Aggregate &ag = (Aggregate &)other;
+
+  if (isDistinct_ != ag.isDistinct_)
+    return FALSE;
+
+  if (NOT isSensitiveToDuplicates())
+    return FALSE;
+
+  return TRUE;
+}
+
 NABoolean Aggregate::isCovered
                       (const ValueIdSet& newExternalInputs,
 		       const GroupAttributes& coveringGA,
@@ -9705,6 +9721,8 @@ ItemExpr * BiRelat::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   result->outerNullFilteringDetected_= outerNullFilteringDetected_;
   result->innerNullFilteringDetected_ = innerNullFilteringDetected_;
 
+  result->rollupColumnNum_ = rollupColumnNum_;
+
   result->flags_ = flags_;
 
   return ItemExpr::copyTopNode(result, outHeap);
@@ -12052,18 +12070,11 @@ Cast::Cast(ItemExpr *val1Ptr, const NAType *type, OperatorTypeEnum otype,
 {
   ValueId vid = val1Ptr ? val1Ptr->getValueId() : NULL_VALUE_ID;
 
-  if ((type->getFSDatatype() == 132) &&
-      (vid != NULL_VALUE_ID) &&
-      (vid.getType().getFSDatatype() == 136))
-    {
-      Lng32 ij = 1;
-    }
-
   checkForTruncation_ = FALSE;
   if (checkForTrunc)
     if (vid == NULL_VALUE_ID)
       checkForTruncation_ = TRUE;
-    else if ( type->getTypeQualifier()         == NA_CHARACTER_TYPE &&
+    else if ( type && type->getTypeQualifier()         == NA_CHARACTER_TYPE &&
               vid.getType().getTypeQualifier() == NA_CHARACTER_TYPE )
     {
        if ( type->getNominalSize() < vid.getType().getNominalSize() )
@@ -12207,9 +12218,13 @@ ItemExpr * CastType::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   ItemExpr *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) CastType(NULL, getType()->newCopy(outHeap));
+    result = new (outHeap) 
+      CastType(NULL, 
+               (getType() ? getType()->newCopy(outHeap) : NULL));
   else
     result = derivedNode;
+  
+  ((CastType*)result)->makeNullable_ = makeNullable_;
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 }
@@ -12926,6 +12941,7 @@ const NAString MathFunc::getText() const
     case ITM_FLOOR:        return "floor";
     case ITM_LOG:          return "log";
     case ITM_LOG10:        return "log10";
+    case ITM_LOG2:         return "log2";
     case ITM_PI:           return "pi";
     case ITM_POWER:        return "power";
     case ITM_RADIANS:      return "radians";
@@ -15124,3 +15140,73 @@ ConstValue* ItemExpr::evaluate(CollHeap* heap)
 
   return result;
 }
+
+ItemExpr * ItmLagOlapFunction::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+    ItemExpr *result;
+
+    if (derivedNode == NULL)
+    {
+        switch (getArity()) { 
+           case 2:
+               result = new (outHeap) ItmLagOlapFunction(child(0), child(1));
+               break;
+           case 3:
+               result = new (outHeap) ItmLagOlapFunction(child(0), child(1), child(2));
+               break;
+           default:
+               CMPASSERT(FALSE);
+        }
+    }
+    else              
+        result = derivedNode;                 
+
+  return ItmSeqOlapFunction::copyTopNode(result, outHeap);
+}
+
+ItmLeadOlapFunction::~ItmLeadOlapFunction() {}
+
+ItemExpr * 
+ItmLeadOlapFunction::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    {
+     switch (getArity()) { 
+      case 2:
+         result = new (outHeap) ItmLeadOlapFunction(child(0), child(1));
+         break;
+      
+      case 1:
+      default:
+         result = new (outHeap) ItmLeadOlapFunction(child(0));
+         break;
+     }
+    }
+  else              
+    result = derivedNode;                 
+
+  ((ItmLeadOlapFunction*)result)->setOffset(getOffset());
+
+  return ItmSeqOlapFunction::copyTopNode(result, outHeap);
+}
+
+NABoolean ItmLeadOlapFunction::hasEquivalentProperties(ItemExpr * other)
+{
+  if (other == NULL)
+    return FALSE;
+
+  if (getOperatorType() != other->getOperatorType() ||
+        getArity() != other->getArity())
+    return FALSE;
+
+  //return getOffsetExpr()->hasEquivalentProperties(((ItmLeadOlapFunction*)other)->getOffsetExpr());
+  return TRUE;
+}
+
+ItemExpr *ItmLeadOlapFunction::transformOlapFunction(CollHeap *heap)
+{
+   return this;
+}
+

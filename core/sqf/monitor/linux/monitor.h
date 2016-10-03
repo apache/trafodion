@@ -63,6 +63,7 @@ public:
     ~CMonitor( void );
 
     bool  CompleteProcessStartup( struct message_def *msg );
+    void  CreateZookeeperClient( void );
     void  IncOpenCount(void);
     void  IncNoticeCount(void);
     void  IncProcessCount(void);
@@ -70,6 +71,7 @@ public:
     void  DecrNoticeCount(void);
     void  DecrProcessCount(void);
     void  StartPrimitiveProcesses( void );  
+    void  StartZookeeperClient( void );
     void  openProcessMap ( void );
     void  writeProcessMapEntry ( const char * buf );
     void  writeProcessMapBegin( const char *name

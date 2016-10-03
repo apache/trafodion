@@ -129,6 +129,7 @@ typedef NABoolean               ComBoolean;
 #define SEABASE_OLD_PRIVMGR_SCHEMA         "PRIVMGR_MD"
 #define SEABASE_PRIVMGR_SCHEMA         "_PRIVMGR_MD_"
 #define SEABASE_UDF_SCHEMA             "_UDF_"
+#define TRAF_SAMPLE_PREFIX             "TRAF_SAMPLE_"  // prefix for a sample table used by update stats
 #define LOB_MD_PREFIX                  "LOBMD_"
 #define LOB_DESC_CHUNK_PREFIX          "LOBDescChunks_"
 #define LOB_DESC_HANDLE_PREFIX         "LOBDescHandle_"

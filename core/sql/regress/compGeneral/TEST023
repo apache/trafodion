@@ -92,7 +92,7 @@ transpose 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' as x5;
 
 create table stest_empty like stest with partitions;
 
-get tables;  -- should be just stest, stest_empty, stestc; no sb_* tables yet
+get tables;  -- should be just stest, stest_empty, stestc, and the sb_* tables
 
 ?section ustat1p
 
@@ -110,12 +110,13 @@ select object_name,sample_name,reason,last_where_predicate
 execute s1 using 'STEST';
 -- should see one row
 
-get tables; -- should be stest, stest_empty, stestc, sb_persistent_samples + a sample table
+get tables; -- should be stest, stest_empty, stestc, sb_* tables + a sample table
 
 -- create another one, showing its replacement
+update statistics for table stest remove sample;
 update statistics for table stest create sample random 10 percent;
 
-get tables; -- should be stest, stest_empty, stestc, sb_persistent_samples + a different sample table
+get tables; -- should be stest, stest_empty, stestc, sb_* tables + a different sample table
 
 execute s1 using 'STEST';
 -- should see one row
@@ -123,7 +124,7 @@ execute s1 using 'STEST';
 -- remove a persistent sample table
 update statistics for table stest remove sample;
 
-get tables; -- should be stest, stest_empty, stestc, sb_persistent_samples only
+get tables; -- should be stest, stest_empty, stestc, sb_* tables only
 
 execute s1 using 'STEST';
 -- should see zero rows
@@ -132,15 +133,16 @@ execute s1 using 'STEST';
 
 update statistics for table stest on every column sample random 10 percent persistent;
 
-get tables; -- should be stest, stest_empty, stestc, sb_persistent_samples, sb_hist* + another sample table
+get tables; -- should be stest, stest_empty, stestc, sb_* tables + another sample table
 
 execute s1 using 'STEST';
 -- should see one row
 
 -- do it again showing its replacement
+update statistics for table stest remove sample;
 update statistics for table stest on every column sample random 10 percent persistent;
 
-get tables; -- should be stest, stest_empty, stestc, sb_persistent_samples, sb_hist* + another sample table
+get tables; -- should be stest, stest_empty, stestc, sb_* tables + another sample table
 
 execute s1 using 'STEST';
 -- should see one row
@@ -179,6 +181,10 @@ insert into stest values (100000,1,1),
 
 -- These two CQDs are to get around annoying 9222 and 9224 warnings
 -- that happen non-deterministically due to "gaps" in the sample histograms.
+-- Note: The warnings now only appear if "update statistics log on" is in 
+-- force, which it isn't here. Nevertheless the CQDs encourage the exercise
+-- of a particular code path within the incremental update stats code so
+-- we leave them here.
 cqd USTAT_IUS_INTERVAL_ROWCOUNT_CHANGE_THRESHOLD '0.15';
 cqd USTAT_IUS_INTERVAL_UEC_CHANGE_THRESHOLD '0.15'; 
 
@@ -254,10 +260,20 @@ update statistics for table stest on existing columns incremental where 1;
 
 get tables; -- should be the same as previous "get tables"
 
--- attempt to do incremental when no persistent sample exists
-update statistics for table stest_empty on existing columns incremental where c1 >= 100000;
+-- attempt to do incremental with a syntactically valid but semantically invalid where clause
+update statistics for table stest on existing columns incremental where badcol > 5;
 
-get tables; -- should be the same as previous "get tables"
+-- attempt to do incremental when no persistent sample exists
+update statistics for table stestc remove sample;
+update statistics for table stestc on existing columns incremental where c1 >= 'naaaa';
+
+-- attempt to create a persistent sample when one already exists, syntax 1
+update statistics for table stest on every column sample random 10 percent persistent;
+
+-- attempt to create a persistent sample when one already exists, syntax 2
+update statistics for table stest create sample random 20 percent;
+
+get tables; -- should be the same as previous "get tables" except only one sample table
 
 
 ?section clnup

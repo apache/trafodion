@@ -70,8 +70,20 @@ select cast('a' as int) from dual;
 select a aa from t032t1 group by aa;
 select a+1 from t032t1 group by a+1;
 select a+1 from t032t1 order by a+1;
+select a+1 aa from t032t1 order by a+1;
+select a+1 aa from t032t1 order by aa;
+select a+1 aa from t032t1 order by 1;
 select * from (select b from t032t1 order by b desc) x(z);
 select * from (select [first 1] a from t032t1) x(z);
+select count(*) from t032t1 order by count(*);
+select count(*) from t032t1 order by count(*) desc;
+select count(*) cc from t032t1 order by count(*) desc;
+select count(distinct a) from t032t1 order by count(distinct a);
+
+-- error cases
+select count(a) from t032t1 order by count(distinct a);
+select sum(a), b from t032t1 group by sum(a), b;
+select sum(a) from t032t1 group by 1;
 
 -- incompatible operations
 select a from t032t1 where a = '2';
@@ -86,6 +98,21 @@ select * from (values(1)) x(a) where current_date = current_timestamp;
 select * from (values(1)) x(a) where current_timestamp(0) = current_timestamp(6);
 
 select cast(1e0 as interval year) from dual;
+
+
+-- auto create schema
+
+-- should fail, schema doesnt exist
+create table t032sch.t032t2 (a int);
+
+-- should succeed, schema will be automatically created
+cqd traf_auto_create_schema 'ON';
+create table t032sch.t032t2 (a int);
+set schema t032sch;
+invoke t032t2;
+insert into t032t2 values (1);
+
+drop schema t032sch cascade;
 
 log;
 

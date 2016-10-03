@@ -1879,8 +1879,6 @@ enum DefaultConstants
 
   QUERY_CACHE_RUNTIME,
 
-  GROUP_BY_USING_ORDINAL,
-
   SKIP_UNAVAILABLE_PARTITION,
 
   ISOLATION_LEVEL_FOR_UPDATES,
@@ -3321,8 +3319,6 @@ enum DefaultConstants
 
   USTAT_IUS_NO_BLOCK,
 
-  USTAT_IUS_SIMPLE_SYNTAX,
-
   // Collect reorg stats. Default is ON and stats are collected. 
   // This cqd is added in case
   // one need to go back to the old behavior of no reorg stats, or if a problem
@@ -3589,6 +3585,10 @@ enum DefaultConstants
   // It is run using underlying hbase single row transaction consistency.
   TRAF_NO_DTM_XN,
 
+  // if set to ON, then query is run as part of localized region transaction.
+  // No external transaction is started to run it.
+  TRAF_USE_REGION_XN,
+
   // HBASE_HASH2_PARTITIONING (ON - OFF for now):
   // - OFF: Treat salted table like a non-salted table
   // - ON: Always use HASH2 for salted table
@@ -3853,6 +3853,10 @@ enum DefaultConstants
 
   // allow ORDER BY in subqueries.
   ALLOW_ORDER_BY_IN_SUBQUERIES,
+
+  // if the schema specified in a create stmt doesn't exist, automatically
+  // create it.
+  TRAF_AUTO_CREATE_SCHEMA,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

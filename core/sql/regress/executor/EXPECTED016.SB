@@ -68,7 +68,7 @@
 >>invoke t016t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T016T1
--- Definition current  Wed May 14 05:01:26 2014
+-- Definition current  Tue Sep 20 07:57:51 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -120,6 +120,7 @@ CREATE TABLE TRAFODION.SCH.T016T1
   , K                                NUMERIC(128, 128) DEFAULT NULL
   , L                                NUMERIC(60, 59) DEFAULT NULL
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -127,7 +128,7 @@ CREATE TABLE TRAFODION.SCH.T016T1
 >>invoke t016t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T016T2
--- Definition current  Wed May 14 05:01:27 2014
+-- Definition current  Tue Sep 20 07:57:52 2016
 
   (
     A                                NUMERIC(39, 12) NO DEFAULT NOT NULL NOT
@@ -150,6 +151,7 @@ CREATE TABLE TRAFODION.SCH.T016T2
   , C                                NUMERIC(21, 21) DEFAULT NULL
   , PRIMARY KEY (A ASC, B ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -329,7 +331,7 @@ A                                          B                      C
 >>invoke t016v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T016V1
--- Definition current  Wed May 14 05:01:35 2014
+-- Definition current  Tue Sep 20 07:58:02 2016
 
   (
     A                                NUMERIC(10, 0) UNSIGNED DEFAULT NULL
@@ -363,7 +365,7 @@ A                                          B                      C
 >>invoke t016v2;
 
 -- Definition of Trafodion view TRAFODION.SCH.T016V2
--- Definition current  Wed May 14 05:01:37 2014
+-- Definition current  Tue Sep 20 07:58:04 2016
 
   (
     JJ                               NUMERIC(128, 0) UNSIGNED DEFAULT NULL
@@ -381,7 +383,7 @@ A                                          B                      C
 >>invoke t016t2t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T016T2T1
--- Definition current  Wed May 14 05:01:40 2014
+-- Definition current  Tue Sep 20 07:58:11 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -416,7 +418,7 @@ A                                          B                      C
 >>invoke t016t2t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T016T2T2
--- Definition current  Wed May 14 05:01:42 2014
+-- Definition current  Tue Sep 20 07:58:16 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE

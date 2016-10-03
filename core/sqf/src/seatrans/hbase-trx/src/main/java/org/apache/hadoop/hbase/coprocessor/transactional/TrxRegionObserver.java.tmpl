@@ -119,6 +119,9 @@ public static final int TS_COMMIT_REQUEST = 1;
 public static final int TS_COMMIT = 2;
 public static final int TS_ABORT = 3;
 public static final int TS_CONTROL_POINT_COMMIT = 4;
+public static final int TS_REGION_TX_ACTIVE = 5;
+public static final int TS_REGION_TX_COMMIT_REQUEST = 6;
+public static final int TS_REGION_TX_COMMIT = 7;
 public static final byte TS_TRAFODION_TXN_TAG_TYPE = 41;
 public static final int ACTIVETXN_DELAY_DEFAULT = 15 * 1000;
 public static final int PENDINGTXN_DELAY_DEFAULT = 500;
@@ -165,6 +168,8 @@ long activeCount = 0;
 long abortCount = 0;
 long commitCount = 0;
 long commitRequestCount = 0;
+long regionTxCommitCount = 0;
+long regionTxCommitRequestCount = 0;
 long totalEdits = 0;
 long skippedEdits = 0;
 int cleanAT = 0;
@@ -375,6 +380,7 @@ static ConcurrentHashMap<String, Object> getRefMap() {
      int op = Bytes.toInt(b,Bytes.SIZEOF_INT+offset);
      long tid = Bytes.toLong(b,Bytes.SIZEOF_INT+Bytes.SIZEOF_INT+offset);
      long logSeqId = Bytes.toLong(b,Bytes.SIZEOF_INT+Bytes.SIZEOF_INT+Bytes.SIZEOF_LONG+offset);
+     ArrayList <WALEdit> editList;
      if ((m_isTrafodionMetadata) || LOG.isTraceEnabled()) LOG.info("Trafodion Recovery Region Observer CP:PWR01 Find transactional tag within Edits for " + lv_regionName + " tid " + tid + " op " + op + " log seq " + logSeqId + " version " + version);
 
      //Trafodion Recovery : process each edit according to its nature (prepare, commit, abort)
@@ -386,14 +392,14 @@ static ConcurrentHashMap<String, Object> getRefMap() {
                         if ((m_isTrafodionMetadata) || LOG.isTraceEnabled()) LOG.info("Trafodion Recovery Region Observer CP:   " + regionInfo.getRegionNameAsString() + " processing active edit for transaction: " + tid
                                 + ", already find a previous edit with that id");
                         //get the editList from pendingTransactionsById, and add the logEdit into the editList
-                        ArrayList <WALEdit> editList = (ArrayList<WALEdit>) (pendingTransactionsById.get(tid));
+                        editList = (ArrayList<WALEdit>) (pendingTransactionsById.get(tid));
                         editList.add(logEdit);
                         activeCount++;
                         // no need to do the "put" back to the map since it gets the reference already
                    }
                    else {
                         // create the editList
-                        List<WALEdit> editList = new ArrayList<WALEdit>();
+                        editList = new ArrayList<WALEdit>();
                         editList.add(logEdit);
                         pendingTransactionsById.put(tid, editList);
                         activeCount++;
@@ -407,13 +413,13 @@ static ConcurrentHashMap<String, Object> getRefMap() {
                                 + ", already find a previous edit with that id");
                         //throw new IOException("Corrupted transaction log");
                         // get the editList from pendingTransactionsById, and add the logEdit into the editList
-                        ArrayList<WALEdit> editList = (ArrayList<WALEdit>) (pendingTransactionsById.get(tid));
+                        editList = (ArrayList<WALEdit>) (pendingTransactionsById.get(tid));
                         editList.add(logEdit);
                         // no need to do the "put" back to the map since it gets the reference already
                    }
                    else {
                         // create the editList
-                        List<WALEdit> editList = new ArrayList<WALEdit>();
+                        editList = new ArrayList<WALEdit>();
                         editList.add(logEdit);
                         pendingTransactionsById.put(tid, editList);
                         //pendingTransactionsById.put(tid, logEdit);
@@ -424,7 +430,8 @@ static ConcurrentHashMap<String, Object> getRefMap() {
 
              case TS_ABORT:
                    if (!pendingTransactionsById.containsKey(tid)) {
-                        LOG.info("TRAF RCOV Region Observer CP:   " + regionInfo.getRegionNameAsString() + " processing abort for transaction: " + tid
+                        LOG.info("TRAF RCOV Region Observer CP:   " + regionInfo.getRegionNameAsString()
+                                 + " processing abort for transaction: " + tid
                                  + ", but don't find a previous edit with that id");
                         abortCount++;
                         break;
@@ -436,21 +443,24 @@ static ConcurrentHashMap<String, Object> getRefMap() {
 
              case TS_COMMIT:
                    if (!pendingTransactionsById.containsKey(tid)) {
-                         LOG.info("TRAF RCOV Region Observer CP:   " + regionInfo.getRegionNameAsString() + " processing commit for transaction: " + tid
+                         LOG.warn("TRAF RCOV Region Observer CP:   " + regionInfo.getRegionNameAsString()
+                                 + " processing commit for transaction: " + tid
                                  + ", but don't find a previous edit with that id");
                          commitCount++;
                          break;
                          //throw new IOException("Corrupted transaction log");
                    }
-                   ArrayList<WALEdit> editList = (ArrayList<WALEdit>) (pendingTransactionsById.get(tid));
-                   if ((m_isTrafodionMetadata) || (LOG.isTraceEnabled())) LOG.info("TRAF RCOV Region Observer CP:  " + regionInfo.getRegionNameAsString() + " find in-doubt transaction " + tid + " to commit");
+                   editList = (ArrayList<WALEdit>) (pendingTransactionsById.get(tid));
+                   if ((m_isTrafodionMetadata) || (LOG.isTraceEnabled())) LOG.info("TRAF RCOV Region Observer CP:  "
+                         + regionInfo.getRegionNameAsString() + " find in-doubt transaction " + tid + " to commit");
                    replayCommittedTransaction(tid, editList);
                    pendingTransactionsById.remove(tid);
                    commitCount++;
              break;
 
              case TS_CONTROL_POINT_COMMIT:
-                     if ((m_isTrafodionMetadata) || LOG.isTraceEnabled()) LOG.info("AAA3 get CP edit : " + tid + " region " + regionInfo.getRegionNameAsString());
+                     if ((m_isTrafodionMetadata) || LOG.isTraceEnabled()) LOG.info("AAA3 get CP edit : " + tid
+                                 + " region " + regionInfo.getRegionNameAsString());
                      ArrayList<WALEdit> tempEditList = new ArrayList<WALEdit>();
                      tempEditList.add(logEdit);
                      replayCommittedTransaction(tid, tempEditList);  
@@ -458,16 +468,34 @@ static ConcurrentHashMap<String, Object> getRefMap() {
                      commitCount++;
              break;
 
+             case TS_REGION_TX_COMMIT:
+                  if ((m_isTrafodionMetadata) || LOG.isTraceEnabled()) LOG.info("TRAF RCOV Region Observer CP: Region Transaction commit " + tid
+                                 + " region " + regionInfo.getRegionNameAsString());
+                  regionTxCommitCount++;
+             break;
+
+             case TS_REGION_TX_COMMIT_REQUEST: // Treat as commit
+                  if ((m_isTrafodionMetadata) || LOG.isTraceEnabled()) LOG.info("TRAF RCOV Region Observer CP: Region Transaction commitRequest " + tid
+                                 + " region " + regionInfo.getRegionNameAsString());
+                  regionTxCommitRequestCount++;
+                  // create the editList
+                  editList = new ArrayList<WALEdit>();
+                  editList.add(logEdit);
+                  replayCommittedTransaction(tid, editList);
+                  if ((m_isTrafodionMetadata) || LOG.isTraceEnabled()) LOG.info("Trafodion Recovery Region Observer CP:  " + regionInfo.getRegionNameAsString() + " find in-doubt REGION transaction " + tid + " in prepared state");
+             break;
+
              default:
-                        throw new IllegalStateException("Trafodion Recovery Region Observer CP: Unexpected log entry type detected in audit replay");
+                  throw new IllegalStateException("Trafodion Recovery Region Observer CP: Unexpected log entry type detected in audit replay");
      } // switch op
 
      totalEdits++;
 
-     if (LOG.isDebugEnabled()) LOG.debug("TRAF RCOV PREWAL Region Observer CP:   " + regionInfo.getRegionNameAsString() + " Edits replay read " + totalEdits + " transactional operations (skipped " + skippedEdits
+     if (LOG.isDebugEnabled()) LOG.debug("TRAF RCOV PREWAL Region Observer CP:   " + regionInfo.getRegionNameAsString()
+                        + " Edits replay read " + totalEdits + " transactional operations (skipped " + skippedEdits
                         + " because sequence id <= " + minSeqID + "): " + commitRequestCount + " commitRequests, "
-                        + abortCount + " aborts, " + commitCount + " commits, and " + flushCount + " flushes.");
-
+                        + regionTxCommitRequestCount + " regionTxCommitRequests, " + abortCount + " aborts, " + commitCount
+                        + " commits, " + regionTxCommitCount + " regionTxCommits, and " + flushCount + " flushes.");
      //recovery patch
 
      env.complete(); // do not need to invoke further down coprocessor
@@ -543,7 +571,7 @@ public void postOpen(ObserverContext<RegionCoprocessorEnvironment> e) {
                       long transactionId = entry.getKey();
 		      String key = String.valueOf(transactionId);
                       if ((m_isTrafodionMetadata) || LOG.isTraceEnabled()) LOG.info("Trafodion Recovery Region Observer CP: Region " + regionInfo.getRegionNameAsString() + " process in-doubt transaction " + transactionId);
-                      int tmid = (int) (transactionId >> 32);
+                      int tmid = (int) TransactionState.getNodeId(transactionId);
                       int count = 1;
                       if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: Region " + regionInfo.getRegionNameAsString() + " add prepared " + transactionId + " to TM " + tmid);
                       if (indoubtTransactionsCountByTmid.containsKey(tmid))

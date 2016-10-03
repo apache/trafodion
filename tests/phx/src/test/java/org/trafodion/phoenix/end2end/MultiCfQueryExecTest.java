@@ -231,6 +231,18 @@ public class MultiCfQueryExecTest extends BaseTest {
         conn.createStatement().execute(ddl);
 
         String dml = null;
+
+        PreparedStatement statement;
+
+        // BEGIN TEMP: until jira TRAFODION-2247 is fixed.
+        // Remove the begin/end temp block after that
+        if (tgtTR()) {
+            dml = "control query default traf_upsert_mode 'REPLACE'";
+            statement = conn.prepareStatement(dml);
+            statement.execute();
+        }
+        // END TEMP:
+
         if (tgtPH()||tgtTR()) dml = "upsert into " +
         "MULTI_CF(" +
         "    ID, " +
@@ -245,7 +257,7 @@ public class MultiCfQueryExecTest extends BaseTest {
 
         String query = "SELECT ID,RESPONSE_TIME from multi_cf where RESPONSE_TIME = 333";
         try {
-            PreparedStatement statement = conn.prepareStatement(query);
+            statement = conn.prepareStatement(query);
             ResultSet rs = statement.executeQuery();
             assertTrue(rs.next());
             assertEquals("000000000000003", rs.getString(1));

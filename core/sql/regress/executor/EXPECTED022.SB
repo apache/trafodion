@@ -882,7 +882,7 @@ A           B         C
 
 >>select cast ('23:11:61' as time) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 23:11:61-05:000
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 23:11:61
 
 --- 0 row(s) selected.
 >>select cast ('23:11:06' as timestamp) from t022t1;
@@ -892,7 +892,7 @@ A           B         C
 --- 0 row(s) selected.
 >>select cast('2010-01-01' as time) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 2010-01-015:000
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 2010-01-01
 
 --- 0 row(s) selected.
 >>select timestamp'2010-01-01 10' from t022t1;
@@ -5652,7 +5652,7 @@ A           B         C
 
 >>select cast ('23:11:61' as time) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 23:11:61-05:000
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 23:11:61
 
 --- 0 row(s) selected.
 >>select cast ('23:11:06' as timestamp) from t022t1;
@@ -5662,7 +5662,7 @@ A           B         C
 --- 0 row(s) selected.
 >>select cast('2010-01-01' as time) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 2010-01-015:000
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 2010-01-01
 
 --- 0 row(s) selected.
 >>select timestamp'2010-01-01 10' from t022t1;

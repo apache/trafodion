@@ -46,8 +46,14 @@
 class ComTdbSortGrby : public ComTdb
 {
   friend class ex_sort_grby_tcb;
+  friend class ex_sort_grby_rollup_tcb;
   friend class ex_sort_grby_private_state;
+
 protected:
+  enum
+    {
+      IS_ROLLUP       = 0x0001
+    };
 
   ComTdbPtr tdbChild_;                    // 00-07
   ExExprPtr aggrExpr_;                    // 08-15
@@ -63,7 +69,9 @@ protected:
 
   UInt16 flags_;                          // 46-47
 
-  char fillersComTdbSortGrby_[40];        // 48-87
+  Int16  numRollupGroups_;                // 48-49
+
+  char fillersComTdbSortGrby_[38];        // 50-87
 
 public:
   // Constructor
@@ -90,6 +98,9 @@ NA_EIDPROC
 NA_EIDPROC
   ~ComTdbSortGrby();
 
+  void setNumRollupGroups(Int16 v) { numRollupGroups_ = v; }
+  Int16 numRollupGroups() { return numRollupGroups_; }
+
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
@@ -105,8 +116,6 @@ NA_EIDPROC
     setImageVersionID(1,getClassVersionID());
     ComTdb::populateImageVersionIDArray();
   }
-
-
 
 NA_EIDPROC
   virtual short getClassSize() { return (short)sizeof(ComTdbSortGrby); }  
@@ -163,7 +172,11 @@ NA_EIDPROC
      else
 	return NULL;
   }   
-   
+
+  NABoolean isRollup() {return ((flags_ & IS_ROLLUP) != 0);};
+  void setIsRollup(NABoolean v)
+  {(v ? flags_ |= IS_ROLLUP : flags_ &= ~IS_ROLLUP);}
+  
 };
 
 NA_EIDPROC
@@ -175,7 +188,7 @@ inline ComTdb * ComTdbSortGrby::getChildTdb(){
   Description : Return ComTdb* depending on the position argument.
                   Position 0 means the left most child.
   Comments    :
-  History     : Yeogirl Yun                                      8/22/95
+  History     : 
                  Initial Revision.
 *****************************************************************************/
 inline const ComTdb* ComTdbSortGrby::getChild(Int32 pos) const

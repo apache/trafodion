@@ -583,7 +583,21 @@ Long ExHeaderClause::pack(void * space)
 {
   return packClause(space, sizeof(ExHeaderClause));
 }  
+NA_EIDPROC Long ExFunctionIsIP::pack(void * space)
 
+{
+  return packClause(space, sizeof(ExFunctionIsIP));
+}
+
+NA_EIDPROC Long ExFunctionInetAton::pack(void * space)
+{
+  return packClause(space, sizeof(ExFunctionInetAton));
+}
+
+NA_EIDPROC Long ExFunctionInetNtoa::pack(void * space)
+{
+  return packClause(space, sizeof(ExFunctionInetNtoa));
+}
 
 // -----------------------------------------------------------------------
 // U N P A C K

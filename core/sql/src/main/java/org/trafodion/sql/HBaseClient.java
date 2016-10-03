@@ -104,9 +104,6 @@ public class HBaseClient {
     private static Configuration config = HBaseConfiguration.create();
     private RMInterface table = null;
 
-    private PoolMap<String, HTableClient> hTableClientsFree;
-    private PoolMap<String, HTableClient> hTableClientsInUse;
-
     // variables used for getRegionStats() and getClusterStats()
     private int regionStatsEntries = 0;
     private int clusterStatsState = 1;
@@ -143,11 +140,6 @@ public class HBaseClient {
 
     private static Connection connection; 
     public HBaseClient() {
-      if (hTableClientsFree == null)
-         hTableClientsFree = new PoolMap<String, HTableClient>
-                 (PoolType.Reusable, Integer.MAX_VALUE);
-      hTableClientsInUse = new PoolMap<String, HTableClient>
-               (PoolType.Reusable, Integer.MAX_VALUE);
     }
 
     static {
@@ -183,62 +175,10 @@ public class HBaseClient {
         return true;
     }
  
-    private void  cleanup(PoolMap hTableClientsPool) throws IOException
-    {
-       Collection hTableClients;
-       Iterator<HTableClient> iter;
-       HTableClient htable;
-       boolean clearRegionCache = false;
-       boolean cleanJniObject = true;
-
-       hTableClients = hTableClientsPool.values();
-       iter = hTableClients.iterator();
-       while (iter.hasNext())
-       {
-         htable = iter.next();
-         htable.close(clearRegionCache, cleanJniObject);          
-       }
-       hTableClientsPool.clear();
-    }
-
-    public boolean cleanup() throws IOException {
-       cleanup(hTableClientsInUse);
-       cleanup(hTableClientsFree);
-       return true;
-    }
-
-   public void cleanupCache(Collection hTableClients) throws IOException
-    {
-       Iterator<HTableClient> iter;
-       HTableClient htable;
-       boolean clearRegionCache = true;
-       boolean cleanJniObject = false;
- 
-       iter = hTableClients.iterator();
-       while (iter.hasNext())
-       {
-          htable = iter.next();
-          htable.close(clearRegionCache, cleanJniObject);     
-       }
-    }
-
-    public boolean cleanupCache(String tblName) throws IOException
-    {
-       Collection hTableClients;
-       hTableClients = hTableClientsFree.values(tblName);
-       cleanupCache(hTableClients);  
-       hTableClientsFree.remove(tblName);
-       hTableClients = hTableClientsInUse.values(tblName);
-       cleanupCache(hTableClients);  
-       hTableClientsInUse.remove(tblName);
-       return true;
-    }
-
     public boolean create(String tblName, Object[]  colFamNameList,
                           boolean isMVCC) 
         throws IOException, MasterNotRunningException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.create(" + tblName + ") called, and MVCC is " + isMVCC + ".");
-            cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
             CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc, isMVCC);
             for (int i = 0; i < colFamNameList.length ; i++) {
@@ -490,7 +430,6 @@ public class HBaseClient {
        throws IOException, MasterNotRunningException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.createk(" + tblName + ") called.");
             String trueStr = "TRUE";
-            cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
             CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc, isMVCC);
             int defaultVersionsValue = 0;
@@ -583,7 +522,6 @@ public class HBaseClient {
         throws IOException, MasterNotRunningException {
 
         if (logger.isDebugEnabled()) logger.debug("HBaseClient.alter(" + tblName + ") called.");
-        cleanupCache(tblName);
         Admin admin = getConnection().getAdmin();
         HTableDescriptor htblDesc = admin.getTableDescriptor(TableName.valueOf(tblName));       
         HColumnDescriptor[] families = htblDesc.getColumnFamilies();
@@ -647,7 +585,6 @@ public class HBaseClient {
                 }
                 admin.close();
             }
-        cleanupCache(tblName);
         return true;
     }
 
@@ -665,7 +602,6 @@ public class HBaseClient {
                    admin.disableTable(tableName);
               admin.deleteTable(tableName);
            }
-           cleanupCache(tblName);
         } finally {
            admin.close();
         }
@@ -711,7 +647,6 @@ public class HBaseClient {
                         ioExc.addSuppressed(e);
                     if (logger.isDebugEnabled()) logger.debug("HbaseClient.dropAll  error" + e);
                 }
-                cleanupCache(tblName);
             }
 
             admin.close();
@@ -737,7 +672,6 @@ public class HBaseClient {
 	    }
  	    
             admin.close();
-            cleanup();
             
             return hbaseTables;
     }
@@ -950,39 +884,13 @@ public class HBaseClient {
     {
        if (logger.isDebugEnabled()) logger.debug("HBaseClient.getHTableClient(" + tblName
                          + (useTRex ? ", use TRX" : ", no TRX") + ") called.");
-       HTableClient htable = hTableClientsFree.get(tblName);
-       if (htable == null) {
-          htable = new HTableClient(getConnection());
-          if (htable.init(tblName, useTRex) == false) {
-             if (logger.isDebugEnabled()) logger.debug("  ==> Error in init(), returning empty.");
+       HTableClient htable = new HTableClient(getConnection());
+       if (htable.init(tblName, useTRex) == false) {
+          if (logger.isDebugEnabled()) logger.debug("  ==> Error in init(), returning empty.");
              return null;
-          }
-
-          Admin admin = getConnection().getAdmin();
-          HTableDescriptor tblDesc = admin.getTableDescriptor(TableName.valueOf(tblName));
-          if (logger.isDebugEnabled()) logger.debug("check coprocessor num for tbl : "+ tblName+". coprocessor size : "+tblDesc.getCoprocessors().size());
-          boolean added = CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), tblDesc);
-          if (added) {
-              if (logger.isDebugEnabled())
-                  logger.debug("  ==> add coprocessor for table : " + tblName);
-              synchronized (admin) {
-                  TableName table = TableName.valueOf(tblName);
-                  admin.disableTable(table);
-                  admin.modifyTable(table, tblDesc);
-                  admin.enableTable(table);
-              }
-          }
-
-          if (logger.isDebugEnabled()) logger.debug("  ==> Created new object.");
-          hTableClientsInUse.put(htable.getTableName(), htable);
-          htable.setJniObject(jniObject);
-          return htable;
-       } else {
-            if (logger.isDebugEnabled()) logger.debug("  ==> Returning existing object, removing from container.");
-            hTableClientsInUse.put(htable.getTableName(), htable);
-           htable.setJniObject(jniObject);
-            return htable;
        }
+       htable.setJniObject(jniObject);
+       return htable;
     }
 
 
@@ -993,19 +901,7 @@ public class HBaseClient {
 	                
         if (logger.isDebugEnabled()) logger.debug("HBaseClient.releaseHTableClient(" + htable.getTableName() + ").");
         boolean cleanJniObject = false;
-        if (htable.release(cleanJniObject))
-        // If the thread is interrupted, then remove the table from cache
-        // because the table connection is retried when the table is used
-        // next time
-
-           cleanupCache(htable.getTableName());
-        else
-        {
-           if (hTableClientsInUse.removeValue(htable.getTableName(), htable))
-              hTableClientsFree.put(htable.getTableName(), htable);
-           else
-              if (logger.isDebugEnabled()) logger.debug("Table not found in inUse Pool");
-        }
+        htable.release(cleanJniObject);
     }
 
     public boolean grant(byte[] user, byte[] tblName,
@@ -1711,14 +1607,15 @@ public class HBaseClient {
   }
 
   public boolean insertRow(long jniObject, String tblName, boolean useTRex, long transID, byte[] rowID,
-                         Object row,
-                         long timestamp,
-                         boolean checkAndPut,
-                         boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
+                           Object row,
+                           long timestamp,
+                           boolean checkAndPut,
+                           boolean asyncOperation,
+                           boolean useRegionXn) throws IOException, InterruptedException, ExecutionException {
 
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       boolean ret = htc.putRow(transID, rowID, row, null, null,
-                                checkAndPut, asyncOperation);
+                               checkAndPut, asyncOperation, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
       else
@@ -1727,14 +1624,15 @@ public class HBaseClient {
   }
 
   public boolean checkAndUpdateRow(long jniObject, String tblName, boolean useTRex, long transID, byte[] rowID,
-                         Object columnsToUpdate,
-                         byte[] columnToCheck, byte[] columnValToCheck,
-                         long timestamp,
-                         boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
+                                   Object columnsToUpdate,
+                                   byte[] columnToCheck, byte[] columnValToCheck,
+                                   long timestamp,
+                                   boolean asyncOperation,
+                                   boolean useRegionXn) throws IOException, InterruptedException, ExecutionException {
       boolean checkAndPut = true;
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       boolean ret = htc.putRow(transID, rowID, columnsToUpdate, columnToCheck, columnValToCheck,
-                                checkAndPut, asyncOperation);
+                               checkAndPut, asyncOperation, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
       else
@@ -1758,11 +1656,13 @@ public class HBaseClient {
   }
 
   public boolean deleteRow(long jniObject, String tblName, boolean useTRex, long transID, 
-                                 byte[] rowID,
-                                 Object[] columns,
-                                 long timestamp, boolean asyncOperation) throws IOException {
+                           byte[] rowID,
+                           Object[] columns,
+                           long timestamp, 
+                           boolean asyncOperation, boolean useRegionXn) throws IOException {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
-      boolean ret = htc.deleteRow(transID, rowID, columns, timestamp, asyncOperation);
+      boolean ret = htc.deleteRow(transID, rowID, columns, timestamp, 
+                                  asyncOperation, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
       else
@@ -1783,11 +1683,13 @@ public class HBaseClient {
   }
 
   public boolean checkAndDeleteRow(long jniObject, String tblName, boolean useTRex, long transID, 
-                                 byte[] rowID,
-                                 byte[] columnToCheck, byte[] colValToCheck,
-                                 long timestamp, boolean asyncOperation) throws IOException {
+                                   byte[] rowID,
+                                   byte[] columnToCheck, byte[] colValToCheck,
+                                   long timestamp, boolean asyncOperation,
+                                   boolean useRegionXn
+                                   ) throws IOException {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
-      boolean ret = htc.checkAndDeleteRow(transID, rowID, columnToCheck, colValToCheck, timestamp);
+      boolean ret = htc.checkAndDeleteRow(transID, rowID, columnToCheck, colValToCheck, timestamp, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
       else

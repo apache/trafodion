@@ -56,10 +56,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL operation complete.
 >>log LOGRTS;
 >>get statistics for qid current ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_446_S1
-Compile Start Time       2016/03/29 19:04:46.352730
-Compile End Time         2016/03/29 19:04:46.388296
-Compile Elapsed Time                 0:00:00.035566
+Qid                      MXID11000001678212341110797980879000000000206U3333300_300_S1
+Compile Start Time       2016/09/20 05:53:33.969254
+Compile End Time         2016/09/20 05:53:34.060717
+Compile Elapsed Time                 0:00:00.091463
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -94,11 +94,11 @@ Stats Collection Type    ACCUMULATED_STATS
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_446_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_446_S1
-Compile Start Time       2016/03/29 19:04:46.352730
-Compile End Time         2016/03/29 19:04:46.388296
-Compile Elapsed Time                 0:00:00.035566
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_300_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_300_S1
+Compile Start Time       2016/09/20 05:53:33.969254
+Compile End Time         2016/09/20 05:53:34.060717
+Compile Elapsed Time                 0:00:00.091463
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -129,11 +129,11 @@ Last Suspend Time        -1
 Stats Collection Type    ACCUMULATED_STATS
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_446_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_446_S1
-Compile Start Time       2016/03/29 19:04:46.352730
-Compile End Time         2016/03/29 19:04:46.388296
-Compile Elapsed Time                 0:00:00.035566
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_300_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_300_S1
+Compile Start Time       2016/09/20 05:53:33.969254
+Compile End Time         2016/09/20 05:53:34.060717
+Compile Elapsed Time                 0:00:00.091463
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -166,10 +166,10 @@ Stats Collection Type    ACCUMULATED_STATS
 --- SQL operation complete.
 >>log;
 >>display statistics for qid current;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_446_S1
-Compile Start Time       2016/03/29 19:04:46.352730
-Compile End Time         2016/03/29 19:04:46.388296
-Compile Elapsed Time                 0:00:00.035566
+Qid                      MXID11000001678212341110797980879000000000206U3333300_300_S1
+Compile Start Time       2016/09/20 05:53:33.969254
+Compile End Time         2016/09/20 05:53:34.060717
+Compile Elapsed Time                 0:00:00.091463
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -201,10 +201,10 @@ Stats Collection Type    ACCUMULATED_STATS
 
 --- SQL operation complete.
 >>get statistics for qid current ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_446_S1
-Compile Start Time       2016/03/29 19:04:46.352730
-Compile End Time         2016/03/29 19:04:46.388296
-Compile Elapsed Time                 0:00:00.035566
+Qid                      MXID11000001678212341110797980879000000000206U3333300_300_S1
+Compile Start Time       2016/09/20 05:53:33.969254
+Compile End Time         2016/09/20 05:53:34.060717
+Compile Elapsed Time                 0:00:00.091463
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -250,14 +250,14 @@ D
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_446_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_446_S1
-Compile Start Time       2016/03/29 19:04:46.352730
-Compile End Time         2016/03/29 19:04:46.388296
-Compile Elapsed Time                 0:00:00.035566
-Execute Start Time       2016/03/29 19:04:50.476910
-Execute End Time         2016/03/29 19:04:54.690590
-Execute Elapsed Time                 0:00:04.213680
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_300_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_300_S1
+Compile Start Time       2016/09/20 05:53:33.969254
+Compile End Time         2016/09/20 05:53:34.060717
+Compile Elapsed Time                 0:00:00.091463
+Execute Start Time       2016/09/20 05:53:38.984800
+Execute End Time         2016/09/20 05:53:42.751956
+Execute Elapsed Time                 0:00:03.767156
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -275,7 +275,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:04:54.687376
+First Row Returned Time  2016/09/20 05:53:42.748488
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -292,13 +292,13 @@ Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
 Message Redrive Attempts 0
-Disk Process Busy Time   224,136
-SQL Process Busy Time    5,364,928
+Disk Process Busy Time   696,264
+SQL Process Busy Time    5,516,762
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            25                        KB
+SQL Heap Used            26                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -306,9 +306,9 @@ EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        2
-Process Create Time      177,020
+Process Create Time      208,657
 Request Message Count    26
-Request Message Bytes    40,176
+Request Message Bytes    40,672
 Reply Message Count      15
 Reply Message Bytes      38,952
 Scr. Overflow Mode       DISK
@@ -320,14 +320,14 @@ Scr. Read Count          0
 Scr. Write Count         0
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_446_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_446_S1
-Compile Start Time       2016/03/29 19:04:46.352730
-Compile End Time         2016/03/29 19:04:46.388296
-Compile Elapsed Time                 0:00:00.035566
-Execute Start Time       2016/03/29 19:04:50.476910
-Execute End Time         2016/03/29 19:04:54.690590
-Execute Elapsed Time                 0:00:04.213680
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_300_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_300_S1
+Compile Start Time       2016/09/20 05:53:33.969254
+Compile End Time         2016/09/20 05:53:34.060717
+Compile Elapsed Time                 0:00:00.091463
+Execute Start Time       2016/09/20 05:53:38.984800
+Execute End Time         2016/09/20 05:53:42.751956
+Execute Elapsed Time                 0:00:03.767156
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -345,7 +345,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:04:54.687376
+First Row Returned Time  2016/09/20 05:53:42.748488
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -362,13 +362,13 @@ Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
 Message Redrive Attempts 0
-Disk Process Busy Time   224,136
-SQL Process Busy Time    5,364,928
+Disk Process Busy Time   696,264
+SQL Process Busy Time    5,516,762
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            25                        KB
+SQL Heap Used            26                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -376,9 +376,9 @@ EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        2
-Process Create Time      177,020
+Process Create Time      208,657
 Request Message Count    26
-Request Message Bytes    40,176
+Request Message Bytes    40,672
 Reply Message Count      15
 Reply Message Bytes      38,952
 Scr. Overflow Mode       DISK
@@ -392,13 +392,13 @@ Scr. Write Count         0
 --- SQL operation complete.
 >>log;
 >>display statistics for qid current;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_446_S1
-Compile Start Time       2016/03/29 19:04:46.352730
-Compile End Time         2016/03/29 19:04:46.388296
-Compile Elapsed Time                 0:00:00.035566
-Execute Start Time       2016/03/29 19:04:50.476910
-Execute End Time         2016/03/29 19:04:54.690590
-Execute Elapsed Time                 0:00:04.213680
+Qid                      MXID11000001678212341110797980879000000000206U3333300_300_S1
+Compile Start Time       2016/09/20 05:53:33.969254
+Compile End Time         2016/09/20 05:53:34.060717
+Compile Elapsed Time                 0:00:00.091463
+Execute Start Time       2016/09/20 05:53:38.984800
+Execute End Time         2016/09/20 05:53:42.751956
+Execute Elapsed Time                 0:00:03.767156
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -416,7 +416,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:04:54.687376
+First Row Returned Time  2016/09/20 05:53:42.748488
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -433,13 +433,13 @@ Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
 Message Redrive Attempts 0
-Disk Process Busy Time   224,136
-SQL Process Busy Time    5,364,928
+Disk Process Busy Time   696,264
+SQL Process Busy Time    5,516,762
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            25                        KB
+SQL Heap Used            26                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -447,9 +447,9 @@ EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        2
-Process Create Time      177,020
+Process Create Time      208,657
 Request Message Count    26
-Request Message Bytes    40,176
+Request Message Bytes    40,672
 Reply Message Count      15
 Reply Message Bytes      38,952
 Scr. Overflow Mode       DISK
@@ -462,13 +462,13 @@ Scr. Write Count         0
 
 --- SQL operation complete.
 >>get statistics for qid current ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_446_S1
-Compile Start Time       2016/03/29 19:04:46.352730
-Compile End Time         2016/03/29 19:04:46.388296
-Compile Elapsed Time                 0:00:00.035566
-Execute Start Time       2016/03/29 19:04:50.476910
-Execute End Time         2016/03/29 19:04:54.690590
-Execute Elapsed Time                 0:00:04.213680
+Qid                      MXID11000001678212341110797980879000000000206U3333300_300_S1
+Compile Start Time       2016/09/20 05:53:33.969254
+Compile End Time         2016/09/20 05:53:34.060717
+Compile Elapsed Time                 0:00:00.091463
+Execute Start Time       2016/09/20 05:53:38.984800
+Execute End Time         2016/09/20 05:53:42.751956
+Execute Elapsed Time                 0:00:03.767156
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -486,7 +486,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:04:54.687376
+First Row Returned Time  2016/09/20 05:53:42.748488
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -503,13 +503,13 @@ Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
 Message Redrive Attempts 0
-Disk Process Busy Time   224,136
-SQL Process Busy Time    5,364,928
+Disk Process Busy Time   696,264
+SQL Process Busy Time    5,516,762
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            25                        KB
+SQL Heap Used            26                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -517,9 +517,9 @@ EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        2
-Process Create Time      177,020
+Process Create Time      208,657
 Request Message Count    26
-Request Message Bytes    40,176
+Request Message Bytes    40,672
 Reply Message Count      15
 Reply Message Bytes      38,952
 Scr. Overflow Mode       DISK
@@ -538,25 +538,25 @@ Scr. Write Count         0
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_446_S1 ;
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_300_S1 ;
 
-*** ERROR[8923] The given Query Id MXID11000023543212326038273788301000000000206U3333300_446_S1 is not found.
+*** ERROR[8923] The given Query Id MXID11000001678212341110797980879000000000206U3333300_300_S1 is not found.
 
 --- SQL operation failed with errors.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_446_S1 ;
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_300_S1 ;
 
-*** ERROR[8923] The given Query Id MXID11000023543212326038273788301000000000206U3333300_446_S1 is not found.
+*** ERROR[8923] The given Query Id MXID11000001678212341110797980879000000000206U3333300_300_S1 is not found.
 
 --- SQL operation failed with errors.
 >>log;
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_455_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_455_S1
-Compile Start Time       2016/03/29 19:05:01.679083
-Compile End Time         2016/03/29 19:05:01.679688
-Compile Elapsed Time                 0:00:00.000605
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_309_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_309_S1
+Compile Start Time       2016/09/20 05:53:50.147431
+Compile End Time         2016/09/20 05:53:50.149317
+Compile Elapsed Time                 0:00:00.001886
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -587,11 +587,11 @@ Last Suspend Time        -1
 Stats Collection Type    ACCUMULATED_STATS
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_455_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_455_S1
-Compile Start Time       2016/03/29 19:05:01.679083
-Compile End Time         2016/03/29 19:05:01.679688
-Compile Elapsed Time                 0:00:00.000605
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_309_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_309_S1
+Compile Start Time       2016/09/20 05:53:50.147431
+Compile End Time         2016/09/20 05:53:50.149317
+Compile Elapsed Time                 0:00:00.001886
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -624,10 +624,10 @@ Stats Collection Type    ACCUMULATED_STATS
 --- SQL operation complete.
 >>log;
 >>display statistics for qid current;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_455_S1
-Compile Start Time       2016/03/29 19:05:01.679083
-Compile End Time         2016/03/29 19:05:01.679688
-Compile Elapsed Time                 0:00:00.000605
+Qid                      MXID11000001678212341110797980879000000000206U3333300_309_S1
+Compile Start Time       2016/09/20 05:53:50.147431
+Compile End Time         2016/09/20 05:53:50.149317
+Compile Elapsed Time                 0:00:00.001886
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -659,10 +659,10 @@ Stats Collection Type    ACCUMULATED_STATS
 
 --- SQL operation complete.
 >>get statistics for qid current ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_455_S1
-Compile Start Time       2016/03/29 19:05:01.679083
-Compile End Time         2016/03/29 19:05:01.679688
-Compile Elapsed Time                 0:00:00.000605
+Qid                      MXID11000001678212341110797980879000000000206U3333300_309_S1
+Compile Start Time       2016/09/20 05:53:50.147431
+Compile End Time         2016/09/20 05:53:50.149317
+Compile Elapsed Time                 0:00:00.001886
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -706,10 +706,10 @@ Stats Collection Type    ACCUMULATED_STATS
 --- SQL command prepared.
 >>log;
 >>get statistics for qid current ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -744,11 +744,11 @@ Stats Collection Type    PERTABLE_STATS
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_460_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_314_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -779,11 +779,11 @@ Last Suspend Time        -1
 Stats Collection Type    PERTABLE_STATS
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_460_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_314_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -818,11 +818,11 @@ Stats Collection Type    PERTABLE_STATS
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_460_S1 ACCUMULATED;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_314_S1 ACCUMULATED;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -853,11 +853,11 @@ Last Suspend Time        -1
 Stats Collection Type    PERTABLE_STATS
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_460_S1 ACCUMULATED;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_314_S1 ACCUMULATED;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -890,10 +890,10 @@ Stats Collection Type    PERTABLE_STATS
 --- SQL operation complete.
 >>log;
 >>display statistics for qid current;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -925,10 +925,10 @@ Stats Collection Type    PERTABLE_STATS
 
 --- SQL operation complete.
 >>get statistics for qid current ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -960,10 +960,10 @@ Stats Collection Type    PERTABLE_STATS
 
 --- SQL operation complete.
 >>display statistics for qid current accumulated ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -995,10 +995,10 @@ Stats Collection Type    PERTABLE_STATS
 
 --- SQL operation complete.
 >>get statistics for qid current accumulated ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -1044,14 +1044,14 @@ D
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_460_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
-Execute Start Time       2016/03/29 19:05:23.337178
-Execute End Time         2016/03/29 19:05:23.348722
-Execute Elapsed Time                 0:00:00.011544
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_314_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
+Execute Start Time       2016/09/20 05:54:16.387205
+Execute End Time         2016/09/20 05:54:16.420368
+Execute Elapsed Time                 0:00:00.033163
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -1069,7 +1069,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:05:23.346805
+First Row Returned Time  2016/09/20 05:54:16.414832
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -1077,12 +1077,12 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    PERTABLE_STATS
-SQL Process Busy Time    5,701
+SQL Process Busy Time    20,759
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -1090,7 +1090,7 @@ EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    27
-Request Message Bytes    40,336
+Request Message Bytes    40,832
 Reply Message Count      15
 Reply Message Bytes      39,176
 Scr. Overflow Mode       UNKNOWN
@@ -1106,17 +1106,17 @@ Table Name
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTAT
                   0                100
-                  4                  4            4            0              5,605              3,209
+                  4                  4            4            0             19,326             10,070
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_460_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
-Execute Start Time       2016/03/29 19:05:23.337178
-Execute End Time         2016/03/29 19:05:23.348722
-Execute Elapsed Time                 0:00:00.011544
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_314_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
+Execute Start Time       2016/09/20 05:54:16.387205
+Execute End Time         2016/09/20 05:54:16.420368
+Execute Elapsed Time                 0:00:00.033163
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -1134,7 +1134,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:05:23.346805
+First Row Returned Time  2016/09/20 05:54:16.414832
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -1142,12 +1142,12 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    PERTABLE_STATS
-SQL Process Busy Time    5,701
+SQL Process Busy Time    20,759
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -1155,7 +1155,7 @@ EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    27
-Request Message Bytes    40,336
+Request Message Bytes    40,832
 Reply Message Count      15
 Reply Message Bytes      39,176
 Scr. Overflow Mode       UNKNOWN
@@ -1171,21 +1171,21 @@ Table Name
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTAT
                   0                100
-                  4                  4            4            0              5,605              3,209
+                  4                  4            4            0             19,326             10,070
 
 --- SQL operation complete.
 >>log;
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_460_S1 ACCUMULATED;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
-Execute Start Time       2016/03/29 19:05:23.337178
-Execute End Time         2016/03/29 19:05:23.348722
-Execute Elapsed Time                 0:00:00.011544
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_314_S1 ACCUMULATED;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
+Execute Start Time       2016/09/20 05:54:16.387205
+Execute End Time         2016/09/20 05:54:16.420368
+Execute Elapsed Time                 0:00:00.033163
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -1203,7 +1203,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:05:23.346805
+First Row Returned Time  2016/09/20 05:54:16.414832
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -1220,13 +1220,13 @@ Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
 Message Redrive Attempts 0
-Disk Process Busy Time   5,605
-SQL Process Busy Time    5,701
+Disk Process Busy Time   19,326
+SQL Process Busy Time    20,759
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -1236,7 +1236,7 @@ Open Time                0
 Processes Created        0
 Process Create Time      0
 Request Message Count    27
-Request Message Bytes    40,336
+Request Message Bytes    40,832
 Reply Message Count      15
 Reply Message Bytes      39,176
 Scr. Overflow Mode       UNKNOWN
@@ -1248,14 +1248,14 @@ Scr. Read Count          0
 Scr. Write Count         0
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_460_S1 ACCUMULATED;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
-Execute Start Time       2016/03/29 19:05:23.337178
-Execute End Time         2016/03/29 19:05:23.348722
-Execute Elapsed Time                 0:00:00.011544
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_314_S1 ACCUMULATED;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
+Execute Start Time       2016/09/20 05:54:16.387205
+Execute End Time         2016/09/20 05:54:16.420368
+Execute Elapsed Time                 0:00:00.033163
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -1273,7 +1273,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:05:23.346805
+First Row Returned Time  2016/09/20 05:54:16.414832
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -1290,13 +1290,13 @@ Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
 Message Redrive Attempts 0
-Disk Process Busy Time   5,605
-SQL Process Busy Time    5,701
+Disk Process Busy Time   19,326
+SQL Process Busy Time    20,759
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -1306,7 +1306,7 @@ Open Time                0
 Processes Created        0
 Process Create Time      0
 Request Message Count    27
-Request Message Bytes    40,336
+Request Message Bytes    40,832
 Reply Message Count      15
 Reply Message Bytes      39,176
 Scr. Overflow Mode       UNKNOWN
@@ -1320,13 +1320,13 @@ Scr. Write Count         0
 --- SQL operation complete.
 >>log;
 >>display statistics for qid current;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
-Execute Start Time       2016/03/29 19:05:23.337178
-Execute End Time         2016/03/29 19:05:23.348722
-Execute Elapsed Time                 0:00:00.011544
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
+Execute Start Time       2016/09/20 05:54:16.387205
+Execute End Time         2016/09/20 05:54:16.420368
+Execute Elapsed Time                 0:00:00.033163
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -1344,7 +1344,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:05:23.346805
+First Row Returned Time  2016/09/20 05:54:16.414832
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -1352,12 +1352,12 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    PERTABLE_STATS
-SQL Process Busy Time    5,701
+SQL Process Busy Time    20,759
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -1365,7 +1365,7 @@ EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    27
-Request Message Bytes    40,336
+Request Message Bytes    40,832
 Reply Message Count      15
 Reply Message Bytes      39,176
 Scr. Overflow Mode       UNKNOWN
@@ -1381,17 +1381,17 @@ Table Name
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTAT
                   0                100
-                  4                  4            4            0              5,605              3,209
+                  4                  4            4            0             19,326             10,070
 
 --- SQL operation complete.
 >>get statistics for qid current ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
-Execute Start Time       2016/03/29 19:05:23.337178
-Execute End Time         2016/03/29 19:05:23.348722
-Execute Elapsed Time                 0:00:00.011544
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
+Execute Start Time       2016/09/20 05:54:16.387205
+Execute End Time         2016/09/20 05:54:16.420368
+Execute Elapsed Time                 0:00:00.033163
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -1409,7 +1409,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:05:23.346805
+First Row Returned Time  2016/09/20 05:54:16.414832
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -1417,12 +1417,12 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    PERTABLE_STATS
-SQL Process Busy Time    5,701
+SQL Process Busy Time    20,759
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -1430,7 +1430,7 @@ EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    27
-Request Message Bytes    40,336
+Request Message Bytes    40,832
 Reply Message Count      15
 Reply Message Bytes      39,176
 Scr. Overflow Mode       UNKNOWN
@@ -1446,17 +1446,17 @@ Table Name
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTAT
                   0                100
-                  4                  4            4            0              5,605              3,209
+                  4                  4            4            0             19,326             10,070
 
 --- SQL operation complete.
 >>display statistics for qid current accumulated;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
-Execute Start Time       2016/03/29 19:05:23.337178
-Execute End Time         2016/03/29 19:05:23.348722
-Execute Elapsed Time                 0:00:00.011544
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
+Execute Start Time       2016/09/20 05:54:16.387205
+Execute End Time         2016/09/20 05:54:16.420368
+Execute Elapsed Time                 0:00:00.033163
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -1474,7 +1474,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:05:23.346805
+First Row Returned Time  2016/09/20 05:54:16.414832
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -1491,13 +1491,13 @@ Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
 Message Redrive Attempts 0
-Disk Process Busy Time   5,605
-SQL Process Busy Time    5,701
+Disk Process Busy Time   19,326
+SQL Process Busy Time    20,759
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -1507,7 +1507,7 @@ Open Time                0
 Processes Created        0
 Process Create Time      0
 Request Message Count    27
-Request Message Bytes    40,336
+Request Message Bytes    40,832
 Reply Message Count      15
 Reply Message Bytes      39,176
 Scr. Overflow Mode       UNKNOWN
@@ -1520,13 +1520,13 @@ Scr. Write Count         0
 
 --- SQL operation complete.
 >>get statistics for qid current accumulated;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_460_S1
-Compile Start Time       2016/03/29 19:05:09.150838
-Compile End Time         2016/03/29 19:05:09.182550
-Compile Elapsed Time                 0:00:00.031712
-Execute Start Time       2016/03/29 19:05:23.337178
-Execute End Time         2016/03/29 19:05:23.348722
-Execute Elapsed Time                 0:00:00.011544
+Qid                      MXID11000001678212341110797980879000000000206U3333300_314_S1
+Compile Start Time       2016/09/20 05:54:01.837324
+Compile End Time         2016/09/20 05:54:01.904748
+Compile Elapsed Time                 0:00:00.067424
+Execute Start Time       2016/09/20 05:54:16.387205
+Execute End Time         2016/09/20 05:54:16.420368
+Execute Elapsed Time                 0:00:00.033163
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -1544,7 +1544,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:05:23.346805
+First Row Returned Time  2016/09/20 05:54:16.414832
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -1561,13 +1561,13 @@ Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
 Message Redrive Attempts 0
-Disk Process Busy Time   5,605
-SQL Process Busy Time    5,701
+Disk Process Busy Time   19,326
+SQL Process Busy Time    20,759
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -1577,7 +1577,7 @@ Open Time                0
 Processes Created        0
 Process Create Time      0
 Request Message Count    27
-Request Message Bytes    40,336
+Request Message Bytes    40,832
 Reply Message Count      15
 Reply Message Bytes      39,176
 Scr. Overflow Mode       UNKNOWN
@@ -1591,7 +1591,7 @@ Scr. Write Count         0
 --- SQL operation complete.
 >>log;
 >>obey PQIDOUT;
->>SET SESSION DEFAULT PARENT_QID 'MXID11000023543212326038273788301000000000206U3333300_460_S1';
+>>SET SESSION DEFAULT PARENT_QID 'MXID11000001678212341110797980879000000000206U3333300_314_S1';
 
 --- SQL operation complete.
 >>prepare s1 from select distinct d from tstat ;
@@ -1601,11 +1601,11 @@ Scr. Write Count         0
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_474_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_474_S1
-Compile Start Time       2016/03/29 19:05:31.159659
-Compile End Time         2016/03/29 19:05:31.160586
-Compile Elapsed Time                 0:00:00.000927
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_328_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_328_S1
+Compile Start Time       2016/09/20 05:54:24.650586
+Compile End Time         2016/09/20 05:54:24.653475
+Compile Elapsed Time                 0:00:00.002889
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -1617,7 +1617,7 @@ Query Type               SQL_SELECT_NON_UNIQUE
 Sub Query Type           SQL_STMT_NA
 Estimated Accessed Rows  0
 Estimated Used Rows      0
-Parent Qid               MXID11000023543212326038273788301000000000206U3333300_460_S1
+Parent Qid               MXID11000001678212341110797980879000000000206U3333300_314_S1
 Parent Query System      SAME
 Child Qid                NONE
 Number of SQL Processes  0
@@ -1636,11 +1636,11 @@ Last Suspend Time        -1
 Stats Collection Type    PERTABLE_STATS
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_474_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_474_S1
-Compile Start Time       2016/03/29 19:05:31.159659
-Compile End Time         2016/03/29 19:05:31.160586
-Compile Elapsed Time                 0:00:00.000927
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_328_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_328_S1
+Compile Start Time       2016/09/20 05:54:24.650586
+Compile End Time         2016/09/20 05:54:24.653475
+Compile Elapsed Time                 0:00:00.002889
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -1652,7 +1652,7 @@ Query Type               SQL_SELECT_NON_UNIQUE
 Sub Query Type           SQL_STMT_NA
 Estimated Accessed Rows  0
 Estimated Used Rows      0
-Parent Qid               MXID11000023543212326038273788301000000000206U3333300_460_S1
+Parent Qid               MXID11000001678212341110797980879000000000206U3333300_314_S1
 Parent Query System      SAME
 Child Qid                NONE
 Number of SQL Processes  0
@@ -1682,11 +1682,11 @@ Stats Collection Type    PERTABLE_STATS
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_476_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_476_S1
-Compile Start Time       2016/03/29 19:05:38.066099
-Compile End Time         2016/03/29 19:05:38.066679
-Compile Elapsed Time                 0:00:00.000580
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_330_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_330_S1
+Compile Start Time       2016/09/20 05:54:28.790777
+Compile End Time         2016/09/20 05:54:28.792540
+Compile Elapsed Time                 0:00:00.001763
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -1717,11 +1717,11 @@ Last Suspend Time        -1
 Stats Collection Type    PERTABLE_STATS
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_476_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_476_S1
-Compile Start Time       2016/03/29 19:05:38.066099
-Compile End Time         2016/03/29 19:05:38.066679
-Compile Elapsed Time                 0:00:00.000580
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_330_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_330_S1
+Compile Start Time       2016/09/20 05:54:28.790777
+Compile End Time         2016/09/20 05:54:28.792540
+Compile Elapsed Time                 0:00:00.001763
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -1768,11 +1768,11 @@ Stats Collection Type    PERTABLE_STATS
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_479_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_333_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -1803,11 +1803,11 @@ Last Suspend Time        -1
 Stats Collection Type    OPERATOR_STATS
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_479_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_333_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -1854,14 +1854,14 @@ D
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_479_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_333_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -1879,7 +1879,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -1890,27 +1890,27 @@ Stats Collection Type    OPERATOR_STATS
 
 LC   RC   Id   PaId ExId Frag TDB Name                 DOP     Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
 
-10   .    11   .    5    0    EX_ROOT                  1                5                  7                  0                  4 897
-9    .    10   11   4    0    EX_SPLIT_TOP             1                5                  7                  2                  4
-8    .    9    10   4    0    EX_SEND_TOP              2               10                883                  2                  4
-7    .    8    9    4    2    EX_SEND_BOTTOM           2               17                 90                  2                  4
-6    .    7    8    4    2    EX_SPLIT_BOTTOM          2                7                  7                  2                  4 2849
-5    .    6    7    3    2    EX_HASH_GRBY             2                6              2,043                  1                  4 0|0|0
-4    .    5    6    2    2    EX_SPLIT_TOP             2               11                 11                100                  4
-3    .    4    5    2    2    EX_SEND_TOP              4               18                698                100                  4
-2    .    3    4    2    3    EX_SEND_BOTTOM           4               31                125                100                  4
-1    .    2    3    2    3    EX_SPLIT_BOTTOM          2                8                 16                100                  4 1632
-.    .    1    2    1    3    EX_TRAF_KEY_SELECT       6               12              4,473                100                  4 TRAFODION.SCH.TSTAT|4|120
+10   .    11   .    5    0    EX_ROOT                  1                5                 22                  0                  4 2278
+9    .    10   11   4    0    EX_SPLIT_TOP             1                5                 33                  2                  4
+8    .    9    10   4    0    EX_SEND_TOP              2               10              2,223                  2                  4
+7    .    8    9    4    2    EX_SEND_BOTTOM           2               17                225                  2                  4
+6    .    7    8    4    2    EX_SPLIT_BOTTOM          2                7                 29                  2                  4 8481
+5    .    6    7    3    2    EX_HASH_GRBY             2                6              5,253                  1                  4 0|0|0
+4    .    5    6    2    2    EX_SPLIT_TOP             2               11                 49                100                  4
+3    .    4    5    2    2    EX_SEND_TOP              4               18              2,925                100                  4
+2    .    3    4    2    3    EX_SEND_BOTTOM           4               28                307                100                  4
+1    .    2    3    2    3    EX_SPLIT_BOTTOM          2                8                 66                100                  4 9864
+.    .    1    2    1    3    EX_TRAF_KEY_SELECT       6               12             28,473                100                  4 TRAFODION.SCH.TSTAT|4|176
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_479_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_333_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -1928,7 +1928,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -1939,31 +1939,31 @@ Stats Collection Type    OPERATOR_STATS
 
 LC   RC   Id   PaId ExId Frag TDB Name                 DOP     Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
 
-10   .    11   .    5    0    EX_ROOT                  1                5                  7                  0                  4 897
-9    .    10   11   4    0    EX_SPLIT_TOP             1                5                  7                  2                  4
-8    .    9    10   4    0    EX_SEND_TOP              2               10                883                  2                  4
-7    .    8    9    4    2    EX_SEND_BOTTOM           2               17                 90                  2                  4
-6    .    7    8    4    2    EX_SPLIT_BOTTOM          2                7                  7                  2                  4 2849
-5    .    6    7    3    2    EX_HASH_GRBY             2                6              2,043                  1                  4 0|0|0
-4    .    5    6    2    2    EX_SPLIT_TOP             2               11                 11                100                  4
-3    .    4    5    2    2    EX_SEND_TOP              4               18                698                100                  4
-2    .    3    4    2    3    EX_SEND_BOTTOM           4               31                125                100                  4
-1    .    2    3    2    3    EX_SPLIT_BOTTOM          2                8                 16                100                  4 1632
-.    .    1    2    1    3    EX_TRAF_KEY_SELECT       6               12              4,473                100                  4 TRAFODION.SCH.TSTAT|4|120
+10   .    11   .    5    0    EX_ROOT                  1                5                 22                  0                  4 2278
+9    .    10   11   4    0    EX_SPLIT_TOP             1                5                 33                  2                  4
+8    .    9    10   4    0    EX_SEND_TOP              2               10              2,223                  2                  4
+7    .    8    9    4    2    EX_SEND_BOTTOM           2               17                225                  2                  4
+6    .    7    8    4    2    EX_SPLIT_BOTTOM          2                7                 29                  2                  4 8481
+5    .    6    7    3    2    EX_HASH_GRBY             2                6              5,253                  1                  4 0|0|0
+4    .    5    6    2    2    EX_SPLIT_TOP             2               11                 49                100                  4
+3    .    4    5    2    2    EX_SEND_TOP              4               18              2,925                100                  4
+2    .    3    4    2    3    EX_SEND_BOTTOM           4               28                307                100                  4
+1    .    2    3    2    3    EX_SPLIT_BOTTOM          2                8                 66                100                  4 9864
+.    .    1    2    1    3    EX_TRAF_KEY_SELECT       6               12             28,473                100                  4 TRAFODION.SCH.TSTAT|4|176
 
 --- SQL operation complete.
 >>log;
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_479_S1 ACCUMULATED;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_333_S1 ACCUMULATED;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -1981,7 +1981,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -1998,13 +1998,13 @@ Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
 Message Redrive Attempts 0
-Disk Process Busy Time   9,490
-SQL Process Busy Time    5,378
+Disk Process Busy Time   12,303
+SQL Process Busy Time    20,623
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -2014,9 +2014,9 @@ Open Time                0
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
-Request Message Bytes    40,496
-Reply Message Count      15
-Reply Message Bytes      42,360
+Request Message Bytes    40,992
+Reply Message Count      14
+Reply Message Bytes      35,848
 Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
@@ -2026,14 +2026,14 @@ Scr. Read Count          0
 Scr. Write Count         0
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_479_S1 ACCUMULATED;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_333_S1 ACCUMULATED;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2051,7 +2051,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2068,13 +2068,13 @@ Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
 Message Redrive Attempts 0
-Disk Process Busy Time   9,490
-SQL Process Busy Time    5,378
+Disk Process Busy Time   12,303
+SQL Process Busy Time    20,623
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -2084,9 +2084,9 @@ Open Time                0
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
-Request Message Bytes    40,496
-Reply Message Count      15
-Reply Message Bytes      42,360
+Request Message Bytes    40,992
+Reply Message Count      14
+Reply Message Bytes      35,848
 Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
@@ -2100,14 +2100,14 @@ Scr. Write Count         0
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_479_S1 PERTABLE;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_333_S1 PERTABLE;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2125,7 +2125,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2133,12 +2133,12 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    OPERATOR_STATS
-SQL Process Busy Time    5,378
+SQL Process Busy Time    20,623
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -2146,9 +2146,9 @@ EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
-Request Message Bytes    40,496
-Reply Message Count      15
-Reply Message Bytes      42,360
+Request Message Bytes    40,992
+Reply Message Count      14
+Reply Message Bytes      35,848
 Scr. Overflow Mode       DISK
 Scr File Count           0
 Scr. Buffer Blk Size     0
@@ -2162,17 +2162,17 @@ Table Name
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTAT
                   0                100
-                  4                  4            4            0              9,490              5,576
+                  4                  4            4            0             12,303              7,241
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_479_S1 PERTABLE;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_333_S1 PERTABLE;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2190,7 +2190,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2198,12 +2198,12 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    OPERATOR_STATS
-SQL Process Busy Time    5,378
+SQL Process Busy Time    20,623
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -2211,9 +2211,9 @@ EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
-Request Message Bytes    40,496
-Reply Message Count      15
-Reply Message Bytes      42,360
+Request Message Bytes    40,992
+Reply Message Count      14
+Reply Message Bytes      35,848
 Scr. Overflow Mode       DISK
 Scr File Count           0
 Scr. Buffer Blk Size     0
@@ -2227,21 +2227,21 @@ Table Name
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTAT
                   0                100
-                  4                  4            4            0              9,490              5,576
+                  4                  4            4            0             12,303              7,241
 
 --- SQL operation complete.
 >>log;
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_479_S1 PROGRESS;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_333_S1 PROGRESS;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2259,7 +2259,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2267,11 +2267,11 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    OPERATOR_STATS
-SQL Process Busy Time    5,378
+SQL Process Busy Time    20,623
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -2279,29 +2279,29 @@ EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
-Request Message Bytes    40,496
-Reply Message Count      15
-Reply Message Bytes      42,360
+Request Message Bytes    40,992
+Reply Message Count      14
+Reply Message Bytes      35,848
 
 Table Name
    Records Accessed       Records Used   HBase/Hive   HBase/Hive      HBase/Hive IO      HBase/Hive IO
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTAT
                   0                100
-                  4                  4            4            0              9,490              5,576
+                  4                  4            4            0             12,303              7,241
 
    Id TDB Name                           Mode            CPU Time  BMO Heap Used BMO Heap Total    BMO Heap WM  BMO Space BufSz BMO Space BufCnt  File Count       Scratch Buffer Block Size/Read/Written                 Scratch IO Count Read/Written
-    6 EX_HASH_GRBY                       DISK               2,043              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
+    6 EX_HASH_GRBY                       DISK               5,253              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_479_S1 PROGRESS;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_333_S1 PROGRESS;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2319,7 +2319,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2327,11 +2327,11 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    OPERATOR_STATS
-SQL Process Busy Time    5,378
+SQL Process Busy Time    20,623
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -2339,33 +2339,33 @@ EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
-Request Message Bytes    40,496
-Reply Message Count      15
-Reply Message Bytes      42,360
+Request Message Bytes    40,992
+Reply Message Count      14
+Reply Message Bytes      35,848
 
 Table Name
    Records Accessed       Records Used   HBase/Hive   HBase/Hive      HBase/Hive IO      HBase/Hive IO
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTAT
                   0                100
-                  4                  4            4            0              9,490              5,576
+                  4                  4            4            0             12,303              7,241
 
    Id TDB Name                           Mode            CPU Time  BMO Heap Used BMO Heap Total    BMO Heap WM  BMO Space BufSz BMO Space BufCnt  File Count       Scratch Buffer Block Size/Read/Written                 Scratch IO Count Read/Written
-    6 EX_HASH_GRBY                       DISK               2,043              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
+    6 EX_HASH_GRBY                       DISK               5,253              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
 
 --- SQL operation complete.
 >>log;
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_479_S1 DEFAULT;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_333_S1 DEFAULT;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2383,7 +2383,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2394,27 +2394,27 @@ Stats Collection Type    OPERATOR_STATS
 
 LC   RC   Id   PaId ExId Frag TDB Name                 DOP     Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
 
-10   .    11   .    5    0    EX_ROOT                  1                5                  7                  0                  4 897
-9    .    10   11   4    0    EX_SPLIT_TOP             1                5                  7                  2                  4
-8    .    9    10   4    0    EX_SEND_TOP              2               10                883                  2                  4
-7    .    8    9    4    2    EX_SEND_BOTTOM           2               17                 90                  2                  4
-6    .    7    8    4    2    EX_SPLIT_BOTTOM          2                7                  7                  2                  4 2849
-5    .    6    7    3    2    EX_HASH_GRBY             2                6              2,043                  1                  4 0|0|0
-4    .    5    6    2    2    EX_SPLIT_TOP             2               11                 11                100                  4
-3    .    4    5    2    2    EX_SEND_TOP              4               18                698                100                  4
-2    .    3    4    2    3    EX_SEND_BOTTOM           4               31                125                100                  4
-1    .    2    3    2    3    EX_SPLIT_BOTTOM          2                8                 16                100                  4 1632
-.    .    1    2    1    3    EX_TRAF_KEY_SELECT       6               12              4,473                100                  4 TRAFODION.SCH.TSTAT|4|120
+10   .    11   .    5    0    EX_ROOT                  1                5                 22                  0                  4 2278
+9    .    10   11   4    0    EX_SPLIT_TOP             1                5                 33                  2                  4
+8    .    9    10   4    0    EX_SEND_TOP              2               10              2,223                  2                  4
+7    .    8    9    4    2    EX_SEND_BOTTOM           2               17                225                  2                  4
+6    .    7    8    4    2    EX_SPLIT_BOTTOM          2                7                 29                  2                  4 8481
+5    .    6    7    3    2    EX_HASH_GRBY             2                6              5,253                  1                  4 0|0|0
+4    .    5    6    2    2    EX_SPLIT_TOP             2               11                 49                100                  4
+3    .    4    5    2    2    EX_SEND_TOP              4               18              2,925                100                  4
+2    .    3    4    2    3    EX_SEND_BOTTOM           4               28                307                100                  4
+1    .    2    3    2    3    EX_SPLIT_BOTTOM          2                8                 66                100                  4 9864
+.    .    1    2    1    3    EX_TRAF_KEY_SELECT       6               12             28,473                100                  4 TRAFODION.SCH.TSTAT|4|176
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_479_S1 DEFAULT;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_333_S1 DEFAULT;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2432,7 +2432,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2443,28 +2443,28 @@ Stats Collection Type    OPERATOR_STATS
 
 LC   RC   Id   PaId ExId Frag TDB Name                 DOP     Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
 
-10   .    11   .    5    0    EX_ROOT                  1                5                  7                  0                  4
-9    .    10   11   4    0    EX_SPLIT_TOP             1                5                  7                  2                  4
-8    .    9    10   4    0    EX_SEND_TOP              2               10                883                  2                  4
-7    .    8    9    4    2    EX_SEND_BOTTOM           2               17                 90                  2                  4
-6    .    7    8    4    2    EX_SPLIT_BOTTOM          2                7                  7                  2                  4 2849
-5    .    6    7    3    2    EX_HASH_GRBY             2                6              2,043                  1                  4 0|0|0
-4    .    5    6    2    2    EX_SPLIT_TOP             2               11                 11                100                  4
-3    .    4    5    2    2    EX_SEND_TOP              4               18                698                100                  4
-2    .    3    4    2    3    EX_SEND_BOTTOM           4               31                125                100                  4
-1    .    2    3    2    3    EX_SPLIT_BOTTOM          2                8                 16                100                  4 1632
-.    .    1    2    1    3    EX_TRAF_KEY_SELECT       6               12              4,473                100                  4 TRAFODION.SCH.TSTAT|4|120
+10   .    11   .    5    0    EX_ROOT                  1                5                 22                  0                  4 2278
+9    .    10   11   4    0    EX_SPLIT_TOP             1                5                 33                  2                  4
+8    .    9    10   4    0    EX_SEND_TOP              2               10              2,223                  2                  4
+7    .    8    9    4    2    EX_SEND_BOTTOM           2               17                225                  2                  4
+6    .    7    8    4    2    EX_SPLIT_BOTTOM          2                7                 29                  2                  4 8481
+5    .    6    7    3    2    EX_HASH_GRBY             2                6              5,253                  1                  4 0|0|0
+4    .    5    6    2    2    EX_SPLIT_TOP             2               11                 49                100                  4
+3    .    4    5    2    2    EX_SEND_TOP              4               18              2,925                100                  4
+2    .    3    4    2    3    EX_SEND_BOTTOM           4               28                307                100                  4
+1    .    2    3    2    3    EX_SPLIT_BOTTOM          2                8                 66                100                  4 9864
+.    .    1    2    1    3    EX_TRAF_KEY_SELECT       6               12             28,473                100                  4 TRAFODION.SCH.TSTAT|4|176
 
 --- SQL operation complete.
 >>log;
 >>get statistics for qid current ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2482,7 +2482,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2493,27 +2493,27 @@ Stats Collection Type    OPERATOR_STATS
 
 LC   RC   Id   PaId ExId Frag TDB Name                 DOP     Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
 
-10   .    11   .    5    0    EX_ROOT                  1                5                  7                  0                  4 897
-9    .    10   11   4    0    EX_SPLIT_TOP             1                5                  7                  2                  4
-8    .    9    10   4    0    EX_SEND_TOP              2               10                883                  2                  4
-7    .    8    9    4    2    EX_SEND_BOTTOM           2                7                 90                  2                  4
-6    .    7    8    4    2    EX_SPLIT_BOTTOM          2                5                  7                  2                  4 2849
-5    .    6    7    3    2    EX_HASH_GRBY             2                6              2,043                  1                  4 0|0|0
-4    .    5    6    2    2    EX_SPLIT_TOP             2               11                 11                100                  4
-3    .    4    5    2    2    EX_SEND_TOP              4               18                698                100                  4
-2    .    3    4    2    3    EX_SEND_BOTTOM           4               11                125                100                  4
-1    .    2    3    2    3    EX_SPLIT_BOTTOM          2                6                 16                100                  4 1632
-.    .    1    2    1    3    EX_TRAF_KEY_SELECT       2                4              1,491                100                  4 TRAFODION.SCH.TSTAT|4|120
+10   .    11   .    5    0    EX_ROOT                  1                5                 22                  0                  4 2278
+9    .    10   11   4    0    EX_SPLIT_TOP             1                5                 33                  2                  4
+8    .    9    10   4    0    EX_SEND_TOP              2               10              2,223                  2                  4
+7    .    8    9    4    2    EX_SEND_BOTTOM           2                7                225                  2                  4
+6    .    7    8    4    2    EX_SPLIT_BOTTOM          2                5                 29                  2                  4 8481
+5    .    6    7    3    2    EX_HASH_GRBY             2                6              5,253                  1                  4 0|0|0
+4    .    5    6    2    2    EX_SPLIT_TOP             2               11                 49                100                  4
+3    .    4    5    2    2    EX_SEND_TOP              4               18              2,925                100                  4
+2    .    3    4    2    3    EX_SEND_BOTTOM           4               10                307                100                  4
+1    .    2    3    2    3    EX_SPLIT_BOTTOM          2                6                 66                100                  4 9864
+.    .    1    2    1    3    EX_TRAF_KEY_SELECT       2                4              9,491                100                  4 TRAFODION.SCH.TSTAT|4|176
 
 --- SQL operation complete.
 >>get statistics for qid current accumulated ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2531,7 +2531,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2548,13 +2548,13 @@ Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
 Message Redrive Attempts 0
-Disk Process Busy Time   9,490
-SQL Process Busy Time    5,378
+Disk Process Busy Time   12,303
+SQL Process Busy Time    20,623
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -2564,9 +2564,9 @@ Open Time                0
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
-Request Message Bytes    40,496
-Reply Message Count      15
-Reply Message Bytes      42,360
+Request Message Bytes    40,992
+Reply Message Count      14
+Reply Message Bytes      35,848
 Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
@@ -2577,13 +2577,13 @@ Scr. Write Count         0
 
 --- SQL operation complete.
 >>get statistics for qid current pertable ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2601,7 +2601,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2609,12 +2609,12 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    OPERATOR_STATS
-SQL Process Busy Time    5,378
+SQL Process Busy Time    20,623
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -2622,9 +2622,9 @@ EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
-Request Message Bytes    40,496
-Reply Message Count      15
-Reply Message Bytes      42,360
+Request Message Bytes    40,992
+Reply Message Count      14
+Reply Message Bytes      35,848
 Scr. Overflow Mode       DISK
 Scr File Count           0
 Scr. Buffer Blk Size     0
@@ -2638,17 +2638,17 @@ Table Name
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTAT
                   0                100
-                  4                  4            4            0              9,490              5,576
+                  4                  4            4            0             12,303              7,241
 
 --- SQL operation complete.
 >>get statistics for qid current progress ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2666,7 +2666,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2674,11 +2674,11 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    OPERATOR_STATS
-SQL Process Busy Time    5,378
+SQL Process Busy Time    20,623
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -2686,29 +2686,29 @@ EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
-Request Message Bytes    40,496
-Reply Message Count      15
-Reply Message Bytes      42,360
+Request Message Bytes    40,992
+Reply Message Count      14
+Reply Message Bytes      35,848
 
 Table Name
    Records Accessed       Records Used   HBase/Hive   HBase/Hive      HBase/Hive IO      HBase/Hive IO
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTAT
                   0                100
-                  4                  4            4            0              9,490              5,576
+                  4                  4            4            0             12,303              7,241
 
    Id TDB Name                           Mode            CPU Time  BMO Heap Used BMO Heap Total    BMO Heap WM  BMO Space BufSz BMO Space BufCnt  File Count       Scratch Buffer Block Size/Read/Written                 Scratch IO Count Read/Written
-    6 EX_HASH_GRBY                       DISK               2,043              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
+    6 EX_HASH_GRBY                       DISK               5,253              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
 
 --- SQL operation complete.
 >>get statistics for qid current default ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2726,7 +2726,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2737,30 +2737,30 @@ Stats Collection Type    OPERATOR_STATS
 
 LC   RC   Id   PaId ExId Frag TDB Name                 DOP     Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
 
-10   .    11   .    5    0    EX_ROOT                  1                5                  7                  0                  4 897
-9    .    10   11   4    0    EX_SPLIT_TOP             1                5                  7                  2                  4
-8    .    9    10   4    0    EX_SEND_TOP              2               10                883                  2                  4
-7    .    8    9    4    2    EX_SEND_BOTTOM           2                7                 90                  2                  4
-6    .    7    8    4    2    EX_SPLIT_BOTTOM          2                5                  7                  2                  4 2849
-5    .    6    7    3    2    EX_HASH_GRBY             2                6              2,043                  1                  4 0|0|0
-4    .    5    6    2    2    EX_SPLIT_TOP             2               11                 11                100                  4
-3    .    4    5    2    2    EX_SEND_TOP              4               18                698                100                  4
-2    .    3    4    2    3    EX_SEND_BOTTOM           4               11                125                100                  4
-1    .    2    3    2    3    EX_SPLIT_BOTTOM          2                6                 16                100                  4 1632
-.    .    1    2    1    3    EX_TRAF_KEY_SELECT       2                4              1,491                100                  4 TRAFODION.SCH.TSTAT|4|120
+10   .    11   .    5    0    EX_ROOT                  1                5                 22                  0                  4 2278
+9    .    10   11   4    0    EX_SPLIT_TOP             1                5                 33                  2                  4
+8    .    9    10   4    0    EX_SEND_TOP              2               10              2,223                  2                  4
+7    .    8    9    4    2    EX_SEND_BOTTOM           2                7                225                  2                  4
+6    .    7    8    4    2    EX_SPLIT_BOTTOM          2                5                 29                  2                  4 8481
+5    .    6    7    3    2    EX_HASH_GRBY             2                6              5,253                  1                  4 0|0|0
+4    .    5    6    2    2    EX_SPLIT_TOP             2               11                 49                100                  4
+3    .    4    5    2    2    EX_SEND_TOP              4               18              2,925                100                  4
+2    .    3    4    2    3    EX_SEND_BOTTOM           4               10                307                100                  4
+1    .    2    3    2    3    EX_SPLIT_BOTTOM          2                6                 66                100                  4 9864
+.    .    1    2    1    3    EX_TRAF_KEY_SELECT       2                4              9,491                100                  4 TRAFODION.SCH.TSTAT|4|176
 
 --- SQL operation complete.
 >>set session default statistics_view_type 'default' ;
 
 --- SQL operation complete.
 >>get statistics for qid current ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2778,7 +2778,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2789,30 +2789,30 @@ Stats Collection Type    OPERATOR_STATS
 
 LC   RC   Id   PaId ExId Frag TDB Name                 DOP     Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
 
-10   .    11   .    5    0    EX_ROOT                  1                5                  7                  0                  4 897
-9    .    10   11   4    0    EX_SPLIT_TOP             1                5                  7                  2                  4
-8    .    9    10   4    0    EX_SEND_TOP              2               10                883                  2                  4
-7    .    8    9    4    2    EX_SEND_BOTTOM           2                7                 90                  2                  4
-6    .    7    8    4    2    EX_SPLIT_BOTTOM          2                5                  7                  2                  4 2849
-5    .    6    7    3    2    EX_HASH_GRBY             2                6              2,043                  1                  4 0|0|0
-4    .    5    6    2    2    EX_SPLIT_TOP             2               11                 11                100                  4
-3    .    4    5    2    2    EX_SEND_TOP              4               18                698                100                  4
-2    .    3    4    2    3    EX_SEND_BOTTOM           4               11                125                100                  4
-1    .    2    3    2    3    EX_SPLIT_BOTTOM          2                6                 16                100                  4 1632
-.    .    1    2    1    3    EX_TRAF_KEY_SELECT       2                4              1,491                100                  4 TRAFODION.SCH.TSTAT|4|120
+10   .    11   .    5    0    EX_ROOT                  1                5                 22                  0                  4 2278
+9    .    10   11   4    0    EX_SPLIT_TOP             1                5                 33                  2                  4
+8    .    9    10   4    0    EX_SEND_TOP              2               10              2,223                  2                  4
+7    .    8    9    4    2    EX_SEND_BOTTOM           2                7                225                  2                  4
+6    .    7    8    4    2    EX_SPLIT_BOTTOM          2                5                 29                  2                  4 8481
+5    .    6    7    3    2    EX_HASH_GRBY             2                6              5,253                  1                  4 0|0|0
+4    .    5    6    2    2    EX_SPLIT_TOP             2               11                 49                100                  4
+3    .    4    5    2    2    EX_SEND_TOP              4               18              2,925                100                  4
+2    .    3    4    2    3    EX_SEND_BOTTOM           4               10                307                100                  4
+1    .    2    3    2    3    EX_SPLIT_BOTTOM          2                6                 66                100                  4 9864
+.    .    1    2    1    3    EX_TRAF_KEY_SELECT       2                4              9,491                100                  4 TRAFODION.SCH.TSTAT|4|176
 
 --- SQL operation complete.
 >>set session default statistics_view_type 'accumulated' ;
 
 --- SQL operation complete.
 >>get statistics for qid current ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2830,7 +2830,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2847,13 +2847,13 @@ Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
 Message Redrive Attempts 0
-Disk Process Busy Time   9,490
-SQL Process Busy Time    5,378
+Disk Process Busy Time   12,303
+SQL Process Busy Time    20,623
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -2863,9 +2863,9 @@ Open Time                0
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
-Request Message Bytes    40,496
-Reply Message Count      15
-Reply Message Bytes      42,360
+Request Message Bytes    40,992
+Reply Message Count      14
+Reply Message Bytes      35,848
 Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
@@ -2879,13 +2879,13 @@ Scr. Write Count         0
 
 --- SQL operation complete.
 >>get statistics for qid current ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2903,7 +2903,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2911,12 +2911,12 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    OPERATOR_STATS
-SQL Process Busy Time    5,378
+SQL Process Busy Time    20,623
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -2924,9 +2924,9 @@ EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
-Request Message Bytes    40,496
-Reply Message Count      15
-Reply Message Bytes      42,360
+Request Message Bytes    40,992
+Reply Message Count      14
+Reply Message Bytes      35,848
 Scr. Overflow Mode       DISK
 Scr File Count           0
 Scr. Buffer Blk Size     0
@@ -2940,20 +2940,20 @@ Table Name
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTAT
                   0                100
-                  4                  4            4            0              9,490              5,576
+                  4                  4            4            0             12,303              7,241
 
 --- SQL operation complete.
 >>set session default statistics_view_type 'progress' ;
 
 --- SQL operation complete.
 >>get statistics for qid current ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_479_S1
-Compile Start Time       2016/03/29 19:06:45.102116
-Compile End Time         2016/03/29 19:06:45.134712
-Compile Elapsed Time                 0:00:00.032596
-Execute Start Time       2016/03/29 19:06:50.244737
-Execute End Time         2016/03/29 19:06:50.260504
-Execute Elapsed Time                 0:00:00.015767
+Qid                      MXID11000001678212341110797980879000000000206U3333300_333_S1
+Compile Start Time       2016/09/20 05:54:32.850986
+Compile End Time         2016/09/20 05:54:32.916117
+Compile Elapsed Time                 0:00:00.065131
+Execute Start Time       2016/09/20 05:54:36.930937
+Execute End Time         2016/09/20 05:54:36.959868
+Execute Elapsed Time                 0:00:00.028931
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -2971,7 +2971,7 @@ Transaction Id           -1
 Source String            select distinct d from tstat ;
 SQL Source Length        30
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:06:50.257871
+First Row Returned Time  2016/09/20 05:54:36.957115
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -2979,11 +2979,11 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    OPERATOR_STATS
-SQL Process Busy Time    5,378
+SQL Process Busy Time    20,623
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
-SQL Heap Used            21                        KB
+SQL Heap Used            22                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -2991,19 +2991,19 @@ EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
-Request Message Bytes    40,496
-Reply Message Count      15
-Reply Message Bytes      42,360
+Request Message Bytes    40,992
+Reply Message Count      14
+Reply Message Bytes      35,848
 
 Table Name
    Records Accessed       Records Used   HBase/Hive   HBase/Hive      HBase/Hive IO      HBase/Hive IO
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTAT
                   0                100
-                  4                  4            4            0              9,490              5,576
+                  4                  4            4            0             12,303              7,241
 
    Id TDB Name                           Mode            CPU Time  BMO Heap Used BMO Heap Total    BMO Heap WM  BMO Space BufSz BMO Space BufCnt  File Count       Scratch Buffer Block Size/Read/Written                 Scratch IO Count Read/Written
-    6 EX_HASH_GRBY                       DISK               2,043              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
+    6 EX_HASH_GRBY                       DISK               5,253              4          1,024          7,687              256                0           0        -1                  0                  0                  0                  0
 
 --- SQL operation complete.
 >>set session default statistics_view_type 'pertable' ;
@@ -3012,36 +3012,36 @@ TRAFODION.SCH.TSTAT
 >>
 >>-- TEST for RMS Stats
 >>get statistics for RMS 0 ;
-Node name                     edev06:0
+Node name                     edev08.esgyn.local:0
 Node Id                       0
 RMS Version                   2511
-SSCP PID                      25539
-SSCP Creation Timestamp       2016/03/29 01:31:02.586074
-SSMP PID                      25726
-SSMP Creation Timestamp       2016/03/29 01:31:03.230981
+SSCP PID                      31567
+SSCP Creation Timestamp       2016/09/19 20:30:35.907724
+SSMP PID                      31645
+SSMP Creation Timestamp       2016/09/19 20:30:37.316674
 Source String Store Len       254
-Stats Heap Allocated          67,106,608
-Stats Heap Used               2,844,848
-Stats Heap High WM            2,945,000
-No.of Process Stats Heaps     52
+Stats Heap Allocated          67,106,592
+Stats Heap Used               1,951,736
+Stats Heap High WM            2,182,280
+No.of Process Stats Heaps     18
 No.of Process Regd.           4
 No.of Query Fragments Regd.   9
 RMS Semaphore Owner           -1
 No.of SSCPs Opened            2
 No.of SSCPs Open Deleted      0
-Last GC Time                  2016/03/29 19:04:31.050031
-Queries GCed in Last Run      2
-Total Queries GCed            442
-SSMP Request Message Count    266,882
-SSMP Request Message Bytes    152,177,056
-SSMP Reply Message Count      266,881
-SSMP Reply Message Bytes      36,695,712
-SSCP Request Message Count    3,433
-SSCP Request Message Bytes    587,064
-SSCP Reply Message Count      3,433
-SSCP Reply Message Bytes      752,712
-RMS Stats Reset Timestamp     2016/03/29 01:31:03.062373
-No. Query Invalidation Keys   1705
+Last GC Time                  2016/09/20 05:51:09.059223
+Queries GCed in Last Run      8
+Total Queries GCed            102
+SSMP Request Message Count    62,820
+SSMP Request Message Bytes    35,673,544
+SSMP Reply Message Count      62,819
+SSMP Reply Message Bytes      8,676,480
+SSCP Request Message Count    1,169
+SSCP Request Message Bytes    206,328
+SSCP Reply Message Count      1,169
+SSCP Reply Message Bytes      251,712
+RMS Stats Reset Timestamp     2016/09/19 20:30:36.713900
+No. Query Invalidation Keys   508
 
 
 --- SQL operation complete.
@@ -3085,7 +3085,7 @@ FUNKY_OPT_UNIQUE                     0
 
 --- 1 row(s) selected.
 >>log;
-Stats Heap Allocated          67,106,608
+Stats Heap Allocated          67,106,592
 >>
 >>-- TEST for EXPLAIN_IN_RMS 
 >>control query default explain_in_rms 'on' ;
@@ -3098,7 +3098,7 @@ Stats Heap Allocated          67,106,608
 
 --- SQL command prepared.
 >>log;
->>explain options 'f' for qid MXID11000023543212326038273788301000000000206U3333300_503_S1 ;
+>>explain options 'f' for qid MXID11000001678212341110797980879000000000206U3333300_357_S1 ;
 
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
@@ -3129,11 +3129,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_611_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_611_S1
-Compile Start Time       2016/03/29 19:07:47.096767
-Compile End Time         2016/03/29 19:07:47.739523
-Compile Elapsed Time                 0:00:00.642756
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_480_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_480_S1
+Compile Start Time       2016/09/20 05:55:35.674752
+Compile End Time         2016/09/20 05:55:35.930272
+Compile Elapsed Time                 0:00:00.255520
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -3164,11 +3164,11 @@ Last Suspend Time        -1
 Stats Collection Type    OPERATOR_STATS
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_611_S1 ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_611_S1
-Compile Start Time       2016/03/29 19:07:47.096767
-Compile End Time         2016/03/29 19:07:47.739523
-Compile Elapsed Time                 0:00:00.642756
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_480_S1 ;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_480_S1
+Compile Start Time       2016/09/20 05:55:35.674752
+Compile End Time         2016/09/20 05:55:35.930272
+Compile Elapsed Time                 0:00:00.255520
 Execute Start Time       -1
 Execute End Time         -1
 Execute Elapsed Time                 0:00:00.000000
@@ -3215,14 +3215,14 @@ D
 >>SET SESSION DEFAULT STATISTICS_VIEW_TYPE 'DEFAULT' ;
 
 --- SQL operation complete.
->>display statistics for QID MXID11000023543212326038273788301000000000206U3333300_611_S1 PERTABLE;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_611_S1
-Compile Start Time       2016/03/29 19:07:47.096767
-Compile End Time         2016/03/29 19:07:47.739523
-Compile Elapsed Time                 0:00:00.642756
-Execute Start Time       2016/03/29 19:07:58.051829
-Execute End Time         2016/03/29 19:07:58.080877
-Execute Elapsed Time                 0:00:00.029048
+>>display statistics for QID MXID11000001678212341110797980879000000000206U3333300_480_S1 PERTABLE;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_480_S1
+Compile Start Time       2016/09/20 05:55:35.674752
+Compile End Time         2016/09/20 05:55:35.930272
+Compile Elapsed Time                 0:00:00.255520
+Execute Start Time       2016/09/20 05:55:43.212647
+Execute End Time         2016/09/20 05:55:43.244508
+Execute Elapsed Time                 0:00:00.031861
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -3240,7 +3240,7 @@ Transaction Id           -1
 Source String            select d from tstat ;
 SQL Source Length        21
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:07:58.079914
+First Row Returned Time  2016/09/20 05:55:43.242916
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -3248,12 +3248,12 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    OPERATOR_STATS
-SQL Process Busy Time    4,671
+SQL Process Busy Time    2,456
 UDR Process Busy Time    0
 SQL Space Allocated      32                        KB
 SQL Space Used           5                         KB
 SQL Heap Allocated       15                        KB
-SQL Heap Used            8                         KB
+SQL Heap Used            10                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -3277,17 +3277,17 @@ Table Name
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTATI
                   0                100
-                  4                  4            2            0             22,037             22,037
+                  4                  4            2            0             27,517             27,517
 
 --- SQL operation complete.
->>get statistics for QID MXID11000023543212326038273788301000000000206U3333300_611_S1 PERTABLE;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_611_S1
-Compile Start Time       2016/03/29 19:07:47.096767
-Compile End Time         2016/03/29 19:07:47.739523
-Compile Elapsed Time                 0:00:00.642756
-Execute Start Time       2016/03/29 19:07:58.051829
-Execute End Time         2016/03/29 19:07:58.080877
-Execute Elapsed Time                 0:00:00.029048
+>>get statistics for QID MXID11000001678212341110797980879000000000206U3333300_480_S1 PERTABLE;
+Qid                      MXID11000001678212341110797980879000000000206U3333300_480_S1
+Compile Start Time       2016/09/20 05:55:35.674752
+Compile End Time         2016/09/20 05:55:35.930272
+Compile Elapsed Time                 0:00:00.255520
+Execute Start Time       2016/09/20 05:55:43.212647
+Execute End Time         2016/09/20 05:55:43.244508
+Execute Elapsed Time                 0:00:00.031861
 State                    CLOSE
 Rows Affected            0
 SQL Error Code           100
@@ -3305,7 +3305,7 @@ Transaction Id           -1
 Source String            select d from tstat ;
 SQL Source Length        21
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:07:58.079914
+First Row Returned Time  2016/09/20 05:55:43.242916
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -3313,12 +3313,12 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    OPERATOR_STATS
-SQL Process Busy Time    4,671
+SQL Process Busy Time    2,456
 UDR Process Busy Time    0
 SQL Space Allocated      32                        KB
 SQL Space Used           5                         KB
 SQL Heap Allocated       15                        KB
-SQL Heap Used            8                         KB
+SQL Heap Used            10                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -3342,7 +3342,7 @@ Table Name
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTATI
                   0                100
-                  4                  4            2            0             22,037             22,037
+                  4                  4            2            0             27,517             27,517
 
 --- SQL operation complete.
 >>log;
@@ -3360,13 +3360,13 @@ BBBB       12  BBBB           12
 
 --- 4 row(s) selected.
 >>get statistics for qid current ;
-Qid                      MXID11000023543212326038273788301000000000206U3333300_654___SQLCI_DML_LAST__
-Compile Start Time       2016/03/29 19:08:02.979219
-Compile End Time         2016/03/29 19:08:02.987386
-Compile Elapsed Time                 0:00:00.008167
-Execute Start Time       2016/03/29 19:08:02.987561
-Execute End Time         2016/03/29 19:08:02.993226
-Execute Elapsed Time                 0:00:00.005665
+Qid                      MXID11000001678212341110797980879000000000206U3333300_502___SQLCI_DML_LAST__
+Compile Start Time       2016/09/20 05:55:47.066579
+Compile End Time         2016/09/20 05:55:47.088573
+Compile Elapsed Time                 0:00:00.021994
+Execute Start Time       2016/09/20 05:55:47.088787
+Execute End Time         2016/09/20 05:55:47.098384
+Execute Elapsed Time                 0:00:00.009597
 State                    DEALLOCATED
 Rows Affected            0
 SQL Error Code           100
@@ -3384,7 +3384,7 @@ Transaction Id           -1
 Source String            select * from tstat ;
 SQL Source Length        21
 Rows Returned            4
-First Row Returned Time  2016/03/29 19:08:02.992297
+First Row Returned Time  2016/09/20 05:55:47.096974
 Last Error before AQR    0
 Number of AQR retries    0
 Delay before AQR         0
@@ -3392,12 +3392,12 @@ No. of times reclaimed   0
 Cancel Time              -1
 Last Suspend Time        -1
 Stats Collection Type    OPERATOR_STATS
-SQL Process Busy Time    1,352
+SQL Process Busy Time    2,186
 UDR Process Busy Time    0
 SQL Space Allocated      32                        KB
 SQL Space Used           5                         KB
 SQL Heap Allocated       15                        KB
-SQL Heap Used            9                         KB
+SQL Heap Used            10                        KB
 EID Space Allocated      0                         KB
 EID Space Used           0                         KB
 EID Heap Allocated       0                         KB
@@ -3421,7 +3421,7 @@ Table Name
    Estimated/Actual   Estimated/Actual          IOs    IO MBytes           Sum Time           Max Time
 TRAFODION.SCH.TSTAT
                   0                100
-                  4                  4            2            0              3,840              3,840
+                  4                  4            2            0              4,988              4,988
 
 --- SQL operation complete.
 >>
@@ -3451,7 +3451,7 @@ TRAFODION.SCH.TSTAT
 < >>get statistics for qid current;
 ---
 > >>obey STATS_CMD_QID;
-> >>get statistics for qid MXID11000023543212326038273788301000000000206U3333300_657_S1;
+> >>get statistics for qid MXID11000001678212341110797980879000000000206U3333300_505_S1;
 21c22
 < Number of Cpus           1
 ---
@@ -3500,7 +3500,7 @@ TRAFODION.SCH.TSTAT
 < >>get statistics for qid current;
 ---
 > >>obey STATS_CMD_QID;
-> >>get statistics for qid MXID11000023543212326038273788301000000000206U3333300_661_S1;
+> >>get statistics for qid MXID11000001678212341110797980879000000000206U3333300_509_S1;
 21c22
 < Number of Cpus           1
 ---
@@ -3532,7 +3532,7 @@ TRAFODION.SCH.TSTAT
 < >>get statistics for qid current;
 ---
 > >>obey STATS_CMD_QID;
-> >>get statistics for qid MXID11000023543212326038273788301000000000206U3333300_665_S1;
+> >>get statistics for qid MXID11000001678212341110797980879000000000206U3333300_513_S1;
 21c22
 < Number of Cpus           1
 ---
@@ -3669,11 +3669,11 @@ get statistics for pid a;
 >>get process statistics for current ;
 
 Node Id:                      0
-PID                           23543
-Start Time                    2016/03/29 19:04:33.788301
-EXE Memory Allocated          29 MB
-EXE Memory Used High WM       119 MB
-EXE Memory Used               28 MB
+PID                           1678
+Start Time                    2016/09/20 05:53:17.980879
+EXE Memory Allocated          23 MB
+EXE Memory Used High WM       101 MB
+EXE Memory Used               22 MB
 IPC Memory Allocated          1 MB
 IPC Memory Used High WM       1 MB
 IPC Memory Used               0 MB
@@ -3688,7 +3688,7 @@ Total ESPs Error in Startup   0
 Total ESPs Deleted            0
 Num ESPs In Use               2
 Num ESPs Free                 0
-Recent Qid                    MXID11000023543212326038273788301000000000206U3333300_665_S1
+Recent Qid                    MXID11000001678212341110797980879000000000206U3333300_513_S1
 
 --- SQL operation complete.
 >>set session default esp_idle_timeout '60' ;
@@ -3714,11 +3714,11 @@ D
 >>get process statistics for current ;
 
 Node Id:                      0
-PID                           23543
-Start Time                    2016/03/29 19:04:33.788301
-EXE Memory Allocated          29 MB
-EXE Memory Used High WM       119 MB
-EXE Memory Used               28 MB
+PID                           1678
+Start Time                    2016/09/20 05:53:17.980879
+EXE Memory Allocated          23 MB
+EXE Memory Used High WM       101 MB
+EXE Memory Used               22 MB
 IPC Memory Allocated          1 MB
 IPC Memory Used High WM       1 MB
 IPC Memory Used               0 MB
@@ -3733,7 +3733,7 @@ Total ESPs Error in Startup   0
 Total ESPs Deleted            0
 Num ESPs In Use               2
 Num ESPs Free                 2
-Recent Qid                    MXID11000023543212326038273788301000000000206U3333300_693___SQLCI_DML_LAST__
+Recent Qid                    MXID11000001678212341110797980879000000000206U3333300_541___SQLCI_DML_LAST__
 
 --- SQL operation complete.
 >>sh sleep 70;
@@ -3742,20 +3742,20 @@ Recent Qid                    MXID11000023543212326038273788301000000000206U3333
 D          
 -----------
 
-         12
          11
          21
          22
+         12
 
 --- 4 row(s) selected.
 >>get process statistics for current ;
 
 Node Id:                      0
-PID                           23543
-Start Time                    2016/03/29 19:04:33.788301
-EXE Memory Allocated          29 MB
-EXE Memory Used High WM       119 MB
-EXE Memory Used               28 MB
+PID                           1678
+Start Time                    2016/09/20 05:53:17.980879
+EXE Memory Allocated          23 MB
+EXE Memory Used High WM       101 MB
+EXE Memory Used               22 MB
 IPC Memory Allocated          1 MB
 IPC Memory Used High WM       1 MB
 IPC Memory Used               0 MB
@@ -3770,7 +3770,7 @@ Total ESPs Error in Startup   0
 Total ESPs Deleted            2
 Num ESPs In Use               2
 Num ESPs Free                 2
-Recent Qid                    MXID11000023543212326038273788301000000000206U3333300_695___SQLCI_DML_LAST__
+Recent Qid                    MXID11000001678212341110797980879000000000206U3333300_543___SQLCI_DML_LAST__
 
 --- SQL operation complete.
 >>

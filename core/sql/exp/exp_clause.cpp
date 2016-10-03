@@ -338,6 +338,16 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_CURR_TRANSID:
 	  setClassID(FUNC_CURR_TRANSID_ID);
 	  break;
+	case ITM_ISIPV4:
+	case ITM_ISIPV6:
+	  setClassID(FUNC_ISIP_ID);
+	  break;
+        case ITM_INET_ATON:
+          setClassID(FUNC_INETATON_ID);
+          break;
+        case ITM_INET_NTOA:
+          setClassID(FUNC_INETNTOA_ID);
+          break;
 	case ITM_USER:
 	case ITM_USERID:
 	case ITM_AUTHTYPE:
@@ -415,6 +425,7 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_FLOOR:
 	case ITM_LOG:
 	case ITM_LOG10:
+	case ITM_LOG2:
 	case ITM_SIN:
 	case ITM_SINH:
 	case ITM_SQRT:
@@ -973,6 +984,15 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
     case ex_clause::FUNC_HBASE_VERSION:
       GetVTblPtr(vtblPtr, ExFunctionHbaseVersion);
       break;
+    case ex_clause::FUNC_ISIP_ID:
+      GetVTblPtr(vtblPtr, ExFunctionIsIP);
+      break;
+    case ex_clause::FUNC_INETATON_ID:
+      GetVTblPtr(vtblPtr, ExFunctionInetAton);
+      break;
+    case ex_clause::FUNC_INETNTOA_ID:
+      GetVTblPtr(vtblPtr, ExFunctionInetNtoa);
+      break;
      default:
       GetVTblPtr(vtblPtr, ex_clause);
       break;
@@ -1218,6 +1238,7 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_FLOOR: return "ITM_FLOOR";
     case ITM_LOG: return "ITM_LOG";
     case ITM_LOG10: return "ITM_LOG10";
+    case ITM_LOG2: return "ITM_LOG2";
     case ITM_MOD: return "ITM_MOD";
     case ITM_POWER: return "ITM_POWER";
     case ITM_ROUND: return "ITM_ROUND";
@@ -1633,9 +1654,11 @@ ex_comp_clause::ex_comp_clause(OperatorTypeEnum oper_type,
 			       Space * space,
 			       ULng32 flags)
      : ex_clause (ex_clause::COMP_TYPE, oper_type, 3, attr, space),
-     flags_(0)
+       flags_(0),
+       rollupColumnNum_(-1)
 {
-  if(flags) setSpecialNulls();
+  if(flags) 
+    setSpecialNulls();
   setInstruction();
 }
  
@@ -1921,8 +1944,19 @@ void ex_branch_clause::displayContents(Space * space, const char * /*displayStr*
 void ex_comp_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   setInstruction();
-  ex_clause::displayContents(space, "ex_comp_clause", clauseNum, constsArea, 
-                             flags_,
+
+  char buf[100];
+  str_sprintf(buf, "  Clause #%d: ex_comp_clause", clauseNum);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  str_sprintf(buf, "    ex_comp_clause::rollupColumnNum_ = %d", rollupColumnNum_);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  str_sprintf(buf, "    ex_comp_clause::flags_ = %b", flags_);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea, 
+                             0,
                              ex_comp_clause::getInstruction(getInstrArrayIndex()),                             
                              ex_comp_clause::getInstructionStr(getInstrArrayIndex()));
 

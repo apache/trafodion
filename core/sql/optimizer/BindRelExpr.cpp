@@ -2964,7 +2964,7 @@ RelExpr *Intersect::bindNode(BindWA *bindWA)
   //
   if(CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON)
   {
-    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
+    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported , not fully tested
         << DgString0("INTERSECT");             // ##
     bindWA->setErrStatus();                    // ##
     if (bindWA->errStatus()) return NULL;      // ##
@@ -3056,7 +3056,7 @@ RelExpr *Except::bindNode(BindWA *bindWA)
   //
   if(CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON)
   {
-    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
+    *CmpCommon::diags() << DgSqlCode(-3022)    // ## EXCEPT not yet supported: not fully tested
         << DgString0("EXCEPT");             // ##
     bindWA->setErrStatus();                    // ##
     if (bindWA->errStatus()) return NULL;      // ##
@@ -3097,7 +3097,7 @@ RelExpr *Except::bindNode(BindWA *bindWA)
     return this;
   }
 
-  // Needs to be removed when supporting get_next for INTERSECT
+  // Needs to be removed when supporting get_next for EXCEPT
   if (getGroupAttr()->isEmbeddedUpdateOrDelete()) {
     *CmpCommon::diags() << DgSqlCode(-4160)
                 << DgString0(fmtdList1)
@@ -3856,9 +3856,17 @@ RelRoot * RelRoot::transformOrderByWithExpr(BindWA *bindWA)
           NABoolean found = FALSE;
           Lng32 selListIndex = 0;
           ItemExpr * selItem = NULL;
+          ItemExpr * renameColEntry = NULL;
           while ((NOT found) && (selListIndex < selListCount))
             {
               selItem = origSelectList[selListIndex];
+              
+              if (selItem->getOperatorType() == ITM_RENAME_COL)
+                {
+                  renameColEntry = selItem;
+                  selItem = selItem->child(0);
+                }
+              
               found = currOrderByItemExpr->duplicateMatch(*selItem);
               if (NOT found)
                 selListIndex++;
@@ -4064,10 +4072,11 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
 			selListIndex = j;
 			listOfExpressions.insert(j);
 			
-			selectListEntry->setInGroupByOrdinal(TRUE);  		    
+                        selectListEntry->setInGroupByOrdinal(TRUE);
+                        selectListEntry->setIsGroupByExpr(TRUE);
 
 			if (renameColEntry)
-			  renameColEntry->setInGroupByOrdinal(TRUE);  		      
+			  renameColEntry->setInGroupByOrdinal(TRUE);
 		      }
 		      else
 			found = FALSE;
@@ -4107,7 +4116,6 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
         }
       if (compExprTreeIsNull)
         return this;
-
 
       if (currGroupByItemExpr->getOperatorType() == ITM_SEL_INDEX)
         {
@@ -4296,7 +4304,7 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
   NABoolean specialMode =
     (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON);
 
-  // make sure child of root is a groupby node.or a sequence node 
+  // make sure child of root is a groupby node or a sequence node 
   // whose child is a group by node
   if (child(0)->getOperatorType() != REL_GROUPBY && 
        (child(0)->getOperatorType() != REL_SEQUENCE || 
@@ -4318,6 +4326,51 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
 
   DCMPASSERT(grby != NULL);
 
+  if (grby->isRollup())
+    {
+      if (grby->groupExpr().entries() != grby->rollupGroupExprList().entries())
+        {
+          *CmpCommon::diags() << DgSqlCode(-4384)
+                              << DgString0("Cannot have duplicate entries.");
+          
+          bindWA->setErrStatus();
+          return NULL;
+        }
+
+      for (ValueId valId = grby->aggregateExpr().init();
+           grby->aggregateExpr().next(valId);
+           grby->aggregateExpr().advance(valId))
+        {
+          ItemExpr * ae = valId.getItemExpr();
+
+          // right now, only support groupby rollup on min/max/sum/avg/count
+          if (NOT ((ae->getOperatorType() == ITM_MIN) ||
+                   (ae->getOperatorType() == ITM_MAX) ||
+                   (ae->getOperatorType() == ITM_SUM) ||
+                   (ae->getOperatorType() == ITM_AVG) ||
+                   (ae->getOperatorType() == ITM_COUNT) ||
+                   (ae->getOperatorType() == ITM_COUNT_NONULL)))
+            {
+              *CmpCommon::diags() << DgSqlCode(-4384)
+                                  << DgString0("Unsupported rollup aggregate function.");
+              
+              bindWA->setErrStatus();
+              return NULL;
+            }
+          
+          // right now, only support groupby rollup on non-distinct aggrs
+          Aggregate * ag = (Aggregate*)ae;
+          if (ag->isDistinct())
+            {
+              *CmpCommon::diags() << DgSqlCode(-4384)
+                                  << DgString0("Distinct rollup aggregates not supported.");
+              
+              bindWA->setErrStatus();
+              return NULL;
+            }
+        }
+    }
+
   ValueIdSet &groupExpr = grby->groupExpr();
   // copy of groupExpr used to identify the changed
   // value ids
@@ -4327,8 +4380,6 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
   // these gets expanded at bind time, and so the select index have to
   // be offset with the expansion number since the sel_index number 
   // reflects the select list at parse time.
-
-
   for (ValueId vid = groupExpr.init(); 
        groupExpr.next(vid);
        groupExpr.advance(vid))
@@ -4342,8 +4393,14 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
           si->setValueId(grpById);
           if (child(0)->getOperatorType() != REL_SEQUENCE)
           {
-          groupExprCpy.remove(vid);
-          groupExprCpy.insert(grpById);
+            groupExprCpy.remove(vid);
+            groupExprCpy.insert(grpById);
+
+            if (grby->isRollup())
+              {
+                CollIndex idx = grby->rollupGroupExprList().index(vid);
+                grby->rollupGroupExprList()[idx] = grpById;
+              }
           }
           else
           {  //sequence
@@ -4462,6 +4519,23 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
             nacol->setReferencedForSingleIntHist();
           }
        } // found Sel Index
+    }
+
+  ValueId valId;
+  if (grby->isRollup())
+    {
+      for (CollIndex i = 0; i < grby->rollupGroupExprList().entries(); i++)
+        {
+          valId = grby->rollupGroupExprList()[i];
+          
+          if (NOT valId.getType().supportsSQLnull())
+            {
+              *CmpCommon::diags() << DgSqlCode(-4384)
+                                  << DgString0("Grouped columns must be nullable.");
+              bindWA->setErrStatus();
+              return NULL;
+            }
+        }
     }
 
   // recreate the groupExpr expression after updating the value ids
@@ -5033,13 +5107,8 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 		 NULL, NULL, NULL, child(0), PARSERHEAP());
 	      le->setHandleInStringFormat(FALSE);
 	      setChild(0, le);
-	 
 	    }
-	     
-
 	}
-	
-      
 
       processRownum(bindWA);
       
@@ -6886,10 +6955,15 @@ RelExpr *GroupByAgg::bindNode(BindWA *bindWA)
     currScope->context()->inGroupByClause() = TRUE;
     groupExprTree->convertToValueIdSet(groupExpr(), bindWA, ITM_ITEM_LIST);
 
+    if (isRollup())
+      groupExprTree->convertToValueIdList(
+           rollupGroupExprList(), bindWA, ITM_ITEM_LIST);
+
     currScope->context()->inGroupByClause() = FALSE;
     if (bindWA->errStatus()) return this;
 
     ValueIdList groupByList(groupExpr());
+ 
     for (CollIndex i = 0; i < groupByList.entries(); i++)
     {
       ValueId vid = groupByList[i];
@@ -6920,6 +6994,13 @@ RelExpr *GroupByAgg::bindNode(BindWA *bindWA)
                       {
                         groupExpr().remove(vid);
                         groupExpr().insert(baseColExpr->getValueId());
+
+                        if (isRollup())
+                          {
+                            CollIndex idx = rollupGroupExprList().index(vid);
+                            rollupGroupExprList()[idx] = baseColExpr->getValueId();
+                          }
+ 
                         baseColExpr->getColumnDesc()->setGroupedFlag();
                         origSelectList[indx]->setInGroupByOrdinal(FALSE);
                       }
@@ -13878,7 +13959,8 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
                   (CmpCommon::diags()->mainSQLCODE() == -4193) ||
                   (CmpCommon::diags()->mainSQLCODE() == -4155) || // define not supported
                   (CmpCommon::diags()->mainSQLCODE() == -4086) || // catch Define Not Found error
-                  (CmpCommon::diags()->mainSQLCODE() == -30044))  // default schema access error
+                  (CmpCommon::diags()->mainSQLCODE() == -30044)|| // default schema access error
+                  (CmpCommon::diags()->mainSQLCODE() == -1398))   // uninit hbase
                     return this;
       
               CmpCommon::diags()->clear();

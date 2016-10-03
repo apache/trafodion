@@ -567,7 +567,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Thu Aug 11 21:06:15 2016
+-- Definition current  Tue Sep 20 11:39:15 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -598,7 +598,7 @@ A            B
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Thu Aug 11 21:06:23 2016
+-- Definition current  Tue Sep 20 11:39:18 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -649,7 +649,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Thu Aug 11 21:06:31 2016
+-- Definition current  Tue Sep 20 11:39:28 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -678,7 +678,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Thu Aug 11 21:06:41 2016
+-- Definition current  Tue Sep 20 11:39:36 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -703,7 +703,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Thu Aug 11 21:06:45 2016
+-- Definition current  Tue Sep 20 11:39:44 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -723,7 +723,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Thu Aug 11 21:06:48 2016
+-- Definition current  Tue Sep 20 11:39:54 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -738,7 +738,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Thu Aug 11 21:06:49 2016
+-- Definition current  Tue Sep 20 11:39:56 2016
 
   (
     A                                INT DEFAULT NULL
@@ -761,7 +761,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Thu Aug 11 21:06:56 2016
+-- Definition current  Tue Sep 20 11:40:04 2016
 
   (
     A                                INT DEFAULT NULL
@@ -779,7 +779,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Thu Aug 11 21:07:02 2016
+-- Definition current  Tue Sep 20 11:40:09 2016
 
   (
     A                                INT DEFAULT NULL
@@ -796,6 +796,7 @@ CREATE TABLE TRAFODION.SCH.T031T1
   (
     A                                INT DEFAULT NULL
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
@@ -824,6 +825,7 @@ CREATE TABLE TRAFODION.SCH.T031T1
   (
     A                                INT DEFAULT NULL
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
@@ -847,6 +849,7 @@ CREATE TABLE TRAFODION.SCH.T031T1
   (
     A                                INT DEFAULT NULL
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
@@ -863,13 +866,43 @@ CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
 >>invoke table(index_table t031t1i1);
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1I1
--- Definition current  Thu Aug 11 21:07:19 2016
+-- Definition current  Tue Sep 20 11:40:37 2016
 
   (
     "A@"                             INT NO DEFAULT
   , SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
   )
   PRIMARY KEY ("A@" ASC, SYSKEY ASC)
+
+--- SQL operation complete.
+>>reset parserflags;
+
+--- SQL operation complete.
+>>
+>>-- volatile and external table operation in default hive schema
+>>drop external table t031hive for hive.hive.t031hive;
+
+--- SQL operation complete.
+>>set schema hive.hive;
+
+--- SQL operation complete.
+>>create volatile table vtt (a int);
+
+--- SQL operation complete.
+>>create volatile index vtti on vtt(a);
+
+--- SQL operation complete.
+>>drop volatile index vtti;
+
+--- SQL operation complete.
+>>drop volatile table vtt;
+
+--- SQL operation complete.
+>>
+>>create external table t031hive for t031hive;
+
+--- SQL operation complete.
+>>drop external table t031hive for t031hive;
 
 --- SQL operation complete.
 >>

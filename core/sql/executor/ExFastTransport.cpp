@@ -482,14 +482,15 @@ Lng32 ExHdfsFastExtractTcb::lobInterfaceCreate()
 
 }
 
-Lng32 ExHdfsFastExtractTcb::lobInterfaceDataModCheck()
+Lng32 ExHdfsFastExtractTcb::lobInterfaceDataModCheck(Int64 &failedModTS)
 {
   return ExpLOBinterfaceDataModCheck(lobGlob_,
                                      targetLocation_,
                                      hdfsHost_,
                                      hdfsPort_,
                                      myTdb().getModTSforDir(),
-                                     0);
+                                     0,
+                                     failedModTS);
 }
 
 
@@ -719,7 +720,8 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
       memset (targetLocation_, '\0', sizeof(targetLocation_));
       snprintf(targetLocation_,999, "%s", myTdb().getTargetName());
 
-      retcode = lobInterfaceDataModCheck();
+      Int64 failedModTS = -1;
+      retcode = lobInterfaceDataModCheck(failedModTS);
       if (retcode < 0)
       {
         Lng32 cliError = 0;
@@ -741,9 +743,15 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
       
       if (retcode == 1) // check failed
       {
+        char errStr[200];
+        str_sprintf(errStr, "genModTS = %Ld, failedModTS = %Ld", 
+                    myTdb().getModTSforDir(), failedModTS);
+        
         ComDiagsArea * diagsArea = NULL;
         ExRaiseSqlError(getHeap(), &diagsArea, 
-                        (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+                        (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR), NULL,
+                        NULL, NULL, NULL,
+                        errStr);
         pentry_down->setDiagsArea(diagsArea);
         pstate.step_ = EXTRACT_ERROR;
         break;

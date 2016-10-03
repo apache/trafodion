@@ -30,6 +30,7 @@
 #include "PrivMgrDesc.h"
 #include "ComSmallDefs.h"
 #include "ComViewColUsage.h"
+#include "CmpDDLCatErrorCodes.h"
 
 #include <string>
 #include <bitset>
@@ -55,50 +56,6 @@ class UIDAndPrivs
 public:
    int64_t objectUID;
    PrivObjectBitmap privsBitmap;
-};
-
-// *****************************************************************************
-// * Class:        ColPrivEntry
-// * Description:  This class represents the privileges and corresponding 
-// *               WGO (with grant option) for a column
-// *****************************************************************************
-class ColPrivEntry
-{
-public:
-   PrivMgrCoreDesc    privDesc_;
-   bool               isUpdate_;
-
-   ColPrivEntry()
-   : isUpdate_(false){};
-   ColPrivEntry(const PrivMgrMDRow &row);
-   ColPrivEntry(const ColPrivEntry &other);
-
-   PrivMgrCoreDesc &getPrivDesc (void) { return privDesc_; }
-
-   int32_t getColumnOrdinal (void) { return privDesc_.getColumnOrdinal(); }
-   PrivColumnBitmap getPrivBitmap (void) { return privDesc_.getPrivBitmap(); }
-   PrivColumnBitmap getGrantableBitmap (void) { return privDesc_.getWgoBitmap(); }
-
-   void setColumnOrdinal (int32_t columnOrdinal)
-   { privDesc_.setColumnOrdinal(columnOrdinal); }
-
-   void setPrivBitmap(PrivMgrBitmap privBitmap)
-   { privDesc_.setPrivBitmap(privBitmap); }
-   void setGrantableBitmap(PrivMgrBitmap grantableBitmap)
-   { privDesc_.setWgoBitmap(grantableBitmap);}
-
-   void setPriv (PrivType privType, bool value)
-   { privDesc_.setPriv(privType, value); }
-   void setGrantable (PrivType privType, bool value)
-   { privDesc_.setWgo(privType, value); }
-
-   void describe (std::string &details) const
-   {
-      details = "column usage - column number is ";
-      details += to_string((long long int) privDesc_.getColumnOrdinal());
-      details += ", isUpdate is ";
-      details += (isUpdate_) ? "true " : "false ";
-   }
 };
 
 // *****************************************************************************
@@ -205,12 +162,12 @@ public:
       const std::string &newOwnerName,
       const std::vector<int64_t> &objectUIDs);
          
-   PrivStatus grantColumnPrivileges(
+   PrivStatus grantColumnPriv(
       const ComObjectType objectType,
       const int32_t granteeID,
       const std::string &granteeName,
       const std::string &grantorName,
-      const std::vector<ColPrivSpec> & colPrivsArray,
+      const PrivMgrDesc &privsToGrant,
       const bool isWGOSpecified);
   
    PrivStatus grantObjectPriv(
@@ -246,12 +203,12 @@ public:
       const std::string &objectsLocation,
       const std::string &authsLocation);
       
-   PrivStatus revokeColumnPrivileges(
+   PrivStatus revokeColumnPriv(
          const ComObjectType objectType,
          const int32_t granteeID,
          const std::string & granteeName,
          const std::string & grantorName,
-         const std::vector<ColPrivSpec> & colPrivsArrayIn,
+         const PrivMgrDesc &privsToRevoke,
          const bool isWGOSpecified);
          
    PrivStatus revokeObjectPriv(
@@ -284,7 +241,8 @@ protected:
      const bool isAllSpecified,
      const bool isWGOSpecified,
      const bool isGOFSpecified,
-     const std::vector<PrivType> privs,
+     const std::vector<PrivType> privsList,
+     const std::vector<ColPrivSpec> & colPrivsList,
      PrivMgrDesc &privsToGrant);
 
    PrivStatus getPrivsFromAllGrantors(
@@ -314,7 +272,7 @@ private:
 
   bool checkColumnRevokeRestrict (
     int32_t granteeID,
-    const std::vector<ColPrivEntry> &colPrivsToRevoke,
+    const NAList<PrivMgrCoreDesc> &colPrivsToRevoke,
     std::vector <PrivMgrMDRow *> &rowList );
 
   bool checkRevokeRestrict (
@@ -419,10 +377,22 @@ private:
      const std::string &newOwnerName,
      const int64_t objectUID);    
 
-  bool hasColumnWGO(
-   const std::vector<ColPrivSpec> & colPrivsArrayIn,
-   const std::vector<int32_t> &roleIDs,
-   PrivStatus & privStatus);
+  PrivStatus initGrantRevoke(
+    const ComObjectType objectType,
+    const int32_t granteeID,
+    const std::vector<PrivType> &privList,
+    const std::vector<ColPrivSpec> & colPrivsArray,
+    const bool isAllSpecified,
+    const bool isGOSpecified,
+    const bool isGrant,
+    PrivMgrDesc &privsToApply,
+    PrivMgrDesc &privsOfTheGrantor,
+    std::vector<int32_t> & roleIDs);
+
+  void reportPrivWarnings(
+    const PrivMgrDesc &origPrivs,
+    const PrivMgrDesc &actualPrivs,
+    const CatErrorCode warningCode);
 
   void scanColumnBranch( const PrivType pType,
     const int32_t& grantor,

@@ -347,6 +347,8 @@ Int32 RelExpr::getArity() const
     case REL_LEFT_TSJ:
     case REL_NESTED_JOIN:
     case REL_MERGE_JOIN:
+    case REL_INTERSECT:
+    case REL_EXCEPT:
       return 2;
 
     default:
@@ -3807,6 +3809,8 @@ NABoolean RelExpr::isAnyJoin() const
     case REL_FORCE_ORDERED_HASH_JOIN:
     case REL_FORCE_HYBRID_HASH_JOIN:
     case REL_FORCE_MERGE_JOIN:
+    case REL_INTERSECT:
+    case REL_EXCEPT:
       return TRUE;
 
     default:
@@ -5142,6 +5146,39 @@ NABoolean Join::duplicateMatch(const RelExpr & other) const
     return FALSE;
 
   return TRUE;
+}
+
+ 
+RelExpr * Intersect::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  RelExpr *result;
+
+  if (derivedNode == NULL)
+    {
+      result = new (outHeap) Intersect(NULL,
+                                        NULL
+                                        );
+    }
+  else
+    result = derivedNode;
+
+  return RelExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * Except::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  RelExpr *result;
+
+  if (derivedNode == NULL)
+    {
+      result = new (outHeap) Except(NULL,
+                                        NULL
+                                        );
+    }
+  else
+    result = derivedNode;
+
+  return RelExpr::copyTopNode(result, outHeap);
 }
 
 RelExpr * Join::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
@@ -7523,6 +7560,7 @@ RelExpr * GroupByAgg::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
     result->aggregateExprTree_ = aggregateExprTree_->copyTree(outHeap);
 
   result->groupExpr_     = groupExpr_;
+  result->rollupGroupExprList_ = rollupGroupExprList_;
   result->aggregateExpr_ = aggregateExpr_;
   result->formEnum_      = formEnum_;
   result->gbAggPushedBelowTSJ_ = gbAggPushedBelowTSJ_;
@@ -7535,6 +7573,8 @@ RelExpr * GroupByAgg::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 
   result->selIndexInHaving_ = selIndexInHaving_;
   result->aggrExprsToBeDeleted_ = aggrExprsToBeDeleted_;
+
+  result->isRollup_ = isRollup_;
 
   return RelExpr::copyTopNode(result, outHeap);
 }
@@ -7672,6 +7712,8 @@ void GroupByAgg::addLocalExpr(LIST(ExprNode *) &xlist,
     {
       if (groupExpr_.isEmpty())
 	xlist.insert(groupExprTree_);
+      else if (isRollup() && (NOT rollupGroupExprList_.isEmpty()))
+ 	xlist.insert(rollupGroupExprList_.rebuildExprTree(ITM_ITEM_LIST));
       else
 	xlist.insert(groupExpr_.rebuildExprTree(ITM_ITEM_LIST));
       llist.insert("grouping_columns");
@@ -7827,7 +7869,10 @@ NABoolean SortGroupBy::isPhysical() const {return TRUE;}
 
 const NAString SortGroupBy::getText() const
 {
-  return "sort_" + GroupByAgg::getText();
+  if (isRollup())
+    return "sort_" + GroupByAgg::getText() + "_rollup";
+  else
+    return "sort_" + GroupByAgg::getText();
 }
 
 RelExpr * SortGroupBy::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)

@@ -246,5 +246,17 @@ showddl t031t1;
 
 set parserflags 1;
 invoke table(index_table t031t1i1);
+reset parserflags;
+
+-- volatile and external table operation in default hive schema
+drop external table t031hive for hive.hive.t031hive;
+set schema hive.hive;
+create volatile table vtt (a int);
+create volatile index vtti on vtt(a);
+drop volatile index vtti;
+drop volatile table vtt;
+
+create external table t031hive for t031hive;
+drop external table t031hive for t031hive;
 
 log;

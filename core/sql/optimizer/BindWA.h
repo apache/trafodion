@@ -135,6 +135,7 @@ public:
   , inRowsSince_                (FALSE)
   , inOtherSequenceFunction_    (FALSE)
   , inGroupByOrdinal_           (FALSE)
+  , inGroupByExpr_              (FALSE)
   , inCreateAfterTrigger_       (FALSE)
   , inCheckOption_              (FALSE)
   , inCreateView_               (FALSE)
@@ -214,6 +215,7 @@ public:
   NABoolean        &inRowsSince()             { return inRowsSince_; }
   NABoolean        &inOtherSequenceFunction() { return inOtherSequenceFunction_; }
   NABoolean        &inGroupByOrdinal() { return inGroupByOrdinal_; }
+  NABoolean        &inGroupByExpr() { return inGroupByExpr_; }
   NABoolean        &inQualifyClause() { return inQualifyClause_; }
   NABoolean        &inTDFunction() { return inTDFunction_; }
   NABoolean        &inUDFunction() { return inUDFunction_; }
@@ -435,6 +437,9 @@ private:
   // belong to group by list. Check done in ColReference::bindNode.
   // Set when a group by element is an ordinal.
   NABoolean inGroupByOrdinal_;
+
+  // Set when a group by element is an expr.
+  NABoolean inGroupByExpr_;
 
   // --------------------------------------------------------------------
   // A pointer a the trigger object.

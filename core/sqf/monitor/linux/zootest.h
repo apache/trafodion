@@ -1,4 +1,4 @@
-//******************************************************************************
+/**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -19,30 +19,16 @@
 // under the License.
 //
 // @@@ END COPYRIGHT @@@
-//******************************************************************************
-#ifndef INCLUDE_LD_GLOBALS_H
-#define INCLUDE_LD_GLOBALS_H  1
-#include "common/evl_sqlog_eventnum.h"
-#include <string>
+********************************************************************/
 
-struct AuthEvents
-{
-DB_SECURITY_EVENTID eventID;
-std::string         eventText;
-std::string         filename;
-int32_t             lineNumber;
-};
+#ifndef ZOOTEST_H_
+#define ZOOTEST_H_
 
-void clearAuthEvents();
+#define MON_ZOOCLIENT_MAIN_1                101380101
+#define MON_ZOOCLIENT_MAIN_2                101380102
+#define MON_ZOOCLIENT_MAIN_3                101380103
+#define MON_ZOOCLIENT_MAIN_4                101380104
+#define MON_ZOOCLIENT_MAIN_5                101380105
+#define MON_ZOOCLIENT_MAIN_6                101380106
 
-size_t getAuthEventCount();
-
-const AuthEvents & getAuthEvent(size_t index);
-
-void logAuthEvent(
-   DB_SECURITY_EVENTID eventID,
-   const char *        msg,
-   const std::string & file_name, 
-   int32_t             line_number); 
-
-#endif 
+#endif // ZOOTEST_H_

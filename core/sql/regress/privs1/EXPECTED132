@@ -278,6 +278,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T1
   , C2                               INT DEFAULT NULL
   , PRIMARY KEY (C1 ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132T1 TO DB__ROOT WITH GRANT OPTION;
@@ -291,6 +292,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
   , C2                               INT DEFAULT NULL
   , PRIMARY KEY (C1 ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132T2 TO SQL_USER1 WITH GRANT OPTION;
@@ -304,6 +306,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T3
   , C2                               INT DEFAULT NULL
   , PRIMARY KEY (C1 ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132T3 TO SQL_USER1 WITH GRANT OPTION;
@@ -787,6 +790,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_GAMES
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (GAME_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T132_HOME_GAMES ON TRAFODION.T132SCH.T132_GAMES
@@ -815,6 +819,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_TEAMS
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (TEAM_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
@@ -866,7 +871,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Thu Feb 25 11:15:40 2016
+-- Definition current  Tue Sep 27 10:16:36 2016
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -883,7 +888,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Thu Feb 25 11:15:42 2016
+-- Definition current  Tue Sep 27 10:16:39 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -900,7 +905,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Thu Feb 25 11:15:43 2016
+-- Definition current  Tue Sep 27 10:16:41 2016
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -914,7 +919,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Thu Feb 25 11:15:45 2016
+-- Definition current  Tue Sep 27 10:16:44 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -945,6 +950,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_GAMES
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (GAME_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T132_HOME_GAMES ON TRAFODION.T132SCH.T132_GAMES
@@ -984,7 +990,7 @@ ALTER TABLE TRAFODION.T132SCH.T132_GAMES ADD CONSTRAINT
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Thu Feb 25 11:16:00 2016
+-- Definition current  Tue Sep 27 10:17:03 2016
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1100,6 +1106,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_GAMES
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (GAME_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T132_HOME_GAMES ON TRAFODION.T132SCH.T132_GAMES
@@ -1128,6 +1135,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_TEAMS
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (TEAM_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
@@ -1179,7 +1187,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Thu Feb 25 11:16:33 2016
+-- Definition current  Tue Sep 27 10:17:40 2016
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1196,7 +1204,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Thu Feb 25 11:16:33 2016
+-- Definition current  Tue Sep 27 10:17:40 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1213,7 +1221,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Thu Feb 25 11:16:33 2016
+-- Definition current  Tue Sep 27 10:17:40 2016
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1227,7 +1235,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Thu Feb 25 11:16:33 2016
+-- Definition current  Tue Sep 27 10:17:40 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1273,6 +1281,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_TEAMS
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (TEAM_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
@@ -1307,7 +1316,7 @@ ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Thu Feb 25 11:16:51 2016
+-- Definition current  Tue Sep 27 10:18:07 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1376,6 +1385,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_GAMES
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (GAME_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T132_HOME_GAMES ON TRAFODION.T132SCH.T132_GAMES
@@ -1404,6 +1414,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_TEAMS
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (TEAM_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
@@ -1456,7 +1467,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Thu Feb 25 11:17:10 2016
+-- Definition current  Tue Sep 27 10:18:30 2016
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1473,7 +1484,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Thu Feb 25 11:17:10 2016
+-- Definition current  Tue Sep 27 10:18:30 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1490,7 +1501,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Thu Feb 25 11:17:10 2016
+-- Definition current  Tue Sep 27 10:18:30 2016
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1504,7 +1515,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Thu Feb 25 11:17:10 2016
+-- Definition current  Tue Sep 27 10:18:30 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1537,6 +1548,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_GAMES
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (GAME_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T132_HOME_GAMES ON TRAFODION.T132SCH.T132_GAMES
@@ -1565,6 +1577,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_TEAMS
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (TEAM_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
@@ -1617,7 +1630,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Thu Feb 25 11:17:27 2016
+-- Definition current  Tue Sep 27 10:18:51 2016
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1634,7 +1647,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Thu Feb 25 11:17:27 2016
+-- Definition current  Tue Sep 27 10:18:51 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1651,7 +1664,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Thu Feb 25 11:17:27 2016
+-- Definition current  Tue Sep 27 10:18:51 2016
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1665,7 +1678,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Thu Feb 25 11:17:27 2016
+-- Definition current  Tue Sep 27 10:18:51 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1698,6 +1711,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_GAMES
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (GAME_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T132_HOME_GAMES ON TRAFODION.T132SCH.T132_GAMES
@@ -1726,6 +1740,7 @@ CREATE TABLE TRAFODION.T132SCH.T132_TEAMS
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (TEAM_NUMBER ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
@@ -1778,7 +1793,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Thu Feb 25 11:17:44 2016
+-- Definition current  Tue Sep 27 10:19:11 2016
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1795,7 +1810,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Thu Feb 25 11:17:44 2016
+-- Definition current  Tue Sep 27 10:19:11 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1812,7 +1827,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Thu Feb 25 11:17:44 2016
+-- Definition current  Tue Sep 27 10:19:11 2016
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1826,7 +1841,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Thu Feb 25 11:17:44 2016
+-- Definition current  Tue Sep 27 10:19:11 2016
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1858,6 +1873,7 @@ End of MXCI Session
 >>-- privileges.  To update stats, you must:
 >>--   be DB__ROOT
 >>--   be table owner
+>>--   have SELECT privilege 
 >>--   have the MANAGE_STATISTICS privilege (DB__ROOTROLE has priv)
 >>-- =================================================================
 >>
@@ -1939,10 +1955,14 @@ End of MXCI Session
 >>
 >>update statistics for table t132t1 on every column;
 
+*** ERROR[4481] The user does not have SELECT or MANAGE_STATISTICS privilege on table or view TRAFODION.T132SCH.T132T1.
+
 *** ERROR[9241] Insufficient privileges to perform the statistics request for table TRAFODION.T132SCH.T132T1.
 
 --- SQL operation failed with errors.
 >>update statistics for table t132t2 on every column;
+
+*** ERROR[4481] The user does not have SELECT or MANAGE_STATISTICS privilege on table or view TRAFODION.T132SCH.T132T2.
 
 *** ERROR[9241] Insufficient privileges to perform the statistics request for table TRAFODION.T132SCH.T132T2.
 
@@ -1980,6 +2000,8 @@ End of MXCI Session
 >>
 >>update statistics for table t132t1 on every column;
 
+*** ERROR[4481] The user does not have SELECT or MANAGE_STATISTICS privilege on table or view TRAFODION.T132SCH.T132T1.
+
 *** ERROR[9241] Insufficient privileges to perform the statistics request for table TRAFODION.T132SCH.T132T1.
 
 --- SQL operation failed with errors.
@@ -1996,26 +2018,26 @@ End of MXCI Session
 >>showstats for table t132t1 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T1
-Table ID: 9082725574613497403
+Table ID: 8170765222353678252
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
-1275314956      8           8           8 SYSKEY
-1275314953      8           8           8 C1
-1275314946      8           8           8 C2
+ 208504770      8           8           8 SYSKEY
+ 208504767      8           8           8 C1
+ 208504760      8           8           8 C2
 
 
 --- SQL operation complete.
 >>showstats for table t132t2 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T2
-Table ID: 9082725574613497462
+Table ID: 8170765222353678398
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
-1278381713      8           8           8 SYSKEY
-1278381708      8           8           8 C1
-1278381703      8           8           8 C2
+ 214964582      8           8           8 SYSKEY
+ 214964577      8           8           8 C1
+ 214964572      8           8           8 C2
 
 
 --- SQL operation complete.
@@ -2056,10 +2078,14 @@ CREATE_SCHEMA
 >>
 >>update statistics for table t132t1 on every column;
 
+*** ERROR[4481] The user does not have SELECT or MANAGE_STATISTICS privilege on table or view TRAFODION.T132SCH.T132T1.
+
 *** ERROR[9241] Insufficient privileges to perform the statistics request for table TRAFODION.T132SCH.T132T1.
 
 --- SQL operation failed with errors.
 >>update statistics for table t132t2 on every column;
+
+*** ERROR[4481] The user does not have SELECT or MANAGE_STATISTICS privilege on table or view TRAFODION.T132SCH.T132T2.
 
 *** ERROR[9241] Insufficient privileges to perform the statistics request for table TRAFODION.T132SCH.T132T2.
 
@@ -2073,14 +2099,14 @@ CREATE_SCHEMA
 >>
 >>showstats for table t132t1 on every column;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T132SCH.T132T1.
+*** ERROR[4481] The user does not have SELECT or MANAGE_STATISTICS privilege on table or view TRAFODION.T132SCH.T132T1.
 
 *** ERROR[9241] Insufficient privileges to perform the statistics request for table TRAFODION.T132SCH.T132T1.
 
 --- SQL operation failed with errors.
 >>showstats for table t132t2 on every column;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T132SCH.T132T2.
+*** ERROR[4481] The user does not have SELECT or MANAGE_STATISTICS privilege on table or view TRAFODION.T132SCH.T132T2.
 
 *** ERROR[9241] Insufficient privileges to perform the statistics request for table TRAFODION.T132SCH.T132T2.
 
@@ -2121,26 +2147,26 @@ MANAGE_STATISTICS
 >>showstats for table t132t1 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T1
-Table ID: 9082725574613497403
+Table ID: 8170765222353678252
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
-1275314957      8           8           8 SYSKEY
-1275314952      8           8           8 C1
-1275314947      8           8           8 C2
+ 208504771      8           8           8 SYSKEY
+ 208504766      8           8           8 C1
+ 208504761      8           8           8 C2
 
 
 --- SQL operation complete.
 >>showstats for table t132t2 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T2
-Table ID: 9082725574613497462
+Table ID: 8170765222353678398
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
-1278381712      8           8           8 SYSKEY
-1278381709      8           8           8 C1
-1278381702      8           8           8 C2
+ 214964583      8           8           8 SYSKEY
+ 214964576      8           8           8 C1
+ 214964573      8           8           8 C2
 
 
 --- SQL operation complete.
@@ -2162,14 +2188,14 @@ End of MXCI Session
 >>
 >>showstats for table t132t1 on every column;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T132SCH.T132T1.
+*** ERROR[4481] The user does not have SELECT or MANAGE_STATISTICS privilege on table or view TRAFODION.T132SCH.T132T1.
 
 *** ERROR[9241] Insufficient privileges to perform the statistics request for table TRAFODION.T132SCH.T132T1.
 
 --- SQL operation failed with errors.
 >>showstats for table t132t2 on every column;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T132SCH.T132T2.
+*** ERROR[4481] The user does not have SELECT or MANAGE_STATISTICS privilege on table or view TRAFODION.T132SCH.T132T2.
 
 *** ERROR[9241] Insufficient privileges to perform the statistics request for table TRAFODION.T132SCH.T132T2.
 
@@ -2190,6 +2216,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T1
     C1                               INT DEFAULT NULL
   , C2                               INT DEFAULT NULL
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132T1 TO DB__ROOT WITH GRANT OPTION;
@@ -2201,19 +2228,19 @@ CREATE TABLE TRAFODION.T132SCH.T132T1
 >>showstats for table t132t1 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T1
-Table ID: 9082725574613497403
+Table ID: 8170765222353678252
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
-1275314957      8           8           8 SYSKEY
-1275314952      8           8           8 C1
-1275314947      8           8           8 C2
+ 208504771      8           8           8 SYSKEY
+ 208504766      8           8           8 C1
+ 208504761      8           8           8 C2
 
 
 --- SQL operation complete.
 >>showstats for table t132t2 on every column;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T132SCH.T132T2.
+*** ERROR[4481] The user does not have SELECT or MANAGE_STATISTICS privilege on table or view TRAFODION.T132SCH.T132T2.
 
 *** ERROR[9241] Insufficient privileges to perform the statistics request for table TRAFODION.T132SCH.T132T2.
 
@@ -2222,6 +2249,78 @@ Table ID: 9082725574613497403
 
 End of MXCI Session
 
+>>
+>>-- testcase for trafodion-2188 fix
+>>create schema t132sch_private;
+
+--- SQL operation complete.
+>>set schema t132sch_private;
+
+--- SQL operation complete.
+>>CREATE TABLE t132t3
++>( c1 char(12) not null, c2 char(12) not null, c3 char(12) not null, 
++>  PRIMARY KEY (C1 ASC))
++>SALT USING 4 PARTITIONS
++>ON (C1);
+
+--- SQL operation complete.
+>>
+>>upsert using load into t132t3
++>select
++>  x1 || x2 || x3 || x4 || x5,
++>  x2 || x4 || x1,
++>  x5 || x3
++>-- the from clause below creates 100,000 rows, the cross product of
++>-- 5 copies of { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' }
++>  from (values('a'),('b'),('c'),('d'),('e'),('f'),('g'),('h'),('i'),('j')) T(x1)
++>transpose 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' as x2
++>transpose 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' as x3
++>transpose 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' as x4
++>transpose 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' as x5;
+
+--- 100000 row(s) inserted.
+>>
+>>select count(*) from t132t3;
+
+(EXPR)              
+--------------------
+
+              100000
+
+--- 1 row(s) selected.
+>>
+>>grant component privilege MANAGE_STATISTICS on sql_operations to sql_user3;
+
+--- SQL operation complete.
+>>get privileges on component sql_operations for sql_user3;
+
+Privilege information on Component SQL_OPERATIONS for SQL_USER3
+===============================================================
+
+MANAGE_STATISTICS
+
+--- SQL operation complete.
+>>sh sqlci -i "TEST132(update_stats1)" -u sql_user3;
+>>update statistics for table t132t3 create sample random 10 percent;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>revoke component privilege MANAGE_STATISTICS on sql_operations from sql_user3;
+
+--- SQL operation complete.
+>>drop table t132t3 cascade;
+
+--- SQL operation complete.
+>>drop schema t132sch_private cascade;
+
+--- SQL operation complete.
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>
 >>-- reset
 >>revoke SELECT on t132t1 from sql_user4;

@@ -1150,12 +1150,6 @@ NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
 // -----------------------------------------------------------------------
 double PhysicalTableMappingUDF::getEstimatedRunTimeMemoryUsage(ComTdb * tdb) {return 0;}
 
-short PhysicalTableMappingUDF::generateShape(CollHeap * space, char * buf, NAString * shapeStr)
-{
-  CMPASSERT(0);
-  return 0;
-};
-
 RelExpr * PhysicalTableMappingUDF::copyTopNode(RelExpr *derivedNode,
                                                CollHeap* outHeap)
 {

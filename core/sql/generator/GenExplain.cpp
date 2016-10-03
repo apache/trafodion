@@ -570,8 +570,7 @@ FileScan::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   // now get columns_retrieved
   description += "columns_retrieved: ";
   char buf[27];
-  //sprintf(buf, "%d ", retrievedCols().entries());
-  sprintf(buf, "%d ", getIndexDesc()->getIndexColumns().entries());
+  sprintf(buf, "%d ", retrievedCols().entries());
   description += buf;
 
   // now get the probe counters
@@ -1136,10 +1135,11 @@ GroupByAgg::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 					      Generator *generator)
 {
   
+  NAString buffer;
   if (CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT_EXPLAIN)==DF_ON &&
       tdb->getNodeType() == ComTdb::ex_HASH_GRBY)
   {
-    NAString buffer = "variable_length_tuples: ";
+    buffer += "variable_length_tuples: ";
     if(((ComTdbHashGrby*)tdb)->useVariableLength())
     {
       buffer += "yes ";
@@ -1157,11 +1157,16 @@ GroupByAgg::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     {
       buffer += "CIF: OFF ";
     }
-
-    explainTuple->setDescription(buffer);
   }
 
- return(explainTuple);
+  if (isRollup())
+    {
+      buffer += "groupby_rollup: specified ";
+    }
+
+  explainTuple->setDescription(buffer);
+
+  return(explainTuple);
 }
 
 ExplainTuple*
@@ -1366,7 +1371,6 @@ NABoolean displayDuringRegressRun(DefaultConstants attr)
       (attr == ALLOW_INCOMPATIBLE_OPERATIONS) ||
       (attr == ALLOW_FIRSTN_IN_SUBQUERIES) ||
       (attr == ALLOW_ORDER_BY_IN_SUBQUERIES) ||
-      (attr == GROUP_BY_USING_ORDINAL) ||
       (attr == GROUP_OR_ORDER_BY_EXPR))
     return FALSE;
   else
@@ -2036,6 +2040,14 @@ GenericUpdate::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     sprintf(lbuf, "%d ", ((ComTdbHbaseAccess *)tdb)->getTrafLoadFlushSize());
     description += lbuf;
   }
+
+  if (natable->isSeabaseTable())
+    {
+      if (((ComTdbHbaseAccess *)tdb)->useRegionXn())
+        description += "region_transaction: enabled ";
+      else if (((ComTdbHbaseAccess *)tdb)->useHbaseXn())
+        description += "hbase_transaction: used ";
+    }
 
   return 0;
 }

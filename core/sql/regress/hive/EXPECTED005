@@ -72,7 +72,7 @@
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: genModTS = 1472657273, failedModTS = 1472657341
 
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
@@ -108,7 +108,7 @@ Y                                          9525
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: genModTS = 1472657273, failedModTS = 1472657341
 
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
@@ -177,7 +177,7 @@ Y                                          9525
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: genModTS = 1472657345, failedModTS = 1472657357
 
 A                        
 -------------------------
@@ -227,7 +227,7 @@ xyz
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: genModTS = 1472657341, failedModTS = 1472657378
 
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
@@ -242,7 +242,7 @@ Y                                         18984
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: genModTS = 1472657341, failedModTS = 1472657378
 
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
@@ -298,7 +298,7 @@ Y                                         18984
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: genModTS = 1472657375, failedModTS = 1472657383
 
 A            B                        
 -----------  -------------------------
@@ -681,7 +681,7 @@ C1           C2                    C3                         C4               C
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: genModTS = 1472657488, failedModTS = 1472657504
 
 A          
 -----------
@@ -715,7 +715,7 @@ A
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: genModTS = 1472657505, failedModTS = 1472657542
 
 A          
 -----------
@@ -742,7 +742,7 @@ A            B
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: genModTS = 1472657542, failedModTS = 1472657545
 
 --- 0 row(s) selected.
 >>insert into hive.hive.thive values (10, 20);
@@ -766,7 +766,7 @@ A            B
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: genModTS = 1472657548, failedModTS = 1472657549
 
 --- 0 row(s) selected.
 >>
@@ -856,7 +856,7 @@ t005part.a	t005part.b	t005part.c
 >>invoke hive.hive.thive_insert_smallint;
 
 -- Definition of hive table THIVE_INSERT_SMALLINT
--- Definition current  Wed Aug 24 21:29:53 2016
+-- Definition current  Wed Aug 31 15:35:21 2016
 
   (
     A                                SMALLINT
@@ -961,7 +961,7 @@ A
 >>invoke hive.hive.thive_insert_varchar;
 
 -- Definition of hive table THIVE_INSERT_VARCHAR
--- Definition current  Wed Aug 24 21:29:58 2016
+-- Definition current  Wed Aug 31 15:35:26 2016
 
   (
     A                                VARCHAR(1 CHAR) CHARACTER SET UTF8 COLLATE
