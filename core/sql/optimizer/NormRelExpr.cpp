@@ -1142,6 +1142,11 @@ NABoolean RelExpr::getMoreOutputsIfPossible(ValueIdSet& outputsNeeded)
       maxOutputs,
       outputsNeeded);
       child(i)->getGroupAttr()->addCharacteristicOutputs(outputsToAdd);
+      if (getOperatorType() == REL_MAP_VALUEIDS) 
+      {
+	((MapValueIds *)this)->addSameMapEntries(outputsToAdd);
+      }
+
 
      // child(i).getGroupAttr()->computeCharacteristicIO
 //	                                            (emptySet,  // no additional inputs
@@ -3958,9 +3963,12 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
   GroupByAgg *moveUpGrby;
   ValueIdSet emptySet ;
   GroupByAgg *movedUpGrbyTail = (GroupByAgg*) topGrby;
+  GroupByAgg *subQGrby = NULL;
   RelExpr * joinRightChild = child(1)->castToRelExpr();
   CollHeap *stmtHeap = CmpCommon::statementHeap() ;
 
+  if (((RelExpr*)topGrby->child(0))->getOperatorType() == REL_GROUPBY)
+    subQGrby = (GroupByAgg *) topGrby->child(0)->castToRelExpr();
 
   MapValueIds *moveUpMap = NULL;
   while ((joinRightChild->getOperatorType() == REL_GROUPBY) &&
@@ -4028,6 +4036,12 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
     child(1) = joinRightChild ;
     moveUpGrby->child(0) = this ;
 
+    if (subQGrby) 
+    {
+      movedUpGrbyTail = subQGrby ;
+      subQGrby = NULL ;
+    }
+
     if (moveUpMap != NULL) 
       movedUpGrbyTail->child(0) = moveUpMap  ;
     else 
@@ -4070,7 +4084,7 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
 
     // Sometimes the moveUpMap ends up being empty after being moved
     // on top of a Join. Eliminate it if we don't need it, otherwise 
-    // it will impeeded output flow.
+    // it will impede output flow.
 
     if ( moveUpMap != NULL && 
          moveUpMap->getGroupAttr()->getCharacteristicOutputs().isEmpty()) 
@@ -4135,7 +4149,7 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
 // sufficient outputs cannot be produced to compute left side's 
 // unique columns
 //
-// Expects: Child(0) to be a Join.
+// Expects: Child(0) to be a Join or a subQ groupby.
 // Sideffects: recomputed inputs and outputs of the join child's children
 //             recomputed inputs and outputs of the join.
 //             pushes any of the groupBy's predicates down that can go down.
