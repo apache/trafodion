@@ -12534,40 +12534,9 @@ hostvar_and_prototype : HOSTVAR TOK_PROTOTYPE mvs_umd_option character_string_li
           $$ = hv;
 	  delete $1;  // okay to delete, we made a copy in makeHostVar
 
-	 
-	  if ((RecompLateNameInfoList *)CmpCommon::context()->recompLateNameInfoList() && !((CmpCommon::statement()->isSMDRecompile() ) ))
-	    	      
-	    // don't get the prototype name from the rlnil for system module statements 
-	    //during recompilation, instead get the original prototype name
-	    {
-	      char * newPtype = NULL;
-	      newPtype = 
-		getPrototypeFromLateNameInfoList
-		((RecompLateNameInfoList *)CmpCommon::context()->recompLateNameInfoList(),
-		 hv->getName(),
-		 *$4);
-//		 *$3);
-
-	      if (newPtype == NULL)
-		{
-		  *SqlParser_Diags << DgSqlCode(4087)
-				   << DgString0(hv->getName());
-		  YYABORT;
-
-		  //yyerror("");	// emits syntax error 15001
-		  //YYERROR;
-		}
-	      
-	      hv->setPrototypeValue(NAString(newPtype));
-	    }
-	  else
-	    {
-//	      hv->setPrototypeValue(*$3);
-	      hv->setPrototypeValue(*$4);
-	    }
-
+          hv->setPrototypeValue(*$4);
 	  delete $4;  // okay to delete, we just made a copy
-//	  delete $3;  // okay to delete, we just made a copy
+
 	  // Remove leading/trailing blanks from string literal --
 	  // the token(s) within the literal is the real proto value
 	  TrimNAStringSpace(hv->getPrototypeValue());
@@ -12577,9 +12546,8 @@ hostvar_and_prototype : HOSTVAR TOK_PROTOTYPE mvs_umd_option character_string_li
 	      YYERROR;
 	    }
 
-      if (TRUE == $3) //MVS
-   		hv->setSpecialType(ExtendedQualName::MVS_UMD);
-
+          if (TRUE == $3) //MVS
+            hv->setSpecialType(ExtendedQualName::MVS_UMD);
 	  
 	  AllHostVars->insert($$);
           TheHostVarRoles->addARole(HV_IS_INPUT);
@@ -12606,31 +12574,7 @@ param_and_prototype : PARAMETER TOK_PROTOTYPE character_string_literal
           $$ = hv;
 	  delete $1;  // okay to delete, we made a copy in makeHostVar
 	  
-	  if ((RecompLateNameInfoList *)CmpCommon::context()->recompLateNameInfoList())
-	    {
-	      char * newPtype = NULL;
-	      newPtype = 
-		getPrototypeFromLateNameInfoList
-		((RecompLateNameInfoList *)CmpCommon::context()->recompLateNameInfoList(),
-		 hv->getName(),
-		 *$3);
-	      
-	      if (newPtype == NULL)
-		{
-		  *SqlParser_Diags << DgSqlCode(4087)
-				   << DgString0(hv->getName());
-		  //		  YYABORT;
-		  yyerror("");	// emits syntax error 15001
-		  YYERROR;
-		}
-	      
-	      hv->setPrototypeValue(NAString(newPtype));
-	    }
-	  else
-	    {
-	      hv->setPrototypeValue(*$3);
-	    }
-	  
+	  hv->setPrototypeValue(*$3);
 	  delete $3;  // okay to delete, we just made a copy
 
 	  // Remove leading/trailing blanks from string literal --
@@ -23070,28 +23014,8 @@ set_table_name:  table_name   // includes the case of hostvar WITH a prototype
 		     HostVar *hv = makeHostVar($1,NULL);
 		     delete $1;  // okay to delete, a copy made in makeHostVar
 
-                     RecompLateNameInfoList *rlnil = (RecompLateNameInfoList *)
-		             CmpCommon::context()->recompLateNameInfoList();
-
-	             if ( rlnil ) {
-                        char * newPtype = NULL;
-	                newPtype = 
-			   getPrototypeFromLateNameInfoList( rlnil , 
-		                                             hv->getName(),
-		                                             "DUMMY");
-
-	                if (newPtype == NULL) {
-		           *SqlParser_Diags << DgSqlCode(4087)
-				            << DgString0(hv->getName());
-		           YYABORT;
-		        }
-	      
-	                hv->setPrototypeValue(NAString(newPtype));
-	             }
-	             else  {
-                        // fake a dummy prototype
-	                hv->setPrototypeValue("DUMMY");
-	             }
+                     // fake a dummy prototype
+                     hv->setPrototypeValue("DUMMY");
 
 	             // Remove leading/trailing blanks from string literal --
 	             // the token(s) within the literal is the real proto value

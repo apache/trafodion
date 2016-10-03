@@ -488,13 +488,17 @@ class ExLob
        Int64  modTS,
        Lng32  numOfPartLevels,
        ExLobGlobals *lobGlobals,
-       Int64 &failedModTS);
+       Int64 &failedModTS,
+       char  *failedLocBuf,
+       Int32 *failedLocBufLen);
 
   Ex_Lob_Error dataModCheck2(
        char * dirPath, 
        Int64  modTS,
        Lng32  numOfPartLevels,
-       Int64 &failedModTS);
+       Int64 &failedModTS,
+       char  *failedLocBuf,
+       Int32 *failedLocBufLen);
 
   Ex_Lob_Error emptyDirectory(char* dirPath, ExLobGlobals* lobGlobals);
 
@@ -524,9 +528,6 @@ class ExLob
     ExLobStats stats_;
     bool prefetchQueued_;
     NAHeap *lobGlobalHeap_;
-#ifdef __ignore
-    ExLobRequest request_;
-#endif
     NABoolean lobTrace_;
 };
 
@@ -540,9 +541,6 @@ typedef map<string, ExLob *>::iterator lobMap_it;
 class ExLobHdfsRequest
 {
   public:
-#ifdef __ignore
-    ExLobHdfsRequest(LobsHdfsRequestType reqType, hdfsFS fs, hdfsFile file, char *buffer, int size);
-#endif
     ExLobHdfsRequest(LobsHdfsRequestType reqType, ExLobCursor *cursor);
     ExLobHdfsRequest(LobsHdfsRequestType reqType, ExLob *lobPtr, ExLobCursor *cursor);
     ExLobHdfsRequest(LobsHdfsRequestType reqType);

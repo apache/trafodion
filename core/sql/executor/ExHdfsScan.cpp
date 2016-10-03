@@ -449,6 +449,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                   }
              
                 Int64 failedModTS = -1;
+                Lng32 failedLocBufLen = 1000;
+                char failedLocBuf[failedLocBufLen];
                 retcode = ExpLOBinterfaceDataModCheck
                   (lobGlob_,
                    dirPath,
@@ -456,7 +458,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                    hdfsScanTdb().port_,
                    modTS,
                    numOfPartLevels,
-                   failedModTS);
+                   failedModTS,
+                   failedLocBuf, failedLocBufLen);
               
                 if (retcode < 0)
                   {

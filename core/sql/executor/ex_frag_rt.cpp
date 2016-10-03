@@ -1914,37 +1914,6 @@ void ExRtFragTable::addFixupRequestToMessage(ExMasterEspMessage *msg,
   // add late name info, if present
   if (getGlobals()->resolvedNameList())
     {
-      if (fragDir_->getPlanVersion() < COM_VERS_R2_3)
-	{
-	  // Translate the resolved name list to the older version 
-	  ResolvedNameListPre1800 *ornl = 
-	    (ResolvedNameListPre1800 *)
-	    (new(ipcHeap) 
-	     char[sizeof(ResolvedNameListPre1800) +
-		  ((getGlobals()->resolvedNameList()->numEntries() > 0 ) ?
-		   ((getGlobals()->resolvedNameList()->
-		     numEntries() - 1) * sizeof(ResolvedName)):
-		   0)
-                 ]
-	    );
-
-	  
-	  ornl->translateFromNewVersion(getGlobals()->resolvedNameList());
-	  ExResolvedNameObj *rno = 
-	    new(ipcHeap) ExResolvedNameObj((ResolvedNameList *)ornl,ipcHeap);
-	  rno->setVersion(Pre1800ResolvedNameObjVersion);
-	  *msg << *rno;
-	  rno->decrRefCount();	  
-	}
-      else
-	{
-	  ExResolvedNameObj *rno = 
-	    new(ipcHeap) ExResolvedNameObj(getGlobals()->resolvedNameList(),
-				       ipcHeap);
-	  *msg << *rno;
-	  rno->decrRefCount();
-	}
-      
     }
 
   // add resource info if needed
@@ -1956,8 +1925,6 @@ void ExRtFragTable::addFixupRequestToMessage(ExMasterEspMessage *msg,
       *msg << *ri;
       ri->decrRefCount();
     }
-
-  
 
   // add timeout-data if needed
   if ( * getGlobals()->getTimeoutData() )
