@@ -6026,7 +6026,7 @@ void genSQLTimestampConstant(struct tm * bdt, NAString& timestamp)
   timestamp += "-";
 
   // tm_mon is in  [0, 11]
-  if ( bdt->tm_mon <= 9 ) timestamp += "0";
+  if ( bdt->tm_mon < 9 ) timestamp += "0"; // < rather than <= since we add one in the next line
   str_itoa(bdt->tm_mon+1, buf); timestamp += buf;
 
   timestamp += "-";
