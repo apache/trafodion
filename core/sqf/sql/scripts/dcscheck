@@ -19,8 +19,6 @@
 # @@@ END COPYRIGHT @@@
 
 dcsznode=/$USER/dcs/master
-dcstmp=/tmp/dcstmp-$USER.log
-tmpjps=/tmp/jpstmp-$USER.log
 jpscmd=$JAVA_HOME/bin/jps
 cfg_mxo_cnt=0
 act_mxo_cnt=0
@@ -40,14 +38,26 @@ else
    L_PDSH=
 fi
 
+dcstmp=`mktemp -t`
+if [[ $? != 0 ]]; then
+    echo "Error while getting a temporary file for dcstmp. Exiting."
+    exit 3
+fi
+
+tmpjps=`mktemp -t`
+if [[ $? != 0 ]]; then
+    echo "Error while getting a temporary file for tmpjps. Exiting."
+    exit 3
+fi
+
 tmp_ps=`mktemp -t`
 if [[ $? != 0 ]]; then
-    echo "Error while getting a temporary file. Exiting."
+    echo "Error while getting a temporary file for tmp_ps. Exiting."
     exit 3
 fi
 tmp_chk=`mktemp -t`
 if [[ $? != 0 ]]; then
-    echo "Error while getting a temporary file. Exiting."
+    echo "Error while getting a temporary file tmp_chk. Exiting."
     exit 3
 fi
 

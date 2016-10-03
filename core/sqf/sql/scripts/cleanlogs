@@ -43,6 +43,7 @@ function core_logs() {
    $L_PDSH "rm -f ${MY_SQROOT}/logs/*.err"
    $L_PDSH "rm -f ${MY_SQROOT}/logs/*.log"
    $L_PDSH "rm -f ${MY_SQROOT}/logs/*log.[0-9]*"
+   $L_PDSH "rm -f ${MY_SQROOT}/sql/scripts/stdout_*"
  fi
 }
 
