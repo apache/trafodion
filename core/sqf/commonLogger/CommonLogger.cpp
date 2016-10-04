@@ -41,6 +41,9 @@
 using namespace log4cxx;
 using namespace log4cxx::helpers;
 
+bool gv_commonLoggerInitialized = false;
+
+
 // **************************************************************************
 // Reads configuration file, creates an appender, layout, and categories.
 // Attaches layout to the appender and appender to categories.
@@ -100,7 +103,7 @@ bool CommonLogger::initLog4cxx(const char* configFileName, const char* fileSuffi
     }
 
     log4cxx::PropertyConfigurator::configure(configPath.data());
-
+    gv_commonLoggerInitialized = true;
     return true;
 
   }
