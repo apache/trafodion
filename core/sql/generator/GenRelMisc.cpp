@@ -3184,6 +3184,9 @@ short Sort::generateTdb(Generator * generator,
 
   sort_tdb->setSortFromTop(sortFromTop());
   sort_tdb->setOverflowMode(generator->getOverflowMode());
+  
+  sort_tdb->setTopNSize((ULng32)getDefault(GEN_SORT_TOPN_SIZE));
+  
 
   if (generator->getUserSidetreeInsert())
     sort_tdb->setUserSidetreeInsert(TRUE);

@@ -204,8 +204,9 @@ protected:
   Float32 bmoCitizenshipFactor_;                        // 68-71
   Int32  pMemoryContingencyMB_;                        // 72-75
   UInt16 sortGrowthPercent_;                            // 76-77
-  
-  char fillersComTdbSort_[18];                          // 78-95
+  char   filler2_[2];                                   // 78-79
+  ULng32 topNSize_;                                     // 80-83
+  char fillersComTdbSort_[12];                          // 84-95
 
 public:
 
@@ -326,6 +327,10 @@ public:
     {  pMemoryContingencyMB_ = mCMB;} 
   Int32 getMemoryContingencyMB(void)
     { return pMemoryContingencyMB_; }
+  void setTopNSize(UInt32 size)
+  	{  topNSize_ = size; }
+  ULng32 getTopNSize(void)
+	{  return topNSize_; }
 
   void setSortMemEstInMbPerCpu(Float32 s) {sortMemEstInMbPerCpu_=s;}
   Float32 getSortMemEstInMbPerCpu() {return sortMemEstInMbPerCpu_;}

@@ -45,6 +45,7 @@
 #include "ex_sort.h"
 #include "SortUtil.h"
 #include "Qsort.h"
+#include "Topn.h"
 #include "ComCextdecs.h"
 #include "logmxevent.h"
 #include "ExStats.h"
@@ -158,7 +159,10 @@ NABoolean SortUtil::sortInitialize(SortUtilConfig& config)
   //---------------------------------------------------------------
   doCleanUp();
   
-  sortAlgo_ =
+  //if topNSize_ is set, then use TopN.
+  if(!config.topNSize_)
+  {
+    sortAlgo_ =
 	new (config.heapAddr_) Qsort(config.runSize_,
 								 config.maxMem_,
 								 config.recSize_,
@@ -170,6 +174,22 @@ NABoolean SortUtil::sortInitialize(SortUtilConfig& config)
 								 &sortError_,
 								 explainNodeId_,
 								 this);
+  }
+  else
+  {
+	  sortAlgo_ =
+			new (config.heapAddr_) TopN(config.topNSize_,
+										 config.maxMem_,
+										 config.recSize_,
+										 config.sortType_.doNotAllocRec_,
+										 config.keySize_,
+										 scratch_,
+										 TRUE,
+										 config.heapAddr_,
+										 &sortError_,
+										 explainNodeId_,
+										 this);
+  }
 	if (sortAlgo_ == NULL)
 	{
 		sortError_.setErrorInfo( EScrNoMemory   //sort error
