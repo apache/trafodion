@@ -84,6 +84,16 @@ Lng32 setBufferValue(T& value,
                       HSDataBuffer &boundary);
 
 
+
+// This is the max supported length of character strings in UPDATE STATISTICS.
+// We will process longer columns, but we truncate their values to this length
+// during the processing. As a result, we may underestimate UEC, if, for 
+// example, the first 32767 bytes are identical but some difference occurs
+// afterwards. If we someday wish to support longer lengths, at the very least
+// the ISVarChar class needs to change to use a longer length field for varchar
+// values.
+enum { MAX_SUPPORTED_CHAR_LENGTH = 32767 };
+
 // An instance of ISFixedChar represents a value of a fixed-length character
 // string (either single or double-byte) retrieved into memory for use by
 // internal sort. A pointer to the actual string is maintained, and definitions
@@ -1583,6 +1593,8 @@ public:
     NAString      *user_table;                     /* object name             */
     NABoolean     isHbaseTable;                    /* ustat on HBase table    */
     NABoolean     isHiveTable;                     /* ustat on Hive table     */
+    NABoolean     hasOversizedColumns;             /* set to TRUE for tables  */
+                                                   /* having gigantic columns */
     ComAnsiNameSpace nameSpace;                    /* object namespace    ++MV*/
     Int64          numPartitions;                  /* # of partns in object   */
     NAString      *hstogram_table;                 /* HISTOGRM table          */

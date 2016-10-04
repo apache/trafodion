@@ -132,7 +132,8 @@ short ExExeUtilCreateTableAsTcb::work()
 	  {
 	    NABoolean xnAlreadyStarted = ta->xnInProgress();
 
-	    if (xnAlreadyStarted)
+	    // allow a user transaction if NO LOAD was specified
+	    if (xnAlreadyStarted && !ctaTdb().noLoad())
               {
                 *getDiagsArea() << DgSqlCode(-20123)
                                 << DgString0("This DDL operation");
