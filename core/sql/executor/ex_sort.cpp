@@ -242,6 +242,7 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
   sortCfg_->setIntermediateScratchCleanup(st->sortOptions_->intermediateScratchCleanup());
   sortCfg_->setResizeCifRecord(st->sortOptions_->resizeCifRecord());
   sortCfg_->setConsiderBufferDefrag(st->sortOptions_->considerBufferDefrag());
+  sortCfg_->setTopNSize(st->getTopNSize());
 
   switch(st->getOverFlowMode())
   {
