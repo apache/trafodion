@@ -5473,16 +5473,16 @@ void HSSample::addTruncatedColumnReference(NAString & qry,HSColumnStruct & colIn
     if (isOverSized)
       {
         qry += "SUBSTRING(";
-        qry += colInfo.colname->data();
+        qry += colInfo.externalColumnName->data();
         qry += " FOR ";
         
         char temp[20];  // big enough for "nnnnnn) AS "
         sprintf(temp,"%d) AS ", maxLengthInBytes / CharInfo::maxBytesPerChar(colInfo.charset));
         qry += temp;
-        qry += colInfo.colname->data();
+        qry += colInfo.externalColumnName->data();
       }
     else
-      qry += colInfo.colname->data();
+      qry += colInfo.externalColumnName->data();
   }
 
 

@@ -1011,6 +1011,7 @@ class MCWrapper
 struct HSColumnStruct : public NABasicObject
   {
     NAString         *colname;        /* column name              */
+    NAString         *externalColumnName;  /* column name to use in SQL (e.g. with delimiters) */
     Lng32              colnum;         /* column position in table */
     Lng32              position;       /* position in grouplist    */
     Lng32              datatype;
@@ -1026,6 +1027,7 @@ struct HSColumnStruct : public NABasicObject
 
     HSColumnStruct()
       : colname(new(STMTHEAP) NAString(STMTHEAP)),
+        externalColumnName(new(STMTHEAP) NAString(STMTHEAP)),
         colnum(-1), position(0), datatype(-1), nullflag(-1),
         charset(CharInfo::UnknownCharSet),
         length(-1), precision(-1), scale(-1),

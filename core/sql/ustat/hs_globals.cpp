@@ -1643,6 +1643,7 @@ void HSColGroupStruct::freeISMemory(NABoolean freeStrData, NABoolean freeMCData)
 HSColumnStruct::HSColumnStruct(const HSColumnStruct &src, NAMemory *h)
   {
     colname         = new (h) NAString(src.colname->data(), h);
+    externalColumnName = new (h) NAString(src.externalColumnName->data(), h);
     colnum          = src.colnum;
     position        = src.position;
     datatype        = src.datatype;
@@ -1663,6 +1664,11 @@ HSColumnStruct::~HSColumnStruct()
         delete colname;
         colname = NULL;
       }
+    if (externalColumnName != NULL)
+      {
+        delete externalColumnName;
+        externalColumnName = NULL;
+      }
   }
 
 // Assignment operator
@@ -1677,6 +1683,7 @@ HSColumnStruct& HSColumnStruct::operator=(const HSColumnStruct& rhs)
     // already deleted; colname is on the STMTHEAP and will be destructed at the
     // end of the statement. [SOL 10-070822-6995]
     colname         = new (STMTHEAP) NAString(rhs.colname->data(), STMTHEAP);
+    externalColumnName = new (STMTHEAP) NAString(rhs.externalColumnName->data(), STMTHEAP);
     colnum          = rhs.colnum;
     position        = rhs.position;
     datatype        = rhs.datatype;
@@ -4601,6 +4608,8 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
        columnName=group->colNames->data();
      else
        columnName=dblQuote+group->colNames->data()+dblQuote;
+
+     *(col.externalColumnName) = columnName;
 
      switch (col.datatype)
      {
