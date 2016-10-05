@@ -7560,6 +7560,7 @@ RelExpr * GroupByAgg::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
     result->aggregateExprTree_ = aggregateExprTree_->copyTree(outHeap);
 
   result->groupExpr_     = groupExpr_;
+  result->rollupGroupExprList_ = rollupGroupExprList_;
   result->aggregateExpr_ = aggregateExpr_;
   result->formEnum_      = formEnum_;
   result->gbAggPushedBelowTSJ_ = gbAggPushedBelowTSJ_;
@@ -7572,6 +7573,8 @@ RelExpr * GroupByAgg::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 
   result->selIndexInHaving_ = selIndexInHaving_;
   result->aggrExprsToBeDeleted_ = aggrExprsToBeDeleted_;
+
+  result->isRollup_ = isRollup_;
 
   return RelExpr::copyTopNode(result, outHeap);
 }
@@ -7709,6 +7712,8 @@ void GroupByAgg::addLocalExpr(LIST(ExprNode *) &xlist,
     {
       if (groupExpr_.isEmpty())
 	xlist.insert(groupExprTree_);
+      else if (isRollup() && (NOT rollupGroupExprList_.isEmpty()))
+ 	xlist.insert(rollupGroupExprList_.rebuildExprTree(ITM_ITEM_LIST));
       else
 	xlist.insert(groupExpr_.rebuildExprTree(ITM_ITEM_LIST));
       llist.insert("grouping_columns");
@@ -7864,7 +7869,10 @@ NABoolean SortGroupBy::isPhysical() const {return TRUE;}
 
 const NAString SortGroupBy::getText() const
 {
-  return "sort_" + GroupByAgg::getText();
+  if (isRollup())
+    return "sort_" + GroupByAgg::getText() + "_rollup";
+  else
+    return "sort_" + GroupByAgg::getText();
 }
 
 RelExpr * SortGroupBy::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
@@ -12002,6 +12010,14 @@ void MapValueIds::getPotentialOutputValues(ValueIdSet & outputValues) const
   //
   outputValues.insertList((getMap2()).getTopValues());
 } // MapValueIds::getPotentialOutputValues()
+
+void MapValueIds::addSameMapEntries(const ValueIdSet & newTopBottomValues)
+{
+  for (ValueId x = newTopBottomValues.init();
+	    newTopBottomValues.next(x);
+	    newTopBottomValues.advance(x))
+    addMapEntry(x,x);
+}
 
 void MapValueIds::addLocalExpr(LIST(ExprNode *) &xlist,
 			       LIST(NAString) &llist) const

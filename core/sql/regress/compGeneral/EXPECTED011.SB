@@ -1106,8 +1106,6 @@ A
 
 *** WARNING[2997]  (Attempting to unnest Subquery)
 
-*** WARNING[2997]  (Subquery was not unnested. Reason: Left subtree cannot produce output values required for grouping.)
-
 --- SQL command prepared.
 >>execute explainIt;
 
@@ -1840,9 +1838,9 @@ ss          ?
 A           (EXPR)    
 ----------  ----------
 
-xx          ?         
-xx          ?         
 ss          ?         
+xx          ?         
+xx          ?         
 
 --- 3 row(s) selected.
 >>
@@ -1856,8 +1854,8 @@ A           (EXPR)
 ----------  ----------
 
 xx          ?         
-xx          ?         
 ss          ?         
+xx          ?         
 
 --- 3 row(s) selected.
 >>
@@ -1910,6 +1908,14 @@ abcd      abc%     abcdefg
 abcd      abc%     abcdefgh
 abcd      abc%     abcedf  
 abcd      abcdef%  aaa     
+abcde     abc%     aaa     
+abcde     abc%     abc     
+abcde     abc%     abcd    
+abcde     abc%     abcde   
+abcde     abc%     abcdefg 
+abcde     abc%     abcdefgh
+abcde     abc%     abcedf  
+abcde     abcdef%  aaa     
 abcdefg   abc%     aaa     
 abcdefg   abc%     abc     
 abcdefg   abc%     abcd    
@@ -1934,14 +1940,6 @@ abcedf    abc%     abcdefg
 abcedf    abc%     abcdefgh
 abcedf    abc%     abcedf  
 abcedf    abcdef%  aaa     
-abcde     abc%     aaa     
-abcde     abc%     abc     
-abcde     abc%     abcd    
-abcde     abc%     abcde   
-abcde     abc%     abcdefg 
-abcde     abc%     abcdefgh
-abcde     abc%     abcedf  
-abcde     abcdef%  aaa     
 
 --- 56 row(s) selected.
 >>

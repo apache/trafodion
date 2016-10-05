@@ -217,6 +217,12 @@ NABoolean QRLogger::initLog4cxx(const char* configFileName)
     return TRUE;
   }
 
+/* This code is kept around for the old QMS kind of logging
+   This can be deleted. But keeeping it around if we need
+   to do use the catgory later */
+
+/*
+
   logFileName += "sql_events";
   logFileName += logFileSuffix;
   
@@ -257,7 +263,7 @@ NABoolean QRLogger::initLog4cxx(const char* configFileName)
   introduceSelf();
 
   // initialize sub categories here - they were removed since they are not currently being used
-
+*/
   return FALSE;
 }
 

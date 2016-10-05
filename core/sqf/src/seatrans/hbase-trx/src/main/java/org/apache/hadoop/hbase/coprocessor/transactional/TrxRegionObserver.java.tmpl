@@ -571,7 +571,7 @@ public void postOpen(ObserverContext<RegionCoprocessorEnvironment> e) {
                       long transactionId = entry.getKey();
 		      String key = String.valueOf(transactionId);
                       if ((m_isTrafodionMetadata) || LOG.isTraceEnabled()) LOG.info("Trafodion Recovery Region Observer CP: Region " + regionInfo.getRegionNameAsString() + " process in-doubt transaction " + transactionId);
-                      int tmid = (int) (transactionId >> 32);
+                      int tmid = (int) TransactionState.getNodeId(transactionId);
                       int count = 1;
                       if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: Region " + regionInfo.getRegionNameAsString() + " add prepared " + transactionId + " to TM " + tmid);
                       if (indoubtTransactionsCountByTmid.containsKey(tmid))

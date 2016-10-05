@@ -3010,12 +3010,12 @@ public class TransactionManager {
               rresult = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
             }
             catch (ServiceException se) {
-                LOG.error("Exception thrown when calling coprocessor: ", se);
-                throw new IOException("Problem with calling coprocessor, no regions returned result", se);
+                LOG.error("Service exception thrown in recoveryRequest: ", se);
+                throw new IOException("Service exception thrown in recoveryRequest:", se);
             }
             catch (Throwable t) {
-                LOG.error("Exception thrown when calling coprocessor: ", t);
-                throw new IOException("Problem with calling coprocessor, no regions returned result", t);
+                LOG.error("Exception thrown in recoveryRequest: ", t);
+                throw new IOException("Exception thrown in recoveryRequest: ", t);
             }
 
         Collection<RecoveryRequestResponse> results = rresult.values();
@@ -3024,7 +3024,8 @@ public class TransactionManager {
 
         if(resultArray.length == 0) {
             table.close();
-            throw new IOException("Problem with calling coprocessor, no regions returned result");
+            throw new IOException("Problem with calling recoveryRequest, no regions returned result \n"
+                                   + " TMid: " + tmid + " region: " + regionName);
         }
 
         //return tri.recoveryRequest(regionInfo.getRegionName(), tmid);

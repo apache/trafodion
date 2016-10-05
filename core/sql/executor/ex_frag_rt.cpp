@@ -2824,34 +2824,10 @@ ExEspManager::ExEspManager(IpcEnvironment *env, CliGlobals *cliGlobals)
 ExEspManager::~ExEspManager()
 {
   if (espServerClass_)
-    NADELETEBASIC(espServerClass_, env_->getHeap());
-
+    NADELETE(espServerClass_, IpcServerClass, env_->getHeap());
+  
   if (espCache_)
-    {
-      // delete/kill all esps in cache
-      ExEspCacheKey *key = NULL;
-      NAList<ExEspDbEntry *> *espList = NULL;
-      NAHashDictionaryIterator<ExEspCacheKey, NAList<ExEspDbEntry *> > iter(*espCache_);
-      for (CollIndex i = 0; i < iter.entries(); i++)
-        {
-          iter.getNext(key, espList);
-          for (CollIndex j = FIRST_COLL_INDEX; j < espList->getUsedLength(); j++)
-            {
-              if (espList->getUsage(j) == UNUSED_COLL_ENTRY)
-                continue;
-
-              ExEspDbEntry *entry = espList->usedEntry(j);
-              if (entry && 
-                  entry->getIpcServer())
-                entry->getIpcServer()->logEspRelease(__FILE__, __LINE__);
-              delete entry;
-            }
-        }
-
-      // delete all cache key and bucket objects
-      espCache_->clear(TRUE);
-      NADELETEBASIC(espCache_, env_->getHeap());
-    }
+    NADELETE(espCache_, NAHashDictionary, env_->getHeap());
 
   if (traceRef_)
     {

@@ -1654,9 +1654,11 @@ ex_comp_clause::ex_comp_clause(OperatorTypeEnum oper_type,
 			       Space * space,
 			       ULng32 flags)
      : ex_clause (ex_clause::COMP_TYPE, oper_type, 3, attr, space),
-     flags_(0)
+       flags_(0),
+       rollupColumnNum_(-1)
 {
-  if(flags) setSpecialNulls();
+  if(flags) 
+    setSpecialNulls();
   setInstruction();
 }
  
@@ -1942,8 +1944,19 @@ void ex_branch_clause::displayContents(Space * space, const char * /*displayStr*
 void ex_comp_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   setInstruction();
-  ex_clause::displayContents(space, "ex_comp_clause", clauseNum, constsArea, 
-                             flags_,
+
+  char buf[100];
+  str_sprintf(buf, "  Clause #%d: ex_comp_clause", clauseNum);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  str_sprintf(buf, "    ex_comp_clause::rollupColumnNum_ = %d", rollupColumnNum_);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  str_sprintf(buf, "    ex_comp_clause::flags_ = %b", flags_);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea, 
+                             0,
                              ex_comp_clause::getInstruction(getInstrArrayIndex()),                             
                              ex_comp_clause::getInstructionStr(getInstrArrayIndex()));
 

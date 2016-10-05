@@ -9721,6 +9721,8 @@ ItemExpr * BiRelat::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   result->outerNullFilteringDetected_= outerNullFilteringDetected_;
   result->innerNullFilteringDetected_ = innerNullFilteringDetected_;
 
+  result->rollupColumnNum_ = rollupColumnNum_;
+
   result->flags_ = flags_;
 
   return ItemExpr::copyTopNode(result, outHeap);
@@ -12068,18 +12070,11 @@ Cast::Cast(ItemExpr *val1Ptr, const NAType *type, OperatorTypeEnum otype,
 {
   ValueId vid = val1Ptr ? val1Ptr->getValueId() : NULL_VALUE_ID;
 
-  if ((type->getFSDatatype() == 132) &&
-      (vid != NULL_VALUE_ID) &&
-      (vid.getType().getFSDatatype() == 136))
-    {
-      Lng32 ij = 1;
-    }
-
   checkForTruncation_ = FALSE;
   if (checkForTrunc)
     if (vid == NULL_VALUE_ID)
       checkForTruncation_ = TRUE;
-    else if ( type->getTypeQualifier()         == NA_CHARACTER_TYPE &&
+    else if ( type && type->getTypeQualifier()         == NA_CHARACTER_TYPE &&
               vid.getType().getTypeQualifier() == NA_CHARACTER_TYPE )
     {
        if ( type->getNominalSize() < vid.getType().getNominalSize() )
@@ -12223,9 +12218,13 @@ ItemExpr * CastType::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   ItemExpr *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) CastType(NULL, getType()->newCopy(outHeap));
+    result = new (outHeap) 
+      CastType(NULL, 
+               (getType() ? getType()->newCopy(outHeap) : NULL));
   else
     result = derivedNode;
+  
+  ((CastType*)result)->makeNullable_ = makeNullable_;
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 }

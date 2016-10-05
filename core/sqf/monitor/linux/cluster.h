@@ -102,6 +102,7 @@ public:
     int  AcceptSyncSock( void );
     int  Connect( const char *portName );
     void ConnectToSelf( void );
+    int  SetKeepAliveSockOpt( int sock );
     int  MkCltSock( const char *portName );
 #ifndef USE_BARRIER
     void ArmWakeUpSignal (void);

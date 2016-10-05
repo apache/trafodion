@@ -1135,10 +1135,11 @@ GroupByAgg::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 					      Generator *generator)
 {
   
+  NAString buffer;
   if (CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT_EXPLAIN)==DF_ON &&
       tdb->getNodeType() == ComTdb::ex_HASH_GRBY)
   {
-    NAString buffer = "variable_length_tuples: ";
+    buffer += "variable_length_tuples: ";
     if(((ComTdbHashGrby*)tdb)->useVariableLength())
     {
       buffer += "yes ";
@@ -1156,11 +1157,16 @@ GroupByAgg::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     {
       buffer += "CIF: OFF ";
     }
-
-    explainTuple->setDescription(buffer);
   }
 
- return(explainTuple);
+  if (isRollup())
+    {
+      buffer += "groupby_rollup: specified ";
+    }
+
+  explainTuple->setDescription(buffer);
+
+  return(explainTuple);
 }
 
 ExplainTuple*

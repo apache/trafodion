@@ -88,19 +88,6 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_T2Driver_SQLMXInitialize(JNIEn
 	const char					*nModuleCaching;
 	const char					*nCompiledModuleLocation;
         
-        sqInit();
-
-        int myNid;
-        pid_t myPid;
-        MS_Mon_Process_Info_Type  proc_info;
-        msg_mon_get_process_info_detail(NULL, &proc_info);
-        myNid = proc_info.nid;
-        myPid = proc_info.pid;
-
-        char logNameSuffix[32];
-        sprintf( logNameSuffix, "_%d_%d.log", myNid, myPid );
-        CommonLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config", logNameSuffix);
-
 	if (!driverVersionChecked)
 	{
 		printf("JDBC Library Version Error - Jar: Unknown Jni: %s\n",

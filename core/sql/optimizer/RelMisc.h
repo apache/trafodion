@@ -1508,6 +1508,7 @@ public:
                                       { valuesNeededForVEGRewrite_ += v; }
   inline void clearValuesForVEGRewrite()
                                    { valuesNeededForVEGRewrite_.clear(); }
+  void addSameMapEntries(const ValueIdSet & newTopBottomValues);
 
   // Method to compute child's characteristic outputs
   virtual

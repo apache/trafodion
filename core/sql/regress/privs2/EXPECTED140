@@ -9,7 +9,7 @@ LIST_COUNT         4294967295
 LOG FILE           LOG140
 MESSAGEFILE        /mnt/rmarton/gitws/incubator-trafodion/core/sqf/export/ ...
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2016-02-08 16:33 LINUX:EDEV05/rmarton} 
+MESSAGEFILE VRSN   {2016-09-23 23:03 LINUX:EDEV05/rmarton} 
 SQL CATALOG        TRAFODION
 SQL SCHEMA         T140_SHARED_VIEWS
 SQL USER CONNECTED user not connected
@@ -615,6 +615,8 @@ Tom                                                 White Socks
 >>
 >>-- user3 can propagate select but no insert on table teams
 >>grant select, insert on teams to sql_user4;
+
+*** WARNING[1013] Not all privileges were granted.  You lack grant option for the INSERT privilege.
 
 --- SQL operation complete.
 >>

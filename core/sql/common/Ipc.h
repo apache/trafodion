@@ -2977,6 +2977,7 @@ public:
 		 IPC_ALLOC_DONT_CARE,
                  short version = COM_VERS_MXV,
                  char *nodeName = NULL);
+  ~IpcServerClass();
 
   inline IpcEnvironment *getEnv() const           { return environment_; }
 
@@ -3002,7 +3003,6 @@ public:
   char *getProcessName(const char *nodeName, short nodeNameLen, short cpuNum, char *processName);
   NABoolean parallelOpens() { return parallelOpens_; }
   NowaitedEspServer nowaitedEspServer_;
-
 private:
 
   // server type
