@@ -3155,21 +3155,12 @@ Lng32 SQLCLI_PerformTasks(
 	  // if we do have something to set... the output descriptor
 	  // had better be available by the time we call local_SetDescPointers
 	  //
-	  //LCOV_EXCL_START
 	  if (!output_desc)
 	    {
 	      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
 	      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
 	    }
-	  //LCOV_EXCL_STOP
-	 /* 
-#ifdef NA_64BIT
-          // dg64 - the old way won't compile on 64-bit
-          va_list cpy;
-          va_copy(cpy, ap);
-          va_end(ap);
-#endif
-*/
+
 	  retcode = local_SetDescPointers(output_desc, 1,
 #ifdef NA_64BIT
                                           // dg64 - the old way won't compile on 64-bit

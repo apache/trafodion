@@ -2469,18 +2469,11 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 	  switch (state_)
 	    {
 	    case INITIAL_STATE_: strcpy(buf, "INITIAL_STATE_"); break;
-	    case RESOLVE_NAMES_: strcpy(buf, "RESOLVE_NAMES_"); break;
 	    case DO_SIM_CHECK_: strcpy(buf, "DO_SIM_CHECK_"); break;
-	    case RECOMPILE_: strcpy(buf, "RECOMPILE_"); break;
-	    case COMPILE_: strcpy(buf, "COMPILE_"); break;
-	    case CHECK_DYNAMIC_SETTINGS_:
-              strcpy(buf, "CHECK_DYNAMIC_SETTINGS_");
-              break;
+	    case CHECK_DYNAMIC_SETTINGS_: strcpy(buf, "CHECK_DYNAMIC_SETTINGS_"); break;
 	    case FIXUP_: strcpy(buf, "FIXUP_"); break;
 	    case FIXUP_DONE_: strcpy(buf, "FIXUP_DONE_"); break;
 	    case EXECUTE_: strcpy(buf, "EXECUTE_"); break;
-	    case RE_EXECUTE_: strcpy(buf, "RE_EXECUTE_"); break;
-	    case RE_EXECUTE_AFTER_RECOMPILE_: strcpy(buf, "RE_EXECUTE_AFTER_RECOMPILE_");
 	    case ERROR_: strcpy(buf, "ERROR_"); break;
 	    case ERROR_RETURN_: strcpy(buf, "ERROR_RETURN_"); break;
 	    default: strcpy(buf, "Unknown state!"); break;
@@ -2637,12 +2630,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		    break;
 		  }
 
-		state_ = COMPILE_;
-		recompileReason[0] = SQL_EOF;	// eof here means EMPTY
-
-		//diagsArea << DgSqlCode(EXE_RECOMPILE)	// a warning only
-		//  << DgInt0(recompileReason[0]);
-		  
+		state_ = ERROR_;
 		break;
 	      }
 	    else if ((root_tdb->transactionReqd() || root_tdb->isLRUOperation())
@@ -2659,21 +2647,10 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		  }
 		else
 		  {
-                    if (diagsArea.contains(-CLI_TRANS_MODE_MISMATCH))
-                      diagsArea.clear();
-
-		    state_ = COMPILE_;
-		    recompileReasonIsTransMode(
-			 root_tdb,
-			 context_->getTransaction(),
-			 recompileReason);
-		    diagsArea << DgSqlCode(recompileReason[0])	// a warning only
-			      << DgInt0(recompileReason[1]) 
-			      << DgInt1(recompileReason[2]);
+                    state_ = ERROR_;
 		  }
 		break;
 	      }
-
 
               if (root_tdb->inMemoryObjectDefn())
 	      {
@@ -2684,7 +2661,6 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
                 state_ = ERROR_;
                 break;
 	      }
-
 
             // if statistics were previously returned for this statement
             // (could happen for multiple executions of the same prepared
@@ -2733,7 +2709,6 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		  {
 		    retcode = ERROR;
 		    state_ = ERROR_RETURN_;
-		    //                readyToReturn = TRUE;
 		    break;
 		  }
 	      }
@@ -2764,152 +2739,6 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
             state_ = CHECK_DYNAMIC_SETTINGS_;
           }
         break;
-
-	case COMPILE_:
-	case RECOMPILE_:
-	  {
-            ex_assert(0, " COMPILE_ and RECOMPILE_ are obsolete");
-
-	    // We want to ignore any errors that occur as part of dealloc 
-	    // when called from here.
-            // So, we mark the DiagsArea before making the call to dealloc(),
-	    // and then rewind
-            // back to there afterwards.
-            Lng32 oldDiagsAreaMark = diagsArea.mark();
-            Lng32 oldGlobalDiagsAreaMark = 0;
-            if (statementGlobals_->getDiagsArea())
-	      {
-		oldGlobalDiagsAreaMark = statementGlobals_->getDiagsArea()->mark();
-	      }
-            
-	    if (dealloc())
-	      {
-                //Leave the diagsArea as it is in case of error during the dealloc().
-		state_ = ERROR_;
-		break;
-	      }
-	    
-            // Rewind to ignore all errors that occurred during a successful dealloc()
-            if (statementGlobals_->getDiagsArea())
-	      {
-		statementGlobals_->getDiagsArea()->rewind(oldGlobalDiagsAreaMark, TRUE);
-	      }
-            diagsArea.rewind(oldDiagsAreaMark, TRUE);
-	    
-	    Int64 startTime = 0;
-	    Int64 time = 0;
-
-            Int32 transactionReqdPriorToRecompile = 0;
-            NABoolean rootTdbExistsPriorToRecompile = TRUE;
-
-            if (root_tdb)
-               transactionReqdPriorToRecompile = root_tdb->transactionReqd();
-            else
-               rootTdbExistsPriorToRecompile = FALSE;
-
-	    if (root_tdb &&
-		(root_tdb->getCollectStatsType() == ComTdb::MEASURE_STATS))
-	      startTime = NA_JulianTimestamp();
-
-	    // similarity check not to be done or failed. Recompile.
-	    // recompWarn = (root_tdb ? returnRecompWarn() : 0);
-	    ULng32 flags = PREPARE_RECOMP;
-            if (isCloned())
-            {
-              ex_assert(clonedFrom_, "Invalid clonedFrom_ pointer");
-              retcode = clonedFrom_->prepare(NULL, diagsArea, NULL, 0, 
-					     SQLCHARSETCODE_ISO88591 /* this setting does not matter because source - the 1st param - is set to NULL */, TRUE,
-					     flags);
-            }
-            else
-            {
-              retcode = prepare(NULL, diagsArea, NULL, 0, 
-				SQLCHARSETCODE_ISO88591 /* this setting does not matter because source - the 1st param - is set to NULL */, TRUE,
-				flags);
-            }
-
-	    if ((retcode == ERROR) || (! root_tdb))
-	      {
-		if (! diagsArea.contains(-CLI_STMT_NOT_PREPARED))
-		   diagsArea << DgSqlCode(- CLI_STMT_NOT_PREPARED);
-
-		state_ = ERROR_;
-		break;
-	      }
-
-            // After a successful compile or recompile, we need to be
-            // able to react to a subsequent availability error on the
-            // new plan by calling runtime metadata lookups that are
-            // guaranteed to return the name of an available partition
-            // if one can be found. By resetting these local variables
-            // we become able to do the lookups again if necessary. If
-            // we do not reset these variables, then after a recompile
-            // if we encounter an unavailable partition we might
-            // return an error to the application immediately which is
-            // not the right thing to do. Instead we may need to do the
-            // lookups again and try to use an available partition.
-            partitionUnavailable = FALSE;
-            partitionAvailabilityChecked = FALSE;
-
-	    // The following stmt does not work since root_tdb changed after
-            // prepare and the collectStatsType not setup correctly.
-	    if ((root_tdb->getCollectStatsType() == ComTdb::MEASURE_STATS) &&
-		(startTime != 0))
-	      {
-		time = NA_JulianTimestamp();
-		reCompileTime = time - startTime;
-		
-		// update Measure sql process recompile counters.
-		// Statement counters cannot be updated here since
-		// stats area not allocated until fixup time.
-		if (cliGlobals->getMeasProcCntrs() != NULL)
-		  {
-                    cliGlobals->getMeasProcCntrs()->incSqlStmtRecompiles(1);
-		    cliGlobals->getMeasProcCntrs()->incSqlStmtRecompileTime(reCompileTime);
-		  }
-	      };
-		
-	    // if (!recompWarn)
-	    recompWarn = returnRecompWarn();
-	    if (recompWarn)
-	      {
-		diagsArea << DgSqlCode(EXE_RECOMPILE)	// a warning only
-		  ;
-
-	      }
-
-            issuePlanVersioningWarnings (diagsArea);
-            // For a cloned statement, the recomp was done on the original
-            // statement, and warnings may be saved there too.
-            if (isCloned())
-              clonedFrom_->issuePlanVersioningWarnings (diagsArea);
-   
-            if (!transactionReqdPriorToRecompile && 
-                rootTdbExistsPriorToRecompile && 
-                root_tdb->transactionReqd())
-               // If the statement is being recompiled, and did not need
-               // a transaction before, but needs one now, start one,
-               // after committing any implicit transaction started earlier
-               // for visibility checking etc. This can only happen if the
-               // table being accessed went from non-audited to audited.
-               commitImplicitTransAndResetTmodes();
-
-	    // Start a transaction, if needed and one not already running.
-	    if (beginTransaction(diagsArea))
-	      {
-		state_ = ERROR_;
-		break;
-	      }
-
-            // Indicate to subsequent states that we have prepared the query.
-            donePrepare = TRUE;
-
-	    if (state_ == COMPILE_ )
-	      state_ = RESOLVE_NAMES_;
-	    else
-	      state_ = CHECK_DYNAMIC_SETTINGS_;
-	  }
-	break;
 
         case CHECK_DYNAMIC_SETTINGS_:
         {
@@ -2992,19 +2821,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 	    if ((retcode == ERROR) || 
                 (partitionUnavailable && partitionAvailabilityChecked))
 	      {
-                // VO, Genesis solution 10-051125-2802:
-                // We may have gotten a plan version error from ESP assignment
-                if ( diagsArea.contains (-VERSION_COMPILER_VERSION_LOWER_THAN_OLDEST_SUPPORTED) ||
-                     diagsArea.contains (-VERSION_COMPILER_USED_TO_COMPILE_QUERY)
-                   )
-                {
-                  // Get rid of these errors - recompile will re-issue if we have an
-                  // incurable incompatibility
-		  diagsArea.clear();
-		  state_ = RECOMPILE_;
-                }
-                else
-                  state_ = ERROR_;
+                state_ = ERROR_;
 		break;
 	      }
 
@@ -3526,61 +3343,58 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		      }
 
 		  }
-	      
-
-
 	      }	
-      // done deciding if this query needs to be monitored and 
-      // registered with WMS.
-      // now execute it.
-      if (masterStats != NULL)
-	{
-	  masterStats->setIsBlocking();
-	  masterStats->setStmtState(STMT_EXECUTE_);
-	}
 
-      Int32 rc = root_tcb->execute(cliGlobals, statementGlobals_,
-				   input_desc, diagsPtr, reExecute);
-
-      if (masterStats != NULL)
-	masterStats->setNotBlocking();
-      if (rc < 0)
-	retcode = ERROR;
-      // "diagsPtr" is modified by the foregoing call.
-      // If "diagsPtr" is NULL, there are no diags to merge
-      // into "diagsArea".  Otherwise, "diagsPtr" is not NULL and does
-      // point to a diags area from which we: 1) avoid the SQL function
-      // 2) copy the ComCondition objects over.  Then we decrement
-      // the reference count to indicate we're done with that
-      // ComDiagsArea.
+            // done deciding if this query needs to be monitored and 
+            // registered with WMS.
+            // now execute it.
+            if (masterStats != NULL)
+              {
+                masterStats->setIsBlocking();
+                masterStats->setStmtState(STMT_EXECUTE_);
+              }
+            
+            Int32 rc = root_tcb->execute(cliGlobals, statementGlobals_,
+                                         input_desc, diagsPtr, reExecute);
+            
+            if (masterStats != NULL)
+              masterStats->setNotBlocking();
+            if (rc < 0)
+              retcode = ERROR;
+            // "diagsPtr" is modified by the foregoing call.
+            // If "diagsPtr" is NULL, there are no diags to merge
+            // into "diagsArea".  Otherwise, "diagsPtr" is not NULL and does
+            // point to a diags area from which we: 1) avoid the SQL function
+            // 2) copy the ComCondition objects over.  Then we decrement
+            // the reference count to indicate we're done with that
+            // ComDiagsArea.
 	    
-      if (diagsPtr)
-	{
-	  diagsArea.mergeAfter(*diagsPtr);
-	  diagsPtr->decrRefCount();    
-	  diagsPtr = NULL;
-	}
+            if (diagsPtr)
+              {
+                diagsArea.mergeAfter(*diagsPtr);
+                diagsPtr->decrRefCount();    
+                diagsPtr = NULL;
+              }
 	    
-      if (retcode == ERROR)
-	{
-	  root_tcb->cancel(statementGlobals_,diagsPtr);
-	  state_ = ERROR_;
-	  break;
-	}
-      else
-	{
-	  if (retcode == 0 && diagsArea.mainSQLCODE() > 0)
-	    // It's a warning. So return 1. 
-	    retcode = (RETCODE)1;
-	  setState(OPEN_);
-	  readyToReturn = TRUE;
-	  break;
-	}
-    }
-  break;
-	
-	case RE_EXECUTE_:                 // on error 60
-	case RE_EXECUTE_AFTER_RECOMPILE_: // on plan version error
+            if (retcode == ERROR)
+              {
+                root_tcb->cancel(statementGlobals_,diagsPtr);
+                state_ = ERROR_;
+                break;
+              }
+            else
+              {
+                if (retcode == 0 && diagsArea.mainSQLCODE() > 0)
+                  // It's a warning. So return 1. 
+                  retcode = (RETCODE)1;
+                setState(OPEN_);
+                readyToReturn = TRUE;
+                break;
+              }
+          }
+        break;
+          
+	case RE_EXECUTE_:                
 	  {
 	    // save lnil & stuff
 	    // if input descriptor was passed in at execute time, recreate 
@@ -3601,10 +3415,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 	    
 	    setFixupState(0);
 	    reExecute=TRUE;
-            if (state_ == RE_EXECUTE_)
-              state_ = CHECK_DYNAMIC_SETTINGS_;
-            else
-              state_ = RECOMPILE_;
+            state_ = CHECK_DYNAMIC_SETTINGS_;
 	  }
 	break;
 
@@ -3706,17 +3517,6 @@ RETCODE Statement::fetch(CliGlobals * cliGlobals, Descriptor * output_desc,
   }
   timeout = -1 ;
 
-#ifdef NA_DEBUG_C_RUNTIME
-  if (output_desc)
-  {
-    Lng32 outputRowsetSize  = 0;
-    output_desc->getDescItem(0, SQLDESC_ROWSET_SIZE, &outputRowsetSize,
-                             0, 0, 0, 0);
-    if (outputRowsetSize > 1)
-      StmtDebug1("  Output rowset size: %d", outputRowsetSize);
-  }
-#endif
-  
   // Check for suspended query.  The other check called in the 
   // Scheduler::work.  We do it here simply because some users
   // expect if the query is suspended while the client is not 
@@ -3771,7 +3571,7 @@ RETCODE Statement::fetch(CliGlobals * cliGlobals, Descriptor * output_desc,
 	    }
 	}
 
-StmtDebug1("  root_tcb->fetch() returned %s",
+      StmtDebug1("  root_tcb->fetch() returned %s",
            RetcodeToString((RETCODE) retcode));
 
     }
@@ -3779,159 +3579,6 @@ StmtDebug1("  root_tcb->fetch() returned %s",
   if (masterStats)
     masterStats->setNotBlocking();
 
-  Statement::ExecState execute_state;
-  while ((retcode < 0)      &&
-	 (diagsPtr != NULL) &&
-	 (  // Handle lost open by trying to close/reopen the table
-            (diagsPtr->contains(-EXE_LOST_OPEN))                        ||
-	    (diagsPtr->contains(-EXE_PARTITION_UNAVAILABLE))            ||
-	    // Handle plan versioning errors by trying to recompile the query
-	    (diagsPtr->contains(-VERSION_PLAN_VERSION_HIGHER_THAN_MXV)) ||
-	    (diagsPtr->contains(-VERSION_PLAN_VERSION_OLDER_THAN_OLDEST_SUPPORTED))
-         )
-	)
-    {
-#ifdef NA_DEBUG_C_RUNTIME
-      StmtDebug1("  stmt state %s", stmtState(getState()));
-      if (diagsPtr)
-       {
-        if (diagsPtr->contains(-EXE_LOST_OPEN))
-            StmtDebug0("  diags contains -EXE_LOST_OPEN");
-        if (diagsPtr->contains(-EXE_PARTITION_UNAVAILABLE))
-            StmtDebug0("  diags contains -EXE_PARTITION_UNAVAILABLE");
-       }
-      StmtDebug1("  this %s a retryable stmt",
-                (root_tdb->retryableStmt() ? "IS" : "IS NOT"));
-#endif
-
-      if (root_tdb->retryableStmt() && (getState() != FETCH_))
-	{
-          // A retryable statement in a retryable state
-          short currentCompilerVersion = COM_VERS_UNKNOWN;
-          short index;
-	  if ((diagsPtr->contains(-EXE_LOST_OPEN)) ||
-	      (diagsPtr->contains(-EXE_PARTITION_UNAVAILABLE)))
-	    execute_state = RE_EXECUTE_;
-	  else
-	    {
-	      // Plan version error. Set the state to RE_EXECUTE_AFTER_RECOMPILE_ and figure out what
-              // version compiler to use, depending upon the actual error.
-              // Save the current default compiler version, so we can reset it after preparing the query.
-              currentCompilerVersion = getContext()->getVersionOfCompiler();
-              if (diagsPtr->contains(-VERSION_PLAN_VERSION_HIGHER_THAN_MXV))
-              {
-                // plan version is too high, recompile with required downrev compiler
-                retcode = getContext()->setOrStartCompiler((short)(*diagsPtr)[1].getOptionalInteger(1), NULL, index);
-              }
-              else
-              {
-                // plan version is too low, recompile with the current version compiler
-                retcode = getContext()->setOrStartCompiler(COM_VERS_COMPILER_VERSION, NULL, index);
-              }
-	      
-	      execute_state = RE_EXECUTE_AFTER_RECOMPILE_;
-	      if (retcode == ERROR)
-		{
-                  // OK no to reset the compiler version, because we didnt actually set it 
-		  setState(CLOSE_);
-		  diagsPtr->decrRefCount();
-		  return ERROR;
-		}
-
-              // Save the error information so that we can report it later as a warning
-              fetchErrorCode_ = (VersionErrorCode) ABS(diagsPtr->mainSQLCODE());          // turn into warning
-              fetchPlanVersion_ = (COM_VERSION) (*diagsPtr)[1].getOptionalInteger(0);
-              fetchSupportedVersion_ = (COM_VERSION) (*diagsPtr)[1].getOptionalInteger(1);
-              fetchNode_ = (*diagsPtr)[1].getOptionalString(0);
-	    }
-
-	  diagsArea.clear();
-
-	  retcode = root_tcb->cancel(statementGlobals_,diagsPtr);
-
-	  setState(CLOSE_);
-	  
-	  retcode = execute(cliGlobals, NULL, diagsArea, execute_state);
-          StmtDebug1("  root_tcb->execute() returned %s",
-                 RetcodeToString((RETCODE) retcode));
-
-	  if (retcode == ERROR)
-	    {
-              if (currentCompilerVersion != COM_VERS_UNKNOWN)
-                // Error path must also reset the current compiler version
-                retcode = getContext()->setOrStartCompiler(currentCompilerVersion,NULL,index);
-
-	      setState(CLOSE_);
-	      diagsPtr->decrRefCount();
-	      return ERROR;
-	    }
-
-          if (currentCompilerVersion != COM_VERS_UNKNOWN)
-          {
-            // Reset the current compiler version if we requested a downrev compiler
-            retcode = getContext()->setOrStartCompiler(currentCompilerVersion,NULL,index);
-            if (retcode == ERROR)
-            {
-              setState(CLOSE_);
-              diagsPtr->decrRefCount();
-              return ERROR;
-            }
-          }
-
-	  diagsPtr->decrRefCount();
-	  diagsPtr = NULL;
-
-	  // if bulk move info needs to be recomputed, set that flag
-	  // in the output descriptor.
-	  // This could happen if the previous execute call caused an
-	  // auto recomp and some output information got changed.
-	  if ((output_desc) && (computeOutputDescBulkMoveInfo()))
-	    {
-	      output_desc->reComputeBulkMoveInfo();
-	      setComputeOutputDescBulkMoveInfo(FALSE);
-	    }
-
-	  if (masterStats)
-            masterStats->setIsBlocking();
-
-          // $$$ in no-waited case, might want to consider reducing
-	  // timeout by time spent (down to a minimum of 0 of course)
-	  closeCursorOnError = TRUE;
-
-	  retcode = root_tcb->fetch(cliGlobals, statementGlobals_,
-				    output_desc, diagsPtr,
-				    timeout, TRUE,
-				    closeCursorOnError);
-          StmtDebug1("  root_tcb->fetch() returned %s",
-                   RetcodeToString((RETCODE) retcode));
-          if (masterStats)
-             masterStats->setNotBlocking();
-	    
-	} // if (retryable and state == FETCH)
-      else
-	{
-          // Non-retryable statement/statement that already has fetched something.
-          if ( diagsPtr->contains(-EXE_LOST_OPEN) ||
-	       diagsPtr->contains(-EXE_PARTITION_UNAVAILABLE)
-             )
-          {
-	    // An open was lost. Set the fixup state to 0 which will cause 
-	    // the next execution to do fixup again; this will re-open the table.
-	    setFixupState(0);
-          }
-          else
-          {
-            // A plan version error. Set the root_tdb to NULL so that 
-            // the next execution will unconditionally recompile the query.
-            assignRootTdb (NULL);
-
-          }
-          break;
-
-	} // if (retryable and state == FETCH) else ...
-    } 
-  
-  
   // "diagsPtr" is modified by the foregoing call.
   // If "diagsPtr" is NULL, there are no diags to merge
   // into "diagsArea".  Otherwise, "diagsPtr" is not NULL and does
@@ -4261,14 +3908,6 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
 {
   Int32 retcode;
 
-  NABoolean processDp2Xns = FALSE;
-  if ((! context_->getTransaction()->xnInProgress()) &&
-      (context_->getTransaction()->autoCommit()) &&
-      (root_tdb->getDp2XnsEnabled()))
-    {
-      processDp2Xns = TRUE;
-    }
-
   if (!root_tdb)
     {
       diagsArea << DgSqlCode(-CLI_STMT_NOT_EXISTS);
@@ -4319,16 +3958,10 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
   // Start a transaction, if needed and one not already running.
   if (root_tdb->transactionReqd())
     {
-      if (processDp2Xns)
-      {
-        // if this query could be evaluated using dp2/tse transactions,
-        // then let the query proceed
-      }
-
       // A user started transaction must be present for olt execution.
       // if no user started transaction, then return and do normal
       // execution.
-      else if ((! context_->getTransaction()->xnInProgress()) ||
+      if ((! context_->getTransaction()->xnInProgress()) ||
 	  ((context_->getTransaction()->exeStartedXn()) &&
 	   (context_->getTransaction()->implicitXn())))
 	{
@@ -4340,21 +3973,21 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
 	{
           if (compareTransModes(root_tdb, context_->getTransaction(),
 				(root_tdb->aqrEnabled() ? &diagsArea : NULL))
-		  && !systemModuleStmt() )
-	  {
-	    if (root_tdb->aqrEnabled())
-	      {
-		// return error. AQR will handle recompile and retry.
-                return(ERROR);
-	      }
-	    else
-	      {
-		doNormalExecute = TRUE;
-                reExecute = FALSE;
-                return SUCCESS;
-	      }
-	  }
-      	  
+              && !systemModuleStmt() )
+            {
+              if (root_tdb->aqrEnabled())
+                {
+                  // return error. AQR will handle recompile and retry.
+                  return(ERROR);
+                }
+              else
+                {
+                  doNormalExecute = TRUE;
+                  reExecute = FALSE;
+                  return SUCCESS;
+                }
+            }
+          
           // move the transid from executor globals to statement globals,
 	  // if a transaction is running.
 	  statementGlobals_->getTransid() =
@@ -4370,10 +4003,10 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
 	    }
 	}
     }
-
-    ExStatisticsArea *statsArea = getStatsArea();
-    if (statsArea != NULL &&
-	statsArea->getCollectStatsType() != ComTdb::MEASURE_STATS)
+  
+  ExStatisticsArea *statsArea = getStatsArea();
+  if (statsArea != NULL &&
+      statsArea->getCollectStatsType() != ComTdb::MEASURE_STATS)
     {
       StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
       if (statsGlobals != NULL)
@@ -4428,21 +4061,6 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
       
       setFixupState(0);
 
-      if (processDp2Xns)
-	{
-	  implicitTransNeeded();
-
-	  short taRetcode =
-	    context_->getTransaction()->beginTransaction();
-	  
-	  if (taRetcode != 0)
-	    {
-	      diagsArea << DgSqlCode(- CLI_BEGIN_TRANSACTION_ERROR);
-	      //	      cliGlobals_->setJmpBufPtr(oldJmpBufPtr);
-	      return ERROR;
-	    }
-	}
-        
       NABoolean doSimCheck = FALSE;
       NABoolean partitionUnavailable = FALSE;
       retcode = fixup(cliGlobals, input_desc, diagsArea, doSimCheck, partitionUnavailable, FALSE);
