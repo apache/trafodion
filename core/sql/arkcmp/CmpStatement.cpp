@@ -140,6 +140,7 @@ CmpStatement::error(Lng32 no, const char* s)
 CmpStatement::CmpStatement(CmpContext* context,
                            CollHeap* outHeap,
                            NAMemory::NAMemoryType memoryType)
+ : parserStmtLiteralList_(outHeap)
 {
   exceptionRaised_ = FALSE;
   reply_ = 0;
@@ -202,6 +203,7 @@ CmpStatement::CmpStatement(CmpContext* context,
 
   simpleFSOTaskMonitor_ = new (heap_) TaskMonitor();
   //simpleFSOMonPtr = simpleFSOTaskMonitor_;
+  parserStmtLiteralList_.setHeap(heap_);
 }
 
 CmpStatement::~CmpStatement()

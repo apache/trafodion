@@ -135,7 +135,7 @@ private:
   NABoolean fabricatedSqlstate_;
 };
 
-static NAList<SqlstateInfo*> listOfSqlstates_;
+static NAList<SqlstateInfo*> listOfSqlstates_(NULL);
 static pthread_mutex_t       listOfSqlstates_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 SQLERRORS_LIB_FUNC 

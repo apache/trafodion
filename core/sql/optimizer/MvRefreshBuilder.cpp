@@ -2709,7 +2709,7 @@ MultiDeltaRefreshMatrixRow::MultiDeltaRefreshMatrixRow(Int32 length,
   : sign_(SIGN_PLUS),
     currentLength_(length),
     maxLength_(maxLength),
-    tableScanTypes_(maxLength, heap),
+    tableScanTypes_(heap, maxLength),
     heap_(heap)
 {
   CMPASSERT(length <= maxLength);
@@ -2811,7 +2811,7 @@ MultiDeltaRefreshMatrix::MultiDeltaRefreshMatrix(Int32	        maxNumOfRows,
     numOfRowsForThisPhase_(0),
     tableIndexMapping_(heap),
     heap_(heap),
-    theMatrix_(maxNumOfRows, heap),
+    theMatrix_(heap, maxNumOfRows),
     TooManyDeltasError_(FALSE),
     isDuplicatesOptimized_(joinGraph->isInsertOnlyRefresh())
 {

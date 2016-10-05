@@ -2807,8 +2807,8 @@ void HbaseSearchKey::makeHBaseSearchKeys(
 {
   // Range Specs for key columns, ordered by key position, plus the
   // normalized item expressions generated from the RangeSpecs
-  ARRAY(ItemExpr *) rangeSpecsForKeyCols;
-  ARRAY(ItemExprList *) rangeBackbonesForKeyCols;
+  ARRAY(ItemExpr *) rangeSpecsForKeyCols(HEAP);
+  ARRAY(ItemExprList *) rangeBackbonesForKeyCols(HEAP);
   ValueIdSet tempExternalInputs; // don't use non-consts as inputs
 
   producedKeys.clear();

@@ -233,6 +233,7 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   , rowIds_(glob ? glob->getDefaultHeap() : NULL)
   , columns_(glob ? glob->getDefaultHeap() : NULL)
   , deletedColumns_(glob ? glob->getDefaultHeap() : NULL)
+  , hnl_(glob ? glob->getDefaultHeap() : NULL)
   , hbaseFilterColumns_(glob ? glob->getDefaultHeap() : NULL)
   , hbaseFilterOps_(glob ? glob->getDefaultHeap() : NULL)
   , hbaseFilterValues_(glob ? glob->getDefaultHeap() : NULL)

@@ -1832,8 +1832,8 @@ template <class T> class NASet : public NACollection<T>
 public:
 
   // default constructor
-  NASet(CollIndex initSize = 0) : NACollection<T>(initSize)
-  { invalidateCache(); }
+  /* NASet(CollIndex initSize = 0) : NACollection<T>(initSize)
+     { invalidateCache(); } */
 
   // constructor with user-defined heap
   NASet(CollHeap  *heap,
@@ -1841,7 +1841,7 @@ public:
   { invalidateCache(); }
 
   // copy ctor
-  NASet(const SET(T) &other, CollHeap * heap=0) : NACollection<T>(other, heap)
+  NASet(const SET(T) &other, CollHeap * heap) : NACollection<T>(other, heap)
   { invalidateCache(); }
 
   // virtual destructor
@@ -1959,8 +1959,8 @@ template <class T> class NAList : public NACollection<T>
 public:
 
   // default constructor
-  NAList(CollIndex initLen = 0) : NACollection<T>(initLen) 
-  { first_ = last_ = userIndexCache_ = arrayIndexCache_ = NULL_COLL_INDEX; }
+  /*NAList(CollIndex initLen = 0) : NACollection<T>(initLen) 
+    { first_ = last_ = userIndexCache_ = arrayIndexCache_ = NULL_COLL_INDEX; }*/
 
   // constructor with user-defined heap
   NAList(CollHeap * heap,
@@ -1968,7 +1968,7 @@ public:
   { first_ = last_ = userIndexCache_ = arrayIndexCache_ = NULL_COLL_INDEX; }
 
   // copy ctor
-  NAList(const NAList<T> &other, CollHeap * heap=0) : NACollection<T>(other, heap)
+  NAList(const NAList<T> &other, CollHeap * heap) : NACollection<T>(other, heap)
   {
     first_ = other.first_;
     last_ = other.last_;
@@ -2217,15 +2217,15 @@ template <class T> class NAArray : public NACollection<T>
 public :
 
   // default constructor
-  NAArray(CollIndex initialElements = 0) : 
-       NACollection<T>(initialElements) {}
+  //NAArray(CollIndex initialElements = 0) : 
+  //NACollection<T>(initialElements) {}
 
   // constructor with user-defined heap
   NAArray(CollHeap *heap, CollIndex initialElements = 0) : 
        NACollection<T>(heap,initialElements) {}
 
   // copy ctor
-  NAArray(const NAArray & other, CollHeap * heap=0) : 
+  NAArray(const NAArray & other, CollHeap * heap) : 
        NACollection<T>(other, heap) {}
   
   // Resize the array to a new size(return new size)
@@ -2285,10 +2285,10 @@ template <class T> class NASubArray : public NASubCollection<T>
 
 public:
 
-  NASubArray(NAArray<T> *superset = NULL, CollHeap* heap=0) : 
+  NASubArray(NAArray<T> *superset, CollHeap* heap) : 
        NASubCollection<T>(superset, heap) {}
 
-  NASubArray(const NASubArray<T> &other, CollHeap * heap=0) : 
+  NASubArray(const NASubArray<T> &other, CollHeap * heap) : 
        NASubCollection<T>(other, heap) {}
 
   virtual ~NASubArray();
@@ -2358,10 +2358,10 @@ template <class T> class NASimpleArray : private NAArray<T>
 {
 
 public:
-  NASimpleArray (CollHeap * h=0) : NAArray<T>(h) {}
+  NASimpleArray (CollHeap * h) : NAArray<T>(h) {}
 
   // copy ctor
-  NASimpleArray (const NASimpleArray & orig, CollHeap * h=0) 
+  NASimpleArray (const NASimpleArray & orig, CollHeap * h) 
        : NAArray<T>(orig, h) {} 
 
   void clearAndDestroy()
@@ -2389,10 +2389,15 @@ public:
   
   // operator s new and delete get inherited from private base class,
   // make them publicly available by the following inline functions
-  static inline void * operator new(size_t size, CollHeap* h=0)
+  static inline void * operator new(size_t size, CollHeap* h)
                                 { return NAArray<T>::operator new(size, h); }
   static inline void operator delete(void *buffer)
                                   { NAArray<T>::operator delete(buffer); }
+
+  inline void setHeap(CollHeap *heap)
+   {
+     NAArray<T>::setHeap(heap);
+   }
 }; // NASimpleArray
 
 // ----------------------------------------------------------------------
@@ -2506,10 +2511,10 @@ public:
   // --------------------------------------------------------------------
   // Constructor function
   // --------------------------------------------------------------------
-  NAHashBucket(CollHeap * heap=0): bucket_(heap), heap_(heap) {}
+  NAHashBucket(CollHeap * heap): bucket_(heap), heap_(heap) {}
  
   // copy ctor
-  NAHashBucket(const NAHashBucket<K,V>& other, CollHeap * heap=0);
+  NAHashBucket(const NAHashBucket<K,V>& other, CollHeap * heap);
   
   // --------------------------------------------------------------------
   // Destructor function
@@ -2618,7 +2623,7 @@ friend class NAHashDictionaryIterator<K,V>;
 		   CollHeap * heap=0 /* where to allocate memory */ );
 
   // copy ctor
-  NAHashDictionary(const NAHashDictionary<K,V>& other, CollHeap * heap=0);
+  NAHashDictionary(const NAHashDictionary<K,V>& other, CollHeap * heap);
   
   // --------------------------------------------------------------------
   // Destructor function
@@ -2818,7 +2823,7 @@ public:
 
   // copy ctor
   NAHashDictionaryIterator<K,V> (const NAHashDictionaryIterator<K,V> & other,
-                                 CollHeap * heap=0) ; 
+                                 CollHeap * heap) ; 
 
   // dtor
   ~NAHashDictionaryIterator<K,V>() ; 
@@ -2913,13 +2918,13 @@ public:
   // --------------------------------------------------------------------
   NAKeyLookup(short initSize, 
               NAKeyLookupEnums::KeyProvenance keyProvenance,
-              CollHeap * heap=0 ) :
+              CollHeap * heap) :
        NAHashDictionary<K,V>(&hashKey, initSize, TRUE,heap),
        keyProvenance_(keyProvenance)
   {}
 
   // copy ctor
-  NAKeyLookup (const NAKeyLookup & nakl, CollHeap * heap=0 ) :
+  NAKeyLookup (const NAKeyLookup & nakl, CollHeap * heap) :
        NAHashDictionary<K,V>(nakl, heap),
        keyProvenance_(nakl.keyProvenance_)
   {}

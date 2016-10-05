@@ -15730,7 +15730,7 @@ RelExpr *CallSP::bindNode(BindWA *bindWA)
   LIST (ItemExpr *) &bWA_HVorDPs = bindWA->getSpHVDPs();
   CollIndex numHVorDPs = bWA_HVorDPs.entries();
 
-  ARRAY(ItemExpr *) local_HVorDPs(numHVorDPs);
+  ARRAY(ItemExpr *) local_HVorDPs(HEAP, numHVorDPs);
   CollIndex idx, idx1, idx2;
 
   // Sort the ItemExpr in the order they appeared in the stmt

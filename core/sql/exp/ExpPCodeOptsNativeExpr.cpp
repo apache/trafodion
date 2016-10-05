@@ -5768,7 +5768,7 @@ void PCodeCfg::layoutNativeCode()
 
   PCodeBinary* pCode = expr_->getPCodeBinary();
 
-  NExTempsList_ = new(heap_) NExTEMPSLIST();
+  NExTempsList_ = new(heap_) NExTEMPSLIST(heap_);
 
 
   // First see if this graph can be compiled natively

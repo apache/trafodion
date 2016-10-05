@@ -10060,10 +10060,12 @@ HbaseAccess::HbaseAccess(CorrName &corrName,
 			 OperatorTypeEnum otype,
 			 CollHeap *oHeap)
   : FileScan(corrName, NULL, NULL, otype, oHeap),
-    listOfSearchKeys_(oHeap)
+    listOfSearchKeys_(oHeap),
+    snpType_(SNP_NONE),
+    retHbaseColRefSet_(oHeap),
+    opList_(oHeap)
 {
   accessType_ = SELECT_;
-  
   uniqueHbaseOper_ = FALSE;
   uniqueRowsetHbaseOper_ = FALSE;
 }
@@ -10087,11 +10089,12 @@ HbaseAccess::HbaseAccess(CorrName &corrName,
              generatedCCPreds,
              otype),
     listOfSearchKeys_(oHeap),
-    snpType_(SNP_NONE)
+    snpType_(SNP_NONE),
+    retHbaseColRefSet_(oHeap),
+    opList_(oHeap)
 {
   accessType_ = SELECT_;
   //setTableDesc(tableDesc);
-
   uniqueHbaseOper_ = FALSE;
   uniqueRowsetHbaseOper_ = FALSE;
 }
@@ -10103,10 +10106,11 @@ HbaseAccess::HbaseAccess(CorrName &corrName,
     isRW_(isRW),
     isCW_(isCW),
     listOfSearchKeys_(oHeap),
-    snpType_(SNP_NONE)
+    snpType_(SNP_NONE),
+    retHbaseColRefSet_(oHeap),
+    opList_(oHeap)
 {
   accessType_ = SELECT_;
-
   uniqueHbaseOper_ = FALSE;
   uniqueRowsetHbaseOper_ = FALSE;
 }
@@ -10115,10 +10119,11 @@ HbaseAccess::HbaseAccess( OperatorTypeEnum otype,
 			  CollHeap *oHeap)
   : FileScan(CorrName(), NULL, NULL, otype, oHeap),
     listOfSearchKeys_(oHeap),
-    snpType_(SNP_NONE)
+    snpType_(SNP_NONE),
+    retHbaseColRefSet_(oHeap),
+    opList_(oHeap)
 {
   accessType_ = SELECT_;
-
   uniqueHbaseOper_ = FALSE;
   uniqueRowsetHbaseOper_ = FALSE;
 }
@@ -15342,7 +15347,7 @@ NABoolean Join::childNodeContainMultiColumnSkew(
    // A list of valueIdSets, each valueIdSet element contains a set of 
    // columns from the join predicates. Each set has all columns from the
    // same table participating in the join predicates.
-   ARRAY(ValueIdSet) mcArray(joinPreds.entries());
+   ARRAY(ValueIdSet) mcArray(CmpCommon::statementHeap(), joinPreds.entries());
 
    Int32 skews = 0, leastSkewList = 0;
    EncodedValue mostFreqVal;

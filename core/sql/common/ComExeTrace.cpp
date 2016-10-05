@@ -83,6 +83,7 @@ ExeTrace::getTitleLineWidth()
 
 
 ExeTraceInfo::ExeTraceInfo()
+  : exeTraces_(NULL) // on C++ heap
 {
 };
 

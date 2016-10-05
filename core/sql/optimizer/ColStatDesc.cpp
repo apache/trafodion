@@ -10708,8 +10708,8 @@ MultiColumnUecList::getUecForMCJoin (
   CostScalar * uecEntry = NULL;
   MultiColumnUecListIterator iter( *this );
 
-  LIST(ValueIdSet) tableOnePossibles; // we'll iter over these
-  SET(ValueIdSet)  tableTwoPossibles; // we'll do lookups over these
+  LIST(ValueIdSet) tableOnePossibles(STMTHEAP); // we'll iter over these
+  SET(ValueIdSet)  tableTwoPossibles(STMTHEAP); // we'll do lookups over these
 
   for ( iter.getNext( keyEntry, uecEntry );
         keyEntry != NULL && uecEntry != NULL;
@@ -11418,7 +11418,7 @@ MultiColumnUecList::displayMissingStatsWarning(TableDesc * mostRefdTable,
   // This should not be very expensive, since column numbers are cached with the
   // column expression
 
-  CollIndexSet setOfColsWithMissingStats;
+  CollIndexSet setOfColsWithMissingStats(NULL,STMTHEAP);
 
   // define ValueId outside of for loop, to avoid c++ compiler error.
   ValueId col;

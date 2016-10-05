@@ -582,9 +582,9 @@ ItemExpr * Scan::applyAssociativityAndCommutativity(
   //   fashion because the code does not assign to 'newRightNode' until *after*
   //   all recursion is finished.
   //
-  ARRAY( ItemExpr * ) IEarray(10) ; //Initially 10 elements (no particular reason to choose 10)
-  ARRAY( Int16 )      state(10)   ; //These ARRAYs will grow automatically as needed.)
-  ARRAY( ItemExpr *) leftNodeArray(10, heap);
+  ARRAY( ItemExpr * ) IEarray(heap, 10) ; //Initially 10 elements (no particular reason to choose 10)
+  ARRAY( Int16 )      state(heap, 10)   ; //These ARRAYs will grow automatically as needed.)
+  ARRAY( ItemExpr *) leftNodeArray(heap, 10);
 
   Int32   currIdx = 0;
   IEarray.insertAt( currIdx, origPtrToOldTree );
@@ -1142,7 +1142,6 @@ NABoolean RelExpr::getMoreOutputsIfPossible(ValueIdSet& outputsNeeded)
       maxOutputs,
       outputsNeeded);
       child(i)->getGroupAttr()->addCharacteristicOutputs(outputsToAdd);
-
      // child(i).getGroupAttr()->computeCharacteristicIO
 //	                                            (emptySet,  // no additional inputs
   //                                                   outputsNeeded);

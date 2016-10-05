@@ -1245,7 +1245,14 @@ public:
   {}
 
   NATableDB (const NATableDB & orig, NAMemory * h) :
-       NAKeyLookup<ExtendedQualName,NATable> (orig, h)
+    NAKeyLookup<ExtendedQualName,NATable> (orig, h),
+    heap_(h),
+    statementTableList_(h),
+    statementCachedTableList_(h),
+    cachedTableList_(h),
+    tablesToDeleteAfterStatement_(h),
+    nonCacheableTableIdents_(h),
+    nonCacheableTableList_(h)
   {}
 
   NAHeap *getHeap() { return (NAHeap *)heap_; }

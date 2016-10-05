@@ -8153,7 +8153,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
 
   NAString constrName;
   NABoolean isPkey = FALSE;
-  NAList<int> reorderList;
+  NAList<int> reorderList(HEAP);
   // Find a uniqueness constraint on the referenced table that matches
   // the referenced column list (not necessarily in the original order
   // of columns).  Also find out how to reorder the column lists to
@@ -8184,9 +8184,9 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
 
       // re-order referencing and referenced key column lists to match
       // the order of the uniqueness constraint in the referenced table
-      NAArray<NAString> ringTempKeyColArray(numEntries);
-      NAArray<NAString> ringTempKeyColOrderArray(numEntries);
-      NAArray<NAString> refdTempKeyColArray(numEntries);
+      NAArray<NAString> ringTempKeyColArray(HEAP, numEntries);
+      NAArray<NAString> ringTempKeyColOrderArray(HEAP, numEntries);
+      NAArray<NAString> refdTempKeyColArray(HEAP, numEntries);
 
       // copy the lists into temp arrays in the correct order
       for (CollIndex i=0; i<numEntries; i++)

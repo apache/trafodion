@@ -572,7 +572,9 @@ public:
 
   static const char *getConnectionStateString(IpcConnectionState s);
 
-  IpcConnection() : fileNumForIOCompletion_(InvalidGuaFileNumber) {}
+ IpcConnection() 
+   : fileNumForIOCompletion_(InvalidGuaFileNumber),
+    recvStreams_(NULL) {} // recvStream on C++ heap
 
   virtual ~IpcConnection();
 

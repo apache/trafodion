@@ -154,11 +154,12 @@ static Int16 orderFixedFieldsByAlignment( Attributes    ** attrs,
   Int16  rc = 0;
 
   Attributes *attr;
-  NAList<UInt32> align8(4);
-  NAList<UInt32> align4(10);
-  NAList<UInt32> align2(10);
-  NAList<UInt32> align1(4);
-  NAList<UInt32> addedCols(4);
+  NAList<UInt32> align8(NULL,4);
+  NAList<UInt32> align4(NULL,10);
+  NAList<UInt32> align2(NULL,10);
+  NAList<UInt32> align1(NULL,4);
+  NAList<UInt32> addedCols(NULL,4); // on C++ heap, wil get dellocated when
+                                    // we return
 
   UInt32 fieldIdx = 0;
   UInt32 numFixed = fixedFields->entries();
@@ -619,9 +620,9 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
         // GU attributes are materialized view columns that are projected out
         // during an update.
         // Variable length fields get their VOA offset set here too.
-	NAList<UInt32> fixedColumns(10);
-	NAList<UInt32> varFields(10);
-	NAList<UInt32> guFields(3);
+	NAList<UInt32> fixedColumns(NULL,10);
+	NAList<UInt32> varFields(NULL,10);
+	NAList<UInt32> guFields(NULL,3);
 
         NAList<UInt32> *fixedFields = &fixedColumns;
 

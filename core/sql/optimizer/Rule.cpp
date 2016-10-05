@@ -259,8 +259,8 @@ void Rule::prepare()
 {
   // an array to hold pointers for cuts of the pattern, ordered by index
   // (most rules should get by with 4 cuts and 4 wildcards)
-  ARRAY(CutOp *) cuts(4);
-  ARRAY(WildCardOp *) wildcards(4);
+  ARRAY(CutOp *) cuts(HEAP, 4);
+  ARRAY(WildCardOp *) wildcards(HEAP, 4);
 
   // fill the "cuts" array
   if (pattern_)

@@ -363,7 +363,7 @@ Int32 AbstractRIConstraintList::getRefConstraints(
 					const ValueIdSet &assigns,
 					RefConstraintList &resultList) const
 {
-  Constraint::ColSignature updateCols;
+  Constraint::ColSignature updateCols(HEAP);
   if (entries() && bindWA->getCurrentScope()->context()->inUpdate())
     Constraint::makeColSignature(assigns, updateCols);
   

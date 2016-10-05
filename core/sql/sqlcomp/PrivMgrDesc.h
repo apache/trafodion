@@ -381,7 +381,7 @@ class PrivMgrDesc
 public:
    PrivMgrDesc(const PrivMgrDesc&other)           // copy constructor
    : tableLevel_(other.tableLevel_),
-     columnLevel_(other.columnLevel_),
+    columnLevel_(other.columnLevel_, NULL),
      grantee_(other.grantee_)
    {}
 
@@ -389,7 +389,7 @@ public:
                const int32_t nbrCols = 0    // preset constructor
               )
    : tableLevel_(),
-     columnLevel_(),
+     columnLevel_(NULL),
      grantee_(grantee)
   {}
 
@@ -397,13 +397,13 @@ public:
    PrivMgrDesc(const PrivMgrDesc &privs,            // preset constructor
                const int32_t grantee)
    : tableLevel_(privs.tableLevel_),
-     columnLevel_(privs.columnLevel_),
+    columnLevel_(privs.columnLevel_, NULL),
      grantee_(privs.grantee_)
    {}
 
    PrivMgrDesc(void)
    : tableLevel_(),
-     columnLevel_(),
+     columnLevel_(NULL),
      grantee_(0)
    {}
 

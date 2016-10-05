@@ -129,7 +129,7 @@ void PCodeCfg::bulkHashComb()
         newInst->code[3] = inst->code[2];
 
         // Create one list with all the source operands
-        OPLIST list;
+        OPLIST list(heap_);
 
         // If the source inst found is not null (i.e. HASH or HASHCOMB_BULK)
         // then include its operands.  Otherwise, we can't hash the source, but
@@ -177,7 +177,7 @@ void PCodeCfg::bulkHashComb()
       if (inst->getOpcode() == PCIT::HASHCOMB_BULK_MBIN32U) {
 
         // Create one list with all the source operands
-        OPLIST list;
+        OPLIST list(heap_);
 
         list.insert(inst->getROps());
 
