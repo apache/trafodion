@@ -19,12 +19,6 @@
 Trafodion brings enterprise-class operational workloads to Hadoop! You can now run all of your data workloads on a single platform based on Hadoop.
 -->
 
-#### [Happy Hour Meetup Hosted by Esgyn Corporation][meetup]
-
-[![Meetup](images/carousel/meetup.png)][meetup]
-
-Meet the committers and contributors to Apache Trafodion and learn how you can get involved.
-
 #### [Hadoop-Scale with SQL Access][scale]
 
 [![Hadoop Scale](images/carousel/scale.png)][scale]
@@ -40,7 +34,6 @@ Trafodion provides SQL access to structured, semi-structured, and unstructured d
 [revolution]: http://trafodion.incubator.apache.org
 [scale]: http://trafodion.incubator.apache.org
 [stack]: index.html
-[meetup]: http://www.meetup.com/Milpitas-bigdata-Meetup/events/232896605/
 
 
 ---
@@ -49,18 +42,8 @@ Trafodion provides SQL access to structured, semi-structured, and unstructured d
 
 
 <table><tr><td>
-  <p><h5>The Apache Trafodion team is happy to announce the third Apache release &#8212; version 2.0.1-incubating!</h5></p>
-  <p><strong>How to get started with Apache Trafodion:</strong>
-     <ul>
-       <li><a href="http://trafodion.incubator.apache.org/documentation.html">Release Documentation</a></li>
-       <li><a href="http://trafodion.incubator.apache.org/release-notes-2-0-1.html">Release Notes</a></li>
-       <li><a href="http://trafodion.incubator.apache.org/download.html">Download</a></li>
-       <li><a href="https://github.com/apache/incubator-trafodion">git Site</a></li>
-       <li><a href="http://trafodion.incubator.apache.org/contributing-redirect.html">Build Instructions</a></li>
-     </ul>
-   </p>
-   <p><h5>The Trafodion team thanks all our contributors and mentors who made the release possible!</h5></p>
-
+  <p><h5>We're working on release 2.1!</h5></p> 
+  <p>Check out the <a href="https://cwiki.apache.org/confluence/display/TRAFODION/Roadmap">Roadmap</a> page for planned content.</p>
 </td></tr></table>
 
 <!-- 20160524 GTA Need more logos before using this part.

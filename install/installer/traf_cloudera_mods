@@ -270,8 +270,17 @@ curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
                 "value" : "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation"
 		}, {
 		"name" : "hbase_regionserver_lease_period", 
-		"value" : "600000"
+		"value" : "3600000"
 		}, {
+                "name" : "hbase_hregion_memstore_flush_size",
+                "value" : "536870912"
+                }, {
+                "name" : "hbase_hregion_memstore_block_multiplier",
+                "value" : "7"
+                }, {
+                "name" : "hbase_hstore_blockingStoreFiles",
+                "value" : "200"
+                }, {
 		"name" : "hbase_regionserver_config_safety_valve", 
 		"value" : "<property>\r\n   <name>hbase.hregion.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>\r\n</property>\r\n <property>\r\n   <name>hbase.regionserver.region.split.policy</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy</value>\r\n</property>\r\n  <property>\r\n   <name>hbase.snapshot.enabled</name>\r\n   <value>true</value>\r\n</property>\r\n <property>\r\n   <name>hbase.snapshot.region.timeout</name>\r\n   <value>600000</value>\r\n</property>\r\n "
 		} ] 
