@@ -40,6 +40,7 @@ obey TEST020(test_10_020913_3920);
 obey TEST020(test_10_030916_9668);
 obey TEST020(test_LP_1360493);
 obey TEST020(trafodion_1700_and_1847);
+obey TEST020(trafodion_2247);
 log;
 obey TEST020(clean_up);
 exit;
@@ -91,6 +92,7 @@ drop table test020t40 cascade;
 drop table test020t41 cascade;
 drop table test020t42 cascade;
 drop table test020t43 cascade;
+drop table test020t44;
 
 ?section tests
 create table  test020t1 (c1 int not null primary key,
@@ -918,4 +920,12 @@ cqd traf_upsert_mode 'merge';
 upsert into test020t43 values (1,1);
 upsert into test020t43 (c1) values(1);
 select * from test020t43 ; 
+
+?section trafodion_2247
+create table test020t44(a char(15) not null primary key,b int) 
+attribute aligned format;
+alter table test020t44 add c int;
+cqd traf_upsert_mode 'merge';
+upsert into test020t44 (a,c) values ('AAAA', 2);
+select * from test020t44;
 

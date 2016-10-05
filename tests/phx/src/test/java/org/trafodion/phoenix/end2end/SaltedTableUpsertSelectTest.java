@@ -236,7 +236,7 @@ public class SaltedTableUpsertSelectTest extends BaseTest {
             String query = null;
 
             PreparedStatement stmt;
-            // BEGIN TEMP: until jira TRAFODION-2247 is fixed.
+            // BEGIN TEMP: until jira TRAFODION-2254 is fixed.
             // Remove the begin/end temp block after that
             if (tgtTR()) {
                 query = "control query default traf_upsert_mode 'REPLACE'";

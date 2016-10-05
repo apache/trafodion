@@ -3936,4 +3936,27 @@ C1           C2
 
 --- 2 row(s) selected.
 >>
+>>obey TEST020(trafodion_2247);
+>>create table test020t44(a char(15) not null primary key,b int)
++>attribute aligned format;
+
+--- SQL operation complete.
+>>alter table test020t44 add c int;
+
+--- SQL operation complete.
+>>cqd traf_upsert_mode 'merge';
+
+--- SQL operation complete.
+>>upsert into test020t44 (a,c) values ('AAAA', 2);
+
+--- 1 row(s) inserted.
+>>select * from test020t44;
+
+A                B            C          
+---------------  -----------  -----------
+
+AAAA                       ?            2
+
+--- 1 row(s) selected.
+>>
 >>log;
