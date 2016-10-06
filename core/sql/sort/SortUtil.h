@@ -62,7 +62,7 @@ public:
   SortUtil(Lng32 explainNodeId);             
   ~SortUtil();            
 
-  NABoolean sortInitialize(SortUtilConfig& config);
+  NABoolean sortInitialize(SortUtilConfig& config, ULng32 topNSize);
   NABoolean sortEnd(void);
   
   Lng32 sortSend(void* record, ULng32 len, void* tupp);

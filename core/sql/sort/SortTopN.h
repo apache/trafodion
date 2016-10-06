@@ -20,13 +20,13 @@
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
-#ifndef TOPN_H
-#define TOPN_H
+#ifndef SORTTOPN_H
+#define SORTTOPN_H
 
 /* -*-C++-*-
 ******************************************************************************
 *
-* File:         Topn.h
+* File:         SortTopN.h
 *
 *
 ******************************************************************************
@@ -43,14 +43,14 @@ class SortUtil;
 class ExBMOStats;
 
 
-class TopN : public SortAlgo { //SortAlgo inherits from NABasicObject
+class SortTopN : public SortAlgo { //SortAlgo inherits from NABasicObject
 
 public:
 
-   TopN(ULng32 recmax,ULng32 sortmaxmem, ULng32 recsize, NABoolean doNotallocRec, 
-        ULng32 keysize, SortScratchSpace* scratch,NABoolean iterQuickSort,
-        CollHeap* heap, SortError* sorterror, Lng32 explainNodeId, SortUtil* sortutil);
-  ~TopN(void);
+  SortTopN(ULng32 recmax,ULng32 sortmaxmem, ULng32 recsize, NABoolean doNotallocRec, 
+  ULng32 keysize, SortScratchSpace* scratch,NABoolean iterQuickSort,
+  CollHeap* heap, SortError* sorterror, Lng32 explainNodeId, SortUtil* sortutil);
+  ~SortTopN(void);
 
   Lng32 sortSend(void* rec, ULng32 len, void* tupp);
   
