@@ -12006,6 +12006,14 @@ void MapValueIds::getPotentialOutputValues(ValueIdSet & outputValues) const
   outputValues.insertList((getMap2()).getTopValues());
 } // MapValueIds::getPotentialOutputValues()
 
+void MapValueIds::addSameMapEntries(const ValueIdSet & newTopBottomValues)
+{
+  for (ValueId x = newTopBottomValues.init();
+	    newTopBottomValues.next(x);
+	    newTopBottomValues.advance(x))
+    addMapEntry(x,x);
+}
+
 void MapValueIds::addLocalExpr(LIST(ExprNode *) &xlist,
 			       LIST(NAString) &llist) const
 {

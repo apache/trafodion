@@ -1142,6 +1142,11 @@ NABoolean RelExpr::getMoreOutputsIfPossible(ValueIdSet& outputsNeeded)
       maxOutputs,
       outputsNeeded);
       child(i)->getGroupAttr()->addCharacteristicOutputs(outputsToAdd);
+      if (getOperatorType() == REL_MAP_VALUEIDS) 
+      {
+	((MapValueIds *)this)->addSameMapEntries(outputsToAdd);
+      }
+
 
      // child(i).getGroupAttr()->computeCharacteristicIO
 //	                                            (emptySet,  // no additional inputs
@@ -3952,15 +3957,14 @@ RelExpr* GroupByAgg::nullPreserveMyExprs( NormWA& normWARef)
 //             an aggregate from the original groupBy.
 
 -------------------------------------------------------------------------------*/
-GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby, 
+GroupByAgg* Join::moveUpGroupByTransformation(GroupByAgg* topGrby, 
                                               NormWA & normWARef)
 {
   GroupByAgg *moveUpGrby;
   ValueIdSet emptySet ;
-  GroupByAgg *movedUpGrbyTail = (GroupByAgg*) topGrby;
+  GroupByAgg *movedUpGrbyTail = topGrby;
   RelExpr * joinRightChild = child(1)->castToRelExpr();
   CollHeap *stmtHeap = CmpCommon::statementHeap() ;
-
 
   MapValueIds *moveUpMap = NULL;
   while ((joinRightChild->getOperatorType() == REL_GROUPBY) &&
@@ -4020,9 +4024,7 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
 
     if (NOT safeToMoveGrby )
     { 
-        // The join contains aggregates
-        // Skip such this subquery .
-      
+      // The join contains aggregates, skip this subquery.
        return NULL ;
     }
     child(1) = joinRightChild ;
@@ -4070,7 +4072,7 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
 
     // Sometimes the moveUpMap ends up being empty after being moved
     // on top of a Join. Eliminate it if we don't need it, otherwise 
-    // it will impeeded output flow.
+    // it will impede output flow.
 
     if ( moveUpMap != NULL && 
          moveUpMap->getGroupAttr()->getCharacteristicOutputs().isEmpty()) 
@@ -4135,7 +4137,7 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
 // sufficient outputs cannot be produced to compute left side's 
 // unique columns
 //
-// Expects: Child(0) to be a Join.
+// Expects: Child(0) to be a Join or a subQ groupby.
 // Sideffects: recomputed inputs and outputs of the join child's children
 //             recomputed inputs and outputs of the join.
 //             pushes any of the groupBy's predicates down that can go down.
@@ -4591,18 +4593,18 @@ RelExpr * Join::semanticQueryOptimizeNode(NormWA & normWARef)
     // two or more levels of nesting. If moveUpGroupBy is not needed
     // movedUpGroupByTail will be set to newGrby.
     RelExpr* gbChild = newGrby->child(0)->castToRelExpr();
-    NABoolean nestedAggInSubQ = FALSE;
     Join * newJoin = NULL;
+    GroupByAgg * newJoinParent = newGrby;
     if (gbChild->getOperatorType() == REL_GROUPBY) 
     {
       newJoin = (Join*) gbChild->child(0)->castToRelExpr();
-      nestedAggInSubQ = TRUE;
+      newJoinParent = (GroupByAgg*) gbChild;
     }
     else
       newJoin = (Join*) gbChild;
 
     GroupByAgg* movedUpGrbyTail = 
-      newJoin->moveUpGroupByTransformation(newGrby, normWARef);
+      newJoin->moveUpGroupByTransformation(newJoinParent, normWARef);
 
     NABoolean hasNoErrors;
     if (movedUpGrbyTail != NULL) 
@@ -4629,10 +4631,7 @@ RelExpr * Join::semanticQueryOptimizeNode(NormWA & normWARef)
     {
       newJoin = newJoin->leftLinearizeJoinTree(normWARef, 
                                                UNNESTING); // Unnesting
-      if (nestedAggInSubQ)
-	movedUpGrbyTail->child(0)->child(0) = newJoin  ;
-      else
-	movedUpGrbyTail->child(0) = newJoin  ;
+      movedUpGrbyTail->child(0) = newJoin  ;
     }
 
       //synthesize logical props for the new nodes.
