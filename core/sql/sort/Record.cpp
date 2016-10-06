@@ -57,12 +57,12 @@ Record::Record(ULng32 size, NABoolean doNotallocRec, CollHeap* heap)
 
 Record::Record(void *rec, ULng32 reclen, void* tupp, CollHeap* heap, SortError* sorterror)
 {
-	 recSize_   = reclen;
-	 sortError_ = sorterror;
-	 heap_      = heap;
-	 tupp_      = tupp;
-	 allocatedRec_ = FALSE_L; 
-	 rec_ =(char *) rec;
+  recSize_   = reclen;
+  sortError_ = sorterror;
+  heap_      = heap;
+  tupp_      = tupp;
+  allocatedRec_ = FALSE_L; 
+  rec_ =(char *) rec;
 }
 
 

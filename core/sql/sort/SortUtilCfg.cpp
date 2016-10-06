@@ -89,6 +89,7 @@ SortUtilConfig::SortUtilConfig(CollHeap* heap)
  sortMemEstInMbPerCpu_ = 0;
  bmoMaxMemThresholdMB_ = 0;
  intermediateScratchCleanup_ = TRUE;
+ topNSort_ = FALSE;
  }
 
 SortUtilConfig::~SortUtilConfig(void)
