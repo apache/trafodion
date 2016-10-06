@@ -327,8 +327,9 @@ public class TransactionManager {
                   String msg = new String ("ERROR occurred while calling doCommitX coprocessor service in doCommitX for transaction: "
                               + transactionId + " participantNum " + participantNum );
                   LOG.error(msg, e);
-                  transactionState.requestPendingCountDec(true);
-                  throw new DoNotRetryIOException(msg,e);
+                  DoNotRetryIOException dnre =  new DoNotRetryIOException(msg,e);
+                  transactionState.requestPendingCountDec(dnre);
+                  throw dnre;
                }
                if(result.size() == 0) {
                   if(LOG.isTraceEnabled()) LOG.trace("doCommitX,received incorrect result size: " + result.size() + " txid: "
@@ -425,7 +426,7 @@ public class TransactionManager {
           catch (UnknownTransactionException ute) {
              LOG.error("Got unknown exception in doCommitX by participant " + participantNum
                        + " for transaction: " + transactionId, ute);
-             transactionState.requestPendingCountDec(true);
+             transactionState.requestPendingCountDec(ute);
              throw ute;
           }
           catch (RetryTransactionException rte) {
@@ -434,9 +435,10 @@ public class TransactionManager {
                 // We have received our reply in the form of an exception,
                 // so decrement outstanding count and wake up waiters to avoid
                 // getting hung forever
-                transactionState.requestPendingCountDec(true);
-                throw new CommitUnsuccessfulException("Exceeded retry attempts (" + retryCount + ") in doCommitX for transaction: " +
-                             transactionId, rte);
+                CommitUnsuccessfulException cue = new CommitUnsuccessfulException("Exceeded retry attempts (" + retryCount + 
+                          ") in doCommitX for transaction: " + transactionId, rte);
+                transactionState.requestPendingCountDec(cue);
+                throw cue;
              }
              LOG.error("doCommitX retrying transaction: " + transactionId + " due to Exception: ", rte);
              refresh = true;
@@ -499,8 +501,9 @@ public class TransactionManager {
                } catch (Throwable e) {
                   String msg = "ERROR occurred while calling doCommitX coprocessor service in doCommitX";
                   LOG.error(msg + ":", e);
-                  transactionState.requestPendingCountDec(true);
-                  throw new DoNotRetryIOException(msg, e);
+                  DoNotRetryIOException dnr = new DoNotRetryIOException(msg, e);
+                  transactionState.requestPendingCountDec(dnr);
+                  throw dnr;
                }
                if(result.size() != 1) {
                   LOG.error("doCommitX, received incorrect result size: " + result.size() + " txid: " + transactionId);
@@ -534,7 +537,7 @@ public class TransactionManager {
               String errMsg = new String("Got unknown exception in doCommitX by participant " + participantNum
               		  + " for transaction: " + transactionId);
               LOG.error(errMsg, ute);
-              transactionState.requestPendingCountDec(true);
+              transactionState.requestPendingCountDec(ute);
               throw ute;
           }
           catch (RetryTransactionException rte) {
@@ -543,9 +546,10 @@ public class TransactionManager {
                 // We have received our reply in the form of an exception,
                 // so decrement outstanding count and wake up waiters to avoid
                 // getting hung forever
-                transactionState.requestPendingCountDec(true);
-                throw new CommitUnsuccessfulException("Exceeded retry attempts (" + retryCount + ") in doCommitX for transaction: " + transactionId,
-                            rte);
+                CommitUnsuccessfulException cue = new CommitUnsuccessfulException("Exceeded retry attempts (" + retryCount + 
+                    ") in doCommitX for transaction: " + transactionId, rte);
+                transactionState.requestPendingCountDec(cue);
+                throw cue;
              }
 
              LOG.error("doCommitX participant " + participantNum + " retrying transaction "
@@ -573,7 +577,7 @@ public class TransactionManager {
 
         }
         // We have received our reply so decrement outstanding count
-        transactionState.requestPendingCountDec(false);
+        transactionState.requestPendingCountDec(null);
 
         if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- EXIT txid: " + transactionId);
         return 0;
@@ -632,8 +636,9 @@ public class TransactionManager {
              } catch (Throwable e) {
                 String errMsg  = new String("doPrepareX coprocessor error for " + Bytes.toString(regionName) + " txid: " + transactionId + ":");
                 LOG.error(errMsg, e);
-                transactionState.requestPendingCountDec(true);
-                throw new CommitUnsuccessfulException("Unable to call prepare, coprocessor error", e);
+                CommitUnsuccessfulException cue =  new CommitUnsuccessfulException("Unable to call prepare, coprocessor error", e);
+                transactionState.requestPendingCountDec(cue);
+                throw cue;
              }
 
              if(result.size() == 0)  {
@@ -719,8 +724,9 @@ public class TransactionManager {
                 // We have received our reply in the form of an exception,
                 // so decrement outstanding count and wake up waiters to avoid
                 // getting hung forever
-                transactionState.requestPendingCountDec(true);
-                throw new CommitUnsuccessfulException("Exceeded retry attempts in doPrepareX: " + retryCount, rte);
+                CommitUnsuccessfulException cue = new CommitUnsuccessfulException("Exceeded retry attempts in doPrepareX: " + retryCount, rte);
+                transactionState.requestPendingCountDec(cue);
+                throw cue;
              }
              LOG.error("doPrepareX participant " + participantNum + " retrying transaction "
                           + transactionId + " due to Exception: " , rte);
@@ -804,8 +810,9 @@ public class TransactionManager {
                 // We have received our reply in the form of an exception,
                 // so decrement outstanding count and wake up waiters to avoid
                 // getting hung forever
-                transactionState.requestPendingCountDec(true);
-                throw new CommitUnsuccessfulException("Exceeded retry attempts in doPrepareX: " + retryCount, e);
+                CommitUnsuccessfulException cue =  new CommitUnsuccessfulException("Exceeded retry attempts in doPrepareX: " + retryCount, e);
+                transactionState.requestPendingCountDec(cue);
+                throw cue;
              }
              LOG.error("doPrepareX participant " + participantNum + " retrying transaction "
                       + transactionId + " due to Exception: ", e);
@@ -929,8 +936,9 @@ public class TransactionManager {
               } catch (Throwable t) {
                   String msg = "ERROR occurred while calling doAbortX coprocessor service";
                   LOG.error(msg,  t);
-                  transactionState.requestPendingCountDec(true);
-                  throw new DoNotRetryIOException(msg, t);
+                  DoNotRetryIOException dnre = new DoNotRetryIOException(msg, t);
+                  transactionState.requestPendingCountDec(dnre);
+                  throw dnre;
               }
               
 
@@ -960,15 +968,16 @@ public class TransactionManager {
           catch (UnknownTransactionException ute) {
              LOG.error("Got unknown exception in doAbortX by participant " + participantNum
                        + " for transaction: " + transactionId, ute);
-             transactionState.requestPendingCountDec(true);
+             transactionState.requestPendingCountDec(ute);
              throw ute;
           }
           catch (RetryTransactionException rte) {
               if (retryCount == RETRY_ATTEMPTS) {
                   String errMsg = "Exceeded retry attempts in doAbortX: " + retryCount;
                   LOG.error(errMsg, rte); 
-                  transactionState.requestPendingCountDec(true);
-                  throw new DoNotRetryIOException(errMsg, rte);
+                  DoNotRetryIOException dnre = new DoNotRetryIOException(errMsg, rte);
+                  transactionState.requestPendingCountDec(dnre);
+                  throw dnre;
               }
               else if (rte.toString().contains("Asked to commit a non-pending transaction ")) {
                  LOG.error(" doCommitX will not retry transaction: " + transactionId , rte);
@@ -988,11 +997,18 @@ public class TransactionManager {
 
                  if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
                      + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
-                    if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- " + table.toString() + " location being refreshed");
-                    if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- lv_hri: " + lv_hri);
-                    if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- location.getRegionInfo(): " + location.getRegionInfo());
+                 if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- " + table.toString() + " location being refreshed");
+                 if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- lv_hri: " + lv_hri);
+                 if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- location.getRegionInfo(): " + location.getRegionInfo());
+                 if (admin.isTableEnabled(TableName.valueOf(table.getTableName()))) {
                     table.getRegionLocation(startKey, true);
-                 if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- setting retry, count: " + retryCount);
+                 }
+                 else {
+                    LOG.error("doAbortX -- table: " + table.toString() + " is disabled, ignoring table and returning");
+                    transactionState.requestPendingCountDec(null);
+                    return 0;                    	
+                 }
+                 if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- setting retry, count: " + retryCount);
                  refresh = false;
             }
             if (retry)
@@ -1033,8 +1049,9 @@ public class TransactionManager {
               } catch (Throwable e) {
                   String msg = "ERROR occurred while calling doAbortX coprocessor service";
                   LOG.error(msg + ":",  e);
-                  transactionState.requestPendingCountDec(true);
-                  throw new DoNotRetryIOException(msg,e);
+                  DoNotRetryIOException dnre = new DoNotRetryIOException(msg,e);
+                  transactionState.requestPendingCountDec(dnre);
+                  throw dnre;
               }
 
               if(result.size() != 1) {
@@ -1060,15 +1077,16 @@ public class TransactionManager {
           catch (UnknownTransactionException ute) {
              LOG.error("Got unknown exception in doAbortX by participant " + participantNum
                        + " for transaction: " + transactionId, ute);
-             transactionState.requestPendingCountDec(true);
+             transactionState.requestPendingCountDec(ute);
              throw ute;
           }
           catch (RetryTransactionException rte) {
               if (retryCount == RETRY_ATTEMPTS){
                    String errMsg = new String ("Exceeded retry attempts in doAbortX: " + retryCount + " (Not ingoring)");
                    LOG.error(errMsg);
-                   transactionState.requestPendingCountDec(true);
-                   throw new RollbackUnsuccessfulException(errMsg, rte);  
+                   RollbackUnsuccessfulException rue = new RollbackUnsuccessfulException(errMsg, rte);  
+                   transactionState.requestPendingCountDec(rue);
+                   throw rue;
               }
               LOG.error("doAbortX participant " + participantNum + " retrying transaction "
                       + transactionId + " due to Exception: " + rte);
@@ -1082,11 +1100,18 @@ public class TransactionManager {
 
                  if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
                      + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
-                    if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- " + table.toString() + " location being refreshed");
-                    if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- lv_hri: " + lv_hri);
-                    if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- location.getRegionInfo(): " + location.getRegionInfo());
+                 if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- " + table.toString() + " location being refreshed");
+                 if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- lv_hri: " + lv_hri);
+                 if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- location.getRegionInfo(): " + location.getRegionInfo());
+                 if (admin.isTableEnabled(TableName.valueOf(table.getTableName()))) {
                     table.getRegionLocation(startKey, true);
-                 if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- setting retry, count: " + retryCount);
+                 }
+                 else {
+                    LOG.error("doAbortX -- table: " + table.toString() + " is disabled, ignoring table and returning");
+                    transactionState.requestPendingCountDec(null);
+                    return 0;                    	
+                 }
+                 if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- setting retry, count: " + retryCount);
                  refresh = false;
               }
               if (retry) 
@@ -1096,7 +1121,7 @@ public class TransactionManager {
         }
       admin.close();
       // We have received our reply so decrement outstanding count
-      transactionState.requestPendingCountDec(false);
+      transactionState.requestPendingCountDec(null);
 
       // forget the transaction if all replies have been received.
       //  otherwise another thread will do it
@@ -1142,8 +1167,9 @@ public class TransactionManager {
 		    } catch (Throwable e) {
 		      String errMsg = "doCommitX coprocessor error for " + Bytes.toString(locations.iterator().next().getRegionInfo().getRegionName()) + " txid: " + transactionId;
 		      LOG.error(errMsg,e);
-                      transactionState.requestPendingCountDec(true);
-		      throw new CommitUnsuccessfulException(errMsg, e);
+		      CommitUnsuccessfulException cue = new CommitUnsuccessfulException(errMsg, e);
+                      transactionState.requestPendingCountDec(cue);
+		      throw cue;
 		    }
 		  if(!retry) {
 		      List<String> exceptions = commitMultipleResponse.getExceptionList();
@@ -1157,9 +1183,10 @@ public class TransactionManager {
 		catch (RetryTransactionException rte) {
 		   if(retryCount == RETRY_ATTEMPTS) {
 		      LOG.error("Exceeded retry attempts (" + retryCount + ") in doCommitX for transaction: " + transactionId, rte);
-		      transactionState.requestPendingCountDec(true);
-		      throw new CommitUnsuccessfulException("Exceeded retry attempts (" + retryCount + ") in doCommitX for transaction: " + transactionId, 
-				 rte);
+		      CommitUnsuccessfulException cue = new CommitUnsuccessfulException("Exceeded retry attempts (" + retryCount + 
+                             ") in doCommitX for transaction: " + transactionId, rte);
+		      transactionState.requestPendingCountDec(cue);
+                      throw cue;
 		   }
 		   LOG.error("doCommitX retrying transaction " + transactionId
 				   + " participant " + participantNum + " due to Exception: ", rte);
@@ -1187,7 +1214,7 @@ public class TransactionManager {
 	    }  while (retry && retryCount++ <= RETRY_ATTEMPTS);
 
 
-	    transactionState.requestPendingCountDec(false);
+	    transactionState.requestPendingCountDec(null);
 
 	    if (LOG.isTraceEnabled()) LOG.trace("doCommitX - Batch -- EXIT txid: " + transactionId);
 	    return 0;
@@ -1227,8 +1254,9 @@ public class TransactionManager {
                   } catch (Throwable e) {
                       String errMsg = "doPrepareX coprocessor error for " + Bytes.toString(locations.iterator().next().getRegionInfo().getRegionName()) + " txid: " + transactionId; 
                       LOG.error(errMsg, e);
-                      transactionState.requestPendingCountDec(true);
-                      throw new CommitUnsuccessfulException("Unable to call prepare, coprocessor error", e);
+                      CommitUnsuccessfulException cue = new CommitUnsuccessfulException("Unable to call prepare, coprocessor error", e);
+                      transactionState.requestPendingCountDec(cue);
+                      throw cue;
                    }
                    if(!retry) {
               results = commitMultipleResponse.getResultList();
@@ -1244,8 +1272,9 @@ public class TransactionManager {
             // We have received our reply in the form of an exception,
             // so decrement outstanding count and wake up waiters to avoid
             // getting hung forever
-            transactionState.requestPendingCountDec(true);
-            throw new CommitUnsuccessfulException("Exceeded retry attempts in doPrepareX: " + retryCount, rte);
+            CommitUnsuccessfulException cue = new CommitUnsuccessfulException("Exceeded retry attempts in doPrepareX: " + retryCount, rte);
+            transactionState.requestPendingCountDec(cue);
+            throw cue;
           }
           LOG.error("doPrepareX - Batch - retrying for participant "
                    + participantNum + " transaction " + transactionId + " due to Exception: ", rte);
@@ -1359,9 +1388,10 @@ public class TransactionManager {
               throw new RetryTransactionException(errMsg, se);
           } catch (Throwable e) {
               String errMsg = "doAbortX - Batch - coprocessor error for " + Bytes.toString(locations.iterator().next().getRegionInfo().getRegionName()) + " txid: " + transactionId; 
-             LOG.error(errMsg, e);
-              transactionState.requestPendingCountDec(true);
-              throw new RollbackUnsuccessfulException("doAbortX, Batch - coprocessor error", e);
+              LOG.error(errMsg, e);
+              RollbackUnsuccessfulException rue = new RollbackUnsuccessfulException("doAbortX, Batch - coprocessor error", e);
+              transactionState.requestPendingCountDec(rue);
+              throw rue;
           }
           if(!retry) {
               List<String> exceptions = abortTransactionMultipleResponse.getExceptionList();
@@ -1375,8 +1405,9 @@ public class TransactionManager {
             if(retryCount == RETRY_ATTEMPTS){
                String errMsg = "Exceeded retry attempts in doAbortX: " + retryCount + " (not ingoring)";
                LOG.error(errMsg, rte);
-               transactionState.requestPendingCountDec(true);
-               throw new RollbackUnsuccessfulException("doAbortX, Batch - coprocessor error", rte);
+               RollbackUnsuccessfulException rue = new RollbackUnsuccessfulException("doAbortX, Batch - coprocessor error", rte);
+               transactionState.requestPendingCountDec(rue);
+               throw rue;
             }
             LOG.error("doAbortX - Batch - participant " + participantNum + " retrying transaction "
                         + transactionId + " due to Exception: ", rte);
@@ -1404,7 +1435,7 @@ public class TransactionManager {
       }  while (retry && retryCount++ <= RETRY_ATTEMPTS);
 
 
-      transactionState.requestPendingCountDec(false);
+      transactionState.requestPendingCountDec(null);
       if(LOG.isTraceEnabled()) LOG.trace("doAbortX - Batch -- EXIT txID: " + transactionId);
       return 0;
    }
@@ -2338,7 +2369,7 @@ public class TransactionManager {
         transactionState.completeSendInvoke(loopCount);
     }
          
-        CommitUnsuccessfulException savedCue = null;
+       IOException savedException = null;
 
         //if DDL is involved with this transaction, need to unwind it.
         if(transactionState.hasDDLTx())
@@ -2354,15 +2385,15 @@ public class TransactionManager {
                 loopExit = true; 
               } 
               catch (InterruptedException ie) {}
-              catch (CommitUnsuccessfulException cue) {
+              catch (IOException e) {
                  loopExit = true;
-                 LOG.error("Exception at the time of aborting DDL transaction", cue); 
-                 savedCue = cue;
+                 LOG.error("Exception at the time of aborting DDL transaction", e); 
+                 savedException = e;
               }
             } while (loopExit == false);
             abortDDL(transactionState);
-            if (savedCue != null)
-               throw savedCue; 
+            if (savedException != null)
+               throw savedException; 
         }
 
         if(LOG.isTraceEnabled()) LOG.trace("Abort -- EXIT txID: " + transactionState.getTransactionId());

@@ -64,7 +64,7 @@ public class TransactionState {
     private Object countLock;
     private boolean commitSendDone;
     private Object commitSendLock;
-    private boolean hasError;
+    private Throwable hasError;
     private boolean localTransaction;
     private boolean ddlTrans;
     private static boolean useConcurrentHM = false;
@@ -93,7 +93,7 @@ public class TransactionState {
         requestPendingCount = 0;
         requestReceivedCount = 0;
         commitSendDone = false;
-        hasError = false;
+        hasError = null;
         ddlTrans = false;
 
         if(getCHMVariable) {
@@ -175,34 +175,34 @@ public class TransactionState {
     {
         synchronized (countLock)
         {
-            hasError = false;  // reset, just in case
+            hasError = null;  // reset, just in case
             requestPendingCount = count;
         }
     }
 
     /**
      * 
-     * Method  : requestPendingCountDec
-     * Params  : None
-     * Return  : void
-     * Purpose : Decrease number of outstanding replies needed and wake up any waiters
-     *           if we receive the last one or if the wakeUp value is true (which means
+     * method  : requestpendingcountdec
+     * params  : none
+     * return  : void
+     * purpose : decrease number of outstanding replies needed and wake up any waiters
+     *           if we receive the last one or if the wakeup value is true (which means
      *           we received an exception)
      */
-    public void  requestPendingCountDec(boolean wakeUp)
+    public void  requestPendingCountDec(Throwable exception)
     {
-        synchronized (countLock)
-        {
-            requestReceivedCount++;
-            if ((requestReceivedCount == requestPendingCount) || (wakeUp == true))
-            {
-                //Signal waiters that an error occurred
-                if (wakeUp == true)
-                    hasError = true;
+       synchronized (countLock)
+       {
+          requestReceivedCount++;
+          if ((requestReceivedCount == requestPendingCount) || (exception != null))
+          {
+             //signal waiters that an error occurred
+             if (exception != null)
+                hasError = exception;
 
-                countLock.notify();
-        }
-    }
+             countLock.notify();
+          }
+       }
     }
 
     /**
@@ -212,7 +212,7 @@ public class TransactionState {
      * Return  : Void
      * Purpose : Hang thread until all replies have been received
      */
-    public void completeRequest() throws InterruptedException, CommitUnsuccessfulException
+    public void completeRequest() throws InterruptedException, IOException
     {
         // Make sure we've completed sending all requests first, if not, then wait
         synchronized (commitSendLock)
@@ -230,9 +230,10 @@ public class TransactionState {
                 countLock.wait();
         }
 
-        if (hasError)
-            throw new CommitUnsuccessfulException();
-
+        if (hasError != null)  {
+            hasError.fillInStackTrace();
+            throw new IOException("Exception at completeRequest()", hasError);
+        }
         return;
 
     }
