@@ -1040,7 +1040,7 @@ ExSqlComp::~ExSqlComp()
 
   delete sqlcompMessage_;
 
-  delete sc_;
+  NADELETE(sc_, IpcServerClass, h_);
   NADELETEBASIC(nodeName_, h_);
   nodeName_ = NULL;
 
