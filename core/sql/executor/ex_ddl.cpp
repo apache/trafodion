@@ -204,7 +204,6 @@ short ExDDLTcb::work()
 
       CmpCompileInfo c(ddlTdb().query_, ddlTdb().queryLen_ + 1, 
                        (Lng32)ddlTdb().queryCharSet_,
-                       NULL, 0,
                        ddlTdb().objectName_, ddlTdb().objectNameLen_+1,
                        masterGlob->getStatement()->recompControlInfo(), 
                        masterGlob->getStatement()->recompControlInfoLen(),
@@ -1473,7 +1472,6 @@ short ExProcessVolatileTableTcb::work()
 	    
 	    CmpCompileInfo c(pvtTdb().query_, pvtTdb().queryLen_ + 1,
 			     pvtTdb().queryCharSet_,
-			     NULL, 0,
 			     pvtTdb().objectName_, pvtTdb().objectNameLen_+1,
 			     masterGlob->getStatement()->recompControlInfo(), 
 			     masterGlob->getStatement()->recompControlInfoLen(),
@@ -1927,7 +1925,6 @@ short ExProcessInMemoryTableTcb::work()
 	    
 	    CmpCompileInfo c(pimtTdb().query_, pimtTdb().queryLen_ + 1,
 			     pimtTdb().queryCharSet_,
-			     NULL, 0,
 			     pimtTdb().objectName_, pimtTdb().objectNameLen_+1,
 			     masterGlob->getStatement()->recompControlInfo(), 
 			     masterGlob->getStatement()->recompControlInfoLen(),

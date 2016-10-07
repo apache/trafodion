@@ -100,7 +100,7 @@ void ComTdbRoot::init(ComTdb * child_tdb,
 		      SqlTableOpenInfo **stoiList,
 		      LateNameInfoList * lateNameInfoList,
 		      Queue *viewStoiList,
-		      QuerySimilarityInfo * qsi,
+		      TrafQuerySimilarityInfo * qsi,
 		      Space *space,
                       Lng32 uniqueExecuteIdOffset, // ++Triggers -
 		      Lng32 triggersStatusOffset,
@@ -541,6 +541,13 @@ void ComTdbRoot::displayContents(Space * space,ULng32 flag)
 	  str_sprintf(buf,"flags_ = %b ", getRWRSInfo()->flags_);
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	}
+
+      if (querySimilarityInfo() && querySimilarityInfo()->siList())
+        {
+	  str_sprintf(buf,"querySimilarityInfo()->siList()->numEntries() = %d ",
+                      querySimilarityInfo()->siList()->entries());
+	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+        }
 
       Lng32 fragOffset;
       Lng32 fragLen;

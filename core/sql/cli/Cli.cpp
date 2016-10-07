@@ -3155,21 +3155,12 @@ Lng32 SQLCLI_PerformTasks(
 	  // if we do have something to set... the output descriptor
 	  // had better be available by the time we call local_SetDescPointers
 	  //
-	  //LCOV_EXCL_START
 	  if (!output_desc)
 	    {
 	      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
 	      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
 	    }
-	  //LCOV_EXCL_STOP
-	 /* 
-#ifdef NA_64BIT
-          // dg64 - the old way won't compile on 64-bit
-          va_list cpy;
-          va_copy(cpy, ap);
-          va_end(ap);
-#endif
-*/
+
 	  retcode = local_SetDescPointers(output_desc, 1,
 #ifdef NA_64BIT
                                           // dg64 - the old way won't compile on 64-bit
@@ -11000,105 +10991,6 @@ Lng32 SQLCLI_LOBddlInterface
     return 0;
 }
 
-#ifdef __ignore
-Lng32 SQLCLI_LOBloader2sqlInterface
-(
- /*IN*/     CliGlobals *cliGlobals,
- /*IN*/     char * lobHandle,
- /*IN*/     Lng32  lobHandleLen,
- /*IN*/     char * lobInfo,
- /*IN*/     Lng32  lobInfoLen,
- /*IN*/     LOBcliQueryType qType,
- /*INOUT*/  char * dataLoc, /* IN: for load, OUT: for extract */
- /*INOUT*/  Int64 &dataLen,   /* length of data. 0 indicates EOD */
- /*INOUT*/  void* *cliInterface  /* INOUT: if returned, save it and 
-           				   pass it back in on the next call */
-
- )
-{
-  ContextCli   & currContext = *(cliGlobals->currContext());
-  ComDiagsArea & diags       = currContext.diags();
-
-  if (! currContext.currLobGlobals())
-    {
-      currContext.currLobGlobals() = 
-	new(currContext.exHeap()) LOBglobals(currContext.exHeap());
-      ExpLOBoper::initLOBglobal
-	(currContext.currLobGlobals()->lobAccessGlobals(), currContext.exHeap(),currContext);
-    }
-  void * lobGlobs = currContext.currLobGlobals()->lobAccessGlobals();
-  Int16 flags;
-  Lng32  lobType, lobNum;
-  Int64 uid, inDescSyskey, descPartnKey;
-  short schNameLen;
-  char schName[512];
-  ExpLOBoper::extractFromLOBhandle(&flags, &lobType, &lobNum, &uid, 
-				   &inDescSyskey, &descPartnKey, 
-				   &schNameLen, schName,
-				   lobHandle);
-
-  char tgtLobNameBuf[100];
-  char * tgtLobName = 
-    ExpLOBoper::ExpGetLOBname(uid, lobNum, tgtLobNameBuf, 100);
-
-  Lng32 cliRC = 0;
-
-  LOBcliQueryType saveQtype = qType;  
-
-  switch (qType)
-    {
-  case LOB_DATA_LOAD:
-      {
-	// temp until lobStorageLocation is passed in.
-	char llb[100];
-	strcpy(llb, lobInfo);
-	char * lobLoc = llb;
-
-	Int64 descSyskey = -1;
-	Int64 requestTag = -1;
-	Lng32 cliError = 0;
-	cliRC = ExpLOBInterfaceInsert(lobGlobs,
-				      tgtLobName, 
-				      lobLoc,
-				      lobType,
-				      NULL, 0,
-
-				      lobHandleLen, lobHandle,
-				      NULL, NULL,
-				      0, NULL,
-				      requestTag, 
-				      0,
-				      inDescSyskey, 
-				      Lob_InsertDataSimple,
-				      &cliError,
-				      Lob_Memory,
-				     
-				      1, // waited
-				      dataLoc,
-				      dataLen); 
-	
-	if (cliRC < 0)
-	  {
-	    Lng32 intParam1 = -cliRC;
-	    ComDiagsArea * da = &diags;
-	    ExRaiseSqlError(currContext.exHeap(), &da, 
-			    (ExeErrorCode)(8442), NULL, &intParam1, 
-			    &cliError, NULL, (char*)"ExpLOInterfaceInsert",
-			    getLobErrStr(intParam1));
-	    goto error_return;
-	  }
-	
-      }
-      break;
-
-    } // switch 
-
-  // normal return. Fall down to deallocate of structures.
-  
- error_return:
-  return (cliRC < 0 ? cliRC : 0);
-}
-#endif
 /*
   Int32 SQLCLI_SWITCH_TO_COMPILER_TYPE(CliGlobals * cliGlobals,
                                        Int32 compiler_class_type)

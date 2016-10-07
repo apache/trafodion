@@ -1410,13 +1410,6 @@ void ExEspControlMessage::actOnFixupFragmentReq(ComDiagsArea &da)
 	    }
 	}
 
-      if (moreObjects() AND getNextObjType() == ESP_LATE_NAME_INFO)
-	{
-	  lnio = new(instHeap) ExResolvedNameObj(NULL, instHeap, TRUE);
-
-	  *this >> *lnio;
-	}
-
       if (moreObjects() AND getNextObjType() == ESP_RESOURCE_INFO)
 	{
 	  ri = new(instHeap) ExMsgResourceInfo(NULL,instHeap);
@@ -1449,10 +1442,6 @@ void ExEspControlMessage::actOnFixupFragmentReq(ComDiagsArea &da)
       // remember the input fragment process ids in the globals for this
       // fragment entry
       glob->setPidFragList(poflist);
-
-      // Soln 10-041117-1848
-      if (lnio)
-	glob->resolvedNameList() = lnio->resolvedNameList();
 
       glob->setResourceInfo(ri);
       if ( td ) * glob->getTimeoutData() = td->getTimeoutData() ;  

@@ -83,9 +83,6 @@ class ExSMDownloadInfo;
 // -----------------------------------------------------------------------
 // Forward references
 // -----------------------------------------------------------------------
-class ResolvedNameList;
-class ResolvedNameListPre1800;
-class ResolvedName;
 class TimeoutData;
 
 // -----------------------------------------------------------------------
@@ -1093,43 +1090,6 @@ public:
                   { return findEntry(fragId)->getProcessId(instanceNum); }
 
 };
-
-// -----------------------------------------------------------------------
-// Information needed to open SQL tables.
-// -----------------------------------------------------------------------
-class ExResolvedNameObj : public ExEspMsgObj
-{
-public:
-
-  ExResolvedNameObj(ResolvedNameList * rnl,
-		    NAMemory         * heap,
-		    NABoolean        takeOwnership = FALSE);
-  ~ExResolvedNameObj();
-
-  // accessor functions
-  inline ResolvedNameList * resolvedNameList() { return rnl_; }
-
-  // method needed to pack and unpack this object
-  IpcMessageObjSize packedLength();
-  IpcMessageObjSize packObjIntoMessage(IpcMessageBufferPtr buffer);
-  void unpackObj(IpcMessageObjType objType,
-		 IpcMessageObjVersion objVersion,
-		 NABoolean sameEndianness,
-		 IpcMessageObjSize objSize,
-		 IpcConstMessageBufferPtr buffer);
-
-  // ---------------------------------------------------------------------
-  // Override of the IpcMessageObj::isActualVersionOK virtual method.
-  // An ExResolvedNameObj's version is OK if it is one of a set of known versions.
-  //
-  NABoolean isActualVersionOK (const IpcMessageObjVersion actualVersion) const
-    {return (  (actualVersion == Pre1800ResolvedNameObjVersion) || (actualVersion == CurrResolvedNameObjVersion) ); }
-
-private:
-  ResolvedNameList * rnl_;
-  ExIpcMsgBoolean  iOwnRnl_; // TRUE means destructor deletes rnl_
-};
-
 
 // -----------------------------------------------------------------------
 // The generated data of a fragment, in a form that can be shipped in

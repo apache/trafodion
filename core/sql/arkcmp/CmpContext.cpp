@@ -175,7 +175,6 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   diags_ = ComDiagsArea::allocate(heap_);
   SqlParser_Diags = diags_;
 
-  recompLateNameInfoList_ = NULL;
   char* streamName;
   outFstream_ = NULL;
 

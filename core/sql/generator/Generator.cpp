@@ -2891,6 +2891,22 @@ Attributes * Generator::getAttr(ItemExpr * ie)
     return getMapInfo(ie->getValueId())->getAttr();
 }
 
+void Generator::addTrafSimTableInfo(TrafSimilarityTableInfo *newST)
+{
+  for (CollIndex i = 0; i < getTrafSimTableInfoList().entries(); i++)
+    {
+      TrafSimilarityTableInfo *ti = 
+        (TrafSimilarityTableInfo*)getTrafSimTableInfoList()[i];
+      if (*ti == *newST)
+        {
+          // value exists, do not add.
+          return;
+        }
+    }
+
+  getTrafSimTableInfoList().insert(newST);
+}
+
 // Helper method used by caching operators to ensure a statement
 // execution count is included in their characteristic input.
 // The "getOrAdd" semantic is to create the ValueId if it doesn't

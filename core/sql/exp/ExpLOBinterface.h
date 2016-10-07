@@ -295,7 +295,10 @@ Lng32 ExpLOBinterfacePurgeBackupLobDataFile(void *& lobGlob,  char *hdfsServer, 
 // dirPath: path to needed directory (includes directory name)
 // modTS is the latest timestamp on any file/dir under dirPath.
 // This method validates that current modTS is not greater then input modTS.
-// On return, failedModTS contains current timestamp that caused mismatch.
+// On return:
+//   failedModTS contains current timestamp that caused mismatch.
+//   failedLocBuf: buffer where path/name of failed dir/file will be returned.
+//   failedLocBufLen: IN: max len of buf. OUT: actual length of data.
 // Return: 1, if check fails. 0, if passes. -1, if error.
 Lng32 ExpLOBinterfaceDataModCheck(void * lobGlob,
                                   char * dirPath,
@@ -303,7 +306,9 @@ Lng32 ExpLOBinterfaceDataModCheck(void * lobGlob,
                                   Lng32  lobHdfsPort,
                                   Int64  modTS,
                                   Lng32  numOfPartLevels,
-                                  Int64 &failedModTS);
+                                  Int64 &failedModTS,
+                                  char * failedLocBuf,
+                                  Int32 &failedLocBufLen);
 
 Lng32 ExpLOBinterfaceEmptyDirectory(void * lobGlob,
                             char * lobName,

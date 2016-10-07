@@ -261,15 +261,12 @@ void CmpMessageReplyBasic::unpackMyself(IpcMessageObjType objType,
 
 CmpCompileInfo::CmpCompileInfo(char * sourceStr, Lng32 sourceStrLen,
 			       Lng32 sourceStrCharSet,
-			       RecompLateNameInfoList * recompLateNameInfoList,
-			       Lng32 rlnilLen,
 			       char * schemaName, Lng32 schemaNameLen,
 			       char * recompControlInfo, Lng32 recompControlInfoLen,
                                ULng32 inputArrayMaxsize, short atomicity)
      : flags_(0),
        sqltext_(sourceStr), sqlTextLen_(sourceStrLen),
        sqlTextCharSet_(sourceStrCharSet),
-       rlnil_(recompLateNameInfoList), rlnilLen_(rlnilLen),
        schemaName_(schemaName), schemaNameLen_(schemaNameLen),
        recompControlInfo_(recompControlInfo), recompControlInfoLen_(recompControlInfoLen),
        inputArrayMaxsize_(inputArrayMaxsize)
@@ -292,8 +289,6 @@ CmpCompileInfo::CmpCompileInfo()
     sqltext_(NULL), 
     sqlTextLen_(0),
     sqlTextCharSet_(0),
-    rlnil_(NULL), 
-    rlnilLen_(0),
     schemaName_(NULL), 
     schemaNameLen_(0),
     recompControlInfo_(NULL), 
@@ -309,8 +304,6 @@ void CmpCompileInfo::init()
   sqltext_ = NULL; 
   sqlTextLen_ = 0;
   sqlTextCharSet_ = 0;
-  rlnil_ = NULL; 
-  rlnilLen_ = 0;
   schemaName_ = NULL; 
   schemaNameLen_ = 0;
   recompControlInfo_ = NULL; 
@@ -328,7 +321,7 @@ Lng32 CmpCompileInfo::getLength()
 Lng32 CmpCompileInfo::getVarLength()
 {
   return ROUND8(sqlTextLen_) + 
-    ROUND8(rlnilLen_) + ROUND8(schemaNameLen_) 
+    ROUND8(schemaNameLen_) 
     + ROUND8(recompControlInfoLen_);
 }
 
@@ -342,13 +335,6 @@ void CmpCompileInfo::packVars(char * buffer, CmpCompileInfo *ci,
       nextOffset += ROUND8(sqlTextLen_);
     }
   
-  if (rlnil_ && (rlnilLen_ > 0))
-    {
-      str_cpy_all(&buffer[nextOffset], (char *)rlnil_, rlnilLen_);
-      ci->rlnil_ = (RecompLateNameInfoList *)nextOffset;
-      nextOffset += ROUND8(rlnilLen_);
-    }
-
   if (schemaName_ && (schemaNameLen_ > 0))
     {
       str_cpy_all(&buffer[nextOffset], (char *)schemaName_, schemaNameLen_);
@@ -384,11 +370,6 @@ void CmpCompileInfo::unpack(char * base)
       sqltext_ = base + (Lng32)((Long)sqltext_);
     }
  
-  if (rlnil_)
-    {
-      rlnil_ = (RecompLateNameInfoList *)(base + (Lng32)(Long)rlnil_);
-    }
-  
   if (schemaName_)
     {
       schemaName_ = base + (Lng32)(Long)schemaName_;
@@ -401,7 +382,6 @@ void CmpCompileInfo::unpack(char * base)
 }
 
 void CmpCompileInfo::getUnpackedFields(char* &sqltext,
-				       RecompLateNameInfoList* &rlnil,
 				       char* &schemaName,
 				       char* &recompControlInfo)
 {
@@ -410,11 +390,6 @@ void CmpCompileInfo::getUnpackedFields(char* &sqltext,
   if (sqltext_)
     {
       sqltext = base + (Lng32)(Long)sqltext_;
-    }
-  
-  if (rlnil_)
-    {
-      rlnil = (RecompLateNameInfoList *)(base + (Lng32)(Long)rlnil_);
     }
   
   if (schemaName_)
@@ -474,7 +449,6 @@ CmpDDLwithStatusInfo::CmpDDLwithStatusInfo(char * sourceStr, Lng32 sourceStrLen,
                                            char * schemaName, Lng32 schemaNameLen, 
                                            char * recompControlInfo, Lng32 recompControlInfoLen)
   : CmpCompileInfo(sourceStr, sourceStrLen, sourceStrCharSet,
-                   NULL, 0,
                    schemaName, schemaNameLen,
                    recompControlInfo, recompControlInfoLen,
                    0, 0)
