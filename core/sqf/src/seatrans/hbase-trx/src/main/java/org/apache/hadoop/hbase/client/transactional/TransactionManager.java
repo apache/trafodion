@@ -426,8 +426,13 @@ public class TransactionManager {
           catch (UnknownTransactionException ute) {
              LOG.error("Got unknown exception in doCommitX by participant " + participantNum
                        + " for transaction: " + transactionId, ute);
-             transactionState.requestPendingCountDec(ute);
-             throw ute;
+             logUteDetails(transactionState, ute);
+             if (ignoreUnknownTransaction) 
+                transactionState.requestPendingCountDec(null);
+             else {
+                transactionState.requestPendingCountDec(ute);
+                throw ute;
+             }
           }
           catch (RetryTransactionException rte) {
              if(retryCount == RETRY_ATTEMPTS) {
@@ -534,11 +539,16 @@ public class TransactionManager {
              }
           }
           catch (UnknownTransactionException ute) {
-              String errMsg = new String("Got unknown exception in doCommitX by participant " + participantNum
+             String errMsg = new String("Got unknown exception in doCommitX by participant " + participantNum
               		  + " for transaction: " + transactionId);
-              LOG.error(errMsg, ute);
-              transactionState.requestPendingCountDec(ute);
-              throw ute;
+             LOG.error(errMsg, ute);
+             logUteDetails(transactionState, ute);
+             if (ignoreUnknownTransaction) 
+                transactionState.requestPendingCountDec(null);
+             else {
+                transactionState.requestPendingCountDec(ute);
+                throw ute;
+             }
           }
           catch (RetryTransactionException rte) {
              if (retryCount == RETRY_ATTEMPTS) {
@@ -968,8 +978,8 @@ public class TransactionManager {
           catch (UnknownTransactionException ute) {
              LOG.error("Got unknown exception in doAbortX by participant " + participantNum
                        + " for transaction: " + transactionId, ute);
-             transactionState.requestPendingCountDec(ute);
-             throw ute;
+             logUteDetails(transactionState, ute);
+             transactionState.requestPendingCountDec(null);
           }
           catch (RetryTransactionException rte) {
               if (retryCount == RETRY_ATTEMPTS) {
@@ -1077,8 +1087,8 @@ public class TransactionManager {
           catch (UnknownTransactionException ute) {
              LOG.error("Got unknown exception in doAbortX by participant " + participantNum
                        + " for transaction: " + transactionId, ute);
-             transactionState.requestPendingCountDec(ute);
-             throw ute;
+             logUteDetails(transactionState, ute);
+             transactionState.requestPendingCountDec(null);
           }
           catch (RetryTransactionException rte) {
               if (retryCount == RETRY_ATTEMPTS){
@@ -2063,6 +2073,39 @@ public class TransactionManager {
       }
       if(LOG.isTraceEnabled()) LOG.trace("retryAbort -- EXIT -- txid: " + transactionState.getTransactionId());
     }
+
+    public void logUteDetails(final TransactionState transactionState, UnknownTransactionException ute) 
+    {
+      if (ute.toString().contains("DUPLICATE")) {
+              int participantNum = 0;
+              byte[] startKey;
+              byte[] endKey_orig;
+              byte[] endKey;
+
+              for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
+
+                  participantNum++;
+                  final byte[] regionName = location.getRegionInfo().getRegionName();
+
+                  startKey = location.getRegionInfo().getStartKey();
+                  endKey_orig = location.getRegionInfo().getEndKey();
+                  if(endKey_orig == null || endKey_orig == HConstants.EMPTY_END_ROW)
+                      endKey = null;
+                  else
+                      endKey = TransactionManager.binaryIncrementPos(endKey_orig, -1);
+
+                  LOG.warn("Received DUPLICATE Commit for transId: "
+                      + transactionState.getTransactionId()
+                     // + " startKey: " + new String(startKey, "UTF-8") + " endKey: " 
+                    //  + new String(endKey, "UTF-8") 
+                      + "startKey" + startKey + " endKey" +  endKey
+                      + ".  Listing participants: #" + participantNum + ", region: "
+                      + location.getRegionInfo().getRegionNameAsString());
+
+                  }
+          }
+
+    }
     /**
      * Do the commit. This is the 2nd phase of the 2-phase protocol.
      *
@@ -2309,16 +2352,16 @@ public class TransactionManager {
       if(LOG.isTraceEnabled()) LOG.trace("Abort -- ENTRY txID: " + transactionState.getTransactionId());
         int loopCount = 0;
 
-      transactionState.setStatus(TransState.STATE_ABORTED);
-      // (Asynchronously send aborts
-      if (batchRegionServer && (TRANSACTION_ALGORITHM == AlgorithmType.MVCC)) {
-        ServerName servername;
-        List<TransactionRegionLocation> regionList;
-        Map<ServerName, List<TransactionRegionLocation>> locations = new HashMap<ServerName, List<TransactionRegionLocation>>();
+        transactionState.setStatus(TransState.STATE_ABORTED);
+        // (Asynchronously send aborts
+        if (batchRegionServer && (TRANSACTION_ALGORITHM == AlgorithmType.MVCC)) {
+            ServerName servername;
+            List<TransactionRegionLocation> regionList;
+            Map<ServerName, List<TransactionRegionLocation>> locations = new HashMap<ServerName, List<TransactionRegionLocation>>();
 
         for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
             if (transactionState.getRegionsToIgnore().contains(location)) {
-                continue;
+               continue;
             }
             servername = location.getServerName();
 
