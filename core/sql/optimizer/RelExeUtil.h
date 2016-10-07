@@ -1051,7 +1051,8 @@ public:
          doParallelDeleteIfXn_(FALSE),
          offlineTable_(FALSE),
          doLabelPurgedata_(FALSE),
-         numLOBs_(0)
+         numLOBs_(0),
+         lobNumArray_(oHeap)
   {
   };
 

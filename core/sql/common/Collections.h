@@ -3028,7 +3028,7 @@ public:
     // no-op if NAKeyLookup couldn't possibly allocate any memory 
     if ( keyProvenance_ != NAKeyLookupEnums::KEY_INSIDE_VALUE ) return ;
 
-    NAList<K *> keys ;
+    NAList<K *> keys (this->heap_);
     dumpKeys (keys) ;
     CollIndex entries = keys.entries() ; 
     for ( CollIndex i = 0 ; i < entries ; i++ )

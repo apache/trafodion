@@ -6707,8 +6707,10 @@ Union::Union(RelExpr *leftChild,
   ,rightList_(NULL)
   ,currentChild_(-1)
   ,alternateRightChildOrderExprTree_(NULL) //++MV
-  ,isSystemGenerated_(sysGenerated),
-  isSerialUnion_(FALSE)
+  ,isSystemGenerated_(sysGenerated)
+  ,isSerialUnion_(FALSE)
+  ,variablesSet_(oHeap)
+  
 {
   if ( NOT mayBeCacheable )
     setNonCacheable();

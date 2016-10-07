@@ -1284,7 +1284,7 @@ NABoolean CacheData::backpatchParams
   CollIndex y=0;
   Int32 countP2 = formals_.entries();
   Int32 countS2 = fSels_.entries();
-  LIST(NAType*) hqcTypes;
+  LIST(NAType*) hqcTypes(STMTHEAP);
 
   for (CollIndex j = 0; j < (countP2+countS2); j ++)
   {

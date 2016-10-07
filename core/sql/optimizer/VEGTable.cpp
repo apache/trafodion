@@ -448,7 +448,7 @@ void VEGRegion::addVEG(const ValueIdSet & vegMembers)
 // -----------------------------------------------------------------------
 void VEGRegion::mergeForwardingEntries(const VEGRegion *fromRegion)
 {
-  LIST(VEGMember *) allForwardingEntries;
+  LIST(VEGMember *) allForwardingEntries(STMTHEAP);
   fromRegion->gatherForwardingEntries(allForwardingEntries);
 
   for(CollIndex i = 0; i < allForwardingEntries.entries(); i++)
@@ -902,7 +902,7 @@ void VEGRegion::replaceInstantiateNullMembers()
   Lng32 index;               // loop index
   InstantiateNull * instNullPtr; // -> an InstantiateNull 
   VEGMember * memberPtr;         // -> a VEGMember
-  LIST(VEGMember *)deleteStack;  // VEGMember that are to be deleted
+  LIST(VEGMember *)deleteStack(STMTHEAP);  // VEGMember that are to be deleted
   ValueId exprId;                // ValueId of a member of the VEG
   ValueIdSet vegMembers;         // set of all members for a VEG 
 
@@ -1216,7 +1216,7 @@ void VEGRegion::processZones()
 #pragma nowarn(1506)   // warning elimination 
   Lng32 ne = members_.entries();
 #pragma warn(1506)  // warning elimination 
-  LIST(VEGMember *) deleteStack;
+  LIST(VEGMember *) deleteStack(STMTHEAP);
 
   // Walk through the members of this VEGRegion to check if any member
   // is to be deleted.

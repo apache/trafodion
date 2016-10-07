@@ -943,7 +943,7 @@ void MultiJoin::synthLogProp(NormWA * normWAPtr)
   
   CASortedList * synthLogPropPath =        
     new (CmpCommon::statementHeap()) 
-      CASortedList(jbbcs.entries(), CmpCommon::statementHeap());
+    CASortedList(CmpCommon::statementHeap(), jbbcs.entries());
       
   synthLogPropPath->insert((*(left.jbbcsToJBBSubset()->getSynthLogPropPath())));
   synthLogPropPath->insert(right.getFirst());

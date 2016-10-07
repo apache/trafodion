@@ -536,7 +536,7 @@ RETDesc *RETDesc::nullInstantiate(BindWA *bindWA,
 // ***********************************************************************
 ColumnNameMap *RETDesc::findColumn(const ValueId vid) const
 {
-  LIST(ColumnNameMap *) colNameMapList;
+  LIST(ColumnNameMap *) colNameMapList(STMTHEAP);
 
   ColumnNameMap *currColNameMap = NULL;
 
@@ -589,7 +589,8 @@ void RETDesc::getTableList(LIST(TableNameMap*) &xtnmList,
       xtnmList.removeAt(i);
 
   // Separate names by number of parts (corr, tbl, sch.tbl, cat.sch.tbl)
-  LIST(TableNameMap*) xtnmCORR, xtnmT, xtnmST, xtnmCST;
+  LIST(TableNameMap*) xtnmCORR(STMTHEAP), xtnmT(STMTHEAP); 
+  LIST(TableNameMap*) xtnmST(STMTHEAP), xtnmCST(STMTHEAP);
   for (i = 0; i < xtnmList.entries(); i++) {
     const CorrName& corr = xtnmList[i]->getTableName();
     const QualifiedName& qual = corr.getQualifiedNameObj();
@@ -623,7 +624,8 @@ void RETDesc::getTableList(LIST(TableNameMap*) &xtnmList,
 
   // Sort in ascending order by name, removing any duplicates.
   if (xtnmList.entries() > 1) {
-    LIST(TableNameMap*) xtnmT = xtnmList;
+    LIST(TableNameMap*) xtnmT(STMTHEAP);
+    xtnmT = xtnmList;
     xtnmList.clear();
 
     while (xtnmT.entries()) {
@@ -804,7 +806,7 @@ void RETDesc::print(FILE* ofd, const char* indent, const char* title) const
     NEW_INDENT, title, this,
     groupedFlag_ ? "(grouped) " : "");
 
-  LIST(TableNameMap*) xtnmList;
+  LIST(TableNameMap*) xtnmList(STMTHEAP);
   xtnm_.dump(xtnmList);
   for (i = 0; i < xtnmList.entries(); i++)
     fprintf(ofd, "%s\n ",

@@ -77,7 +77,7 @@ void RelExpr::addExplainPredicates(ExplainTupleMaster * explainTuple,
   // labelList is on global heap to avoid memory lekas; if it were on
   // statement heap, it would cause memory leak as the elements of the
   // list on global heap CR 10-010813-4515
-  NAList<NAString>   labelList;
+  NAList<NAString>   labelList(generator->wHeap());
 
   ExprNode           *currExpr = NULL;
   NAString           unParsed((size_t)4096, generator->wHeap());

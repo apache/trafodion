@@ -2876,7 +2876,7 @@ void HbaseSearchKey::makeHBaseSearchKeys(
       // Step 2: check how many key columns we should use to expand RangeSpecs
 
       // List of ValueIdSets, one for each HbaseSearchKey to be generated
-      LIST(ValueIdSet) predListForSearchKeys;
+      LIST(ValueIdSet) predListForSearchKeys(STMTHEAP);
 
       // remember range specs and their associated individual preds
       ValueIdSet rangeSpecs, rangePreds, allKeyPreds;

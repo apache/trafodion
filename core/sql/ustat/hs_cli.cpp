@@ -2031,7 +2031,7 @@ HSPersData* HSPersData::Instance(const NAString &catalog)
       instance_ = new (CTXTHEAP) HSPersData;
 
     if (persDataList_ == 0)
-      persDataList_ = new (CTXTHEAP) NAList<NAString>;
+      persDataList_ = new (CTXTHEAP) NAList<NAString>(CTXTHEAP);
     if (catalog_ == 0)
       catalog_ = new (CTXTHEAP) NAString("");
     if (schema_ == 0)

@@ -140,7 +140,11 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   CDBList_(NULL),
   allControlCount_(0),
   optSimulator_(NULL),
-  hosts_(h)
+  hosts_(h),
+  invocationInfos_(h),
+  planInfos_(h),
+  routineHandles_(h),
+  ddlObjs_(h)
 {
   SetMode(isDynamicSQL() ? STMT_DYNAMIC : STMT_STATIC);
 

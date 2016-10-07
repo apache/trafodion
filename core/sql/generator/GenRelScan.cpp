@@ -2711,7 +2711,7 @@ short HbaseAccess::codeGen(Generator * generator)
     {
       listOfFetchedColNames = new(space) Queue(space);
 
-      NAList<NAString> sortedColList;
+      NAList<NAString> sortedColList(generator->wHeap());
       sortValues(retHbaseColRefSet_, sortedColList);
       
       for (Lng32 ij = 0; ij < sortedColList.entries(); ij++)

@@ -496,7 +496,7 @@ short CmpSeabaseDDL::getListOfReferencedTables(
 {
   Lng32 retcode = 0;
 
-  NAList <objectRefdByMe> tempRefdList;
+  NAList <objectRefdByMe> tempRefdList(STMTHEAP);
   retcode = getListOfDirectlyReferencedObjects (cliInterface, objectUID, tempRefdList);
   
   // If unexpected error - return
@@ -1183,7 +1183,7 @@ void CmpSeabaseDDL::dropSeabaseView(
 
   // get the list of all tables referenced by the view.  Save this list so 
   // referenced tables can be removed from cache later
-  NAList<objectRefdByMe> tablesRefdList;
+  NAList<objectRefdByMe> tablesRefdList(STMTHEAP);
   short status = getListOfReferencedTables(&cliInterface, objUID, tablesRefdList);
 
   if (usingViewsQueue)

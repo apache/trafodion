@@ -9496,7 +9496,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   //
   NABoolean view = bindWA->getNATable(getTableName())->getViewText() != NULL;
   ValueIdList tgtColList, userColList, sysColList, *userColListPtr;
-  CollIndexList colnoList;
+  CollIndexList colnoList(STMTHEAP);
   CollIndex totalColCount, defaultColCount, i;
 
   getTableDesc()->getSystemColumnList(sysColList);
@@ -11425,7 +11425,7 @@ void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
   }
 
   CollIndex     i, j;
-  CollIndexList colnoList;                  // map of col nums (row positions)
+  CollIndexList colnoList(STMTHEAP);   // map of col nums (row positions)
   CollIndex a = assignList.entries();
 
   const ColumnDescList *viewColumns = NULL;
@@ -16547,7 +16547,7 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
     RETDesc *childRetDesc = child(i)->getRETDesc();
     
     // Get Name
-    LIST(CorrName*) nameList;
+    LIST(CorrName*) nameList(STMTHEAP);
     childRetDesc->getXTNM().dumpKeys(nameList);
     if (nameList.entries() == 1)
     {
