@@ -2108,7 +2108,7 @@ RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
 
   if (retcode == 1) // check failed
     {
-      char errStr[200];
+      char errStr[2000];
       str_sprintf(errStr, "compiledModTS = %Ld, failedModTS = %Ld, failedLoc = %s", 
                   si->modTS(), failedModTS, 
                   (failedLocBufLen > 0 ? failedLocBuf : si->hdfsRootDir()));
@@ -3396,7 +3396,6 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
           
 	case RE_EXECUTE_:                
 	  {
-	    // save lnil & stuff
 	    // if input descriptor was passed in at execute time, recreate 
 	    // the input data
 	    // Setting the boolean reExecute to true, will cause the

@@ -1064,7 +1064,8 @@ TrafSimilarityTableInfo::TrafSimilarityTableInfo(char * tableName,
        hdfsRootDir_(hdfsRootDir),
        modTS_(modTS), numPartnLevels_(numPartnLevels),
        hdfsDirsToCheck_(hdfsDirsToCheck),
-       hdfsHostName_(hdfsHostName), hdfsPort_(hdfsPort)
+       hdfsHostName_(hdfsHostName), hdfsPort_(hdfsPort),
+       flags_(0)
 {
   if (isHive)
     setIsHive(TRUE);
@@ -1076,7 +1077,8 @@ TrafSimilarityTableInfo::TrafSimilarityTableInfo()
        hdfsRootDir_(NULL),
        modTS_(-1), numPartnLevels_(-1),
        hdfsDirsToCheck_(NULL),
-       hdfsHostName_(NULL), hdfsPort_(NULL)
+       hdfsHostName_(NULL), hdfsPort_(NULL),
+       flags_(0)
 {
 }
 
