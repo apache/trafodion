@@ -288,6 +288,8 @@ public class TransactionManager {
 
         if( TRANSACTION_ALGORITHM == AlgorithmType.MVCC){
         do {
+          retry = false;
+          refresh = false;
           try {
 
             if (LOG.isDebugEnabled()) LOG.debug("doCommitX -- ENTRY txid: " + transactionId
@@ -424,15 +426,24 @@ public class TransactionManager {
 
           }
           catch (UnknownTransactionException ute) {
-             LOG.error("Got unknown exception in doCommitX by participant " + participantNum
-                       + " for transaction: " + transactionId, ute);
-             logUteDetails(transactionState, ute);
-             if (ignoreUnknownTransaction) 
+             String errMsg = new String("Got unknown exception in doCommitX by participant " + participantNum
+                       + " for transaction: " + transactionId);
+             if (ignoreUnknownTransaction) {
+                LOG.info(errMsg + " ,but ignored", ute);
                 transactionState.requestPendingCountDec(null);
-             else {
-                transactionState.requestPendingCountDec(ute);
-                throw ute;
              }
+             else {
+                LOG.error(errMsg, ute);
+                transactionState.logUteDetails();
+                transactionState.requestPendingCountDec(null);
+             }
+          }
+          catch (org.apache.hadoop.hbase.exceptions.FailedSanityCheckException fsce) {
+              LOG.error("doCommitX transaction: " + transactionId + " non-retriable error: " + fsce);
+              refresh = false;
+              retry = false;
+              transactionState.requestPendingCountDec(fsce);
+              throw fsce;
           }
           catch (RetryTransactionException rte) {
              if(retryCount == RETRY_ATTEMPTS) {
@@ -470,6 +481,8 @@ public class TransactionManager {
 
         if( TRANSACTION_ALGORITHM == AlgorithmType.SSCC){
         do {
+          retry = false;
+          refresh = false;
           try {
 
             if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- ENTRY txid: " + transactionId +
@@ -541,13 +554,14 @@ public class TransactionManager {
           catch (UnknownTransactionException ute) {
              String errMsg = new String("Got unknown exception in doCommitX by participant " + participantNum
               		  + " for transaction: " + transactionId);
-             LOG.error(errMsg, ute);
-             logUteDetails(transactionState, ute);
-             if (ignoreUnknownTransaction) 
+             if (ignoreUnknownTransaction) {
+                LOG.info(errMsg + " ,but ignored", ute);
                 transactionState.requestPendingCountDec(null);
+             }
              else {
-                transactionState.requestPendingCountDec(ute);
-                throw ute;
+                LOG.error(errMsg, ute);
+                transactionState.logUteDetails();
+                transactionState.requestPendingCountDec(null);
              }
           }
           catch (RetryTransactionException rte) {
@@ -614,6 +628,8 @@ public class TransactionManager {
 
        if( TRANSACTION_ALGORITHM == AlgorithmType.MVCC){
        do {
+          retry = false;
+          refresh = false;
           try {
              Batch.Call<TrxRegionService, CommitRequestResponse> callable =
                 new Batch.Call<TrxRegionService, CommitRequestResponse>() {
@@ -768,6 +784,8 @@ public class TransactionManager {
        }
        if( TRANSACTION_ALGORITHM == AlgorithmType.SSCC){
        do {
+          retry = false;
+          refresh = false;
           try {
              Batch.Call<SsccRegionService, SsccCommitRequestResponse> callable =
                 new Batch.Call<SsccRegionService, SsccCommitRequestResponse>() {
@@ -902,7 +920,8 @@ public class TransactionManager {
      * Return  : Ignored
      * Purpose : Call abort for a given regionserver
      */
-    public Integer doAbortX(final byte[] regionName, final long transactionId, final int participantNum, final boolean dropTableRecorded) throws IOException{
+    public Integer doAbortX(final byte[] regionName, final long transactionId, final int participantNum, 
+               final boolean dropTableRecorded, boolean ignoreUnknownTransaction) throws IOException{
         if(LOG.isDebugEnabled()) LOG.debug("doAbortX -- ENTRY txID: " + transactionId + " participantNum "
                         + participantNum + " region " + regionName.toString());
         boolean retry = false;
@@ -913,6 +932,8 @@ public class TransactionManager {
         Admin admin = connection.getAdmin();
         if( TRANSACTION_ALGORITHM == AlgorithmType.MVCC) {
         do {
+            retry = false;
+            refresh = false;
             try {
 
               Batch.Call<TrxRegionService, AbortTransactionResponse> callable =
@@ -976,10 +997,17 @@ public class TransactionManager {
               }
            }
           catch (UnknownTransactionException ute) {
-             LOG.error("Got unknown exception in doAbortX by participant " + participantNum
-                       + " for transaction: " + transactionId, ute);
-             logUteDetails(transactionState, ute);
-             transactionState.requestPendingCountDec(null);
+             String errMsg = new String("Got unknown exception in doAbortX by participant " + participantNum
+                       + " for transaction: " + transactionId);
+             if (ignoreUnknownTransaction) {
+                LOG.info(errMsg + " ,but ignored", ute);
+                transactionState.requestPendingCountDec(null);
+             }
+             else {
+                LOG.error(errMsg, ute);
+                transactionState.logUteDetails();
+                transactionState.requestPendingCountDec(null);
+             }
           }
           catch (RetryTransactionException rte) {
               if (retryCount == RETRY_ATTEMPTS) {
@@ -1028,6 +1056,8 @@ public class TransactionManager {
         }
         if( TRANSACTION_ALGORITHM == AlgorithmType.SSCC){
         do {
+             retry = false;
+             refresh = false;
              try {
 
               Batch.Call<SsccRegionService, SsccAbortTransactionResponse> callable =
@@ -1085,10 +1115,17 @@ public class TransactionManager {
               }
           }
           catch (UnknownTransactionException ute) {
-             LOG.error("Got unknown exception in doAbortX by participant " + participantNum
-                       + " for transaction: " + transactionId, ute);
-             logUteDetails(transactionState, ute);
-             transactionState.requestPendingCountDec(null);
+             String errMsg = new String("Got unknown exception in doAbortX by participant " + participantNum
+                       + " for transaction: " + transactionId);
+             if (ignoreUnknownTransaction) {
+                LOG.info(errMsg + " ,but ignored", ute);
+                transactionState.requestPendingCountDec(null);
+             }
+             else {
+                LOG.error(errMsg, ute);
+                transactionState.logUteDetails();
+                transactionState.requestPendingCountDec(null);
+             }
           }
           catch (RetryTransactionException rte) {
               if (retryCount == RETRY_ATTEMPTS){
@@ -1149,6 +1186,8 @@ public class TransactionManager {
 
         int retryCount = 0;
         do {
+          retry = false;
+          refresh = false;
           try {
 
             if (LOG.isTraceEnabled()) LOG.trace("doCommitX - Batch -- ENTRY txid: " + transactionId
@@ -1240,6 +1279,8 @@ public class TransactionManager {
 	    int retryCount = 0;
 	    List<Integer> results = null;
 	    do {
+               retry = false;
+               refresh = false;
 	       try {
 
 		  TrxRegionProtos.CommitRequestMultipleRequest.Builder builder = CommitRequestMultipleRequest.newBuilder();
@@ -1377,6 +1418,8 @@ public class TransactionManager {
     boolean refresh = false;
     int retryCount = 0;
     do {
+      retry = false;
+      refresh = false;
       try {
           TrxRegionProtos.AbortTransactionMultipleRequest.Builder builder = AbortTransactionMultipleRequest.newBuilder();
           builder.setTransactionId(transactionId);
@@ -2064,7 +2107,7 @@ public class TransactionManager {
                   public Integer call() throws CommitUnsuccessfulException, IOException {
 
                       return doAbortX(location.getRegionInfo().getRegionName(),
-                              transactionState.getTransactionId(), participantNum, location.isTableRecodedDropped());
+                              transactionState.getTransactionId(), participantNum, location.isTableRecodedDropped(), false);
                   }
               });
               completedList.add(location);
@@ -2074,38 +2117,6 @@ public class TransactionManager {
       if(LOG.isTraceEnabled()) LOG.trace("retryAbort -- EXIT -- txid: " + transactionState.getTransactionId());
     }
 
-    public void logUteDetails(final TransactionState transactionState, UnknownTransactionException ute) 
-    {
-      if (ute.toString().contains("DUPLICATE")) {
-              int participantNum = 0;
-              byte[] startKey;
-              byte[] endKey_orig;
-              byte[] endKey;
-
-              for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
-
-                  participantNum++;
-                  final byte[] regionName = location.getRegionInfo().getRegionName();
-
-                  startKey = location.getRegionInfo().getStartKey();
-                  endKey_orig = location.getRegionInfo().getEndKey();
-                  if(endKey_orig == null || endKey_orig == HConstants.EMPTY_END_ROW)
-                      endKey = null;
-                  else
-                      endKey = TransactionManager.binaryIncrementPos(endKey_orig, -1);
-
-                  LOG.warn("Received DUPLICATE Commit for transId: "
-                      + transactionState.getTransactionId()
-                     // + " startKey: " + new String(startKey, "UTF-8") + " endKey: " 
-                    //  + new String(endKey, "UTF-8") 
-                      + "startKey" + startKey + " endKey" +  endKey
-                      + ".  Listing participants: #" + participantNum + ", region: "
-                      + location.getRegionInfo().getRegionNameAsString());
-
-                  }
-          }
-
-    }
     /**
      * Do the commit. This is the 2nd phase of the 2-phase protocol.
      *
@@ -2223,6 +2234,11 @@ public class TransactionManager {
                 loopExit = true; 
               } 
               catch (InterruptedException ie) {}
+              catch (IOException e) {
+                 loopExit = true;
+                 LOG.error("Exception at the time of committing DDL transaction", e); 
+                 throw e;
+              }
             } while (loopExit == false);
 
             if (LOG.isDebugEnabled()) LOG.debug("doCommit() [" + transactionState.getTransactionId()
@@ -2352,9 +2368,9 @@ public class TransactionManager {
       if(LOG.isTraceEnabled()) LOG.trace("Abort -- ENTRY txID: " + transactionState.getTransactionId());
         int loopCount = 0;
 
-        transactionState.setStatus(TransState.STATE_ABORTED);
-        // (Asynchronously send aborts
-        if (batchRegionServer && (TRANSACTION_ALGORITHM == AlgorithmType.MVCC)) {
+          transactionState.setStatus(TransState.STATE_ABORTED);
+          // (Asynchronously send aborts
+          if (batchRegionServer && (TRANSACTION_ALGORITHM == AlgorithmType.MVCC)) {
             ServerName servername;
             List<TransactionRegionLocation> regionList;
             Map<ServerName, List<TransactionRegionLocation>> locations = new HashMap<ServerName, List<TransactionRegionLocation>>();
@@ -2403,7 +2419,7 @@ public class TransactionManager {
             		+ participantNum + ", region: " + location.getRegionInfo().getRegionNameAsString());
             threadPool.submit(new TransactionManagerCallable(transactionState, location, connection) {
               public Integer call() throws IOException {
-                return doAbortX(regionName, transactionState.getTransactionId(), participantNum, location.isTableRecodedDropped());
+                return doAbortX(regionName, transactionState.getTransactionId(), participantNum, location.isTableRecodedDropped(), false);
               }
             });
         }

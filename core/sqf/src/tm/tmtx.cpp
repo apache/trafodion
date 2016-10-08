@@ -1114,7 +1114,8 @@ void TM_TX_Info::process_eventQ()
 
       // Protect message as registerRegion could try to reply from the main thread.
       lock();
-      delete lp_msg;
+      if (lp_msg->validate())
+         delete lp_msg;
       unlock();
       // Multithreaded only:
       // Worker threads release the transaction after every request

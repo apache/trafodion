@@ -944,8 +944,8 @@ public class TmAuditTlog {
 
    }
 
-   public long addControlPoint (final int clusterId, final Map<Long, TransactionState> map, final boolean incrementCP) throws IOException {
-      if (LOG.isDebugEnabled()) LOG.info("addControlPoint start with map size " + map.size());
+   public long addControlPoint (final Map<Long, TransactionState> map) throws IOException {
+      if (LOG.isDebugEnabled()) LOG.debug("addControlPoint start with map size " + map.size());
       long lvCtrlPt = 0L;
       long agedAsn;  // Writes older than this audit seq num will be deleted
       long lvAsn;    // local copy of the asn
@@ -1001,7 +1001,7 @@ public class TmAuditTlog {
                throw e;
             }
          }
-      if (LOG.isDebugEnabled()) LOG.info("addControlPoint returning " + lvCtrlPt);
+      if (LOG.isDebugEnabled()) LOG.debug("addControlPoint returning " + lvCtrlPt);
       return lvCtrlPt;
    } 
 

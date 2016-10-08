@@ -35,6 +35,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.HConstants;
 
 /**
  * Holds client-side transaction information. Client's use them as opaque objects passed around to transaction
@@ -70,6 +71,7 @@ public class TransactionState {
     private static boolean useConcurrentHM = false;
     private static boolean getCHMVariable = true;
     private boolean hasRetried = false;
+    private boolean uteLogged = false;
 
     public Set<String> tableNames = Collections.synchronizedSet(new HashSet<String>());
     public Set<TransactionRegionLocation> participatingRegions;
@@ -197,7 +199,7 @@ public class TransactionState {
           if ((requestReceivedCount == requestPendingCount) || (exception != null))
           {
              //signal waiters that an error occurred
-             if (exception != null)
+             if (exception != null && hasError == null)
                 hasError = exception;
 
              countLock.notify();
@@ -501,4 +503,33 @@ public class TransactionState {
       return this.hasRetried;
     }
 
+    public void logUteDetails()
+    {
+       if (uteLogged)
+          return;
+       int participantNum = 0;
+       byte[] startKey;
+       byte[] endKey_orig;
+       byte[] endKey;
+
+       for (TransactionRegionLocation location : getParticipatingRegions()) {
+          participantNum++;
+          final byte[] regionName = location.getRegionInfo().getRegionName();
+
+          startKey = location.getRegionInfo().getStartKey();
+          endKey_orig = location.getRegionInfo().getEndKey();
+          if (endKey_orig == null || endKey_orig == HConstants.EMPTY_END_ROW)
+              endKey = null;
+          else
+              endKey = TransactionManager.binaryIncrementPos(endKey_orig, -1);
+
+          LOG.warn("UTE for transId: " + getTransactionId()
+                    + " participantNum " + participantNum
+                    + " location " + location.getRegionInfo().getRegionNameAsString()
+                    + " startKey " + ((startKey != null)? Hex.encodeHexString(startKey) : "NULL")
+                    + " endKey " +  ((endKey != null) ? Hex.encodeHexString(endKey) : "NULL")
+                    + " RegionEndKey " + ((endKey_orig != null) ? Hex.encodeHexString(endKey_orig) : "NULL"));
+       }
+       uteLogged = true;
+    }
 }
