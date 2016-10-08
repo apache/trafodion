@@ -44,6 +44,7 @@
 #include "cli_stdh.h"
 
 #include "ExpError.h"
+#include "exp_clause_derived.h"
 #include "NLSConversion.h"
 
 #include "Cli.h"
@@ -911,6 +912,11 @@ short sqInit()
       cerr << "Error while initializing messaging system. Exiting..." << endl;
       exit(1);
     }
+
+
+    // Initialize an Instruction Info array's offset index
+    ex_conv_clause::populateInstrOffsetIndex();
+
   }
 
   return 0;

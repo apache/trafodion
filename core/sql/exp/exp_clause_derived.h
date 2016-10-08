@@ -1744,6 +1744,12 @@ public:
   static const ConvInstruction getInstruction(Lng32 index) 
   { return convInstrInfo[index].instruction;}
 
+  static bool  sv_instrOffsetIndexPopulated;
+  static short sv_MaxOpTypeValue;
+  static int   *sv_convIndexSparse;
+  static void  populateInstrOffsetIndex();
+  static int   getInstrOffset(short pv_op1);
+
   Lng32 findIndexIntoInstrArray(ConvInstruction ci);
 
   NA_EIDPROC NABoolean treatAllSpacesAsZero()
