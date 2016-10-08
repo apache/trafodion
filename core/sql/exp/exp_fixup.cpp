@@ -1830,7 +1830,8 @@ int ex_conv_clause::getInstrOffset(short pv_op1)
     ex_conv_clause::populateInstrOffsetIndex();
   }
 
-  if ((pv_op1 < 0) && (pv_op1 > sv_MaxOpTypeValue)) {
+  if ((pv_op1 < 0) || 
+      (pv_op1 > sv_MaxOpTypeValue)) {
     return -1;
   }
 
