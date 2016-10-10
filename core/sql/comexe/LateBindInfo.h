@@ -436,644 +436,6 @@ private:
 // ---------------------------------------------------------------------
 typedef NAVersionedObjectPtrTempl<LateNameInfoList> LateNameInfoListPtr;
 
-
-class ResolvedName
-{
-public:
-  ResolvedName() 
-  : flags_(0),
-    numIndexes_(-1)
-  {str_pad(filler_, sizeof(filler_), '\0');};
-
-  char * resolvedGuardianName() { return resolvedGuardianName_; };
-  char * resolvedAnsiName() { return resolvedAnsiName_; };
-  void setResolvedAnsiName(char *name) { resolvedAnsiName_ = name; };
-
-  Int16 numIndexes() { return numIndexes_; }
-  void setNumIndexes(Int16 i) { numIndexes_ = i; }
-
-  void resetFlags() { flags_ = 0; };
-  void resetFiller() {str_pad(filler_, sizeof(filler_), '\0'); };
-  NABoolean ignoreTS() { return (flags_ & IGNORE_TS) != 0; };
-  void setIgnoreTS(short v) 
-  { (v ? flags_ |= IGNORE_TS : flags_ &= ~IGNORE_TS); }
-
-  NABoolean validateNumIndexes() { return (flags_ & VALIDATE_NUM_INDEXES) != 0; };
-  void setValidateNumIndexes(short v) 
-  { (v ? flags_ |= VALIDATE_NUM_INDEXES : flags_ &= ~VALIDATE_NUM_INDEXES); }
-
-private:
-  enum 
-  { 
-    IGNORE_TS = 0x0001,
-    VALIDATE_NUM_INDEXES = 0x0002
-  };
-
-  ULng32 flags_;
-  char resolvedGuardianName_[MAX_PHYSICAL_NAME_LENGTH];
-  char *resolvedAnsiName_;
-
-  Int16 numIndexes_;
-  char filler_[50];
-};
-
-// An list of LateNameInfo_ generated at compiled time.
-// All list entries are allocated in a contiguous space
-// so they could be accessed quickly.
-class ResolvedNameList
-{
-public:
-  ResolvedNameList()
-  {str_pad(filler_, sizeof(filler_), '\0');version_=0; };
-
-  ResolvedName &getResolvedName(Int32 i)
-  {
-    return resolvedName_[i];
-  };
-
-  ULng32 &numEntries() { return numEntries_; };
-
-  // returns the length of total info that needs to be sent to compiler
-  // at recomp time. This info is used to get to the actual tablename
-  // (and not the prototype name) that was specified thru a hvar/param/env
-  // var.
-  ULng32 getRecompResolvedNameListLen();
-  // puts recomp info into 'buffer'. Space is to be allocated by caller.
-  void getRecompResolvedNameList(char * buffer);
-
-  void resetFlags()
-  { 
-    flags_ = 0;
-    for (UInt32 i = 0; i < numEntries_; i++)
-      {
-	resolvedName_[i].resetFlags();
-      }
-  };
-  void resetFiller()
-    {
-       str_pad(filler_, sizeof(filler_), '\0');
-    
-    for (UInt32 i = 0; i < numEntries_; i++)
-      {
-	resolvedName_[i].resetFiller();
-      }  
-    }
-  void translateFromOldVersion(ResolvedNameListPre1800 *newrnl);
-  void setVersion(short version) { version_ = version; }
-  short getVersion() {return version_;}
-
-private:
-  ULng32 flags_;
-
-  ULng32 numEntries_;
-
-  ResolvedName resolvedName_[1];
-  short version_;
-  char filler_[54]; 
-};
-
-// name info needed at automatic recomp time. Sent
-// by executor to arkcmp. It uses this to replace the original
-// compile time ansi name with the actual runtime ansi name
-// when the query is recompiled.
-class RecompLateNameInfo
-{
-public:
-  RecompLateNameInfo(){flags_ = 0; str_pad(filler_, sizeof(filler_), '\0');};
-
-  char * varName() { return varName_; };
-  char * compileTimeAnsiName() { return compileTimeAnsiName_; };
-  char * actualAnsiName() { return actualAnsiName_; };
-
-  void setMPalias(short v) {(v ? flags_ |= IS_MPALIAS : flags_ &= ~IS_MPALIAS); };
-  NABoolean isMPalias() { return (flags_ & IS_MPALIAS) != 0; };
-
-private:
-  enum RecompLateNameInfoFlags
-    { 
-    IS_MPALIAS = 0x0001       // the variable contains an mpalias name.
-    };
-
-char varName_[50];
-
-// the compile-time ANSI name prototype 
-// value for the table name at original compile time.
-char compileTimeAnsiName_[ComAnsiNamePart::MAX_ANSI_NAME_EXT_LEN+1];
-
-// actual value of varName_ that was input at runtime.
-char actualAnsiName_[ComAnsiNamePart::MAX_ANSI_NAME_EXT_LEN+1];
-
-ULng32 flags_;
-char filler_[50];
-};
-
-class RecompLateNameInfoList
-{
-public:
-  RecompLateNameInfoList()
-    {
-       str_pad(filler_, sizeof(filler_), '\0');
-       version_=0;
-    };
-
-  ULng32 &numEntries() { return numEntries_; };
-
-  RecompLateNameInfo &getRecompLateNameInfo(Int32 i)
-  {
-    return lateNameInfo_[i];
-  };
-
-private:                       
-  ULng32 numEntries_;            
-  RecompLateNameInfo lateNameInfo_[1];  
-  short version_;
-  char filler_[50];
-};
-
-
-//------------------------------------------------------------------------------
-
-class RecompLateNameInfoPre1800
-{
-public:
-  RecompLateNameInfoPre1800(){};
-  char * varName() { return varName_; };
-  char * compileTimeAnsiName() { return compileTimeAnsiName_; };
-  char * actualAnsiName() { return actualAnsiName_; };
-
-  void setMPalias(short v) {(v ? flags_ |= IS_MPALIAS : flags_ &= ~IS_MPALIAS); };
-  NABoolean isMPalias() { return (flags_ & IS_MPALIAS) != 0; };
-
-private:
-  enum RecompLateNameInfoFlags
-  { 
-    IS_MPALIAS = 0x0001       // the variable contains an mpalias name.
-  };
-
-  char varName_[50];
-
-  // the compile-time ANSI name prototype 
-  // value for the table name at original compile time.
-  char compileTimeAnsiName_[ComAnsiNamePart::MAX_ANSI_NAME_EXT_LEN+1];
-
-  // actual value of varName_ that was input at runtime.
-  char actualAnsiName_[ComAnsiNamePart::MAX_ANSI_NAME_EXT_LEN+1];
-
-  ULng32 flags_;
- 
-};
-
-class RecompLateNameInfoListPre1800
-{
-public:
-  RecompLateNameInfoListPre1800(){};
-  ULng32 &numEntries() { return numEntries_; };
-
-  RecompLateNameInfoPre1800 &getRecompLateNameInfo(Int32 i)
-  {
-    return lateNameInfo_[i];
-  };
-  void translateFromNewVersion();
-private:                   
-  ULng32 numEntries_;            
-  RecompLateNameInfoPre1800 lateNameInfo_[1];  
-};
-
-
-class ResolvedNamePre1800
-{
-public:
-  ResolvedNamePre1800() 
-  : flags_(0),
-    numIndexes_(-1)
-  {};
-  char * resolvedGuardianName() { return resolvedGuardianName_; };
-  char * resolvedAnsiName() { return resolvedAnsiName_; };
-  void setResolvedAnsiName(char *name) { resolvedAnsiName_ = name; };
-
-  Int16 numIndexes() { return numIndexes_; }
-  void setNumIndexes(Int16 i) { numIndexes_ = i; }
-
-  void resetFlags() { flags_ = 0; };
-  NABoolean ignoreTS() { return (flags_ & IGNORE_TS) != 0; };
-  void setIgnoreTS(short v) 
-  { (v ? flags_ |= IGNORE_TS : flags_ &= ~IGNORE_TS); }
-
-  NABoolean validateNumIndexes() { return (flags_ & VALIDATE_NUM_INDEXES) != 0; };
-  void setValidateNumIndexes(short v) 
-  { (v ? flags_ |= VALIDATE_NUM_INDEXES : flags_ &= ~VALIDATE_NUM_INDEXES); }
-private:
-  enum 
-  { 
-    IGNORE_TS = 0x0001,
-    VALIDATE_NUM_INDEXES = 0x0002
-  };
-
-  ULng32 flags_;
-  char resolvedGuardianName_[MAX_PHYSICAL_NAME_LENGTH];
-  char *resolvedAnsiName_;
-
-  Int16 numIndexes_;
-
-};
-
-
-class ResolvedNameListPre1800
-{
-public:
-  ResolvedNameListPre1800()
-  {};
-  ResolvedNameListPre1800(ResolvedNameList *newrnl, CollHeap *heap);
-  ResolvedNamePre1800 &getResolvedName(Int32 i)
-  {
-    return resolvedName_[i];
-  };
-
-  ULng32 &numEntries() { return numEntries_; };
-
-  // returns the length of total info that needs to be sent to compiler
-  // at recomp time. This info is used to get to the actual tablename
-  // (and not the prototype name) that was specified thru a hvar/param/env
-  // var.
-  ULng32 getRecompResolvedNameListLen();
-  // puts recomp info into 'buffer'. Space is to be allocated by caller.
-  void getRecompResolvedNameList(char * buffer);
-
-  void resetFlags()
-  { 
-    flags_ = 0;
-    for (UInt32 i = 0; i < numEntries_; i++)
-      {
-	resolvedName_[i].resetFlags();
-      }
-  };
-
-  void translateFromNewVersion(ResolvedNameList *newrnl);
-private:
-  ULng32 flags_;
-
-  ULng32 numEntries_;
-
-  ResolvedNamePre1800 resolvedName_[1];
- 
-};
-//------------------------------------------------------------------------------
-
-
-
-class SimilarityTableInfo : public NAVersionedObject
-{
-public:
-  SimilarityTableInfo();
-  ~SimilarityTableInfo();
-
-  // ---------------------------------------------------------------------
-  // Redefine virtual functions required for Versioning.
-  //----------------------------------------------------------------------
-  virtual unsigned char getClassVersionID()
-  {
-    return 1;
-  }
-
-  virtual void populateImageVersionIDArray()
-  {
-    setImageVersionID(0,getClassVersionID());
-  }
-
-  virtual short getClassSize() { return (short)sizeof(SimilarityTableInfo); }
-
-  Long pack(void * space);
-  Lng32 unpack(void *, void * reallocator);
-
-  NABoolean entrySeq() {return ((flags_ & ENTRY_SEQ) != 0);};
-  void setEntrySeq(NABoolean v) 
-  { (v ? flags_ |= ENTRY_SEQ : flags_ &= ~ENTRY_SEQ); };
-
-  NABoolean audited() {return ((flags_ & AUDITED) != 0);};
-  void setAudited(NABoolean v) 
-  { (v ? flags_ |= AUDITED : flags_ &= ~AUDITED); };
-
-  NABoolean isPartitioned() {return ((flags_ & PARTITIONED) != 0);};
-  void setIsPartitioned(NABoolean v) 
-  { (v ? flags_ |= PARTITIONED : flags_ &= ~PARTITIONED); };
-
-  NABoolean noPartitionSimCheck() {return ((flags_ & NO_PARTITION_SIM_CHECK) != 0);};
-  void setNoPartitionSimCheck(NABoolean v) 
-  { (v ? flags_ |= NO_PARTITION_SIM_CHECK : flags_ &= ~NO_PARTITION_SIM_CHECK); };
-
-  unsigned short &numPartitions() { return numPartitions_; };
-
-  void setPartitioningScheme(const char * scheme)
-  {
-    str_cpy_all(partitioningScheme_, scheme, 2);
-  }
-  char * getPartitioningScheme(){return partitioningScheme_;};
-
-private:
-  enum Flags
-  {
-    ENTRY_SEQ = 0x0001,
-    AUDITED   = 0x0002,
-    PARTITIONED = 0x0004,
-
-    // if set, indicates that partition sim check always passes even if
-    // the num of partitions are different. Used in cases where we know
-    // that the change in num of partns will not change the plan, for ex,
-    // if OLT opt is being used in which case only one partn will be 
-    // accessed at runtime.
-    NO_PARTITION_SIM_CHECK = 0x0008
-  };
-
-  UInt32 flags_;                                                    // 00-03
-  UInt16 numPartitions_;                                            // 04-05
-
-  // see common/ComSmallDefs.h for values for this field. 
-  // (COM_RANGE_PARTITIONING_LIT...etc).
-  char partitioningScheme_[2];                                      // 06-07
-
-  char fillersSimilarityTableInfo_[16];                             // 08-23
-
-};
-
-// ---------------------------------------------------------------------
-// Template instantiation to produce a 64-bit pointer emulator class
-// for SimilarityTableInfo
-// ---------------------------------------------------------------------
-typedef NAVersionedObjectPtrTempl<SimilarityTableInfo> SimilarityTableInfoPtr;
-
-class SimilarityInfo : public NAVersionedObject
-{
-public:
-  SimilarityInfo(NAMemory * heap = NULL);
-  ~SimilarityInfo();
-
-  // ---------------------------------------------------------------------
-  // Redefine virtual functions required for Versioning.
-  //----------------------------------------------------------------------
-  virtual unsigned char getClassVersionID()
-  {
-    return 1;
-  }
-
-  virtual void populateImageVersionIDArray()
-  {
-    setImageVersionID(0,getClassVersionID());
-  }
-
-  virtual short getClassSize()     { return (short)sizeof(SimilarityInfo); }
-
-  Long pack(void * space);
-  Lng32 unpack(void *, void * reallocator);
-  
-  ExpTupleDesc* getTupleDesc() { return tupleDesc_; };
-  void setTupleDesc(ExpTupleDesc *td) { tupleDesc_ = td; };
-
-  Queue* getColNameList() { return colNameList_; };
-  void setColNameList(Queue *cnl) { colNameList_ = cnl; };
-  SimilarityTableInfo* getTableInfo() { return sti_;};
-  void setTableInfo(SimilarityTableInfo* sti) { sti_ = sti;};
-  //  ArkFsIndexMapArray* getIndexMapArray() { return indexMapArray_; };
-  //  void setIndexMapArray(ArkFsIndexMapArray* ima) { indexMapArray_ = ima; };
-  //++ MV
-  void setMvAttributesBitmap(UInt32 bitmap) {mvAttributesBitmap_ = bitmap;};
-  UInt32 getMvAttributesBitmap() const{return mvAttributesBitmap_;};
-
-  void setSimCheck(short s)
-  {
-    if (s)
-      runtimeFlags_ |= DO_SIM_CHK;
-    else
-      runtimeFlags_ &= ~DO_SIM_CHK;
-  }
-  
-  NABoolean doSimCheck() 
-  { 
-    return ((runtimeFlags_ & DO_SIM_CHK) ? TRUE : FALSE); 
-  };
-
-  void setReResolveName(short s)
-  {
-    if (s)
-      runtimeFlags_ |= RE_RESOLVE_NAME;
-    else
-      runtimeFlags_ &= ~RE_RESOLVE_NAME;
-  }
-  
-  NABoolean reResolveName() 
-  { 
-    return ((runtimeFlags_ & RE_RESOLVE_NAME) ? TRUE : FALSE); 
-  };
-
-  void resetRuntimeFlags() { runtimeFlags_ = 0;};
-
-  void disableSimCheck() { compiletimeFlags_ |= SIM_CHECK_DISABLE; };
-  void enableSimCheck()  { compiletimeFlags_ &= ~SIM_CHECK_DISABLE; };
-  NABoolean simCheckDisable() { return ((compiletimeFlags_ & SIM_CHECK_DISABLE) != 0);};
-
-  void setInternalSimCheck() { compiletimeFlags_ |= INTERNAL_SIM_CHECK; };
-  NABoolean internalSimCheck() { return ((compiletimeFlags_ & INTERNAL_SIM_CHECK) != 0);};
-
-  void setGetMatchingIndex() { compiletimeFlags_ |= GET_MATCHING_INDEX; };
-  NABoolean getMatchingIndex() { return ((compiletimeFlags_ & GET_MATCHING_INDEX) != 0);};
-
-private:
-  enum CompiletimeFlags
-  {
-    SIM_CHECK_DISABLE = 0x0001, INTERNAL_SIM_CHECK = 0x0002,
-    GET_MATCHING_INDEX = 0x0004 // skip sim check, get resolved name from
-                                // index info list(see QuerySimilarityList)
- 
-  };
-
-  enum RuntimeFlags
-  {
-    DO_SIM_CHK = 0x0001,
-    RE_RESOLVE_NAME = 0x0002
-  };
-
-  UInt32 compiletimeFlags_;                                         // 00-03
-  UInt32 runtimeFlags_;                                             // 04-07
-  ExpTupleDescPtr tupleDesc_;                                       // 08-15
-  // list of column names. Each name is a null-terminated "char *".
-  QueuePtr colNameList_;                                            // 24-31
-
-  SimilarityTableInfoPtr sti_;                                      // 32-39
-  UInt32 mvAttributesBitmap_;					    // 56-59
-
-  char fillersSimilarityInfo_[36];                                  // 60-95
-};
-
-// ---------------------------------------------------------------------
-// Template instantiation to produce a 64-bit pointer emulator class
-// for SimilarityInfo
-// ---------------------------------------------------------------------
-typedef NAVersionedObjectPtrTempl<SimilarityInfo> SimilarityInfoPtr;
-
-class IndexInfo : public NAVersionedObject
-{
-public:
-  IndexInfo()
-    {
-      flags_ = 0;
-    };
-
-  // ---------------------------------------------------------------------
-  // Redefine virtual functions required for Versioning.
-  //----------------------------------------------------------------------
-NA_EIDPROC
-  virtual unsigned char getClassVersionID()
-  {
-    return 1;
-  }
-  
-NA_EIDPROC
-  virtual void populateImageVersionIDArray()
-  {
-    setImageVersionID(0,getClassVersionID());
-  }
-  
-NA_EIDPROC
-  virtual short getClassSize() { return (short)sizeof(IndexInfo); }
-
-  // Fix for CR 10-010614-3437: Redefined ime_ to be a versioned
-  // object pointer, in order to pack and unpack it correctly.
-  // Also defined the get and set methods.
-  char* indexAnsiName() { return indexAnsiName_;}
-  char* indexPhyName() { return indexPhyName_; }
-
-  virtual Long pack(void * space);
-  virtual Lng32 unpack(void *, void * reallocator);
-
-  void setSimPartInfo(NABoolean v)
-  {
-    (v ? flags_ |= SIM_PART_INFO : flags_ &= ~SIM_PART_INFO);
-  };
-  NABoolean simPartInfo() { return (flags_ & SIM_PART_INFO) != 0; };
-
-  void setPartitioningScheme(const char * scheme)
-  {
-    str_cpy_all(partitioningScheme_, scheme, 2);
-  }
-  char * getPartitioningScheme() {return partitioningScheme_;};
-
-  void setNumPartitions(ULng32 numPartitions = 0)
-  {
-    numPartitions_ = (unsigned short) numPartitions;
-  }
-  ULng32 getNumPartitions() {return (ULng32) numPartitions_;};
-
-private:
-  enum Flags
-  {
-    // set by genSimilarityInfo if index partition info present
-    SIM_PART_INFO = 0x0001
-  };
-
-  // See common/ComAnsiNamePart.h. 6 bytes added here for null terminator and
-  // filler to make length multiple of 8.
-  enum { MAX_ANSI_IDENTIFIER_LEN = 258 + 6 }; 
-
-  char indexAnsiName_[MAX_ANSI_IDENTIFIER_LEN];         // 00-263
-
-  // resolved index name                                  
-  char indexPhyName_[56];                               // 264-319
-#ifdef NA_64BIT
-  // dg64 - 32-bits on disk
-  UInt32  flags_;                                 // 328-331
-#else
-  ULng32 flags_;                                 // 328-331
-#endif
-
-  // number of partitions
-  unsigned short numPartitions_;                        // 332-333
-
-  // partitioning scheme, see common/comSmallDefs.h
-  char partitioningScheme_[2];                          // 334-335
-
-  char filler_[32];                                     // 336-367
-};
-
-// ---------------------------------------------------------------------
-// Template instantiation to produce a 64-bit pointer emulator class
-// for SimilarityInfo
-// ---------------------------------------------------------------------
-typedef NAVersionedObjectPtrTempl<IndexInfo> IndexInfoPtr;
-
-class QuerySimilarityInfo : public NAVersionedObject
-{
-public:
-  enum Options { RECOMP_ON_TS_MISMATCH, ERROR_ON_TS_MISMATCH,
-		 SIM_CHECK_ON_TS_MISMATCH, INTERNAL_SIM_CHECK,
-                 SIM_CHECK_AND_RECOMP_ON_FAILURE, 
-		 SIM_CHECK_AND_ERROR_ON_FAILURE
-               };
-  QuerySimilarityInfo(NAMemory * heap);
-  QuerySimilarityInfo();
-  ~QuerySimilarityInfo();
-
-  // ---------------------------------------------------------------------
-  // Redefine virtual functions required for Versioning.
-  //----------------------------------------------------------------------
-  virtual unsigned char getClassVersionID()
-  {
-    return 1;
-  }
-
-  virtual void populateImageVersionIDArray()
-  {
-    setImageVersionID(0,getClassVersionID());
-  }
-
-  virtual short getClassSize() { return (short)sizeof(QuerySimilarityInfo); }
-
-  Queue * siList() { return siList_; };
-
-  Queue * indexInfoList() { return indexInfoList_; };
-
-  void setIndexInfoList(Queue *iil)
-  {
-    indexInfoList_ = iil;
-  }
-
-  // Options &similarityCheckOption() { return option_; };
-  Options getSimilarityCheckOption() { return (Options)option_; };
-  void setSimilarityCheckOption(Options op) { option_ = op; };
-
-  Int16 &namePosition() { return namePosition_; };
-
-  Long pack(void * space);
-  Lng32 unpack(void *, void * reallocator);
-  
-private:
-
-  NAMemory *heap_;
-#ifndef NA_64BIT
-  char fillersQuerySimilarityInfo1_[4];
-#endif                                                              // 00-07
-
-  // Queue of class SimilarityInfo
-  QueuePtr siList_;                                                 // 08-15
-
-  // List of indices that have to be checked for similarity.
-  // The table whose indices are to be
-  // checked is at position namePosition_ of siList_(member of this
-  // class) and LateNameInfoList (member of Root Tdb).
-  // Queue of class IndexInfo. 
-  QueuePtr indexInfoList_;                                          // 16-23
-  Int16 namePosition_;                                              // 24-25
-
-  Int16 option_;                                                    // 26-27
-
-  char fillersQuerySimilarityInfo_[36];                             // 28-55
-};
-
-// ---------------------------------------------------------------------
-// Template instantiation to produce a 64-bit pointer emulator class
-// for QuerySimilarityInfo
-// ---------------------------------------------------------------------
-typedef NAVersionedObjectPtrTempl<QuerySimilarityInfo> QuerySimilarityInfoPtr;
-
-
 class AnsiOrNskName : public NABasicObject
 {
 public:
@@ -1103,6 +465,143 @@ private:
   bool  isValid_;  // The flag that denotes if the name is checked and extracted into parts
   bool  isError_;  
 };
+
+
+///////////////////////////////////////////////////////////
+// class TrafSimilarityTableInfo
+///////////////////////////////////////////////////////////
+class TrafSimilarityTableInfo : public NAVersionedObject
+{
+public:
+  TrafSimilarityTableInfo(char * tableName,
+                          NABoolean isHive,
+                          char * hdfsRootDir, 
+                          Int64 modTS, Int32 numPartnLevels,
+                          Queue * hdfsDirsToCheck,
+                          char * hdfsHostName,
+                          Int32 hdfsPort);
+
+  TrafSimilarityTableInfo();
+  ~TrafSimilarityTableInfo();
+
+  NABoolean operator==(TrafSimilarityTableInfo &o);
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(0,getClassVersionID());
+  }
+
+  virtual short getClassSize() { return (short)sizeof(TrafSimilarityTableInfo); }
+
+  Long pack(void * space);
+  Lng32 unpack(void *, void * reallocator);
+
+  Int64 modTS() { return modTS_; }
+  Int32 numPartnLevels() { return numPartnLevels_; }
+
+  char * tableName() { return tableName_; }
+  char * hdfsRootDir() { return hdfsRootDir_; }
+  Queue * hdfsDirsToCheck() { return hdfsDirsToCheck_; }
+
+  char * hdfsHostName() { return hdfsHostName_; }
+  Int32 hdfsPort() { return hdfsPort_; }
+
+  NABoolean isHive() {return ((flags_ & HIVE) != 0);};
+  void setIsHive(NABoolean v) 
+  { (v ? flags_ |= HIVE : flags_ &= ~HIVE); };
+
+private:
+  enum Flags
+  {
+    HIVE                    = 0x0001
+  };
+
+  Int64 modTS_;
+  Int32 numPartnLevels_;
+  UInt32 flags_;                                                    
+
+  NABasicPtr tableName_;
+  NABasicPtr hdfsRootDir_;
+  QueuePtr hdfsDirsToCheck_;
+
+  NABasicPtr hdfsHostName_;
+  Int32 hdfsPort_;
+
+  char fillers_[12];                            
+
+};
+typedef NAVersionedObjectPtrTempl<TrafSimilarityTableInfo> TrafSimilarityTableInfoPtr;
+
+///////////////////////////////////////////////////////////////////
+// class TrafQuerySimilarityInfo
+///////////////////////////////////////////////////////////////////
+class TrafQuerySimilarityInfo : public NAVersionedObject
+{
+public:
+  TrafQuerySimilarityInfo(Queue * siList);
+  TrafQuerySimilarityInfo();
+  ~TrafQuerySimilarityInfo();
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(0,getClassVersionID());
+  }
+
+  virtual short getClassSize() { return (short)sizeof(TrafQuerySimilarityInfo); }
+
+  Queue * siList() { return siList_; };
+
+  Long pack(void * space);
+  Lng32 unpack(void *, void * reallocator);
+  
+  NABoolean disableSimCheck() 
+  {return ((flags_ & DISABLE_SIM_CHECK) != 0);};
+  void setDisableSimCheck(NABoolean v) 
+  {(v ? flags_ |= DISABLE_SIM_CHECK : flags_ &= ~DISABLE_SIM_CHECK);};
+  
+  NABoolean disableAutoRecomp() 
+  {return ((flags_ & DISABLE_AUTO_RECOMP) != 0);};
+  void setDisableAutoRecomp(NABoolean v) 
+  {(v ? flags_ |= DISABLE_AUTO_RECOMP : flags_ &= ~DISABLE_AUTO_RECOMP);};
+  
+private:
+  enum Flags
+    {
+      DISABLE_SIM_CHECK       = 0x0002,
+      DISABLE_AUTO_RECOMP     = 0x0004
+    };
+
+  // Queue of class TrafSimilarityTableInfo
+  QueuePtr siList_;                                                 // 00-07
+
+  Int16 option_;                                                    // 08-09
+
+  Int16 flags_;                                                     // 10-11
+
+  char fillersQuerySimilarityInfo_[36];                             // 12-47
+};
+
+// ---------------------------------------------------------------------
+// Template instantiation to produce a 64-bit pointer emulator class
+// for TrafQuerySimilarityInfo
+// ---------------------------------------------------------------------
+typedef NAVersionedObjectPtrTempl<TrafQuerySimilarityInfo> TrafQuerySimilarityInfoPtr;
 
 
 #endif // EX_LATEBIND_H

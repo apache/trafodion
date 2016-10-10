@@ -940,22 +940,6 @@ Lng32 SQLCLI_LOBddlInterface
  /*IN*/    NABoolean lobTrace
  );
 
-#ifdef __ignore
-Lng32 SQLCLI_LOBloader2sqlInterface
-(
- /*IN*/     CliGlobals *cliGlobals,
- /*IN*/     char * lobHandle,
- /*IN*/     Lng32  lobHandleLen,
- /*IN*/     char * lobInfo,
- /*IN*/     Lng32  lobInfoLen,
- /*IN*/     LOBcliQueryType qType,
- /*INOUT*/  char * dataLoc, /* IN: for load, OUT: for extract */
- /*INOUT*/  Int64 &dataLen,    /* length of data. 0 indicates EOD */
- /*INOUT*/  void* *cliInterface  /* INOUT: if returned, save it and 
-           				   pass it back in on the next call */
-
- );
-#endif
 Int32 SQLCLI_SWITCH_TO_COMPILER_TYPE
  (
  /*IN*/     CliGlobals* cliGlobals,

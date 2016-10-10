@@ -716,27 +716,6 @@ HostVar *makeHostVar(NAString *hvName, NAString *indName, NABoolean isDynamic)
   //	  }
 }
 
-
-char * getPrototypeFromLateNameInfoList(
-     RecompLateNameInfoList * lniList, NAString hvarName, NAString origPtypeVal
-     )
-{
-  const char * prototypeVal = origPtypeVal.data();
-
-  for (Int32 i = 0; i < (Int32)lniList->numEntries(); i++)
-    {
-      if ((strcmp(lniList->getRecompLateNameInfo(i).varName(),
-		  hvarName.data()) == 0))
-	{
-	  return lniList->getRecompLateNameInfo(i).actualAnsiName();
-	  
-	}
-    }
-
-  return NULL;
-}
-
-
 static
 NABoolean literalToNumber(NAString *strptr, char sign, NAString *cvtstr, 
                           short &shortVal, Lng32 &longVal, Int64& i64Val, 

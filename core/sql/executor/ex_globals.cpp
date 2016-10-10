@@ -104,6 +104,8 @@ void ex_globals::reAllocate(short create_gui_sched)
   tempList_ = NULL;
   
   tcbList_.allocate(0);
+
+  lobGlobals_ = new(heap_) LOBglobals(heap_);
 }
 
 void ex_globals::deleteMe(NABoolean fatalError)

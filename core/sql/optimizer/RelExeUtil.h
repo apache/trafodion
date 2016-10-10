@@ -1125,7 +1125,7 @@ public:
   // method to do code generation
   virtual short codeGen(Generator*);
   
-  virtual NABoolean aqrSupported() { return FALSE; }
+  virtual NABoolean aqrSupported() { return TRUE; }
 
   const NAString &getHiveTableLocation() const
   {

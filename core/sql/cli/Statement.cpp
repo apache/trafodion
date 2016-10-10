@@ -79,6 +79,7 @@
 
 #include "logmxevent.h"
 
+#include "ExpLOBinterface.h"
 
 #include "ExUdrServer.h"
 #include "wstr.h"
@@ -1631,8 +1632,6 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
       char * data = NULL;
       ULng32 dataLen = 0;
       ExSqlComp::Operator op;
-      char * rlnilBuf = NULL;
-      ULng32 rlnilLen = 0;
       while (retry)
 	{
 	  if (newOperation)
@@ -1641,36 +1640,9 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 	      // Build request and send to arkcmp. 
 	      if ((reComp) || (aqRetry && deCache))
 		{
-		  if ((reComp) && (root_tdb))
-		    {
-		      if (root_tdb->getLateNameInfoList())
-			if ((root_tdb->getPlanVersion() < COM_VERS_R2_3) ||
-			    (versionToUse_ < COM_VERS_R2_3))
-			  
-			  {
-			    rlnilLen= root_tdb->getLateNameInfoList()->
-			      getRecompLateNameInfoListLenPre1800();
-			    
-			    rlnilBuf = new(&heap_) char[rlnilLen];
-			    root_tdb->getLateNameInfoList()->
-			      getRecompLateNameInfoListPre1800(rlnilBuf);
-			  }
-			else
-			  {
-			    rlnilLen = 
-			      root_tdb->getLateNameInfoList()->getRecompLateNameInfoListLen();
-			    
-			    rlnilBuf = new(&heap_) char[rlnilLen];
-			    root_tdb->getLateNameInfoList()->
-			      getRecompLateNameInfoList(rlnilBuf);
-			  }
-		    }
-		  
 		  CmpCompileInfo c((reComp ? source_str : source), 
 				   (reComp ? sourceLenplus1() : octetLenplus1(source, charset)),
 				   (Lng32) (reComp ? charset_ : charset),
-				   (RecompLateNameInfoList *)rlnilBuf,
-				   (Lng32) rlnilLen,
 				   schemaName_, schemaNameLength_+1, 
 				   recompControlInfo_, recompControlInfoLen_,
 				   getInputArrayMaxsize(), (short)rsa);
@@ -1700,9 +1672,6 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 		  data = (char *)dealloc.getAddr
 		    (new(dealloc.setHeap(&heap_)) char[dataLen]);
 		  c.pack(data);
-		  if (rlnilBuf)
-		    NADELETEBASIC(rlnilBuf, &heap_);
-		  rlnilBuf = NULL;
 		  
 		  // Release the existing TDB tree if one exists
 		  assignRootTdb(NULL);
@@ -1728,7 +1697,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 	      else
 		{
 		  CmpCompileInfo c(source, octetLenplus1(source, charset), (Lng32) charset,
-				   NULL, 0, NULL, 0, NULL, 0,
+				   NULL, 0, NULL, 0,
 				   getInputArrayMaxsize(), (short)rsa);
 
 		  if (aqRetry)
@@ -2102,526 +2071,60 @@ Statement * Statement::getCurrentOfCursorStatement(char * cursorName)
 
 }
 
-///////////////////////////////////////////////////////////////////////
-// RETURN: doSimCheck: if true, do similarity check.
-//         doFixup:    if true and doSimCheck is false, do fixup again.
-//                     Note: fixup is always done after sim check so if
-//                           doSimCheck is returned as true, then doFixup
-//                           is ignored.
-///////////////////////////////////////////////////////////////////////
-RETCODE Statement::resolveNames(LateNameInfoList * lnil,
-                                Descriptor * inputDesc, 
-                                ComDiagsArea &diagsArea,
-                                NABoolean &doSimCheck,
-				NABoolean &doFixup)
+RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
+                                       void * lobGlob,
+                                       NABoolean &simCheckFailed,
+                                       ComDiagsArea &diagsArea)
 {
-  doSimCheck = FALSE;
-  doFixup    = FALSE;
-  Lng32 curAnsiNameLen = 0;
-  char * curAnsiName = 0;
-  NABoolean contextChanged = FALSE;
-  AnsiOrNskName *curName = NULL;
-  Int16 retCode;
-  char * parts[4];
-  Lng32 numParts;
-  bool isNskName = FALSE;
-  char * fullyQualifiedSchemaName = schemaName_;
+  simCheckFailed = FALSE;
+  Lng32 retcode = 0;
 
-  if (lnil->definePresent())
+  if ((si->hdfsRootDir() == NULL) || (si->modTS() == -1))
+    return SUCCESS;
+
+  Int64 failedModTS = -1;
+  Lng32 failedLocBufLen = 1000;
+  char failedLocBuf[failedLocBufLen];
+  retcode = ExpLOBinterfaceDataModCheck
+    (lobGlob,
+     si->hdfsRootDir(),
+     si->hdfsHostName(),
+     si->hdfsPort(),
+     si->modTS(),
+     si->numPartnLevels(),
+     failedModTS,
+     failedLocBuf, failedLocBufLen);
+  if (retcode < 0)
     {
-      // if this is the first time names are being resolved, then
-      // do it even if the define context has not changed.
-      unsigned short defcon = context_->getCurrentDefineContext();
-      if ((NOT firstResolveDone()) ||
-	  (defcon != defineContext()))
-	{
-	  contextChanged = TRUE;
-	}
-      defineContext() = defcon;
+      Lng32 intParam1 = -retcode;
+      diagsArea << DgSqlCode(-EXE_ERROR_FROM_LOB_INTERFACE)
+                << DgString0("HDFS")
+                << DgString1("ExpLOBInterfaceDataModCheck")
+                << DgString2(getLobErrStr(intParam1))
+                << DgInt0(intParam1)
+                << DgInt1(0);
+      return ERROR;
     }
-  
-  for (Int32 l = 0; l < (Int32) (lnil->getNumEntries()); l++)
+
+  if (retcode == 1) // check failed
     {
-      LateNameInfo * lni = &(lnil->getLateNameInfo(l));
+      char errStr[2000];
+      str_sprintf(errStr, "compiledModTS = %Ld, failedModTS = %Ld, failedLoc = %s", 
+                  si->modTS(), failedModTS, 
+                  (failedLocBufLen > 0 ? failedLocBuf : si->hdfsRootDir()));
       
-      lni->setAnsiNameChange(0);
-      
-      
-      if (lni->isVariable())
-	{
-	  
-	  if (lni->isDefine())
-	    {
-	    }
-	  else if (lni->isEnvVar())
-	    {
-	      // get name from env var.
-	      char envName[ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+1];
-	      curAnsiName = cliGlobals_->getEnv(lni->variableName());
-	      
-	      if ((! curAnsiName)||
-		  ((curAnsiNameLen = str_len(curAnsiName)) >
-		   ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES))
-		{
-		  
-		  diagsArea << DgSqlCode(-EXE_INVALID_DEFINE_OR_ENVVAR)
-			    <<DgString0(lni->variableName());
-		  return ERROR;
-		}
-	      str_cpy_all(envName,curAnsiName,str_len(curAnsiName));
-	      envName[curAnsiNameLen] = '\0';
-	      
-	      curName = new (&heap_) AnsiOrNskName(envName);
-	      if (curName->convertAnsiOrNskName())
-		{
-		  diagsArea << DgSqlCode(-CLI_INVALID_SQL_ID)<<DgString0(envName);
-		  delete curName;
-		  return ERROR;
-		}
-	    } //endif env var
-	  
-	  else if (lni->isCachedParam())
-	    {
-	      // cached params are only resolved on the first execute after
-	      // prepare. These values are set from constants and 
-	      // cannot change for multiple executions of the same stmt.
-	      if (firstResolveDone())
-                continue; // Go back to the for loop to continue with the next lni
-	
-	      curAnsiName = 
-		&root_tdb->getParameterBuffer()
-		[lni->getCachedParamOffset()];
-	      curName = new (&heap_) AnsiOrNskName(curAnsiName);
-	      if (curName->convertAnsiOrNskName())
-		{
-		  diagsArea << DgSqlCode(-CLI_INVALID_SQL_ID)<<DgString0(curAnsiName);
-		  delete curName;
-		  return ERROR;
-		}
+      diagsArea << DgSqlCode(-EXE_HIVE_DATA_MOD_CHECK_ERROR)
+                << DgString0(errStr);
 
-	    } //endif cached param
-	  else // hvar or param
-	    {
-	      // Here we need to validate what the hvar contains
-	      // We need to make sure it is a string hvar and we call
-	      // convDoIt so that we only get the length of the
-	      // string that we need.
-	      
-	      char *source= 0;
-	      Lng32 sourceLen = 0;
-	      Lng32 sourceType = 0;
-              Lng32 sourceCharset = CharInfo::UnknownCharSet;
-	      void *var_ptr = 0;
+      simCheckFailed = TRUE;
 
-	      inputDesc->getDescItem(lni->getInputListIndex(), 
-				     SQLDESC_VAR_PTR, &var_ptr, 
-				     0, 0, 0, 0);
-	      inputDesc->getDescItem(lni->getInputListIndex(),
-				     SQLDESC_LENGTH, &sourceLen,
-				     0,0,0,0);
-	      
-	      inputDesc->getDescItem(lni->getInputListIndex(),
-				     SQLDESC_TYPE_FS, &sourceType,
-				     0,0,0,0);
-	      
-	      // Check if input is a string type
-	      
-	      if ((sourceType>=REC_MIN_CHARACTER) &&
-                  (sourceType <= REC_MAX_CHARACTER))
-                {
-                  inputDesc->getDescItem(lni->getInputListIndex(),
-                                         SQLDESC_CHAR_SET, &sourceCharset,
-                                         0,0,0,0);
-
-                  if (sourceCharset == CharInfo::UnknownCharSet &&
-                      (sourceType == REC_BYTE_F_ASCII ||
-                       sourceType == REC_BYTE_V_ASCII ||
-                       sourceType == REC_BYTE_V_ANSI))
-                    {
-                      // some clients aren't accustomed yet to setting the
-                      // charset of the SQL statement, treat those as ISO88591
-                      // for single-byte based data types
-                      sourceCharset = CharInfo::ISO88591;
-                    }
-
-                  if (stmt_type == STATIC_STMT &&
-                      sourceCharset == CharInfo::ISO88591)
-                    {
-                      // our convention is to pass UTF-8 or UCS2 for
-                      // names in embedded programs. However, embedded
-                      // SQL does not support UTF-8 at this time.
-                      // Temporary fix: Set input charset to UTF-8
-                      // here until UTF-8 host varables are supported
-                      // in embedded programs (if that ever happens)
-                      sourceCharset = CharInfo::UTF8;
-                    }
-                }
-              else
-		{
-		  diagsArea << DgSqlCode(-CLI_INVALID_OBJECTNAME);
-		  return ERROR; 
-		}
-	      source = (char *)var_ptr;
-	      
-	      if (DFS2REC::isSQLVarChar(sourceType)) 
-		{
-		  // the first 2 bytes of data are actually the variable 
-		  // length indicator
-		  short VCLen;
-		  str_cpy_all((char *) &VCLen, source, sizeof(short));
-		  sourceLen = (Lng32) VCLen;
-		  source = &source[sizeof(short)];
-		}
-	      
-	      ComDiagsArea *diagsPtr = NULL;
-	      char targetName[ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES + 1];
-	      short retcode = convDoIt(source,
-				       sourceLen,
-				       (short) sourceType,
-				       0,
-				       sourceCharset,   // passed in as scale
-				       targetName,
-				       sizeof(targetName) - 1,
-				       REC_BYTE_V_ANSI, // short targetType
-				       0,               // Lng32 targetPrecision
-				       (Lng32) SQLCHARSETCODE_UTF8, // Lng32 targetScale - also used as targetCharSet for CharType
-				       0,
-				       0,
-				       &heap_,
-				       &diagsPtr);
-	      if (diagsPtr)
-		{
-		  diagsArea.mergeAfter(*diagsPtr);
-		  diagsPtr->decrRefCount();
-                  diagsPtr = NULL;
-		}
-	      if (retcode != ex_expr::EXPR_OK)
-		{
-		  diagsArea << DgSqlCode(-EXE_CONVERT_STRING_ERROR);
-                  char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-                  memset(hexstr, 0 , sizeof(hexstr) );
-                  diagsArea << DgString0(stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
-
-		  return ERROR;  
-		}
-
-	      if (! fullyQualifiedSchemaName)
-		fullyQualifiedSchemaName = lni->compileTimeAnsiName();
-
-	      curName = new (&heap_) AnsiOrNskName(targetName);
-	      if (curName->convertAnsiOrNskName())
-		{
-		  diagsArea << DgSqlCode(-CLI_INVALID_SQL_ID)
-			    <<DgString0(targetName);
-		  delete curName;
-		  return ERROR;
-		  
-		}
-	    } // end if hvar 
-
-    	  if (NOT lni->isMPalias())
-	    {
-	      if (lni->isAvoidSimCheck()) // Host Variable in SET TABLE TIMEOUT command without
-		// Prototype clause will have the NAME_ONLY and VARIABLE bit is set
-		// So,we will need at least 3 parts
-		// If nsk name, system name will be filled in
-		{
-		  if (curName->extractParts(numParts, parts))
-		    {
-		      diagsArea << DgSqlCode(-CLI_INVALID_SQL_ID)
-				<< DgString0(curName->getExternalName());
-		      delete curName;
-		      return ERROR;
-		    }
-		  if (numParts < 3)
-		    {
-		      diagsArea << DgSqlCode(-CLI_INVALID_SQL_ID)
-				<< DgString0(curName->getExternalName());
-		      delete curName;
-		      return ERROR;
-		    }
-		  isNskName = curName->isNskName(); // will be set to False
-		}
-	      else
-		isNskName = TRUE;
-	      if (isNskName)
-		{
-		  curAnsiName = curName->getInternalName();
-		  curAnsiNameLen = str_len(curAnsiName);
-		  if (curAnsiName[0] != '\\')
-		    {
-		      
-		    }
-		}
-	    }
-
-	  if (lni->isMPalias() &&  NOT (lni->isAnsiPhySame())) {
-	    // if MPAlias flag is set,  then we compiled for an MX table, or an MP table with 
-	    // a MPAlias defined on it See comment in GenRelMisc.cpp PartitionAccess::codeGen 
-	    // method where the mpalias flag is set. If that flag is set only for an MPAlias
-	    // and not for MX tables then this else statement condition will have to be modified.
-	    // The code below should be executed for MX tables and for MP tables access through
-	    // their MPAlias. The code below is also not needed for accessing resource forks whose
-	    // ansi name is same as their physical name.
-	    
-	    if (curName->extractParts(numParts, parts))
-	      {
-		diagsArea << DgSqlCode(-CLI_INVALID_SQL_ID)
-			  << DgString0(curName->getExternalName());
-		delete curName;
-		return ERROR;
-	      }
-	    if (numParts != 3) {
-	      if (curName->fillInMissingParts(fullyQualifiedSchemaName) == -1)
-		{
-		  diagsArea << DgSqlCode(-CLI_INVALID_SQL_ID)
-			    << DgString0(curName->getExternalName());
-		  delete curName;
-		  return ERROR;
-		}
-	    } // end if numParts != 3
-	    
-	  } // end isMPAlias && isAnsiPhySame
-	  
-	  // if current ansi name is different than the last ansi name, 
-	  // resolve the current ansi name. Remember this in lni.
-	  retCode = lni->getLastUsedName(&heap_)->equals(curName);
-	  if (retCode == -1)
-	    {
-	      diagsArea << DgSqlCode(-CLI_INTERNAL_ERROR);
-	      delete curName;
-	      return ERROR;
-	    }
-	  else
-	    if (retCode == 0)
-	      {
-		lni->setAnsiNameChange(1);
-		lni->setLastUsedName(curName);
-		// If similarity check is to be avoided: Map the physical name
-		// right here (otherwise done during the similarity check.)
-		if ( lni->isAvoidSimCheck() ) 
-		  {
-		    if (! isNskName)
-		      {
-			if (mapAnsiToGuaName(lni, diagsArea) == ERROR)
-			  return ERROR;
-		      }
-		    else
-		      strcpy(lni->resolvedPhyName(), curName->getInternalName());
-		    doFixup = TRUE; // fixup needs to be done again to 
-		    // be able to use the new name.
-		  }
-		else
-		  if (NOT doSimCheck)
-		    {
-		      doSimCheck = TRUE;
-		      
-		      // if this is a view name that has changed, mark it
-		      // in the latenameinfo struct. This will be used later
-		      // when similarity check is done in doQuerySimilarityCheck.
-		      if (lni->isView())
-			{
-			  lni->setViewNameChange(1);
-			}
-		    }
-	      }
-	    else
-	      {
-		if (curName)
-		  {
-		    delete curName;
-		    curName = NULL;
-		  }
-
-
-	      }
-	  
-	} // variable
-      
-    } // for
-  
-  if (NOT firstResolveDone())
-    {
-      setFirstResolveDone(TRUE);
+      return ERROR;
     }
   
   return SUCCESS;
 }
 
-
-////////////////////////////////////////////////////////////////////
-// This method performs similarity check between the information
-// generated at compile time (si) and the information retrieved at
-// runtime for table specified via tableName.
-// RETURNS: ERROR:   if an error occured.
-//          SUCCESS, otherwise.
-//                   if sim check fails, then this is indicated by
-//                   the return param, simCheckFailed, set to TRUE.      
-/////////////////////////////////////////////////////////////////////
-RETCODE Statement::doSimilarityCheck(SimilarityInfo * si,
-				     LateNameInfo * lni,
-				     char * tableName,
-				     NABoolean &simCheckFailed,
-				     ComDiagsArea &diagsArea
-				     )
-{
-  return SUCCESS;
-}
-
-RETCODE Statement::doIUDSimilarityCheck(SimilarityInfo * si,
-			                LateNameInfo * lni,
-					char * tableName,
-					Queue * indexInfoList,
-					NABoolean &simCheckFailed,  
-					ComDiagsArea &diagsArea)
-{
-  return SUCCESS;
-}
-
-RETCODE Statement::getMatchingIndex(Queue * indexInfoList,
-				    char * indexAnsiName,
-				    char * indexPhyName,
-				    ComDiagsArea &diagsArea)
-{
-  indexInfoList->position();
-  for (Int32 i = 0; i < indexInfoList->numEntries(); i++)
-    {
-      IndexInfo * ii = (IndexInfo*)(indexInfoList->getNext());
-
-      if (str_cmp(indexAnsiName, ii->indexAnsiName(),
-		  str_len(indexAnsiName)) == 0)
-	{
-	  strcpy(indexPhyName, ii->indexPhyName());
-	  return SUCCESS;
-	}
-    }
-
-  return SUCCESS;
-}
-  
-RETCODE Statement::mapAnsiToGuaName(LateNameInfo * lni,
-				    ComDiagsArea &diagsArea)
-{
-  return ERROR;
-}
-
-// this method resolves all table names that are used in this query.
-RETCODE Statement::forceMapAllNames(LateNameInfoList * lnil,
-				    ComDiagsArea &diagsArea)
-{
-  for (Int32 i = 0; i < (Int32) (lnil->getNumEntries()); i++)
-    {
-      LateNameInfo * lni = &(lnil->getLateNameInfo(i));
-
-      lni->setAnsiNameChange(1);
-
-      char *lastUsedAnsiName = lni->lastUsedAnsiName();
-
-      // NA_NSK_REL1 -  need to change for ansi names 
-      NABoolean isGuardianName =
-         (lastUsedAnsiName && lastUsedAnsiName[0] == '\\') ? TRUE : FALSE;
-
-      if (lni->isAnsiPhySame() || isGuardianName)
-        {
-
-	  // If ansi name is really a phys name, copy it to resolvedPhyName.
-          // For the first release on NSK, all internal table names, such as
-          // histograms, histints, etc, will have resolved physical names as
-          // their ANSI name.
-	  str_cpy(lni->resolvedPhyName(), lni->lastUsedAnsiName(),
-		  str_len(lni->lastUsedAnsiName()) + 1, '\0');
-	}
-      else 
-	{
-          // VO, Metadata indexes
-          // If all of the following is true:
-          // - the lni represents an index
-          // - the query is from a system module,
-          // THEN the generator has set the last used ansi name to the 
-          // compile time name of the base table. We will use that to find
-          // the index runtime ANSI name.
-          LateNameInfo * baseTableLni = NULL;
-          if ( (lni->getNameSpace() == COM_INDEX_NAME)      &&
-               (systemModuleStmt())
-             )
-          {
-            if (lni->isVariable())
-            {
-              // resolve names has put the runtime name of the table in this lni
-              baseTableLni = lni;
-            }
-            else
-            {
-              // iterate over the lnil to find the entry for the index' base table 
-              for (Int32 ix = 0; ix < (Int32) (lnil->getNumEntries()); ix++)
-              {
-                LateNameInfo * lni2 = &(lnil->getLateNameInfo(ix));
-                if (!strcmp (lni2->compileTimeAnsiName(), lni->lastUsedAnsiName()))
-                {              
-                    baseTableLni = lni2;
-                    break;
-                }
-              }
-            }
-
-            if (baseTableLni == NULL)
-            {
-              // didn't find the base table in the lnil - quit!
-              diagsArea << DgSqlCode(-CLI_INTERNAL_ERROR);
-              return ERROR;
-            }
-
-            // Construct the runtime index name from 
-            // - the runtime catalog and schema name parts of the base table
-            // - the compile time object name part of the index
-            char * indexParts[4];
-            char * tableParts[4];
-            Lng32 numIndexParts = -1, numTableParts = -1;
-            AnsiOrNskName * indexCompileTimeAnsiName = new (&heap_) AnsiOrNskName(lni->compileTimeAnsiName());
-            baseTableLni->getLastUsedName(&heap_)->extractParts (numTableParts, tableParts);
-            indexCompileTimeAnsiName->extractParts (numIndexParts, indexParts);
-
-            if ( (numIndexParts != 3) || (numTableParts != 3))
-            {
-              // Something rotten here ...
-              delete indexCompileTimeAnsiName;
-              diagsArea << DgSqlCode(-CLI_INTERNAL_ERROR);
-              return ERROR;
-            }
-
-            char  indexExtName[ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES + 1]; 
-            ComBuildANSIName (tableParts[0], tableParts[1], indexParts[2], indexExtName);
-            delete indexCompileTimeAnsiName;
-
-            AnsiOrNskName * indexName = new (&heap_) AnsiOrNskName(indexExtName);
-            lni->setLastUsedName (indexName);
-          }
-
-	  RETCODE retcode = mapAnsiToGuaName(lni, diagsArea);
-          if (baseTableLni != NULL && !lni->isVariable())
-            // need to reset the last used ANSI name for a metadata index to that of the
-            // compile time base table. Otherwise, the next name mapping will fail.
-            lni->setLastUsedName (new (&heap_) AnsiOrNskName (baseTableLni->compileTimeAnsiName()));
-
-          if (retcode != SUCCESS)
-            return ERROR;
-	  
-	}
-    }
-
-  return SUCCESS;
-}
-
-/////////////////////////////////////////////////////////////////////////
-// This method does similarity checks on all tables for which 
-// the flag, doSimCheck(), is set.
-// RETURNS: ERROR:   if an error occured.
-//          SUCCESS, otherwise.
-//                   if sim check fails, then this is indicated by
-//                   the return param, simCheckFailed, set to TRUE.      
-/////////////////////////////////////////////////////////////////////////     
-RETCODE Statement::doQuerySimilarityCheck(QuerySimilarityInfo * qsi,
-					  LateNameInfoList   * lnil,
+RETCODE Statement::doQuerySimilarityCheck(TrafQuerySimilarityInfo * qsi,
 					  NABoolean &simCheckFailed,
 					  ComDiagsArea &diagsArea
 					  )
@@ -2629,248 +2132,48 @@ RETCODE Statement::doQuerySimilarityCheck(QuerySimilarityInfo * qsi,
   RETCODE retcode;
 
   simCheckFailed = FALSE;
+  if ((! qsi) ||
+      (qsi->disableSimCheck()) ||
+      (! qsi->siList()) ||
+      (qsi->siList()->numEntries() == 0))
+    return SUCCESS;
 
-  if (! qsi)
-    return ERROR;
-
-  NABoolean aqr = root_tdb->aqrEnabled();
-  if (aqr)
-    {
-      diagsArea << DgSqlCode(-EXE_SIM_CHECK_FAILED)
-		<< DgString0("Similarity check should not be reached with aqr enabled.");
-      
-      return ERROR;
-    }
-
-  // if similarity check is being done due to a view name change that
-  // was passed thru an identifier, then recompile.
-  if (lnil->viewPresent())
-    {
-      CollIndex i = 0;
-      while (i < (Int32) lnil->getNumEntries())
-	{
-#pragma nowarn(1506)   // warning elimination 
-	  LateNameInfo * lni = &(lnil->getLateNameInfo(i));
-#pragma warn(1506)  // warning elimination 
-
-	  if (lni->isViewNameChange())
-	    {
-	      lni->setViewNameChange(0);
-
-	      simCheckFailed = TRUE;
-	      return SUCCESS;
-	      
-	    }
-	  i++;
-	}
-    }
-
-  switch (qsi->getSimilarityCheckOption())
-    {
-    case QuerySimilarityInfo::INTERNAL_SIM_CHECK:
-      {
-	// accessing internal tables(catalog). Just resolve names. Similarity
-	// check always passes for these tables.
-	retcode = forceMapAllNames(lnil, diagsArea);
-	if (retcode == ERROR)
-	  return ERROR;
-
-	for (Int32 i = 0; i < (Int32) (lnil->getNumEntries()); i++)
-	  {
-	    // ignore TS mismatch on the next open since similarity
-	    // check has succeeded.
-	    lnil->getLateNameInfo(i).setIgnoreTS(1);
-	  }
-
-	return SUCCESS;
-      }
-    break;
-
-    case QuerySimilarityInfo::RECOMP_ON_TS_MISMATCH:
-      {
-	if (aqr)
-	  {
-	    diagsArea << DgSqlCode(-EXE_SIM_CHECK_FAILED)
-		      << DgString0("Similarity check should not be reached.");
-	    
-	    return ERROR;
-	  }
-
-	simCheckFailed = TRUE;
-	return SUCCESS;
-      }
-    break;
-
-    case QuerySimilarityInfo::ERROR_ON_TS_MISMATCH:
-      {
-	diagsArea << DgSqlCode(-EXE_SIM_CHECK_FAILED)
-		  << DgString0("Similarity check disabled.");
-	      
-	return ERROR;
-      }
-    break;
- 
-    case QuerySimilarityInfo::SIM_CHECK_AND_RECOMP_ON_FAILURE:
-    case QuerySimilarityInfo::SIM_CHECK_AND_ERROR_ON_FAILURE:
-      {
-	if (aqr)
-	  {
-	    diagsArea << DgSqlCode(-EXE_SIM_CHECK_FAILED)
-		      << DgString0("Similarity check should not be reached.");
-	    
-	    return ERROR;
-	  }
-
-	// do sim check in both these cases. If it passes, do
-	// nothing. If it fails, then recompile or return error.
-      }
-    break;
-    }
-
+  void * lobGlob = NULL; //getRootTcb()->getGlobals()->getExLobGlobal();
+  NABoolean lobGlobInitialized = FALSE;
   qsi->siList()->position();
-  SimilarityInfo * si;
-
-  // index info list is set up for the target IUD'd table in an
-  // IUD(Insert/Update/Delete) query. There may not be any indices
-  // on the IUD'd table at compile time. In that case, the method 
-  // doIUDSimilarityCheck validates that there are no indices on the
-  // runtime IUD's table as well.
-#pragma warning( disable : 4018 )
-  if (qsi->indexInfoList() &&
-      (qsi->namePosition() < lnil->getNumEntries()))
-#pragma warning( default: 4018 )
+  for (Lng32 i = 0; i < qsi->siList()->numEntries(); i++)
     {
-      si = (SimilarityInfo *)(qsi->siList()->get(qsi->namePosition()));
-      LateNameInfo * lni = &lnil->getLateNameInfo(qsi->namePosition());
-      
-      retcode = mapAnsiToGuaName(lni, diagsArea);
-      if (retcode == ERROR)
-	return ERROR;
-      
+      TrafSimilarityTableInfo *si = 
+        (TrafSimilarityTableInfo *)qsi->siList()->getCurr();
+
       simCheckFailed = FALSE;
-      if (NOT si->simCheckDisable())
-	{
-	  if (doIUDSimilarityCheck(si,
-				   lni,
-				   lni->resolvedPhyName(),
-				   qsi->indexInfoList(),
-				   simCheckFailed, diagsArea) == ERROR)
-	    return ERROR;
-	}
-
-      if (simCheckFailed)
-	{
-	  if (qsi->getSimilarityCheckOption() == 
-	      QuerySimilarityInfo::SIM_CHECK_AND_ERROR_ON_FAILURE)
-	    {
-	      diagsArea << DgSqlCode(-EXE_SIM_CHECK_FAILED)
-			<< DgString0("Automatic recompilation disabled.");
-	      
-	      return ERROR;
-	    }
-	  else
-	    return SUCCESS;
-	}
-
-      // at this point we have validated that the runtime table and the
-      // compile time table have matching indices which are in the same
-      // order.
-      lni->setIgnoreTS(1);
-    }
-
-  Int32 i = 0;
-  qsi->siList()->position();
-#pragma warning( disable: 4018 )
-  while (((si = (SimilarityInfo *)(qsi->siList()->getNext())) != NULL) &&
-         (i < lnil->getNumEntries()))
-#pragma warning( default: 4018 )
-    {
-      LateNameInfo * lni = &lnil->getLateNameInfo(i);
-
-      if (si->internalSimCheck())
-	{
-	  // do nothing. An internal system table is being accessed(a metadata
-	  // table) and the timestamp info on those tables is not maintained.
-	  // Consider the similarity check to pass in this case.
-	  lni->setIgnoreTS(1);
-	}
-      else if (si->simCheckDisable())
-	{
-	  lni->setIgnoreTS(0);
-	  simCheckFailed = TRUE;
-	}
-      else if (si->getMatchingIndex())
-	{
-	  if (getMatchingIndex(qsi->indexInfoList(), 
-			       lni->compileTimeAnsiName(),
-			       lni->resolvedPhyName(), diagsArea) == ERROR)
-	    return ERROR;
-
-	  // ignore TS mismatch on the next open since similarity
-	  // check has succeeded.
-	  lni->setIgnoreTS(1);
-	}
-      else if ((qsi->indexInfoList()) &&
-	       (i == qsi->namePosition()))
-	{
-	  // This is the target IUD'd table.
-	  // Nothing needs to be done here, this check has already
-	  // been done before.
-	  lni->setIgnoreTS(1);
-	}
-      else
-	{
-	  retcode = mapAnsiToGuaName(lni, diagsArea);
-	  if (retcode == ERROR)
-	    return ERROR;
-	      
-	  retcode = doSimilarityCheck(si, lni, lni->resolvedPhyName(),
-				      simCheckFailed, diagsArea); 
-#ifdef _DEBUG
-          {
-            char * envPtr = getenv ("SQLMX_DISPLAY_CATMAP");
-            if (envPtr && *envPtr == '1')
+      if (si->isHive())
+        {
+          if ((NOT lobGlobInitialized) &&
+              (lobGlob == NULL))
             {
-              diagsArea << DgSqlCode (DISTRIBUTION_DEBUG_WARNING)
-                        << DgString0 (lni->lastUsedAnsiName())
-                        << DgString1 ("maps to")
-                        << DgString2 (lni->resolvedPhyName());
+              ExpLOBinterfaceInit
+                (lobGlob, &heap_, context_,
+                 TRUE, si->hdfsHostName(), si->hdfsPort());
+              lobGlobInitialized = TRUE;
             }
-          }
 
-#endif
-	  if (retcode  == ERROR)
-	    return ERROR;
-	  
-	  if (simCheckFailed)
-	    {
-	      if (qsi->getSimilarityCheckOption() == 
-		  QuerySimilarityInfo::SIM_CHECK_AND_ERROR_ON_FAILURE)
-		{
-		  diagsArea << DgSqlCode(-EXE_SIM_CHECK_FAILED)
-			    << DgString0("Automatic recompilation disabled.");
-		  
-		  return ERROR;
-		}
-	      else
-		return SUCCESS;
-	    }
+          retcode = doHiveTableSimCheck(si, lobGlob, simCheckFailed, diagsArea);
+          if (retcode == ERROR)
+            {
+              goto error_return; // diagsArea is set
+            }
+        }
+    } // for
 
-	  // ignore TS mismatch on the next open since similarity
-	  // check has succeeded.
-          lni->setIgnoreTS(1);
-	}
-
-	// Fix for 10-010614-3437: When we get here, we have found and
-	// restored similar index information for the IUD stmt, so
-	// don't compare the timestamps.
-	//if (qsi->indexInfoList() && lni->isIndex())
-	//  lni->setIgnoreTS(1);
-
-      i++;
-    }
-  
+  if (lobGlob)
+    ExpLOBinterfaceCleanup(lobGlob, &heap_);
   return SUCCESS;
+  
+ error_return:
+  if (lobGlob)
+    ExpLOBinterfaceCleanup(lobGlob, &heap_);
+  return ERROR;
 }
 
 RETCODE Statement::fixup(CliGlobals * cliGlobals, Descriptor * input_desc,
@@ -2890,24 +2193,7 @@ RETCODE Statement::fixup(CliGlobals * cliGlobals, Descriptor * input_desc,
   if (fixupState() != 0)
     return ERROR;
 
-  if (!donePrepare)
-  {
-    // Don't check visibility if the statement has just been prepared
-    switch (doVisibilityCheck ( root_tdb->getLateNameInfoList(), diagsArea))
-    {
-    case WARNING:
-      doSimCheck = TRUE;
-      return SUCCESS;
-    case ERROR:
-      return ERROR;
-    default:
-      break;
-    }
-  }
-
   /* fixup the generated code */
-  //  statementGlobals_->resolvedNameList() = 
-  //    (lnil_ ? lnil_ : root_tdb->getLateNameInfoList());
   statementGlobals_->setStartAddr((void *)root_tdb);
   statementGlobals_->setCliGlobals(cliGlobals_);
 
@@ -2992,10 +2278,7 @@ RETCODE Statement::fixup(CliGlobals * cliGlobals, Descriptor * input_desc,
       // fixup time.
       if (((diagsArea.contains(-EXE_TIMESTAMP_MISMATCH)) &&
 	   (NOT tsMismatched()))
-          || ((diagsArea.contains(-EXE_TABLE_NOT_FOUND)) &&
-              (root_tdb->querySimilarityInfo()->getSimilarityCheckOption() !=
-                        QuerySimilarityInfo::INTERNAL_SIM_CHECK)))
-	  
+          || (diagsArea.contains(-EXE_TABLE_NOT_FOUND)))
 	{
 	  setTsMismatched(TRUE);
 	  doSimCheck = TRUE;
@@ -3032,14 +2315,6 @@ RETCODE Statement::fixup(CliGlobals * cliGlobals, Descriptor * input_desc,
 		    << DgString0(root_tdb->fetchedCursorName());
 	  return ERROR;
 	}
-    }
-  
-  // clear all runtime flags in statementGlobals_->latenameinfolist()->
-  // getLateNameInfo(i)
-  if (root_tdb->getLateNameInfoList())
-    {
-      //      statementGlobals_->resolvedNameList()->resetFlags();
-      root_tdb->getLateNameInfoList()->resetRuntimeFlags();
     }
 
   setFixupState(-1);
@@ -3187,29 +2462,18 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
   while (readyToReturn == FALSE)  
     {
 #ifdef _DEBUG
-      if ((getenv("SHOW_STATE")) &&
-	  ((! root_tdb) ||
-	   ((root_tdb) &&
-	    (root_tdb->querySimilarityInfo()->getSimilarityCheckOption() !=
-	     QuerySimilarityInfo::INTERNAL_SIM_CHECK))))
+      if (getenv("SHOW_STATE"))
 	{
 	  char buf[40];
 
 	  switch (state_)
 	    {
 	    case INITIAL_STATE_: strcpy(buf, "INITIAL_STATE_"); break;
-	    case RESOLVE_NAMES_: strcpy(buf, "RESOLVE_NAMES_"); break;
 	    case DO_SIM_CHECK_: strcpy(buf, "DO_SIM_CHECK_"); break;
-	    case RECOMPILE_: strcpy(buf, "RECOMPILE_"); break;
-	    case COMPILE_: strcpy(buf, "COMPILE_"); break;
-	    case CHECK_DYNAMIC_SETTINGS_:
-              strcpy(buf, "CHECK_DYNAMIC_SETTINGS_");
-              break;
+	    case CHECK_DYNAMIC_SETTINGS_: strcpy(buf, "CHECK_DYNAMIC_SETTINGS_"); break;
 	    case FIXUP_: strcpy(buf, "FIXUP_"); break;
 	    case FIXUP_DONE_: strcpy(buf, "FIXUP_DONE_"); break;
 	    case EXECUTE_: strcpy(buf, "EXECUTE_"); break;
-	    case RE_EXECUTE_: strcpy(buf, "RE_EXECUTE_"); break;
-	    case RE_EXECUTE_AFTER_RECOMPILE_: strcpy(buf, "RE_EXECUTE_AFTER_RECOMPILE_");
 	    case ERROR_: strcpy(buf, "ERROR_"); break;
 	    case ERROR_RETURN_: strcpy(buf, "ERROR_RETURN_"); break;
 	    default: strcpy(buf, "Unknown state!"); break;
@@ -3366,12 +2630,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		    break;
 		  }
 
-		state_ = COMPILE_;
-		recompileReason[0] = SQL_EOF;	// eof here means EMPTY
-
-		//diagsArea << DgSqlCode(EXE_RECOMPILE)	// a warning only
-		//  << DgInt0(recompileReason[0]);
-		  
+		state_ = ERROR_;
 		break;
 	      }
 	    else if ((root_tdb->transactionReqd() || root_tdb->isLRUOperation())
@@ -3388,21 +2647,10 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		  }
 		else
 		  {
-                    if (diagsArea.contains(-CLI_TRANS_MODE_MISMATCH))
-                      diagsArea.clear();
-
-		    state_ = COMPILE_;
-		    recompileReasonIsTransMode(
-			 root_tdb,
-			 context_->getTransaction(),
-			 recompileReason);
-		    diagsArea << DgSqlCode(recompileReason[0])	// a warning only
-			      << DgInt0(recompileReason[1]) 
-			      << DgInt1(recompileReason[2]);
+                    state_ = ERROR_;
 		  }
 		break;
 	      }
-
 
               if (root_tdb->inMemoryObjectDefn())
 	      {
@@ -3413,7 +2661,6 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
                 state_ = ERROR_;
                 break;
 	      }
-
 
             // if statistics were previously returned for this statement
             // (could happen for multiple executions of the same prepared
@@ -3462,380 +2709,36 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		  {
 		    retcode = ERROR;
 		    state_ = ERROR_RETURN_;
-		    //                readyToReturn = TRUE;
 		    break;
 		  }
 	      }
 
 	    setTsMismatched(FALSE);
-	    state_ = RESOLVE_NAMES_;
+            state_ = DO_SIM_CHECK_;
 	  }
 	break;
 
-	case RESOLVE_NAMES_:
-	  {
-	    NABoolean doSimCheck = FALSE;
-	    NABoolean doFixup    = FALSE;
-
-	    retcode = resolveNames(root_tdb->getLateNameInfoList(),
-				   input_desc, diagsArea,
-				   doSimCheck, doFixup);
-	    if (retcode == ERROR)
-	      {
-		statementGlobals_->takeGlobalDiagsArea(diagsArea);
-		state_ = ERROR_;
-		break;
-	      }
-	    
-	    if (doSimCheck) // do sim check due to name change
-            {
-	      state_ = DO_SIM_CHECK_;
-            }
-	    else
-            {
-              if (doFixup)
+        case DO_SIM_CHECK_:
+          {
+            if ((! root_tdb) || (! root_tdb->querySimilarityInfo()))
               {
-                setFixupState(0);
-              }
-	      state_ = CHECK_DYNAMIC_SETTINGS_;
-            }
-	  }
-	break;
-	
-	case DO_SIM_CHECK_:
-	  {
-            // This DO_SIM_CHECK_ state handles two distinct
-            // tasks. One task is metadata lookups to discover
-            // available partition names following a "partition not
-            // available" error. The other task is the similarity
-            // check. Right now the code does only one of these tasks
-            // but never both. Might be best to break these two tasks
-            // out into separate states.
-
-            if (partitionUnavailable)
-            {
-              // We are getting ready to call catman code, and that code 
-              // will recur into this CLI code.  The recursion doesn't work 
-              // if any errors are in the context Diags Area - i.e, formal 
-              // parameter diagsArea.  So we will clear the context 
-              // diagsArea, but before clearing, we save off the conditions 
-              // for two reasons: 
-              // 1. If error is not fixed by catman, we want to return the 
-              // original conditions (and any new conditions raise by catman) 
-              // in the proper chronological order.
-              // 2. Also, in case a warning was raised before the availability
-              // error (especially, EXE_RECOMPILE), we need to report that, 
-              // even if catman is able to find an available partition.
-              //
-              ComDiagsArea *saveContextDiagsArea = diagsArea.copy();
-              diagsArea.clear();
-
-              // Make a new diags area for catman to accumulate new conditions
-              // into.
-              ComDiagsArea *catmanDiagsArea = 
-                                    ComDiagsArea::allocate(context_->exHeap());
-              retcode = forceMapAllNames( lnil_ ? 
-                            lnil_ : 
-                            root_tdb->getLateNameInfoList(), *catmanDiagsArea);
-
-              // Clear any new conditions have been added to the context diagsArea
-              // They will have copies in the catmanDiagsArea.
-              diagsArea.clear();
-
-              // Now, construct a final diagsArea, with the pre-catman 
-              // Conditions first, followed by the Conditions raised by the
-              // catman. But if there is no error from the catman, clear the
-              // pre-catman errors, because they are no longer relevant.
-
-              if (retcode != ERROR)
-              {
-                Lng32 numErrors = saveContextDiagsArea->getNumber(DgSqlCode::ERROR_);
-                while (numErrors--)
-                {
-                  saveContextDiagsArea->deleteError(numErrors);
-                }
-              }
-
-              diagsArea.mergeAfter(*saveContextDiagsArea);
-              saveContextDiagsArea->deAllocate();
-              diagsArea.mergeAfter(*catmanDiagsArea);
-              catmanDiagsArea->deAllocate();
-
-              if (retcode == ERROR)
-              {
-                partitionAvailabilityChecked = TRUE;
-
-                // If this is the first time the name lookups failed,
-                // continue with a recompile. Otherwise stop working
-                // and report the error.
-                NABoolean reportTheError = FALSE;
-                if (partitionNameLookupsFailed)
-                  reportTheError = TRUE;
-
-#ifdef NA_DEBUG_C_RUNTIME
-                // In the debug build an environment setting can force
-                // us to report the error here
-                if (getenv("NO_RECOMP_WHEN_PART_UNAVAIL"))
-                  reportTheError = TRUE;
-#endif
-
-                partitionNameLookupsFailed = TRUE;
-                if (reportTheError)
-                {
-                  state_ = ERROR_;
-                }
-                else
-                {
-                  // Clear earlier errors from diags area, but leave warnings.
-                  Lng32 numErrors = diagsArea.getNumber(DgSqlCode::ERROR_);
-                  while (numErrors--)
-                  {
-                    diagsArea.deleteError(numErrors);
-                  }
-                  state_ = RECOMPILE_;
-                }
-
-                // This breaks us out of the DO_SIM_CHECK_ state
+                state_ = CHECK_DYNAMIC_SETTINGS_;
                 break;
               }
-              else
+
+            NABoolean simCheckFailed = FALSE;
+            retcode =
+              doQuerySimilarityCheck(root_tdb->querySimilarityInfo(),
+                                     simCheckFailed, diagsArea);
+            if (retcode == ERROR)
               {
-                // At this point, all names are resolved to available
-                // partitions, if at all possible.  If some names
-                // still have no available partitions, we must
-                // remember this fact so that the error (to be
-                // discovered in the FIXUP_ state) will be returned to
-                // the user.
-                partitionAvailabilityChecked = TRUE;
-                partitionUnavailable = FALSE;
-                state_ = CHECK_DYNAMIC_SETTINGS_;
-
-              } // if (retcode == ERROR) else ...
-            } // if (partitionUnavailable)
-
-            else
-            {
-	      NABoolean simCheckFailed = FALSE;
-
-              if (root_tdb->querySimilarityInfo()->getSimilarityCheckOption() != 
-                  QuerySimilarityInfo::ERROR_ON_TS_MISMATCH)
-              {
-                // Clear earlier errors from diags area, but leave warnings.
-                Lng32 numErrors = diagsArea.getNumber(DgSqlCode::ERROR_);
-                while (numErrors--)
-                {
-                  diagsArea.deleteError(numErrors);
-                }
+                state_ = ERROR_;
+                break;
               }
-
-              ComDiagsArea * diagsCopy = NULL;
-              // If the diagsArea is populated, and this is not a recursive call into CLI,
-              // then save a copy and re-instate after doQuerySimilarityCheck.
-              // Clear the original diags area to avoid duplicate errors/warnings.
-              if ((diagsArea.mainSQLCODE())    && 
-                  (context_->getNumOfCliCalls() == 1)
-                 )
-              {
-                diagsCopy = diagsArea.copy();
-                diagsArea.clear();
-              }
-
-	      retcode =
-	        doQuerySimilarityCheck(root_tdb->querySimilarityInfo(),
-				       (lnil_ ? lnil_ : root_tdb->
-				        getLateNameInfoList()),
-				       simCheckFailed, diagsArea);
-
-              if (diagsCopy)
-              {
-                // We saved something ...
-                if (diagsArea.mainSQLCODE())
-                {
-                  // ... and doQuerySimilarityCheck also produced something, add to diagsCopy
-                  diagsCopy->mergeAfter (diagsArea); 
-                  diagsArea.clear();
-                }
-                // Put things back where they belong and get rid of the copy
-                diagsArea.mergeAfter (*diagsCopy); 
-                diagsCopy->deAllocate();
-              }
-
-	      if (retcode == ERROR)
-	        {
-		  state_ = ERROR_;
-		  break;
-	        }
-
-	      setFixupState(0);
-	      
-	      if (simCheckFailed)
-	        {
-		  state_ = RECOMPILE_;
-		  recompileReason[0] = EXE_SIM_CHECK_FAILED;
-	        }
-	      else
-	        {
-	          recompWarn = returnRecompWarn();
-		  if (recompWarn &&
-		      ((root_tdb->querySimilarityInfo()->getSimilarityCheckOption()
-		       == QuerySimilarityInfo::SIM_CHECK_AND_RECOMP_ON_FAILURE) ||
-		      (root_tdb->querySimilarityInfo()->getSimilarityCheckOption()
-		       == QuerySimilarityInfo::SIM_CHECK_AND_ERROR_ON_FAILURE)))
-		      
-		    {
-		      // similarity check passed. Return a warning indicating
-		      // this. This is a temporary warning for testing.
-		      diagsArea << DgSqlCode(EXE_SIM_CHECK_PASSED);
-		    }
-		  state_ = CHECK_DYNAMIC_SETTINGS_;
-	        }
-            }
-	  }
-	break;
-	
-	case COMPILE_:
-	case RECOMPILE_:
-	  {
-	    // We want to ignore any errors that occur as part of dealloc 
-	    // when called from here.
-            // So, we mark the DiagsArea before making the call to dealloc(),
-	    // and then rewind
-            // back to there afterwards.
-            Lng32 oldDiagsAreaMark = diagsArea.mark();
-            Lng32 oldGlobalDiagsAreaMark = 0;
-            if (statementGlobals_->getDiagsArea())
-	      {
-		oldGlobalDiagsAreaMark = statementGlobals_->getDiagsArea()->mark();
-	      }
             
-	    if (dealloc())
-	      {
-                //Leave the diagsArea as it is in case of error during the dealloc().
-		state_ = ERROR_;
-		break;
-	      }
-	    
-            // Rewind to ignore all errors that occurred during a successful dealloc()
-            if (statementGlobals_->getDiagsArea())
-	      {
-		statementGlobals_->getDiagsArea()->rewind(oldGlobalDiagsAreaMark, TRUE);
-	      }
-            diagsArea.rewind(oldDiagsAreaMark, TRUE);
-	    
-	    Int64 startTime = 0;
-	    Int64 time = 0;
-
-            Int32 transactionReqdPriorToRecompile = 0;
-            NABoolean rootTdbExistsPriorToRecompile = TRUE;
-
-            if (root_tdb)
-               transactionReqdPriorToRecompile = root_tdb->transactionReqd();
-            else
-               rootTdbExistsPriorToRecompile = FALSE;
-
-	    if (root_tdb &&
-		(root_tdb->getCollectStatsType() == ComTdb::MEASURE_STATS))
-	      startTime = NA_JulianTimestamp();
-
-	    // similarity check not to be done or failed. Recompile.
-	    // recompWarn = (root_tdb ? returnRecompWarn() : 0);
-	    ULng32 flags = PREPARE_RECOMP;
-            if (isCloned())
-            {
-              ex_assert(clonedFrom_, "Invalid clonedFrom_ pointer");
-              retcode = clonedFrom_->prepare(NULL, diagsArea, NULL, 0, 
-					     SQLCHARSETCODE_ISO88591 /* this setting does not matter because source - the 1st param - is set to NULL */, TRUE,
-					     flags);
-            }
-            else
-            {
-              retcode = prepare(NULL, diagsArea, NULL, 0, 
-				SQLCHARSETCODE_ISO88591 /* this setting does not matter because source - the 1st param - is set to NULL */, TRUE,
-				flags);
-            }
-
-	    if ((retcode == ERROR) || (! root_tdb))
-	      {
-		if (! diagsArea.contains(-CLI_STMT_NOT_PREPARED))
-		   diagsArea << DgSqlCode(- CLI_STMT_NOT_PREPARED);
-
-		state_ = ERROR_;
-		break;
-	      }
-
-            // After a successful compile or recompile, we need to be
-            // able to react to a subsequent availability error on the
-            // new plan by calling runtime metadata lookups that are
-            // guaranteed to return the name of an available partition
-            // if one can be found. By resetting these local variables
-            // we become able to do the lookups again if necessary. If
-            // we do not reset these variables, then after a recompile
-            // if we encounter an unavailable partition we might
-            // return an error to the application immediately which is
-            // not the right thing to do. Instead we may need to do the
-            // lookups again and try to use an available partition.
-            partitionUnavailable = FALSE;
-            partitionAvailabilityChecked = FALSE;
-
-	    // The following stmt does not work since root_tdb changed after
-            // prepare and the collectStatsType not setup correctly.
-	    if ((root_tdb->getCollectStatsType() == ComTdb::MEASURE_STATS) &&
-		(startTime != 0))
-	      {
-		time = NA_JulianTimestamp();
-		reCompileTime = time - startTime;
-		
-		// update Measure sql process recompile counters.
-		// Statement counters cannot be updated here since
-		// stats area not allocated until fixup time.
-		if (cliGlobals->getMeasProcCntrs() != NULL)
-		  {
-                    cliGlobals->getMeasProcCntrs()->incSqlStmtRecompiles(1);
-		    cliGlobals->getMeasProcCntrs()->incSqlStmtRecompileTime(reCompileTime);
-		  }
-	      };
-		
-	    // if (!recompWarn)
-	    recompWarn = returnRecompWarn();
-	    if (recompWarn)
-	      {
-		diagsArea << DgSqlCode(EXE_RECOMPILE)	// a warning only
-		  ;
-
-	      }
-
-            issuePlanVersioningWarnings (diagsArea);
-            // For a cloned statement, the recomp was done on the original
-            // statement, and warnings may be saved there too.
-            if (isCloned())
-              clonedFrom_->issuePlanVersioningWarnings (diagsArea);
-   
-            if (!transactionReqdPriorToRecompile && 
-                rootTdbExistsPriorToRecompile && 
-                root_tdb->transactionReqd())
-               // If the statement is being recompiled, and did not need
-               // a transaction before, but needs one now, start one,
-               // after committing any implicit transaction started earlier
-               // for visibility checking etc. This can only happen if the
-               // table being accessed went from non-audited to audited.
-               commitImplicitTransAndResetTmodes();
-
-	    // Start a transaction, if needed and one not already running.
-	    if (beginTransaction(diagsArea))
-	      {
-		state_ = ERROR_;
-		break;
-	      }
-
-            // Indicate to subsequent states that we have prepared the query.
-            donePrepare = TRUE;
-
-	    if (state_ == COMPILE_ )
-	      state_ = RESOLVE_NAMES_;
-	    else
-	      state_ = CHECK_DYNAMIC_SETTINGS_;
-	  }
-	break;
+            state_ = CHECK_DYNAMIC_SETTINGS_;
+          }
+        break;
 
         case CHECK_DYNAMIC_SETTINGS_:
         {
@@ -3894,70 +2797,6 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 	    
 	    setFixupState(0);
 
-	    // move resolved names from LateNameInfoList to
-	    // ResolvedNameList which will be shipped to PA's
-	    if (root_tdb->getLateNameInfoList())
-	      {
-		ResolvedNameList *&rnl =
-		  statementGlobals_->resolvedNameList();
-		if (rnl && (rnl->numEntries() < root_tdb->getLateNameInfoList()->getNumEntries()))
-		  {
-		    // deallocate the previously allocated rnl
-		    heap_.deallocateMemory(rnl);
-		    rnl = NULL;
-		  }
-
-		if (! rnl)
-		  rnl = 
-		    (ResolvedNameList *)
-		    (new(&heap_) 
-		     char[sizeof(ResolvedNameList) +
-			 ((root_tdb->getLateNameInfoList()->
-			   getNumEntries() > 0 ) ?
-			  ((root_tdb->getLateNameInfoList()->
-			    getNumEntries() - 1) * sizeof(ResolvedName)):
-			  0)]);
-
-		rnl->numEntries() =
-		   root_tdb->getLateNameInfoList()->getNumEntries();
-		rnl->resetFlags();
-
-		for (Int32 i = 0; 
-		     i < (Int32) (root_tdb->getLateNameInfoList()->
-				getNumEntries());
-		     i++)
-		  {
-		    strcpy(rnl->getResolvedName(i).resolvedGuardianName(),
-			   root_tdb->getLateNameInfoList()->
-			   getLateNameInfo(i).resolvedPhyName());
-
-                    short ignore = (short) root_tdb->getLateNameInfoList()->
-                      getLateNameInfo(i).ignoreTS();
-		    rnl->getResolvedName(i).setIgnoreTS(ignore);
-
-                    rnl->getResolvedName(i).setResolvedAnsiName(
-                           root_tdb->getLateNameInfoList()->
-                           getLateNameInfo(i).getLastUsedName(&heap_)->getExternalName());
-		  }
-
-		// if this is an IUD query,
-		// move the number of indices defined on the target
-		// table to the latenameinfo entry for that table.
-		// At open time, if this is an sql/mp table and no timestamp
-		// mismatch is detected, the number of indices will be
-		// validate. See call to doArkOpen in file ex_sql_table.cpp,
-		// method SqlTable::SqlTable.
-		QuerySimilarityInfo * qsi = root_tdb->querySimilarityInfo();
-		if ((qsi->getSimilarityCheckOption() != QuerySimilarityInfo::INTERNAL_SIM_CHECK) &&
-		    (qsi->indexInfoList()))
-		  {
-		    rnl->getResolvedName(qsi->namePosition()).setValidateNumIndexes(TRUE);
-		    rnl->getResolvedName(
-			 qsi->namePosition()).setNumIndexes(
-			      (short)qsi->indexInfoList()->numEntries());
-		  }
-	      } // lateNameInfoList present
-
             StmtDebug1("[BEGIN fixup] %p", this);
 
 	    NABoolean doSimCheck = FALSE;
@@ -3982,19 +2821,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 	    if ((retcode == ERROR) || 
                 (partitionUnavailable && partitionAvailabilityChecked))
 	      {
-                // VO, Genesis solution 10-051125-2802:
-                // We may have gotten a plan version error from ESP assignment
-                if ( diagsArea.contains (-VERSION_COMPILER_VERSION_LOWER_THAN_OLDEST_SUPPORTED) ||
-                     diagsArea.contains (-VERSION_COMPILER_USED_TO_COMPILE_QUERY)
-                   )
-                {
-                  // Get rid of these errors - recompile will re-issue if we have an
-                  // incurable incompatibility
-		  diagsArea.clear();
-		  state_ = RECOMPILE_;
-                }
-                else
-                  state_ = ERROR_;
+                state_ = ERROR_;
 		break;
 	      }
 
@@ -4108,6 +2935,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 	    state_ = EXECUTE_;
 	  }
 	  break;
+
 	case EXECUTE_:
 	  {
 	    if (masterStats != NULL)
@@ -4154,8 +2982,6 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
                 }
             } 
           
-
-	    // BertBert VV
             // in case this is a holdable cursor propagate flag to master executor
             // leaf nodes
             if (isPubsubHoldable() &&
@@ -4517,63 +3343,59 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		      }
 
 		  }
-	      
-
-
 	      }	
-      // done deciding if this query needs to be monitored and 
-      // registered with WMS.
-      // now execute it.
-      if (masterStats != NULL)
-	{
-	  masterStats->setIsBlocking();
-	  masterStats->setStmtState(STMT_EXECUTE_);
-	}
 
-      Int32 rc = root_tcb->execute(cliGlobals, statementGlobals_,
-				   input_desc, diagsPtr, reExecute);
-
-      if (masterStats != NULL)
-	masterStats->setNotBlocking();
-      if (rc < 0)
-	retcode = ERROR;
-      // "diagsPtr" is modified by the foregoing call.
-      // If "diagsPtr" is NULL, there are no diags to merge
-      // into "diagsArea".  Otherwise, "diagsPtr" is not NULL and does
-      // point to a diags area from which we: 1) avoid the SQL function
-      // 2) copy the ComCondition objects over.  Then we decrement
-      // the reference count to indicate we're done with that
-      // ComDiagsArea.
+            // done deciding if this query needs to be monitored and 
+            // registered with WMS.
+            // now execute it.
+            if (masterStats != NULL)
+              {
+                masterStats->setIsBlocking();
+                masterStats->setStmtState(STMT_EXECUTE_);
+              }
+            
+            Int32 rc = root_tcb->execute(cliGlobals, statementGlobals_,
+                                         input_desc, diagsPtr, reExecute);
+            
+            if (masterStats != NULL)
+              masterStats->setNotBlocking();
+            if (rc < 0)
+              retcode = ERROR;
+            // "diagsPtr" is modified by the foregoing call.
+            // If "diagsPtr" is NULL, there are no diags to merge
+            // into "diagsArea".  Otherwise, "diagsPtr" is not NULL and does
+            // point to a diags area from which we: 1) avoid the SQL function
+            // 2) copy the ComCondition objects over.  Then we decrement
+            // the reference count to indicate we're done with that
+            // ComDiagsArea.
 	    
-      if (diagsPtr)
-	{
-	  diagsArea.mergeAfter(*diagsPtr);
-	  diagsPtr->decrRefCount();    
-	  diagsPtr = NULL;
-	}
+            if (diagsPtr)
+              {
+                diagsArea.mergeAfter(*diagsPtr);
+                diagsPtr->decrRefCount();    
+                diagsPtr = NULL;
+              }
 	    
-      if (retcode == ERROR)
-	{
-	  root_tcb->cancel(statementGlobals_,diagsPtr);
-	  state_ = ERROR_;
-	  break;
-	}
-      else
-	{
-	  if (retcode == 0 && diagsArea.mainSQLCODE() > 0)
-	    // It's a warning. So return 1. 
-	    retcode = (RETCODE)1;
-	  setState(OPEN_);
-	  readyToReturn = TRUE;
-	  break;
-	}
-    }
-  break;
-	
-	case RE_EXECUTE_:                 // on error 60
-	case RE_EXECUTE_AFTER_RECOMPILE_: // on plan version error
+            if (retcode == ERROR)
+              {
+                root_tcb->cancel(statementGlobals_,diagsPtr);
+                state_ = ERROR_;
+                break;
+              }
+            else
+              {
+                if (retcode == 0 && diagsArea.mainSQLCODE() > 0)
+                  // It's a warning. So return 1. 
+                  retcode = (RETCODE)1;
+                setState(OPEN_);
+                readyToReturn = TRUE;
+                break;
+              }
+          }
+        break;
+          
+	case RE_EXECUTE_:                
 	  {
-	    // save lnil & stuff
 	    // if input descriptor was passed in at execute time, recreate 
 	    // the input data
 	    // Setting the boolean reExecute to true, will cause the
@@ -4592,10 +3414,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 	    
 	    setFixupState(0);
 	    reExecute=TRUE;
-            if (state_ == RE_EXECUTE_)
-              state_ = CHECK_DYNAMIC_SETTINGS_;
-            else
-              state_ = RECOMPILE_;
+            state_ = CHECK_DYNAMIC_SETTINGS_;
 	  }
 	break;
 
@@ -4697,17 +3516,6 @@ RETCODE Statement::fetch(CliGlobals * cliGlobals, Descriptor * output_desc,
   }
   timeout = -1 ;
 
-#ifdef NA_DEBUG_C_RUNTIME
-  if (output_desc)
-  {
-    Lng32 outputRowsetSize  = 0;
-    output_desc->getDescItem(0, SQLDESC_ROWSET_SIZE, &outputRowsetSize,
-                             0, 0, 0, 0);
-    if (outputRowsetSize > 1)
-      StmtDebug1("  Output rowset size: %d", outputRowsetSize);
-  }
-#endif
-  
   // Check for suspended query.  The other check called in the 
   // Scheduler::work.  We do it here simply because some users
   // expect if the query is suspended while the client is not 
@@ -4762,7 +3570,7 @@ RETCODE Statement::fetch(CliGlobals * cliGlobals, Descriptor * output_desc,
 	    }
 	}
 
-StmtDebug1("  root_tcb->fetch() returned %s",
+      StmtDebug1("  root_tcb->fetch() returned %s",
            RetcodeToString((RETCODE) retcode));
 
     }
@@ -4770,159 +3578,6 @@ StmtDebug1("  root_tcb->fetch() returned %s",
   if (masterStats)
     masterStats->setNotBlocking();
 
-  Statement::ExecState execute_state;
-  while ((retcode < 0)      &&
-	 (diagsPtr != NULL) &&
-	 (  // Handle lost open by trying to close/reopen the table
-            (diagsPtr->contains(-EXE_LOST_OPEN))                        ||
-	    (diagsPtr->contains(-EXE_PARTITION_UNAVAILABLE))            ||
-	    // Handle plan versioning errors by trying to recompile the query
-	    (diagsPtr->contains(-VERSION_PLAN_VERSION_HIGHER_THAN_MXV)) ||
-	    (diagsPtr->contains(-VERSION_PLAN_VERSION_OLDER_THAN_OLDEST_SUPPORTED))
-         )
-	)
-    {
-#ifdef NA_DEBUG_C_RUNTIME
-      StmtDebug1("  stmt state %s", stmtState(getState()));
-      if (diagsPtr)
-       {
-        if (diagsPtr->contains(-EXE_LOST_OPEN))
-            StmtDebug0("  diags contains -EXE_LOST_OPEN");
-        if (diagsPtr->contains(-EXE_PARTITION_UNAVAILABLE))
-            StmtDebug0("  diags contains -EXE_PARTITION_UNAVAILABLE");
-       }
-      StmtDebug1("  this %s a retryable stmt",
-                (root_tdb->retryableStmt() ? "IS" : "IS NOT"));
-#endif
-
-      if (root_tdb->retryableStmt() && (getState() != FETCH_))
-	{
-          // A retryable statement in a retryable state
-          short currentCompilerVersion = COM_VERS_UNKNOWN;
-          short index;
-	  if ((diagsPtr->contains(-EXE_LOST_OPEN)) ||
-	      (diagsPtr->contains(-EXE_PARTITION_UNAVAILABLE)))
-	    execute_state = RE_EXECUTE_;
-	  else
-	    {
-	      // Plan version error. Set the state to RE_EXECUTE_AFTER_RECOMPILE_ and figure out what
-              // version compiler to use, depending upon the actual error.
-              // Save the current default compiler version, so we can reset it after preparing the query.
-              currentCompilerVersion = getContext()->getVersionOfCompiler();
-              if (diagsPtr->contains(-VERSION_PLAN_VERSION_HIGHER_THAN_MXV))
-              {
-                // plan version is too high, recompile with required downrev compiler
-                retcode = getContext()->setOrStartCompiler((short)(*diagsPtr)[1].getOptionalInteger(1), NULL, index);
-              }
-              else
-              {
-                // plan version is too low, recompile with the current version compiler
-                retcode = getContext()->setOrStartCompiler(COM_VERS_COMPILER_VERSION, NULL, index);
-              }
-	      
-	      execute_state = RE_EXECUTE_AFTER_RECOMPILE_;
-	      if (retcode == ERROR)
-		{
-                  // OK no to reset the compiler version, because we didnt actually set it 
-		  setState(CLOSE_);
-		  diagsPtr->decrRefCount();
-		  return ERROR;
-		}
-
-              // Save the error information so that we can report it later as a warning
-              fetchErrorCode_ = (VersionErrorCode) ABS(diagsPtr->mainSQLCODE());          // turn into warning
-              fetchPlanVersion_ = (COM_VERSION) (*diagsPtr)[1].getOptionalInteger(0);
-              fetchSupportedVersion_ = (COM_VERSION) (*diagsPtr)[1].getOptionalInteger(1);
-              fetchNode_ = (*diagsPtr)[1].getOptionalString(0);
-	    }
-
-	  diagsArea.clear();
-
-	  retcode = root_tcb->cancel(statementGlobals_,diagsPtr);
-
-	  setState(CLOSE_);
-	  
-	  retcode = execute(cliGlobals, NULL, diagsArea, execute_state);
-          StmtDebug1("  root_tcb->execute() returned %s",
-                 RetcodeToString((RETCODE) retcode));
-
-	  if (retcode == ERROR)
-	    {
-              if (currentCompilerVersion != COM_VERS_UNKNOWN)
-                // Error path must also reset the current compiler version
-                retcode = getContext()->setOrStartCompiler(currentCompilerVersion,NULL,index);
-
-	      setState(CLOSE_);
-	      diagsPtr->decrRefCount();
-	      return ERROR;
-	    }
-
-          if (currentCompilerVersion != COM_VERS_UNKNOWN)
-          {
-            // Reset the current compiler version if we requested a downrev compiler
-            retcode = getContext()->setOrStartCompiler(currentCompilerVersion,NULL,index);
-            if (retcode == ERROR)
-            {
-              setState(CLOSE_);
-              diagsPtr->decrRefCount();
-              return ERROR;
-            }
-          }
-
-	  diagsPtr->decrRefCount();
-	  diagsPtr = NULL;
-
-	  // if bulk move info needs to be recomputed, set that flag
-	  // in the output descriptor.
-	  // This could happen if the previous execute call caused an
-	  // auto recomp and some output information got changed.
-	  if ((output_desc) && (computeOutputDescBulkMoveInfo()))
-	    {
-	      output_desc->reComputeBulkMoveInfo();
-	      setComputeOutputDescBulkMoveInfo(FALSE);
-	    }
-
-	  if (masterStats)
-            masterStats->setIsBlocking();
-
-          // $$$ in no-waited case, might want to consider reducing
-	  // timeout by time spent (down to a minimum of 0 of course)
-	  closeCursorOnError = TRUE;
-
-	  retcode = root_tcb->fetch(cliGlobals, statementGlobals_,
-				    output_desc, diagsPtr,
-				    timeout, TRUE,
-				    closeCursorOnError);
-          StmtDebug1("  root_tcb->fetch() returned %s",
-                   RetcodeToString((RETCODE) retcode));
-          if (masterStats)
-             masterStats->setNotBlocking();
-	    
-	} // if (retryable and state == FETCH)
-      else
-	{
-          // Non-retryable statement/statement that already has fetched something.
-          if ( diagsPtr->contains(-EXE_LOST_OPEN) ||
-	       diagsPtr->contains(-EXE_PARTITION_UNAVAILABLE)
-             )
-          {
-	    // An open was lost. Set the fixup state to 0 which will cause 
-	    // the next execution to do fixup again; this will re-open the table.
-	    setFixupState(0);
-          }
-          else
-          {
-            // A plan version error. Set the root_tdb to NULL so that 
-            // the next execution will unconditionally recompile the query.
-            assignRootTdb (NULL);
-
-          }
-          break;
-
-	} // if (retryable and state == FETCH) else ...
-    } 
-  
-  
   // "diagsPtr" is modified by the foregoing call.
   // If "diagsPtr" is NULL, there are no diags to merge
   // into "diagsArea".  Otherwise, "diagsPtr" is not NULL and does
@@ -5252,14 +3907,6 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
 {
   Int32 retcode;
 
-  NABoolean processDp2Xns = FALSE;
-  if ((! context_->getTransaction()->xnInProgress()) &&
-      (context_->getTransaction()->autoCommit()) &&
-      (root_tdb->getDp2XnsEnabled()))
-    {
-      processDp2Xns = TRUE;
-    }
-
   if (!root_tdb)
     {
       diagsArea << DgSqlCode(-CLI_STMT_NOT_EXISTS);
@@ -5268,10 +3915,10 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
 
   if (stmt_state != CLOSE_)
     {
-		// trying to execute a statement which is already in open
-		// state
-		diagsArea << DgSqlCode(- CLI_STMT_NOT_CLOSE);
-		return ERROR;
+      // trying to execute a statement which is already in open
+      // state
+      diagsArea << DgSqlCode(- CLI_STMT_NOT_CLOSE);
+      return ERROR;
     }
   
   ExMasterStats * masterStats = NULL;
@@ -5296,7 +3943,7 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
 	 masterStats-> setElapsedStartTime(jts);
      masterStats->setFixupStartTime(-1);
      masterStats->setFreeupStartTime(-1);
-    masterStats->setExeStartTime(aqrInitialExeStartTime_ == -1 ? jts :
+     masterStats->setExeStartTime(aqrInitialExeStartTime_ == -1 ? jts :
                                aqrInitialExeStartTime_);
      masterStats->setSqlErrorCode(0); 
      masterStats->setStmtState(STMT_EXECUTE_);
@@ -5310,16 +3957,10 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
   // Start a transaction, if needed and one not already running.
   if (root_tdb->transactionReqd())
     {
-      if (processDp2Xns)
-      {
-        // if this query could be evaluated using dp2/tse transactions,
-        // then let the query proceed
-      }
-
       // A user started transaction must be present for olt execution.
       // if no user started transaction, then return and do normal
       // execution.
-      else if ((! context_->getTransaction()->xnInProgress()) ||
+      if ((! context_->getTransaction()->xnInProgress()) ||
 	  ((context_->getTransaction()->exeStartedXn()) &&
 	   (context_->getTransaction()->implicitXn())))
 	{
@@ -5331,21 +3972,21 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
 	{
           if (compareTransModes(root_tdb, context_->getTransaction(),
 				(root_tdb->aqrEnabled() ? &diagsArea : NULL))
-		  && !systemModuleStmt() )
-	  {
-	    if (root_tdb->aqrEnabled())
-	      {
-		// return error. AQR will handle recompile and retry.
-		  return(ERROR);
-	      }
-	    else
-	      {
-		doNormalExecute = TRUE;
-                reExecute = FALSE;
-                return SUCCESS;
-	      }
-	  }
-      	  
+              && !systemModuleStmt() )
+            {
+              if (root_tdb->aqrEnabled())
+                {
+                  // return error. AQR will handle recompile and retry.
+                  return(ERROR);
+                }
+              else
+                {
+                  doNormalExecute = TRUE;
+                  reExecute = FALSE;
+                  return SUCCESS;
+                }
+            }
+          
           // move the transid from executor globals to statement globals,
 	  // if a transaction is running.
 	  statementGlobals_->getTransid() =
@@ -5361,10 +4002,10 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
 	    }
 	}
     }
-
-    ExStatisticsArea *statsArea = getStatsArea();
-    if (statsArea != NULL &&
-	statsArea->getCollectStatsType() != ComTdb::MEASURE_STATS)
+  
+  ExStatisticsArea *statsArea = getStatsArea();
+  if (statsArea != NULL &&
+      statsArea->getCollectStatsType() != ComTdb::MEASURE_STATS)
     {
       StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
       if (statsGlobals != NULL)
@@ -5385,7 +4026,20 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
         statsArea->restoreDop();
       }
    }
- 
+
+  // do similarity check 
+  if (root_tdb && root_tdb->querySimilarityInfo())
+    {
+      NABoolean simCheckFailed = FALSE;
+      retcode =
+        doQuerySimilarityCheck(root_tdb->querySimilarityInfo(),
+                               simCheckFailed, diagsArea);
+      
+      if (retcode == ERROR)
+        {
+          return ERROR;
+        }
+    }
 
   ComDiagsArea* diagsPtr = NULL;
   if (! fixupState()) // first time
@@ -5406,70 +4060,6 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
       
       setFixupState(0);
 
-      // move resolved names from LateNameInfoList to
-      // ResolvedNameList which will be shipped to PA's
-      if (root_tdb->getLateNameInfoList())
-	{
-	  ResolvedNameList *&rnl =
-	    statementGlobals_->resolvedNameList();
-	  if (rnl && (rnl->numEntries() < root_tdb->getLateNameInfoList()->getNumEntries()))
-	    {
-	      // deallocate the previously allocated rnl
-	      heap_.deallocateMemory(rnl);
-	      rnl = NULL;
-	    }
-	  
-	  if (! rnl)
-	    rnl = 
-	      (ResolvedNameList *)
-	      (new(&heap_) 
-	       char[sizeof(ResolvedNameList) +
-		   ((root_tdb->getLateNameInfoList()->
-		     getNumEntries() > 0 ) ?
-		    ((root_tdb->getLateNameInfoList()->
-		      getNumEntries() - 1) * sizeof(ResolvedName)):
-		    0)]);
-	  
-	  rnl->numEntries() =
-	    root_tdb->getLateNameInfoList()->getNumEntries();
-	  rnl->resetFlags();
-	  
-	  for (UInt32 i = 0; 
-	       i < root_tdb->getLateNameInfoList()->getNumEntries();
-	       i++)
-	    {
-	      strcpy(rnl->getResolvedName((Int32) i).resolvedGuardianName(),
-		     root_tdb->getLateNameInfoList()->
-		     getLateNameInfo((Int32) i).resolvedPhyName());
-
-              short ignore = (short) root_tdb->getLateNameInfoList()->
-                getLateNameInfo((Int32) i).ignoreTS();
-
-	      rnl->getResolvedName((Int32) i).setIgnoreTS(ignore);
-
-#pragma nowarn(1506)   // warning elimination 
-               rnl->getResolvedName(i).setResolvedAnsiName(
-                   root_tdb->getLateNameInfoList()->
-                   getLateNameInfo(i).getLastUsedName(&heap_)->getExternalName());
-#pragma warn(1506)  // warning elimination 
-	    }
-	}
-
-      if (processDp2Xns)
-	{
-	  implicitTransNeeded();
-
-	  short taRetcode =
-	    context_->getTransaction()->beginTransaction();
-	  
-	  if (taRetcode != 0)
-	    {
-	      diagsArea << DgSqlCode(- CLI_BEGIN_TRANSACTION_ERROR);
-	      //	      cliGlobals_->setJmpBufPtr(oldJmpBufPtr);
-	      return ERROR;
-	    }
-	}
-        
       NABoolean doSimCheck = FALSE;
       NABoolean partitionUnavailable = FALSE;
       retcode = fixup(cliGlobals, input_desc, diagsArea, doSimCheck, partitionUnavailable, FALSE);
@@ -6703,55 +5293,6 @@ short Statement::rollbackTransaction(ComDiagsArea & diagsArea,
     }
 
   return 0;
-}
-
-
-RETCODE Statement::doVisibilityCheck (LateNameInfoList * lnil,
-                                      ComDiagsArea &diagsArea)
-{
-  RETCODE retcode = SUCCESS;
-
-  // Visibility Checks disabled for  (10-081016-6563)
-  //
-  const NABoolean disableVisCheck = TRUE;
-
-  if(disableVisCheck)
-    return retcode;
-
-  for (Int32 l = 0; l < (Int32) (lnil->getNumEntries()); l++)
-    {
-      LateNameInfo * lni = &(lnil->getLateNameInfo(l));
-      if (   !lni->isAnsiPhySame()     // the name is not a physical name
-          && !lni->isAnsiNameChange()  // has not been resolved via catman call
-          && !lni->isView() )          // vis checks for views done elsewhere
-      { 
-        retcode = checkObjectVisibility(lni->getLastUsedName(&heap_), 
-                                        lni->getNameSpace(),
-                                        lni->resolvedPhyName(), 
-                                        diagsArea);
-        if (retcode != SUCCESS )
-          break;
-      } 
-    }
-
-  if (retcode == WARNING)
-  {
-    // Catalog is visible on local node, but either not visible or 
-    // unrelated on remote node. Force name mapping. 
-    retcode = forceMapAllNames (lnil, diagsArea);
-    // Return WARNING so that the caller can force similarity check
-    if (retcode != ERROR)
-	retcode  = WARNING;
-  }
-  return retcode;
-}
-
-RETCODE Statement::checkObjectVisibility( AnsiOrNskName *ansiName,
-					  const ComAnsiNameSpace nameSpace,
-                                          char *guardianName,
-                                          ComDiagsArea &diagsArea)
-{
-  return ERROR;
 }
 
 static

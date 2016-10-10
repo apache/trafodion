@@ -51,7 +51,7 @@ class Descriptor;
 class TransMode;
 class ExFragDir;
 class LateNameInfoList;
-class QuerySimilarityInfo;
+class TragQuerySimilarityInfo;
 class Queue;
 
 typedef NABasicPtrTempl<Int64>   Int64Ptr; // Needed for triggersList_
@@ -456,8 +456,7 @@ protected:
   LateNameInfoListPtr lateNameInfoList_;                            // 120-127
 
   // contains info used to perform similarity info at runtime.
-  QuerySimilarityInfoPtr qsi_;                                      // 128-135
-
+  TrafQuerySimilarityInfoPtr qsi_;                                  // 128-135
 
   // contains the name of the cursor
   NABasicPtr fetchedCursorName_;                                    // 136-143
@@ -659,7 +658,7 @@ public:
             SqlTableOpenInfo **stoiList,
             LateNameInfoList * lateNameInfoList,
 	    Queue *viewStoiList,
-	    QuerySimilarityInfo * qsi,
+	    TrafQuerySimilarityInfo * qsi,
 	    Space *space,
 	    Lng32 uniqueExecuteIdOffset, //++Triggers -
 	    Lng32 triggersStatusOffset,
@@ -863,7 +862,7 @@ public:
 
   Queue* getViewStoiList() {return viewStoiList_; }
 
-  QuerySimilarityInfo * querySimilarityInfo() { return qsi_; };
+  TrafQuerySimilarityInfo * querySimilarityInfo() { return qsi_; };
 
   UninitializedMvName * uninitializedMvList() { return uninitializedMvList_; }  
   short uninitializedMvCount() { return uninitializedMvCount_; }  

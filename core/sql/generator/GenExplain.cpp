@@ -472,7 +472,7 @@ RelExpr::addExplainInfo(ComTdb * tdb,
   //calls virtual subclass-specific function
   addSpecificExplainInfo(explainTuple, tdb, generator);
 
-  //finishes up the processing, used to be inside of ifndef __ignore
+  //finishes up the processing
   addExplainPredicates(explainTuple, generator);
 
   explainTuple->genExplainTupleData(space);

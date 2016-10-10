@@ -512,7 +512,8 @@ public:
 
   NABoolean checkFirstNRowsNotAllowed(BindWA* bindWA) ;
 
-  QuerySimilarityInfo * genSimilarityInfo(Generator *generator);  // GenRelMisc
+  // defined in generator/GenRelMisc.cpp
+  TrafQuerySimilarityInfo * genSimilarityInfo(Generator *generator);
 
   void addOneRowAggregates(BindWA * bindWA);
 
