@@ -150,12 +150,14 @@ void HSFuncLogError(Lng32 error, char *filename, Lng32 lineno);
 //    [6008] missing single-column histograms
 //    [6007] missing multi-column histograms
 //    [4030] non-standard DATETIME format
+//    [2053] Optimizer pass two assertion failure (optimizer still attempts to produce a plan)
 //    [4]    internal Warning
 #define HSFilterWarning(retcode) \
         { \
           if ((retcode == 6008) || \
               (retcode == 6007) || \
               (retcode == 4030) || \
+              (retcode == 2053) || \
               (retcode == HS_WARNING)) \
             retcode = 0; \
         }

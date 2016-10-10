@@ -308,6 +308,12 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_LARGEINT_UNSIGNED_IO 'ON'");
     HSExitIfError(retcode);
 
+    // Set the following CQD to allow "_SALT_", "_DIV_" and similar system columns
+    // in a sample table when the table is created using CREATE TABLE AS SELECT
+    retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_ALLOW_RESERVED_COLNAMES 'ON'");
+    HSExitIfError(retcode);
+
+
     LM->StopTimer();
 
     LM->StartTimer("Parse statement");
