@@ -1804,20 +1804,21 @@ void ex_conv_clause::populateInstrOffsetIndex()
   }
   
   // Allocate a sparsely populated array
-  sv_convIndexSparse = (int *) calloc(sizeof(int), 
-				      (sv_MaxOpTypeValue+1));
+  int *lv_convIndexSparse = (int *) calloc(sizeof(int), 
+					   (sv_MaxOpTypeValue+1));
   // Initialize to -1
   for (j = 0; j <= sv_MaxOpTypeValue; j++) {
-    sv_convIndexSparse[j] = -1;
+    lv_convIndexSparse[j] = -1;
   }
   
   // Setup the sparsely populated array
   j = 0;
   while (j <= lv_MaxIndex) {
-    sv_convIndexSparse[lv_convIndex[j].type_op1] = lv_convIndex[j].offset;
+    lv_convIndexSparse[lv_convIndex[j].type_op1] = lv_convIndex[j].offset;
     j++;
   }
 
+  sv_convIndexSparse = lv_convIndexSparse;
   sv_instrOffsetIndexPopulated = true;
 }
 
@@ -1826,10 +1827,6 @@ void ex_conv_clause::populateInstrOffsetIndex()
  */
 int ex_conv_clause::getInstrOffset(short pv_op1)
 {
-  if (! sv_instrOffsetIndexPopulated) {
-    ex_conv_clause::populateInstrOffsetIndex();
-  }
-
   if ((pv_op1 < 0) || 
       (pv_op1 > sv_MaxOpTypeValue)) {
     return -1;
