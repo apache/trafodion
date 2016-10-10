@@ -103,6 +103,7 @@ Generator::Generator(CmpContext* currentCmpContext) :
     ,stoiList_(wHeap())  
     ,insertNodesList_(wHeap())  
     ,avgVarCharSizeList_(wHeap())  
+    ,trafSimTableInfoList_(wHeap())
 {
   // nothing generated yet.
   genObj = 0;
