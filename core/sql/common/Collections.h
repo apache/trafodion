@@ -1831,10 +1831,6 @@ template <class T> class NASet : public NACollection<T>
 
 public:
 
-  // default constructor
-  /* NASet(CollIndex initSize = 0) : NACollection<T>(initSize)
-     { invalidateCache(); } */
-
   // constructor with user-defined heap
   NASet(CollHeap  *heap,
         CollIndex initSize = 0) : NACollection<T>(heap,initSize)
@@ -1957,10 +1953,6 @@ template <class T> class NAList : public NACollection<T>
 {
 
 public:
-
-  // default constructor
-  /*NAList(CollIndex initLen = 0) : NACollection<T>(initLen) 
-    { first_ = last_ = userIndexCache_ = arrayIndexCache_ = NULL_COLL_INDEX; }*/
 
   // constructor with user-defined heap
   NAList(CollHeap * heap,
@@ -2215,10 +2207,6 @@ template <class T> class NAArray : public NACollection<T>
 {
 
 public :
-
-  // default constructor
-  //NAArray(CollIndex initialElements = 0) : 
-  //NACollection<T>(initialElements) {}
 
   // constructor with user-defined heap
   NAArray(CollHeap *heap, CollIndex initialElements = 0) : 
