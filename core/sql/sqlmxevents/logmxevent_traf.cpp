@@ -86,7 +86,7 @@ bool SQLMXLoggingArea::lockMutex()
     rc = pthread_mutex_lock(&loggingMutex_);
     if (rc)
     {
-      sprintf(buffer, "SQLMXLoggingArea::lockMutex() pthread_mutex_trylock() rc=%d", rc);
+      sprintf(buffer, "SQLMXLoggingArea::lockMutex() pthread_mutex_lock() rc=%d", rc);
       abort();
     }
   }
