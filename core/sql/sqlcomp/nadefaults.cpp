@@ -4125,6 +4125,7 @@ NADefaults::NADefaults(NAMemory * h)
   , heap_(h)
   , resetAll_(FALSE)
   , defFlags_(0)
+  , tablesRead_(h)
 {
   static THREAD_P NABoolean systemParamterUpdated = FALSE;
   // First (but only if NSK-LITE Services exist),

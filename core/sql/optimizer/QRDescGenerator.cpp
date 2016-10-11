@@ -2611,7 +2611,7 @@ void QRDescGenerator::processReferencingPreds(CANodeIdSet* nodeSet,
 
   // Identify equality sets implied by vegpreds and equality conditions, and
   // translate these to joinpred/range/residual predicates in the descriptor.
-  NAList<EqualitySet*> equalitySets;
+  NAList<EqualitySet*> equalitySets(mvqrHeap_);
   formEqualitySets(preds, equalitySets);
   for (CollIndex i=0; i<equalitySets.entries(); i++)
     processEqualitySet(jbbElem, *equalitySets[i]);

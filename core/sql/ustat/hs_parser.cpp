@@ -941,7 +941,7 @@ Lng32 AddKeyGroups()
 
         while (numKeys >= minMCGroupSz)  // Create only MC groups not single cols
           {
-            HSColSet colSet;
+            HSColSet colSet(STMTHEAP);
 
             autoGroup = "(";
             for (j = 0; j < numKeys; j++)
@@ -1017,7 +1017,7 @@ Lng32 AddKeyGroups()
               minMCGroupSz = numKeys - maxMCGroups + 1;
             while (numKeys >= minMCGroupSz)  // MinMCGroupSz is greater than 1.
               {
-              HSColSet colSet;
+		HSColSet colSet(STMTHEAP);
 
               tempColList = "";
               autoGroup = "(";

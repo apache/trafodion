@@ -383,7 +383,7 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
 
       MdamColumnGen * first = 0;
       MdamColumnGen * last = 0;
-      LIST(NAType *) keyTypeList;  // to keep the type of the keys for later
+      LIST(NAType *) keyTypeList(generator->wHeap());//to keep the type of the keys for later
 
       for (i = 0; i < keyCount; i++)
         {

@@ -195,7 +195,7 @@ Cmdline_Args::Cmdline_Args()
     allocMethod_(IPC_ALLOC_DONT_CARE),
     socketArg_(0),
     portArg_(0),
-    settings_(),
+    settings_(NULL), // This NAArray goes on system heap. NULL for heap*
     noSeabaseDefTableRead_(FALSE)
 {}
 

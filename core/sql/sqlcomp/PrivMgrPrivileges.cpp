@@ -1229,7 +1229,7 @@ PrivStatus PrivMgrPrivileges::grantColumnPriv(
   }
 
   // Get existing column grants from grantor to the specified grantee.
-  NAList<PrivMgrCoreDesc> grantedColPrivs;
+  NAList<PrivMgrCoreDesc> grantedColPrivs(STMTHEAP);
   getColRowsForGranteeGrantor(columnRowList_,
                               granteeID,grantorID_,
                               grantedColPrivs);
@@ -3028,7 +3028,7 @@ PrivStatus PrivMgrPrivileges::revokeColumnPriv(
   NAList<PrivMgrCoreDesc> colPrivsToRevoke = privsToRevoke.getColumnPrivs();
 
   // Get existing column grants from grantor to the specified grantee.
-  NAList<PrivMgrCoreDesc> grantedColPrivs;
+  NAList<PrivMgrCoreDesc> grantedColPrivs(STMTHEAP);
   getColRowsForGranteeGrantor(columnRowList_,
                               granteeID,grantorID_,
                               grantedColPrivs);
@@ -4511,7 +4511,7 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
   if (retcode == STATUS_ERROR)
     return retcode;
 
-  NAList<PrivMgrCoreDesc> coreColumnPrivs;
+  NAList<PrivMgrCoreDesc> coreColumnPrivs(STMTHEAP);
   for (int32_t i = 0; i < rowList.size();++i)
   {
     ColumnPrivsMDRow &row = static_cast<ColumnPrivsMDRow &> (*rowList[i]);
@@ -5107,7 +5107,7 @@ PrivStatus PrivMgrPrivileges::convertPrivsToDesc(
   //
   // Input may have same column ordinal in multiple entries, but the input is 
   // guaranteed not to contain same ordinal and privType more than once.
-  NAList<PrivMgrCoreDesc> columnCorePrivs;
+  NAList<PrivMgrCoreDesc> columnCorePrivs(STMTHEAP);
   for (size_t i = 0; i < colPrivsList.size(); i++)
   {
     const ColPrivSpec &colPrivSpec = colPrivsList[i];

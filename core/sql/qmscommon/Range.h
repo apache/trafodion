@@ -956,7 +956,8 @@ class RangeSpec : public NABasicObject
         nullIncluded_(FALSE),
         type_(NULL),
         isDumpMvMode_(FALSE),
-        logLevel_(ll)
+        logLevel_(ll),
+        subranges_(heap)
       {}
 
     /**

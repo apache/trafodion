@@ -642,6 +642,7 @@ class HQCParseKey : public HQCCacheKey
             , nOfTokens_(other.nOfTokens_)
             , isStringNormalized_(other.isStringNormalized_)
             , paramStart_(other.paramStart_)
+	    , HQCDynParamMap_(other.HQCDynParamMap_, h)
 	     {}
 	
        ~HQCParseKey() {}

@@ -564,11 +564,11 @@ static void orderColumnsByAlignment(NAArray<BaseColumn *>   columns,
                                     NAArray<BaseColumn *> * orderedCols )
 {
   Int16  rc = 0;
-  NAList<BaseColumn *> varCols(5);
-  NAList<BaseColumn *> addedCols(5);
-  NAList<BaseColumn *> align4(5);
-  NAList<BaseColumn *> align2(5);
-  NAList<BaseColumn *> align1(5);
+  NAList<BaseColumn *> varCols(STMTHEAP, 5);
+  NAList<BaseColumn *> addedCols(STMTHEAP, 5);
+  NAList<BaseColumn *> align4(STMTHEAP, 5);
+  NAList<BaseColumn *> align2(STMTHEAP, 5);
+  NAList<BaseColumn *> align1(STMTHEAP, 5);
   BaseColumn *currColumn;
   CollIndex i, k;
   Int32 alignmentSize;
@@ -2328,7 +2328,7 @@ short HbaseInsert::codeGen(Generator *generator)
   ULng32 rowIdLen = 0;
 
   ValueIdList savedInputVIDlist;
-  NAList<Attributes*> savedInputAttrsList;
+  NAList<Attributes*> savedInputAttrsList(generator->wHeap());
 
   const ValueIdList &indexVIDlist = getIndexDesc()->getIndexColumns();
   for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)

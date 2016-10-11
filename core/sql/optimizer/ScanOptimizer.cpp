@@ -5500,8 +5500,8 @@ NABoolean FileScanOptimizer::isMDAMFeasibleForHBase(const IndexDesc* idesc, Valu
    }
 
 
-   ARRAY(Int32) uecsByKeyColumns;
-   ARRAY(Int32) rangesByKeyColumns;
+   ARRAY(Int32) uecsByKeyColumns(HEAP);
+   ARRAY(Int32) rangesByKeyColumns(HEAP);
  
    NABoolean possiblyUseMdam = FALSE;
 

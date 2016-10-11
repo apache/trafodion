@@ -2920,7 +2920,7 @@ void ValueIdSet::findCommonSubexpressions(ValueIdSet &other,
 {
   ValueIdList otherList;
   CollIndex otherNumEntries;
-  LIST(HashValue) otherHashValues;
+  LIST(HashValue) otherHashValues(STMTHEAP);
   ValueId vid;
   CollIndex j;
   HashValue hashVal;

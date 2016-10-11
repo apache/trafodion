@@ -86,7 +86,7 @@ ExWorkProcRetcode ExHbaseAccessDDLTcb::work()
 
 	    Queue * cfnl = hbaseAccessTdb().getColFamNameList();
 	    cfnl->position();
-	    HBASE_NAMELIST colFamList;
+	    HBASE_NAMELIST colFamList(getHeap());
 	    HbaseStr colFam;
 	    while(NOT cfnl->atEnd())
 	      {
