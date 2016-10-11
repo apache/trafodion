@@ -3477,7 +3477,8 @@ void Union::copyLeftRightListsToPreviousIF(Union * previousIF, BindWA * bindWA)
 void Union::dumpChildrensRETDescs(const RETDesc& leftTable,
                                   const RETDesc& rightTable)
 {
-#ifndef NDEBUG
+// turn this code on when you need it by changing the #if below
+#if 0   
   // -- MVs. Debugging code !!!!! TBD
   fprintf(stdout, " #    Left                                Right\n");
   CollIndex maxIndex, minIndex;
