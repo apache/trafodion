@@ -323,7 +323,8 @@ CNATestPoint::Wait ( Lng32 delayTime_in_millisecs )
 // Constructor
 // ---------------------------------------------------------------------
 CNATestPointList::CNATestPointList ( EOwnership ownership) 
-    : m_ownership (ownership)
+  : LIST(CNATestPoint*)(NULL), 
+    m_ownership (ownership)
 {
 }
 

@@ -1214,13 +1214,15 @@ if (hTabStats->isOrcFile())
   Int64 modTS = -1;
   Lng32 numOfPartLevels = -1;
   Queue * hdfsDirsToCheck = NULL;
-  if (CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON)
+
+  // Right now, timestamp info is not being generated correctly for
+  // partitioned files. Skip data mod check for them.
+  // Remove this check when partitioned info is set up correctly.
+
+  if ((CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
+      (CmpCommon::getDefault(TRAF_SIMILARITY_CHECK) != DF_OFF) &&
+      (hTabStats->numOfPartCols() <= 0))
     {
-      hdfsRootDir =
-        space->allocateAndCopyToAlignedSpace(hTabStats->tableDir().data(),
-                                             hTabStats->tableDir().length(),
-                                             0);
-      modTS = hTabStats->getModificationTS();
       numOfPartLevels = hTabStats->numOfPartCols();
 
       // if specific directories are to checked based on the query struct
@@ -1229,10 +1231,33 @@ if (hTabStats->isOrcFile())
       // At runtime, only these dirs will be checked for data modification.
       // ** TBD **
 
-      // Right now, timestamp info is not being generated correctly for
-      // partitioned files. Skip data mod check for them.
-      if (numOfPartLevels > 0)
-        hdfsRootDir = NULL;
+      if ((CmpCommon::getDefault(TRAF_SIMILARITY_CHECK) == DF_ROOT) ||
+          (CmpCommon::getDefault(TRAF_SIMILARITY_CHECK) == DF_ON))
+        {
+          char * tiName = new(generator->wHeap()) char[strlen(tablename)+1];
+          strcpy(tiName, tablename);
+          TrafSimilarityTableInfo * ti = 
+            new(generator->wHeap()) TrafSimilarityTableInfo(
+                 tiName,
+                 TRUE, // isHive
+                 (char*)hTabStats->tableDir().data(), // root dir
+                 hTabStats->getModificationTS(),
+                 numOfPartLevels,
+                 hdfsDirsToCheck,
+                 hdfsHostName, hdfsPort);
+          
+          generator->addTrafSimTableInfo(ti);
+        }
+      else
+        {
+          // sim check done at leaf operators.
+          hdfsRootDir =
+            space->allocateAndCopyToAlignedSpace(hTabStats->tableDir().data(),
+                                                 hTabStats->tableDir().length(),
+                                                 0);
+          modTS = hTabStats->getModificationTS();
+          numOfPartLevels = hTabStats->numOfPartCols();
+        }
     }
 
   // create hdfsscan_tdb
@@ -2711,7 +2736,7 @@ short HbaseAccess::codeGen(Generator * generator)
     {
       listOfFetchedColNames = new(space) Queue(space);
 
-      NAList<NAString> sortedColList;
+      NAList<NAString> sortedColList(generator->wHeap());
       sortValues(retHbaseColRefSet_, sortedColList);
       
       for (Lng32 ij = 0; ij < sortedColList.entries(); ij++)

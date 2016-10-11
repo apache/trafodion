@@ -292,141 +292,6 @@ static short genUpdExpr(
   return 0;
 }
 
-static short genMergeInsertExpr(
-        Generator * generator, 
-        TableDesc * tableDesc,             // IN
-        const IndexDesc * indexDesc,       // IN
-        ValueIdArray &mergeInsertRecExprArray,  // IN
-        const Int32 mergeInsertKeyEncodeAtpIndex, // IN
-        const Int32 mergeInsertRowAtpIndex,       // IN
-        ex_expr** mergeInsertKeyEncodeExpr,     // OUT
-        ULng32 &mergeInsertKeyLen,       // OUT
-        ex_expr** mergeInsertExpr,        // OUT
-	ULng32 &mergeInsertRowLen, // OUT
-        ExpTupleDesc** mergeInsertRowTupleDesc)     // OUT fetched/updated RowTupleDesc,
-{
-  ExpGenerator * expGen = generator->getExpGenerator();
-
-  *mergeInsertKeyEncodeExpr = NULL;
-  mergeInsertKeyLen = 0;
-  *mergeInsertExpr = NULL;
-  mergeInsertRowLen = 0;
-
-  // Generate the update expression that will create the updated row
-  // given to DP2 at runtime.
-  ValueIdList mergeInsertRowVidList;
-  BaseColumn *updtCol       = NULL,
-             *fetchedCol    = NULL;
-  Lng32        updtColNum    = -1,
-              fetchedColNum = 0;
-  ItemExpr   *updtColVal    = NULL,
-             *castNode      = NULL;
-  CollIndex   recEntries    = mergeInsertRecExprArray.entries(),
-              colEntries    = indexDesc->getIndexColumns().entries(),
-              j             = 0;
-  NAColumnArray colArray;
-  NAColumn *col;
-
-  if (recEntries == 0)
-    return 0;
-
-  ExpTupleDesc::TupleDataFormat tupleFormat = 
-                   generator->getTableDataFormat( tableDesc->getNATable(), indexDesc);
-
-  NABoolean alignedFormat = (tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT);
-  
-  for (CollIndex ii = 0; ii < mergeInsertRecExprArray.entries(); ii++)
-    {
-      const ItemExpr *assignExpr = mergeInsertRecExprArray[ii].getItemExpr();
-
-      ValueId tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
-      ValueId srcValueId = assignExpr->child(1)->castToItemExpr()->getValueId();
-
-      // populate the colArray because this info is needed later to identify 
-      // the added columns. 
-      if ( alignedFormat )
-      {
-        col = tgtValueId.getNAColumn( TRUE );
-        if ( col != NULL )
-          colArray.insert( col );
-      }
-      
-      ItemExpr * ie = NULL;
-
-      ie = new(generator->wHeap())
-	    Cast(assignExpr->child(1), &tgtValueId.getType());
-     
-      ie->bindNode(generator->getBindWA());
-      mergeInsertRowVidList.insert(ie->getValueId());
-    }
-
-  // Tell the expression generator that we're coming in for an insert
-  // or an update.  This flag will be cleared in generateContigousMoveExpr.
-  if ( tupleFormat == ExpTupleDesc::SQLMX_FORMAT ||
-       tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT )
-    expGen->setForInsertUpdate( TRUE );
-
-  // Generate the insert expression
-  //
-  expGen->generateContiguousMoveExpr
-    (mergeInsertRowVidList,
-     // (IN) Don't add convert nodes, Cast's have already been done.
-     0,
-     // (IN) Destination Atp
-     1, 
-     // (IN) Destination Atp index
-     mergeInsertRowAtpIndex,
-     // (IN) Destination data format
-     tupleFormat,
-     // (OUT) Destination tuple length
-     mergeInsertRowLen,
-     // (OUT) Generated expression
-     mergeInsertExpr, 
-     // (OUT) Tuple descriptor for destination tuple
-     mergeInsertRowTupleDesc, 
-     // (IN) Tuple descriptor format
-     ExpTupleDesc::LONG_FORMAT,
-     NULL, NULL, 0, NULL, NULL,
-     &colArray); // colArray is needed to identify any added cols.
-  
-  // Assign attributes to the ASSIGN nodes of the newRecExpArray()
-  // This is not the same as the generateContiguousMoveExpr() call
-  // above since different valueId's are added to the mapTable.
-  // 
-  expGen->processValIdList(mergeInsertRecExprArray,
-			   tupleFormat,
-			   mergeInsertRowLen,
-			   1, 
-			   mergeInsertRowAtpIndex,
-			   mergeInsertRowTupleDesc,
-			   ExpTupleDesc::LONG_FORMAT,
-                           0,NULL,&colArray,
-                           !indexDesc->isClusteringIndex());
-
-
-  for (CollIndex i = 0; i < indexDesc->getIndexColumns().entries();
-       i++) 
-    {
-      generator->addMapInfo(
-	   (indexDesc->getIndexColumns())[i],
-	   generator->getMapInfo(mergeInsertRecExprArray[i])->getAttr()
-	   )->getAttr()->setAtp(0);
-    }
-  
-    ULng32 f;
-    expGen->generateKeyEncodeExpr(
-	 indexDesc,                              // describes the columns
-	 0,                                      // work Atp
-	 mergeInsertKeyEncodeAtpIndex,                // work Atp entry #3
-	 ExpTupleDesc::SQLMX_KEY_FORMAT,         // Tuple format
-	 mergeInsertKeyLen,                           // Key length
-	 mergeInsertKeyEncodeExpr,                    // Encode expression
-	 FALSE,                                  // don't optimize key encoding
-	 f);
-
-  return 0;
-}
-
 static short genUpdConstraintExpr(Generator *generator)
 {
   return 0;
@@ -470,6 +335,8 @@ static short genHbaseUpdOrInsertExpr(
   if (updRecExprArray.entries() > 0)
     listOfUpdatedColNames = new(space) Queue(space);
 
+  NAColumnArray colArray;
+  NAColumn *col;
 
   for (CollIndex ii = 0; ii < updRecExprArray.entries(); ii++)
     {
@@ -478,6 +345,15 @@ static short genHbaseUpdOrInsertExpr(
 
       ValueId tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
       ValueId srcValueId = assignExpr->child(1)->castToItemExpr()->getValueId();
+
+      // populate the colArray because this info is needed later to identify 
+      // the added columns. 
+      if ( isAligned )
+      {
+        col = tgtValueId.getNAColumn( TRUE );
+        if ( col != NULL )
+          colArray.insert( col );
+      }
 
       ItemExpr * ie = NULL;
 
@@ -539,7 +415,9 @@ static short genHbaseUpdOrInsertExpr(
      updateRowLen,      // (OUT) Destination tuple length
      updateExpr,  // (OUT) Generated expression
      updateTupleDesc, // (OUT) Tuple descriptor for destination tuple
-     ExpTupleDesc::LONG_FORMAT);
+     ExpTupleDesc::LONG_FORMAT,
+     NULL, NULL, 0, NULL, NULL,
+     &colArray); // colArray is needed to identify any added cols.
   
   // Assign attributes to the ASSIGN nodes of the newRecExpArray()
   // This is not the same as the generateContiguousMoveExpr() call
@@ -686,11 +564,11 @@ static void orderColumnsByAlignment(NAArray<BaseColumn *>   columns,
                                     NAArray<BaseColumn *> * orderedCols )
 {
   Int16  rc = 0;
-  NAList<BaseColumn *> varCols(5);
-  NAList<BaseColumn *> addedCols(5);
-  NAList<BaseColumn *> align4(5);
-  NAList<BaseColumn *> align2(5);
-  NAList<BaseColumn *> align1(5);
+  NAList<BaseColumn *> varCols(STMTHEAP, 5);
+  NAList<BaseColumn *> addedCols(STMTHEAP, 5);
+  NAList<BaseColumn *> align4(STMTHEAP, 5);
+  NAList<BaseColumn *> align2(STMTHEAP, 5);
+  NAList<BaseColumn *> align1(STMTHEAP, 5);
   BaseColumn *currColumn;
   CollIndex i, k;
   Int32 alignmentSize;
@@ -2450,7 +2328,7 @@ short HbaseInsert::codeGen(Generator *generator)
   ULng32 rowIdLen = 0;
 
   ValueIdList savedInputVIDlist;
-  NAList<Attributes*> savedInputAttrsList;
+  NAList<Attributes*> savedInputAttrsList(generator->wHeap());
 
   const ValueIdList &indexVIDlist = getIndexDesc()->getIndexColumns();
   for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)

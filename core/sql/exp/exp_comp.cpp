@@ -38,12 +38,12 @@
 
 #include "Platform.h"
 
-
 #include "exp_stdh.h"
 #include "exp_clause_derived.h"
 #include "exp_datetime.h"
 #include "unicode_char_set.h"
 #include "wstr.h"
+#include "ex_globals.h"
 
 ex_expr::exp_return_type ex_comp_clause::processNulls(char *op_data[],
 						      CollHeap *heap,
@@ -70,30 +70,24 @@ ex_expr::exp_return_type ex_comp_clause::processNulls(char *op_data[],
    	    case ITM_EQUAL:
    	      result = (left_is_null && right_is_null ? -1 : 0);
    	      break;
-   	   // LCOV_EXCL_START
    	    case ITM_NOT_EQUAL:
    	      result = (left_is_null && right_is_null ? 0 : -1);
    	      break;
    	      
    	    case ITM_GREATER:
-	      //   	      result = (left_is_null && (!right_is_null) ? -1 : 0);
    	      result = (right_is_null ? 0 : -1);
    	      break;
    
    	    case ITM_LESS:
-	      //   	      result = (left_is_null && (!right_is_null) ? 0 : -1);
    	      result = (left_is_null ? 0 : -1);
    	      break;
    
    	    case ITM_GREATER_EQ:
    	      result = (left_is_null ? -1 : 0);
    	      break;
-   	   // LCOV_EXCL_STOP
    	    case ITM_LESS_EQ:
    	      result = (right_is_null ? -1 : 0);
    	      break;
-   
-   
    	    }
    	  
    	  if (result)
@@ -105,6 +99,12 @@ ex_expr::exp_return_type ex_comp_clause::processNulls(char *op_data[],
    	  else
    	    {
    	      *(Lng32 *)op_data[2 * MAX_OPERANDS] = 0; // result is FALSE
+
+              if ((getRollupColumnNum() >= 0) &&
+                  (getExeGlobals()))
+                {
+                  getExeGlobals()->setRollupColumnNum(getRollupColumnNum());
+                }
    	    }
    	  return ex_expr::EXPR_NULL;
    	} // one of the operands is a null value.
@@ -127,50 +127,50 @@ ex_expr::exp_return_type ex_comp_clause::processNulls(char *op_data[],
 
 ex_expr::exp_return_type 
 ex_comp_clause::processResult(Int32 compare_code, Lng32* result,
-					      CollHeap *heap,
-					      ComDiagsArea** diagsArea)
+                              CollHeap *heap,
+                              ComDiagsArea** diagsArea)
 {
- *result = 0;
-
-	switch (getOperType())
-	  {
-	  case ITM_EQUAL:
-	    if (compare_code == 0)
-	      *result = 1;
-	    break;
-         case ITM_NOT_EQUAL: 
-            if (compare_code != 0)
-	      *result = 1;
-	    break;
-	    
-	  case ITM_LESS:
-	    if (compare_code < 0)
-	      *result = 1;
-	    break;
-
-	  case ITM_LESS_EQ:
-	    if (compare_code <= 0)
-	      *result = 1;
-	    break;
-
-	  case ITM_GREATER:
-	    if (compare_code > 0)
-	      *result = 1;
-	    break;
-
-	  case ITM_GREATER_EQ:
-	    if (compare_code >= 0)
-	      *result = 1;
-	    break;
-
-	  default:
-		  // LCOV_EXCL_START
-	    ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
-	    return ex_expr::EXPR_ERROR;
-	    // LCOV_EXCL_STOP
-	    break;
-	  }
- return ex_expr::EXPR_OK;
+  *result = 0;
+  
+  switch (getOperType())
+    {
+    case ITM_EQUAL:
+      if (compare_code == 0)
+        *result = 1;
+      break;
+    case ITM_NOT_EQUAL: 
+      if (compare_code != 0)
+        *result = 1;
+      break;
+      
+    case ITM_LESS:
+      if (compare_code < 0)
+        *result = 1;
+      break;
+      
+    case ITM_LESS_EQ:
+      if (compare_code <= 0)
+        *result = 1;
+      break;
+      
+    case ITM_GREATER:
+      if (compare_code > 0)
+        *result = 1;
+      break;
+      
+    case ITM_GREATER_EQ:
+      if (compare_code >= 0)
+        *result = 1;
+      break;
+      
+    default:
+      // LCOV_EXCL_START
+      ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
+      return ex_expr::EXPR_ERROR;
+      // LCOV_EXCL_STOP
+      break;
+    }
+  return ex_expr::EXPR_OK;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -1289,6 +1289,14 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
       // LCOV_EXCL_STOP
     }
+
+  if ((getRollupColumnNum() >= 0) &&
+      (*(Lng32*)op_data[0] == 0) &&
+      (getExeGlobals()))
+    {
+      getExeGlobals()->setRollupColumnNum(getRollupColumnNum());
+    }
+
   return retcode;
 
 }

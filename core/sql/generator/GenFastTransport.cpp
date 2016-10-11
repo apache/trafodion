@@ -634,6 +634,7 @@ PhysicalFastExtract::codeGen(Generator *generator)
 
   Int64 modTS = -1;
   if ((CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
+      (CmpCommon::getDefault(TRAF_SIMILARITY_CHECK) != DF_OFF) &&
       (isHiveInsert()) &&
       (getHiveTableDesc() && getHiveTableDesc()->getNATable() && 
        getHiveTableDesc()->getNATable()->getClusteringIndex()))
@@ -641,8 +642,28 @@ PhysicalFastExtract::codeGen(Generator *generator)
       const HHDFSTableStats* hTabStats = 
         getHiveTableDesc()->getNATable()->getClusteringIndex()->getHHDFSTableStats();
 
-      modTS = hTabStats->getModificationTS();
-    }
+      if ((CmpCommon::getDefault(TRAF_SIMILARITY_CHECK) == DF_ROOT) ||
+          (CmpCommon::getDefault(TRAF_SIMILARITY_CHECK) == DF_ON))
+        {
+          TrafSimilarityTableInfo * ti = 
+            new(generator->wHeap()) TrafSimilarityTableInfo(
+                 (char*)getHiveTableName().data(),
+                 TRUE, // isHive
+                 (char*)getTargetName().data(), // root dir
+                 hTabStats->getModificationTS(),
+                 0,
+                 NULL,
+                 (char*)getHdfsHostName().data(), 
+                 hdfsPortNum);
+          
+          generator->addTrafSimTableInfo(ti);
+        }
+      else
+        {
+          // sim check at leaf
+          modTS = hTabStats->getModificationTS();
+        }
+    } // do sim check
 
   targetName = AllocStringInSpace(*space, (char *)getTargetName().data());
   hdfsHostName = AllocStringInSpace(*space, (char *)getHdfsHostName().data());

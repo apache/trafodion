@@ -141,6 +141,7 @@ import org.apache.hadoop.hbase.regionserver.WrongRegionException;
 import org.apache.hadoop.hbase.regionserver.transactional.IdTm;
 import org.apache.hadoop.hbase.regionserver.transactional.IdTmException;
 import org.apache.hadoop.hbase.regionserver.transactional.IdTmId;
+import org.apache.hadoop.hbase.regionserver.transactional.TransactionState;
 import org.apache.hadoop.hbase.regionserver.transactional.SsccTransactionState;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionState.Status;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion;
@@ -780,7 +781,7 @@ CoprocessorService, Coprocessor {
     if (state.isReinstated()) {
       synchronized(indoubtTransactionsById) {
         indoubtTransactionsById.remove(state.getTransactionId());
-        int tmid = (int) (inTransactionId >> 32);
+        int tmid = (int) TransactionState.getNodeId(inTransactionId);
         int count = 0;
         if (indoubtTransactionsCountByTmid.containsKey(tmid)) {
           count =  (int) indoubtTransactionsCountByTmid.get(tmid) - 1;
@@ -1040,7 +1041,7 @@ CoprocessorService, Coprocessor {
       synchronized(indoubtTransactionsById) {
         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: Trafodion Recovery: abort reinstated indoubt transactions " + transactionId);
         indoubtTransactionsById.remove(state.getTransactionId());
-        int tmid = (int) (transactionId >> 32);
+        int tmid = (int) TransactionState.getNodeId(transactionId);
         int count = 0;
 
         // indoubtTransactionsCountByTmid protected by 
@@ -3548,7 +3549,7 @@ CoprocessorService, Coprocessor {
                            // retrieve all in-doubt txn from rmid and return them into a long a
                     for (Entry<Long, WALEdit> entry : indoubtTransactionsById.entrySet()) {
                           long tid = entry.getKey();
-                          if ((int) (tid >> 32) == tmId) {
+                          if ((int) TransactionState.getNodeId(tid) == tmId) {
                               indoubtTransactions.add(tid);
                               if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery: region " + regionInfo.getEncodedName() + " in-doubt transaction " + tid + " has been added into the recovery repply to TM " + tmId);
                           }
@@ -4497,7 +4498,7 @@ CoprocessorService, Coprocessor {
                       state.setSequenceNumber(state.getCommitId());
 //		      state.setSequenceNumber(nextSsccSequenceId.getAndIncrement());
 		      commitedTransactionsBySequenceNumber.put(state.getSequenceNumber(), state);
-                      int tmid = (int) (transactionId >> 32);
+                      int tmid = (int) TransactionState.getNodeId(transactionId);
                       if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Endpoint Coprocessor:E33 Region " + regionInfo.getRegionNameAsString() + " add prepared " + transactionId + " to TM " + tmid);              
              } // for all txns in indoubt transcation list
              } // not reconstruct indoubtes yet

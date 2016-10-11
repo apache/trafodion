@@ -1051,7 +1051,8 @@ public:
          doParallelDeleteIfXn_(FALSE),
          offlineTable_(FALSE),
          doLabelPurgedata_(FALSE),
-         numLOBs_(0)
+         numLOBs_(0),
+         lobNumArray_(oHeap)
   {
   };
 
@@ -1124,7 +1125,7 @@ public:
   // method to do code generation
   virtual short codeGen(Generator*);
   
-  virtual NABoolean aqrSupported() { return FALSE; }
+  virtual NABoolean aqrSupported() { return TRUE; }
 
   const NAString &getHiveTableLocation() const
   {

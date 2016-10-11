@@ -606,7 +606,7 @@ NABoolean HHDFSListPartitionStats::validateAndRefresh(hdfsFS fs, HHDFSDiags &dia
   // assume we get the files sorted by file name
   int numFiles = 0;
   Int32 lastBucketNum = -1;
-  ARRAY(Int32) fileNumInBucket(getLastValidBucketIndx()+1);
+  ARRAY(Int32) fileNumInBucket(HEAP, getLastValidBucketIndx()+1);
   HHDFSBucketStats *bucketStats = NULL;
 
   for (CollIndex i=0; i<=getLastValidBucketIndx(); i++)

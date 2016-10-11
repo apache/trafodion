@@ -114,13 +114,14 @@ private:
 
 
 //
-// Task control block
+// Task control block for ex_sort_grby_tcb
 //
 class ex_sort_grby_tcb : public ex_tcb
 {
   friend class   ex_sort_grby_tdb;
   friend class   ex_sort_grby_private_state;
 
+protected:
   const ex_tcb * childTcb_;
 
   ex_queue_pair  qparent_;
@@ -155,73 +156,116 @@ NA_EIDPROC
     SORT_GRBY_CANCELLED,
     SORT_GRBY_LOCAL_ERROR,
     SORT_GRBY_CHILD_ERROR,
-    SORT_GRBY_NEVER_STARTED
+    SORT_GRBY_NEVER_STARTED,
+
+    // next few states are for rollup sortgroupby tcb
+    SORT_GRBY_ROLLUP_GROUPS_INIT,
+    SORT_GRBY_ROLLUP_GROUP_START,
+    SORT_GRBY_ROLLUP_GROUP,
+    SORT_GRBY_ROLLUP_FINAL_GROUP_START,
+    SORT_GRBY_ROLLUP_FINAL_GROUP
     };
   
-NA_EIDPROC
   void freeResources();  // free resources
   
-NA_EIDPROC
-  short work();  // when scheduled to do work
+  virtual short work();  // when scheduled to do work
 
-NA_EIDPROC
-  inline ex_sort_grby_tdb & sort_grby_tdb() const;
+  ex_sort_grby_tdb & sort_grby_tdb() const
+  {return (ex_sort_grby_tdb &) tdb;}
 
-// return a pair of queue pointers to the parent node. Needed only during
-// construction of nodes.
-NA_EIDPROC
+  // return a pair of queue pointers to the parent node. Needed only during
+  // construction of nodes.
+  NA_EIDPROC
   ex_queue_pair getParentQueue() const
-{
-  return (qparent_);
-}
-
-
-NA_EIDPROC
+  {
+    return (qparent_);
+  }
+  
   virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 
-NA_EIDPROC
   inline ex_expr * aggrExpr() const { return sort_grby_tdb().aggrExpr_; };
-NA_EIDPROC
   inline ex_expr * grbyExpr() const { return sort_grby_tdb().grbyExpr_; };
-NA_EIDPROC
   inline ex_expr * moveExpr() const { return sort_grby_tdb().moveExpr_; };
-NA_EIDPROC
   inline ex_expr * havingExpr() const { return sort_grby_tdb().havingExpr_; };
 
-NA_EIDPROC
   inline Lng32 recLen() {return sort_grby_tdb().recLen_;};
 
-  NA_EIDPROC virtual Int32 numChildren() const { return 1; }   
-  NA_EIDPROC virtual const ex_tcb* getChild(Int32 pos) const;
-};
-
-inline const ex_tcb* ex_sort_grby_tcb::getChild(Int32 pos) const
-{
-   ex_assert((pos >= 0), ""); 
-   if (pos == 0)
+  virtual Int32 numChildren() const { return 1; }   
+  virtual const ex_tcb* getChild(Int32 pos) const
+  {
+    ex_assert((pos >= 0), ""); 
+    if (pos == 0)
       return childTcb_;
-   else
+    else
       return NULL;
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-//
-//  Inline procedures
-//
-///////////////////////////////////////////////////////////////////////////
-
-inline ex_sort_grby_tdb & ex_sort_grby_tcb::sort_grby_tdb() const
-{
-        return (ex_sort_grby_tdb &) tdb;
+  }
+  
+protected:
+  // code contained in the next 4 methods was previously part of mainline 
+  // sort groupby code.
+  // That has now been extracted into these methods so it could be
+  // used by regular and rollup sortgroupby tcbs.
+  short handleCancel(sort_grby_step &step, short &rc);
+  short handleError(sort_grby_step &step, short &rc);
+  short handleFinalize(sort_grby_step &step, short &rc);
+  short handleDone(sort_grby_step &step, short &rc,
+                   NABoolean noAssert = FALSE);
+  
 };
+
+
+/////////////////////////////////////////////////////////////////////
+// Task control block for ex_sort_grby_rollup_tcb
+/////////////////////////////////////////////////////////////////////
+class ex_sort_grby_rollup_tcb : public ex_sort_grby_tcb
+{
+  friend class   ex_sort_grby_tdb;
+  friend class   ex_sort_grby_private_state;
+
+public:
+  // Constructor
+  ex_sort_grby_rollup_tcb(const ex_sort_grby_tdb & sort_grby_tdb,    
+                          const ex_tcb &    child_tcb , // child queue pair
+                          ex_globals * glob
+                          );
+  
+  virtual short work();  // when scheduled to do work
+
+private:
+  short rollupAggrInit();
+
+  // move null to rollup array for all rollup groups impacted by change 
+  // in group groupNum
+  short rollupGrbyMoveNull(Int16 groupNum);
+
+  // move values from child row to rollup array
+  short rollupGrbyMoveValue(ex_queue_entry * centry);
+
+  // evaluate aggregate for all regular and rollup entries
+  short rollupAggrEval(ex_queue_entry * centry);
+
+  // array of entries where rollup aggrs and group values will be computed
+  char ** rollupGroupAggrArr_;
+
+  sort_grby_step step_;
+
+  Int16 rollupColumnNum_;
+  Int16 startGroupNum_;
+  Int16 endGroupNum_;
+  Int16 currGroupNum_;
+
+  NABoolean allDone_;
+};
+
+
 
 ///////////////////////////////////////////////////////////////////
 class ex_sort_grby_private_state : public ex_tcb_private_state
 {
   friend class ex_sort_grby_tcb;
+  friend class ex_sort_grby_rollup_tcb;
   
 public:
 

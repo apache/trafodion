@@ -950,8 +950,8 @@ NABoolean OptRangeSpec::buildRange(ItemExpr* origPredExpr)
   // that tells us where we are in the buildRange() code for the ItemExpr
   // node that we are currently working on.
   //
-  ARRAY( ItemExpr * ) IEarray(10) ; //Initially 10 elements (no particular reason to choose 10)
-  ARRAY( Int16 )      state(10)   ; //These ARRAYs will grow automatically as needed.)
+  ARRAY( ItemExpr * ) IEarray(mvqrHeap_, 10) ; //Initially 10 elements (no particular reason to choose 10)
+  ARRAY( Int16 )      state(mvqrHeap_, 10)   ; //These ARRAYs will grow automatically as needed.)
 
   Int32 currIdx     = 0 ;
   IEarray.insertAt( currIdx, origPredExpr ) ; //Initialize 1st element in the ARRAYs

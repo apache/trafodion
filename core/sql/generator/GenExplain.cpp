@@ -77,7 +77,7 @@ void RelExpr::addExplainPredicates(ExplainTupleMaster * explainTuple,
   // labelList is on global heap to avoid memory lekas; if it were on
   // statement heap, it would cause memory leak as the elements of the
   // list on global heap CR 10-010813-4515
-  NAList<NAString>   labelList;
+  NAList<NAString>   labelList(generator->wHeap());
 
   ExprNode           *currExpr = NULL;
   NAString           unParsed((size_t)4096, generator->wHeap());
@@ -472,7 +472,7 @@ RelExpr::addExplainInfo(ComTdb * tdb,
   //calls virtual subclass-specific function
   addSpecificExplainInfo(explainTuple, tdb, generator);
 
-  //finishes up the processing, used to be inside of ifndef __ignore
+  //finishes up the processing
   addExplainPredicates(explainTuple, generator);
 
   explainTuple->genExplainTupleData(space);
@@ -1135,10 +1135,11 @@ GroupByAgg::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 					      Generator *generator)
 {
   
+  NAString buffer;
   if (CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT_EXPLAIN)==DF_ON &&
       tdb->getNodeType() == ComTdb::ex_HASH_GRBY)
   {
-    NAString buffer = "variable_length_tuples: ";
+    buffer += "variable_length_tuples: ";
     if(((ComTdbHashGrby*)tdb)->useVariableLength())
     {
       buffer += "yes ";
@@ -1156,11 +1157,16 @@ GroupByAgg::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     {
       buffer += "CIF: OFF ";
     }
-
-    explainTuple->setDescription(buffer);
   }
 
- return(explainTuple);
+  if (isRollup())
+    {
+      buffer += "groupby_rollup: specified ";
+    }
+
+  explainTuple->setDescription(buffer);
+
+  return(explainTuple);
 }
 
 ExplainTuple*

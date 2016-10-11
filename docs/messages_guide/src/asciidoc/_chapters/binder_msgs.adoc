@@ -23,22 +23,32 @@
 */
 ////
 
-[[binder-and-compilation-messages]]
-= Binder and Compilation Messages
+[[binder-messages]]
+= Binder Messages (4000 through 4999)
 
-[[through-4999]]
-= (4000 through 4999)
+[[SQL-4000]]
+== SQL 4000
+
+```
+Internal error in the query binder.
+```
+
+*Cause:* An internal error in the SQL compiler.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. Contact {project-support}.
 
 [[SQL-4001]]
 == SQL 4001
 
 ```
-Column <name-1> is not found. Tables in scope: <name-2>. Default schema: <name-3>.
+Column <name-1> is not found. Tables in scope: <names>. Default schema: <name-2>.
 ```
 
 *Cause:* You referenced column <name-1>, which the {project-name} database
-software could not find. The table <name-2> or tables in the scope of the
-column reference and the default schema <name-3> appear.
+software could not find. A list of the tables <names> in the scope of the
+column reference and the default schema <name-2> appear.
 
 A common reason for this error is that you have used double quotes
 instead of single quotes. For example:
@@ -73,13 +83,13 @@ found, and resubmit.
 == SQL 4002
 
 ```
-Column <name-1> is not found. Table <name-2> not exposed. Tables in scope: <name-3>. Default schema: <name-4>.
+Column <name-1> is not found. Table <name-2> not exposed. Tables in scope: <names>. Default schema: <name-3>.
 ```
 
-*Cause:* You referenced column <name-1>, which the {project-name} database
-software could not find. Table <name-2> is not exposed. The table <name-3>
-or tables in the scope of the column reference and the default schema
-<name-4> appear.
+*Cause:* You referenced a qualified column <name-1>, which the {project-name} database
+software could not find. Table <name-2> is not exposed. A list of the tables <names>
+in the scope of the column reference and the default schema
+<name-3> appear.
 
 *Effect:* The operation fails.
 
@@ -167,8 +177,11 @@ between 1 and the <value-2> of SELECT expressions.
 A sub query is not allowed inside an aggregate function.
 ```
 
-*Cause:* You specified a sub query within an aggregate function, which is
-not supported.
+*Cause:* This error can occur only if support for subqueries inside
+aggregate functions has been turned off (e.g., via CQD UDF_SUBQ_IN_AGGS_AND_GBYS 'OFF').
+(Note: By default, this support is presently turned on.)
+You specified a sub query within an aggregate function, which is
+not supported when this support has been turned off.
 
 *Effect:* The operation fails.
 
@@ -225,7 +238,7 @@ because the reference is ambiguous.
 Column reference <name> must be a grouping column or be specified within an aggregate. On this grouped table a star reference is not allowed.
 ```
 
-*Cause:* You referred to column <name> with a SELECT * or SELECT TBL.*
+*Cause:* You implicitly referred to column <name> with a SELECT * or SELECT TBL.*
 reference. Column <name> must be a grouping column or be specified
 within an aggregate.
 
@@ -251,10 +264,10 @@ Column <name> is a system column and cannot be updated or inserted into.
 == SQL 4014
 
 ```
-The operands of an INTERSECT must be of equal degree.
+The operands of an INTERSECT or EXCEPT must be of equal degree.
 ```
 
-*Cause:* You created an INTERSECT with operands of unequal degree. They
+*Cause:* You created an INTERSECT or EXCEPT with operands of unequal degree. They
 must be equal.
 
 *Effect:* The operation fails.
@@ -305,20 +318,6 @@ Derived column name <name> was specified more than once.
 
 *Recovery:* Correct the syntax and resubmit.
 
-[[SQL-4018]]
-== SQL 4018
-
-```
-Rows cannot be deleted from an entry-sequenced table.
-```
-
-*Cause:* You attempted to delete rows from an entry-sequenced table,
-which is not supported.
-
-*Effect:* The operation fails.
-
-*Recovery:* Correct the syntax and resubmit.
-
 [[SQL-4019]]
 == SQL 4019
 
@@ -326,7 +325,10 @@ which is not supported.
 The select list of a sub query in a select list must be scalar (degree of one).
 ```
 
-*Cause:* You specified a select list that is not scalar.
+*Cause:* This error can only appear if support for mulit-degree subqueries has been turned
+off (e.g. via CQD ALLOW_MULTIDEGREE_SUBQ_IN_SELECTLIST 'OFF'). (Note: By default, this
+support is turned on.) You specified a sub query of degree greater than one inside a select list,
+and the support for this was turned off.
 
 *Effect:* The operation fails.
 
@@ -442,8 +444,8 @@ Reading from and inserting into, or updating in, or deleting from the same table
 
 Where <name> is the name of the table.
 
-*Cause:* You attempted to read from and insert, update, or delete within
-the same table <name>. This feature is not supported.
+*Cause:* This error can only occur if support for Halloween updates has been turned off (e.g., via CQD R2_HALLOWEEN_SUPPORT 'OFF'). (Note: By default, support for Halloween updates is turned on.) You attempted to read from and insert, update, or delete within
+the same table <name> but support for this feature has been turned off.
 
 *Effect:* The operation fails.
 
@@ -527,6 +529,9 @@ Column <name> is a primary or clustering key column and cannot be updated.
 *Cause:* You attempted to update column <name>, which is a primary or
 clustering key column that cannot be updated.
 
+Note: {project-name} does support update of primary or clustering keys in most contexts.
+It does not support this in the BEFORE part of a trigger.
+
 *Effect:* The operation fails.
 
 *Recovery:* Correct the syntax and resubmit.
@@ -538,9 +543,8 @@ clustering key column that cannot be updated.
 The operation (<data-type> <operation-data-type>) operation is not allowed.
 ```
 
-*Cause:* You attempted to perform an arithmetic operation on a DATETIME
-field using other DATETIME or INTERVAL expressions that do not have
-identical start and end fields.
+*Cause:* You specified an operation that is not supported. Sometimes this message is accompanied
+with another that gives more detail.
 
 *Effect:* The operation fails.
 
@@ -568,7 +572,8 @@ The source field of the EXTRACT function must be of DateTime or Interval type.
 ```
 
 *Cause:* You specified a source field of the EXTRACT function that is
-not a DATETIME or INTERVAL data type.
+not a DATETIME or INTERVAL data type. This message is also given for the
+YEAR, MONTH, DAY, HOUR, MINUTE and SECOND functions.
 
 *Effect:* The operation fails.
 
@@ -638,7 +643,7 @@ and resubmit.
 Type <specification-1> cannot be compared with type <specification-2>.
 ```
 
-*Cause:* You attempted to compare two type specifications that cannot be
+*Cause:* You attempted to compare two expressions with type specifications that cannot be
 compared.
 
 *Effect:* The operation fails.
@@ -949,6 +954,20 @@ character data types.
 
 *Recovery:* Correct the syntax and resubmit.
 
+[[SQL-4065]]
+== SQL 4065
+
+```
+The format, <format-string>, specified in the <name> function is not supported.
+```
+
+*Cause:* You specified the given <format-string> as an argument to function <name>, but that function does not
+support that <format-string>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
 [[SQL-4066]]
 == SQL 4066
 
@@ -1037,11 +1056,12 @@ be datetime.
 == SQL 4072
 
 ```
-The operand of function <name> must be a datetime containing a <name>.
+The operand of function <name> must be a datetime containing a <part>.
 ```
 
 *Cause:* You specified an invalid operand for function <name>. It must
-be a datetime operand containing the variable listed in the message.
+be a datetime operand containing the part listed in the message (that is, a date
+or a time).
 
 *Effect:* The operation fails.
 

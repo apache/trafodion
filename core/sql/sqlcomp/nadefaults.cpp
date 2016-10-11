@@ -3163,7 +3163,6 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   DDkwd__(SHOWWARN_OPT,		"ON"),
   DDkwd__(SHOW_MEMO_STATS,		"OFF"),
 
-  DDkwd__(SIMILARITY_CHECK,			"ON "),
  DDkwd__(SIMPLE_COST_MODEL,                    "ON"),
 
  XDDkwd__(SKEW_EXPLAIN,                         "ON"),
@@ -3291,7 +3290,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  
   DDint__(TRAF_ALIGNED_FORMAT_ADD_COL_METHOD,	"2"),
  
-  DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "OFF"),   
+  DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "ON"),   
  
   DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
  
@@ -3370,6 +3369,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_RELOAD_NATABLE_CACHE,                   "OFF"),
   DD_____(TRAF_SAMPLE_TABLE_LOCATION,                  "/sample/"),
   DDint__(TRAF_SEQUENCE_CACHE_SIZE,        "-1"),
+
+  DDkwd__(TRAF_SIMILARITY_CHECK,			"ROOT"),
 
   DDkwd__(TRAF_STORE_OBJECT_DESC,                    "OFF"),   
 
@@ -4040,9 +4041,6 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 
   if(resetNeoDefaults)
   {
-    // turn similarity check OFF stats during regressions run.
-    currentDefaults_[SIMILARITY_CHECK] = "OFF";
-
     // turn on ALL stats during regressions run.
     currentDefaults_[COMP_BOOL_157] = "ON";
 
@@ -4127,6 +4125,7 @@ NADefaults::NADefaults(NAMemory * h)
   , heap_(h)
   , resetAll_(FALSE)
   , defFlags_(0)
+  , tablesRead_(h)
 {
   static THREAD_P NABoolean systemParamterUpdated = FALSE;
   // First (but only if NSK-LITE Services exist),
@@ -5739,7 +5738,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	{
 	  if (value == "ON")
 	    {
-	      insert(SIMILARITY_CHECK, "OFF", errOrWarn);
 	      insert(COMP_BOOL_157, "ON", errOrWarn);
 	      insert(SHOWDDL_DISPLAY_FORMAT, "INTERNAL", errOrWarn);
 	      insert(MODE_SPECIAL_1, "OFF", errOrWarn);
@@ -5756,7 +5754,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	    }
 	  else
 	    {
-	      insert(SIMILARITY_CHECK, "ON", errOrWarn);
 	      insert(COMP_BOOL_157, "OFF", errOrWarn);
 	      insert(SHOWDDL_DISPLAY_FORMAT, "EXTERNAL", errOrWarn);
 
@@ -6306,6 +6303,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "KEYINDEXES",
   "LASTROW",
   "LATEST",
+  "LEAF",
   "LOADNODUP",
   "LOCAL",
   "LOCAL_NODE",
@@ -6341,6 +6339,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "REPSEL",
   "RESOURCES",
   "RETURN",
+  "ROOT",
   "SAMPLE",
   "SERIALIZABLE",
   "SHORTANSI",
@@ -6954,6 +6953,12 @@ DefaultToken NADefaults::token(Int32 attrEnum,
     case USE_HIVE_SOURCE:
       isValid = TRUE;
       break;
+
+    case TRAF_SIMILARITY_CHECK:
+      if (tok == DF_ROOT || tok == DF_LEAF || tok == DF_ON || tok == DF_OFF)
+	isValid = TRUE;
+      break;
+
     case TRAF_TABLE_SNAPSHOT_SCAN:
       if (tok  == DF_NONE || tok == DF_SUFFIX || tok == DF_LATEST)
         isValid = TRUE;

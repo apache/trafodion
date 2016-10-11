@@ -205,11 +205,11 @@ public:
   {UNSPECIFIED_ = 0, ATOMIC_ = 1, NOT_ATOMIC_ = 2};
   
   enum ExecState
-  {INITIAL_STATE_, RESOLVE_NAMES_, DO_SIM_CHECK_, COMPILE_, RECOMPILE_,
+  {INITIAL_STATE_, DO_SIM_CHECK_,
    CHECK_DYNAMIC_SETTINGS_, VALIDATE_SECURITY_,
-   FIXUP_, EXECUTE_, RE_EXECUTE_, ERROR_, ERROR_RETURN_,
+   FIXUP_, EXECUTE_, ERROR_, ERROR_RETURN_,
    FIXUP_DONE_, FIXUP_DONE_START_XN_,
-   RE_EXECUTE_AFTER_RECOMPILE_};
+   RE_EXECUTE_};
   
   static const char *stmtState(State state);
 
@@ -452,17 +452,6 @@ private:
 
   ex_root_tdb *assignRootTdb(ex_root_tdb *new_root_tdb);
 
-
-  RETCODE getMatchingIndex(Queue * indexInfoList,
-			   char * indexAnsiName,
-			   char * indexPhyName,
-			   ComDiagsArea &diagsArea);
-  RETCODE doVisibilityCheck (LateNameInfoList * lnil,
-                             ComDiagsArea &diagsArea);
-  RETCODE checkObjectVisibility( AnsiOrNskName *ansiName,
-                                 const ComAnsiNameSpace nameSpace,
-                                 char *guardianName,
-                                 ComDiagsArea &diagsArea);
   NABoolean implicitTransNeeded(void);
   void turnOffAutoCommit(void);
   void resetAutoCommit(void);
@@ -550,33 +539,12 @@ public:
   RETCODE getProxySyntax(char *proxy, Lng32 maxlength, Lng32 *spaceRequired,
                          const char *prefix, const char *suffix);
  
-  RETCODE resolveNames(LateNameInfoList * lnil,
-                       Descriptor * input_desc, 
-                       ComDiagsArea &diagsArea,
-                       NABoolean &doSimCheck,
-		       NABoolean &doFixup);
+  RETCODE doHiveTableSimCheck(TrafSimilarityTableInfo *si,
+                              void* lobGlob,
+                              NABoolean &simCheckFailed,
+                              ComDiagsArea &diagsArea);
 
-  RETCODE mapAnsiToGuaName(LateNameInfo * lni,
-                           ComDiagsArea &diagsArea);
-
-  RETCODE forceMapAllNames(LateNameInfoList * lnil,
-                           ComDiagsArea &diagsArea);
-
-  RETCODE doSimilarityCheck(SimilarityInfo * si,
-			    LateNameInfo * lni,
-                            char * guaName,
-                            NABoolean &simCheckFailed,  
-                            ComDiagsArea &diagsArea);
-
-  RETCODE doIUDSimilarityCheck(SimilarityInfo * si,
-			       LateNameInfo * lni,
-			       char * guaName,
-			       Queue * indexInfoList,
-			       NABoolean &simCheckFailed,  
-			       ComDiagsArea &diagsArea);
-  
-  RETCODE doQuerySimilarityCheck(QuerySimilarityInfo * qsi,
-                                 LateNameInfoList   * lnil,
+  RETCODE doQuerySimilarityCheck(TrafQuerySimilarityInfo * qsi,
                                  NABoolean &simCheckFailed,
                                  ComDiagsArea &diagsArea);
 

@@ -233,9 +233,7 @@ class MCSkewedValueList : public NAList<MCSkewedValue *>
 {
 public:
   // constructor 
-  MCSkewedValueList() {};
-
-  MCSkewedValueList(NAMemory *h)
+  MCSkewedValueList(NAMemory *h=0)
     : NAList<MCSkewedValue *>(h),heap_(h) {};
 
   MCSkewedValueList(const MCSkewedValueList & mcsvl, NAMemory *h=0);
@@ -2218,10 +2216,10 @@ class StatsList : public SHPTR_LIST(ColStatsSharedPtr)
 public:
   StatsList(NAMemory* h,CollIndex initLen =0)
     : heap_(h),
-	  SHPTR_LIST(ColStatsSharedPtr) (h,initLen),
-      groupUecColumns_(h),
-	  groupUecValues_(h),
-	  groupMCSkewedValueLists_(h)
+    SHPTR_LIST(ColStatsSharedPtr) (h,initLen),
+    groupUecColumns_(h),
+    groupUecValues_(h),
+    groupMCSkewedValueLists_(h)
   {}
 
   // ---------------------------------------------------------------------

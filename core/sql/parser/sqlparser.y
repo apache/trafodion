@@ -2083,9 +2083,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>      		join_condition
 %type <item>      		where_clause
 %type <uint>                    multi_commit_size
-//%type <item>      		group_by_clause
 %type <item>      		group_by_clause_non_empty
-//%type <item>      		having_clause
 %type <item>      		having_clause_non_empty
 %type <item>      		qualify_clause
 %type <item>      		sort_by_key
@@ -7322,7 +7320,7 @@ set_function_specification : set_function_type '(' set_quantifier value_expressi
                      (PivotGroup::DELIMITER_, NULL, (char*)"", -1);
 
                    NAList<PivotGroup::PivotOption*> * frol =
-                     new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>;
+                     new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>(PARSERHEAP ());
                    frol->insert(po);
                    
                    $$ = new (PARSERHEAP()) PivotGroup(ITM_PIVOT_GROUP, $7, frol);
@@ -7357,7 +7355,7 @@ pivot_options : empty
 concat_options_list : concat_option
                       {
                         NAList<PivotGroup::PivotOption*> * frol =
-                          new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>;
+                          new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>(PARSERHEAP ());
                         frol->insert($1);
                         $$ = frol;
                       }
@@ -7370,7 +7368,7 @@ concat_options_list : concat_option
 pivot_options_list : pivot_option
                       {
 			NAList<PivotGroup::PivotOption*> * frol =
-			  new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>;
+			  new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>(PARSERHEAP ());
 			frol->insert($1);
 			$$ = frol;
 		      }
@@ -10101,7 +10099,7 @@ hbase_column_create_list : '(' hbase_column_create_value ')'
                                    {
 				     NAList<HbaseColumnCreate::HbaseColumnCreateOptions *> * hccol =
 				       new (PARSERHEAP()) 
-				       NAList<HbaseColumnCreate::HbaseColumnCreateOptions *>;
+				       NAList<HbaseColumnCreate::HbaseColumnCreateOptions *>(PARSERHEAP ());
 				     hccol->insert($2);
 				     $$ = hccol;
 				   }
@@ -10109,7 +10107,7 @@ hbase_column_create_list : '(' hbase_column_create_value ')'
                                    {
 				     NAList<HbaseColumnCreate::HbaseColumnCreateOptions *> * hccol =
 				       new (PARSERHEAP()) 
-				       NAList<HbaseColumnCreate::HbaseColumnCreateOptions *>;
+				       NAList<HbaseColumnCreate::HbaseColumnCreateOptions *>(PARSERHEAP ());
 				     hccol->insert($1);
 				     $$ = hccol;
 				   }
@@ -10684,6 +10682,12 @@ cast_specification : TOK_CAST '(' value_expression  TOK_AS  Set_Cast_Global_Fals
                                 {
                                   $$ = new (PARSERHEAP())
                                     CastType($3, $5);
+                                  empty_charlen_specifier_allowed = FALSE;
+                                }
+                   | TOK_CAST '(' value_expression TOK_AS TOK_NULLABLE ')'
+                                {
+                                  $$ = new (PARSERHEAP())
+                                    CastType($3, TRUE);
                                   empty_charlen_specifier_allowed = FALSE;
                                 }
 
@@ -12530,40 +12534,9 @@ hostvar_and_prototype : HOSTVAR TOK_PROTOTYPE mvs_umd_option character_string_li
           $$ = hv;
 	  delete $1;  // okay to delete, we made a copy in makeHostVar
 
-	 
-	  if ((RecompLateNameInfoList *)CmpCommon::context()->recompLateNameInfoList() && !((CmpCommon::statement()->isSMDRecompile() ) ))
-	    	      
-	    // don't get the prototype name from the rlnil for system module statements 
-	    //during recompilation, instead get the original prototype name
-	    {
-	      char * newPtype = NULL;
-	      newPtype = 
-		getPrototypeFromLateNameInfoList
-		((RecompLateNameInfoList *)CmpCommon::context()->recompLateNameInfoList(),
-		 hv->getName(),
-		 *$4);
-//		 *$3);
-
-	      if (newPtype == NULL)
-		{
-		  *SqlParser_Diags << DgSqlCode(4087)
-				   << DgString0(hv->getName());
-		  YYABORT;
-
-		  //yyerror("");	// emits syntax error 15001
-		  //YYERROR;
-		}
-	      
-	      hv->setPrototypeValue(NAString(newPtype));
-	    }
-	  else
-	    {
-//	      hv->setPrototypeValue(*$3);
-	      hv->setPrototypeValue(*$4);
-	    }
-
+          hv->setPrototypeValue(*$4);
 	  delete $4;  // okay to delete, we just made a copy
-//	  delete $3;  // okay to delete, we just made a copy
+
 	  // Remove leading/trailing blanks from string literal --
 	  // the token(s) within the literal is the real proto value
 	  TrimNAStringSpace(hv->getPrototypeValue());
@@ -12573,9 +12546,8 @@ hostvar_and_prototype : HOSTVAR TOK_PROTOTYPE mvs_umd_option character_string_li
 	      YYERROR;
 	    }
 
-      if (TRUE == $3) //MVS
-   		hv->setSpecialType(ExtendedQualName::MVS_UMD);
-
+          if (TRUE == $3) //MVS
+            hv->setSpecialType(ExtendedQualName::MVS_UMD);
 	  
 	  AllHostVars->insert($$);
           TheHostVarRoles->addARole(HV_IS_INPUT);
@@ -12602,31 +12574,7 @@ param_and_prototype : PARAMETER TOK_PROTOTYPE character_string_literal
           $$ = hv;
 	  delete $1;  // okay to delete, we made a copy in makeHostVar
 	  
-	  if ((RecompLateNameInfoList *)CmpCommon::context()->recompLateNameInfoList())
-	    {
-	      char * newPtype = NULL;
-	      newPtype = 
-		getPrototypeFromLateNameInfoList
-		((RecompLateNameInfoList *)CmpCommon::context()->recompLateNameInfoList(),
-		 hv->getName(),
-		 *$3);
-	      
-	      if (newPtype == NULL)
-		{
-		  *SqlParser_Diags << DgSqlCode(4087)
-				   << DgString0(hv->getName());
-		  //		  YYABORT;
-		  yyerror("");	// emits syntax error 15001
-		  YYERROR;
-		}
-	      
-	      hv->setPrototypeValue(NAString(newPtype));
-	    }
-	  else
-	    {
-	      hv->setPrototypeValue(*$3);
-	    }
-	  
+	  hv->setPrototypeValue(*$3);
 	  delete $3;  // okay to delete, we just made a copy
 
 	  // Remove leading/trailing blanks from string literal --
@@ -13167,6 +13115,11 @@ where_clause : { $$ = NULL; }
 
 group_by_clause_non_empty : TOK_GROUP TOK_BY value_expression_list 
 			      { $$ = $3; }
+                          | TOK_GROUP TOK_BY TOK_ROLLUP '(' value_expression_list ')'
+			      { 
+                                $5->setIsGroupByRollup(TRUE);
+                                $$ = $5; 
+                              }
 
 /* type item */
 having_clause_non_empty : TOK_HAVING search_condition
@@ -16844,7 +16797,7 @@ optional_explain_options : /* empty */
 
 quoted_string_list : QUOTED_STRING
 		 {
-		  $$ = new (PARSERHEAP()) ConstStringList();
+		  $$ = new (PARSERHEAP()) ConstStringList(PARSERHEAP ());
 		  $$->insert($1);
 		 }
 		 | quoted_string_list ',' QUOTED_STRING
@@ -16855,7 +16808,7 @@ quoted_string_list : QUOTED_STRING
 
 col_fam_quoted_string_list : TOK_COLUMN TOK_FAMILY QUOTED_STRING
 		 {
-		  $$ = new (PARSERHEAP()) ConstStringList();
+		  $$ = new (PARSERHEAP()) ConstStringList(PARSERHEAP ());
 		  $$->insert($3);
 		 }
 		 | col_fam_quoted_string_list ',' TOK_COLUMN TOK_FAMILY QUOTED_STRING
@@ -16970,7 +16923,7 @@ exe_util_maintain_object : TOK_MAINTAIN maintain_object_token table_name maintai
              | TOK_INITIALIZE_MAINTAIN
              {
 	       NAList<ExeUtilMaintainObject::MaintainObjectOption*> * mtol =
-		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>;
+		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>(PARSERHEAP ());
 
 	       ExeUtilMaintainObject::MaintainObjectOption * mto = 
 		 new (PARSERHEAP ()) 
@@ -16995,7 +16948,7 @@ exe_util_maintain_object : TOK_MAINTAIN maintain_object_token table_name maintai
              | TOK_REINITIALIZE_MAINTAIN
              {
 	       NAList<ExeUtilMaintainObject::MaintainObjectOption*> * mtol =
-		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>;
+		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>(PARSERHEAP ());
 
 	       ExeUtilMaintainObject::MaintainObjectOption * mto = 
 		 new (PARSERHEAP ()) 
@@ -17020,7 +16973,7 @@ exe_util_maintain_object : TOK_MAINTAIN maintain_object_token table_name maintai
              | TOK_REINITIALIZE_MAINTAIN ',' TOK_DROP TOK_ONLY
              {
 	       NAList<ExeUtilMaintainObject::MaintainObjectOption*> * mtol =
-		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>;
+		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>(PARSERHEAP ());
 
 	       ExeUtilMaintainObject::MaintainObjectOption * mto = 
 		 new (PARSERHEAP ()) 
@@ -17045,7 +16998,7 @@ exe_util_maintain_object : TOK_MAINTAIN maintain_object_token table_name maintai
              | TOK_REINITIALIZE_MAINTAIN ',' TOK_CREATE TOK_VIEW
              {
 	       NAList<ExeUtilMaintainObject::MaintainObjectOption*> * mtol =
-		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>;
+		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>(PARSERHEAP ());
 
 	       ExeUtilMaintainObject::MaintainObjectOption * mto = 
 		 new (PARSERHEAP ()) 
@@ -17070,7 +17023,7 @@ exe_util_maintain_object : TOK_MAINTAIN maintain_object_token table_name maintai
              | TOK_REINITIALIZE_MAINTAIN ',' TOK_DROP TOK_VIEW
              {
 	       NAList<ExeUtilMaintainObject::MaintainObjectOption*> * mtol =
-		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>;
+		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>(PARSERHEAP ());
 
 	       ExeUtilMaintainObject::MaintainObjectOption * mto = 
 		 new (PARSERHEAP ()) 
@@ -17153,7 +17106,7 @@ maintain_object_options : empty
 maintain_object_options_list : maintain_object_option
              {
 	       NAList<ExeUtilMaintainObject::MaintainObjectOption*> * mtol =
-		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>;
+		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>(PARSERHEAP ());
 	       mtol->insert($1);
 	       $$ = mtol;
 	     }
@@ -17729,7 +17682,7 @@ aqr_task :   TOK_ADD { $$ = 1; }
 aqr_options_list : aqr_option
                       {
 			NAList<ExeUtilAQR::AQROption*> * o =
-			  new (PARSERHEAP ()) NAList<ExeUtilAQR::AQROption*>;
+			  new (PARSERHEAP ()) NAList<ExeUtilAQR::AQROption*>(PARSERHEAP ());
 			o->insert($1);
 			$$ = o;
 		      }
@@ -17959,7 +17912,7 @@ optional_hbbload_options : TOK_WITH hbbload_option_list
 hbbload_option_list : hbbload_option
                       {
                         NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*> * hbol =
-                        new (PARSERHEAP ()) NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*>;
+			  new (PARSERHEAP ()) NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*>(PARSERHEAP ());
                         hbol->insert($1);
                         $$ = hbol;
                       }
@@ -18164,7 +18117,7 @@ optional_hbb_unload_options : TOK_WITH hbb_unload_option_list
 hbb_unload_option_list : hbb_unload_option
                 {
                    NAList<UnloadOption*> * hbol =
-                   new (PARSERHEAP ()) NAList<UnloadOption*>;
+		     new (PARSERHEAP ()) NAList<UnloadOption*>(PARSERHEAP ());
                    hbol->insert($1);
                    $$ = hbol;
                 }
@@ -23061,28 +23014,8 @@ set_table_name:  table_name   // includes the case of hostvar WITH a prototype
 		     HostVar *hv = makeHostVar($1,NULL);
 		     delete $1;  // okay to delete, a copy made in makeHostVar
 
-                     RecompLateNameInfoList *rlnil = (RecompLateNameInfoList *)
-		             CmpCommon::context()->recompLateNameInfoList();
-
-	             if ( rlnil ) {
-                        char * newPtype = NULL;
-	                newPtype = 
-			   getPrototypeFromLateNameInfoList( rlnil , 
-		                                             hv->getName(),
-		                                             "DUMMY");
-
-	                if (newPtype == NULL) {
-		           *SqlParser_Diags << DgSqlCode(4087)
-				            << DgString0(hv->getName());
-		           YYABORT;
-		        }
-	      
-	                hv->setPrototypeValue(NAString(newPtype));
-	             }
-	             else  {
-                        // fake a dummy prototype
-	                hv->setPrototypeValue("DUMMY");
-	             }
+                     // fake a dummy prototype
+                     hv->setPrototypeValue("DUMMY");
 
 	             // Remove leading/trailing blanks from string literal --
 	             // the token(s) within the literal is the real proto value
@@ -26985,7 +26918,7 @@ hbase_table_options : TOK_HBASE_OPTIONS '('  hbase_options_list ')'
 hbase_options_list : hbase_option
                       {
 			NAList<HbaseCreateOption*> * hbol =
-			  new (PARSERHEAP ()) NAList<HbaseCreateOption*>;
+			  new (PARSERHEAP ()) NAList<HbaseCreateOption*>(PARSERHEAP ());
 			hbol->insert($1);
 			$$ = hbol;
 		      }
@@ -27979,7 +27912,7 @@ authorization_identifier_or_public : authorization_identifier
 /* type pConstStringList */
 component_privilege_name_list : component_privilege_name
                {
-                 $$ = new (PARSERHEAP()) ConstStringList();
+                 $$ = new (PARSERHEAP()) ConstStringList(PARSERHEAP ());
                  $$->insert($1); // component_privilege_name - NAString * stringval - shallow copy
                }
                | component_privilege_name_list ',' component_privilege_name

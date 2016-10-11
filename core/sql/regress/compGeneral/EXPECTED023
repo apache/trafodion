@@ -510,7 +510,7 @@ TRAF_SAMPLE_85_1474483214_345185
 
 *** ERROR[9219] Incremental UPDATE STATISTICS: An operation failed, possibly due to an invalid WHERE clause.
 
-*** ERROR[4001] Column BADCOL is not found.  Tables in scope: TRAFODION.COMPGENERAL_TEST023.TRAF_SAMPLE_85_1474483214_345185.  Default schema: TRAFODION.SEABASE.
+*** ERROR[4001] Column BADCOL is not found.  Tables in scope: TRAFODION.COMPGENERAL_TEST023.TRAF_SAMPLE_85_1474483214_345185.  Default schema: TRAFODION.SCH.
 
 *** ERROR[8822] The statement was not prepared.
 

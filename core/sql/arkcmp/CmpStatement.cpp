@@ -140,6 +140,7 @@ CmpStatement::error(Lng32 no, const char* s)
 CmpStatement::CmpStatement(CmpContext* context,
                            CollHeap* outHeap,
                            NAMemory::NAMemoryType memoryType)
+ : parserStmtLiteralList_(outHeap)
 {
   exceptionRaised_ = FALSE;
   reply_ = 0;
@@ -202,6 +203,7 @@ CmpStatement::CmpStatement(CmpContext* context,
 
   simpleFSOTaskMonitor_ = new (heap_) TaskMonitor();
   //simpleFSOMonPtr = simpleFSOTaskMonitor_;
+  parserStmtLiteralList_.setHeap(heap_);
 }
 
 CmpStatement::~CmpStatement()
@@ -326,13 +328,10 @@ static NABoolean processRecvdCmpCompileInfo(CmpStatement *cmpStmt,
 					    NABoolean &aqrPrepare,
 					    NABoolean &standaloneQuery)
 {
-  RecompLateNameInfoList * rlnil = NULL;
   char * catSchStr = NULL;
-  cmpInfo->getUnpackedFields(sqlStr, rlnil, catSchStr, recompControlInfo);
+  cmpInfo->getUnpackedFields(sqlStr, catSchStr, recompControlInfo);
   sqlStrLen = cmpInfo->getSqlTextLen();
   
-  context->recompLateNameInfoList() = rlnil;
-
   catSchNameRecvd = FALSE;
   nametypeNsk = FALSE;
   odbcProcess = FALSE;

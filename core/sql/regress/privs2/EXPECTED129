@@ -57,6 +57,7 @@ CREATE TABLE TRAFODION.US4.T1
   , COL3                             INT DEFAULT NULL
   , PRIMARY KEY (COL1 ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.US4.T1 TO SQL_USER4 WITH GRANT OPTION;
@@ -101,6 +102,7 @@ CREATE TABLE TRAFODION.US4.T2
   , C                                INT DEFAULT NULL
   , PRIMARY KEY (A ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.US4.T2 TO SQL_USER4 WITH GRANT OPTION;
@@ -183,6 +185,7 @@ CREATE TABLE TRAFODION.US4.T3
   , D                                INT DEFAULT NULL
   , PRIMARY KEY (A ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.US4.T3 TO SQL_USER4 WITH GRANT OPTION;
@@ -199,6 +202,7 @@ CREATE TABLE TRAFODION.US4.T4
   , H                                INT DEFAULT NULL
   , PRIMARY KEY (E ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.US4.T4 TO SQL_USER4 WITH GRANT OPTION;
@@ -795,6 +799,7 @@ CREATE TABLE TRAFODION.US4.T3
   , D                                INT DEFAULT NULL
   , PRIMARY KEY (A ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -808,6 +813,7 @@ CREATE TABLE TRAFODION.US4.T4
   , H                                INT DEFAULT NULL
   , PRIMARY KEY (E ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -815,18 +821,18 @@ CREATE TABLE TRAFODION.US4.T4
 >>-- Negative tests: revoking from table
 >>revoke select (c) on t3 from sql_user3;
 
-*** ERROR[1018] Grant of role or privilege SELECT on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
+*** WARNING[1018] Grant of role or privilege SELECT WITH GRANT OPTION (columm number 2) on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>revoke select (b) on t3 from sql_user3;
 
 --- SQL operation complete.
 >>
 >>revoke grant option for select (c) on t3 from sql_user3;
 
-*** ERROR[1018] Grant of role or privilege SELECT on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
+*** WARNING[1018] Grant of role or privilege SELECT WITH GRANT OPTION (columm number 2) on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>
 >>revoke grant option for select (d) on t3 from sql_user3;
 
@@ -834,14 +840,14 @@ CREATE TABLE TRAFODION.US4.T4
 >>
 >>revoke grant option for select (b) on t3 from sql_user3;
 
-*** ERROR[1018] Grant of role or privilege SELECT on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
+*** WARNING[1018] Grant of role or privilege SELECT WITH GRANT OPTION (columm number 1) on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>revoke grant option for select (b) on t3 from sql_user3 cascade;
 
-*** ERROR[1018] Grant of role or privilege SELECT on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
+*** WARNING[1018] Grant of role or privilege SELECT WITH GRANT OPTION (columm number 1) on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>showddl t3;
 
 CREATE TABLE TRAFODION.US4.T3
@@ -852,6 +858,7 @@ CREATE TABLE TRAFODION.US4.T3
   , D                                INT DEFAULT NULL
   , PRIMARY KEY (A ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.

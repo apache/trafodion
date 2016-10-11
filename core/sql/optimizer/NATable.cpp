@@ -5133,7 +5133,8 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
      secKeySet_(heap),
      newColumns_(heap),
      snapshotName_(NULL),
-     prototype_(NULL)
+     prototype_(NULL),
+     allColFams_(heap)
  {
    NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
    NAString mmPhase;
@@ -5376,7 +5377,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 
       viewColUsages_ = NULL;
       if(view_desc->viewDesc()->viewcolusages){
-        viewColUsages_ = new (heap_) NAList<ComViewColUsage *>; //initialize empty list
+        viewColUsages_ = new (heap_) NAList<ComViewColUsage *>(heap_); //initialize empty list
         char * beginStr (view_desc->viewDesc()->viewcolusages);
         char * endStr = strchr(beginStr, ';');
         while (endStr != NULL) {
@@ -5871,7 +5872,8 @@ NATable::NATable(BindWA *bindWA,
     secKeySet_(heap),
     privInfo_(NULL),
     newColumns_(heap),
-    snapshotName_(NULL)
+    snapshotName_(NULL),
+    allColFams_(heap)
 {
 
   NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();

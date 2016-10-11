@@ -581,7 +581,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resetAllDefaults(){
     Lng32 len = str_len(buf[i])+1;
     CmpCompileInfo c((char *)buf[i], len,
                      (Lng32)SQLCHARSETCODE_UTF8
-                     , NULL, 0, NULL, 0, NULL, 0, 0, 0);
+                     , NULL, 0, NULL, 0, 0, 0);
     size_t dataLen = c.getLength();
     char * data = new(h_) char[dataLen];
     c.pack(data);
@@ -607,7 +607,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resetRemoteDefaults(){
     Lng32 len = str_len(buf[i])+1;
     CmpCompileInfo c((char *)buf[i], len,
                      (Lng32)SQLCHARSETCODE_UTF8
-                     , NULL, 0, NULL, 0,NULL,0, 0, 0);
+                     , NULL, 0,NULL,0, 0, 0);
     size_t dataLen = c.getLength();
     char * data = new(h_) char[dataLen];
     c.pack(data);
@@ -745,7 +745,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
           str_len(GetControlDefaults::GetExternalizedDefaultsStmt())+1;
         CmpCompileInfo c(buf, len,
                          (Lng32)SQLCHARSETCODE_UTF8
-                         , NULL, 0, NULL, 0, NULL, 0, 0, 0);
+                         , NULL, 0, NULL, 0, 0, 0);
         size_t dataLen = c.getLength();
         char * data = new(h_) char[dataLen];
         c.pack(data);
@@ -825,7 +825,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
         Lng32 len = ctl->getSqlTextLen()+1;
 	CmpCompileInfo c(buf, len,
                          (Lng32)SQLCHARSETCODE_UTF8
-                         , NULL, 0, NULL, 0, NULL, 0, 0, 0);
+                         , NULL, 0, NULL, 0, 0, 0);
         size_t dataLen = c.getLength();
         char * data = new(h_) char[dataLen];
         c.pack(data);
@@ -1040,7 +1040,7 @@ ExSqlComp::~ExSqlComp()
 
   delete sqlcompMessage_;
 
-  delete sc_;
+  NADELETE(sc_, IpcServerClass, h_);
   NADELETEBASIC(nodeName_, h_);
   nodeName_ = NULL;
 

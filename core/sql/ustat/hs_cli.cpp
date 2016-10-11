@@ -504,6 +504,8 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
     NAString tempTabName = tblName;
     NAString userTabName = objDef->getObjectFullName();
 
+    HSGlobalsClass *hs_globals = GetHSContext();
+
     // If the table is a native one, convert the fully qualified user table name NT
     // to a fully qualified external table name ET. The sample table will be created
     // like ET.
@@ -542,21 +544,37 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
 
         ddl  = "CREATE TABLE ";
         ddl += tempTabName;
-        ddl += " LIKE ";
-
-        // is this an MV LOG table?
-        if (objDef->getNameSpace() == COM_IUD_LOG_TABLE_NAME)
-        {
-          ddl += "TABLE (IUD_LOG_TABLE ";
-          ddl += userTabName;
-          ddl += ") ";
-        }
+        if (hs_globals->hasOversizedColumns)
+          {
+            // Use CREATE TABLE AS SELECT when we have to modify the column lengths
+            // (this happens for tables having very long chars/varchars). One 
+            // peculiarity: We have to use the native version of the name
+            // (e.g. HIVE.whatever.whatever for Hive tables) instead of the external
+            // table name (e.g. TRAFODION._HV_whatever.whatever) in the SELECT.
+            ddl += " NO LOAD AS SELECT ";
+            addTruncatedSelectList(ddl);
+            ddl += " FROM ";
+            ddl += objDef->getObjectFullName().data();  // e.g. HIVE.whatever.whatever
+            // ddl += tableOptions;  unfortunately not supported with CREATE TABLE AS SELECT
+          }
         else
-        {
-          ddl += userTabName;
-        }
+          {
+            ddl += " LIKE ";
 
-        ddl += tableOptions;
+            // is this an MV LOG table?
+            if (objDef->getNameSpace() == COM_IUD_LOG_TABLE_NAME)
+              {
+                ddl += "TABLE (IUD_LOG_TABLE ";
+                ddl += userTabName;
+                ddl += ") ";
+              }
+            else
+              {
+                ddl += userTabName;
+              }
+
+            ddl += tableOptions;    
+          }
         tableType = ANSI_TABLE;
         sampleName = new(STMTHEAP) ComObjectName(tempTabName,
                                                  COM_UNKNOWN_NAME,
@@ -648,7 +666,6 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
         HSHandleError(retcode);
       }
 
-    HSGlobalsClass *hs_globals = GetHSContext();
     if (hs_globals && hs_globals->diagsArea.getNumber(DgSqlCode::ERROR_))
       hs_globals->diagsArea.deleteError(0);
 
@@ -2031,7 +2048,7 @@ HSPersData* HSPersData::Instance(const NAString &catalog)
       instance_ = new (CTXTHEAP) HSPersData;
 
     if (persDataList_ == 0)
-      persDataList_ = new (CTXTHEAP) NAList<NAString>;
+      persDataList_ = new (CTXTHEAP) NAList<NAString>(CTXTHEAP);
     if (catalog_ == 0)
       catalog_ = new (CTXTHEAP) NAString("");
     if (schema_ == 0)
@@ -5408,6 +5425,64 @@ NAString HSSample::getTempTablePartitionInfo(NABoolean unpartitionedSample,
     LM->Log(LM->msg);
 
     return tableOptions;
+  }
+
+
+//
+// METHOD:  addTruncatedSelectList()
+//
+// PURPOSE: Generates a SELECT list consisting of 
+//          column references or a SUBSTRING
+//          on column references which truncates the
+//          column to the maximum length allowed in
+//          UPDATE STATISTICS.
+//
+// INPUT:   'qry' - the SQL query string to append the 
+//          select list to.
+//
+void HSSample::addTruncatedSelectList(NAString & qry)
+  {
+    for (Lng32 i = 0; i < objDef->getNumCols(); i++)
+      {
+        if (i)
+          qry += ", ";
+
+        addTruncatedColumnReference(qry,objDef->getColInfo(i));
+      }
+  }
+
+
+//
+// METHOD:  addTruncatedColumnReference()
+//
+// PURPOSE: Generates a column reference or a SUBSTRING
+//          on a column reference which truncates the
+//          column to the maximum length allowed in
+//          UPDATE STATISTICS.
+//
+// INPUT:   'qry' - the SQL query string to append the 
+//          reference to.
+//          'colInfo' - struct containing datatype info
+//          about the column.
+//
+void HSSample::addTruncatedColumnReference(NAString & qry,HSColumnStruct & colInfo)
+  {
+    Lng32 maxLengthInBytes = MAX_SUPPORTED_CHAR_LENGTH;
+    bool isOverSized = DFS2REC::isAnyCharacter(colInfo.datatype) &&
+                           (colInfo.length > maxLengthInBytes);
+    if (isOverSized)
+      {
+        qry += "SUBSTRING(";
+        qry += colInfo.externalColumnName->data();
+        qry += " FOR ";
+        
+        char temp[20];  // big enough for "nnnnnn) AS "
+        sprintf(temp,"%d) AS ", maxLengthInBytes / CharInfo::maxBytesPerChar(colInfo.charset));
+        qry += temp;
+        qry += colInfo.externalColumnName->data();
+      }
+    else
+      qry += colInfo.externalColumnName->data();
   }
 
 

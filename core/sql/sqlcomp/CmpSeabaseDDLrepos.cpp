@@ -382,8 +382,8 @@ short CmpSeabaseDDL::dropAndLogReposViews(ExeCliInterface * cliInterface,
 
       if (tableUID != -1)  // if we got it
         {
-          NAList<NAString> viewNameList;
-          NAList<NAString> viewDefnList;
+          NAList<NAString> viewNameList(STMTHEAP);
+          NAList<NAString> viewDefnList(STMTHEAP);
  
           short retcode1 = 
              saveAndDropUsingViews(tableUID, cliInterface,

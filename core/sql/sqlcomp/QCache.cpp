@@ -1284,7 +1284,7 @@ NABoolean CacheData::backpatchParams
   CollIndex y=0;
   Int32 countP2 = formals_.entries();
   Int32 countS2 = fSels_.entries();
-  LIST(NAType*) hqcTypes;
+  LIST(NAType*) hqcTypes(STMTHEAP);
 
   for (CollIndex j = 0; j < (countP2+countS2); j ++)
   {
@@ -3871,6 +3871,7 @@ HQCCacheKey::HQCCacheKey(const HQCParseKey& hkey, NAHeap* h)
 HQCParseKey::HQCParseKey(CompilerEnv* e, NAHeap* h)
                 : HQCCacheKey(e, h)
                 , params_(h)
+		, HQCDynParamMap_(h)
                 , isCacheable_(FALSE)
                 , isStringNormalized_(FALSE)
                 , nOfTokens_(0)

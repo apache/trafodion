@@ -178,11 +178,16 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     dropInProgress_(FALSE),
     isEmbeddedArkcmpInitialized_(FALSE),
     embeddedArkcmpContext_(NULL),
-    ddlStmtsExecuted_(FALSE)
-   , numCliCalls_(0)
-   , jniErrorStr_(&exHeap_)
-   , hbaseClientJNI_(NULL)
-   , hiveClientJNI_(NULL)
+    ddlStmtsExecuted_(FALSE),
+    numCliCalls_(0),
+    jniErrorStr_(&exHeap_),
+    hbaseClientJNI_(NULL),
+    hiveClientJNI_(NULL),
+    arkcmpArray_(&exHeap_),
+    cmpContextInfo_(&exHeap_),
+    cmpContextInUse_(&exHeap_),
+    arkcmpInitFailed_(&exHeap_),
+    trustedRoutines_(&exHeap_)
 {
   exHeap_.setJmpBuf(cliGlobals->getJmpBuf());
   cliSemaphore_ = new (&exHeap_) CLISemaphore();
@@ -231,9 +236,6 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
   authID_       = 0;
   authToken_    = 0;
   authIDType_   = SQLAUTHID_TYPE_INVALID;
-
-  arkcmpArray_.setHeap(exCollHeap());
-  arkcmpInitFailed_.setHeap(exCollHeap());
 
   arkcmpArray_.insertAt(0,  new(exCollHeap()) ExSqlComp(0,
                                exCollHeap(),
@@ -301,9 +303,6 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
 
   hdfsHandleList_ = new(exCollHeap()) HashQueue(exCollHeap(), 50); // The hfsHandleList_ represents a list of distict hdfs Handles with unique hdfs port numbers and server names. Assume not more than 50 hdfsServers could be connected in the Trafodion setup.  These will get initialized the first time access is made to a particular hdfs server. This list gets cleaned up when the thread exits. 
   
-  // For CmpContext switch
-  cmpContextInfo_.setHeap(exCollHeap());
-  cmpContextInUse_.setHeap(exCollHeap());
 }  
 
 

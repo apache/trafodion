@@ -48,7 +48,8 @@ RangeSpec::RangeSpec(QRRangePredPtr rangePred, CollHeap* heap, logLevel ll)
     nullIncluded_(FALSE),
     type_(NULL),
     isDumpMvMode_(FALSE),
-    logLevel_(ll)
+    logLevel_(ll),
+    subranges_(heap)
 {
   assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     rangePred, QRLogicException,

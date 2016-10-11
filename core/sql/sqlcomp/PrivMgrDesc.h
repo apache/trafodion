@@ -381,7 +381,7 @@ class PrivMgrDesc
 public:
    PrivMgrDesc(const PrivMgrDesc&other)           // copy constructor
    : tableLevel_(other.tableLevel_),
-     columnLevel_(other.columnLevel_),
+    columnLevel_(other.columnLevel_, NULL),
      grantee_(other.grantee_)
    {}
 
@@ -389,21 +389,20 @@ public:
                const int32_t nbrCols = 0    // preset constructor
               )
    : tableLevel_(),
-     columnLevel_(),
+     columnLevel_(NULL),
      grantee_(grantee)
   {}
 
-   //PrivMgrDesc(const int32_t nbrCols);    // preset constructor
    PrivMgrDesc(const PrivMgrDesc &privs,            // preset constructor
                const int32_t grantee)
    : tableLevel_(privs.tableLevel_),
-     columnLevel_(privs.columnLevel_),
+    columnLevel_(privs.columnLevel_, NULL),
      grantee_(privs.grantee_)
    {}
 
    PrivMgrDesc(void)
    : tableLevel_(),
-     columnLevel_(),
+     columnLevel_(NULL),
      grantee_(0)
    {}
 
@@ -461,10 +460,18 @@ public:
    // isNull - returns True iff no privs or wgos
    bool isNull() const
    {
-     return ( tableLevel_.isNull()); 
-     // TBD:  add columnLevel_.isNull()
+      if (tableLevel_.isNull() )
+         return isColumnLevelNull();
+      return false;
    }
 
+   bool isColumnLevelNull() const
+   {
+      for (int i = 0; i < columnLevel_.entries(); i++)
+         if (!columnLevel_[i].isNull())
+            return false;
+      return true;
+   }
 
    // isNullWgo - returns True iff no wgos are set
    bool isNullWgo() const;
@@ -483,6 +490,15 @@ public:
 
    PrivMgrCoreDesc getTablePrivs()  const { return tableLevel_; }
    NAList<PrivMgrCoreDesc> getColumnPrivs() const { return columnLevel_; }
+
+   // Get the PrivMgrCoreDesc based on the columnOrdinal (column number)
+   int getColumnPriv(int32_t columnOrdinal) const
+   {
+     for (int i = 0; i < columnLevel_.entries(); i++)
+       if (columnLevel_[i].getColumnOrdinal() == columnOrdinal) return i;
+     return -1;
+   }
+
    int32_t getGrantee() const { return grantee_; }
    PrivMgrCoreDesc &       fetchTablePrivs();
    bool       getOneTablePriv(const PrivType which) const;

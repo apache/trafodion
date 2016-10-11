@@ -67,6 +67,7 @@
 short GroupByAgg::genAggrGrbyExpr(Generator * generator,
 				  ValueIdSet &aggregateExpr,
 				  ValueIdSet &groupExpr,
+				  ValueIdList &rollupGroupExprList,
 				  ValueIdSet &selectionPred,
 				  Int32 workAtp,
 				  Int32 workAtpIndex,
@@ -282,34 +283,64 @@ short GroupByAgg::genAggrGrbyExpr(Generator * generator,
   ValueIdList moveValIdList;
   ValueIdList gbyValIdList;
   ValueIdSet searchValIdSet;
-
-  if (NOT groupExpr.isEmpty()) {
-    for (valId = groupExpr.init();
-	 groupExpr.next(valId);
-	 groupExpr.advance(valId), i++) {
+  
+  if (isRollup() && (NOT rollupGroupExprList.isEmpty())) {
+    for (CollIndex j = 0; j < rollupGroupExprList.entries(); j++) {
+      valId = rollupGroupExprList[j];
 
       ItemExpr * itemExpr = valId.getItemExpr();
-	  
+      
       // add this converted value to the map table.
-      Convert * convNode = new(generator->wHeap()) Convert (itemExpr);
-	  
+      ItemExpr * convNode = NULL;
+      convNode = new(generator->wHeap()) Convert (itemExpr);
+
       // bind/type propagate the new node
       convNode->bindNode(generator->getBindWA());    
-	  
+      
+      attrs[i++] = 
+        (generator->addMapInfo(convNode->getValueId(), 0))->getAttr();
+      moveValIdList.insert(convNode->getValueId());
+      gbyValIdList.insert(valId);
+      
+      // add the search condition
+      BiRelat * biRelat = new(generator->wHeap())
+        BiRelat(ITM_EQUAL, itemExpr, convNode);
+      biRelat->setSpecialNulls(-1);
+      biRelat->bindNode(generator->getBindWA());
+      
+      biRelat->rollupColumnNum() = j+1;
+      
+      searchValIdSet.insert(biRelat->getValueId());
+    }
+  }
+  else if (NOT groupExpr.isEmpty()) {
+    for (valId = groupExpr.init();
+         groupExpr.next(valId);
+         groupExpr.advance(valId), i++) {
+      
+      ItemExpr * itemExpr = valId.getItemExpr();
+      
+      // add this converted value to the map table.
+      Convert * convNode = new(generator->wHeap()) Convert (itemExpr);
+      
+      // bind/type propagate the new node
+      convNode->bindNode(generator->getBindWA());    
+      
       attrs[i] = 
 	(generator->addMapInfo(convNode->getValueId(), 0))->getAttr();
       moveValIdList.insert(convNode->getValueId());
       gbyValIdList.insert(valId);
-
+      
       // add the search condition
       BiRelat * biRelat = new(generator->wHeap())
 	BiRelat(ITM_EQUAL, itemExpr, convNode);
       biRelat->setSpecialNulls(-1);
       biRelat->bindNode(generator->getBindWA());
+      
       searchValIdSet.insert(biRelat->getValueId());
     }
   }
- 
+  
   numAttrs = ( isAggrOneRow_ ?  numAttrs + moveSet.entries() : numAttrs );
 
   // Create the descriptor describing the aggr row and assign offset to attrs. 
@@ -320,7 +351,7 @@ short GroupByAgg::genAggrGrbyExpr(Generator * generator,
 			    workAtp,
 			    workAtpIndex,
 			    tupleDesc,
-			    ExpTupleDesc::SHORT_FORMAT);
+			    (isRollup() ? ExpTupleDesc::LONG_FORMAT : ExpTupleDesc::SHORT_FORMAT));
  
   NADELETEBASIC(attrs, generator->wHeap());
 
@@ -449,18 +480,19 @@ short GroupByAgg::genAggrGrbyExpr(Generator * generator,
       // are input to this node. Input values already have location
       // assigned to them.
       if ((NOT getGroupAttr()->getCharacteristicInputs().contains(valId)) &&
-           (valId.getItemExpr()->getOperatorType() != ITM_CONSTANT)) {
-        MapInfo * mapInfo = generator->addMapInfo(valId, 0);
-	Attributes * oldGroupColAttr = mapInfo->getAttr();
+           (valId.getItemExpr()->getOperatorType() != ITM_CONSTANT)) 
+        {
+          MapInfo * mapInfo = generator->addMapInfo(valId, 0);
+          Attributes * oldGroupColAttr = mapInfo->getAttr();
 	  
-	oldGroupColAttr->copyLocationAttrs(newGroupColAttr);
-	oldGroupColAttr->setAtp(0);
-	oldGroupColAttr->setAtpIndex(returnedAtpIndex);
+          oldGroupColAttr->copyLocationAttrs(newGroupColAttr);
+          oldGroupColAttr->setAtp(0);
+          oldGroupColAttr->setAtpIndex(returnedAtpIndex);
 	  
-	// code has been generated for valId and a value is available.
-	// Mark it so.
-        mapInfo->codeGenerated();
-      }
+          // code has been generated for valId and a value is available.
+          // Mark it so.
+          mapInfo->codeGenerated();
+        }
     }
   }
   
@@ -927,7 +959,7 @@ short HashGroupBy::codeGen(Generator * generator) {
   // First, construct a list of the item expressions representing the
   // grouping attributes.
   //
-  LIST(ItemExpr*) bitMuxAttrList;
+  LIST(ItemExpr*) bitMuxAttrList(generator->wHeap());
   for(valId = groupValIds.init();
       groupValIds.next(valId);
       groupValIds.advance(valId)) {
@@ -1744,7 +1776,8 @@ short GroupByAgg::codeGen(Generator * generator) {
   
   genAggrGrbyExpr(generator,
 		  aggregateExpr(),
-		  groupExpr(),
+                  groupExpr(),
+		  rollupGroupExprList(),
 		  selectionPred(),
 		  1,
 		  returnedDesc->noTuples() - 1, 
@@ -1784,12 +1817,18 @@ short GroupByAgg::codeGen(Generator * generator) {
 #pragma warn(1506)  // warning elimination 
   generator->initTdbFields(sortGrbyTdb);
 
+  if (isRollup())
+    {
+      sortGrbyTdb->setIsRollup(TRUE);
+
+      sortGrbyTdb->setNumRollupGroups(rollupGroupExprList().entries());
+    }
+
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
          addExplainInfo(sortGrbyTdb, childExplainTuple, 0, generator));
   }
-  
-
+ 
   // set the new up cri desc.
   generator->setCriDesc(returnedDesc, Generator::UP);
 

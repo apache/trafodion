@@ -512,7 +512,8 @@ public:
 
   NABoolean checkFirstNRowsNotAllowed(BindWA* bindWA) ;
 
-  QuerySimilarityInfo * genSimilarityInfo(Generator *generator);  // GenRelMisc
+  // defined in generator/GenRelMisc.cpp
+  TrafQuerySimilarityInfo * genSimilarityInfo(Generator *generator);
 
   void addOneRowAggregates(BindWA * bindWA);
 
@@ -1508,6 +1509,7 @@ public:
                                       { valuesNeededForVEGRewrite_ += v; }
   inline void clearValuesForVEGRewrite()
                                    { valuesNeededForVEGRewrite_.clear(); }
+  void addSameMapEntries(const ValueIdSet & newTopBottomValues);
 
   // Method to compute child's characteristic outputs
   virtual

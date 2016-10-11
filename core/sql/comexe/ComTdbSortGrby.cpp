@@ -83,7 +83,8 @@ ComTdbSortGrby::ComTdbSortGrby(ex_expr * aggr_expr,
   moveExpr_(move_expr),
   havingExpr_(having_expr),
   flags_(0),
-  tdbChild_(child_tdb)
+  tdbChild_(child_tdb),
+  numRollupGroups_(-1)
 {
   if (tolerateNonFatalError)
     setTolerateNonFatalError(TRUE);

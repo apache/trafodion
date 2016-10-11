@@ -117,6 +117,9 @@ CacheWA::CacheWA(NAHeap *h)
   , hasRewriteEnabledMV_(FALSE)
   , hasParameterizedPred_(FALSE)
   , posCounter_(0)
+  , sqlStmtConstParamPos_(h)
+  , sqlStmtSelParamPos_(h)
+  , hqcSqlConstPos_(h)
 {
   requiredPrefixKeys_ = getDefaultAsLong(QUERY_CACHE_REQUIRED_PREFIX_KEYS);
 }

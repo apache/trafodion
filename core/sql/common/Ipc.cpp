@@ -596,11 +596,6 @@ IpcServer::IpcServer(IpcConnection *controlConnection,
 IpcServer::~IpcServer()
 {
   logEspRelease(__FILE__, __LINE__);  
-  release();
-}
-
-void IpcServer::release()
-{
   if (controlConnection_)
     {
 #ifdef IPC_INTEGRITY_CHECKING
@@ -617,6 +612,10 @@ void IpcServer::release()
       ie->checkIntegrity();
 #endif
     }
+}
+
+void IpcServer::release()
+{
   serverClass_->freeServerProcess(this);
 }
 
@@ -4665,6 +4664,17 @@ IpcServerClass::IpcServerClass(IpcEnvironment *env,
     }
 }
 
+IpcServerClass::~IpcServerClass() 
+{
+   NAHeap *heap = (NAHeap *)environment_->getHeap();
+   CollIndex entryCount;
+   entryCount  = allocatedServers_.entries();
+   for (CollIndex i = 0 ; i < entryCount; i++) {
+       NADELETE(allocatedServers_[i], IpcServer, heap);
+   }
+   allocatedServers_.clear();
+}
+
 IpcServer * IpcServerClass::allocateServerProcess(ComDiagsArea **diags,
 						  CollHeap   *diagsHeap,
 						  const char *nodeName,
@@ -4989,7 +4999,7 @@ void IpcServerClass::freeServerProcess(IpcServer *s)
 {
   // assume caller already killed the server
   allocatedServers_.remove(s);
-  environment_->getHeap()->deallocateMemory(s);
+  NADELETE(s, IpcServer, environment_->getHeap());
 }
 
 char *IpcServerClass::getProcessName(const char *nodeName, short nodeNameLen, short cpuNum, char *processName)
