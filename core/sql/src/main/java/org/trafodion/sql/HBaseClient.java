@@ -181,7 +181,7 @@ public class HBaseClient {
         if (logger.isDebugEnabled()) logger.debug("HBaseClient.init(" + connectParam1 + ", " + connectParam2
                          + ") called.");
         if (connection != null)
-           connection = ConnectionFactory.createConnection(config); 
+           connection = getConnection(); 
         table = new RMInterface(connection);
         return true;
     }
