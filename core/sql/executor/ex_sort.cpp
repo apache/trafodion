@@ -242,7 +242,8 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
   sortCfg_->setIntermediateScratchCleanup(st->sortOptions_->intermediateScratchCleanup());
   sortCfg_->setResizeCifRecord(st->sortOptions_->resizeCifRecord());
   sortCfg_->setConsiderBufferDefrag(st->sortOptions_->considerBufferDefrag());
-
+  sortCfg_->setTopNSort(st->topNSort());
+  
   switch(st->getOverFlowMode())
   {
     case SQLCLI_OFM_SSD_TYPE: 
@@ -569,6 +570,7 @@ short ExSortTcb::workUp()
 {
   Lng32 rc = 0;
   short workRC = 0;
+  ULng32 topNCount = 0;
 
   // if no parent request, return
   if (qparent_.down->isEmpty())
@@ -610,9 +612,13 @@ short ExSortTcb::workUp()
 		sortDiag_ = NULL;              // reset
                 // LCOV_EXCL_STOP
 	      }
-
-	    if (sortUtil_->sortInitialize(*sortCfg_) != SORT_SUCCESS)
-	      {
+ 
+      if((request == ex_queue::GET_N) &&
+         (pentry_down->downState.requestValue > 0))
+         topNCount = (ULng32)pentry_down->downState.requestValue;
+       
+      if (sortUtil_->sortInitialize(*sortCfg_, topNCount) != SORT_SUCCESS)
+      {
                 // LCOV_EXCL_START
 		createSortDiags();
 		pstate.step_ = ExSortTcb::SORT_ERROR;
@@ -1926,7 +1932,7 @@ short ExSortFromTopTcb::work()
                 // LCOV_EXCL_STOP
 	      }
 
-	    if (sortUtil_->sortInitialize(*sortCfg_) != SORT_SUCCESS)
+	    if (sortUtil_->sortInitialize(*sortCfg_, 0) != SORT_SUCCESS)
 	      {
                 // LCOV_EXCL_START
 		createSortDiags();
