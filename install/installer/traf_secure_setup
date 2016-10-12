@@ -30,6 +30,18 @@ LDAP_AUTH_FILE="traf_authentication_config_${HOSTNAME}"
 
 HOST_NAME=`hostname -f`
 
+#==============================================
+#  Setup Trafodion environment for secure Hadoop
+#==============================================
+
+LOCAL_WORKDIR="$( cd "$( dirname "$0" )" && pwd )"
+
+TRAF_CONFIG="/etc/trafodion/trafodion_config"
+LOCAL_SECURE_CONFIG="$LOCAL_WORKDIR/trafodion_secure_config"
+rm $LOCAL_SECURE_CONFIG  2>/dev/null
+source $TRAF_CONFIG
+
+# Get Kerberos key details
 # These differ depending on the distribution
 if [[ $HADOOP_TYPE == "cloudera" ]]; then
   TRAF_KEYTAB_DIR='/etc/trafodion'
@@ -42,16 +54,6 @@ else
   HBASE_KEYTAB='/etc/security/keytabs/hbase.service.keytab'
   HDFS_KEYTAB='/etc/security/keytabs/hdfs.headless.keytab'
 fi
-
-#==============================================
-#  Setup Trafodion environment for secure Hadoop
-#==============================================
-
-LOCAL_WORKDIR="$( cd "$( dirname "$0" )" && pwd )"
-
-TRAF_CONFIG="/etc/trafodion/trafodion_config"
-LOCAL_SECURE_CONFIG="$LOCAL_WORKDIR/trafodion_secure_config"
-rm $LOCAL_SECURE_CONFIG  2>/dev/null
 
 
 #==============================================
@@ -135,7 +137,8 @@ if [[ "$SECURE_HADOOP" == "Y" ]]; then
    echo -n "Enter keytab location, default is [$TRAF_KEYTAB_DIR]:"
    read answer
    if [[ ! -d $TRAF_KEYTAB_DIR ]]; then
-     echo "**Missing keytab directory $TRAF_KEYTAB_DIR, create it (Y/N), default is [Y]:"
+     echo -n "**Missing keytab directory $TRAF_KEYTAB_DIR, create it (Y/N), default is [Y]:"
+     read answer
      if [[ "${answer}" =~ ^[Yy]$ ]]; then
        if [[ "$all_node_count" -ne "1" ]]; then
          echo "***INFO: creating $TRAF_KEYTAB_DIR"

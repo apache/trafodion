@@ -162,7 +162,7 @@ function copy_config
   # before propagating the configuration file to nodes in the cluster, verify 
   # that the current file can successfully contact the identity store
   ldapcheck --username=micky.mouse > auth_configcheck
-  isValid=`cat auth_configcheck | grep "User micky.mouse not found" | wc -l`
+  isValid=`cat auth_configcheck | grep "(Invalid username or password)" | wc -l`
   if [ $isValid -ne 1 ]; then
     echo
     echo "***ERROR: Configuration file is invalid, error contacting LDAP server"
