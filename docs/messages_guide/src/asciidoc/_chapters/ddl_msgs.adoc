@@ -3151,7 +3151,7 @@ Table cannot be renamed. <reason>
 ```
 
 *Cause:* You attempted to perform ALTER TABLE RENAME but the rename could not be performed.
-The <reason> explains why.
+<reason> gives more detail.
 
 *Effect:* The operation fails.
 
@@ -3176,7 +3176,7 @@ encounter this error unless you are making code changes to {project-name} yourse
 == SQL 1429
 
 ```
-Inserts into _ROW_ format external hbase tables can only use the VALUES clause and must use the column_create function to create values.
+Inserts into _ROW_ format external HBase tables can only use the VALUES clause and must use the column_create function to create values.
 ```
 
 *Cause:* You attempted an INSERT/SELECT into an external _ROW_ format HBase table, or you attempted an INSERT using the VALUES
