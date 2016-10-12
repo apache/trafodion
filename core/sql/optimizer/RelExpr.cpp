@@ -15603,13 +15603,10 @@ NABoolean Insert::isSideTreeInsertFeasible()
       return FALSE;
    }
 
-   NABoolean isEntrySequencedTable = getTableDesc()->getClusteringIndex()
-        ->getNAFileSet()->isEntrySequenced();
-
    if ( !getInliningInfo().hasPipelinedActions() ) 
      return TRUE;
 
-   if (isEntrySequencedTable || getInliningInfo().isEffectiveGU() ||
+   if (getInliningInfo().isEffectiveGU() ||
        getTolerateNonFatalError() == RelExpr::NOT_ATOMIC_)
       return FALSE;
 

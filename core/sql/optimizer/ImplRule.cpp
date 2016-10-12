@@ -2569,8 +2569,6 @@ RelExpr * HiveInsertRule::nextSubstitute(RelExpr * before,
                    CIdesc);
 
       // insert is always a row-at-a-time operator
-      // This will for now disable inserts into partitioned, entry-sequenced
-      // tables.
       //CMPASSERT(skey->isUnique());
     }
 
@@ -2663,8 +2661,6 @@ RelExpr * HbaseInsertRule::nextSubstitute(RelExpr * before,
                    CIdesc);
 
       // insert is always a row-at-a-time operator
-      // This will for now disable inserts into partitioned, entry-sequenced
-      // tables.
       //CMPASSERT(skey->isUnique());
     }
 
