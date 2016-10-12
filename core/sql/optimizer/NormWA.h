@@ -311,6 +311,10 @@ public:
       ,checkForExtraHubTables_(FALSE)
       ,compilingMVDescriptor_(FALSE)
       ,requiresRecursivePushdown_(FALSE)
+      ,readList_(CmpCommon::statementHeap())
+      ,writeList_(CmpCommon::statementHeap())
+      ,origSeqFunction_(CmpCommon::statementHeap())
+      ,equiTransformedExpr_(CmpCommon::statementHeap())
   {
     vegTable_ = new (wHeap()) VEGTable;
     sqoWARef_ = new (CmpCommon::statementHeap()) SqoWA;
@@ -352,6 +356,10 @@ public:
       ,checkForExtraHubTables_(FALSE)
       ,compilingMVDescriptor_(FALSE)
       ,requiresRecursivePushdown_(other.requiresRecursivePushdown_)
+      ,readList_(other.readList_, STMTHEAP)
+      ,writeList_(other.writeList_, STMTHEAP)
+      ,origSeqFunction_(other.origSeqFunction_, STMTHEAP)
+      ,equiTransformedExpr_(other.equiTransformedExpr_, STMTHEAP)
   {}
   
   // --------------------------------------------------------------------

@@ -959,7 +959,7 @@ short HashGroupBy::codeGen(Generator * generator) {
   // First, construct a list of the item expressions representing the
   // grouping attributes.
   //
-  LIST(ItemExpr*) bitMuxAttrList;
+  LIST(ItemExpr*) bitMuxAttrList(generator->wHeap());
   for(valId = groupValIds.init();
       groupValIds.next(valId);
       groupValIds.advance(valId)) {

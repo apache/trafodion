@@ -36,7 +36,8 @@ CPPSRC := CommonUtil.cpp \
 	SortUtilCfg.cpp \
 	Statistics.cpp \
 	TourTree.cpp \
-	TreeNode.cpp
+	TreeNode.cpp \
+	SortTopN.cpp
 
 CPPSRC += vers_libsort.cpp
 

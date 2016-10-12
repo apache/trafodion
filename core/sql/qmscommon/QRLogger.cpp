@@ -38,6 +38,8 @@
 #include "seabed/ms.h"
 #include "seabed/fserr.h"
 
+BOOL gv_QRLoggerInitialized_ = FALSE;
+
 using namespace log4cxx;
 using namespace log4cxx::helpers;
 
@@ -186,6 +188,9 @@ NABoolean QRLogger::initLog4cxx(const char* configFileName)
 {
   NAString logFileName;
 
+  if (gv_QRLoggerInitialized_)
+     return TRUE;
+ 
   // get the log directory
   logFileName = "";
 
@@ -214,6 +219,7 @@ NABoolean QRLogger::initLog4cxx(const char* configFileName)
   if (CommonLogger::initLog4cxx(configFileName, logFileSuffix))
   {
     introduceSelf();
+    gv_QRLoggerInitialized_ = TRUE;
     return TRUE;
   }
 

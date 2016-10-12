@@ -7320,7 +7320,7 @@ set_function_specification : set_function_type '(' set_quantifier value_expressi
                      (PivotGroup::DELIMITER_, NULL, (char*)"", -1);
 
                    NAList<PivotGroup::PivotOption*> * frol =
-                     new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>;
+                     new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>(PARSERHEAP ());
                    frol->insert(po);
                    
                    $$ = new (PARSERHEAP()) PivotGroup(ITM_PIVOT_GROUP, $7, frol);
@@ -7355,7 +7355,7 @@ pivot_options : empty
 concat_options_list : concat_option
                       {
                         NAList<PivotGroup::PivotOption*> * frol =
-                          new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>;
+                          new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>(PARSERHEAP ());
                         frol->insert($1);
                         $$ = frol;
                       }
@@ -7368,7 +7368,7 @@ concat_options_list : concat_option
 pivot_options_list : pivot_option
                       {
 			NAList<PivotGroup::PivotOption*> * frol =
-			  new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>;
+			  new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>(PARSERHEAP ());
 			frol->insert($1);
 			$$ = frol;
 		      }
@@ -10099,7 +10099,7 @@ hbase_column_create_list : '(' hbase_column_create_value ')'
                                    {
 				     NAList<HbaseColumnCreate::HbaseColumnCreateOptions *> * hccol =
 				       new (PARSERHEAP()) 
-				       NAList<HbaseColumnCreate::HbaseColumnCreateOptions *>;
+				       NAList<HbaseColumnCreate::HbaseColumnCreateOptions *>(PARSERHEAP ());
 				     hccol->insert($2);
 				     $$ = hccol;
 				   }
@@ -10107,7 +10107,7 @@ hbase_column_create_list : '(' hbase_column_create_value ')'
                                    {
 				     NAList<HbaseColumnCreate::HbaseColumnCreateOptions *> * hccol =
 				       new (PARSERHEAP()) 
-				       NAList<HbaseColumnCreate::HbaseColumnCreateOptions *>;
+				       NAList<HbaseColumnCreate::HbaseColumnCreateOptions *>(PARSERHEAP ());
 				     hccol->insert($1);
 				     $$ = hccol;
 				   }
@@ -16797,7 +16797,7 @@ optional_explain_options : /* empty */
 
 quoted_string_list : QUOTED_STRING
 		 {
-		  $$ = new (PARSERHEAP()) ConstStringList();
+		  $$ = new (PARSERHEAP()) ConstStringList(PARSERHEAP ());
 		  $$->insert($1);
 		 }
 		 | quoted_string_list ',' QUOTED_STRING
@@ -16808,7 +16808,7 @@ quoted_string_list : QUOTED_STRING
 
 col_fam_quoted_string_list : TOK_COLUMN TOK_FAMILY QUOTED_STRING
 		 {
-		  $$ = new (PARSERHEAP()) ConstStringList();
+		  $$ = new (PARSERHEAP()) ConstStringList(PARSERHEAP ());
 		  $$->insert($3);
 		 }
 		 | col_fam_quoted_string_list ',' TOK_COLUMN TOK_FAMILY QUOTED_STRING
@@ -16923,7 +16923,7 @@ exe_util_maintain_object : TOK_MAINTAIN maintain_object_token table_name maintai
              | TOK_INITIALIZE_MAINTAIN
              {
 	       NAList<ExeUtilMaintainObject::MaintainObjectOption*> * mtol =
-		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>;
+		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>(PARSERHEAP ());
 
 	       ExeUtilMaintainObject::MaintainObjectOption * mto = 
 		 new (PARSERHEAP ()) 
@@ -16948,7 +16948,7 @@ exe_util_maintain_object : TOK_MAINTAIN maintain_object_token table_name maintai
              | TOK_REINITIALIZE_MAINTAIN
              {
 	       NAList<ExeUtilMaintainObject::MaintainObjectOption*> * mtol =
-		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>;
+		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>(PARSERHEAP ());
 
 	       ExeUtilMaintainObject::MaintainObjectOption * mto = 
 		 new (PARSERHEAP ()) 
@@ -16973,7 +16973,7 @@ exe_util_maintain_object : TOK_MAINTAIN maintain_object_token table_name maintai
              | TOK_REINITIALIZE_MAINTAIN ',' TOK_DROP TOK_ONLY
              {
 	       NAList<ExeUtilMaintainObject::MaintainObjectOption*> * mtol =
-		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>;
+		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>(PARSERHEAP ());
 
 	       ExeUtilMaintainObject::MaintainObjectOption * mto = 
 		 new (PARSERHEAP ()) 
@@ -16998,7 +16998,7 @@ exe_util_maintain_object : TOK_MAINTAIN maintain_object_token table_name maintai
              | TOK_REINITIALIZE_MAINTAIN ',' TOK_CREATE TOK_VIEW
              {
 	       NAList<ExeUtilMaintainObject::MaintainObjectOption*> * mtol =
-		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>;
+		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>(PARSERHEAP ());
 
 	       ExeUtilMaintainObject::MaintainObjectOption * mto = 
 		 new (PARSERHEAP ()) 
@@ -17023,7 +17023,7 @@ exe_util_maintain_object : TOK_MAINTAIN maintain_object_token table_name maintai
              | TOK_REINITIALIZE_MAINTAIN ',' TOK_DROP TOK_VIEW
              {
 	       NAList<ExeUtilMaintainObject::MaintainObjectOption*> * mtol =
-		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>;
+		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>(PARSERHEAP ());
 
 	       ExeUtilMaintainObject::MaintainObjectOption * mto = 
 		 new (PARSERHEAP ()) 
@@ -17106,7 +17106,7 @@ maintain_object_options : empty
 maintain_object_options_list : maintain_object_option
              {
 	       NAList<ExeUtilMaintainObject::MaintainObjectOption*> * mtol =
-		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>;
+		 new (PARSERHEAP ()) NAList<ExeUtilMaintainObject::MaintainObjectOption*>(PARSERHEAP ());
 	       mtol->insert($1);
 	       $$ = mtol;
 	     }
@@ -17682,7 +17682,7 @@ aqr_task :   TOK_ADD { $$ = 1; }
 aqr_options_list : aqr_option
                       {
 			NAList<ExeUtilAQR::AQROption*> * o =
-			  new (PARSERHEAP ()) NAList<ExeUtilAQR::AQROption*>;
+			  new (PARSERHEAP ()) NAList<ExeUtilAQR::AQROption*>(PARSERHEAP ());
 			o->insert($1);
 			$$ = o;
 		      }
@@ -17912,7 +17912,7 @@ optional_hbbload_options : TOK_WITH hbbload_option_list
 hbbload_option_list : hbbload_option
                       {
                         NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*> * hbol =
-                        new (PARSERHEAP ()) NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*>;
+			  new (PARSERHEAP ()) NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*>(PARSERHEAP ());
                         hbol->insert($1);
                         $$ = hbol;
                       }
@@ -18117,7 +18117,7 @@ optional_hbb_unload_options : TOK_WITH hbb_unload_option_list
 hbb_unload_option_list : hbb_unload_option
                 {
                    NAList<UnloadOption*> * hbol =
-                   new (PARSERHEAP ()) NAList<UnloadOption*>;
+		     new (PARSERHEAP ()) NAList<UnloadOption*>(PARSERHEAP ());
                    hbol->insert($1);
                    $$ = hbol;
                 }
@@ -26918,7 +26918,7 @@ hbase_table_options : TOK_HBASE_OPTIONS '('  hbase_options_list ')'
 hbase_options_list : hbase_option
                       {
 			NAList<HbaseCreateOption*> * hbol =
-			  new (PARSERHEAP ()) NAList<HbaseCreateOption*>;
+			  new (PARSERHEAP ()) NAList<HbaseCreateOption*>(PARSERHEAP ());
 			hbol->insert($1);
 			$$ = hbol;
 		      }
@@ -27912,7 +27912,7 @@ authorization_identifier_or_public : authorization_identifier
 /* type pConstStringList */
 component_privilege_name_list : component_privilege_name
                {
-                 $$ = new (PARSERHEAP()) ConstStringList();
+                 $$ = new (PARSERHEAP()) ConstStringList(PARSERHEAP ());
                  $$->insert($1); // component_privilege_name - NAString * stringval - shallow copy
                }
                | component_privilege_name_list ',' component_privilege_name

@@ -1757,7 +1757,7 @@ RelExpr * OrOptimizationRule::nextSubstitute(
 
   // a sparse array that can be used to look up which index we have selected
   // for predicates on a particular column (identified by column number)
-  ARRAY(CollIndex)    indexInfoByColNum;
+  ARRAY(CollIndex)    indexInfoByColNum(CmpCommon::statementHeap());
 
   // a sparse array that stores the associated disjuncts for each index,
   // arranged by index number in the scan node

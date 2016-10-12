@@ -60,7 +60,16 @@ public:
        functionName_(functionName), functionNamePos_(0),
        udfDesc_(0), hasSubquery_(FALSE), heap_(h)
        {
-
+         // we do allow null input parameters
+         allowsSQLnullArg() = TRUE;
+       }
+       
+       UDFunction(const ComObjectName &functionName,
+		  Lng32 argCount, CollHeap *h) :
+       Function(ITM_USER_DEF_FUNCTION, h, argCount),
+       functionName_(functionName), functionNamePos_(0),
+       udfDesc_(0), hasSubquery_(FALSE), heap_(h)
+       {
          // we do allow null input parameters
          allowsSQLnullArg() = TRUE;
        }

@@ -112,10 +112,7 @@ class ExBMOStats;
 // to be used for quicksort.
 //----------------------------------------------------------------------
 
-struct RecKeyBuffer   {
-  char* key_;
-  Record* rec_;
-};
+
 void heapSort(RecKeyBuffer keysToSort[], Int32 runsize);
 void siftDown(RecKeyBuffer keysToSort[], Int32 root, Int32 bottom);
 

@@ -4663,8 +4663,8 @@ Int32 ItemExpr::convertToValueIdSet(ValueIdSet &vs,
   // * a "state" value that tells us where we are in the convertToValueIdSet()
   //   code for the ItemExpr node that we are currently working on
   //
-  ARRAY( ItemExpr * ) IEarray(10) ; //Initially 10 elements (no particular reason to choose 10)
-  ARRAY( Int16 )      state(10)   ; //These ARRAYs will grow automatically as needed.)
+  ARRAY( ItemExpr * ) IEarray(HEAP, 10) ; //Initially 10 elements (no particular reason to choose 10)
+  ARRAY( Int16 )      state(HEAP, 10)   ; //These ARRAYs will grow automatically as needed.)
 
   Int32  currIdx    = 0           ;
   IEarray.insertAt( currIdx, this       ) ; //Initialize first array element
@@ -9743,7 +9743,7 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
     }
 
   // Save off a copy of the chilren array 
-  ARRAY(ExprValueId) copyOfChildren;
+  ARRAY(ExprValueId) copyOfChildren(HEAP);
   for (Int32 i=0; i< getArity(); i++)
     copyOfChildren.insertAt(i, child(i));
 

@@ -89,7 +89,7 @@ CLISemaphore globalSemaphore ;
 #include "SqlStats.h"
 #include "ComExeTrace.h"
 #include "Context.h"
-#include "CommonLogger.h"
+#include "QRLogger.h"
 
 #ifndef CLI_PRIV_SRL
 #pragma warning (disable : 4273)   //warning elimination
@@ -892,19 +892,7 @@ short sqInit()
     try
     {
       short retcode = my_mpi_setup(&largc, &largv);
-      int myNid;
-      pid_t myPid;
-      MS_Mon_Process_Info_Type  proc_info;
-
-      if (! gv_commonLoggerInitialized) {
-         retcode = msg_mon_get_process_info_detail(NULL, &proc_info);
-         ex_assert(retcode == 0, "Error while calling msg_non_get_process in sqInit()");   
-         myNid = proc_info.nid;
-         myPid = proc_info.pid;
-         char logNameSuffix[32];
-         sprintf( logNameSuffix, "_%d_%d.log", myNid, myPid );
-         CommonLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config", logNameSuffix);
-      }
+      QRLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config");
     }
     catch (...)
     {

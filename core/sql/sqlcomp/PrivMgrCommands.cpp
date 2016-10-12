@@ -78,7 +78,7 @@ bool PrivMgrUserPrivs::initUserPrivs(
 
   // generate PrivMgrUserPrivs from the priv_desc structure
   TrafDesc *priv_grantees_desc = priv_desc->privDesc()->privGrantees;
-  NAList<PrivMgrDesc> descList;
+  NAList<PrivMgrDesc> descList(NULL);
 
   // Find relevant descs for the user
   while (priv_grantees_desc)
@@ -111,7 +111,7 @@ bool PrivMgrUserPrivs::initUserPrivs(
       
       TrafDesc *priv_grantee_desc = priv_grantees_desc->privGranteeDesc();
       TrafDesc *columnPrivs = priv_grantee_desc->privGranteeDesc()->columnBitmaps;
-      NAList<PrivMgrCoreDesc> columnDescs;
+      NAList<PrivMgrCoreDesc> columnDescs(NULL);
       while (columnPrivs)
       {
         PrivMgrCoreDesc columnDesc(columnPrivs->privBitmapDesc()->privBitmap,

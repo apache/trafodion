@@ -78,8 +78,8 @@ void ItemExpressionView::DisplayItemExprRoot(void *tree)
   ExprNode *qTree = (ExprNode *) tree;
   if (qTree != NULL)
   {
-      LIST(ExprNode *) localExpList;
-      LIST(NAString) localLabelList;
+    LIST(ExprNode *) localExpList(NULL);
+    LIST(NAString) localLabelList(NULL);
       ExprNode *currExpr;
       NAString currLabel;
       CollIndex numEntries;

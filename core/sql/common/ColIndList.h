@@ -46,8 +46,8 @@
 class ColIndList : public LIST(Lng32)
 {
 public:
-  ColIndList() : LIST(Lng32)() {}
-  ColIndList(LIST(Lng32) list) : LIST(Lng32)(list) {}
+ ColIndList() : LIST(Lng32)(NULL) {} // on C++ heap
+ ColIndList(LIST(Lng32) list) : LIST(Lng32)(list,NULL) {}
   virtual ~ColIndList() {}
   NABoolean isPrefixOf(const ColIndList& other) const;
   NABoolean isOrderedPrefixOf(const ColIndList& other) const;

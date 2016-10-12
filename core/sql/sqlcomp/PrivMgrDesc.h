@@ -390,7 +390,7 @@ public:
                const int32_t nbrCols = 0    // preset constructor
               )
    : tableLevel_(),
-     columnLevel_(),
+     columnLevel_(NULL),
      grantee_(grantee),
      hasPublicPriv_(false)
   {}
@@ -398,14 +398,14 @@ public:
    PrivMgrDesc(const PrivMgrDesc &privs,            // preset constructor
                const int32_t grantee)
    : tableLevel_(privs.tableLevel_),
-     columnLevel_(privs.columnLevel_),
+     columnLevel_(privs.columnLevel_,NULL),
      grantee_(privs.grantee_),
      hasPublicPriv_(privs.hasPublicPriv_)
    {}
 
    PrivMgrDesc(void)
    : tableLevel_(),
-     columnLevel_(),
+     columnLevel_(NULL),
      grantee_(0),
      hasPublicPriv_(false)
    {}

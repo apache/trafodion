@@ -255,10 +255,10 @@ NABoolean SqoChangedItemExprs::undoChanges(NormWA & normWARef, Lng32 subqId)
 void SqoWA::undoChanges(NormWA & normWARef )
 {
    // We need a list of indexes to ItemExprs that we have restored
-   LIST(SqoChangedItemExprs * ) undoneItemExprs;
+   LIST(SqoChangedItemExprs * ) undoneItemExprs(STMTHEAP);
 
    // We need a list indexes to of RelExprs that we have restored
-   LIST(SqoChangedRelExprs * ) undoneRelExprs;
+   LIST(SqoChangedRelExprs * ) undoneRelExprs(STMTHEAP);
 
    for (UInt32 itemIdx=0; itemIdx < changedItemExprs_.entries(); itemIdx++)
    {

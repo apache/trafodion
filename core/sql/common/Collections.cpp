@@ -1506,7 +1506,6 @@ NAHashDictionaryIterator<K,V>::NAHashDictionaryIterator (const NAHashDictionary<
                                                          const V* value)
      : iterator_(dict.heap_)
 {
-  NAHashBucket<K,V> iteratorTemp ; 
   if (key)
     (*(dict.hashTable_))[dict.getHashCode(*key)]->getKeyValuePair(key,value,iterator_);
   else 

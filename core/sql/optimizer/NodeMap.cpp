@@ -2743,7 +2743,7 @@ Int32 NodeMap::getNumberOfUniqueNodes() const
      }
   }
         
-  NAArray<Int32> na(maxNodeNum+1); // 0-based
+  NAArray<Int32> na(HEAP, maxNodeNum+1); // 0-based
 
   for (Int32 i=0; i<maxNodeNum+1; i++ ) 
      na.insertAt(i, 0);

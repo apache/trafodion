@@ -639,7 +639,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       ComTdbVirtTableKeyInfo * indexKeyInfoArray = NULL;
       ComTdbVirtTableKeyInfo * indexNonKeyInfoArray = NULL;
       
-      NAList<NAString> selColList;
+      NAList<NAString> selColList(STMTHEAP);
       NAString defaultColFam(SEABASE_DEFAULT_COL_FAMILY);
       if (createIndexColAndKeyInfoArrays(indexColRefArray,
                                          createIndexNode->isUniqueSpecified(),
@@ -2428,7 +2428,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   // metadata. It creates the corresponding hbase table.
   short retcode = 0;
 
-  HBASE_NAMELIST colFamList;
+  HBASE_NAMELIST colFamList(STMTHEAP);
   HbaseStr colFam;
 
   retcode = -1;
@@ -2549,7 +2549,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   std::vector<NAString> colFamVec;
   colFamVec.push_back(cf1);
 
-  NAList<HbaseCreateOption*> lHbaseCreateOptions;
+  NAList<HbaseCreateOption*> lHbaseCreateOptions(STMTHEAP);
   NAText lHbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
 
   NAList<HbaseCreateOption*> * hbaseCreateOptions = inHbaseCreateOptions;
@@ -4155,7 +4155,7 @@ short CmpSeabaseDDL::genHbaseCreateOptions(
   if (numHBO == 0)
     return 0;
 
-  hbaseCreateOptions = new(heap) NAList<HbaseCreateOption*>;
+  hbaseCreateOptions = new(heap) NAList<HbaseCreateOption*>(heap);
 
   const char * optionStart = startNumHBO + 4;
   
@@ -4304,7 +4304,7 @@ short CmpSeabaseDDL::updateHbaseOptionsInMetadata(
   // old list is empty.
 
   if (!hbaseCreateOptions)
-    hbaseCreateOptions = new(STMTHEAP) NAList<HbaseCreateOption *>;
+    hbaseCreateOptions = new(STMTHEAP) NAList<HbaseCreateOption *>(STMTHEAP);
 
   NAList<HbaseCreateOption *> & newHbaseCreateOptions = edhbo->getHbaseOptions(); 
   for (CollIndex i = 0; i < newHbaseCreateOptions.entries(); i++)

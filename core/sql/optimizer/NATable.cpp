@@ -5134,7 +5134,8 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
      secKeySet_(heap),
      newColumns_(heap),
      snapshotName_(NULL),
-     prototype_(NULL)
+     prototype_(NULL),
+     allColFams_(heap)
  {
    NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
    NAString mmPhase;
@@ -5377,7 +5378,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 
 	  viewColUsages_ = NULL;
 	  if(view_desc->viewDesc()->viewcolusages){
-		  viewColUsages_ = new (heap_) NAList<ComViewColUsage *>; //initialize empty list
+		  viewColUsages_ = new (heap_) NAList<ComViewColUsage *>(heap_); //initialize empty list
 		  char * beginStr (view_desc->viewDesc()->viewcolusages);
 		  char * endStr = strchr(beginStr, ';');
 		  while (endStr != NULL) {
@@ -5389,7 +5390,6 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 			  endStr = strchr(beginStr, ';');
 		  }
 	  }
-
 	  setUpdatable(view_desc->viewDesc()->isUpdatable());
 	  setInsertable(view_desc->viewDesc()->isInsertable());
 
@@ -5773,108 +5773,109 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 
 // Constructor for a Hive table
 NATable::NATable(BindWA *bindWA,
-		const CorrName& corrName,
-		NAMemory *heap,
-		struct hive_tbl_desc* htbl)
-	//
-	// The NATable heap ( i.e. heap_ ) used to come from ContextHeap
-	// (i.e. heap) but it creates high memory usage/leakage in Context
-	// Heap. Although the NATables are deleted at the end of each statement,
-	// the heap_ is returned to heap (i.e. context heap) which caused
-	// context heap containing a lot of not used chunk of memory. So it is
-	// changed to be from whatever heap is passed in at the call in
-	// NATableDB.getNATable.
-	//
-	// Now NATable objects can be cached.If an object is to be cached (persisted
-	// across statements) a NATable heap is allocated for the object
-	// and is passed in (this is done in NATableDB::get(CorrName& corrName...).
-	// Otherwise a reference to the Statement heap is passed in. When a cached
-	// object is to be deleted the object's heap is deleted which wipes out the
-	// NATable object all its related stuff. NATable objects that are not cached
-	// are wiped out at the end of the statement when the statement heap is deleted.
-	//
-	: heap_(heap),
-	referenceCount_(0),
-	refsIncompatibleDP2Halloween_(FALSE),
-	isHalloweenTable_(FALSE),
-	qualifiedName_(corrName.getExtendedQualNameObj(),heap),
-	synonymReferenceName_(heap),
-	fileSetName_(corrName.getQualifiedNameObj(),heap),   // for now, set equal
-	clusteringIndex_(NULL),
-	colcount_(0),
-	colArray_(heap),
-	recordLength_(0),
-	indexes_(heap),
-	vertParts_(heap),
-	colStats_(NULL),
-	statsFetched_(FALSE),
-	viewFileName_(NULL),
-	viewText_(NULL),
-	viewTextInNAWchars_(heap),
-	viewTextCharSet_(CharInfo::UnknownCharSet),
-	viewCheck_(NULL),
-	viewColUsages_(NULL),
-	flags_(IS_INSERTABLE | IS_UPDATABLE),
-	insertMode_(COM_REGULAR_TABLE_INSERT_MODE),
-	isSynonymTranslationDone_(FALSE),
-	checkConstraints_(heap),
-	createTime_(htbl->creationTS_),
-	redefTime_(htbl->redeftime()),
-	cacheTime_(0),
-	statsTime_(0),
-	catalogUID_(0),
-	schemaUID_(0),
-	objectUID_(0),
-	objectType_(COM_UNKNOWN_OBJECT),
-	partitioningScheme_(COM_UNKNOWN_PARTITIONING),
-	uniqueConstraints_(heap),
-	refConstraints_(heap),
-	isAnMV_(FALSE),
-	isAnMVMetaData_(FALSE),
-	mvsUsingMe_(heap),
-	mvInfo_(NULL),
-	accessedInCurrentStatement_(TRUE),
-	setupForStatement_(FALSE),
-	resetAfterStatement_(FALSE),
-	hitCount_(0),
-	replacementCounter_(2),
-	sizeInCache_(0),
-	recentlyUsed_(TRUE),
-	tableConstructionHadWarnings_(FALSE),
-	isAnMPTableWithAnsiName_(FALSE),
-	isUMDTable_(FALSE),
-	isSMDTable_(FALSE),
-	isMVUMDTable_(FALSE),
+                 const CorrName& corrName,
+		 NAMemory *heap,
+		 struct hive_tbl_desc* htbl)
+  //
+  // The NATable heap ( i.e. heap_ ) used to come from ContextHeap
+  // (i.e. heap) but it creates high memory usage/leakage in Context
+  // Heap. Although the NATables are deleted at the end of each statement,
+  // the heap_ is returned to heap (i.e. context heap) which caused
+  // context heap containing a lot of not used chunk of memory. So it is
+  // changed to be from whatever heap is passed in at the call in
+  // NATableDB.getNATable.
+  //
+  // Now NATable objects can be cached.If an object is to be cached (persisted
+  // across statements) a NATable heap is allocated for the object
+  // and is passed in (this is done in NATableDB::get(CorrName& corrName...).
+  // Otherwise a reference to the Statement heap is passed in. When a cached
+  // object is to be deleted the object's heap is deleted which wipes out the
+  // NATable object all its related stuff. NATable objects that are not cached
+  // are wiped out at the end of the statement when the statement heap is deleted.
+  //
+  : heap_(heap),
+    referenceCount_(0),
+    refsIncompatibleDP2Halloween_(FALSE),
+    isHalloweenTable_(FALSE),
+    qualifiedName_(corrName.getExtendedQualNameObj(),heap),
+    synonymReferenceName_(heap),
+    fileSetName_(corrName.getQualifiedNameObj(),heap),   // for now, set equal
+    clusteringIndex_(NULL),
+    colcount_(0),
+    colArray_(heap),
+    recordLength_(0),
+    indexes_(heap),
+    vertParts_(heap),
+    colStats_(NULL),
+    statsFetched_(FALSE),
+    viewFileName_(NULL),
+    viewText_(NULL),
+    viewTextInNAWchars_(heap),
+    viewTextCharSet_(CharInfo::UnknownCharSet),
+    viewCheck_(NULL),
+    viewColUsages_(NULL),
+    flags_(IS_INSERTABLE | IS_UPDATABLE),
+    insertMode_(COM_REGULAR_TABLE_INSERT_MODE),
+    isSynonymTranslationDone_(FALSE),
+    checkConstraints_(heap),
+    createTime_(htbl->creationTS_),
+    redefTime_(htbl->redeftime()),
+    cacheTime_(0),
+    statsTime_(0),
+    catalogUID_(0),
+    schemaUID_(0),
+    objectUID_(0),
+    objectType_(COM_UNKNOWN_OBJECT),
+    partitioningScheme_(COM_UNKNOWN_PARTITIONING),
+    uniqueConstraints_(heap),
+    refConstraints_(heap),
+    isAnMV_(FALSE),
+    isAnMVMetaData_(FALSE),
+    mvsUsingMe_(heap),
+    mvInfo_(NULL),
+    accessedInCurrentStatement_(TRUE),
+    setupForStatement_(FALSE),
+    resetAfterStatement_(FALSE),
+    hitCount_(0),
+    replacementCounter_(2),
+    sizeInCache_(0),
+    recentlyUsed_(TRUE),
+    tableConstructionHadWarnings_(FALSE),
+    isAnMPTableWithAnsiName_(FALSE),
+    isUMDTable_(FALSE),
+    isSMDTable_(FALSE),
+    isMVUMDTable_(FALSE),
 
-	// For virtual tables, we set the object schema version
-	// to be the current schema version
-	osv_(COM_VERS_CURR_SCHEMA),
-	ofv_(COM_VERS_CURR_SCHEMA),
-	partnsDesc_(NULL),
-	colsWithMissingStats_(NULL),
-	originalCardinality_(-1.0),
-	tableIdList_(heap),
-	rcb_(NULL),
-	rcbLen_(0),
-	keyLength_(0),
-	parentTableName_(NULL),
-	sgAttributes_(NULL),
-	isHive_(TRUE),
-	isHbase_(FALSE),
-	isHbaseCell_(FALSE),
-	isHbaseRow_(FALSE),
-	isSeabase_(FALSE),
-	isSeabaseMD_(FALSE),
-	isSeabasePrivSchemaTable_(FALSE),
-	isUserUpdatableSeabaseMD_(FALSE),
-	resetHDFSStatsAfterStmt_(FALSE),
-	hiveDefaultStringLen_(0),
-	hiveTableId_(htbl->tblID_),
-	tableDesc_(NULL),
-	secKeySet_(heap),
-	privInfo_(NULL),
-	newColumns_(heap),
-	snapshotName_(NULL)
+    // For virtual tables, we set the object schema version
+    // to be the current schema version
+    osv_(COM_VERS_CURR_SCHEMA),
+    ofv_(COM_VERS_CURR_SCHEMA),
+    partnsDesc_(NULL),
+    colsWithMissingStats_(NULL),
+    originalCardinality_(-1.0),
+    tableIdList_(heap),
+    rcb_(NULL),
+    rcbLen_(0),
+    keyLength_(0),
+    parentTableName_(NULL),
+    sgAttributes_(NULL),
+    isHive_(TRUE),
+    isHbase_(FALSE),
+    isHbaseCell_(FALSE),
+    isHbaseRow_(FALSE),
+    isSeabase_(FALSE),
+    isSeabaseMD_(FALSE),
+    isSeabasePrivSchemaTable_(FALSE),
+    isUserUpdatableSeabaseMD_(FALSE),
+    resetHDFSStatsAfterStmt_(FALSE),
+    hiveDefaultStringLen_(0),
+    hiveTableId_(htbl->tblID_),
+    tableDesc_(NULL),
+    secKeySet_(heap),
+    privInfo_(NULL),
+    newColumns_(heap),
+    snapshotName_(NULL),
+    allColFams_(heap)
 {
 
 	NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
@@ -6893,7 +6894,7 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
 
   {
     isSeabasePrivSchemaTable_ = TRUE;
-    return;
+   return;
   }
 
   // Most of the time, MD is read by the compiler/DDL on behalf of the user so 
@@ -6919,7 +6920,7 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
     return;
   }
 
-  ComSecurityKeySet secKeyVec;
+  ComSecurityKeySet secKeyVec(heap_);
   if (priv_desc == NULL)
     {
       if (isHiveTable())
