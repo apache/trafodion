@@ -382,7 +382,8 @@ public:
    PrivMgrDesc(const PrivMgrDesc&other)           // copy constructor
    : tableLevel_(other.tableLevel_),
      columnLevel_(other.columnLevel_),
-     grantee_(other.grantee_)
+     grantee_(other.grantee_),
+     hasPublicPriv_(other.hasPublicPriv_)
    {}
 
    PrivMgrDesc(const int32_t grantee,
@@ -390,20 +391,23 @@ public:
               )
    : tableLevel_(),
      columnLevel_(),
-     grantee_(grantee)
+     grantee_(grantee),
+     hasPublicPriv_(false)
   {}
 
    PrivMgrDesc(const PrivMgrDesc &privs,            // preset constructor
                const int32_t grantee)
    : tableLevel_(privs.tableLevel_),
      columnLevel_(privs.columnLevel_),
-     grantee_(privs.grantee_)
+     grantee_(privs.grantee_),
+     hasPublicPriv_(privs.hasPublicPriv_)
    {}
 
    PrivMgrDesc(void)
    : tableLevel_(),
      columnLevel_(),
-     grantee_(0)
+     grantee_(0),
+     hasPublicPriv_(false)
    {}
 
    virtual ~PrivMgrDesc()                 // destructor
@@ -419,6 +423,7 @@ public:
       tableLevel_  = other.tableLevel_;
       columnLevel_ = other.columnLevel_;
       grantee_ = other.grantee_;
+      hasPublicPriv_ = other.hasPublicPriv_;
 
       return *this;
    }
@@ -431,6 +436,7 @@ public:
       if ( this == &other )
          return TRUE;
 
+      // Not checking all members, should be okay
       return ( 
                ( columnLevel_ == other.columnLevel_ ) &&
                ( tableLevel_  == other.tableLevel_  ) &&
@@ -519,27 +525,6 @@ public:
    void resetTablePrivs() { tableLevel_.setAllPrivAndWgo(0); }
    void setColumnPrivs(const NAList<PrivMgrCoreDesc> &privs) { columnLevel_ = privs; }
 
-#if 0
-   void setColumnPriv(const PrivType which,
-                      const bool value,
-                      const int32_t ordinal
-                      );
-   void setColumnWgo(const PrivType which,
-                     const bool value,
-                     const int32_t ordinal
-                     );
-
-   void setOneColOrdPriv(const PrivMgrCoreDesc& privs,
-                         const int32_t ordinal
-                         );
-  void setAllColsPriv(const PrivType which,
-                       const bool value
-                      );
-   void setAllColsWgo(const PrivType which,
-                      const bool value
-                      );
-#endif
-
    // This will replace setAllDMLGrantPrivileges for the table level.  This function
    // is also used to set a view's privileges as well.
    void setAllTableGrantPrivileges(const bool wgo)
@@ -582,68 +567,27 @@ public:
    void setAllUdrRevokePrivileges(const bool grantOption);
    void setAllSequenceRevokePrivileges(const bool grantOption);
 
-
-    /* 
-     *  These six functions are called by CatAccessPrivs to perform GRANT/REVOKEs on the actual
-     *  PrivMgrCoreDesc members of the PrivMgrDesc.  Previously, these members were accessed directly
-     *  via friend declarations.
-     */
+   bool getHasPublicPriv() { return hasPublicPriv_; }
+   void setHasPublicPriv(bool hasPublicPriv) { hasPublicPriv_ = hasPublicPriv; }
 
    PrivMgrCoreDesc::PrivResult grantTablePrivs(PrivMgrCoreDesc& priv)
    { return tableLevel_.grantPrivs(priv); }
    //PrivMgrCoreDesc::PrivResult grantColumnPrivs(PrivMgrCoreDesc& priv, const int32_t ordinal);
-   
+
    PrivMgrCoreDesc::PrivResult revokeTablePrivs(PrivMgrCoreDesc& priv)
    { return tableLevel_.revokePrivs(priv); }
    //PrivMgrCoreDesc::PrivResult revokeColumnPrivs(PrivMgrCoreDesc& priv, const int32_t ordinal);
 
 
-#if 0
-   /* 
-    *  Apply the privileges in this descriptor to a target object,
-    *  as grants from the specified Grantor.
-    *  Modify the privilege settings in the descriptor to carry only the
-    *  privileges newly granted.
-    *  Return ALL/SOME/NONE, according to how many specified privileges
-    *  were actually granted.
-    */
-CatPrivs::PrivResult applyTableGrants(const int64_t objectUID,
-                                      const int32_t& theGrantor
-                                      );
-   /* 
-    *  Apply the privileges in this descriptor to a target object,
-    *  as revokes from the specified Grantor.
-    *  Modify the privilege settings in the descriptor to carry only the
-    *  privileges newly granted.
-    *  Return ALL/SOME/NONE, according to how many specified privileges
-    *  were actually granted.
-    */
-
-
-   /* 
-    *  Apply the privileges in this descriptor to a target object,
-    *  as revokes from the specified Grantor.
-    *  Modify the privilege settings in the descriptor to carry only the
-    *  privileges newly granted.
-    *  Return ALL/SOME/NONE, according to how many specified privileges
-    *  were actually granted.
-    */
-
-
-   PrivMgrCoreDesc::PrivResult applyTableRevokes(CatRWTableValued* targetObjectP,
-                                          const int32_t& theGrantor
-                                          );
-
    void pTrace() const;   // Debug trace
 
-#endif
 
    // Data members
 private:
-
    PrivMgrCoreDesc                 tableLevel_;
    NAList<PrivMgrCoreDesc>         columnLevel_;
    int32_t                         grantee_;
+   bool                            hasPublicPriv_;
 };
 
 

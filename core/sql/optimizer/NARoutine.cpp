@@ -656,24 +656,73 @@ void NARoutine::getPrivileges(TrafDesc *priv_desc)
     return;
   }
 
+  NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
+  privMDLoc += ".\"";
+  privMDLoc += SEABASE_PRIVMGR_SCHEMA;
+  privMDLoc += "\"";
+  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(),PrivMgr::PRIV_INITIALIZED);
+
   if (priv_desc == NULL)
   {
-    *CmpCommon::diags() << DgSqlCode(-1034);
-     return;
-  }
+    privInfo_ = new(heap_) PrivMgrUserPrivs;
 
-  // create privInfo_ from priv_desc
-  privInfo_ = new(heap_) PrivMgrUserPrivs(priv_desc, ComUser::getCurrentUser());
+    CmpSeabaseDDL cmpSBD(STMTHEAP);
+    if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+    {
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+        *CmpCommon::diags() << DgSqlCode( -4400 );
 
-  // buildSecurityKeySet uses privInfo_ member to set up the security keys
-  bool rslt = buildSecurityKeySet(privInfo_, objectUID_, routineSecKeySet_);
-  if (!rslt)
+      return;
+    }
+
+    ComObjectType objectType = (UDRType_ == COM_PROCEDURE_TYPE ?
+                                COM_STORED_PROCEDURE_OBJECT :
+                                COM_USER_DEFINED_ROUTINE_OBJECT);
+
+    std::vector <ComSecurityKey *>* secKeyVec = new(heap_) std::vector<ComSecurityKey *>;
+    if (privInterface.getPrivileges(objectUID_, objectType,
+                                    ComUser::getCurrentUser(), 
+                                   *privInfo_, secKeyVec) != STATUS_GOOD)
     {
       NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
       privInfo_ = NULL;
-      *CmpCommon::diags() << DgSqlCode( -4400 );
+    }
+
+    cmpSBD.switchBackCompiler();
+
+    if (privInfo_)
+    {
+      for (std::vector<ComSecurityKey*>::iterator iter = secKeyVec->begin();
+           iter != secKeyVec->end();
+           iter++)
+      {
+        // Insertion of the dereferenced pointer results in NASet making
+        // a copy of the object, and then we delete the original.
+        routineSecKeySet_.insert(**iter);
+          delete *iter;
+      }
+    }
+  }
+  else
+  {
+    // getActive roles
+    std::vector<int32_t> roleIDs;
+    CmpSeabaseDDL cmpSBD(STMTHEAP);
+    if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+    { 
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+        *CmpCommon::diags() << DgSqlCode( -4400 );
       return;
     }
+
+    PrivStatus retcode = privInterface.getRoles( ComUser::getCurrentUser(), roleIDs);
+    cmpSBD.switchBackCompiler();
+    if (retcode == STATUS_ERROR)
+      return;
+
+    privInfo_ = new (heap_) PrivMgrUserPrivs;
+    privInfo_->initUserPrivs(roleIDs, priv_desc, ComUser::getCurrentUser(),objectUID_, routineSecKeySet_);
+  }
 }
 
 ULng32 NARoutineDBKey::hash() const

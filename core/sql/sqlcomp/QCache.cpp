@@ -2643,15 +2643,18 @@ void QCache::free_entries_with_QI_keys( Int32 pNumKeys, SQL_QIKEY * pSiKeyEntry 
         {
           // this key passed in as a param is for REVOKE so look
           // thru the plan's revoke keys.
-          for ( CollIndex ii = 0; ii < numPlanSecKeys &&
-                                  !found; ii ++ )
+          for ( CollIndex ii = 0; ii < numPlanSecKeys && !found; ii ++ )
           {
-            if ( ( (pSiKeyEntry[jj]).revokeKey.subject == 
-                      planSet[ii].getSubjectHashValue() ) &&
-                 ( (pSiKeyEntry[jj]).revokeKey.object ==
-                      planSet[ii].getObjectHashValue() ) &&
-                 ( siKeyType == planSet[ii].getSecurityKeyType() ) )
-            found = TRUE;
+            // If user ID's (subjects match)
+            if ( (pSiKeyEntry[jj]).revokeKey.subject ==
+                    planSet[ii].getSubjectHashValue() ) 
+            {
+               // Remove all plans for user
+               if ( ( pSiKeyEntry[jj]).revokeKey.object ==
+                       planSet[ii].getObjectHashValue() &&
+                    ( siKeyType == planSet[ii].getSecurityKeyType() ) )
+              found = TRUE;
+            }
           }
         }
      } // end loop thru the keys passed as params

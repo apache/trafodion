@@ -67,96 +67,138 @@ PrivMgrObjectInfo::PrivMgrObjectInfo(
 // ****************************************************************************
 // Class: PrivMgrUserPrivs
 // ****************************************************************************
-PrivMgrUserPrivs::PrivMgrUserPrivs(
+bool PrivMgrUserPrivs::initUserPrivs(
+  const std::vector<int32_t> & roleIDs,
   const TrafDesc *priv_desc,
-  const int32_t userID)
+  const int32_t userID,
+  const int64_t objectUID,
+  ComSecurityKeySet & secKeySet)
 {
-  assert (priv_desc);
+  hasPublicPriv_ = false;
 
   // generate PrivMgrUserPrivs from the priv_desc structure
   TrafDesc *priv_grantees_desc = priv_desc->privDesc()->privGrantees;
-  TrafDesc *priv_grantee_desc = NULL;
-  TrafDesc *priv_public_desc = NULL;
+  NAList<PrivMgrDesc> descList;
 
-  // Find relevant desc for the user
+  // Find relevant descs for the user
   while (priv_grantees_desc)
   {
     Int32 grantee = priv_grantees_desc->privGranteeDesc()->grantee;
+    bool addDesc = false;
     if (grantee == userID)
-      priv_grantee_desc = priv_grantees_desc->privGranteeDesc();
+      addDesc = true;
+
+    if (PrivMgr::isRoleID(grantee))
+    {
+      if ((std::find(roleIDs.begin(), roleIDs.end(), grantee)) != roleIDs.end())
+        addDesc = true;
+    }
 
     if (ComUser::isPublicUserID(grantee))
-      priv_public_desc = priv_grantees_desc->privGranteeDesc();
+    {
+      addDesc = true;
+      hasPublicPriv_ = true;
+    }
 
+    // Create a list of PrivMgrDesc contain privileges for user, user's roles,
+    // and public
+    if (addDesc)
+    {
+      TrafDesc *objectPrivs = priv_grantees_desc->privGranteeDesc()->objectBitmap;
+
+      PrivMgrCoreDesc objectDesc(objectPrivs->privBitmapDesc()->privBitmap,
+                                 objectPrivs->privBitmapDesc()->privWGOBitmap);
+      
+      TrafDesc *priv_grantee_desc = priv_grantees_desc->privGranteeDesc();
+      TrafDesc *columnPrivs = priv_grantee_desc->privGranteeDesc()->columnBitmaps;
+      NAList<PrivMgrCoreDesc> columnDescs;
+      while (columnPrivs)
+      {
+        PrivMgrCoreDesc columnDesc(columnPrivs->privBitmapDesc()->privBitmap,
+                                   columnPrivs->privBitmapDesc()->privWGOBitmap,
+                                   columnPrivs->privBitmapDesc()->columnOrdinal);
+        columnDescs.insert(columnDesc);
+        columnPrivs = columnPrivs->next;
+      }
+
+      PrivMgrDesc privs(priv_grantees_desc->privGranteeDesc()->grantee);
+      privs.setTablePrivs(objectDesc);
+      privs.setColumnPrivs(columnDescs);
+      privs.setHasPublicPriv(hasPublicPriv_);
+
+      descList.insert(privs);
+    }
     priv_grantees_desc = priv_grantees_desc->next;
   }
 
-  // If the user has a privilege in the priv_grantees_desc list, use it to
-  // create the PrivMgrUserPrivs class.
-  if (priv_grantee_desc)
+  // Union privileges from all grantees together to create a single set of
+  // bitmaps.  Create security invalidation keys
+  for (int i = 0; i < descList.entries(); i++)
   {
+    PrivMgrDesc privs = descList[i];
 
     // Set up object level privileges
-    TrafDesc *objectPrivs = priv_grantee_desc->privGranteeDesc()->objectBitmap;
-    objectBitmap_ = objectPrivs->privBitmapDesc()->privBitmap;
-    grantableBitmap_ = objectPrivs->privBitmapDesc()->privWGOBitmap;
+    objectBitmap_ |= privs.getTablePrivs().getPrivBitmap();
+    grantableBitmap_ |= privs.getTablePrivs().getWgoBitmap();
 
     // Set up column level privileges
-    // The PrivColList is a key <=> value pair structure, the key is the
-    // column ordinal (number) and the value is the associated bitmap.
-    TrafDesc *columnPrivs = priv_grantee_desc->privGranteeDesc()->columnBitmaps;
-    PrivColList colPrivsList;
-    PrivColList colGrantableList;
-    while (columnPrivs)
+    NAList<PrivMgrCoreDesc> columnPrivs = privs.getColumnPrivs();
+    std::map<size_t,PrivColumnBitmap>::iterator it;
+    for (int j = 0; j < columnPrivs.entries(); j++)
     {
-      Int32 columnOrdinal = columnPrivs->privBitmapDesc()->columnOrdinal;
-      colPrivsList[columnOrdinal] = columnPrivs->privBitmapDesc()->privBitmap;
-      colGrantableList[columnOrdinal] = columnPrivs->privBitmapDesc()->privWGOBitmap;
-      columnPrivs = columnPrivs->next;
-    }
-    colPrivsList_= colPrivsList;
-    colGrantableList_ = colGrantableList;
-  }
-
-  // See if there are privileges assigned to public.  If so, "or" the public
-  // list to the user to the current bitmaps. Initially all the bitmap are
-  // set to 0.
-  if (priv_public_desc)
-  {
-    // Set up object level privileges
-    TrafDesc *objectPrivs = priv_public_desc->privGranteeDesc()->objectBitmap;
-    objectBitmap_ |= objectPrivs->privBitmapDesc()->privBitmap;
-    grantableBitmap_ |= objectPrivs->privBitmapDesc()->privWGOBitmap;
-
-    // Set up column level privileges
-    // The PrivColList is a key <=> value pair structure, the key is the
-    // column ordinal (number) and the value is the associated bitmap.
-    TrafDesc *columnPrivs = priv_public_desc->privGranteeDesc()->columnBitmaps;
-    PrivColList colPrivsList;
-    PrivColList colGrantableList;
-    std::map<size_t,PrivColumnBitmap>::iterator it; 
-    while (columnPrivs)
-    {
-      Int32 columnOrdinal = columnPrivs->privBitmapDesc()->columnOrdinal;
+      PrivMgrCoreDesc colDesc = columnPrivs[j];
+      Int32 columnOrdinal = colDesc.getColumnOrdinal();
       it = colPrivsList_.find(columnOrdinal);
       if (it == colPrivsList_.end())
       {
-        colPrivsList_[columnOrdinal] = columnPrivs->privBitmapDesc()->privBitmap;
-        colGrantableList[columnOrdinal] = columnPrivs->privBitmapDesc()->privWGOBitmap;
+        colPrivsList_[columnOrdinal] = colDesc.getPrivBitmap();
+        colGrantableList_[columnOrdinal] = colDesc.getWgoBitmap();
       }
       else
       {
-        colPrivsList_[columnOrdinal] |= columnPrivs->privBitmapDesc()->privBitmap;
-        colGrantableList[columnOrdinal] |= columnPrivs->privBitmapDesc()->privWGOBitmap;
+        colPrivsList_[columnOrdinal] |= colDesc.getPrivBitmap();
+        colGrantableList_[columnOrdinal] |= colDesc.getWgoBitmap();
       }
+    }
 
-      columnPrivs = columnPrivs->next;
+    // set up security invalidation keys
+    Int32 grantee = privs.getGrantee();
+    Int32 role = (ComUser::isPublicUserID(grantee) || PrivMgr::isRoleID(grantee)) 
+        ? grantee : NA_UserIdDefault;
+
+    if (!buildSecurityKeys(userID, role, objectUID, privs.getTablePrivs(), secKeySet))
+      return false;
+
+    for (int k = 0; k < colPrivsList_.size(); k++)
+    {
+      PrivMgrCoreDesc colDesc(colPrivsList_[k], colGrantableList_[k]);
+      if (!buildSecurityKeys(userID, role, objectUID, colDesc, secKeySet))
+        return false;
     }
   }
 
   // TBD - add schema privilege bitmaps
+  return true;
 }
 
+// ----------------------------------------------------------------------------
+// method: initUserPrivs
+//
+// Creates a PrivMgrUserPrivs object from a PrivMgrDesc object
+// ----------------------------------------------------------------------------
+void PrivMgrUserPrivs::initUserPrivs(PrivMgrDesc &privsOfTheUser)
+{
+  objectBitmap_ = privsOfTheUser.getTablePrivs().getPrivBitmap();
+  grantableBitmap_ = privsOfTheUser.getTablePrivs().getWgoBitmap();
+
+  for (int32_t i = 0; i < privsOfTheUser.getColumnPrivs().entries(); i++)
+  {
+    const int32_t columnOrdinal = privsOfTheUser.getColumnPrivs()[i].getColumnOrdinal();
+    colPrivsList_[columnOrdinal] = privsOfTheUser.getColumnPrivs()[i].getPrivBitmap();
+    colGrantableList_[columnOrdinal] = privsOfTheUser.getColumnPrivs()[i].getWgoBitmap();
+  }
+  hasPublicPriv_ = privsOfTheUser.getHasPublicPriv();
+}
 
 // ****************************************************************************
 // Class: PrivMgrCommands
@@ -546,10 +588,7 @@ PrivStatus PrivMgrCommands::getPrivileges(
   PrivMgrUserPrivs &userPrivs,
   std::vector <ComSecurityKey *>* secKeySet)
 {
-  PrivMgrBitmap objPrivs;
-  PrivMgrBitmap grantablePrivs;
-  PrivColList colPrivsList;
-  PrivColList colGrantableList;
+  PrivMgrDesc privsOfTheUser;
 
   // If authorization is enabled, go get privilege bitmaps from metadata
   if (authorizationEnabled())
@@ -558,10 +597,7 @@ PrivStatus PrivMgrCommands::getPrivileges(
     PrivStatus retcode = objectPrivs.getPrivsOnObjectForUser(objectUID,
                                                              objectType, 
                                                              userID, 
-                                                             objPrivs, 
-                                                             grantablePrivs,
-                                                             colPrivsList,
-                                                             colGrantableList,
+                                                             privsOfTheUser, 
                                                              secKeySet);
     if (retcode != STATUS_GOOD)
       return retcode;
@@ -570,19 +606,41 @@ PrivStatus PrivMgrCommands::getPrivileges(
   // authorization is not enabled, return bitmaps with all bits set
   // With all bits set, privilege checks will always succeed
   else
-  {
-    objPrivs.set();
-    grantablePrivs.set();
-  }
+    privsOfTheUser.getTablePrivs().setAllPrivAndWgo(true);
 
-  userPrivs.setObjectBitmap(objPrivs);
-  userPrivs.setGrantableBitmap(grantablePrivs);
-  userPrivs.setColPrivList(colPrivsList);
-  userPrivs.setColGrantableList(colGrantableList);
+  userPrivs.initUserPrivs(privsOfTheUser);
     
   return STATUS_GOOD;
 }
 
+
+// ----------------------------------------------------------------------------
+// method: getRoles
+//
+// Returns roleIDs for the grantee.
+//                                                                       
+//  <granteeID> the authorization ID to obtain roles for
+//  <roleIDs> is the returned list of roles
+//                                                                  
+// Returns: PrivStatus                                               
+//                                                                  
+//   STATUS_GOOD: role list was built
+//             *: unexpected error occurred, see diags.     
+// ----------------------------------------------------------------------------
+PrivStatus PrivMgrCommands::getRoles(
+  const int32_t granteeID,
+  std::vector <int32_t > &roleIDs)
+{
+  // If authorization is not enabled, return
+  if (!authorizationEnabled())
+    return STATUS_GOOD;
+  
+  PrivMgrRoles roles(" ",metadataLocation_,pDiags_);
+  std::vector<std::string> roleNames;
+  std::vector<int32_t> roleDepths;
+
+  return  roles.fetchRolesForUser(granteeID,roleNames,roleIDs,roleDepths);
+}
 
 // *****************************************************************************
 // *                                                                           *
