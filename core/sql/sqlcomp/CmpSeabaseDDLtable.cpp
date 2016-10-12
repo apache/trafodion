@@ -4053,14 +4053,39 @@ void CmpSeabaseDDL::renameSeabaseTable(
                  catalogNamePart);
   
   NATable *newNaTable = bindWA.getNATable(newcn); 
-  if (naTable != NULL && (NOT bindWA.errStatus()))
+  if (newNaTable != NULL && (NOT bindWA.errStatus()))
     {
+      // an object already exists with the new name
       *CmpCommon::diags() << DgSqlCode(-1390)
                           << DgString0(newExtTableName);
       
       processReturn();
       
       return;
+    }
+  else if (newNaTable == NULL &&
+           bindWA.errStatus() &&
+           (!CmpCommon::diags()->contains(-4082) || CmpCommon::diags()->getNumber() > 1))
+    {
+      // there is some error other than the usual -4082, object
+      // does not exist
+
+      // If there is also -4082 error, remove that as it is misleading
+      // to the user. The user would see, "new name does not exist" 
+      // and wonder, what is wrong with that?
+
+      for (CollIndex i = CmpCommon::diags()->returnIndex(-4082);
+           i != NULL_COLL_INDEX;
+           i = CmpCommon::diags()->returnIndex(-4082))
+        {
+          CmpCommon::diags()->deleteError(i);
+        }
+  
+      if (CmpCommon::diags()->getNumber() > 0) // still anything there?
+        {
+          processReturn();  // error is already in the diags
+          return;
+        }
     }
 
   CmpCommon::diags()->clear();

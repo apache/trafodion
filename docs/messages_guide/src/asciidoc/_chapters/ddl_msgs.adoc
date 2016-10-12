@@ -3044,3 +3044,146 @@ statement.
 *Recovery:* Remove the creation of triggers from the CREATE SCHEMA
 statement and resubmit. Create triggers in separate statements.
 
+<<<
+[[SQL-1420]]
+== SQL 1420
+
+```
+Column <column-name> cannot be dropped or altered as it is part of the table's primary key.
+```
+
+*Cause:* You attempted to drop a column that is a part of a primary key.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the column name or table name as appropriate and resubmit.
+
+[[SQL-1421]]
+== SQL 1421 
+
+```
+Column <column-name> cannot be dropped or altered as it is used in the secondary index <index-name>.
+```
+
+*Cause:* You attempted to drop a column, but that column is used by the secondary index named.
+
+*Effect:* The operation fails.
+
+*Recovery:* If the secondary index is no longer needed, drop it and resubmit. If the column
+name or table name are incorrect, correct them and resubmit.
+
+[[SQL-1422]]
+== SQL 1422 
+
+```
+An invalid HBase name was specified in this DDL statement. A valid name can only contain these characters: [a-zA-Z_0-9-.]
+```
+
+*Cause:* You attempted to use a name containing an invalid character for a {project-name} object that is
+stored in HBase.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the name and resubmit.
+
+<<<
+[[SQL-1423]]
+== SQL 1423
+
+```
+Insert into metadata table <table-name> failed.
+```
+
+*Cause:* During an INITIALIZE TRAFODION, UPGRADE operation, a write to metadata table <table-name> failed. There may 
+be additional messages giving details of the failure.
+
+*Effect:* The upgrade operation fails.
+
+*Recovery:* None. Contact the {project-name} User Distribution List. Include any additional messages.
+
+[[SQL-1424]]
+== SQL 1424 
+
+```
+Column <column-name> cannot be dropped as that would leave the table with no user defined columns.
+```
+
+*Cause:* You attempted to drop the only remaining user-defined column in the table.
+
+*Effect:* The operation fails.
+
+*Recovery:* If the table is no longer needed, simply drop the table.
+
+[[SQL-1425]]
+== SQL 1425 
+
+```
+This operation could not be performed on <table-name>. <reason>
+```
+
+*Cause:* You attempted an operation on table <table-name> but the operation could not
+be performed. <reason> gives more details.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct any issues indicated by <reason> as appropriate and resubmit.
+
+<<<
+[[SQL-1426]]
+== SQL 1426
+
+```
+An invalid HBase column name <column-name> was specified. A valid name must be of the format:   <ColumnFamily>:<ColumnName>
+```
+
+*Cause:* When accessing an external HBase table (for example, using _ROW_ format), you specified
+an invalid HBase column name.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the column name and resubmit.
+
+[[SQL-1427]]
+== SQL 1427 
+
+```
+Table cannot be renamed. <reason>
+```
+
+*Cause:* You attempted to perform ALTER TABLE RENAME but the rename could not be performed.
+The <reason> explains why.
+
+*Effect:* The operation fails.
+
+*Recovery:* Perform the operations suggested by <reason> and resubmit.
+
+[[SQL-1428]]
+== SQL 1428 
+
+```
+Metadata definitions could not be created and preloaded in global MDdescInfo struct. Make sure that metadata table definition syntax is correct.
+```
+
+*Cause:* This is a {project-name} internal error. It is highly unlikely that you will 
+encounter this error unless you are making code changes to {project-name} yourself.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. Contact the {project-name} Developer Distribution List.
+
+<<<
+[[SQL-1429]]
+== SQL 1429
+
+```
+Inserts into _ROW_ format external hbase tables can only use the VALUES clause and must use the column_create function to create values.
+```
+
+*Cause:* You attempted an INSERT/SELECT into an external _ROW_ format HBase table, or you attempted an INSERT using the VALUES
+clause but did not use a COLUMN_CREATE function. 
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+

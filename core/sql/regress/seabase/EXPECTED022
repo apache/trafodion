@@ -406,7 +406,7 @@ ROW_ID      (EXPR)
 
 >>insert into hbase."_ROW_".t022hbt1 values ('2', column_create(':b', '201'));
 
-*** ERROR[1426] An invalid hbase column name :b was specified. A valid name must be of the format:   <ColumnFamily>:<ColumnName>
+*** ERROR[1426] An invalid HBase column name :b was specified. A valid name must be of the format:   <ColumnFamily>:<ColumnName>
 
 --- 0 row(s) inserted.
 >>insert into hbase."_ROW_".t022hbt1 values ('2', '100');
