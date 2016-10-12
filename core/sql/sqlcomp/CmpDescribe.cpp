@@ -2935,8 +2935,8 @@ short CmpDescribeSeabaseTable (
   NABoolean isSalted = FALSE;
   NABoolean isDivisioned = FALSE;
   ItemExpr *saltExpr;
-  LIST(NAString) divisioningExprs;
-  LIST(NABoolean) divisioningExprAscOrders;
+  LIST(NAString) divisioningExprs(heap);
+  LIST(NABoolean) divisioningExprAscOrders(heap);
 
   if (naTable->getClusteringIndex())
     {

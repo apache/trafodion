@@ -319,7 +319,7 @@ void TableMappingUDFChildInfo::removeColumn(CollIndex i)
 
 //! TableMappingUDF::TableMappingUDF Copy Constructor
 TableMappingUDF::TableMappingUDF(const TableMappingUDF & other)
-: TableValuedFunction(other)
+  : TableValuedFunction(other),childInfo_(STMTHEAP)
 {
   selectivityFactor_ = other.selectivityFactor_;
   cardinalityHint_ = other.cardinalityHint_;

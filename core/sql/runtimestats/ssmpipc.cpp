@@ -448,7 +448,7 @@ ULng32 SsmpGlobals::deAllocateServer(char *nodeName, short nodeNameLen,  short c
 
 void SsmpGlobals::cleanupDeletedSscpServers()
 {
-  NAList<IpcServer *> notReadyToCleanup;
+  NAList<IpcServer *> notReadyToCleanup(heap_);
   IpcServer *sscp;
   while (deletedSscps_->getFirst(sscp))
     {

@@ -271,7 +271,7 @@ RelExpr * MVQRScanRule::nextSubstitute(RelExpr * before,
 
      JBBSubsetAnalysis *jbbSubsetAnalysis = scan->getJBBSubsetAnalysis();
 
-     NAList<MVMatch*> matchingMVs;
+     NAList<MVMatch*> matchingMVs(STMTHEAP);
 
      // the case of an aggregate query on a single table
      if (jbbSubsetAnalysis)
@@ -3185,7 +3185,7 @@ RelExpr * MJStarJoinIIRule::nextSubstitute_Old(RelExpr * before,
   }
 
   // compute join order
-  NAList<CANodeIdSet> orderedListOfFringes;
+  NAList<CANodeIdSet> orderedListOfFringes(STMTHEAP);
   orderedListOfFringes.insert(factTableSet);
 
 

@@ -1120,7 +1120,7 @@ void CascadesMemo::update(CascadesGroup * oldGroup, CascadesGroup * newGroup)
 //<pb>
 Int32 CascadesMemo::garbageCollection()
 {
-  LIST(RelExpr *) changed; // list of outdated RelExprs
+  LIST(RelExpr *) changed(STMTHEAP); // list of outdated RelExprs
   RelExpr *e;              // a single rel expr
   RelExpr *pred;           // predecessor in the hash chain
   Int32 nc;                  // number of children

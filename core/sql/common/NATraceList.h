@@ -46,7 +46,7 @@ class NATraceList : public LIST(NAString)
 {
 public:
 
-  NATraceList(){}
+ NATraceList(): LIST(NAString)(NULL) {} // on C++ heap
    ~NATraceList(){} 
 
   inline NATraceList & operator = (const NATraceList &rhs)

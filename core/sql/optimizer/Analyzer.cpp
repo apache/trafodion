@@ -3515,7 +3515,7 @@ TableAnalysis::getCoveringAccessPaths(NABoolean indexOnly,
                                       const ValueIdSet& vidSet,
                                       NABoolean exactMatch)
 {
-  LIST(AccessPathAnalysis*) accessPaths, retAccessPaths;
+  LIST(AccessPathAnalysis*) accessPaths(STMTHEAP), retAccessPaths(STMTHEAP);
 
   if (indexOnly)
     // Search index-only access paths.
@@ -5381,7 +5381,8 @@ void JBBSubset::print (FILE *f,
 JBBSubsetAnalysis::JBBSubsetAnalysis(const JBBSubset & subset,
                                      CollHeap *outHeap)
   :leftDeepJoinSequence_(CmpCommon::statementHeap(),
-                         subset.getJBBCs().entries())
+                         subset.getJBBCs().entries()),
+   matchingMVs_(CmpCommon::statementHeap())
 {
   heap_ = outHeap;
   jbb_ = subset.getJBB();
@@ -5512,7 +5513,7 @@ void JBBSubsetAnalysis::init()
   {
      synthLogPropPath_ =
        new (CmpCommon::statementHeap()) 
-         CASortedList(jbbcs_.entries(), CmpCommon::statementHeap());
+       CASortedList(CmpCommon::statementHeap(), jbbcs_.entries());
      
      (*synthLogPropPath_).insert(jbbcs_.getFirst());
   }
@@ -6101,7 +6102,7 @@ CASortedList * JBBSubsetAnalysis::getNodesSortedByLocalPredsCard()
                                      getNodesSortedByLocalPredsCard();
 
   CASortedList * result = new (CmpCommon::statementHeap())
-     CASortedList(childSet.entries(), CmpCommon::statementHeap());
+    CASortedList(CmpCommon::statementHeap(), childSet.entries());
 
   for( UInt32 i = 0;
        i < sortedListOfNodes->entries();
@@ -6127,7 +6128,7 @@ CASortedList * JBBSubsetAnalysis::getNodesSortedByLocalKeyPrefixPredsCard()
                                      getNodesSortedByLocalKeyPrefixPredsCard();
 
   CASortedList * result = new (CmpCommon::statementHeap())
-      CASortedList(childSet.entries(), CmpCommon::statementHeap());
+    CASortedList(CmpCommon::statementHeap(), childSet.entries());
 
   for( UInt32 i = 0;
        i < sortedListOfNodes->entries();
@@ -8859,7 +8860,7 @@ void JBBSubsetAnalysis::arrangeTablesAfterFactForStarJoinTypeII()
   }
 
   // compute join order
-  NAList<CANodeIdSet> orderedListOfFringes;
+  NAList<CANodeIdSet> orderedListOfFringes(STMTHEAP);
   orderedListOfFringes.insert(factTableSet);
 
 
@@ -9342,7 +9343,7 @@ CASortedList* JBBWA::sort(JBBWA::shortMetricFunc getSortMetric)
 {
   CANodeIdSet nodesToSort = parentJBB_->getJBBCs();
   CASortedList * result = new (CmpCommon::statementHeap())
-            CASortedList(nodesToSort.entries(), CmpCommon::statementHeap());
+    CASortedList(CmpCommon::statementHeap(), nodesToSort.entries());
 
   while(nodesToSort.entries())
   {

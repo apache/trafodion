@@ -709,7 +709,7 @@ short HashJoin::codeGen(Generator * generator) {
   // lifted some day in the future, but in all "normal" cases this happens
   // anyway)
 
-  LIST(CollIndex) hashKeyColumns;
+  LIST(CollIndex) hashKeyColumns(generator->wHeap());
 
   ////////////////////////////////////////////////////////////
   // Before generating any expression for this node, set the

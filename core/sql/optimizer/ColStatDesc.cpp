@@ -2633,7 +2633,7 @@ ColStatDescList::estimateCardinality (const CostScalar & initialRowCount,
   // NB: we may need to undo some of the adjustments done in the call to
   // useMultiUecIfCorrelatedPreds() above.
   // ---------------------------------------------------------------------
-  CollIndexList joinHistograms; // the CSDL-indices of the join histograms
+  CollIndexList joinHistograms(STMTHEAP); // the CSDL-indices of the join histograms
 
   if (maxSelectivity == NULL)
   {
@@ -2890,7 +2890,7 @@ ColStatDescList::estimateCardinality (const CostScalar & initialRowCount,
     // mc-uec info
     // ---------------------------------------------------------------------
     CostScalar newSemiJoinRowCount = rowRedProduct * semiJoinRowcountBeforePreds;
-    CollIndexList joinHists; // the CSDL-indices of the join histograms
+    CollIndexList joinHists(STMTHEAP); //the CSDL-indices of the join histograms
 
     this->addRecentlyJoinedCols(loopLimit, entries());
 
@@ -5328,8 +5328,8 @@ ColStatDescList::applyPred (ItemExpr *pred,
   // predicate.  Later they need to be oriented to the inner/outer sides
   // of the input ColStatDescList.
   // ---------------------------------------------------------------------
-  CollIndexList leftStatsToMerge;
-  CollIndexList rightStatsToMerge;
+  CollIndexList leftStatsToMerge(STMTHEAP);
+  CollIndexList rightStatsToMerge(STMTHEAP);
 
   identifyMergeCandidates( lhs, leftStatsToMerge );
   if ( leftStatsToMerge.entries() == 0 )
@@ -5792,7 +5792,7 @@ ColStatDescList::applyDefaultPred (ItemExpr *pred,
 	if (op == ITM_VEG_PREDICATE)
 	{
 	  // could be a VEG predicate with no children
-	  CollIndexList statsToMerge;
+	  CollIndexList statsToMerge(STMTHEAP);
 
 	  // locate entries in this ColStatDescList that are associated
 	  // with the current VEG predicate.
@@ -7170,7 +7170,7 @@ ColStatDescList::useMultiUecIfCorrelatedPreds (
 
   NABoolean largeTableNeedsStats = FALSE;
   CostScalar adjRCBeforePreds = floor(oldRowcount.getValue());
-  CollIndexList predList; // the CSDL-indices of the predicate-applied histograms
+  CollIndexList predList(STMTHEAP); // the CSDL-indices of the predicate-applied histograms
   CollIndex i;
   for ( i = startIndex; i < stopIndex; i++ )
   {
@@ -7452,7 +7452,7 @@ ColStatDescList::useMultiUecIfMultipleJoins (
 
   joinOnSingleCol_ = FALSE;
 
-  LIST(ValueIdList) joinValueIdPairs; // the ValueId's pairwise (per join)
+  LIST(ValueIdList) joinValueIdPairs(STMTHEAP); // the ValueId's pairwise (per join)
 
   // look inside the mergeStates of each join histogram, and grab the
   // ValueIds associated with each join
@@ -10708,8 +10708,8 @@ MultiColumnUecList::getUecForMCJoin (
   CostScalar * uecEntry = NULL;
   MultiColumnUecListIterator iter( *this );
 
-  LIST(ValueIdSet) tableOnePossibles; // we'll iter over these
-  SET(ValueIdSet)  tableTwoPossibles; // we'll do lookups over these
+  LIST(ValueIdSet) tableOnePossibles(STMTHEAP); // we'll iter over these
+  SET(ValueIdSet)  tableTwoPossibles(STMTHEAP); // we'll do lookups over these
 
   for ( iter.getNext( keyEntry, uecEntry );
         keyEntry != NULL && uecEntry != NULL;
@@ -11418,7 +11418,7 @@ MultiColumnUecList::displayMissingStatsWarning(TableDesc * mostRefdTable,
   // This should not be very expensive, since column numbers are cached with the
   // column expression
 
-  CollIndexSet setOfColsWithMissingStats;
+  CollIndexSet setOfColsWithMissingStats(NULL,STMTHEAP);
 
   // define ValueId outside of for loop, to avoid c++ compiler error.
   ValueId col;

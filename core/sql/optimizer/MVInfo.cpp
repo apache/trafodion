@@ -859,8 +859,8 @@ const MVVegPredicateColumn *MVVegPredicate::getRepresentativeCol() const
 void MVVegPredicate::markPredicateColsOnUsedObjects(MVInfo *mvInfo, NABoolean isDDL)
 {
   MVUsedObjectInfo	      *usedInfo = NULL;
-  LIST(const QualifiedName *)  tableNames;
-  MVColumnInfoList             mvCols;
+  LIST(const QualifiedName *)  tableNames(NULL);
+  MVColumnInfoList             mvCols(NULL);
   MVColumnInfo                *colInfo = NULL;
 
   // For each column in this predicate
@@ -1052,7 +1052,7 @@ MVUsedObjectInfo::MVUsedObjectInfo(const Scan  *scanNode,
   for (ValueId vid = outputs.init();  outputs.next(vid); outputs.advance(vid) ) 
   {
     ItemExpr *expr = vid.getItemExpr();
-    LIST(BaseColumn*) usedBaseCols;
+    LIST(BaseColumn*) usedBaseCols(heap);
 
     // If the ValueId of the output is of an expression - find all the base
     //  columns that it uses.
@@ -3311,7 +3311,8 @@ MVInfoForDDL::MVInfoForDDL(const NAString		      &nameOfMV,
     userSpecifiedCI_(NULL),
     mvDescriptor_(NULL),
     xmlText_(NULL),
-    notIncrementalReason_(MVNI_DEFAULT)
+    notIncrementalReason_(MVNI_DEFAULT),
+    udfList_(heap)
 {
   //
   if(NULL != userSpecifiedCI)
@@ -3449,7 +3450,7 @@ MVInfoForDDL::getOptimalMJVIndexList (const LIST(Lng32)* mvCI)
 {
   // create index builder
   MJVIndexBuilder indexBuilder (getHeap());
-  IndexList inputRCIList, *outputRCIList;
+  IndexList inputRCIList(getHeap()), *outputRCIList;
 
   // Insert MVCI as the first element of the inputRCIList
   inputRCIList.insert(*mvCI);
@@ -4245,7 +4246,7 @@ void MVInfoForDDL::addBaseColsUsedByComputedMvColumns()
     if (colInfo->getColType() != COM_MVCOL_FUNCTION)
       continue;
 
-    LIST(BaseColumn*) usedCols;
+    LIST(BaseColumn*) usedCols(getHeap());
     findAllTheUsedColumns(colInfo->getColExpr(), NULL, usedCols);
     // If this computed column is only using a single base column (or less)
     // than that column is already entered as the orig column of that MV col.

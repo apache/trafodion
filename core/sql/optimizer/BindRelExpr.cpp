@@ -3477,7 +3477,8 @@ void Union::copyLeftRightListsToPreviousIF(Union * previousIF, BindWA * bindWA)
 void Union::dumpChildrensRETDescs(const RETDesc& leftTable,
                                   const RETDesc& rightTable)
 {
-#ifndef NDEBUG
+// turn this code on when you need it by changing the #if below
+#if 0   
   // -- MVs. Debugging code !!!!! TBD
   fprintf(stdout, " #    Left                                Right\n");
   CollIndex maxIndex, minIndex;
@@ -9496,7 +9497,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   //
   NABoolean view = bindWA->getNATable(getTableName())->getViewText() != NULL;
   ValueIdList tgtColList, userColList, sysColList, *userColListPtr;
-  CollIndexList colnoList;
+  CollIndexList colnoList(STMTHEAP);
   CollIndex totalColCount, defaultColCount, i;
 
   getTableDesc()->getSystemColumnList(sysColList);
@@ -11425,7 +11426,7 @@ void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
   }
 
   CollIndex     i, j;
-  CollIndexList colnoList;                  // map of col nums (row positions)
+  CollIndexList colnoList(STMTHEAP);   // map of col nums (row positions)
   CollIndex a = assignList.entries();
 
   const ColumnDescList *viewColumns = NULL;
@@ -15802,7 +15803,7 @@ RelExpr *CallSP::bindNode(BindWA *bindWA)
   LIST (ItemExpr *) &bWA_HVorDPs = bindWA->getSpHVDPs();
   CollIndex numHVorDPs = bWA_HVorDPs.entries();
 
-  ARRAY(ItemExpr *) local_HVorDPs(numHVorDPs);
+  ARRAY(ItemExpr *) local_HVorDPs(HEAP, numHVorDPs);
   CollIndex idx, idx1, idx2;
 
   // Sort the ItemExpr in the order they appeared in the stmt
@@ -16547,7 +16548,7 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
     RETDesc *childRetDesc = child(i)->getRETDesc();
     
     // Get Name
-    LIST(CorrName*) nameList;
+    LIST(CorrName*) nameList(STMTHEAP);
     childRetDesc->getXTNM().dumpKeys(nameList);
     if (nameList.entries() == 1)
     {

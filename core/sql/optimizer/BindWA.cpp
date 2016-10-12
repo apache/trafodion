@@ -187,6 +187,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL, NABo
      , hasCallStmts_(FALSE)
      , isTrafLoadPrep_(FALSE)
      , flags_(0)
+     , udfList_(wHeap())
 {
   // get current default schema, using NAMETYPE NSK or ANSI rules
   defaultSchema_ = schemaDB_->getDefaultSchema(SchemaDB::APPLY_NAMETYPE_RULES);

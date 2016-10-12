@@ -1675,6 +1675,7 @@ enum DefaultConstants
   DO_RUNTIME_SPACE_OPTIMIZATION,
 
   GEN_SORT_MAX_NUM_BUFFERS,
+  GEN_SORT_TOPN,
 
   SORT_ALGO,            // Sort algorithm choice
   // Not used anymore. OVERRIDE_SYSKEY takes its place.

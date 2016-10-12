@@ -74,9 +74,9 @@ static ExScratchDiskDrive * genScratchDisks(const NAString &def,
   // objects (temporary because we want to make the final list a
   // contiguous array)
   // ---------------------------------------------------------------------
-  LIST(ExScratchDiskDrive *) tempList;
   CollHeap *heap = generator->wHeap();
   Space *space = generator->getSpace();
+  LIST(ExScratchDiskDrive *) tempList(heap);
   struct stat st;
   
  

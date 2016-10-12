@@ -88,13 +88,15 @@ ControlDB * ActiveControlDB()
 				}
 
 ControlDB::ControlDB()
+  :cqdList_(CONTROLDBHEAP),
+   csList_(CONTROLDBHEAP)
 {
   requiredShape_ = NULL;
   requiredShapeWasOnceNonNull_ = FALSE;
   savedRequiredShape_ = NULL;
   outStream_ = NULL;
 
-  ctList_ = new CONTROLDBHEAP LIST(ControlTableOptions *);
+  ctList_ = new CONTROLDBHEAP LIST(ControlTableOptions *)(CONTROLDBHEAP);
   savedCtList_ = NULL;
 }
 
@@ -1373,7 +1375,7 @@ Lng32 ControlDB::packControlTableOptionsToBuffer(char * buffer)
 Lng32 ControlDB::unpackControlTableOptionsFromBuffer(char * buffer)
 {
   if (!ctList_)
-    ctList_ = new CONTROLDBHEAP LIST(ControlTableOptions *);
+    ctList_ = new CONTROLDBHEAP LIST(ControlTableOptions *)(CONTROLDBHEAP);
 
   Lng32 numEntries;
   Lng32 curPos = 0;
@@ -1418,7 +1420,7 @@ Lng32 ControlDB::saveCurrentCTO()
 
   savedCtList_ = ctList_;
 
-  ctList_ = new CONTROLDBHEAP LIST(ControlTableOptions *);
+  ctList_ = new CONTROLDBHEAP LIST(ControlTableOptions *)(CONTROLDBHEAP);
 
   return 0;
 }

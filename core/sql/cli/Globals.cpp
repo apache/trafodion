@@ -107,15 +107,20 @@ CliGlobals::CliGlobals(NABoolean espProcess)
        priorityChanged_(FALSE),
        currRootTcb_(NULL),
        processStats_(NULL),
-       savedPriority_(148) // Set it to some valid priority to start with
+       savedPriority_(148), // Set it to some valid priority to start with
+       qualifyingVolsPerNode_(NULL),
+       cpuNumbers_(NULL),
+       capacities_(NULL),
+       freespaces_(NULL),
+       largestFragments_(NULL),
+       tidList_(NULL),
+       cliSemaphore_(NULL),
+       defaultContext_(NULL),
+       langManC_(NULL),
+       langManJava_(NULL)
 #ifdef SQ_PHANDLE_VERIFIER
        , myVerifier_(-1)
 #endif
-       , tidList_(NULL)
-       , cliSemaphore_(NULL)
-       , defaultContext_(NULL)
-       , langManC_(NULL)
-       , langManJava_(NULL)
 {
   globalsAreInitialized_ = FALSE;
   executorMemory_.setThreadSafe();

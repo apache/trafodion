@@ -513,7 +513,7 @@ Lng32 NodeToCpuVolMapDB::getTotalNumOfVols
 {
   if (nodeName)
   {
-    LIST(NAString *) qualifyingNodeNames;
+    LIST(NAString *) qualifyingNodeNames(CTXTHEAP);
     qualifyingNodeNames.insert(nodeName);
 
     buildVolumeNameCache(qualifyingNodeNames);

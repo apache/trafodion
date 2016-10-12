@@ -79,7 +79,8 @@ LmRoutineJava::LmRoutineJava(
 	      parameters, lm),
     javaParams_(NULL),
     retType_(LmJavaType::JT_NONE),
-    defaultCatSch_(FALSE)
+    defaultCatSch_(FALSE),
+    connectionList_(collHeap())
 {
   JNIEnv *jni = (JNIEnv*)getLM()->jniEnv_;
 

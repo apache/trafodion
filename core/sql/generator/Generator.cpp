@@ -91,9 +91,19 @@
 //////////////////////////////////////////////////
 Generator::Generator(CmpContext* currentCmpContext) :
     currentCmpContext_(currentCmpContext)
- ,  objectUids_(wHeap(), 1)
- ,  objectNames_(wHeap(),0)
- ,  snapshotScanTmpLocation_(NULL)
+    ,objectUids_(wHeap(), 1)
+    ,objectNames_(wHeap(),0)
+    ,snapshotScanTmpLocation_(NULL)
+    ,baseFileDescs_(wHeap())       
+    ,baseStoiList_(wHeap())   
+    ,numOfVpsPerBase_(wHeap())              
+    ,vpFileDescs_(wHeap())       
+    ,lateNameInfoList_(wHeap())  
+    ,genOperSimInfoList_(wHeap())  
+    ,stoiList_(wHeap())  
+    ,insertNodesList_(wHeap())  
+    ,avgVarCharSizeList_(wHeap())  
+    ,trafSimTableInfoList_(wHeap())
 {
   // nothing generated yet.
   genObj = 0;

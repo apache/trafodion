@@ -3687,7 +3687,7 @@ GroupByAgg::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
       //                   to check for dependencies
 
       ValueIdSet baseColumnSet ;
-      LIST(ValueIdSet ) columnsOfThisVEG;
+      LIST(ValueIdSet ) columnsOfThisVEG(STMTHEAP);
       ValueIdSet probableRedundantColSet;
       SET(TableDesc *) * groupByTables = NULL;
 
