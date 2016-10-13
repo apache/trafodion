@@ -812,10 +812,5 @@ sudo cp $LOCAL_TRAF_CONFIG $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 
 #==============================================
-#Call user defined prompting script
-
-$LOCAL_WORKDIR/traf_user_prompt | tee -a $INSTALL_LOG
-
-#==============================================
 
 echo "***INFO: Trafodion configuration setup complete"
