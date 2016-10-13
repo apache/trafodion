@@ -7506,7 +7506,6 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
 
     // Second we make sure the the underlying base table is key sequenced
     // in case of embedded d/u and streams
-    // -- for as long as we don't support entry sequenced tables
     if (boundView->getLeftmostScanNode()) {
       // this is not a "create view V(a) as values(3)" kind of a view
       const NATable * baseTable =
@@ -7757,7 +7756,6 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
   // QSTUFF
   // Second we make sure the the underlying base table is key sequenced in case
   // of embedded d/u and streams
-  // -- for as long as we don't support entry sequenced tables
   if (getGroupAttr()->isStream()){
 
     if (!naTable->getClusteringIndex()->isKeySequenced() ||
@@ -9614,9 +9612,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   }
 
   // Compute total number of columns. Note that there may be some unused
-  // entries in newRecExprArray(), in the following cases:
-  // - An SQL/MP entry sequenced table, entry 0 will not be used as
-  //   the syskey (col 0) is not stored in that type of table
+  // entries in newRecExprArray(), in the following case:
   // - For computed columns that are not stored on disk
   totalColCount = userColListPtr->entries() + sysColList.entries();
   newRecExprArray().resize(totalColCount);
@@ -10004,8 +10000,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       
       // if we need to add the default value, we don't have a new rec expr yet
       if (NOT newRecExprArray().used(i)) {
-        // check for SQL/MP entry sequenced tables omitted above
-
+       
         const char* defaultValueStr = NULL;
         ItemExpr *  defaultValueExpr = NULL;
         NABoolean needToDeallocateColDefaultValueStr = FALSE;
@@ -11094,16 +11089,6 @@ RelExpr *Delete::bindNode(BindWA *bindWA)
     checkConstraints().clear();
   }
 
-  if (getTableDesc()->getClusteringIndex()->getNAFileSet()->isEntrySequenced())
-    {
-      // 4018 DELETE query cannot be used against an Entry-Seq table.
-      *CmpCommon::diags() << DgSqlCode(-4018) <<
-        DgTableName(getTableDesc()->getNATable()->getTableName().
-                      getQualifiedNameAsAnsiString());
-      bindWA->setErrStatus();
-      return this;
-    }
-
   if (NOT getTableDesc()->getVerticalPartitions().isEmpty())
     {
       // 4029 DELETE query cannot be used on a vertically partitioned table.
@@ -12047,21 +12032,6 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
      bindWA->setErrStatus();
      return NULL;
   }
-
-  // By setting the CQD OVERRIDE_SYSKEY to 'ON', the users
-  // are allowed to specify a SYSKEY value on an INSERT.
-  // We achieve this by treating a system column as a user column.
-  // This support is only provided for key sequenced files
-  // for MX and MP tables.
-  if (getOperatorType() == REL_UNARY_INSERT &&
-      naTable->hasSystemColumnUsedAsUserColumn() &&
-      naTable->getClusteringIndex()->isEntrySequenced())
-    {
-      *CmpCommon::diags() << DgSqlCode(-3410) 
-                          << DgTableName(naTable->getTableName().getQualifiedNameAsString());
-      bindWA->setErrStatus();
-      return this;
-    }
   
   Int32 beforeRefcount = naTable->getReferenceCount();
 
