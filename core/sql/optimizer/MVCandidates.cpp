@@ -78,7 +78,7 @@ void MVCandidates::buildFavoritesList (CollHeap* heap)
   {
      // initialize mvqr favorites list
      if (mvqrFavoriteCandidates_ == NULL)
-        mvqrFavoriteCandidates_ = new (heap) LIST(NAString);
+       mvqrFavoriteCandidates_ = new (heap) LIST(NAString)(heap);
 
       // prepare to extract the partitions/tokens from the default string
      char *token;
@@ -643,7 +643,7 @@ void MVCandidates::rewriteResidPreds(QRCandidatePtr candidate,
 
   // Set up the list of element types we want to look for when searching the
   // tree for inputs.
-  NAList<ElementType> inputTypes;
+  NAList<ElementType> inputTypes(heap);
   inputTypes.insert(ET_MVColumn);
   inputTypes.insert(ET_Column);   // obtained by back join
 
@@ -1453,7 +1453,7 @@ void MVCandidates::mapDimOutputs(QRJBBPtr jbbElem,
 {
   QROutputListPtr outputList = jbbElem->getOutputList();
   QROutputPtr output;
-  ElementPtrList elems;
+  ElementPtrList elems(heap);
 
   // Get the initial list of cols/exprs that are directly contained in the output
   // elements. When this list is traversed, if an expression is encountered
@@ -1690,7 +1690,7 @@ void MVCandidates::analyzeCandidate(QRCandidatePtr candidate,
   if (groupBy && groupBy->getResult() == QRElement::NotProvided)
     node = gbNode = getGroupByAggNode(node, groupBy, candidate, heap);
 
-  ElementPtrList vidMapTopElements;
+  ElementPtrList vidMapTopElements(heap);
   RelRoot* root = 
         new(heap) RelRoot(node, REL_ROOT, NULL, NULL, NULL, NULL, heap);
   buildOutputExprs(candidate, root, vidMapTopElements, heap);
@@ -1854,7 +1854,7 @@ void MVCandidates::collectMVs(RelExpr* topNode, CollHeap* heap)
       NAString mvName = gu->getTableName().getQualifiedNameAsString();
 
       if (forbiddenMVs_ == NULL)
-        forbiddenMVs_ = new(heap) LIST(NAString);
+        forbiddenMVs_ = new(heap) LIST(NAString)(heap);
 
       forbiddenMVs_->insert(mvName);
     }

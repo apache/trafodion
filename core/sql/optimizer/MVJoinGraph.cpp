@@ -82,6 +82,7 @@ Lng32 MVJoinTable::markRiConstraints(BindWA *bindWA, MVInfo *mvInfo)
   for (CollIndex i=0; i<refConstraints.entries(); i++)
   {
     RefConstraint *const ref = (RefConstraint *const)(refConstraints[i]);
+
     CMPASSERT(ref->getOperatorType() == ITM_REF_CONSTRAINT);
     // Ignore self referencing RIs.
     if (ref->selfRef())
@@ -101,8 +102,8 @@ Lng32 MVJoinTable::markRiConstraints(BindWA *bindWA, MVInfo *mvInfo)
     Lng32 otherTableIndex = otherTable->getTableIndex();
 
     // The RI must be covered by equal predicates on the same columns
-    LIST(Lng32) myCols;
-    LIST(Lng32) otherCols;
+    LIST(Lng32) myCols(NULL);
+    LIST(Lng32) otherCols(NULL);
     ref->getMyKeyColumns(myCols);
     ref->getOtherTableKeyColumns(bindWA, otherCols);
     CMPASSERT(myCols.entries() == otherCols.entries());

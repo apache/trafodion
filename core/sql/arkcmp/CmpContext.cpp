@@ -139,7 +139,12 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   optPCodeCache_(NULL),                       // just to be safe ...
   CDBList_(NULL),
   allControlCount_(0),
-  optSimulator_(NULL)
+  optSimulator_(NULL),
+  hosts_(h),
+  invocationInfos_(h),
+  planInfos_(h),
+  routineHandles_(h),
+  ddlObjs_(h)
 {
   SetMode(isDynamicSQL() ? STMT_DYNAMIC : STMT_STATIC);
 
@@ -175,7 +180,6 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   diags_ = ComDiagsArea::allocate(heap_);
   SqlParser_Diags = diags_;
 
-  recompLateNameInfoList_ = NULL;
   char* streamName;
   outFstream_ = NULL;
 

@@ -1148,7 +1148,7 @@ FastStatsCountingBloomFilter::FastStatsCountingBloomFilter(NAHeap* heap,
   overflowCountTable_(scbfHashFunc, 1000 /* initial # of elements */,
                       TRUE/*uniqueness enforced*/, heap),
   counters_(m_, (UInt32)bitsNeeded(maxNonOverflowFreq), heap_),
-  keys_(n/* initial # of elements*/, heap)
+  keys_(heap, n/* initial # of elements*/)
 {
 }
 

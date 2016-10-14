@@ -337,17 +337,6 @@ void static buildGrantText(
    const int32_t ownerID,
    std::string & grantText);
 
-static PrivStatus buildColumnSecurityKeys(
-   const int64_t objectUID,
-   const PrivColList & colPrivsList,
-   const int32_t userID, 
-   std::vector<ComSecurityKey *> & secKeySet);
-
-static PrivStatus buildUserSecurityKeys(
-   const std::vector<int32_t> & roleIDs,
-   const int32_t userID, 
-   std::vector <ComSecurityKey *> & secKeySet);
-   
 void static closeColumnList(std::string & columnList);   
 
 static void deleteRowList(std::vector<PrivMgrMDRow *> & rowList);
@@ -356,13 +345,6 @@ static PrivMgrCoreDesc * findColumnEntry(
    NAList<PrivMgrCoreDesc> & colPrivsToGrant,
    const int32_t columnsOrdinal);
    
-static PrivStatus getColRowsForGrantee(
-   const std::vector <PrivMgrMDRow *> &columnRowList,
-   const int32_t granteeID,
-   const std::vector<int32_t> & roleIDs,
-   std::vector<ColumnPrivsMDRow> &rowList,
-   std::vector <ComSecurityKey *>* secKeySet);   
-
 static void getColRowsForGranteeGrantor(
    const std::vector <PrivMgrMDRow *> & columnRowList,
    const int32_t granteeID,
@@ -498,20 +480,31 @@ PrivMgrPrivileges::~PrivMgrPrivileges()
 // *                                                               
 // *****************************************************************************
 PrivStatus PrivMgrPrivileges::buildSecurityKeys(
-   const int32_t granteeID, 
-   const PrivMgrCoreDesc &privs,
-   std::vector <ComSecurityKey *> & secKeySet)
-  
+  const int32_t granteeID,
+  const int32_t roleID,
+  const PrivMgrCoreDesc &privs,
+  std::vector <ComSecurityKey *> & secKeySet)
 {
+  if (privs.isNull())
+    return STATUS_GOOD;
+
   // Only need to generate keys for DML privileges
   for ( size_t i = FIRST_DML_PRIV; i <= LAST_DML_PRIV; i++ )
   {
     if ( privs.getPriv(PrivType(i)))
     {
-      ComSecurityKey *key = new ComSecurityKey(granteeID, 
-                                               objectUID_,
-                                               PrivType(i),
-                                               ComSecurityKey::OBJECT_IS_OBJECT);
+      ComSecurityKey *key = NULL;
+      if (roleID != NA_UserIdDefault && ComUser::isPublicUserID(roleID))
+        key = new ComSecurityKey(granteeID, 
+                                 ComSecurityKey::OBJECT_IS_SPECIAL_ROLE);
+      else if (roleID != NA_UserIdDefault && isRoleID(roleID))
+        key = new ComSecurityKey(granteeID, roleID,
+                                 ComSecurityKey::SUBJECT_IS_USER);
+      else
+        key = new ComSecurityKey(granteeID, 
+                                 objectUID_,
+                                 PrivType(i),
+                                 ComSecurityKey::OBJECT_IS_OBJECT);
       if (key->isValid())
          secKeySet.push_back(key);
       else
@@ -562,93 +555,55 @@ PrivStatus PrivMgrPrivileges::getPrivsOnObject (
   if (generateColumnRowList() == STATUS_ERROR)
     return STATUS_ERROR;
   
-  // Gets all the grantees (userIDs) from the object and column lists
-  // The public auth ID is also included in this list
+  // Gets all the user grantees (userIDs) for the object and column lists
+  // Gets all the role grantees (roleIDs) for the object and column lists
+  // The public auth ID is included in the userIDs list
   std::vector<int32_t> userIDs;
-  if (getDistinctUserIDs(objectRowList_, columnRowList_, userIDs) == STATUS_ERROR)
+  std::vector<int32_t> roleIDs;
+  if (getDistinctIDs(objectRowList_, columnRowList_, userIDs, roleIDs) == STATUS_ERROR)
     return STATUS_ERROR;
 
+  // Gather privilege descriptors for each user
   for (size_t i = 0; i < userIDs.size(); i++)
   {
     int32_t userID = userIDs[i];
 
     PrivMgrDesc privsOfTheUser(userID);
     bool hasManagePrivileges = false;
-    std::vector <int32_t> roleIDs;
+    std::vector <int32_t> emptyRoleIDs;
  
-    // Public is not granted roles, skip to avoid extra I/O
-    if (!ComUser::isPublicUserID(userID))
-    {
-      if (getRoleIDsForUserID(userID,roleIDs) == STATUS_ERROR)
-        return STATUS_ERROR;
-    }
-
-    // getUserPrivs returns object and column privileges summarized across
-    // all grantors. 
-    if (getUserPrivs(objectType, userID, roleIDs, privsOfTheUser,
+    // getUserPrivs returns object and column privileges summarized across all
+    // grantors.  Just get direct grants to the user (role list is empty) 
+    if (getUserPrivs(objectType, userID, emptyRoleIDs, privsOfTheUser,
                      hasManagePrivileges, NULL ) != STATUS_GOOD)
       return STATUS_ERROR;
     
-    privDescs.push_back(privsOfTheUser);
+    if (!privsOfTheUser.isNull())
+      privDescs.push_back(privsOfTheUser);
   }
+  
+  // Attach roles to priv lists
+  for (size_t i = 0; i < roleIDs.size(); i++)
+  {
+    int32_t grantee = roleIDs[i];
+    
+    PrivMgrDesc privsOfTheUser(grantee);
+    bool hasManagePrivileges = false;
+    std::vector <int32_t> emptyRoleIDs;
+    
+    // getUserPrivs returns object and column privileges summarized across
+    // all grantors. 
+    if (getUserPrivs(objectType, grantee, emptyRoleIDs, privsOfTheUser,
+                     hasManagePrivileges, NULL ) != STATUS_GOOD)
+      return STATUS_ERROR;
+    
+    if (!privsOfTheUser.isNull())
+      privDescs.push_back(privsOfTheUser);
+  }
+
   return STATUS_GOOD;
 }
 
-
-// *****************************************************************************
-// * Method: getColPrivsForUser                                
-// *                                                       
-// *    Returns the column privileges a user has been granted on the object.
-// *                                                       
-// *  Parameters:    
-// *                                                                       
-// *  <granteeID> is the unique identifier for the grantee
-// *  <roleIDs> specifies a list of roles granted to the grantee
-// *  <colPrivsList> passes back the list of privs granted
-// *  <colGrantableList> passes back the list the user has WGO for
-// *  <secKeySet> if not NULL, returns a set of keys for user
-// *                                                                     
-// * Returns: PrivStatus                                               
-// *                                                                  
-// * STATUS_GOOD: Privileges were returned
-// *           *: Unable to lookup privileges, see diags.     
-// *                                                               
-// *****************************************************************************
-PrivStatus PrivMgrPrivileges::getColPrivsForUser(
-   const int32_t granteeID,
-   const std::vector<int32_t> & roleIDs,
-   PrivColList & colPrivsList,
-   PrivColList & colGrantableList,
-   std::vector <ComSecurityKey *>* secKeySet) 
-
-{
-
-   std::vector<ColumnPrivsMDRow> rowList;
-
-   // Get the privileges for the columns of the object granted to the grantee
-   PrivStatus privStatus = getColRowsForGrantee(columnRowList_,granteeID,roleIDs,
-                                                rowList,secKeySet);
-                                             
-   if (privStatus == STATUS_ERROR)
-      return privStatus; 
-     
-   for (int32_t i = 0; i < rowList.size();++i)
-   {
-      const int32_t columnOrdinal = rowList[i].columnOrdinal_;
-      colPrivsList[columnOrdinal] = rowList[i].privsBitmap_;
-      colGrantableList[columnOrdinal] = rowList[i].grantableBitmap_;
-      
-      if (secKeySet != NULL)
-      {
-         privStatus = buildColumnSecurityKeys(objectUID_,colPrivsList,
-                                             rowList[i].granteeID_,*secKeySet);
-         if (privStatus != STATUS_GOOD)
-            return privStatus;    
-      }
-   }
-
-   return STATUS_GOOD;
-}  
 
 // *****************************************************************************
 // Function: getColRowsForGranteeOrdinal                                     
@@ -691,22 +646,20 @@ void PrivMgrPrivileges::getColRowsForGranteeOrdinal(
 }
 
 // *****************************************************************************
-// * Method: getDistinctUserIDs                                
+// * Method: getDistinctIDs                                
 // *
-// * Finds all the usersIDs that have been granted at least one privilege on
-// * object.  These userIDs include direct grants: 
-// *   grant <privilege> on <object> to <user>  <== user added to list
-// * Or indirect grants through role:
-// *   grant <privilege> on <object> to <role>
-// *   grant <role> to <user>  <== user added to list
-// * Includes public in the returned list
+// * Finds all the userIDs that have been granted at least one privilege on
+// * object. This list includes the public authorization ID
+// *
+// * Finds all the roleIDs that have been granted at least one privilege on
+// * object
 // *****************************************************************************
-PrivStatus PrivMgrPrivileges::getDistinctUserIDs(
+PrivStatus PrivMgrPrivileges::getDistinctIDs(
   const std::vector <PrivMgrMDRow *> &objectRowList,
   const std::vector <PrivMgrMDRow *> &columnRowList,
-  std::vector<int32_t> &userIDs)
+  std::vector<int32_t> &userIDs,
+  std::vector<int32_t> &roleIDs)
 {
-  std::vector<int32_t> roleIDs;
   int32_t authID;
 
   // DB__ROOTROLE is a special role.  If the current user has been granted 
@@ -715,15 +668,13 @@ PrivStatus PrivMgrPrivileges::getDistinctUserIDs(
   roleIDs.push_back(ROOT_ROLE_ID);
 
   // The direct object grants are stored in memory (objectRowList) so no I/O
-  // Save grants to roles for further processing
   for (size_t i = 0; i < objectRowList.size(); i++)
   {
     ObjectPrivsMDRow &row = static_cast<ObjectPrivsMDRow &> (*objectRowList[i]);
     authID = row.granteeID_;
 
     // insert authID into correct list, if not already present
-    if (ComUser::isPublicUserID(authID) || 
-        CmpSeabaseDDLauth::isUserID(authID)) 
+    if (ComUser::isPublicUserID(authID) || CmpSeabaseDDLauth::isUserID(authID)) 
     {
        if (std::find(userIDs.begin(), userIDs.end(), authID) == userIDs.end())
          userIDs.insert( std::upper_bound( userIDs.begin(), userIDs.end(), authID ), authID);
@@ -756,22 +707,6 @@ PrivStatus PrivMgrPrivileges::getDistinctUserIDs(
     }
   }
 
-  // Get the list of users that have been granted one or more of the roles in
-  // the role list.  A query that retrieves all userIDs granted to the list of
-  // roles (roleIDs) is performed. 
-  if (roleIDs.size() > 0)
-  {
-    std::vector<int32_t> userIDsForRoleIDs;
-    if (getUserIDsForRoleIDs(roleIDs, userIDsForRoleIDs) == STATUS_ERROR)
-      return STATUS_ERROR;
-
-    for (size_t i = 0; i < userIDsForRoleIDs.size(); i++)
-    {
-      authID = userIDsForRoleIDs[i];
-      if (std::find(userIDs.begin(), userIDs.end(), authID) == userIDs.end())
-         userIDs.insert( std::upper_bound( userIDs.begin(), userIDs.end(), authID ), authID);
-    }
-  }
   return STATUS_GOOD;
 }
   
@@ -1229,7 +1164,7 @@ PrivStatus PrivMgrPrivileges::grantColumnPriv(
   }
 
   // Get existing column grants from grantor to the specified grantee.
-  NAList<PrivMgrCoreDesc> grantedColPrivs;
+  NAList<PrivMgrCoreDesc> grantedColPrivs(STMTHEAP);
   getColRowsForGranteeGrantor(columnRowList_,
                               granteeID,grantorID_,
                               grantedColPrivs);
@@ -3028,7 +2963,7 @@ PrivStatus PrivMgrPrivileges::revokeColumnPriv(
   NAList<PrivMgrCoreDesc> colPrivsToRevoke = privsToRevoke.getColumnPrivs();
 
   // Get existing column grants from grantor to the specified grantee.
-  NAList<PrivMgrCoreDesc> grantedColPrivs;
+  NAList<PrivMgrCoreDesc> grantedColPrivs(STMTHEAP);
   getColRowsForGranteeGrantor(columnRowList_,
                               granteeID,grantorID_,
                               grantedColPrivs);
@@ -3270,29 +3205,6 @@ PrivStatus PrivMgrPrivileges::revokeColumnPriv(
       rowRevoked = true;
    } 
    
-   // Send revoked privs to RMS
-   SQL_QIKEY siKeyList[NBR_DML_COL_PRIVS];
-   size_t siIndex = 0;
-
-   for (size_t i = FIRST_DML_COL_PRIV; i <= LAST_DML_COL_PRIV; i++ )
-   {
-      if (!revokedPrivs.test(PrivType(i)))
-         continue;
-         
-      ComSecurityKey secKey(granteeID,objectUID_,PrivType(i),
-                            ComSecurityKey::OBJECT_IS_OBJECT);
-      
-      siKeyList[siIndex].revokeKey.subject = secKey.getSubjectHashValue();
-      siKeyList[siIndex].revokeKey.object = secKey.getObjectHashValue();
-      std::string actionString;
-      secKey.getSecurityKeyTypeAsLit(actionString);
-      strncpy(siKeyList[siIndex].operation,actionString.c_str(),2);
-      siIndex++;                          
-   }      
-   
-   if (siIndex > 0)   
-      SQL_EXEC_SetSecInvalidKeys(siIndex,siKeyList);
-      
    // if (!rowRevoked)
    //   Warning
       
@@ -3377,6 +3289,11 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
   // If only column-level privileges were specified, no problem.  
   if (privsToRevoke.getTablePrivs().isNull())
   {
+    // Send a message to the Trafodion RMS process about the revoke operation.
+    // RMS will contact all master executors and ask that cached privilege 
+    // information be re-calculated
+    retcode = sendSecurityKeysToRMS(granteeID, privsToRevoke);
+
     // report any privs not granted
     if (warnNotAll)
       reportPrivWarnings(origPrivsToRevoke,
@@ -4005,7 +3922,7 @@ void PrivMgrPrivileges::scanColumnPublic(
 // input:
 //    granteeID - the UID of the user losing privileges
 //       the granteeID is stored in the PrivMgrDesc class - extra?
-//    listOfRevokePrivileges - the list of privileges that were revoked
+//    revokedPrivs - the list of privileges that were revoked
 //
 // Returns: PrivStatus                                               
 //                                                                  
@@ -4014,43 +3931,39 @@ void PrivMgrPrivileges::scanColumnPublic(
 // ****************************************************************************
 PrivStatus PrivMgrPrivileges::sendSecurityKeysToRMS(
   const int32_t granteeID, 
-  const PrivMgrDesc &listOfRevokedPrivileges)
+  const PrivMgrDesc &revokedPrivs)
 {
   // Go through the list of table privileges and generate SQL_QIKEYs
-#if 0
-  // Only need to generate keys for SELECT, INSERT, UPDATE, and DELETE
   std::vector<ComSecurityKey *> keyList;
-  PrivMgrCoreDesc privs = listOfRevokedPrivileges.getTablePrivs();
-  for ( size_t i = 0; i < NBR_OF_PRIVS; i++ )
+  int32_t roleID = (ComUser::isPublicUserID(granteeID)) ? PUBLIC_USER : NA_UserIdDefault;
+  const PrivMgrCoreDesc &privs = revokedPrivs.getTablePrivs();
+  PrivStatus privStatus = buildSecurityKeys(granteeID,
+                                            roleID,
+                                            revokedPrivs.getTablePrivs(),
+                                            keyList);
+  if (privStatus != STATUS_GOOD)
   {
-    PrivType pType = PrivType(i);
-    if (pType == SELECT_PRIV || pType == INSERT_PRIV || 
-        pType == UPDATE_PRIV || pType == DELETE_PRIV)
+    for(size_t k = 0; k < keyList.size(); k++)
+     delete keyList[k]; 
+    keyList.clear();
+    return privStatus;
+  }
+
+  for (int i = 0; i < revokedPrivs.getColumnPrivs().entries(); i++)
+  {
+    const NAList<PrivMgrCoreDesc> &columnPrivs = revokedPrivs.getColumnPrivs();
+    privStatus = buildSecurityKeys(granteeID,
+                                   roleID,
+                                   columnPrivs[i],
+                                   keyList);
+    if (privStatus != STATUS_GOOD)
     {
-      if (privs.getPriv(pType))
-      {
-        ComSecurityKey *key = new ComSecurityKey(granteeID, 
-                                                 objectUID_,
-                                                 pType, 
-                                                 ComSecurityKey::OBJECT_IS_OBJECT);
-        if (key->isValid())
-          keyList.push_back(key);
-        else
-        {
-           // Probably should report a different error.  Is an error possible?
-          *pDiags_ << DgSqlCode (-CAT_NOT_AUTHORIZED);
-          return STATUS_ERROR;
-        }
-      }
+      for(size_t k = 0; k < keyList.size(); k++)
+       delete keyList[k]; 
+      keyList.clear();
+      return privStatus;
     }
   }
-#endif
-  std::vector<ComSecurityKey *> keyList;
-  PrivMgrCoreDesc privs = listOfRevokedPrivileges.getTablePrivs();
-  PrivStatus privStatus = buildSecurityKeys(granteeID,privs,keyList);
-  if (privStatus != STATUS_GOOD)
-     return privStatus;
-  // TDB: add column privileges
   
   // Create an array of SQL_QIKEYs
   int32_t numKeys = keyList.size();
@@ -4216,10 +4129,7 @@ PrivStatus PrivMgrPrivileges::getPrivTextForObject(
 // *                                                                       
 // *  <objectUID> identifies the object
 // *  <userID> identifies the user
-// *  <userPrivs> the list of privileges is returned
-// *  <grantablePrivs> the list of grantable privileges is returned
-// *  <colPrivsList> the list of column-level privileges is returned
-// *  <colGrantableList> the list of grantable column-level privileges is returned
+// *  <privsOfTheUser> the list of privileges is returned
 // *                                                                     
 // * Returns: PrivStatus                                               
 // *                                                                  
@@ -4231,10 +4141,7 @@ PrivStatus PrivMgrPrivileges::getPrivsOnObjectForUser(
   const int64_t objectUID,
   ComObjectType objectType,
   const int32_t userID,
-  PrivObjectBitmap &userPrivs,
-  PrivObjectBitmap &grantablePrivs,
-  PrivColList & colPrivsList,
-  PrivColList & colGrantableList,
+  PrivMgrDesc &privsOfTheUser,
   std::vector <ComSecurityKey *>* secKeySet)
 {
   PrivStatus retcode = STATUS_GOOD;
@@ -4253,41 +4160,19 @@ PrivStatus PrivMgrPrivileges::getPrivsOnObjectForUser(
   // generate the list of column-level privileges granted to the object and store in class
   if (generateColumnRowList() == STATUS_ERROR)
     return STATUS_ERROR;
-
-  objectUID_ = objectUID;
-  PrivMgrDesc privsOfTheUser(userID);
-  bool hasManagePrivileges = false;
-  std::vector<int32_t> roleIDs;
   
-  retcode = getRoleIDsForUserID(userID,roleIDs);
-  if (retcode == STATUS_ERROR)
-    return retcode;
+  // generate the list of roles for the user
+  std::vector<int32_t> roleIDs;
+  if (getRoleIDsForUserID(userID,roleIDs) == STATUS_ERROR)
+    return STATUS_ERROR;
 
+  // generate the list of privileges for the user
+  privsOfTheUser.setGrantee(userID);
+  bool hasManagePrivileges = false;
+  
   retcode = getUserPrivs(objectType, userID, roleIDs, privsOfTheUser, 
                          hasManagePrivileges, secKeySet);
-  if (retcode != STATUS_GOOD)
-    return retcode;
- 
-  if (hasManagePrivileges && hasAllDMLPrivs(objectType,privsOfTheUser.getTablePrivs().getPrivBitmap()))
-  {
-    userPrivs = privsOfTheUser.getTablePrivs().getPrivBitmap();
-    grantablePrivs = userPrivs;
-    return STATUS_GOOD; 
-  }
-    
-  userPrivs = privsOfTheUser.getTablePrivs().getPrivBitmap();
-  if (hasManagePrivileges)
-    grantablePrivs = userPrivs;
-  else
-    grantablePrivs = privsOfTheUser.getTablePrivs().getWgoBitmap();
-  
-  // Create the column bitmaps as stored in privsOfTheUser
-  for (int32_t i = 0; i < privsOfTheUser.getColumnPrivs().entries(); i++)
-  {
-    const int32_t columnOrdinal = privsOfTheUser.getColumnPrivs()[i].getColumnOrdinal();
-    colPrivsList[columnOrdinal] = privsOfTheUser.getColumnPrivs()[i].getPrivBitmap();
-    colGrantableList[columnOrdinal] = privsOfTheUser.getColumnPrivs()[i].getWgoBitmap();
-  }  
+
   return retcode;
 }
 
@@ -4406,7 +4291,7 @@ PrivStatus PrivMgrPrivileges::getUserPrivs(
 
    summarizedPrivs = temp;
 
-   // TBD - set all column granted if the table level privilege is set
+
   return retcode;
 }
 
@@ -4443,6 +4328,7 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
 {
   PrivStatus retcode = STATUS_GOOD;
   hasManagePrivileges = false;
+  bool hasPublicGrantee = false;
   
   // Check to see if the granteeID is the system user
   // if so, the system user has all privileges.  Set up appropriately
@@ -4482,15 +4368,20 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
     {
       ObjectPrivsMDRow &row = static_cast<ObjectPrivsMDRow &> (*rowList[i]);
     
-      if (secKeySet != NULL)
-      {
-        PrivMgrCoreDesc privs(row.privsBitmap_,0);
-        retcode = buildSecurityKeys(row.granteeID_,privs,*secKeySet);
-        if (retcode != STATUS_GOOD)
-          return retcode;    
-      }
+      if (ComUser::isPublicUserID(row.granteeID_))
+        hasPublicGrantee = true;
 
       PrivMgrCoreDesc temp (row.privsBitmap_, row.grantableBitmap_);
+      if (secKeySet)
+      {
+        retcode = buildSecurityKeys(granteeID,
+                                    row.granteeID_,
+                                    temp,
+                                    *secKeySet);
+        if (retcode == STATUS_ERROR)
+          return retcode;
+      }
+
       coreTablePrivs.unionOfPrivs(temp);
     }
   
@@ -4511,31 +4402,36 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
   if (retcode == STATUS_ERROR)
     return retcode;
 
-  NAList<PrivMgrCoreDesc> coreColumnPrivs;
+  NAList<PrivMgrCoreDesc> coreColumnPrivs(STMTHEAP);
   for (int32_t i = 0; i < rowList.size();++i)
   {
     ColumnPrivsMDRow &row = static_cast<ColumnPrivsMDRow &> (*rowList[i]);
 
+    if (ComUser::isPublicUserID(row.granteeID_))
+      hasPublicGrantee = true;
+
+
     // See if the ordinal has already been specified
     PrivMgrCoreDesc temp (row.privsBitmap_, row.grantableBitmap_, row.columnOrdinal_);
+    if (secKeySet)
+    {
+      retcode = buildSecurityKeys(granteeID,
+                                  row.granteeID_,
+                                  temp,
+                                  *secKeySet);
+      if (retcode == STATUS_ERROR)
+        return retcode;
+    }
+
     PrivMgrCoreDesc *coreColumnPriv = findColumnEntry(coreColumnPrivs, row.columnOrdinal_);
     if (coreColumnPriv)
       coreColumnPriv->unionOfPrivs(temp);
     else
       coreColumnPrivs.insert(temp);
-    
-    // set up security keys, if required
-    if (secKeySet != NULL)
-    {
-      PrivColList privColList;
-      privColList[row.columnOrdinal_] = row.privsBitmap_;
-      retcode = buildColumnSecurityKeys(objectUID_,privColList, row.granteeID_,*secKeySet);
-      if (retcode != STATUS_GOOD)
-        return retcode;
-    }
   } 
 
   summarizedPrivs.setColumnPrivs(coreColumnPrivs);
+  summarizedPrivs.setHasPublicPriv(hasPublicGrantee);
 
   return STATUS_GOOD;
 }
@@ -4571,26 +4467,6 @@ PrivStatus PrivMgrPrivileges::getRowsForGrantee(
   std::vector <ComSecurityKey *>* secKeySet) 
 {
   PrivStatus retcode = STATUS_GOOD;
-
-#if 0
-  if (isObjectTable)
-  {
-    if (objectRowList_.size() == 0)
-    {
-      PRIVMGR_INTERNAL_ERROR("privilege list for object has not been created");
-      return STATUS_ERROR;
-    }
-  }
-
-  else // isColumnTable
-  {
-    if (columnRowList_.size() == 0)
-    {
-      PRIVMGR_INTERNAL_ERROR("privilege list for columns have not been created");
-      return STATUS_ERROR;
-    }
-  }
-#endif
 
   // create the list of row pointers 
   std::vector<int32_t> authIDs = roleIDs;
@@ -4628,16 +4504,6 @@ PrivStatus PrivMgrPrivileges::getRowsForGrantee(
        rowList.push_back(privRowList[i]);
   }
   
-  if (rowList.size() > 0 && secKeySet != NULL)
-  {
-    retcode = buildUserSecurityKeys(roleIDs,granteeID,*secKeySet);   
-    if (retcode == STATUS_ERROR)
-    {
-      PRIVMGR_INTERNAL_ERROR("Unable to build user security key");
-      return STATUS_ERROR;   
-    }
-  }
-
   return STATUS_GOOD;
 }
 
@@ -5107,7 +4973,7 @@ PrivStatus PrivMgrPrivileges::convertPrivsToDesc(
   //
   // Input may have same column ordinal in multiple entries, but the input is 
   // guaranteed not to contain same ordinal and privType more than once.
-  NAList<PrivMgrCoreDesc> columnCorePrivs;
+  NAList<PrivMgrCoreDesc> columnCorePrivs(STMTHEAP);
   for (size_t i = 0; i < colPrivsList.size(); i++)
   {
     const ColPrivSpec &colPrivSpec = colPrivsList[i];
@@ -5432,132 +5298,6 @@ void static buildGrantText(
 }
 //*************************** End of buildGrantText ****************************
 
-// *****************************************************************************
-// * Function: buildColumnSecurityKeys                                         *
-// *                                                                           *
-// *    Builds security keys for privileges granted on one or more columns of  *
-// * an object.                                                                *
-// *                                                                           *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *                                                                           *
-// *  <objectUID>                  const int64_t                      In       *
-// *    is the unique ID of the object.                                        *
-// *                                                                           *
-// *  <roleIDs>                    const PrivColList & colPrivsList   In       *
-// *    is a list of the column privileges granted on this object to the       *
-// * specified grantee.                                                        *
-// *                                                                           *
-// *  <granteeID>                  const int32_t                      In       *
-// *    is the ID of the user granted the column privilege(s).                 *
-// *                                                                           *
-// *  <secKeySet>                  std::vector <ComSecurityKey *> &   Out      *
-// *    passes back a list of SUBJECT_IS_OBJECT security keys for each of the  *
-// *  privileges granted on the object to the grantee.                         *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// * Returns: PrivStatus                                                       *
-// *                                                                           *
-// * STATUS_GOOD: Security keys were built                                     *
-// *           *: Security keys were not built, see diags.                     *
-// *                                                                           *
-// *****************************************************************************
-static PrivStatus buildColumnSecurityKeys(
-   const int64_t objectUID,
-   const PrivColList & colPrivsList,
-   const int32_t granteeID, 
-   std::vector<ComSecurityKey *> & secKeySet)
-  
-{
-
-// *****************************************************************************
-// *                                                                           *
-// *   Optimizer currently does not support OBJECT_IS_COLUMN, so we combine    *
-// * all column-level privileges to one priv bitmap and create a key for       *
-// * each priv type the grantee has on the object.                             *
-// *                                                                           *
-// *****************************************************************************
-
-PrivColumnBitmap privBitmap;
-
-   for (PrivColIterator columnIterator = colPrivsList.begin();
-        columnIterator != colPrivsList.end(); ++columnIterator)
-      privBitmap |= columnIterator->second;
-      
-   for (size_t i = FIRST_DML_COL_PRIV; i <= LAST_DML_COL_PRIV; i++ )
-   {
-      if (!privBitmap.test(PrivType(i)))
-         continue;
-   
-      ComSecurityKey *key = new ComSecurityKey(granteeID, 
-                                               objectUID,
-                                               PrivType(i),
-                                               ComSecurityKey::OBJECT_IS_OBJECT);
-      if (!key->isValid())
-         return STATUS_ERROR;
-         
-      secKeySet.push_back(key);
-   }
-   
-   return STATUS_GOOD;
-   
-}
-//********************** End of buildColumnSecurityKeys ************************
-
-// *****************************************************************************
-// * Function: buildUserSecurityKeys                                           *
-// *                                                                           *
-// *    Builds security keys for a user and the roles granted to the user.     *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *                                                                           *
-// *  <roleIDs>                    const std::vector<int32_t> &       In       *
-// *    is a reference to a vector of roleIDs that have been granted to the    *
-// *  user.                                                                    *
-// *                                                                           *
-// *                                                                           *
-// *  <userID>                     const int32_t                      In       *
-// *    is the ID of the user granted the role(s).                             *
-// *                                                                           *
-// *  <secKeySet>                  std::vector <ComSecurityKey *> &   Out      *
-// *    passes back a list of SUBJECT_IS_USER security keys for each of the    *
-// *  roles granted to the user.                                               *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// * Returns: PrivStatus                                                       *
-// *                                                                           *
-// * STATUS_GOOD: Security keys were built                                     *
-// *           *: Security keys were not built, see diags.                     *
-// *                                                                           *
-// *****************************************************************************
-static PrivStatus buildUserSecurityKeys(
-   const std::vector<int32_t> & roleIDs,
-   const int32_t userID, 
-   std::vector<ComSecurityKey *> & secKeySet)
-  
-{
-
-   for ( size_t i = 0; i < roleIDs.size(); i++ )
-   {
-      ComSecurityKey *key = new ComSecurityKey(userID,roleIDs[i],
-                                               ComSecurityKey::SUBJECT_IS_USER);
-      if (key->isValid())
-         secKeySet.push_back(key);
-      else
-         return STATUS_ERROR;
-   }
-   
-   return STATUS_GOOD;
-}
-//*********************** End of buildUserSecurityKeys *************************
 
 // *****************************************************************************
 // * Function: closeColumnList                                                 *
@@ -5656,77 +5396,6 @@ static PrivMgrCoreDesc * findColumnEntry(
    return NULL;
 }   
 //************************** End of findColumnEntry ****************************
-
-
-
-// *****************************************************************************
-// * Function: getColRowsForGrantee                                            *
-// *                                                                           *
-// *    Returns the list of column privileges granted for the object that have *
-// *    been granted to the granteeID.                                         *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *  <columnRowList>              std::vector<PrivMgrMDRow *> &      In       *
-// *    is the list of column privileges granted on the object.                *
-// *                                                                           *
-// *  <granteeID>                  const int32_t                      In       *
-// *    is the authID granted the privileges.                                  *
-// *                                                                           *
-// *  <roleIDs>                    const std::vector<int32_t> &       In       *
-// *    is a list of roles granted to the grantee.                             *
-// *                                                                           *
-// *  <rowList>                    std::vector<PrivMgrMDRow *> &      Out      *
-// *    passes back a list rows representing the privileges granted.           *
-// *                                                                           *
-// *  <secKeySet>                  std::vector <ComSecurityKey *> &   Out      *
-// *    passes back a list of SUBJECT_IS_USER security keys for each of the    *
-// *  roles granted to the grantee.                                            *
-// *                                                                           *
-// *****************************************************************************
-// * Returns: PrivStatus                                                       * 
-// *                                                                           *  
-// * STATUS_GOOD: Row returned.                                                *
-// * STATUS_NOTFOUND: No matching rows were found                              *
-// *****************************************************************************
-static PrivStatus getColRowsForGrantee(
-   const std::vector <PrivMgrMDRow *> &columnRowList,
-   const int32_t granteeID,
-   const std::vector<int32_t> & roleIDs,
-   std::vector<ColumnPrivsMDRow> & rowList,
-   std::vector <ComSecurityKey *>* secKeySet)
-    
-{
-
-  std::vector<int32_t> authIDs = roleIDs;
-  authIDs.push_back(granteeID);
-  authIDs.push_back(PUBLIC_USER);
-  std::vector<int32_t>::iterator it;
-
-  std::vector<PrivMgrMDRow *> privRowList;
-
-   // returns the list of rows for the grantee, roles that the grantee has been
-   // granted, and PUBLIC
-   for (size_t i = 0; i < columnRowList.size(); i++)
-   {
-      ColumnPrivsMDRow &row = static_cast<ColumnPrivsMDRow &> (*columnRowList[i]);
-      it = std::find(authIDs.begin(), authIDs.end(), row.granteeID_);
-      if (it != authIDs.end())
-         rowList.push_back(row);
-   }
-
-   if (rowList.empty())
-     return STATUS_NOTFOUND;
-
-   if (secKeySet != NULL)
-      return buildUserSecurityKeys(roleIDs,granteeID,*secKeySet);   
-
-   return STATUS_GOOD;
-   
-}
-//*********************** End of getColRowsForGrantee **************************
 
 
 // *****************************************************************************
@@ -5869,6 +5538,7 @@ static bool isDelimited( const std::string &strToScan)
 //*********************** End of isDelimited ***********************************
    
 
+
 // *****************************************************************************
 // method: reportPrivWarnings
 //
@@ -5939,8 +5609,6 @@ void PrivMgrPrivileges::reportPrivWarnings(
      }
   }
 }
-
-
 
 // *****************************************************************************
 //    ObjectPrivsMDRow methods

@@ -728,7 +728,11 @@ int CZClient::MakeClusterZNodes( void )
                         , rootDir.c_str() );
         }
         rc = RegisterZNode( rootDir.c_str(), NULL, 0 );
-        if (rc) return(rc); // Return the error
+        if ( rc && rc != ZNODEEXISTS )
+        {
+            return(rc); // Return the error
+        }
+        rc = ZOK;
         break;
     default:
         char buf[MON_STRING_BUF_SIZE];
@@ -758,6 +762,11 @@ int CZClient::MakeClusterZNodes( void )
                         , instanceDir.c_str() );
         }
         rc = RegisterZNode( instanceDir.c_str(), NULL, 0 );
+        if ( rc && rc != ZNODEEXISTS )
+        {
+            return(rc); // Return the error
+        }
+        rc = ZOK;
         break;
     default:
         char buf[MON_STRING_BUF_SIZE];
@@ -787,6 +796,11 @@ int CZClient::MakeClusterZNodes( void )
                         , clusterDir.c_str() );
         }
         rc = RegisterZNode( clusterDir.c_str(), NULL, 0 );
+        if ( rc && rc != ZNODEEXISTS )
+        {
+            return(rc); // Return the error
+        }
+        rc = ZOK;
         break;
     default:
         char buf[MON_STRING_BUF_SIZE];

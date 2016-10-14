@@ -243,10 +243,6 @@ NABoolean finalizeAccessOptions(RelExpr *top,
 HostVar *makeHostVar(NAString *hvName, NAString *indName,
 		     NABoolean isDynamic = FALSE);
 
-char * getPrototypeFromLateNameInfoList
-(RecompLateNameInfoList * lniList, NAString hvarName, NAString origPtypeVal);
-
-
 // In the next several procedures, we set up ConstValue's, in whose text
 // we want negative numbers to end up with minus signs but positive numbers
 // without plus signs.  That is,

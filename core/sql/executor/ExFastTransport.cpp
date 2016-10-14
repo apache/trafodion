@@ -482,7 +482,10 @@ Lng32 ExHdfsFastExtractTcb::lobInterfaceCreate()
 
 }
 
-Lng32 ExHdfsFastExtractTcb::lobInterfaceDataModCheck(Int64 &failedModTS)
+Lng32 ExHdfsFastExtractTcb::lobInterfaceDataModCheck
+(Int64 &failedModTS,
+ char * failedLocBuf,
+ Int32 &failedLocBufLen)
 {
   return ExpLOBinterfaceDataModCheck(lobGlob_,
                                      targetLocation_,
@@ -490,7 +493,8 @@ Lng32 ExHdfsFastExtractTcb::lobInterfaceDataModCheck(Int64 &failedModTS)
                                      hdfsPort_,
                                      myTdb().getModTSforDir(),
                                      0,
-                                     failedModTS);
+                                     failedModTS,
+                                     failedLocBuf, failedLocBufLen);
 }
 
 
@@ -721,7 +725,10 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
       snprintf(targetLocation_,999, "%s", myTdb().getTargetName());
 
       Int64 failedModTS = -1;
-      retcode = lobInterfaceDataModCheck(failedModTS);
+      Lng32 failedLocBufLen = 1000;
+      char failedLocBuf[failedLocBufLen];
+      retcode = 
+        lobInterfaceDataModCheck(failedModTS, failedLocBuf, failedLocBufLen);
       if (retcode < 0)
       {
         Lng32 cliError = 0;

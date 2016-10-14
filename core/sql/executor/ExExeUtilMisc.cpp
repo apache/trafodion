@@ -2303,6 +2303,8 @@ short ExExeUtilHiveTruncateTcb::work()
       case DATA_MOD_CHECK_:
       {
         Int64 failedModTS = -1;
+        Lng32 failedLocBufLen = 1000;
+        char failedLocBuf[failedLocBufLen];
         cliRC = ExpLOBinterfaceDataModCheck
           (lobGlob_,
            (htTdb().getPartnLocation() ? 
@@ -2312,7 +2314,8 @@ short ExExeUtilHiveTruncateTcb::work()
            htTdb().getHdfsPort(),
            htTdb().getModTS(),
            0,
-           failedModTS);
+           failedModTS,
+           failedLocBuf, failedLocBufLen);
 
         if (cliRC < 0)
         {

@@ -1873,7 +1873,7 @@ NABoolean VEGPredicate::applyDefaultPred(ColStatDescList & histograms,
   ValueIdSet leftLeafValues;
 
   // could be a VEG predicate with no children
-  CollIndexList statsToMerge;
+  CollIndexList statsToMerge(STMTHEAP);
 
   OperatorTypeEnum op = getOperatorType();
 

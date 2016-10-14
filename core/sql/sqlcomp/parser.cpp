@@ -108,6 +108,8 @@ ULng32 cmmHashFunc_NAString(const NAString& str)
 
 
 Parser::Parser(const CmpContext* cmpContext) 
+  : hasOlapFunctions_(NULL),
+    hasTDFunctions_(NULL)
 {
   cmpContext_ = const_cast<CmpContext*>(cmpContext);
 
@@ -151,7 +153,8 @@ Parser::Parser(const CmpContext* cmpContext)
     {
       defaultColCharset_ = CharInfo::getCharSetEnum(cs);
     }
- 
+  hasOlapFunctions_.setHeap(wHeap_);
+  hasTDFunctions_.setHeap(wHeap_);
   clearHasOlapFunctions();
 
   HQCKey_ = NULL;
@@ -639,7 +642,7 @@ Int32 Parser::parseSQL
   // if (ParScannedTokens == NULL)
     ParScannedTokens = new(wHeap()) ParScannedTokenQueue();
   // if (TheHostVarRoles == NULL)
-    TheHostVarRoles = new(wHeap()) HostVarRole_vec();
+    TheHostVarRoles = new(wHeap()) HostVarRole_vec(wHeap());
 
   // End of setting parser globals
 

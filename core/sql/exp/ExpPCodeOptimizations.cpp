@@ -4414,7 +4414,7 @@ void PCodeCfg::setupForCSE(INSTLIST** cseList)
 
   // Set up cseList to keep track of like PCODE instructions
   for (i=0; i < MAX_NUM_PCODE_INSTS; i++)
-    cseList[i] = new(heap_) INSTLIST;
+    cseList[i] = new(heap_) INSTLIST(heap_);
 
   FOREACH_BLOCK_REV_DFO(block, firstInst, lastInst, index) {
     FOREACH_INST_IN_BLOCK(block, inst) {

@@ -520,6 +520,13 @@ HSColGroupStruct* AddSingleColumn(const Lng32 colNumber, HSColGroupStruct*& grou
     HSColGroupStruct *newGroup = new(STMTHEAP) HSColGroupStruct;
     HSColumnStruct   newColumn = HSColumnStruct(hs_globals->objDef->getColInfo(colNumber));
 
+    bool isOverSized = DFS2REC::isAnyCharacter(newColumn.datatype) &&
+              (newColumn.length > MAX_SUPPORTED_CHAR_LENGTH);
+    if (isOverSized)
+      {
+        hs_globals->hasOversizedColumns = TRUE;
+      }
+
     newColumn.colnum  = colNumber;
     newGroup->colSet.insert((const HSColumnStruct) newColumn);
     newGroup->colCount = 1;
@@ -934,7 +941,7 @@ Lng32 AddKeyGroups()
 
         while (numKeys >= minMCGroupSz)  // Create only MC groups not single cols
           {
-            HSColSet colSet;
+            HSColSet colSet(STMTHEAP);
 
             autoGroup = "(";
             for (j = 0; j < numKeys; j++)
@@ -1010,7 +1017,7 @@ Lng32 AddKeyGroups()
               minMCGroupSz = numKeys - maxMCGroups + 1;
             while (numKeys >= minMCGroupSz)  // MinMCGroupSz is greater than 1.
               {
-              HSColSet colSet;
+		HSColSet colSet(STMTHEAP);
 
               tempColList = "";
               autoGroup = "(";

@@ -5146,7 +5146,7 @@ convDoIt(char * source,
                              diagsArea,
                              tempFlags) == ex_expr::EXPR_OK)
             {
-              *(unsigned short *)target = *(unsigned short *)source;
+              *(UInt8 *)target = *(UInt8 *)source;
             }
           else
             {

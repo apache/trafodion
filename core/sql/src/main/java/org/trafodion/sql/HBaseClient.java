@@ -159,6 +159,17 @@ public class HBaseClient {
 
     
     static public Connection getConnection() throws IOException {
+        // On some distributions, the hbase.client.scanner.timeout.period setting is
+        // too small, resulting in annoying SocketTimeoutExceptions during operations
+        // such as UPDATE STATISTICS on very large tables. On CDH 5.4.5 in particular
+        // we have seen this. Unfortunately Cloudera Manager does not allow us to 
+        // change this setting, and setting it manually in hbase-site.xml doesn't work
+        // because a later Cloudera Manager deploy would just overwrite it. So, we
+        // programmatically check the setting here and insure it is at least 1 hour.
+        long configuredTimeout = config.getLong("hbase.client.scanner.timeout.period",0);
+        if (configuredTimeout < 3600000 /* 1 hour */)
+          config.setLong("hbase.client.scanner.timeout.period",3600000);    
+ 
         if (connection == null) 
               connection = ConnectionFactory.createConnection(config);
         return connection;
@@ -170,7 +181,7 @@ public class HBaseClient {
         if (logger.isDebugEnabled()) logger.debug("HBaseClient.init(" + connectParam1 + ", " + connectParam2
                          + ") called.");
         if (connection != null)
-           connection = ConnectionFactory.createConnection(config); 
+           connection = getConnection(); 
         table = new RMInterface(connection);
         return true;
     }

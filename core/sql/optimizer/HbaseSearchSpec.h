@@ -25,26 +25,29 @@
 
 #include "Collections.h"
 #include "ValueDesc.h"
+#include "NABasicObject.h"
+#include "CmpCommon.h"
 
-struct HbaseSearchSpec
+struct HbaseSearchSpec : public NABasicObject
 {
-    // column names to be retrieved.
-    // Same set to be retrieved for all row id entries in rowIds_
-    // Format of each entry:
-    //         colfam:colname      ==> to retrieve 'colname' from 'colfam'
-    //         colfam:                   ==> to retrieve all columns in that family
-    NAList<NAString> colNames_;
 
-   // row timestamp at which the row is to be retrieved
-    // If -1, latest timestamp
-    Int64 rowTS_;
+ HbaseSearchSpec(NAHeap* h = NULL) 
+   : colNames_(h ? h : STMTHEAP), rowTS_(0) {};
+  void addColumnNames(const ValueIdSet& vs);
+  const NAString getText() const;
 
-    const NAString getText() const;
-
-public:
-    void addColumnNames(const ValueIdSet& vs);
-
-protected:
+  // column names to be retrieved.
+  // Same set to be retrieved for all row id entries in rowIds_
+  // Format of each entry:
+  //         colfam:colname      ==> to retrieve 'colname' from 'colfam'
+  //         colfam:             ==> to retrieve all columns in that family
+  NAList<NAString> colNames_;
+  
+  // row timestamp at which the row is to be retrieved
+  // If -1, latest timestamp
+  Int64 rowTS_;
+  
+ protected:
 };
 
 // This struct is used to specify unique rowids at runtime by
@@ -56,10 +59,12 @@ protected:
 
 struct HbaseUniqueRows : public HbaseSearchSpec
 {
+  HbaseUniqueRows(NAHeap* h = NULL) 
+   : HbaseSearchSpec(h), rowIds_(h ? h : STMTHEAP) {};
+    const NAString getText() const;
+
     // list of rowIds 
     NAList<NAString> rowIds_;
-
-    const NAString getText() const;
 };
 
 
@@ -70,8 +75,6 @@ struct HbaseUniqueRows : public HbaseSearchSpec
 
 struct HbaseRangeRows : public HbaseSearchSpec
 {
-    const NAString getText() const;
-
     // range of rowids .
     // If begin is null, start at beginning.
     // If end is null, stop at end.
@@ -81,15 +84,24 @@ struct HbaseRangeRows : public HbaseSearchSpec
 
     NABoolean beginKeyExclusive_;
     NABoolean endKeyExclusive_;
+
+ HbaseRangeRows(NAHeap* h = NULL) 
+   : HbaseSearchSpec(h) {} ; 
+
+    const NAString getText() const;
 };
 
 struct ListOfUniqueRows : public NAList<HbaseUniqueRows> 
 {
+ ListOfUniqueRows(NAHeap* h = NULL) : 
+  NAList<HbaseUniqueRows>(h ? h : STMTHEAP) {};
   const NAString getText() const;
 };
 
 struct ListOfRangeRows : public NAList<HbaseRangeRows>
 {
+ ListOfRangeRows(NAHeap* h = NULL) : 
+  NAList<HbaseRangeRows>(h ? h : STMTHEAP) {};
   const NAString getText() const;
 };
 

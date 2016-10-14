@@ -780,7 +780,7 @@ public:
   GroupByAgg* pullUpGroupByTransformation(NormWA& NormWARef);
 
   // the other main transformation for subquery unnesting
-  GroupByAgg* moveUpGroupByTransformation(const GroupByAgg* newGrby, 
+  GroupByAgg* moveUpGroupByTransformation(GroupByAgg* newGrby, 
 					  NormWA & normWARef);
 
   // heuristic to unnest subquery if inner table has keyed access.

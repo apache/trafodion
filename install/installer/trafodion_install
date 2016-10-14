@@ -378,6 +378,19 @@ if [ -z "$USER_CONFIG" ]; then
       echo "***ERROR: No security configuration file created." | tee -a $INSTALL_LOG
       exit -1
    fi
+
+  #Call user defined prompting script
+  if [[ -e $LOCAL_WORKDIR/traf_user_prompt ]]; then
+    $LOCAL_WORKDIR/traf_user_prompt | tee -a $INSTALL_LOG
+    $LOCAL_WORKDIR/traf_user_prompt_check | tee -a $INSTALL_LOG
+
+    if [ ${PIPESTATUS[0]} != "0" ]; then
+       echo "***ERROR: Error found while checking config file."
+       echo "***ERROR: Exiting..."
+       exit -1
+    fi
+fi
+
 else
    # copy the user's config file to the default location
    sudo cp $USER_CONFIG $TRAF_CONFIG

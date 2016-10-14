@@ -1414,7 +1414,6 @@ enum DefaultConstants
   //How many blocks do we read ahead for a sequential scan of a file.
   READ_AHEAD_MAX_BLOCKS,
 
-  SIMILARITY_CHECK,
   SYNCDEPTH,
   TABLELOCK,
   TIMEOUT,
@@ -1676,6 +1675,7 @@ enum DefaultConstants
   DO_RUNTIME_SPACE_OPTIMIZATION,
 
   GEN_SORT_MAX_NUM_BUFFERS,
+  GEN_SORT_TOPN,
 
   SORT_ALGO,            // Sort algorithm choice
   // Not used anymore. OVERRIDE_SYSKEY takes its place.
@@ -3858,6 +3858,9 @@ enum DefaultConstants
   // create it.
   TRAF_AUTO_CREATE_SCHEMA,
 
+  // controls if sim check is to be done and where (root or leaf)
+  TRAF_SIMILARITY_CHECK,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
@@ -3940,6 +3943,7 @@ enum DefaultToken {
  DF_KEYINDEXES,
  DF_LASTROW,
  DF_LATEST,
+ DF_LEAF,
  DF_LOADNODUP,
  DF_LOCAL,
  DF_LOCAL_NODE,
@@ -3975,6 +3979,7 @@ enum DefaultToken {
  DF_REPSEL,
  DF_RESOURCES,
  DF_RETURN,
+ DF_ROOT,
  DF_SAMPLE,
  DF_SERIALIZABLE,
  DF_SHORTANSI,

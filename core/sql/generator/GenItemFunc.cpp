@@ -1328,6 +1328,8 @@ short Cast::codeGen(Generator * generator)
 
 short CastType::codeGen(Generator * generator)
 {
+  if (makeNullable_)
+    return Cast::codeGen(generator);
 
   Attributes ** attr;
 

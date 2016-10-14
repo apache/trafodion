@@ -72,7 +72,7 @@ void SQLMXLoggingArea::init()
     else
     {
       sprintf(buffer, "SQLMXLoggingArea::init() pthread_mutex_init() rc=%d", rc);
-      logSQLMXDebugEvent(buffer, (short)rc,__LINE__);
+      abort();
     }
   }
 }
@@ -83,11 +83,11 @@ bool SQLMXLoggingArea::lockMutex()
   int rc = 0;
   if (loggingMutexInitialized_)
   {
-    rc = pthread_mutex_trylock(&loggingMutex_);
+    rc = pthread_mutex_lock(&loggingMutex_);
     if (rc)
     {
-      sprintf(buffer, "SQLMXLoggingArea::lockMutex() pthread_mutex_trylock() rc=%d", rc);
-      logSQLMXDebugEvent(buffer, (short)rc, false);
+      sprintf(buffer, "SQLMXLoggingArea::lockMutex() pthread_mutex_lock() rc=%d", rc);
+      abort();
     }
   }
   return rc ? false : true;
@@ -102,7 +102,7 @@ void SQLMXLoggingArea::unlockMutex()
   if (rc)
   {
     sprintf(buffer, "SQLMXLoggingArea::unlockMutex() pthread_mutex_unlock() rc=%d", rc);
-    logSQLMXDebugEvent(buffer, (short)rc, false);
+    abort();
   }
 }
 

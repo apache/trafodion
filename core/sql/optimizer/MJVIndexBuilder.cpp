@@ -260,7 +260,7 @@ ColIndSetBucketVector::insert (ColIndSet& newSet)
       
       for (size_t j = oldArrSize; j < newArrSize; j++) 
       {
-	empty = new (getHeapPtr()) ColIndSetBucket(j, getHeapPtr());
+	empty = new (getHeapPtr()) ColIndSetBucket(getHeapPtr(),j);
 	insertAt(j, empty);
       }
     }
@@ -329,9 +329,11 @@ ColIndSetMatrix::out()		const
 ColIndSetMatrix::ColIndSetMatrix( const ColIndSetBucketVector& src, 
 				  size_t size, 
 				  CollHeap *heap) :
-    ARRAY(EnumArray*)(size + 1, heap),
-    currIndex_(0) 	, 
-    lastIndex_(size+1) 
+  ARRAY(EnumArray*)(heap, size + 1),
+  currIndex_(0), 
+  lastIndex_(size+1),
+  setsList_(heap),
+  settledList_(heap)
 {
   size += 1;
   size_t i;
@@ -339,7 +341,7 @@ ColIndSetMatrix::ColIndSetMatrix( const ColIndSetBucketVector& src,
 
   for (i = 0; i < size; i++) 
   {
-    currEnumArray = new (heap) EnumArray(size, heap);
+    currEnumArray = new (heap) EnumArray(heap, size);
     CMPASSERT(NULL != currEnumArray);
     for (size_t j = 0; j < size; j++) {
       currEnumArray->insertAt(j, 0);

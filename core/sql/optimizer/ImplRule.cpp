@@ -1761,6 +1761,10 @@ NABoolean SortGroupByRule::topMatch (RelExpr *relExpr,
   if (grbyagg->groupExpr().isEmpty())
     return FALSE;
 
+  // must use sortGroupBy for rollup aggregates
+  if (grbyagg->isRollup())
+    return TRUE;
+
   // Settings to limit Sort Group By application
   Lng32 sortGbySetting = CURRSTMT_OPTDEFAULTS->robustSortGroupBy();
   if (context->getReqdPhysicalProperty()->getMustMatch() == NULL &&
@@ -2066,6 +2070,10 @@ NABoolean HashGroupByRule::topMatch (RelExpr *relExpr,
   // partitioning and location requirements.
   if (NOT grbyagg->rppAreCompatibleWithOperator(
                      context->getReqdPhysicalProperty()))
+    return FALSE;
+
+  // groupby rollup is evaluated using SortGroupBy
+  if (grbyagg->isRollup())
     return FALSE;
 
   return TRUE;
@@ -2561,8 +2569,6 @@ RelExpr * HiveInsertRule::nextSubstitute(RelExpr * before,
                    CIdesc);
 
       // insert is always a row-at-a-time operator
-      // This will for now disable inserts into partitioned, entry-sequenced
-      // tables.
       //CMPASSERT(skey->isUnique());
     }
 
@@ -2655,8 +2661,6 @@ RelExpr * HbaseInsertRule::nextSubstitute(RelExpr * before,
                    CIdesc);
 
       // insert is always a row-at-a-time operator
-      // This will for now disable inserts into partitioned, entry-sequenced
-      // tables.
       //CMPASSERT(skey->isUnique());
     }
 

@@ -2096,7 +2096,8 @@ void SPInfo::moveDiagsIntoStream(ComDiagsArea *diags,
 //***********************************************************************
 
 SPList::SPList(UdrGlobals *udrGlobals)
-  : udrGlobals_(udrGlobals)
+  : udrGlobals_(udrGlobals),
+    spInfoElement_(NULL) // on system heap
 {
   str_cpy_all( &eyeCatcher_[0], EYE_SPLIST + '\0' + '\0', 4 );
   spInfoElement_.resize(0);  // default size

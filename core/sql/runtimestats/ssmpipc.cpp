@@ -158,8 +158,6 @@ void ExSsmpManager::cleanupDeletedSsmpServers()
   IpcServer *ssmp;
   while (deletedSsmps_->getFirst(ssmp))
     {
-      IpcConnection *conn = ssmp->getControlConnection();
-      NADELETE(conn, IpcConnection, conn->collHeap());
       ssmpServerClass_->freeServerProcess(ssmp);
     }
 }
@@ -448,7 +446,7 @@ ULng32 SsmpGlobals::deAllocateServer(char *nodeName, short nodeNameLen,  short c
 
 void SsmpGlobals::cleanupDeletedSscpServers()
 {
-  NAList<IpcServer *> notReadyToCleanup;
+  NAList<IpcServer *> notReadyToCleanup(heap_);
   IpcServer *sscp;
   while (deletedSscps_->getFirst(sscp))
     {
@@ -462,7 +460,6 @@ void SsmpGlobals::cleanupDeletedSscpServers()
         }
       else
         {
-          NADELETE(conn, IpcConnection, conn->collHeap());
           sscpServerClass_->freeServerProcess(sscp);
         }
     }

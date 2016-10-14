@@ -234,9 +234,20 @@ public class SaltedTableUpsertSelectTest extends BaseTest {
             conn.setAutoCommit(false);
     
             String query = null;
+
+            PreparedStatement stmt;
+            // BEGIN TEMP: until jira TRAFODION-2254 is fixed.
+            // Remove the begin/end temp block after that
+            if (tgtTR()) {
+                query = "control query default traf_upsert_mode 'REPLACE'";
+                stmt = conn.prepareStatement(query);
+                stmt.execute();
+            }
+            // END TEMP:
+
             if (tgtPH()||tgtTR()) query = "UPSERT INTO source(pk, col1) VALUES(?,?)";
             else if (tgtSQ()) query = "INSERT INTO source(pk, col1) VALUES(?,?)";
-            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt = conn.prepareStatement(query);
             stmt.setString(1, "1");
             stmt.setInt(2, 1);
             stmt.execute();

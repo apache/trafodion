@@ -1998,7 +1998,7 @@ class HbaseColUsageInfo : public NABasicObject
   
   void insert(QualifiedName *tableName)
   {
-    NASet<NAString> * v = new(heap_) NASet<NAString>;
+    NASet<NAString> * v = new(heap_) NASet<NAString>(heap_);
     usageInfo_->insert(tableName, v);
   }
  

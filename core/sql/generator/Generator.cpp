@@ -91,9 +91,19 @@
 //////////////////////////////////////////////////
 Generator::Generator(CmpContext* currentCmpContext) :
     currentCmpContext_(currentCmpContext)
- ,  objectUids_(wHeap(), 1)
- ,  objectNames_(wHeap(),0)
- ,  snapshotScanTmpLocation_(NULL)
+    ,objectUids_(wHeap(), 1)
+    ,objectNames_(wHeap(),0)
+    ,snapshotScanTmpLocation_(NULL)
+    ,baseFileDescs_(wHeap())       
+    ,baseStoiList_(wHeap())   
+    ,numOfVpsPerBase_(wHeap())              
+    ,vpFileDescs_(wHeap())       
+    ,lateNameInfoList_(wHeap())  
+    ,genOperSimInfoList_(wHeap())  
+    ,stoiList_(wHeap())  
+    ,insertNodesList_(wHeap())  
+    ,avgVarCharSizeList_(wHeap())  
+    ,trafSimTableInfoList_(wHeap())
 {
   // nothing generated yet.
   genObj = 0;
@@ -2889,6 +2899,22 @@ Attributes * Generator::getAttr(ItemExpr * ie)
     return ie->getClause()->getOperand(0);
   else
     return getMapInfo(ie->getValueId())->getAttr();
+}
+
+void Generator::addTrafSimTableInfo(TrafSimilarityTableInfo *newST)
+{
+  for (CollIndex i = 0; i < getTrafSimTableInfoList().entries(); i++)
+    {
+      TrafSimilarityTableInfo *ti = 
+        (TrafSimilarityTableInfo*)getTrafSimTableInfoList()[i];
+      if (*ti == *newST)
+        {
+          // value exists, do not add.
+          return;
+        }
+    }
+
+  getTrafSimTableInfoList().insert(newST);
 }
 
 // Helper method used by caching operators to ensure a statement

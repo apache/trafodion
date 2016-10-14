@@ -4300,7 +4300,7 @@ NAHeap::setAllocTrace()
       traceEnvChecked = true;
     }
   if (TraceAllocSize != 0 && memcmp(name_, "Process Stats Heap", 18))
-    la_ = new LIST(TrafAddrStack *);
+    la_ = new LIST(TrafAddrStack *)(NULL); // on C++ heap
   else
     la_ = NULL;
 }

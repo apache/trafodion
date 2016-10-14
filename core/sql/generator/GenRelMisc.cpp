@@ -678,93 +678,55 @@ short FirstN::codeGen(Generator * generator)
 // RelRoot::genSimilarityInfo()
 //
 /////////////////////////////////////////////////////////
-QuerySimilarityInfo * RelRoot::genSimilarityInfo(Generator *generator)
+TrafQuerySimilarityInfo * RelRoot::genSimilarityInfo(Generator *generator)
 {
   ExpGenerator * exp_gen = generator->getExpGenerator();
 
-  NABoolean disableSimCheck = FALSE;
-  NABoolean internalSimCheck = FALSE;
   NABoolean recompOnTSMismatch = FALSE;
   NABoolean errorOnTSMismatch = FALSE;
-  NABoolean disableAutoRecomp = FALSE;
 
   // generate the similarity info.
   Space * space = generator->getSpace();
-  QuerySimilarityInfo * qsi = new(space) QuerySimilarityInfo(space);
 
-  // check if sim check has been turned off by a CQD.
-  // Even if it is off, sim check on individual tables may be turned
-  // on by a 'control table'.
-  NABoolean simCheckDisabledViaDefault =
-    (CmpCommon::getDefault(SIMILARITY_CHECK) == DF_OFF);
+  NABoolean disableAutoRecomp   = (CmpCommon::getDefault(AUTOMATIC_RECOMPILATION) == DF_OFF);
 
-  disableAutoRecomp =
-    (CmpCommon::getDefault(AUTOMATIC_RECOMPILATION) == DF_OFF);
+  Queue * siList = new(space) Queue(space);
+  TrafQuerySimilarityInfo * qsi = NULL;
 
-  if (generator->aqrEnabled())
-    {
-      qsi->setSimilarityCheckOption(QuerySimilarityInfo::ERROR_ON_TS_MISMATCH);
-      return qsi;
-    }
+  if (generator->getTrafSimTableInfoList().entries() > 0)
+    qsi = new(space) TrafQuerySimilarityInfo(siList);
 
-  // similarity check not done if this compile is for an internal module.
-  // We trust our fellow developers.
-  NABoolean validateTS = TRUE;
-
-  if ( ( generator->currentCmpContext()->internalCompile() == CmpContext::INTERNAL_MODULENAME ) ||
-       ( CmpCommon::statement()->isSMDRecompile() ) ||
-       ( NOT validateTS )
-     )
-    {
-      qsi->setSimilarityCheckOption(QuerySimilarityInfo::INTERNAL_SIM_CHECK);
-      return qsi;
-    }
-
-  // Right now we can handle similarity checks for only
-  // one base table IUD per query. If more than one, disable
-  // similarity check. You can have more than one IUD of base table
-  // for a query like..."insert into t select * from (delete from t)...".
-  NABoolean iudSeen = FALSE;
-  GenOperSimilarityInfo * iudSimInfo = NULL;
-  short iudSimInfoPosition = 0;
   CollIndex i = 0;
 
-  // disable similarity check if a view was referenced in the query.
-  if (getViewStoiList().entries() > 0)
+  for (CollIndex i = 0; i < generator->getTrafSimTableInfoList().entries(); i++)
     {
-      recompOnTSMismatch = TRUE;
+      TrafSimilarityTableInfo * genTsi =
+	(TrafSimilarityTableInfo *)(generator->getTrafSimTableInfoList()[i]);
+      
+      char * genTablename =
+        space->allocateAndCopyToAlignedSpace(genTsi->tableName(), str_len(genTsi->tableName()), 0);
+      char * genRootDir = 
+        space->allocateAndCopyToAlignedSpace(genTsi->hdfsRootDir(), str_len(genTsi->hdfsRootDir()), 0);
+ 
+      char * genHdfsHostName =
+        space->allocateAndCopyToAlignedSpace(genTsi->hdfsHostName(), str_len(genTsi->hdfsHostName()), 0);
+        
+      TrafSimilarityTableInfo * si = 
+        new(space) TrafSimilarityTableInfo(genTablename,   
+                                           genTsi->isHive(),
+                                           genRootDir,
+                                           genTsi->modTS(),
+                                           genTsi->numPartnLevels(),
+                                           NULL,
+                                           genHdfsHostName,
+                                           genTsi->hdfsPort());
+      qsi->siList()->insert(si);
     }
 
-  // if this plan is using ESP parallelism or contains pushed down plan fragments,
-  // disable sim check.
-  FragmentDir *compFragDir = generator->getFragmentDir();
-  if ((NOT recompOnTSMismatch) &&
-      (compFragDir->entries() > 0))
+  if (qsi)
     {
-      for (CollIndex i = 0; i < compFragDir->entries(); i++)
-	{
-	  if (compFragDir->getType(i) == FragmentDir::ESP )
-	    recompOnTSMismatch = TRUE;
-
-          // Recompilatio the query (currently) with a pushed-down plan
-          // if the timestamps on the objects associated with the query
-          // change. For example, a moved partition will have a different
-          // time-stamp and because we do not store the node map with
-          // the plan, we should recompile the query.
-	  if ( compFragDir->getType(i) == FragmentDir::DP2 AND
-	       compFragDir->getContainsPushedDownOperators(i) == TRUE )
-	    recompOnTSMismatch = TRUE;
-	}
+      qsi->setDisableAutoRecomp(disableAutoRecomp);
     }
-
-  if ((recompOnTSMismatch) && (!disableAutoRecomp))
-    {
-         qsi->setSimilarityCheckOption(QuerySimilarityInfo::RECOMP_ON_TS_MISMATCH);
-      return qsi;
-    }
-
-  if (generator->genOperSimInfoList().entries() > 0)
-    internalSimCheck = TRUE;
 
   return qsi;
 }
@@ -1951,12 +1913,10 @@ short RelRoot::codeGen(Generator * generator)
   lnil->setViewPresent(viewPresent);
 #pragma warn(1506)  // warning elimination
 
-#pragma nowarn(1506)   // warning elimination
   lnil->setVariablePresent(variablePresent);
-#pragma warn(1506)  // warning elimination
 
   // Generate info to do similarity check.
-  QuerySimilarityInfo * qsi = genSimilarityInfo(generator);
+  TrafQuerySimilarityInfo * qsi = genSimilarityInfo(generator);
 
   // generate the executor fragment directory <exFragDir> (list of all
   // fragments of the plan that are executed locally or are downloaded
@@ -3224,7 +3184,8 @@ short Sort::generateTdb(Generator * generator,
 
   sort_tdb->setSortFromTop(sortFromTop());
   sort_tdb->setOverflowMode(generator->getOverflowMode());
-
+  sort_tdb->setTopNSort(CmpCommon::getDefault(GEN_SORT_TOPN) == DF_ON);
+  
   if (generator->getUserSidetreeInsert())
     sort_tdb->setUserSidetreeInsert(TRUE);
 

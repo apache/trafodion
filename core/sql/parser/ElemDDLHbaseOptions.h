@@ -49,7 +49,8 @@ class ElemDDLHbaseOptions : public ElemDDLNode
 
   ElemDDLHbaseOptions(NAList<HbaseCreateOption*> * hbaseOptions,
 		      CollHeap * heap)
-   : ElemDDLNode(ELM_HBASE_OPTIONS_ELEM)
+    : ElemDDLNode(ELM_HBASE_OPTIONS_ELEM),
+    hbaseOptions_(heap)
     {
       for (CollIndex i = 0; i < hbaseOptions->entries(); i++)
 	{

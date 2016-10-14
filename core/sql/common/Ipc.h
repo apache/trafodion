@@ -572,7 +572,9 @@ public:
 
   static const char *getConnectionStateString(IpcConnectionState s);
 
-  IpcConnection() : fileNumForIOCompletion_(InvalidGuaFileNumber) {}
+ IpcConnection() 
+   : fileNumForIOCompletion_(InvalidGuaFileNumber),
+    recvStreams_(NULL) {} // recvStream on C++ heap
 
   virtual ~IpcConnection();
 
@@ -2975,6 +2977,7 @@ public:
 		 IPC_ALLOC_DONT_CARE,
                  short version = COM_VERS_MXV,
                  char *nodeName = NULL);
+  ~IpcServerClass();
 
   inline IpcEnvironment *getEnv() const           { return environment_; }
 
@@ -3000,7 +3003,6 @@ public:
   char *getProcessName(const char *nodeName, short nodeNameLen, short cpuNum, char *processName);
   NABoolean parallelOpens() { return parallelOpens_; }
   NowaitedEspServer nowaitedEspServer_;
-
 private:
 
   // server type

@@ -64,7 +64,8 @@ public:
   TableNameMap(const CorrName& tableName,
                ColumnDescList *columnList,
                CollHeap * h=0)
-  : tableName_(tableName,h), columnList_(columnList) {}
+    : tableName_(tableName,h), 
+    columnList_(columnList), hbaseColNameSet_(h){}
 
   // copy ctor
   TableNameMap (const TableNameMap &, CollHeap * h=0) ; // not written

@@ -89,7 +89,7 @@ CLISemaphore globalSemaphore ;
 #include "SqlStats.h"
 #include "ComExeTrace.h"
 #include "Context.h"
-
+#include "QRLogger.h"
 
 #ifndef CLI_PRIV_SRL
 #pragma warning (disable : 4273)   //warning elimination
@@ -892,6 +892,7 @@ short sqInit()
     try
     {
       short retcode = my_mpi_setup(&largc, &largv);
+      QRLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config");
     }
     catch (...)
     {
@@ -7483,57 +7484,6 @@ Lng32 SQL_EXEC_LOBddlInterface
   return retcode;
 }
 
-#ifdef __ignore
-Lng32 SQL_EXEC_LOBloader2sqlInterface
-(
- /*IN*/     char * lobHandle,
- /*IN*/     Lng32  lobHandleLen,
- /*IN*/     char * lobInfo,
- /*IN*/     Lng32  lobInfoLen,
- /*IN*/     LOBcliQueryType qType,
- /*INOUT*/  char * dataLoc, /* IN: for load, OUT: for extract */
- /*INOUT*/  Int64 &dataLen,   /* length of data. 0 indicates EOD */
- /*INOUT*/  void* *cliInterface  /* INOUT: if returned, save it and 
-           				   pass it back in on the next call */
- )
-{
-  Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
-  CLI_NONPRIV_PROLOGUE(retcode);
-  try
-    {
-      tmpSemaphore = getCliSemaphore(threadContext);
-      tmpSemaphore->get();
-      threadContext->incrNumOfCliCalls();
-      retcode = SQLCLI_LOBloader2sqlInterface(GetCliGlobals(),
-					      lobHandle,
-					      lobHandleLen,
-					      lobInfo,
-					      lobInfoLen,
-					      qType,
-					      dataLoc,
-					      dataLen,
-					      cliInterface);
-    }
-  catch(...)
-    {
-      retcode = -CLI_INTERNAL_ERROR;
-#if defined(_THROW_EXCEPTIONS)
-      if (cliWillThrow())
-	{
-          threadContext->decrNumOfCliCalls();
-	  tmpSemaphore->release();
-	  throw;
-	}
-#endif
-    }
-  threadContext->decrNumOfCliCalls();
-  tmpSemaphore->release();
-  RecordError(NULL, retcode);
-  return retcode;
-}
-#endif
 Int32 SQL_EXEC_SWITCH_TO_COMPILER_TYPE
 (
  /*IN*/     Int32 cmpCntxtType

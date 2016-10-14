@@ -206,10 +206,6 @@ Int32 NAFileSet::getSysKeyPosition() const
 
 NABoolean NAFileSet::hasSyskey() const
 {
-  // entry-sequenced files always have a (32 bit) syskey
-  if (isEntrySequenced())
-    return TRUE;
-
   // check the NAColumn class of the key column
   // ++MV - 7/3/01 bug fix
 
@@ -233,10 +229,6 @@ NABoolean NAFileSet::hasSyskey() const
 
 NABoolean NAFileSet::hasOnlySyskey() const
 {
-  // entry-sequenced files always have a (32 bit) syskey
-  if (isEntrySequenced())
-    return TRUE;
-
   // Syskey is the only clustering key
   return ((indexKeyColumns_.entries() == 1) &&
           (indexKeyColumns_[0]->isSyskeyColumn()));

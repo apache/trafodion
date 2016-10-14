@@ -804,6 +804,14 @@ ex_expr::exp_return_type ex_comp_clause::pCodeGenerate(Space *space, UInt32 f) {
   Attributes *op1 = attrs[1];
   Attributes *op2 = attrs[2];
 
+  // if this comp clause need to return the column num which caused the
+  // comparison to fail, then do not generate pcode. That functionality is
+  // not yet supported in pcode.
+  // This is used for rollup group computation which need to know the particular
+  // grouping column that caused the comparison to fail.
+  if (getRollupColumnNum() >= 0)
+    return ex_clause::pCodeGenerate(space, f);
+
   // Generate the standard clause->eval PCode for cases that
   // are not handled with more fundamental PCode operations.
   //

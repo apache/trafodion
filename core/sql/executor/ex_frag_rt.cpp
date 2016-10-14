@@ -1914,37 +1914,6 @@ void ExRtFragTable::addFixupRequestToMessage(ExMasterEspMessage *msg,
   // add late name info, if present
   if (getGlobals()->resolvedNameList())
     {
-      if (fragDir_->getPlanVersion() < COM_VERS_R2_3)
-	{
-	  // Translate the resolved name list to the older version 
-	  ResolvedNameListPre1800 *ornl = 
-	    (ResolvedNameListPre1800 *)
-	    (new(ipcHeap) 
-	     char[sizeof(ResolvedNameListPre1800) +
-		  ((getGlobals()->resolvedNameList()->numEntries() > 0 ) ?
-		   ((getGlobals()->resolvedNameList()->
-		     numEntries() - 1) * sizeof(ResolvedName)):
-		   0)
-                 ]
-	    );
-
-	  
-	  ornl->translateFromNewVersion(getGlobals()->resolvedNameList());
-	  ExResolvedNameObj *rno = 
-	    new(ipcHeap) ExResolvedNameObj((ResolvedNameList *)ornl,ipcHeap);
-	  rno->setVersion(Pre1800ResolvedNameObjVersion);
-	  *msg << *rno;
-	  rno->decrRefCount();	  
-	}
-      else
-	{
-	  ExResolvedNameObj *rno = 
-	    new(ipcHeap) ExResolvedNameObj(getGlobals()->resolvedNameList(),
-				       ipcHeap);
-	  *msg << *rno;
-	  rno->decrRefCount();
-	}
-      
     }
 
   // add resource info if needed
@@ -1956,8 +1925,6 @@ void ExRtFragTable::addFixupRequestToMessage(ExMasterEspMessage *msg,
       *msg << *ri;
       ri->decrRefCount();
     }
-
-  
 
   // add timeout-data if needed
   if ( * getGlobals()->getTimeoutData() )
@@ -2824,34 +2791,10 @@ ExEspManager::ExEspManager(IpcEnvironment *env, CliGlobals *cliGlobals)
 ExEspManager::~ExEspManager()
 {
   if (espServerClass_)
-    NADELETEBASIC(espServerClass_, env_->getHeap());
-
+    NADELETE(espServerClass_, IpcServerClass, env_->getHeap());
+  
   if (espCache_)
-    {
-      // delete/kill all esps in cache
-      ExEspCacheKey *key = NULL;
-      NAList<ExEspDbEntry *> *espList = NULL;
-      NAHashDictionaryIterator<ExEspCacheKey, NAList<ExEspDbEntry *> > iter(*espCache_);
-      for (CollIndex i = 0; i < iter.entries(); i++)
-        {
-          iter.getNext(key, espList);
-          for (CollIndex j = FIRST_COLL_INDEX; j < espList->getUsedLength(); j++)
-            {
-              if (espList->getUsage(j) == UNUSED_COLL_ENTRY)
-                continue;
-
-              ExEspDbEntry *entry = espList->usedEntry(j);
-              if (entry && 
-                  entry->getIpcServer())
-                entry->getIpcServer()->logEspRelease(__FILE__, __LINE__);
-              delete entry;
-            }
-        }
-
-      // delete all cache key and bucket objects
-      espCache_->clear(TRUE);
-      NADELETEBASIC(espCache_, env_->getHeap());
-    }
+    NADELETE(espCache_, NAHashDictionary, env_->getHeap());
 
   if (traceRef_)
     {

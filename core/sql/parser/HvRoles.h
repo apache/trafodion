@@ -67,7 +67,7 @@ class HostVarRole_vec : public  ARRAY(HostVarRole)
 friend ostream& operator<<(ostream&, HostVarRole_vec &);
 public:
 
-   HostVarRole_vec() { };
+   HostVarRole_vec(NAHeap* heap):ARRAY(HostVarRole)(heap) {};
 
    void setFirstUnassignedTo(HostVarRole theRole);
    void setLastUnassignedTo(HostVarRole theRole);

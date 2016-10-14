@@ -351,8 +351,6 @@ public :
   CursorSelectColumns staticCursors_;
   CollIndex saveRetrievedCols_;
 
-  void * &recompLateNameInfoList() { return recompLateNameInfoList_; };
-
   // get/set storage for SQLMX_REGRESS environment variable
   Int32 getSqlmxRegress() const { return sqlmxRegress_; }
   void setSqlmxRegress(Int32 regressEnvVar) { sqlmxRegress_ = regressEnvVar; }
@@ -534,12 +532,6 @@ private:
   // Examples of internal mdf files are those that catman uses, or rfork, etc.
   // See methods isInternalMdf and isInternalModName in arkcmp/StaticCompiler.C.
   InternalCompileEnum internalCompile_;
-
-  // pointer to class executor/ex_latebind.h/RecompLateNameInfoList.
-  // Used to get to the actual name of a host/env var at recomp time
-  // that was originally specified
-  // as a PROTOTYPE value for table name at compile time.
-  void * recompLateNameInfoList_;
 
   // Node and Disk autonomy must distinguish run-time compiles.
   NABoolean isRuntimeCompile_;

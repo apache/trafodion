@@ -2807,8 +2807,8 @@ void HbaseSearchKey::makeHBaseSearchKeys(
 {
   // Range Specs for key columns, ordered by key position, plus the
   // normalized item expressions generated from the RangeSpecs
-  ARRAY(ItemExpr *) rangeSpecsForKeyCols;
-  ARRAY(ItemExprList *) rangeBackbonesForKeyCols;
+  ARRAY(ItemExpr *) rangeSpecsForKeyCols(HEAP);
+  ARRAY(ItemExprList *) rangeBackbonesForKeyCols(HEAP);
   ValueIdSet tempExternalInputs; // don't use non-consts as inputs
 
   producedKeys.clear();
@@ -2876,7 +2876,7 @@ void HbaseSearchKey::makeHBaseSearchKeys(
       // Step 2: check how many key columns we should use to expand RangeSpecs
 
       // List of ValueIdSets, one for each HbaseSearchKey to be generated
-      LIST(ValueIdSet) predListForSearchKeys;
+      LIST(ValueIdSet) predListForSearchKeys(STMTHEAP);
 
       // remember range specs and their associated individual preds
       ValueIdSet rangeSpecs, rangePreds, allKeyPreds;

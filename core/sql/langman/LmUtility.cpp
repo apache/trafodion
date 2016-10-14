@@ -108,7 +108,7 @@ void lmUtilitySetTransactionAttrs(Int32 transAttrs) { transactionAttrs = transAt
 // the retrieved connection references when they are no longer needed.
 // 
 
-NAList<jobject> lmUtilityConnList;
+NAList<jobject> lmUtilityConnList(NULL);
 
 
 // If there are any Java connection objects present in 

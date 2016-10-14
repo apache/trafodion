@@ -2546,7 +2546,13 @@ class CastType : public Cast
 {
 public:
   CastType(ItemExpr *val1Ptr, const NAType *type)
-    : Cast(val1Ptr, type, ITM_CAST_TYPE)
+       : Cast(val1Ptr, type, ITM_CAST_TYPE),
+         makeNullable_(FALSE)
+  {}
+
+  CastType(ItemExpr *val1Ptr, NABoolean makeNullable)
+       : Cast(val1Ptr, NULL, ITM_CAST_TYPE),
+         makeNullable_(makeNullable)
   {}
 
   // copyTopNode method
@@ -2558,6 +2564,9 @@ public:
 
   virtual short codeGen(Generator*);
 
+private:
+  // if set, then cast child to nullable type
+  NABoolean makeNullable_;
 }; // CastType
 
 class Narrow : public Cast

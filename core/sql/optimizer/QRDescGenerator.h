@@ -218,7 +218,8 @@ public:
       vegsUsedHash_(hashValueId, 77, TRUE, heap),
       exprsUsedHash_(hashString, 77, TRUE, heap),
       colTblIdHash_(hashString, 77, TRUE, heap),
-      isDumpMvMode_(FALSE)
+      isDumpMvMode_(FALSE),
+      allEqualitySets_(heap)
     {
       maxExprSize_   = CmpCommon::getDefaultLong(MVQR_MAX_EXPR_SIZE);
       maxExprDepth_  = CmpCommon::getDefaultLong(MVQR_MAX_EXPR_DEPTH);
@@ -482,7 +483,7 @@ public:
    */
   void createEqualitySets(ValueIdSet preds)
     {
-      NAList<EqualitySet*> equalitySets;
+      NAList<EqualitySet*> equalitySets(mvqrHeap_);
       formEqualitySets(preds, equalitySets);
     }
 

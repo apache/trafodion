@@ -582,9 +582,9 @@ ItemExpr * Scan::applyAssociativityAndCommutativity(
   //   fashion because the code does not assign to 'newRightNode' until *after*
   //   all recursion is finished.
   //
-  ARRAY( ItemExpr * ) IEarray(10) ; //Initially 10 elements (no particular reason to choose 10)
-  ARRAY( Int16 )      state(10)   ; //These ARRAYs will grow automatically as needed.)
-  ARRAY( ItemExpr *) leftNodeArray(10, heap);
+  ARRAY( ItemExpr * ) IEarray(heap, 10) ; //Initially 10 elements (no particular reason to choose 10)
+  ARRAY( Int16 )      state(heap, 10)   ; //These ARRAYs will grow automatically as needed.)
+  ARRAY( ItemExpr *) leftNodeArray(heap, 10);
 
   Int32   currIdx = 0;
   IEarray.insertAt( currIdx, origPtrToOldTree );
@@ -1142,7 +1142,10 @@ NABoolean RelExpr::getMoreOutputsIfPossible(ValueIdSet& outputsNeeded)
       maxOutputs,
       outputsNeeded);
       child(i)->getGroupAttr()->addCharacteristicOutputs(outputsToAdd);
-
+      if (getOperatorType() == REL_MAP_VALUEIDS) 
+      {
+	((MapValueIds *)this)->addSameMapEntries(outputsToAdd);
+      }
      // child(i).getGroupAttr()->computeCharacteristicIO
 //	                                            (emptySet,  // no additional inputs
   //                                                   outputsNeeded);
@@ -3952,15 +3955,14 @@ RelExpr* GroupByAgg::nullPreserveMyExprs( NormWA& normWARef)
 //             an aggregate from the original groupBy.
 
 -------------------------------------------------------------------------------*/
-GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby, 
+GroupByAgg* Join::moveUpGroupByTransformation(GroupByAgg* topGrby, 
                                               NormWA & normWARef)
 {
   GroupByAgg *moveUpGrby;
   ValueIdSet emptySet ;
-  GroupByAgg *movedUpGrbyTail = (GroupByAgg*) topGrby;
+  GroupByAgg *movedUpGrbyTail = topGrby;
   RelExpr * joinRightChild = child(1)->castToRelExpr();
   CollHeap *stmtHeap = CmpCommon::statementHeap() ;
-
 
   MapValueIds *moveUpMap = NULL;
   while ((joinRightChild->getOperatorType() == REL_GROUPBY) &&
@@ -4020,9 +4022,7 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
 
     if (NOT safeToMoveGrby )
     { 
-        // The join contains aggregates
-        // Skip such this subquery .
-      
+      // The join contains aggregates, skip this subquery.
        return NULL ;
     }
     child(1) = joinRightChild ;
@@ -4070,7 +4070,7 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
 
     // Sometimes the moveUpMap ends up being empty after being moved
     // on top of a Join. Eliminate it if we don't need it, otherwise 
-    // it will impeeded output flow.
+    // it will impede output flow.
 
     if ( moveUpMap != NULL && 
          moveUpMap->getGroupAttr()->getCharacteristicOutputs().isEmpty()) 
@@ -4135,7 +4135,7 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
 // sufficient outputs cannot be produced to compute left side's 
 // unique columns
 //
-// Expects: Child(0) to be a Join.
+// Expects: Child(0) to be a Join or a subQ groupby.
 // Sideffects: recomputed inputs and outputs of the join child's children
 //             recomputed inputs and outputs of the join.
 //             pushes any of the groupBy's predicates down that can go down.
@@ -4591,18 +4591,18 @@ RelExpr * Join::semanticQueryOptimizeNode(NormWA & normWARef)
     // two or more levels of nesting. If moveUpGroupBy is not needed
     // movedUpGroupByTail will be set to newGrby.
     RelExpr* gbChild = newGrby->child(0)->castToRelExpr();
-    NABoolean nestedAggInSubQ = FALSE;
     Join * newJoin = NULL;
+    GroupByAgg * newJoinParent = newGrby;
     if (gbChild->getOperatorType() == REL_GROUPBY) 
     {
       newJoin = (Join*) gbChild->child(0)->castToRelExpr();
-      nestedAggInSubQ = TRUE;
+      newJoinParent = (GroupByAgg*) gbChild;
     }
     else
       newJoin = (Join*) gbChild;
 
     GroupByAgg* movedUpGrbyTail = 
-      newJoin->moveUpGroupByTransformation(newGrby, normWARef);
+      newJoin->moveUpGroupByTransformation(newJoinParent, normWARef);
 
     NABoolean hasNoErrors;
     if (movedUpGrbyTail != NULL) 
@@ -4629,10 +4629,7 @@ RelExpr * Join::semanticQueryOptimizeNode(NormWA & normWARef)
     {
       newJoin = newJoin->leftLinearizeJoinTree(normWARef, 
                                                UNNESTING); // Unnesting
-      if (nestedAggInSubQ)
-	movedUpGrbyTail->child(0)->child(0) = newJoin  ;
-      else
-	movedUpGrbyTail->child(0) = newJoin  ;
+      movedUpGrbyTail->child(0) = newJoin  ;
     }
 
       //synthesize logical props for the new nodes.
@@ -5216,6 +5213,12 @@ void GroupByAgg::rewriteNode(NormWA & normWARef)
     {
     }
   // ---------------------------------------------------------------------
+  // Rewrite the expressions that are rollup grouping expressions
+  // ---------------------------------------------------------------------
+  if (rollupGroupExprList().normalizeNode(normWARef))
+    {
+    }
+  // ---------------------------------------------------------------------
   // Rewrite the expressions that are aggregate expressions
   // ---------------------------------------------------------------------
   if (aggregateExpr().normalizeNode(normWARef))
@@ -5344,10 +5347,26 @@ RelExpr * GroupByAgg::normalizeNode(NormWA & normWARef)
   // Check if any of the HAVING clause predicates can be pushed down
   // (only when a Group By list is given).
   // ---------------------------------------------------------------------
-  pushdownCoveredExpr(getGroupAttr()->getCharacteristicOutputs(),
-                      getGroupAttr()->getCharacteristicInputs(),
-                      selectionPred()
-                      );
+  
+  // if this is a rollup groupby, then do not pushdown having pred to
+  // child node. If pushdown is done, then it might incorrectly process rows that
+  // are generated during rollup groupby processing.
+  // For ex:
+  //  insert into t values (1);
+  //  select a from t group by rollup(a) having a is not null;
+  //  If 'having' pred is pushdown to scan node as a where pred, 
+  //  then SortGroupBy will return all rollup groups generated 
+  //  and represented as null. They will not be filtered out which
+  //  they would if having pred is applied after rollup group materialization.
+  //  Maybe later we can optimize so this pushdown is done if possible,
+  //  for ex, if there are no 'is null/not null' having preds on grouping cols.
+  if (NOT isRollup())
+    {
+      pushdownCoveredExpr(getGroupAttr()->getCharacteristicOutputs(),
+                          getGroupAttr()->getCharacteristicInputs(),
+                          selectionPred()
+                          );
+    }
 
   NABoolean needsNewVEGRegion = FALSE;
 

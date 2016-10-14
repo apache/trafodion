@@ -1643,6 +1643,7 @@ void HSColGroupStruct::freeISMemory(NABoolean freeStrData, NABoolean freeMCData)
 HSColumnStruct::HSColumnStruct(const HSColumnStruct &src, NAMemory *h)
   {
     colname         = new (h) NAString(src.colname->data(), h);
+    externalColumnName = new (h) NAString(src.externalColumnName->data(), h);
     colnum          = src.colnum;
     position        = src.position;
     datatype        = src.datatype;
@@ -1663,6 +1664,11 @@ HSColumnStruct::~HSColumnStruct()
         delete colname;
         colname = NULL;
       }
+    if (externalColumnName != NULL)
+      {
+        delete externalColumnName;
+        externalColumnName = NULL;
+      }
   }
 
 // Assignment operator
@@ -1677,6 +1683,7 @@ HSColumnStruct& HSColumnStruct::operator=(const HSColumnStruct& rhs)
     // already deleted; colname is on the STMTHEAP and will be destructed at the
     // end of the statement. [SOL 10-070822-6995]
     colname         = new (STMTHEAP) NAString(rhs.colname->data(), STMTHEAP);
+    externalColumnName = new (STMTHEAP) NAString(rhs.externalColumnName->data(), STMTHEAP);
     colnum          = rhs.colnum;
     position        = rhs.position;
     datatype        = rhs.datatype;
@@ -2841,6 +2848,7 @@ HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
   : catSch(new(STMTHEAP) NAString(STMTHEAP)),
     isHbaseTable(FALSE),
     isHiveTable(FALSE),
+    hasOversizedColumns(FALSE),
     user_table(new(STMTHEAP) NAString(STMTHEAP)),
     numPartitions(0),
     hstogram_table(new(STMTHEAP) NAString(STMTHEAP)),
@@ -4001,7 +4009,18 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
 
     dml  = insertType;
     dml += sampleTable;
-    dml += " SELECT * FROM ";
+    dml += " SELECT ";
+    if (hs_globals->hasOversizedColumns)
+      {
+        // The source table has an oversized column. We have to generate
+        // SUBSTRING calls on such columns to fit them into the sample
+        // table.
+        addTruncatedSelectList(dml);
+      }      
+    else
+      dml += "*";
+
+    dml += " FROM ";
 
     NAString hiveSrc = CmpCommon::getDefaultString(USE_HIVE_SOURCE);
     if (! hiveSrc.isNull())
@@ -4590,6 +4609,8 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
      else
        columnName=dblQuote+group->colNames->data()+dblQuote;
 
+     *(col.externalColumnName) = columnName;
+
      switch (col.datatype)
      {
       case REC_DECIMAL_LSE:
@@ -4874,9 +4895,12 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
       default:
         group->ISdatatype = col.datatype;
         group->ISlength = col.length;
+        if (group->ISlength > MAX_SUPPORTED_CHAR_LENGTH)
+          group->ISlength = MAX_SUPPORTED_CHAR_LENGTH;
         group->ISprecision = col.precision;
         group->ISscale = col.scale;
-        group->ISSelectExpn.append(columnName);
+        // the method below handles adding SUBSTRING for over-size char/varchars
+        HSSample::addTruncatedColumnReference(group->ISSelectExpn,col);
         break;
      } // switch
      group = group->next;
@@ -6026,7 +6050,7 @@ void genSQLTimestampConstant(struct tm * bdt, NAString& timestamp)
   timestamp += "-";
 
   // tm_mon is in  [0, 11]
-  if ( bdt->tm_mon <= 9 ) timestamp += "0";
+  if ( bdt->tm_mon < 9 ) timestamp += "0"; // < rather than <= since we add one in the next line
   str_itoa(bdt->tm_mon+1, buf); timestamp += buf;
 
   timestamp += "-";

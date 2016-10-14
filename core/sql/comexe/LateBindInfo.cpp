@@ -194,55 +194,6 @@ static void extractPartsLocal(char * invalue, char *inVal[], short inValLen[])
 
 }
 
-NABoolean LateNameInfo::applyMPAliasDefaults(char * invalue, 
-					     char * outvalue,
-					     char * defValString)
-{
-
-  char * defVal[3] = {NULL, NULL, NULL};
-  short defValLen[3] = {0, 0, 0};
-  char * inVal[3] = {NULL, NULL, NULL};
-  short inValLen[3] = {0, 0, 0};
-
-  // extract cat and schema name from defValString
-  extractPartsLocal(defValString, defVal, defValLen);
-
-  // extract parts from invalue
-  extractPartsLocal(invalue, inVal, inValLen);
-
-  // fill in the missing parts of invalue and create outvalue
-  Int32 outlen=0;
-  if (inVal[0] == NULL)
-    {
-      outlen = defValLen[0] + 1;
-      str_cpy_all(outvalue, defVal[0], outlen);
-    }
-  else
-    {
-      outlen = inValLen[0] + 1;
-      str_cpy_all(outvalue, inVal[0], outlen);
-    }
-
-  if (inVal[1] == NULL)
-    {
-      str_cpy_all(&outvalue[outlen], defVal[1], defValLen[1]+1);
-      outlen += defValLen[1]+1;
-    }
-  else
-    {
-      str_cpy_all(&outvalue[outlen], inVal[1], inValLen[1]+1);
-      outlen += inValLen[1]+1;
-    }
-
-  str_cpy_all(&outvalue[outlen], inVal[2], inValLen[2]);
-  outlen += inValLen[2];
-
-  outvalue[outlen] = 0;
-
-  return TRUE;
-}
-// LCOV_EXCL_STOP
-
 Long LateNameInfoList::pack(void *space)
 {
 #pragma nowarn(1506)   // warning elimination 
@@ -256,227 +207,6 @@ Lng32 LateNameInfoList::unpack(void * base, void * reallocator)
 #pragma nowarn(1506)   // warning elimination 
   if(lateNameInfo_.unpack(base,numEntries_,reallocator)) return -1;
 #pragma warn(1506)  // warning elimination 
-  return NAVersionedObject::unpack(base, reallocator);
-}
-
-// returns the length of total info that needs to be sent to compiler
-// at recomp time. This info is used to get to the actual tablename
-// (and not the prototype name) that was specified thru a hvar/param/env
-// var.
-ULng32 LateNameInfoList::getRecompLateNameInfoListLen()
-{
-  ULng32 numEntriesToSend = 0;
-  for (ULng32 i = 0; i < getNumEntries(); i++)
-    {
-      if (lateNameInfo_[i]->isVariable())
-	numEntriesToSend++;
-    }
-  
-  if (numEntriesToSend > 0)
-    return sizeof(RecompLateNameInfoList) +
-      ((numEntriesToSend-1) * sizeof(RecompLateNameInfo));
-  else
-    return 0;
-}
-
-// puts recomp info into 'buffer'. Space is to be allocated by caller.
-void LateNameInfoList::getRecompLateNameInfoList(char * buffer)
-{
-  RecompLateNameInfoList * rlnil = (RecompLateNameInfoList *)buffer;
-
-  Int32 j = 0;
-  for (UInt32 i = 0; i < getNumEntries(); i++)
-    {
-      if (lateNameInfo_[i]->isVariable())
-	{
-	  str_cpy_and_null(rlnil->getRecompLateNameInfo(j).varName(),
-			   lateNameInfo_[i]->variableName(),
-			   str_len(lateNameInfo_[i]->variableName()) + 1);
-	  
-	  str_cpy_and_null(rlnil->getRecompLateNameInfo(j).compileTimeAnsiName(),
-			   lateNameInfo_[i]->compileTimeAnsiName(),
-			   str_len(lateNameInfo_[i]->compileTimeAnsiName())+1);
-
-	  str_cpy_and_null(rlnil->getRecompLateNameInfo(j).actualAnsiName(),
-			   lateNameInfo_[i]->lastUsedExtAnsiName(),
-			   str_len(lateNameInfo_[i]->lastUsedExtAnsiName())+1);
-	
-#pragma nowarn(1506)   // warning elimination 
-	  rlnil->getRecompLateNameInfo(j).setMPalias(lateNameInfo_[i]->isMPalias());
-#pragma warn(1506)  // warning elimination 
-	
-	  j++;
-        } // if
-    
-    } // for
-  
-  if (j > 0)
-    rlnil->numEntries() = j;
-}
-
-ULng32 LateNameInfoList::getRecompLateNameInfoListLenPre1800()
-{
-  ULng32 numEntriesToSend = 0;
-  for (ULng32 i = 0; i < getNumEntries(); i++)
-    {
-      if (lateNameInfo_[i]->isVariable())
-	numEntriesToSend++;
-    }
-  
-  if (numEntriesToSend > 0)
-    return sizeof(RecompLateNameInfoListPre1800) +
-      ((numEntriesToSend-1) * sizeof(RecompLateNameInfoPre1800));
-  else
-    return 0;
-}
-
-
-// puts recomp info into 'buffer'. Space is to be allocated by caller.
-void LateNameInfoList::getRecompLateNameInfoListPre1800(char * buffer)
-{
-  RecompLateNameInfoListPre1800 * rlnil = (RecompLateNameInfoListPre1800 *)buffer;
-
-  Int32 j = 0;
-  for (UInt32 i = 0; i < getNumEntries(); i++)
-    {
-      if (lateNameInfo_[i]->isVariable())
-	{
-	  str_cpy_and_null(rlnil->getRecompLateNameInfo(j).varName(),
-			   lateNameInfo_[i]->variableName(),
-			   str_len(lateNameInfo_[i]->variableName()) + 1);
-	  
-	  str_cpy_and_null(rlnil->getRecompLateNameInfo(j).compileTimeAnsiName(),
-			   lateNameInfo_[i]->compileTimeAnsiName(),
-			   str_len(lateNameInfo_[i]->compileTimeAnsiName())+1);
-
-	   
-	  str_cpy_and_null(rlnil->getRecompLateNameInfo(j).actualAnsiName(),
-			     lateNameInfo_[i]->lastUsedExtAnsiName(),
-			     str_len(lateNameInfo_[i]->lastUsedExtAnsiName())+1);
-
-#pragma nowarn(1506)   // warning elimination 
-	  rlnil->getRecompLateNameInfo(j).setMPalias(lateNameInfo_[i]->isMPalias());
-#pragma warn(1506)  // warning elimination 
-	  
-	  j++;
-        } // if
-	
-    } // for
-  
-  if (j > 0)
-    rlnil->numEntries() = j;
-}
-
-
-void LateNameInfoList::resetRuntimeFlags()
-{
-  for (UInt32 i = 0; i < getNumEntries(); i++)
-    {
-      lateNameInfo_[i]->resetRuntimeFlags();
-    }
-}
-
-
-
-SimilarityTableInfo::SimilarityTableInfo()
-  : NAVersionedObject(-1)
-{
-  flags_ = 0;
-}
-
-SimilarityTableInfo::~SimilarityTableInfo()
-{
-}
-
-Long SimilarityTableInfo::pack(void * space)
-{
-  return NAVersionedObject::pack(space);
-}
-
-Lng32 SimilarityTableInfo::unpack(void * base, void * reallocator)
-{
-  return 0;
-}
-
-SimilarityInfo::SimilarityInfo(CollHeap * heap)
-  : NAVersionedObject(-1)
-{
-  tupleDesc_      = 0;
-  colNameList_    = 0;
-  sti_            = 0;
-  runtimeFlags_ = 0;
-  compiletimeFlags_ = 0;
-  mvAttributesBitmap_ = 0;
-
-}
-
-SimilarityInfo::~SimilarityInfo()
-{
-}
-
-Long SimilarityInfo::pack(void * space)
-{
-  return NAVersionedObject::pack(space);
-}
-
-Lng32 SimilarityInfo::unpack(void * base, void * reallocator)
-{
-  // ------------------------------------------------------------------------
-  // Notice that objects referenced by keyClass_ and indexMapArray_ have been
-  // packed based on a different base (see SimilarityInfo::pack()). Hence,
-  // they have to be unpacked correspondingly.
-  // ------------------------------------------------------------------------
-  if(tupleDesc_.unpack(base, reallocator)) return -1;
-  if(colNameList_.unpack(base, reallocator)) return -1;
-  if(sti_.unpack(base, reallocator)) return -1;
-  return NAVersionedObject::unpack(base, reallocator);
-}
-
-QuerySimilarityInfo::QuerySimilarityInfo()
-  : heap_(NULL), option_(RECOMP_ON_TS_MISMATCH), NAVersionedObject(-1), siList_(NULL),
-    indexInfoList_(NULL)
-{
-}
-
-QuerySimilarityInfo::QuerySimilarityInfo(CollHeap * heap)
-  : heap_(heap), option_(RECOMP_ON_TS_MISMATCH), NAVersionedObject(-1)
-{
-  siList_ = new(heap) Queue(heap);
-  indexInfoList_ = 0;
-}
-
-QuerySimilarityInfo::~QuerySimilarityInfo()
-{
-
-}
-
-Long QuerySimilarityInfo::pack(void * space)
-{
-  PackQueueOfNAVersionedObjects(siList_,space,SimilarityInfo);
-
-  //PackQueueOfNonNAVersionedObjects(indexInfoList_,space,IndexInfo);
-  PackQueueOfNAVersionedObjects(indexInfoList_,space,IndexInfo);
-
-  return NAVersionedObject::pack(space);
-}
-
-Lng32 QuerySimilarityInfo::unpack(void * base, void * reallocator)
-{
-  UnpackQueueOfNAVersionedObjects(siList_,base,SimilarityInfo,reallocator);
-  
-  //UnpackQueueOfNonNAVersionedObjects(indexInfoList_,base,IndexInfo);
-  UnpackQueueOfNAVersionedObjects(indexInfoList_,base,IndexInfo,reallocator);
-
-  return NAVersionedObject::unpack(base, reallocator);
-}
-
-Long IndexInfo::pack(void * space)
-{
-  return NAVersionedObject::pack(space);
-}
-
-Lng32 IndexInfo::unpack(void * base, void * reallocator)
-{
   return NAVersionedObject::unpack(base, reallocator);
 }
 
@@ -1319,37 +1049,104 @@ Int16 AnsiOrNskName::quoteNSKExtName()
     return 0;
 }
 
-void ResolvedNameListPre1800::translateFromNewVersion(ResolvedNameList *newrnl)
+///////////////////////////////////////////////////////////////////
+// class TrafSimilarityTableInfo
+///////////////////////////////////////////////////////////////////
+TrafSimilarityTableInfo::TrafSimilarityTableInfo(char * tableName,
+                                                 NABoolean isHive,
+                                                 char * hdfsRootDir, 
+                                                 Int64 modTS, Int32 numPartnLevels,
+                                                 Queue * hdfsDirsToCheck,
+                                                 char * hdfsHostName,
+                                                 Int32 hdfsPort)
+     : NAVersionedObject(-1),
+       tableName_(tableName),
+       hdfsRootDir_(hdfsRootDir),
+       modTS_(modTS), numPartnLevels_(numPartnLevels),
+       hdfsDirsToCheck_(hdfsDirsToCheck),
+       hdfsHostName_(hdfsHostName), hdfsPort_(hdfsPort),
+       flags_(0)
 {
-  this->numEntries()=  newrnl->numEntries();
-  this->resetFlags();
-  for (Int32 i = 0;  i < (Int32) (newrnl->numEntries());i++)
-    {
-      strcpy(this->getResolvedName(i).resolvedGuardianName(),
-             newrnl->getResolvedName(i).resolvedGuardianName());
-    
-      this->getResolvedName(i).setIgnoreTS((short)newrnl->getResolvedName(i).ignoreTS());
-      this->getResolvedName(i).setResolvedAnsiName(newrnl->getResolvedName(i).resolvedAnsiName());
-      this->getResolvedName(i).setValidateNumIndexes((short)newrnl->getResolvedName(i).validateNumIndexes());
-      this->getResolvedName(i).setNumIndexes(newrnl->getResolvedName(i).numIndexes());
-    }
+  if (isHive)
+    setIsHive(TRUE);
 }
 
-void ResolvedNameList::translateFromOldVersion(ResolvedNameListPre1800 *oldrnl)
+TrafSimilarityTableInfo::TrafSimilarityTableInfo()
+     : NAVersionedObject(-1),
+       tableName_(NULL),
+       hdfsRootDir_(NULL),
+       modTS_(-1), numPartnLevels_(-1),
+       hdfsDirsToCheck_(NULL),
+       hdfsHostName_(NULL), hdfsPort_(NULL),
+       flags_(0)
 {
-  this->numEntries() = oldrnl->numEntries();
-  this->resetFlags();
-  this->resetFiller();
-  for (Int32 i = 0;  i < (Int32) (oldrnl->numEntries());i++)
-    {
-      strcpy(this->getResolvedName(i).resolvedGuardianName(),
-	     oldrnl->getResolvedName(i).resolvedGuardianName());
-    
-      this->getResolvedName(i).setIgnoreTS((short)oldrnl->getResolvedName(i).ignoreTS());
-      this->getResolvedName(i).setResolvedAnsiName(oldrnl->getResolvedName(i).resolvedAnsiName());
-      this->getResolvedName(i).setValidateNumIndexes((short)oldrnl->getResolvedName(i).validateNumIndexes());
-      this->getResolvedName(i).setNumIndexes(oldrnl->getResolvedName(i).numIndexes());
-						      }
-    }
+}
+
+TrafSimilarityTableInfo::~TrafSimilarityTableInfo()
+{
+}
+
+NABoolean TrafSimilarityTableInfo::operator==(TrafSimilarityTableInfo &o)
+{ 
+  return ((isHive() == o.isHive()) &&
+          (strcmp(tableName(), ((TrafSimilarityTableInfo&)o).tableName()) == 0));
+}
+
+Long TrafSimilarityTableInfo::pack(void * space)
+{
+  tableName_.pack(space);
+  hdfsRootDir_.pack(space);
+  hdfsHostName_.pack(space);
+
+  hdfsDirsToCheck_.pack(space);
+
+  return NAVersionedObject::pack(space);
+}
+
+Lng32 TrafSimilarityTableInfo::unpack(void * base, void * reallocator)
+{
+  if(tableName_.unpack(base)) return -1;
+  if(hdfsRootDir_.unpack(base)) return -1;
+  if(hdfsHostName_.unpack(base)) return -1;
+
+  if(hdfsDirsToCheck_.unpack(base, reallocator)) return -1;
+  
+  return NAVersionedObject::unpack(base, reallocator);
+}
+
+///////////////////////////////////////////////////////////////////
+// class TrafQuerySimilarityInfo
+///////////////////////////////////////////////////////////////////
+TrafQuerySimilarityInfo::TrafQuerySimilarityInfo(Queue * siList)
+     : NAVersionedObject(-1),
+       siList_(siList)
+{
+}
+
+TrafQuerySimilarityInfo::TrafQuerySimilarityInfo()
+     : NAVersionedObject(-1),
+       siList_(NULL)
+{
+}
+
+TrafQuerySimilarityInfo::~TrafQuerySimilarityInfo()
+{
+}
+
+Long TrafQuerySimilarityInfo::pack(void * space)
+{
+  PackQueueOfNAVersionedObjects(siList_,space,TrafSimilarityTableInfo);
+
+  return NAVersionedObject::pack(space);
+}
+
+Lng32 TrafQuerySimilarityInfo::unpack(void * base, void * reallocator)
+{
+  UnpackQueueOfNAVersionedObjects(siList_,base,TrafSimilarityTableInfo,reallocator);
+  
+  return NAVersionedObject::unpack(base, reallocator);
+}
+
+
 // End
 

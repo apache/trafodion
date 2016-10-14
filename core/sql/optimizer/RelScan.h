@@ -319,9 +319,10 @@ public:
 	 cardinalityHint_(-1.0),
 	 forcedIndexInfo_(FALSE),
          baseCardinality_(0),
-          // QSTUFF
-           isRewrittenMV_(FALSE),
-           hbaseAccessOptions_(NULL)
+	   // QSTUFF
+	   isRewrittenMV_(FALSE),
+	   hbaseAccessOptions_(NULL),
+	   matchingMVs_(CmpCommon::statementHeap())
      {} 
 
   // virtual destructor

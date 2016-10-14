@@ -211,7 +211,7 @@
       <item name="Videos" href="https://www.youtube.com/playlist?list=PLyyCp3HBB8Tv9696OnG0_mmgF5tfHeyOi"/>
       <item href="management.html" name="Managing Trafodion"/>
       <!-- item href="new-features.html" name="New Features"/-->
-      <!-- item href="roadmap.html" name="Roadmap"/-->
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Roadmap" name="Roadmap"/>
       <!-- item href="performance.html" name="Performance"/-->
       <item href="http:divider" name=""/>
       <item href="team-redirect.html" name="Team"/>

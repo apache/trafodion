@@ -374,7 +374,9 @@ Ex_Lob_Error ExLob::dataModCheck2(
        char * dirPath, 
        Int64  inputModTS,
        Lng32  numOfPartLevels,
-       Int64 &failedModTS)
+       Int64 &failedModTS,
+       char  *failedLocBuf,
+       Int32 *failedLocBufLen)
 {
   if (numOfPartLevels == 0)
     return LOB_OPER_OK;
@@ -400,6 +402,17 @@ Ex_Lob_Error ExLob::dataModCheck2(
             {
               failed = TRUE;
               failedModTS = currModTS;
+
+              if (failedLocBuf && failedLocBufLen)
+                {
+                  Lng32 failedFileLen = strlen(fileInfo.mName);
+                  Lng32 copyLen = (failedFileLen > (*failedLocBufLen-1) 
+                                   ? (*failedLocBufLen-1) : failedFileLen);
+                  
+                  str_cpy_and_null(failedLocBuf, fileInfo.mName, copyLen,
+                                   '\0', ' ', TRUE);
+                  *failedLocBufLen = copyLen;
+                }
             }
         }
     }
@@ -416,7 +429,7 @@ Ex_Lob_Error ExLob::dataModCheck2(
         {
           hdfsFileInfo &fileInfo = fileInfos[i];
           err = dataModCheck2(fileInfo.mName, inputModTS, numOfPartLevels,
-                              failedModTS);
+                              failedModTS, failedLocBuf, failedLocBufLen);
           if (err != LOB_OPER_OK)
             return err;
         }
@@ -433,7 +446,9 @@ Ex_Lob_Error ExLob::dataModCheck(
        Int64  inputModTS,
        Lng32  numOfPartLevels,
        ExLobGlobals *lobGlobals,
-       Int64 &failedModTS)
+       Int64 &failedModTS,
+       char  *failedLocBuf,
+       Int32 *failedLocBufLen)
 {
   failedModTS = -1;
 
@@ -445,17 +460,33 @@ Ex_Lob_Error ExLob::dataModCheck(
     }
     
   Int64 currModTS = fileInfos[0].mLastMod;
-  hdfsFreeFileInfo(fileInfos, 1);
   if ((inputModTS > 0) &&
       (currModTS > inputModTS))
     {
+      hdfsFileInfo &fileInfo = fileInfos[0];
+
       failedModTS = currModTS;
+
+      if (failedLocBuf && failedLocBufLen)
+        {
+          Lng32 failedFileLen = strlen(fileInfo.mName);
+          Lng32 copyLen = (failedFileLen > (*failedLocBufLen-1) 
+                           ? (*failedLocBufLen-1) : failedFileLen);
+          
+          str_cpy_and_null(failedLocBuf, fileInfo.mName, copyLen,
+                           '\0', ' ', TRUE);
+          *failedLocBufLen = copyLen;
+        }
+
+      hdfsFreeFileInfo(fileInfos, 1);
       return LOB_DATA_MOD_CHECK_ERROR;
     }
 
+  hdfsFreeFileInfo(fileInfos, 1);
   if (numOfPartLevels > 0)
     {
-      return dataModCheck2(dirPath, inputModTS, numOfPartLevels, failedModTS);
+      return dataModCheck2(dirPath, inputModTS, numOfPartLevels, 
+                           failedModTS, failedLocBuf, failedLocBufLen);
     }
 
   return LOB_OPER_OK;
@@ -1457,41 +1488,6 @@ Ex_Lob_Error ExLob::closeCursor(char *handleIn, Int32 handleInLen)
     return LOB_OPER_OK;
 }
 
-#ifdef __ignore
-Ex_Lob_Error ExLob::doSanityChecks(char *dir, LobsStorage storage,
-                                   Int32 handleInLen, Int32 handleOutLen, 
-                                   Int32 blackBoxLen)
-{
-
-#ifdef SQ_USE_HDFS
-    if (!fs_)
-      return LOB_HDFS_CONNECT_ERROR;
-#else
-    if (fdData_ == -1)
-      return LOB_DATA_FILE_OPEN_ERROR;
-#endif
-
-    if (dir_.compare(dir) != 0)
-      return LOB_DIR_NAME_ERROR;
-
-    if (storage_ != storage)
-      return LOB_STORAGE_TYPE_ERROR;
-
-    if (handleInLen > MAX_HANDLE_IN_LEN) {
-      return LOB_HANDLE_IN_LEN_ERROR;
-    }
-
-    if (handleOutLen > MAX_HANDLE_IN_LEN) {
-      return LOB_HANDLE_OUT_LEN_ERROR;
-    }
-
-    if (blackBoxLen > MAX_HANDLE_IN_LEN) {
-      return LOB_BLACK_BOX_LEN_ERROR;
-    }
-
-    return LOB_OPER_OK;
-}
-#endif
 Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset, Int64 lobMaxSize, Int64 lobMaxChunkMemLen, char *handleIn, Int32 handleInLen, Int64 lobGCLimit, void *lobGlobals)
 {
   NABoolean GCDone = FALSE;
@@ -2529,9 +2525,18 @@ Ex_Lob_Error ExLobsOper (
         Int64 inputModTS = *(Int64*)blackBox;
         Int32 inputNumOfPartLevels = 
           *(Lng32*)&((char*)blackBox)[sizeof(inputModTS)];
+        Int32 * failedLocBufLen = 
+          (Int32*)&((char*)blackBox)[sizeof(inputModTS)+
+                                     sizeof(inputNumOfPartLevels)];
+        char * failedLocBuf = &((char*)blackBox)[sizeof(inputModTS)+
+                                                 sizeof(inputNumOfPartLevels)+
+                                                 sizeof(*failedLocBufLen)];
         Int64 failedModTS = -1;
-        err = lobPtr->dataModCheck(lobStorageLocation, inputModTS, inputNumOfPartLevels,
-                                   lobGlobals, failedModTS);
+        err = 
+          lobPtr->dataModCheck(lobStorageLocation, 
+                               inputModTS, inputNumOfPartLevels,
+                               lobGlobals, failedModTS, 
+                               failedLocBuf, failedLocBufLen);
         descNumOut = failedModTS;
       }
       break;
@@ -2996,20 +3001,9 @@ Ex_Lob_Error ExLob::deleteCursor(char *cursorName, ExLobGlobals *lobGlobals)
 //*** Note - sample code to send and receive  
 Ex_Lob_Error ExLob::sendReqToLobServer() 
 {
-
-    Ex_Lob_Error err; 
-#ifdef __ignore
-    request_.setType(Lob_Req_Get_Desc);
-
-    err = request_.send();
-
-    if (err != LOB_OPER_OK) {
-       return err;
-    }
-
-    err = request_.getError();
-#endif
-    return err;
+  Ex_Lob_Error err; 
+  
+  return err;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3170,19 +3164,6 @@ void ExLobLock::wait()
     waiters_--;
 }
 
-#ifdef __ignore
-ExLobHdfsRequest::ExLobHdfsRequest(LobsHdfsRequestType reqType, hdfsFS fs, 
-                                   hdfsFile file, char *buffer, int size) :
-   reqType_(reqType),
-   fs_(fs),
-   file_(file),
-   buffer_(buffer),
-   size_(size)
-{
-  lobPtr_ = 0;
-  error_ = LOB_OPER_OK;
-}
-#endif
 ExLobHdfsRequest::ExLobHdfsRequest(LobsHdfsRequestType reqType, ExLobCursor *cursor) :
    reqType_(reqType),
    cursor_(cursor)

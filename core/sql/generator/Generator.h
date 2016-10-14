@@ -71,6 +71,7 @@ class GenOperSimilarityInfo;
 class ComTdb;
 class Attributes;
 class DP2Insert;
+class TrafSimilarityTableInfo;
 
 // this define is used to raise assertion in generator.
 // Calls GeneratorAbort which does a longjmp out of the calling scope.
@@ -363,6 +364,8 @@ class Generator : public NABasicObject
   LIST(const GenOperSimilarityInfo*) genOperSimInfoList_;
 
   LIST(const SqlTableOpenInfo*) stoiList_;
+
+  LIST(const TrafSimilarityTableInfo*) trafSimTableInfoList_;
 
   // Some nodes in the tree may require the root node to compute
   // special internal input values, such as an execution count
@@ -670,12 +673,19 @@ public:
     lateNameInfoList_.clear();
   }
 
+  void addTrafSimTableInfo(TrafSimilarityTableInfo *ti);
+  
   // Accessor and mutators for data members related to similarity check.
   LIST(const GenOperSimilarityInfo*) &genOperSimInfoList()
   {
     return genOperSimInfoList_;
   }
 
+  // Accessor and mutators for data members related to traf similarity check.
+  LIST(const TrafSimilarityTableInfo*) &getTrafSimTableInfoList()
+  {
+    return trafSimTableInfoList_;
+  }
 
   LIST(const SqlTableOpenInfo*) & getSqlTableOpenInfoList()
   {
