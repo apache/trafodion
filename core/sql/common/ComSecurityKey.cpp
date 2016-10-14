@@ -34,7 +34,18 @@
 #include "exp_function.h"
 #include "ComDistribution.h"
 #include "ComUser.h"
+#include "PrivMgrDefs.h"
 
+// ****************************************************************************
+// function: qiCheckForInvalidObject
+//
+// This function compares the list of query invalidate keys that changed to
+// the list of invalidation keys associated with the object.
+//
+// If the changed invalidation key matches one of the keys for the object,
+// return TRUE.  TRUE indicates that the object should be reloaded to pick up
+// DDL or privilege changes.
+// ****************************************************************************
 NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
                                    const SQL_QIKEY* invalidationKeys,
                                    const Int64 objectUID,
@@ -48,27 +59,48 @@ NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
   for ( Int32 i = 0; i < numInvalidationKeys && !found; i++ )
   {
     invalidationKeyType = ComQIActionTypeLiteralToEnum( invalidationKeys[i].operation );
+    Int32 numObjectKeys = objectKeys.entries();
 
-    // if the object redef time changed and this is the object, remove entry
-    if (invalidationKeyType == COM_QI_OBJECT_REDEF &&
-        invalidationKeys[i].ddlObjectUID == objectUID)
-      found = TRUE;
-    else
+    switch (invalidationKeyType)
     {
-      // Scan the passed-in object keys to find any that match the 
-      // invalidation key 
-      Int32 numObjectKeys = objectKeys.entries();
-      for (Int32 j = 0; j < numObjectKeys && !found; j++ )
+      // Indicates that the DDL of the object has changed. 
+      case COM_QI_OBJECT_REDEF:
       {
-        ComSecurityKey keyValue = objectKeys[j];
-        if ( ( invalidationKeys[i].revokeKey.subject ==
-                 keyValue.getSubjectHashValue() ) &&
-           ( invalidationKeys[i].revokeKey.object ==
-                 keyValue.getObjectHashValue() )  &&
-           ( invalidationKeyType ==
-                 keyValue.getSecurityKeyType() ) ) 
+        if (invalidationKeys[i].ddlObjectUID == objectUID)
           found = TRUE;
+        break;
       }
+
+      // Scan the passed-in object keys to find any that match the subject, 
+      // object, and key type. That is, the subject has the privilege
+      // (invalidation key type) on the object or a column of the object.
+      case COM_QI_OBJECT_SELECT:
+      case COM_QI_OBJECT_INSERT:
+      case COM_QI_OBJECT_DELETE:
+      case COM_QI_OBJECT_UPDATE:
+      case COM_QI_OBJECT_USAGE:
+      case COM_QI_OBJECT_REFERENCES: 
+      case COM_QI_OBJECT_EXECUTE:
+      case COM_QI_USER_GRANT_SPECIAL_ROLE:
+      case COM_QI_USER_GRANT_ROLE:
+      {
+        for (Int32 j = 0; j < numObjectKeys && !found; j++ )
+        {
+          ComSecurityKey keyValue = objectKeys[j];
+          if ( ( invalidationKeys[i].revokeKey.subject ==
+                   keyValue.getSubjectHashValue() ) &&
+               ( invalidationKeys[i].revokeKey.object ==
+                   keyValue.getObjectHashValue() )  &&
+               ( invalidationKeyType ==
+                   keyValue.getSecurityKeyType() ) )
+            found = TRUE;
+        }
+        break;
+      }
+
+      default:
+        found = TRUE;
+        break;
     }
   }
   return found;
@@ -77,53 +109,61 @@ NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
 // ****************************************************************************
 // Function that builds query invalidation keys for privileges. A separate
 // invalidation key is added for each granted DML privilege. 
+//
+// Types of keys available for privs:
+//   OBJECT_IS_SCHEMA - not supported until we support schema level privs
+//   OBJECT_IS_OBJECT - supported for granting privs to user
+//   OBJECT_IS_COLUMN - not supported at this time
+//   OBJECT_IS_SPECIAL_ROLE - key for PUBLIC authorization ID
+//   SUBJECT_IS_USER - support for granting roles to user
+//   SUBJECT_IS_ROLE - not supported until we grant roles to roles
+//
 // ****************************************************************************
-bool buildSecurityKeySet(PrivMgrUserPrivs *privInfo,
-                         Int64 objectUID,
-                         ComSecurityKeySet &secKeySet)
+bool buildSecurityKeys( const int32_t granteeID,
+                        const int32_t roleID,
+                        const int64_t objectUID,
+                        const PrivMgrCoreDesc &privs,
+                        ComSecurityKeySet &secKeySet )
 {
-  Int32 granteeID = ComUser::getCurrentUser();
+  if (privs.isNull())
+    return STATUS_GOOD;
 
-  // Build security keys for object privileges
-  for ( Int32 i = FIRST_DML_PRIV; i <= LAST_DML_PRIV; i++ )
+  // Only need to generate keys for DML privileges
+  for ( size_t i = FIRST_DML_PRIV; i <= LAST_DML_PRIV; i++ )
   {
-    if ( privInfo->hasObjectPriv((PrivType)i) )
-      {
-        ComSecurityKey key(granteeID,
-                           objectUID,
-                           PrivType(i),
-                           ComSecurityKey::OBJECT_IS_OBJECT);
-        if (!key.isValid())
-          return false;
-        secKeySet.insert(key);
-      }
-  }
-  // Build security key for column privileges
-  PrivColumnBitmap privBitmap;
-
-  // Optimizer currently does not support OBJECT_IS_COLUMN, so we "or"
-  // all column-level privileges into one priv bitmap.  We create a key for
-  // each priv type where at least one column has that priv.
-  // The security key set is a list of sets, do duplicates are handled by c++
-  for (PrivColIterator columnIterator = privInfo->getColPrivList().begin();
-       columnIterator != privInfo->getColPrivList().end(); ++columnIterator)
-    privBitmap |= columnIterator->second;
-
-  // Now create a security key on the final bitmap
-  for (Int32 j = FIRST_DML_COL_PRIV; j <= LAST_DML_COL_PRIV; j++ )
+    if ( privs.getPriv(PrivType(i)))
     {
-      if (!privBitmap.test(PrivType((PrivType)j)))
-         continue;
+      if (roleID != NA_UserIdDefault && ComUser::isPublicUserID(roleID))
+      {
+        ComSecurityKey key(granteeID, ComSecurityKey::OBJECT_IS_SPECIAL_ROLE);
+        if (key.isValid())
+          secKeySet.insert(key);
+        else
+          false;
+      }
+          
+      else if (roleID != NA_UserIdDefault && PrivMgr::isRoleID(roleID))
+      {
+        ComSecurityKey key (granteeID, roleID, ComSecurityKey::SUBJECT_IS_USER);
+        if (key.isValid())
+         secKeySet.insert(key);
+        else
+          false;
+      }
 
-      ComSecurityKey key(granteeID,
-                         objectUID,
-                         PrivType(j),
-                         ComSecurityKey::OBJECT_IS_OBJECT);
-      if (!key.isValid())
-        return false;
-      secKeySet.insert(key);
-   }
-   return true;
+      else
+      {
+        ComSecurityKey key (granteeID, objectUID, PrivType(i), 
+                            ComSecurityKey::OBJECT_IS_OBJECT);
+        if (key.isValid())
+         secKeySet.insert(key);
+        else
+          false;
+      }
+    }
+  }
+
+  return true;
 }
 
 
@@ -195,7 +235,7 @@ ComSecurityKey::ComSecurityKey(
     if (typeOfObject == OBJECT_IS_SPECIAL_ROLE)
     {
       actionType_ = COM_QI_USER_GRANT_SPECIAL_ROLE;
-      subjectHash_ = generateHash(subjectUserID);
+      subjectHash_ = SPECIAL_SUBJECT_HASH;
       objectHash_ = SPECIAL_OBJECT_HASH;
     }
   }
@@ -336,7 +376,7 @@ void ComSecurityKey::getSecurityKeyTypeAsLit (std::string &actionString) const
       actionString = COM_QI_SCHEMA_EXECUTE_LIT;
       break;
     case COM_QI_USER_GRANT_SPECIAL_ROLE:
-      actionString = COM_QI_USER_GRANT_SPECIAL_ROLE;
+      actionString = COM_QI_USER_GRANT_SPECIAL_ROLE_LIT;
       break;
     default:
       actionString = COM_QI_INVALID_ACTIONTYPE_LIT;

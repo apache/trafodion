@@ -29,6 +29,7 @@
 #include "Collections.h"
 #include "sqlcli.h"
 #include "PrivMgrCommands.h"
+#include "PrivMgrDesc.h"
 
 class PrivMgrUserPrivs;
 
@@ -41,9 +42,11 @@ NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
                                    const Int64 objectUID,
                                    const ComSecurityKeySet objectKeys);
 
-bool buildSecurityKeySet(PrivMgrUserPrivs *privInfo,
-                         Int64 objectUID,
-                         ComSecurityKeySet &secKeySet);
+bool buildSecurityKeys( const int32_t granteeID,
+                        const int32_t roleID,
+                        const int64_t objectUID,
+                        const PrivMgrCoreDesc &privs,
+                        ComSecurityKeySet &secKeySet);
 
 
 // ****************************************************************************

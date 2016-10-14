@@ -10356,6 +10356,27 @@ std::string commandString;
       SEABASEDDL_INTERNAL_ERROR(commandString.c_str());
    }
    
+   // update the redef timestamp for the role in auths table
+   char buf[(roleIDs.size()*12) + 500];
+   Int64 redefTime = NA_JulianTimestamp();
+   std::string roleList;
+   for (size_t i = 0; i < roleIDs.size(); i++)
+   {
+     if (i > 0)
+       roleList += ", ";
+     roleList += to_string((long long int)roleIDs[i]);
+   }
+
+   str_sprintf(buf, "update %s.\"%s\".%s set auth_redef_time = %Ld "
+                    "where auth_id in (%s)",
+              systemCatalog.c_str(), SEABASE_MD_SCHEMA, SEABASE_AUTHS,
+              redefTime, roleList.c_str());
+ 
+   ExeCliInterface cliInterface(STMTHEAP);
+   Int32 cliRC = cliInterface.executeImmediate(buf);
+   if (cliRC < 0)
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+
 }
 //********************** End of grantRevokeSeabaseRole *************************
 

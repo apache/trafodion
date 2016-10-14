@@ -6817,78 +6817,96 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
   return !bindWA->failedForPrivileges() ;
 }
 
+// ****************************************************************************
+// method: findKeyAndInsertInOutputList
+//
+// This method searches through the list of security keys associated with the
+// object to find the best candidate to save in the plan based on the
+// privilege required.  If it finds a candidate, it inserts the best candidate 
+// into securityKeySet_ member of the RelRoot class.
+//
+// Security key types currently include:
+//   COM_QI_OBJECT_<priv>:   privileges granted directly to the user
+//   COM_QI_USER_GRANT_ROLE: privileges granted to the user via a role 
+//   COM_QI_USER_GRANT_SPECIAL_ROLE: privileges granted to PUBLIC
+//
+// COM_QI_OBJECT_<priv> types are preferred over COM_QI_USER_GRANT_ROLE.
+// ****************************************************************************
 void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
                                           , const uint32_t userHashValue
                                           , const PrivType which
                                           )
 {
-   ComSecurityKey  dummyKey;
+   // If no keys associated with object, just return
+   if (KeysForTab.entries() == 0)
+     return;
 
+   ComSecurityKey * UserObjectKey = NULL;
+   ComSecurityKey * RoleObjectKey = NULL;
+   ComSecurityKey * UserObjectPublicKey = NULL;
+   
+   // These may be implemented at a later time
+   ComSecurityKey * UserSchemaKey = NULL; //privs granted at schema level to user
+   ComSecurityKey * RoleSchemaKey = NULL; //privs granted at schema level to role
+
+   // Get action type for UserObjectKey based on the privilege (which)
+   // so if (which) is SELECT, then the objectActionType is COM_QI_OBJECT_SELECT
+   ComSecurityKey  dummyKey;
    ComQIActionType objectActionType =
                    dummyKey.convertBitmapToQIActionType ( which, ComSecurityKey::OBJECT_IS_OBJECT );
 
-   ComSecurityKey * UserSchemaKey = NULL;
-   ComSecurityKey * UserObjectKey = NULL;
-   ComSecurityKey * RoleSchemaKey = NULL;
-   ComSecurityKey * RoleObjectKey = NULL;
-   ComSecurityKey * BestKey = NULL;
-
-   ComSecurityKey * thisKey = &(KeysForTab[0]);
-
-   uint32_t hashValueOfPublic = 0;
+   ComSecurityKey * thisKey = NULL;
 
    // NOTE: hashValueOfPublic will be the same for all keys, so we generate it only once.
-   if ( KeysForTab.entries() > 0 )
-      hashValueOfPublic = thisKey->generateHash(PUBLIC_USER);
+   uint32_t hashValueOfPublic = ComSecurityKey::SPECIAL_OBJECT_HASH;
 
    // Traverse List looking for ANY appropriate ComSecurityKey 
    for ( Int32 ii = 0; ii < (Int32)(KeysForTab.entries()); ii++ )
    {
       thisKey = &(KeysForTab[ii]);
+  
+      // See if the key is object related
       if ( thisKey->getSecurityKeyType() == objectActionType )
       {
-         if ( thisKey->getSubjectHashValue() == hashValueOfPublic ||
-              thisKey->getSubjectHashValue() == userHashValue )
+         if ( thisKey->getSubjectHashValue() == userHashValue )
          {
-              if ( ! UserObjectKey ) UserObjectKey = thisKey;
+            // Found a security key for the objectActionType
+            if ( ! UserObjectKey ) 
+               UserObjectKey = thisKey;
          }
-         else if ( ! RoleObjectKey ) RoleObjectKey = thisKey;
       }
+     
+      // See if the security key is role related
+      else if (thisKey->getSecurityKeyType() == COM_QI_USER_GRANT_ROLE) 
+      {
+         if ( thisKey->getSubjectHashValue() == userHashValue )
+         {
+            if (! RoleObjectKey ) 
+               RoleObjectKey = thisKey;
+         }
+      }
+
+      else if (thisKey->getSecurityKeyType() == COM_QI_USER_GRANT_SPECIAL_ROLE)
+      {
+         if (thisKey->getObjectHashValue() == hashValueOfPublic )
+         {
+            if (! UserObjectPublicKey )
+               UserObjectPublicKey = thisKey;
+         }
+      }
+
       else {;} // Not right action type, just continue traversing.
    }
 
-   if ( UserObjectKey ) BestKey = UserObjectKey ;
-   else if ( RoleObjectKey ) BestKey = RoleObjectKey ;
-   if ( BestKey == NULL)
-     return;  // Sometimes there aren't any security keys
-   securityKeySet_.insert(*BestKey);
+   // Determine best key, UserObjectKeys are better than RoleObjectKeys
+   ComSecurityKey * BestKey = (UserObjectKey) ? UserObjectKey : RoleObjectKey;
 
-   uint32_t SubjHashValue = BestKey->getSubjectHashValue();
-   hashValueOfPublic = BestKey->generateHash(PUBLIC_USER);
+   if ( BestKey != NULL)
+      securityKeySet_.insert(*BestKey);
 
-   // Check whether this privilege was granted to PUBLIC.  If so, nothing more to check.
-   if ( SubjHashValue == hashValueOfPublic )
-      return;
-   while ( SubjHashValue != userHashValue ) //While we see a ComSecurityKey for a Role
-   {
-      NABoolean found = FALSE;
-      for ( Int32 ii = 0; ii < (Int32)(KeysForTab.entries()); ii++ )
-      {
-         // If this ComSecurityKey is a GRANT type and the grantee (the object)
-         // is the Role specified by SubjHashValue, then break out of inner loop.
-         ComSecurityKey * thisKey = &(KeysForTab[ii]);
-         if ( (   thisKey->getObjectHashValue() == SubjHashValue ) &&
-              (  (thisKey->getSecurityKeyType() == COM_QI_USER_GRANT_ROLE ) ) )
-         {
-            securityKeySet_.insert(*thisKey); // Insert this GRANT type ComSecurityKey into the Plan
-            found = TRUE;
-            SubjHashValue = thisKey->getSubjectHashValue();
-            break; // We found the user or Role which granted the user the privilege
-         }
-      }
-      // found should never be FALSE
-      CMPASSERT(found)
-   }
+   // Add public if it exists
+   if ( UserObjectPublicKey != NULL )
+     securityKeySet_.insert(*UserObjectPublicKey); 
 }
 
 

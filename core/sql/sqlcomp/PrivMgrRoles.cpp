@@ -1664,7 +1664,7 @@ PrivStatus PrivMgrRoles::revokeRole(
    const std::vector<int32_t> & grantorIDs,
    const bool isGOFSpecified,
    const int32_t newGrantDepth,
-   PrivDropBehavior dropBehavior) 
+   PrivDropBehavior dropBehavior)
   
 {
 
@@ -1676,7 +1676,7 @@ PrivStatus PrivMgrRoles::revokeRole(
       return STATUS_ERROR;
    }
    
-PrivStatus privStatus = STATUS_GOOD;
+   PrivStatus privStatus = STATUS_GOOD;
 
    for (size_t r = 0; r < roleIDs.size(); r++)
    {
@@ -1758,10 +1758,10 @@ PrivStatus privStatus = STATUS_GOOD;
       }
    }
 
-// All checks completed, all dependent grants revoked, and when CASCADE is
-// supported, all dependent objects dropped. It's now safe to revoke the roles.
+   // All checks completed, all dependent grants revoked, and when CASCADE is
+   // supported, all dependent objects dropped. It's now safe to revoke the roles.
 
-std::string setClause("SET GRANT_DEPTH = ");
+   std::string setClause("SET GRANT_DEPTH = ");
 
    if (isGOFSpecified)
    {
@@ -1771,9 +1771,9 @@ std::string setClause("SET GRANT_DEPTH = ");
       setClause += grantDepthString;
    }
    
-int32_t numKeys = roleIDs.size() * granteeIDs.size();
-SQL_QIKEY siKeyList[numKeys];
-size_t siIndex = 0;
+   int32_t numKeys = roleIDs.size() * granteeIDs.size();
+   SQL_QIKEY siKeyList[numKeys];
+   size_t siIndex = 0;
 
    for (size_t r2 = 0; r2 < roleIDs.size(); r2++)
    {
@@ -1808,9 +1808,9 @@ size_t siIndex = 0;
             return STATUS_ERROR;
          }
          
-         ComSecurityKey secKey(granteeIDs[g2],roleIDs[r2], 
+         ComSecurityKey secKey(granteeIDs[g2],roleIDs[r2],
                                ComSecurityKey::SUBJECT_IS_USER);
-                               
+
          siKeyList[siIndex].revokeKey.subject = secKey.getSubjectHashValue();
          siKeyList[siIndex].revokeKey.object = secKey.getObjectHashValue();
          std::string actionString;
@@ -1820,7 +1820,7 @@ size_t siIndex = 0;
       }
    }  
     
-// Call the CLI to send details to RMS
+   // Call the CLI to send details to RMS
    SQL_EXEC_SetSecInvalidKeys(siIndex,siKeyList);
       
    return STATUS_GOOD;
