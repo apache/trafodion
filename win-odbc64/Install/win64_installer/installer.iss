@@ -24,7 +24,6 @@
 #define MyAppURL ""
 #define MyDriverName "TRAF ODBC 1.0"
 #define BUILDDIR  GetEnv('BUILDDIR')
-#define VCREDISTDIR GetEnv('VC_REDIST_DIR')
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -48,7 +47,6 @@ ArchitecturesInstallIn64BitMode=x64
 UninstallDisplayName={#MyAppName}
 ArchitecturesAllowed=x64
 SetupLogging=yes
-
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -75,15 +73,6 @@ Root: HKLM; SubKey: Software\ODBC\ODBCINST.INI\{#MyDriverName}; ValueType: strin
 Root: HKLM; SubKey: Software\ODBC\ODBCINST.INI\{#MyDriverName}; ValueType: string; ValueName: Setup; ValueData: {sys}\trfoadm1.dll ;Flags: uninsdeletekey
 Root: HKLM; SubKey: Software\ODBC\ODBCINST.INI\{#MyDriverName}; ValueType: string; ValueName: CertificateDir; ValueData: SYSTEM_DEFAULT ;Flags: uninsdeletekey
 Root: HKLM; SubKey: Software\ODBC\ODBCINST.INI\{#MyDriverName}; ValueType: string; ValueName: CPTimeout; ValueData: 60 ;Flags: uninsdeletekey
-
-[Code]
-[Files]
-Source: "{#VCREDISTDIR}\vcredist_x64.exe"; DestDir: {tmp}; Flags: deleteafterinstall
-
-[Run]
-; add the Parameters, WorkingDir and StatusMsg as you wish, just keep here
-; the conditional installation Check
-Filename: "{tmp}\vcredist_x64.exe"; Check: VCRedistNeedsInstall
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"
@@ -151,6 +140,40 @@ function IsUpgrade: Boolean;
 begin
   Result := (GetUninstallString() <> '');
 end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  bRedistNeedsInstall: Boolean;
+  sDefaultBrowserName: String;
+  sDefaultBrowserReg: String;
+  sDefaultBrowserValue: String;
+  iQuotePos: Integer;
+  lLength: Longint;
+  iRetCode: Integer;
+begin
+  if CurStep=ssPostInstall then
+  begin
+    bRedistNeedsInstall := VCRedistNeedsInstall();
+    if bRedistNeedsInstall=True then
+    begin
+      MsgBox('Install of Visual C++ Redistributable Packages for Visual Studio 2013 is not dectected.'+ #13#10#13#10 + 'Please download vcredist_x64.exe from Microsoft Download Centre and install it.', mbInformation, MB_OK);
+      if RegQueryStringValue(HKCU,'Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice','Progid',sDefaultBrowserName) then
+      begin
+        sDefaultBrowserReg := sDefaultBrowserName + '\shell\open\command';
+        if RegQueryStringValue(HKCR,sDefaultBrowserReg,'',sDefaultBrowserValue) then
+        begin
+          iQuotePos := Pos('"',sDefaultBrowserValue);
+          Delete(sDefaultBrowserValue,iQuotePos,1);
+          lLength := Length(sDefaultBrowserValue);
+          iQuotePos := Pos('"',sDefaultBrowserValue);
+          Delete(sDefaultBrowserValue,iQuotePos,lLength);
+          Exec(sDefaultBrowserValue, 'http://www.microsoft.com/en-us/download/details.aspx?id=40784', '', SW_SHOW, ewNoWait, iRetCode)
+        end
+      end
+    end
+  end
+end;   
+
 
 function InitializeSetup: Boolean;
 var
