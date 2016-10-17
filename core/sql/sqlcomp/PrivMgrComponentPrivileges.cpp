@@ -31,6 +31,7 @@
 
 #include <string>
 #include <cstdio>
+#include <algorithm>
 #include <vector>
 #include "ComSmallDefs.h"
 
@@ -659,9 +660,8 @@ PrivStatus PrivMgrComponentPrivileges::grantPrivilege(
   
 {
 
-// Determine if the component exists.
-
-PrivMgrComponents component(metadataLocation_,pDiags_);
+   // Determine if the component exists.
+   PrivMgrComponents component(metadataLocation_,pDiags_);
 
    if (!component.exists(componentName))
    {
@@ -670,11 +670,11 @@ PrivMgrComponents component(metadataLocation_,pDiags_);
       return STATUS_ERROR;
    }
  
-std::string componentUIDString;
-int64_t componentUID;
-bool isSystemComponent;
-std::string tempStr;
-PrivStatus privStatus = STATUS_GOOD;
+   std::string componentUIDString;
+   int64_t componentUID;
+   bool isSystemComponent;
+   std::string tempStr;
+   PrivStatus privStatus = STATUS_GOOD;
 
    component.fetchByName(componentName,
                          componentUIDString,
@@ -682,11 +682,11 @@ PrivStatus privStatus = STATUS_GOOD;
                          isSystemComponent,
                          tempStr);
                          
-// OK, the component is defined, what about the operations?
-MyTable &myTable = static_cast<MyTable &>(myTable_);
-PrivMgrComponentOperations componentOperations(metadataLocation_,pDiags_);
-std::vector<std::string> operationCodes;
-int32_t grantorID = grantorIDIn;
+   // OK, the component is defined, what about the operations?
+   MyTable &myTable = static_cast<MyTable &>(myTable_);
+   PrivMgrComponentOperations componentOperations(metadataLocation_,pDiags_);
+   std::vector<std::string> operationCodes;
+   int32_t grantorID = grantorIDIn;
 
    for (size_t i = 0; i < operations.size(); i ++)
    {
@@ -720,7 +720,6 @@ int32_t grantorID = grantorIDIn;
       // If grantorID is DB__ROOT, then we use the "owner" of the 
       // operation, which is the user granted the privilege by _SYSTEM.
       // Read COMPONENT_PRIVILEGES to get grantorID.
-      //TODO: Need vector of grantorIDs.
       if (grantorIDIn == ComUser::getRootUserID())
       {
          privStatus = myTable.fetchOwner(componentUID,operationCode,
@@ -745,11 +744,11 @@ int32_t grantorID = grantorIDIn;
       operationCodes.push_back(operationCode);
    }
    
-//
-// Operations are valid, add or update each entry.
-//
+   //
+   // Operations are valid, add or update each entry.
+   //
 
-MyRow row(fullTableName_);
+   MyRow row(fullTableName_);
 
    row.componentUID_ = componentUID;
    row.grantDepth_ = grantDepth;
@@ -758,7 +757,7 @@ MyRow row(fullTableName_);
    row.grantorID_ = grantorID;
    row.grantorName_ = grantorName;
    
-std::string whereClauseHeader(" WHERE COMPONENT_UID = ");
+   std::string whereClauseHeader(" WHERE COMPONENT_UID = ");
 
    whereClauseHeader += componentUIDString;
    whereClauseHeader += " AND GRANTEE_ID = ";          
@@ -1209,23 +1208,46 @@ bool PrivMgrComponentPrivileges::hasWGO(
    
 {
 
-MyTable &myTable = static_cast<MyTable &>(myTable_);
+   // get roles granted to authID
+   std::vector<std::string> roleNames;
+   std::vector<int32_t> roleIDs;
+   std::vector<int32_t> grantDepths;
 
-std::string whereClause (" WHERE GRANTEE_ID = ");
+   PrivMgrRoles roles(" ",metadataLocation_,pDiags_);
 
-   whereClause += authIDToString(authID); 
-   whereClause += " AND COMPONENT_UID = ";          
+   if (roles.fetchRolesForUser(authID,roleNames,
+                               roleIDs,grantDepths) == STATUS_ERROR)
+      return false;
+
+   MyTable &myTable = static_cast<MyTable &>(myTable_);
+
+   std::string granteeList;
+   granteeList += authIDToString(authID);
+   for (size_t i = 0; i < roleIDs.size(); i++)
+   {
+      granteeList += ", ";
+      granteeList += authIDToString(roleIDs[i]);
+   }
+
+   // DB__ROOTROLE is a special role.  If the authID has been granted this role 
+   // then they have WGO privileges. 
+   if (std::find(roleIDs.begin(), roleIDs.end(), ROOT_ROLE_ID) != roleIDs.end())
+      return true;
+
+   std::string whereClause (" WHERE GRANTEE_ID IN (");
+   whereClause += granteeList;
+   whereClause += ") AND COMPONENT_UID = ";          
    whereClause += componentUIDString;
    whereClause += " AND OPERATION_CODE = '";          
    whereClause += operationCode;
    whereClause += "' AND GRANT_DEPTH <> 0";
    
-int64_t rowCount = 0;
+   int64_t rowCount = 0;
 
-// set pointer in diags area
-int32_t diagsMark = pDiags_->mark();
+   // set pointer in diags area
+   int32_t diagsMark = pDiags_->mark();
 
-PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
+   PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 
    if ((privStatus == STATUS_GOOD || privStatus == STATUS_WARNING) &&
         rowCount > 0)
