@@ -90,6 +90,7 @@ CLISemaphore globalSemaphore ;
 #include "SqlStats.h"
 #include "ComExeTrace.h"
 #include "Context.h"
+#include <unistd.h>
 #include "QRLogger.h"
 
 #ifndef CLI_PRIV_SRL
