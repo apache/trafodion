@@ -188,22 +188,17 @@ public class TransactionState {
      * params  : none
      * return  : void
      * purpose : decrease number of outstanding replies needed and wake up any waiters
-     *           if we receive the last one or if the wakeup value is true (which means
-     *           we received an exception)
+     *           if we receive the last one 
      */
     public void  requestPendingCountDec(Throwable exception)
     {
        synchronized (countLock)
        {
           requestReceivedCount++;
-          if ((requestReceivedCount == requestPendingCount) || (exception != null))
-          {
-             //signal waiters that an error occurred
-             if (exception != null && hasError == null)
-                hasError = exception;
-
+          if (exception != null && hasError == null)
+             hasError = exception;
+          if (requestReceivedCount == requestPendingCount)
              countLock.notify();
-          }
        }
     }
 

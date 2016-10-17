@@ -74,11 +74,14 @@ public:
        strcpy((char *) &ia_EID, (char *) EID_CTmMessage);
    }
 
-   bool validate()
+   bool validate(bool detectDoubleDelete = false)
     {
        if (strcmp((char *) &ia_EID, (char *) &EID_CTmMessage) != 0)
        {
-          abort();
+          if (! detectDoubleDelete)
+             abort();
+          else
+             return false;
        }
        return true;
     } //validate
