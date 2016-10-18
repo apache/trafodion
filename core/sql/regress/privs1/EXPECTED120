@@ -1,0 +1,1222 @@
+>>obey TEST120(tests);
+>>-- =================================================================
+>>-- Design:
+>>--    t120role1 - owns schema t120sch 
+>>--    t120role2 - contains grants against teams and games
+>>--    t120role3 - contains grants against teams, games, and standings
+>>--    t120role4 - control, has no privs granted, make sure revoking
+>>--                role does not cause recompilations
+>>--
+>>--    sql_user3 - is schema administrator for schema t120sch
+>>--    sql_user6 - is granted and revoked privileges directly and
+>>--                through t120role2 and t120role3
+>>--    sql_user9 - control, makes sure revokes from roles does not
+>>--                affect sql_user9's compiled queries
+>>--
+>>--    games     - multiple roles giving same privileges
+>>--    teams     - multiple privileges through different roles
+>>--    players   - control, not roles involved in privileges
+>>--    standings - used to test sequence privileges and revoke role
+>>--    stats     - tests revoke PUBLIC authorization ID
+>>-- =================================================================
+>>obey TEST120(create_db);
+>>create role t120role1;
+
+--- SQL operation complete.
+>>create role t120role2;
+
+--- SQL operation complete.
+>>create role t120role3;
+
+--- SQL operation complete.
+>>create role t120role4;
+
+--- SQL operation complete.
+>>grant role t120role1, t120role2, t120role3, t120role4 to sql_user3 with admin option;
+
+--- SQL operation complete.
+>>
+>>create schema t120sch authorization t120role1;
+
+--- SQL operation complete.
+>>set schema t120sch;
+
+--- SQL operation complete.
+>>create table teams
++>  (team_number int not null primary key,
++>   team_name char(20) not null,
++>   team_contact varchar(50) not null,
++>   team_contact_number char (10) not null
++>   )
++>  ;
+
+--- SQL operation complete.
+>>
+>>alter table teams add constraint valid_team_no check (team_number > 0);
+
+--- SQL operation complete.
+>>insert into teams values
++>   (1, 'White Socks', 'Sam','4082282222'),
++>   (2, 'Giants', 'Joe', '5102839483'),
++>   (3, 'Cardinals', 'Stella', '9513849384'),
++>   (4, 'Indians', 'Matt', '5128383748'),
++>   (5, 'Tigers', 'Ronit', '6198273827');
+
+--- 5 row(s) inserted.
+>>
+>>
+>>create table games
++>   ( home_team_number int not null,
++>     visitor_team_number int not null,
++>     game_number int not null primary key,
++>     game_time timestamp not null,
++>     game_location varchar(50) not null)
++>  ;
+
+--- SQL operation complete.
+>>
+>>alter table games add constraint valid_game_number check (game_number > 0);
+
+--- SQL operation complete.
+>>insert into games values
++>   (1, 2, 1, timestamp '2009-04-23 19:30:00', 'California'),
++>   (1, 3, 2, timestamp '2009-04-24 19:30:00', 'California'),
++>   (1, 4, 3, timestamp '2009-04-25 10:00:00', 'Oklahoma'),
++>   (2, 3, 4, timestamp '2009-04-25 13:30:00', 'Michigan'),
++>   (1, 5, 5, timestamp '2009-04-25 15:00:00', 'Oklahoma'),
++>   (2, 5, 6, timestamp '2009-04-27 17:00:00', 'New York'),
++>   (3, 4, 7, timestamp '2009-04-28 17:00:00', 'Florida'),
++>   (4, 2, 8, current_timestamp, 'Missouri');
+
+--- 8 row(s) inserted.
+>>
+>>create table players
++>  (player_number int not null,
++>   player_name varchar (50) not null,
++>   player_team_number int not null,
++>   player_phone_number char (10) not null,
++>   player_details varchar(50),
++>   primary key (player_number, player_team_number))
++>  no partition;
+
+--- SQL operation complete.
+>>
+>>alter table players add constraint valid_player_number check(player_number > 0);
+
+--- SQL operation complete.
+>>
+>>insert into players values
++>   (1, 'Tom', 1, '4083948394', null),
++>   (2, 'Bob', 1, '4089483948', null),
++>   (3, 'Toby',1, '4082938493', 'pitcher'),
++>   (3, 'Toby',2, '4082938493', null),
++>   (4, 'Julie', 2, '5108394839', 'catcher'),
++>   (5, 'Joanne', 2, '5103849384', null),
++>   (6, 'Pete', 2, '5102839483', null),
++>   (6, 'Pete', 3, '5102839483', 'third base'),
++>   (7, 'Jared',4, '9518293849', 'short stop'),
++>   (8, 'Zachary', 4, '9518293840', null),
++>   (9, 'Lynne', 5, '9518293892', 'pitcher'),
++>   (10, 'Omar', 5, '5128394893', null);
+
+--- 12 row(s) inserted.
+>>
+>>create table standings
++>    (team_number int not null primary key,
++>     wins int default 0,
++>     loses int default 0,
++>     last_updated timestamp default current_timestamp)
++>;
+
+--- SQL operation complete.
+>>
+>>insert into standings (team_number)
++>  select team_number from teams;
+
+--- 5 row(s) inserted.
+>>
+>>create sequence team_seq;
+
+--- SQL operation complete.
+>>
+>>create table stats
++>  (team_number int not null primary key,
++>   num_players int not null)
++>;
+
+--- SQL operation complete.
+>>
+>>insert into stats
++>  select team_number, count (player_number)
++>   from teams t, players p
++>   where t.team_number = p.player_team_number
++>   group by team_number;
+
+--- 5 row(s) inserted.
+>>
+>>obey TEST120(queries);
+>>select game_number from games;
+
+GAME_NUMBER
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+
+--- 8 row(s) selected.
+>>select team_number from teams;
+
+TEAM_NUMBER
+-----------
+
+          1
+          2
+          3
+          4
+          5
+
+--- 5 row(s) selected.
+>>select player_number from players;
+
+PLAYER_NUMBER
+-------------
+
+            1
+            2
+            3
+            3
+            4
+            5
+            6
+            6
+            7
+            8
+            9
+           10
+
+--- 12 row(s) selected.
+>>select team_number, seqnum(team_seq) from standings;
+
+TEAM_NUMBER  (EXPR)              
+-----------  --------------------
+
+          1                     1
+          2                     2
+          3                     3
+          4                     4
+          5                     5
+
+--- 5 row(s) selected.
+>>select team_number, num_players from stats;
+
+TEAM_NUMBER  NUM_PLAYERS
+-----------  -----------
+
+          1            3
+          2            4
+          3            1
+          4            2
+          5            2
+
+--- 5 row(s) selected.
+>>
+>>
+>>sh sqlci -i "TEST120(runqueries)" -u sql_user6;
+>>values (current_user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER6                                                                                                                        
+
+--- 1 row(s) selected.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>set schema t120sch;
+
+--- SQL operation complete.
+>>
+>>-- At this time sql_user6 has no privileges
+>>-- Expect error 4481
+>>-- Prepare a bunch of queries, all fail with no privilege
+>>prepare select_games from select game_number from games;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T120SCH.GAMES.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare select_teams from select team_number, team_name from teams;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T120SCH.TEAMS.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare insert_teams from 
++>  insert into teams values (6, 'Braves', 'Jim', '8653845150');
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.T120SCH.TEAMS.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare update_teams from
++>  update teams set team_contact_number = '8653855150' where team_number = 6;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T120SCH.TEAMS.
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.T120SCH.TEAMS.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare select_players from select count(*) from players;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T120SCH.PLAYERS.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare select_standings from select team_number, seqnum(team_seq) from standings;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T120SCH.STANDINGS.
+
+*** ERROR[4491] The user does not have USAGE privilege on sequence TRAFODION.T120SCH.TEAM_SEQ.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare select_stats from select team_number, num_players from stats;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T120SCH.STATS.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- sql_user9 also has no privileges
+>>sh sqlci -i "TEST120(select_queries)" -u sql_user9;
+>>values (current_user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER9                                                                                                                        
+
+--- 1 row(s) selected.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>set schema t120sch;
+
+--- SQL operation complete.
+>>select game_number from games;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T120SCH.GAMES.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- grant privileges
+>>sh sqlci -i "TEST120(grant_all_privs)" -u sql_user3;
+>>values (current_user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER3                                                                                                                        
+
+--- 1 row(s) selected.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>set schema t120sch;
+
+--- SQL operation complete.
+>>
+>>grant insert, delete, update(team_contact, team_contact_number) on teams to t120role2;
+
+--- SQL operation complete.
+>>grant select on teams to sql_user6;
+
+--- SQL operation complete.
+>>grant select (game_number, game_time) on games to t120role2;
+
+--- SQL operation complete.
+>>grant select (game_number, game_time) on games to t120role3;
+
+--- SQL operation complete.
+>>grant all on players to sql_user6;
+
+--- SQL operation complete.
+>>grant role t120role2, t120role3, t120role4 to sql_user6;
+
+--- SQL operation complete.
+>>grant role t120role3 to sql_user9;
+
+--- SQL operation complete.
+>>grant select on standings to sql_user6;
+
+--- SQL operation complete.
+>>grant usage on sequence team_seq to t120role3;
+
+--- SQL operation complete.
+>>grant select (team_number, num_players) on stats to "PUBLIC";
+
+--- SQL operation complete.
+>>showddl games;
+
+CREATE TABLE TRAFODION.T120SCH.GAMES
+  (
+    HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , VISITOR_TEAM_NUMBER              INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , GAME_TIME                        TIMESTAMP(6) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , GAME_LOCATION                    VARCHAR(50) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (GAME_NUMBER ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+ALTER TABLE TRAFODION.T120SCH.GAMES ADD CONSTRAINT
+  TRAFODION.T120SCH.VALID_GAME_NUMBER CHECK
+  (TRAFODION.T120SCH.GAMES.GAME_NUMBER > 0)
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T120SCH.GAMES TO T120ROLE1 WITH GRANT OPTION;
+  GRANT SELECT(GAME_NUMBER, GAME_TIME) ON TRAFODION.T120SCH.GAMES TO T120ROLE2
+  GRANTED BY SQL_USER3;
+GRANT SELECT(GAME_NUMBER, GAME_TIME) ON
+  TRAFODION.T120SCH.GAMES TO T120ROLE3 GRANTED BY SQL_USER3;
+
+--- SQL operation complete.
+>>showddl teams;
+
+CREATE TABLE TRAFODION.T120SCH.TEAMS
+  (
+    TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , TEAM_NAME                        CHAR(20) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , TEAM_CONTACT                     VARCHAR(50) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , TEAM_CONTACT_NUMBER              CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (TEAM_NUMBER ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+ALTER TABLE TRAFODION.T120SCH.TEAMS ADD CONSTRAINT
+  TRAFODION.T120SCH.VALID_TEAM_NO CHECK (TRAFODION.T120SCH.TEAMS.TEAM_NUMBER >
+  0)
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T120SCH.TEAMS TO T120ROLE1 WITH GRANT OPTION;
+  GRANT SELECT ON TRAFODION.T120SCH.TEAMS TO SQL_USER6 GRANTED BY SQL_USER3;
+  GRANT INSERT, DELETE ON TRAFODION.T120SCH.TEAMS TO T120ROLE2 GRANTED BY
+  SQL_USER3;
+GRANT UPDATE(TEAM_CONTACT, TEAM_CONTACT_NUMBER) ON
+  TRAFODION.T120SCH.TEAMS TO T120ROLE2 GRANTED BY SQL_USER3;
+
+--- SQL operation complete.
+>>showddl players;
+
+CREATE TABLE TRAFODION.T120SCH.PLAYERS
+  (
+    PLAYER_NUMBER                    INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PLAYER_NAME                      VARCHAR(50) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PLAYER_TEAM_NUMBER               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PLAYER_PHONE_NUMBER              CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PLAYER_DETAILS                   VARCHAR(50) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , PRIMARY KEY (PLAYER_NUMBER ASC, PLAYER_TEAM_NUMBER ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+ALTER TABLE TRAFODION.T120SCH.PLAYERS ADD CONSTRAINT
+  TRAFODION.T120SCH.VALID_PLAYER_NUMBER CHECK
+  (TRAFODION.T120SCH.PLAYERS.PLAYER_NUMBER > 0)
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T120SCH.PLAYERS TO T120ROLE1 WITH GRANT OPTION;
+  GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T120SCH.PLAYERS
+  TO SQL_USER6 GRANTED BY SQL_USER3;
+
+--- SQL operation complete.
+>>showddl standings;
+
+CREATE TABLE TRAFODION.T120SCH.STANDINGS
+  (
+    TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , WINS                             INT DEFAULT 0
+  , LOSES                            INT DEFAULT 0
+  , LAST_UPDATED                     TIMESTAMP(6) DEFAULT CURRENT
+  , PRIMARY KEY (TEAM_NUMBER ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T120SCH.STANDINGS TO T120ROLE1 WITH GRANT OPTION;
+  GRANT SELECT ON TRAFODION.T120SCH.STANDINGS TO SQL_USER6 GRANTED BY
+  SQL_USER3;
+
+--- SQL operation complete.
+>>showddl sequence team_seq;
+
+CREATE SEQUENCE TRAFODION.T120SCH.TEAM_SEQ
+  START WITH 1 /* NEXT AVAILABLE VALUE 26 */
+  INCREMENT BY 1
+  MAXVALUE 9223372036854775806
+  MINVALUE 1
+  CACHE 25
+  NO CYCLE
+  LARGEINT
+;
+
+-- GRANT USAGE ON SEQUENCE TRAFODION.T120SCH.TEAM_SEQ TO T120ROLE1 WITH GRANT OPTION;
+  GRANT USAGE ON SEQUENCE TRAFODION.T120SCH.TEAM_SEQ TO T120ROLE3 GRANTED BY
+  SQL_USER3;
+
+--- SQL operation complete.
+>>showddl role t120role1;
+
+CREATE ROLE "T120ROLE1";
+  -- GRANT ROLE "T120ROLE1" TO "DB__ROOT" WITH ADMIN OPTION;
+GRANT ROLE
+  "T120ROLE1" TO "SQL_USER3" WITH ADMIN OPTION;
+
+--- SQL operation complete.
+>>showddl role t120role2;
+
+CREATE ROLE "T120ROLE2";
+  -- GRANT ROLE "T120ROLE2" TO "DB__ROOT" WITH ADMIN OPTION;
+GRANT ROLE
+  "T120ROLE2" TO "SQL_USER3" WITH ADMIN OPTION;
+GRANT ROLE "T120ROLE2" TO
+  "SQL_USER6" GRANTED BY "SQL_USER3";
+
+--- SQL operation complete.
+>>showddl role t120role3;
+
+CREATE ROLE "T120ROLE3";
+  -- GRANT ROLE "T120ROLE3" TO "DB__ROOT" WITH ADMIN OPTION;
+GRANT ROLE
+  "T120ROLE3" TO "SQL_USER3" WITH ADMIN OPTION;
+GRANT ROLE "T120ROLE3" TO
+  "SQL_USER6" GRANTED BY "SQL_USER3";
+GRANT ROLE "T120ROLE3" TO "SQL_USER9"
+  GRANTED BY "SQL_USER3";
+
+--- SQL operation complete.
+>>showddl role t120role4;
+
+CREATE ROLE "T120ROLE4";
+  -- GRANT ROLE "T120ROLE4" TO "DB__ROOT" WITH ADMIN OPTION;
+GRANT ROLE
+  "T120ROLE4" TO "SQL_USER3" WITH ADMIN OPTION;
+GRANT ROLE "T120ROLE4" TO
+  "SQL_USER6" GRANTED BY "SQL_USER3";
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- Prepare a bunch of queries, all successful
+>>prepare select_games from select game_number from games;
+
+--- SQL command prepared.
+>>prepare select_teams from select team_number, team_name from teams;
+
+--- SQL command prepared.
+>>prepare insert_teams from 
++>  insert into teams values (6, 'Braves', 'Jim', '8653845150');
+
+--- SQL command prepared.
+>>prepare update_teams from
++>  update teams set team_contact_number = '8653855150' where team_number = 6;
+
+--- SQL command prepared.
+>>prepare select_players from select count(*) from players;
+
+--- SQL command prepared.
+>>prepare select_standings from select team_number, seqnum(team_seq) from standings;
+
+--- SQL command prepared.
+>>
+>>-- Gather the query invalidation keys for each plan
+>>--   OI - object/column insert required
+>>--   OG - sequence usage required
+>>--   OS - object/column select required
+>>--   OU - object/column update required
+>>--   AR - role involved, check query plans that rely on roles during revoke
+>>log;
+Query_Invalidation_Keys explain output for select_games, select_teams, insert_teams, update_teams, select_players, select_standings: 
+Query_Invalidation_Keys{,,UR}
+Query_Invalidation_Keys{,,OS}
+Query_Invalidation_Keys{,,UR}
+Query_Invalidation_Keys{,,OS}{,,UR}
+Query_Invalidation_Keys{,,OS}
+Query_Invalidation_Keys{,,OS}{,,UR}
+>>
+>>-- Verify that sql_user9 can select from games
+>>sh sqlci -i "TEST120(select_queries)" -u sql_user9;
+>>values (current_user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER9                                                                                                                        
+
+--- 1 row(s) selected.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>set schema t120sch;
+
+--- SQL operation complete.
+>>select game_number from games;
+
+GAME_NUMBER
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+
+--- 8 row(s) selected.
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- revoke t120role4 from sql_user6
+>>sh sqlci -i "TEST120(revoke_t120role4)" -u sql_user3;
+>>values (current_user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER3                                                                                                                        
+
+--- 1 row(s) selected.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>set schema t120sch;
+
+--- SQL operation complete.
+>>
+>>revoke role t120role4 from sql_user6;
+
+--- SQL operation complete.
+>>
+>>-- sql_user3 has privs on all tables, can execute and no recompile
+>>obey TEST120(queries);
+>>select game_number from games;
+
+GAME_NUMBER
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+
+--- 8 row(s) selected.
+>>select team_number from teams;
+
+TEAM_NUMBER
+-----------
+
+          1
+          2
+          3
+          4
+          5
+
+--- 5 row(s) selected.
+>>select player_number from players;
+
+PLAYER_NUMBER
+-------------
+
+            1
+            2
+            3
+            3
+            4
+            5
+            6
+            6
+            7
+            8
+            9
+           10
+
+--- 12 row(s) selected.
+>>select team_number, seqnum(team_seq) from standings;
+
+TEAM_NUMBER  (EXPR)              
+-----------  --------------------
+
+          1                    26
+          2                    27
+          3                    28
+          4                    29
+          5                    30
+
+--- 5 row(s) selected.
+>>select team_number, num_players from stats;
+
+TEAM_NUMBER  NUM_PLAYERS
+-----------  -----------
+
+          1            3
+          2            4
+          3            1
+          4            2
+          5            2
+
+--- 5 row(s) selected.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>execute select_games;
+
+GAME_NUMBER
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+
+--- 8 row(s) selected.
+>>execute select_teams;
+
+TEAM_NUMBER  TEAM_NAME           
+-----------  --------------------
+
+          1  White Socks         
+          2  Giants              
+          3  Cardinals           
+          4  Indians             
+          5  Tigers              
+
+--- 5 row(s) selected.
+>>
+>>-- revoke t120role2 from sql_user6
+>>sh sqlci -i "TEST120(revoke_t120role2)" -u sql_user3;
+>>values (current_user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER3                                                                                                                        
+
+--- 1 row(s) selected.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>set schema t120sch;
+
+--- SQL operation complete.
+>>
+>>revoke role t120role2 from sql_user6;
+
+--- SQL operation complete.
+>>
+>>-- sql_user3 has privs on all tables, can execute and no recompile
+>>obey TEST120(queries);
+>>select game_number from games;
+
+GAME_NUMBER
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+
+--- 8 row(s) selected.
+>>select team_number from teams;
+
+TEAM_NUMBER
+-----------
+
+          1
+          2
+          3
+          4
+          5
+
+--- 5 row(s) selected.
+>>select player_number from players;
+
+PLAYER_NUMBER
+-------------
+
+            1
+            2
+            3
+            3
+            4
+            5
+            6
+            6
+            7
+            8
+            9
+           10
+
+--- 12 row(s) selected.
+>>select team_number, seqnum(team_seq) from standings;
+
+TEAM_NUMBER  (EXPR)              
+-----------  --------------------
+
+          1                    51
+          2                    52
+          3                    53
+          4                    54
+          5                    55
+
+--- 5 row(s) selected.
+>>select team_number, num_players from stats;
+
+TEAM_NUMBER  NUM_PLAYERS
+-----------  -----------
+
+          1            3
+          2            4
+          3            1
+          4            2
+          5            2
+
+--- 5 row(s) selected.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- still have privs but query recompiled (8597)
+>>execute select_games;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
+
+GAME_NUMBER
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+
+--- 8 row(s) selected.
+>>execute select_teams;
+
+TEAM_NUMBER  TEAM_NAME           
+-----------  --------------------
+
+          1  White Socks         
+          2  Giants              
+          3  Cardinals           
+          4  Indians             
+          5  Tigers              
+
+--- 5 row(s) selected.
+>>execute select_standings;
+
+TEAM_NUMBER  (EXPR)              
+-----------  --------------------
+
+          1                    76
+          2                    77
+          3                    78
+          4                    79
+          5                    80
+
+--- 5 row(s) selected.
+>>
+>>-- still have privs, no query recompilation message because no invalidation
+>>-- key for roles exist
+>>execute select_players;
+
+(EXPR)              
+--------------------
+
+                  12
+
+--- 1 row(s) selected.
+>>
+>>-- no longer has privilege (4481) and query attempted recompilation
+>>execute insert_teams;
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.T120SCH.TEAMS.
+
+*** ERROR[8822] The statement was not prepared.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
+
+--- 0 row(s) inserted.
+>>execute update_teams;
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.T120SCH.TEAMS.
+
+*** ERROR[8822] The statement was not prepared.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
+
+--- 0 row(s) updated.
+>>
+>>-- revoke role t120role3 from sql_user6
+>>sh sqlci -i "TEST120(revoke_t120role3)" -u sql_user3;
+>>values (current_user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER3                                                                                                                        
+
+--- 1 row(s) selected.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>set schema t120sch;
+
+--- SQL operation complete.
+>>
+>>revoke role t120role3 from sql_user6;
+
+--- SQL operation complete.
+>>
+>>-- sql_user3 has privs on all tables, can execute and no recompile
+>>obey TEST120(queries);
+>>select game_number from games;
+
+GAME_NUMBER
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+
+--- 8 row(s) selected.
+>>select team_number from teams;
+
+TEAM_NUMBER
+-----------
+
+          1
+          2
+          3
+          4
+          5
+
+--- 5 row(s) selected.
+>>select player_number from players;
+
+PLAYER_NUMBER
+-------------
+
+            1
+            2
+            3
+            3
+            4
+            5
+            6
+            6
+            7
+            8
+            9
+           10
+
+--- 12 row(s) selected.
+>>select team_number, seqnum(team_seq) from standings;
+
+TEAM_NUMBER  (EXPR)              
+-----------  --------------------
+
+          1                   101
+          2                   102
+          3                   103
+          4                   104
+          5                   105
+
+--- 5 row(s) selected.
+>>select team_number, num_players from stats;
+
+TEAM_NUMBER  NUM_PLAYERS
+-----------  -----------
+
+          1            3
+          2            4
+          3            1
+          4            2
+          5            2
+
+--- 5 row(s) selected.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- no longer has privilege (4481) on select_games, 
+>>-- but has privilege on select_teams and select_players
+>>execute select_games;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T120SCH.GAMES.
+
+*** ERROR[8822] The statement was not prepared.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
+
+--- 0 row(s) selected.
+>>execute select_teams;
+
+TEAM_NUMBER  TEAM_NAME           
+-----------  --------------------
+
+          1  White Socks         
+          2  Giants              
+          3  Cardinals           
+          4  Indians             
+          5  Tigers              
+
+--- 5 row(s) selected.
+>>execute select_players;
+
+(EXPR)              
+--------------------
+
+                  12
+
+--- 1 row(s) selected.
+>>
+>>-- user has select but not usage
+>>execute select_standings;
+
+*** ERROR[4491] The user does not have USAGE privilege on sequence TRAFODION.T120SCH.TEAM_SEQ.
+
+*** ERROR[8822] The statement was not prepared.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
+
+--- 0 row(s) selected.
+>>
+>>-- Verify sql_user9 can still select from games and no recompilation msg
+>>sh sqlci -i "TEST120(select_queries)" -u sql_user9;
+>>values (current_user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER9                                                                                                                        
+
+--- 1 row(s) selected.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>set schema t120sch;
+
+--- SQL operation complete.
+>>select game_number from games;
+
+GAME_NUMBER
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+
+--- 8 row(s) selected.
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- tests for PUBLIC
+>>-- select priv on stats has been granted to public
+>>prepare select_stats from select team_number, num_players from stats;
+
+--- SQL command prepared.
+>>log;
+Query_Invalidation_Keys explain output for select_stats: 
+Query_Invalidation_Keys{,,UZ}
+>>shecho"Query_Invalidation_Keysexplainoutputforselect_stats:">>LOG;
+>>
+>>execute select_stats;
+
+TEAM_NUMBER  NUM_PLAYERS
+-----------  -----------
+
+          1            3
+          2            4
+          3            1
+          4            2
+          5            2
+
+--- 5 row(s) selected.
+>>
+>>-- revoke PUBLIC
+>>sh sqlci -i "TEST120(revoke_public)" -u sql_user3;
+>>values (current_user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER3                                                                                                                        
+
+--- 1 row(s) selected.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>set schema t120sch;
+
+--- SQL operation complete.
+>>
+>>revoke select (team_number, num_players) on stats from "PUBLIC";
+
+--- SQL operation complete.
+>>showddl stats;
+
+CREATE TABLE TRAFODION.T120SCH.STATS
+  (
+    TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , NUM_PLAYERS                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (TEAM_NUMBER ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T120SCH.STATS TO T120ROLE1 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>select team_number, num_players from stats;
+
+TEAM_NUMBER  NUM_PLAYERS
+-----------  -----------
+
+          1            3
+          2            4
+          3            1
+          4            2
+          5            2
+
+--- 5 row(s) selected.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>select * from stats;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T120SCH.STATS.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute select_stats;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T120SCH.STATS.
+
+*** ERROR[8822] The statement was not prepared.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
+
+--- 0 row(s) selected.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>log;

@@ -49,6 +49,25 @@
 --- SQL command prepared.
 >>
 >>obey TEST137(create_db);
+>>create role md_access;
+
+--- SQL operation complete.
+>>grant select on "_MD_".auths to md_access;
+
+--- SQL operation complete.
+>>grant select on "_PRIVMGR_MD_".components to md_access;
+
+--- SQL operation complete.
+>>grant select on "_PRIVMGR_MD_".component_operations to md_access;
+
+--- SQL operation complete.
+>>grant select on "_PRIVMGR_MD_".component_privileges to md_access;
+
+--- SQL operation complete.
+>>grant role md_access to sql_user1, sql_user4, sql_user5;
+
+--- SQL operation complete.
+>>
 >>create shared schema t137;
 
 --- SQL operation complete.
@@ -664,6 +683,14 @@ LIBRARY_BOOKS
 >>
 >>
 >>log;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER1                                                                                                                        
+
+--- 1 row(s) selected.
 >>-- These tests should succeed
 >>-- returns 2 rows
 >>showddl role db__rootrole;
@@ -674,8 +701,15 @@ CREATE ROLE "DB__ROOTROLE";
 --- SQL operation complete.
 >>execute get_component_operations;
 
-*** ERROR[15017] Statement GET_COMPONENT_OPERATIONS was not found.
+COMPONENT             OPERATION_NAME        OPERATION_CODE
+--------------------  --------------------  --------------
 
+LIBRARY_ACCOUNTS      LIB_MANAGE_OVERDUE    MO            
+LIBRARY_ACCOUNTS      LIB_VIEW_CHECKOUTS    VC            
+LIBRARY_BOOKS         LIB_MANAGE_CHECKOUTS  MC            
+LIBRARY_BOOKS         LIB_VIEW_CHECKOUTS    VC            
+
+--- 4 row(s) selected.
 >>grant component privilege lib_view_checkouts on library_books to sql_user4 
 +>   with grant option;
 
@@ -683,11 +717,30 @@ CREATE ROLE "DB__ROOTROLE";
 >>grant component privilege lib_manage_checkouts on library_books to sql_user5;
 
 --- SQL operation complete.
->>-- returns 17 rows
+>>-- returns 16 rows
 >>execute get_priv_desc;
 
-*** ERROR[15017] Statement GET_PRIV_DESC was not found.
+COMPONENT             OPERATION_NAME        GRANTEE_NAME                                                                      GRANT_DEPTH
+--------------------  --------------------  --------------------------------------------------------------------------------  -----------
 
+LIBRARY_ACCOUNTS      LIB_MANAGE_OVERDUE    DB__ROOT                                                                                   -1
+LIBRARY_ACCOUNTS      LIB_MANAGE_OVERDUE    LIBRARY_ADMIN                                                                               0
+LIBRARY_ACCOUNTS      LIB_MANAGE_OVERDUE    SQL_USER2                                                                                  -1
+LIBRARY_ACCOUNTS      LIB_VIEW_CHECKOUTS    DB__ROOT                                                                                   -1
+LIBRARY_ACCOUNTS      LIB_VIEW_CHECKOUTS    LIBRARY_ADMIN                                                                               0
+LIBRARY_ACCOUNTS      LIB_VIEW_CHECKOUTS    LIBRARY_CKOUT_CLERKS                                                                        0
+LIBRARY_ACCOUNTS      LIB_VIEW_CHECKOUTS    SQL_USER2                                                                                  -1
+LIBRARY_BOOKS         LIB_MANAGE_CHECKOUTS  DB__ROOT                                                                                   -1
+LIBRARY_BOOKS         LIB_MANAGE_CHECKOUTS  LIBRARY_ADMIN                                                                               0
+LIBRARY_BOOKS         LIB_MANAGE_CHECKOUTS  SQL_USER1                                                                                  -1
+LIBRARY_BOOKS         LIB_MANAGE_CHECKOUTS  SQL_USER5                                                                                   0
+LIBRARY_BOOKS         LIB_VIEW_CHECKOUTS    DB__ROOT                                                                                   -1
+LIBRARY_BOOKS         LIB_VIEW_CHECKOUTS    LIBRARY_ADMIN                                                                               0
+LIBRARY_BOOKS         LIB_VIEW_CHECKOUTS    LIBRARY_CKOUT_CLERKS                                                                        0
+LIBRARY_BOOKS         LIB_VIEW_CHECKOUTS    SQL_USER1                                                                                  -1
+LIBRARY_BOOKS         LIB_VIEW_CHECKOUTS    SQL_USER4                                                                                  -1
+
+--- 16 row(s) selected.
 >>
 >>-- These tests should fail
 >>register component library_other;
@@ -705,14 +758,42 @@ CREATE ROLE "DB__ROOTROLE";
 >>--revoke component privilege lib_view_repository
 >>--   on library_books from sql_user6;
 >>log;
+>>values(user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER4                                                                                                                        
+
+--- 1 row(s) selected.
 >>-- these tests should succeed
 >>grant component privilege lib_view_checkouts on library_books to sql_user6;
 
 --- SQL operation complete.
 >>execute get_priv_desc;
 
-*** ERROR[15017] Statement GET_PRIV_DESC was not found.
+COMPONENT             OPERATION_NAME        GRANTEE_NAME                                                                      GRANT_DEPTH
+--------------------  --------------------  --------------------------------------------------------------------------------  -----------
 
+LIBRARY_ACCOUNTS      LIB_MANAGE_OVERDUE    DB__ROOT                                                                                   -1
+LIBRARY_ACCOUNTS      LIB_MANAGE_OVERDUE    LIBRARY_ADMIN                                                                               0
+LIBRARY_ACCOUNTS      LIB_MANAGE_OVERDUE    SQL_USER2                                                                                  -1
+LIBRARY_ACCOUNTS      LIB_VIEW_CHECKOUTS    DB__ROOT                                                                                   -1
+LIBRARY_ACCOUNTS      LIB_VIEW_CHECKOUTS    LIBRARY_ADMIN                                                                               0
+LIBRARY_ACCOUNTS      LIB_VIEW_CHECKOUTS    LIBRARY_CKOUT_CLERKS                                                                        0
+LIBRARY_ACCOUNTS      LIB_VIEW_CHECKOUTS    SQL_USER2                                                                                  -1
+LIBRARY_BOOKS         LIB_MANAGE_CHECKOUTS  DB__ROOT                                                                                   -1
+LIBRARY_BOOKS         LIB_MANAGE_CHECKOUTS  LIBRARY_ADMIN                                                                               0
+LIBRARY_BOOKS         LIB_MANAGE_CHECKOUTS  SQL_USER1                                                                                  -1
+LIBRARY_BOOKS         LIB_MANAGE_CHECKOUTS  SQL_USER5                                                                                   0
+LIBRARY_BOOKS         LIB_VIEW_CHECKOUTS    DB__ROOT                                                                                   -1
+LIBRARY_BOOKS         LIB_VIEW_CHECKOUTS    LIBRARY_ADMIN                                                                               0
+LIBRARY_BOOKS         LIB_VIEW_CHECKOUTS    LIBRARY_CKOUT_CLERKS                                                                        0
+LIBRARY_BOOKS         LIB_VIEW_CHECKOUTS    SQL_USER1                                                                                  -1
+LIBRARY_BOOKS         LIB_VIEW_CHECKOUTS    SQL_USER4                                                                                  -1
+LIBRARY_BOOKS         LIB_VIEW_CHECKOUTS    SQL_USER6                                                                                   0
+
+--- 17 row(s) selected.
 >>revoke component privilege lib_view_checkouts on library_books from sql_user6;
 
 --- SQL operation complete.
@@ -724,13 +805,98 @@ CREATE ROLE "DB__ROOTROLE";
 
 --- SQL operation failed with errors.
 >>log;
->>-- these tests should fail
+>>-- test getting component privileges through roles
+>>obey TEST137(role_tests);
+>>-- tests grants and revoke on roles owned by user work correctly
+>>create role lib_role_test;
+
+--- SQL operation complete.
+>>
+>>-- user5_tests fail - user5 has no priv
+>>grant component privilege lib_view_checkouts on library_books to lib_role_test with grant option;
+
+--- SQL operation complete.
+>>sh sqlci -i "TEST137(user5_tests)" -u sql_user5;
+>>values(user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER5                                                                                                                        
+
+--- 1 row(s) selected.
 >>grant component privilege lib_view_repository on library_books to sql_user7;
 
 *** ERROR[1004] Object LIB_VIEW_REPOSITORY does not exist or object type is invalid for the current operation.
 
 --- SQL operation failed with errors.
+>>grant component privilege lib_view_checkouts on library_books to sql_user7;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>log;
+>>
+>>-- user5_tests for priv lib_view_checkouts succeeds, have privs through role
+>>grant role lib_role_test to sql_user5;
+
+--- SQL operation complete.
+>>sh sqlci -i "TEST137(user5_tests)" -u sql_user5;
+>>values(user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER5                                                                                                                        
+
+--- 1 row(s) selected.
+>>grant component privilege lib_view_repository on library_books to sql_user7;
+
+*** ERROR[1004] Object LIB_VIEW_REPOSITORY does not exist or object type is invalid for the current operation.
+
+--- SQL operation failed with errors.
+>>grant component privilege lib_view_checkouts on library_books to sql_user7;
+
+--- SQL operation complete.
+>>log;
+>>revoke component privilege lib_view_checkouts on library_books from lib_role_test;
+
+--- SQL operation complete.
+>>revoke role lib_role_test from sql_user5;
+
+--- SQL operation complete.
+>>drop role lib_role_test;
+
+--- SQL operation complete.
+>>
+>>-- user5_tests for priv lib_view_checkouts succeeds, have privs through DB__ROOTROLE
+>>grant role db__rootrole to sql_user5;
+
+--- SQL operation complete.
+>>sh sqlci -i "TEST137(user5_tests)" -u sql_user5;
+>>values(user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER5                                                                                                                        
+
+--- 1 row(s) selected.
+>>grant component privilege lib_view_repository on library_books to sql_user7;
+
+*** ERROR[1004] Object LIB_VIEW_REPOSITORY does not exist or object type is invalid for the current operation.
+
+--- SQL operation failed with errors.
+>>grant component privilege lib_view_checkouts on library_books to sql_user7;
+
+--- SQL operation complete.
+>>log;
+>>revoke role db__rootrole from sql_user5;
+
+--- SQL operation complete.
+>>
+>>
+>>-- test the SQL_OPERATIONS privilege
 >>obey TEST137(operator_privs);
 >>-- This section tests operation privileges:
 >>-- Test environment
@@ -1784,6 +1950,46 @@ drop component privilege lib_view_benefactors cascade;
 
 --- SQL operation complete.
 >>drop role library_ckout_clerks;
+
+--- SQL operation complete.
+>>
+>>revoke component privilege lib_view_checkouts on library_books from lib_role_test;
+
+*** ERROR[1008] Authorization identifier LIB_ROLE_TEST does not exist.
+
+--- SQL operation failed with errors.
+>>revoke role lib_role_test from sql_user5;
+
+*** ERROR[1338] Role LIB_ROLE_TEST is not defined in the database.
+
+--- SQL operation failed with errors.
+>>revoke role db__rootrole from sql_user5;
+
+*** ERROR[1018] Grant of role or privilege DB__ROOTROLE from DB__ROOT to SQL_USER5 not found, revoke request ignored.
+
+--- SQL operation failed with errors.
+>>drop role lib_role_test;
+
+*** ERROR[1338] Role LIB_ROLE_TEST is not defined in the database.
+
+--- SQL operation failed with errors.
+>>
+>>revoke role md_access from sql_user1, sql_user4, sql_user5;
+
+--- SQL operation complete.
+>>revoke select on "_MD_".auths from md_access;
+
+--- SQL operation complete.
+>>revoke select on "_PRIVMGR_MD_".components from md_access;
+
+--- SQL operation complete.
+>>revoke select on "_PRIVMGR_MD_".component_operations from md_access;
+
+--- SQL operation complete.
+>>revoke select on "_PRIVMGR_MD_".component_privileges from md_access;
+
+--- SQL operation complete.
+>>drop role md_access;
 
 --- SQL operation complete.
 >>
