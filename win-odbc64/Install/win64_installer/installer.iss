@@ -149,6 +149,7 @@ var
   sDefaultBrowserValue: String;
   iQuotePos: Integer;
   lLength: Longint;
+  iRetCode: Integer;
 begin
   if CurStep=ssPostInstall then
   begin
