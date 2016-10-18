@@ -1264,6 +1264,10 @@ const ex_conv_clause::ConvInstrStruct ex_conv_clause::convInstrInfo[] = {
   //-----------------------------------------------------------------------
   // src datatype          tgt datatype            instruction and indexStr
   //-----------------------------------------------------------------------
+  {REC_UNKNOWN,        REC_UNKNOWN,                instrAndText(CONV_COMPLEX_TO_COMPLEX)},
+  {REC_UNKNOWN,        REC_UNKNOWN,                instrAndText(CONV_SIMPLE_TO_COMPLEX)},
+  {REC_UNKNOWN,        REC_UNKNOWN,                instrAndText(CONV_COMPLEX_TO_SIMPLE)},
+
   {REC_BPINT_UNSIGNED, REC_BPINT_UNSIGNED,         instrAndText(CONV_BPINTU_BPINTU)},
   {REC_BPINT_UNSIGNED, REC_BIN16_SIGNED,	   instrAndText(CONV_BIN16U_BIN16S)},
   {REC_BPINT_UNSIGNED, REC_BIN16_UNSIGNED,         instrAndText(CONV_BIN16U_BIN16U)},
@@ -1718,9 +1722,6 @@ const ex_conv_clause::ConvInstrStruct ex_conv_clause::convInstrInfo[] = {
   {REC_BOOLEAN,       REC_BYTE_F_ASCII,      instrAndText(CONV_BOOL_ASCII)},
   {REC_BOOLEAN,       REC_BYTE_V_ASCII,      instrAndText(CONV_BOOL_ASCII)},
 
-  {REC_UNKNOWN,       REC_UNKNOWN,           instrAndText(CONV_COMPLEX_TO_COMPLEX)},
-  {REC_UNKNOWN,       REC_UNKNOWN,           instrAndText(CONV_SIMPLE_TO_COMPLEX)},
-  {REC_UNKNOWN,       REC_UNKNOWN,           instrAndText(CONV_COMPLEX_TO_SIMPLE)},
 };
 
 Lng32 ex_conv_clause::findIndexIntoInstrArray(ConvInstruction ci)
@@ -1740,6 +1741,100 @@ Lng32 ex_conv_clause::findIndexIntoInstrArray(ConvInstruction ci)
   return -1; // not found
 }
 
+bool   ex_conv_clause::sv_instrOffsetIndexPopulated = false;
+short  ex_conv_clause::sv_MaxOpTypeValue = -1;
+int   *ex_conv_clause::sv_convIndexSparse = 0;
+
+/* 
+ * Scans convInstrInfo[] and populates a 
+ * sparsely populated index: sv_convIndexSparse. 
+ * 
+ * For a given op type: op_type, 
+ * if (sv_convIndexSparse[op_type>] != -1) then 
+ * it contains the offset into the first row of 
+ * convInstrInfo[]
+ */
+void ex_conv_clause::populateInstrOffsetIndex()
+{
+  if (sv_instrOffsetIndexPopulated) {
+    return;
+  }
+
+  typedef struct convInstrIndexStruct {
+    short type_op1;
+    short offset;
+  } convInstrIndexDef;
+  
+  short lv_MaxIndex = -1;
+
+  // Currently, the number of distinct 'type_op1' values in the convInstrInf[] is 32
+  const int lv_MaxIndexCapacity = 100;
+  convInstrIndexDef lv_convIndex[lv_MaxIndexCapacity];
+
+  Int32 i = 0;
+  Int32 lv_source_type = -1;
+  Int32 lv_max_array_size = sizeof(ex_conv_clause::convInstrInfo) / sizeof(ex_conv_clause::ConvInstrStruct);
+  
+  // collect distinct type_op1 values and their 1st offset in convInstrInfo[]
+  while (i < lv_max_array_size) {
+    if (ex_conv_clause::convInstrInfo[i].type_op1 != lv_source_type) {
+      lv_source_type = ex_conv_clause::convInstrInfo[i].type_op1;
+      if ((lv_source_type > -1) && 
+	  (lv_MaxIndex < (lv_MaxIndexCapacity - 1))) {
+	lv_convIndex[++lv_MaxIndex].type_op1 = lv_source_type;
+	lv_convIndex[lv_MaxIndex].offset = i;
+      }
+    }
+    i++;
+  }
+
+  // Find the max op type value in lv_convIndex
+  int j = 0;
+  while (j <= lv_MaxIndex) {
+    if (sv_MaxOpTypeValue < lv_convIndex[j].type_op1) {
+      sv_MaxOpTypeValue = lv_convIndex[j].type_op1;
+    }
+    j++;
+  }
+
+  // just in case some op type has been assigned a pretty large value
+  // we dont want to allocate a very large sparse value
+  if (sv_MaxOpTypeValue > 8000) {
+    sv_MaxOpTypeValue = 8000;
+  }
+  
+  // Allocate a sparsely populated array
+  int *lv_convIndexSparse = (int *) calloc(sizeof(int), 
+					   (sv_MaxOpTypeValue+1));
+  // Initialize to -1
+  for (j = 0; j <= sv_MaxOpTypeValue; j++) {
+    lv_convIndexSparse[j] = -1;
+  }
+  
+  // Setup the sparsely populated array
+  j = 0;
+  while (j <= lv_MaxIndex) {
+    lv_convIndexSparse[lv_convIndex[j].type_op1] = lv_convIndex[j].offset;
+    j++;
+  }
+
+  sv_convIndexSparse = lv_convIndexSparse;
+  sv_instrOffsetIndexPopulated = true;
+}
+
+/* returns the offset into the convInstrInfo[] (the first row where the 
+ * src data type equals the parameter pv_op1)
+ */
+int ex_conv_clause::getInstrOffset(short pv_op1)
+{
+  if ((pv_op1 < 0) || 
+      (pv_op1 > sv_MaxOpTypeValue)) {
+    return -1;
+  }
+
+  return sv_convIndexSparse[pv_op1];
+}
+
 ConvInstruction ex_conv_clause::findInstruction(short sourceType, Lng32 sourceLen,
                                                 short targetType, Lng32 targetLen,
                                                 Lng32 scaleDifference)
@@ -1753,8 +1848,13 @@ ConvInstruction ex_conv_clause::findInstruction(short sourceType, Lng32 sourceLe
   Int32 max_array_size = sizeof(convInstrInfo) / sizeof(ConvInstrStruct);
 
   Int32 i = 0;
-  while ((i < max_array_size) && (convInstrInfo[i].type_op1 != sourceType)) 
-    i++;
+  i = getInstrOffset(sourceType);
+  if (i < 0) {
+    i = 0;
+    while ((i < max_array_size) && (convInstrInfo[i].type_op1 != sourceType)) {
+      i++;
+    }
+  }
 
   NABoolean done = FALSE;
   while ((!done) && (i < max_array_size)) {
