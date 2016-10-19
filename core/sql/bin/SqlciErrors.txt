@@ -1868,7 +1868,7 @@ drop the default context
 9217 ZZZZZ 99999 BEGINNER INFRM DBADMIN The statement will have no effect because no histograms are currently maintained for the table.
 9218 ZZZZZ 99999 BEGINNER INFRM DBADMIN The statement will have no effect because no histograms need to be updated.
 9219 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: An operation failed, possibly due to an invalid WHERE clause.
-9220 ZZZZZ 99999 BEGINNER INFRM DBADMIN --- unused ---
+9220 ZZZZZ 99999 BEGINNER INFRM DBADMIN The table is empty, so no persistent sample table was created.
 9221 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS cannot be performed due to the absence of the IUS persistent sample table for $0~string0.  Use a regular UPDATE STATISTICS command with the sample clause and PERSISTENT first to create such a persistent sample table.
 9222 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: the rowcount in an interval for column $0~String0 changed more than the percentage specified by CQD USTAT_IUS_INTERVAL_ROWCOUNT_CHANGE_THRESHOLD. A regular UPDATE STATISTICS is performed instead.
 9223 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: the total rowcount for column $0~String0 changed more than the percentage specified by CQD USTAT_IUS_TOTAL_ROWCOUNT_CHANGE_THRESHOLD. A regular UPDATE STATISTICS is performed instead.
