@@ -165,9 +165,9 @@
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-4    .    5    root                                                  2.00E+000
-3    .    4    esp_exchange                    1:8(hash2)            2.00E+000
-2    .    3    hash_groupby                                          2.00E+000
+4    .    5    root                                                  1.00E+001
+3    .    4    esp_exchange                    1:8(hash2)            1.00E+001
+2    .    3    hash_groupby                                          1.00E+001
 1    .    2    esp_exchange                    8(hash2):1            1.00E+009
 .    .    1    trafodion_scan                  CHAR8                 1.00E+009
 
@@ -177,16 +177,16 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 B                     (EXPR)              
 --------------------  --------------------
 
+9                                        1
+8                                        1
+10                                       1
+1                                        1
+3                                        1
 2                                        1
 4                                        1
 5                                        1
 7                                        1
-8                                        1
-9                                        1
-3                                        1
 6                                        1
-10                                       1
-1                                        1
 
 --- 10 row(s) selected.
 >>execute reporter;
@@ -195,14 +195,14 @@ SEQ_NUM     INST_NUM    TDB_NAME                  EST_ROWS              ACT_ROWS
 ----------  ----------  ------------------------  --------------------  --------------------
 
          2           0  EX_SPLIT_BOTTOM                     1000000000                    10
-         4           0  EX_SPLIT_BOTTOM                              2                     2
-         4           1  EX_SPLIT_BOTTOM                              2                     1
-         4           2  EX_SPLIT_BOTTOM                              2                     2
-         4           3  EX_SPLIT_BOTTOM                              2                     1
-         4           4  EX_SPLIT_BOTTOM                              2                     2
-         4           5  EX_SPLIT_BOTTOM                              2                     0
-         4           6  EX_SPLIT_BOTTOM                              2                     1
-         4           7  EX_SPLIT_BOTTOM                              2                     1
+         4           0  EX_SPLIT_BOTTOM                             10                     2
+         4           1  EX_SPLIT_BOTTOM                             10                     1
+         4           2  EX_SPLIT_BOTTOM                             10                     2
+         4           3  EX_SPLIT_BOTTOM                             10                     1
+         4           4  EX_SPLIT_BOTTOM                             10                     2
+         4           5  EX_SPLIT_BOTTOM                             10                     0
+         4           6  EX_SPLIT_BOTTOM                             10                     1
+         4           7  EX_SPLIT_BOTTOM                             10                     1
 
 --- 9 row(s) selected.
 >>
@@ -220,9 +220,9 @@ SEQ_NUM     INST_NUM    TDB_NAME                  EST_ROWS              ACT_ROWS
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-4    .    5    root                                                  2.00E+000
-3    .    4    esp_exchange                    1:8(hash2)            2.00E+000
-2    .    3    hash_groupby                                          2.00E+000
+4    .    5    root                                                  1.00E+001
+3    .    4    esp_exchange                    1:8(hash2)            1.00E+001
+2    .    3    hash_groupby                                          1.00E+001
 1    .    2    esp_exchange                    8(hash2):1            1.00E+009
 .    .    1    trafodion_scan                  DATE8                 1.00E+009
 
@@ -233,15 +233,15 @@ B            (EXPR)
 -----------  --------------------
 
          10                     1
+          5                     1
+          7                     1
+          6                     1
+          3                     1
           8                     1
           9                     1
           1                     1
           4                     1
           2                     1
-          6                     1
-          3                     1
-          5                     1
-          7                     1
 
 --- 10 row(s) selected.
 >>execute reporter;
@@ -250,14 +250,14 @@ SEQ_NUM     INST_NUM    TDB_NAME                  EST_ROWS              ACT_ROWS
 ----------  ----------  ------------------------  --------------------  --------------------
 
          2           0  EX_SPLIT_BOTTOM                     1000000000                    10
-         4           0  EX_SPLIT_BOTTOM                              2                     1
-         4           1  EX_SPLIT_BOTTOM                              2                     0
-         4           2  EX_SPLIT_BOTTOM                              2                     1
-         4           3  EX_SPLIT_BOTTOM                              2                     3
-         4           4  EX_SPLIT_BOTTOM                              2                     1
-         4           5  EX_SPLIT_BOTTOM                              2                     0
-         4           6  EX_SPLIT_BOTTOM                              2                     2
-         4           7  EX_SPLIT_BOTTOM                              2                     2
+         4           0  EX_SPLIT_BOTTOM                             10                     1
+         4           1  EX_SPLIT_BOTTOM                             10                     0
+         4           2  EX_SPLIT_BOTTOM                             10                     1
+         4           3  EX_SPLIT_BOTTOM                             10                     3
+         4           4  EX_SPLIT_BOTTOM                             10                     1
+         4           5  EX_SPLIT_BOTTOM                             10                     0
+         4           6  EX_SPLIT_BOTTOM                             10                     2
+         4           7  EX_SPLIT_BOTTOM                             10                     2
 
 --- 9 row(s) selected.
 >>
@@ -275,10 +275,10 @@ SEQ_NUM     INST_NUM    TDB_NAME                  EST_ROWS              ACT_ROWS
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-4    .    5    root                                                  2.00E+000
-3    .    4    hash_partial_groupby                                  2.00E+000
-2    .    3    esp_exchange                    1:6(hash2)            2.00E+000
-1    .    2    hash_partial_groupby                                  2.00E+000
+4    .    5    root                                                  4.00E+000
+3    .    4    hash_partial_groupby                                  4.00E+000
+2    .    3    esp_exchange                    1:6(hash2)            4.00E+000
+1    .    2    hash_partial_groupby                                  4.00E+000
 .    .    1    trafodion_scan                  NUMERIC10DOT2         1.00E+011
 
 --- SQL operation complete.
@@ -298,12 +298,12 @@ B            (EXPR)
 SEQ_NUM     INST_NUM    TDB_NAME                  EST_ROWS              ACT_ROWS
 ----------  ----------  ------------------------  --------------------  --------------------
 
-         3           0  EX_SPLIT_BOTTOM                              2                     2
-         3           1  EX_SPLIT_BOTTOM                              2                     1
-         3           2  EX_SPLIT_BOTTOM                              2                     3
-         3           3  EX_SPLIT_BOTTOM                              2                     0
-         3           4  EX_SPLIT_BOTTOM                              2                     1
-         3           5  EX_SPLIT_BOTTOM                              2                     1
+         3           0  EX_SPLIT_BOTTOM                              4                     2
+         3           1  EX_SPLIT_BOTTOM                              4                     1
+         3           2  EX_SPLIT_BOTTOM                              4                     3
+         3           3  EX_SPLIT_BOTTOM                              4                     0
+         3           4  EX_SPLIT_BOTTOM                              4                     1
+         3           5  EX_SPLIT_BOTTOM                              4                     1
 
 --- 6 row(s) selected.
 >>
@@ -322,10 +322,10 @@ SEQ_NUM     INST_NUM    TDB_NAME                  EST_ROWS              ACT_ROWS
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-4    .    5    root                                                  2.00E+000
-3    .    4    hash_partial_groupby                                  2.00E+000
-2    .    3    esp_exchange                    1:8(hash2)            2.00E+000
-1    .    2    hash_partial_groupby                                  2.00E+000
+4    .    5    root                                                  1.00E+001
+3    .    4    hash_partial_groupby                                  1.00E+001
+2    .    3    esp_exchange                    1:8(hash2)            1.00E+001
+1    .    2    hash_partial_groupby                                  1.00E+001
 .    .    1    trafodion_scan                  TIME2                 1.00E+009
 
 --- SQL operation complete.
@@ -335,11 +335,11 @@ B            (EXPR)
 -----------  --------------------
 
           6                     1
-          2                     1
          10                     1
+          2                     1
           8                     1
-          9                     1
           3                     1
+          9                     1
           7                     1
           5                     1
           1                     1
@@ -351,14 +351,14 @@ B            (EXPR)
 SEQ_NUM     INST_NUM    TDB_NAME                  EST_ROWS              ACT_ROWS
 ----------  ----------  ------------------------  --------------------  --------------------
 
-         3           0  EX_SPLIT_BOTTOM                              2                     0
-         3           1  EX_SPLIT_BOTTOM                              2                     2
-         3           2  EX_SPLIT_BOTTOM                              2                     1
-         3           3  EX_SPLIT_BOTTOM                              2                     1
-         3           4  EX_SPLIT_BOTTOM                              2                     1
-         3           5  EX_SPLIT_BOTTOM                              2                     1
-         3           6  EX_SPLIT_BOTTOM                              2                     2
-         3           7  EX_SPLIT_BOTTOM                              2                     2
+         3           0  EX_SPLIT_BOTTOM                             10                     0
+         3           1  EX_SPLIT_BOTTOM                             10                     2
+         3           2  EX_SPLIT_BOTTOM                             10                     1
+         3           3  EX_SPLIT_BOTTOM                             10                     1
+         3           4  EX_SPLIT_BOTTOM                             10                     1
+         3           5  EX_SPLIT_BOTTOM                             10                     1
+         3           6  EX_SPLIT_BOTTOM                             10                     2
+         3           7  EX_SPLIT_BOTTOM                             10                     2
 
 --- 8 row(s) selected.
 >>
@@ -377,9 +377,9 @@ SEQ_NUM     INST_NUM    TDB_NAME                  EST_ROWS              ACT_ROWS
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-4    .    5    root                                                  2.00E+000
-3    .    4    esp_exchange                    1:8(hash2)            2.00E+000
-2    .    3    hash_groupby                                          2.00E+000
+4    .    5    root                                                  1.00E+001
+3    .    4    esp_exchange                    1:8(hash2)            1.00E+001
+2    .    3    hash_groupby                                          1.00E+001
 1    .    2    esp_exchange                    8(hash2):1            1.00E+009
 .    .    1    trafodion_scan                  TIMESTAMP2            1.00E+009
 
@@ -389,16 +389,16 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 B            (EXPR)              
 -----------  --------------------
 
-          2                     1
-          5                     1
-          7                     1
-          8                     1
          10                     1
+          8                     1
+          6                     1
+          3                     1
+          2                     1
           9                     1
           1                     1
           4                     1
-          6                     1
-          3                     1
+          5                     1
+          7                     1
 
 --- 10 row(s) selected.
 >>execute reporter;
@@ -407,14 +407,14 @@ SEQ_NUM     INST_NUM    TDB_NAME                  EST_ROWS              ACT_ROWS
 ----------  ----------  ------------------------  --------------------  --------------------
 
          2           0  EX_SPLIT_BOTTOM                     1000000000                    10
-         4           0  EX_SPLIT_BOTTOM                              2                     1
-         4           1  EX_SPLIT_BOTTOM                              2                     0
-         4           2  EX_SPLIT_BOTTOM                              2                     1
-         4           3  EX_SPLIT_BOTTOM                              2                     3
-         4           4  EX_SPLIT_BOTTOM                              2                     1
-         4           5  EX_SPLIT_BOTTOM                              2                     0
-         4           6  EX_SPLIT_BOTTOM                              2                     2
-         4           7  EX_SPLIT_BOTTOM                              2                     2
+         4           0  EX_SPLIT_BOTTOM                             10                     1
+         4           1  EX_SPLIT_BOTTOM                             10                     0
+         4           2  EX_SPLIT_BOTTOM                             10                     1
+         4           3  EX_SPLIT_BOTTOM                             10                     3
+         4           4  EX_SPLIT_BOTTOM                             10                     1
+         4           5  EX_SPLIT_BOTTOM                             10                     0
+         4           6  EX_SPLIT_BOTTOM                             10                     2
+         4           7  EX_SPLIT_BOTTOM                             10                     2
 
 --- 9 row(s) selected.
 >>

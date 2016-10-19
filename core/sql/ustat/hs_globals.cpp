@@ -7719,6 +7719,12 @@ Lng32 HSGlobalsClass::FlushStatistics(NABoolean &statsWritten)
 
       }
 
+    if (retcode == 0)
+      {
+        // invalidate any cached histograms in the cluster
+        CmpSeabaseDDL::invalidateStats(objDef->getObjectUID());
+      }
+
     return retcode;
   }
 

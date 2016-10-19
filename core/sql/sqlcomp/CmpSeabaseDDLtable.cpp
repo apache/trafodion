@@ -3909,6 +3909,15 @@ void CmpSeabaseDDL::dropSeabaseTable(
   return;
 }
 
+short CmpSeabaseDDL::invalidateStats(Int64 tableUID)
+{
+  SQL_QIKEY qiKey;
+
+  strncpy(qiKey.operation,COM_QI_STATS_UPDATED_LIT,sizeof(qiKey.operation));
+  qiKey.ddlObjectUID = tableUID;
+  return SQL_EXEC_SetSecInvalidKeys(1, &qiKey);
+}
+
 void CmpSeabaseDDL::renameSeabaseTable(
                                        StmtDDLAlterTableRename * renameTableNode,
                                        NAString &currCatName, NAString &currSchName)

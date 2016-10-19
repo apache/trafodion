@@ -40,7 +40,7 @@ typedef NASet<ComSecurityKey>  ComSecurityKeySet;
 NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys, 
                                    const SQL_QIKEY* invalidationKeys, 
                                    const Int64 objectUID,
-                                   const ComSecurityKeySet objectKeys);
+                                   const ComSecurityKeySet & objectKeys);
 
 bool buildSecurityKeys( const int32_t granteeID,
                         const int32_t roleID,

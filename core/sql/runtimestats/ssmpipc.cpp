@@ -562,6 +562,9 @@ void SsmpGlobals::work()
     }
   if (SikGcInterval < 0)
     {
+      // Note: If you change this logic see also the logic to update
+      // siKeyGCinterval_ in optimizer/opt.cpp.
+
       // call getenv once per process
       char *sct = getenv("RMS_SIK_GC_INTERVAL_SECONDS");
       if (sct)

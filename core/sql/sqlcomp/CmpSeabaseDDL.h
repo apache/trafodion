@@ -198,6 +198,8 @@ class CmpSeabaseDDL
 
   static std::vector<std::string> getHistogramTables();
 
+  static short invalidateStats(Int64 tableUID);
+
   NABoolean isAuthorizationEnabled();
 
   short existsInHbase(const NAString &objName,

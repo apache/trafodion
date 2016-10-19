@@ -197,6 +197,7 @@ ULng32 qualNameHashFunc(const QualifiedName& qualName)
 //-------------------------------------------------------------------------
 HistogramCache::HistogramCache(NAMemory * heap,Lng32 initSize)
 : heap_(heap),
+  lastTouchTime_(getCurrentTime()),
   hits_(0),
   lookups_(0),
   memoryLimit_(33554432),
@@ -231,6 +232,7 @@ void HistogramCache::invalidateCache()
   }
   histogramsCache_->clearAndDestroy();
   lruQ_.clear();
+  lastTouchTime_ = getCurrentTime();
 }
 
 //--------------------------------------------------------------------------
@@ -250,6 +252,15 @@ void HistogramCache::getHistograms(NATable& table)
   StatsList& colStatsList = *(table.getColStats());
   const Int64& redefTime = table.getRedefTime();
   Int64& statsTime = const_cast<Int64&>(table.getStatsTime());
+  Int64 tableUID = table.objectUid().castToInt64();
+  Int64 siKeyGCinterval = CURRSTMT_OPTDEFAULTS->siKeyGCinterval();
+
+  // Fail safe logic: Make sure that we haven't been idle longer than
+  // the RMS security invalidation garbage collection logic. If we have,
+  // it is possible that an invalidation key for stats has been missed.
+  // So to be safe, we invalidate the whole cache.
+  if (getCurrentTime() > lastTouchTime_ + siKeyGCinterval)
+    invalidateCache();
 
   //1//
   //This 'flag' is set to NULL if FetchHistogram has to be called to
@@ -259,10 +270,6 @@ void HistogramCache::getHistograms(NATable& table)
   //   cached histogram has to be refreshed from disk.
   //Pointer to cache entry for histograms on this table
   HistogramsCacheEntry * cachedHistograms = NULL;
-
-  // skip reading the histograms if they have not been changed in last
-  // CACHE_HISTOGRAMS_REFRESH_INTERVAL hours
-  NABoolean skipRead = FALSE;
 
   //Do we need to use the cache
   //Depends on :
@@ -275,74 +282,27 @@ void HistogramCache::getHistograms(NATable& table)
     // look up the cache and get a reference to statistics for this table
     cachedHistograms = lookUp(table);
 
-    // first thing to check is, if the table to which the histograms are cached
-    // has been updated
+    // (Possibly useless) sanity tests
+
+    // Check to see if the redefinition timestamp has changed. This seems
+    // to be always stubbed to zero today on Trafodion, so this check
+    // seems to never fail.
 
     if (cachedHistograms && (cachedHistograms->getRedefTime() != redefTime))
     {
       deCache(&cachedHistograms);
     }
-    // If the histograms exist in the cache, then we want to avoid reading
-    // timestamps, if the histograms have not been updated in last default
-    // refresh time (CACHE_HISTOGRAMS_REFRESH_INTERVAL) or if the histograms in the cache
-    // are less than CACHE_HISTOGRAMS_REFRESH_INTERVAL old.
 
-    Int64 lastRefTimeDef, lastFakeRefTimeDef, currentTime;
-    if (cachedHistograms)
+    // Check to see if the table's objectUID has changed (indicating that
+    // it has been dropped and recreated). This test shouldn't fail, because
+    // a drop should have caused the NATable object to be invalidated via
+    // the query invalidation infrastructure which should have already caused
+    // the histograms to be decached.
+
+    if (cachedHistograms && (cachedHistograms->getTableUID() != tableUID))
     {
-      lastRefTimeDef = uint32ToInt64(CURRSTMT_OPTDEFAULTS->defRefTime());
-      lastFakeRefTimeDef = uint32ToInt64(CURRSTMT_OPTDEFAULTS->defFakeRefTime());
-
-      currentTime = getCurrentTime();
-
-      Int64 histLastRefreshedTime = cachedHistograms->getRefreshTime();
-
-      if (currentTime && cachedHistograms->isAllStatsFake())
-      {
-        // Check if it has been more than 'lastFakeRefTimeDef' secs 
-        // (equal to CQD HIST_NO_STATS_REFRESH_INTERVAL) since histograms have
-        // been checked OR if update statistics automation is ON and it has
-        // been more than 'lastFakeRefTimeDef'/360 (should = 10 by default).
-        Int64 timeSinceLastHistRefresh = currentTime - histLastRefreshedTime;
-        if(!CURRSTMT_OPTDEFAULTS->ustatAutomation() && timeSinceLastHistRefresh > lastFakeRefTimeDef ||
-            CURRSTMT_OPTDEFAULTS->ustatAutomation() && timeSinceLastHistRefresh > lastFakeRefTimeDef/360)
-        {
-          //the histograms are in the cache but we need to re-read them because
-          //their default values might have been re-estimated
-          deCache(&cachedHistograms);
-        }
-      }
-
-      // Histograms are not fake. Check to see if we need to do anymore timestamp checks
-
-      if (currentTime && cachedHistograms && lastRefTimeDef > 0)
-      {
-        Int64 lastUpdateStatsTime = HistogramsCacheEntry::getLastUpdateStatsTime();
-
-        if ((lastUpdateStatsTime != -1) && 
-            ((currentTime - lastUpdateStatsTime) < lastRefTimeDef))
-        {
-          // Last known update stats time for this table occurred less than
-          // CACHE_HISTOGRAMS_REFRESH_INTERVAL secs ago.
-          if (lastUpdateStatsTime < histLastRefreshedTime)
-          {
-            // Last time the histograms cache was refreshed for this table is newer
-            // than last known update stats time.  Skip read of hists.
-            skipRead = TRUE;
-          }
-        }
-        else
-          // No update stats time recorded OR last known update stats time occurred
-          // more than CACHE_HISTOGRAMS_REFRESH_INTERVAL secs ago.
-          if ((currentTime - histLastRefreshedTime) < lastRefTimeDef)
-            // Histograms were refreshed less than CACHE_REFRESH_HISTOGRAMS_INTERVAL
-            // secs ago.  Skip read of hists.
-            skipRead = TRUE;
-      }
+      deCache(&cachedHistograms);
     }
-
-    //assumption:
-    //if tempHist is not NULL then it should have a pointer to full Histograms
 
     //check if histogram preFetching is on
     if(CURRSTMT_OPTDEFAULTS->preFetchHistograms() && cachedHistograms)
@@ -354,77 +314,28 @@ void HistogramCache::getHistograms(NATable& table)
         //were not preFetched so delete them and
         //re-Read them
         deCache(&cachedHistograms);
-      } //4//
+     } //4//
     } //3//
+  } //2//
 
-    //Check if there is a timestamp mis-match
-    if(cachedHistograms AND cachedHistograms->getRedefTime() != redefTime)
-    { //5//
-       //the histograms are in the cache but we need to re-read them because of
-       //a time stamp mismatch
-       deCache(&cachedHistograms);
-    } //5//
-    else if (!skipRead)
-      { //6//
-        //Do some more timestamp calculations and set re-Read flag if
-        //there is a mis-match
-        if(cachedHistograms)
-        { //9 //
-          // Check when the histogram table was last modified.  If this time doesn't equal
-          // the modification time of the cached histograms, OR this time is more than
-          // lastRefTimeDef secs old, call FetchStatsTime to read STATS_TIME field of
-          // the actual histogram.  The last condition here is used to force a call of
-          // FetchStatsTime() after awhile.  This is for update stats automation:
-          // FetchStatsTime() will update the READ_TIME field of the histogram.
-          Int64 modifTime;
-          Int64 currentJulianTime = NA_JulianTimestamp();
-          GetHSModifyTime(qualifiedName, type, modifTime, FALSE);
-          Int64 readCntInterval = (Int64)CmpCommon::getDefaultLong(USTAT_AUTO_READTIME_UPDATE_INTERVAL);
-          if (modifTime != 0)
-            // If the HISTOGRAMS table was modified since the last time FetchStatsTime()
-            // called and the time is not the same as the cached histograms OR
-            // if it was modified more than READTIME_UPDATE_INTERVAL secs ago and
-            // ustat automation is ON:
-            if (cachedHistograms->getModifTime() != modifTime ||
-                (currentJulianTime - modifTime > readCntInterval*1000000 &&
-                 CmpCommon::getDefaultLong(USTAT_AUTOMATION_INTERVAL) > 0))
-          { //10//
-            FetchStatsTime(qualifiedName,type,colArray,statsTime,FALSE);
-            cachedHistograms->updateRefreshTime();
-            // If ustat automation is on, FetchStatsTime will modify the HISTOGRAMS table.
-            // So, the new modification time of the HISTOGRAMS table must be saved to the
-            // cached histograms when automation is on, so that only changes to HISTOGRAMS 
-            // by update stats cause the above 'if' to be TRUE.
-            if (CmpCommon::getDefaultLong(USTAT_AUTOMATION_INTERVAL) > 0)
-            {
-              GetHSModifyTime(qualifiedName, type, modifTime, FALSE);
-              cachedHistograms->setModifTime(modifTime);
-            }
+  if( cachedHistograms )
+  {
+    hits_++;
+  }
+  else
+  {
+    lookups_++;
+  }
 
-            if (cachedHistograms->getStatsTime() != statsTime)
-            { //11//
-              deCache(&cachedHistograms);
-            } //11//
-          } //10//
-        } //9//
-      } //6//
-    } //2//
+  //retrieve the statistics for the table in colStatsList
+  createColStatsList(table, cachedHistograms);
 
-    if( cachedHistograms )
-    {
-      hits_++;
-    }
-    else
-    {
-      lookups_++;
-    }
+  //if not using histogram cache, then invalidate cache
+  if(!CURRSTMT_OPTDEFAULTS->cacheHistograms())
+    invalidateCache();
 
-    //retrieve the statistics for the table in colStatsList
-    createColStatsList(table, cachedHistograms);
+  lastTouchTime_ = getCurrentTime();
 
-    //if not using histogram cache, then invalidate cache
-    if(!CURRSTMT_OPTDEFAULTS->cacheHistograms())
-      invalidateCache();
 } //1//
 #pragma warn(770)  // warning elimination
   
@@ -523,8 +434,6 @@ void HistogramCache::createColStatsList
       (colStatsList, colArray, cachedHistograms, singleColsFound);
    }
 
-  Int64 modifTime = 0;
-
   // set to TRUE if all columns in the table have default statistics
   NABoolean allFakeStats = TRUE;
 
@@ -586,7 +495,6 @@ void HistogramCache::createColStatsList
                     (*statsListForFetch),
                      FALSE,
                     CmpCommon::statementHeap(),
-                    modifTime,
                     statsTime,
                     allFakeStats,//set to TRUE if all columns have default stats
                     preFetch,
@@ -635,7 +543,8 @@ void HistogramCache::createColStatsList
   
         // put the re-read histograms into cache
         putStatsListIntoCache((*statsListForFetch), colArray, qualifiedName,
-                             modifTime, statsTime, redefTime, allFakeStats);
+                             table.objectUid().castToInt64(),
+                             statsTime, redefTime, allFakeStats);
   
         // look up the cache and get a reference to statistics for this table
         cachedHistograms = lookUp(table);
@@ -775,7 +684,7 @@ Int32 HistogramCache::getStatsListFromCache
 void HistogramCache::putStatsListIntoCache(StatsList & colStatsList,
                                           const NAColumnArray& colArray,
                                           const QualifiedName & qualifiedName,
-                                          Int64 modifTime,
+                                          Int64 tableUID,
                                           Int64 statsTime,
                                           const Int64 & redefTime,
 					  NABoolean allFakeStats)
@@ -783,8 +692,8 @@ void HistogramCache::putStatsListIntoCache(StatsList & colStatsList,
   ULng32 histCacheHeapSize = heap_->getAllocSize();
   // create memory efficient representation of colStatsList
   HistogramsCacheEntry * histogramsForCache = new (heap_) 
-    HistogramsCacheEntry(colStatsList, qualifiedName, 
-                         modifTime, statsTime, redefTime, heap_);
+    HistogramsCacheEntry(colStatsList, qualifiedName, tableUID,
+                         statsTime, redefTime, heap_);
   ULng32 cacheEntrySize = heap_->getAllocSize() - histCacheHeapSize;
 
   if(CmpCommon::getDefault(CACHE_HISTOGRAMS_CHECK_FOR_LEAKS) == DF_ON)
@@ -793,19 +702,12 @@ void HistogramCache::putStatsListIntoCache(StatsList & colStatsList,
     ULng32 histCacheHeapSize2 = heap_->getAllocSize();
     CMPASSERT( histCacheHeapSize == histCacheHeapSize2);
     histogramsForCache = new (heap_) 
-      HistogramsCacheEntry(colStatsList, qualifiedName, 
-                           modifTime, statsTime, redefTime, heap_);
+      HistogramsCacheEntry(colStatsList, qualifiedName, tableUID, 
+                           statsTime, redefTime, heap_);
     cacheEntrySize = heap_->getAllocSize() - histCacheHeapSize2;
   }
   histogramsForCache->setSize(cacheEntrySize);
 
-  if(FALSE)
-  {
-    delete histogramsForCache;
-    histogramsForCache = new (heap_) 
-    HistogramsCacheEntry(colStatsList, qualifiedName, 
-                         modifTime, statsTime, redefTime, heap_);
-  }
   // add it to the cache 
   QualifiedName* key = const_cast<QualifiedName*>
     (histogramsForCache->getName());
@@ -971,22 +873,44 @@ void HistogramCache::monitor() const
   }
 }
 
+void HistogramCache::freeInvalidEntries(Int32 numKeys,
+                                        SQL_QIKEY * qiKeyArray)
+{
+  // an empty set for qiCheckForInvalidObject call
+  ComSecurityKeySet dummy(CmpCommon::statementHeap());
+  // create an iterator that will iterate over the whole cache
+  NAHashDictionaryIterator<QualifiedName, HistogramsCacheEntry> it(*histogramsCache_);
+  QualifiedName * qn = NULL;
+  HistogramsCacheEntry * entry = NULL;
+  
+  for (int i = 0; i < it.entries(); i++)
+  {
+    it.getNext(qn,entry);
+    if (qiCheckForInvalidObject(numKeys, qiKeyArray,
+                                entry->getTableUID(),
+                                dummy))
+      deCache(&entry);
+  }
+
+  lastTouchTime_ = getCurrentTime();
+}
+
+
 // constructor for memory efficient representation of colStats.
 // colStats has both single-column & multi-column histograms.
 HistogramsCacheEntry::HistogramsCacheEntry
 (const StatsList & colStats,
  const QualifiedName & qualifiedName,
-				                     const Int64 & modifTime,
-                                     const Int64 & statsTime,
-                                     const Int64 & redefTime,
+ Int64 tableUID,
+ const Int64 & statsTime,
+ const Int64 & redefTime,
  NAMemory * heap) 
   : full_(NULL), multiColumn_(NULL), name_(NULL), heap_(heap)
-  , refreshTime_(0), singleColumnPositions_(heap)
+  , refreshTime_(0), singleColumnPositions_(heap), tableUID_(tableUID)
   , accessedInCurrentStatement_(TRUE)
   , size_(0)
 {
-	modifTime_ = modifTime;
-    statsTime_ = statsTime;
+  statsTime_ = statsTime;
   updateRefreshTime();
   redefTime_ = redefTime;
   preFetched_ = CURRSTMT_OPTDEFAULTS->preFetchHistograms();
@@ -1304,8 +1228,6 @@ void HistogramsCacheEntry::print
   fprintf(ofd,"allFakeStats_:%d ", allFakeStats_);
   fprintf(ofd,"preFetched_:%d \n", preFetched_);
   char time[30];
-  convertInt64ToAscii(modifTime_, time);
-  fprintf(ofd,"modifTime_:%s ", time);
   convertInt64ToAscii(redefTime_, time);
   fprintf(ofd,"redefTime_:%s ", time);
   convertInt64ToAscii(refreshTime_, time);
@@ -1314,6 +1236,8 @@ void HistogramsCacheEntry::print
   fprintf(ofd,"statsTime_:%s ", time);
   convertInt64ToAscii(getLastUpdateStatsTime(), time);
   fprintf(ofd,"lastUpdateStatsTime:%s \n", time);
+  convertInt64ToAscii(tableUID_, time);
+  fprintf(ofd,"tableUID_:%s \n", time);
   fprintf(ofd,"single-column histograms:%d ", singleColumnCount());
   singleColumnPositions_.printColsFromTable(ofd,NULL);
   if (full_)
