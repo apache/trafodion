@@ -182,7 +182,7 @@ P_TYPE = $(shell uname -p)
 
 ifeq ($(SQ_BUILD_TYPE),release)
   RELEASE ?= 1
-  SERVERTAR="$(PKG_PROD)_server-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}.tar.gz"
+  SERVERTAR="$(PKG_PROD)_server-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}-incubating.tar.gz"
 else
   RELEASE ?= devel
   SERVERTAR="$(PKG_PROD)_server-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}-debug.tar.gz"
