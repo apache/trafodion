@@ -659,6 +659,10 @@ public:
   {
    	return preFetchHistograms_;
   };
+  inline Int64 siKeyGCinterval()
+  {
+    return siKeyGCinterval_;
+  };
 
   static NABoolean cacheHistograms();
 
@@ -727,15 +731,6 @@ public:
   {
     histUseSampleForCardEst_ = v;
   }
-
-  inline Lng32 defRefTime()
-  {
-    return defRefTime_;
-  };
-  inline Lng32 defFakeRefTime()
-  {
-    return defFakeRefTime_;
-  };
 
   inline Lng32 partitioningSchemeSharing()
   {
@@ -1097,11 +1092,10 @@ private:
   NABoolean reduceBaseHistograms_;
   NABoolean reduceIntermediateHistograms_;
   NABoolean preFetchHistograms_;
+  Int64 siKeyGCinterval_;  // query/security invalidation key garbage collection interval, in seconds
 
   NABoolean ustatAutomation_;
   double histDefaultSampleSize_;
-  Lng32 defRefTime_;
-  Lng32 defFakeRefTime_;
   double baseHistogramReductionFF_;
   double intermediateHistogramReductionFF_;
   double histogramReductionConstantAlpha_;

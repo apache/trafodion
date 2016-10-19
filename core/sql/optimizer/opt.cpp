@@ -3893,6 +3893,7 @@ OptDefaults::OptDefaults(CollHeap* h) : heap_(h)
    joinCardLowBound_ = 0.5;
    ustatAutomation_ = FALSE;
    preFetchHistograms_ = TRUE;
+   siKeyGCinterval_ = (Int64)24 * 60 * 60; // 24 hours
    histMCStatsNeeded_ = TRUE;
    histSkipMCUecForNonKeyCols_ = TRUE;
    histMissingStatsWarningLevel_ = 4;
@@ -3906,9 +3907,6 @@ OptDefaults::OptDefaults(CollHeap* h) : heap_(h)
    histDefaultSampleSize_ = 10000;
    histTupleFreqValListThreshold_ = 40;
    histNumOfAddDaysToExtrapolate_ = 4;
-
-   defRefTime_ = 3600;
-   defFakeRefTime_ = 3600;
 
    defNoStatsUec_ = 2;
    defNoStatsRowCount_ = 100;
@@ -4996,9 +4994,6 @@ void OptDefaults::initialize(RelExpr* rootExpr)
   joinCardLowBound_			= (defs_->getAsDouble(HIST_JOIN_CARD_LOWBOUND));
   ustatAutomation_		        = (defs_->getAsLong(USTAT_AUTOMATION_INTERVAL) > 0);
 
-  defRefTime_				= defs_->getAsLong(CACHE_HISTOGRAMS_REFRESH_INTERVAL);
-  defFakeRefTime_			= defs_->getAsLong(HIST_NO_STATS_REFRESH_INTERVAL);
-
   defNoStatsUec_      			= defs_->getAsDouble(HIST_NO_STATS_UEC);
   defNoStatsRowCount_                   = defs_->getAsDouble(HIST_NO_STATS_ROWCOUNT);
 
@@ -5033,6 +5028,20 @@ void OptDefaults::initialize(RelExpr* rootExpr)
   {
 	  preFetchHistograms_           = FALSE;
   }
+
+  // Find out what the RMS security key invalidation garbage collection
+  // interval is (this mirrors the logic in runtimestats/ssmpipc.cpp), so
+  // we can fail-safe the histogram cache.
+
+  char *sct = getenv("RMS_SIK_GC_INTERVAL_SECONDS");  // in seconds
+  if (sct)
+    {
+      siKeyGCinterval_ = ((Int64) str_atoi(sct, str_len(sct)));
+      if (siKeyGCinterval_ < 10)
+        siKeyGCinterval_ = 10;
+    }
+  else
+    siKeyGCinterval_ = (Int64)24 * 60 * 60; // 24 hours
 
   // -----------------------------------------------------------------------
   // Initialize recalibration constants:

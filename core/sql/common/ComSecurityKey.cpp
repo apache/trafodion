@@ -49,7 +49,7 @@
 NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
                                    const SQL_QIKEY* invalidationKeys,
                                    const Int64 objectUID,
-                                   const ComSecurityKeySet objectKeys)
+                                   const ComSecurityKeySet & objectKeys)
 {
   NABoolean found = FALSE;
   ComQIActionType invalidationKeyType = COM_QI_INVALID_ACTIONTYPE;
@@ -65,6 +65,8 @@ NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
     {
       // Indicates that the DDL of the object has changed. 
       case COM_QI_OBJECT_REDEF:
+      // Indicates that the histogram statistics of the object has changed.
+      case COM_QI_STATS_UPDATED:
       {
         if (invalidationKeys[i].ddlObjectUID == objectUID)
           found = TRUE;

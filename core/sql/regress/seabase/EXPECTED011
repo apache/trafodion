@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Tue Sep 20 23:29:21 2016
+-- Definition current  Tue Oct 18 19:38:05 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -143,7 +143,7 @@ A            B
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212341174162429455
+PLAN_ID .................. 212343579486936982
 ROWS_OUT ................. 7
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t011t1 where a >= 3 and a < 5;
@@ -182,7 +182,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 9047840693079464784
+  ObjectUIDs ............. 971200116663334701
   select_list ............ TRAFODION.SCH.T011T1.A, TRAFODION.SCH.T011T1.B
 
 
@@ -791,8 +791,8 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-1    .    2    root                  o                               5.00E+001
-.    .    1    trafodion_scan                  T011T2                5.00E+001
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_scan                  T011T2                1.00E+000
 
 --- SQL operation complete.
 >>
@@ -805,8 +805,8 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-1    .    2    root                  o                               5.00E+001
-.    .    1    trafodion_scan                  T011T2                5.00E+001
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_scan                  T011T2                1.00E+000
 
 --- SQL operation complete.
 >>
@@ -1269,7 +1269,7 @@ METRIC_TEXT_TABLE
 >>invoke trafodion."_REPOS_".metric_query_table;
 
 -- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
--- Definition current  Tue Sep 20 23:31:38 2016
+-- Definition current  Tue Oct 18 19:40:14 2016
 
   (
     INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1457,7 +1457,7 @@ METRIC_TEXT_TABLE
 >>-- get qid for the prepared stmt
 >>get qid for statement explstmt;
 
-MXID11000032456212341174131726593000000000206U3333300_2185_EXPLSTMT
+MXID11000018109212343579451270139000000000206U3333300_2285_EXPLSTMT
 
 --- SQL operation complete.
 >>
@@ -1509,7 +1509,7 @@ SEQ_NUM      OPERATOR
 --- SQL command prepared.
 >>get qid for statement explstmt2;
 
-MXID11000032456212341174131726593000000000206U3333300_2196_EXPLSTMT2
+MXID11000018109212343579451270139000000000206U3333300_2296_EXPLSTMT2
 
 --- SQL operation complete.
 >>set qid MXID123456 for explstmt2;

@@ -1170,6 +1170,7 @@ void CmpMain:: getAndProcessAnySiKeys(TimeVal begTime)
          sikKeyArray);
        InvalidateNATableCacheEntries(returnedNumSiKeys, sikKeyArray);
        InvalidateNARoutineCacheEntries(returnedNumSiKeys, sikKeyArray);
+       InvalidateHistogramCacheEntries(returnedNumSiKeys, sikKeyArray);
      }
    }
   // Always update previous QI time 
@@ -1352,6 +1353,14 @@ void CmpMain::InvalidateNARoutineCacheEntries(Int32 returnedNumQiKeys,
 {
    ActiveSchemaDB()->getNARoutineDB()->free_entries_with_QI_key(
      returnedNumQiKeys, qiKeyArray);
+   return ;
+}
+
+void CmpMain::InvalidateHistogramCacheEntries(Int32 returnedNumQiKeys,
+                                              SQL_QIKEY * qiKeyArray)
+{
+   if (CURRCONTEXT_HISTCACHE)
+     CURRCONTEXT_HISTCACHE->freeInvalidEntries(returnedNumQiKeys,qiKeyArray);
    return ;
 }
 
