@@ -3477,7 +3477,8 @@ void Union::copyLeftRightListsToPreviousIF(Union * previousIF, BindWA * bindWA)
 void Union::dumpChildrensRETDescs(const RETDesc& leftTable,
                                   const RETDesc& rightTable)
 {
-#ifndef NDEBUG
+// turn this code on when you need it by changing the #if below
+#if 0   
   // -- MVs. Debugging code !!!!! TBD
   fprintf(stdout, " #    Left                                Right\n");
   CollIndex maxIndex, minIndex;
@@ -6816,78 +6817,96 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
   return !bindWA->failedForPrivileges() ;
 }
 
+// ****************************************************************************
+// method: findKeyAndInsertInOutputList
+//
+// This method searches through the list of security keys associated with the
+// object to find the best candidate to save in the plan based on the
+// privilege required.  If it finds a candidate, it inserts the best candidate 
+// into securityKeySet_ member of the RelRoot class.
+//
+// Security key types currently include:
+//   COM_QI_OBJECT_<priv>:   privileges granted directly to the user
+//   COM_QI_USER_GRANT_ROLE: privileges granted to the user via a role 
+//   COM_QI_USER_GRANT_SPECIAL_ROLE: privileges granted to PUBLIC
+//
+// COM_QI_OBJECT_<priv> types are preferred over COM_QI_USER_GRANT_ROLE.
+// ****************************************************************************
 void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
                                           , const uint32_t userHashValue
                                           , const PrivType which
                                           )
 {
-   ComSecurityKey  dummyKey;
+   // If no keys associated with object, just return
+   if (KeysForTab.entries() == 0)
+     return;
 
+   ComSecurityKey * UserObjectKey = NULL;
+   ComSecurityKey * RoleObjectKey = NULL;
+   ComSecurityKey * UserObjectPublicKey = NULL;
+   
+   // These may be implemented at a later time
+   ComSecurityKey * UserSchemaKey = NULL; //privs granted at schema level to user
+   ComSecurityKey * RoleSchemaKey = NULL; //privs granted at schema level to role
+
+   // Get action type for UserObjectKey based on the privilege (which)
+   // so if (which) is SELECT, then the objectActionType is COM_QI_OBJECT_SELECT
+   ComSecurityKey  dummyKey;
    ComQIActionType objectActionType =
                    dummyKey.convertBitmapToQIActionType ( which, ComSecurityKey::OBJECT_IS_OBJECT );
 
-   ComSecurityKey * UserSchemaKey = NULL;
-   ComSecurityKey * UserObjectKey = NULL;
-   ComSecurityKey * RoleSchemaKey = NULL;
-   ComSecurityKey * RoleObjectKey = NULL;
-   ComSecurityKey * BestKey = NULL;
-
-   ComSecurityKey * thisKey = &(KeysForTab[0]);
-
-   uint32_t hashValueOfPublic = 0;
+   ComSecurityKey * thisKey = NULL;
 
    // NOTE: hashValueOfPublic will be the same for all keys, so we generate it only once.
-   if ( KeysForTab.entries() > 0 )
-      hashValueOfPublic = thisKey->generateHash(PUBLIC_USER);
+   uint32_t hashValueOfPublic = ComSecurityKey::SPECIAL_OBJECT_HASH;
 
    // Traverse List looking for ANY appropriate ComSecurityKey 
    for ( Int32 ii = 0; ii < (Int32)(KeysForTab.entries()); ii++ )
    {
       thisKey = &(KeysForTab[ii]);
+  
+      // See if the key is object related
       if ( thisKey->getSecurityKeyType() == objectActionType )
       {
-         if ( thisKey->getSubjectHashValue() == hashValueOfPublic ||
-              thisKey->getSubjectHashValue() == userHashValue )
+         if ( thisKey->getSubjectHashValue() == userHashValue )
          {
-              if ( ! UserObjectKey ) UserObjectKey = thisKey;
+            // Found a security key for the objectActionType
+            if ( ! UserObjectKey ) 
+               UserObjectKey = thisKey;
          }
-         else if ( ! RoleObjectKey ) RoleObjectKey = thisKey;
       }
+     
+      // See if the security key is role related
+      else if (thisKey->getSecurityKeyType() == COM_QI_USER_GRANT_ROLE) 
+      {
+         if ( thisKey->getSubjectHashValue() == userHashValue )
+         {
+            if (! RoleObjectKey ) 
+               RoleObjectKey = thisKey;
+         }
+      }
+
+      else if (thisKey->getSecurityKeyType() == COM_QI_USER_GRANT_SPECIAL_ROLE)
+      {
+         if (thisKey->getObjectHashValue() == hashValueOfPublic )
+         {
+            if (! UserObjectPublicKey )
+               UserObjectPublicKey = thisKey;
+         }
+      }
+
       else {;} // Not right action type, just continue traversing.
    }
 
-   if ( UserObjectKey ) BestKey = UserObjectKey ;
-   else if ( RoleObjectKey ) BestKey = RoleObjectKey ;
-   if ( BestKey == NULL)
-     return;  // Sometimes there aren't any security keys
-   securityKeySet_.insert(*BestKey);
+   // Determine best key, UserObjectKeys are better than RoleObjectKeys
+   ComSecurityKey * BestKey = (UserObjectKey) ? UserObjectKey : RoleObjectKey;
 
-   uint32_t SubjHashValue = BestKey->getSubjectHashValue();
-   hashValueOfPublic = BestKey->generateHash(PUBLIC_USER);
+   if ( BestKey != NULL)
+      securityKeySet_.insert(*BestKey);
 
-   // Check whether this privilege was granted to PUBLIC.  If so, nothing more to check.
-   if ( SubjHashValue == hashValueOfPublic )
-      return;
-   while ( SubjHashValue != userHashValue ) //While we see a ComSecurityKey for a Role
-   {
-      NABoolean found = FALSE;
-      for ( Int32 ii = 0; ii < (Int32)(KeysForTab.entries()); ii++ )
-      {
-         // If this ComSecurityKey is a GRANT type and the grantee (the object)
-         // is the Role specified by SubjHashValue, then break out of inner loop.
-         ComSecurityKey * thisKey = &(KeysForTab[ii]);
-         if ( (   thisKey->getObjectHashValue() == SubjHashValue ) &&
-              (  (thisKey->getSecurityKeyType() == COM_QI_USER_GRANT_ROLE ) ) )
-         {
-            securityKeySet_.insert(*thisKey); // Insert this GRANT type ComSecurityKey into the Plan
-            found = TRUE;
-            SubjHashValue = thisKey->getSubjectHashValue();
-            break; // We found the user or Role which granted the user the privilege
-         }
-      }
-      // found should never be FALSE
-      CMPASSERT(found)
-   }
+   // Add public if it exists
+   if ( UserObjectPublicKey != NULL )
+     securityKeySet_.insert(*UserObjectPublicKey); 
 }
 
 
@@ -7505,7 +7524,6 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
 
     // Second we make sure the the underlying base table is key sequenced
     // in case of embedded d/u and streams
-    // -- for as long as we don't support entry sequenced tables
     if (boundView->getLeftmostScanNode()) {
       // this is not a "create view V(a) as values(3)" kind of a view
       const NATable * baseTable =
@@ -7756,7 +7774,6 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
   // QSTUFF
   // Second we make sure the the underlying base table is key sequenced in case
   // of embedded d/u and streams
-  // -- for as long as we don't support entry sequenced tables
   if (getGroupAttr()->isStream()){
 
     if (!naTable->getClusteringIndex()->isKeySequenced() ||
@@ -9496,7 +9513,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   //
   NABoolean view = bindWA->getNATable(getTableName())->getViewText() != NULL;
   ValueIdList tgtColList, userColList, sysColList, *userColListPtr;
-  CollIndexList colnoList;
+  CollIndexList colnoList(STMTHEAP);
   CollIndex totalColCount, defaultColCount, i;
 
   getTableDesc()->getSystemColumnList(sysColList);
@@ -9613,9 +9630,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   }
 
   // Compute total number of columns. Note that there may be some unused
-  // entries in newRecExprArray(), in the following cases:
-  // - An SQL/MP entry sequenced table, entry 0 will not be used as
-  //   the syskey (col 0) is not stored in that type of table
+  // entries in newRecExprArray(), in the following case:
   // - For computed columns that are not stored on disk
   totalColCount = userColListPtr->entries() + sysColList.entries();
   newRecExprArray().resize(totalColCount);
@@ -10003,8 +10018,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       
       // if we need to add the default value, we don't have a new rec expr yet
       if (NOT newRecExprArray().used(i)) {
-        // check for SQL/MP entry sequenced tables omitted above
-
+       
         const char* defaultValueStr = NULL;
         ItemExpr *  defaultValueExpr = NULL;
         NABoolean needToDeallocateColDefaultValueStr = FALSE;
@@ -11093,16 +11107,6 @@ RelExpr *Delete::bindNode(BindWA *bindWA)
     checkConstraints().clear();
   }
 
-  if (getTableDesc()->getClusteringIndex()->getNAFileSet()->isEntrySequenced())
-    {
-      // 4018 DELETE query cannot be used against an Entry-Seq table.
-      *CmpCommon::diags() << DgSqlCode(-4018) <<
-        DgTableName(getTableDesc()->getNATable()->getTableName().
-                      getQualifiedNameAsAnsiString());
-      bindWA->setErrStatus();
-      return this;
-    }
-
   if (NOT getTableDesc()->getVerticalPartitions().isEmpty())
     {
       // 4029 DELETE query cannot be used on a vertically partitioned table.
@@ -11425,7 +11429,7 @@ void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
   }
 
   CollIndex     i, j;
-  CollIndexList colnoList;                  // map of col nums (row positions)
+  CollIndexList colnoList(STMTHEAP);   // map of col nums (row positions)
   CollIndex a = assignList.entries();
 
   const ColumnDescList *viewColumns = NULL;
@@ -12046,21 +12050,6 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
      bindWA->setErrStatus();
      return NULL;
   }
-
-  // By setting the CQD OVERRIDE_SYSKEY to 'ON', the users
-  // are allowed to specify a SYSKEY value on an INSERT.
-  // We achieve this by treating a system column as a user column.
-  // This support is only provided for key sequenced files
-  // for MX and MP tables.
-  if (getOperatorType() == REL_UNARY_INSERT &&
-      naTable->hasSystemColumnUsedAsUserColumn() &&
-      naTable->getClusteringIndex()->isEntrySequenced())
-    {
-      *CmpCommon::diags() << DgSqlCode(-3410) 
-                          << DgTableName(naTable->getTableName().getQualifiedNameAsString());
-      bindWA->setErrStatus();
-      return this;
-    }
   
   Int32 beforeRefcount = naTable->getReferenceCount();
 
@@ -15802,7 +15791,7 @@ RelExpr *CallSP::bindNode(BindWA *bindWA)
   LIST (ItemExpr *) &bWA_HVorDPs = bindWA->getSpHVDPs();
   CollIndex numHVorDPs = bWA_HVorDPs.entries();
 
-  ARRAY(ItemExpr *) local_HVorDPs(numHVorDPs);
+  ARRAY(ItemExpr *) local_HVorDPs(HEAP, numHVorDPs);
   CollIndex idx, idx1, idx2;
 
   // Sort the ItemExpr in the order they appeared in the stmt
@@ -16547,7 +16536,7 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
     RETDesc *childRetDesc = child(i)->getRETDesc();
     
     // Get Name
-    LIST(CorrName*) nameList;
+    LIST(CorrName*) nameList(STMTHEAP);
     childRetDesc->getXTNM().dumpKeys(nameList);
     if (nameList.entries() == 1)
     {

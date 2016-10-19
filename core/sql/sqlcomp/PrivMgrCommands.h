@@ -31,6 +31,7 @@
 #include "PrivMgrMD.h"
 #include "PrivMgrDefs.h"
 #include "TrafDDLdesc.h"
+#include "ComSecurityKey.h"
 
 class ComDiagsArea;
 class ComSecurityKey;
@@ -130,10 +131,9 @@ class PrivMgrUserPrivs
 {
   public:
 
-  PrivMgrUserPrivs(const int32_t nbrCols = 0){};
-  PrivMgrUserPrivs(
-    const TrafDesc *priv_desc,
-    const int32_t userID);
+  PrivMgrUserPrivs()
+  : hasPublicPriv_(false)
+  {}
 
   static std::string convertPrivTypeToLiteral(PrivType which)
   {
@@ -392,6 +392,14 @@ class PrivMgrUserPrivs
   void setSchemaGrantableBitmap (PrivSchemaBitmap schemaGrantableBitmap)
      {schemaGrantableBitmap_ = schemaGrantableBitmap;}
 
+  bool getHasPublicPriv() { return hasPublicPriv_; }
+  void setHasPublicPriv(bool hasPublicPriv) {hasPublicPriv_ = hasPublicPriv;}
+  void initUserPrivs (PrivMgrDesc &privsOfTheGrantor);
+  bool initUserPrivs ( const std::vector<int32_t> &roleIDs,
+                       const TrafDesc *priv_desc,
+                       const int32_t userID,
+                       const int64_t objectUID,
+                       NASet<ComSecurityKey> & secKeySet);
 
  private:
    PrivObjectBitmap objectBitmap_;
@@ -401,7 +409,9 @@ class PrivMgrUserPrivs
    PrivSchemaBitmap schemaPrivBitmap_;
    PrivSchemaBitmap schemaGrantableBitmap_;
    PrivColumnBitmap emptyBitmap_;
+   bool hasPublicPriv_;
 };
+
 
 // *****************************************************************************
 // *
@@ -479,6 +489,10 @@ public:
       const int64_t objectUID,
       std::vector<ObjectPrivsRow> & objectPrivsRows);
       
+   PrivStatus getRoles(
+      const int32_t grantee,
+      std::vector<int32_t> &roleIDs);
+
    PrivStatus givePrivForObjects(
          const int32_t currentOwnerID,
          const int32_t newOwnerID,

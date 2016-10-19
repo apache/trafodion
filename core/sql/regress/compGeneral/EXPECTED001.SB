@@ -165,7 +165,7 @@ ENO          ENAME                 DNO
 +> intersect
 +>select * from  t022;
 
-*** ERROR[4014] The operands of an INTERSECT must be of equal degree.
+*** ERROR[4014] The operands of an INTERSECT or EXCEPT must be of equal degree.
 
 *** ERROR[8822] The statement was not prepared.
 

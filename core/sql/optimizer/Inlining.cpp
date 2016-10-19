@@ -1325,25 +1325,6 @@ void GenericUpdate::fixTentativeRETDesc(BindWA *bindWA, CollHeap *heap)
         BiArith(ITM_PLUS, incrementExpr, new (heap)
 	  JulianTimestamp(new (heap) InternalTimestamp));
 
-      // If this is an entry sequenced table, than the SYSKEY is an INT 
-      // instead of a LARGEINT. So when we manufacture a "fake syskey"
-      // for INSERT operators, we must cast it to INT.
-      NAColumn *syskeyColumn = 
-	getTableDesc()->getNATable()->getNAColumnArray().getColumn("SYSKEY");
-      if ( (syskeyColumn != NULL) && 
-	   (syskeyColumn->getType()->getNominalSize() == 4) )
-      {
-	// The logical way to convert a LARGEINT to an INT is by using
-	// Cast or Convert. However, they both cause the following 
-	// error during execution:
-	// *** ERROR[8411] A numeric overflow occurred during an 
-	//                 arithmetic computation or data conversion.
-	// So I am using Modulus. It's not the most efficient way
-	// to do it, but it works.
-	fakeSyskey = new (heap) 
-	  Modulus(fakeSyskey, new (heap) ConstValue(INT_MAX));
-      }
-
       fakeSyskey->bindNode(bindWA);
 
       // Make NEW@.SYSKEY point to the timestamp expression.

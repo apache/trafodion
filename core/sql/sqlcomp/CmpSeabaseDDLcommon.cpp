@@ -639,7 +639,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       ComTdbVirtTableKeyInfo * indexKeyInfoArray = NULL;
       ComTdbVirtTableKeyInfo * indexNonKeyInfoArray = NULL;
       
-      NAList<NAString> selColList;
+      NAList<NAString> selColList(STMTHEAP);
       NAString defaultColFam(SEABASE_DEFAULT_COL_FAMILY);
       if (createIndexColAndKeyInfoArrays(indexColRefArray,
                                          createIndexNode->isUniqueSpecified(),
@@ -2428,7 +2428,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   // metadata. It creates the corresponding hbase table.
   short retcode = 0;
 
-  HBASE_NAMELIST colFamList;
+  HBASE_NAMELIST colFamList(STMTHEAP);
   HbaseStr colFam;
 
   retcode = -1;
@@ -2549,7 +2549,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   std::vector<NAString> colFamVec;
   colFamVec.push_back(cf1);
 
-  NAList<HbaseCreateOption*> lHbaseCreateOptions;
+  NAList<HbaseCreateOption*> lHbaseCreateOptions(STMTHEAP);
   NAText lHbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
 
   NAList<HbaseCreateOption*> * hbaseCreateOptions = inHbaseCreateOptions;
@@ -4155,7 +4155,7 @@ short CmpSeabaseDDL::genHbaseCreateOptions(
   if (numHBO == 0)
     return 0;
 
-  hbaseCreateOptions = new(heap) NAList<HbaseCreateOption*>;
+  hbaseCreateOptions = new(heap) NAList<HbaseCreateOption*>(heap);
 
   const char * optionStart = startNumHBO + 4;
   
@@ -4304,7 +4304,7 @@ short CmpSeabaseDDL::updateHbaseOptionsInMetadata(
   // old list is empty.
 
   if (!hbaseCreateOptions)
-    hbaseCreateOptions = new(STMTHEAP) NAList<HbaseCreateOption *>;
+    hbaseCreateOptions = new(STMTHEAP) NAList<HbaseCreateOption *>(STMTHEAP);
 
   NAList<HbaseCreateOption *> & newHbaseCreateOptions = edhbo->getHbaseOptions(); 
   for (CollIndex i = 0; i < newHbaseCreateOptions.entries(); i++)
@@ -10356,6 +10356,27 @@ std::string commandString;
       SEABASEDDL_INTERNAL_ERROR(commandString.c_str());
    }
    
+   // update the redef timestamp for the role in auths table
+   char buf[(roleIDs.size()*12) + 500];
+   Int64 redefTime = NA_JulianTimestamp();
+   std::string roleList;
+   for (size_t i = 0; i < roleIDs.size(); i++)
+   {
+     if (i > 0)
+       roleList += ", ";
+     roleList += to_string((long long int)roleIDs[i]);
+   }
+
+   str_sprintf(buf, "update %s.\"%s\".%s set auth_redef_time = %Ld "
+                    "where auth_id in (%s)",
+              systemCatalog.c_str(), SEABASE_MD_SCHEMA, SEABASE_AUTHS,
+              redefTime, roleList.c_str());
+ 
+   ExeCliInterface cliInterface(STMTHEAP);
+   Int32 cliRC = cliInterface.executeImmediate(buf);
+   if (cliRC < 0)
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+
 }
 //********************** End of grantRevokeSeabaseRole *************************
 

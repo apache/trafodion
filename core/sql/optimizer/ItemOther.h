@@ -1325,7 +1325,7 @@ static void doNotReplaceAnItemExpressionForLikePredicates(ItemExpr* inputTree,
                                                           ValueIdSet& inputSet,
                                                           ItemExpr* parent=NULL)
 {
-  NAList<LikePredDetails*> likeList;
+  NAList<LikePredDetails*> likeList(STMTHEAP);
   ValueIdSet vidsToRemove;
 
   // For each inequality expression in inputSet, see if it is derived from the

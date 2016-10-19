@@ -59,9 +59,7 @@ enum ExeDfs2feEnum
                                            // THE SUPPLIED RECORD IS TOO LONG.
                                            // ALSO RETURNED BY THE DISCPROCESS WHEN
                                            // IT ENCOUNTERS A BAD FIELD IN A STORED
-                                           // RECORD, OR IF AN ENTRY-SEQUENCED
-                                           // RECORD UPDATE IS ATTEMPTED WHICH
-                                           // CHANGES THE LENGTH OF A VARCHAR FIELD.
+                                           // RECORD.
                                            //------------------------------
    , FEBADRECDESC            = dfs2fe_base +  1032        // THE RECORD DESCRIPTION IS
                                            // INCONSISTENT.

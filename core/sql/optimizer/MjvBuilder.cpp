@@ -291,7 +291,7 @@ void MjvBuilder::setupBindContext(RelRoot *topNode,
 SET(MVColumnInfo*) MjvBuilder::collectAllAffectedColumns(const IntegerList *updatedCols,
 							 const QualifiedName &qualTableName ) const
 {
-  SET(MVColumnInfo*) affectedCols;
+  SET(MVColumnInfo*) affectedCols(STMTHEAP);
 
   // Finding out the list of columns in the MJV
   const MVColumns &mvCols = getMvInfo()->getMVColumns();

@@ -56,10 +56,12 @@ log;
 -- run tests as different users
 sh sqlci -i "TEST137(user1_tests)" -u sql_user1;
 sh sqlci -i "TEST137(user4_tests)" -u sql_user4;;
-sh sqlci -i "TEST137(user5_tests)" -u sql_user5;
+
+log LOG137;
+-- test getting component privileges through roles
+obey TEST137(role_tests);
 
 -- test the SQL_OPERATIONS privilege
-log LOG137;
 obey TEST137(operator_privs);
 
 obey TEST137(clean_up);
@@ -105,6 +107,18 @@ revoke role library_ckout_clerks from sql_user2;
 revoke role library_ckout_clerks from sql_user3, sql_user4, sql_user5;
 drop role library_ckout_clerks;
 
+revoke component privilege lib_view_checkouts on library_books from lib_role_test;
+revoke role lib_role_test from sql_user5;
+revoke role db__rootrole from sql_user5;
+drop role lib_role_test;
+     
+revoke role md_access from sql_user1, sql_user4, sql_user5;
+revoke select on "_MD_".auths from md_access;
+revoke select on "_PRIVMGR_MD_".components from md_access;
+revoke select on "_PRIVMGR_MD_".component_operations from md_access;
+revoke select on "_PRIVMGR_MD_".component_privileges from md_access;
+drop role md_access;
+
 ?section set_up
 prepare get_roles from
 select substring (auth_db_name,1,20) as role_name
@@ -148,6 +162,13 @@ order by 1, 2, d.grantor_ID, d.grantee_name, grant_depth
 for read uncommitted access;
 
 ?section create_db
+create role md_access;
+grant select on "_MD_".auths to md_access;
+grant select on "_PRIVMGR_MD_".components to md_access;
+grant select on "_PRIVMGR_MD_".component_operations to md_access;
+grant select on "_PRIVMGR_MD_".component_privileges to md_access;
+grant role md_access to sql_user1, sql_user4, sql_user5;
+
 create shared schema t137;
 set schema t137;
 
@@ -353,6 +374,26 @@ drop component privilege lib_view_repository on library_xxxx;
 -- error unknown privilege
 drop component privilege lib_view_xxxx on library_books;
 
+?section role_tests
+-- tests grants and revoke on roles owned by user work correctly
+create role lib_role_test;
+
+-- user5_tests fail - user5 has no priv
+grant component privilege lib_view_checkouts on library_books to lib_role_test with grant option;
+sh sqlci -i "TEST137(user5_tests)" -u sql_user5;
+
+-- user5_tests for priv lib_view_checkouts succeeds, have privs through role
+grant role lib_role_test to sql_user5;
+sh sqlci -i "TEST137(user5_tests)" -u sql_user5;
+revoke component privilege lib_view_checkouts on library_books from lib_role_test;
+revoke role lib_role_test from sql_user5;
+drop role lib_role_test;
+
+-- user5_tests for priv lib_view_checkouts succeeds, have privs through DB__ROOTROLE
+grant role db__rootrole to sql_user5;
+sh sqlci -i "TEST137(user5_tests)" -u sql_user5;
+revoke role db__rootrole from sql_user5;
+
 ?section operator_privs
 -- This section tests operation privileges:
 -- Test environment
@@ -420,7 +461,9 @@ showddl component sql_operations;
 ?section user1_tests
 obey TEST137 (set_up);
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+-- user1_tests
 log LOG137;
+values (user);
 -- These tests should succeed
 -- returns 2 rows
 showddl role db__rootrole;
@@ -428,7 +471,7 @@ execute get_component_operations;
 grant component privilege lib_view_checkouts on library_books to sql_user4 
    with grant option;
 grant component privilege lib_manage_checkouts on library_books to sql_user5;
--- returns 17 rows
+-- returns 16 rows
 execute get_priv_desc;
 
 -- These tests should fail
@@ -444,6 +487,7 @@ log;
 obey TEST137 (set_up);
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
+values(user);
 -- these tests should succeed
 grant component privilege lib_view_checkouts on library_books to sql_user6;
 execute get_priv_desc;
@@ -457,8 +501,9 @@ log;
 obey TEST137 (set_up);
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
--- these tests should fail
+values(user);
 grant component privilege lib_view_repository on library_books to sql_user7;
+grant component privilege lib_view_checkouts on library_books to sql_user7;
 log;
 
 -- below is the setup and testing for various scenarios for revoke component privileges

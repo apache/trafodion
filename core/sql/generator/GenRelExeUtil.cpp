@@ -3333,11 +3333,16 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
   hiveHdfsHost =
     space->AllocateAndCopyToAlignedSpace (getHiveHostName(), 0);
 
+  NABoolean doSimCheck = FALSE;
+  if ((CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
+      (CmpCommon::getDefault(TRAF_SIMILARITY_CHECK) == DF_LEAF))
+    doSimCheck = TRUE;
+
   ComTdbExeUtilHiveTruncate * exe_util_tdb = new(space) 
     ComTdbExeUtilHiveTruncate(tablename, strlen(tablename),
                               hiveTableLocation, partn_loc,
                               hiveHdfsHost, hiveHdfsPort,
-                              hiveModTS_,
+                              (doSimCheck ? hiveModTS_ : -1),
                               (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
                               (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
                               (queue_index)getDefault(GEN_DDL_SIZE_DOWN),

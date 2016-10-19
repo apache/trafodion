@@ -57,6 +57,7 @@ class HSDataBuffer;
 class HSTableDef;
 struct HSColDesc;
 struct HSColGroupStruct;
+struct HSColumnStruct;
 class ISFixedChar;
 class ISVarChar;
 class MCWrapper;
@@ -192,6 +193,9 @@ class HSSample
     Lng32 drop() { return dropSample(sampleTable, objDef); }
 
     NABoolean isIUS() { return isIUS_; }
+
+    void addTruncatedSelectList(NAString & qry);
+    static void addTruncatedColumnReference(NAString & qry, HSColumnStruct & colInfo);
 
   private:
     // Member function

@@ -47,11 +47,19 @@
 #include "NABasicObject.h"
 #include "SortError.h"
 
+class Record;
+
+struct RecKeyBuffer   {
+	  char* key_;
+	  Record* rec_;
+	};
+	
 class Record   {
   public :
 
     Record();
     Record(ULng32 size, NABoolean doNotallocRec, CollHeap* heap);
+    Record(void *rec, ULng32 reclen, void* tupp, CollHeap* heap, SortError* sorterror);
     ~Record(void);
 
     void initialize(ULng32 recsize, NABoolean doNotallocRec, 

@@ -8742,7 +8742,8 @@ void MCSkewedValueList::display() const
 }
 
 MCSkewedValueList::MCSkewedValueList(const MCSkewedValueList & mcsvl, NAMemory *h)
-:heap_(h ? h : CmpCommon::statementHeap())
+  :NAList<MCSkewedValue *>(h ? h : CmpCommon::statementHeap()),
+   heap_(h ? h : CmpCommon::statementHeap())
 {
     for (CollIndex i = 0; i < mcsvl.entries(); i++)
     {

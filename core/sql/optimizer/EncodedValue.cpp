@@ -276,7 +276,8 @@ void NormValue::display (FILE *f, const char * prefix, const char * suffix,
 // LCOV_EXCL_STOP
 
 NormValueList::NormValueList(const NormValueList & nvl, NAMemory *h)
-:heap_(h ? h : CmpCommon::statementHeap())
+  :NAArray<NormValue>(h ? h : CmpCommon::statementHeap(),nvl.entries()),
+  heap_(h ? h : CmpCommon::statementHeap())
 {
   for(CollIndex i=0; i<nvl.entries(); i++)
   {

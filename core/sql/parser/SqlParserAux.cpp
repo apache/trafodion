@@ -292,7 +292,7 @@ THREAD_P NABoolean        ThereAreAssignments;
 void resetHostVars()
 {
   if (AllHostVars == NULL)
-    AllHostVars = new AllHostVarsT();
+    AllHostVars = new AllHostVarsT(NULL);
   AllHostVars->clear();
   TheHostVarRoles->clear();		// SqlParserGlobals.h
 
@@ -300,7 +300,7 @@ void resetHostVars()
   TheProcArgTypes = NULL;
   InAssignmentSt =  FALSE;
   if (AssignmentHostVars == NULL)
-    AssignmentHostVars = new AssignmentHostVarsT();
+    AssignmentHostVars = new AssignmentHostVarsT(NULL);
   AssignmentHostVars->clear();  
 
   intoClause = FALSE;
@@ -498,7 +498,7 @@ RelRoot *finalize(RelExpr *top, NABoolean outputVarCntValid)
 
   if (TheProcArgTypes)
     {
-      LIST(HVArgType *) argdump;
+      LIST(HVArgType *) argdump(PARSERHEAP());
       TheProcArgTypes->dump(argdump);
       for (i = 0; i < argdump.entries(); i++)
         {
@@ -715,27 +715,6 @@ HostVar *makeHostVar(NAString *hvName, NAString *indName, NABoolean isDynamic)
   //	    delete argInfo;
   //	  }
 }
-
-
-char * getPrototypeFromLateNameInfoList(
-     RecompLateNameInfoList * lniList, NAString hvarName, NAString origPtypeVal
-     )
-{
-  const char * prototypeVal = origPtypeVal.data();
-
-  for (Int32 i = 0; i < (Int32)lniList->numEntries(); i++)
-    {
-      if ((strcmp(lniList->getRecompLateNameInfo(i).varName(),
-		  hvarName.data()) == 0))
-	{
-	  return lniList->getRecompLateNameInfo(i).actualAnsiName();
-	  
-	}
-    }
-
-  return NULL;
-}
-
 
 static
 NABoolean literalToNumber(NAString *strptr, char sign, NAString *cvtstr, 

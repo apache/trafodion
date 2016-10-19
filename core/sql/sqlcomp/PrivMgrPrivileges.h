@@ -112,20 +112,10 @@ public:
   // -------------------------------------------------------------------
    PrivStatus buildSecurityKeys(
       const int32_t granteeID, 
+      const int32_t roleID,
       const PrivMgrCoreDesc &privs,
       std::vector <ComSecurityKey *> & secKeySet);
       
-   PrivStatus getPrivsOnObject (
-      const ComObjectType objectType,
-      std::vector<PrivMgrDesc> & privDescs );
- 
-   PrivStatus getColPrivsForUser(
-      const int32_t granteeID,
-      const std::vector<int32_t> & roleIDs,
-      PrivColList & colPrivsList,
-      PrivColList & colGrantableList,
-      std::vector <ComSecurityKey *>* secKeySet);
-       
    PrivStatus getGrantorDetailsForObject(
       const bool isGrantedBySpecified,
       const std::string grantedByName,
@@ -138,6 +128,17 @@ public:
       const std::string & orderByClause,
       std::vector<PrivObjectBitmap> & privBitmaps);
       
+   PrivStatus getPrivsOnObject (
+      const ComObjectType objectType,
+      std::vector<PrivMgrDesc> & privDescs );
+ 
+   PrivStatus getPrivsOnObjectForUser(
+      const int64_t objectUID,
+      ComObjectType objectType,
+      const int32_t userID,
+      PrivMgrDesc &privsForTheUser,
+      std::vector <ComSecurityKey *>* secKeySet);
+
    PrivStatus getPrivRowsForObject(
       const int64_t objectUID,
       std::vector<ObjectPrivsRow> & objectPrivsRows);
@@ -145,16 +146,6 @@ public:
    PrivStatus getPrivTextForObject(
       const PrivMgrObjectInfo &objectInfo,
       std::string &privilegeText);
-
-   PrivStatus getPrivsOnObjectForUser(
-      const int64_t objectUID,
-      ComObjectType objectType,
-      const int32_t userID,
-      PrivObjectBitmap &userPrivs,
-      PrivObjectBitmap &grantablePrivs,
-      PrivColList & colPrivsList,
-      PrivColList & colGrantableList,
-      std::vector <ComSecurityKey *>* secKeySet);
 
    PrivStatus givePrivForObjects(
       const int32_t currentOwnerID,
@@ -334,10 +325,11 @@ private:
     const int64_t objectUID,
     std::vector<PrivMgrMDRow *> &columnRows);
 
-  PrivStatus getDistinctUserIDs(
+  PrivStatus getDistinctIDs(
     const std::vector <PrivMgrMDRow *> &objectRowList,
     const std::vector <PrivMgrMDRow *> &columnRowList,
-    std::vector<int32_t> &userIDs);
+    std::vector<int32_t> &userIDs,
+    std::vector<int32_t> &roleIDs);
 
   PrivStatus getGrantedPrivs(
     const int32_t granteeID,

@@ -168,7 +168,8 @@ protected:
     COLLECT_NF_ERRORS_     = 0x0001,
     PREFIX_ORDERED_INPUT   = 0x0002,
     SORT_FROM_TOP          = 0x0004,
-    USER_SIDETREE_INSERT   = 0x0008
+    USER_SIDETREE_INSERT   = 0x0008,
+    SORT_TOPN_ENABLE       = 0x0010
   };
 
   SortOptionsPtr sortOptions_;                          // 00-07
@@ -204,7 +205,6 @@ protected:
   Float32 bmoCitizenshipFactor_;                        // 68-71
   Int32  pMemoryContingencyMB_;                        // 72-75
   UInt16 sortGrowthPercent_;                            // 76-77
-  
   char fillersComTdbSort_[18];                          // 78-95
 
 public:
@@ -306,6 +306,10 @@ public:
   NABoolean sortFromTop() { return (flags_ & SORT_FROM_TOP) != 0;}
   void setSortFromTop(NABoolean v)
   {(v ? flags_ |= SORT_FROM_TOP : flags_ &= ~SORT_FROM_TOP);}
+  
+  NABoolean topNSort() { return (flags_ & SORT_TOPN_ENABLE) != 0;}
+  void setTopNSort(NABoolean v)
+  {(v ? flags_ |= SORT_TOPN_ENABLE : flags_ &= ~SORT_TOPN_ENABLE);}
 
   NABoolean userSidetreeInsert()
   {
@@ -326,7 +330,7 @@ public:
     {  pMemoryContingencyMB_ = mCMB;} 
   Int32 getMemoryContingencyMB(void)
     { return pMemoryContingencyMB_; }
-
+  
   void setSortMemEstInMbPerCpu(Float32 s) {sortMemEstInMbPerCpu_=s;}
   Float32 getSortMemEstInMbPerCpu() {return sortMemEstInMbPerCpu_;}
   Float32 sortGrowthPercent() {return Float32(sortGrowthPercent_/100.0);}

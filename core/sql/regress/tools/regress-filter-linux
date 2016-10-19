@@ -435,7 +435,7 @@ s/^ ObjectUIDs \.\.\.\.\.\.\.\.\.\.\.\.\. [0-9,]*$/  ObjectUIDs filtered/g
 s/qid MXID11.*$/qid filtered/g
 s/ID MXID11.*$/qid filtered/g
 
-s/DataModMismatchDetails:[ 0-9a-zA-Z:,=]*/DataModMismatchDetails: removed/g
+s/DataModMismatchDetails:[ 0-9a-zA-Z:,=_\/\.\-]*/DataModMismatchDetails: removed/g
 
 " $sedInput
 

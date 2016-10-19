@@ -87,11 +87,7 @@ public:
       ULng32 getRecSize() const;
 
       NABoolean  setKeyInfo(ULng32 keysize);
-      
-
-      NABoolean setTemps(ULng32 runsize, ULng32 mergesize);
-      NABoolean getTemps() const;
-
+            
       void setUseBuffered(NABoolean torf);
       NABoolean getUseBuffered() ;
 
@@ -152,7 +148,6 @@ public:
      {
        return numEsps_;
      }
-
      void setEventHandler(ExSubtask *eh)	
      {
       ioEventHandler_ = eh;
@@ -281,6 +276,8 @@ public:
     void setIntermediateScratchCleanup(NABoolean v)
       { intermediateScratchCleanup_ = v;}
     NABoolean intermediateScratchCleanup(){return intermediateScratchCleanup_;}
+    void setTopNSort(NABoolean v)
+      { topNSort_ = v; }
 
     friend class SortUtil;
 
@@ -319,7 +316,7 @@ private:
       ULng32 mergeOrder_; // Need to modify this to do automatically.
       ULng32 minMem_;  // Minimum sort heap  memory
       ULng32 maxMem_;  // Maximum sort heap memory
-      ULng32 initialRunSize_; // unused :to be set by the executor
+      NABoolean topNSort_; // TopN sorting enable/disable
       ULng32 runSizeIncr_; // unused :how much to increment the run size by.
       ULng32 maxNumBuffers_; // Max buffer space as set by the compiler
       unsigned short scratchThreshold_; // percent of disk usage after which a disk will be discarded for use

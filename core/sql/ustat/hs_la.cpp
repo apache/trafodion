@@ -291,6 +291,7 @@ Lng32 HSSqTableDef::DescribeColumnNames()
         HSHandleError(retcode_);
         colName[len] = '\0';
         *colInfo_[i].colname = &*colName;
+        *colInfo_[i].externalColumnName = ToAnsiIdentifier(*colInfo_[i].colname);
                                                   /*== GET COLUMN DATATYPE ==*/
         retcode_ = SQL_EXEC_GetDescItem(outputDesc, entry,
                                         SQLDESC_TYPE_FS,
@@ -1010,6 +1011,7 @@ Lng32 HSHiveTableDef::DescribeColumnNames()
     {
       *(colInfo_[i].colname) = hiveColDesc->name_;
       colInfo_[i].colname->toUpper();
+      *colInfo_[i].externalColumnName = ToAnsiIdentifier(*colInfo_[i].colname);
 
       NAType* natype = getSQColTypeForHive(hiveColDesc->type_, STMTHEAP);
       colInfo_[i].datatype = natype->getFSDatatype();
@@ -1238,6 +1240,7 @@ Lng32 HSHbaseTableDef::DescribeColumnNames()
     {
       colInfo_[i].colnum = i;  // position of col in table
       *(colInfo_[i].colname) = colArr[i]->getColName();
+      *colInfo_[i].externalColumnName = ToAnsiIdentifier(*colInfo_[i].colname);
       natype = colArr[i]->getType();
       colInfo_[i].datatype = natype->getFSDatatype();
       colInfo_[i].nullflag = natype->supportsSQLnullLogical();

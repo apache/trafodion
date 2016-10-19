@@ -2108,7 +2108,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
   tableInfo->numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
   tableInfo->rowFormat = (alignedFormat ? COM_ALIGNED_FORMAT_TYPE : COM_HBASE_FORMAT_TYPE);
 
-  NAList<HbaseCreateOption*> hbaseCreateOptions;
+  NAList<HbaseCreateOption*> hbaseCreateOptions(STMTHEAP);
   NAString hco;
 
   short retVal = setupHbaseOptions(createTableNode->getHbaseOptionsClause(), 
@@ -4053,14 +4053,39 @@ void CmpSeabaseDDL::renameSeabaseTable(
                  catalogNamePart);
   
   NATable *newNaTable = bindWA.getNATable(newcn); 
-  if (naTable != NULL && (NOT bindWA.errStatus()))
+  if (newNaTable != NULL && (NOT bindWA.errStatus()))
     {
+      // an object already exists with the new name
       *CmpCommon::diags() << DgSqlCode(-1390)
                           << DgString0(newExtTableName);
       
       processReturn();
       
       return;
+    }
+  else if (newNaTable == NULL &&
+           bindWA.errStatus() &&
+           (!CmpCommon::diags()->contains(-4082) || CmpCommon::diags()->getNumber() > 1))
+    {
+      // there is some error other than the usual -4082, object
+      // does not exist
+
+      // If there is also -4082 error, remove that as it is misleading
+      // to the user. The user would see, "new name does not exist" 
+      // and wonder, what is wrong with that?
+
+      for (CollIndex i = CmpCommon::diags()->returnIndex(-4082);
+           i != NULL_COLL_INDEX;
+           i = CmpCommon::diags()->returnIndex(-4082))
+        {
+          CmpCommon::diags()->deleteError(i);
+        }
+  
+      if (CmpCommon::diags()->getNumber() > 0) // still anything there?
+        {
+          processReturn();  // error is already in the diags
+          return;
+        }
     }
 
   CmpCommon::diags()->clear();
@@ -5109,11 +5134,11 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
         }
 
       HbaseCreateOption hbco("NAME", trafColFam.data()); 
-      NAList<HbaseCreateOption*> hbcol;
+      NAList<HbaseCreateOption*> hbcol(STMTHEAP);
       hbcol.insert(&hbco);
       ElemDDLHbaseOptions edhbo(&hbcol, STMTHEAP);
 
-      NAList<NAString> nal;
+      NAList<NAString> nal(STMTHEAP);
       nal.insert(trafColFam);
 
       HbaseStr hbaseTable;
@@ -5765,8 +5790,8 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
 
   Int64 objUID = naTable->objectUid().castToInt64();
 
-  NAList<NAString> viewNameList;
-  NAList<NAString> viewDefnList;
+  NAList<NAString> viewNameList(STMTHEAP);
+  NAList<NAString> viewDefnList(STMTHEAP);
   if (saveAndDropUsingViews(objUID, &cliInterface, viewNameList, viewDefnList))
     {
       NAString reason = "Error occurred while saving views.";
@@ -6871,8 +6896,8 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnDatatype(
   // the views.
   // At the end of alter, views will be recreated. If an error happens
   // during view recreation, alter will fail.
-  NAList<NAString> viewNameList;
-  NAList<NAString> viewDefnList;
+  NAList<NAString> viewNameList(STMTHEAP);
+  NAList<NAString> viewDefnList(STMTHEAP);
   if (saveAndDropUsingViews(objUID, &cliInterface, viewNameList, viewDefnList))
      {
       NAString reason = "Error occurred while saving views.";
@@ -7145,8 +7170,8 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnRename(
 
   Int64 objUID = naTable->objectUid().castToInt64();
   
-  NAList<NAString> viewNameList;
-  NAList<NAString> viewDefnList;
+  NAList<NAString> viewNameList(STMTHEAP);
+  NAList<NAString> viewDefnList(STMTHEAP);
   if (saveAndDropUsingViews(objUID, &cliInterface, viewNameList, viewDefnList))
     {
       NAString reason = "Error occurred while saving dependent views.";
@@ -7730,7 +7755,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
       return;
     }
 
-  NAList<NAString> emptyKeyColList;
+  NAList<NAString> emptyKeyColList(STMTHEAP);
   if (updateIndexInfo(keyColList,
                       keyColOrderList,
                       emptyKeyColList,
@@ -8153,7 +8178,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
 
   NAString constrName;
   NABoolean isPkey = FALSE;
-  NAList<int> reorderList;
+  NAList<int> reorderList(HEAP);
   // Find a uniqueness constraint on the referenced table that matches
   // the referenced column list (not necessarily in the original order
   // of columns).  Also find out how to reorder the column lists to
@@ -8184,9 +8209,9 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
 
       // re-order referencing and referenced key column lists to match
       // the order of the uniqueness constraint in the referenced table
-      NAArray<NAString> ringTempKeyColArray(numEntries);
-      NAArray<NAString> ringTempKeyColOrderArray(numEntries);
-      NAArray<NAString> refdTempKeyColArray(numEntries);
+      NAArray<NAString> ringTempKeyColArray(HEAP, numEntries);
+      NAArray<NAString> ringTempKeyColOrderArray(HEAP, numEntries);
+      NAArray<NAString> refdTempKeyColArray(HEAP, numEntries);
 
       // copy the lists into temp arrays in the correct order
       for (CollIndex i=0; i<numEntries; i++)
@@ -8715,7 +8740,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
         }
     }
 
-  NAList<NAString> keyColList;
+  NAList<NAString> keyColList(STMTHEAP);
   if (constraintErrorChecks(&cliInterface,
                             alterAddConstraint->castToStmtDDLAddConstraintCheck(),
                             naTable,
@@ -8779,7 +8804,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
   comUID.make_UID();
   Int64 checkUID = comUID.get_value();
 
-  NAList<NAString> emptyList;
+  NAList<NAString> emptyList(STMTHEAP);
   if (updateConstraintMD(keyColList, emptyList, uniqueStr, tableUID, checkUID, 
                          naTable, COM_CHECK_CONSTRAINT, TRUE, &cliInterface))
     {
@@ -9721,7 +9746,7 @@ void CmpSeabaseDDL::createNativeHbaseTable(
       colFamVec.push_back(nas->data());
     }
 
-  NAList<HbaseCreateOption*> hbaseCreateOptions;
+  NAList<HbaseCreateOption*> hbaseCreateOptions(STMTHEAP);
   NAString hco;
   retcode = setupHbaseOptions(createTableNode->getHbaseOptionsClause(), 
                               0, objectNamePart,
@@ -10380,7 +10405,7 @@ ComTdbVirtTablePrivInfo * CmpSeabaseDDL::getSeabasePrivInfo(
   ComTdbVirtTablePrivInfo *privInfo = new (STMTHEAP) ComTdbVirtTablePrivInfo();
 
   // PrivMgrDesc operator= is a deep copy
-  privInfo->privmgr_desc_list = new (STMTHEAP) NAList<PrivMgrDesc>;
+  privInfo->privmgr_desc_list = new (STMTHEAP) NAList<PrivMgrDesc>(STMTHEAP);
   for (size_t i = 0; i < privDescs.size(); i++)
     privInfo->privmgr_desc_list->insert(privDescs[i]);
 

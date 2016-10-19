@@ -326,7 +326,7 @@ alter-action is:
      ADD [IF NOT EXISTS][COLUMN] column-definition
    | ADD [CONSTRAINT constraint-name] table-constraint
    | DROP CONSTRAINT constraint-name [RESTRICT]
-   | RENAME TO new-name [CASCADE]
+   | RENAME TO new-name
    | DROP COLUMN [IF EXISTS] column-name
 
 column-definition is:
@@ -514,7 +514,6 @@ is a constraint that specifies a condition that must be satisfied for each row i
 see <<search_condition,search condition>>. you cannot refer to the current_date, current_time, or current_timestamp function in a check
 constraint, and you cannot use subqueries in a check constraint.
 
-<<<
 *** `foreign key (_column-list_) references _ref-spec_ not enforced`
 +
 is a table constraint that specifies a referential constraint for the table, declaring that a column or set of columns (called a foreign key)
@@ -525,6 +524,7 @@ the two columns or sets of columns must have the same characteristics (data type
 the foreign key in _table_ is the column being defined; with the foreign key clause, the foreign key is the column or set of columns specified in
 the foreign key clause. for information about _ref-spec_, see references _ref-spec_ not enforced.
 
+<<<
 * `drop constraint _constraint-name_ [restrict]`
 +
 drops a constraint from the table. +
@@ -542,7 +542,7 @@ if you do not specify a constraint name, trafodion sql constructs an sql identif
 identifier consists of the fully qualified table name concatenated with a system-generated unique identifier. for example, a constraint on table
 a.b.c might be assigned a name such as a.b.c_123&#8230;_01&#8230;.
 
-* `rename to _new-name_ [cascade]`
+* `rename to _new-name_`
 +
 changes the logical name of the object within the same schema.
 
@@ -551,10 +551,6 @@ changes the logical name of the object within the same schema.
 specifies the new name of the object after the rename to operation occurs.
 
 <<<
-** `cascade`
-+
-specifies that indexes and constraints on the renamed object will be renamed.
-
 * `add if not exists _column-definition_`
 +
 adds a column to _table_ if it does not already exist in the table.

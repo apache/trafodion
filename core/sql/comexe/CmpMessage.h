@@ -64,7 +64,6 @@ class CmpMessageCompileStmt;
 
 class ex_expr;
 class sql_buffer;
-class RecompLateNameInfoList;
 class FragmentDir;
 
 // -----------------------------------------------------------------------
@@ -310,8 +309,6 @@ class CmpCompileInfo
 public:
   CmpCompileInfo(char * sourceStr, Lng32 sourceStrLen,
 		 Lng32 sourceStrCharSet,
-		 RecompLateNameInfoList  * recompLateNameInfoList, 
-		 Lng32 rlnilLen,
 		 char * schemaName, Lng32 schemaNameLen, 
 		 char * recompControlInfo, Lng32 recompControlInfoLen,
 		 ULng32 inputArrayMaxsize,
@@ -329,7 +326,6 @@ public:
   void unpack(char * base);
   
   void getUnpackedFields(char* &sqltext,
-			 RecompLateNameInfoList* &rlnil,
 			 char* &schemaName,
 			 char* &recompControlInfo);
 
@@ -417,19 +413,19 @@ protected:
     HBASE_DDL                               = 0x0800
   };
 
-  char * sqltext_;    // 00-03
-  Lng32 sqlTextLen_;   // 04-07
-  RecompLateNameInfoList * rlnil_;  // 08-11
-  Lng32 rlnilLen_;  // 12-15
-  char * schemaName_;  // 16-19
-  Lng32 schemaNameLen_;  // 20-23
-  ULng32 inputArrayMaxsize_;  // 24-27
-  ULng32 flags_;              // 28-31
+  char * sqltext_;        // 00-07
+  Lng32 sqlTextLen_;      // 08-11
+  Lng32 unused_;          // 12-15
+  char * schemaName_;     // 16-23
+  Lng32 schemaNameLen_;   // 24-27
+  Lng32 unused2_;         // 28-31
+  ULng32 inputArrayMaxsize_;  // 32-35
+  ULng32 flags_;              // 36-39
 
-  char * recompControlInfo_;         // 32-35
-  Lng32   recompControlInfoLen_;     // 36-39
-  Lng32   sqlTextCharSet_;           // 40-43   
-  char fillerBytes_[FILLERSIZE];     // 44-99   
+  char * recompControlInfo_;         // 40-43
+  Lng32  recompControlInfoLen_;      // 44-47
+  Lng32  sqlTextCharSet_;            // 48-51   
+  char fillerBytes_[FILLERSIZE];     // 52-107   
 };
 #pragma warn(1506)  // warning elimination 
 
