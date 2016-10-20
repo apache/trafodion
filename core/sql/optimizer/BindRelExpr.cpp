@@ -9301,41 +9301,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
         return this;
       }
 
-    RelExpr * mychild = child(0);
-
-    const HHDFSTableStats* hTabStats = 
-      getTableDesc()->getNATable()->getClusteringIndex()->getHHDFSTableStats();
-				 
-    const char * hiveTablePath;
-    NAString hostName;
-    Int32 hdfsPort;
-    NAString tableDir;
-    NABoolean result;
-
-    char fldSep[2];
-    char recSep[2];
-    memset(fldSep,'\0',2);
-    memset(recSep,'\0',2);
-    fldSep[0] = hTabStats->getFieldTerminator();
-    recSep[0] = hTabStats->getRecordTerminator();
-
-    // don't rely on timeouts to invalidate the HDFS stats for the target table,
-    // make sure that we invalidate them right after compiling this statement,
-    // at least for this process
-    ((NATable*)(getTableDesc()->getNATable()))->setClearHDFSStatsAfterStmt(TRUE);
-
-    // inserting into tables with multiple partitions is not yet supported
-    CMPASSERT(hTabStats->entries() == 1);
-    hiveTablePath = (*hTabStats)[0]->getDirName();
-    result = ((HHDFSTableStats* )hTabStats)->splitLocation
-      (hiveTablePath, hostName, hdfsPort, tableDir) ;       
-    if (!result) {
-       *CmpCommon::diags() << DgSqlCode(-4224)
-                            << DgString0(hiveTablePath);
-        bindWA->setErrStatus();
-        return this;
-    }
-
     // specifying a list of column names to insert to is not yet supported
     if (insertColTree_) {
       *CmpCommon::diags() << DgSqlCode(-4223)
@@ -9344,48 +9309,24 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       return this;
     }
      
-    //    NABoolean isSequenceFile = (*hTabStats)[0]->isSequenceFile();
-    const NABoolean isSequenceFile = hTabStats->isSequenceFile();
-    
-    RelExpr * unloadRelExpr =
-                    new (bindWA->wHeap())
-                    FastExtract( mychild,
-                                 new (bindWA->wHeap()) NAString(hiveTablePath),
-                                 new (bindWA->wHeap()) NAString(hostName),
-                                 hdfsPort,
-                                 getTableDesc(),
-                                 new (bindWA->wHeap()) NAString(getTableName().getQualifiedNameObj().getObjectName()),
-                                 FastExtract::FILE,
-                                 bindWA->wHeap());
-    RelExpr * boundUnloadRelExpr = unloadRelExpr->bindNode(bindWA);
-    if (bindWA->errStatus())
-      return NULL;
+    RelExpr *feResult = FastExtract::makeFastExtractTree(
+         getTableDesc(),
+         child(0).getPtr(),
+         getOverwriteHiveTable(),
+         TRUE,  // called from within binder
+         FALSE, // not a common subexpr
+         bindWA);
 
-    ((FastExtract*)boundUnloadRelExpr)->setRecordSeparator(recSep);
-    ((FastExtract*)boundUnloadRelExpr)->setDelimiter(fldSep);
-    ((FastExtract*)boundUnloadRelExpr)->setOverwriteHiveTable(getOverwriteHiveTable());
-    ((FastExtract*)boundUnloadRelExpr)->setSequenceFile(isSequenceFile);
-    if (getOverwriteHiveTable())
-    {
-      RelExpr * newRelExpr =  new (bindWA->wHeap())
-        ExeUtilHiveTruncate(getTableName(), NULL, bindWA->wHeap());
+    if (feResult)
+      {
+        feResult = feResult->bindNode(bindWA);
+        if (bindWA->errStatus())
+          return NULL;
 
-      //new root to prevent  error 4056 when binding
-      newRelExpr = new (bindWA->wHeap()) RelRoot(newRelExpr);
-
-      RelExpr *blockedUnion = new (bindWA->wHeap()) Union(newRelExpr, boundUnloadRelExpr);
-      ((Union*)blockedUnion)->setBlockedUnion();
-      ((Union*)blockedUnion)->setSerialUnion();
-
-      RelExpr *boundBlockedUnion = blockedUnion->bindNode(bindWA);
-      if (bindWA->errStatus())
-        return NULL;
-
-      return boundBlockedUnion;
-
-    }
-
-    return boundUnloadRelExpr;
+        return feResult;
+      }
+    else
+      return this;
   }
 
   if(!(getOperatorType() == REL_UNARY_INSERT &&
@@ -17095,6 +17036,45 @@ bool ControlRunningQuery::isUserAuthorized(BindWA *bindWA)
   return true;
   
 }// ControlRunningQuery::isUserAuthorized()
+
+RelExpr * CommonSubExprRef::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  CSEInfo *info = CmpCommon::statement()->getCSEInfo(internalName_);
+  CommonSubExprRef *parentCSE = bindWA->inCSE();
+
+  DCMPASSERT(info);
+
+  bindWA->setInCSE(this);
+
+  if (parentCSE)
+    // establish the parent/child relationship, if not done already
+    CmpCommon::statement()->getCSEInfo(parentCSE->getName())->addChildCSE(info);
+
+  bindChildren(bindWA);
+  if (bindWA->errStatus())
+    return this;
+
+  // eliminate any CommonSubExprRef nodes that are not truly common,
+  // i.e. those that are referenced only once
+  if (CmpCommon::statement()->getCSEInfo(internalName_)->getNumConsumers() <= 1)
+    return child(0).getPtr();
+
+  // we know that our child is a RenameTable (same name as this CSE,
+  // whose child is a RelRoot, defining the CTE. Copy the bound select
+  // list of the CTE.
+  CMPASSERT(child(0)->getOperatorType() == REL_RENAME_TABLE &&
+            child(0)->child(0)->getOperatorType() == REL_ROOT);
+  columnList_ = static_cast<RelRoot *>(child(0)->child(0).getPtr())->compExpr();
+
+  bindWA->setInCSE(parentCSE);
+
+  return bindSelf(bindWA);
+}
 
 RelExpr * OSIMControl::bindNode(BindWA *bindWA)
 {

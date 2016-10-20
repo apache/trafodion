@@ -1145,6 +1145,14 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
  DDkwd__(CREATE_OBJECTS_IN_METADATA_ONLY,      "OFF"),
 
  DDkwd__(CROSS_PRODUCT_CONTROL,		"ON"),
+ // CQDs for Common Subexpressions (CSEs)
+ // emit warnings that help diagnose why CSEs are not shared
+ DDkwd__(CSE_DEBUG_WARNINGS,                   "OFF"),
+ // create a CommonSubExpr node for CTEs defined in WITH clauses (OFF/ON)
+ DDkwd__(CSE_FOR_WITH,                         "OFF"),
+ DDkwd__(CSE_HIVE_TEMP_TABLE,                  "ON"),
+ // implement CommonSubExpr as a temp table (OFF/SYSTEM/ON)
+ DDkwd__(CSE_USE_TEMP,                         "OFF"),
 
 SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
 

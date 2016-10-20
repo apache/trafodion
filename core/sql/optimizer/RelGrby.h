@@ -212,6 +212,14 @@ public:
 
   virtual void eliminateCascadedGroupBy(NormWA &normWaRef);
 
+  virtual NABoolean prepareMeForCSESharing(
+       const ValueIdSet &outputsToAdd,
+       const ValueIdSet &predicatesToRemove,
+       const ValueIdSet &commonPredicatesToAdd,
+       const ValueIdSet &inputsToRemove,
+       CSEInfo *info,
+       NABoolean testRun);
+
   // flows compRefOpt constraints up the query tree.
   virtual void processCompRefOptConstraints(NormWA * normWAPtr) ;
 

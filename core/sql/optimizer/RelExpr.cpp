@@ -8181,10 +8181,9 @@ void Scan::getPotentialOutputValuesAsVEGs(ValueIdSet& outputs) const
 {
   outputs.clear();
   ValueIdSet tempSet ;
-  ValueIdList tempList ;
+
   getPotentialOutputValues(tempSet);
-  getTableDesc()->getEquivVEGCols(tempSet, tempList); 
-  outputs = tempList ;
+  getTableDesc()->getEquivVEGCols(tempSet, outputs); 
 }
 
 
@@ -8283,8 +8282,8 @@ RelExpr * Scan::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->setExtraOutputColumns(getExtraOutputColumns());
   result->isRewrittenMV_ = isRewrittenMV_;
   result->matchingMVs_ = matchingMVs_;
-
   result->hbaseAccessOptions_ = hbaseAccessOptions_;
+  result->commonSubExpr_ = commonSubExpr_;
 
   // don't copy values that can be calculated by addIndexInfo()
   // (could be done, but we are lazy and just call addIndexInfo() again)
@@ -11967,6 +11966,15 @@ void MapValueIds::pushdownCoveredExpr(
 				 translatedOutputs);
   requiredValues += translatedOutputs;
 
+  if (cseRef_)
+    // If this MapValueIds node represents a common subexpression,
+    // then don't try to push predicates again that already have
+    // been pushed down before. VEGPredicates may not be pushable
+    // at all to the rewritten child, and other predicates might
+    // be duplicated with different ValueIds for the internal
+    // operators such as "=", "+", ">".
+    predicatesOnParent -= cseRef_->getPushedPredicates();
+
   // rewrite the predicates so they can be applied in the child node
   getMap().rewriteValueIdSetDown(predicatesOnParent,predsRewrittenForChild);
 
@@ -12052,7 +12060,7 @@ NABoolean MapValueIds::duplicateMatch(const RelExpr & other) const
   if (includesFavoriteMV_ != o.includesFavoriteMV_)
     return FALSE;
 
-  if (usedByMvqr_ != o.usedByMvqr_)
+  if (cseRef_ != o.cseRef_)
     return FALSE;
 
   if (map_ != o.map_)
@@ -12071,7 +12079,7 @@ RelExpr * MapValueIds::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
     result = static_cast<MapValueIds*>(derivedNode);
 
   result->includesFavoriteMV_ = includesFavoriteMV_;
-  result->usedByMvqr_ = usedByMvqr_;
+  result->cseRef_ = cseRef_;
 
   return RelExpr::copyTopNode(result, outHeap);
 }
@@ -12198,6 +12206,266 @@ void ControlRunningQuery::setComment(NAString &comment)
   NAString cancelComment (comment, CmpCommon::statementHeap());
   comment_ = cancelComment;
 }
+
+// -----------------------------------------------------------------------
+// member functions for class CSEInfo (helper for CommonSubExprRef)
+// -----------------------------------------------------------------------
+
+CSEInfo::CSEAnalysisOutcome CSEInfo::getAnalysisOutcome(Int32 id) const
+{
+  if (idOfAnalyzingConsumer_ != id &&
+      analysisOutcome_ == CREATE_TEMP)
+    // only the analyzing consumer creates and reads the temp, the
+    // others only read it
+    return TEMP;
+  else
+    return analysisOutcome_;
+}
+
+void CSEInfo::addChildCSE(CSEInfo *child)
+{
+  if (!childCSEs_.contains(child))
+    childCSEs_.insert(child);
+}
+
+void CSEInfo::addCSERef(CommonSubExprRef *cse)
+{
+  CMPASSERT(name_ == cse->getName());
+  cse->setId(consumers_.entries());
+  consumers_.insert(cse);
+}
+
+// -----------------------------------------------------------------------
+// member functions for class CommonSubExprRef
+// -----------------------------------------------------------------------
+
+CommonSubExprRef::~CommonSubExprRef()
+{
+}
+
+Int32 CommonSubExprRef::getArity() const
+{
+  // always return 1 for now, that may change in the future
+  return 1;
+}
+
+void CommonSubExprRef::addToCmpStatement()
+{
+  NABoolean alreadySeen = TRUE;
+
+  // look up whether a CSE with this name already exists
+  CSEInfo *info = CmpCommon::statement()->getCSEInfo(internalName_);
+
+  if (!info)
+    {
+      // make a new object to hold a list of all references
+      // to this CSE (the first one of them will be "this")
+      info = new(CmpCommon::statementHeap())
+        CSEInfo(internalName_,
+                CmpCommon::statementHeap());
+      alreadySeen = FALSE;
+    }
+
+  info->addCSERef(this);
+
+  if (!alreadySeen)
+    CmpCommon::statement()->addCSEInfo(info);
+}
+
+void CommonSubExprRef::addLocalExpr(LIST(ExprNode *) &xlist,
+                                    LIST(NAString) &llist) const
+{
+  if (NOT columnList_.isEmpty())
+    {
+      xlist.insert(columnList_.rebuildExprTree(ITM_ITEM_LIST));
+      llist.insert("column_list");
+    }
+
+  if(NOT pushedPredicates_.isEmpty())
+  {
+    xlist.insert(pushedPredicates_.rebuildExprTree());
+    llist.insert("pushed_predicates");
+  }
+}
+
+HashValue CommonSubExprRef::topHash()
+{
+  HashValue result = RelExpr::topHash();
+
+  result ^= internalName_;
+  result ^= id_;
+  result ^= columnList_;
+  result ^= pushedPredicates_;
+
+  return result;
+}
+
+NABoolean CommonSubExprRef::duplicateMatch(const RelExpr & other) const
+{
+  if (NOT RelExpr::duplicateMatch(other))
+    return FALSE;
+
+  const CommonSubExprRef &o = static_cast<const CommonSubExprRef &>(other);
+
+  return (internalName_ == o.internalName_ &&
+          id_ == o.id_ &&
+          columnList_ == o.columnList_ &&
+          pushedPredicates_ == o.pushedPredicates_);
+}
+
+RelExpr * CommonSubExprRef::copyTopNode(RelExpr *derivedNode,
+                                        CollHeap* outHeap)
+{
+  CommonSubExprRef *result = NULL;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) CommonSubExprRef(NULL,
+                                            internalName_.data(),
+                                            outHeap);
+  else
+    result = static_cast<CommonSubExprRef *>(derivedNode);
+
+  result->setId(id_);
+  result->columnList_ = columnList_;
+  result->pushedPredicates_ = pushedPredicates_;
+
+  return result;
+}
+
+const NAString CommonSubExprRef::getText() const
+{
+  NAString result("cse ");
+  char buf[20];
+
+  result += ToAnsiIdentifier(internalName_);
+
+  snprintf(buf, sizeof(buf), " %d", id_);
+  result += buf;
+
+  return result;
+}
+
+Union * CommonSubExprRef::makeUnion(RelExpr *lc,
+                                    RelExpr *rc,
+                                    NABoolean blocked)
+{
+  // Make a regular or blocked union with no characteristic outputs
+  Union *result;
+  ValueIdSet newInputs(lc->getGroupAttr()->getCharacteristicInputs());
+
+  result = new(CmpCommon::statementHeap()) Union(lc, rc);
+
+  newInputs += rc->getGroupAttr()->getCharacteristicInputs();
+
+  result->setGroupAttr(new (CmpCommon::statementHeap()) GroupAttributes());
+  result->getGroupAttr()->addCharacteristicInputs(newInputs);
+
+  if(blocked)
+    result->setBlockedUnion();
+
+  return result;
+}
+
+void CommonSubExprRef::display()
+{
+  printf("Original columns:\n");
+  columnList_.display();
+  printf("\nCommon inputs:\n");
+  commonInputs_.display();
+  printf("\nPushed predicates:\n");
+  pushedPredicates_.display();
+}
+
+void CommonSubExprRef::displayAll()
+{
+  const LIST(CSEInfo *) *cses = CmpCommon::statement()->getCSEInfoList();
+
+  if (cses)
+    for (CollIndex i=0; i<cses->entries(); i++)
+      {
+        CSEInfo *info = cses->at(i);
+        CollIndex nc = info->getNumConsumers();
+
+        printf("==========================\n");
+        printf("CSE: %s (%d consumers)\n",
+               info->getName().data(),
+               nc);
+
+        const LIST(CSEInfo *) &children(info->getChildCSEs());
+
+        for (CollIndex j=0; j<children.entries(); j++)
+          printf("       references CSE: %s\n", children[j]->getName().data());
+
+        if (info->getIdOfAnalyzingConsumer() >= 0)
+          {
+            const char *outcome = "?";
+
+            switch (info->getAnalysisOutcome(0))
+              {
+              case CSEInfo::UNKNOWN_ANALYSIS:
+                outcome = "UNKNOWN";
+                break;
+              case CSEInfo::EXPAND:
+                outcome = "EXPAND";
+                break;
+              case CSEInfo::CREATE_TEMP:
+                outcome = "CREATE_TEMP";
+                break;
+              case CSEInfo::TEMP:
+                outcome = "TEMP";
+                break;
+              case CSEInfo::ERROR:
+                outcome = "ERROR";
+                break;
+              default:
+                outcome = "???";
+                break;
+              }
+
+            printf("  analyzed by consumer %d, outcome: %s\n",
+                   info->getIdOfAnalyzingConsumer(),
+                   outcome);
+
+            if (info->getAnalysisOutcome(
+                     info->getIdOfAnalyzingConsumer()) ==
+                CSEInfo::CREATE_TEMP)
+              {
+                ValueIdList cols;
+                CommonSubExprRef *consumer =
+                  info->getConsumer(info->getIdOfAnalyzingConsumer());
+                const ValueIdList &cCols(consumer->getColumnList());
+
+                makeValueIdListFromBitVector(cols,
+                                             cCols,
+                                             info->getNeededColumns());
+                printf("  \ncolumns of temp table:\n");
+                cols.display();
+                printf("  \ncommonPredicates:\n");
+                info->getCommonPredicates().display();
+                printf("  \ntempTableName: %s\n",
+                       info->getTempTableName().
+                          getQualifiedNameAsAnsiString().data());
+                printf("  \nDDL of temp table:\n%s\n",
+                       info->getTempTableDDL().data());
+              }
+          }
+
+        for (int c=0; c<nc; c++)
+          {
+            printf("\n----- Consumer %d:\n", c);
+            info->getConsumer(c)->display();
+          }
+      }
+}
+
+void CommonSubExprRef::makeValueIdListFromBitVector(ValueIdList &tgt,
+                                                    const ValueIdList &src,
+                                                    const NABitVector &vec)
+{
+  for (CollIndex b=0; vec.nextUsed(b); b++)
+    tgt.insert(src[b]);
+}
+
 
 // -----------------------------------------------------------------------
 // member functions for class GenericUpdate

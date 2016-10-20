@@ -870,6 +870,7 @@ public:
   NABoolean isATriggerTransitionName(BindWA *bindWA, NABoolean onlyNew=FALSE) const;
 
   NABoolean isHive() const;
+  NABoolean isInHiveDefaultSchema() const;
   NABoolean isSeabase() const;
   NABoolean isHbase() const;
   NABoolean isSeabaseMD() const;

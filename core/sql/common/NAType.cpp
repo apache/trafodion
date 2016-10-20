@@ -679,7 +679,7 @@ short NAType::convertTypeToText(char * text,	   // OUTPUT
 				 displayCaseSpecific);
 }
 
-short NAType::getMyTypeAsHiveText(NAString * outputStr)  // output
+short NAType::getMyTypeAsHiveText(NAString * outputStr/*out*/) const
 {
   Lng32		      fs_datatype		= getFSDatatype();
 
@@ -762,7 +762,7 @@ short NAType::getMyTypeAsHiveText(NAString * outputStr)  // output
 }
 
 short NAType::getMyTypeAsText(NAString * outputStr,  // output
-			      NABoolean addNullability)
+			      NABoolean addNullability) const
 {
   // get the right value for all these
   Lng32		      fs_datatype		= getFSDatatype();

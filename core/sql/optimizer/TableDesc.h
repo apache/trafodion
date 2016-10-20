@@ -141,6 +141,9 @@ public:
   // which maps base columns to index columns.
   void getEquivVEGCols (const ValueIdList &columnList,
 			ValueIdList &VEGColumnList) const;
+  void getEquivVEGCols (const ValueIdSet &columnSet,
+			ValueIdSet &VEGColumnSet) const;
+  ValueId getEquivVEGCol (const ValueId &column) const;
   NABoolean isSpecialObj();
 
   CostScalar getBaseRowCntIfUniqueJoinCol(const ValueIdSet &joinedCols);
@@ -220,6 +223,14 @@ public:
 
   ValueIdSet getSaltColumnAsSet() ;
   NABoolean hasIdentityColumnInClusteringKey() const ;
+
+  // helper function for Hive tables
+  static NABoolean splitHiveLocation(const char *tableLocation,
+                                     NAString &hdfsHost,
+                                     Int32 &hdfsPort,
+                                     NAString &tableDir,
+                                     ComDiagsArea *diags,
+                                     int hdfsPortOverride);
 
 private:
 

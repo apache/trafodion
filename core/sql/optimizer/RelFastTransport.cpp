@@ -36,6 +36,7 @@
 #include "CostMethod.h"
 #include "AllRelExpr.h"
 #include "Globals.h"
+#include "HDFSHook.h"
 
 // -----------------------------------------------------------------------
 // methods for class RelFastExtract
@@ -61,12 +62,125 @@ FastExtract::FastExtract(const FastExtract & other)
   selectList_ = other.selectList_;
   isSequenceFile_ = other.isSequenceFile_;
   overwriteHiveTable_ = other.overwriteHiveTable_;
+  isMainQueryOperator_ = other.isMainQueryOperator_;
 }
 
 //! FastExtract::~FastExtract Destructor
 FastExtract::~FastExtract()
 {
 
+}
+
+RelExpr *FastExtract::makeFastExtractTree(
+     TableDesc *tableDesc,
+     RelExpr *child,
+     NABoolean overwriteTable,
+     NABoolean calledFromBinder,
+     NABoolean tempTableForCSE,
+     BindWA *bindWA)
+{
+  RelExpr *result = NULL;
+  const HHDFSTableStats* hTabStats = 
+      tableDesc->getNATable()->getClusteringIndex()->getHHDFSTableStats();
+				 
+  const char * hiveTablePath;
+  NAString hostName;
+  Int32 hdfsPort;
+  NAString tableDir;
+
+  char fldSep[2];
+  char recSep[2];
+  memset(fldSep,'\0',2);
+  memset(recSep,'\0',2);
+  fldSep[0] = hTabStats->getFieldTerminator();
+  recSep[0] = hTabStats->getRecordTerminator();
+
+  // don't rely on timeouts to invalidate the HDFS stats for the target table,
+  // make sure that we invalidate them right after compiling this statement,
+  // at least for this process
+  ((NATable*)(tableDesc->getNATable()))->setClearHDFSStatsAfterStmt(TRUE);
+
+  // inserting into tables with multiple partitions is not yet supported
+  CMPASSERT(hTabStats->entries() == 1);
+  hiveTablePath = (*hTabStats)[0]->getDirName();
+  NABoolean splitSuccess = TableDesc::splitHiveLocation(
+       hiveTablePath,
+       hostName,
+       hdfsPort,
+       tableDir,
+       CmpCommon::diags(),
+       hTabStats->getPortOverride());      
+ 
+  if (!splitSuccess) {
+    *CmpCommon::diags() << DgSqlCode(-4224)
+                        << DgString0(hiveTablePath);
+    bindWA->setErrStatus();
+    return NULL;
+  }
+
+  const NABoolean isSequenceFile = hTabStats->isSequenceFile();
+    
+  FastExtract * unloadRelExpr =
+    new (bindWA->wHeap()) FastExtract(
+         child,
+         new (bindWA->wHeap()) NAString(hiveTablePath, bindWA->wHeap()),
+         new (bindWA->wHeap()) NAString(hostName, bindWA->wHeap()),
+         hdfsPort,
+         tableDesc,
+         new (bindWA->wHeap()) NAString(
+              tableDesc->getCorrNameObj().getQualifiedNameObj().getObjectName(),
+              bindWA->wHeap()),
+         FastExtract::FILE,
+         bindWA->wHeap());
+  unloadRelExpr->setRecordSeparator(recSep);
+  unloadRelExpr->setDelimiter(fldSep);
+  unloadRelExpr->setOverwriteHiveTable(overwriteTable);
+  unloadRelExpr->setSequenceFile(isSequenceFile);
+  unloadRelExpr->setIsMainQueryOperator(calledFromBinder);
+  result = unloadRelExpr;
+
+  if (overwriteTable)
+    {
+      ExeUtilHiveTruncate *trunc = new (bindWA->wHeap())
+        ExeUtilHiveTruncate(tableDesc->getCorrNameObj(),
+                            NULL,
+                            bindWA->wHeap());
+      RelExpr * newRelExpr = trunc;
+
+      if (tempTableForCSE)
+        {
+          trunc->setSuppressModCheck();
+
+          // This table gets created at compile time, unlike most
+          // other tables. It gets dropped when the statement is
+          // deallocated. Note that there are three problems:
+          // a) Statement gets never executed
+          // b) Process exits before deallocating the statement
+          // c) Statement gets deallocated, then gets executed again
+          //
+          // Todo: CSE: Handle these issues.
+          // Cases a) and b) are handled like volatile tables, there
+          // is a cleanup mechanism.
+          // Case c) gets handled by AQR.
+          trunc->setDropTableOnDealloc();
+        }
+
+      if (calledFromBinder)
+        //new root to prevent  error 4056 when binding
+        newRelExpr = new (bindWA->wHeap()) RelRoot(newRelExpr);
+      else
+        // this node must be bound, even outside the binder,
+        // to set some values
+        newRelExpr = newRelExpr->bindNode(bindWA);
+
+      Union *blockedUnion = new (bindWA->wHeap()) Union(newRelExpr, result);
+
+      blockedUnion->setBlockedUnion();
+      blockedUnion->setSerialUnion();
+      result = blockedUnion;
+    }
+
+  return result;
 }
 
 //! FastExtract::copyTopNode method
@@ -99,6 +213,7 @@ RelExpr * FastExtract::copyTopNode(RelExpr *derivedNode,
   result->selectList_ = selectList_;
   result->isSequenceFile_ = isSequenceFile_;
   result->overwriteHiveTable_ = overwriteHiveTable_;
+  result->isMainQueryOperator_ = isMainQueryOperator_;
 
   return RelExpr::copyTopNode(result, outHeap);
 }

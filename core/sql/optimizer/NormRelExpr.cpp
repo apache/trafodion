@@ -4369,7 +4369,7 @@ NABoolean Join::applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby,
 //  2) If the children of the join are marked for removal
 //         
 //	parent
-//          |                  parent
+//        |                  parent
 //	Join                   |
 //	/   \       ------>    X
 //     X    Y   
@@ -4379,9 +4379,8 @@ NABoolean Join::applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby,
 //  3) If its a left join and has been markedForElimination by the normalize 
 //     phase then
 //
-//        parent
-//          |                  parent
-//
+//      parent
+//        |                    parent
 //      LeftJoin                 |
 //	/   \       ------>      X
 //     X    Y   
@@ -4400,12 +4399,18 @@ NABoolean Join::applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby,
 //      Here t2.a is a unique key of table t2.
 //      
 //      The following transformation is made
-//        Semi Join {pred : t1.b = t2.a}          Join {pred : t1.b = t2.a} 
+//        Semi Join {pred : t1.b = t2.a}  ------>  Join {pred : t1.b = t2.a} 
 //
 //   b) If the right child is not unique in the joining column then 
 //      we transform the semijoin into an inner join followed by a groupby
 //      as the join's right child. This transformation is enabled by default
 //      only if the right side is an IN list, otherwise a CQD has to be used.
+//
+//                                          groupby  (X.key)
+//          SemiJoin                           |
+//           /    \        ------>           Join
+//          X      Y                         /  \
+//                                          X    Y
 //
 // SUBQUERY UNNESTING 
 // The subquery unnesting consist of two main transformations:
@@ -4413,14 +4418,15 @@ NABoolean Join::applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby,
 // which are based on Dayal and Muralikrishna's algorithm (see below).
 //
 // a) pullUpGroupBy transformation:
+//
 // For a single level subquery this is the only transformation required for 
 // subquery unnesting. 
 // 
-//      TSJ                            GroupBy 
+//      TSJ                             GroupBy 
 //     /   \                              |    
-//   X      ScalarAgg           -->      Join 
+//   X      ScalarAgg           -->      Join  (pred)
 //             |                         /   \
-//          Filter                      X     Y 
+//          Filter (pred)               X     Y 
 //             |
 //             Y 
 //
@@ -4429,35 +4435,37 @@ NABoolean Join::applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby,
 // to apply the moveupGroupBy transformation.
 //
 // b) moveUpGroupBy transformation:
+//
 // When the pullUpGroupBy transformation has to be applied more than once 
 // on a query tree (for multi-level subqueries), then it is possible that 
 // that a groupBy below still contains outer references. For example with
-// a two level query:
+// a two level query, this is what the tree will look like after applying
+// the pullUpGroupBy transformation twice:
 //
-//      TSJ2                           GroupBy2
-//     /   \            pullUpGroupBy     |    
-//   X      ScalarAgg2 transformation   Join2 
-//             |           --->         /   \
-//          Filter2                     X     GroupBy1 
-//             |                                 \
-//             TSJ1                              Join1
-//            /   \                                \
-//           Y    ScalarAgg1                        Z
+//      TSJ2                               GroupBy2
+//     /   \               pullUpGroupBy      |    
+//   X      ScalarAgg2    transformation    Join2 
+//             |             (2 times)      /   \
+//          Filter2         ---------->    X     GroupBy1 
+//             |                                   \
+//             TSJ1                                Join1
+//            /   \                                /  \
+//           Y    ScalarAgg1                      Y    Z
 //                   \
 //                 Filter1
 //                     \
 //                      Z
 //
-// After the transformation the new tree looks like:
-      // GroupBy2(Join2(X2,GroupBy1(Join1(X1,Y1)))).
-// If the selection pred. of GroubBy1 and/or Join1 contain outer references
-      // those predicates will have to be pulled up so that Join2 does not have
-// to be a TSJ. 
+// If the selection pred. of GroubBy1 and/or Join1 contain outer
+// references after the transformation, those predicates will have to
+// be pulled up so that Join2 does not have to be a TSJ. See the comment
+// in Join::moveUpGroupByTransformation() for how the right side
+// of the picture above gets transformed further.
 // 
-// One additional compilcation occurs when we need to convert any of the
-// TSJs into a LeftJoin. This convertion occurs during either or both
+// One additional complication occurs when we need to convert any of the
+// TSJs into a LeftJoin. This conversion occurs during either or both
 // the pullUpGroupBy or moveUpGroupBy transformation. If we require a LeftJoin
-// we manipulate the predicates and nullinstantiates outputs of the LeftJoin
+// we manipulate the predicates and null-instantiated outputs of the LeftJoin
 // that is from the right subtree in order to preserve correctness. Refer
 // to the infamous count bug!
 // For more details, please refer to 
@@ -4653,12 +4661,39 @@ RelExpr * Join::semanticQueryOptimizeNode(NormWA & normWARef)
         (child(1)->getGroupAttr()->getNumJoinedTables() <= 
          ActiveSchemaDB()->getDefaults().getAsLong(COMP_INT_11)))
     {
-      return leftLinearizeJoinTree(normWARef, SEMI_JOIN_TO_INNER_JOIN);
+      return leftLinearizeJoinTree(normWARef, SEMI_JOIN_TO_INNER_JOIN); // 
     }
   }
 /*---------------------------------------------------------------------------------------*/
   return this;
 } // Join::semanticQueryOptimizeNode()
+
+NABoolean Join::prepareMeForCSESharing(
+     const ValueIdSet &outputsToAdd,
+     const ValueIdSet &predicatesToRemove,
+     const ValueIdSet &commonPredicatesToAdd,
+     const ValueIdSet &inputsToRemove,
+     CSEInfo *info,
+     NABoolean testRun)
+{
+  if (isTSJForWrite() ||
+      isTSJForUndo() ||
+      isTSJForMerge() ||
+      getIsForTrafLoadPrep())
+    return FALSE;
+
+  if (!testRun)
+    {
+      // The caller of this methods added "commonPredicatesToAdd" to
+      // predicates_ (the generic selection predicates stored in the
+      // RelExpr). That works for both inner and non-inner joins.  The
+      // only thing we have left to do is to recompute the equi-join
+      // predicates.
+      findEquiJoinPredicates();
+    }
+
+  return TRUE;
+}
 
 // ***********************************************************************
 // $$$$ Union
@@ -5593,6 +5628,47 @@ void GroupByAgg::eliminateCascadedGroupBy(NormWA & normWARef)
   }
 }
 
+NABoolean GroupByAgg::prepareMeForCSESharing(
+     const ValueIdSet &outputsToAdd,
+     const ValueIdSet &predicatesToRemove,
+     const ValueIdSet &commonPredicatesToAdd,
+     const ValueIdSet &inputsToRemove,
+     CSEInfo *info,
+     NABoolean testRun)
+{
+  // The caller of this method took care of most adjustments to
+  // make. The main thing the groupby node needs to do is to add any
+  // outputs that are required to its characteristic outputs.
+
+  if (!testRun)
+    {
+      ValueIdSet myAvailableValues(groupExpr_);
+      ValueIdSet referencedValues;
+      ValueIdSet myOutputsToAdd;
+      ValueIdSet unCoveredExpr;
+
+      myAvailableValues += aggregateExpr_;
+
+      // The caller may be asking for expressions on columns, maybe
+      // even an expression involving grouping columns and aggregates
+      // and multiple tables, therefore use the isCovered method to
+      // determine those subexpressions that we can produce here.
+      NABoolean allCovered =
+        outputsToAdd.isCovered(myAvailableValues,
+                               *(getGroupAttr()),
+                               referencedValues,
+                               myOutputsToAdd,
+                               unCoveredExpr);
+
+      if (allCovered)
+        myOutputsToAdd = outputsToAdd;
+
+      getGroupAttr()->addCharacteristicOutputs(myOutputsToAdd);
+    }
+
+  return TRUE;
+}
+
 
 // ***********************************************************************
 // $$$$ Scan
@@ -5950,6 +6026,41 @@ RelExpr * Scan::normalizeNode
   }
   return ((RelExpr *)newJoin);
 } // Scan::normalizeNode()
+
+NABoolean Scan::prepareMeForCSESharing(
+     const ValueIdSet &outputsToAdd,
+     const ValueIdSet &predicatesToRemove,
+     const ValueIdSet &commonPredicatesToAdd,
+     const ValueIdSet &inputsToRemove,
+     CSEInfo *info,
+     NABoolean testRun)
+{
+  // The caller of this method took care of most adjustments to
+  // make. The main thing the scan node needs to do is to add any
+  // outputs that are required to its characteristic outputs.
+
+  if (!testRun)
+    {
+      ValueIdSet myColSet(getTableDesc()->getColumnVEGList());
+      ValueIdSet referencedCols;
+      ValueIdSet myOutputsToAdd;
+      ValueIdSet unCoveredExpr;
+
+      // The caller may be asking for expressions on columns, maybe
+      // even an expression involving multiple tables, therefore use
+      // the isCovered method to determine those subexpressions that we
+      // can produce here.
+      outputsToAdd.isCovered(myColSet,
+                             *(getGroupAttr()),
+                             referencedCols,
+                             myOutputsToAdd,
+                             unCoveredExpr);
+
+      getGroupAttr()->addCharacteristicOutputs(myOutputsToAdd);
+    }
+
+  return TRUE;
+}
 
 /* This method applies a long list of heuristics to determine whether
  its better to use a semijoin to evaluate the OR pred or if we should
@@ -7453,6 +7564,8 @@ RelExpr * RelRoot::semanticQueryOptimizeNode(NormWA & normWARef)
 	// ---------------------------------------------------------------------
 	child(0) = child(0)->semanticQueryOptimizeNode(normWARef);
 
+        child(0) = inlineTempTablesForCSEs(normWARef);
+
 	normWARef.restoreOriginalVEGRegion();
 
         normWARef.setExtraHubVertex(NULL);
@@ -7496,6 +7609,176 @@ RelExpr * RelRoot::semanticQueryOptimizeNode(NormWA & normWARef)
 
 } // RelRoot::semanticQueryOptimizeNode()
 
+RelExpr * RelRoot::inlineTempTablesForCSEs(NormWA & normWARef)
+{
+  RelExpr *result = NULL;
+  const LIST(CSEInfo *) * cses = CmpCommon::statement()->getCSEInfoList();
+
+  if (cses && cses->entries() > 0)
+    {
+      // If this query tree has any common subexpressions that need
+      // to be materialized as temp tables, then insert these
+      // materialization steps (called CTi below) between the root
+      // and its child node, Q, like this:
+      //
+      //     Root                                    Root
+      //       |                                       |
+      //       Q                                  MapValueIds
+      //                                               |
+      //                                          BlockedUnion
+      //                                           /        \
+      //                                        Union        Q
+      //                                        /   \
+      //                                      ...    CTn
+      //                                      /
+      //                                   Union
+      //                                   /   \
+      //                                 CT1   CT2
+      //
+      // The common subexpressions may depend on each other, so make
+      // sure to create them in the right order and to use blocked
+      // union instead of a regular union if there are such
+      // dependencies.
+      NABitVector toDoVec;   // still to be done
+      NABitVector readyVec;  // ready, all predecessors are done
+      NABitVector doneVec;   // already done
+
+      // first, figure out all the CSEs that we have to process
+      for (CollIndex i=0; i<cses->entries(); i++)
+        if (cses->at(i)->getInsertIntoTemp() != NULL)
+          toDoVec += i;
+
+      // loop over the to-do list, finding new entries for which we
+      // already processed all of their predecessors
+      while (toDoVec.entries() > 0)
+        {
+          RelExpr *thisLevelOfInserts = NULL;
+
+          for (CollIndex c=0; toDoVec.nextUsed(c); c++)
+            {
+              CSEInfo *info = cses->at(c);
+              // predecessor CSEs that have to be computed before we
+              // can attempt to compute this one
+              const LIST(CSEInfo *) &predecessors(info->getChildCSEs());
+              NABoolean isReady = TRUE;
+
+              for (CollIndex p=0; p<predecessors.entries(); p++)
+                {
+                  if (!doneVec.contains(p) &&
+                      cses->at(p)->getInsertIntoTemp() != NULL)
+                    // a predecessor CSE for which we have to
+                    // materialize a temp table has not yet
+                    // been processed - can't do this one
+                    isReady = FALSE;
+                }
+
+              if (isReady)
+                {
+                  // no predecessors or all predecessors have been
+                  // done
+                  readyVec += c;
+                }
+            }
+
+          // At this point we will have one or more CSEs in readyVec.
+          // All of their predecessors (if any) have already been
+          // processed.  Now make a Union backbone to process all the
+          // CSEs in readyVec in parallel.
+
+          // If we find nothing, we may have circular dependencies,
+          // and this is not allowed
+          // (recursive queries will have to be handled separately)
+          CMPASSERT(readyVec.entries() > 0);
+
+          for (CollIndex r=0; readyVec.nextUsed(r); r++)
+            {
+              CSEInfo *info = cses->at(r);
+              
+              if (thisLevelOfInserts == NULL)
+                thisLevelOfInserts = info->getInsertIntoTemp();
+              else
+                {
+                  thisLevelOfInserts = CommonSubExprRef::makeUnion(
+                       thisLevelOfInserts,
+                       info->getInsertIntoTemp(),
+                       FALSE);
+                }
+            } // loop over ready list
+
+          if (result == NULL)
+            result = thisLevelOfInserts;
+          else
+            result = CommonSubExprRef::makeUnion(
+                 result,
+                 thisLevelOfInserts,
+                 TRUE);
+
+          toDoVec -= readyVec;
+          doneVec += readyVec;
+          readyVec.clear();
+        } // while loop over to-do-list
+    } // CSEs exist for this statement
+
+  if (result)
+    {
+      const ValueIdSet &childOutputs(
+           child(0).getGroupAttr()->getCharacteristicOutputs());
+      ValueIdList outputValueList;
+      ValueIdList unionValueList;
+
+      // make a final blocked union between the inlined
+      // insert statements and the actual query
+      Union *topUnion = CommonSubExprRef::makeUnion(
+           result,
+           child(0),
+           TRUE);
+
+      // This top-level union has a right child that produces the
+      // desired outputs. The left child produces fake dummy ValueIds,
+      // it doesn't produce any rows. Since the root expects the right
+      // child's ValueIds, we put a MapValueIds on top that maps the
+      // values back to what they were in the right child.
+      for (ValueId o=childOutputs.init();
+           childOutputs.next(o);
+           childOutputs.advance(o))
+        {
+          ItemExpr *leftFake = new(CmpCommon::statementHeap())
+            NATypeToItem(o.getType().newCopy(CmpCommon::statementHeap()));
+
+          leftFake->synthTypeAndValueId();
+
+	  ValueIdUnion *vidUnion = new(CmpCommon::statementHeap())
+	    ValueIdUnion(leftFake->getValueId(),
+                         o,
+                         NULL_VALUE_ID,
+			 topUnion->getUnionFlags());
+	  vidUnion->synthTypeAndValueId();
+	  topUnion->addValueIdUnion(vidUnion->getValueId(),
+                                    CmpCommon::statementHeap());
+          outputValueList.insert(o);
+          unionValueList.insert(vidUnion->getValueId());
+          topUnion->getGroupAttr()->addCharacteristicOutput(
+               vidUnion->getValueId());
+        }
+
+      result = new(CmpCommon::statementHeap())
+        MapValueIds(topUnion,
+                    ValueIdMap(outputValueList, unionValueList),
+                    CmpCommon::statementHeap());
+
+      result->setGroupAttr(new (CmpCommon::statementHeap()) GroupAttributes());
+      result->getGroupAttr()->addCharacteristicInputs(
+           topUnion->getGroupAttr()->getCharacteristicInputs());
+      result->getGroupAttr()->setCharacteristicOutputs(childOutputs);
+
+      result->synthLogProp(&normWARef);
+    }
+  else
+    // no change, return child pointer
+    result = child(0);
+
+  return result;
+}
 
 // -----------------------------------------------------------------------
 // Filter::normalizeNode()
@@ -7660,6 +7943,137 @@ void RelExpr::processCompRefOptConstraints(NormWA * normWAPtr)
 {
 }
 
+NABoolean RelExpr::prepareTreeForCSESharing(
+     const ValueIdSet &outputsToAdd,
+     const ValueIdSet &predicatesToRemove,
+     const ValueIdSet &newPredicatesToAdd,
+     const ValueIdSet &inputsToRemove,
+     CSEInfo *info,
+     NABoolean testRun)
+{
+  NABoolean result = TRUE;
+  CollIndex nc = getArity();
+  ValueIdSet newLocalPredicates(newPredicatesToAdd);
+  ValueIdSet newVEGPreds;
+
+  newLocalPredicates.findAllOpType(ITM_VEG_PREDICATE, newVEGPreds);
+
+  // recursively call this for the children
+  for (CollIndex i=0; i<nc && result; i++)
+    {
+      ValueIdSet childPredsToRemove(predicatesToRemove);
+      ValueIdSet childPredsToAdd(newPredicatesToAdd);
+      ValueIdSet childAvailValues(outputsToAdd);
+
+      childAvailValues += child(i).getGroupAttr()->getCharacteristicOutputs();
+      childAvailValues += child(i).getGroupAttr()->getCharacteristicInputs();
+
+      childPredsToRemove.removeUnCoveredExprs(childAvailValues);
+      childPredsToAdd.removeUnCoveredExprs(childAvailValues);
+
+      result = child(i)->prepareTreeForCSESharing(
+           outputsToAdd,
+           childPredsToRemove,
+           childPredsToAdd,
+           inputsToRemove,
+           info,
+           testRun);
+
+      if (!testRun)
+        {
+          // if the child already had or has added any of the requested
+          // outputs, then add them to our own char. outputs
+          ValueIdSet childAddedOutputs(
+               child(i).getGroupAttr()->getCharacteristicOutputs());
+
+          childAddedOutputs.intersectSet(outputsToAdd);
+          getGroupAttr()->addCharacteristicOutputs(childAddedOutputs);
+        }
+
+      // Todo: CSE: consider using recursivePushDownCoveredExpr
+      // instead of pushing these new predicates in this method
+      newVEGPreds.intersectSet(childPredsToAdd);
+      newLocalPredicates -= childPredsToAdd;
+    }
+
+  if (result && !testRun)
+    {
+      // Remove the predicates from our selection predicates.
+      // Note that the virtual method above is supposed to remove
+      // these predicates from all other places in the node.
+      predicates_ -= predicatesToRemove;
+
+      // Todo: CSE: need to remove predicates that are "similar" to
+      // the ones requested, e.g. same columns and constants, but
+      // an "=" operator with a different ValudId?
+
+      // add any predicates that aren't covered by one of the children
+      // and also add VEGPredicates that are covered by both of the
+      // children
+
+      newLocalPredicates += newVEGPreds;
+      predicates_ += newLocalPredicates;
+
+      // Remove the char. inputs the caller asked to remove.
+      // At this time we are not doing additional checks to
+      // ensure these inputs aren't referenced anymore in
+      // our node. We rely on the caller to ensure that
+      // these extra inputs are only needed by the predicates
+      // that we removed.
+      getGroupAttr()->removeCharacteristicInputs(inputsToRemove);
+    }
+
+  // Call a virtual method on this node to give it a chance to
+  // remove the predicates from any other places where they might be
+  // storing them, and to add any outputs it produces locally. Also
+  // give it a chance to say "no" to the whole idea of pulling out
+  // predicates and changing char. inputs and outputs (the default
+  // behavior).
+  result = prepareMeForCSESharing(outputsToAdd,
+                                  predicatesToRemove,
+                                  newLocalPredicates,
+                                  inputsToRemove,
+                                  info,
+                                  testRun);
+
+  return result;
+}
+
+// Note that the caller of this method is responsible for adding those
+// new outputs to the group attributes that come from the children and
+// for removing the requested inputs. The caller also removes
+// "predicatesToRemove" from the selection predicates. This method
+// only needs to do the following:
+
+// - Add any new outputs to the char. outputs that are generated
+//   directly by this node (not by its children)
+// - Add "newPredicatesToAdd" to any other places where predicates
+//   are needed, remove then from the selection predicates if they
+//   should be stored elsewhere
+// - Remove "predicatesToRemove" from this node
+//   (not from the children, that is done by the caller)
+// - Make sure that "inputsToRemove" isn't referenced anywhere else
+//   in this node
+NABoolean RelExpr::prepareMeForCSESharing(
+     const ValueIdSet &outputsToAdd,
+     const ValueIdSet &predicatesToRemove,
+     const ValueIdSet &newPredicatesToAdd,
+     const ValueIdSet &inputsToRemove,
+     CSEInfo *info,
+     NABoolean testRun)
+{
+  // A class derived from RelExpr must explicitly define
+  // this method to support being part of a shared CSE
+
+  char buf[100];
+
+  snprintf(buf, sizeof(buf), "Operator %s not supported",
+           getText().data());
+
+  info->getConsumer(0)->emitCSEDiagnostics(buf, !testRun);
+
+  return FALSE;
+}
 
 void Join::processCompRefOptConstraints(NormWA * normWAPtr)
 {
@@ -8492,6 +8906,722 @@ void Pack::rewriteNode(NormWA& normWA)
   getGroupAttr()->normalizeInputsAndOutputs(normWA);
 }
 
+// ***********************************************************************
+// $$$$ CommonSubExprRef
+// member functions for class CommonSubExprRef
+// ***********************************************************************
+
+void CommonSubExprRef::transformNode(NormWA & normWARef,
+                                     ExprGroupId & locationOfPointerToMe)
+{
+  CMPASSERT( locationOfPointerToMe.getPtr() == this );
+
+  if (nodeIsTransformed())
+    return;
+  markAsTransformed();
+
+  // Allocate a new VEG region for the child, to prevent VEGies that
+  // cross the potentially common part and the rest of the query tree.
+  //normWARef.allocateAndSetVEGRegion(EXPORT_ONLY, this);
+  child(0)->getGroupAttr()->addCharacteristicInputs(
+       getGroupAttr()->getCharacteristicInputs());
+  child(0)->transformNode(normWARef, child(0)); 
+  pullUpPreds();
+  transformSelectPred(normWARef, locationOfPointerToMe);
+  //normWARef.restoreOriginalVEGRegion();
+}
+
+void CommonSubExprRef::pullUpPreds()
+{
+  // To preserve the commonality of common subexpressions, we
+  // don't allow to pull predicates out of them.
+
+  // so do nothing here, preventing predicate pull-up
+
+  // alternatively, we could do the pull-up and record the
+  // pulled-up predicates here
+  // RelExpr::pullUpPreds();
+  // pulledPredicates_ += selectionPred();
+
+  // this is also the time to record the original set of inputs
+  // for this node, before predicate pushdown can alter the inputs
+  commonInputs_ = getGroupAttr()->getCharacteristicInputs();
+}
+
+void CommonSubExprRef::pushdownCoveredExpr(
+     const ValueIdSet & outputExpr,
+     const ValueIdSet & newExternalInputs,
+     ValueIdSet & predicatesOnParent,
+     const ValueIdSet * setOfValuesReqdByParent,
+     Lng32 childIndex)
+{
+  // Remember the predicates we pushed down, since other consumers of
+  // this CSE may not have pushed the equivalent
+  // predicates. Therefore, if we want to materialize a common
+  // subexpressions, any predicates that were pushed down and are not
+  // common to all the consumers must be pulled back out before we can
+  // share a common query tree.
+  ValueIdSet predsPushedThisTime(predicatesOnParent);
+
+  RelExpr::pushdownCoveredExpr(outputExpr,
+                               newExternalInputs,
+                               predicatesOnParent,
+                               setOfValuesReqdByParent,
+                               childIndex);
+
+  predsPushedThisTime -= predicatesOnParent;
+  pushedPredicates_   += predsPushedThisTime;
+}
+
+void CommonSubExprRef::rewriteNode(NormWA & normWARef)
+{
+  RelExpr::rewriteNode(normWARef);
+
+  nonVEGColumns_ = columnList_;
+  columnList_.normalizeNode(normWARef);
+  commonInputs_.normalizeNode(normWARef);
+
+  normWARef.incrementCommonSubExprRefCount();
+}
+
+RelExpr * CommonSubExprRef::semanticQueryOptimizeNode(NormWA & normWARef)
+{
+  RelExpr *result = this;
+  CSEInfo *info = CmpCommon::statement()->getCSEInfo(internalName_);
+  CSEInfo::CSEAnalysisOutcome action = CSEInfo::UNKNOWN_ANALYSIS;
+
+  RelExpr::semanticQueryOptimizeNode(normWARef);
+
+  if (CmpCommon::getDefault(CSE_USE_TEMP) == DF_OFF)
+    {
+      emitCSEDiagnostics("Forced with CQD CSE_USE_TEMP CQD 'off'");
+      action = CSEInfo::EXPAND;
+    }
+  else
+    action = analyzeAndPrepareForSharing(*info);
+
+  switch (action)
+    {
+    case CSEInfo::EXPAND:
+      // Not able to share the CSE, expand the CSE by eliminating
+      // this node and putting its child tree in its place. In this
+      // case, analyzeAndPrepareForSharing() left the tree unchanged.
+      result = child(0).getPtr();
+      break;
+
+    case CSEInfo::CREATE_TEMP:
+      determineTempTableType(*info);
+      createTempTable(*info);
+      info->setInsertIntoTemp(
+           createInsertIntoTemp(*info, normWARef));
+      // fall through to the next case
+
+    case CSEInfo::TEMP:
+      // We are able to share this CSE between multile consumers.
+      // Replace this node with a scan on the temp table that
+      // holds the CSE results.
+      result = createTempScan(*info, normWARef);
+      break;
+
+    case CSEInfo::ERROR:
+      // diags should be set
+      CMPASSERT(CmpCommon::diags()->mainSQLCODE() < 0);
+      break;
+
+    default:
+      CMPASSERT(0);
+    }
+
+  // for debugging
+  if (info->getIdOfAnalyzingConsumer() == id_)
+    displayAll();
+
+  return result;
+}
+
+CSEInfo::CSEAnalysisOutcome CommonSubExprRef::analyzeAndPrepareForSharing(CSEInfo &info)
+{
+  // If another consumer has already done the analysis, return its result.
+  // Note: Right now, all the consumers do the same, in the future, we could
+  // expand some and share others.
+  if (info.getIdOfAnalyzingConsumer() >= 0)
+    return info.getAnalysisOutcome(id_);
+
+  NABoolean canShare = TRUE;
+  CSEInfo::CSEAnalysisOutcome result = CSEInfo::UNKNOWN_ANALYSIS;
+  NABitVector neededColumnsBitmap;
+  ValueIdList tempTableColumns;
+  const ValueIdSet &charOutputs(getGroupAttr()->getCharacteristicOutputs());
+  CollIndex numConsumers = info.getNumConsumers();
+
+  // A laundry list of changes to undo the effects of normalization,
+  // specifically of pushing predicates down and of minimizing the
+  // outputs. Also, a list of new common selection predicates to add.
+  ValueIdSet outputsToAdd;
+  ValueIdSet predicatesToRemove(pushedPredicates_);
+  ValueIdSet newPredicatesToAdd;
+  ValueIdSet commonPredicates(pushedPredicates_);
+  ValueIdSet inputsToRemove(child(0).getGroupAttr()->getCharacteristicInputs());
+  ValueIdSet *nonCommonPredicatesArray =
+    new(CmpCommon::statementHeap()) ValueIdSet[numConsumers];
+  ValueIdMap *myColsToConsumerMaps =
+    new(CmpCommon::statementHeap()) ValueIdMap[numConsumers];
+  ItemExpr *nonCommonPredicatesORed = NULL;
+  int numORedPreds = 0;
+
+  info.setIdOfAnalyzingConsumer(id_);
+
+  // ------------------------------------------------------------------
+  // CSE Analysis phase
+  // ------------------------------------------------------------------
+
+  // loop over the consumers of the CSE to negotiate a common set
+  // of columns to retrieve and a common set of predicates that can
+  // remain pushed down
+  for (CollIndex c=0; c<numConsumers && canShare; c++)
+    {
+      CommonSubExprRef *consumer = info.getConsumer(c);
+
+      const ValueIdList &cCols(consumer->columnList_);
+      ValueIdSet cColSet(cCols);
+      ValueIdSet cOutputs(consumer->getGroupAttr()->getCharacteristicOutputs());
+      const ValueIdSet &cPreds(consumer->pushedPredicates_);
+      ValueIdSet mappedPreds;
+
+      // add to cOutputs those values that are referenced by the
+      // pushed-down predicates
+      cColSet.intersectSetDeep(cPreds);
+      cOutputs += cColSet;
+
+      // check the characteristic outputs of this consumer and
+      // add all of them (by position number of the original
+      // list) to the bit vector of required columns
+      for (CollIndex i=0; i<cCols.entries(); i++)
+        if (cOutputs.contains(cCols[i]))
+          neededColumnsBitmap += i;
+
+      if (!cPreds.isEmpty())
+        if (consumer->id_ == id_)
+          {
+            // Assert for now that we are still seeing the same node,
+            // not a copy.  If this fails, think about whether making
+            // a copy might cause issues here, e.g. because some of
+            // the information has diverged.
+            DCMPASSERT(consumer == this);
+
+            // consumer is the same as "this"
+            mappedPreds = cPreds;
+          }
+        else
+          {
+            // another consumer, likely to use different ValueIds
+
+            // a ValueIdMap that maps my columns (top) to those of the
+            // other consumer (bottom)
+
+            myColsToConsumerMaps[c] = ValueIdMap(columnList_, cCols);
+
+            // make sure we can also map VEGPreds for any VEGRefs in the map
+            myColsToConsumerMaps[c].augmentForVEG(
+                 TRUE,  // add VEGPreds for existing VEGRefs
+                 FALSE, // no need to add more VEGRefs
+                 TRUE,  // only do this if constants match
+                 // only do this if the VEGies refer to
+                 // the same outputs
+                 &(getGroupAttr()->getCharacteristicInputs()),
+                 &(consumer->getGroupAttr()->getCharacteristicInputs()));
+
+            // Check the inputs, all of the consumers must have the same inputs
+            // (parameters). We could see differences if query caching decides
+            // to parameterize the copies of the CTEs differently.
+            if (consumer->commonInputs_ != commonInputs_)
+              {
+                emitCSEDiagnostics(
+                     "Differing inputs in CTE references, try CQD QUERY_CACHE '0'");
+                canShare = FALSE;
+              }
+
+            // rewrite the predicates on the consumer in terms of my
+            // own ValueIds
+            myColsToConsumerMaps[c].rewriteValueIdSetUp(mappedPreds, cPreds);
+
+            commonPredicates.findCommonSubexpressions(mappedPreds, TRUE);
+
+          }
+      // Save the mapped preds for later.
+      // Note: These are not final yet, until we have found
+      // common predicates among all the consumers.
+      nonCommonPredicatesArray[c] = mappedPreds;
+    }
+
+  // translate the bit vector of required columns into a set of values
+  // that are required (by other consumers) but are not produced by my
+  // child tree
+  makeValueIdListFromBitVector(tempTableColumns,
+                               columnList_,
+                               neededColumnsBitmap);
+  outputsToAdd.insertList(tempTableColumns);
+  info.setNeededColumns(neededColumnsBitmap);
+  predicatesToRemove -= commonPredicates;
+  info.setCommonPredicates(commonPredicates);
+
+  // Make an ORed predicate of all those non-common predicates of the
+  // consumers, to be applied on the common subexpression when creating
+  // the temp table. Also determine non-common predicates to be applied
+  // when scanning the temp table.
+  for (CollIndex n=0; n<numConsumers && canShare; n++)
+    {
+      // Now that we have the definitive set of common predicates,
+      // we can get the "uncommon" predicates, i.e. those that
+      // have to be evaluated on the individual scans of the temp
+      // tables. What we can do, however, is to OR these "uncommon"
+      // predicates and apply that OR predicate when building the
+      // temp table.
+      nonCommonPredicatesArray[n] -= commonPredicates;
+
+      if (nonCommonPredicatesArray[n].entries() > 0)
+        {
+          if (numORedPreds == n)
+            {
+              // build the ORed predicate
+              ItemExpr *uncommonPreds =
+                nonCommonPredicatesArray[n].rebuildExprTree();
+
+              if (nonCommonPredicatesORed)
+                nonCommonPredicatesORed =
+                  new(CmpCommon::statementHeap()) BiLogic(
+                       ITM_OR,
+                       nonCommonPredicatesORed,
+                       uncommonPreds);
+              else
+                nonCommonPredicatesORed = uncommonPreds;
+
+              numORedPreds++;
+            }
+          
+          // rewrite the non-common predicates in terms of the consumer
+          // (the ValueIdMap should in many cases already have the
+          // correct translation)
+          myColsToConsumerMaps[n].rewriteValueIdSetDown(
+               nonCommonPredicatesArray[n],
+               info.getConsumer(n)->nonSharedPredicates_);
+        }
+    }
+
+  // adding the ORed non-common predicates makes sense only if all
+  // consumers have some such predicate. If at least one consumer
+  // doesn't, that's equivalent to a TRUE predicate, and TRUE OR x is
+  // always TRUE.
+  if (numORedPreds == numConsumers)
+    {
+      nonCommonPredicatesORed->synthTypeAndValueId();
+
+      newPredicatesToAdd += nonCommonPredicatesORed->getValueId();
+    }
+
+  outputsToAdd -= child(0).getGroupAttr()->getCharacteristicOutputs();
+  inputsToRemove -= commonInputs_;
+
+  // do a dry-run first, before we change the child tree,
+  // because if we can't prepare the tree for CSE sharing,
+  // we'll need it in its original form to be able to expand it
+  if (canShare)
+    canShare = child(0)->prepareTreeForCSESharing(
+         outputsToAdd,
+         predicatesToRemove,
+         newPredicatesToAdd,
+         inputsToRemove,
+         &info,
+         TRUE);
+
+  if (canShare &&
+      CmpCommon::getDefault(CSE_USE_TEMP) != DF_ON)
+    {
+      // Todo: CSE: make a heuristic decision
+      emitCSEDiagnostics("Heuristically decided not to materialize");
+      canShare = FALSE;
+    }
+
+  if (canShare && info.getNeededColumns().entries() == 0)
+    {
+      // Temp table has no columns, looks like all we care about is
+      // the number of rows returned. This is not yet supported. We
+      // could make a table with a dummy column.
+      emitCSEDiagnostics("Temp table with no columns is not supported");
+      canShare = FALSE;
+    }
+
+
+  // ------------------------------------------------------------------
+  // Preparation phase
+  // ------------------------------------------------------------------
+
+  if (canShare)
+    {
+      canShare = child(0)->prepareTreeForCSESharing(
+           outputsToAdd,
+           predicatesToRemove,
+           newPredicatesToAdd,
+           inputsToRemove,
+           &info,
+           FALSE);
+
+      // If this failed we are in trouble, we potentially changed the
+      // child tree, preventing us from expanding it. Therefore we
+      // have to error out. We should therefore find all the problems
+      // in the dry run above.
+      if (!canShare)
+        {
+          emitCSEDiagnostics("Failed to prepare child tree for materialization",
+                             TRUE);
+          result = CSEInfo::ERROR;
+        }
+      else if (!child(0).getGroupAttr()->getCharacteristicOutputs().contains(
+                    outputsToAdd))
+        {
+          // we failed to produce the requested additional outputs
+          emitCSEDiagnostics("Failed to produce all the required output columns",
+                             TRUE);
+          canShare = FALSE;
+          result = CSEInfo::ERROR;
+        }
+
+    }
+
+  if (canShare)
+    result = CSEInfo::CREATE_TEMP;
+  else if (result == CSEInfo::UNKNOWN_ANALYSIS)
+    result = CSEInfo::EXPAND;
+
+  info.setAnalysisOutcome(id_, result);
+
+  return result;
+}
+
+void CommonSubExprRef::determineTempTableType(CSEInfo &info)
+{
+  NABoolean createHiveTable =
+    (CmpCommon::getDefault(CSE_HIVE_TEMP_TABLE) == DF_ON);
+
+  if (createHiveTable)
+    info.setTempTableType(CSEInfo::HIVE_TEMP_TABLE);
+  else
+    info.setTempTableType(CSEInfo::VOLATILE_TEMP_TABLE);
+}
+
+int CommonSubExprRef::createTempTable(CSEInfo &info)
+{
+  int result = 0;
+  NAString tempTableName("CSE_TEMP_");
+  NAString tempTableSchema;
+  NAString tempTableCatalog;
+  CSEInfo::CSETempTableType tempTableType = info.getTempTableType();
+  char buf[32];
+  NAString tempTableDDL;
+  ValueIdList cols;
+  NAString cseNamePrefix(internalName_.data(),
+                         MINOF(internalName_.length(),16));
+
+  // Step 1: Create temp table name
+  // ------------------------------
+
+  // we create a name of this form:
+  // CSE_TEMP_ppppp_MXIDiiiii_Ssss_ccc
+  // where
+  //   ppp... is a prefix of the CTE name or an internal name
+  //          (just to make it easier to identify, not really needed,
+  //           we only use letters, digits, underscores)
+  //   iii... is the SQL session id
+  //          (Hive tables only, to keep different sessions apart)
+  //   sss    is the statement number in this session
+  //   ccc    is the CSE number in this statement
+
+  cseNamePrefix.toUpper();
+  
+  for (int p=0; p<cseNamePrefix.length(); p++)
+    {
+      char c = cseNamePrefix[p];
+
+      if (!(c >= '0' && c <= '9' ||
+            c >= 'A' && c <= 'Z' ||
+            c == '_'))
+        cseNamePrefix.replace(p,1,"_");
+    }
+
+  tempTableName += cseNamePrefix;
+  if (tempTableType == CSEInfo::HIVE_TEMP_TABLE)
+    {
+      tempTableName += "_";
+      tempTableName +=
+        CmpCommon::context()->sqlSession()->getSessionId();
+    }
+  snprintf(buf, sizeof(buf), "_S%u_%d",
+           CmpCommon::context()->getStatementNum(),
+           info.getCSEId());
+  tempTableName += buf;
+
+  if (tempTableType == CSEInfo::HIVE_TEMP_TABLE)
+    {
+      tempTableSchema  = HIVE_SYSTEM_SCHEMA;
+      tempTableCatalog = HIVE_SYSTEM_CATALOG;
+    }
+
+  info.setTempTableName(QualifiedName(tempTableName,
+                                      tempTableSchema,
+                                      tempTableCatalog));
+
+  // Step 2: Create the DDL for the temp table
+  // -----------------------------------------
+       
+  tempTableDDL += "CREATE ";
+  if (tempTableType == CSEInfo::VOLATILE_TEMP_TABLE)
+    tempTableDDL += "VOLATILE ";
+  tempTableDDL += "TABLE ";
+  if (tempTableType == CSEInfo::HIVE_TEMP_TABLE &&
+      tempTableSchema == HIVE_SYSTEM_SCHEMA ||
+      tempTableType == CSEInfo::VOLATILE_TEMP_TABLE)
+    {
+      // Hive table in default schema or volatile table,
+      // juse a one-part name
+      tempTableDDL += tempTableName;
+    }
+  else if (tempTableType == CSEInfo::HIVE_TEMP_TABLE)
+    {
+      // Hive table in a different schema, use a 2 part name
+      // (not yet supported)
+      tempTableDDL += tempTableSchema;
+      tempTableDDL += '.';
+      tempTableDDL += tempTableName;
+    }
+  else
+    {
+      // use a regular 3-part name
+      // (not yet supported)
+      tempTableDDL +=
+        info.getTempTableName().
+          getQualifiedNameAsAnsiString();
+    }
+
+  tempTableDDL += "(\n";
+
+  makeValueIdListFromBitVector(cols, columnList_, info.getNeededColumns());
+
+  for (CollIndex c=0; c<cols.entries(); c++)
+    {
+      char colName[10];
+      NAString colType;
+
+      snprintf(colName, sizeof(colName),"  C%05d ", c);
+      tempTableDDL +=  colName;
+      if (tempTableType == CSEInfo::HIVE_TEMP_TABLE)
+        cols[c].getType().getMyTypeAsHiveText(&colType);
+      else
+        cols[c].getType().getMyTypeAsText(&colType);
+      tempTableDDL += colType;
+      if (c+1 < cols.entries())
+        tempTableDDL += ",\n";
+      else
+        tempTableDDL += ")";
+    }
+
+  info.setTempTableDDL(tempTableDDL);
+
+  // Step 3: Create the temp table
+  // -----------------------------
+
+  if (tempTableType == CSEInfo::HIVE_TEMP_TABLE)
+    {
+      int m = CmpCommon::diags()->mark();
+      if (!CmpCommon::context()->execHiveSQL(tempTableDDL,
+                                             CmpCommon::diags()))
+        {
+          if (CmpCommon::statement()->recompiling())
+            // ignore temp table creation errors if we are
+            // recompiling, the temp table may have been
+            // created in a previous compilation attempt
+            // (if not, we will run into other errors later)
+            CmpCommon::diags()->rewind(m);
+          else
+            result = -1;
+        }
+    }
+  else
+    {
+      // Todo: CSE: create volatile table
+      emitCSEDiagnostics("Volatile temp tables not yet supported",
+                         TRUE);
+      result = -1;
+    }
+
+  // Step 4: Get the NATable for the temp table
+  // ------------------------------------------
+
+  if (result == 0)
+    {
+      BindWA bindWA(ActiveSchemaDB(), CmpCommon::context());
+      CorrName cn(info.getTempTableName());
+      NATable *tempNATable =
+        ActiveSchemaDB()->getNATableDB()->get(cn,
+                                              &bindWA,
+                                              NULL);
+
+      if (!tempNATable)
+        emitCSEDiagnostics("Unable to read metadata for temporary table",
+                           TRUE);
+      else
+        info.setTempNATable(tempNATable);
+    }
+
+  return result;
+}
+
+RelExpr * CommonSubExprRef::createInsertIntoTemp(CSEInfo &info, NormWA & normWARef)
+{
+  RelExpr *result = NULL;
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context());
+  CorrName cn(info.getTempTableName());
+  TableDesc *tableDesc =
+    bindWA.createTableDesc(info.getTempNATable(),
+                           cn,
+                           FALSE);
+  ValueIdList srcValueList;
+
+  if (info.getTempTableType() == CSEInfo::HIVE_TEMP_TABLE)
+    {
+      // Create this tree:
+      //
+      //     BlockedUnion
+      //      /        \
+      //  Truncate  FastExtract temp
+      //    temp         |
+      //                cse
+      //
+      // In this tree "cse" is the child of this node and "temp" is
+      // the name of the Hive table. The tree is equivalent to what
+      // would be generated by an SQL statement
+      // "insert overwite table <temp> <cse>".
+
+      result = FastExtract::makeFastExtractTree(
+         tableDesc,
+         child(0).getPtr(),
+         TRUE,   // overwrite the table
+         FALSE,  // called outside the binder
+         TRUE,   // this is a table for a common subexpression
+         &bindWA);
+
+      CMPASSERT(result->getOperatorType() == REL_UNION &&
+                result->child(1)->getOperatorType() == REL_FAST_EXTRACT);
+      RelExpr *fe = result->child(1);
+
+      makeValueIdListFromBitVector(srcValueList, columnList_, info.getNeededColumns());
+      CMPASSERT(fe->getOperatorType() == REL_FAST_EXTRACT);
+      static_cast<FastExtract *>(fe)->setSelectList(srcValueList);
+      fe->setGroupAttr(new (CmpCommon::statementHeap()) GroupAttributes());
+      fe->getGroupAttr()->addCharacteristicInputs(
+           fe->child(0).getGroupAttr()->getCharacteristicInputs());
+      result->child(0)->setGroupAttr(
+           new (CmpCommon::statementHeap()) GroupAttributes());
+      result->setGroupAttr(new (CmpCommon::statementHeap()) GroupAttributes());
+      result->getGroupAttr()->addCharacteristicInputs(
+           fe->getGroupAttr()->getCharacteristicInputs());
+
+    }
+  else
+    {
+      emitCSEDiagnostics(
+           "Unsupported temp table type in createInsertIntoTemp()",
+           TRUE);
+    }
+
+  info.setInsertIntoTemp(result);
+
+  return result;
+}
+
+RelExpr * CommonSubExprRef::createTempScan(CSEInfo &info, NormWA & normWARef)
+{
+  MapValueIds *result = NULL;
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context());
+  CorrName cn(info.getTempTableName(),
+              CmpCommon::statementHeap(),
+              internalName_);
+  TableDesc *tableDesc =
+    bindWA.createTableDesc(info.getTempNATable(),
+                           cn,
+                           FALSE,
+                           getHint());
+
+  Scan *scan =
+    new(CmpCommon::statementHeap()) Scan(cn, tableDesc);
+
+  // Run the new scan through bind and normalization phases, like the
+  // rest of the nodes have
+  ExprGroupId x(scan);
+
+  scan->bindSelf(&bindWA);
+  normWARef.allocateAndSetVEGRegion(IMPORT_ONLY, scan);
+  scan->transformNode(normWARef, x);
+  CMPASSERT(x.getPtr() == scan);
+  scan->rewriteNode(normWARef);
+  scan->normalizeNode(normWARef);
+  scan->synthLogProp(&normWARef);
+  normWARef.restoreOriginalVEGRegion();
+
+  scan->setCommonSubExpr(this);
+
+  // At this point we have a scan node on the temp table, with a new
+  // TableDesc that has new ValueIds. Make a map from the new ids to
+  // my own.
+  ValueIdList myOutputs;
+  ValueIdList tempTableOutputList;
+  ValueIdList tempTableVEGOutputList;
+  ValueIdSet tempTableOutputs;
+  ValueIdSet tempTablePreds;
+
+  makeValueIdListFromBitVector(myOutputs, columnList_, info.getNeededColumns());
+  tableDesc->getUserColumnList(tempTableOutputList);
+  tableDesc->getEquivVEGCols(tempTableOutputList, tempTableVEGOutputList);
+  CMPASSERT(myOutputs.entries() == tempTableVEGOutputList.entries());
+
+  ValueIdMap outToTempMap(myOutputs, tempTableVEGOutputList);
+
+  result = new(CmpCommon::statementHeap()) MapValueIds(scan,
+                                                       outToTempMap,
+                                                       CmpCommon::statementHeap());
+
+  result->setCSERef(this);
+  result->addValuesForVEGRewrite(nonVEGColumns_);
+  outToTempMap.rewriteValueIdSetDown(getGroupAttr()->getCharacteristicOutputs(),
+                                     tempTableOutputs);
+  // Todo: CSE: the rewrite below doesn't work with VEGPreds, and the
+  // augment method also isn't sufficient
+  outToTempMap.rewriteValueIdSetDown(nonSharedPredicates_, tempTablePreds);
+  scan->getGroupAttr()->setCharacteristicInputs(
+       getGroupAttr()->getCharacteristicInputs());
+  scan->getGroupAttr()->setCharacteristicOutputs(tempTableOutputs);
+  scan->setSelectionPredicates(tempTablePreds);
+
+  result->setGroupAttr(getGroupAttr());
+
+  return result;
+}
+
+void CommonSubExprRef::emitCSEDiagnostics(const char *message, NABoolean forceError)
+{
+  // Normally this does nothing.
+  // With CQD CSE_DEBUG_WARNINGS ON, it emits diagnostics about the reason(s) why
+  //      we don't share some common subexpressions.
+  // With forceError set to TRUE, it generates an internal error that causes the
+  //      query to fail. This should be avoided as best as possible, since expanding
+  //      the CSEs should have given us a successful plan.
+
+  if (CmpCommon::getDefault(CSE_DEBUG_WARNINGS) == DF_ON || forceError)
+    {
+      *CmpCommon::diags() << DgSqlCode((forceError ? -5001 : 5001))
+                          << DgString0(internalName_.data())
+                          << DgString1(message);
+    }
+}
 
 // -----------------------------------------------------------------------
 // IsolatedNonTableUDR::transformNode()

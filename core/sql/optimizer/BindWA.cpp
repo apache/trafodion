@@ -163,6 +163,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL, NABo
      , renameToScanTable_ (FALSE)
      , inViewExpansion_ (FALSE)
      , inliningInfoFlagsToSetRecursivly_(0)
+     , currCSE_(NULL)
      , inCTAS_(FALSE)
      , viewsUsed_("", wHeap())
      , hasDynamicRowsetsInQuery_(FALSE)

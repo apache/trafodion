@@ -1554,6 +1554,13 @@ public:
   // flip the top and bottom maps
   void flipSides();
 
+  // add VEGPreds for VEGRefs contained in the map
+  void augmentForVEG(NABoolean addVEGPreds,
+                     NABoolean addVEGRefs,
+                     NABoolean compareConstants,
+                     const ValueIdSet *topInputsToCheck,
+                     const ValueIdSet *bottomInputsToCheck);
+
   // Normalize the map replacing valueIds with VEGRefs
   NABoolean normalizeNode(NormWA & normWARef);
 

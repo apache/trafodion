@@ -580,12 +580,16 @@ ValueId::castToBaseColumn(NABoolean *isaConstant) const
   // loop until we RETURN from this function or its a NULL expression
   while (ie)
     {
-	  ValueId vid = NULL_VALUE_ID;
+      ValueId vid = NULL_VALUE_ID;
 
       switch (ie->getOperatorType())
         {
         case ITM_BASECOLUMN:
           return (BaseColumn *)ie;
+
+	case ITM_INDEXCOLUMN:
+	  return (BaseColumn *) ((IndexColumn *) ie)->
+            getDefinition().getItemExpr();
 
         case ITM_INSTANTIATE_NULL:
 		case ITM_UNPACKCOL:
@@ -605,7 +609,7 @@ ValueId::castToBaseColumn(NABoolean *isaConstant) const
           ie = vid.getItemExpr();
           break;
 
-		case ITM_ROWSETARRAY_SCAN:
+        case ITM_ROWSETARRAY_SCAN:
           // $$$ mar: no good way to do this easily, so for now we punt
           // $$$ --> post-FCS, do something better
 	  //
@@ -623,21 +627,21 @@ ValueId::castToBaseColumn(NABoolean *isaConstant) const
             break;
           }
 
-		default:
-		  if (ie->getArity() > 0)
-		  {
-			ie = (*ie)[0];
-			break;
-		  }
-		  else
-                  {
-                       if (isaConstant)
-                       {
-                         *isaConstant = ie->doesExprEvaluateToConstant
-                           (FALSE,TRUE);
-                       }
-			return NULL;
-                  }
+        default:
+          if (ie->getArity() > 0)
+            {
+              ie = (*ie)[0];
+              break;
+            }
+          else
+            {
+              if (isaConstant)
+                {
+                  *isaConstant = ie->doesExprEvaluateToConstant
+                    (FALSE,TRUE);
+                }
+              return NULL;
+            }
         }
     } // end of while
 	return NULL;
@@ -5700,6 +5704,109 @@ void ValueIdMap::flipSides()
   ValueIdList flipList = topValues_;
   topValues_ = bottomValues_;
   bottomValues_ = flipList;
+}
+
+void ValueIdMap::augmentForVEG(NABoolean addVEGPreds,
+                               NABoolean addVEGRefs,
+                               NABoolean compareConstants,
+                               const ValueIdSet *topInputsToCheck,
+                               const ValueIdSet *bottomInputsToCheck)
+{
+  // If a ValueIdMap maps one VEGReference x to another VEGReference y,
+  // we may want to be able to map the corresponding VEGPredicates as
+  // well. This method enables that by finding such pairs of VEGReferences
+  // and augmenting the map with their VEGPredicates. The method can also
+  // augment the map from VEGPredicates to VEGReferences.
+
+  // NOTE: Before using this method, make sure it is applicable in
+  // your case. What it does is somewhat questionable. We may have
+  // a VEG(a,b,1) in the top values and a VEG(c,d,2) in the bottom
+  // values. Replacing one VEGPred into another may or may not be
+  // what we want. Furthermore, a,b,c may be local values, d may
+  // be a characteristic input. Again, it is questionable whether
+  // the rewrite is what's desired.
+
+  // The method allows to restrict the rewrite somewhat:
+  // - compareConstants requires top and bottom VEGPreds to
+  //   have the same constant (or no constants at all)
+  // - top/bottom inputs to check can be used to exclude
+  //   VEGPreds that differ in the way they use inputs.
+
+  // There are other issues that still may go wrong with this
+  // method, maybe with predicates like COL1=COL2.
+
+  CollIndex ne = topValues_.entries();
+
+  for (CollIndex i=0; i<ne; i++)
+    {
+      ItemExpr *t = topValues_[i].getItemExpr();
+      ItemExpr *b = bottomValues_[i].getItemExpr();
+      OperatorTypeEnum to = t->getOperatorType();
+      OperatorTypeEnum bo = b->getOperatorType();
+
+      if (addVEGPreds &&
+          to == ITM_VEG_REFERENCE &&
+          bo == ITM_VEG_REFERENCE)
+        {
+          VEG *vegT = static_cast<VEGReference *>(t)->getVEG();
+          VEG *vegB = static_cast<VEGReference *>(b)->getVEG();
+          ValueId topPred(vegT->getVEGPredicate()->getValueId());
+
+          if (! topValues_.contains(topPred))
+            {
+              NABoolean ok = TRUE;
+              ValueId constT = vegT->getAConstant(TRUE);
+              ValueId constB = vegB->getAConstant(TRUE);
+
+              // check whether constants match
+              // (or are both NULL_VALUE_ID)
+              if (compareConstants)
+                ok = (constT == constB);
+
+              if (ok &&
+                  ((topInputsToCheck && topInputsToCheck->entries() > 0) ||
+                   (bottomInputsToCheck && bottomInputsToCheck->entries() > 0)))
+                {
+                  ValueIdSet topInputs;
+                  ValueIdSet bottomInputs;
+
+                  if (topInputsToCheck)
+                    topInputs = *topInputsToCheck;
+                  if (bottomInputsToCheck)
+                    bottomInputs = *bottomInputsToCheck;
+
+                  topInputs.intersectSet(vegT->getAllValues());
+                  bottomInputs.intersectSet(vegB->getAllValues());
+                  // if the caller provided inputs to check, we only
+                  // rewrite VEGPreds if their VEGies refer to the
+                  // same inputs (or if they don't refer to any inputs)
+                  ok = (topInputs == bottomInputs);
+                }
+
+              if (ok)
+                {
+                  topValues_.insert(topPred);
+                  bottomValues_.insert(vegB->getVEGPredicate()->getValueId());
+                }
+            }
+        }
+
+      if (addVEGRefs &&
+          to == ITM_VEG_PREDICATE &&
+          bo == ITM_VEG_PREDICATE)
+        {
+          ValueId topRef(static_cast<VEGPredicate *>(t)->
+                         getVEG()->getVEGReference()->getValueId());
+
+          if (! topValues_.contains(topRef))
+            {
+              topValues_.insert(topRef);
+              bottomValues_.insert(
+                   static_cast<VEGPredicate *>(b)->
+                      getVEG()->getVEGReference()->getValueId());
+            }
+        }
+    }
 }
 
 NABoolean ValueIdMap::normalizeNode(NormWA & normWARef)

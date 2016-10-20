@@ -86,6 +86,7 @@
 #include "opt.h"	    // to initialize the memo and task_list variables
 
 #include "RelExeUtil.h"
+#include "RelMisc.h"
 #include "CmpSeabaseDDL.h"
 #include "CmpSeabaseDDLupgrade.h"
 #include "NAUserId.h"
@@ -156,6 +157,7 @@ CmpStatement::CmpStatement(CmpContext* context,
   isSMDRecompile_ = FALSE;
   isParallelLabelOp_ = FALSE;
   displayGraph_ = FALSE;
+  cses_ = NULL;
   detailsOnRefusedRequirements_ = NULL;
 
 #ifndef NDEBUG
@@ -1687,4 +1689,27 @@ void CmpStatement::setTMUDFRefusedRequirements(const char *details)
     }
 
   detailsOnRefusedRequirements_->insert(new(heap_) NAString(details, heap_));
+}
+
+void CmpStatement::addCSEInfo(CSEInfo *info)
+{
+  if (cses_ == NULL)
+    cses_ = new(CmpCommon::statementHeap())
+      LIST(CSEInfo *)(CmpCommon::statementHeap());
+
+  info->setCSEId(cses_->entries());
+  cses_->insert(info);
+}
+
+CSEInfo * CmpStatement::getCSEInfo(const char *cseName)
+{
+  if (cses_)
+    for (CollIndex i=0; i<cses_->entries(); i++)
+      {
+        if ((*cses_)[i]->getName() == cseName)
+          return (*cses_)[i];
+      }
+
+  // no match found
+  return NULL;
 }

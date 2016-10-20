@@ -196,7 +196,7 @@ class ExExeUtilTcb : public ex_tcb
   ex_queue_pair getParentQueue() const;
   Int32 orderedQueueProtocol() const;
 
-  void freeResources();
+  virtual void freeResources();
 
   virtual Int32 numChildren() const;
   virtual const ex_tcb* getChild(Int32 pos) const;
@@ -3343,6 +3343,7 @@ class ExExeUtilHiveTruncateTcb : public ExExeUtilTcb
 
   ~ExExeUtilHiveTruncateTcb();
 
+  virtual void freeResources();
   virtual short work();
 
   NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
