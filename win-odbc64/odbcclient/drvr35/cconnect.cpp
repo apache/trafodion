@@ -1086,7 +1086,7 @@ INT_PTR CALLBACK ConnectDriverKWDialogProc(
 			PostMessage(hwndDlg,WM_QUIT,0,0);
 			break;
 		case IDCANCEL:
-			PostMessage(hwndDlg,WM_QUIT,0,0);
+			PostMessage(hwndDlg,WM_QUIT,1,0);
 			break;
 		}
 		return TRUE;
@@ -1761,10 +1761,16 @@ SQLRETURN CConnect::DriverConnect(SQLHWND WindowHandle,
 					 DispatchMessage(&msg);
 				 }
 				}
+				
 				DestroyWindow(hWndDlg);
 				EnableWindow(WindowHandle,!b);
-
 				FreeLibrary(hinst);
+
+				if (msg.wParam == 1)//IDCANCEL
+				{
+					setDiagRec(DRIVER_ERROR, IDS_HY_000, 0, "Operation Aborted.");
+					return SQL_ERROR;
+				}
 			 }
 			 else {
 				BOOL b=EnableWindow(WindowHandle,FALSE);
@@ -1783,8 +1789,13 @@ SQLRETURN CConnect::DriverConnect(SQLHWND WindowHandle,
 				}
 				DestroyWindow(hWndDlg);
 				EnableWindow(WindowHandle,!b);
-
 				FreeLibrary(hinst);
+
+				if (msg.wParam == 1)//IDCANCEL
+				{
+					setDiagRec(DRIVER_ERROR, IDS_HY_000, 0, "Operation Aborted.");
+					return SQL_ERROR;
+				}
 			 }
 
 		}
