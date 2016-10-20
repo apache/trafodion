@@ -377,25 +377,16 @@ public class TransactionManager {
                   for (CommitResponse cresponse : result.values()) {
                     if (cresponse.getHasException()) {
                       String exceptionString = new String (cresponse.getException());
-                      LOG.error("doCommitX - exceptionString: " + exceptionString);
                       if (exceptionString.contains("UnknownTransactionException")) {
-                        if (ignoreUnknownTransaction == true) {
-                          if (LOG.isTraceEnabled()) LOG.trace("doCommitX, ignoring UnknownTransactionException in cresponse");
-                        }
-                        else {
-                          LOG.error("doCommitX, coprocessor UnknownTransactionException: " + cresponse.getException());
                           throw new UnknownTransactionException(cresponse.getException());
-                        }
                       }
                       else if (exceptionString.contains("DUPLICATE")) {
-                         LOG.error("doCommitX, coprocessor UnknownTransactionException: " + cresponse.getException());
                          throw new UnknownTransactionException(cresponse.getException());
                       }
                       else if (exceptionString.contains("org.apache.hadoop.hbase.exceptions.FailedSanityCheckException")) {
                          throw new org.apache.hadoop.hbase.exceptions.FailedSanityCheckException(cresponse.getException());
                       }
                       else {
-                        if (LOG.isTraceEnabled()) LOG.trace("doCommitX coprocessor exception: " + cresponse.getException());
                         throw new RetryTransactionException(cresponse.getException());
                       }
                   }
@@ -518,16 +509,9 @@ public class TransactionManager {
                     if(cresponse.getHasException()) {
                       String exceptionString = new String (cresponse.getException());
                       if (exceptionString.contains("UnknownTransactionException")) {
-                        if (ignoreUnknownTransaction == true) {
-                          if (LOG.isTraceEnabled()) LOG.trace("doCommitX, ignoring UnknownTransactionException in cresponse");
-                        }
-                        else {
-                          LOG.error("doCommitX, coprocessor UnknownTransactionException: " + cresponse.getException());
                           throw new UnknownTransactionException(cresponse.getException());
-                        }
                       }
                       else {
-                        if (LOG.isTraceEnabled()) LOG.trace("doCommitX coprocessor exception: " + cresponse.getException());
                         throw new RetryTransactionException(cresponse.getException());
                       }
                   }
@@ -973,19 +957,11 @@ public class TransactionManager {
               }
               else {
                  for (AbortTransactionResponse cresponse : result.values()) {
-                   if(cresponse.getHasException()) {
-                     String exceptionString = new String (cresponse.getException());
-		     String errMsg = new String("Abort of transaction " + transactionId
-                          + " participantNum: " + participantNum + " region: " + Bytes.toString(regionName)
-                          + " threw Exception: " + exceptionString);
-                     LOG.error(errMsg);
-                     if(exceptionString.contains("UnknownTransactionException")) {
-                       LOG.error("doAbortx caught and rethrowing UnknownTransactionException for transaction " + transactionId
-                               + " participantNum: " + participantNum + " region: " + Bytes.toString(regionName)); 
-                       throw new UnknownTransactionException(errMsg);
+                   String exceptionString = cresponse.getException();
+                   if (exceptionString != null) {
+                     if (exceptionString.contains("UnknownTransactionException")) {
+                       throw new UnknownTransactionException(exceptionString);
                      }
-                     LOG.error("doAbortx throwing RetryTransactionException for transaction " + transactionId
-                               + " participantNum: " + participantNum + " region: " + Bytes.toString(regionName)); 
                      throw new RetryTransactionException(cresponse.getException());
                    }
                  }
@@ -993,8 +969,8 @@ public class TransactionManager {
               }
            }
           catch (UnknownTransactionException ute) {
-             String errMsg = new String("Got unknown exception in doAbortX by participant " + participantNum
-                       + " for transaction " + transactionId);
+             String errMsg = new String("doAbortX UnknownTransactionException for transaction "
+                              + transactionId + " participantNum " + participantNum + " Location " + location.getRegionInfo().getRegionNameAsString());
              if (ignoreUnknownTransaction) {
                 LOG.info(errMsg + " ,but ignored", ute);
                 transactionState.requestPendingCountDec(null);
@@ -1007,20 +983,23 @@ public class TransactionManager {
           }
           catch (RetryTransactionException rte) {
               if (retryCount == RETRY_ATTEMPTS) {
-                  String errMsg = "Exceeded retry attempts in doAbortX: " + retryCount;
-                  LOG.error(errMsg, rte); 
-                  DoNotRetryIOException dnre = new DoNotRetryIOException(errMsg, rte);
-                  transactionState.requestPendingCountDec(dnre);
-                  throw dnre;
+                 String errMsg = new String("Exceeded " + retryCount + " retry attempts in doAbortX for transaction " 
+                     + transactionId + " participantNum " + participantNum + " Location " + location.getRegionInfo().getRegionNameAsString());
+                 DoNotRetryIOException dnre = new DoNotRetryIOException(errMsg, rte);
+                 LOG.error(errMsg, dnre);
+                 transactionState.requestPendingCountDec(dnre);
+                 throw dnre;
               }
               else if (rte.toString().contains("Asked to commit a non-pending transaction ")) {
-                 LOG.error(" doCommitX will not retry transaction " + transactionId , rte);
+                 String errMsg = new String("doAbortX will not retry transaction" 
+                     + transactionId + " participantNum " + participantNum + " Location " + location.getRegionInfo().getRegionNameAsString());
+                 LOG.error(errMsg,rte);
                  refresh = false;
                  retry = false;
               }
               else {
-                  LOG.error("doAbortX retrying transaction " + transactionId + " participantNum: "
-                       + participantNum + " region: " + Bytes.toString(regionName) + " due to Exception: " ,rte );
+                  LOG.warn("doAbortX retrying " + retryCount + " time for transaction " + transactionId + " participantNum: "
+                      + participantNum + " Location " + location.getRegionInfo().getRegionNameAsString());
                  refresh = true;
                  retry = true;
               }
@@ -1048,8 +1027,8 @@ public class TransactionManager {
             if (retry)
                retrySleep = retry(retrySleep);
           } while (retry && retryCount++ <= RETRY_ATTEMPTS);
-
         }
+
         if( TRANSACTION_ALGORITHM == AlgorithmType.SSCC){
         do {
              retry = false;
@@ -1075,9 +1054,9 @@ public class TransactionManager {
 
             Map<byte[], SsccAbortTransactionResponse> result = null;
               try {
-                      if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- before coprocessorService txid: " + transactionId + " table: " +
+                  if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- before coprocessorService txid: " + transactionId + " table: " +
                         table.toString() + " startKey: " + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
-                      result = table.coprocessorService(SsccRegionService.class, startKey, endKey, callable);
+                  result = table.coprocessorService(SsccRegionService.class, startKey, endKey, callable);
               } catch (ServiceException se) {
                   String msg = "ERROR occurred while calling doAbortX coprocessor service";
                   LOG.warn(msg + ":",  se);
@@ -1090,25 +1069,23 @@ public class TransactionManager {
                   throw dnre;
               }
 
-              if(result.size() != 1) {
-                     LOG.error("doAbortX, received incorrect result size: " + result.size());
-                     refresh = true;
-                     retry = true;
-                  }
-                  else {
-                     for (SsccAbortTransactionResponse cresponse : result.values()) {
-                if(cresponse.getHasException()) {
-                  String exceptionString = cresponse.getException();
-                  String errMsg = new String("Abort of transaction " + transactionId + " threw Exception: " + exceptionString);
-                  LOG.error(errMsg);
-                  if(exceptionString.contains("UnknownTransactionException")) {
-                         throw new UnknownTransactionException(errMsg);
-                  }
-                  throw new RetryTransactionException(cresponse.getException());
-                }
+              if (result.size() != 1) {
+                 LOG.error("doAbortX, received incorrect result size: " + result.size());
+                 refresh = true;
+                 retry = true;
+              }
+              else {
+                 for (SsccAbortTransactionResponse cresponse : result.values()) {
+                    if (cresponse.getHasException()) {
+                       String exceptionString = cresponse.getException();
+                       if (exceptionString.contains("UnknownTransactionException")) {
+                          throw new UnknownTransactionException(exceptionString);
+                       }
+                       throw new RetryTransactionException(cresponse.getException());
+                    }
+                 }
               }
               retry = false;
-              }
           }
           catch (UnknownTransactionException ute) {
              String errMsg = new String("Got unknown exception in doAbortX by participant " + participantNum
@@ -1166,11 +1143,6 @@ public class TransactionManager {
       // We have received our reply so decrement outstanding count
       transactionState.requestPendingCountDec(null);
 
-      // forget the transaction if all replies have been received.
-      //  otherwise another thread will do it
-//      if (transactionState.requestAllComplete())
-//      {
-//      }
       if(LOG.isTraceEnabled()) LOG.trace("doAbortX -- EXIT txID: " + transactionId);
       return 0;
     }
@@ -1218,7 +1190,7 @@ public class TransactionManager {
                  transactionState.requestPendingCountDec(cue);
                  throw cue;
             }
-		  if(!retry) {
+		 if(!retry) {
 		      List<String> exceptions = commitMultipleResponse.getExceptionList();
 
 		      checkException(transactionState, locations, exceptions);
@@ -1385,8 +1357,7 @@ public class TransactionManager {
              break;
           default:
              CommitUnsuccessfulException cue = new CommitUnsuccessfulException(errMsg);
-             if (LOG.isWarnEnabled()) 
-                 LOG.warn(errMsg, cue);
+             LOG.warn(errMsg, cue);
              throw cue;
        }
        resultCount++;
@@ -2238,7 +2209,7 @@ public class TransactionManager {
               catch (InterruptedException ie) {}
               catch (IOException e) {
                  loopExit = true;
-                 LOG.error("Exception at the time of committing DDL transaction", e); 
+                 LOG.error("Exception at the time of committing DML before processing DDL ", e); 
                  throw e;
               }
             } while (loopExit == false);
@@ -2448,7 +2419,7 @@ public class TransactionManager {
               catch (InterruptedException ie) {}
               catch (IOException e) {
                  loopExit = true;
-                 LOG.error("Exception at the time of aborting DDL transaction", e); 
+                 LOG.error("Exception at the time of aborting DML before processing DDL", e); 
                  savedException = e;
               }
             } while (loopExit == false);
