@@ -158,15 +158,15 @@ fi
 
 export HBASE_DEP_VER_APACHE=1.2.0
 export HIVE_DEP_VER_APACHE=1.1.0
-export HBVER=apache1_2_0
+export HBVER=apache1_2
 
 if [[ "$HBASE_DISTRO" == "APACHE1.1" ]]; then
    export HBASE_DEP_VER_APACHE=1.1.2
-   export HBVER=apache1_1_2
+   export HBVER=apache1_1
 fi
 if [[ "$HBASE_DISTRO" == "APACHE1.0" ]]; then
    export HBASE_DEP_VER_APACHE=1.0.2
-   export HBVER=apache1_0_2
+   export HBVER=apache1_0
 fi
 export HBASE_TRX_ID_APACHE=hbase-trx-${HBVER}
 
