@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put Trafodion site-specific property overrides in this file. -->
+
+<configuration>
+   <property>
+     <name>hbase.hregion.impl</name>
+     <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>
+   </property>
+   <property>
+    <name>hbase.coprocessor.region.classes</name>
+      <value>
+           org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,
+           org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,
+           org.apache.hadoop.hbase.coprocessor.AggregateImplementation
+      </value>
+   </property>
+   <property>
+    <name>hbase.client.scanner.timeout.period</name>
+    <value>3600000</value>
+   </property>
+</configuration>
