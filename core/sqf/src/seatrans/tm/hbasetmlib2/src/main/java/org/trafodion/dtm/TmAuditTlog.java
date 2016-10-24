@@ -272,8 +272,9 @@ public class TmAuditTlog {
                   // We have received our reply in the form of an exception,
                   // so decrement outstanding count and wake up waiters to avoid
                   // getting hung forever
-                  transactionState.requestPendingCountDec(true);
-                  throw new IOException("Exceeded retry attempts (" + retryCount + ") in deleteEntriesOlderThanASNX for ASN: " + auditSeqNum);
+                  IOException ie = new IOException("Exceeded retry attempts (" + retryCount + ") in deleteEntriesOlderThanASNX for ASN: " + auditSeqNum);
+                  transactionState.requestPendingCountDec(ie);
+                  throw ie;
                }
 
                if (LOG.isWarnEnabled()) LOG.warn("deleteEntriesOlderThanASNX -- " + table.toString() + " location being refreshed");
@@ -297,7 +298,7 @@ public class TmAuditTlog {
             }
        } while (retryCount < TLOG_RETRY_ATTEMPTS && retry == true);
        // We have received our reply so decrement outstanding count
-       transactionState.requestPendingCountDec(false);
+       transactionState.requestPendingCountDec(null);
 
        if (LOG.isTraceEnabled()) LOG.trace("deleteEntriesOlderThanASNX -- EXIT ASN: " + auditSeqNum);
        return 0;
@@ -944,7 +945,7 @@ public class TmAuditTlog {
    }
 
    public long addControlPoint (final Map<Long, TransactionState> map) throws IOException {
-      if (LOG.isTraceEnabled()) LOG.trace("addControlPoint start with map size " + map.size());
+      if (LOG.isDebugEnabled()) LOG.debug("addControlPoint start with map size " + map.size());
       long lvCtrlPt = 0L;
       long agedAsn;  // Writes older than this audit seq num will be deleted
       long lvAsn;    // local copy of the asn
@@ -1000,7 +1001,7 @@ public class TmAuditTlog {
                throw e;
             }
          }
-      if (LOG.isTraceEnabled()) LOG.trace("addControlPoint returning " + lvCtrlPt);
+      if (LOG.isDebugEnabled()) LOG.debug("addControlPoint returning " + lvCtrlPt);
       return lvCtrlPt;
    } 
 

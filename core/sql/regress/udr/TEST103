@@ -19,7 +19,7 @@
 --
 -- @@@ END COPYRIGHT @@@
 --
--- This script tests DDL operations associted with libraries
+-- This script tests DDL operations associated with libraries
 -- functions, and procedures
 --
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';

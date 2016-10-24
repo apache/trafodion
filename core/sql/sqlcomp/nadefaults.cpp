@@ -486,15 +486,6 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
   DDkwd__(CACHE_HISTOGRAMS_MONITOR_MEM_DETAIL,  "OFF"),
   DD_____(CACHE_HISTOGRAMS_MONITOR_OUTPUT_FILE, ""),
 
-// This is the default time interval, during which we ensure that
-// the histograms in the cache are correct. If the histograms in the
-// cache are older than this default interval, and the HISTOGRAMS
-// table last modification time is older than this, any requested
-// histograms will be checked to see if it was modified more recently
-// than the histograms in cache (the READ_TIME fields will also be
-// updated).  If so, the optimizer will refetch histograms.
-
- XDDui___(CACHE_HISTOGRAMS_REFRESH_INTERVAL,  "3600"),
  DD_____(CACHE_HISTOGRAMS_TRACE_OUTPUT_FILE, ""),
  DDkwd__(CALL_EMBEDDED_ARKCMP,       "OFF"),
  DDui___(CANCEL_MINIMUM_BLOCKING_INTERVAL,      "60"),
@@ -1905,15 +1896,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   // Default behavior is to generate all warnings
   XDDui___(HIST_MISSING_STATS_WARNING_LEVEL,	"4"),
 
-  // This specifies the time interval after which the fake statistics
-  // should be refreshed. This was done primarirly for users
-  // which did not want to update statistics on temporary tables.
-  // If this statistics is cached, then this results in bad plans
-  // These users can have this default set to 0, in which case histograms
-  // with fake statistics will never be cached.  Note that when ustat
-  // automation is on, this value divided by 360 is used.
-
- XDDui___(HIST_NO_STATS_REFRESH_INTERVAL,       "3600"),
   DDflt1_(HIST_NO_STATS_ROWCOUNT,               "100"),
   DDflt1_(HIST_NO_STATS_UEC,                    "2"),
   DDflt1_(HIST_NO_STATS_UEC_CHAR1,              "10"),

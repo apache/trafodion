@@ -1113,8 +1113,10 @@ void TM_TX_Info::process_eventQ()
       } // switch
 
       // Protect message as registerRegion could try to reply from the main thread.
+      bool detectDoubleDelete = true;
       lock();
-      delete lp_msg;
+      if (lp_msg->validate(detectDoubleDelete))
+         delete lp_msg;
       unlock();
       // Multithreaded only:
       // Worker threads release the transaction after every request
