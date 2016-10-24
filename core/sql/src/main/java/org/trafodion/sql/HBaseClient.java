@@ -176,7 +176,7 @@ public class HBaseClient {
         return true;
     }
 
-    private void addCoprocessor(HTableDescriptor desc) {
+    private void addCoprocessor(HTableDescriptor desc) throws IOException {
         String coprocessorClasses = config.get("hbase.coprocessor.region.classes");
         if (coprocessorClasses != null)
            desc.addCoprocessor(coprocessorClasses);
@@ -186,6 +186,7 @@ public class HBaseClient {
                           boolean isMVCC) 
         throws IOException, MasterNotRunningException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.create(" + tblName + ") called, and MVCC is " + isMVCC + ".");
+            HTableDescriptor desc = new HTableDescriptor(tblName);
             addCoprocessor(desc);
             for (int i = 0; i < colFamNameList.length ; i++) {
 		String  colFam = (String)colFamNameList[i];

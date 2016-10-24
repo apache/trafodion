@@ -20,6 +20,8 @@ package org.trafodion.sql;
 import org.apache.log4j.Logger;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.fs.Path;
+
 
 /**
  * Adds Trafodion configuration files to a Configuration
@@ -29,10 +31,9 @@ public class TrafConfiguration extends HBaseConfiguration {
   static Logger logger = Logger.getLogger(TrafConfiguration.class.getName());
 
   public static Configuration addTrafResources(Configuration conf) {
-    logger.trace("Calling TrafConfiguration.addTrafResources");
-    String trafSiteXml = System.getenv("MY_SQROOT") + "/etc/traf-site.xml";
-    conf.addResource(trafSiteXml);
-
+    String trafSiteXml = new String(System.getenv("MY_SQROOT") + "/etc/traf-site.xml");
+    Path fileRes = new Path(trafSiteXml);
+    conf.addResource(fileRes);
     return conf;
   }
 
