@@ -6770,7 +6770,7 @@ CoprocessorService, Coprocessor {
 
     for(TrxTransactionState ts : transactionMap.values()) {
       for(TrxTransactionState ts2 : ts.getTransactionsToCheck()) {
-        transactionMap.put(ts.getTransactionId(), ts);
+        transactionMap.put(ts2.getTransactionId(), ts2);
       }
     }
     txnPersistBuilder.setNextSeqId(nextSequenceId.get());
