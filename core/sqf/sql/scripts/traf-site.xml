@@ -5,10 +5,6 @@
 
 <configuration>
    <property>
-     <name>hbase.hregion.impl</name>
-     <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>
-   </property>
-   <property>
     <name>hbase.coprocessor.region.classes</name>
       <value>
            org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,

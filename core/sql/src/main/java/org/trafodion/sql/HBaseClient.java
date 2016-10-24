@@ -178,8 +178,11 @@ public class HBaseClient {
 
     private void addCoprocessor(HTableDescriptor desc) throws IOException {
         String coprocessorClasses = config.get("hbase.coprocessor.region.classes");
-        if (coprocessorClasses != null)
-           desc.addCoprocessor(coprocessorClasses);
+        if (coprocessorClasses != null) {
+           String[] coprocessors = coprocessorClasses.split(",");
+           for (int i = 0; i < coprocessors.length ; i++)
+               desc.addCoprocessor(coprocessors[i].trim());
+        }
     }
  
     public boolean create(String tblName, Object[]  colFamNameList,
