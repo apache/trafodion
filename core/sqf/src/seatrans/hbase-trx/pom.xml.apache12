@@ -39,7 +39,7 @@
 
   <groupId>org.apache</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>hbase-trx-apache1_2_0</artifactId>
+  <artifactId>hbase-trx-apache1_2</artifactId>
   <version>${env.TRAFODION_VER}</version>
   <name>HBase - Trx</name>
   <description>Trx of HBase usage</description>
