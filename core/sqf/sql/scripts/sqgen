@@ -187,14 +187,14 @@ fi
 
 ./gensqstatem2lenv > $SQETC_DIR/sqstatem2l.env
 
-if [ -f $SQETC_DIR/traf-site.xml ]; then
-    echo "Trafodion customization file $SQETC_DIR/traf-site.xml exists."
+if [ -f $SQETC_DIR/trafodion-site.xml ]; then
+    echo "Trafodion customization file $SQETC_DIR/trafodion-site.xml exists."
     echo "The file will not be copied."
     echo
 else
-    echo "Copying Trafodion customization file: $SQETC_DIR/traf-site.xml"
+    echo "Copying Trafodion customization file: $SQETC_DIR/trafodion-site.xml"
     echo
-    cp ./traf-site.xml $SQETC_DIR
+    cp ./trafodion-site.xml $SQETC_DIR
     lv_retcode=$?
     if [[ $lv_retcode != 0 ]]; then 
 	echo "Error $lv_retcode while copying Exiting..."

@@ -177,11 +177,11 @@ public class HBaseClient {
     }
 
     private void addCoprocessor(HTableDescriptor desc) throws IOException {
-        String coprocessorClasses = config.get("hbase.coprocessor.region.classes");
-        if (coprocessorClasses != null) {
-           String[] coprocessors = coprocessorClasses.split(",");
-           for (int i = 0; i < coprocessors.length ; i++)
+        String[] coprocessors = config.getStrings("hbase.coprocessor.region.classes");
+        if (coprocessors != null) {
+           for (int i = 0; i < coprocessors.length ; i++) {
                desc.addCoprocessor(coprocessors[i].trim());
+           }
         }
     }
  

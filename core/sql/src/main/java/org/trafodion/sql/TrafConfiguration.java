@@ -21,7 +21,8 @@ import org.apache.log4j.Logger;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.fs.Path;
-
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Adds Trafodion configuration files to a Configuration
@@ -31,9 +32,19 @@ public class TrafConfiguration extends HBaseConfiguration {
   static Logger logger = Logger.getLogger(TrafConfiguration.class.getName());
 
   public static Configuration addTrafResources(Configuration conf) {
-    String trafSiteXml = new String(System.getenv("MY_SQROOT") + "/etc/traf-site.xml");
+    Configuration lv_conf = new Configuration();
+    String trafSiteXml = new String(System.getenv("MY_SQROOT") + "/etc/trafodion-site.xml");
     Path fileRes = new Path(trafSiteXml);
-    conf.addResource(fileRes);
+    lv_conf.addResource(fileRes);
+    Iterator<Map.Entry<String,String>> iter = lv_conf.iterator();
+    String key;
+    while (iter.hasNext()) {
+       Map.Entry<String,String> entry = iter.next();
+       key = entry.getKey();
+       if (key.startsWith("trafodion."))
+          key = key.substring(10); // 10 - length of trafodion.
+       conf.set(key, entry.getValue());
+    }
     return conf;
   }
 
@@ -48,7 +59,7 @@ public class TrafConfiguration extends HBaseConfiguration {
 
   /**
    * @param that Configuration to clone.
-   * @return a Configuration created with the traf-site.xml files plus
+   * @return a Configuration created with the trafodion-site.xml files plus
    * the given configuration.
    */
   public static Configuration create(final Configuration that) {
