@@ -159,7 +159,7 @@ On Linux cluster, if you run into issues please check dcs log files located in $
 
 Validate that the interace is set up correctly. This command should only show one additional interface for HA configuration
 ----
-pdsh $MY_NODES "/sbin/ip addr show |grep 23400"
+pdsh $MY_NODES "sudo /sbin/ip addr show |grep 23400"
 ----
 
 Validate to get the list of  all the DcsMaster that are configured and started in the cluster

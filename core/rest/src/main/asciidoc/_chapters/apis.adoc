@@ -31,133 +31,19 @@
 :icons: font
 :experimental:
 
-The terms "representational state transfer" and "REST" were introduced in 2000 in the doctoral dissertation of 
-Roy Fielding, one of the principal authors of the Hypertext Transfer Protocol (HTTP) specification. In a nutshell
-
-A GET to an resource requests a copy of the information. 
-
-A PUT to an resource replaces the resource.  
-
-POST adds resources. 
-
-DELETE eliminates resources. 
-  
 [[rest]]
-== Resource Identifiers
+== REST APIs
+
 The URIs for the REST-based web services have the following syntax:
 
   http://{hostname:port}/{version}/{resourcepath}
 
 The elements in this syntax are as follows:
 
-  {hostname} - The http address of the service to get information about. 
-                                 Currently supported are the Trafodion DTM, RMS and DCS components. 
-  {version} - The version of the APIs. In this release, the version is v1.
-  {resourcepath} - A path that defines a singleton resource or a collection of resources. 
+ {hostname} - The http address of the service to get information about.
+ {version} - The version of the APIs. In this release, the version is v1.
+ {resourcepath} - A path that defines a singleton resource or a collection of resources. 
   
-== HTTP Requests
-To invoke a REST API, your application calls an HTTP operation on the URI associated with a resource. 
-
-.Headers 
-This release ignores Accept and Accept-Encoding headers.
-
-== HTTP Responses
-The following sections describe the syntax of HTTP Responses.
-
-.Compression
-This release does not support compression.
-
-.Response Formats
-This release of the REST APIs supports responses in JSON format only.
-
-.Response Examples
-
-.JSON response with single resource
-
-HTTP Request: 
-----
-GET http://{hostname:4200}/v1/servers
-----
-
-Response Status Line: 
-----
-HTTP/1.1 200 OK
-----
-
-Response Header:
-----
- HTTP/1.1 200 OK
- Cache-Control: no-cache
- Content-Type: application/json
- Transfer-Encoding: chunked
-----
-
-Response Body:
-----
-{
-  "STATE":"UP",
-  "SUBSTATE":"OPERATIONAL",
-  "PROCESSES":
-  [
-    {
-      "PROCESS":"DTM",
-      "CONFIGURED":2,
-      "ACTUAL":2,
-      "DOWN":""},
-    {
-      "PROCESS":"RMS",
-      "CONFIGURED":4,
-      "ACTUAL":4,
-      "DOWN":""
-    },
-    {
-      "PROCESS":"DCSMASTER",
-      "CONFIGURED":2,
-      "ACTUAL":2,
-      "DOWN":""
-    },
-    {
-      "PROCESS":"MXOSRVR",
-      "CONFIGURED":4,
-      "ACTUAL":4,
-      "DOWN":""
-    }
-  ]
-}
-----
-
-.JSON response with Error response
-
-Here we request information about DCS client connections when DCS is stopped.
-
-HTTP Request: 
-----
-GET http://{hostname:4200}/v1/servers/dcs/connections
-----
-
-Response Status Line: 
-----
-HTTP/1.1 404 Not Found
-----
-
-Response Header:
-----
-  HTTP/1.1 404 Not Found
-  Content-Type: application/json
-  Transfer-Encoding: chunked
-----
-
-Response Body:
-----
-{
-   "RemoteException" : {
-      "javaClassName" : "org.trafodion.rest.NotFoundException",
-      "exception" : "NotFoundException",
-      "message" : "DCS connection resources not found"
-   }
-}
-----
-== Supported REST APIs
 There are many ways/languages to use the REST API's. The following examples use the curl command line interface to do the REST calls.
 
 [cols="15%,10%,40%,35%"]
