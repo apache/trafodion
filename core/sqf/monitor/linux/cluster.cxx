@@ -4415,7 +4415,7 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
 
                         peer->p_timeout_count++;
 
-                        if ( peer->p_timeout_count <= sv_epoll_retry_count )
+                        if ( peer->p_timeout_count < sv_epoll_retry_count )
                         {
                             continue;
                         }
