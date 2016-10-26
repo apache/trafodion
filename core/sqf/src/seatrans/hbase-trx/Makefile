@@ -21,9 +21,9 @@
 
 # This Makefile is just a thin shell to Maven, which is used to do the real build
 
-BLD_HBASE_APACHE10_TRX_JARNAME     =hbase-trx-apache1_0_2-$(TRAFODION_VER).jar
-BLD_HBASE_APACHE11_TRX_JARNAME     =hbase-trx-apache1_1_2-$(TRAFODION_VER).jar
-BLD_HBASE_APACHE12_TRX_JARNAME     =hbase-trx-apache1_2_0-$(TRAFODION_VER).jar
+BLD_HBASE_APACHE10_TRX_JARNAME     =hbase-trx-apache1_0-$(TRAFODION_VER).jar
+BLD_HBASE_APACHE11_TRX_JARNAME     =hbase-trx-apache1_1-$(TRAFODION_VER).jar
+BLD_HBASE_APACHE12_TRX_JARNAME     =hbase-trx-apache1_2-$(TRAFODION_VER).jar
 BLD_HBASE_CDH54_TRX_JARNAME        =hbase-trx-cdh5_4-$(TRAFODION_VER).jar
 BLD_HBASE_CDH55_TRX_JARNAME        =hbase-trx-cdh5_5-$-$(TRAFODION_VER).jar
 BLD_HBASE_CDH57_TRX_JARNAME        =hbase-trx-cdh5_7-$-$(TRAFODION_VER).jar
