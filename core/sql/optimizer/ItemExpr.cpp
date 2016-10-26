@@ -6204,6 +6204,9 @@ const NAString Aggregate::getText() const
       else
         result = "count_nonull";
       break;
+    case ITM_GROUPING:
+      result = "grouping";
+      break;
     case ITM_ONE_ROW:
       result = "one_Row";
       break;
@@ -6324,6 +6327,8 @@ ItemExpr * Aggregate::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   result->frameStart_ = frameStart_;
   result->frameEnd_ = frameEnd_;
 
+  result->rollupGroupIndex_ = rollupGroupIndex_;
+
   return ItemExpr::copyTopNode(result, outHeap);
 }
 
@@ -6336,6 +6341,7 @@ NABoolean Aggregate::isSensitiveToDuplicates() const
     case ITM_MIN:
     case ITM_ANY_TRUE:
     case ITM_ONE_TRUE:
+    case ITM_GROUPING:
       return FALSE;
 
     case ITM_SUM:
@@ -6545,12 +6551,19 @@ ItemExpr * Aggregate::rewriteForStagedEvaluation(ValueIdList &initialAggrs,
     case ITM_SUM:
     case ITM_ANY_TRUE:
     case ITM_ONEROW:
+    case ITM_GROUPING:
       // in these cases, just do the same aggregate function twice
       partial = new (CmpCommon::statementHeap())
                      Aggregate(getOperatorType(), child(0));
 
       result = new (CmpCommon::statementHeap())
                     Aggregate(getOperatorType(), partial);
+
+      if (getOperatorType() == ITM_GROUPING)
+        {
+          ((Aggregate *)partial)->setRollupGroupIndex(getRollupGroupIndex());
+          ((Aggregate *)result)->setRollupGroupIndex(getRollupGroupIndex());
+        }
 
       if (inScalarGroupBy())
       {
@@ -7721,6 +7734,8 @@ const NAString BuiltinFunction::getText() const
     case ITM_LOBLOAD:
       return "lobload";
     
+    case ITM_AGGR_GROUPING_FUNC:
+      return "aggr_grouping";
 
     default:
       return "unknown func";
@@ -11786,6 +11801,23 @@ ItemExpr * AggrMinMax::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
     result = new (outHeap) AggrMinMax(NULL, NULL);
   else
     result = derivedNode;
+
+  return BuiltinFunction::copyTopNode(result, outHeap);
+}
+
+// --------------------------------------------------------------
+// member functions for AggrGrouping function
+// --------------------------------------------------------------
+ItemExpr * AggrGrouping::copyTopNode(ItemExpr * derivedNode, CollHeap* outHeap)
+{
+  AggrGrouping *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) AggrGrouping(-1);
+  else
+    result = (AggrGrouping*)derivedNode;
+
+  result->rollupGroupIndex_ = rollupGroupIndex_;
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 }

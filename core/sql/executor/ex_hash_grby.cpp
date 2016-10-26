@@ -174,9 +174,11 @@ ex_hash_grby_tcb::ex_hash_grby_tcb(const ex_hash_grby_tdb &  hash_grby_tdb,
   hbMoveInExpr_ = hash_grby_tdb.hbMoveInExpr_;
   ofMoveInExpr_ = hash_grby_tdb.ofMoveInExpr_;
   resMoveInExpr_ = hash_grby_tdb.resMoveInExpr_;
-  hbAggrExpr_ = hash_grby_tdb.hbAggrExpr_;
-  ofAggrExpr_ = hash_grby_tdb.ofAggrExpr_;
-  resAggrExpr_ = hash_grby_tdb.resAggrExpr_;
+
+  hbAggrExpr_ = hash_grby_tdb.hbAggrExpr();
+  ofAggrExpr_ = hash_grby_tdb.ofAggrExpr();
+  resAggrExpr_ = hash_grby_tdb.resAggrExpr();
+
   havingExpr_ = hash_grby_tdb.havingExpr_;
   moveOutExpr_ = hash_grby_tdb.moveOutExpr_;
   hbSearchExpr_ = hash_grby_tdb.hbSearchExpr_;
@@ -975,9 +977,10 @@ void ex_hash_grby_tcb::returnResultCurrentRow(HashRow * dataPointer)
   
     // when called from EID (with aggr) - turn curr row into a partial group
     if (hbAggrExpr_) { 
-      ((AggrExpr *)(hbAggrExpr_))->initializeAggr(workAtp_);
-      if (hbAggrExpr_->eval(childEntry->getAtp(), workAtp_) ==
-	  ex_expr::EXPR_ERROR) {
+      hbAggrExpr_->initializeAggr(workAtp_);
+      if ((hbAggrExpr_->perrecExpr()) &&
+          (hbAggrExpr_->perrecExpr()->eval(childEntry->getAtp(), workAtp_) ==
+           ex_expr::EXPR_ERROR)) {
 	workHandleError(childEntry->getAtp());
 	return; 
       }
@@ -1122,15 +1125,16 @@ void ex_hash_grby_tcb::workReadChild() {
         // The expression does not expect the HashRow to be part of the row.
         // Adjust the datapointer in the work atp to point beyond the HashRow.
 	workAtp_->getTupp(hbRowAtpIndex_).setDataPointer(hashRow->getData());
-	if (hbAggrExpr_->eval(childEntry->getAtp(), workAtp_) ==
-	    ex_expr::EXPR_ERROR)
+	if ((hbAggrExpr_->perrecExpr()) &&
+            (hbAggrExpr_->perrecExpr()->eval(childEntry->getAtp(), workAtp_) ==
+             ex_expr::EXPR_ERROR))
 	  {
             workHandleError(childEntry->getAtp());
 	    return;
 	  }
 
 	// Reset the "missed to find a group in the exisitng hash table",
-	// since we are looking for concecutive misses before we 
+	// since we are looking for consecutive misses before we 
 	// clear (send to parent) the hash table.
 	partialGroupbyMissCounter_ = 0;
       };
@@ -1144,9 +1148,10 @@ void ex_hash_grby_tcb::workReadChild() {
 				    &rc_)) {
 	// row is inserted. Initialize group and aggregate row
 	if (hbAggrExpr_) {
-	  ((AggrExpr *)(hbAggrExpr_))->initializeAggr(workAtp_);
-	  if (hbAggrExpr_->eval(childEntry->getAtp(), workAtp_) ==
-	      ex_expr::EXPR_ERROR)
+	  hbAggrExpr_->initializeAggr(workAtp_);
+	  if ((hbAggrExpr_->perrecExpr()) &&
+              (hbAggrExpr_->perrecExpr()->eval(childEntry->getAtp(), workAtp_) ==
+               ex_expr::EXPR_ERROR))
 	  {
             workHandleError(childEntry->getAtp());
 	    return;
@@ -1488,12 +1493,12 @@ void ex_hash_grby_tcb::workReadOverFlowRow() {
     HashRow * hashRow = ht->getNext(&cursor_);
     if (hashRow) {
       // the group exists already. Aggregate the child row into the group
-      if (ofAggrExpr_) {
+      if (ofAggrExpr_ && ofAggrExpr_->perrecExpr()) {
 
         // The expression does not expect the HashRow to be part of the row.
         // Adjust the datapointer in the work atp to point beyond the HashRow.
 	workAtp_->getTupp(hbRowAtpIndex_).setDataPointer(hashRow->getData());
-	if (ofAggrExpr_->eval(workAtp_, workAtp_) == ex_expr::EXPR_ERROR)
+	if (ofAggrExpr_->perrecExpr()->eval(workAtp_, workAtp_) == ex_expr::EXPR_ERROR)
 	  {
             workHandleError(workAtp_);
 	    return;
@@ -1515,7 +1520,7 @@ void ex_hash_grby_tcb::workReadOverFlowRow() {
 				    doNotOverflow )) {
 	// row is inserted. Initialize group and aggregate row
 	if (hbAggrExpr_)
-	  ((AggrExpr *)(hbAggrExpr_))->initializeAggr(workAtp_);
+	  hbAggrExpr_->initializeAggr(workAtp_);
 	else  
 	  // no aggr: then return now the row that was just inserted, but only
 	  // if we now read the unreturned part (i.e., the head of the list) 
@@ -1525,7 +1530,8 @@ void ex_hash_grby_tcb::workReadOverFlowRow() {
 	    returnResultCurrentRow(cluster->getLastDataPointer()) ;
 
 	if ((ofAggrExpr_) &&
-	    (ofAggrExpr_->eval(workAtp_, workAtp_) == ex_expr::EXPR_ERROR))
+            (ofAggrExpr_->perrecExpr()) &&
+	    (ofAggrExpr_->perrecExpr()->eval(workAtp_, workAtp_) == ex_expr::EXPR_ERROR))
 	  {
             workHandleError(workAtp_);
 	    return;

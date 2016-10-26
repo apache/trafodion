@@ -47,6 +47,86 @@
 #include "str.h"
 
 ///////////////////////////////////////////////////
+// class AggrExpr
+//////////////////////////////////////////////////
+ex_expr::exp_return_type AggrExpr::initializeAggr(atp_struct * atp)
+{
+  if (initExpr_)
+    {
+      if (initExpr_->eval(atp, atp) == ex_expr::EXPR_ERROR)
+	return ex_expr::EXPR_ERROR;
+    }
+
+  if (perrecExpr_)
+    {
+      ex_clause *clause = perrecExpr_->getClauses();
+      while (clause)
+        {
+          if (clause->getType() == ex_clause::AGGREGATE_TYPE)
+            {
+              if (((ex_aggregate_clause *)clause)->init() == ex_expr::EXPR_ERROR)
+                return ex_expr::EXPR_ERROR;
+            }
+          
+          clause = clause->getNextClause();
+        }
+    }
+
+  if (groupingExpr_)
+    {
+      ex_clause *clause = groupingExpr_->getClauses();
+      while (clause)
+        {
+          if (clause->getType() == ex_clause::AGGREGATE_TYPE)
+            {
+              if (((ex_aggregate_clause *)clause)->init() == ex_expr::EXPR_ERROR)
+                return ex_expr::EXPR_ERROR;
+            }
+          
+          clause = clause->getNextClause();
+        }
+    }
+
+  return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type AggrExpr::finalizeAggr(atp_struct * /*atp*/)
+{
+  return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type AggrExpr::finalizeNullAggr(atp_struct * atp)
+{
+  if (finalNullExpr_)
+    return finalNullExpr_->eval(atp, atp);
+  else
+    return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type AggrExpr::evalGroupingForNull(
+     Int16 startEntry, Int16 endEntry)
+{
+  if (groupingExpr_)
+    {
+      ex_clause *clause = groupingExpr_->getClauses();
+      while (clause)
+        {
+          if (clause->getOperType() == ITM_AGGR_GROUPING_FUNC)
+            {
+              ExFunctionGrouping * g = (ExFunctionGrouping*)clause;
+              if ((g->getRollupGroupIndex() >= startEntry) &&
+                  (g->getRollupGroupIndex() <= endEntry))
+                g->setRollupNull(-1);
+            }
+          
+          clause = clause->getNextClause();
+        }
+    }
+
+  return ex_expr::EXPR_OK;
+}
+
+///////////////////////////////////////////////////
 // class ex_aggregate_clause
 //////////////////////////////////////////////////
 ex_expr::exp_return_type ex_aggregate_clause::init()
@@ -208,6 +288,31 @@ ex_expr::exp_return_type ex_aggr_min_max_clause::eval(char * op_data[],
     }
   
   return retcode;
+}
+
+/////////////////////////////////////////////////
+// class ExFunctionGrouping
+/////////////////////////////////////////////////
+ex_expr::exp_return_type ExFunctionGrouping::init()
+{
+  ex_expr::exp_return_type retcode = ex_expr::EXPR_OK;
+
+  rollupNull_ = 0;
+
+  return retcode;  
+}
+
+ex_expr::exp_return_type ExFunctionGrouping::eval(char *op_data[],
+                                                  CollHeap *heap,
+                                                  ComDiagsArea** diagsArea)
+{
+  char * tgt = op_data[0];
+  if (rollupNull_)
+    *(UInt32*)tgt = 1;
+  else
+    *(UInt32*)tgt = 0;
+
+  return ex_expr::EXPR_OK;
 }
 
 /////////////////////////////////////////////////

@@ -1249,7 +1249,7 @@ short ExpGenerator::generateAggrExpr(const ValueIdSet &val_id_set,
 				     ex_expr ** expr,
 				     short gen_last_clause,
 				     NABoolean groupByOperation,
-                                     const ValueIdSet *addedInitSet /*optional*/
+                                     const ValueIdSet *addedInitSet/*optional*/
                                      )
 {
   ///////////////////////////////////////////////////////////////////////
@@ -1946,14 +1946,48 @@ short ExpGenerator::generateAggrExpr(const ValueIdSet &val_id_set,
 
     }
 
-  initExprGen();
-  *expr = new(getSpace()) AggrExpr(init_expr,
-				   0,//perrec_expr,
-				   0, //final_expr,
-				   final_null_expr);
+  // generate expressions to evaluate GROUPING clause
+  ValueIdSet groupingValIdSet;
+  for (val_id = val_id_set.init(); 
+       val_id_set.next(val_id); 
+       val_id_set.advance(val_id))
+    {
+      ItemExpr * item_expr = val_id.getValueDesc()->getItemExpr();
+      if (item_expr->getOperatorType() == ITM_GROUPING)
+        {
+          generator->getMapInfo(val_id)->codeGenerated();
+          Aggregate * ag = (Aggregate*)item_expr;
+          ItemExpr * groupingExpr = 
+            new(wHeap()) AggrGrouping(ag->getRollupGroupIndex());
+	  groupingExpr->bindNode(generator->getBindWA());
+	  groupingValIdSet.insert(groupingExpr->getValueId());
+          
+          Attributes * attr = generator->getMapInfo(val_id)->getAttr();
+          map_info = generator->addMapInfo(groupingExpr->getValueId(), attr);
+          (map_info->getAttr())->copyLocationAttrs(attr);
+        }
+    } // for
 
-  generateSetExpr(*newValIdSet, ex_expr::exp_ARITH_EXPR, expr,
-                  gen_last_clause);
+  ex_expr * grouping_expr = NULL;
+  if (NOT groupingValIdSet.isEmpty())
+    {
+      unsigned short pcm = getPCodeMode();
+      setPCodeMode(ex_expr::PCODE_NONE);
+
+      generateSetExpr(groupingValIdSet, ex_expr::exp_ARITH_EXPR,
+                      &grouping_expr);
+
+      setPCodeMode(pcm);
+    }
+
+  ex_expr * perrec_expr = NULL;
+  generateSetExpr(*newValIdSet, ex_expr::exp_ARITH_EXPR, &perrec_expr);
+
+  *expr = new(getSpace()) AggrExpr(init_expr,
+				   perrec_expr,
+				   0, //final_expr,
+				   final_null_expr,
+                                   grouping_expr);
 
   for (CollIndex ns = 0; ns < NullSwitcharooVidList.entries(); ns++)
     {

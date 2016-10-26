@@ -4350,7 +4350,8 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
                    (ae->getOperatorType() == ITM_SUM) ||
                    (ae->getOperatorType() == ITM_AVG) ||
                    (ae->getOperatorType() == ITM_COUNT) ||
-                   (ae->getOperatorType() == ITM_COUNT_NONULL)))
+                   (ae->getOperatorType() == ITM_COUNT_NONULL) ||
+                   (ae->getOperatorType() == ITM_GROUPING)))
             {
               *CmpCommon::diags() << DgSqlCode(-4384)
                                   << DgString0("Unsupported rollup aggregate function.");
@@ -4369,7 +4370,54 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
               bindWA->setErrStatus();
               return NULL;
             }
-        }
+
+          // if grouping aggr, find the rollup group it corresponds to.
+          if (ae->getOperatorType() == ITM_GROUPING)
+            {
+              NABoolean found = FALSE;
+              ItemExpr * aggrChild = ae->child(0);
+              int i = 0;
+              while ((NOT found) and (i < grby->rollupGroupExprList().entries()))
+                {
+                  ValueId vid =  grby->rollupGroupExprList()[i];
+                  found =  aggrChild->duplicateMatch(*vid.getItemExpr());
+                  if (found)
+                    ag->setRollupGroupIndex(i);
+                  i++;
+                } // while
+
+              if (NOT found)
+                {
+                  // must find it.
+                  *CmpCommon::diags() << DgSqlCode(-4384)
+                                      << DgString0("GROUPING function can only be specified on a GROUP BY ROLLUP entry.");
+                  
+                  bindWA->setErrStatus();
+                  return NULL;
+                }
+            }
+        } // for
+    }
+  else
+    {
+      // not groupby rollup
+      for (ValueId valId = grby->aggregateExpr().init();
+           grby->aggregateExpr().next(valId);
+           grby->aggregateExpr().advance(valId))
+        {
+          ItemExpr * ae = valId.getItemExpr();
+
+          // grouping can only be specified with 'groupby rollup' clause
+          if (ae->getOperatorType() == ITM_GROUPING)
+            {
+              *CmpCommon::diags() << DgSqlCode(-3242)
+                                  << DgString0("GROUPING function can only be specified with GROUP BY ROLLUP clause.");
+              
+              bindWA->setErrStatus();
+              return NULL;
+            }
+ 
+        } // for
     }
 
   ValueIdSet &groupExpr = grby->groupExpr();

@@ -1499,6 +1499,16 @@ const NAType *Aggregate::synthesizeType()
       result = operand.newCopy(HEAP);
     break;
   }
+
+  case ITM_GROUPING:
+    {
+	  // grouping result is an unsigned int (32 bit)
+      result = new HEAP
+        SQLInt(FALSE /*unsigned*/,
+               FALSE /*not null*/);
+    }
+  break;
+
   case ITM_ONE_ROW:
   case ITM_ONEROW:  
   {
@@ -1534,8 +1544,18 @@ const NAType *AggrMinMax::synthesizeType()
   const NAType *result;
 
   const NAType& operand = child(0)->castToItemExpr()->getValueId().getType();
-  //    result = operand.synthesizeNullableType(HEAP);
   result = operand.newCopy(HEAP);
+
+  return result;
+}
+
+// -----------------------------------------------------------------------
+// member functions for class AggGrouping
+// -----------------------------------------------------------------------
+const NAType *AggrGrouping::synthesizeType()
+{
+  // result unsigned 32 bit integer
+  const NAType *result = new HEAP SQLInt(FALSE, FALSE);
 
   return result;
 }

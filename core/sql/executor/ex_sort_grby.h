@@ -185,7 +185,8 @@ NA_EIDPROC
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 
-  inline ex_expr * aggrExpr() const { return sort_grby_tdb().aggrExpr_; };
+  AggrExpr * aggrExpr() const { return sort_grby_tdb().aggrExpr(); }
+
   inline ex_expr * grbyExpr() const { return sort_grby_tdb().grbyExpr_; };
   inline ex_expr * moveExpr() const { return sort_grby_tdb().moveExpr_; };
   inline ex_expr * havingExpr() const { return sort_grby_tdb().havingExpr_; };
@@ -236,9 +237,11 @@ public:
 private:
   short rollupAggrInit();
 
-  // move null to rollup array for all rollup groups impacted by change 
-  // in group groupNum
-  short rollupGrbyMoveNull(Int16 groupNum);
+  // this method does 3 things:
+  //  1) moves rollup nulls to return buffer
+  //  2) evaluates grouping function for rollup nulls
+  //  3) moves grouping function result to return buffer
+  short processRollupGrbyNulls(Int16 groupNum);
 
   // move values from child row to rollup array
   short rollupGrbyMoveValue(ex_queue_entry * centry);
