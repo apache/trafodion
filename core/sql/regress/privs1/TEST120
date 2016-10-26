@@ -1,0 +1,379 @@
+-- ============================================================================
+-- TEST120 - tests revoke query invalidation
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Tests query invalidation during revoke role operations.
+-- Added in response to JIRA TRAFODION-2189
+-- ============================================================================
+
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+obey TEST120(clean_up);
+log LOG120 clear;
+obey TEST120(tests);
+log;
+obey TEST120(clean_up);
+exit;
+
+?section clean_up
+drop sequence team_seq;
+drop schema t120sch cascade;
+revoke role t120role3 from sql_user9 by sql_user3;
+revoke role t120role2 from sql_user6 by sql_user3;
+revoke role t120role3 from sql_user6 by sql_user3;
+revoke role t120role4 from sql_user6 by sql_user3;
+revoke role t120role1 from sql_user3; 
+revoke role t120role2 from sql_user3; 
+revoke role t120role3 from sql_user3; 
+revoke role t120role4 from sql_user3; 
+drop role t120role1;
+drop role t120role2;
+drop role t120role3;
+drop role t120role4;
+
+?section create_db
+create role t120role1;
+create role t120role2;
+create role t120role3;
+create role t120role4;
+grant role t120role1, t120role2, t120role3, t120role4 to sql_user3 with admin option;
+
+create schema t120sch authorization t120role1;
+set schema t120sch;
+create table teams
+  (team_number int not null primary key,
+   team_name char(20) not null,
+   team_contact varchar(50) not null,
+   team_contact_number char (10) not null
+   )
+  ;
+
+alter table teams add constraint valid_team_no check (team_number > 0);
+insert into teams values
+   (1, 'White Socks', 'Sam','4082282222'),
+   (2, 'Giants', 'Joe', '5102839483'),
+   (3, 'Cardinals', 'Stella', '9513849384'),
+   (4, 'Indians', 'Matt', '5128383748'),
+   (5, 'Tigers', 'Ronit', '6198273827');
+
+
+create table games
+   ( home_team_number int not null,
+     visitor_team_number int not null,
+     game_number int not null primary key,
+     game_time timestamp not null,
+     game_location varchar(50) not null)
+  ;
+
+alter table games add constraint valid_game_number check (game_number > 0);
+insert into games values
+   (1, 2, 1, timestamp '2009-04-23 19:30:00', 'California'),
+   (1, 3, 2, timestamp '2009-04-24 19:30:00', 'California'),
+   (1, 4, 3, timestamp '2009-04-25 10:00:00', 'Oklahoma'),
+   (2, 3, 4, timestamp '2009-04-25 13:30:00', 'Michigan'),
+   (1, 5, 5, timestamp '2009-04-25 15:00:00', 'Oklahoma'),
+   (2, 5, 6, timestamp '2009-04-27 17:00:00', 'New York'),
+   (3, 4, 7, timestamp '2009-04-28 17:00:00', 'Florida'),
+   (4, 2, 8, current_timestamp, 'Missouri');
+
+create table players
+  (player_number int not null,
+   player_name varchar (50) not null,
+   player_team_number int not null,
+   player_phone_number char (10) not null,
+   player_details varchar(50),
+   primary key (player_number, player_team_number))
+  no partition;
+
+alter table players add constraint valid_player_number check(player_number > 0);
+
+insert into players values
+   (1, 'Tom', 1, '4083948394', null),
+   (2, 'Bob', 1, '4089483948', null),
+   (3, 'Toby',1, '4082938493', 'pitcher'),
+   (3, 'Toby',2, '4082938493', null),
+   (4, 'Julie', 2, '5108394839', 'catcher'),
+   (5, 'Joanne', 2, '5103849384', null),
+   (6, 'Pete', 2, '5102839483', null),
+   (6, 'Pete', 3, '5102839483', 'third base'),
+   (7, 'Jared',4, '9518293849', 'short stop'),
+   (8, 'Zachary', 4, '9518293840', null),
+   (9, 'Lynne', 5, '9518293892', 'pitcher'),
+   (10, 'Omar', 5, '5128394893', null);
+
+create table standings
+    (team_number int not null primary key,
+     wins int default 0,
+     loses int default 0,
+     last_updated timestamp default current_timestamp)
+;
+
+insert into standings (team_number)
+  select team_number from teams;
+
+create sequence team_seq;
+
+create table stats
+  (team_number int not null primary key,
+   num_players int not null)
+;
+
+insert into stats
+  select team_number, count (player_number)
+   from teams t, players p
+   where t.team_number = p.player_team_number
+   group by team_number;
+
+obey TEST120(queries);
+
+?section tests
+-- =================================================================
+-- Design:
+--    t120role1 - owns schema t120sch 
+--    t120role2 - contains grants against teams and games
+--    t120role3 - contains grants against teams, games, and standings
+--    t120role4 - control, has no privs granted, make sure revoking
+--                role does not cause recompilations
+--
+--    sql_user3 - is schema administrator for schema t120sch
+--    sql_user6 - is granted and revoked privileges directly and
+--                through t120role2 and t120role3
+--    sql_user9 - control, makes sure revokes from roles does not
+--                affect sql_user9's compiled queries
+--
+--    games     - multiple roles giving same privileges
+--    teams     - multiple privileges through different roles
+--    players   - control, not roles involved in privileges
+--    standings - used to test sequence privileges and revoke role
+--    stats     - tests revoke PUBLIC authorization ID
+-- =================================================================
+obey TEST120(create_db);
+sh sqlci -i "TEST120(runqueries)" -u sql_user6;
+
+?section runqueries
+-- =================================================================
+-- This runs all the tests as sql_user6.  
+-- =================================================================
+log LOG120;
+values (current_user);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+set schema t120sch;
+
+-- At this time sql_user6 has no privileges
+-- Expect error 4481
+-- Prepare a bunch of queries, all fail with no privilege
+prepare select_games from select game_number from games;
+prepare select_teams from select team_number, team_name from teams;
+prepare insert_teams from 
+  insert into teams values (6, 'Braves', 'Jim', '8653845150');
+prepare update_teams from
+  update teams set team_contact_number = '8653855150' where team_number = 6;
+prepare select_players from select count(*) from players;
+prepare select_standings from select team_number, seqnum(team_seq) from standings;
+prepare select_stats from select team_number, num_players from stats;
+
+-- sql_user9 also has no privileges
+sh sqlci -i "TEST120(select_queries)" -u sql_user9;
+
+-- grant privileges
+sh sqlci -i "TEST120(grant_all_privs)" -u sql_user3;
+
+-- Prepare a bunch of queries, all successful
+prepare select_games from select game_number from games;
+prepare select_teams from select team_number, team_name from teams;
+prepare insert_teams from 
+  insert into teams values (6, 'Braves', 'Jim', '8653845150');
+prepare update_teams from
+  update teams set team_contact_number = '8653855150' where team_number = 6;
+prepare select_players from select count(*) from players;
+prepare select_standings from select team_number, seqnum(team_seq) from standings;
+
+-- Gather the query invalidation keys for each plan
+--   OI - object/column insert required
+--   OG - sequence usage required
+--   OS - object/column select required
+--   OU - object/column update required
+--   AR - role involved, check query plans that rely on roles during revoke
+log;
+log EXPLAIN120 clear;
+explain select_games;
+explain select_teams;
+explain insert_teams;
+explain update_teams;
+explain select_players;
+explain select_standings;
+
+log;
+sh echo "Query_Invalidation_Keys explain output for select_games, select_teams, insert_teams, update_teams, select_players, select_standings: "   >> LOG120;
+sh sed '/Query_Invalidation_Keys/,/ObjectUIDs/!d;/ObjectUIDs/d' EXPLAIN120 | sed -e 's/[0-9 \t]*//g' >> LOG120;
+log;
+log LOG120;
+
+-- Verify that sql_user9 can select from games
+sh sqlci -i "TEST120(select_queries)" -u sql_user9;
+
+-- revoke t120role4 from sql_user6
+sh sqlci -i "TEST120(revoke_t120role4)" -u sql_user3;
+execute select_games;
+execute select_teams;
+
+-- revoke t120role2 from sql_user6
+sh sqlci -i "TEST120(revoke_t120role2)" -u sql_user3;
+
+-- still have privs but query recompiled (8597)
+execute select_games;
+execute select_teams;
+execute select_standings;
+
+-- still have privs, no query recompilation message because no invalidation
+-- key for roles exist
+execute select_players;
+
+-- no longer has privilege (4481) and query attempted recompilation
+execute insert_teams;
+execute update_teams;
+
+-- revoke role t120role3 from sql_user6
+sh sqlci -i "TEST120(revoke_t120role3)" -u sql_user3;
+
+-- no longer has privilege (4481) on select_games, 
+-- but has privilege on select_teams and select_players
+execute select_games;
+execute select_teams;
+execute select_players;
+
+-- user has select but not usage
+execute select_standings;
+
+-- Verify sql_user9 can still select from games and no recompilation msg
+sh sqlci -i "TEST120(select_queries)" -u sql_user9;
+
+-- tests for PUBLIC
+-- select priv on stats has been granted to public
+prepare select_stats from select team_number, num_players from stats;
+log;
+log EXPLAIN120 clear;
+explain select_stats;
+sh echo "Query_Invalidation_Keys explain output for select_stats: "   >> LOG120;
+sh sed '/Query_Invalidation_Keys/,/ObjectUIDs/!d;/ObjectUIDs/d' EXPLAIN120 | sed -e 's/[0-9 \t]*//g' >> LOG120;
+log;
+log LOG120;
+
+execute select_stats;
+
+-- revoke PUBLIC
+sh sqlci -i "TEST120(revoke_public)" -u sql_user3;
+
+select * from stats;
+execute select_stats;
+
+?section grant_all_privs
+log LOG120;
+values (current_user);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+set schema t120sch;
+
+grant insert, delete, update(team_contact, team_contact_number) on teams to t120role2;
+grant select on teams to sql_user6;
+grant select (game_number, game_time) on games to t120role2;
+grant select (game_number, game_time) on games to t120role3; 
+grant all on players to sql_user6;
+grant role t120role2, t120role3, t120role4 to sql_user6;
+grant role t120role3 to sql_user9;
+grant select on standings to sql_user6;
+grant usage on sequence team_seq to t120role3;
+grant select (team_number, num_players) on stats to "PUBLIC";
+showddl games;
+showddl teams;
+showddl players;
+showddl standings;
+showddl sequence team_seq;
+showddl role t120role1;
+showddl role t120role2;
+showddl role t120role3;
+showddl role t120role4;
+
+?section revoke_t120role2
+log LOG120;
+values (current_user);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+set schema t120sch;
+
+revoke role t120role2 from sql_user6;
+
+-- sql_user3 has privs on all tables, can execute and no recompile
+obey TEST120(queries);
+
+?section revoke_t120role3
+log LOG120;
+values (current_user);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+set schema t120sch;
+
+revoke role t120role3 from sql_user6;
+
+-- sql_user3 has privs on all tables, can execute and no recompile
+obey TEST120(queries);
+
+?section revoke_t120role4
+log LOG120;
+values (current_user);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+set schema t120sch;
+
+revoke role t120role4 from sql_user6;
+
+-- sql_user3 has privs on all tables, can execute and no recompile
+obey TEST120(queries);
+
+?section revoke_public
+log LOG120;
+values (current_user);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+set schema t120sch;
+
+revoke select (team_number, num_players) on stats from "PUBLIC";
+showddl stats;
+select team_number, num_players from stats;
+
+?section queries
+select game_number from games;
+select team_number from teams;
+select player_number from players;
+select team_number, seqnum(team_seq) from standings;
+select team_number, num_players from stats;
+
+?section select_queries
+log LOG120;
+values (current_user);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+set schema t120sch;
+select game_number from games;

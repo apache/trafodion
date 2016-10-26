@@ -980,13 +980,6 @@ enum DefaultConstants
   CACHE_HISTOGRAMS_TRACE_OUTPUT_FILE,
 
   //------------------------------------------------------------------------
-  // Following default is used to skip reading fetchStatsTime
-  // -----------------------------------------------------------------------
-
-  CACHE_HISTOGRAMS_REFRESH_INTERVAL,
-  HIST_NO_STATS_REFRESH_INTERVAL,
-
-  //------------------------------------------------------------------------
   //NATable Cache Size in MBs
   //------------------------------------------------------------------------
   METADATA_CACHE_SIZE,

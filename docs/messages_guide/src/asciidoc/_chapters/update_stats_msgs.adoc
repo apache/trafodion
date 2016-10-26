@@ -312,6 +312,21 @@ update failed. This message is accompanied by another message giving more detail
 *Recovery:* If the WHERE clause is in error, correct and resubmit. If this does not correct the problem, 
 contact {project-support}.
 
+[[SQL-9220]]
+== SQL 9220
+
+```
+The table is empty, so no persistent sample table was created.
+```
+
+*Cause:* UPDATE STATISTICS SAMPLE RANDOM PERSISTENT was specified but the table was empty. Histograms
+were created, however no persistent sample table was created.
+
+*Effect:* The operation completes.
+
+*Recovery:* If you wish to create a persistent sample table, either increase the sampling rate
+or populate the table with more data, and resubmit.
+
 <<<
 [[SQL-9221]]
 == SQL 9221

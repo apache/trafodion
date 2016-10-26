@@ -57,7 +57,6 @@ import org.apache.hadoop.hbase.client.transactional.TransactionMap;
 import org.apache.hadoop.hbase.client.transactional.TransactionalReturn;
 import org.apache.hadoop.hbase.client.transactional.TmDDL;
 import org.apache.hadoop.hbase.exceptions.DeserializationException;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
@@ -74,6 +73,7 @@ import org.apache.hadoop.hbase.regionserver.transactional.IdTmException;
 import org.apache.hadoop.hbase.regionserver.transactional.IdTmId;
 
 import org.apache.zookeeper.KeeperException;
+import org.trafodion.sql.TrafConfiguration;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -124,7 +124,7 @@ public class HBaseTxClient {
       if (LOG.isDebugEnabled()) LOG.debug("Enter init, hBasePath:" + hBasePath);
       if (LOG.isTraceEnabled()) LOG.trace("mapTransactionStates " + mapTransactionStates + " entries " + mapTransactionStates.size());
       if (config == null) {
-         config = HBaseConfiguration.create();
+         config = TrafConfiguration.create();
          connection = ConnectionFactory.createConnection(config);
       }
       config.set("hbase.zookeeper.quorum", zkServers);
@@ -203,7 +203,7 @@ public class HBaseTxClient {
       setupLog4j();
       if (LOG.isDebugEnabled()) LOG.debug("Enter init(" + dtmid + ")");
       if (config == null) {
-         config = HBaseConfiguration.create();
+         config = TrafConfiguration.create();
          connection = ConnectionFactory.createConnection(config);
       }
       config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");

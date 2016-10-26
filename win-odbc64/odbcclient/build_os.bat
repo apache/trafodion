@@ -20,10 +20,6 @@ REM under the License.
 REM
 REM @@@ END COPYRIGHT @@@
 
-
-REM download vcredist_x64.exe form http://www.microsoft.com/en-us/download/details.aspx?id=40784 and copy it to VC_REDIST_DIR.
-set VC_REDIST_DIR=C:\Build\winodbc64\redist
-
 REM set this to the directory where you want to put the driver package file
 set PACKDIR=C:\Build\winodbc64
 
@@ -159,10 +155,10 @@ if %BUILD_STATUS%==0 (
 )
 
 ISCC.exe /Q %BUILDDIR%\win-odbc64\Install\win64_installer\installer.iss
-copy /Y %BUILDDIR%\win-odbc64\Install\win64_installer\Output\TFODBC64-1.3.0.exe %PACKDIR%
+copy /Y %BUILDDIR%\win-odbc64\Install\win64_installer\Output\TFODBC64-2.1.0.exe %PACKDIR%
 @echo on
 
-if exist %PACKDIR%\TFODBC64-1.3.0.exe (
+if exist %PACKDIR%\TFODBC64-2.1.0.exe (
 	set ALL_SUCCESS=1
 )
 cd %BUILDDIR%\win-odbc64\odbcclient

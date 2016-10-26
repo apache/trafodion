@@ -153,8 +153,8 @@ function editTrafbashrc {
 source $TRAF_CONFIG
 
 sudo chmod 777 $HOME_DIR/$TRAF_USER/.bashrc
-sudo sed -i -e "/export NODE_LIST/d" $HOME_DIR/$TRAF_USER/.bashrc
-sudo sed -i -e "/export MY_NODES=/d" $HOME_DIR/$TRAF_USER/.bashrc
+sudo sed -i -e "s@export NODE_LIST=.*@export NODE_LIST=\"$NODE_LIST\"@" $HOME_DIR/$TRAF_USER/.bashrc
+sudo sed -i -e "s@export MY_NODES=.*@export MY_NODES=\"$MY_NODES\"@" $HOME_DIR/$TRAF_USER/.bashrc
 
 }
 
@@ -169,6 +169,43 @@ sudo cp $HOME_DIR/$TRAF_USER/.bashrc $PWD/tempBashrc
 $TRAF_PDCP $PWD/tempBashrc $HOME
 $TRAF_PDSH sudo cp $HOME/tempBashrc $HOME_DIR/$TRAF_USER/.bashrc
 $TRAF_PDSH sudo chmod 644 $HOME_DIR/$TRAF_USER/.bashrc
+
+}
+
+function copyClusterConf {
+
+source $TRAF_CONFIG
+echo "***INFO: Copying over new cluster.conf file" 
+
+echo "***IMPORTANT*** Ignore copy errors to new node."
+echo
+sleep 5
+
+sudo cp $SQ_ROOT/tmp/cluster.conf $PWD
+sudo chown $(whoami).$(whoami) $PWD/cluster.conf
+$TRAF_PDCP $PWD/cluster.conf $HOME
+$TRAF_PDSH sudo cp $HOME/cluster.conf $SQ_ROOT/tmp/cluster.conf 2>&1 > /dev/null
+$TRAF_PDSH sudo chown $TRAF_USER.trafodion $SQ_ROOT/tmp/cluster.conf 2>&1 > /dev/null
+$TRAF_PDSH sudo rm $HOME/cluster.conf
+
+}
+
+function copySQconfig {
+
+source $TRAF_CONFIG
+echo "***INFO: Copying over new sqconfig file"
+
+echo "***IMPORTANT*** Ignore copy errors to new node."
+echo
+sleep 5
+
+sudo cp -r $SQ_ROOT/sql/scripts/sqconfig $PWD
+sudo chown $(whoami).$(whoami) $PWD/sqconfig
+$TRAF_PDCP $PWD/sqconfig $HOME
+$TRAF_PDSH sudo cp $HOME/sqconfig $SQ_ROOT/sql/scripts/sqconfig 2>&1 > /dev/null
+$TRAF_PDSH sudo chown $TRAF_USER.trafodion $SQ_ROOT/sql/scripts/sqconfig 2>&1 > /dev/null
+$TRAF_PDSH sudo rm $HOME/sqconfig
+
 
 }
 
@@ -188,13 +225,14 @@ echo "***INFO: Create DCS servers file"
 source $TRAF_CONFIG
 DCS_DIR=$(sudo ls $SQ_ROOT | grep dcs\*)
 
+sudo cp $SQ_ROOT/$DCS_DIR/conf/servers $PWD
+sudo chown $(whoami).$(whoami) $PWD/servers
 
 let per_node=$DCS_SERVERS_PARM/$node_count
 let extras=$DCS_SERVERS_PARM%$node_count
 count=1
 for node_name in $NODE_LIST
 do
-
    while read line
    do
       if [[ $line  =~ .*$node_name.* ]]; then
@@ -214,9 +252,11 @@ do
 done
 
 
-$TRAF_PDCP $PWD/tempServers $HOME
+$TRAF_PDCP $PWD/servers $HOME/tempServers
 $TRAF_PDSH sudo cp $HOME/tempServers $SQ_ROOT/$DCS_DIR/conf/servers
 $TRAF_PDSH sudo chown $TRAF_USER.trafodion $SQ_ROOT/$DCS_DIR/conf/servers
+
+
 
 }
 
@@ -227,7 +267,7 @@ echo "***INFO: Create DCS Backup Master file"
 source $TRAF_CONFIG
 DCS_DIR=$(sudo ls $SQ_ROOT | grep dcs\*)
 
-if [[ ! -z $NEW_BACKUP_DCS_NODES ]]; then 
+if [[ ! -z $NEW_BACKUP_DCS_NODES ]]; then
    for node_name in $BACKUP_DCS_NODES
    do
       echo $node_name >> $PWD/tempbackup
@@ -240,13 +280,12 @@ if [[ ! -z $NEW_BACKUP_DCS_NODES ]]; then
 fi
 }
 
-
 function copyAll {
 
 source $TRAF_CONFIG
 echo 
 echo "***IMPORTANT: Copying files to $NEW_NODES"
-echo "***IMPORTANT: This will take some time, it's a lot of file. Please wait...."
+echo "***IMPORTANT: This will take some time, it's alot of file. Please wait...."
 echo 
 sudo mkdir -p $HOME/tmpTraf/
 $TRAF_NEW_PDSH sudo rm -rf $HOME_DIR/$TRAF_USER/.ssh
@@ -312,12 +351,12 @@ function copySqcert {
 source $TRAF_CONFIG
 
 $TRAF_PDSH mkdir -p $HOME/tmpTraf
-sudo cp -r $HOME_DIR/$TRAF_USER/sqcert $HOME/tmpTraf
+sudo cp -r $HOME_DIR/$TRAF_USER/sqcert/* $HOME/tmpTraf
 sudo chown -R $(whoami).$(whoami) $HOME/tmpTraf
 $TRAF_PDCP -r $HOME/tmpTraf $HOME
 $TRAF_PDSH sudo mkdir -p $HOME_DIR/$TRAF_USER/sqcert
 $TRAF_PDSH sudo chown -R $TRAF_USER.trafodion $HOME_DIR/$TRAF_USER/sqcert 2>&1 > /dev/null
-$TRAF_PDSH sudo cp -rf $HOME/tmpTraf/sqcert/* $HOME_DIR/$TRAF_USER/sqcert 2>&1 > /dev/null
+$TRAF_PDSH sudo cp -rf $HOME/tmpTraf/sqcert $HOME_DIR/$TRAF_USER/sqcert 2>&1 > /dev/null
 $TRAF_PDSH sudo chown -R $TRAF_USER.trafodion $HOME_DIR/$TRAF_USER/sqcert 2>&1 > /dev/null
 $TRAF_PDSH rm -r $HOME/tmpTraf
 
@@ -344,36 +383,12 @@ function printMessage {
 source $TRAF_CONFIG
 echo
 echo "***IMPORTANT: EXIT OUT OF ALL EXISTING SHELLS, need to pick up new environment variables"
-echo "***IMPORTANT: All node(s) should be added!"
+echo "***IMPORTANT: Node is ready to be added"
+echo "***IMPORTANT: sudo su $TRAF_USER"
+echo "***IMPORTANT: sqshell -a"
+echo "***IMPORTANT: up <new node>"
 echo
 
-}
-
-function addUpNodes {
-
-for node in $NEW_NODES
-do 
-  
-    nodeToAdd="node-name $node, cores $CORES, processors $PROCESSORS, roles connection,aggregation,storage"
-
-    sudo su $TRAF_USER --login --command "cd $SQ_ROOT/sql/scripts; echo \"node add $nodeToAdd \" | sqshell -a"
-    sleep 30
-    sudo su $TRAF_USER --login --command "cd $SQ_ROOT/sql/scripts; echo \"node up $node\" | sqshell -a"
-    sleep 30
-
-done
-
-}
-
-function sqRegen {
-
-sudo su $TRAF_USER --login --command "cd $SQ_ROOT/sql/scripts; sqregen -config"
-
-}
-
-function dcsStart {
-
-sudo su $TRAF_USER --login --command "cd $SQ_ROOT/sql/scripts; dcsstart"
 }
 
 function cleanUp {
@@ -389,11 +404,13 @@ $TRAF_PDSH rm -rf $HOME/trafodion.conf
 }
 
 
+
 #Main
 
 echo
 echo "***IMPORTANT: Starting installation on $NEW_NODES"
 echo 
+
 installPackages
 copyLimits
 reserveDCSPorts
@@ -405,15 +422,12 @@ copyTrafbashrc
 copyAll
 trafAcceptKeys
 editDCSServers
-if [[ "$ENABLE_HA" == "true" ]]; then 
+if [[ "$ENABLE_HA" == "true" ]]; then
    editDCSBackUp
 fi
 addTraftoHBase
+copyClusterConf
+copySQconfig
 copySqcert
-addUpNodes
-sqRegen
-copysqConfig
-dcsStart
-cleanUp
 printMessage
-
+cleanUp

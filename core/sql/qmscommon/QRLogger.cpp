@@ -183,6 +183,9 @@ void getMyNidSuffix(char stringNidSuffix[])
 // **************************************************************************
 NABoolean QRLogger::initLog4cxx(const char* configFileName)
 {
+  if (gv_QRLoggerInitialized_)
+     return TRUE;
+
   NAString logFileName;
 
   if (gv_QRLoggerInitialized_)

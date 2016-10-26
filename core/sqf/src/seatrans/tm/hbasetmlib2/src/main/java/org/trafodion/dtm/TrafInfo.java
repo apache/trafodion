@@ -30,7 +30,6 @@ import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HRegionInfo;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
@@ -38,6 +37,7 @@ import org.apache.hadoop.hbase.client.ConnectionFactory;
 //H98import org.apache.hadoop.hbase.ipc.TransactionalRegionInterface;
 //H98import org.apache.hadoop.hbase.ipc.HRegionInterface;
 
+import org.trafodion.sql.TrafConfiguration;
 
 public class TrafInfo {
 
@@ -50,7 +50,7 @@ public class TrafInfo {
     }
 
     public void init() throws IOException {
-        this.config = HBaseConfiguration.create();
+        this.config = TrafConfiguration.create();
         this.connection = ConnectionFactory.createConnection(config);
     }
 

@@ -24,7 +24,6 @@ package org.trafodion.sql;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.ClusterStatus;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.RegionLoad;
@@ -33,6 +32,7 @@ import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.trafodion.sql.TrafConfiguration;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -158,7 +158,7 @@ public class TrafRegionStats {
 
 
     public TrafRegionStats () throws IOException {
-        Configuration config = HBaseConfiguration.create();
+        Configuration config = TrafConfiguration.create();
 
         hbAdmin = new HBaseAdmin(config);
     }

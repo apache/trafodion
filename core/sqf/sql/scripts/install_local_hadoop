@@ -776,6 +776,8 @@ export MY_DB_MGR_SECURE_PORT=${MY_DB_MGR_SECURE_PORT}
 export MY_DRILL_INFO_PORT_NUM=${MY_DRILL_INFO_PORT_NUM}
 export MY_DRILL_RPC_PORT_NUM=${MY_DRILL_RPC_PORT_NUM}
 export MY_DRILL_BIT_PORT_NUM=${MY_DRILL_BIT_PORT_NUM}
+# HBase heap size is in MB
+export HBASE_HEAPSIZE=2048
 EOF
 
   # now source in this script
@@ -1541,7 +1543,7 @@ echo "$MY_LOCAL_SW_DIST/${HBASE_TAR}"
     mv -f $HBASE_CONFIG_FILE $HBASE_CONFIG_FILE.orig
   fi
 
-  if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+  if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
     MASTER_VISBILITY_COPROC="<property>
     <name>hbase.coprocessor.master.classes</name>
     <value>org.apache.hadoop.hbase.security.access.AccessController,
@@ -1550,6 +1552,13 @@ echo "$MY_LOCAL_SW_DIST/${HBASE_TAR}"
     </property>"
     VISIBILITY_COPROC=", 
       org.apache.hadoop.hbase.security.visibility.VisibilityController"
+  fi
+
+  if [[ "$HBASE_DISTRO" == "APACHE1.1"  ||  "$HBASE_DISTRO" == "APACHE1.0" ]]; then 
+    HREGION_IMPL="<property>
+    <name>hbase.hregion.impl</name>
+    <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>
+    </property>"
   fi
 
   cat <<EOF >$HBASE_CONFIG_FILE
@@ -1623,19 +1632,8 @@ echo "$MY_LOCAL_SW_DIST/${HBASE_TAR}"
     <name>hbase.master.distributed.log.splitting</name>
     <value>false</value>
    </property>
-   <property>
-     <name>hbase.hregion.impl</name>
-     <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>
-   </property>
+   ${HREGION_IMPL}
    ${MASTER_VISBILITY_COPROC}
-   <property>
-    <name>hbase.coprocessor.region.classes</name>
-      <value>
-           org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,
-           org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,
-           org.apache.hadoop.hbase.coprocessor.AggregateImplementation
-      </value>
-   </property>
 </configuration>
 EOF
 

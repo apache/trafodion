@@ -1570,6 +1570,8 @@ A
 
 *** WARNING[2997]  (Attempting to unnest Subquery)
 
+*** WARNING[6007] Multi-column statistics for columns (C, D) from table TRAFODION.SCH.T40 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
 --- SQL command prepared.
 >>
 >>execute explainIt;
@@ -1692,6 +1694,8 @@ A
 +>order by 1,2;
 
 *** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[6007] Multi-column statistics for columns (C, D) from table TRAFODION.SCH.T40 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
 
 --- SQL command prepared.
 >>
@@ -1838,8 +1842,8 @@ ss          ?
 A           (EXPR)    
 ----------  ----------
 
-ss          ?         
 xx          ?         
+ss          ?         
 xx          ?         
 
 --- 3 row(s) selected.
@@ -1853,8 +1857,8 @@ xx          ?
 A           (EXPR)    
 ----------  ----------
 
-xx          ?         
 ss          ?         
+xx          ?         
 xx          ?         
 
 --- 3 row(s) selected.

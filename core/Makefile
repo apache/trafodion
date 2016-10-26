@@ -132,7 +132,7 @@ cleanall: sqroot eclipseclean cleantests
 	cd ../install &&                $(MAKE) clean
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
-package-all: package pkg-sql-regress pkg-phx-tests pkg-dcs-tests 
+package-all: rpmbuild package pkg-sql-regress pkg-phx-tests pkg-dcs-tests 
 
 pkg-product: all dcs rest 
 	cd sqf && $(MAKE) package 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
@@ -171,6 +171,58 @@ find-absolute-dlls:
 
 check-copyrights:
 	python ./updateCopyrightCheck.py
+
+##############
+# RPM defines
+PKG_PROD=apache-trafodion
+
+OS_TYPE = RH
+OS_MAJOR ?=  $(shell lsb_release -rs | cut -f1 -d.)
+P_TYPE = $(shell uname -p)
+
+ifeq ($(SQ_BUILD_TYPE),release)
+  RELEASE ?= 1
+  SERVERTAR="$(PKG_PROD)_server-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}-incubating.tar.gz"
+else
+  RELEASE ?= devel
+  SERVERTAR="$(PKG_PROD)_server-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}-debug.tar.gz"
+endif
+
+ARCH=$(P_TYPE)
+
+SPECFILE = trafodion.spec
+
+RPMROOT=$(shell cd ..; /bin/pwd)/RPMROOT
+RPMDIR=$(RPMROOT)/RPMS
+SRPMDIR=$(RPMROOT)/SRPMS
+SOURCEDIR=$(RPMROOT)/SOURCES
+BUILDDIR=$(RPMROOT)/BUILD
+BUILDROOTDIR=$(RPMROOT)/BUILDROOT
+
+rpmpackage: pkg-product
+	/bin/rm -rf $(RPMROOT)
+	mkdir -p $(RPMDIR)
+	mkdir -p $(SOURCEDIR)
+	mkdir -p $(BUILDDIR)
+	mkdir -p $(BUILDROOTDIR)
+	mkdir -p $(SRPMDIR)
+	ln -L ../distribution/$(SERVERTAR) $(SOURCEDIR)/$(PKG_PROD)_server-$(TRAFODION_VER).tar.gz
+
+rpmbuild: rpmpackage
+	rpmbuild -vv -bb \
+	                --define "name $(PKG_PROD)_server" \
+	                --define "version $(TRAFODION_VER)" \
+	                --define "release $(RELEASE)" \
+	                --define "_builddir $(BUILDDIR)" \
+	                --define "_buildrootdir $(BUILDROOTDIR)" \
+	                --define "_sourcedir $(SOURCEDIR)" \
+	                --define "_rpmdir $(RPMDIR)" \
+	                --define "_arch $(ARCH)" \
+	                --define "_topdir $(RPMROOT)" \
+	                $(SPECFILE)
+	mkdir -p ../distribution/${OS_TYPE}${OS_MAJOR}
+	mv $(RPMROOT)/RPMS/$(ARCH)/$(PKG_PROD)*.rpm ../distribution/${OS_TYPE}${OS_MAJOR}/
+
 
 eclipse: rest/.project dcs/.project sql/.project sqf/src/seatrans/hbase-trx/.project .project
 	@echo

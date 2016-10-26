@@ -2625,21 +2625,23 @@ void QCache::free_entries_with_QI_keys( Int32 pNumKeys, SQL_QIKEY * pSiKeyEntry 
         SiKeyOpVal[1] = pSiKeyEntry[jj].operation[1];
         ComQIActionType siKeyType =
           ComQIActionTypeLiteralToEnum( SiKeyOpVal );
-        if ((siKeyType == COM_QI_OBJECT_REDEF) &&
-             rootTdb->getNumObjectUIDs() > 0)
+        if (siKeyType == COM_QI_OBJECT_REDEF)
         {
-          // this key passed in as a param is for object redefinition
-          // (DDL) so look for matching ObjectUIDs.
-          const Int64 *planObjectUIDs = rootTdb->
-            getUnpackedPtrToObjectUIDs(base);
-          for (Int32 ii = 0; ii < rootTdb->getNumObjectUIDs() &&
-                             !found; ii++)  
+          if (rootTdb->getNumObjectUIDs() > 0)
           {
-            if (planObjectUIDs[ii] ==  pSiKeyEntry[jj].ddlObjectUID)
-              found = TRUE;
+            // this key passed in as a param is for object redefinition
+            // (DDL) so look for matching ObjectUIDs.
+            const Int64 *planObjectUIDs = rootTdb->
+              getUnpackedPtrToObjectUIDs(base);
+            for (Int32 ii = 0; ii < rootTdb->getNumObjectUIDs() &&
+                               !found; ii++)  
+            {
+              if (planObjectUIDs[ii] ==  pSiKeyEntry[jj].ddlObjectUID)
+                found = TRUE;
+            }
           }
         }
-        else
+        else if (siKeyType != COM_QI_STATS_UPDATED)
         {
           // this key passed in as a param is for REVOKE so look
           // thru the plan's revoke keys.

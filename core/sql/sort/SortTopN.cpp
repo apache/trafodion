@@ -157,6 +157,10 @@ void SortTopN::buildHeap()
 //Topmost node or root will be the highest.
 void SortTopN::satisfyHeap() 
 {
+  //nothing to do if zero or one record.
+  if(runSize_ <= 1)
+    return;
+  
   for (int i = (runSize_/2 ); i >= 0; i--)
     siftDown(topNKeys_, i, runSize_-1);
 }
@@ -212,6 +216,10 @@ Lng32 SortTopN::sortSendEnd()
 //----------------------------------------------------------------------
 void SortTopN::sortHeap()
 {
+  //nothing to do if zero or one record.
+  if(runSize_ <= 1)
+    return;
+  
   for (int i = runSize_-1; i >= 1; i--)
   {
     swap(&topNKeys_[0],&topNKeys_[i]);

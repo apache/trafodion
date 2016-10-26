@@ -120,12 +120,6 @@
 >>obey TEST107(dml);
 >>-------------
 >>-- Test #1: In memory sort ,double & copy
->>control query default GEN_SORT_MAX_BUFFER_SIZE '3276800';
-
---- SQL operation complete.
->>control query default GEN_SORT_MAX_NUM_BUFFERS  '40';
-
---- SQL operation complete.
 >>prepare xx from SELECT [last 1] c100k from t107100k order by c100k;
 
 --- SQL command prepared.
@@ -138,22 +132,52 @@ C100K
 
 --- 1 row(s) selected.
 >>
+>>-- Test #1A: uses TOPN sort
+>>prepare xx from SELECT [first 10] c100k from t107100k order by c100k;
+
+--- SQL command prepared.
+>>execute xx;
+
+C100K      
+-----------
+
+          0
+          1
+          2
+          3
+          4
+         10
+         11
+         12
+         13
+         14
+
+--- 10 row(s) selected.
+>>
+>>-- Test#1B: negetive test, zero records to sort.
+>>prepare xx from SELECT c100k from t107100k where c100k < 0 order by c100k;
+
+--- SQL command prepared.
+>>execute xx;
+
+--- 0 row(s) selected.
+>>
+>>-- Test#1C: negetive test, zero records to sort, TOPN
+>>prepare xx from SELECT [first 10] c100k from t107100k where c100k < 0 order by c100k;
+
+--- SQL command prepared.
+>>execute xx;
+
+--- 0 row(s) selected.
+>>
 >>-- Test #2: SQL buffer overflow, overflow and merge
 >>set envvar SCRATCH_IO_PENDING 280;
 
 --- SQL operation complete.
->>control query default EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_SORT 'ON';
+>>control query default GEN_SORT_MAX_NUM_BUFFERS  '1';
 
 --- SQL operation complete.
->>control query default GEN_SORT_MAX_BUFFER_SIZE '3276800';
-
---- SQL operation complete.
->> -- 200 rows approx NSK
->>control query default GEN_SORT_MAX_NUM_BUFFERS  '40';
-
---- SQL operation complete.
->> -- total of 8000 rows per run NSK
->>prepare xx from SELECT [last 1] c100k, str1 from t107100k order by c100k;
+>>prepare xx from SELECT [last 1] c100k, str1 from t107100k order by 1,2;
 
 --- SQL command prepared.
 >>execute xx;
@@ -169,24 +193,19 @@ C100K        STR1
 >>set envvar SCRATCH_IO_PENDING 50;
 
 --- SQL operation complete.
->>control query default EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_SORT 'ON';
-
---- SQL operation complete.
->>control query default GEN_SORT_MAX_BUFFER_SIZE '3276800';
-
---- SQL operation complete.
->> -- 200 rows approx NSK
 >>control query default GEN_SORT_MAX_NUM_BUFFERS  '20';
 
 --- SQL operation complete.
->> -- total of 8000 rows per run NSK
 >>control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
 
 --- SQL operation complete.
->>control query default SORT_MAX_HEAP_SIZE_MB    '2';
+>>control query default GEN_SORT_MAX_NUM_BUFFERS  '1';
 
 --- SQL operation complete.
->>prepare xx from SELECT [last 1] c100k, str1 from t107100k order by c100k;
+>>control query default SORT_MAX_HEAP_SIZE_MB    '1';
+
+--- SQL operation complete.
+>>prepare xx from SELECT [last 1] c100k, str1 from t107100k order by 1,2;
 
 --- SQL command prepared.
 >>execute xx;
@@ -197,34 +216,6 @@ C100K        STR1
       99994  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
 
 --- 1 row(s) selected.
->>reset envvar SCRATCH_IO_PENDING;
-
---- SQL operation complete.
->>
->>#ifNSK
->>-- Test #4 - Test 2 with multiple opens = 4
->>control query default GEN_SORT_MAX_BUFFER_SIZE '3276800';
->> -- 200 rows approx NSK
->>control query default GEN_SORT_MAX_NUM_BUFFERS  '20';
->> -- total of 8000 rows per run NSK
->>control query default SORT_MEMORY_QUOTA_SYSTEM '';
->>control query default SORT_MAX_HEAP_SIZE_MB    '';
->>control query default SCRATCH_MAX_OPENS_SORT '4';
->>prepare xx from SELECT [last 1] c100k, str1 from t107100k order by c100k;
->>execute xx;
->>
->>-- Test #5 - Test 2 with multiple opens = 4, intermediate merges
->>control query default GEN_SORT_MAX_BUFFER_SIZE '3276800';
->> -- 200 rows approx NSK
->>control query default GEN_SORT_MAX_NUM_BUFFERS  '20';
->> -- total of 8000 rows per run NSK
->>control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
->>control query default SORT_MAX_HEAP_SIZE_MB    '2';
->>control query default SCRATCH_MAX_OPENS_SORT '4';
->>prepare xx from SELECT [last 1] c100k, str1 from t107100k order by c100k;
->>execute xx;
->>
->>#ifNSK
 >>
 >>#ifLINUX
 >>obey TEST107(cif_dml);

@@ -2334,6 +2334,7 @@ out:
 							  &pSrvrStmt->m_need_21036_end_msg,
 							  inSqlNewQueryType);
 		delete inSqlString;
+		delete tmpSqlString;
 	}
 	//end rs
 }  // end rePrepare2
@@ -4963,17 +4964,17 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
             char fkexpSchemaNm[MAX_ANSI_NAME_LEN + 1];
             char fkexpTableNm[MAX_ANSI_NAME_LEN + 1];
 
-            if (!checkIfWildCard(fkcatalogNm, fkcatalogNmNoEsc) ||
-                !checkIfWildCard(fkschemaNm, fkschemaNmNoEsc)   ||
-                !checkIfWildCard(fktableNm, fktableNmNoEsc))
-            {
-                exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
-                exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_WILDCARD_NOT_SUPPORTED;
-                goto MapException;
-            }
+            if (strcmp(fktableNm, "") == 0)
+                strcpy((char *)fktableNm, "%");
+            if (strcmp(fkschemaNm, "") == 0)
+                strcpy((char *)fkschemaNm, "%");
 
-            convertWildcard(metadataId, TRUE, fkschemaNm, fkexpCatalogNm);
+            convertWildcard(metadataId, TRUE, fkcatalogNm, fkexpCatalogNm);
+            convertWildcardNoEsc(metadataId, TRUE, fkcatalogNm, fkcatalogNmNoEsc);
+
+            convertWildcard(metadataId, TRUE, fkschemaNm, fkexpSchemaNm);
             convertWildcardNoEsc(metadataId, TRUE, fkschemaNm, fkschemaNmNoEsc);
+
             convertWildcard(metadataId, TRUE, fktableNm, fkexpTableNm);
             convertWildcardNoEsc(metadataId, TRUE, fktableNm, fktableNmNoEsc);
 
@@ -4982,7 +4983,7 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                     "cast(PKCO.CATALOG_NAME as varchar(128)) PKTABLE_CAT, "
                     "cast(PKCO.SCHEMA_NAME as varchar(128)) PKTABLE_SCHEM, "
                     "cast(PKCO.TABLE_NAME as varchar(128)) PKTABLE_NAME, "
-                    "cast(PKCO.COLUMN_NAME as varchar(128)) PKCOLUMNS_NAME, "
+                    "cast(PKCO.COLUMN_NAME as varchar(128)) PKCOLUMN_NAME, "
                     "cast(FKCO.CATALOG_NAME as varchar(128)) FKTABLE_CAT, "
                     "cast(PKCO.SCHEMA_NAME as varchar(128)) FKTABLE_SCHEM, "
                     "cast(FKCO.TABLE_NAME as varchar(128)) FKTABLE_NAME, "
@@ -4990,9 +4991,9 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                     "cast(FKKV.ORDINAL_POSITION as smallint) KEY_SEQ, "
                     "cast(0 as smallint) update_rule, " // not support
                     "cast(0 as smallint) delete_rule, " // not support
-                    "cast(PKCO.COLUMN_NAME as varchar(128)) fk_name, "
-                    "cast(PKCO.COLUMN_NAME as varchar(128)) PK_NAME, "
-                    "cast(0 as smallint) DEFERRABILITY "
+                    "cast(FKKV.CONSTRAINT_NAME as varchar(128)) FK_NAME, "
+                    "cast(PKKV.CONSTRAINT_NAME as varchar(128)) PK_NAME, "
+                    "cast(0 as smallint) DEFERRABILITY " // not support
                     "from "
                     "TRAFODION.\"_MD_\".REF_CONSTRAINTS_VIEW rcv, "
                     "TRAFODION.\"_MD_\".KEYS_VIEW PKKV, "
@@ -5000,22 +5001,21 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                     "TRAFODION.\"_MD_\".COLUMNS_VIEW PKCO, "
                     "TRAFODION.\"_MD_\".COLUMNS_VIEW FKCO "
                     "where "
-                    "PKKV.CONSTRAINT_NAME = rcv.CONSTRAINT_NAME "
-                    "and FKKV.CONSTRAINT_NAME = rcv.UNIQUE_CONSTRAINT_NAME "
+                    "FKKV.CONSTRAINT_NAME = rcv.CONSTRAINT_NAME "
+                    "and PKKV.CONSTRAINT_NAME = rcv.UNIQUE_CONSTRAINT_NAME "
                     "and PKCO.TABLE_NAME = PKKV.TABLE_NAME "
                     "and FKCO.TABLE_NAME = FKKV.TABLE_NAME "
                     "and PKCO.COLUMN_NAME = PKKV.COLUMN_NAME "
                     "and FKCO.COLUMN_NAME = FKKV.COLUMN_NAME "
-                    "and (rcv.TABLE_NAME = '%s' or trim(rcv.TABLE_NAME) LIKE '%s' ESCAPE '\\') "
                     "and (PKCO.SCHEMA_NAME = '%s' or trim(PKCO.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
                     "and (PKCO.TABLE_NAME = '%s' or trim(PKCO.TABLE_NAME) LIKE '%s' ESCAPE '\\') "
                     "and (FKCO.SCHEMA_NAME = '%s' or trim(FKCO.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
-                    "and (FKCO.TABLE_NAME = '%s' or trim(FKCO.TABLE_NAME) LIKE '%s' ESCAPE '\\');",
-                tableNmNoEsc, expTableNm,
+                    "and (FKCO.TABLE_NAME = '%s' or trim(FKCO.TABLE_NAME) LIKE '%s' ESCAPE '\\') "
+                    "FOR READ UNCOMMITTED ACCESS ORDER BY 1, 2, 3, 5, 6, 7, 9;",
                 schemaNmNoEsc, expSchemaNm,
                 tableNmNoEsc, expTableNm,
-                fkschemaNm, fkexpSchemaNm,
-                fktableNm, fkexpTableNm
+                fkschemaNmNoEsc, fkexpSchemaNm,
+                fktableNmNoEsc, fkexpTableNm
                     );
             break;
         case SQL_API_SQLSTATISTICS:

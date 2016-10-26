@@ -27691,13 +27691,6 @@ revoke_role_statement : TOK_REVOKE optional_with_admin_option
                                    optional_drop_behavior
                                    optional_granted_by
                         {
-                          // revoke_role_statement ::= TOK_REVOKE optional_with_admin_option TOK_ROLE authorization_identifier_list TOK_FROM grantee_list optional_granted_by
-
-                          //if ($2 /* optional_with_admin_option */ == TRUE)
-                          //{
-                          //  YYERROR;
-                          //}
-
                           $$ = new (PARSERHEAP())
                             StmtDDLRoleGrant(
                                 $4 , /* authorization_identifier_list - role list */
@@ -27855,10 +27848,6 @@ grant_role_statement : TOK_GRANT TOK_ROLE authorization_identifier_list TOK_TO g
                                  optional_with_admin_option
                                  optional_granted_by
                        {
-                          //if($6 /* optional_with_admin_option */ == TRUE) // "with admin option" specified
-			  //{
-                          //    YYERROR;
-                          //}
                           $$ = new (PARSERHEAP())
 			       StmtDDLRoleGrant(
                                 $3 , /*role list*/ 
