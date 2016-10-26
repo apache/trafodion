@@ -2334,6 +2334,7 @@ out:
 							  &pSrvrStmt->m_need_21036_end_msg,
 							  inSqlNewQueryType);
 		delete inSqlString;
+		delete tmpSqlString;
 	}
 	//end rs
 }  // end rePrepare2
