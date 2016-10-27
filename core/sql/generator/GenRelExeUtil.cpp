@@ -119,6 +119,11 @@ short GenericUtilExpr::processOutputRow(Generator * generator,
 {
   ExpGenerator * expGen = generator->getExpGenerator();
   Space * space = generator->getSpace();
+  TableDesc *virtTableDesc = getVirtualTableDesc();
+
+  if (!virtTableDesc)
+    // this operator produces no outputs (e.g. truncate used with a temp table)
+    return 0;
   
   // Assumption (for now): retrievedCols contains ALL columns from
   // the table/index. This is because this operator does
@@ -130,7 +135,7 @@ short GenericUtilExpr::processOutputRow(Generator * generator,
 
   Attributes ** attrs =
     new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
+    Attributes * [virtTableDesc->getColumnList().entries()];
 
   for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
     {
@@ -811,6 +816,9 @@ short ExeUtilCleanupVolatileTables::codeGen(Generator * generator)
   
   if (type_ == ALL_TABLES_IN_ALL_CATS)
     exe_util_tdb->setCleanupAllTables(TRUE);
+
+  if (CmpCommon::getDefault(CSE_CLEANUP_HIVE_TABLES) != DF_OFF)
+    exe_util_tdb->setCleanupHiveCSETables(TRUE);
 
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
@@ -3324,6 +3332,21 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
   tablename = space->AllocateAndCopyToAlignedSpace
     (generator->genGetNameAsAnsiNAString(getTableName()), 0);
 
+  NAString hiveTableNameStr;
+  char * hiveTableName = NULL;
+
+  if (!getTableName().isInHiveDefaultSchema())
+    {
+      hiveTableNameStr =
+        getTableName().getQualifiedNameObj().getSchemaName();
+      hiveTableNameStr += ".";
+    }
+
+  hiveTableNameStr +=
+    getTableName().getQualifiedNameObj().getObjectName();
+  hiveTableName = space->AllocateAndCopyToAlignedSpace(
+       hiveTableNameStr, 0);
+
   char * hiveTableLocation = NULL;
   char * hiveHdfsHost = NULL;
   Int32 hiveHdfsPort = getHiveHdfsPort();
@@ -3332,6 +3355,8 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
     space->AllocateAndCopyToAlignedSpace (getHiveTableLocation(), 0);
   hiveHdfsHost =
     space->AllocateAndCopyToAlignedSpace (getHiveHostName(), 0);
+  if (getSuppressModCheck())
+    hiveModTS_ = 0;
 
   NABoolean doSimCheck = FALSE;
   if ((CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
@@ -3340,6 +3365,7 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
 
   ComTdbExeUtilHiveTruncate * exe_util_tdb = new(space) 
     ComTdbExeUtilHiveTruncate(tablename, strlen(tablename),
+                              hiveTableName,
                               hiveTableLocation, partn_loc,
                               hiveHdfsHost, hiveHdfsPort,
                               (doSimCheck ? hiveModTS_ : -1),
@@ -3351,6 +3377,9 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
                               getDefault(GEN_DDL_BUFFER_SIZE));
 
   generator->initTdbFields(exe_util_tdb);
+
+  if (getDropTableOnDealloc())
+    exe_util_tdb->setDropOnDealloc(TRUE);
   
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(

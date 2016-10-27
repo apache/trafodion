@@ -864,6 +864,8 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(QueryText& input,            //IN
        Retried_for_priv_failure = TRUE;
     }
 
+    CmpCommon::statement()->prepareForCompilationRetry();
+
     // We will retry Compilation, so toss pre-retry errors/warnings
     CmpCommon::diags()->rewind(here, TRUE/*update maxDiagsId_*/);
     if (queryExpr) {
@@ -1668,7 +1670,7 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(const char *input_str,           //IN
                                        NABoolean* cacheable,            //OUT
                                        TimeVal* begTime,                //IN
                                        NABoolean shouldLog)             //IN
-{
+{                               // 
   CmpExceptionEnvWatcher guard;
 
   ComDiagsArea & d = *CmpCommon::diags();
@@ -2431,7 +2433,7 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
             //    has a parameterized equality predicate then
             // do NOT cache it because it can result in a false hit
             // that can cause wrong results
-            if (!generator.isNonCacheableMVQRplan()) {
+            if (!generator.isNonCacheablePlan()) {
               tkey = 
                 cachewa.getTextKey(input_str, charset, getStmtAttributes());
 

@@ -1103,6 +1103,17 @@ short RelRoot::codeGen(Generator * generator)
   else
     qCacheInfoBuf = parameterBuffer;
 
+  // Check for reasons why the query plan should not be cached.
+  // Note: This does not influence the use of cache parameters,
+  // it's too late at this time to undo that.
+  const LIST(CSEInfo *) *cseInfoList = CmpCommon::statement()->getCSEInfoList();
+
+  if (cseInfoList &&
+      CmpCommon::getDefault(CSE_CACHE_TEMP_QUERIES) == DF_OFF)
+    for (CollIndex i=0; i<cseInfoList->entries(); i++)
+      if (cseInfoList->at(i)->usesATempTable())
+        generator->setNonCacheableCSEPlan(TRUE);
+
   // compute offsets for rwrs attrs. Offsets are computed separately
   // for rwrs vars since these values will be moved as part of input
   // row at runtime. This input row should only contain values which are

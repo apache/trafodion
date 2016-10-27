@@ -57,21 +57,24 @@ namespace tmudr {
 }
 class DDLExpr;
 class ExprNode;
+class QueryAnalysis;
+class CostMethod;
+class NAMemory;
+class CompilationStats;
+class OptGlobals;
+class CqsWA;
+class CommonSubExprRef;
+class ValueIdList;
+class ValueIdSet;
+class RelExpr;
+class CSEInfo;
 
 // contents
 class CmpStatement;
 class CmpStatementISP;
 class CmpStatementISPGetNext;
-class QueryAnalysis;
-class CostMethod;
-
-class NAMemory;
-class CompilationStats;
-class OptGlobals;
-class CqsWA;
 
 typedef NASimpleArray<NAString*>                   NAStringList;
-
 
 class CmpStatement : public NABasicObject
 {
@@ -168,6 +171,9 @@ public:
   QueryAnalysis* getQueryAnalysis() { return queryAnalysis_; };
   QueryAnalysis* initQueryAnalysis();
 
+  void prepareForCompilationRetry();
+  Int32 getNumOfCompilationRetries() const { return numOfCompilationRetries_; }
+
   // statement shape rewrite
   CqsWA* getCqsWA()   { return cqsWA_; }
   void   initCqsWA();  
@@ -220,6 +226,10 @@ public:
 
   short getDDLExprAndNode(char * sqlStr, Lng32 inputCS,
                           DDLExpr* &ddlExpr, ExprNode* &ddlNode);
+
+  CSEInfo *getCSEInfo(const char *cseName);
+  const LIST(CSEInfo *) *getCSEInfoList() { return cses_; }
+  void addCSEInfo(CSEInfo *info);
 
 protected:
   // CmpStatement(const CmpStatement&); please remove this line
@@ -315,8 +325,17 @@ private:
   // on RelExpr are enabled only when it is set.
   NABoolean displayGraph_;
 
+  // common subexpressions in this statement, there could
+  // be multiple, named CSEs, each with one or more references
+  LIST(CSEInfo *) *cses_;
+
   // for error reporting for UDFs, keep a list of requirements the UDF refused
   LIST(const NAString *) *detailsOnRefusedRequirements_;
+
+  // indicates whether we are retrying the compile in
+  // CmpMain::sqlcomp(QueryText, ...
+  Int32 numOfCompilationRetries_;
+
 }; // end of CmpStatement
 
 class CmpStatementISP: public CmpStatement

@@ -1,0 +1,1606 @@
+>>obey TEST045(setup);
+>>
+>>-- general setup
+>>cqd hist_missing_stats_warning_level '0';
+
+--- SQL operation complete.
+>>cqd hive_max_string_length '32';
+
+--- SQL operation complete.
+>>cqd mode_special_4 'on';
+
+--- SQL operation complete.
+>>
+>>create schema T045_CSES;
+
+--- SQL operation complete.
+>>set schema T045_CSES;
+
+--- SQL operation complete.
+>>
+>>prepare show_cses from
++>select case when operator in ('BLOCKED_UNION', 'HIVE_INSERT')
++>            then operator
++>            else 'SCAN TEMP' end as operator,
++>       count(*) as how_many
++>from table(explain(null, 'S'))
++>where operator = 'BLOCKED_UNION'
++>   or tname like '%CSE_TEMP_%'
++>group by 1
++>order by 1;
+
+--- SQL command prepared.
+>>
+>>obey TEST045(ddl);
+>>--------------------------------------------------------------------
+>>
+>>create table store_sales
++>(
++>    ss_sold_date_sk           int,
++>    ss_sold_time_sk           int,
++>    ss_item_sk                int not null,
++>    ss_customer_sk            int,
++>    ss_cdemo_sk               int,
++>    ss_hdemo_sk               int,
++>    ss_addr_sk                int,
++>    ss_store_sk               int,
++>    ss_promo_sk               int,
++>    ss_ticket_number          int not null,
++>    ss_quantity               int,
++>    ss_wholesale_cost         float,
++>    ss_list_price             float,
++>    ss_sales_price            float,
++>    ss_ext_discount_amt       float,
++>    ss_ext_sales_price        float,
++>    ss_ext_wholesale_cost     float,
++>    ss_ext_list_price         float,
++>    ss_ext_tax                float,
++>    ss_coupon_amt             float,
++>    ss_net_paid               float,
++>    ss_net_paid_inc_tax       float,
++>    ss_net_profit             float,
++>        primary key(ss_item_sk,ss_ticket_number)
++>)
++>--SALT USING $PARTITION_NUM PARTITIONS
++>--  HBASE_OPTIONS
++>--  (
++>--    DATA_BLOCK_ENCODING = 'FAST_DIFF',
++>--    COMPRESSION = 'SNAPPY'
++>--  )
++>;
+
+--- SQL operation complete.
+>>
+>>create table store_returns
++>(
++>        sr_returned_date_sk     int,
++>        sr_return_time_sk       int,
++>        sr_item_sk              int not null,
++>        sr_customer_sk          int,
++>        sr_cdemo_sk             int,
++>        sr_hdemo_sk             int,
++>        sr_addr_sk              int,
++>        sr_store_sk             int,
++>        sr_reason_sk            int,
++>        sr_ticket_number        int not null,
++>        sr_return_quantity      int,
++>        sr_return_amt           float,
++>        sr_return_tax           float,
++>        sr_return_amt_inc_tax   float,
++>        sr_fee                  float,
++>        sr_return_ship_cost     float,
++>        sr_refunded_cash        float,
++>        sr_reversed_charge      float,
++>        sr_store_credit         float,
++>        sr_net_loss             float,
++>        primary key(sr_item_sk,sr_ticket_number)
++>
++>)
++>--SALT USING $PARTITION_NUM PARTITIONS
++>--  HBASE_OPTIONS
++>--  (
++>--    DATA_BLOCK_ENCODING = 'FAST_DIFF',
++>--    COMPRESSION = 'SNAPPY'
++>--  )
++>;
+
+--- SQL operation complete.
+>>
+>>create table catalog_sales
++>(
++>        cs_sold_date_sk         int,
++>        cs_sold_time_sk         int,
++>        cs_ship_date_sk         int,
++>        cs_bill_customer_sk     int,
++>        cs_bill_cdemo_sk        int,
++>        cs_bill_hdemo_sk        int,
++>        cs_bill_addr_sk         int,
++>        cs_ship_customer_sk     int,
++>        cs_ship_cdemo_sk        int,
++>        cs_ship_hdemo_sk        int,
++>        cs_ship_addr_sk         int,
++>        cs_call_center_sk       int,
++>        cs_catalog_page_sk      int,
++>        cs_ship_mode_sk         int,
++>        cs_warehouse_sk         int,
++>        cs_item_sk              int not null,
++>        cs_promo_sk             int,
++>        cs_order_number         int not null,
++>        cs_quantity             int,
++>        cs_wholesale_cost       float,
++>        cs_list_price           float,
++>        cs_sales_price          float,
++>        cs_ext_discount_amt     float,
++>        cs_ext_sales_price      float,
++>        cs_ext_wholesale_cost   float,
++>        cs_ext_list_price       float,
++>        cs_ext_tax              float,
++>        cs_coupon_amt           float,
++>        cs_ext_ship_cost        float,
++>        cs_net_paid             float,
++>        cs_net_paid_inc_tax     float,
++>        cs_net_paid_inc_ship     float,
++>        cs_net_paid_inc_ship_tax float,
++>        cs_net_profit            float,
++>        primary key(cs_item_sk,cs_order_number)
++>)
++>--SALT USING $PARTITION_NUM PARTITIONS
++>--  HBASE_OPTIONS
++>--  (
++>--    DATA_BLOCK_ENCODING = 'FAST_DIFF',
++>--    COMPRESSION = 'SNAPPY'
++>--  )
++>;
+
+--- SQL operation complete.
+>>
+>>create table  catalog_returns
++>(
++>    cr_returned_date_sk               int,
++>        cr_returned_time_sk           int,
++>        cr_item_sk                    int not null,
++>        cr_refunded_customer_sk       int,
++>        cr_refunded_cdemo_sk          int,
++>        cr_refunded_hdemo_sk          int,
++>        cr_refunded_addr_sk           int,
++>        cr_returning_customer_sk      int,
++>        cr_returning_cdemo_sk         int,
++>        cr_returning_hdemo_sk         int,
++>        cr_returning_addr_sk          int,
++>        cr_call_center_sk             int,
++>        cr_catalog_page_sk            int,
++>        cr_ship_mode_sk               int,
++>        cr_warehouse_sk               int,
++>        cr_reason_sk                  int,
++>        cr_order_number               int not null,
++>        cr_return_quantity            int,
++>        cr_return_amount              float,
++>        cr_return_tax                 float,
++>        cr_return_amt_inc_tax         float,
++>        cr_fee                        float,
++>        cr_return_ship_cost           float,
++>        cr_refunded_cash              float,
++>        cr_reversed_charge            float,
++>        cr_store_credit               float,
++>        cr_net_loss                   float,
++>
++>        primary key(cr_item_sk,cr_order_number)
++>)
++>--SALT USING $PARTITION_NUM PARTITIONS
++>--  HBASE_OPTIONS
++>--  (
++>--    DATA_BLOCK_ENCODING = 'FAST_DIFF',
++>--    COMPRESSION = 'SNAPPY'
++>--  )
++>;
+
+--- SQL operation complete.
+>>
+>>create table  web_sales
++>(
++>        ws_sold_date_sk               int,
++>        ws_sold_time_sk               int,
++>        ws_ship_date_sk               int,
++>        ws_item_sk                    int not null,
++>        ws_bill_customer_sk           int,
++>        ws_bill_cdemo_sk              int,
++>        ws_bill_hdemo_sk              int,
++>        ws_bill_addr_sk               int,
++>        ws_ship_customer_sk           int,
++>        ws_ship_cdemo_sk              int,
++>        ws_ship_hdemo_sk              int,
++>        ws_ship_addr_sk               int,
++>        ws_web_page_sk                int,
++>        ws_web_site_sk                int,
++>        ws_ship_mode_sk               int,
++>        ws_warehouse_sk               int,
++>        ws_promo_sk                   int,
++>        ws_order_number               int not null,
++>        ws_quantity                   int,
++>        ws_wholesale_cost             float,
++>        ws_list_price                 float,
++>        ws_sales_price                float,
++>        ws_ext_discount_amt           float,
++>        ws_ext_sales_price            float,
++>        ws_ext_wholesale_cost         float,
++>        ws_ext_list_price             float,
++>        ws_ext_tax                    float,
++>        ws_coupon_amt                 float,
++>        ws_ext_ship_cost              float,
++>        ws_net_paid                   float,
++>        ws_net_paid_inc_tax           float,
++>        ws_net_paid_inc_ship          float,
++>        ws_net_paid_inc_ship_tax      float,
++>        ws_net_profit                 float,
++>
++>        primary key (ws_item_sk,ws_order_number)
++>)
++>--SALT USING $PARTITION_NUM PARTITIONS
++>--  HBASE_OPTIONS
++>--  (
++>--    DATA_BLOCK_ENCODING = 'FAST_DIFF',
++>--    COMPRESSION = 'SNAPPY'
++>--  )
++>;
+
+--- SQL operation complete.
+>>
+>>create table web_returns
++>(
++>        wr_returned_date_sk           int,
++>        wr_returned_time_sk           int,
++>        wr_item_sk                    int not null,
++>        wr_refunded_customer_sk       int,
++>        wr_refunded_cdemo_sk          int,
++>        wr_refunded_hdemo_sk          int,
++>        wr_refunded_addr_sk           int,
++>        wr_returning_customer_sk      int,
++>        wr_returning_cdemo_sk         int,
++>        wr_returning_hdemo_sk         int,
++>        wr_returning_addr_sk          int,
++>        wr_web_page_sk                int,
++>        wr_reason_sk                  int,
++>        wr_order_number               int not null,
++>        wr_return_quantity            int,
++>        wr_return_amt                 float,
++>        wr_return_tax                 float,
++>        wr_return_amt_inc_tax         float,
++>        wr_fee                        float,
++>        wr_return_ship_cost           float,
++>        wr_refunded_cash              float,
++>        wr_reversed_charge            float,
++>        wr_account_credit             float,
++>        wr_net_loss                   float,
++>        primary key ( wr_order_number, wr_item_sk )
++>
++>)
++>--SALT USING $PARTITION_NUM PARTITIONS
++>--  HBASE_OPTIONS
++>--  (
++>--    DATA_BLOCK_ENCODING = 'FAST_DIFF',
++>--    COMPRESSION = 'SNAPPY'
++>--  )
++>;
+
+--- SQL operation complete.
+>>
+>>create table store 
++>(
++>        s_store_sk                    int not null,
++>        s_store_id                    char(16),
++>        s_rec_start_date              date,
++>        s_rec_end_date                date,
++>        s_closed_date_sk              int,
++>        s_store_name                  varchar(50),
++>        s_number_employees            int,
++>        s_floor_space                 int,
++>        s_hours                       char(20),
++>        S_manager                     varchar(40),
++>        S_market_id                   int,
++>        S_geography_class             varchar(100),
++>        S_market_desc                 varchar(100),
++>        s_market_manager              varchar(40),
++>        s_division_id                 int,
++>        s_division_name               varchar(50),
++>        s_company_id                  int,
++>        s_company_name                varchar(50),
++>        s_street_number               varchar(10),
++>        s_street_name                 varchar(60),
++>        s_street_type                 char(15),
++>        s_suite_number                char(10),  --fix bug
++>        s_city                        varchar(60),
++>        s_county                      varchar(30),
++>        s_state                       char(2),
++>        s_zip                         char(10),
++>        s_country                     varchar(20),
++>        s_gmt_offset                  float,
++>        s_tax_percentage              float,
++>
++>        primary key(s_store_sk)
++>
++>)
++>--SALT USING $PARTITION_NUM PARTITIONS
++>--  HBASE_OPTIONS
++>--  (
++>--    DATA_BLOCK_ENCODING = 'FAST_DIFF',
++>--    COMPRESSION = 'SNAPPY'
++>--  )
++>;
+
+--- SQL operation complete.
+>>
+>>create table Customer
++>(
++>        c_customer_sk                 int not null,
++>        c_customer_id                 char(16) CHARACTER SET UTF8 not null,
++>        c_current_cdemo_sk            int,
++>        c_current_hdemo_sk            int,
++>        c_current_addr_sk             int,
++>        c_first_shipto_date_sk        int,
++>        c_first_sales_date_sk         int,
++>        c_salutation                  char(10) CHARACTER SET UTF8,
++>        c_first_name                  char(20) CHARACTER SET UTF8,
++>        c_last_name                   char(30) CHARACTER SET UTF8,
++>        c_preferred_cust_flag         char(1),
++>        c_birth_day                   integer,
++>        c_birth_month                 integer,
++>        c_birth_year                  integer,
++>        c_birth_country               varchar(20) CHARACTER SET UTF8,
++>        c_login                       char(13) CHARACTER SET UTF8,
++>        c_email_address               char(50) CHARACTER SET UTF8,
++>        c_last_review_date_sk         int,
++>        primary key (c_customer_sk)
++>)
++>--SALT USING $PARTITION_NUM PARTITIONS
++>--  HBASE_OPTIONS
++>--  (
++>--    DATA_BLOCK_ENCODING = 'FAST_DIFF',
++>--    COMPRESSION = 'SNAPPY'
++>--  )
++>;
+
+--- SQL operation complete.
+>>
+>>create table Customer_address
++>(
++>        ca_address_sk                 int not null,
++>        ca_address_id                 char(16) not null,
++>        ca_street_number              char(10),
++>        ca_street_name                varchar(60),
++>        ca_street_type                char(15),
++>        ca_suite_number               char(10),
++>        ca_city                       varchar(60),
++>        ca_county varchar(30),
++>        ca_state char(2),
++>        ca_zip char(10),
++>        ca_country varchar(20),
++>        ca_gmt_offset decimal(5,2),
++>        ca_location_type char(20),
++>        primary key (ca_address_sk)
++>)
++>--SALT USING $PARTITION_NUM PARTITIONS
++>--  HBASE_OPTIONS
++>--  (
++>--    DATA_BLOCK_ENCODING = 'FAST_DIFF',
++>--    COMPRESSION = 'SNAPPY'
++>--  )
++>;
+
+--- SQL operation complete.
+>>
+>>create table Date_dim
++>(
++>        d_date_sk                     int not null,
++>        d_date_id                     char(16) not null,
++>        d_date                        date,
++>        d_month_seq                   integer,
++>        d_week_seq                    integer,
++>        d_quarter_seq                 integer,
++>        d_year                        integer,
++>        d_dow                         integer,
++>        d_moy                         integer,
++>        d_dom                         integer,
++>        d_qoy                         integer,
++>        d_fy_year                     integer,
++>        d_fy_quarter_seq              integer,
++>        d_fy_week_seq                 integer,
++>        d_day_name                    char(9),
++>        d_quarter_name                char(6),
++>        d_holiday                     char(1),
++>        d_weekend                     char(1),
++>        d_following_holiday           char(1),
++>        d_first_dom                   integer,
++>        d_last_dom                    integer,
++>        d_same_day_ly                 integer,
++>        d_same_day_lq                 integer,
++>        d_current_day                 char(1),
++>        d_current_week                char(1),
++>        d_current_month               char(1),
++>        d_current_quarter             char(1),
++>        d_current_year                char(1),
++>        primary key (d_date_sk)
++>)
++>--SALT USING $PARTITION_NUM PARTITIONS
++>--  HBASE_OPTIONS
++>--  (
++>--    DATA_BLOCK_ENCODING = 'FAST_DIFF',
++>--    COMPRESSION = 'SNAPPY'
++>--  )
++>;
+
+--- SQL operation complete.
+>>
+>>create table item
++>(
++>        i_item_sk                      int not null,
++>        i_item_id                      char(16) not null,
++>        i_rec_start_date               date,
++>        i_rec_end_date                 date,
++>        i_item_desc                    varchar(200),
++>        i_current_price                decimal(7,2),
++>        i_wholesale_cost               decimal(7,2),
++>        i_brand_id                     integer,
++>        i_brand                        char(50),
++>        i_class_id                     integer,
++>        i_class                        char(50),
++>        i_category_id                  integer,
++>        i_category                     char(50),
++>        i_manufact_id                  integer,
++>        i_manufact                     char(50),
++>        i_size                         char(20),
++>        i_formulation                  char(20),
++>        i_color                        char(20),
++>        i_units                        char(10),
++>        i_container                    char(10),
++>        i_manager_id                   integer,
++>        i_product_name                 char(50),
++>        primary key(i_item_sk)
++>)
++>--SALT USING $PARTITION_NUM PARTITIONS
++>--  HBASE_OPTIONS
++>--  (
++>--    DATA_BLOCK_ENCODING = 'FAST_DIFF',
++>--    COMPRESSION = 'SNAPPY'
++>--  )
++>;
+
+--- SQL operation complete.
+>>
+>>
+>>--------------------------------------------------------------------
+>>obey TEST045(queries);
+>>--------------------------------------------------------------------
+>>
+>>obey TEST045(enable_cses);
+>>cqd cse_for_with 'on';
+
+--- SQL operation complete.
+>>cqd cse_use_temp 'on';
+
+--- SQL operation complete.
+>>cqd cse_hive_temp_table 'on';
+
+--- SQL operation complete.
+>>cqd cse_debug_warnings 'on';
+
+--- SQL operation complete.
+>>
+>>
+>>--------------------------------------------------------------------
+>>-- test some queries on populated Hive tables that we already have
+>>--------------------------------------------------------------------
+>>
+>>set schema hive.hive;
+
+--- SQL operation complete.
+>>
+>>prepare s from
++>with cse1 as (select count(*) from date_dim where d_dow = ?)
++>select * from cse1
++>union all
++>select * from cse1;
+
+--- SQL command prepared.
+>>execute show_cses;
+
+OPERATOR                        HOW_MANY            
+------------------------------  --------------------
+
+BLOCKED_UNION                                      2
+HIVE_INSERT                                        1
+SCAN TEMP                                          2
+
+--- 3 row(s) selected.
+>>execute s using 1;
+
+(EXPR)              
+--------------------
+
+               10436
+               10436
+
+--- SQL operation complete.
+>>-- execute a second time
+>>execute s using 2;
+
+(EXPR)              
+--------------------
+
+               10436
+               10436
+
+--- SQL operation complete.
+>>
+>>-- prepare a second time, so far not using query cache
+>>prepare s from
++>with cse1 as (select count(*) from date_dim where d_dow = ?)
++>select * from cse1
++>union all
++>select * from cse1;
+
+--- SQL command prepared.
+>>execute show_cses;
+
+OPERATOR                        HOW_MANY            
+------------------------------  --------------------
+
+BLOCKED_UNION                                      2
+HIVE_INSERT                                        1
+SCAN TEMP                                          2
+
+--- 3 row(s) selected.
+>>execute s using 3;
+
+(EXPR)              
+--------------------
+
+               10435
+               10435
+
+--- SQL operation complete.
+>>-- execute a second time
+>>execute s using 4;
+
+(EXPR)              
+--------------------
+
+               10437
+               10437
+
+--- SQL operation complete.
+>>
+>>-- test subquery unnesting
+>>cqd subquery_unnesting 'debug';
+
+--- SQL operation complete.
+>>
+>>prepare s from
++>with cse1 as (select * from date_dim)
++>select count(*)
++>from cse1 x
++>where d_date_sk > (select avg(d_date_sk) from cse1 y where x.d_moy > y.d_moy);
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: Left subtree cannot produce output values required for grouping.)
+
+--- SQL command prepared.
+>>-- currently not unnested
+>>execute show_cses;
+
+OPERATOR                        HOW_MANY            
+------------------------------  --------------------
+
+BLOCKED_UNION                                      2
+HIVE_INSERT                                        1
+SCAN TEMP                                          2
+
+--- 3 row(s) selected.
+>>
+>>--------------------------------------------------------------------
+>>-- test some TPC-DS queries
+>>--------------------------------------------------------------------
+>>
+>>set schema trafodion.t045_cses;
+
+--- SQL operation complete.
+>>
+>>--QID: 1
+>>
+>>prepare s from
++>with customer_total_return as
++>  (select sr_customer_sk as ctr_customer_sk
++>         ,sr_store_sk as ctr_store_sk
++>         ,sum(SR_REVERSED_CHARGE) as ctr_total_return
++>   from store_returns
++>       ,date_dim
++>   where sr_returned_date_sk = d_date_sk
++>         and d_year =2000
++>   group by sr_customer_sk
++>        ,sr_store_sk
++>  )
++>
++>select  c_customer_id
++>from customer_total_return ctr1
++>    ,store
++>    ,customer
++>where ctr1.ctr_total_return > (select avg(ctr_total_return)*1.2
++>                               from customer_total_return ctr2
++>                               where ctr1.ctr_store_sk = ctr2.ctr_store_sk)
++>  and s_store_sk = ctr1.ctr_store_sk
++>  and s_state = 'SD'
++>  and ctr1.ctr_customer_sk = c_customer_sk
++>order by c_customer_id
++>limit 100;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>execute show_cses;
+
+OPERATOR                        HOW_MANY            
+------------------------------  --------------------
+
+BLOCKED_UNION                                      2
+HIVE_INSERT                                        1
+SCAN TEMP                                          2
+
+--- 3 row(s) selected.
+>>execute s;
+
+--- SQL operation complete.
+>>
+>>
+>>--QID: 2
+>>
+>>prepare s from
++> with wscs as
++> (select sold_date_sk
++>        ,sales_price
++>  from  (select ws_sold_date_sk sold_date_sk
++>               ,ws_ext_sales_price sales_price
++>          from web_sales 
++>         union all
++>         select cs_sold_date_sk sold_date_sk
++>               ,cs_ext_sales_price sales_price
++>         from catalog_sales) t),
++> wswscs as 
++> (select d_week_seq,
++>        sum(case when (d_day_name='Sunday') then sales_price else null end) sun_sales,
++>        sum(case when (d_day_name='Monday') then sales_price else null end) mon_sales,
++>        sum(case when (d_day_name='Tuesday') then sales_price else  null end) tue_sales,
++>        sum(case when (d_day_name='Wednesday') then sales_price else null end) wed_sales,
++>        sum(case when (d_day_name='Thursday') then sales_price else null end) thu_sales,
++>        sum(case when (d_day_name='Friday') then sales_price else null end) fri_sales,
++>        sum(case when (d_day_name='Saturday') then sales_price else null end) sat_sales
++> from wscs
++>     ,date_dim
++> where d_date_sk = sold_date_sk
++> group by d_week_seq)
++> select d_week_seq1
++>       ,round(sun_sales1/sun_sales2,2)
++>       ,round(mon_sales1/mon_sales2,2)
++>       ,round(tue_sales1/tue_sales2,2)
++>       ,round(wed_sales1/wed_sales2,2)
++>       ,round(thu_sales1/thu_sales2,2)
++>       ,round(fri_sales1/fri_sales2,2)
++>       ,round(sat_sales1/sat_sales2,2)
++> from
++> (select wswscs.d_week_seq d_week_seq1
++>        ,sun_sales sun_sales1
++>        ,mon_sales mon_sales1
++>        ,tue_sales tue_sales1
++>        ,wed_sales wed_sales1
++>        ,thu_sales thu_sales1
++>        ,fri_sales fri_sales1
++>        ,sat_sales sat_sales1
++>  from wswscs,date_dim 
++>  where date_dim.d_week_seq = wswscs.d_week_seq and
++>        d_year = 1999) y,
++> (select wswscs.d_week_seq d_week_seq2
++>        ,sun_sales sun_sales2
++>        ,mon_sales mon_sales2
++>        ,tue_sales tue_sales2
++>        ,wed_sales wed_sales2
++>        ,thu_sales thu_sales2
++>        ,fri_sales fri_sales2
++>        ,sat_sales sat_sales2
++>  from wswscs
++>      ,date_dim 
++>  where date_dim.d_week_seq = wswscs.d_week_seq and
++>        d_year = 1999+1) z
++> where d_week_seq1=d_week_seq2-53
++> order by d_week_seq1;
+
+*** WARNING[5001] Common subexpression WSWSCS cannot be shared among multiple consumers. Reason: Operator map_value_ids not supported.
+
+--- SQL command prepared.
+>>-- use temp for wscs only, not wswscs, due to MapValueIds
+>>execute show_cses;
+
+OPERATOR                        HOW_MANY            
+------------------------------  --------------------
+
+BLOCKED_UNION                                      2
+HIVE_INSERT                                        1
+SCAN TEMP                                          2
+
+--- 3 row(s) selected.
+>>execute s;
+
+--- SQL operation complete.
+>>
+>>
+>>--QID: 4
+>>
+>>prepare s from
++>with year_total as (
++> select c_customer_id customer_id
++>       ,c_first_name customer_first_name
++>       ,c_last_name customer_last_name
++>       ,c_preferred_cust_flag customer_preferred_cust_flag
++>       ,c_birth_country customer_birth_country
++>       ,c_login customer_login
++>       ,c_email_address customer_email_address
++>       ,d_year dyear
++>       ,sum(((ss_ext_list_price-ss_ext_wholesale_cost-ss_ext_discount_amt)+ss_ext_sales_price)/2) year_total
++>       ,'s' sale_type
++> from customer
++>     ,store_sales
++>     ,date_dim
++> where c_customer_sk = ss_customer_sk
++>   and ss_sold_date_sk = d_date_sk
++> group by c_customer_id
++>         ,c_first_name
++>         ,c_last_name
++>         ,c_preferred_cust_flag
++>         ,c_birth_country
++>         ,c_login
++>         ,c_email_address
++>         ,d_year
++> union all
++> select c_customer_id customer_id
++>       ,c_first_name customer_first_name
++>       ,c_last_name customer_last_name
++>       ,c_preferred_cust_flag customer_preferred_cust_flag
++>       ,c_birth_country customer_birth_country
++>       ,c_login customer_login
++>       ,c_email_address customer_email_address
++>       ,d_year dyear
++>       ,sum((((cs_ext_list_price-cs_ext_wholesale_cost-cs_ext_discount_amt)+cs_ext_sales_price)/2) ) year_total
++>       ,'c' sale_type
++> from customer
++>     ,catalog_sales
++>     ,date_dim
++> where c_customer_sk = cs_bill_customer_sk
++>   and cs_sold_date_sk = d_date_sk
++> group by c_customer_id
++>         ,c_first_name
++>         ,c_last_name
++>         ,c_preferred_cust_flag
++>         ,c_birth_country
++>         ,c_login
++>         ,c_email_address
++>         ,d_year
++>union all
++> select c_customer_id customer_id
++>       ,c_first_name customer_first_name
++>       ,c_last_name customer_last_name
++>       ,c_preferred_cust_flag customer_preferred_cust_flag
++>       ,c_birth_country customer_birth_country
++>       ,c_login customer_login
++>       ,c_email_address customer_email_address
++>       ,d_year dyear
++>       ,sum((((ws_ext_list_price-ws_ext_wholesale_cost-ws_ext_discount_amt)+ws_ext_sales_price)/2) ) year_total
++>       ,'w' sale_type
++> from customer
++>     ,web_sales
++>     ,date_dim
++> where c_customer_sk = ws_bill_customer_sk
++>   and ws_sold_date_sk = d_date_sk
++> group by c_customer_id
++>         ,c_first_name
++>         ,c_last_name
++>         ,c_preferred_cust_flag
++>         ,c_birth_country
++>         ,c_login
++>         ,c_email_address
++>         ,d_year
++>         )
++>select
++>      t_s_secyear.customer_id
++>     ,t_s_secyear.customer_first_name
++>     ,t_s_secyear.customer_last_name
++>     ,t_s_secyear.customer_birth_country
++> from year_total t_s_firstyear
++>     ,year_total t_s_secyear
++>     ,year_total t_c_firstyear
++>     ,year_total t_c_secyear
++>     ,year_total t_w_firstyear
++>     ,year_total t_w_secyear
++> where t_s_secyear.customer_id = t_s_firstyear.customer_id
++>   and t_s_firstyear.customer_id = t_c_secyear.customer_id
++>   and t_s_firstyear.customer_id = t_c_firstyear.customer_id
++>   and t_s_firstyear.customer_id = t_w_firstyear.customer_id
++>   and t_s_firstyear.customer_id = t_w_secyear.customer_id
++>   and t_s_firstyear.sale_type = 's'
++>   and t_c_firstyear.sale_type = 'c'
++>   and t_w_firstyear.sale_type = 'w'
++>   and t_s_secyear.sale_type = 's'
++>   and t_c_secyear.sale_type = 'c'
++>   and t_w_secyear.sale_type = 'w'
++>   and t_s_firstyear.dyear =  1998
++>   and t_s_secyear.dyear = 1998+1
++>   and t_c_firstyear.dyear =  1998
++>   and t_c_secyear.dyear =  1998+1
++>   and t_w_firstyear.dyear = 1998
++>   and t_w_secyear.dyear = 1998+1
++>   and t_s_firstyear.year_total > 0
++>   and t_c_firstyear.year_total > 0
++>   and t_w_firstyear.year_total > 0
++>   and case when t_c_firstyear.year_total > 0 then t_c_secyear.year_total / t_c_firstyear.year_total else null end
++>           > case when t_s_firstyear.year_total > 0 then t_s_secyear.year_total / t_s_firstyear.year_total else null end
++>   and case when t_c_firstyear.year_total > 0 then t_c_secyear.year_total / t_c_firstyear.year_total else null end
++>           > case when t_w_firstyear.year_total > 0 then t_w_secyear.year_total / t_w_firstyear.year_total else null end
++> order by t_s_secyear.customer_id
++>         ,t_s_secyear.customer_first_name
++>         ,t_s_secyear.customer_last_name
++>         ,t_s_secyear.customer_birth_country
++>limit 100;
+
+--- SQL command prepared.
+>>execute show_cses;
+
+OPERATOR                        HOW_MANY            
+------------------------------  --------------------
+
+BLOCKED_UNION                                      2
+HIVE_INSERT                                        1
+SCAN TEMP                                          6
+
+--- 3 row(s) selected.
+>>execute s;
+
+--- SQL operation complete.
+>>
+>>
+>>--QID: 11
+>>
+>>prepare s from
++>with year_total as (
++> select c_customer_id customer_id
++>       ,c_first_name customer_first_name
++>       ,c_last_name customer_last_name
++>       ,c_preferred_cust_flag customer_preferred_cust_flag
++>       ,c_birth_country customer_birth_country
++>       ,c_login customer_login
++>       ,c_email_address customer_email_address
++>       ,d_year dyear
++>       ,sum(ss_ext_list_price-ss_ext_discount_amt) year_total
++>       ,'s' sale_type
++> from customer
++>     ,store_sales
++>     ,date_dim
++> where c_customer_sk = ss_customer_sk
++>   and ss_sold_date_sk = d_date_sk
++> group by c_customer_id
++>         ,c_first_name
++>         ,c_last_name
++>         ,c_preferred_cust_flag 
++>         ,c_birth_country
++>         ,c_login
++>         ,c_email_address
++>         ,d_year 
++> union all
++> select c_customer_id customer_id
++>       ,c_first_name customer_first_name
++>       ,c_last_name customer_last_name
++>       ,c_preferred_cust_flag customer_preferred_cust_flag
++>       ,c_birth_country customer_birth_country
++>       ,c_login customer_login
++>       ,c_email_address customer_email_address
++>       ,d_year dyear
++>       ,sum(ws_ext_list_price-ws_ext_discount_amt) year_total
++>       ,'w' sale_type
++> from customer
++>     ,web_sales
++>     ,date_dim
++> where c_customer_sk = ws_bill_customer_sk
++>   and ws_sold_date_sk = d_date_sk
++> group by c_customer_id
++>         ,c_first_name
++>         ,c_last_name
++>         ,c_preferred_cust_flag 
++>         ,c_birth_country
++>         ,c_login
++>         ,c_email_address
++>         ,d_year
++>         )
++>select  
++>     t_s_secyear.customer_id
++>    ,t_s_secyear.customer_first_name
++>    ,t_s_secyear.customer_last_name
++>    ,t_s_secyear.customer_preferred_cust_flag
++> from year_total t_s_firstyear
++>     ,year_total t_s_secyear
++>     ,year_total t_w_firstyear
++>     ,year_total t_w_secyear
++> where t_s_secyear.customer_id = t_s_firstyear.customer_id
++>         and t_s_firstyear.customer_id = t_w_secyear.customer_id
++>         and t_s_firstyear.customer_id = t_w_firstyear.customer_id
++>         and t_s_firstyear.sale_type = 's'
++>         and t_w_firstyear.sale_type = 'w'
++>         and t_s_secyear.sale_type = 's'
++>         and t_w_secyear.sale_type = 'w'
++>         and t_s_firstyear.dyear = 2001
++>         and t_s_secyear.dyear = 2001+1
++>         and t_w_firstyear.dyear = 2001
++>         and t_w_secyear.dyear = 2001+1
++>         and t_s_firstyear.year_total > 0
++>         and t_w_firstyear.year_total > 0
++>         and case when t_w_firstyear.year_total > 0 then t_w_secyear.year_total / t_w_firstyear.year_total else 0.0 end
++>             > case when t_s_firstyear.year_total > 0 then t_s_secyear.year_total / t_s_firstyear.year_total else 0.0 end
++> order by t_s_secyear.customer_id
++>         ,t_s_secyear.customer_first_name
++>         ,t_s_secyear.customer_last_name
++>         ,t_s_secyear.customer_preferred_cust_flag
++>limit 100;
+
+--- SQL command prepared.
+>>execute show_cses;
+
+OPERATOR                        HOW_MANY            
+------------------------------  --------------------
+
+BLOCKED_UNION                                      2
+HIVE_INSERT                                        1
+SCAN TEMP                                          4
+
+--- 3 row(s) selected.
+>>execute s;
+
+--- SQL operation complete.
+>>
+>>--QID: 14a
+>>
+>>prepare s from
++>-- **************
++>-- VARIANT/ALTERNATIVE Version from TPC-DS (Rollout) is used
++>-- **************
++>
++>-- NOTE: THIS QUERY HAS A COMPILER ISSUE. See Mantis 1048
++>--       BOTH MULTI-QUERIES have the same issue. ******************
++>
++>with  cross_items as
++> (select i_item_sk ss_item_sk
++> from item,
++> (select iss.i_brand_id brand_id
++>     ,iss.i_class_id class_id
++>     ,iss.i_category_id category_id
++> from store_sales
++>     ,item iss
++>     ,date_dim d1
++> where ss_item_sk = iss.i_item_sk
++>   and ss_sold_date_sk = d1.d_date_sk
++>   and d1.d_year between 1999 AND 1999 + 2
++> intersect 
++> select ics.i_brand_id
++>     ,ics.i_class_id
++>     ,ics.i_category_id
++> from catalog_sales
++>     ,item ics
++>     ,date_dim d2
++> where cs_item_sk = ics.i_item_sk
++>   and cs_sold_date_sk = d2.d_date_sk
++>   and d2.d_year between 1999 AND 1999 + 2
++> intersect
++> select iws.i_brand_id
++>     ,iws.i_class_id
++>     ,iws.i_category_id
++> from web_sales
++>     ,item iws
++>     ,date_dim d3
++> where ws_item_sk = iws.i_item_sk
++>   and ws_sold_date_sk = d3.d_date_sk
++>   and d3.d_year between 1999 AND 1999 + 2) x
++> where i_brand_id = brand_id
++>      and i_class_id = class_id
++>      and i_category_id = category_id
++>)
++>,
++> avg_sales as
++> (select avg(quantity*list_price) average_sales
++>  from (select ss_quantity quantity
++>             ,ss_list_price list_price
++>       from store_sales
++>           ,date_dim
++>       where ss_sold_date_sk = d_date_sk
++>         and d_year between 1999 and 2001 
++>       union all 
++>       select cs_quantity quantity 
++>             ,cs_list_price list_price
++>       from catalog_sales
++>           ,date_dim
++>       where cs_sold_date_sk = d_date_sk
++>         and d_year between 1999 AND 1999 + 2
++>       union all
++>       select ws_quantity quantity
++>             ,ws_list_price list_price
++>       from web_sales
++>           ,date_dim
++>       where ws_sold_date_sk = d_date_sk
++>         and d_year between 1999 AND 1999 + 2) x)
++>,
++>  results AS
++>(select channel, i_brand_id, i_class_id, i_category_id, sum(sales) sum_sales, sum(number_sales) number_sales
++> from (
++>       select 'store' channel, i_brand_id,i_class_id
++>             ,i_category_id,sum(ss_quantity*ss_list_price) sales
++>             , count(*) number_sales
++>       from store_sales
++>           ,item
++>           ,date_dim
++>       where ss_item_sk in (select ss_item_sk from cross_items)
++>         and ss_item_sk = i_item_sk
++>         and ss_sold_date_sk = d_date_sk
++>         and d_year = 1999 + 2 
++>         and d_moy = 11
++>       group by i_brand_id,i_class_id,i_category_id
++>       having sum(ss_quantity*ss_list_price) > (select average_sales from avg_sales)
++>       union all
++>       select 'catalog' channel, i_brand_id,i_class_id,i_category_id, sum(cs_quantity*cs_list_price) sales, count(*) number_sales
++>       from catalog_sales
++>           ,item
++>           ,date_dim
++>       where cs_item_sk in (select ss_item_sk from cross_items)
++>         and cs_item_sk = i_item_sk
++>         and cs_sold_date_sk = d_date_sk
++>         and d_year = 1999 + 2
++>         and d_moy = 11
++>       group by i_brand_id,i_class_id,i_category_id
++>       having sum(cs_quantity*cs_list_price) > (select average_sales from avg_sales)
++>       union all
++>       select 'web' channel, i_brand_id,i_class_id,i_category_id, sum(ws_quantity*ws_list_price) sales , count(*) number_sales
++>       from web_sales
++>           ,item
++>           ,date_dim
++>       where ws_item_sk in (select ss_item_sk from cross_items)
++>         and ws_item_sk = i_item_sk
++>         and ws_sold_date_sk = d_date_sk
++>         and d_year = 1999 + 2
++>         and d_moy = 11
++>       group by i_brand_id,i_class_id,i_category_id
++>       having sum(ws_quantity*ws_list_price) > (select average_sales from avg_sales)
++> ) y
++> group by channel, i_brand_id,i_class_id,i_category_id)
++>
++>select channel, i_brand_id, i_class_id, i_category_id, sum_sales, number_sales
++>from (
++>      select channel, i_brand_id, i_class_id, i_category_id, sum_sales, number_sales from results
++>      union
++>      select channel, i_brand_id, i_class_id,  null as i_category_id, sum(sum_sales), sum(number_sales) from results
++>      group by channel, i_brand_id, i_class_id
++>      union
++>      select channel, i_brand_id, null as i_class_id, null as i_category_id, sum(sum_sales), sum(number_sales) from results
++>      group by channel, i_brand_id
++>      union
++>      select channel, null as i_brand_id, null as i_class_id, null as i_category_id, sum(sum_sales), sum(number_sales) from results
++>      group by channel
++>      union
++>      select null as channel, null as i_brand_id, null as i_class_id, null as i_category_id, sum(sum_sales), sum(number_sales) from results) z
++>order by channel, i_brand_id, i_class_id, i_category_id
++> limit 100 ;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[1214] Error Error in creating temp table or temp table insert encountered when executing HiveQL statement ../optimizer/NormRelExpr.cpp.
+
+--- SQL command prepared.
+>>execute show_cses;
+
+--- 0 row(s) selected.
+>>execute s;
+
+CHANNEL  I_BRAND_ID   I_CLASS_ID   I_CATEGORY_ID  SUM_SALES             NUMBER_SALES
+-------  -----------  -----------  -------------  --------------------  --------------------
+
+?                  ?            ?              ?                     ?                     ?
+
+--- SQL operation complete.
+>>
+>>--QID: 23a
+>>
+>>prepare s from
++> with frequent_ss_items as 
++> (select substr(i_item_desc,1,30) itemdesc,i_item_sk item_sk,d_date solddate,count(*) cnt
++>  from store_sales
++>      ,date_dim 
++>      ,item
++>  where ss_sold_date_sk = d_date_sk
++>    and ss_item_sk = i_item_sk 
++>    and d_year in (2000,2000+1,2000+2,2000+3)
++>  group by substr(i_item_desc,1,30),i_item_sk,d_date
++>  having count(*) >4),
++> max_store_sales as
++> (select max(csales) tpcds_cmax 
++>  from (select c_customer_sk,sum(ss_quantity*ss_sales_price) csales
++>        from store_sales
++>            ,customer
++>            ,date_dim 
++>        where ss_customer_sk = c_customer_sk
++>         and ss_sold_date_sk = d_date_sk
++>             and d_year in (2000,2000+1,2000+2,2000+3)
++>        group by c_customer_sk)),
++> best_ss_customer as
++> (select c_customer_sk,sum(ss_quantity*ss_sales_price) ssales
++>  from store_sales
++>      ,customer
++>  where ss_customer_sk = c_customer_sk
++>  group by c_customer_sk
++>  having sum(ss_quantity*ss_sales_price) > (95/100.0) * (select
++>  *
++>from
++> max_store_sales))
++> select sum(sales)
++> from (select cs_quantity*cs_list_price sales
++>       from catalog_sales
++>           ,date_dim 
++>       where d_year = 2000 
++>         and d_moy = 6 
++>         and cs_sold_date_sk = d_date_sk 
++>         and cs_item_sk in (select item_sk from frequent_ss_items)
++>         and cs_bill_customer_sk in (select c_customer_sk from best_ss_customer)
++>      union all
++>      select ws_quantity*ws_list_price sales
++>       from web_sales 
++>           ,date_dim 
++>       where d_year = 2000 
++>         and d_moy = 6 
++>         and ws_sold_date_sk = d_date_sk 
++>         and ws_item_sk in (select item_sk from frequent_ss_items)
++>         and ws_bill_customer_sk in (select c_customer_sk from best_ss_customer)) 
++>limit 100;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[5001] Common subexpression FREQUENT_SS_ITEMS cannot be shared among multiple consumers. Reason: Differing inputs in CTE references, try CQD QUERY_CACHE '0'.
+
+*** WARNING[5001] Common subexpression BEST_SS_CUSTOMER cannot be shared among multiple consumers. Reason: Differing inputs in CTE references, try CQD QUERY_CACHE '0'.
+
+--- SQL command prepared.
+>>execute show_cses;
+
+OPERATOR                        HOW_MANY            
+------------------------------  --------------------
+
+BLOCKED_UNION                                      2
+HIVE_INSERT                                        1
+SCAN TEMP                                          2
+
+--- 3 row(s) selected.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   ?
+
+--- SQL operation complete.
+>>
+>>--QID: 23b
+>>
+>>prepare s from
++> with frequent_ss_items as
++> (select substr(i_item_desc,1,30) itemdesc,i_item_sk item_sk,d_date solddate,count(*) cnt
++>  from store_sales
++>      ,date_dim
++>      ,item
++>  where ss_sold_date_sk = d_date_sk
++>    and ss_item_sk = i_item_sk
++>    and d_year in (2000,2000+1,2000+2,2000+3)
++>  group by substr(i_item_desc,1,30),i_item_sk,d_date
++>  having count(*) >4),
++> max_store_sales as
++> (select max(csales) tpcds_cmax
++>  from (select c_customer_sk,sum(ss_quantity*ss_sales_price) csales
++>        from store_sales
++>            ,customer
++>            ,date_dim 
++>        where ss_customer_sk = c_customer_sk
++>         and ss_sold_date_sk = d_date_sk
++>         and d_year in (2000,2000+1,2000+2,2000+3)
++>        group by c_customer_sk)),
++> best_ss_customer as
++> (select c_customer_sk,sum(ss_quantity*ss_sales_price) ssales
++>  from store_sales
++>      ,customer
++>  where ss_customer_sk = c_customer_sk
++>  group by c_customer_sk
++>  having sum(ss_quantity*ss_sales_price) > (95/100.0) * (select
++>  *
++> from max_store_sales))
++> select  c_last_name,c_first_name,sales
++> from (select c_last_name,c_first_name,sum(cs_quantity*cs_list_price) sales
++>        from catalog_sales
++>            ,customer
++>            ,date_dim 
++>        where d_year = 2000 
++>         and d_moy = 6 
++>         and cs_sold_date_sk = d_date_sk 
++>         and cs_item_sk in (select item_sk from frequent_ss_items)
++>         and cs_bill_customer_sk in (select c_customer_sk from best_ss_customer)
++>         and cs_bill_customer_sk = c_customer_sk 
++>       group by c_last_name,c_first_name
++>      union all
++>      select c_last_name,c_first_name,sum(ws_quantity*ws_list_price) sales
++>       from web_sales
++>           ,customer
++>           ,date_dim 
++>       where d_year = 2000
++>         and d_moy = 6 
++>         and ws_sold_date_sk = d_date_sk 
++>         and ws_item_sk in (select item_sk from frequent_ss_items)
++>         and ws_bill_customer_sk in (select c_customer_sk from best_ss_customer)
++>         and ws_bill_customer_sk = c_customer_sk
++>       group by c_last_name,c_first_name) 
++>     order by c_last_name,c_first_name,sales
++>limit 100;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[5001] Common subexpression FREQUENT_SS_ITEMS cannot be shared among multiple consumers. Reason: Differing inputs in CTE references, try CQD QUERY_CACHE '0'.
+
+*** WARNING[5001] Common subexpression BEST_SS_CUSTOMER cannot be shared among multiple consumers. Reason: Differing inputs in CTE references, try CQD QUERY_CACHE '0'.
+
+--- SQL command prepared.
+>>execute show_cses;
+
+OPERATOR                        HOW_MANY            
+------------------------------  --------------------
+
+BLOCKED_UNION                                      2
+HIVE_INSERT                                        1
+SCAN TEMP                                          2
+
+--- 3 row(s) selected.
+>>execute s;
+
+--- SQL operation complete.
+>>
+>>--QID: 24a
+>>
+>>prepare s from
++>with ssales as
++>(select c_last_name
++>      ,c_first_name
++>      ,s_store_name
++>      ,ca_state
++>      ,s_state
++>      ,i_color
++>      ,i_current_price
++>      ,i_manager_id
++>      ,i_units
++>      ,i_size
++>      ,sum(ss_net_paid) netpaid
++>from store_sales
++>    ,store_returns
++>    ,store
++>    ,item
++>    ,customer
++>    ,customer_address
++>where ss_ticket_number = sr_ticket_number
++>  and ss_item_sk = sr_item_sk
++>  and ss_customer_sk = c_customer_sk
++>  and ss_item_sk = i_item_sk
++>  and ss_store_sk = s_store_sk
++>  and c_birth_country = upper(ca_country)
++>  and s_zip = ca_zip
++>  and s_market_id = 10
++>group by c_last_name
++>        ,c_first_name
++>        ,s_store_name
++>        ,ca_state
++>        ,s_state
++>        ,i_color
++>        ,i_current_price
++>        ,i_manager_id
++>        ,i_units
++>        ,i_size)
++>select c_last_name
++>      ,c_first_name
++>      ,s_store_name
++>      ,sum(netpaid) paid
++>from ssales
++>where i_color = 'smoke'
++>group by c_last_name
++>        ,c_first_name
++>        ,s_store_name
++>having sum(netpaid) > (select 0.05*avg(netpaid)
++>                                 from ssales)
++>;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+--- SQL command prepared.
+>>execute show_cses;
+
+OPERATOR                        HOW_MANY            
+------------------------------  --------------------
+
+BLOCKED_UNION                                      2
+HIVE_INSERT                                        1
+SCAN TEMP                                          2
+
+--- 3 row(s) selected.
+>>execute s;
+
+--- SQL operation complete.
+>>
+>>--QID: 24b
+>>
+>>prepare s from
++>with ssales as
++>(select c_last_name
++>      ,c_first_name
++>      ,s_store_name
++>      ,ca_state
++>      ,s_state
++>      ,i_color
++>      ,i_current_price
++>      ,i_manager_id
++>      ,i_units
++>      ,i_size
++>      ,sum(ss_net_paid) netpaid
++>from store_sales
++>    ,store_returns
++>    ,store
++>    ,item
++>    ,customer
++>    ,customer_address
++>where ss_ticket_number = sr_ticket_number
++>  and ss_item_sk = sr_item_sk
++>  and ss_customer_sk = c_customer_sk
++>  and ss_item_sk = i_item_sk
++>  and ss_store_sk = s_store_sk
++>  and c_birth_country = upper(ca_country)
++>  and s_zip = ca_zip
++>  and s_market_id=10
++>group by c_last_name
++>        ,c_first_name
++>        ,s_store_name
++>        ,ca_state
++>        ,s_state
++>        ,i_color
++>        ,i_current_price
++>        ,i_manager_id
++>        ,i_units
++>        ,i_size)
++>select c_last_name
++>      ,c_first_name
++>      ,s_store_name
++>      ,sum(netpaid) paid
++>from ssales
++>where i_color = 'pink'
++>group by c_last_name
++>        ,c_first_name
++>        ,s_store_name
++>having sum(netpaid) > (select 0.05*avg(netpaid)
++>                           from ssales)
++>;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+--- SQL command prepared.
+>>execute show_cses;
+
+OPERATOR                        HOW_MANY            
+------------------------------  --------------------
+
+BLOCKED_UNION                                      2
+HIVE_INSERT                                        1
+SCAN TEMP                                          2
+
+--- 3 row(s) selected.
+>>execute s;
+
+--- SQL operation complete.
+>>
+>>--QID: 30
+>>
+>>prepare s from
++> with customer_total_return as
++> (select wr_returning_customer_sk as ctr_customer_sk
++>        ,ca_state as ctr_state, 
++>         sum(wr_return_amt) as ctr_total_return
++> from web_returns
++>     ,date_dim
++>     ,customer_address
++> where wr_returned_date_sk = d_date_sk 
++>   and d_year =1999
++>   and wr_returning_addr_sk = ca_address_sk 
++> group by wr_returning_customer_sk
++>         ,ca_state)
++>select  c_customer_id,c_salutation,c_first_name,c_last_name,c_preferred_cust_flag
++>       ,c_birth_day,c_birth_month,c_birth_year,c_birth_country,c_login,c_email_address
++>       ,c_last_review_date_sk,ctr_total_return
++> from customer_total_return ctr1
++>     ,customer_address
++>     ,customer
++> where ctr1.ctr_total_return > (select avg(ctr_total_return)*1.2
++>                                from customer_total_return ctr2 
++>                                where ctr1.ctr_state = ctr2.ctr_state)
++>       and ca_address_sk = c_current_addr_sk
++>       and ca_state = 'OK'
++>       and ctr1.ctr_customer_sk = c_customer_sk
++> order by c_customer_id,c_salutation,c_first_name,c_last_name,c_preferred_cust_flag
++>                  ,c_birth_day,c_birth_month,c_birth_year,c_birth_country,c_login,c_email_address
++>                  ,c_last_review_date_sk,ctr_total_return
++>limit 100;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>execute show_cses;
+
+OPERATOR                        HOW_MANY            
+------------------------------  --------------------
+
+BLOCKED_UNION                                      2
+HIVE_INSERT                                        1
+SCAN TEMP                                          2
+
+--- 3 row(s) selected.
+>>execute s;
+
+--- SQL operation complete.
+>>
+>>--QID: 31
+>>
+>>prepare s from
++> with ss as
++> (select ca_county,d_qoy, d_year,sum(ss_ext_sales_price) as store_sales
++> from store_sales,date_dim,customer_address
++> where ss_sold_date_sk = d_date_sk
++>  and ss_addr_sk=ca_address_sk
++> group by ca_county,d_qoy, d_year),
++> ws as
++> (select ca_county,d_qoy, d_year,sum(ws_ext_sales_price) as web_sales
++> from web_sales,date_dim,customer_address
++> where ws_sold_date_sk = d_date_sk
++>  and ws_bill_addr_sk=ca_address_sk
++> group by ca_county,d_qoy, d_year)
++> select 
++>        ss1.ca_county
++>       ,ss1.d_year
++>       ,ws2.web_sales/ws1.web_sales web_q1_q2_increase
++>       ,ss2.store_sales/ss1.store_sales store_q1_q2_increase
++>       ,ws3.web_sales/ws2.web_sales web_q2_q3_increase
++>       ,ss3.store_sales/ss2.store_sales store_q2_q3_increase
++> from
++>        ss ss1
++>       ,ss ss2
++>       ,ss ss3
++>       ,ws ws1
++>       ,ws ws2
++>       ,ws ws3
++> where
++>    ss1.d_qoy = 1
++>    and ss1.d_year = 2002
++>    and ss1.ca_county = ss2.ca_county
++>    and ss2.d_qoy = 2
++>    and ss2.d_year = 2002
++>    and ss2.ca_county = ss3.ca_county
++>    and ss3.d_qoy = 3
++>    and ss3.d_year = 2002
++>    and ss1.ca_county = ws1.ca_county
++>    and ws1.d_qoy = 1
++>    and ws1.d_year = 2002
++>    and ws1.ca_county = ws2.ca_county
++>    and ws2.d_qoy = 2
++>    and ws2.d_year = 2002
++>    and ws1.ca_county = ws3.ca_county
++>    and ws3.d_qoy = 3
++>    and ws3.d_year =2002
++>    and case when ws1.web_sales > 0 then ws2.web_sales/ws1.web_sales else null end 
++>       > case when ss1.store_sales > 0 then ss2.store_sales/ss1.store_sales else null end
++>    and case when ws2.web_sales > 0 then ws3.web_sales/ws2.web_sales else null end
++>       > case when ss2.store_sales > 0 then ss3.store_sales/ss2.store_sales else null end
++> order by store_q1_q2_increase;
+
+*** WARNING[5001] Common subexpression SS cannot be shared among multiple consumers. Reason: Encountered VEGs with different constants in different consumers.
+
+*** WARNING[5001] Common subexpression WS cannot be shared among multiple consumers. Reason: Encountered VEGs with different constants in different consumers.
+
+--- SQL command prepared.
+>>-- Different constants used in different references of WITH clause - not yet supported
+>>execute show_cses;
+
+--- 0 row(s) selected.
+>>execute s;
+
+--- SQL operation complete.
+>>obey TEST045(clnup);
+>>
+>>drop schema T045_CSES cascade;
+
+--- SQL operation complete.
+>>cqd cse_cleanup_hive_tables 'on';
+
+--- SQL operation complete.
+>>cleanup obsolete volatile tables;
+
+--- SQL operation complete.
+>>
+>>log;

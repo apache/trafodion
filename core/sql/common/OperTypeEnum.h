@@ -282,6 +282,8 @@ enum OperatorTypeEnum {
                         REL_HIVE_INSERT,
                         REL_BULK_UNLOAD,
 
+                        REL_COMMON_SUBEXPR_REF,
+
                         REL_LAST_REL_OP = 1999,
 
                         // item operators (predicates)

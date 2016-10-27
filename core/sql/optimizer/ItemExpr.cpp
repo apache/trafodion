@@ -1469,11 +1469,15 @@ void ItemExpr::findAllT(OperatorTypeEnum wantedType,
 	  ValueIdUnion * tempUnion = (ValueIdUnion*) this;
           for (Lng32 i = 0; i < (Lng32)tempUnion->entries(); i++)
             {
-              tempUnion->getSource(i).getItemExpr()->
-                findAllT(wantedType,
-                         result,
-                         visitVEGMembers,
-                         visitIndexColDefs);
+              // guard against loops in the references
+              // (can happen with common subexpressions, for example)
+              if (!tempUnion->getSource(i).getItemExpr()->
+                     referencesTheGivenValue(getValueId()))
+                tempUnion->getSource(i).getItemExpr()->
+                  findAllT(wantedType,
+                           result,
+                           visitVEGMembers,
+                           visitIndexColDefs);
             }
 	  break;
 	}
@@ -4672,14 +4676,17 @@ const NAString ValueIdUnion::getText(UnparseFormatEnum form) const
     result = "ValueIdUnion(";
   }
 
-  getSource(0).getItemExpr()->unparse(result);
-
-  for (CollIndex i = 1; i < entries(); i++)
+  for (CollIndex i = 0; i < entries(); i++)
   {
-    result += delim;
-#pragma nowarn(1506)   // warning elimination
-    getSource(i).getItemExpr()->unparse(result);
-#pragma warn(1506)  // warning elimination
+    if (i > 0)
+      result += delim;
+
+    // guard against loops in the references
+    // (can happen with common subexpressions, for example)
+    if (!getSource(i).getItemExpr()->referencesTheGivenValue(getValueId()))
+      getSource(i).getItemExpr()->unparse(result);
+    else
+      result += "...";
   }
 
   if (form == USER_FORMAT_DELUXE)
@@ -10454,6 +10461,20 @@ void ConstValue::changeStringConstant(const NAString* strval)
    }
 
    *text_ = *strval;
+}
+
+NABoolean ConstValue::isAFalseConstant() const
+{
+  NABoolean result = FALSE;
+
+  if (type_->getTypeQualifier() == NA_BOOLEAN_TYPE && !isNull())
+    {
+      CMPASSERT(storageSize_ == sizeof(Int32));
+      if (*(reinterpret_cast<Int32 *>(value_)) == 0)
+        result = TRUE; // that means the constant is FALSE!!
+    }
+
+  return result;          
 }
 
 NABoolean ConstValue::isExactNumeric() const

@@ -453,6 +453,7 @@ public:
   void setWasDefaultSpec()		 { if (isNull_)
 					     isNull_ = IS_NULL_WAS_DEFAULT;
 					 }
+  NABoolean isAFalseConstant() const;
 
   NABoolean isExactNumeric() const;
 
