@@ -560,9 +560,9 @@ public:
 				 short displayCaseSpecific = 0);
 
   short getMyTypeAsText(NAString * outputStr, 
-			NABoolean addNullability = TRUE); // output
+			NABoolean addNullability = TRUE) const; // output
 
-  short getMyTypeAsHiveText(NAString * outputStr);  // output
+  short getMyTypeAsHiveText(NAString * outputStr) const;  // output
 
   // used for query caching
   Lng32 getSize() const;

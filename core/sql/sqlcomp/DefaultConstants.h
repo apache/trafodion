@@ -3854,6 +3854,12 @@ enum DefaultConstants
   // controls if sim check is to be done and where (root or leaf)
   TRAF_SIMILARITY_CHECK,
 
+  // Common subexpressions in RelExpr trees
+  CSE_DEBUG_WARNINGS,
+  CSE_FOR_WITH,
+  CSE_USE_TEMP,
+  CSE_HIVE_TEMP_TABLE,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

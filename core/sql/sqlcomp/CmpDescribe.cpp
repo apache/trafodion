@@ -2284,9 +2284,9 @@ short CmpDescribeHiveTable (
       
       NAString nas;
       if (type == 1)
-        ((NAType*)nat)->getMyTypeAsText(&nas, FALSE);
+        nat->getMyTypeAsText(&nas, FALSE);
       else
-        ((NAType*)nat)->getMyTypeAsHiveText(&nas);
+        nat->getMyTypeAsHiveText(&nas);
       
       sprintf(&buf[strlen(buf)], "%s", nas.data());
 
@@ -2442,7 +2442,7 @@ short cmpDisplayColumn(const NAColumn *nac,
   const NAType * nat = (inNAT ? inNAT : nac->getType());
   
   NAString nas;
-  ((NAType*)nat)->getMyTypeAsText(&nas, FALSE);
+  nat->getMyTypeAsText(&nas, FALSE);
   
   NAString attrStr;
   

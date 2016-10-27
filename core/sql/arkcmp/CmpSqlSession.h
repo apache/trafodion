@@ -71,7 +71,7 @@ public:
 
   void setSessionId(NAString &sessionID);
 
-  NAString getSessionId() {return sessionID_;}
+  const NAString &getSessionId() {return sessionID_;}
 
   void setSessionUsername(NAString &userName);
 

@@ -1758,7 +1758,6 @@ void MVCandidates::analyzeCandidate(QRCandidatePtr candidate,
   normalizedRoot->finishSynthEstLogProp();
 
   mapVidNode->setIncludesFavoriteMV(favoriteMV);
-  mapVidNode->setUsedByMvqr(TRUE);
   mapVidNode->primeGroupAttributes();
   //match->setMvRelExprTree(mapVidNode);
 

@@ -1302,6 +1302,7 @@ void ComTdbExeUtilFastDelete::displayContents(Space * space,
 ComTdbExeUtilHiveTruncate::ComTdbExeUtilHiveTruncate(
      char * tableName,
      ULng32 tableNameLen,
+     char * hiveTableName,
      char * tableLocation,
      char * partnLocation,
      char * hostName,
@@ -1324,6 +1325,7 @@ ComTdbExeUtilHiveTruncate::ComTdbExeUtilHiveTruncate(
 		     down, up, 
 		     num_buffers, buffer_size),
        flags_(0),
+       hiveTableName_(hiveTableName),
        tableLocation_(tableLocation),
        partnLocation_(partnLocation),
        hdfsHost_(hostName),
@@ -1344,6 +1346,9 @@ Long ComTdbExeUtilHiveTruncate::pack(void * space)
   if (partnLocation_)
     partnLocation_.pack(space);
 
+  if (hiveTableName_)
+    hiveTableName_.pack(space);
+
   return ComTdbExeUtil::pack(space);
 }
 
@@ -1356,6 +1361,9 @@ Lng32 ComTdbExeUtilHiveTruncate::unpack(void * base, void * reallocator)
     return -1;
 
   if (partnLocation_.unpack(base))
+    return -1;
+
+  if (hiveTableName_.unpack(base))
     return -1;
 
   return ComTdbExeUtil::unpack(base, reallocator);
@@ -1375,6 +1383,13 @@ void ComTdbExeUtilHiveTruncate::displayContents(Space * space,
       if (getTableName() != NULL)
 	{
 	  str_sprintf(buf,"Tablename = %s ",getTableName());
+	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), 
+					       sizeof(short));
+	}
+
+      if (getHiveTableName() != NULL)
+	{
+	  str_sprintf(buf,"Hive Tablename = %s ",getHiveTableName());
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), 
 					       sizeof(short));
 	}

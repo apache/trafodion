@@ -268,7 +268,6 @@ OptimizerSimulator::OptimizerSimulator(CollHeap *heap)
  queue_(NULL),
  sysCallsDisabled_(0),
  forceLoad_(FALSE),
- hiveClient_(NULL),
  heap_(heap)
 {
   for (sysCall sc=FIRST_SYSCALL; sc<NUM_OF_SYSCALLS; sc = sysCall(sc+1))
@@ -1106,31 +1105,24 @@ NABoolean OptimizerSimulator::massageTableUID(OsimHistogramEntry* entry, NAHashD
 }
 
 void OptimizerSimulator::execHiveSQL(const char* hiveSQL)
-{        
-    if(NULL == hiveClient_)
-    {
-        hiveClient_ = HiveClient_JNI::getInstance();
-        if ( hiveClient_->isInitialized() == FALSE ||
-             hiveClient_->isConnected() == FALSE)
-        {
-            HVC_RetCode retCode = hiveClient_->init();
-            if (retCode != HVC_OK)
-            {
-                NAString errMsg;
-                errMsg = "Error initialize hive client.";
-                OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
-            }
-        }  
-    }
+{
+  HiveClient_JNI *hiveClient = CmpCommon::context()->getHiveClient();
 
-    HVC_RetCode retCode = hiveClient_->executeHiveSQL(hiveSQL);
-    if (retCode != HVC_OK)
+  if (hiveClient == NULL)
     {
-        NAString errMsg;
-        errMsg = "Error running hive SQL.";
-        OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
+      NAString errMsg;
+      errMsg = "Error initialize hive client.";
+      OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
     }
-    
+  else
+    {
+      if (!CmpCommon::context()->execHiveSQL(hiveSQL))
+        {
+          NAString errMsg;
+          errMsg = "Error running hive SQL.";
+          OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
+        }
+    }
 }
 
 short OptimizerSimulator::loadHistogramsTable(NAString* modifiedPath, QualifiedName * qualifiedName, unsigned int bufLen)

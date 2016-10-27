@@ -2252,6 +2252,24 @@ ExExeUtilHiveTruncateTcb::ExExeUtilHiveTruncateTcb(
 
 ExExeUtilHiveTruncateTcb::~ExExeUtilHiveTruncateTcb()
 {
+  freeResources();
+}
+
+void ExExeUtilHiveTruncateTcb::freeResources()
+{
+  if (htTdb().getDropOnDealloc())
+    {
+      NAString hiveDropDDL("drop table ");
+      HiveClient_JNI *hiveClient = HiveClient_JNI::getInstance();
+
+      hiveDropDDL += htTdb().getHiveTableName();
+
+      // ignore errors on drop
+      if (!hiveClient->isInitialized() ||
+          !hiveClient->isConnected())
+        hiveClient->init();
+      hiveClient->executeHiveSQL(hiveDropDDL);
+    }
 }
 
 Int32 ExExeUtilHiveTruncateTcb::fixup()

@@ -935,6 +935,13 @@ NABoolean CorrName::isHive() const
   return getQualifiedNameObj().isHive();
 }
 
+NABoolean CorrName::isInHiveDefaultSchema() const
+{
+  return (isHive() &&
+          getQualifiedNameObj().getSchemaName() ==
+                                  HIVE_SYSTEM_SCHEMA);
+}
+
 NABoolean CorrName::isSeabase() const
 {
   return getQualifiedNameObj().isSeabase();

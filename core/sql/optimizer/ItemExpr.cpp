@@ -10456,6 +10456,20 @@ void ConstValue::changeStringConstant(const NAString* strval)
    *text_ = *strval;
 }
 
+NABoolean ConstValue::isAFalseConstant() const
+{
+  NABoolean result = FALSE;
+
+  if (type_->getTypeQualifier() == NA_BOOLEAN_TYPE && !isNull())
+    {
+      CMPASSERT(storageSize_ == sizeof(Int32));
+      if (*(reinterpret_cast<Int32 *>(value_)) == 0)
+        result = TRUE; // that means the constant is FALSE!!
+    }
+
+  return result;          
+}
+
 NABoolean ConstValue::isExactNumeric() const
 {
   return (type_->getTypeQualifier() == NA_NUMERIC_TYPE AND

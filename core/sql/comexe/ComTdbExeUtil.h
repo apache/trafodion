@@ -1620,12 +1620,19 @@ private:
 class ComTdbExeUtilHiveTruncate : public ComTdbExeUtil
 {
 public:
+  // flags
+  enum
+  {
+    TRUNC_DROP_TABLE_ON_DEALLOC = 0x0001
+  };
+
   ComTdbExeUtilHiveTruncate()
   : ComTdbExeUtil()
   {}
 
   ComTdbExeUtilHiveTruncate(char * tableName,
                             ULng32 tableNameLen,
+                            char * hiveTableName,
                             char * tableLocation,
                             char * partnLocation,
                             char * hostName,
@@ -1677,18 +1684,28 @@ public:
     return partnLocation_;
   }
 
+  char * getHiveTableName() const
+  {
+    return hiveTableName_;
+  }
+
+  void setDropOnDealloc(NABoolean v)
+  {(v ? flags_ |= TRUNC_DROP_TABLE_ON_DEALLOC : flags_ &= ~TRUNC_DROP_TABLE_ON_DEALLOC); }
+  NABoolean getDropOnDealloc() { return (flags_ & TRUNC_DROP_TABLE_ON_DEALLOC) != 0; }
+
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
   NA_EIDPROC void displayContents(Space *space, ULng32 flag);
 
 private:
-  NABasicPtr tableLocation_;                     // 00-07
-  NABasicPtr partnLocation_;                     // 08-15
-  NABasicPtr hdfsHost_;                          // 16-23
-  Int64 modTS_;                                  // 24-31
-  Int32 hdfsPort_;                               // 32-35
-  UInt32 flags_;                                 // 36-39
+  NABasicPtr hiveTableName_;                     // 00-07
+  NABasicPtr tableLocation_;                     // 08-15
+  NABasicPtr partnLocation_;                     // 16-23
+  NABasicPtr hdfsHost_;                          // 24-31
+  Int64 modTS_;                                  // 32-39
+  Int32 hdfsPort_;                               // 40-43
+  UInt32 flags_;                                 // 44-47
 };
 
 class ComTdbExeUtilGetStatistics : public ComTdbExeUtil

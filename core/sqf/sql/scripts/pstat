@@ -107,4 +107,4 @@ fi
 
 
 
-ps --sort=cmd,pid -C $PROGS -o user:12,pid,ppid,wchan,rss,vsz,time,stat,cmd | grep -w ^$USER
+ps --sort=cmd,pid -C $PROGS -o user:12,pid,ppid,wchan,rss,vsz,time,stat,cmd | grep -w ^$USER | grep -v '<defunct>'$
