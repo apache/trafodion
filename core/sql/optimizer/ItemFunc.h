@@ -116,7 +116,8 @@ public:
       olapPartitionBy_(NULL),
       olapOrderBy_(NULL),
       frameStart_(-INT_MAX),
-      frameEnd_(INT_MAX)
+      frameEnd_(INT_MAX),
+      rollupGroupIndex_(-1)
     { setOrigOpType(otypeSpecifiedByUser); }
   Aggregate(OperatorTypeEnum otype,
 	    ItemExpr *child0 = NULL,
@@ -133,7 +134,8 @@ public:
       olapPartitionBy_(NULL),
       olapOrderBy_(NULL),
       frameStart_(-INT_MAX),
-      frameEnd_(INT_MAX)
+      frameEnd_(INT_MAX),
+      rollupGroupIndex_(-1)
     {}
   Aggregate(OperatorTypeEnum otype,
 	    ItemExpr *child0,
@@ -151,7 +153,8 @@ public:
       olapPartitionBy_(NULL),
       olapOrderBy_(NULL),
       frameStart_(-INT_MAX),
-      frameEnd_(INT_MAX)
+      frameEnd_(INT_MAX),
+      rollupGroupIndex_(-1)
     {}
 
   // virtual destructor
@@ -329,7 +332,8 @@ public:
 
   virtual QR::ExprElement getQRExprElem() const;
 
-
+  void setRollupGroupIndex(Int16 v) { rollupGroupIndex_ = v; }
+  Int16 getRollupGroupIndex() { return rollupGroupIndex_; }
 
 private:
 
@@ -383,6 +387,10 @@ private:
 
   // true iff am top part of a rewritten aggregate
   NABoolean amTopPartOfAggr_;
+
+  // this field indicates the index into rollupGroupExprList of GroupByAgg
+  // that corresponds to the child of GROUPING aggr.
+  Int16 rollupGroupIndex_;
 }; // class Aggregate
 
 
@@ -995,6 +1003,34 @@ public:
 				 CollHeap* outHeap = 0);
 
 }; // class AggrMinMax
+
+/////////////////////////////////////////////////////////////////
+// This function is created by generator and is used to
+// evaluate GROUPING function.
+/////////////////////////////////////////////////////////////////
+class AggrGrouping : public BuiltinFunction
+{
+public:
+  AggrGrouping(Int16 rollupGroupIndex = -1)
+       : BuiltinFunction(ITM_AGGR_GROUPING_FUNC, CmpCommon::statementHeap()),
+         rollupGroupIndex_(rollupGroupIndex)
+  {}
+
+  // a virtual function for type propagating the node
+  virtual const NAType * synthesizeType();
+
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+private:
+  // this field indicates the index into rollupGroupExprList of GroupByAgg
+  // that corresponds to the child of GROUPING aggr.
+  Int16 rollupGroupIndex_;
+
+}; // class AggrGrouping
 
 class AnsiUSERFunction : public BuiltinFunction
 {

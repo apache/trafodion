@@ -7334,6 +7334,7 @@ set_function_type :   TOK_AVG 		{ $$ = ITM_AVG; }
                     | TOK_COUNT 	{ $$ = ITM_COUNT; }
                     | TOK_VARIANCE 	{ $$ = ITM_VARIANCE; }
                     | TOK_STDDEV 	{ $$ = ITM_STDDEV; }
+                    | TOK_GROUPING 	{ $$ = ITM_GROUPING; }
 
 concat_options : empty
                        {

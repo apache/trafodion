@@ -693,6 +693,30 @@ short AggrMinMax::codeGen(Generator * generator)
   return 0;
 }
 
+short AggrGrouping::codeGen(Generator * generator)
+{
+  Attributes ** attr;
+  
+  Space * space = generator->getSpace();
+  
+  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
+    return 0;
+  
+  GenAssert((rollupGroupIndex_ >= 0), 
+            "AggrGrouping::codeGen. rollupGroupIndex_ must be >= 0.");
+
+  ex_clause * function_clause = 
+    new(generator->getSpace()) ExFunctionGrouping(getOperatorType(),
+                                                  1,
+                                                  attr, 
+                                                  rollupGroupIndex_,
+                                                  generator->getSpace());
+  
+  generator->getExpGenerator()->linkClause(this, function_clause);
+  
+  return 0;
+}
+
 short AnsiUSERFunction::codeGen(Generator * generator)
 {
   Attributes ** attr;

@@ -123,9 +123,10 @@ ex_sort_grby_tcb::ex_sort_grby_tcb(const ex_sort_grby_tdb &  sort_grby_tdb,
 
   // fixup aggr expression
   if (aggrExpr())
-    (void) aggrExpr()->fixup(0, getExpressionMode(), this, space, heap,
-			     glob->computeSpace(), glob);
-
+    (void) aggrExpr()->fixup(0, getExpressionMode(), this, 
+                             space, heap,
+                             glob->computeSpace(), glob);
+  
   // fixup move expression
   if (moveExpr())
     (void) moveExpr()->fixup(0, getExpressionMode(), this, space, heap,
@@ -534,7 +535,7 @@ short ex_sort_grby_tcb::work()
 		// initialize the aggregate
 		if (aggrExpr())	 
 		  {
-		    if (((AggrExpr *)aggrExpr())->initializeAggr(workAtp_) ==
+		    if (aggrExpr()->initializeAggr(workAtp_) ==
 			ex_expr::EXPR_ERROR)
 		      {
                         pstate->step_ =
@@ -543,8 +544,7 @@ short ex_sort_grby_tcb::work()
 		      }
 		    // a flag in the expression is set at compilation time
 		    // if this is a single row aggregate
-		    pstate->oneRowAggr_ =
-		      ((AggrExpr *)(aggrExpr()))->isOneRowAggr();
+		    pstate->oneRowAggr_ = aggrExpr()->isOneRowAggr();
 		  }
 
 		// if group by not being done(scalar aggrs) and no rows were 
@@ -553,7 +553,7 @@ short ex_sort_grby_tcb::work()
 		if ((!grbyExpr()) && 
 		    (centry->upState.status == ex_queue::Q_NO_DATA))
 		  {
-		    if (((AggrExpr *)aggrExpr())->finalizeNullAggr(workAtp_)
+		    if (aggrExpr()->finalizeNullAggr(workAtp_)
 			== ex_expr::EXPR_ERROR)
 		      {
                         pstate->step_ =
@@ -618,11 +618,12 @@ short ex_sort_grby_tcb::work()
 		  else
 		    {
 		      // aggregate the row.
-		      if (aggrExpr())
+		      if (aggrExpr() && aggrExpr()->perrecExpr())
 			{
                           ex_expr::exp_return_type retcode;
-                          retcode = aggrExpr()->eval(centry->getAtp(),
-						     workAtp_);
+                          retcode = 
+                            aggrExpr()->perrecExpr()->eval(centry->getAtp(),
+                                                           workAtp_);
                           if ( retcode == ex_expr::EXPR_OK &&
 			       pstate->oneRowAggr_ &&
                                moveExpr() &&
@@ -764,27 +765,60 @@ ex_sort_grby_rollup_tcb::ex_sort_grby_rollup_tcb
     }
 }
 
-
-short ex_sort_grby_rollup_tcb::rollupGrbyMoveNull(Int16 groupNum)
+// this method does 3 things:
+//  1) moves rollup nulls to return buffer
+//  2) evaluates grouping function for rollup nulls
+//  3) moves grouping function result to return buffer
+short ex_sort_grby_rollup_tcb::processRollupGrbyNulls(Int16 groupNum)
 {
-  ExpTupleDesc * returnRowTD =
-    sort_grby_tdb().getCriDescUp()->getTupleDescriptor
-    (sort_grby_tdb().tuppIndex_);
-
-  // returnRowTD has aggregate entries followed by group entries.
-  Int16 totalEntries = returnRowTD->numAttrs();
-  Int16 numAggr = totalEntries - sort_grby_tdb().numRollupGroups();
-  Int16 startEntry = numAggr + (groupNum > 0 ? groupNum : 0);
-  Int16 endEntry = totalEntries - 1;
-  char * grbyData = rollupGroupAggrArr_[groupNum];
-
-  // move nulls to rollup groups
-  for (Int16 i = startEntry; i <= endEntry; i++)
+  char * grbyData = (groupNum >= 0 ? rollupGroupAggrArr_[groupNum] : NULL);
+  Int16 startEntry = -1;
+  Int16 endEntry = -1;
+  Int16 numAggr = -1;
+  //  move rollup nulls to return buffer
+  if (grbyData)
     {
-      Attributes * attr = returnRowTD->getAttr(i);
-      if (attr->getNullFlag())
+      // returnRowTD has aggregate entries followed by group entries.
+      ExpTupleDesc * returnRowTD =
+        sort_grby_tdb().getCriDescUp()->getTupleDescriptor
+        (sort_grby_tdb().tuppIndex_);
+      
+      Int16 totalEntries = returnRowTD->numAttrs();
+      numAggr = totalEntries - sort_grby_tdb().numRollupGroups();
+      startEntry = numAggr + (groupNum > 0 ? groupNum : 0);
+      endEntry = totalEntries - 1;
+      
+      // move nulls to rollup groups
+      for (Int16 i = startEntry; i <= endEntry; i++)
         {
-          *(short*)&grbyData[attr->getNullIndOffset()] = -1;
+          Attributes * attr = returnRowTD->getAttr(i);
+          if (attr->getNullFlag())
+            {
+              *(short*)&grbyData[attr->getNullIndOffset()] = -1;
+            }
+        }
+      
+      // copy data from rollupArr to work atp so it could be returned.
+      char * workDataPtr = 
+        workAtp_->getTupp(sort_grby_tdb().tuppIndex_).getDataPointer();
+      str_cpy_all(workDataPtr, grbyData, recLen());
+    }
+
+  // evaluate grouping function for null values
+  if (grbyData && aggrExpr() && aggrExpr()->groupingExpr())
+    {
+      if (aggrExpr()->evalGroupingForNull(startEntry-numAggr, endEntry-numAggr))
+        {
+          return -1;
+        }
+    }
+
+  // move grouping function result to return buffer
+  if (aggrExpr() && aggrExpr()->groupingExpr())
+    {
+      if (aggrExpr()->groupingExpr()->eval(workAtp_, workAtp_) == ex_expr::EXPR_ERROR)
+        {
+          return -1;
         }
     }
 
@@ -828,7 +862,7 @@ short ex_sort_grby_rollup_tcb::rollupAggrInit()
     return 0;
 
   // initialize the regular aggrs
-  if (((AggrExpr *)aggrExpr())->initializeAggr(workAtp_) ==
+  if (aggrExpr()->initializeAggr(workAtp_) ==
       ex_expr::EXPR_ERROR)
     {
       return -1;
@@ -843,7 +877,7 @@ short ex_sort_grby_rollup_tcb::rollupAggrInit()
       workAtp_->getTupp(sort_grby_tdb().tuppIndex_)
         .setDataPointer(rollupGroupAggrArr_[i]);
 
-      if (((AggrExpr *)aggrExpr())->initializeAggr(workAtp_) ==
+      if (aggrExpr()->initializeAggr(workAtp_) ==
           ex_expr::EXPR_ERROR)
         {
           workAtp_->getTupp(sort_grby_tdb().tuppIndex_)
@@ -859,11 +893,11 @@ short ex_sort_grby_rollup_tcb::rollupAggrInit()
 
 short ex_sort_grby_rollup_tcb::rollupAggrEval(ex_queue_entry * centry)
 {
-  if (! aggrExpr())
+  if (! aggrExpr() || ! aggrExpr()->perrecExpr())
     return 0;
 
   // evaluate the regular aggr
-  if (aggrExpr()->eval(centry->getAtp(), workAtp_) == ex_expr::EXPR_ERROR)
+  if (aggrExpr()->perrecExpr()->eval(centry->getAtp(), workAtp_) == ex_expr::EXPR_ERROR)
     {
       return -1;
     }
@@ -877,7 +911,7 @@ short ex_sort_grby_rollup_tcb::rollupAggrEval(ex_queue_entry * centry)
       workAtp_->getTupp(sort_grby_tdb().tuppIndex_)
         .setDataPointer(rollupGroupAggrArr_[i]);
 
-      if (aggrExpr()->eval(centry->getAtp(), workAtp_) == ex_expr::EXPR_ERROR)
+      if (aggrExpr()->perrecExpr()->eval(centry->getAtp(), workAtp_) == ex_expr::EXPR_ERROR)
         {
           workAtp_->getTupp(sort_grby_tdb().tuppIndex_)
             .setDataPointer(tempWorkDataPtr);
@@ -1079,7 +1113,7 @@ short ex_sort_grby_rollup_tcb::work()
                     workAtp_->getTupp(sort_grby_tdb().tuppIndex_)
                       .setDataPointer(rollupGroupAggrArr_[0]);
                     
-		    if (((AggrExpr *)aggrExpr())->initializeAggr(workAtp_) ==
+		    if (aggrExpr()->initializeAggr(workAtp_) ==
 			ex_expr::EXPR_ERROR)
 		      {
                         pstate->step_ =
@@ -1221,6 +1255,12 @@ short ex_sort_grby_rollup_tcb::work()
 	case SORT_GRBY_FINALIZE:
 	case SORT_GRBY_FINALIZE_CANCEL:
 	  {
+            if (processRollupGrbyNulls(-1))
+              {
+                step_ = SORT_GRBY_LOCAL_ERROR;
+                break;
+              }
+
             if (handleFinalize(step_, rc))
               return rc;
 
@@ -1291,23 +1331,17 @@ short ex_sort_grby_rollup_tcb::work()
             if (qparent_.up->isFull())
               return WORK_OK; // parent queue is full. Just return
 
-            if (rollupGrbyMoveNull(currGroupNum_))
+            if (processRollupGrbyNulls(currGroupNum_))
               {
                 step_ = SORT_GRBY_LOCAL_ERROR;
                 break;
               }
 
-            // copy data from rollupArr to work atp so it could be returned.
-            char * currRollupDataPtr = rollupGroupAggrArr_[currGroupNum_];
-            char * workDataPtr = 
-              workAtp_->getTupp(sort_grby_tdb().tuppIndex_).getDataPointer();
-            str_cpy_all(workDataPtr, currRollupDataPtr, recLen());
-            
             if (handleFinalize(step_, rc))
               {
                 return rc;
               }
-            
+
             currGroupNum_--;
 
             step_ = SORT_GRBY_ROLLUP_GROUP_START;
@@ -1332,18 +1366,12 @@ short ex_sort_grby_rollup_tcb::work()
                 return WORK_OK; // parent queue is full. Just return
               }
 
-            if (rollupGrbyMoveNull(0))
+            if (processRollupGrbyNulls(0))
               {
                 step_ = SORT_GRBY_LOCAL_ERROR;
                 break;
               }
 
-            // copy data from rollupArr to work atp so it could be returned.
-            char * currRollupDataPtr = rollupGroupAggrArr_[0];
-            char * workDataPtr = 
-              workAtp_->getTupp(sort_grby_tdb().tuppIndex_).getDataPointer();
-            str_cpy_all(workDataPtr, currRollupDataPtr, recLen());
-            
             if (handleFinalize(step_, rc))
               {
                 return rc;
