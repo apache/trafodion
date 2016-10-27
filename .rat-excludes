@@ -112,6 +112,7 @@ resource.h*
 resource.hm*
 odb.sln
 odb.vcxproj.*
+odb.rc
 # BSD licensed files
 swscanf.cpp
 swsprintf.cpp
