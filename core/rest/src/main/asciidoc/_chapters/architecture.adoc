@@ -64,7 +64,7 @@ HTTP and HTTPS requests. It's a 100% java implementation.
 
 [[server-startup]]
 === Startup Behavior 
-The server is started/stopped via the scripts found in the _/bin_ directory. During startup it opens a connection to ZooKeeper.
+The server is started/stopped via the scripts found in the _$REST_INSTALL_DIR/bin_ directory. During startup it opens a connection to ZooKeeper.
 
 [[server-threads]]
 === Threads
@@ -76,7 +76,7 @@ is configured but this may be changed in the configuration by modifying the _res
          
 [[server-processes-script-manager]]
 ==== ScriptManager
-The script manager thread is responsible for reading and compiling the Python scripts found in _/bin/scripts_ directory. It  
+The script manager thread is responsible for reading and compiling the Python scripts found in _$REST_INSTALL_DIR/bin/scripts_ directory. It  
 can detect a change in any script found there. If any script changes it will recompile it.
  
 ==== JDBC Type 4

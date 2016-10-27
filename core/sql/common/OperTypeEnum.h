@@ -350,6 +350,9 @@ enum OperatorTypeEnum {
   
                         ITM_PIVOT_GROUP = 2077,
 
+                        ITM_GROUPING = 2078,
+                        ITM_AGGR_GROUPING_FUNC = 2079,
+
                         // custom functions
                         ITM_USER_DEF_FUNCTION = 2100,
                         ITM_BETWEEN = 2101,

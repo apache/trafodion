@@ -180,7 +180,11 @@ function getNodeStatus {
 }
 
 jpscmd=$JAVA_HOME/bin/jps
-tmpjps=/tmp/tmpjps-$USER.log
+tmpjps=`mktemp -t`
+if [[ $? != 0 ]]; then
+    echo "Error while getting a temporary file for tmpjps. Exiting."
+    exit 3
+fi
 begin_time_seconds=$(date +%s)
 
 declare -i max_checks

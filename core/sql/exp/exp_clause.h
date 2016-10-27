@@ -202,7 +202,8 @@ public:
     FUNC_HBASE_VERSION       = 117,
     FUNC_ISIP_ID             = 118,
     FUNC_INETATON_ID         = 119,
-    FUNC_INETNTOA_ID         = 120
+    FUNC_INETNTOA_ID         = 120,
+    AGGR_GROUPING_ID         = 121
   };
 
   // max number of operands (including result) in a clause.

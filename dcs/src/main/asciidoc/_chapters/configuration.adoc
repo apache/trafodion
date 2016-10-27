@@ -306,23 +306,20 @@ include::../../../../target/asciidoc/dcs-default.adoc[]
 Set DCS environment variables in this file. Examples include options to pass the JVM on start of
 an DCS daemon such as heap size and garbage collector configs. You can also set configurations for DCS configuration, log directories,
 niceness, ssh options, where to locate process pid files, etc. Open the file at _conf/dcs-env.sh_ and peruse its content.
-Each option is fairly well documented.  Add your own environment variables here if you want them read by DCS daemons on startup.
-  
-Changes here will require a cluster restart for DCS to notice the change.
+Each option is fairly well documented.  Add your own environment variables here if you want them read by DCS daemons on startup. Changes done to this file requires restart of DCS.
  
 === _log4j.properties_
 
-Edit this file to change rate at which DCS files are rolled and to change the level at which DCS logs messages.
-   
-Changes here will require a cluster restart for DCS to notice the change though log levels can be changed for 
-particular daemons via the DCS UI.
+Edit this file to change rate at which DCS files are rolled over and, to change the level at which DCS logs messages. Changes done to this file will require restart of DCS.
 
 === _master_ 
-A plain-text file which lists host on which the primary master process should be started. Only one host allowed to be the 
-primary master
+A plain-text file which lists hostname or host IP address  on which the primary master process should be started. Only one host is allowed to be the primary master
 
 === _backup-masters_ 
 A plain-text file which lists hosts on which the backup master process should be started. Only one host per line is allowed
+
+=== _servers_
+A plain-text file which lists hosts on which the DcsServer server process should be started. Only one host per line or the host name followed by the count or number of master executor servers. All servers listed in this file will be started and stopped when DCS start or stop is run.
  
 == Example Configurations 
 
