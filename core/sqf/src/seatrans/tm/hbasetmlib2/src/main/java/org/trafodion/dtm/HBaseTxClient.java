@@ -890,7 +890,7 @@ public class HBaseTxClient {
       * Thread to gather recovery information for regions that need to be recovered 
       */
      private static class RecoveryThread extends Thread{
-             final int SLEEP_DELAY = 1000; // Initially set to run every 1sec
+             static final int SLEEP_DELAY = 1000; // Initially set to run every 1sec
              private int sleepTimeInt = 0;
              private boolean skipSleep = false;
              private TmAuditTlog audit;
@@ -905,6 +905,16 @@ public class HBaseTxClient {
              private boolean forceForgotten;
              private boolean useTlog;
              HBaseTxClient hbtx;
+             private static int envSleepTimeInt;
+
+         static {
+            String sleepTime = System.getenv("TMRECOV_SLEEP");
+            if (sleepTime != null) 
+               envSleepTimeInt = Integer.parseInt(sleepTime);
+            else
+               envSleepTimeInt = SLEEP_DELAY;
+            LOG.info("Recovery thread sleep set to: " + envSleepTimeInt + " ms");
+         }
 
          public RecoveryThread(TmAuditTlog audit,
                                HBaseTmZK zookeeper,
@@ -934,13 +944,7 @@ public class HBaseTxClient {
                           this.txnManager = txnManager;
                           this.inDoubtList = new HashSet<Long> ();
                           this.tmID = zookeeper.getTMID();
-
-                          String sleepTime = System.getenv("TMRECOV_SLEEP");
-                          if (sleepTime != null) {
-                                this.sleepTimeInt = Integer.parseInt(sleepTime);
-                                if(LOG.isDebugEnabled()) LOG.debug("Recovery thread sleep set to: " +
-                                                                   this.sleepTimeInt + "ms");
-                          }
+                          this.sleepTimeInt = envSleepTimeInt;
              }
 
              public void stopThread() {
@@ -1133,11 +1137,8 @@ public class HBaseTxClient {
                         }
                         try {
                             if(continueThread) {
-                                if(!skipSleep) {
-                                    if (sleepTimeInt > 0)
-                                        Thread.sleep(sleepTimeInt);
-                                    else
-                                        Thread.sleep(SLEEP_DELAY);
+                                if (!skipSleep) {
+                                   Thread.sleep(sleepTimeInt);
                                 }
                             }
                             retryCount = 0;
