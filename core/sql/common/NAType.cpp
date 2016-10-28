@@ -726,9 +726,12 @@ short NAType::getMyTypeAsHiveText(NAString * outputStr/*out*/) const
       break;
 
     case REC_MIN_DECIMAL ... REC_MAX_DECIMAL:
-      outputStr->format("decimal(%d,%d)",
-                        getPrecision(),
-                        getScale());
+      if (getPrecision() <= 38)
+        outputStr->format("decimal(%d,%d)",
+                          getPrecision(),
+                          getScale());
+      else
+        *outputStr = "double";
       break;
 
     case REC_FLOAT32:

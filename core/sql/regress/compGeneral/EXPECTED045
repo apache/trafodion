@@ -968,9 +968,6 @@ SCAN TEMP                                          4
 +>-- VARIANT/ALTERNATIVE Version from TPC-DS (Rollout) is used
 +>-- **************
 +>
-+>-- NOTE: THIS QUERY HAS A COMPILER ISSUE. See Mantis 1048
-+>--       BOTH MULTI-QUERIES have the same issue. ******************
-+>
 +>with  cross_items as
 +> (select i_item_sk ss_item_sk
 +> from item,
@@ -1149,12 +1146,19 @@ SCAN TEMP                                          4
 
 *** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
 
-*** WARNING[1214] Error Error in creating temp table or temp table insert encountered when executing HiveQL statement ../optimizer/NormRelExpr.cpp.
+*** WARNING[2997] RESULTS (Operator map_value_ids not supported)
 
 --- SQL command prepared.
 >>execute show_cses;
 
---- 0 row(s) selected.
+OPERATOR                        HOW_MANY            
+------------------------------  --------------------
+
+BLOCKED_UNION                                      2
+HIVE_INSERT                                        1
+SCAN TEMP                                         15
+
+--- 3 row(s) selected.
 >>execute s;
 
 CHANNEL  I_BRAND_ID   I_CLASS_ID   I_CATEGORY_ID  SUM_SALES             NUMBER_SALES

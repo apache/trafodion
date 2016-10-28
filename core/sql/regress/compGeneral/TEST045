@@ -844,9 +844,6 @@ prepare s from
 -- VARIANT/ALTERNATIVE Version from TPC-DS (Rollout) is used
 -- **************
 
--- NOTE: THIS QUERY HAS A COMPILER ISSUE. See Mantis 1048
---       BOTH MULTI-QUERIES have the same issue. ******************
-
 with  cross_items as
  (select i_item_sk ss_item_sk
  from item,
