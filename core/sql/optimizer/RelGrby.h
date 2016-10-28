@@ -112,6 +112,7 @@ public:
     isMarkedForElimination_(FALSE),
     aggDistElimRuleCreates_(FALSE),
     groupByOnJoinRuleCreates_(FALSE),
+    extraGrpOrderby_(NULL),
     isRollup_(FALSE)
   {}
 
@@ -130,6 +131,7 @@ public:
     isMarkedForElimination_(FALSE),
     aggDistElimRuleCreates_(FALSE),
     groupByOnJoinRuleCreates_(FALSE),
+    extraGrpOrderby_(NULL),
     isRollup_(FALSE)
   {}
 
@@ -152,6 +154,9 @@ public:
   inline void setGroupExpr(ValueIdSet &expr) { groupExpr_ = expr;}
   inline void addGroupExpr(ValueIdSet &expr) { groupExpr_ += expr;}
 
+  inline ValueIdSet & extraOrderExpr() { return extraOrderExpr_; }
+  inline const ValueIdSet & extraOrderExpr() const { return extraOrderExpr_; }
+  
   ValueIdList & rollupGroupExprList() { return rollupGroupExprList_; }
   const ValueIdList & rollupGroupExprList() const { return rollupGroupExprList_; }
   void setRollupGroupExprList(ValueIdList &expr) { rollupGroupExprList_ = expr;}
@@ -528,6 +533,9 @@ public:
   NABoolean isRollup() { return isRollup_; }
   const NABoolean isRollup() const { return isRollup_; }
 
+  ItemExpr * getExtraGrpOrderby() { return extraGrpOrderby_; }
+  void setExtraGrpOrderby(ItemExpr *ie) { extraGrpOrderby_ = ie; }
+
 //////////////////////////////////////////////////////
 
 private:
@@ -552,7 +560,9 @@ private:
   // ---------------------------------------------------------------------
   ItemExpr    * groupExprTree_;
   ValueIdSet  groupExpr_;
-
+  
+  ItemExpr  * extraGrpOrderby_;
+  ValueIdSet  extraOrderExpr_;
   // --------------------------------------
   // used for processing groupby rollup
   // --------------------------------------

@@ -546,6 +546,7 @@ public:
   NABoolean orderBy() { return orderBy_;}
   ValueIdList &reqdOrder() { return reqdOrder_; }
   Lng32 maxLen() { return maxLen_; }
+  ItemExpr *getOrderbyItemExpr() { return orgReqOrder_; } 
 private:
   NAList<PivotOption*> * pivotOptionsList_;
 
@@ -553,6 +554,7 @@ private:
 
   NABoolean orderBy_;
   ValueIdList reqdOrder_;   	// ORDER BY list
+  ItemExpr *orgReqOrder_;
   
   Lng32 maxLen_;
 }; // class PivotGroup

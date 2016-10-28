@@ -7181,7 +7181,8 @@ PivotGroup::PivotGroup(OperatorTypeEnum otype,
             case ORDER_BY_:
               {
                 orderBy_ = TRUE;
-                // TBD: populate reqdOrder. May need to move to bindNode
+                // optionNode_ contains the ItemExpr 
+                orgReqOrder_ = (ItemExpr *)po->optionNode_; 
               }
               break;
             }
@@ -7204,6 +7205,7 @@ ItemExpr * PivotGroup::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   result->delim_ = delim_;
   result->orderBy_ = orderBy_;
   result->reqdOrder_ = reqdOrder_;
+  result->orgReqOrder_ = orgReqOrder_;
   result->maxLen_ = maxLen_;
 
   return Aggregate::copyTopNode(result, outHeap);

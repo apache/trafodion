@@ -11814,10 +11814,23 @@ void SortGroupBy::addArrangementAndOrderRequirements(
   {
     // Shouldn't/Can't add a sort order type requirement
     // if we are in DP2
-    if (rg.getStartRequirements()->executeInDP2())
-      rg.addArrangement(groupExpr(),NO_SOT);
-    else
-      rg.addArrangement(groupExpr(),ESP_SOT);
+
+   if( NOT extraOrderExpr().isEmpty())
+   {
+     ValueIdList groupExprCpy(groupExpr());
+     for (ValueId vid = extraOrderExpr().init(); extraOrderExpr().next(vid);
+       extraOrderExpr().advance(vid))
+     {
+       groupExprCpy.insert(vid);   
+     }
+     rg.addSortKey(groupExprCpy);
+   }
+   else {
+     if (rg.getStartRequirements()->executeInDP2())
+       rg.addArrangement(groupExpr(),NO_SOT);
+     else
+       rg.addArrangement(groupExpr(),ESP_SOT);
+   }
   }
 }
 
@@ -11856,6 +11869,7 @@ SortGroupBy::synthPhysicalProperty(const Context* myContext,
                                                              planNumber,
                                                              pws);
 
+      //PhysicalProperty(((isRollup() ||NOT extraOrderExpr().isEmpty()) ? ValueIdList() : sppOfChild->getSortKey()),
   PhysicalProperty* sppForMe =
     new (CmpCommon::statementHeap())
       PhysicalProperty((isRollup() ? ValueIdList() : sppOfChild->getSortKey()),

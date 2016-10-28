@@ -5218,6 +5218,9 @@ void GroupByAgg::rewriteNode(NormWA & normWARef)
   if (rollupGroupExprList().normalizeNode(normWARef))
     {
     }
+  if (extraOrderExpr().normalizeNode(normWARef))
+    {
+    }
   // ---------------------------------------------------------------------
   // Rewrite the expressions that are aggregate expressions
   // ---------------------------------------------------------------------
