@@ -202,6 +202,7 @@ ExFunctionPack::ExFunctionPack(){};
 ExUnPackCol::ExUnPackCol(){};
 ExFunctionRangeLookup::ExFunctionRangeLookup(){};
 ExAuditImage::ExAuditImage(){};
+ExFunctionCrc32::ExFunctionCrc32(){};
 ExFunctionIsIP::ExFunctionIsIP(){};
 ExFunctionInetAton::ExFunctionInetAton(){};
 ExFunctionInetNtoa::ExFunctionInetNtoa(){};
@@ -213,6 +214,13 @@ ExFunctionAscii::ExFunctionAscii(OperatorTypeEnum oper_type,
 };
 
 ExFunctionChar::ExFunctionChar(OperatorTypeEnum oper_type,
+			       Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 2, attr, space)
+{
+  
+};
+
+ExFunctionCrc32::ExFunctionCrc32(OperatorTypeEnum oper_type,
 			       Attributes ** attr, Space * space)
      : ex_function_clause(oper_type, 2, attr, space)
 {
@@ -7898,6 +7906,15 @@ ex_expr::exp_return_type ExFunctionInetNtoa::eval(char * op_data[],
    getOperand(0)->setVarLength(slen, op_data[-MAX_OPERANDS]);
 
    return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type ExFunctionCrc32::eval(char * op_data[],
+                                                        CollHeap *heap,
+                                                        ComDiagsArea **diags)
+{
+    *(ULng32*)op_data[0] = 0; 
+//stub for now
+    return ex_expr::EXPR_OK;
 }
 
 ex_expr::exp_return_type ExFunctionIsIP::eval(char * op_data[],

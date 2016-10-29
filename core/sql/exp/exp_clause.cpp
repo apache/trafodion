@@ -338,6 +338,9 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_CURR_TRANSID:
 	  setClassID(FUNC_CURR_TRANSID_ID);
 	  break;
+        case ITM_CRC32:
+          setClassID(FUNC_CRC32_ID);
+          break; 
 	case ITM_ISIPV4:
 	case ITM_ISIPV6:
 	  setClassID(FUNC_ISIP_ID);
@@ -983,6 +986,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_HBASE_VERSION:
       GetVTblPtr(vtblPtr, ExFunctionHbaseVersion);
+      break;
+    case ex_clause::FUNC_CRC32_ID:
+      GetVTblPtr(vtblPtr, ExFunctionCrc32);
       break;
     case ex_clause::FUNC_ISIP_ID:
       GetVTblPtr(vtblPtr, ExFunctionIsIP);

@@ -782,6 +782,10 @@ enum OperatorTypeEnum {
                         ITM_ISIPV6 = 2631,
                         ITM_INET_ATON = 2632,
                         ITM_INET_NTOA = 2633,
+                        ITM_CRC32     = 2634,
+                        ITM_MD5       = 2635,
+                        ITM_SHA1      = 2636,
+                        ITM_SHA2      = 2637,
 
                         // Items for needed for Translating to UCS2 output strings
                         ITM_DATEFMT     = 2990,

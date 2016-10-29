@@ -218,6 +218,15 @@ short BuiltinFunction::codeGen(Generator * generator)
       
       break;
 
+   case ITM_CRC32:
+      {
+         function_clause =
+           new(generator->getSpace()) ExFunctionCrc32(getOperatorType(),
+                                                         attr, space);
+      }
+     
+      break;
+
    case ITM_ISIPV4:
    case ITM_ISIPV6:
       {

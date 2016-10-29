@@ -1010,7 +1010,17 @@ const NAType *BuiltinFunction::synthesizeType()
 	    SQLChar(maxLength, typ1.supportsSQLnull());
       }
     break;
- 
+    case ITM_CRC32:
+      {
+        const NAType &typ1 = child(0)->getValueId().getType();
+        retType = new HEAP
+           SQLInt(FALSE, FALSE); //unsigned int
+        if (typ1.supportsSQLnull())
+          {
+            retType->setNullable(TRUE);
+          }
+      } 
+    break;
     case ITM_ISIPV4:
     case ITM_ISIPV6:
       {
