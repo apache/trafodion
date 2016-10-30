@@ -11576,7 +11576,7 @@ convDoIt(char * source,
                           sourceType,
                           sourceScale,
                           targetType,
-                          0,
+                          flags,
                           targetLen,
                           targetScale);
     

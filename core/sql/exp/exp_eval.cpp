@@ -424,7 +424,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 		      // datalen, then this varchar field either is a null
 		      // value or has a length of zero.
 		      // A varchar field is missing if its offset is > datalen.
-		      if (((*op)->isSpecialField()) &&
+		      if (((*op)->isAddedCol()) &&
 			  (((*op)->getOffset() == ExpOffsetMax) ||
 			   ((datalen > 0) &&
 			    ((((*op)->getVCIndicatorLength() > 0) &&
@@ -2287,6 +2287,7 @@ ex_expr::exp_return_type ex_expr::evalPCodeAligned(PCodeBinary* pCode32,
 ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 					    atp_struct *atp1,
 					    atp_struct *atp2,
+                                            Lng32 datalen,
 					    ULng32 *rowLen)
 {
   ComDiagsArea *diagsArea;

@@ -454,13 +454,13 @@ static short genHbaseUpdOrInsertExpr(
       const NAColumn *nac = bc->getNAColumn();
       if (nac->isAddedColumn())
 	{
-	  colAttr->setSpecialField(); 
+	  colAttr->setAddedCol(); 
 
 	  Attributes::DefaultClass dc = expGen->getDefaultClass(nac);
 	  colAttr->setDefaultClass(dc);
 
 	  Attributes * attr = (*updateTupleDesc)->getAttr(ii);
-	  attr->setSpecialField(); 
+	  attr->setAddedCol(); 
 	  attr->setDefaultClass(dc);
 	}
 

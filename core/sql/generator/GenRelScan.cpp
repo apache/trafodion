@@ -2544,7 +2544,14 @@ short HbaseAccess::codeGen(Generator * generator)
     {
       colArray = &getIndexDesc()->getAllColumns();
 
-      expGen->setPCodeMode(ex_expr::PCODE_NONE);
+      // current pcode does not handle added columns in aligned format rows.
+      // Generated pcode assumes that the row does not have missing columns.
+      // Missing columns can only be evaluated using regular clause expressions.
+      // Set this flag so both pcode and clauses are saved in generated expr.
+      // At runtime, if a row has missing/added columns, the clause expression 
+      // is evaluated. Otherwise it is evaluated using pcode.
+      // See ExHbaseAccess.cpp::missingValuesInAlignedFormatRow for details.
+      expGen->setSaveClausesInExpr(TRUE);
     }
 
   expGen->processValIdList(
@@ -2598,6 +2605,7 @@ short HbaseAccess::codeGen(Generator * generator)
       (hasAddedColumns))
     {
       expGen->setPCodeMode(pcm);
+      expGen->setSaveClausesInExpr(FALSE);
     }
 
   work_cri_desc->setTupleDescriptor(convertTuppIndex, convertTupleDesc);
