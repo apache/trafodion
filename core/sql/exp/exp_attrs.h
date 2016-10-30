@@ -141,7 +141,7 @@ public:
   {
     NABoolean rtnStatus = FALSE;
 
-    if ( attr->isSpecialField() )
+    if ( attr->isAddedCol() )
     {
       UInt32 firstVarOffset = tuppDesc->getFirstVariableOffset(dataPtr,
                                                                firstFixedOffset);
@@ -356,8 +356,8 @@ public:
   Int32 isComplexType()      { return flags_ & COMPLEX_TYPE;}
   Int16 isSimpleType()       {return !(flags_ & COMPLEX_TYPE);}
 
-  NABoolean isSpecialField() { return (flags_ & SPECIAL_FIELD) != 0; }
-  void setSpecialField()     { flags_ |= SPECIAL_FIELD; }
+  NABoolean isAddedCol() { return (flags_ & ADDED_COL) != 0; }
+  void setAddedCol()     { flags_ |= ADDED_COL; }
 
   void setShowplan()         { flags_ |= SHOWPLAN_; }
   void resetShowplan()       { flags_ &= ~SHOWPLAN_; }
@@ -469,8 +469,8 @@ public:
     if (attr->isNotAlwaysAligned())
       needDataAlignment();
 
-    if (attr->isSpecialField())
-      setSpecialField();
+    if (attr->isAddedCol())
+      setAddedCol();
 
     if (attr->isBulkMoveable())
       setBulkMoveable(TRUE);
@@ -565,9 +565,9 @@ private:
     COMPLEX_TYPE  = 0x0002,       // indicates that this is a complex type. 
                                   // Used at unpack/fixup time to fixup
                                   // virtual table pointers.
-    SPECIAL_FIELD = 0x0004,       // This indicates that the column being
-                                  // processed either follows a varchar
-                                  // field or is missing. It needs to be
+    ADDED_COL     = 0x0004,       // This indicates that the column being
+                                  // processed is an added column.
+                                  // It needs to be
                                   // handled in a special way.
                                   // See evalClauses() in exp_eval.cpp.
     SHOWPLAN_     = 0x0008,

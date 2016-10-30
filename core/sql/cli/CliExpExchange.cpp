@@ -482,7 +482,7 @@ Descriptor::BulkMoveStatus Descriptor::checkBulkMoveStatusV1(
       (((DFS2REC::isDateTime(op->getDatatype()))    ||
 	(DFS2REC::isInterval(op->getDatatype()))) && 
        (NOT isInternalFormatIO))           ||
-      (op->isSpecialField()) ||
+      (op->isAddedCol()) ||
       (!op->isBulkMoveable())
       )
     return BULK_MOVE_OFF;
@@ -579,7 +579,7 @@ Descriptor::BulkMoveStatus Descriptor::checkBulkMoveStatusV2(
   if ((NOT isRWRS) &&
       ((rowsetSize > 0 )       ||
        (descItem.var_ptr == 0) ||
-       (op->isSpecialField()))
+       (op->isAddedCol()))
       )
     return BULK_MOVE_OFF;
 

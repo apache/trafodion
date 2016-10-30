@@ -1593,6 +1593,45 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormatMulti()
   return 0;
 }
 
+// return TRUE is values are missing in aligned format row.
+// Added columns are always added after all the existing columns
+// in a table.
+// This methods checks for added columns from in the list of attributes.
+// Check is done from last to first attr.
+// If an attr is a specialField (added col), then check is done to see if
+// it is missing. TRUE is returned in that case.
+// If a non-added field is reached, then no cols are missing. 
+// FALSE is returned in that case.
+NABoolean ExHbaseAccessTcb::missingValuesInAlignedFormatRow(
+     ExpTupleDesc * tdesc, char * alignedRow, Lng32 alignedRowLen)
+{
+  if (NOT tdesc->addedFieldPresent())
+    return FALSE;
+
+  UInt32 ff = ExpTupleDesc::getFirstFixedOffset
+    (alignedRow, ExpTupleDesc::SQLMX_ALIGNED_FORMAT);
+
+  Attributes * attr = NULL;
+  for (int idx = tdesc->numAttrs()-1; idx >= 0; idx--)
+    {
+      attr = tdesc->getAttr(idx);
+
+      // if a regular (non-added) attr is reached, we are done.
+      // There cannot be any added columns to the left of this attr.
+      if (NOT attr->isAddedCol())
+        return FALSE;
+
+      if (Attributes::isDefaultValueNeeded(
+               attr, tdesc, ff, 
+               attr->getVCIndicatorLength(), attr->getVoaOffset(), 
+               alignedRow, alignedRowLen))
+        return TRUE;
+
+    } // for
+
+  return FALSE;
+}
+
 Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat(Int64 *latestRowTimestamp)
 {
   // no columns are being fetched from hbase, do not create a row.
@@ -1681,6 +1720,15 @@ Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat(Int64 *latestRowTimestamp)
       }
   }
 
+  // check to see if added columns are missing from this row.
+  // If they are, pcode evaluation cannot be used.
+  NABoolean doEvalClauses = FALSE;
+  if ((convertExpr()) &&
+      (convertExpr()->getPCodeBinary()) &&
+      (asciiSourceTD->addedFieldPresent()) &&
+      (missingValuesInAlignedFormatRow(asciiSourceTD, asciiRow_, asciiRowLen)))
+    doEvalClauses = TRUE;
+
   workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_)
     .setDataPointer(convertRow_);
   workAtp_->getTupp(hbaseAccessTdb().asciiTuppIndex_) 
@@ -1690,15 +1738,29 @@ Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat(Int64 *latestRowTimestamp)
     {
       convertRowLen_ = hbaseAccessTdb().convertRowLen();
       UInt32 rowLen = convertRowLen_;
-      ex_expr::exp_return_type evalRetCode =
-	convertExpr()->eval(pentry_down->getAtp(), workAtp_, NULL, 
-			    asciiRowLen, &rowLen);
+      ex_expr::exp_return_type evalRetCode = ex_expr::EXPR_OK;
+
+      if (doEvalClauses)
+        {
+          evalRetCode = 
+            convertExpr()->evalClauses(convertExpr()->getClauses(),
+                                       pentry_down->getAtp(), workAtp_, 
+                                       asciiRowLen, &rowLen,
+                                       NULL, NULL);
+        }
+      else
+        {
+          evalRetCode = 
+            convertExpr()->eval(pentry_down->getAtp(), workAtp_, NULL, 
+                                asciiRowLen, &rowLen);
+        }
+
       if (evalRetCode == ex_expr::EXPR_ERROR)
 	{
 	  return -1;
 	}
       if (hbaseAccessTdb().getUseCif() &&
-      rowLen < convertRowLen_)
+          rowLen < convertRowLen_)
         convertRowLen_=rowLen;
     }
 

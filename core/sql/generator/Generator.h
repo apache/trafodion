@@ -237,6 +237,7 @@ class Generator : public NABasicObject
 
     // If Hive tables are accessed at runtime
     , HIVE_ACCESS              = 0x00000400
+
   };
  
   // Each operator node receives some tupps in its input atp and

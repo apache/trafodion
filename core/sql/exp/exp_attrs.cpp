@@ -400,7 +400,7 @@ void Attributes::displayContents(Space * space, Int32 operandNum,
 
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-  if (isSpecialField())
+  if (isAddedCol())
     {
       str_sprintf(buf, "      DefaultFieldNum = %d",getDefaultFieldNum());
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
@@ -570,7 +570,7 @@ NA_EIDPROC NABoolean isAddedColumn(Attributes * srcAttr,
    //     row image.
    // (4) This is a fixed column, but there are no previous fixed fields
    //     in the audit row image.
-   if (((srcAttr->isSpecialField()) || (tableHasAddedColumns)) &&
+   if (((srcAttr->isAddedCol()) || (tableHasAddedColumns)) &&
        (((srcAttr->getVCIndicatorLength() > 0) &&
          (srcAttr->getVoaOffset() >= offsetOfFirstFixedFieldInRec)) ||
         (((!tableHasVariableColumns) &&

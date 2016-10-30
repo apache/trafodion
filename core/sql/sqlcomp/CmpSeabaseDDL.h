@@ -1024,11 +1024,13 @@ protected:
 
   // makes a copy of traf metadata and underlying hbase table
   short cloneSeabaseTable(
-       CorrName &cn,
+       const NAString &srcTableNameStr,
+       Int64 srcObjUID,
+       const NAString &clonedTableNameStr,
        const NATable * naTable,
-       const NAString &clonedTabName,
-       ExpHbaseInterface * ehi = NULL,
-       ExeCliInterface * cilInterface = NULL);
+       ExpHbaseInterface * ehi,
+       ExeCliInterface * cilInterface,
+       NABoolean withCreate);
 
   short dropSeabaseTable2(
                           ExeCliInterface *cliInterface,
