@@ -4552,9 +4552,8 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
       {
         if( ((PivotGroup*)vid.getItemExpr())->orderBy() ) 
         {
-          //((PivotGroup*)vid.getItemExpr())->getOrderbyItemExpr()->bindNode(bindWA);
           grby->setExtraGrpOrderby(((PivotGroup*)vid.getItemExpr())->getOrderbyItemExpr());
-          grby->getExtraGrpOrderby()->convertToValueIdSet(grby->extraOrderExpr(), bindWA, ITM_ITEM_LIST);
+          grby->getExtraGrpOrderby()->convertToValueIdList(grby->extraOrderExpr(), bindWA, ITM_ITEM_LIST);
         }
       }
     }

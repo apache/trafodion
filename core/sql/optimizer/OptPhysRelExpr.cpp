@@ -11818,10 +11818,9 @@ void SortGroupBy::addArrangementAndOrderRequirements(
    if( NOT extraOrderExpr().isEmpty())
    {
      ValueIdList groupExprCpy(groupExpr());
-     for (ValueId vid = extraOrderExpr().init(); extraOrderExpr().next(vid);
-       extraOrderExpr().advance(vid))
+     for (CollIndex i=0; i< extraOrderExpr().entries(); i++)
      {
-       groupExprCpy.insert(vid);   
+       groupExprCpy.insert(extraOrderExpr().at(i));   
      }
      rg.addSortKey(groupExprCpy);
    }
