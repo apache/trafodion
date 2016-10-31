@@ -370,7 +370,7 @@ public:
     if (evalPtr_)
       return (*evalPtr_)(pCode, atp1, atp2, this);
     else if (pCode != NULL)
-      return evalPCode(pCode, atp1, atp2, rowLen);
+      return evalPCode(pCode, atp1, atp2, datalen, rowLen);
     else
       return evalClauses(getClauses(), atp1, atp2, datalen, rowLen, 
 			 lastFldIndex, fetchedDataPtr);
@@ -392,6 +392,7 @@ public:
     evalPCode(PCodeBinary*pCode,
 	      atp_struct*,
 	      atp_struct*,
+              Lng32 datalen,
 	      ULng32 *rowlen);
 
   // Inlined implementation of various expressions.  The number after "evalFast"

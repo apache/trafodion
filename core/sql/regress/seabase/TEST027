@@ -247,6 +247,7 @@ get all views on table t027t7;
 drop table if exists t027t7 cascade;
 create table t027t7(a int not null, b varchar(2), 
    c varchar(4) character set utf8 not null, z int not null primary key)
+attribute aligned format
 salt using 2 partitions;
 create index t027t7i1 on t027t7(b);
 insert into t027t7 values (1, 'ab', 'cd', 10);
@@ -272,7 +273,8 @@ alter table t027t7 alter column cc rename to ccc;
 
 -- alter col with views
 drop table if exists t027t7 cascade;
-create table t027t7 (a varchar(10), b int);
+create table t027t7 (a varchar(10), b int)
+attribute aligned format;
 create view t027v1 as select * from t027t7;
 create view t027v12 as select * from t027v1;
 create view t027v11 as select * from t027t7;

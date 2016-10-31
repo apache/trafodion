@@ -46,7 +46,7 @@ drop role t144role1;
 
 revoke execute on procedure "_LIBMGR_".help from sql_user5 by sql_user3;
 revoke execute on procedure "_LIBMGR_".help from sql_user3 by sql_user2;
-revoke execute on procedure "_LIBMGR_".help from sql_user2 with grant option;
+revoke execute on procedure "_LIBMGR_".help from sql_user2;
 
 ?section create_db
 create schema t144user1 authorization sql_user1;
@@ -89,7 +89,8 @@ library t144_l2
 deterministic no sql final call allow any parallelism state area size 1024 ;
 
 drop function if exists gen_time;
-create function gen_time(customer_number int) returns (timestamp_value largeint)
+create function gen_time(seedValue largeint, numberDays int, startTime largeint) 
+returns (timestamp_value largeint)
 language c parameter style sql external name 'genTimestamp'
 library t144_l2
 deterministic no sql final call allow any parallelism state area size 1024 ;
@@ -229,7 +230,7 @@ select customer_id,
        'NUMBER: ' || gen_random(customer_id, 10) as tenant_id
 from customers;
 select customer_name, 
-       'TIME: ' || cast (gen_time(customer_id) as char(30)) as customer_time_updated
+       'TIME: ' || cast (gen_time(customer_id, 5, 212342970132970472) as char(30)) as customer_time_updated
 from customers;
 select customer_id,
        'NUMBER: ' || gen_random(customer_id, 10) as tenant_id,
