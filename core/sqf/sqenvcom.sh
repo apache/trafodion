@@ -683,9 +683,9 @@ export SQ_MON_KEEPINTVL=6
 export SQ_MON_KEEPCNT=5
 
 # Monitor sync thread epoll wait timeout is in seconds
-# Currently set to 60 seconds internally (1 second timeout, 60 retries)
-#export SQ_MON_EPOLL_WAIT_TIMEOUT=5
-#export SQ_MON_EPOLL_RETRY_COUNT=12
+# Currently set to 64 seconds (4 second timeout, 16 retries)
+export SQ_MON_EPOLL_WAIT_TIMEOUT=4
+export SQ_MON_EPOLL_RETRY_COUNT=16
 
 # Monitor Zookeeper client
 #  - A zero value disables the zclient logic in the monitor process.
