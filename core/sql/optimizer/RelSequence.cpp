@@ -247,6 +247,9 @@ RelSequence::copyTopNode(RelExpr *derivedNode, CollHeap *outHeap)
   result->cancelExpr() = cancelExpr();
 
   result->checkPartitionChangeExpr_  = checkPartitionChangeExpr_;
+  result->hasOlapFunctions_ = hasOlapFunctions_;
+  result->hasTDFunctions_= hasTDFunctions_;
+  result->movePartIdsExpr_ = movePartIdsExpr_;
 
   //need to review the commented code below
   //result->requiredOrderTree_ = requiredOrderTree_->copyTree(outHeap)->castToItemExpr();
