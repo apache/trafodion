@@ -99,6 +99,9 @@ void Parser::reset(NABoolean on_entry_reset_was_needed)
   //
   if (!Get_SqlParser_Flags(DELAYED_RESET))
     Set_SqlParser_Flags(0);
+
+  if (with_clauses_)
+    with_clauses_->clear();
 }
 
 ULng32 cmmHashFunc_NAString(const NAString& str)

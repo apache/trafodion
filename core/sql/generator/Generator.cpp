@@ -146,6 +146,8 @@ Generator::Generator(CmpContext* currentCmpContext) :
 
   nonCacheableMVQRplan_ = FALSE;
 
+  nonCacheableCSEPlan_ = FALSE;
+
   updateWithinCS_ = FALSE;
 
   isInternalRefreshStatement_ = FALSE;

@@ -53,6 +53,7 @@
 #include  "ComRtUtils.h"
 #include  "ExStats.h"
 #include  "seabed/ms.h"
+#include  "CmpContext.h"
 
 ///////////////////////////////////////////////////////////////////
 ex_tcb * ExExeUtilLoadVolatileTableTdb::build(ex_globals * glob)
@@ -285,7 +286,7 @@ ExExeUtilVolatileTablesTcb::ExExeUtilVolatileTablesTcb(
 }
 
 short ExExeUtilVolatileTablesTcb::isCreatorProcessObsolete
-(char * schemaName, NABoolean includesCat)
+(const char * name, NABoolean includesCat, NABoolean isCSETableName)
 {
   Lng32 retcode = 0;
 
@@ -293,21 +294,39 @@ short ExExeUtilVolatileTablesTcb::isCreatorProcessObsolete
   short segmentNum;
   short cpu;
   pid_t pin;
-  Int64 schemaNameCreateTime = 0;
+  Int64 nameCreateTime = 0;
   
   Lng32 currPos = 0;
 
   if (includesCat)
     {
-      // schemaName is of the form:  <CAT>.<SCHEMA>
+      // name is of the form:  <CAT>.<SCHEMA>
       // Skip the <CAT> part.
-      while (schemaName[currPos] != '.')
+      while (name[currPos] != '.')
 	currPos++;
       currPos++;
     }
 
-  currPos += 
-    strlen(COM_VOLATILE_SCHEMA_PREFIX); // + strlen(COM_SESSION_ID_PREFIX);
+  if (isCSETableName)
+    {
+      // CSE table names look like this: CSE_TEMP_<name>_MXID..._Snnn_mmm
+      const char *startPrefix = "_" COM_SESSION_ID_PREFIX;
+      const char *match = &name[currPos];
+      const char *prevMatch = NULL;
+
+      // find the last occurrence of the start prefix in the name
+      while ((match = strstr(match, startPrefix)) != NULL)
+        prevMatch = ++match; // position prevMatch on the "MXID"
+
+      if (prevMatch)
+        currPos = prevMatch-name;
+      else
+        return 0; // name does not fit our pattern, don't delete it
+    }
+  else
+    // volatile table schema is a fixed prefix, followed by the session id
+    currPos += 
+      strlen(COM_VOLATILE_SCHEMA_PREFIX);
 
   Int64 segmentNum_l;
   Int64 cpu_l;
@@ -316,12 +335,12 @@ short ExExeUtilVolatileTablesTcb::isCreatorProcessObsolete
   Lng32 userNameLen = 0;
   Lng32 userSessionNameLen = 0;
   ComSqlId::extractSqlSessionIdAttrs
-    (&schemaName[currPos],
-     -1, //(strlen(schemaName) - currPos),
+    (&name[currPos],
+     -1, //(strlen(name) - currPos),
      segmentNum_l,
      cpu_l,
      pin_l,
-     schemaNameCreateTime,
+     nameCreateTime,
      sessionUniqNum,
      userNameLen, NULL,
      userSessionNameLen, NULL);
@@ -330,7 +349,7 @@ short ExExeUtilVolatileTablesTcb::isCreatorProcessObsolete
   pin = (pid_t)pin_l;
 
   // see if process exists. If it exists, check if it is the same
-  // process that is specified in the schemaName.
+  // process that is specified in the name.
   short errorDetail = 0;
   Int64 procCreateTime = 0;
   retcode = ComRtGetProcessCreateTime(&cpu, &pin, &segmentNum,
@@ -338,12 +357,12 @@ short ExExeUtilVolatileTablesTcb::isCreatorProcessObsolete
 				      errorDetail);
   if (retcode == XZFIL_ERR_OK)
   {
-     // process specified in schema name exists.
-     if (schemaNameCreateTime != procCreateTime)
-	// but is a different process. Schema's process is obsolete.
+     // process specified in name exists.
+     if (nameCreateTime != procCreateTime)
+	// but is a different process. Schema or name's process is obsolete.
 	return -1;
      else
-	// schema's process is still alive.
+	// schema or name's process is still alive.
 	return 0;
   }
   else
@@ -520,7 +539,7 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 	    OutputInfo * vi = (OutputInfo*)schemaNamesList_->getCurr();
 	    char * schemaName = vi->get(0);
 	    if ((cvtTdb().cleanupAllTables()) ||
-		(isCreatorProcessObsolete(schemaName, FALSE)))
+		(isCreatorProcessObsolete(schemaName, FALSE, FALSE)))
 	      {
 		// schema is obsolete, drop it.
 		// Or we need to cleanup all schemas, active or obsolete.
@@ -579,6 +598,15 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
                 *diags << DgSqlCode(1069)
                        << DgSchemaName(errorSchemas_);
 	      }
+	    step_ = CLEANUP_HIVE_TABLES_;
+	  }
+	break;
+
+	case CLEANUP_HIVE_TABLES_:
+	  {
+            if (cvtTdb().cleanupHiveCSETables())
+              dropHiveTempTablesForCSEs(getDiagsArea());
+
 	    step_ = DONE_;
 	  }
 	break;
@@ -706,6 +734,54 @@ short ExExeUtilCleanupVolatileTablesTcb::dropVolatileTables
   NADELETEBASIC(sendCQD, heap);
 
   return cliRC;
+}
+
+short ExExeUtilCleanupVolatileTablesTcb::dropHiveTempTablesForCSEs(
+     ComDiagsArea * diagsArea)
+{
+  Queue * hiveTableNames = NULL;
+  // Todo: CSE: support schemas other than default for temp tables
+  NAString hiveTablesGetQuery("get tables in schema hive.hive, no header");
+  short retcode = 0;
+
+  if (initializeInfoList(hiveTableNames))
+    {
+      return -1;
+    }
+
+  if (fetchAllRows(hiveTableNames,
+                   (char *) hiveTablesGetQuery.data(),
+                   1,
+                   FALSE,
+                   retcode) < 0)
+    {
+      return -1;
+    }
+
+  hiveTableNames->position();
+
+  while (!hiveTableNames->atEnd())
+    {
+      OutputInfo * ht = (OutputInfo*) (hiveTableNames->getCurr());
+      const char *origTableName = ht->get(0);
+      NAString tableName(origTableName);
+
+      tableName.toUpper();
+
+      if (strstr(tableName.data(), COM_CSE_TABLE_PREFIX) == tableName.data() &&
+          isCreatorProcessObsolete(tableName.data(), FALSE, TRUE))
+        {
+          NAString dropHiveTable("drop table ");
+
+          dropHiveTable += origTableName;
+          if (!CmpCommon::context()->execHiveSQL(dropHiveTable.data()))
+            ; // ignore errors for now
+        }
+
+      hiveTableNames->advance();
+    }
+
+  return 0;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -914,7 +990,7 @@ short ExExeUtilGetVolatileInfoTcb::work()
 	    char * schemaName = vi->get(0);
 
 	    char state[10];
-	    if (isCreatorProcessObsolete(schemaName, FALSE))
+	    if (isCreatorProcessObsolete(schemaName, FALSE, FALSE))
 	      strcpy(state, "Obsolete");
 	    else
 	      strcpy(state, "Active  ");
@@ -947,7 +1023,7 @@ short ExExeUtilGetVolatileInfoTcb::work()
 		(strcmp(prevInfo_->get(0), schemaName) != 0))
 	      {
 		char state[10];
-		if (isCreatorProcessObsolete(schemaName, FALSE))
+		if (isCreatorProcessObsolete(schemaName, FALSE, FALSE))
 		  strcpy(state, "Obsolete");
 		else
 		  strcpy(state, "Active  ");

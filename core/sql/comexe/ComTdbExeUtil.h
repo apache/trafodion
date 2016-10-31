@@ -1270,12 +1270,17 @@ public:
   void setCleanupAllTables(NABoolean v)
   {(v ? flags_ |= CLEANUP_ALL_TABLES : flags_ &= ~CLEANUP_ALL_TABLES); };
   NABoolean cleanupAllTables() { return (flags_ & CLEANUP_ALL_TABLES) != 0; };
+  void setCleanupHiveCSETables(NABoolean v)
+  {(v ? flags_ |= CLEANUP_HIVE_CSE_TABLES : flags_ &= ~CLEANUP_HIVE_CSE_TABLES); }
+  NABoolean cleanupHiveCSETables() { return (flags_ & CLEANUP_HIVE_CSE_TABLES) != 0; }
 
 private:
   enum
   {
     // cleanup obsolete and active schemas/tables.
-    CLEANUP_ALL_TABLES          = 0x0001
+    CLEANUP_ALL_TABLES          = 0x0001,
+    // cleanup Hive tables used for common subexpressions
+    CLEANUP_HIVE_CSE_TABLES     = 0x0002
   };
 
   UInt32 flags_;                                             // 00-03
@@ -1620,12 +1625,19 @@ private:
 class ComTdbExeUtilHiveTruncate : public ComTdbExeUtil
 {
 public:
+  // flags
+  enum
+  {
+    TRUNC_DROP_TABLE_ON_DEALLOC = 0x0001
+  };
+
   ComTdbExeUtilHiveTruncate()
   : ComTdbExeUtil()
   {}
 
   ComTdbExeUtilHiveTruncate(char * tableName,
                             ULng32 tableNameLen,
+                            char * hiveTableName,
                             char * tableLocation,
                             char * partnLocation,
                             char * hostName,
@@ -1677,18 +1689,28 @@ public:
     return partnLocation_;
   }
 
+  char * getHiveTableName() const
+  {
+    return hiveTableName_;
+  }
+
+  void setDropOnDealloc(NABoolean v)
+  {(v ? flags_ |= TRUNC_DROP_TABLE_ON_DEALLOC : flags_ &= ~TRUNC_DROP_TABLE_ON_DEALLOC); }
+  NABoolean getDropOnDealloc() { return (flags_ & TRUNC_DROP_TABLE_ON_DEALLOC) != 0; }
+
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
   NA_EIDPROC void displayContents(Space *space, ULng32 flag);
 
 private:
-  NABasicPtr tableLocation_;                     // 00-07
-  NABasicPtr partnLocation_;                     // 08-15
-  NABasicPtr hdfsHost_;                          // 16-23
-  Int64 modTS_;                                  // 24-31
-  Int32 hdfsPort_;                               // 32-35
-  UInt32 flags_;                                 // 36-39
+  NABasicPtr hiveTableName_;                     // 00-07
+  NABasicPtr tableLocation_;                     // 08-15
+  NABasicPtr partnLocation_;                     // 16-23
+  NABasicPtr hdfsHost_;                          // 24-31
+  Int64 modTS_;                                  // 32-39
+  Int32 hdfsPort_;                               // 40-43
+  UInt32 flags_;                                 // 44-47
 };
 
 class ComTdbExeUtilGetStatistics : public ComTdbExeUtil

@@ -1941,8 +1941,10 @@ short CmpSeabaseDDL::createSeabaseTable2(
                 }
               catch (...)
                 {
-                  // diags area should be set
-                  CMPASSERT(CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0);
+                  // diags area should be set, if not, set it
+                  if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+                    *CmpCommon::diags() << DgSqlCode(-4243)
+                              << DgString0("(expression with unknown type)");
                   exceptionOccurred = TRUE;
                 }
 

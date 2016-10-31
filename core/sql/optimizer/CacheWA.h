@@ -257,7 +257,7 @@ class CacheWA : public NABasicObject
   // mark current query as definitely cacheable
   void setCacheable() { cacheable_ = TRUE; }
 
-  // mark current query as definitely cacheable
+  // mark current query as definitely not cacheable
   void resetCacheable() { cacheable_ = FALSE; }
 
   // tilt current query towards cacheability

@@ -1053,9 +1053,6 @@ DNO                   DNAME                 ENO          DNO
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>cqd mode_special_4 'on';
-
---- SQL operation complete.
 >>with w1 as (select * from witht1),
 +>w2 as (select * from w1)
 +>select * from w2;
@@ -1117,9 +1114,6 @@ C1 C2
 
 *** ERROR[8822] The statement was not prepared.
 
->>cqd mode_special_4 reset;
-
---- SQL operation complete.
 >>
 >>?section cleanup
 >>

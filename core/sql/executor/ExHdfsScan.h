@@ -164,6 +164,7 @@ protected:
   , OPEN_HDFS_CURSOR
   , CHECK_FOR_DATA_MOD
   , CHECK_FOR_DATA_MOD_AND_DONE
+  , ASSIGN_RANGES_AT_RUNTIME
   , GET_HDFS_DATA
   , CLOSE_HDFS_CURSOR
   , PROCESS_HDFS_ROW
@@ -208,6 +209,10 @@ protected:
   // row still waiting to be processed).
   char * extractAndTransformAsciiSourceToSqlRow(int &err,
 						ComDiagsArea * &diagsArea, int mode);
+
+  void computeRangesAtRuntime();
+  void deallocateRuntimeRanges();
+  HdfsFileInfo *getRange(Int32 r);
 
   short moveRowToUpQueue(const char * row, Lng32 len, 
                          short * rc, NABoolean isVarchar);
@@ -270,6 +275,8 @@ protected:
   Lng32 myInstNum_;
   Lng32 beginRangeNum_;
   Lng32 numRanges_;
+  HdfsFileInfo *runTimeRanges_;
+  Int32 numRunTimeRanges_;
   Lng32 currRangeNum_;
   char *endOfRequestedRange_ ; // helps rows span ranges.
   char * hdfsFileName_;

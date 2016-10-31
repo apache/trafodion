@@ -76,6 +76,7 @@ class GroupBySplitRule;
 class AggrDistinctEliminationRule;
 class GroupByTernarySplitRule;
 class ShortCutGroupByRule;
+class CommonSubExprRule;
 
 class SampleScanRule;
 class JoinToBushyTreeRule;
@@ -939,6 +940,24 @@ public:
   virtual ~ShortCutGroupByRule();
   virtual NABoolean topMatch (RelExpr * relExpr,
 			      Context *context);
+  virtual RelExpr * nextSubstitute(RelExpr * before,
+				   Context * context,
+				   RuleSubstituteMemory * & memory);
+  virtual NABoolean canMatchPattern (const RelExpr * pattern) const;
+};
+
+class CommonSubExprRule : public Rule
+{
+public:
+  CommonSubExprRule (const char * name,
+                     RelExpr * pattern,
+                     RelExpr * substitute) :
+       Rule(name,pattern,substitute) {}
+
+  // copy ctor
+  CommonSubExprRule (const CommonSubExprRule &) ; // not written
+
+  virtual ~CommonSubExprRule();
   virtual RelExpr * nextSubstitute(RelExpr * before,
 				   Context * context,
 				   RuleSubstituteMemory * & memory);
