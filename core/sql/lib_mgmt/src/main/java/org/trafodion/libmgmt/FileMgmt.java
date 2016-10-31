@@ -41,7 +41,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,8 +77,7 @@ public class FileMgmt {
 				"ADDLIB - Create a library. SHOWDDL PROCEDURE [SCHEMA NAME.]ADDLIB for more info.",
 				"ALTERLIB - Update a library. SHOWDDL PROCEDURE [SCHEMA NAME.]ALTERLIB for more info.",
 				"DROPLIB - Drop a library. SHOWDDL PROCEDURE [SCHEMA NAME.]DROPLIB for more info.",
-				"GETSTARTWITH - Get all child of startwith key. SHOWDDL PROCEDURE [SCHEMA NAME.].GETSTARTWITH for more info.",
-				"CONNECTBY - Connect by startwith result. SHOWDDL PROCEDURE [SCHEMA NAME.].CONNECTBY for more info."
+				"CONNECTBY - Create a intermediate table. SHOWDDL PROCEDURE [SCHEMA NAME.].CONNECTBY for more info."
 		};
 		List<String> index = new ArrayList<String>(help.length);
 		index.add("PUT");
@@ -83,7 +86,6 @@ public class FileMgmt {
 		index.add("RM");
 		index.add("RMREX");
 		index.add("GETFILE");
-		index.add("GETSTARTWITH");
 		index.add("CONNECTBY");
 		String tmp = helps[0].trim().toUpperCase();
 		helps[0] = "HELP:\r\n";
@@ -108,9 +110,6 @@ public class FileMgmt {
 			break;
 		case 6:
 			helps[0] = help[6];
-			break;
-		case 7:
-			helps[0] = help[7];
 			break;
 		default:
 			for (String h : help) {
@@ -559,62 +558,40 @@ public class FileMgmt {
 		}
 	}
 	
-	public static void connectBy(String columnName, String originSql, String startWithSql, String startWithKey,ResultSet[] rs) throws SQLException{
-		String[] out =new String[1];
-		getStartWith(startWithSql, startWithKey, out); 
-		String[] s = out[0].replaceAll("^\\[|\\]$", "").split("\\s*,\\s*");
-		String clause = " ";
-		for(int i = 0;i<s.length;i++){
-			if(i == s.length -1){
-				clause += columnName + "=\'" + s[i] + "\'";
-			}else{
-				clause += columnName + "=\'" + s[i] + "\' or ";
+	public static void connectBy(String newTableName, String sourceTableName, String columnName,
+			String parentColumnName) throws SQLException {
+		String nodeSql = String.format("select %1$s, %2$s from %3$s", columnName, parentColumnName, sourceTableName);
+		String rootSql = String.format("select distinct %1$s from %2$s where %1$s not in (select %3$s from %2$s)",
+				parentColumnName, sourceTableName, columnName);
+		String dropSql = String.format("drop table if exists %1$s", newTableName);
+		String createSql = String.format("create table %1$s (%2$s varchar(100) not null, %3$s varchar(100) not null);",
+				newTableName, columnName, parentColumnName);
+		String insertSql = "insert into %1$s values(\'%2$s\',\'%3$s\');";
+
+		Connection conn = getConn();
+		Statement stmt = conn.createStatement();
+		ResultSet rootRS = stmt.executeQuery(rootSql);
+		String rootName = "";
+		while (rootRS.next()) {
+			rootName = rootRS.getString(1);
+		}
+		ResultSet nodesRS = stmt.executeQuery(nodeSql);
+		ArrayList<Tuple<String, String>> results = new ArrayList<Tuple<String, String>>();
+		while (nodesRS.next()) {
+			Tuple<String, String> result = new Tuple<String, String>(nodesRS.getString(1), nodesRS.getString(2));
+			results.add(result);
+		}
+		ArrayList<Tuple<String, String>> connects = getAllPaths(results, rootName);
+
+		stmt.execute(dropSql);
+		stmt.execute(createSql);
+		if (connects.size() > 0) {
+			for (int i = 0; i < connects.size(); i++) {
+				Tuple<String, String> connect = connects.get(i);
+				stmt.addBatch(String.format(insertSql, newTableName, connect.getRight(), connect.getLeft()));
 			}
+			stmt.executeBatch();
 		}
-		String connectSql = String.format(originSql, clause);
-		Connection conn = getConn();
-		PreparedStatement ps = conn.prepareStatement(connectSql);
-		try{
-			rs[0] = ps.executeQuery();
-		} catch(SQLException e){
-			LOG.error(originSql,e);
-			throw e;
-		} 
-	}
-	
-	
-	public static void getStartWith(String sql, String startWithKey, String[] out) throws SQLException{
-		String sqlTest = String.format(sql, startWithKey);
-		int searchLevel = 0;
-		ArrayList<String> ids = new ArrayList<String>();
-		Connection conn = getConn();
-		PreparedStatement ps = conn.prepareStatement(sqlTest);
-		try{
-			ids.addAll(bfsSearch(sql,startWithKey,searchLevel,ps));
-			out[0]= Arrays.toString(ids.toArray());
-		} catch(SQLException e){
-			LOG.error(sql,e);
-			throw e;
-		} 
-	}
-	
-	private static ArrayList<String> bfsSearch(String sql, String startWithKey,int searchLevel, PreparedStatement ps) throws SQLException{
-		ArrayList<String> ids = new ArrayList<String>();
-		if(searchLevel==99){
-			return ids;
-		}
-		String sqlText = String.format(sql, startWithKey);
-		ResultSet rs = ps.executeQuery(sqlText);
-		while(rs.next()){
-			String parentId = rs.getString(1);
-			String childId = rs.getString(2);
-			ids.add(childId);
-		}
-		searchLevel++;
-		for(int i = 0;i < ids.size();i++){
-			ids.addAll(bfsSearch(sql,ids.get(i),searchLevel,ps));
-		}
-		return ids;
 	}
 
 	private static String getCodeFilePath(Connection conn) throws SQLException {
@@ -710,6 +687,113 @@ public class FileMgmt {
 			LOG.info("Closed connection");
 		} catch (Exception e) {
 			LOG.warn(e.getMessage());
+		}
+	}
+	
+	private static ArrayList<Tuple<String, String>> getAllPaths(ArrayList<Tuple<String, String>> source, String root) {
+		int size = source.size();
+		ArrayList<String> visited = new ArrayList<String>();
+		Hashtable<String, String> adjTable = new Hashtable<String, String>();
+		for (int i = 0; i < size; i++) {
+			String key = source.get(i).getLeft();
+			String value = source.get(i).getRight();
+			adjTable.put(key, value);
+		}
+		ArrayList<ArrayList<String>> paths = new ArrayList<ArrayList<String>>();
+		dfs(root, visited, adjTable, new ArrayList<String>(), paths);
+		ArrayList<Tuple<String, String>> connects = new ArrayList<Tuple<String, String>>();
+		for (int i = 0; i < paths.size(); i++) {
+			ArrayList<String> path = paths.get(i);
+			for (int m = 0; m < path.size() - 1; m++) {
+				String start = path.get(m);
+				for (int n = m + 1; n < path.size(); n++) {
+					String end = path.get(n);
+					Tuple<String, String> connect = new Tuple<String, String>(start, end);
+					if (!connects.contains(connect)) {
+						connects.add(connect);
+					}
+				}
+			}
+		}
+		return connects;
+	}
+
+	private static void dfs(String root, ArrayList<String> visited, Hashtable<String, String> table,
+			ArrayList<String> previous, ArrayList<ArrayList<String>> paths) {
+		visited.add(root);
+		previous.add(root);
+		ArrayList<String> childs = getChild(root, table);
+		Iterator<String> iter = childs.iterator();
+		while (iter.hasNext()) {
+			String child = iter.next();
+			if (!visited.contains(child)) {
+				dfs(child, visited, table, (ArrayList<String>) previous.clone(), paths);
+			}
+		}
+		if (childs.size() == 0) {
+			paths.add(previous);
+		}
+	}
+
+	private static ArrayList<String> getChild(String pid, Hashtable<String, String> table) {
+		ArrayList<String> childs = new ArrayList<String>();
+		int count = 0;
+		for (String key : table.keySet()) {
+			count++;
+			String value = table.get(key);
+			if (value.equals(pid)) {
+				childs.add(key);
+			}
+		}
+		return childs;
+	}
+	
+	private static class Tuple<X, Y> {
+		public final X x;
+		public final Y y;
+
+		public Tuple(X x, Y y) {
+			this.x = x;
+			this.y = y;
+		}
+
+		@Override
+		public String toString() {
+			return "(" + x + "," + y + ")";
+		}
+
+		@Override
+		public boolean equals(Object other) {
+			if (other == this) {
+				return true;
+			}
+
+			if (!(other instanceof Tuple)) {
+				return false;
+			}
+
+			Tuple<X, Y> other_ = (Tuple<X, Y>) other;
+
+			// this may cause NPE if nulls are valid values for x or y.
+			// The logic may be improved to handle nulls properly, if needed.
+			return other_.x.equals(this.x) && other_.y.equals(this.y);
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((x == null) ? 0 : x.hashCode());
+			result = prime * result + ((y == null) ? 0 : y.hashCode());
+			return result;
+		}
+
+		public X getLeft() {
+			return this.x;
+		}
+
+		public Y getRight() {
+			return this.y;
 		}
 	}
 }
