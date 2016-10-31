@@ -697,7 +697,9 @@ short NAType::getMyTypeAsHiveText(NAString * outputStr/*out*/) const
         else
           {
             char buf[20];
-            Int32 size = getNominalSize() / ct->getBytesPerChar();
+            // Hive doesn't have the "n bytes" notation,
+            // so just take the overall char limit
+            Int32 size = ct->getStrCharLimit();
             str_itoa(size, buf);
             *outputStr = "varchar(";
             *outputStr += buf;

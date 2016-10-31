@@ -109,6 +109,7 @@ class ElemProxyColDef;
 class ItemExprList;
 class RtmdCompileTimeObj;
 class HbaseAccessOptions;
+class Union;
 
 // TreeStore struct
 struct TreeStore : public NABasicObject
