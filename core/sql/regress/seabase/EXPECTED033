@@ -50,6 +50,46 @@ A            B            C            D
 
 --- 6 row(s) selected.
 >>
+>>select cast(d as nullable), grouping(cast(d as nullable)) from t033t1
++>  group by rollup (cast(d as nullable));
+
+(EXPR)       (EXPR)    
+-----------  ----------
+
+          3           0
+          4           0
+          5           0
+          6           0
+          ?           1
+
+--- 5 row(s) selected.
+>>select cast(d as nullable) dd, grouping(cast(d as nullable)) from t033t1
++>  group by rollup (dd);
+
+DD           (EXPR)    
+-----------  ----------
+
+          3           0
+          4           0
+          5           0
+          6           0
+          ?           1
+
+--- 5 row(s) selected.
+>>select cast(d as nullable) dd, grouping(cast(d as nullable)) from t033t1
++>  group by rollup (1);
+
+DD           (EXPR)    
+-----------  ----------
+
+          3           0
+          4           0
+          5           0
+          6           0
+          ?           1
+
+--- 5 row(s) selected.
+>>
 >>explain options 'f' select a,b,c,sum(d),grouping(a),grouping(b),grouping(c) 
 +>                 from t033t1 
 +>                 group by rollup(a,b,c) order by 1,2,3;

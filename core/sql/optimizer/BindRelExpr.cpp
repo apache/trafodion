@@ -4380,6 +4380,11 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
               while ((NOT found) and (i < grby->rollupGroupExprList().entries()))
                 {
                   ValueId vid =  grby->rollupGroupExprList()[i];
+                  if (vid.getItemExpr()->getOperatorType() == ITM_SEL_INDEX)
+                    {
+                      SelIndex * si = (SelIndex*)vid.getItemExpr();
+                      vid = compExpr()[si->getSelIndex()-1];
+                    }
                   found =  aggrChild->duplicateMatch(*vid.getItemExpr());
                   if (found)
                     ag->setRollupGroupIndex(i);

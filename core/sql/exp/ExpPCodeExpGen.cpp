@@ -177,11 +177,11 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
       for(short i = 0; i < clause->getNumOperands(); i++) {
 #if defined(__EID)
 	if ((clause->getOperand(i)->getOffset() == UINT_MAX) ||
-            (clause->getOperand(i)->isSpecialField() && !pCodeSpecialFields()))
+            (clause->getOperand(i)->isAddedCol() && !pCodeSpecialFields()))
 #else
 	if (((clause->getOperand(i)->getOffset() == UINT_MAX) && 
               !handleIndirectVC()) ||                             
-            (clause->getOperand(i)->isSpecialField() && 
+            (clause->getOperand(i)->isAddedCol() && 
               !pCodeSpecialFields()))
 #endif
         {
@@ -221,7 +221,7 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
 
 	if (((clause->getOperand(i)->getOffset() == UINT_MAX) &&
               !handleIndirectVC()) ||
-            (clause->getOperand(i)->isSpecialField() && 
+            (clause->getOperand(i)->isAddedCol() && 
               !pCodeSpecialFields()))
         {
 	  setPCodeObject(0);

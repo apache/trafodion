@@ -149,7 +149,7 @@ ExpTupleDesc::~ExpTupleDesc()
 // were added.
 NA_EIDPROC
 static Int16 orderFixedFieldsByAlignment( Attributes    ** attrs,
-                                          NAList<UInt32> * fixedFields )
+                                          NAList<UInt32> * fixedFields)
 {
   Int16  rc = 0;
 
@@ -171,7 +171,7 @@ static Int16 orderFixedFieldsByAlignment( Attributes    ** attrs,
     fixedFields->getFirst( fieldIdx );
     attr    = attrs[ fieldIdx ];
 
-    if (attr->isSpecialField())   // an added column
+    if (attr->isAddedCol())   // an added column
     {
       addedCols.insert( fieldIdx );
       continue;
@@ -260,7 +260,16 @@ void computeOffsetOfFixedField(Attributes **  attrs,
     attrs[prevIdx]->setNextFieldIndex(fieldIdx);
 
   if (alignFormat)
-    fixedOffset = ADJUST(fixedOffset, field->getDataAlignmentSize());
+    {
+      if ((field->isAddedCol()) && (field->getDataAlignmentSize() == 8))
+        {
+          fixedOffset = ADJUST(fixedOffset, 4);
+        }
+      else
+        {
+          fixedOffset = ADJUST(fixedOffset, field->getDataAlignmentSize());
+        }
+    }
 
   if (firstField == ExpOffsetMax)
   {
@@ -372,7 +381,7 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
                 // determine offset at compile time. Remember 
                 // the position of this field (as a negative number
                 // coz all positive values could be valid offsets).
-                attrs[i]->setSpecialField();
+                attrs[i]->setAddedCol();
              	attrs[i]->setOffset(ExpOffsetMax);
 		attrs[i]->setRelOffset(i);
 
@@ -690,7 +699,7 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
           else   // have a fixed field, add it to list to process next
             fixedFields->insert(i);
 
-          if (attrs[i]->isSpecialField())
+          if (attrs[i]->isAddedCol())
           {
             *rtnFlags |= ExpTupleDesc::ADDED_COLUMN;
 
@@ -719,7 +728,7 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
         if ( alignedFormat )
         {
           // This call destructively rearranges the list of fixed fields.
-          orderFixedFieldsByAlignment( attrs, fixedFields );
+          orderFixedFieldsByAlignment( attrs, fixedFields);
 
           // No variable fields present so adjust the first fixed for the
           // pad bytes.
