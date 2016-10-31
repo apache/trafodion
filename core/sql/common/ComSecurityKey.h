@@ -48,6 +48,11 @@ bool buildSecurityKeys( const int32_t granteeID,
                         const PrivMgrCoreDesc &privs,
                         ComSecurityKeySet &secKeySet);
 
+void qiInvalidationType (const Int32 numInvalidationKeys,
+                         const SQL_QIKEY* invalidationKeys,
+                         const Int32 userID,
+                         bool &resetRoleList,
+                         bool &updateCaches);
 
 // ****************************************************************************
 // Class:  ComSecurityKey 

@@ -6846,42 +6846,39 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
 
   ComSecurityKeySet secKeyVec(heap_);
   if (priv_desc == NULL)
+  {
+    if (isHiveTable())
+      readPrivileges();
+    else
+      privInfo_ = NULL;
+    return;
+  }
+  else
+  {
+    // get roles granted to current user 
+    // SQL_EXEC_GetRoleList returns the list of roles from the CliContext
+    std::vector<int32_t> myRoles;
+    Int32 numRoles = 0;
+    Int32 *roleIDs = NULL;
+    if (SQL_EXEC_GetRoleList(numRoles, roleIDs) < 0)
     {
-      if (isHiveTable())
-        readPrivileges();
-      else
-        privInfo_ = NULL;
+      *CmpCommon::diags() << DgSqlCode(-1034);
       return;
     }
-  else
-    {
-      // Build privInfo_ based on the priv_desc
-      std::vector<int32_t> roleIDs;
 
-      CmpSeabaseDDL cmpSBD(STMTHEAP);
-      if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
-      {
-        if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-          *CmpCommon::diags() << DgSqlCode( -4400 );
-        return;
-      }
+    // At this time we should have at least one entry in roleIDs (PUBLIC_USER)
+    CMPASSERT (roleIDs && numRoles > 0);
 
-      NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
-      privMDLoc += ".\"";
-      privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-      privMDLoc += "\"";
+    for (Int32 i = 0; i < numRoles; i++)
+      myRoles.push_back(roleIDs[i]);
 
-      PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(),PrivMgr::PRIV_INITIALIZED);
-      PrivStatus retcode = privInterface.getRoles( ComUser::getCurrentUser(), roleIDs);
-      cmpSBD.switchBackCompiler();
-      if (retcode == STATUS_ERROR)
-        return;
-
-      privInfo_ = new(heap_) PrivMgrUserPrivs;
-      privInfo_->initUserPrivs(roleIDs, priv_desc, 
-                               ComUser::getCurrentUser(), 
-                               objectUID_.get_value(), secKeySet_);
+    // Build privInfo_ based on the priv_desc
+    privInfo_ = new(heap_) PrivMgrUserPrivs;
+    privInfo_->initUserPrivs(myRoles, priv_desc, 
+                             ComUser::getCurrentUser(), 
+                             objectUID_.get_value(), secKeySet_);
   }
+
 
   if (privInfo_ == NULL)
     {
@@ -9097,6 +9094,7 @@ NATableDB::RemoveFromNATableCache( NATable * NATablep , UInt32 currIndx )
 //
 // Remove ALL entries from the NATable Cache that have been
 // marked for removal before the next compilation.
+// Remove nonCacheable entries also.
 //
 void
 NATableDB::remove_entries_marked_for_removal()
@@ -9120,6 +9118,17 @@ NATableDB::remove_entries_marked_for_removal()
       }
       else currIndx++ ; //Note: No increment if the entry was removed !
    }
+
+   //remove the nonCacheableTableList and delete the name, 
+   //this is needed to remove objects such as sequence generators which 
+   //are not stored in the cached list
+   for(CollIndex i=0; i < nonCacheableTableList_.entries(); i++){
+     remove(nonCacheableTableList_[i]);
+     delete nonCacheableTableList_[i]; // delete the name only
+   }
+
+   //clear the list of special tables
+   nonCacheableTableList_.clear();
 }
 
 //

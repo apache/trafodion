@@ -4490,7 +4490,7 @@ Lng32 retcode;
    return retcode;
 
 }
-
+ 
 
 SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetAuthName_Internal(
@@ -4705,6 +4705,85 @@ Lng32 SQL_EXEC_SetSessionAttr_Internal(
    return retcode;
 }
 
+
+Lng32 SQL_EXEC_GetRoleList(
+   Int32 &numRoles,
+   Int32 *&roleIDs)
+
+{
+
+   Lng32 retcode;
+   CLISemaphore *tmpSemaphore;
+   ContextCli   *threadContext;
+
+   CLI_NONPRIV_PROLOGUE(retcode);
+   try
+   {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode =
+      SQLCLI_GetRoleList(GetCliGlobals(),
+                         numRoles,
+                         roleIDs);
+   }
+   catch(...)
+   {
+     retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+     if (cliWillThrow())
+       {
+         threadContext->decrNumOfCliCalls();
+         tmpSemaphore->release();
+         throw;
+       }
+#endif
+   }
+
+   threadContext->decrNumOfCliCalls();
+   tmpSemaphore->release();
+   return retcode;
+
+}
+
+ 
+SQLCLI_LIB_FUNC
+Lng32 SQL_EXEC_ResetRoleList_Internal()
+{
+   Lng32 retcode;
+   CLISemaphore *tmpSemaphore;
+   ContextCli   *threadContext;
+
+   CLI_NONPRIV_PROLOGUE(retcode);
+
+   try
+   {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode =
+      SQLCLI_ResetRoleList(GetCliGlobals());
+   }
+   catch(...)
+   {
+     retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+     if (cliWillThrow())
+       {
+         threadContext->decrNumOfCliCalls();
+         tmpSemaphore->release();
+         throw;
+       }
+#endif
+   }
+
+   threadContext->decrNumOfCliCalls();
+   tmpSemaphore->release();
+   return retcode;
+
+}
+
+ 
 SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetUniqueQueryIdAttrs(
                 /*IN*/    char * uniqueQueryId,

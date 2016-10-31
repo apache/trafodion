@@ -246,6 +246,24 @@ CmpSeabaseDDLauth::AuthStatus CmpSeabaseDDLauth::getAuthDetails(Int32 authID)
   }
 }
 
+CmpSeabaseDDLauth::AuthStatus CmpSeabaseDDLauth::getRoleIDs(
+  const Int32 authID,
+  std::vector<int32_t> &roleIDs)
+{
+  NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc,systemCatalog_.data(),SEABASE_PRIVMGR_SCHEMA);
+
+  PrivMgrRoles role(std::string(MDSchema_.data()),
+                    std::string(privMgrMDLoc.data()),
+                    CmpCommon::diags());
+  std::vector<std::string> roleNames;
+  std::vector<int32_t> roleDepths;
+
+  if (role.fetchRolesForUser(authID,roleNames,roleIDs,roleDepths) == PrivStatus::STATUS_ERROR)
+    return STATUS_ERROR;
+  return STATUS_GOOD; 
+}
+
 // ----------------------------------------------------------------------------
 // method:  getUniqueID
 //
