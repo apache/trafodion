@@ -4571,9 +4571,9 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
         }
         else
         {
-            // default to 60 seconds
-            sv_epoll_wait_timeout = 1000;
-            sv_epoll_retry_count = 60;
+            // default to 64 seconds
+            sv_epoll_wait_timeout = 4000;
+            sv_epoll_retry_count = 16;
         }
 
         char buf[MON_STRING_BUF_SIZE];
