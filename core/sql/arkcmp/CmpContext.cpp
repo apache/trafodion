@@ -1157,4 +1157,16 @@ void CmpContext::resetLogmxEventSqlText()
    delete sqlTextBuf_ ;
    sqlTextBuf_ = NULL ;
 }
+
+void CmpContext::clearAllCaches()
+{
+   qcache_->makeEmpty();
+   schemaDB_->getNATableDB()->setCachingOFF();
+   schemaDB_->getNATableDB()->setCachingON();
+   schemaDB_->getNARoutineDB()->setCachingOFF();
+   schemaDB_->getNARoutineDB()->setCachingON();
+   if(histogramCache_)
+      histogramCache_->invalidateCache();
+}
+
 #endif // NA_CMPDLL
