@@ -295,7 +295,6 @@ private:
                                         SQL_QIKEY *qiKeyArray);
    void InvalidateHistogramCacheEntries(Int32 returnedNumSiKeys, 
                                         SQL_QIKEY *qiKeyArray);
-   void CheckForSpecialRoleRevoke( Int32 NumSiKeys, SQL_QIKEY * pSiKeyArray );
    void RemoveMarkedNATableCacheEntries();
    void UnmarkMarkedNATableCacheEntries();
 

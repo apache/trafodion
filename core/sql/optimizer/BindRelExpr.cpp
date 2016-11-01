@@ -6779,7 +6779,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
       if (retcode != STATUS_GOOD)
       {
         bindWA->setFailedForPrivileges( TRUE );
-        RemoveNATableEntryFromCache = TRUE;
+        tab->setRemoveFromCacheBNC(TRUE); // To be removed by CmpMain before Compilation retry
         *CmpCommon::diags() << DgSqlCode( -1034 );
         return FALSE;
       }
@@ -6837,7 +6837,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
       if (retcode != STATUS_GOOD)
       {
         bindWA->setFailedForPrivileges(TRUE);
-        RemoveNATableEntryFromCache = TRUE;
+        tab->setRemoveFromCacheBNC(TRUE); // Not used until sequences stored in table cache
         *CmpCommon::diags() << DgSqlCode( -1034 );
         return FALSE;
       }
@@ -6859,7 +6859,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     else
     {
       bindWA->setFailedForPrivileges( TRUE );
-      RemoveNATableEntryFromCache = TRUE;
+      tab->setRemoveFromCacheBNC(TRUE); // To be removed by CmpMain before Compilation retry
       *CmpCommon::diags()
         << DgSqlCode( -4491 )
         << DgString0( "USAGE" )
