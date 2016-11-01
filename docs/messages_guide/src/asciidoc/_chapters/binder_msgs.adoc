@@ -2257,11 +2257,11 @@ statement.
 == SQL 4169
 
 ```
-Embedded delete statements are not allowed when using DECLARE ...
+Embedded delete statements are not allowed when using DECLARE . . .
 FOR UPDATE clause.
 ```
 
-*Cause:* You attempted to perform a DECLARE... FOR UPDATE clause that
+*Cause:* You attempted to perform a DECLARE. . . FOR UPDATE clause that
 included an embedded DELETE statement.
 
 *Effect:* {project-name} is unable to compile the
@@ -2797,7 +2797,7 @@ A CALL statement is not allowed within a compound statement.
 ```
 
 *Cause:* In the {project-name} database software statement being compiled, a
-CALL statement was present within a BEGIN...END block.
+CALL statement was present within a BEGIN. . . END block.
 
 *Effect:* {project-name} statement is not compiled.
 

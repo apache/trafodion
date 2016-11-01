@@ -26,6 +26,12 @@
 WARNING: License issues prevent us from including the ODBC Driver for Windows in this release. Contact the
 {project-name} user e-mail list ({project-support}) for help obtaining the driver.
 
+If you have not done so already, please ensure that you have unpackaged the
+<<download-software, unpackaged the {project-name} client software>>.
+
+The examples in this chapter assumes that you have unpackaged the installation files
+to `c:\trafodion\odbc`.
+
 == Installation Requirements
 
 [cols="40%s,60%",options="header"]
@@ -38,16 +44,14 @@ WARNING: License issues prevent us from including the ODBC Driver for Windows in
 | Network Software | TCP/IP
 |===
 
-== Installation Instructions
+<<<
 [[win_odbc_install]]
-
-=== Install Windows ODBC Driver
+== Installation Instructions
 
 NOTE: To install the driver on your PC, you must be logged on with a user ID that has administrator privileges.
 
-You download and extract the {project-name} client package using the instructions in <<introduction-download, Download Installation Package>> above.
-
-The ODBC client installation file, `TFODBC64-*.exe`, which installs or links to multiple client components:
+The ODBC client installation file (`c:\trafodion\odbc\TFODBC64-*.exe`) installs or links to
+multiple client components:
 
 [cols="40%s,60%",options="header"]
 |===
@@ -67,37 +71,76 @@ during installation:
 | C:\Program Files\Trafodion\TRAF   | ODBC _version_ Windows 64-bit
 |===
 
-=== Start the InstallShield wizard
-The InstallShield wizard walks you through the steps to install the client components ({project-name} ODBC 1.0) on your workstation. You can
-perform the installation in _interactive mode_, in which you provide input or accept defaults when prompted as ODBC is installed. 
-Please refer to <<win_odbc_interactive_mode,Interactive Mode Installation>> below.
-
-[[win_odbc_interactive_mode]]
-==== Interactive Mode Installation
+<<<
+To install the {project-name} ODBC driver, do the following:
 
 1.  Double-click the `TFODBC64-*.exe` distribution file to start the InstallShield wizard.
 2.  On the *Welcome* page, click *Next*.
++
+image:{images}/winodbc_welcome.jpg[Windows ODBC Installer Welcome Screen]
++
+<<<
 3.  Read and select the *I accept the agreement* radio button. Click *Next*. 
++
+image:{images}/winodbc_license.jpg[Windows ODBC Installer License Screen]
++
+<<<
 4.  On the *Destination Folder* page, click *Install* to select the default location: `C:\Program Files\Trafodion\TRAF ODBC _version_\` 
 +
+image:{images}/winodbc_destination.jpg[Windows ODBC Installer Destination Screen]
++
 This location is the installation directory for ODBC header and help files. All other ODBC files are installed in `%SYSTEMROOT%\system32`.
++
+<<<
+5. Validate the Destination and click *Install*.
++
+image:{images}/winodbc_ready_to_install.jpg[Windows ODBC Ready to Install Screen]
++
+<<<
+6. The Windows ODBC driver is installed. Click *Finish* to exit the installation wizard.
++
+image:{images}/winodbc_install_finished.jpg[Windows ODBC Install Finished Screen]
 
-5. Read and accept the Microsoft C++ license agreement by checking the *I agree to the license terms and conditions*. Click *Install*.
-6. Click *Close*.
-7. Click *Finish* to exit the installation wizard.
+<<<
+[[win_odbc_setup_data_source]]
+== Set Up ODBC Data Source
 
-=== Add a client data source
 1.  Start the Microsoft ODBC Administrator:
 * On Windows 7: *Start>All Programs>{project-name} ODBC _version_>MS ODBC Administrator*
 * On Windows 8: Right-click the *{project-name} ODBC _version_* icon on the desktop and select MS ODBC Administrator.
-* On Windows 10: Right-click the Windows icon in the menu bar. Select *Settings*. Search for *Set up ODBC data sources (64-bit)*. Click on the found item. 
-
+* On Windows 10: Click the Windows icon in the menu bar. Type *Set up ODBC data sources (64-bit)*. Click on the found item. 
++
+image:{images}/winodbc_admin_intro.jpg[Windows ODBC Admin Intro Screen]
++
+<<<
 2.  In the *ODBC Data Source Administrator* dialog box, click *Add*.
++
+image:{images}/winodbc_admin_add.jpg[Windows ODBC Admin Create Data Source Screen]
++
+<<<
 3.  Select *TRAF ODBC _version_*, and then click *Finish* to start the *Create a New {project-name} ODBC Data Source* wizard.
++
+image:{images}/winodbc_admin_add_general.jpg[Windows ODBC Admin Create Data Source General Screen]
++
+<<<
 4.  Enter the data source name (for example, `Default_DataSource_Schema1`) and an optional description, and click *Next*.
++
+image:{images}/winodbc_admin_add_general_edited.jpg[Windows ODBC Admin Create Data Source Edited General Screen]
++
+<<<
 5.  Enter the `IP address` or `host name` for the database platform. Enter the default port number as *23400*^1^. Leave the defaults as is, and click *Next*.
++
+image:{images}/winodbc_admin_add_network.jpg[Windows ODBC Admin Create Data Source Network Screen]
++
+<<<
 6.  Enter the schema name. The default schema name is `SEABASE`. Click *Next*.
++
+image:{images}/winodbc_admin_add_schema.jpg[Windows ODBC Admin Create Data Source Schema Screen]
++
+<<<
 7.  Enter the translate DLL name and its option, if you have one. If not, leave it blank. Leave the localization defaults as is.
++
+image:{images}/winodbc_admin_add_translate_dll.jpg[Windows ODBC Admin Create Data Source Translate DLL Screen]
 +
 The Replacement Character replaces any character that is incompatible for translation when retrieving data. It is one character (one or two
 bytes long). The Replacement Character is assumed to be in the character set specified in the Client/Server Character Set Interaction. If it is not specified, `?` is used as the default.
@@ -105,7 +148,11 @@ bytes long). The Replacement Character is assumed to be in the character set spe
 Click *Finish*.
 
 8.  The wizard gives you an opportunity to test the connection. Click *Test Connection* and click *OK*.
++
+<<<
 9.  The server ID and schema are filled in for you. Enter a valid user name and password, and click *OK*.
++
+image:{images}/winodbc_admin_add_test_connection.jpg[Windows ODBC Admin Create Data Source Test Connection Screen]
 +
 The wizard attempts to connect to the data source and displays a message stating whether it was successful or not.
 10.  Click *OK* to save the data source, or click *Cancel* _twice_ to quit the *Create Data Source* wizard.
@@ -113,50 +160,6 @@ The wizard attempts to connect to the data source and displays a message stating
 ^1^ Your specific installation may use a different port number. Check with your {project-name} administrator.
 
 <<<
-[[win_odbc_client_env]]
-=== Set Up Client Environment
-All client data sources connect to the pre-configured server data source on the database platform, which is `Default_DataSource`. 
-
-You can configure one data source only, `Default_DataSource`, on the database platform, but you can create other data source 
-definitions on the workstation. 
-
-For example, if you have more than one schema on the database platform and you want to connect 
-to each of those schemas on the database platform, you can create a client data source for each of those schemas. 
-
-Instead of changing the schema definition in the data source definition on the workstation, you can create multiple data source 
-definitions with different schemas on the workstation. The client data source will use the specified schema but will connect to 
-`Default_DataSource` on the database platform.
-
-To create a data source on the client workstation, follow these steps:
-
-1.  Launch the *MS ODBC Administrator*. 
-* On Windows 7: *Start>All Programs>{project-name} ODBC _version_>MS ODBC Administrator*
-* On Windows 8: Right-click the *{project-name} ODBC _version_* icon on the desktop and select MS ODBC Administrator.
-* On Windows 10: Right-click the Windows icon in the menu bar. Select *Settings*. Search for *Set up ODBC data sources (64-bit)*. Click on the found item. 
-
-2.  In the *ODBC Data Source Administrator* dialog box, select the *User DSN* tab, and click *Add*.
-3.  Select the *TRAF ODBC _version_* driver, and then click *Finish*.
-+
-A new dialog box appears, prompting you to create a new data source.
-4.  Enter the name of the data source, `Default_DataSource`, and click *Next* to continue.
-5.  Enter the IP address and port number of the {project-name} system to which will be connecting. By default, the port number is *23400*^1^. 
-Click *Next* to continue.
-6.  Select the default schema. If you do not select a schema, the default is `SEABASE`. Click *Next* to continue.
-+
-<<<
-7.  If desired, configure the *translate dll*, which translates data from one character set to another, and configure the localization. By
-default, the client error message language is English, and the client’s local character set is used. Click *Finish* to continue.
-+
-The *Test {project-name} ODBC Connection* dialog box appears, allowing you to test the connection using the data source that you created.
-
-8.  Click *Test Connection*.
-9.  When prompted, enter your user name and password, and, optionally, schema. Click *OK*.
-+
-If the connection is successful, you will see `Connected Successfully` in the *Test {project-name} ODBC Connection* dialog box.
-10.  Click *OK* to save the data source, or click *Cancel* _twice_ to quit the *Create Data Source* wizard.
-
-^1^ Your specific installation may use a different port number. Check with your {project-name} administrator.
-
 === Enable Compression
 When compression is enabled in the ODBC driver, the ODBC driver can send and receive large volumes of data quickly and efficiently to and from
 the {project-name} Database Connectivity Services (DCS) server over a TCP/IP network. By default, compression is disabled.
@@ -173,8 +176,7 @@ To enable compression in the ODBC driver or to change the compression setting, f
 <<win_odbc_client_env, Setting Up the Client Environment>>.
 +
 A new dialog box appears, showing the configuration of your data source.
-+
-<<<
+
 3.  Select the *Network* tab, and then select one of these values for *Compression*:
 * `SYSTEM_DEFAULT`, which is the same as no compression
 * `no compression`
@@ -188,7 +190,7 @@ maximum available compression
 
 <<<
 [[win_odbc_run_basicsql]]
-=== Run Sample Program (`basicsql`)
+== Run Sample Program (`basicsql`)
 NOTE: The Basic SQL sample program is not currently bundled with the ODBC Windows driver. To obtain the source code and the build and run
 files for this program, please refer to  <<odbc_sample_program, ODBC Sample Program>>.
 
