@@ -93,6 +93,11 @@ public class RMInterface {
     private Connection connection;
     static {
         System.loadLibrary("stmlib");
+        String envset = System.getenv("TM_USE_SSCC");
+        if (envset != null)
+           envTransactionAlgorithm = (Integer.parseInt(envset) == 1) ? AlgorithmType.SSCC : AlgorithmType.MVCC;
+        else
+           envTransactionAlgorithm = AlgorithmType.MVCC;
     }
 
     private native void registerRegion(int port, byte[] hostname, long startcode, byte[] regionInfo);
@@ -112,17 +117,13 @@ public class RMInterface {
        MVCC, SSCC
     }
 
+    private static AlgorithmType envTransactionAlgorithm;
     private AlgorithmType transactionAlgorithm;
 
     public RMInterface(final String tableName, Connection connection) throws IOException {
         //super(conf, Bytes.toBytes(tableName));
         this.connection = connection;
-        transactionAlgorithm = AlgorithmType.MVCC;
-        String envset = System.getenv("TM_USE_SSCC");
-        if( envset != null)
-        {
-            transactionAlgorithm = (Integer.parseInt(envset) == 1) ? AlgorithmType.SSCC : AlgorithmType.MVCC;
-        }
+        transactionAlgorithm = envTransactionAlgorithm;
         if( transactionAlgorithm == AlgorithmType.MVCC) //MVCC
         {
             ttable = new TransactionalTable(Bytes.toBytes(tableName), connection);
@@ -131,7 +132,6 @@ public class RMInterface {
         {
             ttable = new SsccTransactionalTable( Bytes.toBytes(tableName), connection);
         }
-
         idServer = new IdTm(false);
         if (LOG.isTraceEnabled()) LOG.trace("RMInterface constructor exit");
     }
