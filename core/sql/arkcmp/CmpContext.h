@@ -485,6 +485,8 @@ public :
 
   NAList<DDLObjInfo>& ddlObjsList() { return ddlObjs_; }
 
+  void clearAllCaches();
+
 // MV
 private:
 // Adding support for multi threaded requestor (multi transactions) handling

@@ -2864,7 +2864,21 @@ void ContextCli::completeSetAuthID(
 // Recreate MXCMP if previously connected and currently connected user id's 
 // are different.
    if ( recreateMXCMP )
+   {
+      // reset rolelist in anticipation of the new user
+      resetRoleList();
+
+      // create all the caches
+      CmpContextInfo *cmpCntxtInfo;
+      for (int i = 0; i < cmpContextInfo_.entries(); i++)
+      {
+         cmpCntxtInfo = cmpContextInfo_[i];
+         cmpCntxtInfo->getCmpContext()->clearAllCaches();
+      }
+
+      // clear caches in secondary arkcmps
       killAndRecreateMxcmp();
+   }
  
    if (eraseCQDs)
    {
