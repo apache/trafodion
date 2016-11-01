@@ -2270,14 +2270,17 @@ static Lng32 SQLCLI_RetryQuery(
 			    flags
 			    );
 
-  if (savedStmtStats)
-    savedStmtStats->setAqrInProgress(FALSE);
-
-  if (isERROR(retcode))
+  if (isERROR(retcode)) {
+      if (savedStmtStats)
+          savedStmtStats->setAqrInProgress(FALSE);
       return retcode;
+  }
       
-  if (afterPrepare)
+  if (afterPrepare) {
+     if (savedStmtStats)
+        savedStmtStats->setAqrInProgress(FALSE);
     return 0;
+  }
 
   // before executing this statement,
   // validate that the new prepare's input/output descriptors are the same
