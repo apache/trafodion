@@ -1,0 +1,73 @@
+{
+"MOD_CFGS": {
+    "hbase-site": {
+        "hbase.master.distributed.log.splitting": "false",
+        "hbase.snapshot.master.timeoutMillis": "600000",
+        "hbase.coprocessor.region.classes": "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation",
+        "hbase.hregion.impl": "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion",
+        "hbase.regionserver.region.split.policy": "org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy",
+        "hbase.snapshot.enabled": "true",
+        "hbase.bulkload.staging.dir": "/hbase-staging",
+        "hbase.regionserver.region.transactional.tlog": "true",
+        "hbase.snapshot.region.timeout": "600000",
+        "hbase.client.scanner.timeout.period": "600000"
+    },
+    "hdfs-site": { "dfs.namenode.acls.enabled": "true" },
+    "zoo.cfg": { "maxClientCnxns": "0" }
+},
+
+"HBASE_MASTER_CONFIG": {
+"roleTypeConfigs" :  [ {
+        "roleType" : "MASTER",
+        "items" : [ {
+                "name" : "hbase_master_config_safety_valve",
+        "value" : "<property>\r\n   <name>hbase.master.distributed.log.splitting</name>\r\n   <value>false</value>\r\n</property>\r\n <property>\r\n   <name>hbase.snapshot.master.timeoutMillis</name>\r\n   <value>600000</value>\r\n</property>\r\n"
+                } ]
+    } ]
+},
+
+"HBASE_RS_CONFIG": {
+"items" : [ {
+                "name" : "hbase_coprocessor_region_classes",
+                "value" : "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation"
+                }, {
+                "name" : "hbase_regionserver_lease_period",
+                "value" : "600000"
+                }, {
+                "name" : "hbase_regionserver_config_safety_valve",
+                "value" : "<property>\r\n   <name>hbase.hregion.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>\r\n</property>\r\n <property>\r\n   <name>hbase.regionserver.region.split.policy</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy</value>\r\n</property>\r\n  <property>\r\n   <name>hbase.snapshot.enabled</name>\r\n   <value>true</value>\r\n</property>\r\n <property>\r\n   <name>hbase.bulkload.staging.dir</name>\r\n   <value>/hbase-staging</value>\r\n</property>\r\n <property>\r\n   <name>hbase.regionserver.region.transactional.tlog</name>\r\n   <value>true</value>\r\n</property>\r\n <property>\r\n   <name>hbase.snapshot.region.timeout</name>\r\n   <value>600000</value>\r\n</property>\r\n "
+                } ]
+},
+
+"HDFS_CONFIG": {
+"roleTypeConfigs" :  [ {
+        "roleType" : "NAMENODE",
+        "items": [ {
+                "name" : "namenode_java_heapsize",
+        "value" : "1073741824"
+                } ]
+   }, {
+        "roleType" : "SECONDARYNAMENODE",
+        "items":[ {
+                "name" : "secondary_namenode_java_heapsize",
+        "value" : "1073741824"
+                } ]
+     } ],
+    "items": [ {
+             "name":"dfs_namenode_acls_enabled",
+             "value":"true"
+             } ]
+},
+
+"ZK_CONFIG":{
+"roleTypeConfigs" :
+    [ {
+        "roleType" : "SERVER",
+        "items":
+           [ {
+           "name"  : "maxClientCnxns",
+           "value" : "0"
+           } ]
+    } ]
+}
+}
