@@ -2502,6 +2502,10 @@ enum DefaultConstants
   // Histogram boundary value maximum length.
   USTAT_MAX_CHAR_BOUNDARY_LEN,
 
+  // When update statistics creates a sample table, it limits
+  // character columns to this size in bytes.
+  USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES,
+
   // Maximum number of MC histograms to create for any one MC key.
   USTAT_NUM_MC_GROUPS_FOR_KEYS,
 

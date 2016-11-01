@@ -4130,6 +4130,11 @@ NAHeap::doCheckMallocState()
   assert(total <= totalSize_);
   assert(allocSize_ <= highWaterMark_);
   assert(allocSize_ <= intervalWaterMark_);
+
+  // also check for overflow
+  if (debugLevel_ == 2)
+    checkForOverflow();
+
 }
 
 // Find x in a bin. Used in other check functions.

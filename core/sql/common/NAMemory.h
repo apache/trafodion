@@ -809,7 +809,9 @@ private:
   NA_EIDPROC void      doCheckTree(NATreeFragment *t);
   NA_EIDPROC void      doCheckTreebin(bindex_t i);
   NA_EIDPROC void      doCheckSmallbin(bindex_t i);
+public:
   NA_EIDPROC void      doCheckMallocState();
+private:
   NA_EIDPROC NABoolean binFind(NAHeapFragment *x);
   NA_EIDPROC size_t    traverseAndCheck();
 #ifndef STAND_ALONE

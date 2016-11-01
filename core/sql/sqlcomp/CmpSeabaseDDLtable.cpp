@@ -66,6 +66,7 @@ extern short CmpDescribeSeabaseTable (
                              NABoolean withPartns = FALSE,
                              NABoolean withoutSalt = FALSE,
                              NABoolean withoutDivisioning = FALSE,
+                             UInt32 columnLengthLimit = UINT_MAX,
                              NABoolean noTrailingSemi = FALSE,
 
                              // used to add,rem,alter column definition from col list.
@@ -88,7 +89,9 @@ extern short cmpDisplayColumn(const NAColumn *nac,
                               NABoolean namesOnly,
                               NABoolean &identityCol,
                               NABoolean isExternalTable,
-                              NABoolean isAlignedRowFormat);
+                              NABoolean isAlignedRowFormat,
+                              UInt32 columnLengthLimit,
+                              NAList<const NAColumn *> * truncatedColumnList);
 
 extern short cmpDisplayPrimaryKey(const NAColumnArray & naColArr,
                                   Lng32 numKeys,
@@ -347,6 +350,7 @@ void CmpSeabaseDDL::createSeabaseTableLike(
                                     likeOptions.getIsWithHorizontalPartitions(),
                                     likeOptions.getIsWithoutSalt(),
                                     likeOptions.getIsWithoutDivision(),
+                                    likeOptions.getIsLikeOptColumnLengthLimit(),
                                     TRUE);
   if (retcode)
     return;
@@ -4595,6 +4599,7 @@ short CmpSeabaseDDL::createSeabaseTableLike2(
   retcode = CmpDescribeSeabaseTable(cn, 3/*createlike*/, buf, buflen, STMTHEAP,
                                     NULL,
                                     withPartns, withoutSalt, withoutDivision,
+                                    UINT_MAX,
                                     TRUE);
   if (retcode)
     return -1;
@@ -6541,7 +6546,7 @@ short CmpSeabaseDDL::hbaseFormatTableAlterColumnAttr(
   dispBuf[0] = 0;
   if (cmpDisplayColumn(nac, (char*)tempCol.data(), newType, 3, NULL, dispBuf, 
                        ii, FALSE, identityCol, 
-                       FALSE, FALSE))
+                       FALSE, FALSE, UINT_MAX, NULL))
     return -1;
   
   Int64 tableUID = naTable->objectUid().castToInt64();

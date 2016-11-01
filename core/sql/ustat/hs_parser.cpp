@@ -521,7 +521,7 @@ HSColGroupStruct* AddSingleColumn(const Lng32 colNumber, HSColGroupStruct*& grou
     HSColumnStruct   newColumn = HSColumnStruct(hs_globals->objDef->getColInfo(colNumber));
 
     bool isOverSized = DFS2REC::isAnyCharacter(newColumn.datatype) &&
-              (newColumn.length > MAX_SUPPORTED_CHAR_LENGTH);
+              (newColumn.length > hs_globals->maxCharColumnLengthInBytes);
     if (isOverSized)
       {
         hs_globals->hasOversizedColumns = TRUE;

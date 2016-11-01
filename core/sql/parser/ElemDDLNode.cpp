@@ -568,6 +568,11 @@ ElemDDLLikeOptWithoutDivision * ElemDDLNode::castToElemDDLLikeOptWithoutDivision
   return NULL;
 }
 
+ElemDDLLikeLimitColumnLength * ElemDDLNode::castToElemDDLLikeLimitColumnLength()
+{
+  return NULL;
+}
+
 ElemDDLList *
 ElemDDLNode::castToElemDDLList()
 {

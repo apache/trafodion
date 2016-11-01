@@ -70,6 +70,7 @@ CREATE TABLE stestc
 c1 char(12) not null,
 c2 char(12) not null,
 c3 char(12) not null,
+bigcol varchar(1024) not null,
 PRIMARY KEY (C1 ASC)
 )
 SALT USING 4 PARTITIONS
@@ -80,7 +81,12 @@ upsert using load into stestc
 select 
   x1 || x2 || x3 || x4 || x5,
   x2 || x4 || x1,
-  x5 || x3
+  x5 || x3,
+  'Wow this is really big ' || x1 || x2 || x3 || x4 || x5 ||
+  ' and now we concatenate lots more junk, more junk than you' ||
+  ' can shake a stick at because we like to use up storage' ||
+  ' and exercise code paths that result in string truncation.' ||
+  ' And you thought you had better things to do.'
 -- the from clause below creates 100,000 rows, the cross product of
 -- 5 copies of { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' }
   from (values('a'),('b'),('c'),('d'),('e'),('f'),('g'),('h'),('i'),('j')) T(x1)
@@ -195,36 +201,36 @@ execute s1 using 'STEST';
 -- similar tests, but using character data types
 update statistics for table stestc on every column sample random 10 percent persistent;
 
-insert into stestc values ('naaaa','abc','ba'),
-  ('naaab','abc','ba'),
-  ('naaac','abc','ba'),
-  ('naaad','abc','ba'),
-  ('naaae','abc','ba'),
-  ('naaaf','abc','ba'),
-  ('naaag','abc','ba'),
-  ('naaah','abc','ba'),
-  ('naaai','abc','ba'),
-  ('naaaj','abc','ba'),
-  ('naaba','bhe','ba'),
-  ('naabb','bhe','ba'),
-  ('naabc','bhe','ba'),
-  ('naabd','bhe','ba'),
-  ('naabe','bhe','ba'),
-  ('naabf','bhe','ba'),
-  ('naabg','bhe','ba'),
-  ('naabh','bhe','ba'),
-  ('naabi','bhe','ba'),
-  ('naabj','bhe','ba'),
-  ('naaca','fib','ba'),
-  ('naacb','fib','ba'),
-  ('naacc','fib','ba'),
-  ('naacd','fib','ba'),
-  ('naace','fib','ba'),
-  ('naacf','fib','ba'),
-  ('naacg','fib','ba'),
-  ('naach','fib','ba'),
-  ('naaci','fib','ba'),
-  ('naacj','fib','ba');
+insert into stestc values ('naaaa','abc','ba','Hava Nagila'),
+  ('naaab','abc','ba','Le Marseillais'),
+  ('naaac','abc','ba','some other song'),
+  ('naaad','abc','ba','more data'),
+  ('naaae','abc','ba','more data'),
+  ('naaaf','abc','ba','more data'),
+  ('naaag','abc','ba','more data'),
+  ('naaah','abc','ba','more data'),
+  ('naaai','abc','ba','more data'),
+  ('naaaj','abc','ba','more data'),
+  ('naaba','bhe','ba','more data'),
+  ('naabb','bhe','ba','more data'),
+  ('naabc','bhe','ba','more data'),
+  ('naabd','bhe','ba','more data'),
+  ('naabe','bhe','ba','more data'),
+  ('naabf','bhe','ba','more data'),
+  ('naabg','bhe','ba','Ha! caught you sleeping!'),
+  ('naabh','bhe','ba','more data'),
+  ('naabi','bhe','ba','more data'),
+  ('naabj','bhe','ba','more data'),
+  ('naaca','fib','ba','more data'),
+  ('naacb','fib','ba','more data'),
+  ('naacc','fib','ba','more data'),
+  ('naacd','fib','ba','more data'),
+  ('naace','fib','ba','more data'),
+  ('naacf','fib','ba','more data'),
+  ('naacg','fib','ba','more data'),
+  ('naach','fib','ba','more data'),
+  ('naaci','fib','ba','more data'),
+  ('naacj','fib','ba','more data');
 
 update statistics for table stestc on existing columns incremental where c1 >= 'naaaa';
 

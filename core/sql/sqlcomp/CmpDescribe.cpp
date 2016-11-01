@@ -200,6 +200,7 @@ short CmpDescribeSeabaseTable (
                              NABoolean withPartns = FALSE,
                              NABoolean withoutSalt = FALSE,
                              NABoolean withoutDivisioning = FALSE,
+                             UInt32 columnLengthLimit = UINT_MAX,
                              NABoolean noTrailingSemi = FALSE,
 
                              // used to add,rem,alter column definition from col list.
@@ -2353,7 +2354,7 @@ short CmpDescribeHiveTable (
                                          type,
                                          dummyBuf, dummyLen, heap, 
                                          NULL, 
-                                         TRUE, FALSE, FALSE, TRUE,
+                                         TRUE, FALSE, FALSE, UINT_MAX, TRUE,
                                          NULL, 0, NULL, NULL, &space);
 
       outputShortLine(space, ";");
@@ -2379,7 +2380,9 @@ short cmpDisplayColumn(const NAColumn *nac,
                        NABoolean namesOnly,
                        NABoolean &identityCol,
                        NABoolean isExternalTable,
-                       NABoolean isAlignedRowFormat)
+                       NABoolean isAlignedRowFormat,
+                       UInt32 columnLengthLimit,
+                       NAList<const NAColumn *> * truncatedColumnList)
 {
   Space lSpace;
   
@@ -2440,9 +2443,28 @@ short cmpDisplayColumn(const NAColumn *nac,
     }
   
   const NAType * nat = (inNAT ? inNAT : nac->getType());
-  
   NAString nas;
   ((NAType*)nat)->getMyTypeAsText(&nas, FALSE);
+
+  // if it is a character type and it is longer than the length
+  // limit, then shorten the target type
+  
+  if ((nat->getTypeQualifier() == NA_CHARACTER_TYPE) &&
+      (!nat->isLob()) &&
+      (columnLengthLimit < UINT_MAX) &&
+      (truncatedColumnList))
+    {
+      const CharType * natc = (const CharType *)nat;
+      if (natc->getDataStorageSize() > columnLengthLimit)
+        {
+          CharType * newType = (CharType *)natc->newCopy(NULL);
+          newType->setDataStorageSize(columnLengthLimit);
+          nas.clear();
+          ((NAType*)newType)->getMyTypeAsText(&nas, FALSE);
+          delete newType;
+          truncatedColumnList->insert(nac);
+        }
+    }
   
   NAString attrStr;
   
@@ -2556,7 +2578,9 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
                         char * inColName = NULL,
                         short ada = 0, // 0,add. 1,drop. 2,alter
                         const NAColumn * nacol = NULL,
-                        const NAType * natype = NULL)
+                        const NAType * natype = NULL,
+                        UInt32 columnLengthLimit = UINT_MAX,
+                        NAList<const NAColumn *> * truncatedColumnList = NULL)
 {
   Lng32 ii = 0;
   identityColPos = -1;
@@ -2583,13 +2607,13 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
           (ada == 2) && (nacol) && (natype))
         {
           if (cmpDisplayColumn(nac, NULL, natype, displayType, &space, buf, ii, namesOnly, identityCol, 
-                               isExternalTable, isAlignedRowFormat))
+                               isExternalTable, isAlignedRowFormat, columnLengthLimit, truncatedColumnList))
             return -1;
         }
       else
         {
           if (cmpDisplayColumn(nac, NULL, NULL, displayType, &space, buf, ii, namesOnly, identityCol, 
-                               isExternalTable, isAlignedRowFormat))
+                               isExternalTable, isAlignedRowFormat, columnLengthLimit, truncatedColumnList))
             return -1;
         }
 
@@ -2602,7 +2626,7 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
   if ((inColName) && (ada == 0) && (nacol))
     {
       if (cmpDisplayColumn(nacol, NULL, NULL, displayType, &space, buf, ii, namesOnly, identityCol, 
-                           isExternalTable, isAlignedRowFormat))
+                           isExternalTable, isAlignedRowFormat, columnLengthLimit, truncatedColumnList))
         return -1;
     }
 
@@ -2697,6 +2721,7 @@ short CmpDescribeSeabaseTable (
                                NABoolean withPartns,
                                NABoolean withoutSalt,
                                NABoolean withoutDivisioning,
+                               UInt32 columnLengthLimit,
                                NABoolean noTrailingSemi,
                                char * colName,
                                short ada,
@@ -2913,6 +2938,7 @@ short CmpDescribeSeabaseTable (
 
   Lng32 identityColPos = -1;
   NABoolean closeParan = FALSE;
+  NAList<const NAColumn *> truncatedColumnList(heap);
   if ((NOT isExternalTable) ||
       ((isExternalTable) && 
        ((isExternalHbaseTable && (type == 1)) ||
@@ -2926,7 +2952,9 @@ short CmpDescribeSeabaseTable (
                         FALSE,
                         identityColPos,
                         isExternalTable, naTable->isSQLMXAlignedTable(),
-                        colName, ada, nacol, natype);
+                        colName, ada, nacol, natype,
+                        columnLengthLimit,
+                        &truncatedColumnList);
       closeParan = TRUE;
     }
 
@@ -2934,6 +2962,7 @@ short CmpDescribeSeabaseTable (
   NABoolean isStoreBy = FALSE;
   NABoolean isSalted = FALSE;
   NABoolean isDivisioned = FALSE;
+  NABoolean forceStoreBy = FALSE;
   ItemExpr *saltExpr;
   LIST(NAString) divisioningExprs(heap);
   LIST(NABoolean) divisioningExprAscOrders(heap);
@@ -2967,10 +2996,23 @@ short CmpDescribeSeabaseTable (
             nonSystemKeyCols++;
           else if (nac->isSyskeyColumn())
             isStoreBy = TRUE;
+
+          // if we are shortening a column, set isStoreBy to TRUE since truncating
+          // a character string my cause formerly distinct values to become equal
+          // (that is, change PRIMARY KEY to STORE BY)
+          for (Lng32 j = 0; j < truncatedColumnList.entries(); j++)
+            {
+              const NAColumn * truncatedColumn = truncatedColumnList[j];
+              if (nac->getColName() == truncatedColumn->getColName())
+                {
+                  isStoreBy = TRUE;
+                  forceStoreBy = TRUE;
+                }
+            }
         }
     }
   
-  if (nonSystemKeyCols == 0)
+  if ((nonSystemKeyCols == 0) && (!forceStoreBy))
     isStoreBy = FALSE;
 
   if (type == 1)
