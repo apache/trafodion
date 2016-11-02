@@ -3559,6 +3559,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_LOCK_HIST_TABLES,               "OFF"),
   DD_____(USTAT_LOG,                            "ULOG"),
   DDui30_246(USTAT_MAX_CHAR_BOUNDARY_LEN,       "30"),   // Values can be 30-246.
+  DDui___(USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES,   "256"),  // When computing UECs, char cols are limited to this many bytes
   DDflt0_   (USTAT_MAX_CHAR_DATASIZE_FOR_IS,    "1000"),  // max data size in MB for char type to use 
  XDDui___(USTAT_MAX_READ_AGE_IN_MIN,            "5760"),
   DDui___(USTAT_MAX_SAMPLE_AGE,                 "365"),  // For R2.5 set to a year so user created samples won't be removed.

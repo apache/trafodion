@@ -258,4 +258,38 @@ private:
 
 }; // class ElemDDLLikeOptWithoutDivision
 
+// -----------------------------------------------------------------------
+// definition of class ElemDDLLikeLimitColumnLength
+// -----------------------------------------------------------------------
+class ElemDDLLikeLimitColumnLength : public ElemDDLLikeOpt
+{
+
+public:
+
+  // constructor
+  ElemDDLLikeLimitColumnLength(UInt32 limit)
+    : ElemDDLLikeOpt(ELM_LIKE_OPT_LIMIT_COLUMN_LENGTH),
+      columnLengthLimit_(limit)
+  { }
+
+  // virtual destructor
+  virtual ~ElemDDLLikeLimitColumnLength();
+
+  // cast
+  virtual ElemDDLLikeLimitColumnLength *
+    castToElemDDLLikeLimitColumnLength();
+
+  // method for tracing
+  virtual const NAString getText() const;
+
+  UInt32 getColumnLengthLimit()
+  { return columnLengthLimit_; };
+
+
+private:
+
+  UInt32 columnLengthLimit_; // in bytes
+
+}; // class ElemDDLLikeLimitColumnLength
+
 #endif // ELEMDDLLIKEOPTIONS_H
