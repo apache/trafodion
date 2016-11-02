@@ -53,19 +53,19 @@ class RemoteRun(Remote):
 
     def __del__(self):
         # clean up
-        self.__run_ssh('sudo rm -rf %s' % TMP_DIR)
+        self.__run_ssh('sudo -n rm -rf %s' % TMP_DIR)
 
     def run_script(self, script, run_user, json_string, verbose=False):
         """ @param run_user: run the script with this user """
 
         if run_user:
-            # format string in order to run with 'sudo su $user -c $cmd'
+            # format string in order to run with 'sudo -n su $user -c $cmd'
             json_string = json_string.replace('"', '\\\\\\"').replace(' ', '').replace('{', '\\{').replace('$', '\\\\\\$')
             # this command only works with shell=True
-            script_cmd = '"sudo su - %s -c \'%s/%s %s\'"' % (run_user, TMP_DIR, script, json_string)
+            script_cmd = '"sudo -n su - %s -c \'%s/%s %s\'"' % (run_user, TMP_DIR, script, json_string)
             self.__run_ssh(script_cmd, verbose=verbose, shell=True)
         else:
-            script_cmd = 'sudo %s/%s \'%s\'' % (TMP_DIR, script, json_string)
+            script_cmd = 'sudo -n %s/%s \'%s\'' % (TMP_DIR, script, json_string)
             self.__run_ssh(script_cmd, verbose=verbose)
 
         format1 = 'Host [%s]: Script [%s]: %s' % (self.host, script, self.stdout)

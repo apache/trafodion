@@ -37,8 +37,8 @@ def run(pwd):
     traf_package = dbcfgs['traf_package']
 
     key_file = '/tmp/id_rsa'
-    run_cmd('sudo rm -rf %s*' % key_file)
-    run_cmd('sudo echo -e "y" | ssh-keygen -t rsa -N "" -f %s' % key_file)
+    run_cmd('sudo -n rm -rf %s*' % key_file)
+    run_cmd('sudo -n echo -e "y" | ssh-keygen -t rsa -N "" -f %s' % key_file)
 
     files = [key_file, key_file+'.pub', traf_package]
 

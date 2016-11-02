@@ -30,15 +30,6 @@ import json
 import platform
 from common import run_cmd, cmd_output, err
 
-# not used
-EPEL_REPO = """
-[epel]
-name=Extra Packages for Enterprise Linux $releasever - $basearch
-mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-$releasever&arch=$basearch
-enabled=1
-gpgcheck=0
-"""
-
 LOCAL_REPO_PTR = """
 [traflocal]
 baseurl=http://%s:%s/

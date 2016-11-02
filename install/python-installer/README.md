@@ -6,7 +6,7 @@
 - /etc/hosts contains hostname info for all Trafodion nodes on **installer node**
 - python version 2.6/2.7, and python library `httplib2`, `prettytable`
 - Trafodion server package file is stored on **installer node**
-- Passwordless SSH login, two ways:
+- Passwordless SSH login, one of these two options is needed:
  - Set SSH key pairs against **installer node** and Trafodion nodes
  - Install `sshpass` tool on **installer node**, then input the SSH password during installation using `--enable-pwd` option
 

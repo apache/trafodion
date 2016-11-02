@@ -39,7 +39,6 @@ except ImportError:
 from ConfigParser import ConfigParser
 from collections import defaultdict
 
-__VERSION__ = 'v1.0.0'
 INSTALLER_LOC = sys.path[0]
 
 USER_PROMPT_FILE = INSTALLER_LOC + '/prompt.json'
@@ -50,7 +49,7 @@ MODCFG_FILE = INSTALLER_LOC + '/mod_cfgs.json'
 DBCFG_FILE = INSTALLER_LOC + '/db_config'
 DBCFG_TMP_FILE = INSTALLER_LOC + '/.db_config_temp'
 
-TMP_DIR = '/tmp/.install'
+TMP_DIR = '/tmp/.trafodion_install_temp'
 MARK = '[ERR]'
 
 def version():
@@ -99,7 +98,7 @@ def run_cmd(cmd):
     return stdout.strip()
 
 def run_cmd_as_user(user, cmd):
-    return run_cmd('sudo su - %s -c \'%s\'' % (user, cmd))
+    return run_cmd('sudo -n su - %s -c \'%s\'' % (user, cmd))
 
 def cmd_output(cmd):
     """ return command output but not check return value """

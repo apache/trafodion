@@ -36,8 +36,9 @@ def run():
     TRAF_PACKAGE_FILE = '/tmp/' + dbcfgs['traf_package'].split('/')[-1]
     run_cmd('mkdir -p %s' % TRAF_DIR)
     run_cmd('tar xf %s -C %s' % (TRAF_PACKAGE_FILE, TRAF_DIR))
+    run_cmd('rm -rf %s' % TRAF_PACKAGE_FILE)
 
-    print 'Trafodion package uncompressed successfully!'
+    print 'Trafodion package extracted successfully!'
 
 # main
 try:
