@@ -218,6 +218,33 @@ short BuiltinFunction::codeGen(Generator * generator)
       
       break;
 
+   case ITM_SHA:
+      {
+         function_clause =
+           new(generator->getSpace()) ExFunctionSha(getOperatorType(),
+                                                         attr, space);
+      }
+     
+      break;
+
+   case ITM_SHA2:
+      {
+         function_clause =
+           new(generator->getSpace()) ExFunctionSha2(getOperatorType(),
+                                                         attr, space);
+      }
+     
+      break;
+
+   case ITM_MD5:
+      {
+         function_clause =
+           new(generator->getSpace()) ExFunctionMd5(getOperatorType(),
+                                                         attr, space);
+      }
+     
+      break;
+
    case ITM_CRC32:
       {
          function_clause =

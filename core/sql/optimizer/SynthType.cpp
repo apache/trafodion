@@ -1010,6 +1010,53 @@ const NAType *BuiltinFunction::synthesizeType()
 	    SQLChar(maxLength, typ1.supportsSQLnull());
       }
     break;
+    case ITM_SHA:
+    case ITM_SHA2:
+      {
+        // type cast any params
+        ValueId vid1 = child(0)->getValueId();
+        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        vid1.coerceType(c1, NA_CHARACTER_TYPE);
+        //input type must be string
+        const NAType &typ1 = child(0)->getValueId().getType();
+
+        if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("IS_IP");
+	    return NULL;
+          }
+
+        retType = new HEAP
+           SQLVarChar(40, FALSE);
+	if (typ1.supportsSQLnull())
+	  {
+	    retType->setNullable(TRUE);
+	  }
+      }
+    break;
+    case ITM_MD5:
+      {
+        // type cast any params
+        ValueId vid1 = child(0)->getValueId();
+        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        vid1.coerceType(c1, NA_CHARACTER_TYPE);
+        //input type must be string
+        const NAType &typ1 = child(0)->getValueId().getType();
+
+        if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("IS_IP");
+	    return NULL;
+          }
+
+        retType = new HEAP
+           SQLVarChar(33, FALSE);
+	if (typ1.supportsSQLnull())
+	  {
+	    retType->setNullable(TRUE);
+	  }
+      }
+    break;
     case ITM_CRC32:
       {
         const NAType &typ1 = child(0)->getValueId().getType();
