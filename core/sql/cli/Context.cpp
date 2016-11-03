@@ -187,7 +187,9 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     cmpContextInfo_(&exHeap_),
     cmpContextInUse_(&exHeap_),
     arkcmpInitFailed_(&exHeap_),
-    trustedRoutines_(&exHeap_)
+    trustedRoutines_(&exHeap_),
+    roleIDs_(NULL),
+    numRoles_(0)
 {
   exHeap_.setJmpBuf(cliGlobals->getJmpBuf());
   cliSemaphore_ = new (&exHeap_) CLISemaphore();
@@ -2862,7 +2864,21 @@ void ContextCli::completeSetAuthID(
 // Recreate MXCMP if previously connected and currently connected user id's 
 // are different.
    if ( recreateMXCMP )
+   {
+      // reset rolelist in anticipation of the new user
+      resetRoleList();
+
+      // create all the caches
+      CmpContextInfo *cmpCntxtInfo;
+      for (int i = 0; i < cmpContextInfo_.entries(); i++)
+      {
+         cmpCntxtInfo = cmpContextInfo_[i];
+         cmpCntxtInfo->getCmpContext()->clearAllCaches();
+      }
+
+      // clear caches in secondary arkcmps
       killAndRecreateMxcmp();
+   }
  
    if (eraseCQDs)
    {
@@ -5073,8 +5089,11 @@ void ContextCli::initializeUserInfoFromOS()
 // *    is the maximum number of characters that can be written to             *
 // *  authNameFromTable.                                                       *
 // *                                                                           *
-// *  <authIDFromTable>              char *                           Out      *
+// *  <authIDFromTable>              int                              Out      *
 // *    passes back the numeric ID of the authorization entry.                 *
+// *                                                                           *
+// *  <roleIDs>                      std::vector<int32_t> &           Out      *
+// *    passes back the list of number ID's for the user                       *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
@@ -5086,33 +5105,34 @@ void ContextCli::initializeUserInfoFromOS()
 // *****************************************************************************
 
 RETCODE ContextCli::authQuery(
-   AuthQueryType queryType,         
-   const char  * authName,          
-   Int32         authID,            
-   char        * authNameFromTable, 
-   Int32         authNameMaxLen,
-   Int32       & authIDFromTable)   
+   AuthQueryType          queryType,         
+   const char           * authName,          
+   Int32                  authID,            
+   char                 * authNameFromTable, 
+   Int32                  authNameMaxLen,
+   Int32                & authIDFromTable,
+   std::vector<int32_t> & roleIDs)   
    
 {
 
-// We may need to perform a transactional lookup into metadata.
-// The following steps will be taken to manage the
-// transaction. The same steps are used in the Statement class when
-// we read the authorization information
-//
-//  1. Disable autocommit
-//  2. Note whether a transaction is already in progress
-//  3. Do the work
-//  4. Commit the transaction if a new one was started
-//  5. Enable autocommit if it was disabled
+   // We may need to perform a transactional lookup into metadata.
+   // The following steps will be taken to manage the
+   // transaction. The same steps are used in the Statement class when
+   // we read the authorization information
+   //
+   //  1. Disable autocommit
+   //  2. Note whether a transaction is already in progress
+   //  3. Do the work
+   //  4. Commit the transaction if a new one was started
+   //  5. Enable autocommit if it was disabled
 
-// If we hit errors and need to inject the user name in error
-// messages, but the caller passed in a user ID not a name, we will
-// use the string form of the user ID.
+   // If we hit errors and need to inject the user name in error
+   // messages, but the caller passed in a user ID not a name, we will
+   // use the string form of the user ID.
 
-const char *nameForDiags = authName;
-char localNameBuf[32];
-char isValidFromUsersTable[3];
+   const char *nameForDiags = authName;
+   char localNameBuf[32];
+   char isValidFromUsersTable[3];
 
    if (queryType == USERS_QUERY_BY_USER_ID)
    {
@@ -5120,8 +5140,8 @@ char isValidFromUsersTable[3];
       nameForDiags = localNameBuf;
    }
 
-//  1. Disable autocommit 
-NABoolean autoCommitDisabled = FALSE;
+   //  1. Disable autocommit 
+   NABoolean autoCommitDisabled = FALSE;
 
    if (transaction_->autoCommit())
    {
@@ -5129,16 +5149,16 @@ NABoolean autoCommitDisabled = FALSE;
       transaction_->disableAutoCommit();
    }
 
-//  2. Note whether a transaction is already in progress
-NABoolean txWasInProgress = transaction_->xnInProgress();
+   //  2. Note whether a transaction is already in progress
+   NABoolean txWasInProgress = transaction_->xnInProgress();
 
-//  3. Do the work
-CmpSeabaseDDLauth::AuthStatus authStatus = CmpSeabaseDDLauth::STATUS_GOOD;
-RETCODE result = SUCCESS;
-CmpSeabaseDDLuser userInfo;
-CmpSeabaseDDLauth authInfo;
-CmpSeabaseDDLrole roleInfo;
-CmpSeabaseDDLauth *authInfoPtr = NULL;
+   //  3. Do the work
+   CmpSeabaseDDLauth::AuthStatus authStatus = CmpSeabaseDDLauth::STATUS_GOOD;
+   RETCODE result = SUCCESS;
+   CmpSeabaseDDLuser userInfo;
+   CmpSeabaseDDLauth authInfo;
+   CmpSeabaseDDLrole roleInfo;
+   CmpSeabaseDDLauth *authInfoPtr = NULL;
 
    switch (queryType)
    {
@@ -5176,6 +5196,14 @@ CmpSeabaseDDLauth *authInfoPtr = NULL;
          authStatus = roleInfo.getAuthDetails(authID);
       }
       break;
+
+      case ROLES_QUERY_BY_AUTH_ID:
+      {
+         authInfoPtr = &authInfo;
+         authStatus = authInfo.getRoleIDs(authID, roleIDs);
+      }   
+      break;
+
       default:
       {
          ex_assert(0, "Invalid query type");
@@ -5286,6 +5314,7 @@ RETCODE ContextCli::setDatabaseUserByID(Int32 userID)
 {
   char username[MAX_USERNAME_LEN +1];
   Int32 userIDFromMetadata;
+  std::vector<int32_t> roleIDs;
 
   // See if the USERS row exists
   RETCODE result = authQuery(USERS_QUERY_BY_USER_ID,
@@ -5293,7 +5322,8 @@ RETCODE ContextCli::setDatabaseUserByID(Int32 userID)
                              userID,      // IN user ID
                              username, //OUT
                              sizeof(username),
-                             userIDFromMetadata);    //OUT
+                             userIDFromMetadata,
+                             roleIDs);    //OUT
 
   // Update the instance if the USERS lookup was successful
   if (result != ERROR)
@@ -5310,13 +5340,15 @@ RETCODE ContextCli::setDatabaseUserByName(const char *userName)
 {
   char usersNameFromUsersTable[MAX_USERNAME_LEN +1];
   Int32 userIDFromUsersTable;
+  std::vector<int32_t> roleIDs;
 
   RETCODE result = authQuery(USERS_QUERY_BY_USER_NAME,
                              userName,    // IN user name
                              0,           // IN user ID (ignored)
                              usersNameFromUsersTable, //OUT
                              sizeof(usersNameFromUsersTable),
-                             userIDFromUsersTable);  // OUT
+                             userIDFromUsersTable,
+                             roleIDs);  // OUT
 
   // Update the instance if the lookup was successful
   if (result != ERROR)
@@ -5325,6 +5357,72 @@ RETCODE ContextCli::setDatabaseUserByName(const char *userName)
   return result;
 }
 
+
+// ****************************************************************************
+// *
+// * Function: ContextCli::getRoleList
+// *
+// * Return the role IDs granted to the current user 
+// *   If the list of roles is already stored, just return this list.
+// *   If the list of roles does not exist extract the roles granted to the
+// *     current user from the Metadata and store in roleIDs_.
+// *
+// ****************************************************************************
+RETCODE ContextCli::getRoleList(
+  Int32 &numRoles,
+  Int32 *&roleIDs)
+{
+  // If role list has not been created, go read metadata
+  if (roleIDs_ == NULL)
+  {
+    // Get roles for userID
+    char usersNameFromUsersTable[MAX_USERNAME_LEN +1];
+    Int32 userIDFromUsersTable;
+    std::vector<int32_t> myRoles;
+    RETCODE result = authQuery (ROLES_QUERY_BY_AUTH_ID,
+                                NULL,  // user name
+                                databaseUserID_,
+                                usersNameFromUsersTable, //OUT
+                                sizeof(usersNameFromUsersTable),
+                                userIDFromUsersTable,
+                                myRoles);  // OUT
+    if (result != SUCCESS)
+      return result;
+
+    // Include the public user
+    myRoles.push_back(PUBLIC_USER);
+
+    // Add role info to ContextCli
+    numRoles_ = myRoles.size();
+    roleIDs_ = new (&exHeap_) Int32[numRoles_];
+    for (size_t i = 0; i < numRoles_; i++)
+      roleIDs_[i] = myRoles[i];
+  }
+
+  numRoles = numRoles_;
+  roleIDs = roleIDs_;
+
+  return SUCCESS;
+}
+  
+// ****************************************************************************
+// *
+// * Function: ContextCli::resetRoleList
+// *
+// * Deletes the current role list, a subsequent call to getRoleList reads the 
+// * metadata to get the list of roles associated with the current user and, 
+// * for the current user, stores the list in roleIDs_ and numRoles_ members
+// *
+// ****************************************************************************
+RETCODE ContextCli::resetRoleList()
+{
+  if (roleIDs_)
+    NADELETEBASIC(roleIDs_, &exHeap_);
+  roleIDs_ = NULL;
+  numRoles_ = 0;
+
+  return SUCCESS;
+}
 
 // *****************************************************************************
 // *                                                                           *
@@ -5390,8 +5488,9 @@ char authNameFromTable[MAX_USERNAME_LEN + 1];
   
 //TODO: If list of roles granted to user is cached in context, search there first.
 
+   std::vector<int32_t> roleIDs;
    return authQuery(AUTH_QUERY_BY_NAME,authName,0,authNameFromTable,
-                    sizeof(authNameFromTable),authID); 
+                    sizeof(authNameFromTable),authID, roleIDs); 
                        
 }
 //******************* End of ContextCli::getAuthIDFromName *********************
@@ -5443,9 +5542,10 @@ RETCODE ContextCli::getAuthNameFromID(
    
 {
 
-RETCODE result = SUCCESS;
-char authNameFromTable[MAX_USERNAME_LEN + 1];
-Int32 authIDFromTable;
+   RETCODE result = SUCCESS;
+   char authNameFromTable[MAX_USERNAME_LEN + 1];
+   Int32 authIDFromTable;
+   std::vector<int32_t> roleIDs;
 
    requiredLen = 0;
   
@@ -5474,7 +5574,8 @@ Int32 authIDFromTable;
                             authID,      // IN user ID
                             authNameFromTable, //OUT
                             sizeof(authNameFromTable),
-                            authIDFromTable);  // OUT
+                            authIDFromTable,
+                            roleIDs);  // OUT
          if (result == SUCCESS)
             return storeName(authNameFromTable,authName,maxBufLen,requiredLen);
       	 break;
@@ -5485,7 +5586,8 @@ Int32 authIDFromTable;
                             authID,      // IN user ID
                             authNameFromTable, //OUT
                             sizeof(authNameFromTable),
-                            authIDFromTable);  // OUT
+                            authIDFromTable,
+                            roleIDs);  // OUT
          if (result == SUCCESS)
             return storeName(authNameFromTable,authName,maxBufLen,requiredLen);
       	 break;
@@ -5519,6 +5621,7 @@ RETCODE ContextCli::getDBUserNameFromID(Int32 userID,         // IN
   RETCODE result = SUCCESS;
   char usersNameFromUsersTable[MAX_USERNAME_LEN + 1];
   Int32 userIDFromUsersTable;
+  std::vector<int32_t> roleIDs;
   if (requiredLen)
     *requiredLen = 0;
   
@@ -5544,7 +5647,8 @@ RETCODE ContextCli::getDBUserNameFromID(Int32 userID,         // IN
                        userID,      // IN user ID
                        usersNameFromUsersTable, //OUT
                        sizeof(usersNameFromUsersTable),
-                       userIDFromUsersTable);  // OUT
+                       userIDFromUsersTable,
+                       roleIDs);  // OUT
     if (result != ERROR)
       currentUserName = usersNameFromUsersTable;
   }
@@ -5604,18 +5708,20 @@ RETCODE ContextCli::getDBUserIDFromName(const char *userName, // IN
       return SUCCESS;
    }
   
-// See if the AUTHS row exists
+   // See if the AUTHS row exists
 
-RETCODE result = SUCCESS;
-char usersNameFromUsersTable[MAX_USERNAME_LEN + 1];
-Int32 userIDFromUsersTable;
+   RETCODE result = SUCCESS;
+   char usersNameFromUsersTable[MAX_USERNAME_LEN + 1];
+   Int32 userIDFromUsersTable;
+   std::vector<int32_t> roleIDs;
 
    result = authQuery(USERS_QUERY_BY_USER_NAME,
                       userName,    // IN user name
                       0,           // IN user ID (ignored)
                       usersNameFromUsersTable, //OUT
                       sizeof(usersNameFromUsersTable),
-                      userIDFromUsersTable);  // OUT
+                      userIDFromUsersTable,
+                      roleIDs);  // OUT
    if (result == SUCCESS && userID)
       *userID = userIDFromUsersTable;
 

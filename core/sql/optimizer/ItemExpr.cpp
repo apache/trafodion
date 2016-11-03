@@ -1469,11 +1469,15 @@ void ItemExpr::findAllT(OperatorTypeEnum wantedType,
 	  ValueIdUnion * tempUnion = (ValueIdUnion*) this;
           for (Lng32 i = 0; i < (Lng32)tempUnion->entries(); i++)
             {
-              tempUnion->getSource(i).getItemExpr()->
-                findAllT(wantedType,
-                         result,
-                         visitVEGMembers,
-                         visitIndexColDefs);
+              // guard against loops in the references
+              // (can happen with common subexpressions, for example)
+              if (!tempUnion->getSource(i).getItemExpr()->
+                     referencesTheGivenValue(getValueId()))
+                tempUnion->getSource(i).getItemExpr()->
+                  findAllT(wantedType,
+                           result,
+                           visitVEGMembers,
+                           visitIndexColDefs);
             }
 	  break;
 	}
@@ -4672,14 +4676,17 @@ const NAString ValueIdUnion::getText(UnparseFormatEnum form) const
     result = "ValueIdUnion(";
   }
 
-  getSource(0).getItemExpr()->unparse(result);
-
-  for (CollIndex i = 1; i < entries(); i++)
+  for (CollIndex i = 0; i < entries(); i++)
   {
-    result += delim;
-#pragma nowarn(1506)   // warning elimination
-    getSource(i).getItemExpr()->unparse(result);
-#pragma warn(1506)  // warning elimination
+    if (i > 0)
+      result += delim;
+
+    // guard against loops in the references
+    // (can happen with common subexpressions, for example)
+    if (!getSource(i).getItemExpr()->referencesTheGivenValue(getValueId()))
+      getSource(i).getItemExpr()->unparse(result);
+    else
+      result += "...";
   }
 
   if (form == USER_FORMAT_DELUXE)
@@ -6204,6 +6211,9 @@ const NAString Aggregate::getText() const
       else
         result = "count_nonull";
       break;
+    case ITM_GROUPING:
+      result = "grouping";
+      break;
     case ITM_ONE_ROW:
       result = "one_Row";
       break;
@@ -6324,6 +6334,8 @@ ItemExpr * Aggregate::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   result->frameStart_ = frameStart_;
   result->frameEnd_ = frameEnd_;
 
+  result->rollupGroupIndex_ = rollupGroupIndex_;
+
   return ItemExpr::copyTopNode(result, outHeap);
 }
 
@@ -6336,6 +6348,7 @@ NABoolean Aggregate::isSensitiveToDuplicates() const
     case ITM_MIN:
     case ITM_ANY_TRUE:
     case ITM_ONE_TRUE:
+    case ITM_GROUPING:
       return FALSE;
 
     case ITM_SUM:
@@ -6545,12 +6558,19 @@ ItemExpr * Aggregate::rewriteForStagedEvaluation(ValueIdList &initialAggrs,
     case ITM_SUM:
     case ITM_ANY_TRUE:
     case ITM_ONEROW:
+    case ITM_GROUPING:
       // in these cases, just do the same aggregate function twice
       partial = new (CmpCommon::statementHeap())
                      Aggregate(getOperatorType(), child(0));
 
       result = new (CmpCommon::statementHeap())
                     Aggregate(getOperatorType(), partial);
+
+      if (getOperatorType() == ITM_GROUPING)
+        {
+          ((Aggregate *)partial)->setRollupGroupIndex(getRollupGroupIndex());
+          ((Aggregate *)result)->setRollupGroupIndex(getRollupGroupIndex());
+        }
 
       if (inScalarGroupBy())
       {
@@ -7721,6 +7741,8 @@ const NAString BuiltinFunction::getText() const
     case ITM_LOBLOAD:
       return "lobload";
     
+    case ITM_AGGR_GROUPING_FUNC:
+      return "aggr_grouping";
 
     default:
       return "unknown func";
@@ -10441,6 +10463,20 @@ void ConstValue::changeStringConstant(const NAString* strval)
    *text_ = *strval;
 }
 
+NABoolean ConstValue::isAFalseConstant() const
+{
+  NABoolean result = FALSE;
+
+  if (type_->getTypeQualifier() == NA_BOOLEAN_TYPE && !isNull())
+    {
+      CMPASSERT(storageSize_ == sizeof(Int32));
+      if (*(reinterpret_cast<Int32 *>(value_)) == 0)
+        result = TRUE; // that means the constant is FALSE!!
+    }
+
+  return result;          
+}
+
 NABoolean ConstValue::isExactNumeric() const
 {
   return (type_->getTypeQualifier() == NA_NUMERIC_TYPE AND
@@ -11786,6 +11822,23 @@ ItemExpr * AggrMinMax::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
     result = new (outHeap) AggrMinMax(NULL, NULL);
   else
     result = derivedNode;
+
+  return BuiltinFunction::copyTopNode(result, outHeap);
+}
+
+// --------------------------------------------------------------
+// member functions for AggrGrouping function
+// --------------------------------------------------------------
+ItemExpr * AggrGrouping::copyTopNode(ItemExpr * derivedNode, CollHeap* outHeap)
+{
+  AggrGrouping *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) AggrGrouping(-1);
+  else
+    result = (AggrGrouping*)derivedNode;
+
+  result->rollupGroupIndex_ = rollupGroupIndex_;
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 }

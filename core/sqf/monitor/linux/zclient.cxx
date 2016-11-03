@@ -391,6 +391,7 @@ CZClient::~CZClient( void )
 
     if (ZHandle)
     {
+        WatchNodeDelete( Node_name );
         zookeeper_close(ZHandle);
         ZHandle = 0;
     }
@@ -1095,6 +1096,26 @@ int CZClient::SetZNodeWatch( string &monZnode )
                 , "[%s], zoo_exists() for %s failed with error %s\n"
                 ,  method_name, monZnode.c_str( ), ZooErrorStr(rc));
         mon_log_write(MON_ZCLIENT_SETZNODEWATCH_1, SQ_LOG_ERR, buf);
+        switch ( rc )
+        {
+        case ZSYSTEMERROR:
+        case ZRUNTIMEINCONSISTENCY:
+        case ZDATAINCONSISTENCY:
+        case ZCONNECTIONLOSS:
+        case ZMARSHALLINGERROR:
+        case ZUNIMPLEMENTED:
+        case ZOPERATIONTIMEOUT:
+        case ZBADARGUMENTS:
+        case ZINVALIDSTATE:
+        case ZSESSIONEXPIRED:
+        case ZCLOSING:
+            // Treat these error like a session expiration, since
+            // we can't communicate with quorum servers
+            HandleZSessionExpiration();
+            break;
+        default:
+            break;
+        }
     }
 
     TRACE_EXIT;
@@ -1438,6 +1459,26 @@ int CZClient::WatchNodeDelete( const char *nodeName )
                 , "[%s], zoo_delete(%s) failed with error %s\n"
                 , method_name, nodeName, ZooErrorStr(rc) );
         mon_log_write(MON_ZCLIENT_WATCHNODEDELETE_3, SQ_LOG_INFO, buf);
+        switch ( rc )
+        {
+        case ZSYSTEMERROR:
+        case ZRUNTIMEINCONSISTENCY:
+        case ZDATAINCONSISTENCY:
+        case ZCONNECTIONLOSS:
+        case ZMARSHALLINGERROR:
+        case ZUNIMPLEMENTED:
+        case ZOPERATIONTIMEOUT:
+        case ZBADARGUMENTS:
+        case ZINVALIDSTATE:
+        case ZSESSIONEXPIRED:
+        case ZCLOSING:
+            // Treat these error like a session expiration, since
+            // we can't communicate with quorum servers
+            HandleZSessionExpiration();
+            break;
+        default:
+            break;
+        }
     }
 
     TRACE_EXIT;

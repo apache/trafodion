@@ -37,6 +37,8 @@
 
 #include "ComSmallDefs.h"
 #include "NAUserId.h"
+#include <vector>
+
 
 class StmtDDLRegisterUser;
 class StmtDDLAlterUser;
@@ -73,6 +75,8 @@ class CmpSeabaseDDLauth
                                     bool isExternal = false);
      virtual bool describe       (const NAString &authName, 
                                     NAString &authText);
+     AuthStatus   getRoleIDs     (const Int32 authID,
+                                    std::vector<int32_t> &roleIDs);
 
      // accessors
      Int32          getAuthCreator() const    { return authCreator_; }
@@ -162,7 +166,7 @@ class CmpSeabaseDDLuser : public CmpSeabaseDDLauth
      void unregisterUser(StmtDDLRegisterUser * pNode);
      
      CmpSeabaseDDLauth::AuthStatus getUserDetails(const char *pUserName, 
-                                                    bool isExternal = false);
+                                                  bool isExternal = false);
      CmpSeabaseDDLauth::AuthStatus getUserDetails(Int32 userID);
 
      bool describe (const NAString &authName, NAString &authText);

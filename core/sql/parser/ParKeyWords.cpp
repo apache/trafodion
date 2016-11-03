@@ -972,6 +972,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("SET",                TOK_SET,         ANS_|RESWORD_|MPWORD_),
   ParKeyWord("SETS",               TOK_SETS,        COMPAQ_|RESWORD_),
   ParKeyWord("SG_TABLE",           TOK_SG_TABLE,    NONRESTOKEN_),
+  ParKeyWord("SHA",                TOK_SHA,         NONRESTOKEN_),
   ParKeyWord("SHA1",               TOK_SHA1,        NONRESTOKEN_),
   ParKeyWord("SHA2",               TOK_SHA2,        NONRESTOKEN_),
   ParKeyWord("SHAPE",              TOK_SHAPE,       NONRESTOKEN_),

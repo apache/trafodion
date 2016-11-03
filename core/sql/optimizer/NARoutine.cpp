@@ -705,23 +705,25 @@ void NARoutine::getPrivileges(TrafDesc *priv_desc)
   }
   else
   {
-    // getActive roles
-    std::vector<int32_t> roleIDs;
-    CmpSeabaseDDL cmpSBD(STMTHEAP);
-    if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
-    { 
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-        *CmpCommon::diags() << DgSqlCode( -4400 );
+    // get roles granted to current user 
+    // SQL_EXEC_GetRoleList returns the list of roles from the CliContext
+    std::vector<int32_t> myRoles;
+    Int32 numRoles = 0;
+    Int32 *roleIDs = NULL;
+    if (SQL_EXEC_GetRoleList(numRoles, roleIDs) < 0)
+    {
+      *CmpCommon::diags() << DgSqlCode(-1034);
       return;
     }
 
-    PrivStatus retcode = privInterface.getRoles( ComUser::getCurrentUser(), roleIDs);
-    cmpSBD.switchBackCompiler();
-    if (retcode == STATUS_ERROR)
-      return;
+    // At this time we should have at least one entry in roleIDs (PUBLIC_USER)
+    CMPASSERT (roleIDs && numRoles > 0);
+
+    for (Int32 i = 0; i < numRoles; i++)
+      myRoles.push_back(roleIDs[i]);
 
     privInfo_ = new (heap_) PrivMgrUserPrivs;
-    privInfo_->initUserPrivs(roleIDs, priv_desc, ComUser::getCurrentUser(),objectUID_, routineSecKeySet_);
+    privInfo_->initUserPrivs(myRoles, priv_desc, ComUser::getCurrentUser(),objectUID_, routineSecKeySet_);
   }
 }
 

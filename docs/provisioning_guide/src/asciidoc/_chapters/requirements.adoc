@@ -131,7 +131,7 @@ The following table lists the default ports used by the different {project-name}
 | 4201         | rest-site.xml      | trafodion.rest.https.port       | Yes      | 1     | HTTPS    | {project-name} REST Server (HTTPS).
 | 23400        | dcs-site.xml       | dcs.master.port                 | Yes      | _n_   | binary   | Start of {project-name} DCS port range. (37800 for {project-name} 1.1)
 | 24400        | dcs-site.xml       | dcs.master.info.port            | Yes      | 1     | HTTP     | DCS master web GUI. (40010 for {project-name} 1.1)
-| 24410        | dcs-site.xml       | dcs.server.info.port            | Yes      | _n_   | HTTP     | Start of range for DCS server web GUIs. (40020 for {project-name} 1.1)
+| 24410        | dcs-site.xml       | dcs.server.info.port            | Yes      | _n_   | HTTP     | Start of range for DCS server web GUIs. (40030 for {project-name} 1.1)
 | 50030        | mapred-site.xml    | mapred.job.tracker.http.address | No       | 1     | HTTP     | MapReduce Job Tracker web GUI.
 | 50070        | hdfs-site.xml      | dfs.http.address                | No       | 1     | HTTP     | HDFS Name Node web GUI.
 | 50075        | hdfs-site.xml      | dfs.datanode.http.address       | No       | 1     | HTTP     | HDFS Data Node web GUI.

@@ -282,6 +282,8 @@ enum OperatorTypeEnum {
                         REL_HIVE_INSERT,
                         REL_BULK_UNLOAD,
 
+                        REL_COMMON_SUBEXPR_REF,
+
                         REL_LAST_REL_OP = 1999,
 
                         // item operators (predicates)
@@ -349,6 +351,9 @@ enum OperatorTypeEnum {
                         ITM_ONEROW = 2076,
   
                         ITM_PIVOT_GROUP = 2077,
+
+                        ITM_GROUPING = 2078,
+                        ITM_AGGR_GROUPING_FUNC = 2079,
 
                         // custom functions
                         ITM_USER_DEF_FUNCTION = 2100,

@@ -115,7 +115,8 @@ public :
     recordSeparator_(*recordSep, oHeap),
     overwriteHiveTable_(FALSE),
     isSequenceFile_(FALSE),
-    nullStringSpec_((nullString ? TRUE : FALSE))
+    nullStringSpec_((nullString ? TRUE : FALSE)),
+    isMainQueryOperator_(TRUE)
   {
   };
 
@@ -138,7 +139,8 @@ public :
     recordSeparator_(oHeap),
     overwriteHiveTable_(FALSE),
     isSequenceFile_(FALSE),
-    nullStringSpec_(FALSE)
+    nullStringSpec_(FALSE),
+    isMainQueryOperator_(TRUE)
   { };
 
 
@@ -159,7 +161,8 @@ public :
     recordSeparator_(oHeap),
     overwriteHiveTable_(FALSE),
     isSequenceFile_(FALSE),
-    nullStringSpec_(FALSE)
+    nullStringSpec_(FALSE),
+    isMainQueryOperator_(TRUE)
   { };
 
   FastExtract(RelExpr* child,
@@ -186,7 +189,8 @@ public :
     recordSeparator_(oHeap),
     overwriteHiveTable_(FALSE),
     isSequenceFile_(FALSE),
-    nullStringSpec_(FALSE)
+    nullStringSpec_(FALSE),
+    isMainQueryOperator_(TRUE)
   { };
 
   //! FastExtract Copy Constructor
@@ -194,6 +198,16 @@ public :
 
   //! ~FastExtract destructor
   virtual ~FastExtract();
+
+  // make a FastExtract from a TableDesc
+  static RelExpr * makeFastExtractTree(
+       TableDesc *tableDesc,
+       RelExpr *child,
+       NABoolean overwriteTable,
+       NABoolean calledFromBinder,
+       NABoolean tempTableForCSE,
+       BindWA *bindWA);
+
   //! copyTopNode method
   // a virtual function used to copy most of a Node
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
@@ -313,6 +327,16 @@ public :
    isSequenceFile_ = sf;
   }
 
+  void setIsMainQueryOperator(NABoolean m)
+  {
+    isMainQueryOperator_ = m;
+  }
+
+  NABoolean getIsMainQueryOperator() const
+  {
+    return isMainQueryOperator_;
+  }
+
 private:
   
   
@@ -333,6 +357,7 @@ private:
   NAString hiveTableName_;
   NABoolean overwriteHiveTable_;
   NABoolean isSequenceFile_;
+  NABoolean isMainQueryOperator_;
 
 }; // class FastExtract
 

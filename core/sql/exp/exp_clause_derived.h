@@ -274,6 +274,43 @@ private:
   // ---------------------------------------------------------------------
 };
 
+class SQLEXP_LIB_FUNC  ExFunctionGrouping : public ex_aggregate_clause {
+public:
+  ExFunctionGrouping(OperatorTypeEnum oper_type,
+                     short num_operands,
+                     Attributes ** attr,
+                     Int16 rollupGroupIndex,
+                     Space * space)
+    : ex_aggregate_clause(oper_type, num_operands, attr, space),
+    rollupGroupIndex_(rollupGroupIndex),
+    rollupNull_(0)
+      {};
+  
+  ExFunctionGrouping(){};
+
+  ex_expr::exp_return_type init();
+  ex_expr::exp_return_type eval(char *op_data[], 
+                                CollHeap* = 0, 
+                                ComDiagsArea** = 0);  
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+
+  // Display
+  //
+  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+                                  Int32 clauseNum, char * constsArea);
+
+  Int16 getRollupGroupIndex() { return rollupGroupIndex_; }
+  void setRollupNull(short v) {  rollupNull_ = v; }
+
+private:
+  Int16 rollupGroupIndex_;
+  Int16 rollupNull_;
+  
+  char fillers_[60];
+  // ---------------------------------------------------------------------
+};
+
 class SQLEXP_LIB_FUNC  ex_pivot_group_clause : public ex_aggregate_clause {
 public:	
   // Construction

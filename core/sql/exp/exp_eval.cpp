@@ -424,7 +424,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 		      // datalen, then this varchar field either is a null
 		      // value or has a length of zero.
 		      // A varchar field is missing if its offset is > datalen.
-		      if (((*op)->isSpecialField()) &&
+		      if (((*op)->isAddedCol()) &&
 			  (((*op)->getOffset() == ExpOffsetMax) ||
 			   ((datalen > 0) &&
 			    ((((*op)->getVCIndicatorLength() > 0) &&
@@ -810,10 +810,8 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
               (*nulldata) = 0;
             }
           }
-	  
 
 	} // for
-
 	  
       // -----------------------------------------------------------------
       // Call the NULL processing method for this clause and, if still
@@ -2289,6 +2287,7 @@ ex_expr::exp_return_type ex_expr::evalPCodeAligned(PCodeBinary* pCode32,
 ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 					    atp_struct *atp1,
 					    atp_struct *atp2,
+                                            Lng32 datalen,
 					    ULng32 *rowLen)
 {
   ComDiagsArea *diagsArea;
@@ -8587,40 +8586,4 @@ ex_expr::exp_return_type ex_clause::eval(char * /*op_data*/[],
   // default eval method does nothing and returns OK
   return ex_expr::EXPR_OK;
 };
-
-ex_expr::exp_return_type AggrExpr::initializeAggr(atp_struct * atp)
-{
-  if (initExpr_)
-    {
-      if (initExpr_->eval(atp, atp) == ex_expr::EXPR_ERROR)
-	return ex_expr::EXPR_ERROR;
-    }
-
-  ex_clause *clause = getClauses();
-  while (clause)
-    {
-      if (clause->getType() == ex_clause::AGGREGATE_TYPE)
-	{
-	  if (((ex_aggregate_clause *)clause)->init() == ex_expr::EXPR_ERROR)
-	    return ex_expr::EXPR_ERROR;
-	}
-      
-      clause = clause->getNextClause();
-    }
-
-  return ex_expr::EXPR_OK;
-}
-
-ex_expr::exp_return_type AggrExpr::finalizeAggr(atp_struct * /*atp*/)
-{
-  return ex_expr::EXPR_OK;
-}
-
-ex_expr::exp_return_type AggrExpr::finalizeNullAggr(atp_struct * atp)
-{
-  if (finalNullExpr_)
-    return finalNullExpr_->eval(atp, atp);
-  else
-    return ex_expr::EXPR_OK;
-}
 

@@ -1670,6 +1670,7 @@ int main (int argc, char *argv[])
     delete [] nodename;
     delete Devices;
     delete Nodes;
+    delete ZClient;
     delete Monitor;
     Monitor = NULL; // TRACE uses this
     delete Config;

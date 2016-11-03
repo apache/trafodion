@@ -7946,19 +7946,21 @@ ex_expr::exp_return_type ExFunctionCrc32::eval(char * op_data[],
   Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
   Lng32 rlen = resultAttr->getLength();
 
-    *(ULng32*)op_data[0] = 0; 
-    ULng32 crc = crc32(0L, Z_NULL, 0);
-    crc = crc32 (crc, (const Bytef*)op_data[1], slen);
-    *(ULng32*)op_data[0] = crc; 
-    return ex_expr::EXPR_OK;
+  *(ULng32*)op_data[0] = 0; 
+  ULng32 crc = crc32(0L, Z_NULL, 0);
+  crc = crc32 (crc, (const Bytef*)op_data[1], slen);
+  *(ULng32*)op_data[0] = crc; 
+  return ex_expr::EXPR_OK;
 }
 
+//only support SHA 256 for this version
+//TBD: add 224 and 384, 512 in next version
 ex_expr::exp_return_type ExFunctionSha2::eval(char * op_data[],
                                                         CollHeap *heap,
                                                         ComDiagsArea **diags)
 {
 
-  unsigned char sha[SHA_DIGEST_LENGTH + 1]={0};  
+  unsigned char sha[SHA256_DIGEST_LENGTH+ 1]={0};  
 
   Attributes *resultAttr   = getOperand(0);
   Attributes *srcAttr   = getOperand(1);
@@ -7966,19 +7968,15 @@ ex_expr::exp_return_type ExFunctionSha2::eval(char * op_data[],
   Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
   Lng32 rlen = resultAttr->getLength();
 
-  if(rlen < 40)
-  {
-    //ExRaiseSqlError(heap, diagsArea, EXE_GETBIT_ERROR);
-    return ex_expr::EXPR_ERROR;
-  }
+  memset(op_data[0], 0, rlen);
 
-  SHA_CTX  sha_ctx;
+  SHA256_CTX  sha_ctx;
 
-  SHA_Init(&sha_ctx);  
-  SHA_Update(&sha_ctx, op_data[1], slen);
-  SHA_Final((unsigned char*) sha,&sha_ctx); 
+  SHA256_Init(&sha_ctx);  
+  SHA256_Update(&sha_ctx, op_data[1], slen);
+  SHA256_Final((unsigned char*) sha,&sha_ctx); 
   char tmp[2];
-  for(int i=0; i < SHA_DIGEST_LENGTH ; i++ )
+  for(int i=0; i < SHA256_DIGEST_LENGTH; i++ )
   {
     tmp[0]=tmp[1]='0';
     sprintf(tmp, "%.2x", (int)sha[i]);
@@ -7997,21 +7995,15 @@ ex_expr::exp_return_type ExFunctionSha::eval(char * op_data[],
 
   Attributes *resultAttr   = getOperand(0);
   Attributes *srcAttr   = getOperand(1);
-
   Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
   Lng32 rlen = resultAttr->getLength();
-
-  if(rlen < 40)
-  {
-    //ExRaiseSqlError(heap, diagsArea, EXE_GETBIT_ERROR);
-    return ex_expr::EXPR_ERROR;
-  }
+  memset(op_data[0], 0, rlen);
 
   SHA_CTX  sha_ctx;
 
-  SHA_Init(&sha_ctx);  
-  SHA_Update(&sha_ctx, op_data[1], slen);
-  SHA_Final((unsigned char*) sha,&sha_ctx); 
+  SHA1_Init(&sha_ctx);  
+  SHA1_Update(&sha_ctx, op_data[1], slen);
+  SHA1_Final((unsigned char*) sha,&sha_ctx); 
   char tmp[2];
   for(int i=0; i < SHA_DIGEST_LENGTH ; i++ )
   {
@@ -8022,6 +8014,7 @@ ex_expr::exp_return_type ExFunctionSha::eval(char * op_data[],
    
   return ex_expr::EXPR_OK;
 }
+
 ex_expr::exp_return_type ExFunctionMd5::eval(char * op_data[],
                                                         CollHeap *heap,
                                                         ComDiagsArea **diags)
@@ -8034,12 +8027,7 @@ ex_expr::exp_return_type ExFunctionMd5::eval(char * op_data[],
   Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
   Lng32 rlen = resultAttr->getLength();
 
-  if(rlen < 32)
-  {
-    //ExRaiseSqlError(heap, diagsArea, EXE_GETBIT_ERROR);
-    return ex_expr::EXPR_ERROR;
-  }
-
+  memset(op_data[0], 0, rlen);
   MD5_CTX  md5_ctx;
 
   MD5_Init(&md5_ctx);  

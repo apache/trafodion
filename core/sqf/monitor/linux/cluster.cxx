@@ -410,6 +410,18 @@ void CCluster::AssignTmLeader(int pnid)
 
     if (TmLeaderPNid != pnid) 
     {
+        node = LNode[TmLeaderNid]->GetNode();
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+        {
+            trace_printf( "%s@%d - Node pnid=%d (%s), phase=%s, isSoftNodeDown=%d\n"
+                        , method_name, __LINE__
+                        , node->GetPNid()
+                        , node->GetName()
+                        , NodePhaseString(node->GetPhase())
+                        , node->IsSoftNodeDown());
+        }
+    
         return;
     }
 
@@ -435,6 +447,16 @@ void CCluster::AssignTmLeader(int pnid)
         }
 
         node = Node[TmLeaderPNid];
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+        {
+            trace_printf( "%s@%d - Node pnid=%d (%s), phase=%s, isSoftNodeDown=%d\n"
+                        , method_name, __LINE__
+                        , node->GetPNid()
+                        , node->GetName()
+                        , NodePhaseString(node->GetPhase())
+                        , node->IsSoftNodeDown());
+        }
 
         if ( node->IsSpareNode() ||
              node->IsSoftNodeDown() ||
@@ -938,14 +960,21 @@ void CCluster::SoftNodeDown( int pnid )
     node = Nodes->GetNode(pnid);
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-       trace_printf( "%s@%d - pnid=%d, state=%s, isInQuiesceState=%d,"
-                     " (local pnid=%d, state=%s, isInQuiesceState=%d, "
-                     "shutdown level=%d)\n"
-                   , method_name, __LINE__
-                   , pnid, StateString(node->GetState())
-                   , node->isInQuiesceState()
-                   , MyPNID, StateString(MyNode->GetState())
-                   , MyNode->isInQuiesceState(), MyNode->GetShutdownLevel() );
+    {
+        trace_printf( "%s@%d - pnid=%d, state=%s, phase=%s, isInQuiesceState=%d, isSoftNodeDown=%d"
+                      " (local pnid=%d, state=%s, phase=%s, isInQuiesceState=%d, isSoftNodeDown=%d "
+                      "shutdown level=%d)\n"
+                    , method_name, __LINE__
+                    , pnid, StateString(node->GetState())
+                    , NodePhaseString(node->GetPhase())
+                    , node->isInQuiesceState()
+                    , node->IsSoftNodeDown()
+                    , MyPNID, StateString(MyNode->GetState())
+                    , NodePhaseString(MyNode->GetPhase())
+                    , MyNode->isInQuiesceState()
+                    , MyNode->IsSoftNodeDown()
+                    , MyNode->GetShutdownLevel() );
+    }
 
     if (( MyPNID == pnid              ) &&
         ( MyNode->GetState() == State_Down ||
@@ -966,12 +995,6 @@ void CCluster::SoftNodeDown( int pnid )
     {
         node->SetSoftNodeDown();            // Set soft down flag
         node->SetPhase( Phase_SoftDown );   // Suspend TMSync on node
-        node->KillAllDownSoft();            // Kill all processes
-
-        snprintf( buf, sizeof(buf)
-                , "[%s], Node %s (%d) executed soft down.\n"
-                , method_name, node->GetName(), node->GetPNid() );
-        mon_log_write(MON_CLUSTER_SOFTNODEDOWN_2, SQ_LOG_ERR, buf);
 
         if ( node->GetPNid() == MyPNID )
         {
@@ -979,6 +1002,13 @@ void CCluster::SoftNodeDown( int pnid )
             CReplSoftNodeDown *repl = new CReplSoftNodeDown( MyPNID );
             Replicator.addItem(repl);
         }
+
+        node->KillAllDownSoft();            // Kill all processes
+
+        snprintf( buf, sizeof(buf)
+                , "[%s], Node %s (%d) executed soft down.\n"
+                , method_name, node->GetName(), node->GetPNid() );
+        mon_log_write(MON_CLUSTER_SOFTNODEDOWN_2, SQ_LOG_ERR, buf);
     }
     else
     {
@@ -1001,6 +1031,16 @@ void CCluster::SoftNodeDown( int pnid )
         Monitor->SetAbortPendingTmSync();
         if (trace_settings & (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
            trace_printf("%s@%d - Node %s (pnid=%d) TmSyncState updated (%d)(%s)\n", method_name, __LINE__, MyNode->GetName(), MyPNID, MyNode->GetTmSyncState(), SyncStateString( MyNode->GetTmSyncState() ));
+    }
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+    {
+        trace_printf( "%s@%d - Node pnid=%d (%s), phase=%s, isSoftNodeDown=%d\n"
+                    , method_name, __LINE__
+                    , node->GetPNid()
+                    , node->GetName()
+                    , NodePhaseString(node->GetPhase())
+                    , node->IsSoftNodeDown());
     }
 
     IAmIntegrated = false;
@@ -4321,25 +4361,32 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
         {
             // convert to milliseconds
             sv_epoll_wait_timeout = atoi( lv_epoll_wait_timeout_env ) * 1000;
+            char *lv_epoll_retry_count_env = getenv( "SQ_MON_EPOLL_RETRY_COUNT" );
+            if ( lv_epoll_retry_count_env )
+            {
+                sv_epoll_retry_count = atoi( lv_epoll_retry_count_env );
+            }
+            if ( sv_epoll_retry_count > 180 )
+            {
+                sv_epoll_retry_count = 180;
+            }
         }
         else
         {
-            sv_epoll_wait_timeout = -1;
+            // default to 64 seconds
+            sv_epoll_wait_timeout = 4000;
+            sv_epoll_retry_count = 16;
         }
 
-        char *lv_epoll_retry_count_env = getenv( "SQ_MON_EPOLL_RETRY_COUNT" );
-        if ( lv_epoll_retry_count_env )
-        {
-            sv_epoll_retry_count = atoi( lv_epoll_retry_count_env );
-        }
-        if ( sv_epoll_retry_count < 0 )
-        {
-            sv_epoll_retry_count = 0;
-        }
-        if ( sv_epoll_retry_count > 100 )
-        {
-            sv_epoll_retry_count = 100;
-        }
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s@%d] EPOLL timeout wait_timeout=%d msecs, retry_count=%d\n"
+                , method_name
+                ,  __LINE__
+                , sv_epoll_wait_timeout
+                , sv_epoll_retry_count );
+
+        mon_log_write( MON_CLUSTER_ALLGATHERSOCK_1, SQ_LOG_INFO, buf );
     }
 
     // do the work
@@ -4368,7 +4415,7 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
 
                         peer->p_timeout_count++;
 
-                        if ( peer->p_timeout_count <= sv_epoll_retry_count )
+                        if ( peer->p_timeout_count < sv_epoll_retry_count )
                         {
                             continue;
                         }
@@ -6383,6 +6430,7 @@ int CCluster::AcceptSock( int sock )
     int csock; // connected socket
     struct sockaddr_in  sockinfo;   // socket address info
 
+    size = sizeof(struct sockaddr *);
     if ( getsockname( sock, (struct sockaddr *) &sockinfo, &size ) )
     {
         char buf[MON_STRING_BUF_SIZE];

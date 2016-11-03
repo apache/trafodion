@@ -489,7 +489,6 @@ create materialized view T_MV1
         select A.dno,B.eno
         from t005t02 A full outer join t005t01 B on A.dno = B.dno;
 
-cqd mode_special_4 'on';
 with w1 as (select * from witht1),
 w2 as (select * from w1)
 select * from w2; 
@@ -505,7 +504,6 @@ select * from w1;
 
 with recursive w1 as (select c1, c2 from witht1 union all select origin.c1 , origin.c2 from w1 join t1 origin on origin.c1 = w1.c1 );
 with w1 as (select * from witht1), w1 as (select * from witht2) select * from w1;
-cqd mode_special_4 reset;
 
 ?section cleanup
 

@@ -196,7 +196,7 @@ class ExExeUtilTcb : public ex_tcb
   ex_queue_pair getParentQueue() const;
   Int32 orderedQueueProtocol() const;
 
-  void freeResources();
+  virtual void freeResources();
 
   virtual Int32 numChildren() const;
   virtual const ex_tcb* getChild(Int32 pos) const;
@@ -989,7 +989,9 @@ class ExExeUtilVolatileTablesTcb : public ExExeUtilTcb
                                                  Lng32 &pstateLength); // out, length of one element
 
  protected:
-  short isCreatorProcessObsolete(char * schemaName, NABoolean includesCat);
+  short isCreatorProcessObsolete(const char * name,
+                                 NABoolean includesCat,
+                                 NABoolean isCSETableName);
 };
 
 class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
@@ -1015,6 +1017,7 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
                                   ex_globals *globals = NULL,
                                   ComDiagsArea * diagsArea = NULL);
   static short dropVolatileTables(ContextCli * currContext, CollHeap * heap);
+  short dropHiveTempTablesForCSEs(ComDiagsArea * diagsArea = NULL);
 
  private:
   enum Step
@@ -1027,6 +1030,7 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
       DO_CLEANUP_,
       COMMIT_WORK_,
       END_CLEANUP_,
+      CLEANUP_HIVE_TABLES_,
       DONE_,
       ERROR_
     };
@@ -3343,6 +3347,7 @@ class ExExeUtilHiveTruncateTcb : public ExExeUtilTcb
 
   ~ExExeUtilHiveTruncateTcb();
 
+  virtual void freeResources();
   virtual short work();
 
   NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(

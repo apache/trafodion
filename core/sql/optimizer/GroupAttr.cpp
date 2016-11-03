@@ -1921,10 +1921,7 @@ EstLogPropSharedPtr GroupAttributes::outputLogProp (const EstLogPropSharedPtr& i
   // we have a log expr for which synthLogProp was not invoked ...
   // if so, fix it!!
 
-  if (logExpr == NULL)
-  {
-    CMPASSERT ("Trying to get logical properties for an invalid expression");
-  }
+  CMPASSERT (logExpr);
 
   EstLogPropSharedPtr outputEstLogProp;
 

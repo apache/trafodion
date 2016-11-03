@@ -240,7 +240,7 @@ NA_EIDPROC
 
 NA_EIDPROC    
   static Lng32 extractSqlSessionIdAttrs
-  (char * sessionId,            // IN
+  (const char * sessionId,       // IN
    Lng32 sessionIdLen,        // IN
    Int64 &segmentNumber,         // OUT
    Int64 &cpu,                   // OUT
@@ -279,7 +279,7 @@ private:
   NA_EIDPROC    
   static Lng32 getSqlIdAttr
    (Lng32 attr,         // which attr (SqlQueryIDAttr)
-    char * queryId,    // query ID
+    const char * queryId,// query ID
     Lng32 queryIdLen,   // query ID len. 
     Int64 &value,      // If returned attr is of string type, this value is the
                        // max length of the buffer pointed to by stringValue.

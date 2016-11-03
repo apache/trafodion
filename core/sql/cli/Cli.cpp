@@ -2270,14 +2270,17 @@ static Lng32 SQLCLI_RetryQuery(
 			    flags
 			    );
 
-  if (savedStmtStats)
-    savedStmtStats->setAqrInProgress(FALSE);
-
-  if (isERROR(retcode))
+  if (isERROR(retcode)) {
+      if (savedStmtStats)
+          savedStmtStats->setAqrInProgress(FALSE);
       return retcode;
+  }
       
-  if (afterPrepare)
+  if (afterPrepare) {
+     if (savedStmtStats)
+        savedStmtStats->setAqrInProgress(FALSE);
     return 0;
+  }
 
   // before executing this statement,
   // validate that the new prepare's input/output descriptors are the same
@@ -6616,7 +6619,6 @@ ComDiagsArea &diags = currContext.diags();
 
 }
 
-
 Lng32 SQLCLI_GetAuthName (
     /*IN*/            CliGlobals *cliGlobals,
     /*IN*/            Lng32       auth_id,
@@ -6715,6 +6717,49 @@ Int32 SQLCLI_GetAuthState (
 
   return CliEpilogue(cliGlobals, NULL, retcode);
 }
+
+Lng32 SQLCLI_GetRoleList(
+   CliGlobals * cliGlobals,
+   Int32 &numRoles,
+   Int32 *&roleIDs)
+
+{
+   Lng32 retcode = 0;
+
+   // create initial context, if first call, and add module, if any.
+   retcode = CliPrologue(cliGlobals, NULL);
+   if (isERROR(retcode))
+      return retcode;
+
+   ContextCli &currContext = *(cliGlobals->currContext());
+   ComDiagsArea &diags = currContext.diags();
+
+   retcode = currContext.getRoleList(numRoles,roleIDs);
+
+   return CliEpilogue(cliGlobals, NULL, retcode);
+
+}
+
+Lng32 SQLCLI_ResetRoleList(
+   CliGlobals * cliGlobals)
+
+{
+   Lng32 retcode = 0;
+
+   // create initial context, if first call, and add module, if any.
+   retcode = CliPrologue(cliGlobals, NULL);
+   if (isERROR(retcode))
+      return retcode;
+
+   ContextCli &currContext = *(cliGlobals->currContext());
+   ComDiagsArea &diags = currContext.diags();
+
+   retcode = currContext.resetRoleList();
+
+   return CliEpilogue(cliGlobals, NULL, retcode);
+
+}
+
 
 Lng32 SQLCLI_SetSessionAttr(/*IN*/ CliGlobals *cliGlobals,
 			    /*IN SESSIONATTR_TYPE*/ Lng32 attrName,

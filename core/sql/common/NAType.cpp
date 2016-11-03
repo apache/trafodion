@@ -679,7 +679,7 @@ short NAType::convertTypeToText(char * text,	   // OUTPUT
 				 displayCaseSpecific);
 }
 
-short NAType::getMyTypeAsHiveText(NAString * outputStr)  // output
+short NAType::getMyTypeAsHiveText(NAString * outputStr/*out*/) const
 {
   Lng32		      fs_datatype		= getFSDatatype();
 
@@ -697,7 +697,9 @@ short NAType::getMyTypeAsHiveText(NAString * outputStr)  // output
         else
           {
             char buf[20];
-            Int32 size = getNominalSize() / ct->getBytesPerChar();
+            // Hive doesn't have the "n bytes" notation,
+            // so just take the overall char limit
+            Int32 size = ct->getStrCharLimit();
             str_itoa(size, buf);
             *outputStr = "varchar(";
             *outputStr += buf;
@@ -723,6 +725,15 @@ short NAType::getMyTypeAsHiveText(NAString * outputStr)  // output
 
     case REC_BIN64_SIGNED:
       *outputStr = "bigint";
+      break;
+
+    case REC_MIN_DECIMAL ... REC_MAX_DECIMAL:
+      if (getPrecision() <= 38)
+        outputStr->format("decimal(%d,%d)",
+                          getPrecision(),
+                          getScale());
+      else
+        *outputStr = "double";
       break;
 
     case REC_FLOAT32:
@@ -762,7 +773,7 @@ short NAType::getMyTypeAsHiveText(NAString * outputStr)  // output
 }
 
 short NAType::getMyTypeAsText(NAString * outputStr,  // output
-			      NABoolean addNullability)
+			      NABoolean addNullability) const
 {
   // get the right value for all these
   Lng32		      fs_datatype		= getFSDatatype();

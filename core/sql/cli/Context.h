@@ -106,7 +106,7 @@ public:
   const char *getDatabaseUserName() { return databaseUserName_;}
   Int32 *getDatabaseUserID() { return &databaseUserID_; }
   Int32 *getSessionUserID() { return &sessionUserID_; }
-
+  
   // Functions to switch user identity. The specified user must exist
   // as a valid user in the USERS metadata table. Otherwise an error
   // code is returned and error conditions will be written to the
@@ -118,8 +118,7 @@ public:
   void setDatabaseUser(const Int32 &uid, // IN
                        const char *uname);   // IN
 
-  // Functions to map between Trafodion authentication IDs and names. The 
-  // mapping operation is not supported on other platforms.
+  // Functions to map between Trafodion authentication IDs and names. 
   RETCODE getAuthIDFromName(
      const char *authName,  
      Int32 & authID);   
@@ -158,6 +157,12 @@ public:
                      bool &authorizationReady,
                      bool &auditingEnabled);
 
+
+  // functions to get and set roles for the current user
+  RETCODE getRoleList(Int32  &numRoles,
+                      Int32  *&roleIDs);
+
+  RETCODE resetRoleList();
 
   SequenceValueGenerator* &seqGen() { return seqGen_; }
 
@@ -238,6 +243,10 @@ private:
   // Database user name. On Linux the values come from the USER_NAME
   // column in the USERS table. Max 128 characters.
   char *databaseUserName_;
+
+  // List of active roles for the databaseUser
+  Int32  *roleIDs_;
+  Int32   numRoles_;
 
   NABoolean userNameChanged_;
 
@@ -527,7 +536,8 @@ private:
       USERS_QUERY_BY_USER_ID,
       USERS_QUERY_BY_EXTERNAL_NAME,
       ROLE_QUERY_BY_ROLE_ID,
-      AUTH_QUERY_BY_NAME
+      AUTH_QUERY_BY_NAME,
+      ROLES_QUERY_BY_AUTH_ID
     };
 
   // Private method to perform single-row lookups into the AUTHS
@@ -542,12 +552,13 @@ private:
   // USERS_QUERY_BY_EXTERNAL_NAME, the authName argument must be
   // provided.
   RETCODE authQuery(
-     AuthQueryType queryType,         
-     const char  * authName,          
-     Int32         authID,            
-     char        * authNameFromTable,
-     Int32         authNameMaxLen, 
-     Int32       & authIDFromTable);  
+     AuthQueryType          queryType,         
+     const char           * authName,          
+     Int32                  authID,            
+     char                 * authNameFromTable,
+     Int32                  authNameMaxLen, 
+     Int32                & authIDFromTable,
+     std::vector<int32_t> & roleIDs);  
       
   RETCODE storeName(
      const char *src,

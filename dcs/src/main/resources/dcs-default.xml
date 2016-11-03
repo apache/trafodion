@@ -124,7 +124,7 @@
   </property>         
   <property>
     <name>dcs.server.info.port</name>
-    <value>40030</value>
+    <value>24410</value>
     <description>The port for the DcsServer web UI
     Set to -1 if you do not want the server UI to run.
     </description>

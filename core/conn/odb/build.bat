@@ -31,11 +31,6 @@ set ZLIB_INCLUDE_PATH=C:\zlib\include
 REM set this to zlib library files directory
 set ZLIB_LIB_PATH=C:\zlib\lib
 
-REM set this to openssl header files directory
-set OPENSSL_INCLUDE_PATH=C:\openssl-1.0.1e\include
-REM set this to openssl library files directory
-set OPENSSL_LIB_PATH=C:\openssl-1.0.1e\lib
-
 set ALL_SUCCESS=0
 
 echo=

@@ -1941,8 +1941,10 @@ short CmpSeabaseDDL::createSeabaseTable2(
                 }
               catch (...)
                 {
-                  // diags area should be set
-                  CMPASSERT(CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0);
+                  // diags area should be set, if not, set it
+                  if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+                    *CmpCommon::diags() << DgSqlCode(-4243)
+                              << DgString0("(expression with unknown type)");
                   exceptionOccurred = TRUE;
                 }
 
@@ -4167,18 +4169,18 @@ void CmpSeabaseDDL::renameSeabaseTable(
         }
     }
 
-  cliRC = updateObjectName(&cliInterface,
-                           objUID,
-                           catalogNamePart.data(), schemaNamePart.data(),
-                           newObjectNamePart.data());
-  if (cliRC < 0)
+  // this operation cannot be done if a xn is already in progress.
+  if (xnInProgress(&cliInterface))
     {
-      processReturn();
+      *CmpCommon::diags() << DgSqlCode(-20125)
+                          << DgString0("This ALTER");
       
+      processReturn();
       return;
     }
 
-  // rename the underlying hbase object
+  NABoolean ddlXns = renameTableNode->ddlXns();
+
   HbaseStr hbaseTable;
   hbaseTable.val = (char*)extNameForHbase.data();
   hbaseTable.len = extNameForHbase.length();
@@ -4187,6 +4189,22 @@ void CmpSeabaseDDL::renameSeabaseTable(
   newHbaseTable.val = (char*)newExtNameForHbase.data();
   newHbaseTable.len = newExtNameForHbase.length();
 
+  NABoolean xnWasStartedHere = FALSE;
+  if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+    return;
+
+  cliRC = updateObjectName(&cliInterface,
+                           objUID,
+                           catalogNamePart.data(), schemaNamePart.data(),
+                           newObjectNamePart.data());
+  if (cliRC < 0)
+    {
+      processReturn();
+      
+      goto label_error;
+    }
+
+  // rename the underlying hbase object
   retcode = ehi->copy(hbaseTable, newHbaseTable);
   if (retcode < 0)
     {
@@ -4196,18 +4214,17 @@ void CmpSeabaseDDL::renameSeabaseTable(
                           << DgInt0(-retcode)
                           << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
       
-      deallocEHI(ehi); 
-      
       processReturn();
       
-      return;
+      cliRC = -1;
+      goto label_error;
     }
 
-  NABoolean ddlXns = renameTableNode->ddlXns();
   retcode = dropHbaseTable(ehi, &hbaseTable, FALSE, ddlXns);
   if (retcode < 0)
     {
-      return;
+      cliRC = -1;
+      goto label_error;
     }
 
   cliRC = updateObjectRedefTime(&cliInterface,
@@ -4215,9 +4232,8 @@ void CmpSeabaseDDL::renameSeabaseTable(
                                 COM_BASE_TABLE_OBJECT_LIT, -1, objUID);
   if (cliRC < 0)
     {
-      deallocEHI(ehi);
       processReturn();
-      return;
+      goto label_error;
     }
 
   ActiveSchemaDB()->getNATableDB()->removeNATable
@@ -4228,6 +4244,19 @@ void CmpSeabaseDDL::renameSeabaseTable(
     (newcn,
      ComQiScope::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT,
      renameTableNode->ddlXns(), FALSE);
+
+  deallocEHI(ehi); 
+
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
+
+  return;
+
+ label_error:
+  retcode = dropHbaseTable(ehi, &newHbaseTable, FALSE, FALSE);
+
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, cliRC);
+  
+  deallocEHI(ehi); 
 
   return;
 }
@@ -4674,53 +4703,96 @@ short CmpSeabaseDDL::cloneHbaseTable(
 }
 
 short CmpSeabaseDDL::cloneSeabaseTable(
-     CorrName &cn,
+     const NAString &srcTableNameStr,
+     Int64 srcTableUID,
+     const NAString &clonedTableNameStr,
      const NATable * naTable,
-     const NAString &clonedTableName,
      ExpHbaseInterface * inEHI,
-     ExeCliInterface * cliInterface)
+     ExeCliInterface * cliInterface,
+     NABoolean withCreate)
 {
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
 
-  retcode = createSeabaseTableLike2(cn, clonedTableName);
-  if (retcode)
-    return -1;
+  ComObjectName srcTableName(srcTableNameStr, COM_TABLE_NAME);
+  const NAString srcCatNamePart = srcTableName.getCatalogNamePartAsAnsiString();
+  const NAString srcSchNamePart = srcTableName.getSchemaNamePartAsAnsiString(TRUE);
+  const NAString srcObjNamePart = srcTableName.getObjectNamePartAsAnsiString(TRUE);
+  CorrName srcCN(srcObjNamePart, STMTHEAP, srcSchNamePart, srcCatNamePart);
 
-  ComObjectName tableName(clonedTableName, COM_TABLE_NAME);
-  const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
-  const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
-  const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
-  Int64 clonedTableUID = 
-    getObjectUID
-    (cliInterface,
-     catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
-     COM_BASE_TABLE_OBJECT_LIT);
- 
+  ComObjectName clonedTableName(clonedTableNameStr, COM_TABLE_NAME);
+  const NAString clonedCatNamePart = clonedTableName.getCatalogNamePartAsAnsiString();
+  const NAString clonedSchNamePart = clonedTableName.getSchemaNamePartAsAnsiString(TRUE);
+  const NAString clonedObjNamePart = clonedTableName.getObjectNamePartAsAnsiString(TRUE);
+
   char buf[2000];
-  str_sprintf(buf, "merge into %s.\"%s\".%s using (select column_name, column_class from %s.\"%s\".%s where object_uid = %Ld) x on (object_uid = %Ld and column_name = x.column_name) when matched then update set column_class = x.column_class;",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
-              naTable->objectUid().castToInt64(),
-              clonedTableUID);
+  if (withCreate)
+    {
+      retcode = createSeabaseTableLike2(srcCN, clonedTableNameStr,
+                                        FALSE, TRUE, TRUE);
+      if (retcode)
+        return -1;
+
+      Int64 clonedTableUID = 
+        getObjectUID
+        (cliInterface,
+         clonedCatNamePart.data(), 
+         clonedSchNamePart.data(), 
+         clonedObjNamePart.data(),
+         COM_BASE_TABLE_OBJECT_LIT);
+      
+      // if there are added or altered columns in the source table, then cloned
+      // table metadata need to reflect that.
+      // Update metadata and set the cloned column class to be the same as source.
+      str_sprintf(buf, "merge into %s.\"%s\".%s using (select column_name, column_class from %s.\"%s\".%s where object_uid = %Ld) x on (object_uid = %Ld and column_name = x.column_name) when matched then update set column_class = x.column_class;",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+                  srcTableUID,
+                  clonedTableUID);
+      cliRC = cliInterface->executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          processReturn();
+          
+          return -1;
+        }
+    }
+
+  if (NOT withCreate)
+    {
+      // truncate cloned(tgt) table before upsert
+      if (truncateHbaseTable(clonedCatNamePart, 
+                             clonedSchNamePart, 
+                             clonedObjNamePart,
+                             (NATable*)naTable, inEHI))
+        {
+          return -1;
+        }
+      
+    }
+
+  NAString quotedSrcCatName;
+  ToQuotedString(quotedSrcCatName, 
+                 NAString(srcCN.getQualifiedNameObj().getCatalogName()), FALSE);
+  NAString quotedSrcSchName;
+  ToQuotedString(quotedSrcSchName, 
+                 NAString(srcCN.getQualifiedNameObj().getSchemaName()), FALSE);
+  NAString quotedSrcObjName;
+  ToQuotedString(quotedSrcObjName, 
+                 NAString(srcCN.getQualifiedNameObj().getObjectName()), FALSE);
+
+  str_sprintf(buf, "upsert using load into %s select * from %s.%s.%s",
+              clonedTableNameStr.data(), 
+              quotedSrcCatName.data(),
+              quotedSrcSchName.data(), 
+              quotedSrcObjName.data());
   cliRC = cliInterface->executeImmediate(buf);
   if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
       processReturn();
 
-      return -1;
-    }
- 
-  const NAString extNameForHbase = 
-    cn.getQualifiedNameObj().getCatalogName() + "." + 
-    cn.getQualifiedNameObj().getSchemaName() + "." + 
-    cn.getQualifiedNameObj().getObjectName();
-
-  if (cloneHbaseTable(extNameForHbase, clonedTableName, inEHI))
-    {
-      processReturn();
-      
       return -1;
     }
 
@@ -5393,7 +5465,11 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
 
   char buf[4000];
 
-  if (cloneSeabaseTable(cn, naTable, tempTable, ehi, &cliInterface))
+  if (cloneSeabaseTable(naTable->getTableName().getQualifiedNameAsAnsiString(), //cn, 
+                        naTable->objectUid().castToInt64(),
+                        tempTable, 
+                        naTable,
+                        ehi, &cliInterface, TRUE))
     {
       cliRC = -1;
       goto label_drop;
@@ -5435,7 +5511,7 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
       if (nac->isSystemColumn())
         continue;
 
-      tgtCols += nac->getColName();
+      tgtCols += "\"" + nac->getColName() + "\"";
       tgtCols += ",";
     } // for
 
@@ -5480,9 +5556,19 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
  label_restore:
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
 
-  cloneHbaseTable(tempTable, 
-                  naTable->getTableName().getQualifiedNameAsAnsiString(),
-                  ehi);
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cn,
+     ComQiScope::REMOVE_FROM_ALL_USERS, 
+     COM_BASE_TABLE_OBJECT, FALSE, FALSE);
+
+  if (cloneSeabaseTable(tempTable, -1,
+                        naTable->getTableName().getQualifiedNameAsAnsiString(),
+                        naTable,
+                        ehi, &cliInterface, FALSE))
+    {
+      cliRC = -1;
+      goto label_drop;
+    }
  
  label_drop:  
   str_sprintf(buf, "drop table %s", tempTable.data());
@@ -6295,7 +6381,11 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumnAttr
 
   NABoolean xnWasStartedHere = FALSE;
 
-  if (cloneSeabaseTable(cn, naTable, tempTable, ehi, &cliInterface))
+  if (cloneSeabaseTable(naTable->getTableName().getQualifiedNameAsAnsiString(),
+                        naTable->objectUid().castToInt64(),
+                        tempTable, 
+                        naTable,
+                        ehi, &cliInterface, TRUE))
     {
       cliRC = -1;
       goto label_drop;
@@ -6407,10 +6497,20 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumnAttr
  label_restore:
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
 
-  cloneHbaseTable(tempTable, 
-                  naTable->getTableName().getQualifiedNameAsAnsiString(),
-                  ehi);
- 
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cn,
+     ComQiScope::REMOVE_FROM_ALL_USERS, 
+     COM_BASE_TABLE_OBJECT, FALSE, FALSE);
+
+  if (cloneSeabaseTable(tempTable, -1,
+                        naTable->getTableName().getQualifiedNameAsAnsiString(),
+                        naTable,
+                        ehi, &cliInterface, FALSE))
+    {
+      cliRC = -1;
+      goto label_drop;
+    }
+
  label_drop:  
   str_sprintf(buf, "drop table %s", tempTable.data());
   Lng32 cliRC2 = cliInterface.executeImmediate(buf);

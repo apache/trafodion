@@ -166,6 +166,8 @@ public:
                                            { requiredInputs_ += vidSet; }
   void addCharacteristicInputs(const ValueIdList& vidList)
                                  { requiredInputs_.insertList(vidList); }
+  void removeCharacteristicInputs(const ValueIdSet &vidSet)
+                                           { requiredInputs_ -= vidSet; }
 
   // --------------------------------------------------------------------
   // Methods for Characteristic Outputs

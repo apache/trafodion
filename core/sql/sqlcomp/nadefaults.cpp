@@ -1144,7 +1144,23 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
  DDkwd__(CREATE_METADATA_TABLE,                "OFF"),
  DDkwd__(CREATE_OBJECTS_IN_METADATA_ONLY,      "OFF"),
 
- DDkwd__(CROSS_PRODUCT_CONTROL,		"ON"),
+ DDkwd__(CROSS_PRODUCT_CONTROL,	               "ON"),
+
+ // CQDs for Common Subexpressions (CSEs)
+ // cache queries containing temp tables for common subexpressions
+ DDkwd__(CSE_CACHE_TEMP_QUERIES,               "OFF"),
+ // "cleanup obsolete volatile tables" command cleans up Hive temp tables
+ DDkwd__(CSE_CLEANUP_HIVE_TABLES,              "OFF"),
+ // emit warnings that help diagnose why CSEs are not shared
+ DDkwd__(CSE_DEBUG_WARNINGS,                   "OFF"),
+ // create a CommonSubExpr node for CTEs defined in WITH clauses (OFF/ON)
+ DDkwd__(CSE_FOR_WITH,                         "OFF"),
+ // use Hive tables as temp tables
+ DDkwd__(CSE_HIVE_TEMP_TABLE,                  "ON"),
+ // print debugging info on stdout
+ DDkwd__(CSE_PRINT_DEBUG_INFO,                 "OFF"),
+ // implement CommonSubExpr as a temp table (OFF/SYSTEM/ON)
+ DDkwd__(CSE_USE_TEMP,                         "ON"),
 
 SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
 

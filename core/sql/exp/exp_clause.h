@@ -203,12 +203,12 @@ public:
     FUNC_ISIP_ID             = 118,
     FUNC_INETATON_ID         = 119,
     FUNC_INETNTOA_ID         = 120,
-    FUNC_CRC32_ID            = 121,
-    FUNC_MD5_ID              = 122,
-    FUNC_SHA1_ID             = 123,
-    FUNC_SHA2_ID             = 124,
-    FUNC_SHA_ID              = 125
-
+    AGGR_GROUPING_ID         = 121,
+    FUNC_CRC32_ID            = 122,
+    FUNC_MD5_ID              = 123,
+    FUNC_SHA1_ID             = 124,
+    FUNC_SHA2_ID             = 125,
+    FUNC_SHA_ID              = 126
   };
 
   // max number of operands (including result) in a clause.

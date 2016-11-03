@@ -936,6 +936,13 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_SetErrorCodeInRTS(
                 /*IN*/ SQLSTMT_ID * statement_id,
 	        /*IN*/ Lng32     sqlErrorCode);  
 
+SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GetRoleList(
+   Int32 &numRoles,
+   Int32 *&roleIDs);
+
+SQLCLI_LIB_FUNC Lng32 SQL_EXEC_ResetRoleList_Internal ();
+
+
 /*
 Statistics info collected for Replicate Operator
 ComTdb::ex_REPLICATE in the replicator processes

@@ -1011,6 +1011,7 @@ const NAType *BuiltinFunction::synthesizeType()
       }
     break;
     case ITM_SHA:
+    case ITM_SHA1:
     case ITM_SHA2:
       {
         // type cast any params
@@ -1022,12 +1023,12 @@ const NAType *BuiltinFunction::synthesizeType()
 
         if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
           {
-	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("IS_IP");
+	    *CmpCommon::diags() << DgSqlCode(-4067) << DgString0("SHA");
 	    return NULL;
           }
 
         retType = new HEAP
-           SQLVarChar(40, FALSE);
+           SQLChar(128, FALSE);
 	if (typ1.supportsSQLnull())
 	  {
 	    retType->setNullable(TRUE);
@@ -1045,12 +1046,12 @@ const NAType *BuiltinFunction::synthesizeType()
 
         if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
           {
-	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("IS_IP");
+	    *CmpCommon::diags() << DgSqlCode(-4067) << DgString0("MD5");
 	    return NULL;
           }
 
         retType = new HEAP
-           SQLVarChar(33, FALSE);
+           SQLChar(32, FALSE);
 	if (typ1.supportsSQLnull())
 	  {
 	    retType->setNullable(TRUE);
@@ -1080,7 +1081,7 @@ const NAType *BuiltinFunction::synthesizeType()
 
         if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
           {
-	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("IS_IP");
+	    *CmpCommon::diags() << DgSqlCode(-4067) << DgString0("IS_IP");
 	    return NULL;
           }
         retType = new HEAP
@@ -1103,7 +1104,7 @@ const NAType *BuiltinFunction::synthesizeType()
 
         if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
           {
-	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("INET_ATON");
+	    *CmpCommon::diags() << DgSqlCode(-4067) << DgString0("INET_ATON");
 	    return NULL;
           }
         retType = new HEAP
@@ -1556,6 +1557,16 @@ const NAType *Aggregate::synthesizeType()
       result = operand.newCopy(HEAP);
     break;
   }
+
+  case ITM_GROUPING:
+    {
+	  // grouping result is an unsigned int (32 bit)
+      result = new HEAP
+        SQLInt(FALSE /*unsigned*/,
+               FALSE /*not null*/);
+    }
+  break;
+
   case ITM_ONE_ROW:
   case ITM_ONEROW:  
   {
@@ -1591,8 +1602,18 @@ const NAType *AggrMinMax::synthesizeType()
   const NAType *result;
 
   const NAType& operand = child(0)->castToItemExpr()->getValueId().getType();
-  //    result = operand.synthesizeNullableType(HEAP);
   result = operand.newCopy(HEAP);
+
+  return result;
+}
+
+// -----------------------------------------------------------------------
+// member functions for class AggGrouping
+// -----------------------------------------------------------------------
+const NAType *AggrGrouping::synthesizeType()
+{
+  // result unsigned 32 bit integer
+  const NAType *result = new HEAP SQLInt(FALSE, FALSE);
 
   return result;
 }

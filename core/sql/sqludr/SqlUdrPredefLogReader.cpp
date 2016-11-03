@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <limits>
+#include <time.h>
 #include "sqludr.h"
 
 using namespace tmudr;
@@ -216,9 +217,14 @@ bool validateCharsAndCopy(char *outBuf, int outBufLen,
 // The optional [options] argument is a character constant. The
 // following options are supported:
 //  f: add file name output columns (see below)
-//  t: turn on tracing
 //  p: force parallel execution on workstation environment with
 //     virtual nodes (debug build only)
+//  s: displays statistics about the request including:
+//       number of event files opened
+//       number of event files read
+//       number of events read
+//       number of events returned 
+//  t: turn on tracing
 //
 // Returned columns:
 //
@@ -244,10 +250,10 @@ bool validateCharsAndCopy(char *outBuf, int outBufLen,
 // for each result row. parse_status indicates whether there were
 // any errors reading the information:
 // '  ' (two blanks): no errors
+// 'C'  (as first or second character): character conversion error
 // 'E'  (as first or second character): parse error
 // 'T'  (as first or second character): truncation or over/underflow
 //                                      occurred
-// 'C'  (as first or second character): character conversion error
 // -----------------------------------------------------------------
 
 // compiler interface class for TRAF_CPP_EVENT_LOG_READER
@@ -279,6 +285,7 @@ public:
   // like to change the default behavior
 
   virtual void describeParamsAndColumns(UDRInvocationInfo &info); // Binder
+  virtual void describeDataflowAndPredicates(UDRInvocationInfo &info);
   virtual void describeDesiredDegreeOfParallelism(UDRInvocationInfo &info,
                                                   UDRPlanInfo &plan);// Optimizer
   virtual void processData(UDRInvocationInfo &info,
@@ -286,6 +293,12 @@ public:
   virtual ~ReadCppEventsUDFInterface();
 
 private:
+  bool validateEvent(const UDRInvocationInfo &info,
+                     const char *currField,
+                     const ColNum colNum,
+                     const bool doTrace,
+                     const int pid);
+
   bool useParallelExecForVirtualNodes_;
   DIR *logDir_;
   FILE *infile_;
@@ -343,6 +356,10 @@ void ReadCppEventsUDFInterface::describeParamsAndColumns(
               addFileColumns = true;
             break;
 
+            case 's':
+              // statistics option, handled at runtime
+            break;
+
             case 't':
               // trace option, handled at runtime
             break;
@@ -397,6 +414,41 @@ void ReadCppEventsUDFInterface::describeParamsAndColumns(
     }
 }
 
+void ReadCppEventsUDFInterface::describeDataflowAndPredicates(UDRInvocationInfo &info)
+{
+  UDR::describeDataflowAndPredicates(info);
+
+  bool generatedColsAreUsed = false;
+  if (info.out().getColumn(LOG_TS_COLNUM).getUsage() == ColumnInfo::USED ||
+      info.out().getColumn(SEVERITY_COLNUM).getUsage() == ColumnInfo::USED ||
+      info.out().getColumn(COMPONENT_COLNUM).getUsage() == ColumnInfo::USED ||
+      info.out().getColumn(NODE_NUMBER_COLNUM).getUsage() == ColumnInfo::USED ||
+      info.out().getColumn(CPU_COLNUM).getUsage() == ColumnInfo::USED ||
+      info.out().getColumn(PIN_COLNUM).getUsage() == ColumnInfo::USED ||
+      info.out().getColumn(PROCESS_NAME_COLNUM).getUsage() == ColumnInfo::USED ||
+      info.out().getColumn(SQL_CODE_COLNUM).getUsage() == ColumnInfo::USED ||
+      info.out().getColumn(QUERY_ID_COLNUM).getUsage() == ColumnInfo::USED ||
+      info.out().getColumn(LOG_FILE_NAME_COLNUM).getUsage() == ColumnInfo::USED)
+    generatedColsAreUsed = true;
+
+  // Walk through predicates and find additional ones to push down
+  // or to evaluate locally
+  for (int p=0; p<info.getNumPredicates(); p++)
+  {
+    if (generatedColsAreUsed && info.isAComparisonPredicate(p))
+    {
+      const ComparisonPredicateInfo &cpi = info.getComparisonPredicate(p);
+      if (cpi.hasAConstantValue())
+        info.setPredicateEvaluationCode(p, PredicateInfo::EVALUATE_IN_UDF);
+      else
+        info.setPredicateEvaluationCode(p, PredicateInfo::EVALUATE_ON_RESULT);
+    }
+    else
+      info.setPredicateEvaluationCode(p, PredicateInfo::EVALUATE_ON_RESULT);
+  }
+}
+
+
 void ReadCppEventsUDFInterface::describeDesiredDegreeOfParallelism(
      UDRInvocationInfo &info,
      UDRPlanInfo &plan)
@@ -419,6 +471,7 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
   // input parameters
   bool addFileColumns = false;
   bool doTrace = false;
+  bool doStats = false;
   int pid = (int) getpid();
 
   if (info.par().getNumColumns() >= 1)
@@ -434,6 +487,10 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
           case 'f': // handled below with addFileColumns
           case 'p': // handled at compile time
             break;
+
+          case 's':
+            doStats = true;
+          break;
 
           case 't':
             doTrace = true;
@@ -475,6 +532,12 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
   int haveRowToEmit = 0;
   int appendPos = 0;
   int numLogLocations = 3 ;
+
+  // Any possibility of overflowing?
+  int64_t numFilesOpened = 0;
+  int64_t numFilesRead = 0;
+  int64_t numEventsRead = 0;
+  int64_t numEventsReturned = 0;
 
   for(int logLocationIndex = 0; logLocationIndex < numLogLocations; logLocationIndex++) 
   {
@@ -599,11 +662,19 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
       if (dirEntry == NULL)
 	break;
       
+      numFilesOpened++;
+
       if (doTrace)
       {
 	printf("(%d) EVENT_LOG_READER examining log file %s\n", pid, dirEntry->d_name);
 	fflush(stdout);
       }
+
+      // If there is a contraint on log_file_name that is not met, skip to next file
+      if (!validateEvent(info, dirEntry->d_name, LOG_FILE_NAME_COLNUM, doTrace, pid))
+        continue;
+
+      numFilesRead++;
 
       const char *fileName = dirEntry->d_name;
       size_t nameLen = strlen(fileName);
@@ -669,6 +740,7 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
         // ---------------------------------------------------------------------
         // Loop over the lines of the file
         // ---------------------------------------------------------------------
+        bool meetsConstraint = true; 
         while ((ok = fgets(inputLine, sizeof(inputLine), infile_)) != NULL)
         {
 	  int year, month, day, hour, minute, second, fraction;
@@ -683,18 +755,19 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
 	  std::string lineParseError;
 	  
 	  lineNumber++;
+	  numEventsRead++;
 	  
 	  // skip any empty lines, should not really happen
 	  if (lineLength < 2)
+	  {
+	    if (doTrace)
 	    {
-	      if (doTrace)
-	      {
-		printf("(%d) EVENT_LOG_READER read short line %s\n", pid, inputLine);
-		fflush(stdout);
-	      }
-	      
-	      continue;
+              printf("(%d) EVENT_LOG_READER read short line %s\n", pid, inputLine);
+              fflush(stdout);
 	    }
+	      
+	    continue;
+	  }
 	  
 	  // remove a trailing LF character
 	  if (inputLine[lineLength-1] == '\n')
@@ -732,7 +805,6 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
 	    setParseError(CharConversionError, lineParseError);
 	  }
 	  
-	  
 	  // try to read the timestamp at the beginning of the line. Example:
 	  // 2014-10-30 20:49:53,252
 	  numItems = sscanf(currField,
@@ -743,6 +815,9 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
 	  if (numItems == 8)
 	  {
 	    // We were able to read a timestamp field
+
+            // reset meetsConstraint for the new event
+	    meetsConstraint = true;
 	    
 	    // Emit previous row, we have seen the start of next row
 	    if (haveRowToEmit)
@@ -754,15 +829,16 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
 				  rowParseStatus);
 	      if (addFileColumns)
 		setCharOutputColumn(info,
-				    PARSE_STATUS_COLNUM,
-				    rowParseStatus.c_str(),
-				    rowParseStatus);
+		    		    PARSE_STATUS_COLNUM,
+		  		    rowParseStatus.c_str(),
+		  		    rowParseStatus);
+	      numEventsReturned++;
 	      emitRow(info);
 	      if (doTrace)
-	       {
-		 printf("(%d) EVENT_LOG_READER emit\n", pid);
-		 fflush(stdout);
-	       }
+	      {
+		printf("(%d) EVENT_LOG_READER emit1\n", pid);
+		fflush(stdout);
+	      }
 	    }
 	    
 	    // we read a line that will produce an output row, initialize
@@ -783,10 +859,27 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
 	    snprintf(buf, sizeof(buf),
 		     "%04d-%02d-%02d %02d:%02d:%02d.%06d",
 		     year, month, day, hour, minute, second, fraction);
-	    setCharOutputColumn(info, LOG_TS_COLNUM, buf, rowParseStatus);
+
+	    meetsConstraint = validateEvent(info, buf, LOG_TS_COLNUM, doTrace, pid); 
+	    if (!meetsConstraint)
+	    {
+	      if (doTrace)
+	      {
+		printf("(%d) EVENT_LOG_READER Event not returned for column number %d,  value %s does not meet constraint\n",
+		       pid, (int)LOG_TS_COLNUM, buf);
+		fflush(stdout);
+	      }
+	      continue;
+	    }
+            setCharOutputColumn(info, LOG_TS_COLNUM, buf, rowParseStatus);
 	  }
 	  else
 	  {
+	    // This is a continuation line from the previous line(s) but the
+	    // previous lines did not meet constraint, continue.
+	    if (!meetsConstraint)
+	      continue;
+
 	    if (!haveRowToEmit)
 	    {
 	      // no valid timestamp and we did not have a previous line
@@ -920,69 +1013,107 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
 	    switch (columnNum)
 	    {
 	    case 2:
-	      setCharOutputColumn(info,
-				  SEVERITY_COLNUM,
-				  startOfVal,
-				  rowParseStatus);
+	      if (!validateEvent(info, startOfVal, SEVERITY_COLNUM, doTrace, pid))
+	        meetsConstraint = false;
+	      else
+	        setCharOutputColumn(info,
+	  			    SEVERITY_COLNUM,
+	  			    startOfVal,
+	  			    rowParseStatus);
 	      break;
 	      
 	    case 3:
-	      setCharOutputColumn(info,
-				  COMPONENT_COLNUM,
-				  startOfVal,
-				  rowParseStatus);
+	      if (!validateEvent(info, startOfVal, COMPONENT_COLNUM, doTrace, pid))
+	        meetsConstraint = false;
+	      else
+	        setCharOutputColumn(info,
+	  			    COMPONENT_COLNUM,
+	  			    startOfVal,
+	  			    rowParseStatus);
 	      break;
 	      
 	    case 4:
-	      setIntOutputColumn(info,
-				 NODE_NUMBER_COLNUM,
-				 startOfVal,
-				 rowParseStatus);
+	      if (!validateEvent(info, startOfVal, NODE_NUMBER_COLNUM, doTrace, pid))
+	        meetsConstraint = false;
+	      else
+	        setIntOutputColumn(info,
+	  			   NODE_NUMBER_COLNUM,
+	  			   startOfVal,
+	  			   rowParseStatus);
 	      break;
 	      
 	    case 5:
-	      setIntOutputColumn(info,
-				 CPU_COLNUM,
-				 startOfVal,
-				 rowParseStatus);
+	      if (!validateEvent(info, startOfVal, CPU_COLNUM, doTrace, pid))
+	        meetsConstraint = false;
+	      else
+	        setIntOutputColumn(info,
+	  			   CPU_COLNUM,
+	  			   startOfVal,
+				   rowParseStatus);
 	      break;
 	      
 	    case 6:
-	      setIntOutputColumn(info,
-				 PIN_COLNUM,
-				 startOfVal,
-				 rowParseStatus);
+	      if (!validateEvent(info, startOfVal, PIN_COLNUM, doTrace, pid))
+	        meetsConstraint = false;
+	      else
+	        setIntOutputColumn(info,
+				   PIN_COLNUM,
+				   startOfVal,
+				   rowParseStatus);
 	      break;
 	      
 	    case 7:
-	      setCharOutputColumn(info,
-				  PROCESS_NAME_COLNUM,
-				  startOfVal,
-				  rowParseStatus);
+	      if (!validateEvent(info, startOfVal, PROCESS_NAME_COLNUM, doTrace, pid))
+	        meetsConstraint = false;
+	      else
+	        setCharOutputColumn(info,
+				    PROCESS_NAME_COLNUM,
+				    startOfVal,
+				    rowParseStatus);
 	      break;
 	      
 	    case 8:
-	      setIntOutputColumn(info,
-				 SQL_CODE_COLNUM,
-				 startOfVal,
-				 rowParseStatus);
+	      if (!validateEvent(info, startOfVal, SQL_CODE_COLNUM, doTrace, pid))
+	        meetsConstraint = false;
+              else
+	        setIntOutputColumn(info,
+				   SQL_CODE_COLNUM,
+				   startOfVal,
+				   rowParseStatus);
 	      break;
 	      
 	    case 9:
-	      setCharOutputColumn(info,
-				  QUERY_ID_COLNUM,
-				  startOfVal,
-				  rowParseStatus);
+	      if (!validateEvent(info, startOfVal, QUERY_ID_COLNUM, doTrace, pid))
+	        meetsConstraint = false;
+	      else
+	        setCharOutputColumn(info,
+				    QUERY_ID_COLNUM,
+				    startOfVal,
+				    rowParseStatus);
+
 	      // we read all required fields,
 	      // next field is the message text
 	      if (messageTextField.empty())
 		messageTextField = nextField;
 	      break;
+            }
+
+	    if (!meetsConstraint)
+	    {
+	      if (doTrace)
+	      {
+	        printf("(%d) EVENT_LOG_READER Event not returned for column number %d,  value %s does not meet constraint\n",
+	        pid, (int)columnNum, startOfVal);
+	        fflush(stdout);
+	       }
+	       break;
 	    }
-	    
 	    currField = nextField;
 	  } // loop over column numbers 2-9
 	  
+	  if (!meetsConstraint)
+	    continue;
+
             // do some final adjustments
 	  if (!haveRowToEmit)
 	  {
@@ -997,6 +1128,7 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
 	  
 	  haveRowToEmit = 1;
 	} // loop over the lines of the file
+        
 	
         if (haveRowToEmit) 
         {
@@ -1006,19 +1138,19 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
 			      messageTextField.data(),
 			      rowParseStatus);
 	  if (addFileColumns)
-	    setCharOutputColumn(info,
-				PARSE_STATUS_COLNUM,
-				rowParseStatus.c_str(),
-				rowParseStatus);
-	  // Emit a row
-	  emitRow(info);
-	  if (doTrace)
-	  {
-	    printf("(%d) EVENT_LOG_READER emit\n", pid);
-	    fflush(stdout);
-	  }
+            setCharOutputColumn(info,
+                                PARSE_STATUS_COLNUM,
+                                rowParseStatus.c_str(),
+                                rowParseStatus);
+          numEventsReturned++;
+          emitRow(info);
+          if (doTrace)
+          {
+            printf("(%d) EVENT_LOG_READER emit2\n", pid);
+            fflush(stdout);
+          }
 	  haveRowToEmit = 0;
-            appendPos = 0;
+          appendPos = 0;
 	}
         // Close the input file
         if (infile_)
@@ -1038,7 +1170,231 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
     closedir(logDir_);
     logDir_ = NULL;
   } // for numLogLocations
+
+  if (doStats)
+  {
+    printf("(%d) EVENT_LOG_READER results: number log files opened: %ld, "
+           "number log files read: %ld, number rows read: %ld, "
+           "number rows returned: %ld\n",
+           pid, numFilesOpened, numFilesRead, numEventsRead, numEventsReturned);
+    fflush(stdout);
+  }
 }
+
+bool ReadCppEventsUDFInterface::validateEvent(const UDRInvocationInfo &info,
+                                              const char *currField,
+                                              const ColNum colNum,
+                                              const bool doTrace,
+                                              const int pid)
+{
+  // Go through list of constraints for the UDF and see if any apply to the
+  // current event.  If event does not meet constraint return false.
+  for (int i = 0; i <  info.getNumPredicates(); i++)
+  {
+    // If not predicate we are looking for, skip
+    if (info.getComparisonPredicate(i).getColumnNumber() != colNum)
+      continue;
+
+    // Strip off any character set qualifier
+    std::string constStr = info.getComparisonPredicate(i).getConstValue();
+    std::string temp = constStr;
+    std::size_t firstQuote = temp.find_first_of("'");
+    std::size_t lastQuote = temp.find_last_of("'");
+    if (firstQuote != std::string::npos && 
+        lastQuote != std::string::npos &&
+        (firstQuote != lastQuote))
+      constStr = temp.substr(firstQuote+1, (lastQuote - firstQuote - 1));
+    else
+      constStr = temp;
+
+    // Comparisons can be done via timestamp compares, string compares or
+    // numeric compares.  Determine if passed in colNum requires a numeric
+    // compare
+    bool isNumeric = 
+       (colNum == NODE_NUMBER_COLNUM ||
+        colNum == CPU_COLNUM ||
+        colNum == PIN_COLNUM ||
+        colNum == SQL_CODE_COLNUM ||
+        colNum == LOG_FILE_NODE_COLNUM ||
+        colNum == LOG_FILE_LINE_COLNUM) ? true : false;
+
+    // Report predicate evaluation that will take place
+    if (doTrace)
+    {
+      printf("(%d) EVENT_LOG_READER Constraint check - comparison operator: %d "
+             "column: %d event value: %s predicate value: %s, iterator: %d \n",
+             pid, (int)info.getComparisonPredicate(i).getOperator(), colNum,
+             currField, constStr.c_str(), i);
+      fflush(stdout);
+    }
+
+    if (colNum == LOG_TS_COLNUM)
+    {
+      struct tm tm;
+
+      // convert predicate value
+      memset(&tm, 0, sizeof(struct tm));
+      strptime(constStr.c_str(), "%Y-%m-%d %H:%M:%S", &tm);
+      time_t constTime = mktime(&tm);
+
+      // convert event value
+      memset(&tm, 0, sizeof(struct tm));
+      strptime(currField, "%Y-%m-%d %H:%M:%S", &tm);
+      time_t eventTime = mktime(&tm);
+
+      int result = 0;
+      switch (info.getComparisonPredicate(i).getOperator())
+      {
+        case PredicateInfo::EQUAL:
+          result = difftime(eventTime,constTime);
+          if (result == 0)
+            continue;
+          else
+            return false;
+          break;
+        case PredicateInfo::NOT_EQUAL:
+          result = difftime(eventTime,constTime);
+          if (result == 0)
+            return false;
+          break;
+        case PredicateInfo::LESS:
+          result = difftime(constTime,eventTime);
+          if (result <= 0)
+            return false;
+          break;
+        case PredicateInfo::LESS_EQUAL:
+          result = difftime(constTime,eventTime);
+          if (result < 0)
+            return false;
+          break;
+        case PredicateInfo::GREATER:
+          result = difftime(eventTime,constTime);
+          if (result <= 0)
+            return false;
+            break;
+         case PredicateInfo::GREATER_EQUAL:
+          result = difftime(eventTime,constTime);
+           if (result < 0)
+            return false;
+           break;
+         default:
+           return false;
+           break;
+      } // LOG_TS_COLNUM operation switch
+    } //end if
+
+    else if (isNumeric)
+    {
+      char * pEnd;
+      bool validConst = true;
+      bool validEvent = true;
+      
+      // Convert predicate value
+      long constLong = strtol (constStr.c_str(),&pEnd,10);
+
+      // if unable to convert predicate value, set validConst to false
+      if (pEnd == NULL || *pEnd != 0 || pEnd == constStr.c_str())
+        validConst = false;
+
+      // Convert event value
+      long eventLong = strtol (currField,&pEnd,10);
+
+      // If unable to convert currField into an int, set validEvent to false
+      if (pEnd == NULL || *pEnd != 0 || pEnd == currField)
+        validEvent = false;
+
+       switch (info.getComparisonPredicate(i).getOperator())
+       {
+         case PredicateInfo::EQUAL:
+           if (validConst && validEvent && constLong == eventLong)
+             continue;
+           else
+             return false;
+           break;
+         case PredicateInfo::NOT_EQUAL:
+           if (validConst && validEvent && constLong == eventLong)
+             return false;
+           break;
+         case PredicateInfo::LESS:
+           if (validConst && validEvent && eventLong < constLong)
+             continue;
+           else
+             return false;
+           break;
+         case PredicateInfo::LESS_EQUAL:
+           if (validConst && validEvent && eventLong <= constLong)
+             continue;
+           else
+             return false;
+           break;
+         case PredicateInfo::GREATER:
+           if (validConst && validEvent && eventLong > constLong)
+             continue;
+           else
+             return false;
+           break;
+         case PredicateInfo::GREATER_EQUAL:
+           if (validConst && validEvent && eventLong >= constLong)
+             continue;
+           else
+             return false;
+           break;
+         default:
+           return false;
+           break;
+       } // numeric operator switch
+     } // else if
+      
+    // All other comparisons are assumed to be string compares
+    else
+    {
+      // convert predicate value
+      temp = constStr;
+      constStr.clear();
+      for(size_t j = 0; j < temp.size(); ++j)
+        constStr += (std::toupper(temp[j]));
+
+      // convert event value
+      temp = currField;
+      std::string eventStr;
+      for(size_t j = 0; j < temp.size(); ++j)
+        eventStr += (std::toupper(temp[j]));
+
+      switch (info.getComparisonPredicate(i).getOperator())
+      {
+        case PredicateInfo::EQUAL:
+          if (constStr != eventStr)
+            return false;
+          break;
+        case PredicateInfo::NOT_EQUAL:
+          if (constStr == eventStr)
+            return false;
+          break;
+        case PredicateInfo::LESS:
+          if (eventStr >= constStr)
+            return false;
+          break;
+        case PredicateInfo::LESS_EQUAL:
+          if (eventStr > constStr)
+            return false;
+          break;
+        case PredicateInfo::GREATER:
+          if (eventStr <= constStr)
+            return false;
+          break;
+         case PredicateInfo::GREATER_EQUAL:
+           if (eventStr < constStr)
+            return false;
+           break;
+        default:
+          return false;
+          break;
+      } // string comparison switch
+    } // else
+  } // for getNumPredicates
+  return true;
+}
+
 
 ReadCppEventsUDFInterface::~ReadCppEventsUDFInterface()
 {

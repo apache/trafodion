@@ -145,50 +145,35 @@ update statistics for table t107t2 on  every column sample 1000 rows;
 ?section dml
 -------------
 -- Test #1: In memory sort ,double & copy
-control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; 
-control query default GEN_SORT_MAX_NUM_BUFFERS  '40';
 prepare xx from SELECT [last 1] c100k from t107100k order by c100k;
+execute xx;
+
+-- Test #1A: uses TOPN sort
+prepare xx from SELECT [first 10] c100k from t107100k order by c100k;
+execute xx;
+
+-- Test#1B: negetive test, zero records to sort.
+prepare xx from SELECT c100k from t107100k where c100k < 0 order by c100k;
+execute xx;
+
+-- Test#1C: negetive test, zero records to sort, TOPN
+prepare xx from SELECT [first 10] c100k from t107100k where c100k < 0 order by c100k;
 execute xx;
 
 -- Test #2: SQL buffer overflow, overflow and merge
 set envvar SCRATCH_IO_PENDING 280;
-control query default EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_SORT 'ON';
-control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; -- 200 rows approx NSK
-control query default GEN_SORT_MAX_NUM_BUFFERS  '40'; -- total of 8000 rows per run NSK
-prepare xx from SELECT [last 1] c100k, str1 from t107100k order by c100k;
+control query default GEN_SORT_MAX_NUM_BUFFERS  '1';
+prepare xx from SELECT [last 1] c100k, str1 from t107100k order by 1,2;
 execute xx;
 
 -- Test #3 - causes intermediate merge
 set envvar SCRATCH_IO_PENDING 50;
-control query default EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_SORT 'ON';
-control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; -- 200 rows approx NSK
-control query default GEN_SORT_MAX_NUM_BUFFERS  '20'; -- total of 8000 rows per run NSK
+control query default GEN_SORT_MAX_NUM_BUFFERS  '20';
 control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
-control query default SORT_MAX_HEAP_SIZE_MB    '2';
-prepare xx from SELECT [last 1] c100k, str1 from t107100k order by c100k;
+control query default GEN_SORT_MAX_NUM_BUFFERS  '1';
+control query default SORT_MAX_HEAP_SIZE_MB    '1';
+prepare xx from SELECT [last 1] c100k, str1 from t107100k order by 1,2;
 execute xx;
-reset envvar SCRATCH_IO_PENDING; 
-
-#ifNSK
--- Test #4 - Test 2 with multiple opens = 4
-control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; -- 200 rows approx NSK
-control query default GEN_SORT_MAX_NUM_BUFFERS  '20'; -- total of 8000 rows per run NSK
-control query default SORT_MEMORY_QUOTA_SYSTEM '';
-control query default SORT_MAX_HEAP_SIZE_MB    '';
-control query default SCRATCH_MAX_OPENS_SORT '4';
-prepare xx from SELECT [last 1] c100k, str1 from t107100k order by c100k;
-execute xx;
-
--- Test #5 - Test 2 with multiple opens = 4, intermediate merges
-control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; -- 200 rows approx NSK
-control query default GEN_SORT_MAX_NUM_BUFFERS  '20'; -- total of 8000 rows per run NSK
-control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
-control query default SORT_MAX_HEAP_SIZE_MB    '2';
-control query default SCRATCH_MAX_OPENS_SORT '4';
-prepare xx from SELECT [last 1] c100k, str1 from t107100k order by c100k;
-execute xx;
-
-#ifNSK
 
 ?section dml1
 -------------

@@ -339,6 +339,7 @@ ex_clause::ex_clause(clause_type type,
 	  setClassID(FUNC_CURR_TRANSID_ID);
 	  break;
         case ITM_SHA:
+        case ITM_SHA1:
           setClassID(FUNC_SHA_ID);
           break;
         case ITM_SHA2:
@@ -463,6 +464,9 @@ ex_clause::ex_clause(clause_type type,
 	  break;
 	case ITM_AGGR_MIN_MAX:
 	  setClassID(AGGR_MIN_MAX_ID);
+	  break;
+	case ITM_AGGR_GROUPING_FUNC:
+	  setClassID(AGGR_GROUPING_ID);
 	  break;
 	case ITM_CURRENTEPOCH:
 	case ITM_VSBBROWTYPE:
@@ -909,6 +913,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
     case ex_clause::AGGR_MIN_MAX_ID:
       GetVTblPtr(vtblPtr, ex_aggr_min_max_clause);
       break;
+    case ex_clause::AGGR_GROUPING_ID:
+      GetVTblPtr(vtblPtr, ExFunctionGrouping);
+      break;
     case ex_clause::AGGREGATE_TYPE:
       GetVTblPtr(vtblPtr, ex_aggregate_clause);
       break;
@@ -1177,6 +1184,7 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     // LCOV_EXCL_STOP
     case ITM_AGGR_MIN_MAX: return "ITM_AGGR_MIN_MAX";
+    case ITM_AGGR_GROUPING_FUNC: return "ITM_AGGR_GROUPING_FUNC";
 
     // custom functions
     // LCOV_EXCL_START
@@ -1860,6 +1868,16 @@ void ex_aggr_min_max_clause::displayContents(Space * space, const char * /*displ
 void ex_pivot_group_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   ex_clause::displayContents(space, "ex_pivot_group_clause", clauseNum, constsArea);
+}
+
+void ExFunctionGrouping::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
+{
+  ex_clause::displayContents(space, "ExFunctionGrouping", clauseNum, constsArea);
+
+  char buf[100];
+  str_sprintf(buf, "    rollupGroupIndex_ = %d\n",
+              rollupGroupIndex_);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 }
 
 void ex_arith_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
