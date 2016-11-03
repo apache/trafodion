@@ -26190,6 +26190,11 @@ like_option : TOK_WITHOUT TOK_CONSTRAINTS
                                   $$ = new (PARSERHEAP())
                                     ElemDDLLikeSaltClause(saltClause);
                                 }
+                      | TOK_LIMIT TOK_COLUMN TOK_LENGTH TOK_TO unsigned_integer
+                                {
+                                  $$ = new (PARSERHEAP())
+                                    ElemDDLLikeLimitColumnLength($5);
+                                }
 
 /* type pElemDDL */
 optional_create_table_attribute_list : create_table_as_attr_list_start

@@ -71,6 +71,7 @@
 #include "SqlciError.h"
 #include "ExpErrorEnums.h"
 #include "CmpSeabaseDDL.h" // call to createHistogramTables
+#include "ComMisc.h"   // to get ComTrafReservedColName
 
 // -----------------------------------------------------------------------
 // Class to deallocate statement and descriptor.
@@ -540,50 +541,34 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
         // Rather, the SALT USING clause will be used. 
         if ( !isNativeTable ) 
            tableOptions = " WITH PARTITIONS";
-        // If a transaction is running, the table needs to be created as audited.
-        // Otherwise, create table as non-audited.
-        /* TEMPTEMP. Dave need to validate this change.
-        if (TM->InTransaction())
-          tableOptions += " ATTRIBUTE AUDIT";
-        else
-          tableOptions += " ATTRIBUTE NO AUDIT";
-
-        tableOptions += getTempTablePartitionInfo(unpartitioned, isPersSample);
-        */
+        if (hs_globals->hasOversizedColumns)
+          {
+            // We will be truncating some columns when populating the sample table,
+            // trading off accuracy in UEC against performance. Add a clause to
+            // the table options limiting column lengths to the desired maximum.
+            tableOptions += " LIMIT COLUMN LENGTH TO ";
+            char temp[20];  // long enough for 32-bit integer
+            sprintf(temp,"%d",hs_globals->maxCharColumnLengthInBytes);
+            tableOptions += temp;
+          }
 
         ddl  = "CREATE TABLE ";
         ddl += tempTabName;
-        if (hs_globals->hasOversizedColumns)
+        ddl += " LIKE ";
+
+        // is this an MV LOG table?
+        if (objDef->getNameSpace() == COM_IUD_LOG_TABLE_NAME)
           {
-            // Use CREATE TABLE AS SELECT when we have to modify the column lengths
-            // (this happens for tables having very long chars/varchars). One 
-            // peculiarity: We have to use the native version of the name
-            // (e.g. HIVE.whatever.whatever for Hive tables) instead of the external
-            // table name (e.g. TRAFODION._HV_whatever.whatever) in the SELECT.
-            ddl += " NO LOAD AS SELECT ";
-            addTruncatedSelectList(ddl);
-            ddl += " FROM ";
-            ddl += objDef->getObjectFullName().data();  // e.g. HIVE.whatever.whatever
-            // ddl += tableOptions;  unfortunately not supported with CREATE TABLE AS SELECT
+            ddl += "TABLE (IUD_LOG_TABLE ";
+            ddl += userTabName;
+            ddl += ") ";
           }
         else
           {
-            ddl += " LIKE ";
-
-            // is this an MV LOG table?
-            if (objDef->getNameSpace() == COM_IUD_LOG_TABLE_NAME)
-              {
-                ddl += "TABLE (IUD_LOG_TABLE ";
-                ddl += userTabName;
-                ddl += ") ";
-              }
-            else
-              {
-                ddl += userTabName;
-              }
-
-            ddl += tableOptions;    
+            ddl += userTabName;
           }
+
+        ddl += tableOptions;    
         tableType = ANSI_TABLE;
         sampleName = new(STMTHEAP) ComObjectName(tempTabName,
                                                  COM_UNKNOWN_NAME,
@@ -5448,12 +5433,17 @@ NAString HSSample::getTempTablePartitionInfo(NABoolean unpartitionedSample,
 //
 void HSSample::addTruncatedSelectList(NAString & qry)
   {
+    bool first = true;
     for (Lng32 i = 0; i < objDef->getNumCols(); i++)
       {
-        if (i)
-          qry += ", ";
+        if (!ComTrafReservedColName(*objDef->getColInfo(i).colname))
+          {
+            if (!first)
+              qry += ", ";
 
-        addTruncatedColumnReference(qry,objDef->getColInfo(i));
+            addTruncatedColumnReference(qry,objDef->getColInfo(i));
+            first = false;
+          }
       }
   }
 
@@ -5473,18 +5463,34 @@ void HSSample::addTruncatedSelectList(NAString & qry)
 //
 void HSSample::addTruncatedColumnReference(NAString & qry,HSColumnStruct & colInfo)
   {
-    Lng32 maxLengthInBytes = MAX_SUPPORTED_CHAR_LENGTH;
+    HSGlobalsClass *hs_globals = GetHSContext();
+    Lng32 maxLengthInBytes = hs_globals->maxCharColumnLengthInBytes;
     bool isOverSized = DFS2REC::isAnyCharacter(colInfo.datatype) &&
                            (colInfo.length > maxLengthInBytes);
     if (isOverSized)
       {
+        // Note: The result data type of SUBSTRING is VARCHAR, always.
+        // But if the column is CHAR, many places in the ustat code are not
+        // expecting a VARCHAR. So, we stick a CAST around it to convert
+        // it back to a CHAR in these cases.
+
+        NABoolean isFixedChar = DFS2REC::isSQLFixedChar(colInfo.datatype);
+        if (isFixedChar)
+          qry += "CAST(";
         qry += "SUBSTRING(";
         qry += colInfo.externalColumnName->data();
         qry += " FOR ";
         
-        char temp[20];  // big enough for "nnnnnn) AS "
-        sprintf(temp,"%d) AS ", maxLengthInBytes / CharInfo::maxBytesPerChar(colInfo.charset));
+        char temp[20];  // big enough for "nnnnnn)"
+        sprintf(temp,"%d)", maxLengthInBytes / CharInfo::maxBytesPerChar(colInfo.charset));
         qry += temp;
+        if (isFixedChar)
+          {
+            qry += " AS CHAR(";
+            qry += temp;
+            qry += ")";
+          }
+        qry += " AS ";
         qry += colInfo.externalColumnName->data();
       }
     else

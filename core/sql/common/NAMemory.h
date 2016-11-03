@@ -746,6 +746,13 @@ public:
 
   NA_EIDPROC void releaseFreePages(); // release deallocted pages to kernel
 
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) 
+  // useful method for debugging buffer overruns; sprinkle your code
+  // with calls to this in order to narrow down where a buffer overrun
+  // is occurring
+  NA_EIDPROC void      doCheckMallocState();
+#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID)
+
 private:
   NA_EIDPROC static NABoolean isAligned(void *a);
   NA_EIDPROC static size_t    granularityAlign(size_t size);
@@ -809,7 +816,6 @@ private:
   NA_EIDPROC void      doCheckTree(NATreeFragment *t);
   NA_EIDPROC void      doCheckTreebin(bindex_t i);
   NA_EIDPROC void      doCheckSmallbin(bindex_t i);
-  NA_EIDPROC void      doCheckMallocState();
   NA_EIDPROC NABoolean binFind(NAHeapFragment *x);
   NA_EIDPROC size_t    traverseAndCheck();
 #ifndef STAND_ALONE
