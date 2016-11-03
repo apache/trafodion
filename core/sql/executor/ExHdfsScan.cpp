@@ -230,6 +230,11 @@ void ExHdfsScanTcb::freeResources()
     NADELETEBASIC(hdfsAsciiSourceBuffer_, getSpace());
     hdfsAsciiSourceBuffer_ = NULL;
   }
+  if(sequenceFileReader_)
+  {
+    NADELETE(sequenceFileReader_,SequenceFileReader, getHeap());
+    sequenceFileReader_ = NULL;
+  }
  
   // hdfsSqlTupp_.release() ; // ??? 
   if (hdfsSqlBuffer_)
@@ -552,8 +557,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	    retcode = 0;
 	    if (isSequenceFile() && !sequenceFileReader_)
 	      {
-	        sequenceFileReader_ = new(getSpace()) 
-                    SequenceFileReader((NAHeap *)getSpace());
+	        sequenceFileReader_ = new(getHeap()) 
+                    SequenceFileReader((NAHeap *)getHeap());
 	        sfrRetCode = sequenceFileReader_->init();
 	        
 	        if (sfrRetCode != JNI_OK)
