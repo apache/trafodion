@@ -44,6 +44,8 @@ Trafodion provides SQL access to structured, semi-structured, and unstructured d
 <table><tr><td>
   <p><h5>We're working on release 2.1!</h5></p> 
   <p>Check out the <a href="https://cwiki.apache.org/confluence/display/TRAFODION/Roadmap">Roadmap</a> page for planned content.</p>
+  <p><h5>Want to disucss Trafodion in Chinese? Join the Trafodion discussion on Tencent QQ!</h5></p> 
+  <p><a href="http://im.qq.com/">QQ</a> Group ID: 176011868.</p>
 </td></tr></table>
 
 <!-- 20160524 GTA Need more logos before using this part.

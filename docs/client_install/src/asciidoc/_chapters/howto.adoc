@@ -1,0 +1,164 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+= How To
+
+[[howto-setup-path]]
+== Set Up Path Variable
+
+You need to update your PATH variable for Java and the {project-name} clients.
+The examples below show how to add Java to your PATH variable. The process
+is similar for the different {project-name} clients.
+
+NOTE: You typically point the PATH variable to the `bin` directory, if it exists.
+Otherwise, you point the PATH variable to the directory containing the client executable.
+The examples below point to the Java `bin` directory.
+
+[[howto-setup-path-windows]]
+=== Set PATH Variable on Windows
+
+==== Windows 10
+
+. Right-click on the Windows icon on the menu bar. Select *System*.
+. Click on *Advanced System Settings*.
+. In the *System Properties* dialog box, click the *Advanced* tab.
+. Click the *Environment Variables* button.
+. Under *System* variables, select the variable named *Path*, and then click *Edit. . .*:
++
+image:{images}/win10_edit_path.jpg[Windows 10 Edit Path Variable]
++
+<<<
+. Click *Browse. . .*. Find the directory where you installed Java or the {project-name} client. Select the `bin` directory as applicable.
++
+image:{images}/win10_select_java.jpg[image]
+
+.  Click *OK* to close the browse window. Click *OK* to close the edit window.
+.  Verify that the updated *Path* appears under *System* variables, and click *OK*.
+.  In the *System Properties* dialog box, click *OK* to accept the changes.
+
+<<<
+==== Windows 8
+
+. Right-click the *Computer* icon on your desktop, and then select *Properties*. The *Control Panel > System and Security > System* window appears.
+
+. In the left navigation bar, click the *Advanced* system settings link.
+
+.  In the *System Properties* dialog box, click the *Environment Variables* button.
+
+.  Under *System* variables, select the variable named *Path*, and then click *Edit*:
++
+image:{images}/path2.jpg[image]
+
+.  Place the cursor at the start of the *Variable* value field and
+enter the path of the Java or {project-name} client `bin` directory, ending with a semicolon (;):
++
+image:{images}/varval2.jpg[image]
++
+*Example*
++
+```
+"c:\Program Files (x86)\Java\jre7\bin";
+```
++
+NOTE: Check that no space exists after the semicolon (;) in the path. If there are spaces in the directory name, delimit the entire directory path in double quotes (") before the semicolon.
+
+.  Click *OK*.
+.  Verify that the updated *Path* appears under *System* variables, and click *OK*.
+.  In the *System Properties* dialog box, click *OK* to accept the changes.
+
+For a full installation, a sample PATH variable may contain:
+
+```
+SET PATH=%PATH%;C:\Program Files\Java\jre1.8.0_101\;C:\trafodion\trafci\bin\;
+```
+
+
+[[howto-setup-path-linux]]
+=== Set PATH Variable on Linux
+
+. Open the user profile (`.profile` or `.bash_profile` for the Bash shell) in the `$HOME` directory.
++
+```
+cd $HOME
+vi .profile
+```
+
+. In the user profile, set the `PATH` environment variable to include the path of the Java 
+or {project-name} client `bin` directory. 
++
+```
+export PATH=$PATH:/usr/lib/jvm/java-1.7.0/bin
+```
++
+NOTE: Place the path of the Java bin directory after `$PATH` separated by colon (`:`). 
+
+.  To activate the changes, either log out and log in again or source in the user profile.
++
+```
+source profile
+```
+
+For a full installation, a sample PATH variable may contain:
+
+```
+export PATH=$PATH:/usr/lib/jvm/java-1.7.0/bin:/opt/user/trafodion/trafci/bin
+```
+
+[[howto-setup-path-verify]]
+=== Verify PATH Variable
+
+Ensure that you can access the Java or {project-name} client
+from the command line.
+
+*Examples*
+
+Display the Java version.
+
+```
+c:\trafodion> java -version
+
+java version "1.7.0_45" # This is the version you need to check
+Java(TM) SE Runtime Environment (build 1.7.0_45-b18)
+Java HotSpot(TM) Client VM (build 24.45-b08, mixed mode, sharing)
+c:\trafodion>
+```
+
+Display the trafci version.
+
+```
+c:\trafodion> trafci -version
+
+Welcome to EsgynDB Enterprise Command Interface
+Copyright (c) 2015-2016 Esgyn Corporation
+
+JDBC Type 4 Driver Build ID : Traf_JDBC_Type4_Build_439d96b
+Command Interface Build ID  : TrafCI_Build_439d96b
+
+c:\trafodion>
+```
+
+If you cannot display the version information, then you need to 
+check your PATH variable settings again.
+

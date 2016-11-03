@@ -20,47 +20,226 @@
  */
 ////
 
-[[install-odb]]
+[[odb-install]]
 = Install odb
 
-[[installation-requirements]]
-== Installation Requirements
+If you have not done so already, please ensure that you have
+<<download-software, unpackaged the {project-name} client software>> and
+<<odbc-linux-install, setup the {project-name} Linux ODBC Driver>>.
 
-The odb tool runs on 64-bit Linux. On a Linux workstation, odb requires `pthread` libraries, which are usually installed by default. It also
-requires the unixODBC Driver Manager to be installed and configured on the client workstation. For more information, see the
-{docs-url}/odb/index.html[_{project-name} odb User Guide_].
+The examples in this chapter assumes that you have unpackaged the odb installation file 
+to `$HOME/trafodion/odb`.
 
-[[installation-instructions]]
-== Installation Instructions
+== odb Requirements
 
-NOTE: Before following these installation instructions, please make sure to install and configure unixODBC on the client workstation. For more
-information, see the {docs-url}/odb/index.html[_{project-name} odb User Guide_].
+odb requires:
 
-You download and extract the {project-name} client package using the instructions in <<introduction-download, Download Installation Package>> above.
+* pthread libraries (Generally installed by default)
+* unixODBC. See installation instructions <<odb-install-unixodbc, below>>.
 
-[[odb-install]]
-=== Install odb
+[[odb-install-unixodbc]]
+== Install and Configure unixODBC
 
-1.  Change the directory to the `clients` subdirectory.
-2.  Unpack the contents of the `odb64_linux.tar.gz` file to a location on your client workstation:
+This section explains how to install and configure `unixODBC`.
+Refer to the http://www.unixodbc.org/doc/[unixODBC documentation] for additional
+configuration information.
+
+1.  Obtain the source code tar ball from http://www.unixodbc.org/ Use version 2.3.*_x_* or later.
+2.  Unpack the tar ball:
 +
 ```
-mkdir $HOME/odb
-tar -xzf odb64_linux.tar.gz -C $HOME/odb
+$ tar -xzvf unixODBC-2.3.1.tar.gz
+```
+
+3.  Configure unixODBC installation (root access required):
++
+```
+$ cd unixODBC-2.3.1
+$ sudo ./configure --disable-gui --enable-threads --disable-drivers
 ```
 +
-The command extracts these files:
+unixODBC is installed under `/usr/local`.
 +
+If you don't have root privileges or you want to install unixODBC somewhere else
+then `add --prefix=<installation_path>` to the `configure` command here above.
++
+*Example - Install unixODBC in Alternate Location*
++
+```
+$ ./configure --prefix=$HOME/trafodion/unixodbc --disable-gui --enable-threads --disable-drivers
+```
++
+<<<
+4.  Compile unixODBC sources:
++
+```
+$ make
+```
+
+5.  Install unixODBC:
+
+```
+$ make install
+```
+
+=== Configure unixODBC
+
+1.  Define environment variables.
+2.  Define data sources.
+
+Start with the environment variables (which you can add to your profile script):
+
+1. Set the `ODBCHOME` variable to the unixODBC installation directory (the one configured via `--prefix` here above).
++
+*Example*
++
+```
+$ export ODBCHOME=$HOME/trafodion/unixodbc
+```
+
+2. Configure the system data sources directory (the one containing `odbc.ini` and `odbcinst.ini`).
+Normally, the `etc/` directory under `$ODBCHOME`:
++
+```
+$ export ODBCSYSINI=$ODBCHOME/etc
+```
+
+3. Configure the `ODBCINI` variable to the full path of the `odbc.ini` file:
++
+```
+$ export ODBCINI=$ODBCSYSINI/odbc.ini
+```
+
+4. Add the unixODBC lib directory to your `LD_LIBRARY_PATH` (Linux) or `LIBPATH` (IBM AIX) or `SHLIB_PATH` (HP/UX):
++
+```
+$ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ODBCHOME/lib
+```
+
+<<<
+=== Configure Data Sources
+
+==== `odbc.ini`
+
+```
+[ODBC]
+AppUnicodeType=utf16
+
+[<DATA_SOURCE_NAME>]
+Description = DSN Description
+Driver = <odbcinst.ini corresponding section>
+...
+Other (Driver specific) parameters
+...
+```
+
+==== `odbcinst.ini`
+
+```
+[<Driver name in odbc.ini>]
+Description = Driver description
+Driver = <ODBC driver>
+FileUsage = 1
+UsageCount = 1
+```
+
+<<<
+*{project-name} Example*
+
+```
+$ cat odbc.ini
+
+[ODBC]
+AppUnicodeType=utf16
+
+[traf]
+Description = traf DSN 
+Driver = Trafodion 
+Catalog = TRAFODION 
+Schema = QA 
+DataLang = 0 
+FetchBufferSize = SYSTEM_DEFAULT 
+Server = TCP:<server-name>:<port-no> 
+SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT 
+SQL_LOGIN_TIMEOUT = SYSTEM_DEFAULT 
+SQL_QUERY_TIMEOUT = NO_TIMEOUT 
+ServiceName = TRAFODION_DEFAULT_SERVICE
+
+$ cat odbcinst.ini
+
+[Trafodion]
+Description = {project-name} ODBC Stand Alone Driver
+Driver = /<dir-name>/conn/clients/odbc/libtrafodbc_drvr64.so
+FileUsage = 1 
+UsageCount = 1 
+
+[ODBC]
+Threading = 1 
+Trace = Off 
+Tracefile = uodbc.trc
+$
+```
+
+<<<
+The `Threading` setting is defined as follows
+(extracted from unixODBC sources `DriverManager/handles.c`):
+
+[source,cplusplus]
+----
+/*
+* ...
+* If compiled with thread support the DM allows four different
+* thread strategies
+*
+
+* Level 0 - Only the DM internal structures are protected
+* the driver is assumed to take care of it's self
+*
+
+* Level 1 - The driver is protected down to the statement level
+* each statement will be protected, and the same for the connect
+* level for connect functions, note that descriptors are considered
+* equal to statements when it comes to thread protection.
+*
+
+* Level 2 - The driver is protected at the connection level. only
+* one thread can be in a particular driver at one time
+*
+
+* Level 3 - The driver is protected at the env level, only one thing
+* at a time.
+*
+
+* By default the driver open connections with a lock level of 0,
+* drivers should be expected to be thread safe now.
+* this can be changed by adding the line
+*
+
+* Threading = N
+*
+* to the driver entry in odbcinst.ini, where N is the locking level
+*
+*/
+----
+
+<<<
+[[odb-verify-install]]
+== Verify odb Installation
+
+`$HOME/trafodion/odb` should contain the following files.
+
 * `README`
 * `/bin/odb64luo` (the odb executable)
 
-3.  You are now ready to run the odb executable. For more information, see the {docs-url}/odb/index.html[_{project-name} odb User Guide_].
+See the {docs-url}/odb/index.html[{project-name} odb User Guide] for information how to use odb.
 
 [[odb-uninstall]]
 == Uninstall odb
 
 To uninstall odb, delete the `README` and `/bin/odb64luo` files from their installed location.
 
+*Example*
+
 ```
-rm -rf odb-installation-directory
+rm -rf $HOME/trafodion/odb
 ```

@@ -30,8 +30,7 @@ This manual describes how to install and configure client applications that enab
 This manual is intended for users who want to connect to and use a {project-name} database.
 
 == New and Changed Information
-This manual shows updated versions for {project-name} Release {project-version}. It also provides instructions on how to download and install <<odb,{project-name} odb>>, a
-new multi-threaded, ODBC-based command-line tool for parallel data loading and extracting.
+This manual shows updated versions for {project-name} Release {project-version}.
 
 == Notation Conventions
 This list summarizes the notation conventions for syntax presentation in this manual.

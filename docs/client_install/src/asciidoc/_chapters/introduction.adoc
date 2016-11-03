@@ -35,11 +35,11 @@ The following table lists JDBC-based clients supported by {project-name}.
 | Client Name | Description
 | *{project-name} JDBC Type 4 Driver* | A driver that enables Java applications that run on a client workstation to connect to a {project-name} database. +
  +
-*NOTE:* The {project-name} Command Interface (TrafCI), DbVisualizer, and SQuirreL SQL Client require this driver to be installed on the client
+*NOTE:* The {project-name} Command Interface (trafci), DBVisualizer, and SQuirreL SQL Client require this driver to be installed on the client
 workstation.
-| *{project-name} Command Interface (TrafCI)* | A command-line interface that allows you to connect to a {project-name} database and run SQL statements and other commands interactively or from
+| *{project-name} Command Interface (trafci)* | A command-line interface that allows you to connect to a {project-name} database and run SQL statements and other commands interactively or from
 script files. For more information, see the http://trafodion.incubator.apache.org/docs/command_interface/index.html[{project-name} Command Interface Guide].
-| *DbVisualizer* | A third-party database tool that allows you to connect to a {project-name} database. For more information, see the http://www.dbvis.com/[DbVisualizer website].
+| *DBVisualizer* | A third-party database tool that allows you to connect to a {project-name} database. For more information, see the http://www.dbvis.com/[DbVisualizer website].
 | *SQuirreL SQL Client* | A third-party database tool that allows you to connect to a {project-name} database. For more information, see the 
 http://squirrel-sql.sourceforge.net/[SQuirreL SQL Client website].
 |===
@@ -58,90 +58,13 @@ A driver that enables applications, which were developed for the Microsoft Open 
 interface (API) and which run on a Windows workstation, to connect to a {project-name} database.
 | *{project-name} odb tool* | A multi-threaded, ODBC-based command-line tool for parallel data loading and extracting. For more information, see the
 {docs-url}/odb/index.html[{project-name} odb User Guide].
+| *Tableau* | An interactive data visualization products focused on business intelligence
+For more information, see the http://www.tableau.com/[Tableau Software website].
 |===
 
 ^1^ License issues prevent us from including the ODBC Driver for Windows in this release. Contact
 {project-support} for help obtaining the driver.
 
-<<<
-[[introduction-download]]
-== Download Installation Package
-The {project-name} client software is available from the {download-url}[{project-name} Download] page. There is one
-`{project-name} Clients` package per release listed under *<version> Binaries*.
-
-The `{project-name} Clients` package consists of a zipped tar file that contains the {project-name} Clients tar file. The {project-name} Client
-binaries are located in the Clients folder, which contains the following files:
-
-[cols="30%l,70%", options="header"]
-|===
-| File                             | Usage
-| odbc64_linux.tar.gz              | {project-name} odb tool.
-| TFODBC64-*.exe                   | *[Not included in this release]*^1^ {project-name} ODBC Driver for Windows.
-| TRAF_ODBC_Linux_Driver_64.tar.gz | {project-name} ODBC driver for Linux.
-| trafci.zip                       | The {project-name} command interpreter `trafci`.
-| JDBCT4.zip                       | {project-name} JDBC Type 4 Driver.
-|===
-
-^1^ License issues prevent us from including the ODBC Driver for Windows in this release. Contact 
-{project-support} for help obtaining the driver.
-
-[[introduction-windows-download]]
-=== Windows Download
-
-Do the following:
-
-1.  Create a download folder on the client workstation. For example, `{project-name} Downloads`.
-
-2.  Open a Web browser and navigate to the {project-name} downloads site {download-url}.
-
-3.  Orient yourself to the binaries for the release you're installing.
-Click on the `{project-name} Clients` link to start downloading the {project-name} clients tar file to your workstation.
-
-4.  Place the `apache-trafodion-clients-*.tar.gz` file into the download folder.
-
-5.  Unpack the `apache-trafodion-clients-\*.tar.gz` file using an unzip program of your choice. This creates
-an `apache-trafodion-clients-*.tar` file.
-
-6. Unpack the `apache-trafodion-clients-*.tar` file using an unzip program of your choice. This creates
-the `clients` folder, which has the following content:
-+
-```
-JDBCT4.zip odb64_linux.tar.gz trafci.zip TRAF_ODBC_Linux_Driver_64.tar.gz
-```
-+
-You use these files to install the different {project-name} clients.
-
-[[introduction-linux-download]]
-=== Linux Download
-
-Do the following:
-
-1. Create a download directory on the client workstation. For example, `$HOME/trafodion-downloads`.
-
-2. Open a Web browser and navigate to the {project-name} downloads site {download-url}.
-
-3.  Orient yourself to the binaries for the release you're installing.
-Right-click on the `{project-name} Clients` link and select *Copy link address*.
-
-4.  Go to the download directory on the client workstation and use `wget` to download the client package
-using the link address you copied in step 3 above.
-
-5.  Unpack the `apache-trafodion-clients-*.tar.gz` using `tar`.
-+
-*Example*
-+
-```
-$ mkdir $HOME/trafodion-downloads
-$ cd $HOME/trafodion-downloads
-$ wget <link to package>
-$ tar -xzf apache-trafodion-clients-1.3.0-incubating-bin.tar.gz
-$ cd clients
-$ ls
-JDBCT4.zip  odb64_linux.tar.gz  trafci.zip  TRAF_ODBC_Linux_Driver_64.tar.gz
-$
-```
-+
-You use these files to install the different {project-name} clients.
 
 
 
