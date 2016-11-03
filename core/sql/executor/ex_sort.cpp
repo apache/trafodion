@@ -96,6 +96,72 @@ ExOperStats * ExSortTcb::doAllocateStatsEntry(CollHeap *heap,
   return stat;
 }
 
+void ExSortTcb::setupPoolBuffers(ex_queue_entry *pentry_down)
+{
+  CollHeap  *space = getGlobals()->getSpace();
+  
+  // Allocate the buffer pool.
+  // Note that when memoryQuota system is enabled, we initialize the
+  // pool with atleast 2 buffer. This is to accomodate sort to progress
+  // even under extremely loaded environment(memory pressure)irrespective
+  // of memory quota system. The buffer size is calculated taking into
+  // account the estimate number of rows by the compiler and limited by
+  // maximum of GEN_SORT_MAX_BUFFER_SIZE. The memory quota system will
+  // come into force for additional buffers following this initial buffer.
+  Lng32 numBuffs = (sortTdb().sortOptions_->memoryQuotaMB()<= 0)?sortTdb().numBuffers_:2;
+  Lng32 numSortBuffs = 0;
+
+  // need separate pools for sorting and saving result rows
+  if (sortTdb().partialSort())
+  {
+     // give result pool and sort pool each half of the space
+     numSortBuffs = numBuffs = (numBuffs + 1)/2;
+     if(numSortBuffs < 2) numSortBuffs = 2; //initialize the pool with atleast 2 buffers.
+     if(numBuffs < 2) numBuffs = 2;
+  }
+
+  //partial sort uses two pools. one partialSortPool_ and regularSortPool_
+  //partialSortPool_ will be used for receiving the sorted records.
+  if (numSortBuffs > 0)
+  {
+    partialSortPool_ = new(space) sql_buffer_pool(
+                          numSortBuffs, sortTdb().bufferSize_, space);
+  }
+
+  //setup sortPool_ reference handle. If TopN, topNSortPool_ will be allocated
+  //from ExSimpleSQLBuffer based on numBuffs. If not TopN, regularSortPool_ will
+  //be allocated from sql_buffer_pool based on numBuffs.
+  //sortPool_ reference handle will either point to topNSortPool or 
+  //regularSortPool.
+  if((pentry_down->downState.request == ex_queue::GET_N) &&
+     (pentry_down->downState.requestValue > 0))
+  {
+    topNSortPool_ = new(space)
+                    ExSimpleSQLBuffer(pentry_down->downState.requestValue + 1,
+                        sortTdb().sortRecLen_, space);
+    
+    sortPool_ = new(space) ExSortBufferPool((void*)topNSortPool_, 
+                                          ExSortBufferPool::SIMPLE_BUFFER_TYPE);
+  }
+  else
+  {
+    regularSortPool_ = new(space) sql_buffer_pool(numBuffs,sortTdb().bufferSize_,
+                                                  space);
+    
+    sortPool_ = new(space)ExSortBufferPool((void*)regularSortPool_,
+                                            ExSortBufferPool::SQL_BUFFER_TYPE);
+  }
+   
+  //setup the receive pool. Receive pool is the same as sortPool for all cases except
+  //for partial sort.
+  if(sortTdb().partialSort())
+    receivePool_ = new(space) ExSortBufferPool(partialSortPool_,
+                                            ExSortBufferPool::SQL_BUFFER_TYPE);
+  else
+    receivePool_ = sortPool_;
+  
+}
+
 //
 // Build a sort tcb
 //
@@ -124,7 +190,7 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
 		     const ex_tcb & child_tcb,    // child queue pair
 		     ex_globals *glob
 		     ) : ex_tcb( sort_tdb, 1, glob),
-                       sortPool_(NULL),
+                       partialSortPool_(NULL),
                        setCompareTd_(NULL),
                        sortPartiallyComplete_(FALSE)
 {
@@ -137,43 +203,6 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
   // cast sort tdb to non-const
   ExSortTdb * st = (ExSortTdb *)&sort_tdb;
   
-  // Allocate the buffer pool.
-  // Note that when memoryQuota system is enabled, we initialize the
-  // pool with atleast 2 buffer. This is to accomodate sort to progress
-  // even under extremely loaded environment(memory pressure)irrespective
-  // of memory quota system. The buffer size is calculated taking into
-  // account the estimate number of rows by the compiler and limited by
-  // maximum of GEN_SORT_MAX_BUFFER_SIZE. The memory quota system will
-  // come into force for additional buffers following this initial buffer.
-  Lng32 numBuffs = (st->sortOptions_->memoryQuotaMB()<= 0)?sort_tdb.numBuffers_:2;
-  Lng32 numSortBuffs = 0;
-
-  // need separate pools for sorting and saving result rows
-  if (st->partialSort())
-  {
-     // give result pool and sort pool each half of the space
-     numSortBuffs = numBuffs = (numBuffs + 1)/2;
-     if(numSortBuffs < 2) numSortBuffs = 2; //initialize the pool with atleast 2 buffers.
-     if(numBuffs < 2) numBuffs = 2;
-  }
-
-#pragma nowarn(1506)   // warning elimination 
-  if (numSortBuffs > 0)
-  {
-    sortPool_ = new(space) sql_buffer_pool(
-                          numSortBuffs, sort_tdb.bufferSize_, space);
-  }
-  pool_ = new(space) sql_buffer_pool(numBuffs, sortTdb().bufferSize_, space);
-
-
-
-#pragma warn(1506)  // warning elimination
-  
-  if(sortTdb().partialSort())
-    receivePool_ = sortPool_;
-  else
-    receivePool_ = pool_;
-
   // get the queue that child use to communicate with me
   qchild_  = child_tcb.getParentQueue(); 
  
@@ -183,6 +212,11 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
   processedInputs_ = qparent_.down->getTailIndex();
   workAtp_ = allocateAtp(sort_tdb.workCriDesc_, space);
   workAtp_->getTupp(2) = new(space) tupp_descriptor();
+  
+  //buffer pools are allocated in SORT_PREP work phase.
+  topNSortPool_ = NULL;
+  regularSortPool_ = NULL;
+  partialSortPool_ = NULL;
 
   *(short *)&sortType_ = 0;
 
@@ -296,7 +330,7 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
   defragTd_ = NULL;
   if (considerBufferDefrag())
   {
-    defragTd_ = pool_->addDefragTuppDescriptor(sortTdb().sortRecLen_);
+    defragTd_ = sortPool_->addDefragTuppDescriptor(sortTdb().sortRecLen_);
   }
 
   nfDiags_ = NULL;
@@ -330,9 +364,7 @@ ExSortTcb::~ExSortTcb()
    nfDiags_ = NULL;
   
   freeResources();
-  
-  if(pool_)
-    delete pool_;
+
 };
   
 ////////////////////////////////////////////////////////////////////////
@@ -340,10 +372,30 @@ ExSortTcb::~ExSortTcb()
 //
 void ExSortTcb::freeResources()
 {
-  if (sortPool_)
+  if (partialSortPool_)
+  {
+    delete partialSortPool_;
+    partialSortPool_ = NULL;
+  }
+  if (regularSortPool_)
+  {
+    delete regularSortPool_;
+    regularSortPool_ = NULL;
+  }
+  if (topNSortPool_)
+  {
+    delete topNSortPool_;
+    topNSortPool_ = NULL;
+  }
+  if (sortPool_ && (sortPool_ != receivePool_))
   {
     delete sortPool_;
     sortPool_ = NULL;
+  }
+  if (receivePool_)
+  {
+    delete receivePool_;
+    receivePool_ = NULL;
   }
   delete qparent_.up;
   delete qparent_.down;
@@ -556,7 +608,7 @@ short ExSortTcb::workDown()
           { 
             ExSortTdb *sortTdb = (ExSortTdb *)getTdb();
             bmoStats_->setSpaceBufferSize(sortTdb->bufferSize_);
-            bmoStats_->setSpaceBufferCount(receivePool_->get_number_of_buffers());
+            bmoStats_->setSpaceBufferCount(sortTdb->numBuffers_);
           }
 	  pstate.step_ = ExSortTcb::SORT_PREP;
 	  
@@ -612,6 +664,8 @@ short ExSortTcb::workUp()
 		sortDiag_ = NULL;              // reset
                 // LCOV_EXCL_STOP
 	      }
+	    
+	    setupPoolBuffers(pentry_down);
  
       if((request == ex_queue::GET_N) &&
          (pentry_down->downState.requestValue > 0))
@@ -873,7 +927,7 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 	    td = NULL;
 
             if (defragTd_ && //considerBufferDefrag() && //resizeCifRecord() &&
-                !pool_->currentBufferHasEnoughSpace(sortTdb().sortRecLen_))
+                !sortPool_->currentBufferHasEnoughSpace(sortTdb().sortRecLen_))
             {
 #if defined(_DEBUG)
               assert(resizeCifRecord());
@@ -903,30 +957,14 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
                 {
                   defragLength = *rowLenPtr;
                   td =
-                     pool_->get_free_tupp_descriptor(defragLength + dataOffset, &buf);// do we need &buf here??
-
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
-      char txt[] = "sort";
-      SqlBuffer * buf = pool_->getCurrentBuffer();
-      if (buf)
-      {
-        sql_buffer_pool::logDefragInfo(txt,
-          SqlBufferGetTuppSize(sortTdb().sortRecLen_,buf->bufType()),
-          SqlBufferGetTuppSize(defragLength + dataOffset,buf->bufType()),
-          buf->getFreeSpace(),
-          buf,
-          buf->getTotalTuppDescs(),
-          this);
-      }
-#endif
-
+                    sortPool_->get_free_tupp_descriptor(defragLength + dataOffset, &buf);// do we need &buf here??
                 }
                }
             }
             else
             {
               td =
-                   pool_->get_free_tupp_descriptor(sortTdb().sortRecLen_, &buf);
+                sortPool_->get_free_tupp_descriptor(sortTdb().sortRecLen_, &buf);
             }
 
 
@@ -937,12 +975,12 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 		if (sortTdb().sortOptions_->dontOverflow())
 		  {
                     // LCOV_EXCL_START
-		    pool_->addBuffer(sortTdb().bufferSize_);
+		  sortPool_->addBuffer(sortTdb().bufferSize_);
                     // LCOV_EXCL_STOP
 		  }
 		// add more buffers if there is more space 
 		//available in the pool.
-		else if (pool_->get_number_of_buffers() < 
+		else if (sortPool_->get_number_of_buffers() < 
 			 sortTdb().maxNumBuffers_)
 		  {
 		    //No more space in the pool to allocate sorted rows.
@@ -954,9 +992,7 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 		       sortUtil_->consumeMemoryQuota(sortTdb().bufferSize_))
 		      {
 			// Add a new buffer.
-#pragma nowarn(1506)      // warning elimination 
-			pool_->addBuffer(sortTdb().bufferSize_);
-#pragma warn(1506)        // warning elimination
+                        sortPool_->addBuffer(sortTdb().bufferSize_);
 		      }
 		    else 
 		      {
@@ -1004,7 +1040,7 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 		// have been added or tupples freed because of overflow
 		// completion.
 		td =
-		  pool_->get_free_tupp_descriptor(sortTdb().sortRecLen_, &buf);
+		  sortPool_->get_free_tupp_descriptor(sortTdb().sortRecLen_, &buf);
 
 		if (td == NULL)
 		  {
@@ -1017,14 +1053,14 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 		    // Increase the max number of buffers in the 
 		    // dynamic array list
 		    // LCOV_EXCL_START
-		    pool_->set_max_number_of_buffers
-		      (pool_->get_max_number_of_buffers() +1);
+		    sortPool_->set_max_number_of_buffers
+		      (sortPool_->get_max_number_of_buffers() +1);
 		    
-		    pool_->addBuffer(pool_->defaultBufferSize());
+		    sortPool_->addBuffer(sortPool_->defaultBufferSize());
 		    
 		    // allocate the tuple yet again.
 		    td =
-		      pool_->get_free_tupp_descriptor(sortTdb().sortRecLen_, 
+		      sortPool_->get_free_tupp_descriptor(sortTdb().sortRecLen_, 
 						      &buf); 
 		    
 		    if (td == NULL)
@@ -1038,7 +1074,7 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 		  }
 	      }
 	    if (bmoStats_)
-	      bmoStats_->setSpaceBufferCount(pool_->get_number_of_buffers());
+	      bmoStats_->setSpaceBufferCount(sortPool_->get_number_of_buffers());
 	  }
 	else
 	  {
@@ -1406,7 +1442,7 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
       void * v = (void *)td;
       // If partial sort, then allocate a tuple from sort pool.
       // The result roecord is copied from regular pool_ to 
-      // sortPool_.
+      // partialSortPool_.
       if(sortTdb().partialSort())
 	{
           // LCOV_EXCL_START
