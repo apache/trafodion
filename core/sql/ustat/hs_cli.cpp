@@ -391,8 +391,17 @@ Lng32 HSFuncExecDDL( const char *dml
   HSTranMan *TM;
   NABoolean startedTrans = FALSE;
   TM = HSTranMan::Instance();
-  startedTrans = (((retcode = TM->Begin("DDL")) == 0) ? TRUE : FALSE);
-  HSHandleError(retcode);
+  {
+    // This HSErrorCatcher is in its own block so we'll report a
+    // diagnostic in case the TM->Begin call fails. Note that
+    // HSFuncExecQuery contains its own HSErrorCatcher, so that 
+    // code is outside this block. (If we included it in this
+    // block then any error encountered there would be reported
+    // twice.)
+    HSErrorCatcher errorCatcher(retcode, sqlcode, errorToken, TRUE);
+    startedTrans = (((retcode = TM->Begin("DDL")) == 0) ? TRUE : FALSE);    
+    HSHandleError(retcode);
+  }
 
   //Special parser flags needed to use the NO AUDIT option.
   retcode = HSFuncExecQuery(dml, sqlcode, rowsAffected, errorToken,
@@ -964,14 +973,9 @@ Lng32 HSTranMan::Begin(const char *title)
         if (NOT transStarted_ &&
             NOT (extTrans_ = ((SQL_EXEC_Xact(SQLTRANS_STATUS, 0) == 0) ? TRUE : FALSE)))
           {
-#ifdef NA_USTAT_USE_STATIC
-            HSCliStatement begn(HSCliStatement::BEGINWORK);
-            retcode_ = begn.execFetch("BEGIN WORK;");
-#else
             NAString stmtText = "BEGIN WORK";
             retcode_ = HSFuncExecQuery(stmtText.data(), - UERR_INTERNAL_ERROR, NULL,
                                        HS_QUERY_ERROR, NULL, NULL, TRUE);
-#endif // NA_USTAT_USE_STATIC
             if (retcode_ >= 0)
               {
                 transStarted_ = TRUE;
@@ -1024,15 +1028,9 @@ Lng32 HSTranMan::Commit()
       {
         if (transStarted_)                         /*== COMMIT TRANSACTION ==*/
           {
-#ifdef NA_USTAT_USE_STATIC
-            HSCliStatement comt(HSCliStatement::COMMITWORK);
-            //logXactCode("before COMMIT WORK");
-            retcode_ = comt.execFetch("COMMIT WORK;");
-#else
             NAString stmtText = "COMMIT WORK";
             retcode_ = HSFuncExecQuery(stmtText.data(), - UERR_INTERNAL_ERROR, NULL,
                                        HS_QUERY_ERROR, NULL, NULL, TRUE);
-#endif // NA_USTAT_USE_STATIC
 
             // transaction has ended
             transStarted_ = FALSE;
@@ -1097,20 +1095,28 @@ Lng32 HSTranMan::Rollback()
       {
         if (transStarted_)                         /*==ROLLBACK TRANSACTION==*/
           {
-#ifdef NA_USTAT_USE_STATIC
-            HSCliStatement robk(HSCliStatement::ROBACKWORK);
-            retcode_ = robk.execFetch("ROLLBACK WORK");
-#else
             NAString stmtText = "ROLLBACK WORK";
             retcode_ = HSFuncExecQuery(stmtText.data(), - UERR_INTERNAL_ERROR, NULL,
                                        HS_QUERY_ERROR, NULL, NULL, TRUE);
-#endif // NA_USTAT_USE_STATIC
             // transaction has ended
             transStarted_ = FALSE;
-            if (retcode_ >= 0) {
-              retcode_ = 0;
-              LM->Log("ROLLBACK()");
-            }
+            if (retcode_ < 0)
+              {
+                // The rollback may have failed because the Executor already
+                // aborted the transaction.
+                if (!InTransaction())
+                  retcode_ = 0;  // just ignore the error
+                else
+                  {
+                    snprintf(LM->msg, sizeof(LM->msg), "ROBACKWORK failed, retcode_: %d)", retcode_);
+                    LM->Log(LM->msg);
+                  }
+              }
+            if (retcode_ >= 0) 
+              {
+                retcode_ = 0;
+                LM->Log("ROLLBACK()");
+              }
           }
         else
           {                                      /*==NO TRANSACTION RUNNING==*/
