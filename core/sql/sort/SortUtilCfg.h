@@ -278,6 +278,7 @@ public:
     NABoolean intermediateScratchCleanup(){return intermediateScratchCleanup_;}
     void setTopNSort(NABoolean v)
       { topNSort_ = v; }
+    NABoolean topNSort() { return topNSort_; }
 
     friend class SortUtil;
 

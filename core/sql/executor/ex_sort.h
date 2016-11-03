@@ -45,6 +45,7 @@
 #include "Int64.h"
 #include "NABoolean.h"
 #include "ComTdbSort.h"
+#include "ExSimpleSqlBuffer.h"
 
 // -----------------------------------------------------------------------
 // Classes defined in this file
@@ -52,7 +53,7 @@
 class ExSortTdb;
 class ExBMOStats;
 class ExSortStats;
-
+class ExSortBufferPool;
 // -----------------------------------------------------------------------
 // Classes referenced in this file
 // -----------------------------------------------------------------------
@@ -158,9 +159,10 @@ protected:
   ComDiagsArea   * sortDiag_;
   NAList<ComDiagsArea *>  *nfDiags_;
 
-  sql_buffer_pool * sortPool_;   // used only for partial sort
-  sql_buffer_pool * pool_;     // for normal sorting and and result rows
-  sql_buffer_pool *receivePool_;  // can either be sortPool_ or pool_;
+  sql_buffer_pool * partialSortPool_;   // used only for partial sort, currently not enabled.
+  sql_buffer_pool * sortPool_;     // for normal sorting and and result rows
+  ExSimpleSQLBuffer *topNSortPool_;// for topN sorting where tuple desc need to be reused.
+  ExSortBufferPool *receivePool_;  //Common handle for different pools, a.k.a wrapper
 
 
   //used to detect change is subset of rows when reading from child.
@@ -355,5 +357,127 @@ public:
   ExSortFromTopPrivateState();        //constructor
   ~ExSortFromTopPrivateState();       // destructor
 };
+
+class ExSortBufferPool : public NABasicObject
+{
+  public:
+    enum PoolType {
+    SIMPLE_BUFFER_TYPE,
+    SQL_BUFFER_TYPE
+     };
+
+    void init(void *pool, PoolType poolType)
+    {
+      if(poolType == SIMPLE_BUFFER_TYPE)
+      {
+        simplePool_ = (ExSimpleSQLBuffer *)pool;
+        sqlBufferPool_ = NULL;
+      }
+      else
+      {
+        sqlBufferPool_ = (sql_buffer_pool *)pool;
+        simplePool_ = NULL;
+      }
+    }
+    
+    ExSortBufferPool()
+    {
+      simplePool_ = NULL;
+      sqlBufferPool_ = NULL;
+    }
+    
+    short currentBufferHasEnoughSpace( Lng32 tupDataSize)
+    { 
+      if (sqlBufferPool_)
+        return sqlBufferPool_->currentBufferHasEnoughSpace(tupDataSize);
+      else
+        return 1; //indicates there is space. Fixed number of tupps for TopN.
+    }
+    
+    inline tupp_descriptor * get_free_tupp_descriptor(Lng32 tupDataSize, SqlBuffer **buf=NULL)
+    {
+      if (sqlBufferPool_)
+        return sqlBufferPool_->get_free_tupp_descriptor(tupDataSize, buf);
+      else if(simplePool_)
+      {
+        tp_.init();  //init tp_ so it does not point to any tupp descriptor.
+        if(!simplePool_->getFreeTuple(tp_))
+          return tp_.get_tupp_descriptor();
+      }
+      return NULL;
+    }
+    
+    inline SqlBuffer * getCurrentBuffer()
+    {
+      if (sqlBufferPool_)
+        return sqlBufferPool_->getCurrentBuffer();
+      else
+        return NULL;
+    }
+    
+    SqlBufferBase * addBuffer(Lng32 totalBufferSize, bool failureIsFatal = true)
+    {
+      if (sqlBufferPool_)
+        return sqlBufferPool_->addBuffer(totalBufferSize, failureIsFatal);
+      else
+        return NULL; 
+    }
+    
+    inline Lng32 get_number_of_buffers() const
+    {
+      if (sqlBufferPool_)
+        return sqlBufferPool_->get_number_of_buffers();
+      else
+        return 0; 
+    }
+    
+    inline Lng32 get_max_number_of_buffers() const
+    { 
+      if (sqlBufferPool_)
+        return sqlBufferPool_->get_max_number_of_buffers();
+      else
+        return 0; 
+    }
+   
+
+    inline void set_max_number_of_buffers(Lng32 maxnumbuf)
+    {
+      if (sqlBufferPool_)
+        return sqlBufferPool_->set_max_number_of_buffers(maxnumbuf);
+      else
+        return; 
+    }
+    
+    Lng32 defaultBufferSize()
+    {
+      if (sqlBufferPool_)
+        return sqlBufferPool_->defaultBufferSize();
+      else
+        return 0;
+    }
+    
+    tupp_descriptor * addDefragTuppDescriptor(Lng32 dataSize)
+    {
+      if (sqlBufferPool_)
+        return sqlBufferPool_->addDefragTuppDescriptor(dataSize);
+      else
+        return NULL;
+    }
+    
+    ~ExSortBufferPool()
+    {
+      //init this tp_ so that no tupp descriptor is associated
+      //with it and no decrement in reference count happens.
+      tp_.init();
+    };
+    
+  private:
+    tupp tp_;
+    PoolType poolType_;
+    ExSimpleSQLBuffer *simplePool_;
+    sql_buffer_pool   *sqlBufferPool_;
+    
+};
+
 
 #endif

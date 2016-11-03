@@ -163,17 +163,33 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
     sortPool_ = new(space) sql_buffer_pool(
                           numSortBuffs, sort_tdb.bufferSize_, space);
   }
-  pool_ = new(space) sql_buffer_pool(numBuffs, sortTdb().bufferSize_, space);
+
+  //if sortNRows, ExSimpleBuffer is allocated once N is 
+  //read from parent request. Pool is initialized in work method.
+  //If not sortNRows, sql_buffer_pool is allocated here.
+  if(!st->sortOptions_->sortNRows())
+    pool_ = new(space) sql_buffer_pool(numBuffs, sortTdb().bufferSize_, space);
 
 
 
 #pragma warn(1506)  // warning elimination
-  
-  if(sortTdb().partialSort())
-    receivePool_ = sortPool_;
-  else
-    receivePool_ = pool_;
 
+  receivePool_ = new(space) ExSortBufferPool();
+  if(sortTdb().partialSort())
+  {
+    receivePool_->init((void*)sortPool_, ExSortBufferPool::SQL_BUFFER_TYPE);
+  }
+  else if(!st->sortOptions_->sortNRows())
+  {
+    receivePool_->init((void*)pool_, ExSortBufferPool::SQL_BUFFER_TYPE);
+  }
+  else
+  {
+    //initialize ExSortBufferPool::init() for TopN later once N
+    //is known from parent down queue.
+    topNSortPool_ = NULL;
+  }
+  
   // get the queue that child use to communicate with me
   qchild_  = child_tcb.getParentQueue(); 
  
@@ -296,7 +312,7 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
   defragTd_ = NULL;
   if (considerBufferDefrag())
   {
-    defragTd_ = pool_->addDefragTuppDescriptor(sortTdb().sortRecLen_);
+    defragTd_ = receivePool_->addDefragTuppDescriptor(sortTdb().sortRecLen_);
   }
 
   nfDiags_ = NULL;
@@ -333,6 +349,9 @@ ExSortTcb::~ExSortTcb()
   
   if(pool_)
     delete pool_;
+  
+  if(receivePool_)
+    delete receivePool_;
 };
   
 ////////////////////////////////////////////////////////////////////////
@@ -614,8 +633,18 @@ short ExSortTcb::workUp()
 	      }
  
       if((request == ex_queue::GET_N) &&
-         (pentry_down->downState.requestValue > 0))
-         topNCount = (ULng32)pentry_down->downState.requestValue;
+         (pentry_down->downState.requestValue > 0) &&
+         (sortCfg_->topNSort()))
+      {
+        //initialize the receivePool_ for TopN sort.
+        //Allocate one additional tuple to read a record from child.
+        //This additional tuple is recycled for every child record read.
+        topNSortPool_ = new (getGlobals()->getSpace())
+          ExSimpleSQLBuffer(pentry_down->downState.requestValue + 1, sortTdb().sortRecLen_, getGlobals()->getSpace());
+        
+        receivePool_->init((void*)topNSortPool_, ExSortBufferPool::SIMPLE_BUFFER_TYPE);
+        topNCount = (ULng32)pentry_down->downState.requestValue;
+      }
        
       if (sortUtil_->sortInitialize(*sortCfg_, topNCount) != SORT_SUCCESS)
       {
@@ -873,7 +902,7 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 	    td = NULL;
 
             if (defragTd_ && //considerBufferDefrag() && //resizeCifRecord() &&
-                !pool_->currentBufferHasEnoughSpace(sortTdb().sortRecLen_))
+                !receivePool_->currentBufferHasEnoughSpace(sortTdb().sortRecLen_))
             {
 #if defined(_DEBUG)
               assert(resizeCifRecord());
@@ -903,11 +932,11 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
                 {
                   defragLength = *rowLenPtr;
                   td =
-                     pool_->get_free_tupp_descriptor(defragLength + dataOffset, &buf);// do we need &buf here??
+                    receivePool_->get_free_tupp_descriptor(defragLength + dataOffset, &buf);// do we need &buf here??
 
 #if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
       char txt[] = "sort";
-      SqlBuffer * buf = pool_->getCurrentBuffer();
+      SqlBuffer * buf = receivePool_->getCurrentBuffer();
       if (buf)
       {
         sql_buffer_pool::logDefragInfo(txt,
@@ -926,7 +955,7 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
             else
             {
               td =
-                   pool_->get_free_tupp_descriptor(sortTdb().sortRecLen_, &buf);
+                receivePool_->get_free_tupp_descriptor(sortTdb().sortRecLen_, &buf);
             }
 
 
@@ -937,12 +966,12 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 		if (sortTdb().sortOptions_->dontOverflow())
 		  {
                     // LCOV_EXCL_START
-		    pool_->addBuffer(sortTdb().bufferSize_);
+		  receivePool_->addBuffer(sortTdb().bufferSize_);
                     // LCOV_EXCL_STOP
 		  }
 		// add more buffers if there is more space 
 		//available in the pool.
-		else if (pool_->get_number_of_buffers() < 
+		else if (receivePool_->get_number_of_buffers() < 
 			 sortTdb().maxNumBuffers_)
 		  {
 		    //No more space in the pool to allocate sorted rows.
@@ -955,7 +984,7 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 		      {
 			// Add a new buffer.
 #pragma nowarn(1506)      // warning elimination 
-			pool_->addBuffer(sortTdb().bufferSize_);
+                        receivePool_->addBuffer(sortTdb().bufferSize_);
 #pragma warn(1506)        // warning elimination
 		      }
 		    else 
@@ -1004,7 +1033,7 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 		// have been added or tupples freed because of overflow
 		// completion.
 		td =
-		  pool_->get_free_tupp_descriptor(sortTdb().sortRecLen_, &buf);
+		  receivePool_->get_free_tupp_descriptor(sortTdb().sortRecLen_, &buf);
 
 		if (td == NULL)
 		  {
@@ -1017,14 +1046,14 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 		    // Increase the max number of buffers in the 
 		    // dynamic array list
 		    // LCOV_EXCL_START
-		    pool_->set_max_number_of_buffers
-		      (pool_->get_max_number_of_buffers() +1);
+		    receivePool_->set_max_number_of_buffers
+		      (receivePool_->get_max_number_of_buffers() +1);
 		    
-		    pool_->addBuffer(pool_->defaultBufferSize());
+		    receivePool_->addBuffer(receivePool_->defaultBufferSize());
 		    
 		    // allocate the tuple yet again.
 		    td =
-		      pool_->get_free_tupp_descriptor(sortTdb().sortRecLen_, 
+		      receivePool_->get_free_tupp_descriptor(sortTdb().sortRecLen_, 
 						      &buf); 
 		    
 		    if (td == NULL)
@@ -1038,7 +1067,7 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 		  }
 	      }
 	    if (bmoStats_)
-	      bmoStats_->setSpaceBufferCount(pool_->get_number_of_buffers());
+	      bmoStats_->setSpaceBufferCount(receivePool_->get_number_of_buffers());
 	  }
 	else
 	  {
