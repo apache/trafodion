@@ -24,8 +24,14 @@ under the License.
 package org.trafodion.dcs.zookeeper;
 
 import java.util.Properties;
+import java.util.Iterator;
 import java.util.Map.Entry;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 import org.apache.hadoop.conf.Configuration;
 import org.trafodion.dcs.util.DcsConfiguration;
 
@@ -63,9 +69,50 @@ public class ZooKeeperMainServerArg {
    * @param args Command line arguments. First arg is path to zookeepers file.
    */
   public static void main(String args[]) {
-    Configuration conf = DcsConfiguration.create();
-    String hostport = new ZooKeeperMainServerArg().parse(conf);
-    System.out.println((hostport == null || hostport.length() == 0)? "":
-      "-server " + hostport);
-  }
+		Configuration conf = DcsConfiguration.create();
+		if (args.length > 0) {
+			String clientPort = conf.get("dcs.zookeeper.property.clientPort");
+			String[] quorums = conf.get("dcs.zookeeper.quorum").split(",");
+
+			Options options = new Options();
+			options.addOption("lq", false, "list quorums");
+			options.addOption("la", false, "list all config");
+			options.addOption("key", true, "list key value");
+			CommandLineParser parser = new PosixParser();
+			CommandLine cmd;
+			try {
+				cmd = parser.parse(options, args);
+				if (cmd.hasOption("lq")) {
+					StringBuffer str_lq = new StringBuffer();
+					for (int i = 0; i < quorums.length; i++) {
+						str_lq.append(quorums[i] + ":" + clientPort);
+						if (i < quorums.length - 1)
+							str_lq.append(",");
+					}
+					System.out.println(str_lq);
+				}
+				if (cmd.hasOption("la")) {
+					StringBuffer str_la = new StringBuffer();
+					Iterator<Entry<String, String>> iter = conf.iterator();
+					while (iter.hasNext()) {
+						Entry<String, String> entity = iter.next();
+						str_la.append(entity.getKey() + ":" + entity.getValue() + "\n");
+					}
+					System.out.println(str_la);
+				}
+				if (cmd.hasOption("key")) {
+					String key = cmd.getOptionValue("key");
+					if (key == null) {
+					} else {
+						System.out.println(conf.get(key));
+					}
+				}
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+		} else {
+			String hostport = new ZooKeeperMainServerArg().parse(conf);
+			System.out.println((hostport == null || hostport.length() == 0) ? "" : "-server " + hostport);
+		}
+	}
 }
