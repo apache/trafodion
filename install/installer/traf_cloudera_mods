@@ -205,20 +205,7 @@ rm $HOME/traf_hbase_config_temp 2> /dev/null
 
 # change the hdfs configuration using Cloudera's REST API
 curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
-'{ "roleTypeConfigs" :  [ {
-        "roleType" : "NAMENODE",
-        "items": [ {
-                "name" : "namenode_java_heapsize",
-        "value" : "1073741824"
-                } ]
-   }, {
-        "roleType" : "SECONDARYNAMENODE",
-        "items":[ {
-                "name" : "secondary_namenode_java_heapsize",
-        "value" : "1073741824"
-                } ]
-     } ],
-    "items": [ {
+'{ "items": [ {
              "name":"dfs_namenode_acls_enabled",
              "value":"true"
              }, {
