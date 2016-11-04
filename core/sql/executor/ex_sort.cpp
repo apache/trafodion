@@ -162,7 +162,7 @@ void ExSortTcb::setupPoolBuffers(ex_queue_entry *pentry_down)
   
   //CIF defrag option only if NOT topNSortPool_
   defragTd_ = NULL;
-  if (considerBufferDefrag() && (topNSortPool_ != NULL))
+  if (considerBufferDefrag() && (topNSortPool_ == NULL))
   {
     defragTd_ = sortPool_->addDefragTuppDescriptor(sortTdb().sortRecLen_);
   }
