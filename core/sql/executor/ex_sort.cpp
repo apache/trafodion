@@ -160,6 +160,13 @@ void ExSortTcb::setupPoolBuffers(ex_queue_entry *pentry_down)
   else
     receivePool_ = sortPool_;
   
+  //CIF defrag option only if NOT topNSortPool_
+  defragTd_ = NULL;
+  if (considerBufferDefrag() && (topNSortPool_ != NULL))
+  {
+    defragTd_ = sortPool_->addDefragTuppDescriptor(sortTdb().sortRecLen_);
+  }
+  
 }
 
 //
@@ -217,7 +224,11 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
   topNSortPool_ = NULL;
   regularSortPool_ = NULL;
   partialSortPool_ = NULL;
-
+  
+  //pool reference handles. Initialized in SORT_PREP phase.
+  sortPool_ = NULL;
+  receivePool_ = NULL;
+  
   *(short *)&sortType_ = 0;
 
   sortType_.doNotAllocRec_ = 1;
@@ -327,11 +338,7 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
   sortCfg_->setEspInstance(espInstance);
   sortCfg_->setIpcEnvironment(glob->castToExExeStmtGlobals()->getIpcEnvironment());
 
-  defragTd_ = NULL;
-  if (considerBufferDefrag())
-  {
-    defragTd_ = sortPool_->addDefragTuppDescriptor(sortTdb().sortRecLen_);
-  }
+  
 
   nfDiags_ = NULL;
   sortUtil_->setupComputations(*sortCfg_);
@@ -387,9 +394,12 @@ void ExSortTcb::freeResources()
     delete topNSortPool_;
     topNSortPool_ = NULL;
   }
-  if (sortPool_ && (sortPool_ != receivePool_))
+  if (sortPool_)
   {
-    delete sortPool_;
+    if(sortPool_ != receivePool_)
+    {
+      delete sortPool_;
+    }
     sortPool_ = NULL;
   }
   if (receivePool_)
