@@ -9716,22 +9716,6 @@ misc_function :
                 }
 
 
-     | TOK_SHA1 '(' value_expression ')'
-                {
-                    $$ = new (PARSERHEAP())
-                    BuiltinFunction(ITM_SHA1,
-                            CmpCommon::statementHeap(),
-                            1, $3);
-                }
-
-     | TOK_SHA2 '(' value_expression ')'
-                {
-                    $$ = new (PARSERHEAP())
-                    BuiltinFunction(ITM_SHA2,
-                            CmpCommon::statementHeap(),
-                            1, $3);
-                }
-
      | TOK_GREATEST '(' value_expression ',' value_expression ')'
                   {
                     $$ = new (PARSERHEAP())

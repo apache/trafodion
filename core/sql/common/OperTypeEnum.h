@@ -791,7 +791,6 @@ enum OperatorTypeEnum {
                         ITM_MD5       = 2635,
                         ITM_SHA1      = 2636,
                         ITM_SHA2      = 2637,
-                        ITM_SHA       = 2638,
 
                         // Items for needed for Translating to UCS2 output strings
                         ITM_DATEFMT     = 2990,

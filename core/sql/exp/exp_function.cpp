@@ -41,7 +41,7 @@
 
 #include <math.h>
 #include <zlib.h>
-#include "openssl/md5.h"
+#include <openssl/md5.h>
 #include <openssl/sha.h>  
 
 #define MathSqrt(op, err) sqrt(op)
@@ -7968,19 +7968,19 @@ ex_expr::exp_return_type ExFunctionSha2::eval(char * op_data[],
   Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
   Lng32 rlen = resultAttr->getLength();
 
-  memset(op_data[0], 0, rlen);
+  str_pad(op_data[0], rlen, ' ');
 
   SHA256_CTX  sha_ctx;
 
   SHA256_Init(&sha_ctx);  
   SHA256_Update(&sha_ctx, op_data[1], slen);
   SHA256_Final((unsigned char*) sha,&sha_ctx); 
-  char tmp[2];
+  char tmp[3];
   for(int i=0; i < SHA256_DIGEST_LENGTH; i++ )
   {
-    tmp[0]=tmp[1]='0';
+    tmp[0]=tmp[1]=tmp[2]='0';
     sprintf(tmp, "%.2x", (int)sha[i]);
-    memcpy(op_data[0]+i*2, tmp, 2);
+    str_cpy_all(op_data[0]+i*2, tmp, 2);
   }
    
   return ex_expr::EXPR_OK;
@@ -7997,19 +7997,19 @@ ex_expr::exp_return_type ExFunctionSha::eval(char * op_data[],
   Attributes *srcAttr   = getOperand(1);
   Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
   Lng32 rlen = resultAttr->getLength();
-  memset(op_data[0], 0, rlen);
+  str_pad(op_data[0], rlen , ' ');
 
   SHA_CTX  sha_ctx;
 
   SHA1_Init(&sha_ctx);  
   SHA1_Update(&sha_ctx, op_data[1], slen);
   SHA1_Final((unsigned char*) sha,&sha_ctx); 
-  char tmp[2];
+  char tmp[3];
   for(int i=0; i < SHA_DIGEST_LENGTH ; i++ )
   {
-    tmp[0]=tmp[1]='0';
+    tmp[0]=tmp[1]=tmp[2]='0';
     sprintf(tmp, "%.2x", (int)sha[i]);
-    memcpy(op_data[0]+i*2, tmp, 2);
+    str_cpy_all(op_data[0]+i*2, tmp, 2);
   }
    
   return ex_expr::EXPR_OK;
@@ -8027,18 +8027,19 @@ ex_expr::exp_return_type ExFunctionMd5::eval(char * op_data[],
   Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
   Lng32 rlen = resultAttr->getLength();
 
-  memset(op_data[0], 0, rlen);
+  str_pad(op_data[0], rlen, ' ');
   MD5_CTX  md5_ctx;
 
   MD5_Init(&md5_ctx);  
   MD5_Update(&md5_ctx, op_data[1], slen);
   MD5_Final((unsigned char*) md5,&md5_ctx); 
-  char tmp[2];
+
+  char tmp[3];
   for(int i=0; i < 16; i++ )
   {
-    tmp[0]=tmp[1]='0';
+    tmp[0]=tmp[1]=tmp[2]='0';
     sprintf(tmp, "%.2x", (int)md5[i]);
-    memcpy(op_data[0]+i*2, tmp, 2);
+    str_cpy_all(op_data[0]+i*2, tmp, 2);
   }
    
   return ex_expr::EXPR_OK;

@@ -338,9 +338,8 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_CURR_TRANSID:
 	  setClassID(FUNC_CURR_TRANSID_ID);
 	  break;
-        case ITM_SHA:
         case ITM_SHA1:
-          setClassID(FUNC_SHA_ID);
+          setClassID(FUNC_SHA1_ID);
           break;
         case ITM_SHA2:
           setClassID(FUNC_SHA2_ID);
@@ -1003,7 +1002,7 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
     case ex_clause::FUNC_HBASE_VERSION:
       GetVTblPtr(vtblPtr, ExFunctionHbaseVersion);
       break;
-    case ex_clause::FUNC_SHA_ID:
+    case ex_clause::FUNC_SHA1_ID:
       GetVTblPtr(vtblPtr, ExFunctionSha);
       break;
     case ex_clause::FUNC_SHA2_ID:

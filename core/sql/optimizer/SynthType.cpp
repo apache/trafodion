@@ -1010,7 +1010,6 @@ const NAType *BuiltinFunction::synthesizeType()
 	    SQLChar(maxLength, typ1.supportsSQLnull());
       }
     break;
-    case ITM_SHA:
     case ITM_SHA1:
     case ITM_SHA2:
       {

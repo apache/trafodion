@@ -1655,4 +1655,24 @@ Sheldon     ship                5500.00     4000.00
 
 --- 19 row(s) selected.
 >>
+>>select md5('10'), crc32(10), sha('10') from dual;
+
+(EXPR)                            (EXPR)      (EXPR)
+--------------------------------  ----------  --------------------------------------------------------------------------------------------------------------------------------
+
+d3d9446802a44259755d38e6d163e820   852952723  b1d5781111d84f7b3fe45a0852e59758cd7a87e5
+
+--- 1 row(s) selected.
+>>select md5(10) from dual;
+
+*** ERROR[4067] The operands of function MD5 must be character data types.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select sha1(10) from dual;
+
+*** ERROR[4067] The operands of function SHA must be character data types.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>log;

@@ -218,7 +218,6 @@ short BuiltinFunction::codeGen(Generator * generator)
       
       break;
 
-   case ITM_SHA:
    case ITM_SHA1:
       {
          function_clause =
