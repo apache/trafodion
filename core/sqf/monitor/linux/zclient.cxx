@@ -728,12 +728,15 @@ bool CZClient::IsZNodeExpired( const char *nodeName )
                     , method_name, __LINE__, monZnode.c_str() );
     }
     rc = zoo_exists( ZHandle, monZnode.c_str( ), 0, &stat );
-    if ( rc == ZNONODE )
+    if ( rc == ZNONODE ||
+         rc == ZCONNECTIONLOSS || 
+         rc == ZOPERATIONTIMEOUT )
     {
         expired = true;
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
         {
-            trace_printf( "%s@%d monZnode=%s does not exist (ZNONODE)\n"
+            trace_printf( "%s@%d monZnode=%s does not exist or "
+                          "cannot be accessed!\n"
                         , method_name, __LINE__, monZnode.c_str() );
         }
     }
@@ -758,10 +761,8 @@ bool CZClient::IsZNodeExpired( const char *nodeName )
         case ZSYSTEMERROR:
         case ZRUNTIMEINCONSISTENCY:
         case ZDATAINCONSISTENCY:
-        case ZCONNECTIONLOSS:
         case ZMARSHALLINGERROR:
         case ZUNIMPLEMENTED:
-        case ZOPERATIONTIMEOUT:
         case ZBADARGUMENTS:
         case ZINVALIDSTATE:
         case ZSESSIONEXPIRED:
@@ -1143,12 +1144,15 @@ int CZClient::SetZNodeWatch( string &monZnode )
                     , method_name, __LINE__, monZnode.c_str() );
     }
     rc = zoo_exists( ZHandle, monZnode.c_str( ), 0, &stat );
-    if ( rc == ZNONODE )
+    if ( rc == ZNONODE ||
+         rc == ZCONNECTIONLOSS || 
+         rc == ZOPERATIONTIMEOUT )
     {
         // return the error
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
         {
-            trace_printf( "%s@%d monZnode=%s does not exist (ZNONODE)\n"
+            trace_printf( "%s@%d monZnode=%s does not exist or "
+                          "cannot be accessed!\n"
                         , method_name, __LINE__, monZnode.c_str() );
         }
     }
@@ -1177,10 +1181,8 @@ int CZClient::SetZNodeWatch( string &monZnode )
         case ZSYSTEMERROR:
         case ZRUNTIMEINCONSISTENCY:
         case ZDATAINCONSISTENCY:
-        case ZCONNECTIONLOSS:
         case ZMARSHALLINGERROR:
         case ZUNIMPLEMENTED:
-        case ZOPERATIONTIMEOUT:
         case ZBADARGUMENTS:
         case ZINVALIDSTATE:
         case ZSESSIONEXPIRED:
@@ -1519,12 +1521,14 @@ int CZClient::WatchNodeDelete( const char *nodeName )
                 , method_name, nodeName );
         mon_log_write(MON_ZCLIENT_WATCHNODEDELETE_1, SQ_LOG_INFO, buf);
     }
-    else if ( rc == ZNONODE )
+    else if ( rc == ZNONODE ||
+              rc == ZCONNECTIONLOSS || 
+              rc == ZOPERATIONTIMEOUT )
     {
         rc = ZOK;
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s], znode (%s) already deleted!\n"
+                , "[%s], znode (%s) already deleted or cannot be accessed!\n"
                 , method_name, nodeName );
         mon_log_write(MON_ZCLIENT_WATCHNODEDELETE_2, SQ_LOG_INFO, buf);
     }
@@ -1540,10 +1544,8 @@ int CZClient::WatchNodeDelete( const char *nodeName )
         case ZSYSTEMERROR:
         case ZRUNTIMEINCONSISTENCY:
         case ZDATAINCONSISTENCY:
-        case ZCONNECTIONLOSS:
         case ZMARSHALLINGERROR:
         case ZUNIMPLEMENTED:
-        case ZOPERATIONTIMEOUT:
         case ZBADARGUMENTS:
         case ZINVALIDSTATE:
         case ZSESSIONEXPIRED:
