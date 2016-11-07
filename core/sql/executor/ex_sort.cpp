@@ -1156,7 +1156,8 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
               if (retCode != ex_expr::EXPR_ERROR)
               {
                 // adjust row size
-                if (resizeCifRecord()>0 && rowLenPtr)
+                // Applicable if sql_buffer_pool type.
+                if (resizeCifRecord()>0 && rowLenPtr && (topNSortPool_ == NULL))
                 {
                   newRecLen = *rowLenPtr + dataOffset;
                   if (*rowLenPtr != savedRowLen)
@@ -1563,8 +1564,8 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
 		}
 	    }
           
-          Int16 *rowLenPtr = NULL;
-          if (resizeCifRecord() > 0)
+	  Int16 *rowLenPtr = NULL;
+          if (resizeCifRecord() > 0 && (topNSortPool_ == NULL))
           {
             if (buf)
             { 
