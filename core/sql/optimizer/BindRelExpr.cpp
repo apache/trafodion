@@ -3904,6 +3904,62 @@ RelRoot * RelRoot::transformOrderByWithExpr(BindWA *bindWA)
   return this;
 }
 
+//////////////////////////////////////////////////////////////////////
+// GROUPING functions returns a 1 or 0 depending on whether a null
+// value was moved as a rollup group or not.
+//
+// GROUPING_ID(a,b,c) returns a value corresponding to the bit vector 
+// where each bit entry represents the GROUPING result for the argument
+// of GROUPING_ID function.
+//
+// For ex: GROUPING_ID(a,b,c) will have 3 bit entries, 
+// and is equivalent to:
+//   GROUPING(a)*4 + GROUPING(b)*2 + GROUPING(c)*1
+//////////////////////////////////////////////////////////////////////
+ItemExpr * RelRoot::processGroupingID(ItemExpr * ie, BindWA *bindWA)
+{
+  if (ie->getOperatorType() != ITM_GROUPING_ID)
+    return ie;
+
+  ItemExpr * groupingIdExpr = NULL;
+
+  ItemExprList childExprList(bindWA->wHeap());
+  childExprList.insertTree(ie->child(0)->castToItemExpr());
+  
+  Int64 multiplier = (Int64)pow(2, (childExprList.entries()-1));
+  SQLLargeInt * li = 
+    new(bindWA->wHeap()) SQLLargeInt(FALSE, FALSE); // +ve value, no nulls
+  for (CollIndex i = 0; i < (CollIndex)childExprList.entries(); i++)
+    {
+      ItemExpr * currChildIE = 
+        ((ItemExpr *) childExprList[i])->castToItemExpr();
+      
+      ItemExpr * groupingClause =
+        new(bindWA->wHeap()) Aggregate(ITM_GROUPING, currChildIE, FALSE);
+      
+      ItemExpr * multiplierClause = new(bindWA->wHeap()) 
+        ConstValue(li, (void*)&multiplier, sizeof(Int64));
+      ItemExpr * groupingExpr = new(bindWA->wHeap()) 
+        BiArith(ITM_TIMES, groupingClause, multiplierClause);
+      
+      if (i == 0)
+        {
+          groupingIdExpr = groupingExpr;
+        }
+      else
+        {
+          groupingIdExpr = new(bindWA->wHeap())
+            BiArith(ITM_PLUS, groupingIdExpr, groupingExpr);
+        }
+      
+      multiplier = multiplier / 2;
+    }
+  
+  groupingIdExpr = new(bindWA->wHeap()) Cast(groupingIdExpr, li);
+
+  return groupingIdExpr;
+}
+
 ///////////////////////////////////////////////////////////////////////////
 //
 // This methods performs the following in this order:
@@ -3974,8 +4030,40 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
   {
     origGrbyList.insertTree(groupExprTree);
   }
+
   if (NOT compExprTreeIsNull)
   {
+    // expand GROUPING_ID in terms of GROUPING aggregates
+    if (grby->isRollup())
+      {
+        NABoolean groupingIDfound = FALSE;
+
+        ItemExprList selList(getCompExprTree(), bindWA->wHeap());
+        ItemExprList newSelList(bindWA->wHeap());
+        for (CollIndex ii = 0; ii < selList.entries(); ii++)
+          {
+            ItemExpr * ie = selList[ii];
+            if (ie->getOperatorType() == ITM_GROUPING_ID)
+              {
+                ItemExpr * newIE = processGroupingID(ie, bindWA);
+                if (bindWA->errStatus())
+                  return this;
+                
+                groupingIDfound = TRUE;
+                newSelList.insert(newIE);
+              }
+            else
+              newSelList.insert(ie);
+          } // for
+
+        if (groupingIDfound)
+          {
+            ItemExpr * newCompExprTree = newSelList.convertToItemExpr();
+            removeCompExprTree();
+            addCompExprTree(newCompExprTree);
+          }
+       }
+
     origSelectList.insertTree(getCompExprTree());
     origSelectListCount = origSelectList.entries();
   }

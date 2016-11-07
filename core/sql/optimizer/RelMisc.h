@@ -448,6 +448,7 @@ public:
   RelRoot * transformGroupByWithOrdinalPhase1(BindWA *bindWA);
   RelRoot * transformGroupByWithOrdinalPhase2(BindWA *bindWA);
   RelRoot * transformOrderByWithExpr(BindWA *bindWA);
+  ItemExpr * processGroupingID(ItemExpr * ie, BindWA *bindWA);
 
   // MV --
   NABoolean virtual isIncrementalMV() { return getFirstNRows()==-1 && !needFirstSortedRows(); }
