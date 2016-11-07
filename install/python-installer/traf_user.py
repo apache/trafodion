@@ -87,7 +87,8 @@ def run():
         '{{ sq_home }}': SQ_ROOT,
         '{{ hadoop_type }}': hadoop_type,
         '{{ node_list }}': ' '.join(nodes),
-        '{{ node_count }}':str(len(nodes)),
+        '{{ node_count }}': str(len(nodes)),
+        '{{ enable_ha }}': dbcfgs['enable_ha'],
         '{{ my_nodes }}': ' -w ' + ' -w '.join(nodes)
     }
 

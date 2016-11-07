@@ -49,6 +49,7 @@ export NODE_LIST="{{ node_list }}"
 export MY_NODES="{{ my_nodes }}"
 export node_count="{{ node_count }}"
 export HADOOP_TYPE="{{ hadoop_type }}"
+export ENABLE_HA="{{ enable_ha }}"
 
 #-------------------------------------------
 # Execute the sqenv.sh script if it exists.
