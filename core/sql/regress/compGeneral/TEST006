@@ -636,3 +636,6 @@ select emp_name, dept_name, salary_amt,
 lag(salary_amt, 3) over (partition by dept_name order by emp_name)
 from T006_EMPLOYEES <<+ cardinality 10e6 >> order by emp_name;
 
+select md5('10'), crc32(10), sha('10') from dual;
+select md5(10) from dual;
+select sha1(10) from dual;

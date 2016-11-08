@@ -40,6 +40,10 @@
 
 
 #include <math.h>
+#include <zlib.h>
+#include <openssl/md5.h>
+#include <openssl/sha.h>  
+
 #define MathSqrt(op, err) sqrt(op)
 
 #include <ctype.h>
@@ -202,6 +206,10 @@ ExFunctionPack::ExFunctionPack(){};
 ExUnPackCol::ExUnPackCol(){};
 ExFunctionRangeLookup::ExFunctionRangeLookup(){};
 ExAuditImage::ExAuditImage(){};
+ExFunctionCrc32::ExFunctionCrc32(){};
+ExFunctionMd5::ExFunctionMd5(){};
+ExFunctionSha::ExFunctionSha(){};
+ExFunctionSha2::ExFunctionSha2(){};
 ExFunctionIsIP::ExFunctionIsIP(){};
 ExFunctionInetAton::ExFunctionInetAton(){};
 ExFunctionInetNtoa::ExFunctionInetNtoa(){};
@@ -213,6 +221,34 @@ ExFunctionAscii::ExFunctionAscii(OperatorTypeEnum oper_type,
 };
 
 ExFunctionChar::ExFunctionChar(OperatorTypeEnum oper_type,
+			       Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 2, attr, space)
+{
+  
+};
+
+ExFunctionCrc32::ExFunctionCrc32(OperatorTypeEnum oper_type,
+			       Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 2, attr, space)
+{
+  
+};
+
+ExFunctionMd5::ExFunctionMd5(OperatorTypeEnum oper_type,
+			       Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 2, attr, space)
+{
+  
+};
+
+ExFunctionSha::ExFunctionSha(OperatorTypeEnum oper_type,
+			       Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 2, attr, space)
+{
+  
+};
+
+ExFunctionSha2::ExFunctionSha2(OperatorTypeEnum oper_type,
 			       Attributes ** attr, Space * space)
      : ex_function_clause(oper_type, 2, attr, space)
 {
@@ -7898,6 +7934,115 @@ ex_expr::exp_return_type ExFunctionInetNtoa::eval(char * op_data[],
    getOperand(0)->setVarLength(slen, op_data[-MAX_OPERANDS]);
 
    return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type ExFunctionCrc32::eval(char * op_data[],
+                                                        CollHeap *heap,
+                                                        ComDiagsArea **diags)
+{
+  Attributes *resultAttr   = getOperand(0);
+  Attributes *srcAttr   = getOperand(1);
+
+  Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
+  Lng32 rlen = resultAttr->getLength();
+
+  *(ULng32*)op_data[0] = 0; 
+  ULng32 crc = crc32(0L, Z_NULL, 0);
+  crc = crc32 (crc, (const Bytef*)op_data[1], slen);
+  *(ULng32*)op_data[0] = crc; 
+  return ex_expr::EXPR_OK;
+}
+
+//only support SHA 256 for this version
+//TBD: add 224 and 384, 512 in next version
+ex_expr::exp_return_type ExFunctionSha2::eval(char * op_data[],
+                                                        CollHeap *heap,
+                                                        ComDiagsArea **diags)
+{
+
+  unsigned char sha[SHA256_DIGEST_LENGTH+ 1]={0};  
+
+  Attributes *resultAttr   = getOperand(0);
+  Attributes *srcAttr   = getOperand(1);
+
+  Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
+  Lng32 rlen = resultAttr->getLength();
+
+  str_pad(op_data[0], rlen, ' ');
+
+  SHA256_CTX  sha_ctx;
+
+  SHA256_Init(&sha_ctx);  
+  SHA256_Update(&sha_ctx, op_data[1], slen);
+  SHA256_Final((unsigned char*) sha,&sha_ctx); 
+  char tmp[3];
+  for(int i=0; i < SHA256_DIGEST_LENGTH; i++ )
+  {
+    tmp[0]=tmp[1]=tmp[2]='0';
+    sprintf(tmp, "%.2x", (int)sha[i]);
+    str_cpy_all(op_data[0]+i*2, tmp, 2);
+  }
+   
+  return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type ExFunctionSha::eval(char * op_data[],
+                                                        CollHeap *heap,
+                                                        ComDiagsArea **diags)
+{
+
+  unsigned char sha[SHA_DIGEST_LENGTH + 1]={0};  
+
+  Attributes *resultAttr   = getOperand(0);
+  Attributes *srcAttr   = getOperand(1);
+  Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
+  Lng32 rlen = resultAttr->getLength();
+  str_pad(op_data[0], rlen , ' ');
+
+  SHA_CTX  sha_ctx;
+
+  SHA1_Init(&sha_ctx);  
+  SHA1_Update(&sha_ctx, op_data[1], slen);
+  SHA1_Final((unsigned char*) sha,&sha_ctx); 
+  char tmp[3];
+  for(int i=0; i < SHA_DIGEST_LENGTH ; i++ )
+  {
+    tmp[0]=tmp[1]=tmp[2]='0';
+    sprintf(tmp, "%.2x", (int)sha[i]);
+    str_cpy_all(op_data[0]+i*2, tmp, 2);
+  }
+   
+  return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type ExFunctionMd5::eval(char * op_data[],
+                                                        CollHeap *heap,
+                                                        ComDiagsArea **diags)
+{
+  unsigned char md5[17]={0};  
+
+  Attributes *resultAttr   = getOperand(0);
+  Attributes *srcAttr   = getOperand(1);
+
+  Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
+  Lng32 rlen = resultAttr->getLength();
+
+  str_pad(op_data[0], rlen, ' ');
+  MD5_CTX  md5_ctx;
+
+  MD5_Init(&md5_ctx);  
+  MD5_Update(&md5_ctx, op_data[1], slen);
+  MD5_Final((unsigned char*) md5,&md5_ctx); 
+
+  char tmp[3];
+  for(int i=0; i < 16; i++ )
+  {
+    tmp[0]=tmp[1]=tmp[2]='0';
+    sprintf(tmp, "%.2x", (int)md5[i]);
+    str_cpy_all(op_data[0]+i*2, tmp, 2);
+  }
+   
+  return ex_expr::EXPR_OK;
 }
 
 ex_expr::exp_return_type ExFunctionIsIP::eval(char * op_data[],

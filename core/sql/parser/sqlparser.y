@@ -556,6 +556,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_COSH
 %token <tokval> TOK_COST
 %token <tokval> TOK_COUNT
+%token <tokval> TOK_CRC32
 %token <tokval> TOK_CQD
 %token <tokval> TOK_CROSS
 %token <tokval> TOK_CURDATE             /* ODBC extension  */ 
@@ -828,6 +829,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_MEMORY
 %token <tokval> TOK_MERGE
 %token <tokval> TOK_METADATA
+%token <tokval> TOK_MD5
 %token <tokval> TOK_MIN
 %token <tokval> TOK_MINIMAL
 %token <tokval> TOK_MINUTE
@@ -1034,6 +1036,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SET
 %token <tokval> TOK_SETS
 %token <tokval> TOK_SG_TABLE
+%token <tokval> TOK_SHA
+%token <tokval> TOK_SHA1
+%token <tokval> TOK_SHA2
 %token <tokval> TOK_SHAPE
 %token <tokval> TOK_SHARE               /* Tandem extension non-reserved word */
 %token <tokval> TOK_SHARED              /* Tandem extension non-reserved word */
@@ -9670,6 +9675,46 @@ misc_function :
 				{
 				  $$ = $2;
 				}
+
+     | TOK_SHA  '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_SHA1,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+     | TOK_SHA1  '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_SHA1,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+
+     | TOK_SHA2 '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_SHA2,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+
+     | TOK_MD5 '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_MD5,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+
+     | TOK_CRC32 '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_CRC32,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+
 
      | TOK_GREATEST '(' value_expression ',' value_expression ')'
                   {
