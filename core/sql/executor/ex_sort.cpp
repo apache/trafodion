@@ -134,7 +134,8 @@ void ExSortTcb::setupPoolBuffers(ex_queue_entry *pentry_down)
   //sortPool_ reference handle will either point to topNSortPool or 
   //regularSortPool.
   if((pentry_down->downState.request == ex_queue::GET_N) &&
-     (pentry_down->downState.requestValue > 0))
+     (pentry_down->downState.requestValue > 0) &&
+     (sortTdb().topNSortEnabled()))
   {
     topNSortPool_ = new(space)
                     ExSimpleSQLBuffer(pentry_down->downState.requestValue + 1,
@@ -287,7 +288,7 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
   sortCfg_->setIntermediateScratchCleanup(st->sortOptions_->intermediateScratchCleanup());
   sortCfg_->setResizeCifRecord(st->sortOptions_->resizeCifRecord());
   sortCfg_->setConsiderBufferDefrag(st->sortOptions_->considerBufferDefrag());
-  sortCfg_->setTopNSort(st->topNSort());
+  sortCfg_->setTopNSort(st->topNSortEnabled());
   
   switch(st->getOverFlowMode())
   {
