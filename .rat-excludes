@@ -165,4 +165,8 @@ VariableLengthPKTest.java
 # asciidoc extention file -- MIT license
 google-analytics-postprocessor.rb
 
-
+# installer JSON config files
+mod_cfgs.json
+prompt.json
+script.json
+version.json

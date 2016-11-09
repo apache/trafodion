@@ -1,0 +1,87 @@
+{
+"install": [
+    {
+        "script": "traf_check.py",
+        "desc": "Environment Check",
+        "node": "all"
+    },
+    {
+        "script": "copy_files.py",
+        "desc": "Copy Trafodion package file",
+        "node": "local",
+        "req_pwd": "yes"
+    },
+    {
+        "script": "traf_user.py",
+        "desc": "Trafodion user Setup",
+        "node": "all"
+    },
+    {
+        "script": "traf_dep.py",
+        "desc": "Install Trafodion dependencies",
+        "node": "all"
+    },
+    {
+        "script": "traf_package.py",
+        "desc": "Install Trafodion package",
+        "node": "all",
+        "run_as_traf": "yes"
+    },
+    {
+        "script": "traf_setup.py",
+        "desc": "Environment Setup",
+        "node": "all"
+    },
+    {
+        "script": "traf_kerberos.py",
+        "desc": "Kerberos Setup",
+        "node": "all"
+    },
+    {
+        "script": "dcs_setup.py",
+        "desc": "DCS/REST Setup",
+        "node": "all",
+        "run_as_traf": "yes"
+    },
+    {
+        "script": "traf_ldap.py",
+        "desc": "LDAP Security Setup",
+        "node": "all",
+        "run_as_traf": "yes"
+    },
+    {
+        "script": "hadoop_mods.py",
+        "desc": "Hadoop modification and restart",
+        "node": "local"
+    },
+    {
+        "script": "apache_mods.py",
+        "desc": "Hadoop modification and restart",
+        "node": "all"
+    },
+    {
+        "script": "hdfs_cmds.py",
+        "desc": "Set permission of HDFS folder for Trafodion user",
+        "node": "first_rs"
+    },
+    {
+        "script": "traf_sqconfig.py",
+        "desc": "Sqconfig Setup",
+        "node": "first",
+        "run_as_traf": "yes"
+    },
+    {
+        "script": "traf_start.py",
+        "desc": "Start Trafodion",
+        "node": "first",
+        "run_as_traf": "yes"
+    }
+],
+"discover": [
+    {
+        "script": "traf_discover.py",
+        "desc": "Environment Discover",
+        "node": "all"
+    }
+]
+}
