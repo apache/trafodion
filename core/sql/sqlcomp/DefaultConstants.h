@@ -3834,6 +3834,9 @@ enum DefaultConstants
   // if FALSE, create unsigned literal for +ve and signed literal for -ve nums.
   TRAF_CREATE_SIGNED_NUMERIC_LITERAL,
 
+
+  TRAF_UPSERT_TO_EFF_TREE,
+
   // if TRUE, create tinyint literal insteadl of smallint.
   TRAF_CREATE_TINYINT_LITERAL,
 
@@ -3866,6 +3869,7 @@ enum DefaultConstants
   CSE_PRINT_DEBUG_INFO,
   CSE_CLEANUP_HIVE_TABLES,
   CSE_CACHE_TEMP_QUERIES,
+
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

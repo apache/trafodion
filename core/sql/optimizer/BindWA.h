@@ -685,6 +685,8 @@ public:
   // --------------------------------------------------------------------
   RelExpr *&getSequenceNode() { return sequenceNode_; };
 
+  ValueIdMap &getNcToOldMap() { return ncToOldMap_;}
+
   ValueIdList getOlapPartition() const {return OlapPartition_; };
 
   ValueIdList getOlapOrder() const {return OlapOrder_; };
@@ -786,7 +788,7 @@ private:
   // node, an error is issued.
   //
   RelExpr *sequenceNode_;
-
+  ValueIdMap ncToOldMap_;
   // --------------------------------------------------------------------
   // Context info for this scope.
   // --------------------------------------------------------------------

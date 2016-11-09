@@ -96,7 +96,9 @@ class MVInfoForDDL;
 class PlanPriority;
 class Hint;
 class TableMappingUDF;
+class RelSequence;
 class CSEInfo;
+
 
 ////////////////////
 class CANodeIdSet;
@@ -680,9 +682,9 @@ public:
 
   Scan *getScanNode(NABoolean assertExactlyOneScanNode = TRUE) const;
   Scan *getLeftmostScanNode() const;
-
   Scan *getAnyScanNode() const;
-
+  Join *getLeftJoinChild() const;
+  RelSequence *getOlapChild() const;
   void getAllTableDescs(TableDescList &tableDescs);
 
   TableDesc *findFirstTableDescAndValueIdMap(RelExpr *currentNode,
