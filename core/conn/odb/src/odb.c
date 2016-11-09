@@ -4254,7 +4254,8 @@ static void gclean(void)
                 free( etab[i].src );    /* ... free .src */
                 if ( etab[i].ps )       /* ps but not multi */
                     MutexDestroy(&etab[i].pmutex);
-                MutexDestroy(&etab[i].gmutex);
+                if (i == 0)              /* fix jira-2029, the groupt mutex is only set in etab[0] */
+                    MutexDestroy(&etab[i].gmutex);
             }
             break;
         case 'l':               /* ...(l) allocated in etabadd */
@@ -4269,12 +4270,14 @@ static void gclean(void)
                 for ( j = 0 ; j < etab[etab[i].k].pc ; j++ )
                     free(etab[etab[i].k].key[j]);
                 etab[etab[i].k].em = 0 ;
-                MutexDestroy(&etab[i].gmutex);
+                if (i == 0)              /* fix jira-2029, the groupt mutex is only set in etab[0] */
+                    MutexDestroy(&etab[i].gmutex);
             }
             if ( etab[etab[i].k].src ) {    /* only grand parent frees .src */
                 free(etab[etab[i].k].src);
                 etab[etab[i].k].src = 0 ;
-                MutexDestroy(&etab[i].gmutex);
+                if (i == 0)              /* fix jira-2029, the groupt mutex is only set in etab[0] */
+                    MutexDestroy(&etab[i].gmutex);
             }
             break;
         case 'D':               /* ...(D) allocated in etabadd */
@@ -4288,7 +4291,8 @@ static void gclean(void)
                     free ( etab[i].sb );
                 free ( etab[i].src );
                 MutexDestroy( &etab[i].pmutex );
-                MutexDestroy( &etab[i].gmutex );
+                if (i == 0)              /* fix jira-2029, the groupt mutex is only set in etab[0] */
+                    MutexDestroy(&etab[i].gmutex);
                 CondDestroy ( &etab[i].pcvp );
                 CondDestroy ( &etab[i].pcvc );
             }
