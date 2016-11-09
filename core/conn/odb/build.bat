@@ -46,6 +46,7 @@ echo Building ODB - Win64 Release...
 cd %BUILDDIR%\odb
 msbuild.exe /t:rebuild odb.vcxproj /p:Platform=x64 /p:Configuration=Release /p:ZlibIncludeDir=%ZLIB_INCLUDE_PATH% /p:ZlibLibDir=%ZLIB_LIB_PATH%
 set BUILD_STATUS=%ERRORLEVEL%
+cd %BUILDDIR%
 
 if %BUILD_STATUS% == 0 (
 	copy /Y odb\x64\Release\odb.exe %PACKDIR%
