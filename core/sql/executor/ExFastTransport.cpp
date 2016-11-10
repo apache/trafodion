@@ -529,6 +529,7 @@ ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 
   if (lobGlob_ != NULL)
   {
+    ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
     lobGlob_ = NULL;
   }
 

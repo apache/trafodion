@@ -2275,13 +2275,6 @@ void ExExeUtilHiveTruncateTcb::freeResources()
 Int32 ExExeUtilHiveTruncateTcb::fixup()
 {
   lobGlob_ = NULL;
-
-  ExpLOBinterfaceInit
-    (lobGlob_, getGlobals()->getDefaultHeap(),
-     getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE, 
-     htTdb().getHdfsHost(),
-     htTdb().getHdfsPort());
-
   return 0;
 }
 //////////////////////////////////////////////////////
@@ -2310,6 +2303,11 @@ short ExExeUtilHiveTruncateTcb::work()
     {
       case INITIAL_:
       {
+        ExpLOBinterfaceInit
+        (lobGlob_, getGlobals()->getDefaultHeap(),
+         getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE, 
+         htTdb().getHdfsHost(),
+         htTdb().getHdfsPort());
 
         if (htTdb().getModTS() > 0)
           step_ = DATA_MOD_CHECK_;
@@ -2461,6 +2459,12 @@ short ExExeUtilHiveTruncateTcb::work()
         if (qparent_.up->isFull())
           return WORK_OK;
 
+        if (lobGlob_)
+        {
+          ExpLOBinterfaceCleanup(lobGlob_, getHeap());
+          lobGlob_ = NULL;
+        }
+        
         // Return EOF.
         ex_queue_entry * up_entry = qparent_.up->getTailEntry();
 

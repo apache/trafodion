@@ -205,6 +205,12 @@ ExHdfsScanTcb::ExHdfsScanTcb(
                                         jniDebugPort,
                                         jniDebugTimeout);
 
+  //Initialize hdfs access interface.
+  lobGlob_ = NULL;
+  ExpLOBinterfaceInit(lobGlob_,getGlobals()->getDefaultHeap(),
+                      getGlobals()->castToExExeStmtGlobals()->getContext(),
+                      TRUE, hdfsScanTdb.hostName_,hdfsScanTdb.port_);
+
 }
     
 ExHdfsScanTcb::~ExHdfsScanTcb()
@@ -341,11 +347,6 @@ ex_tcb_private_state *ExHdfsScanTcb::allocatePstates(
 
 Int32 ExHdfsScanTcb::fixup()
 {
-  lobGlob_ = NULL;
-
-  ExpLOBinterfaceInit
-    (lobGlob_, getGlobals()->getDefaultHeap(),getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE, hdfsScanTdb().hostName_,hdfsScanTdb().port_);
-  
   return 0;
 }
 

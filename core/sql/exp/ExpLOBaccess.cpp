@@ -2285,11 +2285,13 @@ Ex_Lob_Error ExLobsOper (
     {
       lobGlobals = (ExLobGlobals *)globPtr;
 
-      lobMap = lobGlobals->getLobMap();
+      if(operation != Lob_Cleanup)
+      {
+      	lobMap = lobGlobals->getLobMap();
 
-      it = lobMap->find(string(fileName));
+      	it = lobMap->find(string(fileName));
 
-      if (it == lobMap->end())
+      	if (it == lobMap->end())
 	{
 	  //lobPtr = new (lobGlobals->getHeap())ExLob();
 	  lobPtr = new ExLob();
@@ -2312,7 +2314,8 @@ Ex_Lob_Error ExLobsOper (
 	  lobPtr = it->second;
         
 	}
-      lobPtr->lobTrace_ = lobGlobals->lobTrace_;
+      	lobPtr->lobTrace_ = lobGlobals->lobTrace_;
+      }
     }
   /* 
 // **Note** This is code that needs to get called before sneding a request to the 
@@ -3048,7 +3051,9 @@ ExLobGlobals::~ExLobGlobals()
     }
 
     for (int i=0; i<NUM_WORKER_THREADS; i++) {
+      traceMessage("waiting for thread", NULL,__LINE__, (long) threadId_[i]);
       pthread_join(threadId_[i], NULL);
+      traceMessage("waiting for thread completed", NULL,__LINE__, (long) threadId_[i]);
     }
     // Free the post fetch bugf list AFTER the worker threads have left to 
     // avoid slow worker thread being stuck and master deallocating these 
@@ -3108,7 +3113,11 @@ Ex_Lob_Error ExLobGlobals::startWorkerThreads()
    for (int i=0; i<NUM_WORKER_THREADS; i++) {
      rc = pthread_create(&threadId_[i], NULL, workerThreadMain, this);
      if (rc != 0)
-      return LOB_HDFS_THREAD_CREATE_ERROR;
+     {
+       traceMessage("startWorkerThreads Thread Create failed ", NULL,__LINE__, (long) threadId_[i]);
+       return LOB_HDFS_THREAD_CREATE_ERROR;
+     }
+     traceMessage("startWorkerThreads Thread Created ", NULL,__LINE__, (long) threadId_[i]);
    }
    
    return LOB_OPER_OK;
@@ -3303,7 +3312,7 @@ void ExLobGlobals::doWorkInThread()
          delete request;
       }
    }
-
+   traceMessage("Got shutdown request, exiting now.", NULL,__LINE__, (long)pthread_self());
    pthread_exit(0);
 }
 
@@ -3345,14 +3354,15 @@ Ex_Lob_Error ExLobGlobals::processPreOpens()
 //The output file will be named trace_threads.<pid> on ech node
 
 void ExLobGlobals::traceMessage(const char *logMessage, ExLobCursor *cursor,
-                                int line)
+                                int line, long num)
 {
   if ( threadTraceFile_ && logMessage)
   {
     fprintf(threadTraceFile_, 
-    "Thread: 0x%lx Line:  %d %s 0x%lx\n" ,
+    "Thread: 0x%lx Line:  %d %s 0x%lx (%ld)\n" ,
        (unsigned long)pthread_self(), line, logMessage, 
-       (unsigned long) cursor);
+       (unsigned long) cursor,
+       num);
     fflush(threadTraceFile_);
   }
     
