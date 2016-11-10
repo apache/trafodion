@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.sql.Clob;
 import java.sql.SQLException;
@@ -33,8 +34,8 @@ import java.util.logging.LogRecord;
 
 public class TrafT4Clob implements Clob {
 
-	private String data_;
-	private boolean isFreed_;
+	private String data_ = null;
+	private boolean isFreed_ = false;
 	private String lobHandle_ = null;
 	private TrafT4Connection connection_ = null;
 
@@ -60,20 +61,17 @@ public class TrafT4Clob implements Clob {
 			connection_.props_.getLogWriter().println(temp);
 		}
 
+		T4Connection t4connection = this.connection_.getServerHandle().getT4Connection();
+		LogicalByteArray wbuffer = ExtractLobMessage.marshal(ExtractLobMessage.LOB_EXTRACT_BUFFER, lobHandle_, 1, 0,
+				connection_.ic_);
+		LogicalByteArray rbuffer = t4connection.getReadBuffer(TRANSPORT.SRVR_API_EXTRACTLOB, wbuffer);
+		ExtractLobReply reply = new ExtractLobReply(rbuffer, connection_.ic_);
+
 		try {
-			if (lobHandle_ != null) {
-				T4Connection t4connection = this.connection_.getServerHandle().getT4Connection();
-				LogicalByteArray wbuffer = ExtractLobMessage.marshal(ExtractLobMessage.LOB_EXTRACT_BUFFER, lobHandle_, 1, 0,
-						connection_.ic_);
-				LogicalByteArray rbuffer = t4connection.getReadBuffer(TRANSPORT.SRVR_API_EXTRACTLOB, wbuffer);
-				ExtractLobReply reply = new ExtractLobReply(rbuffer, connection_.ic_);
-
-				this.data_ = new String(reply.lobDataValue, "UTF-8");
-				isFreed_ = false;
-			}
-		}
-		catch (Exception e) {
-
+			this.data_ = new String(reply.lobDataValue, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw TrafT4Messages.createSQLException(this.connection_.ic_.t4props_, this.connection_.ic_.getLocale(),
+					"unsupported_encoding", "UTF-8");
 		}
 	}
 	public void free() throws SQLException {
@@ -165,7 +163,7 @@ public class TrafT4Clob implements Clob {
 					"out_of_lob_bound_msg", null);
 		}
 		if (str == null) {
-
+			throw TrafT4Messages.createSQLException(this.connection_.props_, this.connection_.getLocale(), "clob_null_string_para", null);
 		}
 
 		StringBuilder buf = new StringBuilder(this.data_);

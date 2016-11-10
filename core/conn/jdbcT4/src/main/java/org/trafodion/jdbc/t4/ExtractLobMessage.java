@@ -21,37 +21,39 @@
 
 package org.trafodion.jdbc.t4;
 
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.UnsupportedCharsetException;
+import java.sql.SQLException;
 
 class ExtractLobMessage {
 
 	static final short LOB_EXTRACT_LEN                 = 0;
 	static final short LOB_EXTRACT_BUFFER              = LOB_EXTRACT_LEN + 1;
-	static final short LOB_EXTRATC_BOTH_LEN_AND_BUFFER = LOB_EXTRACT_BUFFER + 1;
+	static final short LOB_EXTRACT_BOTH_LEN_AND_BUFFER = LOB_EXTRACT_BUFFER + 1;
 
-	static LogicalByteArray marshal(short extractType, String lobHandle, int lobHandleCharset, long lobLength, InterfaceConnection ic) throws CharacterCodingException, UnsupportedCharsetException{
+	static LogicalByteArray marshal(short extractType, String lobHandle, int lobHandleCharset, long lobLength, InterfaceConnection ic) throws SQLException{
 		int wlength = Header.sizeOf();
 		LogicalByteArray buf;
 
-		byte[] lobHandleBytes = ic.encodeString(lobHandle, InterfaceUtilities.SQLCHARSETCODE_UTF8);
+		try {
+			byte[] lobHandleBytes = ic.encodeString(lobHandle, InterfaceUtilities.SQLCHARSETCODE_UTF8);
 
-		wlength += TRANSPORT.size_int;
-		//wlength += TRANSPORT.size_long; // length of lobHandle
+			wlength += TRANSPORT.size_int;
+			// wlength += TRANSPORT.size_long; // length of lobHandle
 
-		if (lobHandle.length() > 0) {
-			wlength += TRANSPORT.size_bytesWithCharset(lobHandleBytes);
+			if (lobHandle.length() > 0) {
+				wlength += TRANSPORT.size_bytesWithCharset(lobHandleBytes);
+			}
+
+			if (lobLength > 0) {
+				wlength += TRANSPORT.size_long;
+			}
+
+			buf = new LogicalByteArray(wlength, Header.sizeOf(), ic.getByteSwap());
+
+			buf.insertInt(extractType);
+			buf.insertStringWithCharset(lobHandleBytes, lobHandleCharset);
+			return buf;
+		} catch (Exception e) {
+			throw TrafT4Messages.createSQLException(ic.t4props_, ic.getLocale(), "unsupported_encoding", "UTF-8");
 		}
-
-		if (lobLength > 0) {
-			wlength += TRANSPORT.size_long;
-		}
-
-		buf = new LogicalByteArray(wlength, Header.sizeOf(), ic.getByteSwap());
-
-		buf.insertInt(extractType);
-		//buf.insertInt(lobHandle.length());
-		buf.insertStringWithCharset(lobHandleBytes, lobHandleCharset);
-		return buf;
 	}
 }

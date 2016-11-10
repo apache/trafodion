@@ -31,11 +31,19 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 public class TrafT4Blob implements Blob {
-	private byte[] data_;
+	private byte[] data_ = null;
 	private boolean isFreed_ = false;
+	private String lobHandle_ = null;
 	private TrafT4Connection connection_ = null;
 
-	public TrafT4Blob(TrafT4Connection connection, String lobHandle) throws SQLException {
+	public TrafT4Blob(TrafT4Connection connection, String lobHandle) throws SQLException{
+		if (connection == null) {
+			throw TrafT4Messages.createSQLException(connection_.props_, null, null, null);
+		}
+
+		this.connection_ = connection;
+		this.lobHandle_ = lobHandle;
+
 		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, lobHandle);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4ResultSet", "getClob", "", p);
@@ -50,6 +58,14 @@ public class TrafT4Blob implements Blob {
 			String temp = lf.format(lr);
 			connection_.props_.getLogWriter().println(temp);
 		}
+
+		T4Connection t4connection = this.connection_.getServerHandle().getT4Connection();
+		LogicalByteArray wbuffer = ExtractLobMessage.marshal(ExtractLobMessage.LOB_EXTRACT_BUFFER, lobHandle_, 1, 0,
+				connection_.ic_);
+		LogicalByteArray rbuffer = t4connection.getReadBuffer(TRANSPORT.SRVR_API_EXTRACTLOB, wbuffer);
+		ExtractLobReply reply = new ExtractLobReply(rbuffer, connection_.ic_);
+
+		this.data_ = reply.lobDataValue;
 	}
 
 	public InputStream getBinaryStream() throws SQLException {
@@ -78,7 +94,7 @@ public class TrafT4Blob implements Blob {
 
 		if((startPos > data_.length) || (startPos < 0) || (length < 0))
 			throw TrafT4Messages.createSQLException(this.connection_.props_, this.connection_.getLocale(),
-					"out_of_lob_bound_msg", null);
+					"out_of_lob_bound", null);
 
 		if((endPos - 1) > data_.length) {
 			length = data_.length - startPos;
@@ -103,7 +119,7 @@ public class TrafT4Blob implements Blob {
 			out.write(bytes, offset, len);
 		} catch (IOException e) {
 			throw TrafT4Messages.createSQLException(this.connection_.props_, this.connection_.getLocale(),
-					"blob_io_error", null);
+					"blob_io_error", e.getMessage());
 		} finally {
 			try {
 				out.close();
@@ -135,7 +151,7 @@ public class TrafT4Blob implements Blob {
 
 		if (len < 0 || len > this.data_.length) {
 			throw TrafT4Messages.createSQLException(this.connection_.props_, this.connection_.getLocale(),
-					"out_of_lob_bound_msg", null);
+					"out_of_lob_bound", null);
 		}
 
 		byte[] newData = new byte[(int) len];

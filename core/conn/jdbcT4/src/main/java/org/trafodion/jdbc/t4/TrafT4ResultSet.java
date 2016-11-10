@@ -4861,7 +4861,6 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 		outputDesc_[columnIndex - 1].checkValidNumericConversion(connection_.getLocale());
 
 		lobHandle = getLocalString(columnIndex);
-		int dataType = outputDesc_[columnIndex - 1].dataType_;
 
 		if (lobHandle != null) {
 			return new TrafT4Clob(connection_, lobHandle);
@@ -4910,7 +4909,6 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 		outputDesc_[columnIndex - 1].checkValidNumericConversion(connection_.getLocale());
 
 		lobHandle = getLocalString(columnIndex);
-		int dataType = outputDesc_[columnIndex - 1].dataType_;
 
 		if (lobHandle != null) {
 			return new TrafT4Blob(connection_, lobHandle);

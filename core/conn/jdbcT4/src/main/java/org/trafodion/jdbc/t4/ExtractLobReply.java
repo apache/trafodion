@@ -21,8 +21,6 @@
 
 package org.trafodion.jdbc.t4;
 
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.UnsupportedCharsetException;
 import java.sql.SQLException;
 
 class ExtractLobReply {
@@ -30,19 +28,16 @@ class ExtractLobReply {
 	SQLWarningOrError[] errorList;
 
 	odbc_SQLSvc_ExtractLob_exc_ m_p1;
-	String m_p2;
-	SQLItemDescList_def m_p3;
-	ERROR_DESC_LIST_def m_p4;
 	String proxySyntax = "";
 
 	int lobDataLen = 0;
 
 	byte[] lobDataValue = null;
 
-	ExtractLobReply(LogicalByteArray buf, InterfaceConnection ic) throws CharacterCodingException,
-	UnsupportedCharsetException, SQLException {
+	ExtractLobReply(LogicalByteArray buf, InterfaceConnection ic) throws SQLException {
 		buf.setLocation(Header.sizeOf());
 
+		try {
 		m_p1 = new odbc_SQLSvc_ExtractLob_exc_();
 		m_p1.extractFromByteArray(buf, ic);
 
@@ -51,6 +46,13 @@ class ExtractLobReply {
 			if (lobDataLen > 0) {
 				lobDataValue = buf.extractByteArray(lobDataLen);
 			}
+		}
+		}
+		catch (SQLException e) {
+			throw e;
+		}
+		catch (Exception e) {
+			throw TrafT4Messages.createSQLException(ic.t4props_, ic.getLocale(), "unsupported_encoding", "UTF-8");
 		}
 	}
 }
