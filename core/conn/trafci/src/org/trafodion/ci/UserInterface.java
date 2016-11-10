@@ -269,11 +269,11 @@ public class UserInterface {
 			// A session object is returned by SessionInterface
 			// with the required DB connection, writer and reader objects
 			SessionInterface siObj = new SessionInterface(crObj, cwObj);
-
+			Session sessObj = null;
 			try {
 				// set the script file if -script option is specified
 				siObj.setScriptFile(paObj.fileName);
-				Session sessObj = siObj.createSession(paObj.userName,
+				sessObj = siObj.createSession(paObj.userName,
 						paObj.roleName, paObj.password, paObj.serverName,
 						paObj.portNumber, paObj.dsnName, SessionDefaults.USERI,
 						paObj.noConnectOption);
@@ -396,6 +396,13 @@ public class UserInterface {
 				System.out.println(e);
 				//if (doTrace)
 					e.printStackTrace();
+			} finally {
+				if (sessObj != null && sessObj.getConnObj() != null) {
+					try {
+						sessObj.getConnObj().close();
+					} catch (SQLException e) {
+					}
+				}
 			}
 
 			siObj = null;
