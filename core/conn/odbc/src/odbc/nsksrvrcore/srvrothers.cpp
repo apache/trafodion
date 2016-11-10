@@ -4557,6 +4557,8 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                                  "cast(0 as smallint), cast(0 as smallint), cast(3 as smallint), cast(0 as smallint)),"
                                  "('BIGINT SIGNED', -5, 19, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'LARGEINT', NULL, NULL, 'SIGNED LARGEINT', 10, 19, 20, -402, NULL, NULL, 0, 0, 3, 0),"
                                  "('CHAR', 1, 32000, '''', '''', 'max length', 1, 1, 3, NULL, 0, NULL, 'CHARACTER', NULL, NULL, 'CHARACTER', NULL, -1, -1, 1, NULL, NULL, 0, 0, 3, 0),"
+                                 "('NCHAR', -8, 32000, '''', '''', 'max length', 1, 1, 3, NULL, 0, NULL, 'WCHAR', NULL, NULL, 'WCHAR', NULL, -1, -1, -8, NULL, NULL, 0, 0, 3, 0),"
+                                 "('NCHAR VARYING', -9, 32000, '''', '''', 'max length', 1, 1, 3, NULL, 0, NULL, 'WCHAR VARYING', NULL, NULL, 'VARWCHAR', NULL, -1, -1, -9, NULL, NULL, 0, 0, 3, 0),"
                                  "('DATE', 91, 10, '{d ''', '''}', NULL, 1, 0, 2, NULL, 0, NULL, 'DATE', NULL, NULL, 'DATE', NULL, 10, 6, 9, 1, NULL, 1, 3, 3, 0),"
                                  "('DECIMAL', 3, 18, NULL, NULL, 'precision,scale', 1, 0, 2, 0, 0, 0, 'DECIMAL', 0, 18, 'DECIMAL', 10, -2, -3, 3, NULL, NULL, 0, 0, 3, 0),"
                                  "('DECIMAL SIGNED', 3, 18, NULL, NULL, 'precision,scale', 1, 0, 2, 0, 0, 0, 'DECIMAL', 0, 18, 'SIGNED DECIMAL', 10, -2, -3, 3, NULL, NULL, 0, 0, 3, 0),"

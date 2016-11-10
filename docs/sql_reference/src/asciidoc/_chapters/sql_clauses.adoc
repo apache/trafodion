@@ -712,7 +712,7 @@ BALANCE
   WHEN sex = 'female' THEN 15 ROWS
   END 
 ORDER BY age;
-+
+
 AGE         SEX    SALARY
 ----------- ------ -----------
          22 male      28000.00

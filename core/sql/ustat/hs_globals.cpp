@@ -2894,7 +2894,9 @@ HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
     jitLogThreshold(0),
     stmtStartTime(0),
     jitLogOn(FALSE),
-    isUpdatestatsStmt(FALSE)
+    isUpdatestatsStmt(FALSE),
+    maxCharColumnLengthInBytes(ActiveSchemaDB()->getDefaults().
+               getAsLong(USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES))
   {
     // Must add the context first in the constructor.
     contID_ = AddHSContext(this);
@@ -4893,14 +4895,17 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
       // values won't matter, or no encoding is needed, in which case the
       // fields for the sorted type are the same as those for the original type.
       default:
-        group->ISdatatype = col.datatype;
-        group->ISlength = col.length;
-        if (group->ISlength > MAX_SUPPORTED_CHAR_LENGTH)
-          group->ISlength = MAX_SUPPORTED_CHAR_LENGTH;
-        group->ISprecision = col.precision;
-        group->ISscale = col.scale;
-        // the method below handles adding SUBSTRING for over-size char/varchars
-        HSSample::addTruncatedColumnReference(group->ISSelectExpn,col);
+        {
+          HSGlobalsClass *hs_globals = GetHSContext();
+          group->ISdatatype = col.datatype;
+          group->ISlength = col.length;
+          if (group->ISlength > hs_globals->maxCharColumnLengthInBytes)
+            group->ISlength = hs_globals->maxCharColumnLengthInBytes;
+          group->ISprecision = col.precision;
+          group->ISscale = col.scale;
+          // the method below handles adding SUBSTRING for over-size char/varchars
+          HSSample::addTruncatedColumnReference(group->ISSelectExpn,col);
+        }
         break;
      } // switch
      group = group->next;

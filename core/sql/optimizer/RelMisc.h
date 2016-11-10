@@ -47,6 +47,7 @@
 #include "LateBindInfo.h"
 #include "SequenceGeneratorAttributes.h"
 #include "ComSecurityKey.h"
+#include "CmpStatement.h"
 
 class TrafDesc;
 
@@ -68,7 +69,13 @@ class PhyPack;
 class FirstN;
 class ExtractSource;
 class SequenceGenerator;
-class NextValueFor;
+class Rowset;
+class RowsetRowwise;
+class RowsetInto;
+class RowsetFor;
+class ControlRunningQuery;
+class CommonSubExprRef;
+class Union;
 
 
   // The following are physical operators
@@ -101,6 +108,9 @@ class ElemDDLNode;
 class ElemProxyColDef;
 class ItemExprList;
 class RtmdCompileTimeObj;
+class HbaseAccessOptions;
+class Union;
+
 // TreeStore struct
 struct TreeStore : public NABasicObject
 {
@@ -268,6 +278,7 @@ public:
 
   // subqueries are unnested in this method
   virtual RelExpr * semanticQueryOptimizeNode(NormWA & normWARef);
+  RelExpr * inlineTempTablesForCSEs(NormWA & normWARef);
 
   // Method to push down predicates from a RelRoot node into the
   // children
@@ -1444,26 +1455,29 @@ public:
   MapValueIds(RelExpr  *child = NULL,
 	      CollHeap *oHeap = CmpCommon::statementHeap())
     : RelExpr(REL_MAP_VALUEIDS,child,NULL,oHeap), 
-    includesFavoriteMV_(FALSE), usedByMvqr_(FALSE)                     {}
+      includesFavoriteMV_(FALSE),
+      cseRef_(NULL)                                                    {}
 
   MapValueIds(RelExpr *child,
 	      const ValueIdSet &identity,
 	      CollHeap *oHeap = CmpCommon::statementHeap())
     : RelExpr(REL_MAP_VALUEIDS,child,NULL,oHeap),
-      map_(identity), includesFavoriteMV_(FALSE), usedByMvqr_(FALSE)   {}
+      map_(identity), includesFavoriteMV_(FALSE),
+      cseRef_(NULL)                                                    {}
 
   MapValueIds(RelExpr *child,
 	      const ValueIdMap &map,
 	      CollHeap *oHeap = CmpCommon::statementHeap())
     : RelExpr(REL_MAP_VALUEIDS,child,NULL,oHeap),
-    map_(map), includesFavoriteMV_(FALSE), usedByMvqr_(FALSE)          {}
+    map_(map), includesFavoriteMV_(FALSE),
+      cseRef_(NULL)                                                    {}
 
   MapValueIds(const MapValueIds & other)
     : RelExpr(REL_MAP_VALUEIDS, other.child(0)),
       map_(other.map_),
       valuesNeededForVEGRewrite_(other.valuesNeededForVEGRewrite_),
       includesFavoriteMV_(other.includesFavoriteMV_),
-      usedByMvqr_(other.usedByMvqr_)                                   {}
+      cseRef_(other.cseRef_)                                           {}
 
   virtual ~MapValueIds();
 
@@ -1510,6 +1524,7 @@ public:
   inline void clearValuesForVEGRewrite()
                                    { valuesNeededForVEGRewrite_.clear(); }
   void addSameMapEntries(const ValueIdSet & newTopBottomValues);
+  void setCSERef(CommonSubExprRef *cse)                 { cseRef_ = cse; }
 
   // Method to compute child's characteristic outputs
   virtual
@@ -1543,18 +1558,13 @@ public:
   NABoolean includesFavoriteMV () const
           {return includesFavoriteMV_;}
 
-  void setUsedByMvqr (NABoolean value)
-          {usedByMvqr_ = value;}
-
-  NABoolean usedByMvqr () const
-          {return usedByMvqr_;}
-
 private:
 
   ValueIdMap map_;
   ValueIdSet valuesNeededForVEGRewrite_;
   NABoolean  includesFavoriteMV_;
-  NABoolean  usedByMvqr_;
+  NABoolean  replaceVEGUsingList_;
+  CommonSubExprRef *cseRef_;
 };
 
 // -----------------------------------------------------------------------
@@ -2545,5 +2555,326 @@ private:
   QuerySpec qs_;
   NAString comment_;
 };
+
+// Container for the common info about a common subexpression. This is
+// a helper class for class CommonSubExprRef below.
+
+// This class is stored in the CmpStatement object, but it is defined
+// here because it is closely related to the CommonSubExprRef class
+// and because it contains ValueIdSet and ValueIdList data members
+// which should not be used by CmpStatement classes directly.
+
+// Note about acronyms:
+// CTE: Common Table Expression syntax (WITH clause) in SQL
+// CSE: Common SubExpression (could be WITH clause or
+//      another type of common subexpression)
+class CSEInfo : public NABasicObject
+{
+public:
+
+  enum CSEAnalysisOutcome
+    {
+      UNKNOWN_ANALYSIS,    // analysis not yet done
+      EXPAND,              // expand the common subexpression
+      CREATE_TEMP,         // materialize CSE as temp, then read the temp
+      TEMP,                // read the temp created by someone else
+      ERROR                // error occurred, diags are set
+    };
+
+  enum CSETempTableType
+    {
+      UNKNOWN_TEMP_TABLE,  // temp table type not yet determined
+      HIVE_TEMP_TABLE,     // use a Hive delimited table
+      VOLATILE_TEMP_TABLE  // use a Trafodion volatile table
+    };
+
+  CSEInfo(const char *name,
+          NAMemory *mem) :
+       name_(name, mem),
+       cseId_(-1),
+       childCSEs_(mem),
+       consumers_(mem),
+       neededColumns_(mem),
+       idOfAnalyzingConsumer_(-1),
+       analysisOutcome_(UNKNOWN_ANALYSIS),
+       tempTableType_(UNKNOWN_TEMP_TABLE),
+       tempTableName_(mem),
+       tempTableDDL_(mem),
+       tempNATable_(NULL),
+       insertIntoTemp_(NULL)
+  {}
+
+  const NAString &getName() const                            { return name_; }
+  Int32 getCSEId() const                                    { return cseId_; }
+  const LIST(CSEInfo *) &getChildCSEs() const           { return childCSEs_; }
+  const CollIndex getNumConsumers() const     { return consumers_.entries(); }
+  CommonSubExprRef *getConsumer(CollIndex i) const   { return consumers_[i]; }
+
+  Int32 getIdOfAnalyzingConsumer() const    { return idOfAnalyzingConsumer_; }
+  CSEAnalysisOutcome getAnalysisOutcome(Int32 id) const;
+  NABoolean usesATempTable() const         { return insertIntoTemp_ != NULL; }
+  CSETempTableType getTempTableType() const         { return tempTableType_; }
+  const NABitVector &getNeededColumns() const       { return neededColumns_; }
+  const ValueIdSet &getCommonPredicates() const  { return commonPredicates_; }
+  const ValueIdSet &getVEGRefsWithDifferingConstants() const
+                                    { return vegRefsWithDifferingConstants_; }
+  const ValueIdSet &getVEGRefsWithDifferingInputs() const
+                                       { return vegRefsWithDifferingInputs_; }
+  const QualifiedName &getTempTableName() const     { return tempTableName_; }
+  const NAString &getTempTableDDL() const            { return tempTableDDL_; }
+  const NATable *getTempNATable() const               { return tempNATable_; }
+  RelExpr *getInsertIntoTemp() const               { return insertIntoTemp_; }
+
+  void setCSEId(Int32 id)                                     { cseId_ = id; }
+  void addChildCSE(CSEInfo *child);
+  void addCSERef(CommonSubExprRef *cse);
+  void setIdOfAnalyzingConsumer(Int32 id)     { idOfAnalyzingConsumer_ = id; }
+  void setAnalysisOutcome(CSEAnalysisOutcome outcome)
+                                               { analysisOutcome_ = outcome; }
+  void setTempTableType(CSETempTableType t)            { tempTableType_ = t; }
+
+  void setNeededColumns(const NABitVector &v)          { neededColumns_ = v; }
+  void setCommonPredicates(const ValueIdSet &s)     { commonPredicates_ = s; }
+  void addCommonPredicates(const ValueIdSet &s)    { commonPredicates_ += s; }
+  void addVEGRefsWithDifferingConstants(const ValueIdSet &s)
+                                      { vegRefsWithDifferingConstants_ += s; }
+  void addVEGRefsWithDifferingInputs(const ValueIdSet &s)
+                                         { vegRefsWithDifferingInputs_ += s; }
+  void setTempTableName(const QualifiedName &n)        { tempTableName_ = n; }
+  void setTempTableDDL(const char *s)                   { tempTableDDL_ = s; }
+  void setTempNATable(const NATable *nat)              { tempNATable_ = nat; }
+  void setInsertIntoTemp(RelExpr *r)                   {insertIntoTemp_ = r; }
+
+private:
+  // name of the Common Subexpression
+  NAString name_;
+
+  // id of this CSE within the statement
+  Int32 cseId_;
+
+  // list of other CSEs that are referenced by this one
+  LIST(CSEInfo *) childCSEs_;
+
+  // list of nodes referring to the common
+  // subexpression, their index numbers match
+  // the index in this list
+  LIST(CommonSubExprRef *) consumers_;
+
+  // a common list of columns and predicate to use used for a
+  // materialized CSE
+
+  // a list of the actual columns (in terms of the 
+  NABitVector neededColumns_;
+  ValueIdSet commonPredicates_;
+
+  // VEGies with conflicts between the different
+  // consumers
+  ValueIdSet vegRefsWithDifferingConstants_;
+  ValueIdSet vegRefsWithDifferingInputs_;
+
+  // information for the materialization of the CSE
+  Int32 idOfAnalyzingConsumer_;
+  CSEAnalysisOutcome analysisOutcome_;
+  CSETempTableType tempTableType_;
+  QualifiedName tempTableName_;
+  NAString tempTableDDL_;
+  const NATable *tempNATable_;
+  RelExpr *insertIntoTemp_;
+};
+
+// -----------------------------------------------------------------------
+// The CommonSubExprRef class represents a potential common subexpression
+// (CSE) in the query tree. The common subexpression has a name, and
+// multiple CommonSubExprRef nodes in the tree may refer to the same
+// name.  This is a unary operator, the child tree defines the common
+// subexpression (with a few caveats, see below). Note that in our
+// current design, we keep multiple copies of the common subexpression
+// around, in case we don't want to materialize the CSE. This is a
+// logical operator, it either needs to be removed or it needs to be
+// replaced with a scan of a temp table.
+// -----------------------------------------------------------------------
+class CommonSubExprRef : public RelExpr
+{
+public:
+
+  // constructor
+  CommonSubExprRef(RelExpr *cse = NULL,
+                   const char *internalName = NULL,
+                   NAMemory *oHeap = CmpCommon::statementHeap())
+       : RelExpr(REL_COMMON_SUBEXPR_REF,cse,NULL,oHeap),
+         internalName_(internalName, oHeap),
+         id_(-1),
+         hbAccessOptionsFromCTE_(NULL)
+  {}
+
+  virtual ~CommonSubExprRef();
+
+  // the name used in the CTE or a generated name
+  const NAString &getName() const                    { return internalName_; }
+  Int32 getId() const                                          { return id_; }
+
+  virtual Int32 getArity() const;
+
+  // return a read-only reference to the initial list of columns
+  const ValueIdList & getColumnList() const            { return columnList_; }
+  const ValueIdSet & getNonVEGColumns() const       { return nonVEGColumns_; }
+
+  const ValueIdSet &getPushedPredicates() const  { return pushedPredicates_; }
+
+  void setId(Int32 id)                     { CMPASSERT(id_ == -1); id_ = id; }
+
+  // remember HBase access options (if needed)
+  void setHbaseAccessOptions(HbaseAccessOptions *hbo)
+                                            { hbAccessOptionsFromCTE_ = hbo; }
+
+  // add this node to the global list of CommonSubExprRefs kept in CmpStatement
+  void addToCmpStatement();
+
+  // is this the first reference to the common subexpression?
+  NABoolean isFirstReference();
+
+  // a virtual function for performing name binding within the query tree
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  // normalizer methods
+  virtual void transformNode(NormWA & normWARef,
+                             ExprGroupId & locationOfPointerToMe);
+  virtual void pullUpPreds();
+  virtual void pushdownCoveredExpr(
+       const ValueIdSet & outputExprOnOperator,
+       const ValueIdSet & newExternalInputs,
+       ValueIdSet& predOnOperator,
+       const ValueIdSet * nonPredNonOutputExprOnOperator = NULL,
+       Lng32 childId = (-MAX_REL_ARITY));
+  virtual void rewriteNode(NormWA & normWARef);
+  virtual RelExpr * semanticQueryOptimizeNode(NormWA & normWARef);
+
+  // add all the expressions that are local to this
+  // node to an existing list of expressions (used by GUI tool)
+  virtual void addLocalExpr(LIST(ExprNode *) &xlist,
+			    LIST(NAString) &llist) const;
+
+  virtual HashValue topHash();
+  virtual NABoolean duplicateMatch(const RelExpr & other) const;
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+
+  // synthesize logical properties
+  virtual void synthLogProp(NormWA * normWAPtr = NULL);
+  virtual void synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp);
+
+  // get a printable string that identifies the operator
+  virtual const NAString getText() const;
+
+  void emitCSEDiagnostics(const char *message,
+                          NABoolean forceError = FALSE);
+
+  // for use by the root node for inlining
+  static Union *makeUnion(RelExpr *lc, RelExpr *rc, NABoolean blocked);
+
+  // for debugging
+  void display();
+  static void displayAll(const char *optionalId = NULL);
+
+private:
+
+  // private methods
+  // ---------------
+
+  // Methods used in the transformation of a plan with CSEs into
+  // one that creates a temp table, populates it, then replaces the
+  // CommonSubExprRef nodes with scans of the temp table. These methods
+  // are meant to be used in the SQO phase and/or in optimizer rules.
+
+  // - Find a list of columns that satisfies all the CSE consumers,
+  // - Find a set of pushed-down predicates common to all consumers
+  // - Based on the remaining predicates, determine a STORE BY or
+  //   PRIMARY KEY of the temp table
+  // - Get an estimate for rows and bytes accessed for each of
+  //   the scan nodes
+  // - Heuristically decide whether to share the data in a temp table
+  CSEInfo::CSEAnalysisOutcome analyzeAndPrepareForSharing(CSEInfo &info);
+
+  // decide which type of temp table to use, store the result in info
+  void determineTempTableType(CSEInfo &info);
+
+  // Based on the information obtained in analyzeSharing(), create
+  // a volatile table to hold the result of the common subexpression.
+  // Note that this table is created at compile time. If the user
+  // compiled this statement in a user-defined transaction, the
+  // temp table will be created in that transaction. If the user was
+  // not in a transaction when this statement was compiled, we
+  // will use a separate transaction that will be committed before
+  // returning back to the user.
+  NABoolean createTempTable(CSEInfo &info);
+
+  RelExpr * createInsertIntoTemp(CSEInfo &info, NormWA & normWARef);
+
+  // Create a scan on the temp table, which can replace this
+  // CommonSubExprRef node when we choose to materialize the common
+  // subexpression
+  RelExpr * createTempScan(CSEInfo &info, NormWA & normWARef);
+  RelExpr * getTempScan() const                           { return tempScan_; }
+
+  static void makeValueIdListFromBitVector(ValueIdList &tgt,
+                                           const ValueIdList &src,
+                                           const NABitVector &vec);
+
+  // data members
+  // ------------
+
+  // The name of the CTE (Common Table Expression) in internal
+  // format, if the operator was generated from a reference to
+  // a CTE. Otherwise, this could be some made-up name.
+  NAString internalName_;
+
+  // One or more CommonSubExprRef operators may refer to the same
+  // common subexprssion. These references are numbered 0, 1, ...
+  Int32 id_;
+
+  // The list of columns produced by the common subexpression.
+  // We keep the full list here, even when the characteristic
+  // outputs get reduced during the normalization phase. This
+  // is a list, since different consumers of the CSE will use
+  // different value ids, so the only way to equate columns
+  // of different consumers is by position in this list.
+  ValueIdList columnList_;
+
+  // same columns without making VEGRefs. This is needed
+  // in preCodeGen.
+  ValueIdSet nonVEGColumns_;
+
+  // The common inputs (typically parameters). Pushing down
+  // new predicates may create additional characteristic
+  // inputs for this RelExpr, those are not reflected here.
+  // These common inputs should have the same value ids for
+  // all consumers.
+  ValueIdSet commonInputs_;
+
+  // Predicates that got pulled up during normalization.
+  // Usually those should get pushed down again.
+  // ValueIdSet pulledPredicates_;
+
+  // Predicates that got pushed into the child tree. These
+  // modify our copy of the common subexpression. If we want
+  // to use a temp table, we may need to pull out those predicates
+  // that are not common between all the users of the CSE
+  ValueIdSet pushedPredicates_;
+
+  // Predicates that are not common predicates, pushed into the
+  // common temp table. These need to be applied to the temp
+  // table, if we decide to read from a temp table.
+  ValueIdSet nonSharedPredicates_;
+
+  // We allow hints and access options on references to CTEs.
+  // Those are ignored when we expand the CTE, but they can
+  // be applied to the scan of the temp node, if we decide to
+  // create a temp table for the resulting CSE.
+  HbaseAccessOptions *hbAccessOptionsFromCTE_;
+
+  RelExpr *tempScan_;
+
+}; // class CommonSubExprRef
+
 
 #endif /* RELMISC_H */

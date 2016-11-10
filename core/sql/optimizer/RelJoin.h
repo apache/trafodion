@@ -787,6 +787,14 @@ public:
   NABoolean applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby, 
 					       NormWA & normWARef);
 
+  virtual NABoolean prepareMeForCSESharing(
+       const ValueIdSet &outputsToAdd,
+       const ValueIdSet &predicatesToRemove,
+       const ValueIdSet &commonPredicatesToAdd,
+       const ValueIdSet &inputsToRemove,
+       CSEInfo *info,
+       NABoolean testRun);
+
   // Detect whether rows coming from the ith child contain multi-column skew for
   // a set of join predicates. The output argument vidOfEquiJoinWithSkew is the
   // valueId of a particular join predicate chosen by the method for use by the

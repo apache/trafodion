@@ -220,7 +220,7 @@ class Generator : public NABasicObject
     
     // if set, then sidetreeinsert operator need to be added.
     , ENABLE_TRANSFORM_TO_STI = 0x00000004
-    , FAST_EXTRACT            = 0x00000008   // UNLOAD query
+    , IS_FAST_EXTRACT         = 0x00000008   // UNLOAD query
 
     // if lobs are accessed at runtime 
     , PROCESS_LOB             = 0x00000010
@@ -237,7 +237,7 @@ class Generator : public NABasicObject
 
     // If Hive tables are accessed at runtime
     , HIVE_ACCESS              = 0x00000400
-
+    , CONTAINS_FAST_EXTRACT    = 0x00000800
   };
  
   // Each operator node receives some tupps in its input atp and
@@ -392,6 +392,7 @@ class Generator : public NABasicObject
   NABoolean isInternalRefreshStatement_;
 
   NABoolean nonCacheableMVQRplan_;
+  NABoolean nonCacheableCSEPlan_;
 
   // is set when relroot has an order by requirement
   NABoolean orderRequired_;
@@ -1225,10 +1226,17 @@ public:
     { return (flags2_ & DP2_XNS_ENABLED) != 0; }
   void setDp2XnsEnabled(NABoolean v)
     { (v ? flags2_ |= DP2_XNS_ENABLED : flags2_ &= ~DP2_XNS_ENABLED); }	
-  NABoolean isFastExtract() { return (flags2_ & FAST_EXTRACT) != 0; };
+  // statement is a fast extract operation
+  NABoolean isFastExtract() { return (flags2_ & IS_FAST_EXTRACT) != 0; };
   void setIsFastExtract(NABoolean v)
   {
-    (v ? flags2_ |= FAST_EXTRACT : flags2_ &= ~FAST_EXTRACT);
+    (v ? flags2_ |= IS_FAST_EXTRACT : flags2_ &= ~IS_FAST_EXTRACT);
+  }
+  // statement contains a fast extract operator somewhere
+  NABoolean containsFastExtract() { return (flags2_ & CONTAINS_FAST_EXTRACT) != 0; };
+  void setContainsFastExtract(NABoolean v)
+  {
+    (v ? flags2_ |= CONTAINS_FAST_EXTRACT : flags2_ &= ~CONTAINS_FAST_EXTRACT);
   }
 
   /*  NABoolean noTransformToSTI()
@@ -1368,9 +1376,13 @@ public:
 
   void setFoundAnUpdate(NABoolean u) { foundAnUpdate_ = u;}
 
+  NABoolean isNonCacheablePlan() const
+                       { return nonCacheableMVQRplan_ || nonCacheableCSEPlan_;}
   NABoolean isNonCacheableMVQRplan() const { return nonCacheableMVQRplan_;}
+  NABoolean isNonCacheableCSEPlan() const  { return nonCacheableCSEPlan_;}
 
   void setNonCacheableMVQRplan(NABoolean n) { nonCacheableMVQRplan_ = n;}
+  void setNonCacheableCSEPlan(NABoolean n)  { nonCacheableCSEPlan_ = n;}
 
   NABoolean updateWithinCS() const { return updateWithinCS_;}
 

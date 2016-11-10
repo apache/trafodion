@@ -94,8 +94,10 @@ typedef NABoolean               ComBoolean;
 #define SMD_LOCATION  "$SYSTEM"
 #define SMD_VERSION   "1000"
 
-//#define COM_SESSION_ID_PREFIX      "MXID_"
 #define COM_VOLATILE_SCHEMA_PREFIX "VOLATILE_SCHEMA_"
+
+// prefix of temp tables for common subexpressions
+#define COM_CSE_TABLE_PREFIX "CSE_TEMP_"
 
 // 'reserved' tables in public_access_schema for sql internal use
 #define COM_PUBLIC_ACCESS_SCHEMA "PUBLIC_ACCESS_SCHEMA"

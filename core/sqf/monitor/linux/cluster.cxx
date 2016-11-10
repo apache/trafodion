@@ -525,7 +525,7 @@ CCluster::CCluster (void)
       seqNum_(0),
       waitForWatchdogExit_(false)
       ,checkSeqNum_(false)
-      ,validateNodeDown_(true)
+      ,validateNodeDown_(false)
       ,enqueuedDown_(false)
       ,nodeDownDeathNotices_(true)
       ,verifierNum_(0)
@@ -4611,21 +4611,35 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
                         (peer->p_sending) )
                     {
 
-                        peer->p_timeout_count++;
-
-                        if ( peer->p_timeout_count < sv_epoll_retry_count )
+                        if ( ! ZClientEnabled )
                         {
-                            continue;
+                            peer->p_timeout_count++;
+    
+                            if ( peer->p_timeout_count < sv_epoll_retry_count )
+                            {
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            // Check for node down, otherwise stay in the loop
+                            if ( ! ZClient->IsZNodeExpired( Node[iPeer]->GetName() ))
+                            {
+                                continue;
+                            }
                         }
 
                         char buf[MON_STRING_BUF_SIZE];
                         snprintf( buf, sizeof(buf)
-                                , "[%s@%d] Not heard from peer=%d\n"
+                                , "[%s@%d] Not heard from peer=%d (node=%s) "
+                                  "(current seq # is %lld)\n"
                                 , method_name
                                 ,  __LINE__
-                                , iPeer );
-
+                                , iPeer
+                                , Node[iPeer]->GetName()
+                                , seqNum_ );
                         mon_log_write( MON_CLUSTER_ALLGATHERSOCK_1, SQ_LOG_CRIT, buf );
+
                         stats[iPeer].MPI_ERROR = MPI_ERR_EXITED;
                         err = MPI_ERR_IN_STATUS;
                         if ( peer->p_sending )

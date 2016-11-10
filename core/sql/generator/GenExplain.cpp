@@ -1892,13 +1892,9 @@ Exchange::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 
   if (splitBottomTdb->getQueryUsesSM())
     description += "seamonster_query: yes ";
-  else
-    description += "seamonster_query: no ";
 
   if (splitBottomTdb->getExchangeUsesSM())
     description += "seamonster_exchange: yes ";
-  else
-    description += "seamonster_exchange: no ";
 
   explainTuple->setDescription(description);  // save what we have built
 

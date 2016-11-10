@@ -2502,6 +2502,10 @@ enum DefaultConstants
   // Histogram boundary value maximum length.
   USTAT_MAX_CHAR_BOUNDARY_LEN,
 
+  // When update statistics computes UECs on character columns or
+  // creates a sample table, it limits them to this size in bytes.
+  USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES,
+
   // Maximum number of MC histograms to create for any one MC key.
   USTAT_NUM_MC_GROUPS_FOR_KEYS,
 
@@ -3853,6 +3857,15 @@ enum DefaultConstants
 
   // controls if sim check is to be done and where (root or leaf)
   TRAF_SIMILARITY_CHECK,
+
+  // Common subexpressions in RelExpr trees
+  CSE_DEBUG_WARNINGS,
+  CSE_FOR_WITH,
+  CSE_USE_TEMP,
+  CSE_HIVE_TEMP_TABLE,
+  CSE_PRINT_DEBUG_INFO,
+  CSE_CLEANUP_HIVE_TABLES,
+  CSE_CACHE_TEMP_QUERIES,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

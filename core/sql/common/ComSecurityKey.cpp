@@ -168,6 +168,88 @@ bool buildSecurityKeys( const int32_t granteeID,
   return true;
 }
 
+// ****************************************************************************
+// Function that returns the types of invalidation to perform
+//   For DDL invalidation keys, always need to update caches
+//   For security invalidation keys
+//      update caches if key is for an object revoke from the current user
+//      reset list of roles if key is a revoke role from the current user
+//
+// returns:
+//    resetRoleList -- need to reset the list of roles for the current user
+//    updateCaches -- need to update cache entries related for the keys
+// ****************************************************************************
+void qiInvalidationType (const Int32 numInvalidationKeys,
+                         const SQL_QIKEY* invalidationKeys,
+                         const Int32 userID,
+                         bool &resetRoleList,
+                         bool &updateCaches)
+{
+  resetRoleList = false;
+  updateCaches = false;
+  ComQIActionType invalidationKeyType = COM_QI_INVALID_ACTIONTYPE;
+
+  // Have the ComSecurityKey constructor compute the hash value for the the User's ID.
+  // Note: The following code doesn't care about the object's hash value or the resulting 
+  // ComSecurityKey's ActionType....we just need the hash value for the User's ID.
+  // Perhaps a new constructor would be good (also done in RelRoot::checkPrivileges)
+  int64_t objectUID = 12345;
+  ComSecurityKey userKey( userID, objectUID
+                         , SELECT_PRIV
+                         , ComSecurityKey::OBJECT_IS_OBJECT
+                        );
+  uint32_t userHashValue = userKey.getSubjectHashValue();
+
+  for ( Int32 i = 0; i < numInvalidationKeys && !resetRoleList && !updateCaches; i++ )
+  {
+    invalidationKeyType = ComQIActionTypeLiteralToEnum( invalidationKeys[i].operation );
+    switch (invalidationKeyType)
+    {
+      // Object changed, need to update caches
+      case COM_QI_OBJECT_REDEF:
+      case COM_QI_STATS_UPDATED:
+        updateCaches = true;
+        break;
+
+      // Privilege changed on an object, need to update caches if
+      // any QI keys are associated with the current user
+      case COM_QI_OBJECT_SELECT:
+      case COM_QI_OBJECT_INSERT:
+      case COM_QI_OBJECT_DELETE:
+      case COM_QI_OBJECT_UPDATE:
+      case COM_QI_OBJECT_USAGE:
+      case COM_QI_OBJECT_REFERENCES:
+      case COM_QI_OBJECT_EXECUTE:
+        if (invalidationKeys[i].revokeKey.subject == userHashValue)
+          updateCaches = true;
+        break;
+
+      // For public user (SPECIAL_ROLE), the subject is a special hash
+      case COM_QI_USER_GRANT_SPECIAL_ROLE:
+        if (invalidationKeys[i].revokeKey.subject == ComSecurityKey::SPECIAL_SUBJECT_HASH)
+          updateCaches = true;
+        break;
+
+      // A revoke role from a user was performed.  Need to reset role list
+      // if QI key associated with the current user and remove any plans
+      // that include the role key
+      case COM_QI_USER_GRANT_ROLE:
+        if (invalidationKeys[i].revokeKey.subject == userHashValue)
+        {
+          resetRoleList = true;
+          updateCaches = true;
+        }
+        break;
+
+      // unknown key type, search and update cache (should not happen)
+      default:
+        resetRoleList = true;
+        updateCaches = true;
+        break;
+      }
+  }
+}
+
 
 // *****************************************************************************
 //    ComSecurityKey methods

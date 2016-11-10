@@ -856,6 +856,122 @@ public:
   // ---------------------------------------------------------------------
 };
 
+class SQLEXP_LIB_FUNC ExFunctionCrc32: public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionCrc32(OperatorTypeEnum oper_type,
+				Attributes ** attr,
+				Space * space);
+  NA_EIDPROC ExFunctionCrc32();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);  
+  NA_EIDPROC Long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  // ---------------------------------------------------------------------
+};
+
+class SQLEXP_LIB_FUNC ExFunctionSha: public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionSha(OperatorTypeEnum oper_type,
+				Attributes ** attr,
+				Space * space);
+  NA_EIDPROC ExFunctionSha();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);  
+  NA_EIDPROC Long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  // ---------------------------------------------------------------------
+};
+
+class SQLEXP_LIB_FUNC ExFunctionSha2: public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionSha2(OperatorTypeEnum oper_type,
+				Attributes ** attr,
+				Space * space);
+  NA_EIDPROC ExFunctionSha2();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);  
+  NA_EIDPROC Long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  // ---------------------------------------------------------------------
+};
+
+class SQLEXP_LIB_FUNC ExFunctionMd5: public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionMd5(OperatorTypeEnum oper_type,
+				Attributes ** attr,
+				Space * space);
+  NA_EIDPROC ExFunctionMd5();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);  
+  NA_EIDPROC Long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  // ---------------------------------------------------------------------
+};
+
 class SQLEXP_LIB_FUNC ExFunctionIsIP : public ex_function_clause {
 public:
   NA_EIDPROC ExFunctionIsIP(OperatorTypeEnum oper_type,

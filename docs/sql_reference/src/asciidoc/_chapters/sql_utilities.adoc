@@ -145,7 +145,7 @@ causes the Bulk Loader to ignore duplicates in the source data. By
 default, the Bulk Loader checks if there are duplicates in the source
 data and generates an error when it detects duplicates.
 
-** `NO OUTPUT
+** `NO OUTPUT`
 +
 prevents the LOAD statement from displaying status messages. By default,
 the LOAD statement prints status messages listing the steps that the

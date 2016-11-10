@@ -363,7 +363,6 @@ class OptimizerSimulator : public NABasicObject
     //existing objects with same qualified name 
     //will be droped first
     NABoolean forceLoad_;
-    HiveClient_JNI* hiveClient_;
     CollHeap *heap_;
 };
 

@@ -556,6 +556,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_COSH
 %token <tokval> TOK_COST
 %token <tokval> TOK_COUNT
+%token <tokval> TOK_CRC32
 %token <tokval> TOK_CQD
 %token <tokval> TOK_CROSS
 %token <tokval> TOK_CURDATE             /* ODBC extension  */ 
@@ -828,6 +829,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_MEMORY
 %token <tokval> TOK_MERGE
 %token <tokval> TOK_METADATA
+%token <tokval> TOK_MD5
 %token <tokval> TOK_MIN
 %token <tokval> TOK_MINIMAL
 %token <tokval> TOK_MINUTE
@@ -1034,6 +1036,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SET
 %token <tokval> TOK_SETS
 %token <tokval> TOK_SG_TABLE
+%token <tokval> TOK_SHA
+%token <tokval> TOK_SHA1
+%token <tokval> TOK_SHA2
 %token <tokval> TOK_SHAPE
 %token <tokval> TOK_SHARE               /* Tandem extension non-reserved word */
 %token <tokval> TOK_SHARED              /* Tandem extension non-reserved word */
@@ -6677,11 +6682,28 @@ table_as_tmudf_function : TOK_UDF '(' table_mapping_function_invocation ')'
 
 table_name_and_hint : table_name optimizer_hint hbase_access_options
                       {
-                        NAString tmp = ((*$1).getQualifiedNameAsString());
-                        if(SqlParser_CurrentParser->hasWithDefinition(&tmp) )
+                        NAString cteName = ((*$1).getQualifiedNameAsString());
+                        if(SqlParser_CurrentParser->hasWithDefinition(&cteName) )
                         {
-                          RelExpr *re = SqlParser_CurrentParser->getWithDefinition(&tmp);
-                          $$=re->copyTree(PARSERHEAP());
+                          RelExpr *re = SqlParser_CurrentParser->getWithDefinition(&cteName);
+                          if (CmpCommon::getDefault(CSE_FOR_WITH) == DF_ON)
+                            {
+                              CommonSubExprRef *cse =
+                                new(PARSERHEAP()) CommonSubExprRef(re,cteName);
+
+                              if (!cse->isFirstReference())
+                                cse->setChild(0, re->copyTree(PARSERHEAP()));
+
+                              if ($2)
+                                cse->setHint($2);
+                              if ($3)
+                                cse->setHbaseAccessOptions($3);
+
+                              cse->addToCmpStatement();
+                              $$ = cse;
+                            }
+                          else
+                            $$=re->copyTree(PARSERHEAP());
                           delete $1;
                         }
                         else
@@ -6994,12 +7016,29 @@ del_stmt_w_acc_type_rtn_list_and_as_clause_col_list : '('  delete_statement acce
 
 table_name_as_clause_and_hint : table_name as_clause optimizer_hint hbase_access_options
                                 {
-                                   NAString tmp = ((*$1).getQualifiedNameAsString());
-                                   if(SqlParser_CurrentParser->hasWithDefinition(&tmp) )
+                                   NAString cteName = ((*$1).getQualifiedNameAsString());
+                                   if(SqlParser_CurrentParser->hasWithDefinition(&cteName) )
                                    {     
-                                     RelExpr *re = SqlParser_CurrentParser->getWithDefinition(&tmp);
-                                     RenameTable *rt = new (PARSERHEAP()) RenameTable(re, *$2);
-                                     $$=rt->copyTree(PARSERHEAP());
+                                     RelExpr *re = SqlParser_CurrentParser->getWithDefinition(&cteName);
+                                     if (CmpCommon::getDefault(CSE_FOR_WITH) == DF_ON)
+                                       {
+                                         CommonSubExprRef *cse =
+                                           new(PARSERHEAP()) CommonSubExprRef(re,cteName);
+
+                                         if (!cse->isFirstReference())
+                                           cse->setChild(0, re->copyTree(PARSERHEAP()));
+
+                                         if ($3) 
+                                           cse->setHint($3);
+                                         if ($4)
+                                           cse->setHbaseAccessOptions($4);
+
+                                         cse->addToCmpStatement();
+                                         $$ = cse;
+                                       }
+                                     else
+                                       $$=re->copyTree(PARSERHEAP());
+                                     $$ = new (PARSERHEAP()) RenameTable($$, *$2);
                                   }
                                   else
                                   {
@@ -7072,8 +7111,11 @@ with_clause_elements : with_clause_element
 
 with_clause_element : correlation_name TOK_AS '(' query_expression ')'
                       {
-                         RelRoot *root = new (PARSERHEAP())
-                                            RelRoot($4, REL_ROOT);
+                         RelExpr *root = $4;
+
+                         if (root->getOperatorType() != REL_ROOT)
+                           root = new (PARSERHEAP()) RelRoot(root, REL_ROOT);
+
                          $$= new (PARSERHEAP()) RenameTable(root, *$1); 
 
                          //Duplicated definition of WITH
@@ -9633,6 +9675,46 @@ misc_function :
 				{
 				  $$ = $2;
 				}
+
+     | TOK_SHA  '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_SHA1,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+     | TOK_SHA1  '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_SHA1,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+
+     | TOK_SHA2 '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_SHA2,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+
+     | TOK_MD5 '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_MD5,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+
+     | TOK_CRC32 '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_CRC32,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
+
 
      | TOK_GREATEST '(' value_expression ',' value_expression ')'
                   {
@@ -26152,6 +26234,11 @@ like_option : TOK_WITHOUT TOK_CONSTRAINTS
                                   ComASSERT($1->castToElemDDLSaltOptionsClause());
                                   $$ = new (PARSERHEAP())
                                     ElemDDLLikeSaltClause(saltClause);
+                                }
+                      | TOK_LIMIT TOK_COLUMN TOK_LENGTH TOK_TO unsigned_integer
+                                {
+                                  $$ = new (PARSERHEAP())
+                                    ElemDDLLikeLimitColumnLength($5);
                                 }
 
 /* type pElemDDL */

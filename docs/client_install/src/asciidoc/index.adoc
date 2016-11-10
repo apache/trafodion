@@ -37,7 +37,7 @@
 
 :images: ../images
 :sourcedir: ../../resources/source
-
+:tableau: ../../resources/tableau
 :leveloffset: 1
 
 // The directory is called _chapters because asciidoctor skips direct
@@ -47,7 +47,6 @@
 include::../../shared/license.txt[]
 
 <<<
-
 include::../../shared/acknowledgements.txt[]
 
 <<<
@@ -55,6 +54,7 @@ include::../../shared/revisions.txt[]
 
 include::asciidoc/_chapters/about.adoc[]
 include::asciidoc/_chapters/introduction.adoc[]
+include::asciidoc/_chapters/preparation.adoc[]
 include::asciidoc/_chapters/jdbct4.adoc[]
 include::asciidoc/_chapters/trafci.adoc[]
 include::asciidoc/_chapters/dbviz.adoc[]
@@ -62,7 +62,9 @@ include::asciidoc/_chapters/SQuirrel.adoc[]
 include::asciidoc/_chapters/odbc_linux.adoc[]
 include::asciidoc/_chapters/odb.adoc[]
 include::asciidoc/_chapters/odbc_windows.adoc[]
+include::asciidoc/_chapters/tableau.adoc[]
+include::asciidoc/_chapters/howto.adoc[]
 
-= Appendix
-include::asciidoc/_chapters/sample_prog.adoc[]
+
+
 

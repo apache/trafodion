@@ -1279,7 +1279,7 @@ public:
                      NABoolean ddlXns, NABoolean atCommit);
    
   void RemoveFromNATableCache( NATable * NATablep , UInt32 currIndx );
-  static void remove_entries_marked_for_removal();
+  void remove_entries_marked_for_removal();
   static void unmark_entries_marked_for_removal();
 
   void free_entries_with_QI_key( Int32 numSiKeys, SQL_QIKEY* qiKeyArray );

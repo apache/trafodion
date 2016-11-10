@@ -1648,7 +1648,8 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
       isCIFOn_ = FALSE;
 
       if ((CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT) == DF_ON )||
-          generator->isFastExtract())
+          generator->isFastExtract() ||
+          generator->containsFastExtract())
       {
          isCIFOn_ = TRUE;
          generator->setCompressedInternalFormat();
@@ -6059,6 +6060,101 @@ RelExpr * MapValueIds::preCodeGen(Generator * generator,
 
   getGroupAttr()->addCharacteristicInputs(pulledNewInputs);
 
+  if (cseRef_)
+    {
+      // -------------------------------------------------------------
+      // This MapValueIds represents a common subexpression.
+      //
+      // We need to take some actions here to help with VEG rewrite,
+      // since we eliminated some nodes from the tree, while the
+      // VEGies still contain all equated values, including those that
+      // got eliminated. Furthermore, the one tree that was chosen for
+      // materialization got moved and we need to make sure that the
+      // place where we scan the temp table produces the same ValueIds
+      // that were marked as "Bridge Values" when we processed the
+      // insert into temp statement.
+      // -------------------------------------------------------------
+
+      ValueIdSet cseVEGPreds;
+      const ValueIdList &vegCols(cseRef_->getColumnList());
+      ValueIdSet nonVegCols(cseRef_->getNonVEGColumns());
+      NABoolean isAnalyzingConsumer =
+        (CmpCommon::statement()->getCSEInfo(cseRef_->getName())->
+           getIdOfAnalyzingConsumer() == cseRef_->getId());
+      ValueIdSet availableValues(
+           getGroupAttr()->getCharacteristicInputs());
+
+      valuesNeededForVEGRewrite_ += cseRef_->getNonVEGColumns();
+      availableValues += valuesNeededForVEGRewrite_;
+
+      // find all the VEG predicates of the original columns that this
+      // common subexpression represents...
+      for (CollIndex v=0; v<vegCols.entries(); v++)
+        if (vegCols[v].getItemExpr()->getOperatorType() == ITM_VEG_REFERENCE)
+          {
+            // look at one particular VEG that is produced by this
+            // query tree
+            VEG *veg =
+              static_cast<VEGReference *>(vegCols[v].getItemExpr())->getVEG();
+
+            if (isAnalyzingConsumer && veg->getBridgeValues().entries() > 0)
+              {
+                // If we are looking at the analyzing consumer, then
+                // its child tree "C" got transformed into an
+                // "insert overwrite table "temp" select * from "C".
+
+                // This insert into temp statement chose some VEG
+                // member(s) as the "bridge value(s)". Find these bridge
+                // values and choose one to represent the VEG here.
+                const ValueIdSet &vegMembers(veg->getAllValues());
+
+                // collect all VEG members produced and subtract them
+                // from the values to be used for VEG rewrite
+                ValueIdSet subtractions(cseRef_->getNonVEGColumns());
+                // then add back only the bridge value
+                ValueIdSet additions;
+
+                // get the VEG members produced by child C
+                subtractions.intersectSet(vegMembers);
+
+                // augment the base columns with their index columns,
+                // the bridge value is likely an index column
+                for (ValueId v=subtractions.init();
+                     subtractions.next(v);
+                     subtractions.advance(v))
+                  if (v.getItemExpr()->getOperatorType() == ITM_BASECOLUMN)
+                    {
+                      subtractions +=
+                        static_cast<BaseColumn *>(v.getItemExpr())->getEIC();
+                    }
+
+                // now find a bridge value (or values) that we can
+                // produce
+                additions = subtractions;
+                additions.intersectSet(veg->getBridgeValues());
+
+                // if we found it, then adjust availableValues
+                if (additions.entries() > 0)
+                  {
+                    availableValues -= subtractions;
+                    availableValues += additions;
+                  }
+              }
+
+            cseVEGPreds += veg->getVEGPredicate()->getValueId();
+          } // a VEGRef
+
+      // Replace the VEGPredicates, pretending that we still have
+      // the original tree below us, not the materialized temp
+      // table. This will hopefully keep the bookkeeping in the
+      // VEGies correct by setting the right referenced values
+      // and choosing the right bridge values.
+      cseVEGPreds.replaceVEGExpressions(
+           availableValues,
+           getGroupAttr()->getCharacteristicInputs());
+
+    } // this MapValueIds is for a common subexpression
+
   // ---------------------------------------------------------------------
   // The MapValueIds node describes a mapping between expressions used
   // by its child tree and expressions used by its parent tree. The
@@ -6127,10 +6223,9 @@ RelExpr * MapValueIds::preCodeGen(Generator * generator,
     x.getItemExpr()->getLeafValueIds(leafValues);
   lowerAvailableValues += leafValues;
 
-  // upperAvailableValues is needed for mvqr. The addition of the lower 
-  // available values is only necessary to avoid an assertion failure in
-  // VEGReference::replaceVEGReference().
-  ValueIdSet upperAvailableValues(valuesForVEGRewrite());
+  ValueIdSet upperAvailableValues(valuesNeededForVEGRewrite_);
+  // The addition of the lower available values is only necessary to
+  // avoid an assertion failure in VEGReference::replaceVEGReference().
   upperAvailableValues += lowerAvailableValues;
 
   // ---------------------------------------------------------------------
@@ -6181,11 +6276,12 @@ RelExpr * MapValueIds::preCodeGen(Generator * generator,
           {
              if (newUpper->getOperatorType() == ITM_VEG_REFERENCE) 
              {
-               if (usedByMvqr())
-                 // If this node is used to map the outputs of an MV added by
-                 // MVQR, upperAvailableValues has been constructed to
-                 // contain the base column a vegref should map to, so we use
-                 // that instead of a created surrogate.
+               if (valuesNeededForVEGRewrite_.entries() > 0)
+                 // If this node is used to map the outputs of one
+                 // table to those of another, upperAvailableValues
+                 // has been constructed to contain the base column a
+                 // vegref should map to, so we use that instead of a
+                 // created surrogate.
                  newUpper = newUpper->replaceVEGExpressions
                                 (upperAvailableValues,
 				 getGroupAttr()->getCharacteristicInputs());
@@ -10716,7 +10812,10 @@ RelExpr * PhysicalFastExtract::preCodeGen (Generator * generator,
   if (nodeIsPreCodeGenned())
     return this;
 
-  generator->setIsFastExtract(TRUE);  
+  if (getIsMainQueryOperator())
+    generator->setIsFastExtract(TRUE);
+  else
+    generator->setContainsFastExtract(TRUE);
 
   if (!RelExpr::preCodeGen(generator,externalInputs,pulledNewInputs))
     return NULL;

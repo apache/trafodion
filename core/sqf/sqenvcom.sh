@@ -685,6 +685,7 @@ export SQ_MON_KEEPCNT=5
 # Monitor sync thread epoll wait timeout is in seconds
 # Currently set to 64 seconds (4 second timeout, 16 retries)
 export SQ_MON_EPOLL_WAIT_TIMEOUT=4
+# Note: the retry count is ignored when SQ_MON_ZCLIENT_ENABLED=1 (the default)
 export SQ_MON_EPOLL_RETRY_COUNT=16
 
 # Monitor Zookeeper client
@@ -695,7 +696,6 @@ export SQ_MON_EPOLL_RETRY_COUNT=16
 #  - Session timeout in seconds defines when Zookeeper quorum determines a
 #    non-responsive monitor zclient which results in a Trafodion node down. 
 #    Default is 60 seconds (1 minute) which is the maximum Zookeeper allows.
-#      (15 seconds longer than EPOLL timeout above).
 #export SQ_MON_ZCLIENT_SESSION_TIMEOUT=60
 
 # set to 0 to disable phandle verifier
