@@ -154,8 +154,9 @@ public:
   inline void setGroupExpr(ValueIdSet &expr) { groupExpr_ = expr;}
   inline void addGroupExpr(ValueIdSet &expr) { groupExpr_ += expr;}
 
-  inline ValueIdList & extraOrderExpr() { return extraOrderExpr_; }
+  inline void setExtraOrderExpr(const ValueIdList &newExtraOrder) { extraOrderExpr_ = newExtraOrder; }
   inline const ValueIdList & extraOrderExpr() const { return extraOrderExpr_; }
+  void normalizeExtraOrderExpr( NormWA & normWARef  ) { extraOrderExpr_.normalizeNode(normWARef); }
   
   ValueIdList & rollupGroupExprList() { return rollupGroupExprList_; }
   const ValueIdList & rollupGroupExprList() const { return rollupGroupExprList_; }

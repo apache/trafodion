@@ -11808,29 +11808,30 @@ void SortGroupBy::addArrangementAndOrderRequirements(
   // A GROUP BY ROLLUP needs the exact order as specified.
   if (isRollup() && (NOT rollupGroupExprList().isEmpty()))
     {
-      rg.addSortKey(rollupGroupExprList());
+      if( NOT extraOrderExpr().isEmpty())
+      {
+        ValueIdList groupExprCpy(rollupGroupExprList());
+        groupExprCpy.insert(extraOrderExpr());
+        rg.addSortKey(groupExprCpy);
+      }
+      else
+        rg.addSortKey(rollupGroupExprList());
     }
   else if (NOT groupExpr().isEmpty())
-  {
-    // Shouldn't/Can't add a sort order type requirement
-    // if we are in DP2
-
-   if( NOT extraOrderExpr().isEmpty())
-   {
-     ValueIdList groupExprCpy(groupExpr());
-     for (CollIndex i=0; i< extraOrderExpr().entries(); i++)
-     {
-       groupExprCpy.insert(extraOrderExpr().at(i));   
-     }
-     rg.addSortKey(groupExprCpy);
-   }
-   else {
-     if (rg.getStartRequirements()->executeInDP2())
-       rg.addArrangement(groupExpr(),NO_SOT);
-     else
-       rg.addArrangement(groupExpr(),ESP_SOT);
-   }
-  }
+    {
+      if( NOT extraOrderExpr().isEmpty())
+      {
+        ValueIdList groupExprCpy(groupExpr());
+        groupExprCpy.insert(extraOrderExpr());
+        rg.addSortKey(groupExprCpy);
+      }
+      else {
+        if (rg.getStartRequirements()->executeInDP2())
+          rg.addArrangement(groupExpr(),NO_SOT);
+        else
+          rg.addArrangement(groupExpr(),ESP_SOT);
+      }
+    }
 }
 
 //<pb>
@@ -11868,7 +11869,6 @@ SortGroupBy::synthPhysicalProperty(const Context* myContext,
                                                              planNumber,
                                                              pws);
 
-      //PhysicalProperty(((isRollup() ||NOT extraOrderExpr().isEmpty()) ? ValueIdList() : sppOfChild->getSortKey()),
   PhysicalProperty* sppForMe =
     new (CmpCommon::statementHeap())
       PhysicalProperty((isRollup() ? ValueIdList() : sppOfChild->getSortKey()),
