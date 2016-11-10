@@ -661,7 +661,7 @@ odbc_SQLSrvr_ExtractLob_ts_res_(
     char * buffer = NULL;
     UInt32 message_length = 0;
 
-    odbc_SQLsrvr_ExtractLob_param_res_(
+    sts = odbc_SQLsrvr_ExtractLob_param_res_(
               pnode
             , buffer
             , message_length
@@ -670,10 +670,14 @@ odbc_SQLSrvr_ExtractLob_ts_res_(
             , lobDataValue
             );
 
-    pnode->send_response(buffer, message_length, call_id_);
+    if (sts == CEE_SUCCESS)
+        sts = pnode->send_response(buffer, message_length, call_id_);
 
     if (lobDataValue != NULL)
-        delete[] lobDataValue;
+    {
+        delete [] lobDataValue;
+        lobDataValue = NULL;
+    }
     return sts;
 }
 

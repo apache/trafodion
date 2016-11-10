@@ -6393,7 +6393,7 @@ odbc_SQLSrvr_ExtractLob_sme_(
     char RequestError[200] = {0};
     SRVR_STMT_HDL  *QryLobExtractSrvrStmt = NULL;
 
-    if ((QryLobExtractSrvrStmt = getSrvrStmt("", TRUE)) == NULL)
+    if ((QryLobExtractSrvrStmt = getSrvrStmt("MXOSRVR_EXTRACRTLOB", TRUE)) == NULL)
     {
         SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR,
                      EVENTLOG_ERROR_TYPE,
@@ -6411,13 +6411,12 @@ odbc_SQLSrvr_ExtractLob_sme_(
 
     try
     {
-        SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
-
         short retcode = QryLobExtractSrvrStmt->ExecDirect(NULL, LobExtractQuery, EXTERNAL_STMT, TYPE_CALL, SQL_ASYNC_ENABLE_OFF, 0);
 
         if (retcode == SQL_ERROR)
         {
-            ERROR_DESC_def *p_buffer = QryLobExtractSrvrStmt->sqlError.errorList._buffer; strncpy(RequestError, p_buffer->errorText, sizeof(RequestError) - 1);
+            ERROR_DESC_def *p_buffer = QryLobExtractSrvrStmt->sqlError.errorList._buffer;
+            strncpy(RequestError, p_buffer->errorText, sizeof(RequestError) - 1);
 
             SendEventMsg(MSG_SQL_ERROR,
                          EVENTLOG_ERROR_TYPE,
@@ -6448,7 +6447,13 @@ odbc_SQLSrvr_ExtractLob_sme_(
         exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECDIRECT_FAILED;
     }
 
-    lobDataValue = new IDL_char(lobDataLen + 1);
+    lobDataValue = new IDL_char[lobDataLen + 1];
+    if (lobDataValue == NULL)
+    {
+        exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
+        exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_BUFFER_ALLOC_FAILED;
+    }
+
     memset(lobDataValue, 0, lobDataLen + 1);
 
     memset(LobExtractQuery, 0, sizeof(LobExtractQuery));
@@ -6492,6 +6497,12 @@ odbc_SQLSrvr_ExtractLob_sme_(
 
             exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
             exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECDIRECT_FAILED;
+        }
+
+        if (exception_->exception_nr != 0) {
+            lobDataLen = 0;
+            delete [] lobDataValue;
+            lobDataValue = NULL;
         }
     }
 }

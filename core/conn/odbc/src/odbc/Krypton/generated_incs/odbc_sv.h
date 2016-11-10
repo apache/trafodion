@@ -3520,6 +3520,7 @@ odbc_SQLSvc_UpdateServerContext_msms_(
 #define odbc_SQLsrvr_ExtractLob_InvalidConnection_exn_ 2
 #define odbc_SQLSrvr_ExtractLob_SQLError_exn_ 3
 #define odbc_SQLSrvr_ExtractLob_SQLInvalidhandle_exn_ 4
+#define obdc_SQLSrvr_ExtractLob_AllocLOBDataError_exn_ 5
 
 /*
  * Exception struct for

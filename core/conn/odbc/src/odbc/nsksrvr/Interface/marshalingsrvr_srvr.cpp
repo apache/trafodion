@@ -2311,6 +2311,7 @@ odbc_SQLsrvr_ExtractLob_param_res_(
       , IDL_char * lobDataValue
 )
 {
+    CEE_status sts = CEE_SUCCESS;
     IDL_long wlength = 0;
     char* curptr;
 
@@ -2339,6 +2340,14 @@ odbc_SQLsrvr_ExtractLob_param_res_(
         case odbc_SQLsrvr_ExtractLob_InvalidConnection_exn_:
         case odbc_SQLSrvr_ExtractLob_SQLInvalidhandle_exn_:
             break;
+        case obdc_SQLSrvr_ExtractLob_AllocLOBDataError_exn_:
+            wlength += sizeof(exceptionLength);
+            if (exception_->u.ParamError.ParamDesc != NULL)
+            {
+                exceptionLength = strlen(exception_->u.ParamError.ParamDesc) + 1;
+                wlength += exceptionLength;
+            }
+            break;
         default:
             break;
     }
@@ -2355,6 +2364,10 @@ odbc_SQLsrvr_ExtractLob_param_res_(
     message_length = wlength;
 
     buffer = pnode->w_allocate(message_length);
+    if (buffer == NULL)
+    {
+        return CEE_ALLOCFAIL;
+    }
     curptr = (IDL_char*)(buffer + sizeof(HEADER));
 
     // copy odbc_SQLsrvr_ExtractLob_exc_
@@ -2364,6 +2377,7 @@ odbc_SQLsrvr_ExtractLob_param_res_(
     switch(exception_->exception_nr)
     {
         case odbc_SQLsrvr_ExtractLob_ParamError_exn_:
+        case obdc_SQLSrvr_ExtractLob_AllocLOBDataError_exn_:
             IDL_long_copy(&exceptionLength, curptr);
             if (exception_->u.ParamError.ParamDesc != NULL)
                 IDL_charArray_copy((const IDL_char *)exception_->u.ParamError.ParamDesc, curptr);
@@ -2385,4 +2399,6 @@ odbc_SQLsrvr_ExtractLob_param_res_(
     {
         IDL_charArray_copy(lobDataValue, curptr);
     }
+
+    return sts;
 }
