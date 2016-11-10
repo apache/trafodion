@@ -1479,10 +1479,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                                     getLobErrStr(intParam1));
                     pentry_down->setDiagsArea(diagsArea);
                   }
-                // sss This is one place that is unconditionally closing the 
-                // hdfsFs that's part of this thread's JNIenv.
-                // if (ehi_)
-                //   retcode = ehi_->hdfsClose();
+                  retcode = ehi_->hdfsClose();
             } 
 	    if (step_ == CLOSE_FILE)
 	      {
