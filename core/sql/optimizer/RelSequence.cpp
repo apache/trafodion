@@ -253,7 +253,8 @@ RelSequence::copyTopNode(RelExpr *derivedNode, CollHeap *outHeap)
 
   //need to review the commented code below
   //result->requiredOrderTree_ = requiredOrderTree_->copyTree(outHeap)->castToItemExpr();
-  //result->partitionBy_ = partitionBy_->copyTree(outHeap)->castToItemExpr();
+  if (partitionBy_)
+    result->partitionBy_ = partitionBy_->copyTree(outHeap)->castToItemExpr();
   //result->cancelExprTree_ = cancelExprTree_->copyTree(outHeap)->castToItemExpr();
   // Copy any data members from the classes lower in the derivation chain.
   //

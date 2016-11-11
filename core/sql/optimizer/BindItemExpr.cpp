@@ -11955,6 +11955,15 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
       }
     break;
 
+    case ITM_GROUPING_ID:
+      {
+        *CmpCommon::diags() << DgSqlCode(-3242)
+                            << DgString0("GROUPING_ID function must be specified in the select list of a GROUP BY ROLLUP statement.");
+        bindWA->setErrStatus();
+        return this;
+      }
+      break;
+
     default:
       {
 	bindWA->setErrStatus();
