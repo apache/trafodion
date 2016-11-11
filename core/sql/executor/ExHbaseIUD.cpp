@@ -1679,9 +1679,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           if (eodSeen)
           {
             ehi_->closeHFile(table_);
-            // sss This is one place that is unconditionally closing the 
-            // hdfsFs that's part of this thread's JNIenv.
-            //ehi_->hdfsClose();
+            ehi_->hdfsClose();
             hFileParamsInitialized_ = false;
             retcode = ehi_->close();
           }
