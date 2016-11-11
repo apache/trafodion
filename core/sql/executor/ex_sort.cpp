@@ -98,6 +98,12 @@ ExOperStats * ExSortTcb::doAllocateStatsEntry(CollHeap *heap,
 
 void ExSortTcb::setupPoolBuffers(ex_queue_entry *pentry_down)
 {
+  //if any of these pools is already allocated, most likely
+  //from a prepare once execute many scenario, then no need 
+  //to reallocate the pool again. Just return.
+  if(partialSortPool_ || topNSortPool_ || regularSortPool_)
+    return;
+  
   CollHeap  *space = getGlobals()->getSpace();
   
   // Allocate the buffer pool.
