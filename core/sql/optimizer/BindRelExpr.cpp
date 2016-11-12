@@ -4537,7 +4537,6 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
           {
             groupExprCpy.remove(vid);
             groupExprCpy.insert(grpById);
-
             if (grby->isRollup())
               {
                 CollIndex idx = grby->rollupGroupExprList().index(vid);
@@ -4680,6 +4679,27 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
         }
     }
 
+  //looking for extra order requirement, currently, aggregate function PIVOT_GROUP will need extra order 
+  //so loop through the aggregation expression and check if there is PIVOT_GROUP and it needs explicit order
+  //if found, populate the extraOrderExpr for the GroupAggBy
+  //so later optimizer can add correct sort key 
+  ValueIdSet &groupAggExpr = grby->aggregateExpr();
+
+  for (ValueId vid = groupAggExpr.init(); 
+       groupAggExpr.next(vid);
+       groupAggExpr.advance(vid))
+    {
+      if (vid.getItemExpr()->getOperatorType() == ITM_PIVOT_GROUP)
+      {
+        if( ((PivotGroup*)vid.getItemExpr())->orderBy() ) 
+        {
+          grby->setExtraGrpOrderby(((PivotGroup*)vid.getItemExpr())->getOrderbyItemExpr());
+          ValueIdList tmpList;
+          grby->getExtraGrpOrderby()->convertToValueIdList(tmpList, bindWA, ITM_ITEM_LIST);
+          grby->setExtraOrderExpr(tmpList);
+        }
+      }
+    }
   // recreate the groupExpr expression after updating the value ids
   grby->setGroupExpr (groupExprCpy);
 
@@ -5888,7 +5908,6 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
   if (! returnedRoot)
     return NULL;
 
-  //  ItemExpr *orderByTree = removeOrderByTree();
   ItemExpr *orderByTree = removeOrderByTree();
   if (orderByTree) {
     //

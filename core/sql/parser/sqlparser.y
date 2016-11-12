@@ -7336,21 +7336,17 @@ set_function_specification : set_function_type '(' set_quantifier value_expressi
 			   }
               | TOK_GROUP_CONCAT '('  set_quantifier value_expression concat_options ')' 
                {
-                       //comehere
-                  CheckModeSpecial4;
                   $$ = new (PARSERHEAP())
                   PivotGroup(ITM_PIVOT_GROUP, $4, $5, $3);
  
                }
               | TOK_PIVOT '(' set_quantifier value_expression pivot_options ')'
                   {
-                    CheckModeSpecial4;
 
                     $$ = new (PARSERHEAP()) PivotGroup(ITM_PIVOT_GROUP, $4, $5, $3);
                   }
               | TOK_PIVOT_GROUP '(' set_quantifier value_expression pivot_options ')'
                   {
-                    CheckModeSpecial4;
 
                     $$ = new (PARSERHEAP()) PivotGroup(ITM_PIVOT_GROUP, $4, $5, $3);
                   }
