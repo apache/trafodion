@@ -626,7 +626,7 @@ RETDesc *GenericUpdate::createOldAndNewCorrelationNames(BindWA *bindWA, NABoolea
     // DELETE or UPDATE --
     // Now merge the old/target/before valueid's (the Scan child RETDesc)
     // into this RETDesc such that these cols are all named "OLD@.<col>"
-    //f
+    //
     Scan *scan ;
     if (getOperatorType() != REL_UNARY_INSERT)
       scan = getScanNode();

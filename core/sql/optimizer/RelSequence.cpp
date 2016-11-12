@@ -1193,7 +1193,7 @@ RelExpr *RelSequence::bindNode(BindWA *bindWA)
       newColumn->getValueId(),
       USER_COLUMN,
       colList->at(i)->getHeading());
-    ncToOldMap.addMapEntry(columnValueId,newColumn->getValueId());
+    ncToOldMap.addMapEntry(newColumn->getValueId(),columnValueId);
     if(colList->at(i)->isGrouped()) {
       ColumnNameMap *cnm =
         resultTable->findColumn(colList->at(i)->getColRefNameObj());
@@ -1262,7 +1262,7 @@ RelExpr *RelSequence::bindNode(BindWA *bindWA)
 
   bindWA->getCurrentScope()->getSequenceNode() = boundExpr;
   // save the ncToOldmap in the current scope. It will be used in Insert::bindnode for a special case.
-  bindWA->getCurrentScope()->getNcToOldMap() = ncToOldMap;
+  bindWA->getCurrentScope()->setNCToOldMap( ncToOldMap);
   return boundExpr;
 
 } // RelSequence::bindNode()

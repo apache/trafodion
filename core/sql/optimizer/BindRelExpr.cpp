@@ -2445,7 +2445,8 @@ Join * RelExpr::getLeftJoinChild() const
   
   while(result)
     {
-      if (result->getOperatorType() == REL_LEFT_JOIN) break;
+      if (result->getOperatorType() == REL_LEFT_JOIN) 
+        break;
       result = result->child(0);
     }
   return (Join *)result;
@@ -2457,7 +2458,8 @@ RelSequence* RelExpr::getOlapChild() const
   
   while(result)
     {
-      if (result->getOperatorType() == REL_SEQUENCE) break;
+      if (result->getOperatorType() == REL_SEQUENCE) 
+        break;
       result = result->child(0);
     }
   return (RelSequence *)result;
@@ -10322,12 +10324,12 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     const NodeMap* np;
     Lng32 partns = 1;
     if ( pf && (np = pf->getNodeMap()) )
-    {
-       partns = np->getNumEntries();
-       if(partns > 1  && CmpCommon::getDefault(ATTEMPT_ESP_PARALLELISM) == DF_OFF)
-         // 4490 - BULK LOAD into a salted table is not supported if ESP parallelism is turned off
-         *CmpCommon::diags() << DgSqlCode(-4490);
-    }
+      {
+        partns = np->getNumEntries();
+        if(partns > 1  && CmpCommon::getDefault(ATTEMPT_ESP_PARALLELISM) == DF_OFF)
+          // 4490 - BULK LOAD into a salted table is not supported if ESP parallelism is turned off
+          *CmpCommon::diags() << DgSqlCode(-4490);
+      }
   }
 
   if (isUpsertThatNeedsMerge(isAlignedRowFormat, omittedDefaultCols, omittedCurrentDefaultClassCols)) {
@@ -10336,12 +10338,12 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
 	boundExpr = xformUpsertToMerge(bindWA);  
 	return boundExpr;
       }
-      else if( CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_ON)
-	boundExpr = xformUpsertToEfficientTree(bindWA);
+    else 
+      boundExpr = xformUpsertToEfficientTree(bindWA);
     
     
   }
-   if (NOT (isMerge() || noIMneeded()))
+  if (NOT (isMerge() || noIMneeded()))
     boundExpr = handleInlining(bindWA, boundExpr);
 
   // turn OFF Non-atomic Inserts for ODBC if we have detected that Inlining is needed
@@ -10423,7 +10425,8 @@ NABoolean Insert::isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean
      return FALSE;
 }
 
-#ifdef __ignore
+/** commenting the following method out for future work. This may be enabled as a further performance improvement if we can eliminate the sort node that gets geenrated as part of the Sequence Node. In case of no duplicates we won't need the Sequence node at all. 
+
 // take an insert(src) node and transform it into
 // a tuple_flow with old/new rows flowing to the IM tree.
 // with a newly created input_scan
@@ -10536,7 +10539,8 @@ RelExpr* Insert::xformUpsertToEfficientTreeNoDup(BindWA *bindWA)
 
   return topNode; 
 }
-#endif
+*/
+
 // take an insert(src) node and transform it into
 // a tuple_flow with old/new rows flowing to the IM tree.
 // with a newly created sequence node used to eliminate duplicates.
@@ -10599,7 +10603,7 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
   ColReference * targetColRef;
   int predCount = 0;
   ValueIdSet newOuterRefs;
-  ItemExpr * pkeyValPrev;
+  ItemExpr * pkeyValPrev = NULL;
   ItemExpr * pkeyVals = NULL;
   for (CollIndex i = 0; i < tableCols.entries(); i++)
     {
@@ -10630,11 +10634,12 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
 						     keyPredPrev,
 						     keyPred);  
 	    }
-	  pkeyValPrev = pkeyVals;
+          
+          pkeyValPrev = pkeyVals;
     
 	  pkeyVals = tableCols[i].getItemExpr();
 	  
-	  if (i > 0) 
+	  if (pkeyValPrev != NULL ) 
 	    {
 	      pkeyVals = new(bindWA->wHeap()) ItemList(pkeyVals,pkeyValPrev);
       
@@ -10644,8 +10649,8 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
     }
  
   // Map the table's primary key values to the source lists key values
-  ValueIdList tablePKeyVals = NULL;
-  ValueIdList sourcePKeyVals = NULL;
+  ValueIdList tablePKeyVals ;
+  ValueIdList sourcePKeyVals ;
   
   pkeyVals->convertToValueIdList(tablePKeyVals,bindWA,ITM_ITEM_LIST);
   updateToSelectMap().mapValueIdListDown(tablePKeyVals,sourcePKeyVals);
@@ -10653,8 +10658,7 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
 
 
   Join *lj = new(bindWA->wHeap()) Join(child(0),targetTableScan,REL_LEFT_JOIN,keyPred);
-  lj->doNotTransformToTSJ();	  
-  lj->setTSJForWrite(TRUE);
+  
   bindWA->getCurrentScope()->xtnmStack()->createXTNM();
 
   
@@ -10664,7 +10668,7 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
   bindWA->getCurrentScope()->xtnmStack()->removeXTNM();
  
  
-  ValueIdSet sequenceFunction = NULL;		
+  ValueIdSet sequenceFunction ;		
  
   ItemExpr *constOne = new (bindWA->wHeap()) ConstValue(1);
  
@@ -10676,6 +10680,7 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
   
   //Create the olap node and use the primary key of the table as the 
   //"partition by" columns for the olap node.
+  CMPASSERT(!bindWA->getCurrentScope()->getSequenceNode());
   RelSequence *seqNode = new(bindWA->wHeap()) RelSequence(boundLJ, sourcePKeyVals.rebuildExprTree(ITM_ITEM_LIST),  (ItemExpr *)NULL);
  
 
@@ -10695,14 +10700,14 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
   // Add a selection predicate (post predicate) to check if the LEAD item is NULL
   ItemExpr *selPredOnLead = NULL;
   selPredOnLead = new (bindWA->wHeap()) UnLogic(ITM_IS_NULL,leadItem);
-  selPredOnLead->bindNode(bindWA);
+  selPredOnLead = selPredOnLead->bindNode(bindWA);
   if (bindWA->errStatus()) return this;
   seqNode->selectionPred() += selPredOnLead->getValueId();
-  
-  RelExpr *boundSeqNode = seqNode->bindNode(bindWA);  
-  boundSeqNode->setChild(0,boundLJ);
+  seqNode->setChild(0,boundLJ);
 
-  
+ 
+  RelExpr *boundSeqNode = seqNode->bindNode(bindWA);  
+   
   setChild(0,boundSeqNode);
 
   // Fixup the newRecExpr() and newRecExprArray() to refer to the new 
@@ -10710,12 +10715,12 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
   // from the current bindScope for this.
   ValueIdSet newNewRecExpr;
   ValueIdMap notCoveredMap = bindWA->getCurrentScope()->getNcToOldMap();
-  notCoveredMap.rewriteValueIdSetDown(newRecExpr(),newNewRecExpr);
+  notCoveredMap.rewriteValueIdSetUp(newNewRecExpr, newRecExpr());
   newRecExpr() = newNewRecExpr;
   
   ValueIdList oldRecArrList(newRecExprArray());
   ValueIdList newRecArrList;
-  notCoveredMap.rewriteValueIdListDown(oldRecArrList,newRecArrList);
+  notCoveredMap.rewriteValueIdListUp(newRecArrList, oldRecArrList);
   ValueIdArray newNewRecArray(newRecArrList.entries());
   
   for (CollIndex i = 0; i < newRecArrList.entries(); i++)

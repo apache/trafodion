@@ -685,7 +685,8 @@ public:
   // --------------------------------------------------------------------
   RelExpr *&getSequenceNode() { return sequenceNode_; };
 
-  ValueIdMap &getNcToOldMap() { return ncToOldMap_;}
+  const ValueIdMap &getNcToOldMap() { return ncToOldMap_;}
+  void setNCToOldMap(ValueIdMap vmap) {ncToOldMap_ = vmap; }
 
   ValueIdList getOlapPartition() const {return OlapPartition_; };
 
