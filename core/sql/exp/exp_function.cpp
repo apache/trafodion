@@ -213,6 +213,8 @@ ExFunctionSha2::ExFunctionSha2(){};
 ExFunctionIsIP::ExFunctionIsIP(){};
 ExFunctionInetAton::ExFunctionInetAton(){};
 ExFunctionInetNtoa::ExFunctionInetNtoa(){};
+ExFunctionSoundex::ExFunctionSoundex(){};
+
 ExFunctionAscii::ExFunctionAscii(OperatorTypeEnum oper_type,
 				 Attributes ** attr, Space * space)
      : ex_function_clause(oper_type, 2, attr, space)
@@ -758,6 +760,13 @@ ExFunctionInternalTimestamp::ExFunctionInternalTimestamp(OperatorTypeEnum oper_t
 														 Space *space)
   : ex_function_clause(oper_type, 1, attr, space)
 {}
+
+ExFunctionSoundex::ExFunctionSoundex(OperatorTypeEnum oper_type,
+			       Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 2, attr, space)
+{
+
+};
 
 
 // Triggers
@@ -8233,6 +8242,119 @@ ex_expr::exp_return_type ExFunctionIsIP::eval(char * op_data[],
     *(Int16 *)op_data[0] = 1; 
     return ex_expr::EXPR_OK;
   }
+}
+
+/*
+ * SOUNDEX(str) returns a character string containing the phonetic
+ * representation of the input string. It lets you compare words that
+ * are spelled differently, but sound alike in English.
+ * The phonetic representation is defined in "The Art of Computer Programming",
+ * Volume 3: Sorting and Searching, by Donald E. Knuth, as follows:
+ *
+ *  1. Retain the first letter of the string and remove all other occurrences
+ *  of the following letters: a, e, h, i, o, u, w, y.
+ *
+ *  2. Assign numbers to the remaining letters (after the first) as follows:
+ *        b, f, p, v = 1
+ *        c, g, j, k, q, s, x, z = 2
+ *        d, t = 3
+ *        l = 4
+ *        m, n = 5
+ *        r = 6
+ *
+ *  3. If two or more letters with the same number were adjacent in the original
+ *  name (before step 1), or adjacent except for any intervening h and w, then
+ *  omit all but the first.
+ *
+ *  4. Return the first four bytes padded with 0.
+ * */
+ex_expr::exp_return_type ExFunctionSoundex::eval(char *op_data[],
+						     CollHeap *heap,
+						     ComDiagsArea** diagsArea)
+{
+    ULng32 previous = 0;
+    ULng32 current = 0;
+
+    char *srcStr = op_data[1];
+    char *tgtStr = op_data[0];
+    Lng32 srcLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+    Lng32 tgtLen = getOperand(0)->getLength();
+    
+    CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
+
+    str_pad(tgtStr, tgtLen, '\0');
+
+    tgtStr[0] = toupper(srcStr[0]);    // Retain the first letter, convert to capital anyway
+    Int16 setLen = 1;                  // The first character is set already
+
+    for(int i=1; i < srcLen; ++i)
+    {
+        char chr = toupper(srcStr[i]);
+        switch(chr)
+        {
+            case 'A':
+            case 'E':
+            case 'H':
+            case 'I':
+            case 'O':
+            case 'U':
+            case 'W':
+            case 'Y':
+                current = 0;
+                break;
+            case 'B':
+            case 'F':
+            case 'P':
+            case 'V':
+                current = 1;
+                break;
+            case 'C':
+            case 'G':
+            case 'J':
+            case 'K':
+            case 'Q':
+            case 'S':
+            case 'X':
+            case 'Z':
+                current = 2;
+                break;
+            case 'D':
+            case 'T':
+                current = 3;
+                break;
+            case 'L':
+                current = 4;
+                break;
+            case 'M':
+            case 'N':
+                current = 5;
+                break;
+            case 'R':
+                current = 6;
+                break;
+            default:
+                break;
+        }
+
+        if(current)    // Only non-zero valued letter shall ve retained, 0 will be discarded
+        {
+            if(previous != current)
+            {
+                str_itoa(current, &tgtStr[setLen]);
+                setLen++;    // A new character is set in target
+            }
+        }
+
+        previous = current;
+
+        if(setLen == tgtLen)    // Don't overhit the target string
+            break;
+    } // end of for loop
+
+    if(setLen < tgtLen)
+        str_pad(tgtStr+setLen, (tgtLen - setLen), '0');
+    
+    return ex_expr::EXPR_OK;
 }
 
 // LCOV_EXCL_STOP
