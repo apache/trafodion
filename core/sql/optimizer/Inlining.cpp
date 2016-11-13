@@ -56,6 +56,7 @@
 #include "MjvBuilder.h"
 #include "ItmFlowControlFunction.h"
 #include <CmpMain.h>
+#include "RelSequence.h"
 
 #ifdef NA_DEBUG_GUI
 	#include "ComSqlcmpdbg.h"
@@ -618,7 +619,9 @@ RETDesc *GenericUpdate::createOldAndNewCorrelationNames(BindWA *bindWA, NABoolea
   }
 
   if ((getOperatorType() != REL_UNARY_INSERT) || 
-	getUpdateCKorUniqueIndexKey())
+      getUpdateCKorUniqueIndexKey() ||
+      ((getOperatorType() == REL_UNARY_INSERT) &&((Insert *)this)->isMerge()) ||
+      ((getOperatorType() == REL_UNARY_INSERT) && ((Insert *)this)->isUpsert() && (CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_ON )))  
   {
     // DELETE or UPDATE --
     // Now merge the old/target/before valueid's (the Scan child RETDesc)
@@ -629,14 +632,45 @@ RETDesc *GenericUpdate::createOldAndNewCorrelationNames(BindWA *bindWA, NABoolea
       scan = getScanNode();
     else 
       scan = getLeftmostScanNode();
+    if ((getOperatorType() == REL_UNARY_INSERT) && ((Insert *)this)->isUpsert() && (CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_ON ))
+      {
+	RelSequence *olapChild = getOlapChild();
+	CorrName corrName(getTableDesc()->getCorrNameObj().getQualifiedNameObj(), 
+			  bindWA->wHeap(),
+			  OLDCorr);
+	
+        //	ColumnDescList *colList = (olapChild->getRETDesc())->getColumnList();
+	for (short i = 0; i< olapChild->getRETDesc()->getDegree();i++)
+	  {
+	    // we remembered if the original columns was from the right side of
+	    // this olap node so add those to the RetDesc since those are the 
+	    //ones we want to delete from the dependent indexes.
+	    if ((olapChild->getRETDesc()->getValueId(i)).getItemExpr()->origOpType() == ITM_INSTANTIATE_NULL)
+	      {		    
+		rd->addColumn(bindWA, 
+			      ColRefName(olapChild->getRETDesc()->getColRefNameObj(i).getColName(), corrName),
+			      olapChild->getRETDesc()->getValueId(i),
+			      USER_COLUMN,
+			      olapChild->getRETDesc()->getHeading(i));
+		    
+	      }	    
+	  }
+	rd->addColumns(bindWA, *olapChild->getRETDesc()->getSystemColumnList(),  SYSTEM_COLUMN,&corrName);
+	
 
-    CMPASSERT(scan);
-    CorrName corrName(scan->getTableDesc()->getCorrNameObj().getQualifiedNameObj(), 
-	bindWA->wHeap(),
-	OLDCorr);
+      }	
+    
+    else
+      {
+	CMPASSERT(scan);
+	CorrName corrName(scan->getTableDesc()->getCorrNameObj().getQualifiedNameObj(), 
+			  bindWA->wHeap(),
+			  OLDCorr);
 
-    rd->addColumns(bindWA, *scan->getRETDesc(), &corrName);
+	rd->addColumns(bindWA, *scan->getRETDesc(), &corrName);
+      }
   }
+   
 
   Set_SqlParser_Flags(ALLOW_FUNNY_IDENTIFIER);	// allow "@" processing
   Set_SqlParser_Flags(DELAYED_RESET); // allow multiple parser calls.
@@ -1857,7 +1891,8 @@ static RelExpr *createIMNode(BindWA *bindWA,
 			     NABoolean isIMInsert,
 			     NABoolean useInternalSyskey,
                              NABoolean isForUpdate,
-                             NABoolean isForMerge)
+                             NABoolean isForMerge,
+			     NABoolean isEffUpsert)
 {
    
  // See createOldAndNewCorrelationNames() for info on OLDCorr/NEWCorr
@@ -1874,13 +1909,13 @@ static RelExpr *createIMNode(BindWA *bindWA,
   // that correspond to the base table. Hence we introduce 
   // robustDelete below. This flag could also be called 
   // isIMOnAUniqueIndexForMerge
-  NABoolean robustDelete = isForMerge && index->isUniqueIndex();
+  NABoolean robustDelete = (isForMerge && index->isUniqueIndex()) || (isEffUpsert && index->isUniqueIndex());
 
-  tableCorrName.setCorrName((isIMInsert)?  NEWCorr : OLDCorr);
+  tableCorrName.setCorrName(isIMInsert ?  NEWCorr : OLDCorr);
   
   ItemExprList *colRefList = new(bindWA->wHeap()) ItemExprList(bindWA->wHeap());
   
-  const ValueIdList &indexColVids = ((isIMInsert || robustDelete)? 
+  const ValueIdList &indexColVids = ((isIMInsert || robustDelete )? 
 				     index->getIndexColumns() : 
 				     index->getIndexKey());
   ItemExpr *preCond = NULL; // pre-condition for delete, insert if any
@@ -1906,7 +1941,7 @@ static RelExpr *createIMNode(BindWA *bindWA,
   // Index Type/IM operation->  Delete  | Insert
   // Non-unique Index           Yes        No 
   // Unique Index               Yes        Yes
-  if ((!isIMInsert && isForUpdate)||robustDelete)
+  if ((!isIMInsert && isForUpdate)||robustDelete )
     {
       // For delete nodes that are part of an update, generate a
       // comparison expression between old and new index column values
@@ -1996,7 +2031,7 @@ static RelExpr *createIMNode(BindWA *bindWA,
       imNode = new (bindWA->wHeap()) LeafDelete(indexCorrName,
                                                 NULL,
                                                 colRefList,
-                                                (robustDelete)?TRUE:FALSE,
+                                                (robustDelete )?TRUE:FALSE,
                                                 REL_LEAF_DELETE,
                                                 preCond,
                                                 bindWA->wHeap());
@@ -2041,6 +2076,7 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
   RelExpr *indexInsert = NULL, *indexDelete = NULL, *indexOp = NULL;
   NABoolean isForUpdate = (getOperatorType() == REL_UNARY_UPDATE ||
                            isMergeUpdate());
+  NABoolean isEffUpsert = ((CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_ON ) && (getOperatorType() == REL_UNARY_INSERT && ((Insert*)this)->isUpsert()));
 
   if (indexCorrName.getUgivenName().isNull())
     {
@@ -2051,7 +2087,7 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
   // ALL the index columns as AFTER/NEW columns.
   //
   if (getOperatorType() == REL_UNARY_INSERT ||
-      getOperatorType() == REL_UNARY_UPDATE)
+      getOperatorType() == REL_UNARY_UPDATE || isEffUpsert)
     indexInsert = indexOp = createIMNode(bindWA, 
 					 tableCorrName, 
 					 indexCorrName,
@@ -2059,22 +2095,26 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
 					 TRUE, 
 					 useInternalSyskey,
                                          isForUpdate,
-                                         isMerge());
+                                         isMerge(),
+					 isEffUpsert);
 
   // Create a list of base columns ColReferences for
   // ONLY the index KEY columns as BEFORE/OLD columns.
   //
   if (getOperatorType() == REL_UNARY_DELETE ||
-      getOperatorType() == REL_UNARY_UPDATE)
+      getOperatorType() == REL_UNARY_UPDATE ||
+      isEffUpsert)
+    
     indexDelete = indexOp = createIMNode(bindWA, 
 					 tableCorrName, indexCorrName,
 					 index, 
 					 FALSE,
     			       		 useInternalSyskey,
                                          isForUpdate,
-                                         isMerge());
+                                         isMerge(),
+					 isEffUpsert);
 
-  if (getOperatorType() == REL_UNARY_UPDATE) {
+  if ((getOperatorType() == REL_UNARY_UPDATE) || isEffUpsert){
     indexOp = new (bindWA->wHeap()) Union(indexDelete, indexInsert, 
                                           NULL, NULL, REL_UNION, 
                                           CmpCommon::statementHeap(),TRUE,TRUE);

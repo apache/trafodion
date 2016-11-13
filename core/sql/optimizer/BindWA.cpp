@@ -75,6 +75,7 @@ BindScope::BindScope(BindWA* bindWA) :
   xtnm_(bindWA ? bindWA->wHeap() : NULL),
   RETDesc_(NULL),
   sequenceNode_(NULL),
+  ncToOldMap_(NULL),
   OlapPartitionChange_ (NULL),
   HasOlapSeqFunctions_ ( BindScope::OLAPUNKNOWN_ ),
   isFirstOlapWindowSpec_( TRUE ),

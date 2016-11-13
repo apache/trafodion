@@ -2424,6 +2424,7 @@ Scan *RelExpr::getScanNode(NABoolean assertExactlyOneScanNode) const
   return (Scan *)result;
 }
 
+
 Scan *RelExpr::getLeftmostScanNode() const
 {
   RelExpr *result = (RelExpr *)this;   // cast away constness, big whoop
@@ -2434,6 +2435,34 @@ Scan *RelExpr::getLeftmostScanNode() const
   }
 
   return (Scan *)result;
+}
+
+
+
+Join * RelExpr::getLeftJoinChild() const
+{
+  RelExpr *result = (RelExpr *)this;
+  
+  while(result)
+    {
+      if (result->getOperatorType() == REL_LEFT_JOIN) 
+        break;
+      result = result->child(0);
+    }
+  return (Join *)result;
+}
+
+RelSequence* RelExpr::getOlapChild() const
+{
+  RelExpr *result = (RelExpr *)this;
+  
+  while(result)
+    {
+      if (result->getOperatorType() == REL_SEQUENCE) 
+        break;
+      result = result->child(0);
+    }
+  return (RelSequence *)result;
 }
 
 // QSTUFF
@@ -9779,6 +9808,10 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       return boundExpr;
     }
   }
+
+ 
+
+
    
   bindChildren(bindWA);
   if (bindWA->errStatus()) return this;
@@ -9913,6 +9946,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
      if (bulkLoadIndex) {
        setRETDesc(child(0)->getRETDesc());
       } 
+
+
 
     for (i = 0; i < tgtColList.entries() && i2 < newTgtColList.entries(); i++) {
       if(tgtColList[i] != newTgtColList[i2])
@@ -10396,19 +10431,26 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     const NodeMap* np;
     Lng32 partns = 1;
     if ( pf && (np = pf->getNodeMap()) )
-    {
-       partns = np->getNumEntries();
-       if(partns > 1  && CmpCommon::getDefault(ATTEMPT_ESP_PARALLELISM) == DF_OFF)
-         // 4490 - BULK LOAD into a salted table is not supported if ESP parallelism is turned off
-         *CmpCommon::diags() << DgSqlCode(-4490);
-    }
+      {
+        partns = np->getNumEntries();
+        if(partns > 1  && CmpCommon::getDefault(ATTEMPT_ESP_PARALLELISM) == DF_OFF)
+          // 4490 - BULK LOAD into a salted table is not supported if ESP parallelism is turned off
+          *CmpCommon::diags() << DgSqlCode(-4490);
+      }
   }
 
   if (isUpsertThatNeedsMerge(isAlignedRowFormat, omittedDefaultCols, omittedCurrentDefaultClassCols)) {
-    boundExpr = xformUpsertToMerge(bindWA);
-    return boundExpr;
+    if (CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_OFF) 	
+      {
+	boundExpr = xformUpsertToMerge(bindWA);  
+	return boundExpr;
+      }
+    else 
+      boundExpr = xformUpsertToEfficientTree(bindWA);
+    
+    
   }
-  else if (NOT (isMerge() || noIMneeded()))
+  if (NOT (isMerge() || noIMneeded()))
     boundExpr = handleInlining(bindWA, boundExpr);
 
   // turn OFF Non-atomic Inserts for ODBC if we have detected that Inlining is needed
@@ -10490,6 +10532,313 @@ NABoolean Insert::isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean
      return FALSE;
 }
 
+/** commenting the following method out for future work. This may be enabled as a further performance improvement if we can eliminate the sort node that gets geenrated as part of the Sequence Node. In case of no duplicates we won't need the Sequence node at all. 
+
+// take an insert(src) node and transform it into
+// a tuple_flow with old/new rows flowing to the IM tree.
+// with a newly created input_scan
+RelExpr* Insert::xformUpsertToEfficientTreeNoDup(BindWA *bindWA) 
+{
+  NATable *naTable = bindWA->getNATable(getTableName());
+  if (bindWA->errStatus())
+    return NULL;
+  if ((naTable->getViewText() != NULL) && (naTable->getViewCheck()))		
+    {		
+      *CmpCommon::diags() << DgSqlCode(-3241) 		
+			  << DgString0(" View with check option not allowed.");	    		
+      bindWA->setErrStatus();		
+      return NULL;		
+    }
+
+  RelExpr *topNode = this;
+  // Create a new BindScope, to encompass the new nodes 
+  // upsert(left_join(input_scan, tuple))
+  // and any inlining nodes that will be created. Any values the upsert
+  // and children will need from src will be marked as outer references in that
+  // new BindScope. We assume that "src" is already bound.
+  ValueIdSet currOuterRefs = bindWA->getCurrentScope()->getOuterRefs();
+
+  CMPASSERT(child(0)->nodeIsBound());
+
+  BindScope *upsertScope = bindWA->getCurrentScope();
+
+  // columns of the target table
+  const ValueIdList &tableCols = updateToSelectMap().getTopValues();
+  const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
+
+  // create a Join node - left join of the base table columns with the columns to be upserted.
+  // columns of the target table
+  CMPASSERT(child(0)->nodeIsBound());
+  
+  Scan * targetTableScan =
+    new (bindWA->wHeap())
+    Scan(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()));
+
+ 
+  //join predicate between source columns and target table.
+  ItemExpr * keyPred = NULL;
+  ItemExpr * keyPredPrev = NULL;
+  BaseColumn* baseCol;
+  ColReference * targetColRef;
+  int predCount = 0;
+  ValueIdSet newOuterRefs;
+  ItemExpr * pkeyValPrev;
+  ItemExpr * pkeyVals;
+  for (CollIndex i = 0; i < tableCols.entries(); i++)
+    {
+      baseCol = (BaseColumn *)(tableCols[i].getItemExpr()) ;
+      if (baseCol->getNAColumn()->isSystemColumn())
+	continue;
+
+      targetColRef = new(bindWA->wHeap()) ColReference(
+						       new(bindWA->wHeap()) ColRefName(
+										       baseCol->getNAColumn()->getFullColRefName(), bindWA->wHeap()));
+    
+
+      if (baseCol->getNAColumn()->isClusteringKey())
+	{
+	  // create a join/key predicate between source and target table,
+	  // on the clustering key columns of the target table, making
+	  // ColReference nodes for the target table, so that we can bind
+	  // those to the new scan
+	  keyPredPrev = keyPred;
+	  keyPred = new (bindWA->wHeap())
+	    BiRelat(ITM_EQUAL, targetColRef, 
+		    sourceVals[i].getItemExpr(),
+		    baseCol->getType().supportsSQLnull());
+	  predCount++;
+	  if (predCount > 1) 
+	    {
+	      keyPred = new(bindWA->wHeap()) BiLogic(ITM_AND,
+						     keyPredPrev,
+						     keyPred);  
+	    }
+	  pkeyValPrev = pkeyVals;
+    
+	  pkeyVals = tableCols[i].getItemExpr();
+	  if (i > 0) 
+	    {
+	      pkeyVals = new(bindWA->wHeap()) ItemList(pkeyVals,pkeyValPrev);
+      
+	    }
+	}
+     
+    }
+ 
+  // Map the table's primary key values to the source lists key values
+  ValueIdList tablePKeyVals = NULL;
+  ValueIdList sourcePKeyVals = NULL;
+  
+  pkeyVals->convertToValueIdList(tablePKeyVals,bindWA,ITM_ITEM_LIST);
+  updateToSelectMap().mapValueIdListDown(tablePKeyVals,sourcePKeyVals);
+  
+  Join *lj = new(bindWA->wHeap()) Join(child(0),targetTableScan,REL_LEFT_JOIN,keyPred);
+  lj->doNotTransformToTSJ();	  
+  lj->setTSJForWrite(TRUE);
+   bindWA->getCurrentScope()->xtnmStack()->createXTNM();
+  RelExpr *boundLJ = lj->bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+  bindWA->getCurrentScope()->xtnmStack()->removeXTNM();
+  setChild(0,boundLJ);
+  topNode = handleInlining(bindWA,topNode);
+
+
+  return topNode; 
+}
+*/
+
+// take an insert(src) node and transform it into
+// a tuple_flow with old/new rows flowing to the IM tree.
+// with a newly created sequence node used to eliminate duplicates.
+/*
+               NJ
+            /      \
+         Sequence   NJ
+        /            \  
+     Left Join        IM Tree 
+     /        \
+    /          \
+Input Tuplelist  Target Table Scan
+or select list
+*/
+         
+RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA) 
+{
+  NATable *naTable = bindWA->getNATable(getTableName());
+  if (bindWA->errStatus())
+    return NULL;
+  if ((naTable->getViewText() != NULL) && (naTable->getViewCheck()))		
+    {		
+      *CmpCommon::diags() << DgSqlCode(-3241) 		
+			  << DgString0(" View with check option not allowed.");	    		
+      bindWA->setErrStatus();		
+      return NULL;		
+    }
+
+  RelExpr *topNode = this;
+ 
+  CMPASSERT(child(0)->nodeIsBound());
+
+  BindScope *upsertScope = bindWA->getCurrentScope();
+  // Create a new BindScope, to encompass the new nodes 
+  // upsert(left_join(input_scan, tuple))
+  // and any inlining nodes that will be created. Any values the upsert
+  // and children will need from src will be marked as outer references in that
+  // new BindScope. We assume that "src" is already bound.
+  ValueIdSet currOuterRefs = bindWA->getCurrentScope()->getOuterRefs();
+  // Save the current RETDesc.
+  RETDesc *prevRETDesc = bindWA->getCurrentScope()->getRETDesc();
+
+  // columns of the target table
+  const ValueIdList &tableCols = updateToSelectMap().getTopValues();
+  const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
+
+  // create a Join node - left join of the base table columns with the columns to be upserted.
+  // columns of the target table
+  CMPASSERT(child(0)->nodeIsBound());
+  
+  Scan * targetTableScan =
+    new (bindWA->wHeap())
+    Scan(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()));
+
+ 
+  //join predicate between source columns and target table.
+  ItemExpr * keyPred = NULL;
+  ItemExpr * keyPredPrev = NULL;
+  BaseColumn* baseCol;
+  ColReference * targetColRef;
+  int predCount = 0;
+  ValueIdSet newOuterRefs;
+  ItemExpr * pkeyValPrev = NULL;
+  ItemExpr * pkeyVals = NULL;
+  for (CollIndex i = 0; i < tableCols.entries(); i++)
+    {
+      baseCol = (BaseColumn *)(tableCols[i].getItemExpr()) ;
+      if (baseCol->getNAColumn()->isSystemColumn())
+	continue;
+
+      targetColRef = new(bindWA->wHeap()) ColReference(
+						       new(bindWA->wHeap()) ColRefName(
+										       baseCol->getNAColumn()->getFullColRefName(), bindWA->wHeap()));
+    
+
+      if (baseCol->getNAColumn()->isClusteringKey())
+	{
+	  // create a join/key predicate between source and target table,
+	  // on the clustering key columns of the target table, making
+	  // ColReference nodes for the target table, so that we can bind
+	  // those to the new scan
+	  keyPredPrev = keyPred;
+	  keyPred = new (bindWA->wHeap())
+	    BiRelat(ITM_EQUAL, targetColRef, 
+		    sourceVals[i].getItemExpr(),
+		    baseCol->getType().supportsSQLnull());
+	  predCount++;
+	  if (predCount > 1) 
+	    {
+	      keyPred = new(bindWA->wHeap()) BiLogic(ITM_AND,
+						     keyPredPrev,
+						     keyPred);  
+	    }
+          
+          pkeyValPrev = pkeyVals;
+    
+	  pkeyVals = tableCols[i].getItemExpr();
+	  
+	  if (pkeyValPrev != NULL ) 
+	    {
+	      pkeyVals = new(bindWA->wHeap()) ItemList(pkeyVals,pkeyValPrev);
+      
+	    }
+	}
+     
+    }
+ 
+  // Map the table's primary key values to the source lists key values
+  ValueIdList tablePKeyVals ;
+  ValueIdList sourcePKeyVals ;
+  
+  pkeyVals->convertToValueIdList(tablePKeyVals,bindWA,ITM_ITEM_LIST);
+  updateToSelectMap().mapValueIdListDown(tablePKeyVals,sourcePKeyVals);
+  
+
+
+  Join *lj = new(bindWA->wHeap()) Join(child(0),targetTableScan,REL_LEFT_JOIN,keyPred);
+  
+  bindWA->getCurrentScope()->xtnmStack()->createXTNM();
+
+  
+  RelExpr *boundLJ = lj->bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+  bindWA->getCurrentScope()->xtnmStack()->removeXTNM();
+ 
+ 
+  ValueIdSet sequenceFunction ;		
+ 
+  ItemExpr *constOne = new (bindWA->wHeap()) ConstValue(1);
+ 
+  //Retrieve all the system and user columns of the left join output
+  ValueIdList  ljOutCols = NULL;
+  boundLJ->getRETDesc()->getValueIdList(ljOutCols);
+  //Retrieve the null instantiated part of the LJ output
+  ValueIdList ljNullInstColumns = lj->nullInstantiatedOutput();
+  
+  //Create the olap node and use the primary key of the table as the 
+  //"partition by" columns for the olap node.
+  CMPASSERT(!bindWA->getCurrentScope()->getSequenceNode());
+  RelSequence *seqNode = new(bindWA->wHeap()) RelSequence(boundLJ, sourcePKeyVals.rebuildExprTree(ITM_ITEM_LIST),  (ItemExpr *)NULL);
+ 
+
+  // Create a LEAD Item Expr for a random value 999. 
+  // Use this to eliminate rows which have a NULL for this LEAD value within 
+  // a particular partition range.
+  ItemExpr *leadItem, *boundLeadItem = NULL;
+  ItemExpr *constLead999 = new (bindWA->wHeap()) ConstValue( 999);
+
+  leadItem = new(bindWA->wHeap()) ItmLeadOlapFunction(constLead999,1);
+  ((ItmLeadOlapFunction *)leadItem)->setIsOLAP(TRUE);
+  boundLeadItem = leadItem->bindNode(bindWA);
+  if (bindWA->errStatus()) return this;
+  boundLeadItem->convertToValueIdSet(sequenceFunction);
+  seqNode->setSequenceFunctions(sequenceFunction);
+  
+  // Add a selection predicate (post predicate) to check if the LEAD item is NULL
+  ItemExpr *selPredOnLead = NULL;
+  selPredOnLead = new (bindWA->wHeap()) UnLogic(ITM_IS_NULL,leadItem);
+  selPredOnLead = selPredOnLead->bindNode(bindWA);
+  if (bindWA->errStatus()) return this;
+  seqNode->selectionPred() += selPredOnLead->getValueId();
+  seqNode->setChild(0,boundLJ);
+
+ 
+  RelExpr *boundSeqNode = seqNode->bindNode(bindWA);  
+   
+  setChild(0,boundSeqNode);
+
+  // Fixup the newRecExpr() and newRecExprArray() to refer to the new 
+  // valueIds of the new child - i.e RelSequence. Use the saved off valueIdMap
+  // from the current bindScope for this.
+  ValueIdSet newNewRecExpr;
+  ValueIdMap notCoveredMap = bindWA->getCurrentScope()->getNcToOldMap();
+  notCoveredMap.rewriteValueIdSetUp(newNewRecExpr, newRecExpr());
+  newRecExpr() = newNewRecExpr;
+  
+  ValueIdList oldRecArrList(newRecExprArray());
+  ValueIdList newRecArrList;
+  notCoveredMap.rewriteValueIdListUp(newRecArrList, oldRecArrList);
+  ValueIdArray newNewRecArray(newRecArrList.entries());
+  
+  for (CollIndex i = 0; i < newRecArrList.entries(); i++)
+    {
+      newNewRecArray.insertAt(i,newRecArrList.at(i));
+    }
+  newRecExprArray() = newNewRecArray;
+  return topNode; 
+}
+
+
 // take an insert(src) node and transform it into
 // tsj_flow(src, merge_update(input_scan))
 // with a newly created input_scan
@@ -10520,7 +10869,6 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
 
   CMPASSERT(child(0)->nodeIsBound());
   bindWA->initNewScope();
-
   BindScope *mergeScope = bindWA->getCurrentScope();
 
   // create a new scan of the target table, to be used in the merge
@@ -10570,6 +10918,7 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
                                                 keyPredPrev,
                                                 keyPred);  
       }
+
     }
     if (sourceVals[i].getItemExpr()->getOperatorType() != ITM_CONSTANT)
       {
@@ -10978,7 +11327,7 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
   if (needsBindScope_)
     bindWA->initNewScope();
 
-  // For an xformaed upsert any UDF or subquery is guaranteed to be 
+  // For an xformed upsert any UDF or subquery is guaranteed to be 
   // in the using clause. Upsert will not generate a merge without using 
   // clause. ON clause, when matched SET clause and when not matched INSERT
   // clauses all use expressions from the using clause. (same vid).
