@@ -589,11 +589,64 @@ NABoolean HSGlobalsClass::setHBaseCacheSize(double sampleRatio)
       NAString maxCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX ";
       maxCQD += temp1;
       HSFuncExecQuery(maxCQD);
+      hbaseCacheSizeCQDsSet_ = TRUE;
       return TRUE;
     }
   else
     return FALSE;
 }
+
+
+// If a Hive table has very long character columns, we might get
+// a SQL error 8446 when scanning it. The way around that is to
+// set CQD HIVE_MAX_STRING_LENGTH_IN_BYTES to the longest string
+// length in the table. This is typically done by the user in
+// the sqlci or trafci session. However we need to propagate
+// it to our child tdm_arkcmp. This method does that.
+NABoolean HSGlobalsClass::setHiveMaxStringLengthInBytes(void)
+{
+  NABoolean rc = FALSE;
+  if (isHiveTable)
+    {
+      NADefaults &defs = ActiveSchemaDB()->getDefaults();
+      if (defs.getProvenance(HIVE_MAX_STRING_LENGTH_IN_BYTES) >= 
+          NADefaults::SET_BY_CQD)
+        {
+          char temp1[40];  // way more space than needed, but it's safe
+          UInt32 hiveMaxStringLengthInBytes = 
+            ActiveSchemaDB()->getDefaults().getAsULong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
+
+          sprintf(temp1,"'%u'",hiveMaxStringLengthInBytes);
+          NAString theCQD = "CONTROL QUERY DEFAULT HIVE_MAX_STRING_LENGTH_IN_BYTES ";
+          theCQD += temp1;
+          HSFuncExecQuery(theCQD);
+
+          hiveMaxStringLengthCQDSet_ = TRUE;
+          rc = TRUE;
+        }
+    }
+
+  return rc;
+}
+
+
+// If we set any CQDs in CollectStatistics that need to be
+// reset when we are done, do that here.
+void HSGlobalsClass::resetCQDs(void)
+{
+  if (hbaseCacheSizeCQDsSet_)
+    {
+      HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN RESET");
+      HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX RESET");
+      hbaseCacheSizeCQDsSet_ = FALSE;
+    }
+  if (hiveMaxStringLengthCQDSet_)
+    {
+      HSFuncExecQuery("CONTROL QUERY DEFAULT HIVE_MAX_STRING_LENGTH_IN_BYTES RESET");
+      hiveMaxStringLengthCQDSet_ = FALSE;
+    }
+}
+
 
 // rearrange the MCs so that the larger groups are listed first
 // and the ones that will not be processed (not enough memory) are
@@ -2896,7 +2949,9 @@ HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
     jitLogOn(FALSE),
     isUpdatestatsStmt(FALSE),
     maxCharColumnLengthInBytes(ActiveSchemaDB()->getDefaults().
-               getAsLong(USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES))
+               getAsLong(USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES)),
+    hbaseCacheSizeCQDsSet_(FALSE),
+    hiveMaxStringLengthCQDSet_(FALSE)
   {
     // Must add the context first in the constructor.
     contID_ = AddHSContext(this);
@@ -3980,7 +4035,7 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
         // in a batch) to avoid scanner timeout. Reset these after the sample query
         // has executed.
         if (hs_globals->isHbaseTable)
-          HBaseCQDsUsed = HSGlobalsClass::setHBaseCacheSize(samplePercent);
+          HBaseCQDsUsed = hs_globals->setHBaseCacheSize(samplePercent);
 
         if (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_STATS) == DF_ON)
           {
@@ -4137,8 +4192,7 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
 
     if (HBaseCQDsUsed)
       {
-        HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN RESET");
-        HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX RESET");
+        hs_globals->resetCQDs();
       }
     if (EspCQDUsed)
       {
@@ -5187,6 +5241,9 @@ Lng32 HSGlobalsClass::CollectStatistics()
     HSSample sampleTable(objDef, optFlags & SAMPLE_REQUESTED, sampleTblPercent);
       // Initialize variables for sample table.  May not be used.
 
+    // set CQD for Hive if needed
+    setHiveMaxStringLengthInBytes();
+
     /*======================================================================*/
     /* Perform internal sort if enabled.                                    */
     /*======================================================================*/
@@ -5446,11 +5503,6 @@ Lng32 HSGlobalsClass::CollectStatistics()
    
             retcode = readColumnsIntoMem(&cursor, maxRowsToRead);
             HSHandleError(retcode);
-            if (hbaseCQDsUsed)
-              {
-                HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN RESET");
-                HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX RESET");
-              }
             checkTime("after reading pending columns into memory for internal sort");
             columnSeconds = getTimeDiff() / numColsToProcess;  // saved for automation
 
@@ -12602,12 +12654,11 @@ Int32 HSGlobalsClass::processIUSColumn(T* ptr,
                logCBF("after the above key, cbf is:", cbf);
             }
 #endif
-
-            diagsArea << DgSqlCode(UERR_IUS_INSERT_NONMFV_OVERFLOW)
-                      << DgString0(smplGroup->colSet[0].colname->data());
-
-             
+  
             if (LM->LogNeeded()) {
+              // only issue the warning if logging is turned on
+              diagsArea << DgSqlCode(UERR_IUS_INSERT_NONMFV_OVERFLOW)
+                << DgString0(smplGroup->colSet[0].colname->data());
               LM->Log("NONMFV overflow");
               LM->StopTimer();  // Need both of these; there are
               LM->StopTimer();  //   2 outstanding timer events
@@ -12739,8 +12790,12 @@ if ( x[0] == (unsigned char)255 && x[1] == (unsigned char)127 ) {
 
       // non-mfv value overflows to mfv. bail out.
       if (insert_status == CountingBloomFilter::NEW_MFV) {
-         diagsArea << DgSqlCode(UERR_IUS_INSERT_NONMFV_OVERFLOW)
-                   << DgString0(smplGroup->colSet[0].colname->data());
+         if (LM->LogNeeded())
+           {
+             // only issue warning if logging is turned on
+             diagsArea << DgSqlCode(UERR_IUS_INSERT_NONMFV_OVERFLOW)
+                       << DgString0(smplGroup->colSet[0].colname->data());
+           }
          LM->StopTimer();
          return UERR_IUS_INSERT_NONMFV_OVERFLOW;
       }
