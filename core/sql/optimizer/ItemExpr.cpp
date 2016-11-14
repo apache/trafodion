@@ -7432,6 +7432,11 @@ NABoolean BuiltinFunction::isCacheableExpr(CacheWA& cwa)
 	return FALSE;
       }
     break;
+    case ITM_JSONOBJECTFIELDTEXT:
+    {
+	    return FALSE;
+    }
+    break;
 
     default:
       {
@@ -7539,6 +7544,8 @@ const NAString BuiltinFunction::getText() const
       return "nullifzero";
     case ITM_NVL:
       return "nvl";
+    case ITM_JSONOBJECTFIELDTEXT:
+      return "json_object_field_text";
     case ITM_QUERYID_EXTRACT:
       return "queryid_extract";
     case ITM_UPPER:
@@ -7797,7 +7804,12 @@ ItemExpr * BuiltinFunction::copyTopNode(ItemExpr * derivedNode,
 						   outHeap, 2, child(0), child(1));
 	  }
 	break;
-
+    case ITM_JSONOBJECTFIELDTEXT:
+	{
+	    result = new (outHeap) BuiltinFunction(getOperatorType(),
+						   outHeap, 2, child(0), child(1));
+	}
+	break;
 	default:
 	  {
 	    ABORT("copyTopNode() can only be called for a derived class of BuiltinFunction");

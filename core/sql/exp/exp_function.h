@@ -3757,6 +3757,28 @@ private:
   // ---------------------------------------------------------------------
 };
 
+class SQLEXP_LIB_FUNC  ex_function_json_object_field_text : public ex_function_clause {
+public:
+  NA_EIDPROC ex_function_json_object_field_text(OperatorTypeEnum oper_type,
+			     Attributes ** attr,
+			     Space * space);
+  NA_EIDPROC ex_function_json_object_field_text();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);  
+  NA_EIDPROC Long pack(void *);
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+
+  // This clause handles all NULL processing in the eval() method.
+  NA_EIDPROC Int32 isNullRelevant() const { return 0; };
+
+private:
+  char fillers_[64];
+  // ---------------------------------------------------------------------
+};
+
+
 class SQLEXP_LIB_FUNC ExFunctionExtractColumns : public ex_function_clause
 {
    public:

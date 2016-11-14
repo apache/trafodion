@@ -493,6 +493,10 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_NVL:
 	  setClassID(FUNC_NVL);
 	  break;
+    case ITM_JSONOBJECTFIELDTEXT:
+	  setClassID(FUNC_JSON_ID);
+	  break;
+      
 	case ITM_EXTRACT_COLUMNS:
 	  setClassID(FUNC_EXTRACT_COLUMNS);
 	  break;
@@ -932,6 +936,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_NVL:
       GetVTblPtr(vtblPtr, ex_function_nvl);
+      break;
+    case ex_clause::FUNC_JSON_ID:
+      GetVTblPtr(vtblPtr, ex_function_json_object_field_text);
       break;
     case ex_clause::FUNC_EXTRACT_COLUMNS:
       GetVTblPtr(vtblPtr, ExFunctionExtractColumns);
@@ -1425,6 +1432,8 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     case ITM_NULLIFZERO: return "ITM_NULLIFZERO";
     case ITM_NVL: return "ITM_NVL";
+
+    case ITM_JSONOBJECTFIELDTEXT: return "ITM_JSONOBJECTFIELDTEXT";
 
     // subqueries
     case ITM_ROW_SUBQUERY: return "ITM_ROW_SUBQUERY";

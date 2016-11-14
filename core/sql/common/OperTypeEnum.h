@@ -508,6 +508,8 @@ enum OperatorTypeEnum {
                         ITM_BITEXTRACT = 2235,
                         ITM_CONVERTTOBITS = 2236,
                         ITM_LOG2= 2237,
+                        // JSON fuctions
+                        ITM_JSONOBJECTFIELDTEXT = 2241,
 
                         // string functions
                         ITM_TRUNC = 2250,

@@ -1204,6 +1204,30 @@ const NAType *BuiltinFunction::synthesizeType()
       }
     break;
 
+    case ITM_JSONOBJECTFIELDTEXT:
+    {
+        ValueId vid1 = child(0)->getValueId();
+        ValueId vid2 = child(1)->getValueId();
+
+        // untyped param operands are typed as CHAR
+        vid2.coerceType(NA_CHARACTER_TYPE);
+
+        const NAType &typ1 = vid1.getType();
+        const NAType &typ2 = vid2.getType();
+
+        if ((typ1.getTypeQualifier() != NA_CHARACTER_TYPE) ||
+            (typ2.getTypeQualifier() != NA_CHARACTER_TYPE))
+        {
+            // 4043 The operand of a $0~String0 function must be character.
+            *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextUpper());
+            return NULL;
+        }
+
+        retType = new HEAP
+        SQLVarChar(typ1.getNominalSize(), typ1.supportsSQLnull());
+    }
+    break;
+
     case ITM_QUERYID_EXTRACT:
       {
 	// type cast any params
