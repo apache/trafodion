@@ -33741,6 +33741,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_FLOOR
                       | TOK_FN
                       | TOK_GREATEST
+                      | TOK_GROUPING_ID
                       | TOK_HASHPARTFUNC
                       | TOK_HASH2PARTFUNC
                       | TOK_HBASE_TIMESTAMP
