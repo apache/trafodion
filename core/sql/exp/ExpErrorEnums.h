@@ -487,6 +487,22 @@ enum ExeErrorCode
   EXE_SM_FIXUP_REPLY_TIMEOUT            = 8953,
 
   // ---------------------------------------------------------------------
+  // Execution errors related to JSon parser
+  // ---------------------------------------------------------------------
+  EXE_JSON_INVALID_TOKEN                  = 8971,
+  EXE_JSON_INVALID_VALUE                  = 8972,
+  EXE_JSON_INVALID_STRING                 = 8973,
+  EXE_JSON_INVALID_ARRAY_START            = 8974,
+  EXE_JSON_INVALID_ARRAY_NEXT             = 8975,
+  EXE_JSON_INVALID_OBJECT_START           = 8976,
+  EXE_JSON_INVALID_OBJECT_LABEL           = 8977,
+  EXE_JSON_INVALID_OBJECT_NEXT            = 8978,
+  EXE_JSON_INVALID_OBJECT_COMMA           = 8979,
+  EXE_JSON_INVALID_END                    = 8980,
+  EXE_JSON_END_PREMATURELY                = 8981,
+  EXE_JSON_UNEXPECTED_ERROR               = 8982,
+
+  // ---------------------------------------------------------------------
   // Scratch file I/O errors (10100 - 10199)
   // ---------------------------------------------------------------------
   EXE_SCR_IO_CREATE                     = 10101,
@@ -553,22 +569,6 @@ enum ExeErrorCode
   CLI_RWRS_DECOMPRESS_ERROR        = 30045,
   CLI_RWRS_DECOMPRESS_LENGTH_ERROR = 30046,
   CLI_NAR_ERROR_DETAILS            = 30047,
-// ---------------------------------------------------------------------
-// Execution errors related to JSon parser
-// ---------------------------------------------------------------------
-  
-  EXE_JSON_INVALID_TOKEN                  = 32001,
-  EXE_JSON_INVALID_VALUE                  = 32002,
-  EXE_JSON_INVALID_STRING                 = 32003,
-  EXE_JSON_INVALID_ARRAY_START            = 32004,
-  EXE_JSON_INVALID_ARRAY_NEXT             = 32005,
-  EXE_JSON_INVALID_OBJECT_START           = 32006,
-  EXE_JSON_INVALID_OBJECT_LABEL           = 32007,
-  EXE_JSON_INVALID_OBJECT_NEXT            = 32008,
-  EXE_JSON_INVALID_OBJECT_COMMA           = 32009,
-  EXE_JSON_INVALID_END                    = 32010,
-  EXE_JSON_END_PREMATURELY                = 32011,
-  EXE_JSON_UNEXPECTED_ERROR               = 32012,
 
   // ---------------------------------------------------------------------
   // the trailer (use temporarily for new errors that aren't added yet)

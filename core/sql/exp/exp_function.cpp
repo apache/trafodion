@@ -71,7 +71,7 @@
 #include "NAUserId.h"
 #include "ComUser.h"
 #include "ExpSeqGen.h"
-#include "json.h"
+#include "ComJSON.h"
 
 #undef DllImport
 #define DllImport __declspec ( dllimport )

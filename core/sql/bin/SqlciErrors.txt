@@ -1852,6 +1852,18 @@ drop the default context
 8963 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UNLOAD encountered a backup TSE switch.
 8964 ZZZZZ 99999 BEGINNER MAJOR DBADMIN LOAD is not currently supported with non empty tables.
 8965 ZZZZZ 99999 BEGINNER MAJOR DBADMIN File $0~String0 already exists.
+8971 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Token is invalid.
+8972 ZZZZZ 99999 BEGINNER MAJOR DBADMIN JSON value is invalid.
+8973 ZZZZZ 99999 BEGINNER MAJOR DBADMIN String is invalid.
+8974 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected array element or "]", but does not found.
+8975 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected "," or "]", but does not found.
+8976 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected string or "}", but does not found.
+8977 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected ":", but does not found.
+8978 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected "," or "}", but does not found.
+8979 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected string, but does not found.
+8980 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected end of input, but does not found.
+8981 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The input string ended unexpectedly.
+8982 ZZZZZ 99999 BEGINNER MAJOR DBADMIN unexpected json parse state.
 9200 ZZZZZ 99999 ADVANCED MAJOR DIALOUT UPDATE STATISTICS for table $0~CatalogName.$1~SchemaName.$2~TableName encountered an error$3~string2 from statement $4~string0.
 9201 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Unable to DROP object $0~string0.
 9202 ZZZZZ 99999 BEGINNER INFRM DBADMIN UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are $0~string0.
@@ -3925,16 +3937,3 @@ $3~String1.
 30047 ZZZZZ 99999 BEGINNER MAJOR DBADMIN NAR details. HexdRow: $0~String0 ErrNum: $1~Int1 ObjectName: $2~TableName PartitionName: $3~String3 FileNum: $4~Int4 RecNum: $5~Int5
 30048 ZZZZZ 99999  BEGINNER MAJOR DBADMIN Fast Load failed. Number of error rows($0~Int0) inserted into the exception table exceeded the max allowed($1~Int1).
 30049 ZZZZZ 99999  BEGINNER MAJOR DBADMIN Fast Load succeeded. Number of error rows inserted into the exception table is $0~Int0
-
-32001 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Token is invalid.
-32002 ZZZZZ 99999 BEGINNER MAJOR DBADMIN JSON value is invalid.
-32003 ZZZZZ 99999 BEGINNER MAJOR DBADMIN String is invalid.
-32004 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected array element or "]", but does not found.
-32005 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected "," or "]", but does not found.
-32006 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected string or "}", but does not found.
-32007 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected ":", but does not found.
-32008 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected "," or "}", but does not found.
-32009 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected string, but does not found.
-32010 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected end of input, but does not found.
-32011 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The input string ended unexpectedly.
-32012 ZZZZZ 99999 BEGINNER MAJOR DBADMIN unexpected json parse state.
