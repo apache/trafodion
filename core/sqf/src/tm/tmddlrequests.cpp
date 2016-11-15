@@ -40,7 +40,7 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
    char la_tbldesc[TM_MAX_DDLREQUEST_STRING];
    char la_tblname[TM_MAX_DDLREQUEST_STRING];
    char* str_key;
-   str_key = new char[TM_MAX_DDLREQUEST_STRING];
+   str_key = new char[pv_keyLength];
    char** la_keys;
    la_keys = new char *[TM_MAX_DDLREQUEST_STRING];
    int lv_error = FEOK;
@@ -51,9 +51,9 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
    }
    else {
       int lv_tbldesc_length = pp_env->GetArrayLength(pv_tableDescriptor);
-      memset(la_tbldesc, 0, lv_tbldesc_length);
+      memset(la_tbldesc, 0, lv_tbldesc_length < TM_MAX_DDLREQUEST_STRING ? lv_tbldesc_length : TM_MAX_DDLREQUEST_STRING );
       jbyte *lp_tbldesc = pp_env->GetByteArrayElements(pv_tableDescriptor, 0);
-      memcpy(la_tbldesc, lp_tbldesc, lv_tbldesc_length);
+      memcpy(la_tbldesc, lp_tbldesc, lv_tbldesc_length < TM_MAX_DDLREQUEST_STRING ? lv_tbldesc_length : TM_MAX_DDLREQUEST_STRING -1);
 
       memset(la_tblname, 0, lv_tblname_len < TM_MAX_DDLREQUEST_STRING ? lv_tblname_len : TM_MAX_DDLREQUEST_STRING);
       jbyte *lp_tblname = pp_env->GetByteArrayElements(pv_tblname, 0);
@@ -82,6 +82,8 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
       pp_env->ReleaseByteArrayElements(pv_tableDescriptor, lp_tbldesc, 0);
       pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
    }
+   delete  [] la_keys;
+   delete str_key;
    return lv_error;
 }
 
