@@ -7922,9 +7922,45 @@ ItemExpr * InverseOrder::removeInverseOrder()
 }
 
 // -----------------------------------------------------------------------
+// member functions for PatternMatchingFunction.
+// -----------------------------------------------------------------------
+PatternMatchingFunction::~PatternMatchingFunction() {}
+
+// -----------------------------------------------------------------------
 // member functions for Like
 // -----------------------------------------------------------------------
 Like::~Like() {}
+
+Regexp::~Regexp() {}
+
+
+ItemExpr * Regexp::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  ItemExpr *result = NULL;
+
+  if (derivedNode == NULL)
+    {
+      switch (getArity())
+	{
+	case 2:
+	  result = new (outHeap) Regexp(child(0), child(1),
+	    numberOfNonWildcardChars_,
+	    bytesInNonWildcardChars_,
+	    patternAStringLiteral_,
+	    oldDefaultSelForLikeWildCardUsed_,
+	    beginEndKeysApplied_);
+	  break;
+	default:
+	  CMPASSERT(0 == 1);
+	  break;
+	}
+    }
+  else
+    result = derivedNode;
+
+  return BuiltinFunction::copyTopNode(result, outHeap);
+
+} // Regexp::copyTopNode()
 
 ItemExpr * Like::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 {
@@ -7962,7 +7998,7 @@ ItemExpr * Like::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
 } // Like::copyTopNode()
 
-double Like::defaultSel()
+double PatternMatchingFunction::defaultSel()
 {
   // if begin and end keys have been applied to this expression, then this means
   // that the original LIKE predicate was something like a%b. This was transformed
@@ -7984,7 +8020,7 @@ double Like::defaultSel()
   return computeSelForNonWildcardChars(); ;
 }
 
-void Like::setNumberOfNonWildcardChars(const LikePatternString &pattern)
+void PatternMatchingFunction::setNumberOfNonWildcardChars(const LikePatternString &pattern)
 {
   Int32 count = 0;
   Int32 byteCnt = 0;
@@ -8010,7 +8046,7 @@ void Like::setNumberOfNonWildcardChars(const LikePatternString &pattern)
   bytesInNonWildcardChars_  = byteCnt ;
 }
 
-double Like::computeSelForNonWildcardChars()
+double PatternMatchingFunction::computeSelForNonWildcardChars()
 {
 
   // get the default selectivity for like predicate
@@ -8056,7 +8092,7 @@ double Like::computeSelForNonWildcardChars()
   return defaultSelectivity;
 }
 
-NABoolean Like::hasEquivalentProperties(ItemExpr * other)
+NABoolean PatternMatchingFunction::hasEquivalentProperties(ItemExpr * other)
 {
   if (other == NULL)
     return FALSE;
@@ -8075,7 +8111,7 @@ NABoolean Like::hasEquivalentProperties(ItemExpr * other)
 
 }
 
-void Like::unparse(NAString &result,
+void PatternMatchingFunction::unparse(NAString &result,
 		   PhaseEnum phase,
 		   UnparseFormatEnum form,
 		   TableDesc* tabId) const

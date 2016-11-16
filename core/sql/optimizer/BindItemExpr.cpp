@@ -6355,7 +6355,7 @@ ItemExpr *Cast::bindNode(BindWA *bindWA)
 // member functions for class Like
 // -----------------------------------------------------------------------
 
-ItemExpr *Like::bindNode(BindWA *bindWA)
+ItemExpr *PatternMatchingFunction::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound())
     return getValueId().getItemExpr();
@@ -6438,9 +6438,9 @@ ItemExpr *Like::bindNode(BindWA *bindWA)
 
   return applyBeginEndKeys(bindWA, boundExpr, bindWA->wHeap());
 
-} // Like::bindNode()
+} // PatternMatchingFunction::bindNode()
 
-NABoolean Like::beginEndKeysApplied(CollHeap *heap)
+NABoolean PatternMatchingFunction::beginEndKeysApplied(CollHeap *heap)
 {
   // Called by optimizer, long after binding (thus bindNode has already
   // called the common method applyBeginEndKeys and done the appropriate
@@ -6451,7 +6451,13 @@ NABoolean Like::beginEndKeysApplied(CollHeap *heap)
 
   return beginEndKeysApplied_;
 
-} // Like::beginEndKeysApplied()
+} // PatternMatchingFunction::beginEndKeysApplied()
+
+ItemExpr *Regexp::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
+				  CollHeap *heap)
+{
+  return boundExpr;
+}
 
 ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
 				  CollHeap *heap)

@@ -4344,7 +4344,7 @@ const NAType *InverseOrder::synthesizeType()
 // member functions for class Like
 // -----------------------------------------------------------------------
 
-const NAType *Like::synthesizeType()
+const NAType *PatternMatchingFunction::synthesizeType()
 {
   //
   // Type cast any params.

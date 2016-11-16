@@ -89,7 +89,9 @@ short BuiltinFunction::codeGen(Generator * generator)
 						       attr, space);
       }
     break;
-    
+    case ITM_REGEXP:
+//TODO
+    break; 
     case ITM_LIKE:
       {
 

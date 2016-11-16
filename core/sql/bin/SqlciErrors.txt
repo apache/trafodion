@@ -1378,6 +1378,7 @@ $1~String1 --------------------------------
 4384 ZZZZZ 99999 BEGINNER MINOR DBADMIN GROUP BY ROLLUP clause not allowed for this statement. Reason: $0~String0
 4390 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The OLAP History row size exceeds the limit of $0~Int0 bytes
 4391 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Paramaters and outer references in the PARTITION BY or ORDER BY clause of a window function are not supported.
+4392 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The REGEXP predicate only supports the default collating sequence.
 4400 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Internal error
 4401 ZZZZZ 99999 BEGINNER MAJOR LOGONLY No Privileged Segment
 4402 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Program file not authorized
