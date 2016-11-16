@@ -118,7 +118,7 @@
       <OutputFile>..\..\..\lib\x64\Release/trfoadm1.dll</OutputFile>
       <ModuleDefinitionFile>.\drvr35adm.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\x64\Release/trfoadm1.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>..\..\..\lib\x64\Release/trfoadm1.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>.\x64\Release/trfoadm1.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>

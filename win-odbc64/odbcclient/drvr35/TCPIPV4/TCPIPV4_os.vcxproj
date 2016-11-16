@@ -69,7 +69,7 @@
       <OutputFile>..\..\..\..\lib\x64\Release/traf_tcpipv40100.dll</OutputFile>
       <ModuleDefinitionFile>.\TCPIPV4.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\x64/Release/traf_tcpipv40100.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>..\..\..\..\lib\x64\Release/traf_tcpipv40100.pdb</ProgramDatabaseFile>
       <ImportLibrary>.\x64/Release/traf_tcpipv40100.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>

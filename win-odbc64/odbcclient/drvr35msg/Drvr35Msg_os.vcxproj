@@ -73,7 +73,7 @@
       <AdditionalDependencies>msvcrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\..\..\lib\x64\Release/traf_odbcDrvMsg_intl0100.dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\x64\Release/traf_odbcDrvMsg_intl0100.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>..\..\..\lib\x64\Release/traf_odbcDrvMsg_intl0100.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>.\x64\Release/traf_odbcDrvMsg_intl.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>

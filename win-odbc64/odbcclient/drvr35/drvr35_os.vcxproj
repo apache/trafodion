@@ -65,7 +65,7 @@
       <AdditionalLibraryDirectories>..\..\common;$(OpenSSLLibraryDir);$(ZlibLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>.\drvr35.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\x64\Release/trfodbc1.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>..\..\..\lib\x64\Release/trfodbc1.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>.\x64\Release/trfodbc1.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
