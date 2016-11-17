@@ -3871,6 +3871,9 @@ enum DefaultConstants
   CSE_CACHE_TEMP_QUERIES,
 
 
+  // mode for AES_ENCRYPT/AED_DECRYPT
+  BLOCK_ENCRYPTION_MODE,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

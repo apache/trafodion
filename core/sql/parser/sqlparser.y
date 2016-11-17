@@ -446,6 +446,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_ACCUMULATED
 %token <tokval> TOK_ADD_MONTHS
 %token <tokval> TOK_ADMIN               /* ANSI reserved word */
+%token <tokval> TOK_AES_ENCRYPT
+%token <tokval> TOK_AES_DECRYPT
 %token <tokval> TOK_AFTER
 %token <tokval> TOK_ALL
 %token <tokval> TOK_ALL_DDL
@@ -10177,6 +10179,26 @@ misc_function :
        | TOK_GROUPING_ID '(' value_expression_list ')'
              {
                $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_GROUPING_ID, $3);
+             }
+       | TOK_AES_ENCRYPT '(' value_expression ',' value_expression ',' value_expression ')'
+             {
+               $$ = new (PARSERHEAP()) BuiltinFunction(ITM_AES_ENCRYPT, CmpCommon::statementHeap(),
+                                                       3, $3, $5, $7);
+             }
+       | TOK_AES_ENCRYPT '(' value_expression ',' value_expression ')'
+             {
+               $$ = new (PARSERHEAP()) BuiltinFunction(ITM_AES_ENCRYPT, CmpCommon::statementHeap(),
+                                                       2, $3, $5);
+             }
+       | TOK_AES_DECRYPT '(' value_expression ',' value_expression ',' value_expression ')'
+             {
+               $$ = new (PARSERHEAP()) BuiltinFunction(ITM_AES_DECRYPT, CmpCommon::statementHeap(),
+                                                       3, $3, $5, $7);
+             }
+       | TOK_AES_DECRYPT '(' value_expression ',' value_expression ')'
+             {
+               $$ = new (PARSERHEAP()) BuiltinFunction(ITM_AES_DECRYPT, CmpCommon::statementHeap(),
+                                                       2, $3, $5);
              }
 
 hbase_column_create_list : '(' hbase_column_create_value ')'
@@ -33672,6 +33694,8 @@ nonreserved_word :      TOK_ABORT
 // QSTUFF
                       | TOK_VALIDATE
                       | TOK_RMS
+                      | TOK_AES_ENCRYPT
+                      | TOK_AES_DECRYPT
 
 // Formerly declared as FUNC_ in ulexer.cpp keywordTable.  Now defined
 // as nonreserved_func_word.  This works better and does not increase the

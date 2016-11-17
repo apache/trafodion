@@ -1532,6 +1532,13 @@ string getExeErrorCodeString(ExeErrorCode value)
 //-------------------------------------------------------------
 	case EXE_INTERNALLY_GENERATED_COMMAND: 			return FMT_EXE_INTERNALLY_GENERATED_COMMAND;
 
+//-------------------------------------------------------------
+// Error codes for AES encrpt/decrypt functions
+//-------------------------------------------------------------
+    case EXE_AES_INVALID_IV:                        return FMT_EXE_AES_INVALID_IV;
+    case EXE_ERR_PARAMCOUNT_FOR_FUNC:               return FMT_EXE_ERR_PARAMCOUNT_FOR_FUNC;
+    case EXE_OPTION_IGNORED:                        return FMT_EXE_OPTION_IGNORED;
+    case EXE_OPENSSL_ERROR:                         return FMT_EXE_OPENSSL_ERROR;
 
 //fast transport
 
