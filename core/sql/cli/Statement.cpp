@@ -2151,7 +2151,7 @@ RETCODE Statement::doQuerySimilarityCheck(TrafQuerySimilarityInfo * qsi,
             {
               ExpLOBinterfaceInit
                 (lobGlob, &heap_, context_,
-                 TRUE, si->hdfsHostName(), si->hdfsPort());
+                 FALSE, si->hdfsHostName(), si->hdfsPort());
               lobGlobInitialized = TRUE;
             }
 
