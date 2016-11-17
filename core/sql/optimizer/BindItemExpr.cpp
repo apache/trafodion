@@ -1252,6 +1252,7 @@ Int32 ItemExpr::shouldPushTranslateDown(CharInfo::CharSet chrset) const
      case ITM_LEFT:                  // b) counts characters
      case ITM_RIGHT:                 // b) counts characters
      case ITM_LIKE:                  // b) counts characters
+     case ITM_REGEXP:                  // b) counts characters
      case ITM_SUBSTR:                // b) counts characters
      case ITM_REPLACE:               // b) counts characters
      case ITM_INSERT_STR:            // b) counts characters

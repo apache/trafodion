@@ -7532,6 +7532,8 @@ const NAString BuiltinFunction::getText() const
     case ITM_LIKE:
     case ITM_LIKE_DOUBLEBYTE:
       return "like";
+    case ITM_REGEXP:
+      return "regexp";
     case ITM_LOWER:
     case ITM_LOWER_UNICODE:
       return "lower";

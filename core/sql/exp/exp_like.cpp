@@ -42,11 +42,14 @@
 
 
 #include <stddef.h>
+#include <sys/types.h>
+#include <regex.h>
 #include "exp_clause_derived.h"
 #include "exp_like.h"
 #include "exp_function.h"
 #include "unicode_char_set.h"
 #include "nchar_mp.h"
+
 
 
 ///////////////////////////////////////////////////
@@ -457,6 +460,27 @@ NABoolean LikePattern::matches
 }
 
 ///////////////////////////////////////////////////
+// class ExRegexpClauseBase
+///////////////////////////////////////////////////
+ex_expr::exp_return_type 
+ExRegexpClauseBase::processNulls(char *op_data[], CollHeap *heap,
+	     ComDiagsArea **diagsArea
+	    )
+{
+  //
+  // If an operand is missing(its a null value), set the result to UNKNOWN.
+  //
+  for (short i = 1; i < getNumOperands(); i++) {
+    if (getOperand(i)->getNullFlag() && (NOT op_data[i])) {
+      *(Lng32*)op_data[2 * MAX_OPERANDS] = -1;
+      return ex_expr::EXPR_NULL;
+    }
+  }
+
+  return ex_expr::EXPR_OK;
+}
+
+///////////////////////////////////////////////////
 // class ex_like_clause_base
 ///////////////////////////////////////////////////
 ex_expr::exp_return_type 
@@ -477,6 +501,38 @@ ex_like_clause_base::processNulls(char *op_data[], CollHeap *heap,
   return ex_expr::EXPR_OK;
 }
 
+
+ex_expr::exp_return_type ExRegexpClauseChar::eval(char *op_data[],
+					      CollHeap* exHeap,
+					      ComDiagsArea** diagsArea)
+{
+//comehere
+  Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+  Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
+  regex_t reg;
+  regmatch_t pm[10];
+  const size_t nmatch = 10;
+  int cflags, z;
+  cflags = REG_EXTENDED|REG_NEWLINE;
+  char * pattern;
+  pattern = new (exHeap) char[len2];
+  char *srcStr= new (exHeap) char[len1];
+  memcpy(pattern, op_data[2], len2);
+  memcpy(srcStr, op_data[1], len1);
+  z = regcomp(&reg, pattern, cflags);
+  if (z != 0){
+    //ERROR
+    return ex_expr::EXPR_ERROR;
+  }
+
+  NABoolean matchFlag = true;
+  z = regexec(&reg,srcStr , nmatch, pm, 0);
+  if (z == REG_NOMATCH) 
+    matchFlag = false;
+   
+  *(Lng32 *)op_data[0] = (Lng32)matchFlag;
+  return ex_expr::EXPR_OK;
+}
 ex_expr::exp_return_type ex_like_clause_char::eval(char *op_data[],
 					      CollHeap* exHeap,
 					      ComDiagsArea** diagsArea)

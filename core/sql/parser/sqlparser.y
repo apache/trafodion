@@ -19064,7 +19064,9 @@ like_predicate : value_expression not_like value_expression
               | value_expression TOK_REGEXP value_expression
                                 {
                                   //TODO
-                                  YYERROR;
+                                  $$ = new (PARSERHEAP()) Regexp($1,$3);
+				  if ($2 == TOK_NOT)
+				    $$ = new (PARSERHEAP()) UnLogic(ITM_NOT,$$);
                                 } 
 
 /* type item */
