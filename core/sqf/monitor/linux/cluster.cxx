@@ -4326,7 +4326,8 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
     tag = 0; // make compiler happy
     struct timespec currentTime;
     // Set to twice the ZClient session timeout
-    static int sessionTimeout = (ZClient->GetSessionTimeout() * 2);
+    static int sessionTimeout = ZClientEnabled 
+                                ? (ZClient->GetSessionTimeout() * 2) : 120;
 
     int nsent = 0, nrecv = 0;
     for ( int iPeer = 0; iPeer < cfgPNodes_; iPeer++ )
