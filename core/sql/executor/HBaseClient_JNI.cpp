@@ -295,10 +295,8 @@ HBC_RetCode HBaseClient_JNI::initConnection(const char* zkServers, const char* z
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::initConnection(%s, %s) called.", zkServers, zkPort);
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HBC_ERROR_INIT_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
   jstring js_zkServers = jenv_->NewStringUTF(zkServers);
   if (js_zkServers == NULL) 
@@ -315,7 +313,6 @@ HBC_RetCode HBaseClient_JNI::initConnection(const char* zkServers, const char* z
     return HBC_ERROR_INIT_PARAM;
   }
   tsRecentJMFromJNI = JavaMethods_[JM_INIT].jm_full_name;
-  // boolean init(java.lang.String, java.lang.String); 
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_INIT].methodID, js_zkServers, js_zkPort);
 
   if (jenv_->ExceptionCheck())
@@ -351,15 +348,8 @@ HTableClient_JNI* HBaseClient_JNI::getHTableClient(NAHeap *heap, const char* tab
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GET_HTC_EXCEPTION));
     return NULL;
   }
-
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return NULL;
-
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return NULL;
-  }
+  if (initJNIEnv() != JOI_OK)
+     return NULL;
   jstring js_tblName = jenv_->NewStringUTF(tableName);
   if (js_tblName == NULL) 
   {
@@ -382,8 +372,6 @@ HTableClient_JNI* HBaseClient_JNI::getHTableClient(NAHeap *heap, const char* tab
   jobject j_htc = jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_HTC].methodID, 
 	(jlong)htc, js_tblName, (jboolean)useTRex);
 
-  jenv_->DeleteLocalRef(js_tblName); 
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
@@ -402,7 +390,6 @@ HTableClient_JNI* HBaseClient_JNI::getHTableClient(NAHeap *heap, const char* tab
     return NULL;
   }
   htc->setJavaObject(j_htc);
-  jenv_->DeleteLocalRef(j_htc);
   if (htc->init() != HTC_OK)
   {
      jenv_->PopLocalFrame(NULL);
@@ -422,17 +409,10 @@ HBC_RetCode HBaseClient_JNI::releaseHTableClient(HTableClient_JNI* htc)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::releaseHTableClient() called.");
 
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
+
   jobject j_htc = htc->getJavaObject();
-
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
-
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HBC_ERROR_REL_HTC_EXCEPTION;
-  }
-    
   if (j_htc != (jobject)-1) {
       tsRecentJMFromJNI = JavaMethods_[JM_REL_HTC].jm_full_name;
       jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_REL_HTC].methodID, j_htc);
@@ -460,15 +440,9 @@ HBulkLoadClient_JNI* HBaseClient_JNI::getHBulkLoadClient(NAHeap *heap)
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GET_HBLC_EXCEPTION));
     return NULL;
   }
-
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return NULL;
-
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
+  if (initJNIEnv() != JOI_OK)
      return NULL;
-  }
+
   tsRecentJMFromJNI = JavaMethods_[JM_GET_HBLC].jm_full_name;
   jobject j_hblc = jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_HBLC].methodID);
 
@@ -487,7 +461,6 @@ HBulkLoadClient_JNI* HBaseClient_JNI::getHBulkLoadClient(NAHeap *heap)
     return NULL;
   }
   HBulkLoadClient_JNI *hblc = new (heap) HBulkLoadClient_JNI(heap, j_hblc);
-  jenv_->DeleteLocalRef(j_hblc);
   if ( hblc->init()!= HBLC_OK)
   {
      NADELETE(hblc, HBulkLoadClient_JNI, heap);
@@ -507,14 +480,9 @@ HBC_RetCode HBaseClient_JNI::releaseHBulkLoadClient(HBulkLoadClient_JNI* hblc)
 
   jobject j_hblc = hblc->getJavaObject();
 
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_REL_HBLC_EXCEPTION;
-  }
   tsRecentJMFromJNI = JavaMethods_[JM_REL_HBLC].jm_full_name;
   jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_REL_HBLC].methodID, j_hblc);
 
@@ -537,14 +505,9 @@ HBC_RetCode HBaseClient_JNI::releaseHBulkLoadClient(HBulkLoadClient_JNI* hblc)
 HBC_RetCode HBaseClient_JNI::create(const char* fileName, HBASE_NAMELIST& colFamilies, NABoolean isMVCC)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::create(%s) called.", fileName);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_CREATE_PARAM;
-  }
   jstring js_fileName = jenv_->NewStringUTF(fileName);
   if (js_fileName == NULL) 
   {
@@ -558,18 +521,14 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName, HBASE_NAMELIST& colFam
      getExceptionDetails();
      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
      logError(CAT_SQL_HBASE, "HBaseClient_JNI::create()", getLastError());
-     jenv_->DeleteLocalRef(js_fileName); 
      jenv_->PopLocalFrame(NULL);
      return HBC_ERROR_CREATE_PARAM;
   }
     
-  tsRecentJMFromJNI = JavaMethods_[JM_CREATE].jm_full_name;
   jboolean j_isMVCC = isMVCC;
+  tsRecentJMFromJNI = JavaMethods_[JM_CREATE].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
         JavaMethods_[JM_CREATE].methodID, js_fileName, j_fams, j_isMVCC);
-
-  jenv_->DeleteLocalRef(js_fileName); 
-  jenv_->DeleteLocalRef(j_fams);
 
   if (jenv_->ExceptionCheck())
   {
@@ -602,14 +561,9 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
                                     NABoolean isMVCC)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::create(%s) called.", fileName);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_CREATE_PARAM;
-  }
   jstring js_fileName = jenv_->NewStringUTF(fileName);
   if (js_fileName == NULL) 
   {
@@ -624,7 +578,6 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
      getExceptionDetails();
      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
      logError(CAT_SQL_HBASE, "HBaseClient_JNI::create()", getLastError());
-     jenv_->DeleteLocalRef(js_fileName); 
      jenv_->PopLocalFrame(NULL);
      return HBC_ERROR_CREATE_PARAM;
   }
@@ -638,8 +591,6 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
         getExceptionDetails();
         logError(CAT_SQL_HBASE, __FILE__, __LINE__);
         logError(CAT_SQL_HBASE, "HBaseClient_JNI::create()", getLastError());
-        jenv_->DeleteLocalRef(js_fileName); 
-        jenv_->DeleteLocalRef(j_opts);
         jenv_->PopLocalFrame(NULL);
         return HBC_ERROR_CREATE_PARAM;
      }
@@ -648,15 +599,10 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
   jint j_numSplits = numSplits;
   jint j_keyLength = keyLength;
 
-  tsRecentJMFromJNI = JavaMethods_[JM_CREATEK].jm_full_name;
   jboolean j_isMVCC = isMVCC;
+  tsRecentJMFromJNI = JavaMethods_[JM_CREATEK].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
           JavaMethods_[JM_CREATEK].methodID, js_fileName, j_opts, j_keys, j_tid, j_numSplits, j_keyLength, j_isMVCC);
-
-  jenv_->DeleteLocalRef(js_fileName); 
-  jenv_->DeleteLocalRef(j_opts);
-  if (j_keys != NULL)
-     jenv_->DeleteLocalRef(j_keys);
 
   if (jenv_->ExceptionCheck())
   {
@@ -685,14 +631,9 @@ HBC_RetCode HBaseClient_JNI::alter(const char* fileName,
                                    Int64 transID)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::alter(%s) called.", fileName);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_ALTER_PARAM;
-  }
   jstring js_fileName = jenv_->NewStringUTF(fileName);
   if (js_fileName == NULL) 
   {
@@ -707,7 +648,6 @@ HBC_RetCode HBaseClient_JNI::alter(const char* fileName,
      getExceptionDetails();
      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
      logError(CAT_SQL_HBASE, "HBaseClient_JNI::alter()", getLastError());
-     jenv_->DeleteLocalRef(js_fileName); 
      jenv_->PopLocalFrame(NULL);
      return HBC_ERROR_ALTER_PARAM;
   }
@@ -717,9 +657,6 @@ HBC_RetCode HBaseClient_JNI::alter(const char* fileName,
   tsRecentJMFromJNI = JavaMethods_[JM_ALTER].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
           JavaMethods_[JM_ALTER].methodID, js_fileName, j_opts, j_tid);
-
-  jenv_->DeleteLocalRef(js_fileName); 
-  jenv_->DeleteLocalRef(j_opts);
 
   if (jenv_->ExceptionCheck())
   {
@@ -961,10 +898,9 @@ HBC_RetCode HBaseClient_JNI::drop(const char* fileName, bool async, long transID
 HBC_RetCode HBaseClient_JNI::registerTruncateOnAbort(const char* fileName, Int64 transID)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::drop(%s) called.", fileName);
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_DROP_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
+
   jstring js_fileName = jenv_->NewStringUTF(fileName);
   if (js_fileName == NULL)
   {
@@ -977,8 +913,6 @@ HBC_RetCode HBaseClient_JNI::registerTruncateOnAbort(const char* fileName, Int64
 
   tsRecentJMFromJNI = JavaMethods_[JM_TRUNCABORT].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_TRUNCABORT].methodID, js_fileName, j_tid);
-
-  jenv_->DeleteLocalRef(js_fileName);
 
   if (jenv_->ExceptionCheck())
   {
@@ -998,10 +932,9 @@ HBC_RetCode HBaseClient_JNI::registerTruncateOnAbort(const char* fileName, Int64
 HBC_RetCode HBaseClient_JNI::drop(const char* fileName, JNIEnv* jenv, Int64 transID)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::drop(%s) called.", fileName);
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_DROP_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
+
   jstring js_fileName = jenv->NewStringUTF(fileName);
   if (js_fileName == NULL) 
   {
@@ -1014,8 +947,6 @@ HBC_RetCode HBaseClient_JNI::drop(const char* fileName, JNIEnv* jenv, Int64 tran
   // boolean drop(java.lang.String);
   tsRecentJMFromJNI = JavaMethods_[JM_DROP].jm_full_name;
   jboolean jresult = jenv->CallBooleanMethod(javaObj_, JavaMethods_[JM_DROP].methodID, js_fileName, j_tid);
-
-  jenv->DeleteLocalRef(js_fileName);  
 
   if (jenv->ExceptionCheck())
   {
@@ -1037,18 +968,16 @@ HBC_RetCode HBaseClient_JNI::dropAll(const char* pattern, bool async, Int64 tran
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::dropAll(%s) called.", pattern);
 
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
+
   if (async) {
     // not supported yet.
-    return HBC_ERROR_DROP_EXCEPTION;
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_DROP_PARAM));
+    jenv_->PopLocalFrame(NULL);
+    return HBC_ERROR_DROP_PARAM;
   }
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_DROP_EXCEPTION;
-  }
   jstring js_pattern = jenv_->NewStringUTF(pattern);
   if (js_pattern == NULL) 
   {
@@ -1062,8 +991,6 @@ HBC_RetCode HBaseClient_JNI::dropAll(const char* pattern, bool async, Int64 tran
   // boolean drop(java.lang.String);
   tsRecentJMFromJNI = JavaMethods_[JM_DROP_ALL].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DROP_ALL].methodID, js_pattern, j_tid);
-
-  jenv_->DeleteLocalRef(js_pattern);  
 
   if (jenv_->ExceptionCheck())
   {
@@ -1085,14 +1012,9 @@ NAArray<HbaseStr>* HBaseClient_JNI::listAll(NAHeap *heap, const char* pattern)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::listAll(%s) called.", pattern);
 
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-       return NULL;
-
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
+  if (initJNIEnv() != JOI_OK)
      return NULL;
-  }
+
   jstring js_pattern = jenv_->NewStringUTF(pattern);
   if (js_pattern == NULL) 
   {
@@ -1104,8 +1026,6 @@ NAArray<HbaseStr>* HBaseClient_JNI::listAll(NAHeap *heap, const char* pattern)
   tsRecentJMFromJNI = JavaMethods_[JM_LIST_ALL].jm_full_name;
   jarray j_hbaseTables = 
     (jarray)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_LIST_ALL].methodID, js_pattern);
-
-  jenv_->DeleteLocalRef(js_pattern);  
 
   if (jenv_->ExceptionCheck())
   {
@@ -1134,14 +1054,8 @@ Int32 HBaseClient_JNI::getRegionStatsEntries()
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::getRegionStatsEntries() called.");
 
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-       return NULL;
-
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
+  if (initJNIEnv() != JOI_OK)
      return NULL;
-  }
 
   tsRecentJMFromJNI = JavaMethods_[JM_GET_REGION_STATS_ENTRIES].jm_full_name;
   jint numEntries = 
@@ -1168,14 +1082,9 @@ NAArray<HbaseStr>* HBaseClient_JNI::getRegionStats(NAHeap *heap, const char* tbl
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::getRegionStats(%s) called.", tblName);
 
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-       return NULL;
-
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
+  if (initJNIEnv() != JOI_OK)
      return NULL;
-  }
+
   jstring js_tblName = NULL;
   if (tblName) {
     js_tblName = jenv_->NewStringUTF(tblName);
@@ -1190,8 +1099,6 @@ NAArray<HbaseStr>* HBaseClient_JNI::getRegionStats(NAHeap *heap, const char* tbl
   tsRecentJMFromJNI = JavaMethods_[JM_GET_REGION_STATS].jm_full_name;
   jarray j_regionInfo = 
     (jarray)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_REGION_STATS].methodID, js_tblName);
-
-  jenv_->DeleteLocalRef(js_tblName);  
 
   if (jenv_->ExceptionCheck())
   {
@@ -1225,14 +1132,10 @@ HBC_RetCode HBaseClient_JNI::copy(const char* srcTblName,
                                   NABoolean force)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::copy(%s,%s) called.", srcTblName, tgtTblName);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_DROP_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
+
   jstring js_srcTblName = jenv_->NewStringUTF(srcTblName);
   if (js_srcTblName == NULL) 
   {
@@ -1254,10 +1157,6 @@ HBC_RetCode HBaseClient_JNI::copy(const char* srcTblName,
   jboolean jresult = jenv_->CallBooleanMethod(
        javaObj_, JavaMethods_[JM_COPY].methodID, 
        js_srcTblName, js_tgtTblName, j_force);
-
-  jenv_->DeleteLocalRef(js_srcTblName);  
-
-  jenv_->DeleteLocalRef(js_tgtTblName);  
 
   if (jenv_->ExceptionCheck())
   {
@@ -1284,14 +1183,9 @@ HBC_RetCode HBaseClient_JNI::copy(const char* srcTblName,
 HBC_RetCode HBaseClient_JNI::exists(const char* fileName, Int64 transID)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::exists(%s) called.", fileName);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_EXISTS_EXCEPTION;
-  }
   jstring js_fileName = jenv_->NewStringUTF(fileName);
   if (js_fileName == NULL) 
   {
@@ -1305,8 +1199,6 @@ HBC_RetCode HBaseClient_JNI::exists(const char* fileName, Int64 transID)
   // boolean exists(java.lang.String);
   tsRecentJMFromJNI = JavaMethods_[JM_EXISTS].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_EXISTS].methodID, js_fileName, j_tid);
-
-  jenv_->DeleteLocalRef(js_fileName);  
 
   if (jenv_->ExceptionCheck())
   {
@@ -1332,14 +1224,9 @@ HBC_RetCode HBaseClient_JNI::exists(const char* fileName, Int64 transID)
 HBC_RetCode HBaseClient_JNI::grant(const Text& user, const Text& tblName, const TextVec& actions)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::grant(%s, %s, %s) called.", user.data(), tblName.data(), actions.data());
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_GRANT_EXCEPTION;
-  }
   int len = user.size();
   jbyteArray jba_user = jenv_->NewByteArray(len);
   if (jba_user == NULL) 
@@ -1355,7 +1242,6 @@ HBC_RetCode HBaseClient_JNI::grant(const Text& user, const Text& tblName, const 
   if (jba_tblName == NULL) 
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GRANT_PARAM));
-    jenv_->DeleteLocalRef(jba_user);  
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_GRANT_PARAM;
   }
@@ -1371,8 +1257,6 @@ HBC_RetCode HBaseClient_JNI::grant(const Text& user, const Text& tblName, const 
        getExceptionDetails();
        logError(CAT_SQL_HBASE, __FILE__, __LINE__);
        logError(CAT_SQL_HBASE, "HBaseClient_JNI::grant()", getLastError());
-       jenv_->DeleteLocalRef(jba_user);  
-       jenv_->DeleteLocalRef(jba_tblName);  
        jenv_->PopLocalFrame(NULL);
        return HBC_ERROR_GRANT_PARAM;
     }
@@ -1380,12 +1264,6 @@ HBC_RetCode HBaseClient_JNI::grant(const Text& user, const Text& tblName, const 
   tsRecentJMFromJNI = JavaMethods_[JM_GRANT].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
        JavaMethods_[JM_GRANT].methodID, jba_user, jba_tblName, j_actionCodes);
-
-  jenv_->DeleteLocalRef(jba_user);  
-  jenv_->DeleteLocalRef(jba_tblName);  
-  if (j_actionCodes != NULL)
-     jenv_->DeleteLocalRef(j_actionCodes);  
-
 
   if (jenv_->ExceptionCheck())
   {
@@ -1416,14 +1294,9 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
                                               Int64& rowCount)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::estimateRowCount(%s) called.", tblName);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_ROWCOUNT_EST_EXCEPTION;
-  }
   jstring js_tblName = jenv_->NewStringUTF(tblName);
   if (js_tblName == NULL)
   {
@@ -1444,8 +1317,6 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
   rowCount = *arrayElems;
   if (isCopy == JNI_TRUE)
     jenv_->ReleaseLongArrayElements(jRowCount, arrayElems, JNI_ABORT);
-
-  jenv_->DeleteLocalRef(js_tblName);
 
   if (jenv_->ExceptionCheck())
   {
@@ -1469,14 +1340,9 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
 HBC_RetCode HBaseClient_JNI::getLatestSnapshot(const char * tblName, char *& snapshotName, NAHeap * heap)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::getLatestSnapshot(%s) called.", tblName);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_GET_LATEST_SNP_EXCEPTION;
-  }
   jstring js_tblName = jenv_->NewStringUTF(tblName);
   if (js_tblName == NULL)
   {
@@ -1486,8 +1352,6 @@ HBC_RetCode HBaseClient_JNI::getLatestSnapshot(const char * tblName, char *& sna
   }
   tsRecentJMFromJNI = JavaMethods_[JM_GET_LATEST_SNP].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_LATEST_SNP].methodID,js_tblName);
-  if (js_tblName != NULL)
-    jenv_->DeleteLocalRef(js_tblName);
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
@@ -1506,7 +1370,6 @@ HBC_RetCode HBaseClient_JNI::getLatestSnapshot(const char * tblName, char *& sna
     snapshotName = new (heap) char[strlen(tmp)+1];
     strcpy(snapshotName, tmp);
     jenv_->ReleaseStringUTFChars(jresult, tmp);
-    jenv_->DeleteLocalRef(jresult);
   }
   jenv_->PopLocalFrame(NULL);
   return HBC_OK;  
@@ -1514,14 +1377,9 @@ HBC_RetCode HBaseClient_JNI::getLatestSnapshot(const char * tblName, char *& sna
 HBC_RetCode HBaseClient_JNI::cleanSnpTmpLocation(const char * path)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::cleanSnpTmpLocation(%s) called.", path);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_CLEAN_SNP_TMP_LOC_PARAM;
-  }
   jstring js_path = jenv_->NewStringUTF(path);
   if (js_path == NULL)
   {
@@ -1532,9 +1390,6 @@ HBC_RetCode HBaseClient_JNI::cleanSnpTmpLocation(const char * path)
 
   tsRecentJMFromJNI = JavaMethods_[JM_CLEAN_SNP_TMP_LOC].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CLEAN_SNP_TMP_LOC].methodID,js_path);
-
-  if (js_path != NULL)
-    jenv_->DeleteLocalRef(js_path);
 
   if (jenv_->ExceptionCheck())
   {
@@ -1551,14 +1406,9 @@ HBC_RetCode HBaseClient_JNI::cleanSnpTmpLocation(const char * path)
 HBC_RetCode HBaseClient_JNI::setArchivePermissions(const char * tbl)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::setArchivePermissions(%s) called.", tbl);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_SET_ARC_PERMS_EXCEPTION;
-  }
   jstring js_tbl = jenv_->NewStringUTF(tbl);
   if (js_tbl == NULL)
   {
@@ -1569,10 +1419,6 @@ HBC_RetCode HBaseClient_JNI::setArchivePermissions(const char * tbl)
 
   tsRecentJMFromJNI = JavaMethods_[JM_SET_ARC_PERMS].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_SET_ARC_PERMS].methodID,js_tbl);
-
-  if (js_tbl != NULL)
-    jenv_->DeleteLocalRef(js_tbl);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
@@ -1588,16 +1434,11 @@ HBC_RetCode HBaseClient_JNI::setArchivePermissions(const char * tbl)
 
 HBC_RetCode HBaseClient_JNI::getBlockCacheFraction(float& frac)
 {
-   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, 
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, 
                  "HBaseClient_JNI::getBlockCacheFraction() called.");
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_GET_CACHE_FRAC_EXCEPTION;
-  }
   tsRecentJMFromJNI = JavaMethods_[JM_GET_CAC_FRC].jm_full_name;
   jfloat jresult = jenv_->CallFloatMethod(javaObj_, 
                                           JavaMethods_[JM_GET_CAC_FRC].methodID);
@@ -1703,10 +1544,9 @@ HBLC_RetCode HBulkLoadClient_JNI::initHFileParams(
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBulkLoadClient_JNI::initHFileParams(%s, %s, %s, %ld, %s, %s) called.",
                 hFileLoc.data(), hfileName.data(), tblName.val, maxHFileSize, sampleTblName, hiveDDL);
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBLC_ERROR_CREATE_HFILE_PARAM;
-  }
+  if (initJNIEnv() != JOI_OK)
+     return HBLC_ERROR_INIT_PARAM;
+
   jstring js_hFileLoc = jenv_->NewStringUTF(hFileLoc.c_str());
    if (js_hFileLoc == NULL)
    {
@@ -1757,11 +1597,6 @@ HBLC_RetCode HBulkLoadClient_JNI::initHFileParams(
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_INIT_HFILE_PARAMS].methodID, js_hFileLoc,
                                               js_hfileName, j_maxSize, js_tabName, js_sampleTblName, js_hiveDDL);
 
-  jenv_->DeleteLocalRef(js_hFileLoc);
-  jenv_->DeleteLocalRef(js_hfileName);
-  jenv_->DeleteLocalRef(js_sampleTblName);
-  jenv_->DeleteLocalRef(js_hiveDDL);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
@@ -1785,11 +1620,9 @@ HBLC_RetCode HBulkLoadClient_JNI::addToHFile( short rowIDLen, HbaseStr &rowIDs,
             HbaseStr &rows, ExHbaseAccessStats *hbs)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBulkLoadClient_JNI::addToHFile called.");
+  if (initJNIEnv() != JOI_OK)
+     return HBLC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBLC_ERROR_ADD_TO_HFILE_EXCEPTION;
-  }
   jobject jRowIDs = jenv_->NewDirectByteBuffer(rowIDs.val, rowIDs.len);
   if (jRowIDs == NULL)
   {
@@ -1818,9 +1651,6 @@ HBLC_RetCode HBulkLoadClient_JNI::addToHFile( short rowIDLen, HbaseStr &rowIDs,
     hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
     hbs->incHbaseCalls();
   }
-  jenv_->DeleteLocalRef(jRowIDs);
-  jenv_->DeleteLocalRef(jRows);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
@@ -1844,11 +1674,9 @@ HBLC_RetCode HBulkLoadClient_JNI::closeHFile(
                         const HbaseStr &tblName)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBulkLoadClient_JNI::closeHFile(%s) called.", tblName.val);
+  if (initJNIEnv() != JOI_OK)
+     return HBLC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBLC_ERROR_CLOSE_HFILE_EXCEPTION;
-  }
   tsRecentJMFromJNI = JavaMethods_[JM_CLOSE_HFILE].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CLOSE_HFILE].methodID);
 
@@ -1880,11 +1708,9 @@ HBLC_RetCode HBulkLoadClient_JNI::doBulkLoad(
                              NABoolean snapshot)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBulkLoadClient_JNI::doBulkLoad(%s, %s, %s) called.", tblName.val, prepLocation.data(), tableName.data());
+  if (initJNIEnv() != JOI_OK)
+     return HBLC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBLC_ERROR_DO_BULKLOAD_EXCEPTION;
-  }
   jstring js_PrepLocation = jenv_->NewStringUTF(prepLocation.c_str());
    if (js_PrepLocation == NULL)
    {
@@ -1915,9 +1741,6 @@ HBLC_RetCode HBulkLoadClient_JNI::doBulkLoad(
   tsRecentJMFromJNI = JavaMethods_[JM_DO_BULK_LOAD].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DO_BULK_LOAD].methodID, js_PrepLocation, js_TableName, j_quasiSecure, j_snapshot);
 
-  jenv_->DeleteLocalRef(js_PrepLocation);
-  jenv_->DeleteLocalRef(js_TableName);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
@@ -1942,11 +1765,8 @@ HBLC_RetCode HBulkLoadClient_JNI::bulkLoadCleanup(
                              const Text& location)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBulkLoadClient_JNI::bulkLoadCleanup(%s, %s) called.", tblName.val, location.data());
-
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBLC_ERROR_BULKLOAD_CLEANUP_PARAM;
-  }
+  if (initJNIEnv() != JOI_OK)
+     return HBLC_ERROR_INIT_PARAM;
 
   jstring js_location = jenv_->NewStringUTF(location.c_str());
    if (js_location == NULL)
@@ -1967,9 +1787,6 @@ HBLC_RetCode HBulkLoadClient_JNI::bulkLoadCleanup(
   }
   tsRecentJMFromJNI = JavaMethods_[JM_BULK_LOAD_CLEANUP].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_BULK_LOAD_CLEANUP].methodID, js_location);
-
-  jenv_->DeleteLocalRef(js_location);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
@@ -2008,9 +1825,6 @@ HVC_RetCode  HiveClient_JNI::hdfsCreateFile(const char* path)
      return HVC_ERROR_HDFS_CREATE_PARAM;
    }
    jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CREATE_FILE].methodID, js_path);
-
-   jenv_->DeleteLocalRef(js_path);
-
    if (jenv_->ExceptionCheck())
    {
      getExceptionDetails();
@@ -2055,8 +1869,6 @@ HVC_RetCode  HiveClient_JNI::hdfsCreateFile(const char* path)
    // String write(java.lang.String);
    jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE].methodID,jbArray , j_len);
 
-   jenv_->DeleteLocalRef(jbArray);
-
    if (jenv_->ExceptionCheck())
    {
      getExceptionDetails();
@@ -2082,10 +1894,8 @@ HVC_RetCode  HiveClient_JNI::hdfsCreateFile(const char* path)
 HVC_RetCode  HiveClient_JNI::hdfsClose()
 {
    QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::close() called.");
-   if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-      getExceptionDetails();
-      return HVC_ERROR_HDFS_CLOSE_EXCEPTION;
-   }
+   if (initJNIEnv() != JOI_OK)
+      return HVC_ERROR_INIT_PARAM;
    if (javaObj_ == NULL)
    {
      // Maybe there was an initialization error.
@@ -2094,6 +1904,7 @@ HVC_RetCode  HiveClient_JNI::hdfsClose()
    }
 
    // String close();
+   tsRecentJMFromJNI = JavaMethods_[JM_HDFS_CLOSE].jm_full_name;
    jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CLOSE].methodID);
 
    if (jenv_->ExceptionCheck())
@@ -2121,11 +1932,9 @@ HVC_RetCode  HiveClient_JNI::hdfsClose()
  HBC_RetCode  HBaseClient_JNI::incrCounter( const char * tabName, const char * rowId, const char * famName, const char * qualName , Int64 incr, Int64 & count)
  {
    QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::incrCounter().");
+   if (initJNIEnv() != JOI_OK)
+      return HBC_ERROR_INIT_PARAM;
 
-   if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-      getExceptionDetails();
-      return HBC_ERROR_INCR_COUNTER_PARAM;
-   }
    jstring js_tabName = jenv_->NewStringUTF(tabName);
    if (js_tabName == NULL) {
      jenv_->PopLocalFrame(NULL);
@@ -2151,14 +1960,10 @@ HVC_RetCode  HiveClient_JNI::hdfsClose()
 
    jlong j_incr = incr;
 
+   tsRecentJMFromJNI = JavaMethods_[JM_INCR_COUNTER].jm_full_name;
    jlong jcount = jenv_->CallLongMethod(javaObj_, JavaMethods_[JM_INCR_COUNTER].methodID, js_tabName, js_rowId, js_famName, js_qualName, j_incr);
 
    count = jcount;
-
-   jenv_->DeleteLocalRef(js_tabName);
-   jenv_->DeleteLocalRef(js_rowId);
-   jenv_->DeleteLocalRef(js_famName);
-   jenv_->DeleteLocalRef(js_qualName);
    if (jenv_->ExceptionCheck())
    {
      getExceptionDetails();
@@ -2178,11 +1983,9 @@ HVC_RetCode  HiveClient_JNI::hdfsClose()
  HBC_RetCode  HBaseClient_JNI::createCounterTable( const char * tabName,  const char * famName)
  {
    QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::createCounterTable().");
+   if (initJNIEnv() != JOI_OK)
+      return HBC_ERROR_INIT_PARAM;
 
-   if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-      getExceptionDetails();
-      return HBC_ERROR_CREATE_COUNTER_EXCEPTION;
-   }
    jstring js_tabName = jenv_->NewStringUTF(tabName);
    if (js_tabName == NULL) {
      jenv_->PopLocalFrame(NULL);
@@ -2193,10 +1996,9 @@ HVC_RetCode  HiveClient_JNI::hdfsClose()
      jenv_->PopLocalFrame(NULL);
      return HBC_ERROR_INCR_COUNTER_PARAM;
    }
+   tsRecentJMFromJNI = JavaMethods_[JM_CREATE_COUNTER_TABLE].jm_full_name;
    jboolean jresult = jenv_->CallLongMethod(javaObj_, JavaMethods_[JM_CREATE_COUNTER_TABLE].methodID, js_tabName, js_famName);
 
-   jenv_->DeleteLocalRef(js_tabName);
-   jenv_->DeleteLocalRef(js_famName);
    if (jenv_->ExceptionCheck())
    {
      getExceptionDetails();
@@ -2226,14 +2028,9 @@ HBulkLoadClient_JNI::~HBulkLoadClient_JNI()
 HBC_RetCode HBaseClient_JNI::revoke(const Text& user, const Text& tblName, const TextVec& actions)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::revoke(%s, %s, %s) called.", user.data(), tblName.data(), actions.data());
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_REVOKE_EXCEPTION;
-  }
   int len = user.size();
   jbyteArray jba_user = jenv_->NewByteArray(len);
   if (jba_user == NULL) 
@@ -2249,7 +2046,6 @@ HBC_RetCode HBaseClient_JNI::revoke(const Text& user, const Text& tblName, const
   if (jba_tblName == NULL) 
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_REVOKE_PARAM));
-    jenv_->DeleteLocalRef(jba_user);  
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_REVOKE_PARAM;
   }
@@ -2265,8 +2061,6 @@ HBC_RetCode HBaseClient_JNI::revoke(const Text& user, const Text& tblName, const
        getExceptionDetails();
        logError(CAT_SQL_HBASE, __FILE__, __LINE__);
        logError(CAT_SQL_HBASE, "HBaseClient_JNI::revoke()", getLastError());
-       jenv_->DeleteLocalRef(jba_user);  
-       jenv_->DeleteLocalRef(jba_tblName);  
        jenv_->PopLocalFrame(NULL);
        return HBC_ERROR_REVOKE_PARAM;
     }
@@ -2274,11 +2068,6 @@ HBC_RetCode HBaseClient_JNI::revoke(const Text& user, const Text& tblName, const
   tsRecentJMFromJNI = JavaMethods_[JM_REVOKE].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
        JavaMethods_[JM_REVOKE].methodID, jba_user, jba_tblName, j_actionCodes);
-
-  jenv_->DeleteLocalRef(jba_user);  
-  jenv_->DeleteLocalRef(jba_tblName);  
-   if (j_actionCodes != NULL)
-      jenv_->DeleteLocalRef(j_actionCodes);
 
   if (jenv_->ExceptionCheck())
   {
@@ -2314,9 +2103,6 @@ HTableClient_JNI *HBaseClient_JNI::startGet(NAHeap *heap, const char* tableName,
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GET_HTC_EXCEPTION));
     return NULL;
   }
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return NULL;
 
   HTableClient_JNI *htc = new (heap) HTableClient_JNI(heap, (jobject)-1);
   if (htc->init() != HTC_OK) {
@@ -2327,12 +2113,9 @@ HTableClient_JNI *HBaseClient_JNI::startGet(NAHeap *heap, const char* tableName,
   htc->setHbaseStats(hbs);
   htc->setFetchMode(HTableClient_JNI::GET_ROW);
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    NADELETE(htc, HTableClient_JNI, heap);
-    return NULL;
-  }
-     
+  if (initJNIEnv() != JOI_OK)
+     return NULL;
+
   jstring js_tblName = jenv_->NewStringUTF(tableName);
   if (js_tblName == NULL) {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_STARTGET_EXCEPTION));
@@ -2408,10 +2191,6 @@ HTableClient_JNI *HBaseClient_JNI::startGets(NAHeap *heap, const char* tableName
     return NULL;
   }
 
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return NULL;
-
   HTableClient_JNI *htc = new (heap) HTableClient_JNI(heap, (jobject)-1);
   if (htc->init() != HTC_OK) {
      NADELETE(htc, HTableClient_JNI, heap);
@@ -2421,11 +2200,8 @@ HTableClient_JNI *HBaseClient_JNI::startGets(NAHeap *heap, const char* tableName
   htc->setHbaseStats(hbs);
   htc->setFetchMode(HTableClient_JNI::BATCH_GET);
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    NADELETE(htc, HTableClient_JNI, heap);
-    return NULL;
-  }
+  if (initJNIEnv() != JOI_OK)
+     return NULL;
 
   jstring js_tblName = jenv_->NewStringUTF(tableName);
   if (js_tblName == NULL) {
@@ -2523,14 +2299,8 @@ HBC_RetCode HBaseClient_JNI::getRegionsNodeName(const char* tblName,
                                                 ARRAY(const char *)& nodeNames)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::getRegionsNodeName(%s) called.", tblName);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
-
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_GET_LATEST_SNP_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
   jstring js_tblName = jenv_->NewStringUTF(tblName);
   if (js_tblName == NULL)
@@ -2560,11 +2330,7 @@ HBC_RetCode HBaseClient_JNI::getRegionsNodeName(const char* tblName,
     }
     //jenv_->ReleaseObjectArrayElements(jNodeNames, strObj, JNI_ABORT);
     jenv_->ReleaseStringUTFChars(strObj, node);
-    jenv_->DeleteLocalRef(strObj);
   }
-
-  jenv_->DeleteLocalRef(jNodeNames);
-  jenv_->DeleteLocalRef(js_tblName);
 
   if (jenv_->ExceptionCheck())
   {
@@ -2595,13 +2361,9 @@ HBC_RetCode HBaseClient_JNI::getHbaseTableInfo(const char* tblName,
                                               Int32& blockSize)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::getHbaseTableInfo(%s) called.", tblName);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_GET_LATEST_SNP_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
+
   jstring js_tblName = jenv_->NewStringUTF(tblName);
   if (js_tblName == NULL)
   {
@@ -2652,12 +2414,13 @@ HBC_RetCode HBaseClient_JNI::insertRow(NAHeap *heap, const char *tableName,
      htc->setTableName(tableName);
      htc->setHbaseStats(hbs);
   }
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
+
+  if (initJNIEnv() != JOI_OK) {
     if (htc != NULL) 
        NADELETE(htc, HTableClient_JNI, heap);
-    return HBC_ERROR_INSERTROW_PARAM;
+     return HBC_ERROR_INIT_PARAM;
   }
+
   jstring js_tblName = jenv_->NewStringUTF(tableName);
   if (js_tblName == NULL) {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_INSERTROW_PARAM));
@@ -2744,12 +2507,12 @@ HBC_RetCode HBaseClient_JNI::insertRows(NAHeap *heap, const char *tableName,
      htc->setTableName(tableName);
      htc->setHbaseStats(hbs);
   }
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
+  if (initJNIEnv() != JOI_OK) {
     if (htc != NULL) 
        NADELETE(htc, HTableClient_JNI, heap);
-    return HBC_ERROR_INSERTROWS_PARAM;
+     return HBC_ERROR_INIT_PARAM;
   }
+
   jstring js_tblName = jenv_->NewStringUTF(tableName);
   if (js_tblName == NULL) {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_INSERTROWS_PARAM));
@@ -2836,12 +2599,12 @@ HBC_RetCode HBaseClient_JNI::checkAndUpdateRow(NAHeap *heap, const char *tableNa
      htc->setTableName(tableName);
      htc->setHbaseStats(hbs);
   }
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
+  if (initJNIEnv() != JOI_OK) {
     if (htc != NULL) 
        NADELETE(htc, HTableClient_JNI, heap);
-    return HBC_ERROR_CHECKANDUPDATEROW_PARAM;
+     return HBC_ERROR_INIT_PARAM;
   }
+
   jstring js_tblName = jenv_->NewStringUTF(tableName);
   if (js_tblName == NULL) {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_CHECKANDUPDATEROW_PARAM));
@@ -2954,10 +2717,12 @@ HBC_RetCode HBaseClient_JNI::deleteRow(NAHeap *heap, const char *tableName,
      htc->setTableName(tableName);
      htc->setHbaseStats(hbs);
   }
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HBC_ERROR_DELETEROW_EXCEPTION;
+  if (initJNIEnv() != JOI_OK) {
+    if (htc != NULL) 
+       NADELETE(htc, HTableClient_JNI, heap);
+     return HBC_ERROR_INIT_PARAM;
   }
+
   jstring js_tblName = jenv_->NewStringUTF(tableName);
   if (js_tblName == NULL) {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_DELETEROW_PARAM));
@@ -3051,10 +2816,12 @@ HBC_RetCode HBaseClient_JNI::deleteRows(NAHeap *heap, const char *tableName,
      htc->setTableName(tableName);
      htc->setHbaseStats(hbs);
   }
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HBC_ERROR_DELETEROWS_EXCEPTION;
+  if (initJNIEnv() != JOI_OK) {
+    if (htc != NULL) 
+       NADELETE(htc, HTableClient_JNI, heap);
+     return HBC_ERROR_INIT_PARAM;
   }
+
   jstring js_tblName = jenv_->NewStringUTF(tableName);
   if (js_tblName == NULL) {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_DELETEROWS_PARAM));
@@ -3134,10 +2901,12 @@ HBC_RetCode HBaseClient_JNI::checkAndDeleteRow(NAHeap *heap, const char *tableNa
      htc->setTableName(tableName);
      htc->setHbaseStats(hbs);
   }
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HBC_ERROR_CHECKANDDELETEROW_EXCEPTION;
+  if (initJNIEnv() != JOI_OK) {
+    if (htc != NULL) 
+       NADELETE(htc, HTableClient_JNI, heap);
+     return HBC_ERROR_INIT_PARAM;
   }
+
   jstring js_tblName = jenv_->NewStringUTF(tableName);
   if (js_tblName == NULL) {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_CHECKANDDELETEROW_PARAM));
@@ -3228,12 +2997,10 @@ NAArray<HbaseStr>* HBaseClient_JNI::getEndKeys(NAHeap *heap, const char * tableN
 
 NAArray<HbaseStr>* HBaseClient_JNI::getKeys(Int32 funcIndex, NAHeap *heap, const char *tableName, bool useTRex)
 {
+  if (initJNIEnv() != JOI_OK) 
+     return NULL;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return NULL;
-  }
-   jstring js_tblName = jenv_->NewStringUTF(tableName);
+  jstring js_tblName = jenv_->NewStringUTF(tableName);
   if (js_tblName == NULL) {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GETKEYS));
     jenv_->PopLocalFrame(NULL);
@@ -3424,10 +3191,9 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::startScan() called.");
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HTC_ERROR_SCANOPEN_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK) 
+     return HTC_ERROR_INIT_PARAM;
+
   int len = startRowID.size();
   jbyteArray jba_startRowID = jenv_->NewByteArray(len);
   if (jba_startRowID == NULL) 
@@ -3443,7 +3209,6 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
   if (jba_stopRowID == NULL) 
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_SCANOPEN_PARAM));
-    jenv_->DeleteLocalRef(jba_startRowID);
     jenv_->PopLocalFrame(NULL);
     return HTC_ERROR_SCANOPEN_PARAM;
   }
@@ -3458,8 +3223,6 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
        getExceptionDetails();
        logError(CAT_SQL_HBASE, __FILE__, __LINE__);
        logError(CAT_SQL_HBASE, "HTableClient_JNI::startScan()", getLastError());
-       jenv_->DeleteLocalRef(jba_startRowID);
-       jenv_->DeleteLocalRef(jba_stopRowID);
        jenv_->PopLocalFrame(NULL);
        return HTC_ERROR_SCANOPEN_PARAM;
     }
@@ -3487,10 +3250,6 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
        getExceptionDetails();
        logError(CAT_SQL_HBASE, __FILE__, __LINE__);
        logError(CAT_SQL_HBASE, "HTableClient_JNI::startScan()", getLastError());
-       jenv_->DeleteLocalRef(jba_startRowID);
-       jenv_->DeleteLocalRef(jba_stopRowID);
-       if (j_cols != NULL)
-           jenv_->DeleteLocalRef(j_cols);
        jenv_->PopLocalFrame(NULL);
        return HTC_ERROR_SCANOPEN_PARAM;
     }
@@ -3505,12 +3264,6 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
         getExceptionDetails();
         logError(CAT_SQL_HBASE, __FILE__, __LINE__);
         logError(CAT_SQL_HBASE, "HTableClient_JNI::startScan()", getLastError());
-        jenv_->DeleteLocalRef(jba_startRowID);
-        jenv_->DeleteLocalRef(jba_stopRowID);
-        if (j_cols != NULL)
-           jenv_->DeleteLocalRef(j_cols);
-        if (j_colnamestofilter != NULL)
-           jenv_->DeleteLocalRef(j_colnamestofilter);
         jenv_->PopLocalFrame(NULL);
         return HTC_ERROR_SCANOPEN_PARAM;
      }
@@ -3525,14 +3278,6 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
         getExceptionDetails();
         logError(CAT_SQL_HBASE, __FILE__, __LINE__);
         logError(CAT_SQL_HBASE, "HTableClient_JNI::startScan()", getLastError());
-        jenv_->DeleteLocalRef(jba_startRowID);
-        jenv_->DeleteLocalRef(jba_stopRowID);
-        if (j_cols != NULL)
-           jenv_->DeleteLocalRef(j_cols);
-        if (j_colnamestofilter != NULL)
-           jenv_->DeleteLocalRef(j_colnamestofilter);
-        if (j_compareoplist != NULL)
-           jenv_->DeleteLocalRef(j_compareoplist);
         jenv_->PopLocalFrame(NULL);
         return HTC_ERROR_SCANOPEN_PARAM;
      }
@@ -3555,8 +3300,6 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
    if (js_tmp_loc == NULL)
    {
      GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_SCANOPEN_PARAM));
-     //delete the previous string in case of error
-     jenv_->DeleteLocalRef(js_snapName);
      jenv_->PopLocalFrame(NULL);
      return HTC_ERROR_SCANOPEN_PARAM;
    }
@@ -3581,20 +3324,6 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
     hbs_->incHbaseCalls();
   }
 
-  jenv_->DeleteLocalRef(jba_startRowID);  
-  jenv_->DeleteLocalRef(jba_stopRowID);  
-  if (j_cols != NULL)
-     jenv_->DeleteLocalRef(j_cols);
-  if (j_colnamestofilter != NULL)
-     jenv_->DeleteLocalRef(j_colnamestofilter);
-  if (j_compareoplist != NULL)
-     jenv_->DeleteLocalRef(j_compareoplist);
-  if (j_colvaluestocompare != NULL)
-     jenv_->DeleteLocalRef(j_colvaluestocompare);
-  if (js_tmp_loc!= NULL)
-    jenv_->DeleteLocalRef(js_tmp_loc);
-  if (js_snapName!= NULL)
-    jenv_->DeleteLocalRef(js_snapName);
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
@@ -3621,10 +3350,9 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const LI
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRow(%ld, %s) called.", transID, rowID.val);
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HTC_ERROR_DELETEROW_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK) 
+     return HTC_ERROR_INIT_PARAM;
+
   jbyteArray jba_rowID = jenv_->NewByteArray(rowID.len);
   if (jba_rowID == NULL) 
   {
@@ -3642,7 +3370,6 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const LI
         getExceptionDetails();
         logError(CAT_SQL_HBASE, __FILE__, __LINE__);
         logError(CAT_SQL_HBASE, "HTableClient_JNI::deleteRow()", getLastError());
-        jenv_->DeleteLocalRef(jba_rowID);  
         jenv_->PopLocalFrame(NULL);
         return HTC_ERROR_DELETEROW_PARAM;
      }
@@ -3651,9 +3378,9 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const LI
   jlong j_ts = timestamp;
   if (hbs_)
     hbs_->getHbaseTimer().start();
-  tsRecentJMFromJNI = JavaMethods_[JM_DELETE].jm_full_name;
   jboolean j_asyncOperation = FALSE;
   jboolean j_useRegionXn = FALSE;
+  tsRecentJMFromJNI = JavaMethods_[JM_DELETE].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
                                               JavaMethods_[JM_DELETE].methodID, j_tid, jba_rowID, j_cols, j_ts, j_asyncOperation, j_useRegionXn);
   if (hbs_)
@@ -3661,10 +3388,6 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const LI
       hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
       hbs_->incHbaseCalls();
     }
-
-  jenv_->DeleteLocalRef(jba_rowID);  
-  if (j_cols != NULL)
-     jenv_->DeleteLocalRef(j_cols);
 
   if (jenv_->ExceptionCheck())
   {
@@ -3694,14 +3417,12 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const LI
 HTC_RetCode HTableClient_JNI::setWriteBufferSize(Int64 size)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::setWriteBufferSize() called.");
-
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HTC_ERROR_WRITEBUFFERSIZE_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK) 
+     return HTC_ERROR_INIT_PARAM;
 
   jlong j_size = size;
 
+  tsRecentJMFromJNI = JavaMethods_[JM_SET_WB_SIZE].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_SET_WB_SIZE].methodID, j_size);
 
 
@@ -3731,11 +3452,10 @@ HTC_RetCode HTableClient_JNI::setWriteToWAL(bool WAL)
 
   jboolean j_WAL = WAL;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HTC_ERROR_WRITETOWAL_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK) 
+     return HTC_ERROR_INIT_PARAM;
 
+  tsRecentJMFromJNI = JavaMethods_[JM_SET_WRITE_TO_WAL].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_SET_WRITE_TO_WAL].methodID, j_WAL);
 
 
@@ -3771,10 +3491,10 @@ const char *HTableClient_JNI::getTableName()
 //////////////////////////////////////////////////////////////////////////////
 std::string* HTableClient_JNI::getHTableName()
 {
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return NULL;
-  }
+  if (initJNIEnv() != JOI_OK) 
+     return NULL;
+
+  tsRecentJMFromJNI = JavaMethods_[JM_GET_HTNAME].jm_full_name;
   jstring js_name = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_HTNAME].methodID);
 
   if (jenv_->ExceptionCheck())
@@ -3794,7 +3514,6 @@ std::string* HTableClient_JNI::getHTableName()
   const char* char_result = jenv_->GetStringUTFChars(js_name, 0);
   std::string* tableName = new (heap_) std::string(char_result);
   jenv_->ReleaseStringUTFChars(js_name, char_result);
-  jenv_->DeleteLocalRef(js_name);  
   jenv_->PopLocalFrame(NULL);
   return tableName;
 }
@@ -3814,10 +3533,8 @@ HTC_RetCode HTableClient_JNI::coProcAggr(Int64 transID,
 
   int len = 0;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HTC_ERROR_COPROC_AGGR_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK) 
+     return HTC_ERROR_INIT_PARAM;
 
   len = startRowID.size();
   jbyteArray jba_startrowid = jenv_->NewByteArray(len);
@@ -3882,11 +3599,6 @@ HTC_RetCode HTableClient_JNI::coProcAggr(Int64 transID,
       hbs_->incHbaseCalls();
     }
 
-  jenv_->DeleteLocalRef(jba_startrowid);  
-  jenv_->DeleteLocalRef(jba_stoprowid);  
-  jenv_->DeleteLocalRef(jba_colfamily);
-  jenv_->DeleteLocalRef(jba_colname);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
@@ -3903,8 +3615,6 @@ HTC_RetCode HTableClient_JNI::coProcAggr(Int64 transID,
      int len = jenv_->GetArrayLength(jresult);
      val = new (heap_) Text((char *)result, len);
      jenv_->ReleaseByteArrayElements((jbyteArray)jresult, result, JNI_ABORT);
-     jenv_->DeleteLocalRef(jresult);
-
   }
   if (val == NULL)
   {
@@ -4069,10 +3779,8 @@ HVC_RetCode HiveClient_JNI::initConnection(const char* metastoreURI)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::initConnection(%s) called.", metastoreURI);
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HVC_ERROR_INIT_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK)
+     return HVC_ERROR_INIT_PARAM;
 
   jstring js_metastoreURI = jenv_->NewStringUTF(metastoreURI);
   if (js_metastoreURI == NULL) 
@@ -4085,8 +3793,6 @@ HVC_RetCode HiveClient_JNI::initConnection(const char* metastoreURI)
 
   tsRecentJMFromJNI = JavaMethods_[JM_INIT].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_INIT].methodID, js_metastoreURI);
-
-  jenv_->DeleteLocalRef(js_metastoreURI);   
 
   if (jenv_->ExceptionCheck())
   {
@@ -4116,14 +3822,9 @@ HVC_RetCode HiveClient_JNI::close()
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::close() called.");
 
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HVC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HVC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HVC_ERROR_CLOSE_EXCEPTION;
-  }
   // boolean close();
   tsRecentJMFromJNI = JavaMethods_[JM_CLOSE].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CLOSE].methodID);
@@ -4153,14 +3854,9 @@ HVC_RetCode HiveClient_JNI::close()
 HVC_RetCode HiveClient_JNI::exists(const char* schName, const char* tabName)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::exists(%s, %s) called.", schName, tabName);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HVC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HVC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HVC_ERROR_EXISTS_EXCEPTION;
-  }
   jstring js_schName = jenv_->NewStringUTF(schName);
   if (js_schName == NULL) 
   {
@@ -4179,9 +3875,6 @@ HVC_RetCode HiveClient_JNI::exists(const char* schName, const char* tabName)
   // boolean exists(java.lang.String, java.lang.String);
   tsRecentJMFromJNI = JavaMethods_[JM_EXISTS].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_EXISTS].methodID, js_schName, js_tabName);
-
-  jenv_->DeleteLocalRef(js_schName);
-  jenv_->DeleteLocalRef(js_tabName);
 
   if (jenv_->ExceptionCheck())
   {
@@ -4209,14 +3902,9 @@ HVC_RetCode HiveClient_JNI::getHiveTableStr(const char* schName,
                                             Text& hiveTblStr)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Enter HiveClient_JNI::getHiveTableStr(%s, %s, %s).", schName, tabName, hiveTblStr.data());
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HVC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HVC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HVC_ERROR_GET_HVT_EXCEPTION;
-  }
   jstring js_schName = jenv_->NewStringUTF(schName);
   if (js_schName == NULL) 
   {
@@ -4237,10 +3925,6 @@ HVC_RetCode HiveClient_JNI::getHiveTableStr(const char* schName,
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, 
                                             JavaMethods_[JM_GET_HVT].methodID, 
                                             js_schName, js_tabName);
-
-  jenv_->DeleteLocalRef(js_schName);
-  jenv_->DeleteLocalRef(js_tabName);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
@@ -4256,7 +3940,6 @@ HVC_RetCode HiveClient_JNI::getHiveTableStr(const char* schName,
   }
   if (jenv_->GetStringLength(jresult) <= 0)
   { 
-     jenv_->DeleteLocalRef(jresult);
      jenv_->PopLocalFrame(NULL);
      return HVC_DONE; // Table does not exist
   }
@@ -4265,7 +3948,6 @@ HVC_RetCode HiveClient_JNI::getHiveTableStr(const char* schName,
   const char* char_result = jenv_->GetStringUTFChars(jresult, 0);
   hiveTblStr += char_result ; // deep copy. hiveTblStr is assumed to be empty.
   jenv_->ReleaseStringUTFChars(jresult, char_result);
-  jenv_->DeleteLocalRef(jresult);  
 
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Exit HiveClient_JNI::getHiveTableStr(%s, %s, %s).", schName, tabName, hiveTblStr.data());
   jenv_->PopLocalFrame(NULL);
@@ -4280,14 +3962,9 @@ HVC_RetCode HiveClient_JNI::getRedefTime(const char* schName,
                                          Int64& redefTime)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Enter HiveClient_JNI::getRedefTime(%s, %s, %lld).", schName, tabName, redefTime);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HVC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HVC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HVC_ERROR_GET_REDEFTIME_PARAM;
-  }
   jstring js_schName = jenv_->NewStringUTF(schName);
   if (js_schName == NULL) 
   {
@@ -4308,9 +3985,6 @@ HVC_RetCode HiveClient_JNI::getRedefTime(const char* schName,
   jlong jresult = jenv_->CallLongMethod(javaObj_, 
                                         JavaMethods_[JM_GET_RDT].methodID, 
                                         js_schName, js_tabName);
-
-  jenv_->DeleteLocalRef(js_schName);
-  jenv_->DeleteLocalRef(js_tabName);
 
   if (jenv_->ExceptionCheck())
   {
@@ -4340,14 +4014,8 @@ HVC_RetCode HiveClient_JNI::getRedefTime(const char* schName,
 HVC_RetCode HiveClient_JNI::getAllSchemas(LIST(Text *)& schNames)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Enter HiveClient_JNI::getAllSchemas(%p) called.", (void *) &schNames);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HVC_ERROR_INIT_PARAM;
-
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HVC_ERROR_GET_ALLSCH_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK)
+     return HVC_ERROR_INIT_PARAM;
 
   tsRecentJMFromJNI = JavaMethods_[JM_GET_ASH].jm_full_name;
   jarray j_schNames= 
@@ -4364,7 +4032,6 @@ HVC_RetCode HiveClient_JNI::getAllSchemas(LIST(Text *)& schNames)
 
   int numSchemas = convertStringObjectArrayToList(heap_, j_schNames,
                    schNames);           
-  jenv_->DeleteLocalRef(j_schNames);
   if (numSchemas == 0) {
      jenv_->PopLocalFrame(NULL);
      return HVC_DONE;
@@ -4381,14 +4048,8 @@ HVC_RetCode HiveClient_JNI::getAllSchemas(LIST(Text *)& schNames)
 HVC_RetCode HiveClient_JNI::executeHiveSQL(const char* hiveSQL)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Enter HiveClient_JNI::executeHiveSQL(%s) called.", hiveSQL);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HVC_ERROR_INIT_PARAM;
-
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HVC_ERROR_GET_ALLSCH_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK)
+     return HVC_ERROR_INIT_PARAM;
 
   jstring js_hiveSQL = jenv_->NewStringUTF(hiveSQL);
   if (js_hiveSQL == NULL) 
@@ -4410,8 +4071,6 @@ HVC_RetCode HiveClient_JNI::executeHiveSQL(const char* hiveSQL)
     return HVC_ERROR_GET_ALLSCH_EXCEPTION;
   }
 
-  jenv_->DeleteLocalRef(js_hiveSQL);
-  
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, 
        "Exit HiveClient_JNI::executeHiveSQL(%s) called.", hiveSQL);
   jenv_->PopLocalFrame(NULL);
@@ -4425,14 +4084,9 @@ HVC_RetCode HiveClient_JNI::getAllTables(const char* schName,
                                          LIST(Text *)& tblNames)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Enter HiveClient_JNI::getAllTables(%s, %p) called.", schName, (void *) &tblNames);
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HVC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HVC_ERROR_INIT_PARAM;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    return HVC_ERROR_GET_ALLTBL_EXCEPTION;
-  }
   jstring js_schName = jenv_->NewStringUTF(schName);
   if (js_schName == NULL) 
   {
@@ -4457,7 +4111,6 @@ HVC_RetCode HiveClient_JNI::getAllTables(const char* schName,
 
   int numTables = convertStringObjectArrayToList(heap_, j_tblNames,
                    tblNames);           
-  jenv_->DeleteLocalRef(j_tblNames);
   if (numTables == 0) {
      jenv_->PopLocalFrame(NULL);
      return HVC_DONE;
@@ -4964,10 +4617,9 @@ HTC_RetCode HTableClient_JNI::fetchRows()
 {
    QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::fetchRows() called.");
 
-   if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-      getExceptionDetails();
-      return HTC_ERROR_FETCHROWS_EXCEPTION;
-   }
+   if (initJNIEnv() != JOI_OK) 
+      return HTC_ERROR_INIT_PARAM;
+
    jlong jniObject = (jlong)this;
    if (hbs_)
      hbs_->getHbaseTimer().start();
@@ -5106,11 +4758,11 @@ HTC_RetCode HTableClient_JNI::completeAsyncOperation(Int32 timeout, NABoolean *r
 {
   HTC_RetCode retcode;
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
-    if (hbs_)
-       hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
-    return HTC_ERROR_COMPLETEASYNCOPERATION_EXCEPTION;
+  if (initJNIEnv() != JOI_OK) {
+     getExceptionDetails();
+     if (hbs_)
+        hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
+     return HTC_ERROR_COMPLETEASYNCOPERATION_EXCEPTION;
   }
   jint jtimeout = timeout;
   jbooleanArray jresultArray =  jenv_->NewBooleanArray(resultArrayLen);
@@ -5122,7 +4774,8 @@ HTC_RetCode HTableClient_JNI::completeAsyncOperation(Int32 timeout, NABoolean *r
       if (hbs_)
          hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
       return HTC_ERROR_COMPLETEASYNCOPERATION_EXCEPTION;
-   }
+  }
+  tsRecentJMFromJNI = JavaMethods_[JM_COMPLETE_PUT].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_COMPLETE_PUT].methodID,
                                jtimeout, jresultArray);
   if (jenv_->ExceptionCheck()) {
@@ -5144,7 +4797,6 @@ HTC_RetCode HTableClient_JNI::completeAsyncOperation(Int32 timeout, NABoolean *r
   for (int i = 0; i < resultArrayLen; i++) 
       resultArray[i] = returnArray[i]; 
   jenv_->ReleaseBooleanArrayElements(jresultArray, returnArray, JNI_ABORT);
-  jenv_->DeleteLocalRef(jresultArray);
   jenv_->PopLocalFrame(NULL);
   return HTC_OK;
 }
