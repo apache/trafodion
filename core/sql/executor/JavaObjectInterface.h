@@ -57,6 +57,7 @@ typedef enum {
  ,JOI_ERROR_FINDCLASS           // JNI FindClass() failed
  ,JOI_ERROR_GETMETHOD           // JNI GetMethodID() failed
  ,JOI_ERROR_NEWOBJ              // JNI NewObject() failed
+ ,JOI_ERROR_INIT_JNI            // initJNIEnv failed
  ,JOI_LAST
 } JOI_RetCode;
 
@@ -140,7 +141,8 @@ protected:
   {
     return isHBaseCompatibilityMode_;
   }
-
+  
+  JOI_RetCode initJNIEnv();
   char* buildClassPath();  
   
 public:
