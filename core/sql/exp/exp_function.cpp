@@ -8312,8 +8312,7 @@ ex_expr::exp_return_type ExFunctionAESEncrypt::eval(char * op_data[],
   if (!EVP_EncryptFinal(&ctx, result + u_len, &f_len))
       goto aes_encrypt_error;
 
-  if (!EVP_CIPHER_CTX_cleanup(&ctx))
-      goto aes_encrypt_error;
+  EVP_CIPHER_CTX_cleanup(&ctx);
 
   tgt->setVarLength(u_len + f_len, op_data[-MAX_OPERANDS]);
 
