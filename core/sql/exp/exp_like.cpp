@@ -506,33 +506,46 @@ ex_expr::exp_return_type ExRegexpClauseChar::eval(char *op_data[],
 					      CollHeap* exHeap,
 					      ComDiagsArea** diagsArea)
 {
-//comehere
+  NABoolean matchFlag = true;
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
   Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
   regex_t reg;
-  regmatch_t pm[10];
-  const size_t nmatch = 10;
-  int cflags, z;
-  cflags = REG_EXTENDED|REG_NEWLINE;
+  regmatch_t pm[1];
+  const size_t nmatch = 1;
+  Lng32 cflags, z;
   char * pattern;
-  pattern = new (exHeap) char[len2];
-  char *srcStr= new (exHeap) char[len1];
-  memcpy(pattern, op_data[2], len2);
-  memcpy(srcStr, op_data[1], len1);
+  char *srcStr= new (exHeap) char[len1+1];
+
+  cflags = REG_EXTENDED|REG_NEWLINE;
+  pattern = new (exHeap) char[len2+1];
+  pattern[len2]=0;
+  srcStr[len1]=0;
+
+  str_cpy_all(pattern, op_data[2], len2);
+  str_cpy_all(srcStr, op_data[1], len1);
+
   z = regcomp(&reg, pattern, cflags);
+
   if (z != 0){
     //ERROR
+    ExRaiseSqlError(exHeap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+    **diagsArea << DgString0("REGEXP");
     return ex_expr::EXPR_ERROR;
   }
-
-  NABoolean matchFlag = true;
+ 
   z = regexec(&reg,srcStr , nmatch, pm, 0);
-  if (z == REG_NOMATCH) 
+  if (z != 0) 
     matchFlag = false;
-   
+
   *(Lng32 *)op_data[0] = (Lng32)matchFlag;
+  regfree(&reg);
+
+  NADELETEBASIC(pattern, exHeap);
+  NADELETEBASIC(srcStr, exHeap);
+  
   return ex_expr::EXPR_OK;
 }
+
 ex_expr::exp_return_type ex_like_clause_char::eval(char *op_data[],
 					      CollHeap* exHeap,
 					      ComDiagsArea** diagsArea)
