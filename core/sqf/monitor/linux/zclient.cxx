@@ -703,12 +703,14 @@ int CZClient::InitializeZClient( void )
     return( rc );
 }
 
-bool CZClient::IsZNodeExpired( const char *nodeName )
+bool CZClient::IsZNodeExpired( const char *nodeName, int &zerr )
 {
     const char method_name[] = "CZClient::IsZNodeExpired";
     TRACE_ENTRY;
 
-    bool expired = false;
+    bool  expired = false;
+    int   rc = -1;
+    Stat  stat;
     stringstream newpath;
     newpath.str( "" );
     newpath << zkRootNode_.c_str() 
@@ -717,10 +719,7 @@ bool CZClient::IsZNodeExpired( const char *nodeName )
             << nodeName;
     string monZnode = newpath.str( );
 
-    char  zkData[MAX_PROCESSOR_NAME];
-    int   rc = -1;
-    int   zkDataLen = sizeof(zkData);
-    Stat  stat;
+    zerr = ZOK;
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
     {
@@ -728,17 +727,25 @@ bool CZClient::IsZNodeExpired( const char *nodeName )
                     , method_name, __LINE__, monZnode.c_str() );
     }
     rc = zoo_exists( ZHandle, monZnode.c_str( ), 0, &stat );
-    if ( rc == ZNONODE ||
-         rc == ZCONNECTIONLOSS || 
-         rc == ZOPERATIONTIMEOUT )
+    if ( rc == ZNONODE )
     {
         expired = true;
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
         {
-            trace_printf( "%s@%d monZnode=%s does not exist or "
-                          "cannot be accessed!\n"
+            trace_printf( "%s@%d monZnode=%s does not exist!\n"
                         , method_name, __LINE__, monZnode.c_str() );
         }
+    }
+    else if ( rc == ZCONNECTIONLOSS || rc == ZOPERATIONTIMEOUT )
+    {
+        // Treat this as not expired until communication resumes
+        expired = false;
+        zerr = rc;
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], zoo_exists() for %s failed with error %s\n"
+                ,  method_name, monZnode.c_str( ), ZooErrorStr(rc));
+        mon_log_write(MON_ZCLIENT_ISZNODEEXPIRED_1, SQ_LOG_ERR, buf);
     }
     else if ( rc == ZOK )
     {
@@ -751,11 +758,12 @@ bool CZClient::IsZNodeExpired( const char *nodeName )
     }
     else
     {
+        expired = true;
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
                 , "[%s], zoo_exists() for %s failed with error %s\n"
                 ,  method_name, monZnode.c_str( ), ZooErrorStr(rc));
-        mon_log_write(MON_ZCLIENT_ISZNODEEXPIRED_1, SQ_LOG_CRIT, buf);
+        mon_log_write(MON_ZCLIENT_ISZNODEEXPIRED_2, SQ_LOG_CRIT, buf);
         switch ( rc )
         {
         case ZSYSTEMERROR:

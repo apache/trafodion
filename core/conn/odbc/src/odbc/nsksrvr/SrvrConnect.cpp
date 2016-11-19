@@ -106,8 +106,6 @@ PerformanceMeasure *perf = 0;
 #include <pthread.h>
 
 #include <queue>
-#include <fstream>
-using namespace std;
 
 extern zhandle_t *zh;
 extern stringstream availSrvrNode;
@@ -8526,6 +8524,33 @@ odbc_SQLSrvr_EndTransaction_ame_(
 
 //LCOV_EXCL_STOP
 
+void
+odbc_SQLSrvr_ExtractLob_ame_(
+    /* In   */ CEE_tag_def objtag_
+  , /* In   */ const CEE_handle_def *call_id_
+  , /* In   */ IDL_long    extractLobAPI
+  , /* In   */ IDL_string  lobHandle)
+{
+    ERROR_DESC_LIST_def sqlWarning = {0, 0};
+    IDL_long_long lobDataLen = 0;
+    IDL_char * lobDataValue = NULL;
+
+    odbc_SQLsrvr_ExtractLob_exc_ exception_ = {0, 0};
+
+    odbc_SQLSrvr_ExtractLob_sme_(objtag_,
+                                 call_id_,
+                                 &exception_,
+                                 extractLobAPI,
+                                 lobHandle,
+                                 lobDataLen,
+                                 lobDataValue);
+
+    odbc_SQLSrvr_ExtractLob_ts_res_(objtag_,
+                                    call_id_,
+                                    &exception_,
+                                    lobDataLen,
+                                    lobDataValue);
+}
 
 
 void getCurrentCatalogSchema()

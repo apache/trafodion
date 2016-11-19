@@ -60,7 +60,7 @@
 #include "ExpLOBexternal.h"
 #include "NAVersionedObject.h"
 #include "ComQueue.h"
-
+#include "QRLogger.h"
 #include "NAMemory.h"
 #include <seabed/ms.h>
 #include <seabed/fserr.h>
@@ -2280,8 +2280,10 @@ Ex_Lob_Error ExLobsOper (
 	  return LOB_GLOB_PTR_ERROR;
 	}
     }
-
-  if ((globPtr != NULL) && (operation != Lob_Init))
+  if (globPtr != NULL)
+  {
+    lobGlobals = (ExLobGlobals *)globPtr;
+    if ((operation != Lob_Init) && (operation != Lob_Cleanup))
     {
       lobGlobals = (ExLobGlobals *)globPtr;
 
@@ -2314,6 +2316,7 @@ Ex_Lob_Error ExLobsOper (
 	}
       lobPtr->lobTrace_ = lobGlobals->lobTrace_;
     }
+  }
   /* 
 // **Note** This is code that needs to get called before sneding a request to the 
 //mxlobsrvr process. It's inactive code currently   
@@ -3014,9 +3017,9 @@ ExLobGlobals::ExLobGlobals() :
     lobMap_(NULL), 
     fs_(NULL),
     isCliInitialized_(FALSE),
-    isHive_(FALSE),
     threadTraceFile_(NULL),
     lobTrace_(FALSE),
+    numWorkerThreads_(0),
     heap_(NULL)
 {
   //initialize the log file
@@ -3043,12 +3046,21 @@ ExLobGlobals::~ExLobGlobals()
     if (lobMap_) 
       delete lobMap_;
 
-    for (int i=0; i<NUM_WORKER_THREADS; i++) {
-      enqueueShutdownRequest();
-    }
-
-    for (int i=0; i<NUM_WORKER_THREADS; i++) {
-      pthread_join(threadId_[i], NULL);
+    if (numWorkerThreads_ > 0) { 
+       for (int i=0; numWorkerThreads_-i > 0 && i < NUM_WORKER_THREADS; i++) {
+           QRLogger::log(CAT_SQL_EXE, LL_DEBUG, 0, NULL,  
+           "Worker Thread Shutdown Requested %ld ", 
+           threadId_[i]);
+           enqueueShutdownRequest();
+       }
+     
+       for (int i=0; numWorkerThreads_ > 0 && i < NUM_WORKER_THREADS; i++) {
+           pthread_join(threadId_[i], NULL);
+           QRLogger::log(CAT_SQL_EXE, LL_DEBUG, 0, NULL,  
+           "Worker Thread Completed %ld ", 
+           threadId_[i]);
+           numWorkerThreads_--;
+       }
     }
     // Free the post fetch bugf list AFTER the worker threads have left to 
     // avoid slow worker thread being stuck and master deallocating these 
@@ -3109,6 +3121,10 @@ Ex_Lob_Error ExLobGlobals::startWorkerThreads()
      rc = pthread_create(&threadId_[i], NULL, workerThreadMain, this);
      if (rc != 0)
       return LOB_HDFS_THREAD_CREATE_ERROR;
+      QRLogger::log(CAT_SQL_EXE, LL_DEBUG, 0, NULL,  
+           "Worker Thread Created %ld ",
+           threadId_[i]);
+     numWorkerThreads_++;
    }
    
    return LOB_OPER_OK;

@@ -178,7 +178,7 @@ short ex_sort_grby_tcb::handleCancel(sort_grby_step &step, short &rc)
   ex_queue_entry * centry = qchild_.up->getHeadEntry();
   
   ex_assert(centry->upState.parentIndex == qparent_.down->getHeadIndex(),
-            "ex_sort_grby_tcb::work() child's reply out of sync");
+            "ex_sort_grby_tcb::handleCancel() child's reply out of sync");
   
   ex_queue::up_status child_status = centry->upState.status;
   switch(child_status)
@@ -199,7 +199,7 @@ short ex_sort_grby_tcb::handleCancel(sort_grby_step &step, short &rc)
       break;
       
     case ex_queue::Q_INVALID:
-      ex_assert(0,"ex_sort_grby_tcb::work() Invalid state returned by child");
+      ex_assert(0,"ex_sort_grby_tcb::handleCancel() Invalid state returned by child");
       break;
       
     }; // end of switch on status of child queue
@@ -348,9 +348,9 @@ short ex_sort_grby_tcb::handleDone(sort_grby_step &step, short &rc,
       if (NOT noAssert)
         {
           ex_assert(centry->upState.status == ex_queue::Q_NO_DATA,
-                    "ex_sort_grby_tcb::work() expecting Q_NO_DATA");
+                    "ex_sort_grby_tcb::handleDone() expecting Q_NO_DATA");
           ex_assert(centry->upState.parentIndex == qparent_.down->getHeadIndex(),
-                    "ex_sort_grby_tcb::work() child's reply out of sync");
+                    "ex_sort_grby_tcb::handleDone() child's reply out of sync");
         }
       qchild_.up->removeHead();
     }

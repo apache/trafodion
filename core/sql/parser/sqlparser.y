@@ -1505,6 +1505,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_FUNCTION
 %token <tokval> TOK_FUNCTIONS
 %token <tokval> TOK_GROUPING
+%token <tokval> TOK_GROUPING_ID
 %token <tokval> TOK_HOST
 
 %token <tokval> TOK_ITERATE
@@ -7335,21 +7336,17 @@ set_function_specification : set_function_type '(' set_quantifier value_expressi
 			   }
               | TOK_GROUP_CONCAT '('  set_quantifier value_expression concat_options ')' 
                {
-                       //comehere
-                  CheckModeSpecial4;
                   $$ = new (PARSERHEAP())
                   PivotGroup(ITM_PIVOT_GROUP, $4, $5, $3);
  
                }
               | TOK_PIVOT '(' set_quantifier value_expression pivot_options ')'
                   {
-                    CheckModeSpecial4;
 
                     $$ = new (PARSERHEAP()) PivotGroup(ITM_PIVOT_GROUP, $4, $5, $3);
                   }
               | TOK_PIVOT_GROUP '(' set_quantifier value_expression pivot_options ')'
                   {
-                    CheckModeSpecial4;
 
                     $$ = new (PARSERHEAP()) PivotGroup(ITM_PIVOT_GROUP, $4, $5, $3);
                   }
@@ -10177,6 +10174,10 @@ misc_function :
                               {
                                 $$ = new (PARSERHEAP()) HbaseTimestampRef($3);
 			      }
+       | TOK_GROUPING_ID '(' value_expression_list ')'
+             {
+               $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_GROUPING_ID, $3);
+             }
 
 hbase_column_create_list : '(' hbase_column_create_value ')'
                                    {
@@ -33730,6 +33731,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_FLOOR
                       | TOK_FN
                       | TOK_GREATEST
+                      | TOK_GROUPING_ID
                       | TOK_HASHPARTFUNC
                       | TOK_HASH2PARTFUNC
                       | TOK_HBASE_TIMESTAMP

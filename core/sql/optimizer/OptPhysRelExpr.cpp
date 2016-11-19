@@ -11808,17 +11808,30 @@ void SortGroupBy::addArrangementAndOrderRequirements(
   // A GROUP BY ROLLUP needs the exact order as specified.
   if (isRollup() && (NOT rollupGroupExprList().isEmpty()))
     {
-      rg.addSortKey(rollupGroupExprList());
+      if( NOT extraOrderExpr().isEmpty())
+      {
+        ValueIdList groupExprCpy(rollupGroupExprList());
+        groupExprCpy.insert(extraOrderExpr());
+        rg.addSortKey(groupExprCpy);
+      }
+      else
+        rg.addSortKey(rollupGroupExprList());
     }
   else if (NOT groupExpr().isEmpty())
-  {
-    // Shouldn't/Can't add a sort order type requirement
-    // if we are in DP2
-    if (rg.getStartRequirements()->executeInDP2())
-      rg.addArrangement(groupExpr(),NO_SOT);
-    else
-      rg.addArrangement(groupExpr(),ESP_SOT);
-  }
+    {
+      if( NOT extraOrderExpr().isEmpty())
+      {
+        ValueIdList groupExprCpy(groupExpr());
+        groupExprCpy.insert(extraOrderExpr());
+        rg.addSortKey(groupExprCpy);
+      }
+      else {
+        if (rg.getStartRequirements()->executeInDP2())
+          rg.addArrangement(groupExpr(),NO_SOT);
+        else
+          rg.addArrangement(groupExpr(),ESP_SOT);
+      }
+    }
 }
 
 //<pb>
