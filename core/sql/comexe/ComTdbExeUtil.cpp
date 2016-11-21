@@ -2566,7 +2566,9 @@ ComTdbExeUtilHiveMDaccess::ComTdbExeUtilHiveMDaccess(
 			   ULng32 bufferSize,
 			   ex_expr *scanPred,
 			   char * hivePredStr,
-                           char * schemaName)
+                           char * catalogName,
+                           char * schemaName,
+                           char * objectName)
   : ComTdbExeUtil(ComTdbExeUtil::HIVE_MD_ACCESS_,
 		  0, 0, 0, // query,querylen,querycharset
 		  NULL, 0, // tablename,tablenamelen
@@ -2579,7 +2581,9 @@ ComTdbExeUtilHiveMDaccess::ComTdbExeUtilHiveMDaccess(
 		  numBuffers, bufferSize),
     mdType_(type),
     hivePredStr_(hivePredStr),
-    schema_(schemaName)
+    catalog_(catalogName),
+    schema_(schemaName),
+    object_(objectName)
 {
   setNodeType(ComTdb::ex_HIVE_MD_ACCESS);
 }
@@ -2626,8 +2630,12 @@ Long ComTdbExeUtilHiveMDaccess::pack(void * space)
 {
   if (hivePredStr_) 
     hivePredStr_.pack(space);
+  if (catalog_)
+    catalog_.pack(space);
   if (schema_)
     schema_.pack(space);
+  if (object_)
+    object_.pack(space);
 
   return ComTdbExeUtil::pack(space);
 }
@@ -2638,7 +2646,11 @@ Lng32 ComTdbExeUtilHiveMDaccess::unpack(void * base, void * reallocator)
 {
   if (hivePredStr_.unpack(base))
     return -1;
+  if (catalog_.unpack(base))
+    return -1;
   if (schema_.unpack(base))
+    return -1;
+  if (object_.unpack(base))
     return -1;
 
   return ComTdbExeUtil::unpack(base, reallocator);
@@ -2659,9 +2671,19 @@ void ComTdbExeUtilHiveMDaccess::displayContents(Space * space,ULng32 flag)
 	  str_sprintf(buf,"hivePredStr_ = %s", hivePredStr());
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	}
+      if (getCatalog())
+	{
+	  str_sprintf(buf,"catalog_ = %s", getCatalog());
+	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+	}
       if (getSchema())
 	{
 	  str_sprintf(buf,"schema_ = %s", getSchema());
+	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+	}
+      if (getObject())
+	{
+	  str_sprintf(buf,"object_ = %s", getObject());
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	}
     }

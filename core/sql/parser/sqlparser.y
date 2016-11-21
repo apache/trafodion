@@ -5896,12 +5896,17 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
 				}
 | TOK_TABLE '(' TOK_HIVEMD '(' hivemd_identifier ')' ')'
 				{
-				    $$ = new (PARSERHEAP()) HiveMDaccessFunc($5);
+                                  $$ = new (PARSERHEAP()) HiveMDaccessFunc($5);
 				}
-| TOK_TABLE '(' TOK_HIVEMD '(' hivemd_identifier ',' schema_name ')' ')'
+| TOK_TABLE '(' TOK_HIVEMD '(' hivemd_identifier ',' identifier ')' ')'
 				{
                                   $$ = new (PARSERHEAP()) HiveMDaccessFunc($5, $7);
 				}
+| TOK_TABLE '(' TOK_HIVEMD '(' hivemd_identifier ',' identifier ',' identifier ')' ')'
+				{
+                                  $$ = new (PARSERHEAP()) HiveMDaccessFunc($5, $7, $9);
+				}
+
 | TOK_TABLE '(' TOK_QUERY_CACHE '(' value_expression_list ')' ')'
   {
     $$ = new (PARSERHEAP()) RelInternalSP("QUERYCACHE"
@@ -6378,7 +6383,7 @@ index_hint : qualified_name
       }
     | qualified_guardian_name '.' subvolume_name '.' identifier
       {
-		NAString *nam = new (PARSERHEAP()) NAString(($1->data()),PARSERHEAP());
+        NAString *nam = new (PARSERHEAP()) NAString(($1->data()),PARSERHEAP());
         nam->append(".", 1);
         nam->append(($3->data()), $3->length());
         nam->append(".", 1);

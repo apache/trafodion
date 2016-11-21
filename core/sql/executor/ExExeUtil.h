@@ -3245,6 +3245,7 @@ protected:
   enum Step
   {
     INITIAL_,
+    READ_HIVE_MD_,
     POSITION_,
     FETCH_TABLE_,
     FETCH_COLUMN_,
@@ -3262,14 +3263,16 @@ protected:
   HiveMetaData* hiveMD_;
 
   hive_column_desc * currColDesc_;
+  hive_pkey_desc * currPartnDesc_;
   hive_bkey_desc * currKeyDesc_;
-  
+  Int32 currColNum_;
+
   char * mdRow_;
   LIST (NAText *) tblNames_;
-  short pos_;
 
   char hiveCat_[1024];
   char hiveSch_[1024];
+  char schForHive_[1024];
 };
 
 //////////////////////////////////////////////////////////////////////////

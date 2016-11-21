@@ -326,7 +326,12 @@ short CmpSeabaseDDL::copyOldReposToNew(ExeCliInterface * cliInterface)
   char queryBuf[10000];
 
   NABoolean xnWasStartedHere = FALSE;
-
+  if (xnInProgress(cliInterface))
+    {
+      *CmpCommon::diags() << DgSqlCode(-20123);
+      return -1;
+    }
+  
   for (Int32 i = 0; i < sizeof(allReposUpgradeInfo)/sizeof(MDUpgradeInfo); i++)
     {
       const MDUpgradeInfo &rti = allReposUpgradeInfo[i];
@@ -759,6 +764,6 @@ void CmpSeabaseDDL::processRepository(
     createRepos(&cliInterface);
   else if (dropR)
     dropRepos(&cliInterface);
-  
+
   return;
 }
