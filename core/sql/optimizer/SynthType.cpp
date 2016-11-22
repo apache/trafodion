@@ -1011,7 +1011,6 @@ const NAType *BuiltinFunction::synthesizeType()
       }
     break;
     case ITM_SHA1:
-    case ITM_SHA2:
       {
         // type cast any params
         ValueId vid1 = child(0)->getValueId();
@@ -1034,6 +1033,37 @@ const NAType *BuiltinFunction::synthesizeType()
 	  }
       }
     break;
+
+    case ITM_SHA2:
+      {
+        ValueId vid1 = child(0)->getValueId();
+        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        vid1.coerceType(c1, NA_CHARACTER_TYPE);
+
+        const NAType &typ1 = child(0)->getValueId().getType();
+
+        if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+        {
+          *CmpCommon::diags() << DgSqlCode(-4067) << DgString0("SHA2");
+          return NULL;
+        }
+
+        // type cast any params
+        ValueId vid = child(0)->getValueId();
+        vid.coerceType(NA_NUMERIC_TYPE);
+        const NAType &typ2 = child(1)->getValueId().getType();
+
+        if (typ2.getTypeQualifier() != NA_NUMERIC_TYPE)
+        {
+          *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("SHA2");
+          return NULL;
+        }
+
+        retType = new HEAP
+          SQLVarChar(1024, typ1.supportsSQLnull());
+      }
+    break;
+
     case ITM_MD5:
       {
         // type cast any params

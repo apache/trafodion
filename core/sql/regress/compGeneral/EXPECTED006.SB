@@ -1779,4 +1779,49 @@ Lane L500
 Lynn L500
 
 --- 2 row(s) selected.
+>>select sha2('the original data', 0) from dual;
+
+(EXPR)
+----------
+
+38fd175fead1af0a96f46a9ed32d443857c16d0069c19e0cd7239340a1f94334
+
+--- 1 row(s) selected.
+>>select sha2('the original data', 128) from dual;
+
+*** ERROR[8428] The argument to function SHA2 is not valid.
+
+--- 0 row(s) selected.
+>>select sha2('the original data', 224) from dual;
+
+(EXPR)
+----------
+
+82e1dae1bc1b2d862d30ddb6e16a717e5de6a143ab8c56c32a310a5b
+
+--- 1 row(s) selected.
+>>select sha2('the original data', 256) from dual;
+
+(EXPR)
+----------
+
+38fd175fead1af0a96f46a9ed32d443857c16d0069c19e0cd7239340a1f94334
+
+--- 1 row(s) selected.
+>>select sha2('the original data', 384) from dual;
+
+(EXPR)
+----------
+
+bc0050f3ff7a540c74a42664c53a7f9fd485622374a43eb4a62cd84e48f483237bed50f6562f8c6e405454c4dbb0d4a3
+
+--- 1 row(s) selected.
+>>select sha2('the original data', 512) from dual;
+
+(EXPR)
+----------
+
+18091a172d94aae1ae530ced02bde7f022229f446348f5d3b36989c2e6fd59f5252c7a7f8ecb71a74cb724448243ff71651f87aed155aee7340fad1b02567b60
+
+--- 1 row(s) selected.
 >>log;

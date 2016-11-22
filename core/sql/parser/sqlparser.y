@@ -9695,12 +9695,12 @@ misc_function :
                             1, $3);
                 }
 
-     | TOK_SHA2 '(' value_expression ')'
+     | TOK_SHA2 '(' value_expression, ',', value_expression ')'
                 {
                     $$ = new (PARSERHEAP())
                     BuiltinFunction(ITM_SHA2,
                             CmpCommon::statementHeap(),
-                            1, $3);
+                            2, $3, $5);
                 }
 
      | TOK_MD5 '(' value_expression ')'
