@@ -7,3 +7,5 @@ utils/trafci.sh
 install/Installer.java
 src/main/java/org/trafodion/ci/Vproc.java
 /target/
+/target/
+/target/
