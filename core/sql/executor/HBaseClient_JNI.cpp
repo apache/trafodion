@@ -99,6 +99,12 @@ static const char* const hbcErrorEnumStr[] =
  ,"Preparing parameters for getKeys()."
  ,"Preparing parameters for listAll()."
  ,"Preparing parameters for getRegionStats()."
+ ,"JNI NewStringUTF() in createSnapshot()."
+ ,"Java exception in createSnapshot()."
+ ,"JNI NewStringUTF() in deleteSnapshot()."
+ ,"Java exception in deleteSnapshot()."
+ ,"JNI NewStringUTF() in verifySnapshot()."
+ ,"Java exception in verifySnapshot()."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -281,6 +287,12 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_HBC_GETSTARTKEYS ].jm_signature = "(Ljava/lang/String;Z)[[B";
     JavaMethods_[JM_HBC_GETENDKEYS ].jm_name      = "getEndKeys";
     JavaMethods_[JM_HBC_GETENDKEYS ].jm_signature = "(Ljava/lang/String;Z)[[B";
+    JavaMethods_[JM_HBC_CREATE_SNAPSHOT].jm_name      = "createSnapshot";
+    JavaMethods_[JM_HBC_CREATE_SNAPSHOT].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
+    JavaMethods_[JM_HBC_DELETE_SNAPSHOT].jm_name      = "deleteSnapshot";
+    JavaMethods_[JM_HBC_DELETE_SNAPSHOT].jm_signature = "(Ljava/lang/String;)Z";
+    JavaMethods_[JM_HBC_VERIFY_SNAPSHOT].jm_name      = "verifySnapshot";
+    JavaMethods_[JM_HBC_VERIFY_SNAPSHOT].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
     rc = (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
@@ -1814,10 +1826,8 @@ HVC_RetCode  HiveClient_JNI::hdfsCreateFile(const char* path)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::hdfsCreate(%s) called.", path);
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HVC_ERROR_HDFS_CREATE_EXCEPTION;
-  }
+  if (initJNIEnv() != JOI_OK)
+     return HVC_ERROR_INIT_PARAM;
 
    jstring js_path = jenv_->NewStringUTF(path);
    if (js_path == NULL) {
@@ -1852,10 +1862,8 @@ HVC_RetCode  HiveClient_JNI::hdfsCreateFile(const char* path)
  {
    QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::hdfsWrite(%ld) called.", len);
 
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HVC_ERROR_HDFS_WRITE_EXCEPTION;
-  }
+   if (initJNIEnv() != JOI_OK)
+     return HVC_ERROR_INIT_PARAM;
 
    //Write the requisite bytes into the file
    jbyteArray jbArray = jenv_->NewByteArray( len);
@@ -3027,7 +3035,112 @@ NAArray<HbaseStr>* HBaseClient_JNI::getKeys(Int32 funcIndex, NAHeap *heap, const
      return retArray;  
 }
 
+HBC_RetCode HBaseClient_JNI::createSnapshot( const NAString&  tableName, const NAString&  snapshotName)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::createSnapshot(%s, %s) called.",
+      tableName.data(), snapshotName.data());
 
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
+
+  jstring js_tableName = jenv_->NewStringUTF(tableName.data());
+  if (js_tableName == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_CREATE_SNAPSHOT_PARAM));
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_CREATE_SNAPSHOT_PARAM;
+  }
+  jstring js_snapshotName= jenv_->NewStringUTF(snapshotName.data());
+  if (js_snapshotName == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_CREATE_SNAPSHOT_PARAM));
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_CREATE_SNAPSHOT_PARAM;
+  }
+
+  tsRecentJMFromJNI = JavaMethods_[JM_HBC_CREATE_SNAPSHOT].jm_full_name;
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HBC_CREATE_SNAPSHOT].methodID, js_tableName, js_snapshotName);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::createSnapshot()", getLastError());
+    jenv_->PopLocalFrame(NULL);
+    return HBC_ERROR_CREATE_SNAPSHOT_EXCEPTION;
+  }
+
+  jenv_->PopLocalFrame(NULL);
+  return HBC_OK;
+}
+
+HBC_RetCode HBaseClient_JNI::verifySnapshot( const NAString&  tableName, const NAString&  snapshotName,
+                                                NABoolean & exist)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::verifySnapshot(%s, %s) called.",
+      tableName.data(), snapshotName.data());
+
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
+
+  jstring js_tableName = jenv_->NewStringUTF(tableName.data());
+  if (js_tableName == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_VERIFY_SNAPSHOT_PARAM));
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_VERIFY_SNAPSHOT_PARAM;
+  }
+  jstring js_snapshotName= jenv_->NewStringUTF(snapshotName.data());
+  if (js_snapshotName == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_VERIFY_SNAPSHOT_PARAM));
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_VERIFY_SNAPSHOT_PARAM;
+  }
+
+  tsRecentJMFromJNI = JavaMethods_[JM_HBC_VERIFY_SNAPSHOT].jm_full_name;
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HBC_VERIFY_SNAPSHOT].methodID, js_tableName, js_snapshotName);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::verifySnapshot()", getLastError());
+    jenv_->PopLocalFrame(NULL);
+    return HBC_ERROR_VERIFY_SNAPSHOT_EXCEPTION;
+  }
+
+  exist = jresult;
+
+  jenv_->PopLocalFrame(NULL);
+  return HBC_OK;
+}
+
+HBC_RetCode HBaseClient_JNI::deleteSnapshot( const NAString&  snapshotName)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::deleteSnapshot(%s) called.",
+      snapshotName.data());
+
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
+
+  jstring js_snapshotName= jenv_->NewStringUTF(snapshotName.data());
+  if (js_snapshotName == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_DELETE_SNAPSHOT_PARAM));
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_DELETE_SNAPSHOT_PARAM;
+  }
+
+  tsRecentJMFromJNI = JavaMethods_[JM_HBC_DELETE_SNAPSHOT].jm_full_name;
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HBC_DELETE_SNAPSHOT].methodID, js_snapshotName);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::deleteSnapshot()", getLastError());
+    jenv_->PopLocalFrame(NULL);
+    return HBC_ERROR_DELETE_SNAPSHOT_EXCEPTION;
+  }
+  jenv_->PopLocalFrame(NULL);
+  return HBC_OK;
+}
 
 // ===========================================================================
 // ===== Class HTableClient

@@ -156,12 +156,6 @@ typedef enum {
  ,SFW_ERROR_HDFS_EXISTS_PARAM
  ,SFW_ERROR_HDFS_EXISTS_EXCEPTION
  ,SFW_ERROR_HDFS_EXISTS_FILE_EXISTS
- ,SFW_ERROR_CREATE_SNAPSHOT_PARAM
- ,SFW_ERROR_CREATE_SNAPSHOT_EXCEPTION
- ,SFW_ERROR_DELETE_SNAPSHOT_PARAM
- ,SFW_ERROR_DELETE_SNAPSHOT_EXCEPTION
- ,SFW_ERROR_VERIFY_SNAPSHOT_PARAM
- ,SFW_ERROR_VERIFY_SNAPSHOT_EXCEPTION
  ,SFW_ERROR_HDFS_DELETE_PATH_PARAM
  ,SFW_ERROR_HDFS_DELETE_PATH_EXCEPTION
  ,SFW_LAST
@@ -214,9 +208,6 @@ public:
   SFW_RetCode    hdfsCleanUnloadPath(const NAString& uldPath );
   SFW_RetCode    hdfsExists(const NAString& uldPath,  NABoolean & exists );
   SFW_RetCode    hdfsClose();
-  SFW_RetCode    createSnapshot( const NAString&  tableName, const NAString&  snapshotName);
-  SFW_RetCode    deleteSnapshot( const NAString&  snapshotName);
-  SFW_RetCode    verifySnapshot( const NAString&  tableName, const NAString&  snapshotName, NABoolean & exist);
   SFW_RetCode    release();
 
   virtual char*  getErrorText(SFW_RetCode errEnum);
@@ -237,9 +228,6 @@ private:
     JM_HDFS_MERGE_FILES,
     JM_HDFS_CLEAN_UNLOAD_PATH,
     JM_HDFS_EXISTS,
-    JM_CREATE_SNAPSHOT,
-    JM_DELETE_SNAPSHOT,
-    JM_VERIFY_SNAPSHOT,
     JM_HDFS_DELETE_PATH,
     JM_LAST
   };
