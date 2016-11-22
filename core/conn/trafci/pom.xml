@@ -26,12 +26,12 @@
 	<groupId>org.trafodion</groupId>
 	<artifactId>trafci</artifactId>
 	<packaging>jar</packaging>
-	<version>${env.TRAFODION_VER}</version>
+	<version>${TRAFODION_VER}</version>
 	<name>Trafodion Trafci</name>
 	<properties>
 		<jettyVersion>9.2.6.v20141205</jettyVersion>
-		<traf-jdbc-version>${env.TRAFODION_VER}</traf-jdbc-version>
-		<trafci-version>${env.TRAFODION_VER}</trafci-version>
+		<traf-jdbc-version>${TRAFODION_VER}</traf-jdbc-version>
+		<trafci-version>${TRAFODION_VER}</trafci-version>
 	</properties>
 	<dependencies>
 		<dependency>

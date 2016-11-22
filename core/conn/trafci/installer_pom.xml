@@ -26,12 +26,12 @@
 	<groupId>org.trafodion</groupId>
 	<artifactId>trafciInstaller</artifactId>
 	<packaging>jar</packaging>
-	<version>${env.TRAFODION_VER}</version>
+	<version>${TRAFODION_VER}</version>
 	<name>Trafodion Trafci</name>
 	<properties>
 		<basedir>.</basedir>
-		<traf-jdbc-version>${env.TRAFODION_VER}</traf-jdbc-version>
-		<trafci-version>${env.TRAFODION_VER}</trafci-version>
+		<traf-jdbc-version>${TRAFODION_VER}</traf-jdbc-version>
+		<trafci-version>${TRAFODION_VER}</trafci-version>
 	</properties>
 	<build>
 		<finalName>trafciInstaller</finalName>
